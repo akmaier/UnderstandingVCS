@@ -193,20 +193,25 @@ Once both ports pass against xitari, add `tests/cross/jaxtari_vs_jutari.py` that
 
 ## 5. Phased milestones
 
-Each phase ends with a green conformance-test suite for its scope, in **both** ports, before the next phase starts.
+Each phase ends with a green test suite for its scope, in **both** ports, before the next phase starts. Status shown here; for per-phase commit IDs and exact test deltas see [STATUS.md](STATUS.md).
 
-| Phase | Scope | Conformance gate |
-|---|---|---|
-| **P0** | Repo scaffolding: pyproject/Project.toml, module skeleton, CI, tools/trace_dump build | `pytest -q` and `julia -e 'using Pkg; Pkg.test("JuTari")'` both run (empty suites OK) |
-| **P1** | 6502 CPU: official opcodes, addressing modes, flags, cycle counts, IRQ/NMI/RESET | `cpu_klaus_dormann.jsonl.gz` passes byte-for-byte for ≥10M cycles |
-| **P2** | Bus + RAM + 6507 13-bit mirroring | RAM read/write goldens pass |
-| **P3** | TIA video: scanline engine, playfield, players, missiles, ball, collisions, HMOVE, WSYNC | `tia_blank_screen` and a TIA stress ROM pass; frame buffers match |
-| **P4** | M6532 RIOT: timers + I/O ports + RAM (already in P2) | `riot_timer_walk` passes |
-| **P5** | Cartridges: 2K, 4K, F8, F6, F4 first (covers ~90% of supported ROMs), then E0, FE, 3F, 3E, MB, MC, AR, DPC, … | Per-cart-type goldens pass |
-| **P6** | Console wiring + I/O (joysticks, paddles, switches) + StellaEnvironment + per-game RomSettings | `game_pong_5000frames`, `game_breakout_5000frames`, `game_space_invaders_5000frames` pass; ALE step/reset/act/getScreen API matches xitari semantically |
-| **P7** | Differentiability layer (`diff/`): HARD mode is the default and must keep all conformance tests green; SOFT mode enables gradients via soft opcode dispatch, soft RAM addressing, ROM-as-weights | Gradient sanity tests pass (e.g., ∂(pixel)/∂(ROM byte) is non-zero for byte known to affect that pixel and zero for one that cannot); HARD-mode conformance still green |
-| **P8** | XAI hooks + first attribution experiment | Integrated Gradients on ROM bytes recovers a known sprite-defining region in Pong |
-| **P9** | JAX-vs-Julia benchmark + first paper-shaped XAI study | Throughput numbers + a writeup |
+| Phase | Scope | Conformance gate | Status |
+|---|---|---|---|
+| **P0** | Repo scaffolding: pyproject/Project.toml, module skeleton, CI, tools/trace_dump build | `pytest -q` and `julia -e 'using Pkg; Pkg.test("JuTari")'` both run (empty suites OK) | ✅ |
+| **P1** | 6502 CPU: official opcodes, addressing modes, flags, cycle counts, IRQ/NMI/RESET | `cpu_klaus_dormann.jsonl.gz` passes byte-for-byte for ≥10M cycles — **conformance harness not built yet; coverage is via 200+ unit tests per port across P1a-f.** All 151 documented NMOS opcodes + USBC alias implemented. | ✅ (unit-tests) |
+| **P2** | Bus + RAM + 6507 13-bit mirroring | RAM read/write goldens pass — **goldens not generated yet; coverage is via unit tests.** | ✅ (unit-tests) |
+| **P3** | TIA video: scanline engine, playfield, players, missiles, ball, collisions, HMOVE, WSYNC | `tia_blank_screen` and a TIA stress ROM pass; frame buffers match — **conformance harness not built; coverage is via 200+ unit tests across P3a-f.** End-of-scanline rendering (no beam-racing yet); NUSIZ multi-copy + VDELP not yet implemented. | ✅ (unit-tests) |
+| **P4** | M6532 RIOT: timers + I/O ports + RAM (already in P2) | `riot_timer_walk` passes — coverage via unit tests. PA7 interrupt + INSTAT-read flag clearing deferred. | ✅ (unit-tests) |
+| **P5** | Cartridges: 2K, 4K, F8, F6, F4 first (covers ~90% of supported ROMs), then E0, FE, 3F, 3E, MB, MC, AR, DPC, … | Per-cart-type goldens pass — coverage via unit tests + 1 end-to-end CPU bank-switch test. SC variants + E0/FE/3F/3E/MB/MC/AR/DPC deferred. | ✅ (basic 5 formats) |
+| **P6** | Console wiring + I/O (joysticks, paddles, switches) + StellaEnvironment + per-game RomSettings | `game_pong_5000frames`, `game_breakout_5000frames`, `game_space_invaders_5000frames` pass; ALE step/reset/act/getScreen API matches xitari semantically | ✅ (API surface) — per-game `RomSettings` deferred (GenericRomSettings stub only); paddle timing + phosphor blend deferred. |
+| **P7** | Differentiability layer (`diff/`): HARD mode is the default and must keep all conformance tests green; SOFT mode enables gradients via soft opcode dispatch, soft RAM addressing, ROM-as-weights | Gradient sanity tests pass (e.g., ∂(pixel)/∂(ROM byte) is non-zero for byte known to affect that pixel and zero for one that cannot); HARD-mode conformance still green | ✅ (**primitives only**) — `RomTensor`, `soft_select`, `soft_memory_read`, `soft_branch`, STE round/clamp shipped with jaxtari gradient tests + end-to-end ROM-attribution demo. **Integration with `step()` is the still-open P7b.** |
+| **P7b** | Wire P7 primitives into `cpu.m6502.step()` so SOFT mode produces a fully-differentiable framebuffer; replace `Cart` in the Bus with a `RomTensor`-backed alternative; add Julia Zygote / ChainRulesCore rrules | `jax.grad(env.step)` returns a non-zero, structurally-correct gradient back to the ROM | ⏳ |
+| **P8** | XAI hooks + first attribution experiment | Integrated Gradients on ROM bytes recovers a known sprite-defining region in Pong | ☐ |
+| **P9** | JAX-vs-Julia benchmark + first paper-shaped XAI study | Throughput numbers + a writeup | ☐ |
+
+### Cross-cutting infrastructure debt
+
+The single most important piece of unfinished infrastructure is the **xitari-trace conformance harness** described in §4. Both ports are currently validated against hand-built unit tests rather than against real ROMs running on xitari, so subtle timing or BCD or bank-switch bugs that don't show up in our test set won't get caught. The `tools/trace_dump.cpp` sketch is committed but has never been built; no golden traces exist. Closing this would let us claim "bit-exact against xitari" rather than "passes our unit tests".
 
 P1 is the largest single chunk and is naturally subdivided:
 

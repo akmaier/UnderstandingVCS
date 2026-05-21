@@ -18,18 +18,28 @@ This is the lever that lets us aim XAI tools at a system we already understand b
 
 ---
 
+## Current status
+
+Both ports run a full VCS — CPU + Bus + RAM + TIA + RIOT + 2K/4K/F8/F6/F4 bank-switched cart — wrapped in an ALE-style `StellaEnvironment` (`reset` / `step(action)` / `get_screen` / `get_ram`). All 151 documented NMOS 6502 opcodes are implemented. The TIA renders playfield + 2 player sprites + 2 missiles + ball + collisions, drives the framebuffer through VSYNC / VBLANK, and supports HMOVE positioning. The RIOT timer (4 prescalers) + I/O ports (SWCHA/SWCHB + DDRs) are live. The differentiability primitives (`RomTensor`, `soft_select`, `soft_memory_read`, `soft_branch`, straight-through round/clamp) are in jaxtari with gradient tests and an end-to-end ROM-byte attribution demo; integration with `step()` is the still-open P7b.
+
+**1097 tests green** across the two ports (jaxtari 321 + jutari 776).
+
+For the per-phase commit ledger, what each port can do today, and the complete list of deferrals, see **[STATUS.md](STATUS.md)**. For the design rationale and the still-pending phase plan, see **[PORTING_PLAN.md](PORTING_PLAN.md)**.
+
+---
+
 ## Repository Structure
 
 ```
 UnderstandingVCS/
 ├── README.md              # This file
-├── PORTING_PLAN.md        # Module-by-module plan for jaxtari/jutari (read this next)
+├── PORTING_PLAN.md        # Phase plan + design rationale
+├── STATUS.md              # Per-phase commit/test/deferral ledger
 ├── .gitignore             # Excludes papers/, dqn/, xitari/ (external deps) and .DS_Store
-├── literature/            # AI-readable markdown versions of papers with BibTeX
-│   ├── jonas_kording_2017_pcbi.md
-│   └── mnih_2015_nature.md
-├── jaxtari/               # JAX port of xitari (tracked) — in active development
-├── jutari/                # Julia port of xitari (tracked) — in active development
+├── literature/            # AI-readable markdown versions of papers with BibTeX (13 papers)
+├── jaxtari/               # JAX port — see jaxtari/README.md
+├── jutari/                # Julia port — see jutari/README.md
+├── tools/                 # trace_dump.cpp sketch (xitari conformance helper, not built yet)
 ├── papers/                # PDF downloads (excluded from git, reproducible via DOIs)
 ├── dqn/                   # DeepMind DQN repository clone (excluded — used as black-box agent)
 └── xitari/                # DeepMind Xitari (ALE fork) — the bit-exact reference (excluded)
