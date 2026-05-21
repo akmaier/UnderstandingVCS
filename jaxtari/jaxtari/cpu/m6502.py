@@ -6,10 +6,12 @@ Implemented so far (PORTING_PLAN.md §5):
 - P1b1: bitwise (AND, ORA, EOR), compare (CMP, CPX, CPY), BIT.
 - P1b2: arithmetic (ADC, SBC including BCD/decimal mode) + the undocumented
   USBC (0xEB) alias for SBC immediate.
+- P1c: shifts/rotates (ASL, LSR, ROL, ROR) in both accumulator and memory
+  (zp / zp,X / abs / abs,X) addressing modes.
 
-Pending: P1c (ASL, LSR, ROL, ROR), P1d (branches + JMP/JSR/RTS), P1e (stack
-+ status), P1f (BRK/RTI/IRQ/NMI/RESET and the cycle-counting fine print).
-Unknown opcodes fall through to the stub: PC += 1, cycles += base.
+Pending: P1d (branches + JMP/JSR/RTS), P1e (stack + status), P1f
+(BRK/RTI/IRQ/NMI/RESET and the cycle-counting fine print). Unknown opcodes
+fall through to the stub: PC += 1, cycles += base.
 """
 
 from __future__ import annotations
@@ -19,8 +21,18 @@ from typing import Tuple
 import jax.numpy as jnp
 
 from jaxtari.cpu.addressing import INSTRUCTION_LENGTH, RESOLVERS
-from jaxtari.cpu.alu import adc, bit_flags, compare_flags, sbc, set_zn
-from jaxtari.cpu.tables import ADDRESSING_MODE_TABLE, CYCLE_TABLE, FLAG_U
+from jaxtari.cpu.alu import (
+    adc,
+    asl_op,
+    bit_flags,
+    compare_flags,
+    lsr_op,
+    rol_op,
+    ror_op,
+    sbc,
+    set_zn,
+)
+from jaxtari.cpu.tables import ADDR_IMPLIED, ADDRESSING_MODE_TABLE, CYCLE_TABLE, FLAG_U
 from jaxtari.types import CPUState
 
 Memory = jnp.ndarray  # shape (1 << 16,), dtype uint8
@@ -72,6 +84,16 @@ OPCODES: dict[int, str] = {
     0xE9: "SBC", 0xE5: "SBC", 0xF5: "SBC", 0xED: "SBC",
     0xFD: "SBC", 0xF9: "SBC", 0xE1: "SBC", 0xF1: "SBC",
     0xEB: "SBC",
+
+    # --- P1c -----------------------------------------------------------------
+    # ASL — accumulator + 4 memory modes
+    0x0A: "ASL", 0x06: "ASL", 0x16: "ASL", 0x0E: "ASL", 0x1E: "ASL",
+    # LSR — accumulator + 4 memory modes
+    0x4A: "LSR", 0x46: "LSR", 0x56: "LSR", 0x4E: "LSR", 0x5E: "LSR",
+    # ROL — accumulator + 4 memory modes
+    0x2A: "ROL", 0x26: "ROL", 0x36: "ROL", 0x2E: "ROL", 0x3E: "ROL",
+    # ROR — accumulator + 4 memory modes
+    0x6A: "ROR", 0x66: "ROR", 0x76: "ROR", 0x6E: "ROR", 0x7E: "ROR",
 }
 
 
@@ -236,6 +258,30 @@ def step(state: CPUState, memory: Memory) -> Tuple[CPUState, Memory]:
             PC=jnp.uint16((int(state.PC) + INSTRUCTION_LENGTH[mode]) & 0xFFFF),
             cycles=state.cycles + jnp.uint64(base_cycles + extra),
         ), memory
+
+    # --- Shifts / rotates -------------------------------------------------
+    if mnemonic in ("ASL", "LSR", "ROL", "ROR"):
+        op = {"ASL": asl_op, "LSR": lsr_op, "ROL": rol_op, "ROR": ror_op}[mnemonic]
+        if mode == ADDR_IMPLIED:
+            # Accumulator-mode shift / rotate: operand and destination are A.
+            new_a, new_p = op(int(state.P), int(state.A))
+            return state._replace(
+                A=jnp.uint8(new_a & 0xFF),
+                P=jnp.uint8(new_p & 0xFF),
+                PC=jnp.uint16((int(state.PC) + 1) & 0xFFFF),
+                cycles=state.cycles + jnp.uint64(base_cycles),
+            ), memory
+        # Memory-mode RMW. No page-cross penalty (the cycle table already
+        # encodes the worst case for these opcodes).
+        addr, _ = RESOLVERS[mode](state, memory)
+        value = int(memory[addr & 0xFFFF])
+        new_value, new_p = op(int(state.P), value)
+        new_memory = memory.at[addr & 0xFFFF].set(jnp.uint8(new_value & 0xFF))
+        return state._replace(
+            P=jnp.uint8(new_p & 0xFF),
+            PC=jnp.uint16((int(state.PC) + INSTRUCTION_LENGTH[mode]) & 0xFFFF),
+            cycles=state.cycles + jnp.uint64(base_cycles),
+        ), new_memory
 
     # Defensive — should be unreachable.
     return _stub_advance(state, base_cycles), memory

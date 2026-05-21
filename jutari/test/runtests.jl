@@ -534,3 +534,127 @@ end
     end
 
 end
+
+@testset "JuTari P1c shifts and rotates" begin
+
+    @testset "ASL A shifts bit 7 into carry" begin
+        s = _state(PC=0x8000, A=0x80, P=FLAG_U)
+        mem = _make_memory(Dict(0x8000 => 0x0A))
+        step(s, mem)
+        @test s.A == 0x00
+        @test (s.P & FLAG_C) != 0
+        @test (s.P & FLAG_Z) != 0
+        @test (s.P & FLAG_N) == 0
+        @test s.cycles == 2
+    end
+
+    @testset "ASL A normal shift" begin
+        s = _state(PC=0x8000, A=0x01, P=FLAG_U)
+        mem = _make_memory(Dict(0x8000 => 0x0A))
+        step(s, mem)
+        @test s.A == 0x02
+        @test (s.P & FLAG_C) == 0
+    end
+
+    @testset "ASL zp writes back and sets N" begin
+        s = _state(PC=0x8000)
+        mem = _make_memory(Dict(0x8000 => 0x06, 0x8001 => 0x10, 0x0010 => 0x41))
+        step(s, mem)
+        @test mem[0x0010 + 1] == 0x82
+        @test (s.P & FLAG_N) != 0
+        @test (s.P & FLAG_C) == 0
+        @test s.cycles == 5
+    end
+
+    @testset "ASL abs,X has no page cross penalty" begin
+        s = _state(PC=0x8000, X=0x10)
+        mem = _make_memory(Dict(0x8000 => 0x1E, 0x8001 => 0xF5, 0x8002 => 0x12, 0x1305 => 0x40))
+        step(s, mem)
+        @test mem[0x1305 + 1] == 0x80
+        @test s.cycles == 7
+    end
+
+    @testset "LSR A clears N even when input has bit 7" begin
+        s = _state(PC=0x8000, A=0xFF, P=FLAG_U)
+        mem = _make_memory(Dict(0x8000 => 0x4A))
+        step(s, mem)
+        @test s.A == 0x7F
+        @test (s.P & FLAG_C) != 0
+        @test (s.P & FLAG_N) == 0
+    end
+
+    @testset "LSR A bit 0 → C, result 0 → Z" begin
+        s = _state(PC=0x8000, A=0x01, P=FLAG_U | FLAG_N)
+        mem = _make_memory(Dict(0x8000 => 0x4A))
+        step(s, mem)
+        @test s.A == 0x00
+        @test (s.P & FLAG_C) != 0
+        @test (s.P & FLAG_Z) != 0
+        @test (s.P & FLAG_N) == 0
+    end
+
+    @testset "LSR zp,X writes back" begin
+        s = _state(PC=0x8000, X=0x05)
+        mem = _make_memory(Dict(0x8000 => 0x56, 0x8001 => 0x10, 0x0015 => 0x08))
+        step(s, mem)
+        @test mem[0x0015 + 1] == 0x04
+        @test s.cycles == 6
+    end
+
+    @testset "ROL A brings in carry to bit 0" begin
+        s = _state(PC=0x8000, A=0x40, P=FLAG_U | FLAG_C)
+        mem = _make_memory(Dict(0x8000 => 0x2A))
+        step(s, mem)
+        @test s.A == 0x81
+        @test (s.P & FLAG_C) == 0
+        @test (s.P & FLAG_N) != 0
+    end
+
+    @testset "ROL A bit 7 → C" begin
+        s = _state(PC=0x8000, A=0x80, P=FLAG_U)
+        mem = _make_memory(Dict(0x8000 => 0x2A))
+        step(s, mem)
+        @test s.A == 0x00
+        @test (s.P & FLAG_C) != 0
+        @test (s.P & FLAG_Z) != 0
+    end
+
+    @testset "ROL abs writes back" begin
+        s = _state(PC=0x8000, P=FLAG_U | FLAG_C)
+        mem = _make_memory(Dict(0x8000 => 0x2E, 0x8001 => 0x00, 0x8002 => 0x20, 0x2000 => 0x55))
+        step(s, mem)
+        @test mem[0x2000 + 1] == 0xAB
+        @test (s.P & FLAG_C) == 0
+        @test (s.P & FLAG_N) != 0
+        @test s.cycles == 6
+    end
+
+    @testset "ROR A brings carry to bit 7" begin
+        s = _state(PC=0x8000, A=0x02, P=FLAG_U | FLAG_C)
+        mem = _make_memory(Dict(0x8000 => 0x6A))
+        step(s, mem)
+        @test s.A == 0x81
+        @test (s.P & FLAG_C) == 0
+        @test (s.P & FLAG_N) != 0
+    end
+
+    @testset "ROR A bit 0 → C, result 0 → Z" begin
+        s = _state(PC=0x8000, A=0x01, P=FLAG_U)
+        mem = _make_memory(Dict(0x8000 => 0x6A))
+        step(s, mem)
+        @test s.A == 0x00
+        @test (s.P & FLAG_C) != 0
+        @test (s.P & FLAG_Z) != 0
+        @test (s.P & FLAG_N) == 0
+    end
+
+    @testset "ROR zp writes back" begin
+        s = _state(PC=0x8000, P=FLAG_U | FLAG_C)
+        mem = _make_memory(Dict(0x8000 => 0x66, 0x8001 => 0x10, 0x0010 => 0x02))
+        step(s, mem)
+        @test mem[0x0010 + 1] == 0x81
+        @test (s.P & FLAG_C) == 0
+        @test s.cycles == 5
+    end
+
+end

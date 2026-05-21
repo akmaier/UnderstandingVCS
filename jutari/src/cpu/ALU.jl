@@ -7,7 +7,8 @@
 - P1b1: `compare_flags!` (CMP/CPX/CPY), `bit_flags!` (BIT)
 - P1b2: `adc!`, `sbc!` — binary and BCD (decimal mode), matching xitari's
         M6502Hi.ins NMOS semantics bit-for-bit (case 0x69 / 0xe9).
-- P1c:  shift/rotate carry handling — pending.
+- P1c:  `asl_op!`, `lsr_op!`, `rol_op!`, `ror_op!` — shifts and rotates;
+        each returns the result byte and mutates `state.P`.
 
 Each helper mutates `state.P` (and for adc!/sbc!, `state.A`) in place and
 force-asserts `FLAG_U` (bit 5) which is always read as 1 on real hardware.
@@ -19,7 +20,8 @@ using ..CPUTables: FLAG_N, FLAG_Z, FLAG_C, FLAG_V, FLAG_U, FLAG_D
 # vs. JuTari.Types path.
 using ...Types: CPUState
 
-export set_zn!, compare_flags!, bit_flags!, adc!, sbc!
+export set_zn!, compare_flags!, bit_flags!, adc!, sbc!,
+       asl_op!, lsr_op!, rol_op!, ror_op!
 
 function set_zn!(state::CPUState, value::Integer)
     p = state.P & ~(FLAG_Z | FLAG_N)
@@ -176,6 +178,65 @@ function sbc!(state::CPUState, operand::Integer)
     state.A = UInt8(new_a & 0xFF)
     state.P = (p | FLAG_U) & UInt8(0xFF)
     return nothing
+end
+
+# --------------------------------------------------------------------------- #
+# P1c — shifts and rotates. Each mutates `state.P` and returns the result
+# byte (caller decides whether to write it to A or to memory).
+# --------------------------------------------------------------------------- #
+
+"""ASL: bit 7 → C; bit 0 ← 0; N/Z from result. Returns the result byte."""
+function asl_op!(state::CPUState, value::Integer)
+    v = Int(value) & 0xFF
+    new_c = (v >> 7) & 1
+    result = (v << 1) & 0xFF
+    p = state.P & ~(FLAG_C | FLAG_Z | FLAG_N)
+    new_c != 0 && (p |= FLAG_C)
+    result == 0 && (p |= FLAG_Z)
+    (result & 0x80) != 0 && (p |= FLAG_N)
+    state.P = (p | FLAG_U) & UInt8(0xFF)
+    return UInt8(result)
+end
+
+"""LSR: bit 0 → C; bit 7 ← 0; N always 0; Z from result. Returns the result."""
+function lsr_op!(state::CPUState, value::Integer)
+    v = Int(value) & 0xFF
+    new_c = v & 1
+    result = (v >> 1) & 0x7F
+    p = state.P & ~(FLAG_C | FLAG_Z | FLAG_N)
+    new_c != 0 && (p |= FLAG_C)
+    result == 0 && (p |= FLAG_Z)
+    # N is always 0 after LSR.
+    state.P = (p | FLAG_U) & UInt8(0xFF)
+    return UInt8(result)
+end
+
+"""ROL: old C → bit 0; bit 7 → new C; N/Z from result. Returns the result."""
+function rol_op!(state::CPUState, value::Integer)
+    v = Int(value) & 0xFF
+    c_in = (state.P & FLAG_C) != 0 ? 1 : 0
+    new_c = (v >> 7) & 1
+    result = ((v << 1) | c_in) & 0xFF
+    p = state.P & ~(FLAG_C | FLAG_Z | FLAG_N)
+    new_c != 0 && (p |= FLAG_C)
+    result == 0 && (p |= FLAG_Z)
+    (result & 0x80) != 0 && (p |= FLAG_N)
+    state.P = (p | FLAG_U) & UInt8(0xFF)
+    return UInt8(result)
+end
+
+"""ROR: old C → bit 7; bit 0 → new C; N/Z from result. Returns the result."""
+function ror_op!(state::CPUState, value::Integer)
+    v = Int(value) & 0xFF
+    c_in = (state.P & FLAG_C) != 0 ? 1 : 0
+    new_c = v & 1
+    result = ((v >> 1) | (c_in << 7)) & 0xFF
+    p = state.P & ~(FLAG_C | FLAG_Z | FLAG_N)
+    new_c != 0 && (p |= FLAG_C)
+    result == 0 && (p |= FLAG_Z)
+    (result & 0x80) != 0 && (p |= FLAG_N)
+    state.P = (p | FLAG_U) & UInt8(0xFF)
+    return UInt8(result)
 end
 
 end # module

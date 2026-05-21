@@ -9,10 +9,11 @@ Implemented so far (PORTING_PLAN.md §5):
 - P1b1: bitwise (AND, ORA, EOR), compare (CMP, CPX, CPY), BIT.
 - P1b2: arithmetic (ADC, SBC including BCD/decimal mode) + undocumented
         USBC (0xEB) alias for SBC immediate.
+- P1c:  shifts/rotates (ASL, LSR, ROL, ROR) in accumulator + memory modes.
 
-Pending: P1c (ASL/LSR/ROL/ROR), P1d (branches + JMP/JSR/RTS), P1e (stack +
-status flags), P1f (BRK/RTI/IRQ/NMI/RESET + cycle fine print). Unknown
-opcodes fall through to the stub (PC += 1, cycles += base).
+Pending: P1d (branches + JMP/JSR/RTS), P1e (stack + status flags),
+P1f (BRK/RTI/IRQ/NMI/RESET + cycle fine print). Unknown opcodes fall
+through to the stub (PC += 1, cycles += base).
 """
 module CPU
 
@@ -20,9 +21,10 @@ include("Tables.jl")
 include("Addressing.jl")
 include("ALU.jl")
 
-using .CPUTables: ADDRESSING_MODE_TABLE, CYCLE_TABLE
+using .CPUTables: ADDRESSING_MODE_TABLE, CYCLE_TABLE, ADDR_IMPLIED
 using .Addressing: resolve, instruction_length
-using .ALU: set_zn!, compare_flags!, bit_flags!, adc!, sbc!
+using .ALU: set_zn!, compare_flags!, bit_flags!, adc!, sbc!,
+            asl_op!, lsr_op!, rol_op!, ror_op!
 using ..Types: CPUState
 
 export step
@@ -73,6 +75,16 @@ const OPCODES = Dict{UInt8, Symbol}(
     0xE9 => :SBC, 0xE5 => :SBC, 0xF5 => :SBC, 0xED => :SBC,
     0xFD => :SBC, 0xF9 => :SBC, 0xE1 => :SBC, 0xF1 => :SBC,
     0xEB => :SBC,
+
+    # --- P1c ---------------------------------------------------------------
+    # ASL — accumulator + 4 memory modes
+    0x0A => :ASL, 0x06 => :ASL, 0x16 => :ASL, 0x0E => :ASL, 0x1E => :ASL,
+    # LSR
+    0x4A => :LSR, 0x46 => :LSR, 0x56 => :LSR, 0x4E => :LSR, 0x5E => :LSR,
+    # ROL
+    0x2A => :ROL, 0x26 => :ROL, 0x36 => :ROL, 0x2E => :ROL, 0x3E => :ROL,
+    # ROR
+    0x6A => :ROR, 0x66 => :ROR, 0x76 => :ROR, 0x6E => :ROR, 0x7E => :ROR,
 )
 
 @inline _peek(memory::Vector{UInt8}, addr::Integer) =
@@ -192,6 +204,24 @@ function step(state::CPUState, memory::Vector{UInt8})
         addr, page = resolve(mode, state, memory)
         sbc!(state, _peek(memory, addr))
         _advance_pc!(state, mode); page && (extra_cycles += 1)
+
+    # --- Shifts / rotates -------------------------------------------------
+    elseif mnemonic === :ASL || mnemonic === :LSR ||
+           mnemonic === :ROL || mnemonic === :ROR
+        op = mnemonic === :ASL ? asl_op! :
+             mnemonic === :LSR ? lsr_op! :
+             mnemonic === :ROL ? rol_op! : ror_op!
+        if mode == ADDR_IMPLIED
+            # Accumulator-mode: operand and destination are A.
+            state.A = op(state, state.A)
+            state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
+        else
+            # Memory-mode RMW. Cycle table is already worst-case; no page-cross.
+            addr, _ = resolve(mode, state, memory)
+            result = op(state, _peek(memory, addr))
+            memory[(Int(addr) & 0xFFFF) + 1] = result
+            _advance_pc!(state, mode)
+        end
     end
 
     state.cycles += UInt64(base_cycles + extra_cycles)

@@ -4,7 +4,8 @@
 - P1b1: `compare_flags` (CMP/CPX/CPY), `bit_flags` (BIT).
 - P1b2: `adc`, `sbc` — binary and BCD (decimal mode), matching xitari's
         M6502Hi.ins NMOS semantics bit-for-bit (see comments inline).
-- P1c:  shift/rotate carry handling — pending.
+- P1c:  `asl_op`, `lsr_op`, `rol_op`, `ror_op` — shifts and rotates with
+        carry-in / carry-out.
 
 All helpers take and return a plain Python int for the status byte `P`. The
 constant bit 5 (`FLAG_U`) is asserted at the end of each helper because the
@@ -170,3 +171,72 @@ def sbc(p: int, a: int, operand: int) -> Tuple[int, int]:
     if v_set:
         p |= FLAG_V
     return new_a, (p | FLAG_U) & 0xFF
+
+
+# --------------------------------------------------------------------------- #
+# P1c — shifts and rotates
+# Reference: xitari/emucore/m6502/src/M6502Hi.ins, the ASL/LSR/ROL/ROR cases.
+# All four return (result_byte, new_p) and update C, Z, N. The dispatcher in
+# `cpu.m6502` decides whether the result goes back into A (accumulator mode)
+# or into memory (zp / zp,X / abs / abs,X).
+# --------------------------------------------------------------------------- #
+
+def asl_op(p: int, value: int) -> Tuple[int, int]:
+    """Arithmetic shift left: bit 7 → C; bit 0 ← 0; N/Z from result."""
+    value &= 0xFF
+    new_c = (value >> 7) & 1
+    result = (value << 1) & 0xFF
+    p = p & (0xFF ^ FLAG_C ^ FLAG_Z ^ FLAG_N)
+    if new_c:
+        p |= FLAG_C
+    if result == 0:
+        p |= FLAG_Z
+    if result & 0x80:
+        p |= FLAG_N
+    return result, (p | FLAG_U) & 0xFF
+
+
+def lsr_op(p: int, value: int) -> Tuple[int, int]:
+    """Logical shift right: bit 0 → C; bit 7 ← 0; N always 0; Z from result."""
+    value &= 0xFF
+    new_c = value & 1
+    result = (value >> 1) & 0x7F  # bit 7 forced to 0 by the shift
+    p = p & (0xFF ^ FLAG_C ^ FLAG_Z ^ FLAG_N)
+    if new_c:
+        p |= FLAG_C
+    if result == 0:
+        p |= FLAG_Z
+    # N is always 0 after LSR — no need to set.
+    return result, (p | FLAG_U) & 0xFF
+
+
+def rol_op(p: int, value: int) -> Tuple[int, int]:
+    """Rotate left through carry: old C → bit 0; bit 7 → new C; N/Z from result."""
+    value &= 0xFF
+    c_in = 1 if (p & FLAG_C) else 0
+    new_c = (value >> 7) & 1
+    result = ((value << 1) | c_in) & 0xFF
+    p = p & (0xFF ^ FLAG_C ^ FLAG_Z ^ FLAG_N)
+    if new_c:
+        p |= FLAG_C
+    if result == 0:
+        p |= FLAG_Z
+    if result & 0x80:
+        p |= FLAG_N
+    return result, (p | FLAG_U) & 0xFF
+
+
+def ror_op(p: int, value: int) -> Tuple[int, int]:
+    """Rotate right through carry: old C → bit 7; bit 0 → new C; N/Z from result."""
+    value &= 0xFF
+    c_in = 1 if (p & FLAG_C) else 0
+    new_c = value & 1
+    result = ((value >> 1) | (c_in << 7)) & 0xFF
+    p = p & (0xFF ^ FLAG_C ^ FLAG_Z ^ FLAG_N)
+    if new_c:
+        p |= FLAG_C
+    if result == 0:
+        p |= FLAG_Z
+    if result & 0x80:
+        p |= FLAG_N
+    return result, (p | FLAG_U) & 0xFF
