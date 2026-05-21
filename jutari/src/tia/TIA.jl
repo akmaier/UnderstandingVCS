@@ -18,14 +18,18 @@ Phase progress:
   - P3b: playfield rendering (PF0/PF1/PF2 + CTRLPF mirror).
   - P3c: player sprites P0/P1 (GRP, REFP, RESP, HMP, HMOVE, HMCLR).
   - P3d: missiles M0/M1 and ball BL (sizes, EN*, RES*, HM*).
-  - P3e: collision latches — 8 read-only registers
-    CXM0P/CXM1P/CXP0FB/CXP1FB/CXM0FB/CXM1FB/CXBLPF/CXPPMM at \$30–\$37
-    that accumulate D6/D7 bits when objects share a pixel on any
-    rendered scanline. Writing CXCLR (\$2C) clears all 8 latches.
+  - P3e: collision latches + CXCLR.
+  - P3f: software-driven frame ending via VSYNC and output blanking
+    via VBLANK. The 1→0 edge on VSYNC.D1 is the frame boundary
+    (frame++, scanline=0). When VBLANK.D1 is set, completed scanlines
+    are NOT written to the framebuffer (blanked).
 
-Pending: P3f (VSYNC/VBLANK + frame ending). INPT* reads still stub
-to 0. Beam-racing is approximated; collision detection runs on the
-end-of-scanline register snapshot.
+P3 is now feature-complete for the documented register set, modulo:
+  - NUSIZ multi-copy / 2×/4×-wide player scaling.
+  - VDELP* / VDELBL vertical-delay updates.
+  - Sub-pixel beam-accurate rendering.
+  - Audio (TIASnd).
+  - INPT* input reads.
 """
 module TIA
 
@@ -95,6 +99,8 @@ mutable struct TIAState
     m1_x::Int
     bl_x::Int
     collisions::Vector{UInt8}      # 8 collision-latch bytes ($30..$37)
+    vsync_active::Bool
+    vblank_active::Bool
 end
 
 initial_tia_state() = TIAState(
@@ -103,6 +109,7 @@ initial_tia_state() = TIAState(
     zeros(UInt8, SCREEN_HEIGHT, SCREEN_WIDTH),
     0, 0, 0, 0, 0,
     zeros(UInt8, 8),
+    false, false,
 )
 
 """
@@ -153,6 +160,19 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer)
 
     if reg == W_WSYNC
         tia.wsync_pending = true
+    elseif reg == W_VSYNC
+        new_vsync = (Int(value) & 0x02) != 0
+        if tia.vsync_active && !new_vsync
+            # 1→0 edge: software frame boundary.
+            tia.vsync_active = false
+            tia.frame += UInt64(1)
+            tia.scanline = 0
+            tia.scanline_cycle = 0
+        else
+            tia.vsync_active = new_vsync
+        end
+    elseif reg == W_VBLANK
+        tia.vblank_active = (Int(value) & 0x02) != 0
     elseif reg == W_RESP0
         tia.p0_x = _resp_position(tia.scanline_cycle)
     elseif reg == W_RESP1
@@ -197,10 +217,14 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
     if line_advance > 0
         scanline_pixels = render_scanline(tia)
         _detect_collisions!(tia)
-        for i in 0:(line_advance - 1)
-            completed_line = (tia.scanline + i) % NTSC_SCANLINES_PER_FRAME
-            if completed_line < SCREEN_HEIGHT
-                tia.framebuffer[completed_line + 1, :] .= scanline_pixels
+        # When VBLANK is active, output is blanked — collisions still
+        # accumulate but framebuffer writes are suppressed.
+        if !tia.vblank_active
+            for i in 0:(line_advance - 1)
+                completed_line = (tia.scanline + i) % NTSC_SCANLINES_PER_FRAME
+                if completed_line < SCREEN_HEIGHT
+                    tia.framebuffer[completed_line + 1, :] .= scanline_pixels
+                end
             end
         end
     end

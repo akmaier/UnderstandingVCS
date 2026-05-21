@@ -13,7 +13,8 @@ using JuTari.TIA: tia_peek, tia_poke!, tia_advance!, tia_apply_wsync!,
                   W_RESP0, W_RESP1, W_HMP0, W_HMP1, W_HMM0, W_HMM1, W_HMBL,
                   W_HMOVE, W_HMCLR,
                   W_ENAM0, W_ENAM1, W_ENABL, W_NUSIZ0, W_NUSIZ1,
-                  W_RESM0, W_RESM1, W_RESBL, W_CXCLR
+                  W_RESM0, W_RESM1, W_RESBL, W_CXCLR,
+                  W_VSYNC, W_VBLANK
 
 function _make_memory(image)
     mem = zeros(UInt8, 1 << 16)
@@ -1943,6 +1944,104 @@ end
         for reg in 0x30:0x37
             @test tia_peek(tia, reg) == 0
         end
+    end
+
+end
+
+@testset "JuTari P3f VSYNC + VBLANK + frame ending" begin
+
+    @testset "VSYNC default clear" begin
+        tia = initial_tia_state()
+        @test tia.vsync_active == false
+    end
+
+    @testset "VSYNC D1 sets flag, no frame increment yet" begin
+        tia = initial_tia_state()
+        tia_poke!(tia, W_VSYNC, 0x02)
+        @test tia.vsync_active == true
+        @test tia.frame == 0
+        @test tia.scanline == 0
+    end
+
+    @testset "VSYNC only bit 1 matters" begin
+        tia = initial_tia_state()
+        tia_poke!(tia, W_VSYNC, 0x01); @test tia.vsync_active == false
+        tia_poke!(tia, W_VSYNC, 0xFD); @test tia.vsync_active == false
+        tia_poke!(tia, W_VSYNC, 0xFF); @test tia.vsync_active == true
+    end
+
+    @testset "VSYNC falling edge increments frame and resets scanline" begin
+        tia = initial_tia_state()
+        tia.scanline = 100; tia.scanline_cycle = 42
+        tia_poke!(tia, W_VSYNC, 0x02)
+        @test tia.frame == 0
+        @test tia.scanline == 100
+        tia_poke!(tia, W_VSYNC, 0x00)
+        @test tia.frame == 1
+        @test tia.scanline == 0
+        @test tia.scanline_cycle == 0
+        @test tia.vsync_active == false
+    end
+
+    @testset "VSYNC clear with no rising edge is no-op for frame" begin
+        tia = initial_tia_state(); tia.scanline = 50
+        tia_poke!(tia, W_VSYNC, 0x00)
+        @test tia.frame == 0
+        @test tia.scanline == 50
+    end
+
+    @testset "VBLANK default clear" begin
+        tia = initial_tia_state()
+        @test tia.vblank_active == false
+    end
+
+    @testset "VBLANK D1 sets and clears flag" begin
+        tia = initial_tia_state()
+        tia_poke!(tia, W_VBLANK, 0x02); @test tia.vblank_active == true
+        tia_poke!(tia, W_VBLANK, 0x00); @test tia.vblank_active == false
+    end
+
+    @testset "VBLANK suppresses framebuffer writes" begin
+        tia = initial_tia_state()
+        tia_poke!(tia, W_PF0, 0xF0); tia_poke!(tia, W_COLUPF, 0x42)
+        tia_poke!(tia, W_VBLANK, 0x02)
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        @test sum(tia.framebuffer[1, :]) == 0
+        @test tia.scanline == 1
+    end
+
+    @testset "VBLANK clear resumes framebuffer writes" begin
+        tia = initial_tia_state()
+        tia_poke!(tia, W_PF0, 0xF0); tia_poke!(tia, W_COLUPF, 0x42)
+        tia_poke!(tia, W_VBLANK, 0x02)
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        @test sum(tia.framebuffer[1, :]) == 0
+        tia_poke!(tia, W_VBLANK, 0x00)
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        @test tia.framebuffer[2, 1] == 0x42
+        @test tia.framebuffer[2, 16] == 0x42
+    end
+
+    @testset "full frame cycle via VSYNC" begin
+        tia = initial_tia_state()
+        tia_poke!(tia, W_PF0, 0xF0); tia_poke!(tia, W_COLUPF, 0x42)
+        # 1. VSYNC: 3 lines blanked
+        tia_poke!(tia, W_VSYNC, 0x02)
+        tia_poke!(tia, W_VBLANK, 0x02)
+        tia_advance!(tia, 3 * NTSC_CPU_CYCLES_PER_SCANLINE)
+        tia_poke!(tia, W_VSYNC, 0x00)
+        @test tia.frame == 1
+        @test tia.scanline == 0
+        # 2. VBLANK: 37 lines blanked
+        tia_advance!(tia, 37 * NTSC_CPU_CYCLES_PER_SCANLINE)
+        @test sum(tia.framebuffer) == 0
+        # 3. Visible: 3 lines
+        tia_poke!(tia, W_VBLANK, 0x00)
+        tia_advance!(tia, 3 * NTSC_CPU_CYCLES_PER_SCANLINE)
+        for row in (38, 39, 40)              # 1-based — these are row indices 37..39
+            @test tia.framebuffer[row, 1] == 0x42
+        end
+        @test tia.framebuffer[41, 1] == 0
     end
 
 end

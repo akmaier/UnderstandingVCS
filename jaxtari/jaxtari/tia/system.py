@@ -19,15 +19,21 @@ Phase progress:
   - P3b: playfield rendering (PF0/PF1/PF2 + CTRLPF mirror + COLU*).
   - P3c: player sprites P0/P1 (GRP, REFP, RESP, HMP, HMOVE, HMCLR).
   - P3d: missiles M0/M1 and ball BL (EN*, RES*, HM*, NUSIZ/CTRLPF sizes).
-  - P3e (this sub-phase): collision latches — 8 read-only registers
-    CXM0P/CXM1P/CXP0FB/CXP1FB/CXM0FB/CXM1FB/CXBLPF/CXPPMM at \$30–\$37
-    that accumulate D6/D7 bits when objects share a pixel on any
-    rendered scanline. Writing CXCLR (\$2C) clears all 8 latches.
+  - P3e: collision latches CXM0P..CXPPMM + CXCLR.
+  - P3f (this sub-phase): software-driven frame ending via VSYNC and
+    output blanking via VBLANK. A write that clears VSYNC.D1 (1→0
+    edge) is treated as the frame boundary — `frame` increments,
+    `scanline` resets to 0. When VBLANK.D1 is set, completed scanlines
+    are NOT written to the framebuffer (the visible image is blanked).
+    The 262-scanline wrap is kept as a safety overflow for ROMs that
+    never trigger VSYNC.
 
-Pending: P3f (VSYNC / VBLANK + frame ending). INPT* reads still stub
-to 0. Beam-racing is approximated: rendering captures register state as
-of end-of-scanline; collision detection runs on the same scanline
-snapshot.
+P3 is now feature-complete for the documented register set, modulo:
+  - NUSIZ multi-copy / 2×/4×-wide player scaling.
+  - VDELP* / VDELBL vertical-delay updates.
+  - Sub-pixel beam-accurate rendering (mid-scanline register changes).
+  - Audio (TIASnd).
+  - INPT* input reads.
 """
 
 from __future__ import annotations
@@ -137,6 +143,10 @@ class TIAState(NamedTuple):
     `collisions` is an 8-byte array holding the latched values of the
     read-only TIA collision registers \$30–\$37 (D6/D7 set on object
     overlap; cleared by CXCLR).
+
+    `vsync_active` and `vblank_active` mirror the D1 bit of the
+    respective registers; software toggles these to mark vertical
+    retrace and the off-screen vblank/overscan periods.
     """
     registers: jnp.ndarray
     scanline_cycle: int
@@ -150,6 +160,8 @@ class TIAState(NamedTuple):
     m1_x: int
     bl_x: int
     collisions: jnp.ndarray
+    vsync_active: bool
+    vblank_active: bool
 
 
 def initial_tia_state() -> TIAState:
@@ -166,6 +178,8 @@ def initial_tia_state() -> TIAState:
         m1_x=0,
         bl_x=0,
         collisions=jnp.zeros((8,), dtype=jnp.uint8),
+        vsync_active=False,
+        vblank_active=False,
     )
 
 
@@ -226,6 +240,22 @@ def tia_poke(tia: TIAState, addr: int, value: int) -> TIAState:
 
     if reg == W_WSYNC:
         new_tia = new_tia._replace(wsync_pending=True)
+    elif reg == W_VSYNC:
+        new_vsync = (value & 0x02) != 0
+        if tia.vsync_active and not new_vsync:
+            # 1→0 edge: frame boundary. Increment frame counter, reset
+            # scanline. Beam-accurate emulators reset scanline_cycle too;
+            # we follow that convention.
+            new_tia = new_tia._replace(
+                vsync_active=False,
+                frame=tia.frame + 1,
+                scanline=0,
+                scanline_cycle=0,
+            )
+        else:
+            new_tia = new_tia._replace(vsync_active=new_vsync)
+    elif reg == W_VBLANK:
+        new_tia = new_tia._replace(vblank_active=(value & 0x02) != 0)
     elif reg == W_RESP0:
         new_tia = new_tia._replace(p0_x=_resp_position(new_tia.scanline_cycle))
     elif reg == W_RESP1:
@@ -287,10 +317,14 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
     if line_advance > 0:
         scanline_pixels = render_scanline(tia)
         new_collisions = _detect_collisions(tia._replace(collisions=new_collisions))
-        for i in range(line_advance):
-            completed_line = (tia.scanline + i) % NTSC_SCANLINES_PER_FRAME
-            if completed_line < SCREEN_HEIGHT:
-                fb = fb.at[completed_line].set(scanline_pixels)
+        # When VBLANK is active, the TIA blanks its output — completed
+        # scanlines are NOT written to the framebuffer. Collision
+        # detection still runs (matching real hardware).
+        if not tia.vblank_active:
+            for i in range(line_advance):
+                completed_line = (tia.scanline + i) % NTSC_SCANLINES_PER_FRAME
+                if completed_line < SCREEN_HEIGHT:
+                    fb = fb.at[completed_line].set(scanline_pixels)
 
     new_line = tia.scanline + line_advance
     frame_advance = new_line // NTSC_SCANLINES_PER_FRAME
