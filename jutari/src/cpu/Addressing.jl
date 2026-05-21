@@ -15,16 +15,15 @@ using ..CPUTables: ADDR_IMMEDIATE, ADDR_ZERO, ADDR_ZERO_X, ADDR_ZERO_Y,
                    ADDR_INDIRECT, ADDR_INDIRECT_X, ADDR_INDIRECT_Y,
                    ADDR_RELATIVE, ADDR_IMPLIED
 # Three dots: Types lives at JuTari.Types, but we are at JuTari.CPU.Addressing,
-# so we need to climb two levels (past CPU) to reach it. `..Types` would resolve
-# to the non-existent JuTari.CPU.Types.
+# so we need to climb two levels (past CPU) to reach it.
 using ...Types: CPUState
+# Multiple-dispatch `peek` so resolvers accept either a `BusState` (proper
+# 6507 bus) or a flat `Vector{UInt8}` (P1-style scratch memory).
+using ...Bus: peek as _peek
 
 export resolve, instruction_length
 
-@inline _peek(memory::Vector{UInt8}, addr::Integer) =
-    memory[(Int(addr) & 0xFFFF) + 1]
-
-@inline function _peek16(memory::Vector{UInt8}, addr::Integer)
+@inline function _peek16(memory, addr::Integer)
     lo = UInt16(_peek(memory, addr))
     hi = UInt16(_peek(memory, addr + 1))
     return (hi << 8) | lo
@@ -34,48 +33,48 @@ end
     return UInt16((Int(state.PC) + 1) & 0xFFFF)
 end
 
-function resolve_immediate(state::CPUState, memory::Vector{UInt8})
+function resolve_immediate(state::CPUState, memory)
     return _operand_addr(state), false
 end
 
-function resolve_zero(state::CPUState, memory::Vector{UInt8})
+function resolve_zero(state::CPUState, memory)
     return UInt16(_peek(memory, _operand_addr(state))), false
 end
 
-function resolve_zero_x(state::CPUState, memory::Vector{UInt8})
+function resolve_zero_x(state::CPUState, memory)
     op = _peek(memory, _operand_addr(state))
     return UInt16((Int(op) + Int(state.X)) & 0xFF), false
 end
 
-function resolve_zero_y(state::CPUState, memory::Vector{UInt8})
+function resolve_zero_y(state::CPUState, memory)
     op = _peek(memory, _operand_addr(state))
     return UInt16((Int(op) + Int(state.Y)) & 0xFF), false
 end
 
-function resolve_absolute(state::CPUState, memory::Vector{UInt8})
+function resolve_absolute(state::CPUState, memory)
     return _peek16(memory, _operand_addr(state)), false
 end
 
-function resolve_absolute_x(state::CPUState, memory::Vector{UInt8})
+function resolve_absolute_x(state::CPUState, memory)
     base = _peek16(memory, _operand_addr(state))
     eff  = UInt16((Int(base) + Int(state.X)) & 0xFFFF)
     return eff, (Int(base) & 0xFF00) != (Int(eff) & 0xFF00)
 end
 
-function resolve_absolute_y(state::CPUState, memory::Vector{UInt8})
+function resolve_absolute_y(state::CPUState, memory)
     base = _peek16(memory, _operand_addr(state))
     eff  = UInt16((Int(base) + Int(state.Y)) & 0xFFFF)
     return eff, (Int(base) & 0xFF00) != (Int(eff) & 0xFF00)
 end
 
-function resolve_indirect_x(state::CPUState, memory::Vector{UInt8})
+function resolve_indirect_x(state::CPUState, memory)
     zp = UInt8((Int(_peek(memory, _operand_addr(state))) + Int(state.X)) & 0xFF)
     lo = UInt16(_peek(memory, zp))
     hi = UInt16(_peek(memory, UInt8((Int(zp) + 1) & 0xFF)))
     return (hi << 8) | lo, false
 end
 
-function resolve_indirect_y(state::CPUState, memory::Vector{UInt8})
+function resolve_indirect_y(state::CPUState, memory)
     zp   = _peek(memory, _operand_addr(state))
     lo   = UInt16(_peek(memory, zp))
     hi   = UInt16(_peek(memory, UInt8((Int(zp) + 1) & 0xFF)))
@@ -84,7 +83,7 @@ function resolve_indirect_y(state::CPUState, memory::Vector{UInt8})
     return eff, (Int(base) & 0xFF00) != (Int(eff) & 0xFF00)
 end
 
-function resolve_relative(state::CPUState, memory::Vector{UInt8})
+function resolve_relative(state::CPUState, memory)
     offset = Int(_peek(memory, _operand_addr(state)))
     offset >= 0x80 && (offset -= 0x100)
     base = UInt16((Int(state.PC) + 2) & 0xFFFF)
@@ -92,7 +91,7 @@ function resolve_relative(state::CPUState, memory::Vector{UInt8})
     return eff, (Int(base) & 0xFF00) != (Int(eff) & 0xFF00)
 end
 
-function resolve_indirect(state::CPUState, memory::Vector{UInt8})
+function resolve_indirect(state::CPUState, memory)
     """JMP indirect with the 6502 page-wrap bug at \$xxFF."""
     ptr = _peek16(memory, _operand_addr(state))
     lo  = UInt16(_peek(memory, ptr))
@@ -105,7 +104,7 @@ end
 
 Dispatch to the right `resolve_*` function for the given addressing-mode code.
 """
-function resolve(mode::UInt8, state::CPUState, memory::Vector{UInt8})
+function resolve(mode::UInt8, state::CPUState, memory)
     if mode == ADDR_IMMEDIATE;    return resolve_immediate(state, memory)
     elseif mode == ADDR_ZERO;     return resolve_zero(state, memory)
     elseif mode == ADDR_ZERO_X;   return resolve_zero_x(state, memory)

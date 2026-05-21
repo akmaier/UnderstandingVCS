@@ -31,6 +31,7 @@ from typing import Tuple
 
 import jax.numpy as jnp
 
+from jaxtari.bus.system import peek, poke
 from jaxtari.cpu.addressing import INSTRUCTION_LENGTH, RESOLVERS
 from jaxtari.cpu.alu import (
     adc,
@@ -59,7 +60,10 @@ from jaxtari.cpu.tables import (
 )
 from jaxtari.types import CPUState
 
-Memory = jnp.ndarray  # shape (1 << 16,), dtype uint8
+# A "world" is whatever the CPU steps against — see jaxtari.bus.system.
+# Either a Bus (proper 6507 emulation) or a flat 65,536-byte jnp.ndarray
+# (used by the P1 unit tests). All memory access goes through peek/poke.
+Memory = jnp.ndarray
 
 
 # Opcode → mnemonic. Anything not in this dict falls through to the stub.
@@ -197,15 +201,15 @@ def _stub_advance(state: CPUState, base_cycles: int) -> CPUState:
 # BRK/RTI/IRQ/NMI (P1f). Stack lives at $0100 + SP; SP decrements on push.
 # --------------------------------------------------------------------------- #
 
-def push8(memory: Memory, sp: int, value: int) -> Tuple[Memory, int]:
-    new_memory = memory.at[0x0100 + (sp & 0xFF)].set(jnp.uint8(value & 0xFF))
+def push8(memory, sp: int, value: int):
+    new_memory = poke(memory, 0x0100 + (sp & 0xFF), value)
     new_sp = (sp - 1) & 0xFF
     return new_memory, new_sp
 
 
-def pop8(memory: Memory, sp: int) -> Tuple[int, int]:
+def pop8(memory, sp: int) -> Tuple[int, int]:
     new_sp = (sp + 1) & 0xFF
-    value = int(memory[0x0100 + new_sp])
+    value = peek(memory, 0x0100 + new_sp)
     return value, new_sp
 
 
@@ -243,10 +247,10 @@ def _commit_load(
 
 
 def _commit_store(
-    state: CPUState, memory: Memory, addr: int, value: int, mode: int, base_cycles: int
-) -> Tuple[CPUState, Memory]:
+    state: CPUState, memory, addr: int, value: int, mode: int, base_cycles: int
+):
     """Common path for STA / STX / STY. Stores never apply the page-cross penalty."""
-    new_memory = memory.at[addr & 0xFFFF].set(jnp.uint8(value & 0xFF))
+    new_memory = poke(memory, addr, value)
     new_state = state._replace(
         PC=jnp.uint16((int(state.PC) + INSTRUCTION_LENGTH[mode]) & 0xFFFF),
         cycles=state.cycles + jnp.uint64(base_cycles),
@@ -281,10 +285,15 @@ def _commit_flags_only(
 # step
 # --------------------------------------------------------------------------- #
 
-def step(state: CPUState, memory: Memory) -> Tuple[CPUState, Memory]:
-    """Execute one 6502 instruction. Returns the new `(state, memory)`."""
+def step(state: CPUState, memory):
+    """Execute one 6502 instruction. Returns the new `(state, memory)`.
+
+    `memory` may be either a `jaxtari.bus.Bus` (proper 6507 bus) or a flat
+    65,536-byte `jnp.ndarray` (P1-style scratch memory). All accesses go
+    through `jaxtari.bus.peek` / `poke` which dispatch on the type.
+    """
     pc = int(state.PC) & 0xFFFF
-    opcode = int(memory[pc])
+    opcode = peek(memory, pc)
     mode = int(ADDRESSING_MODE_TABLE[opcode])
     base_cycles = int(CYCLE_TABLE[opcode])
 
@@ -311,7 +320,7 @@ def step(state: CPUState, memory: Memory) -> Tuple[CPUState, Memory]:
     # --- Loads -------------------------------------------------------------
     if mnemonic in ("LDA", "LDX", "LDY"):
         addr, page_crossed = RESOLVERS[mode](state, memory)
-        value = int(memory[addr & 0xFFFF])
+        value = peek(memory, addr)
         reg = {"LDA": "A", "LDX": "X", "LDY": "Y"}[mnemonic]
         extra = 1 if page_crossed else 0
         return _commit_load(state, reg, value, mode, base_cycles, extra), memory
@@ -325,7 +334,7 @@ def step(state: CPUState, memory: Memory) -> Tuple[CPUState, Memory]:
     # --- Bitwise A-ops (AND / ORA / EOR) -----------------------------------
     if mnemonic in ("AND", "ORA", "EOR"):
         addr, page_crossed = RESOLVERS[mode](state, memory)
-        value = int(memory[addr & 0xFFFF])
+        value = peek(memory, addr)
         a = int(state.A)
         if mnemonic == "AND":
             new_a = a & value
@@ -339,7 +348,7 @@ def step(state: CPUState, memory: Memory) -> Tuple[CPUState, Memory]:
     # --- Compares (CMP / CPX / CPY) ----------------------------------------
     if mnemonic in ("CMP", "CPX", "CPY"):
         addr, page_crossed = RESOLVERS[mode](state, memory)
-        value = int(memory[addr & 0xFFFF])
+        value = peek(memory, addr)
         reg_val = {
             "CMP": int(state.A),
             "CPX": int(state.X),
@@ -354,14 +363,14 @@ def step(state: CPUState, memory: Memory) -> Tuple[CPUState, Memory]:
     # --- BIT --------------------------------------------------------------
     if mnemonic == "BIT":
         addr, _ = RESOLVERS[mode](state, memory)
-        value = int(memory[addr & 0xFFFF])
+        value = peek(memory, addr)
         new_p = bit_flags(int(state.P), int(state.A), value)
         return _commit_flags_only(state, new_p, mode, base_cycles, 0), memory
 
     # --- ADC / SBC --------------------------------------------------------
     if mnemonic in ("ADC", "SBC"):
         addr, page_crossed = RESOLVERS[mode](state, memory)
-        value = int(memory[addr & 0xFFFF])
+        value = peek(memory, addr)
         new_a, new_p = (adc if mnemonic == "ADC" else sbc)(
             int(state.P), int(state.A), value
         )
@@ -388,9 +397,9 @@ def step(state: CPUState, memory: Memory) -> Tuple[CPUState, Memory]:
         # Memory-mode RMW. No page-cross penalty (the cycle table already
         # encodes the worst case for these opcodes).
         addr, _ = RESOLVERS[mode](state, memory)
-        value = int(memory[addr & 0xFFFF])
+        value = peek(memory, addr)
         new_value, new_p = op(int(state.P), value)
-        new_memory = memory.at[addr & 0xFFFF].set(jnp.uint8(new_value & 0xFF))
+        new_memory = poke(memory, addr, new_value)
         return state._replace(
             P=jnp.uint8(new_p & 0xFF),
             PC=jnp.uint16((int(state.PC) + INSTRUCTION_LENGTH[mode]) & 0xFFFF),
@@ -501,11 +510,11 @@ def step(state: CPUState, memory: Memory) -> Tuple[CPUState, Memory]:
     # --- INC / DEC memory (P1f) -------------------------------------------
     if mnemonic in ("INC", "DEC"):
         addr, _ = RESOLVERS[mode](state, memory)
-        value = int(memory[addr & 0xFFFF])
+        value = peek(memory, addr)
         delta = 1 if mnemonic == "INC" else -1
         new_value = (value + delta) & 0xFF
         new_p = set_zn(int(state.P), new_value)
-        new_memory = memory.at[addr & 0xFFFF].set(jnp.uint8(new_value))
+        new_memory = poke(memory, addr, new_value)
         return state._replace(
             P=jnp.uint8(new_p & 0xFF),
             PC=jnp.uint16((int(state.PC) + INSTRUCTION_LENGTH[mode]) & 0xFFFF),
@@ -535,7 +544,7 @@ def step(state: CPUState, memory: Memory) -> Tuple[CPUState, Memory]:
         new_memory, sp = push16(memory, int(state.SP), return_addr)
         new_memory, sp = push8(new_memory, sp, int(state.P) | FLAG_B | FLAG_U)
         new_p = (int(state.P) | FLAG_I | FLAG_U) & 0xFF
-        new_pc = int(new_memory[0xFFFE]) | (int(new_memory[0xFFFF]) << 8)
+        new_pc = peek(new_memory, 0xFFFE) | (peek(new_memory, 0xFFFF) << 8)
         return state._replace(
             SP=jnp.uint8(sp),
             P=jnp.uint8(new_p),

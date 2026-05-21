@@ -38,6 +38,9 @@ using .Addressing: resolve, instruction_length
 using .ALU: set_zn!, compare_flags!, bit_flags!, adc!, sbc!,
             asl_op!, lsr_op!, rol_op!, ror_op!
 using ..Types: CPUState
+# Multiple-dispatch peek / poke! so `step` accepts either a `BusState`
+# (proper 6507 bus) or a flat `Vector{UInt8}` (P1-style scratch memory).
+using ..Bus: peek, poke!
 
 export step
 
@@ -148,33 +151,37 @@ const _STATUS_OP = Dict{UInt8, Tuple{UInt8, Bool}}(
     0xD8 => (FLAG_D, false), 0xF8 => (FLAG_D, true),
 )
 
-@inline _peek(memory::Vector{UInt8}, addr::Integer) =
-    memory[(Int(addr) & 0xFFFF) + 1]
+# `_peek` is a local alias for the dispatched `peek` from the Bus module —
+# kept so the existing call sites read the same as before this refactor.
+const _peek = peek
 
 # --------------------------------------------------------------------------- #
 # Stack helpers — shared by JSR/RTS (P1d), PHA/PLA/PHP/PLP (P1e), and
 # BRK/RTI/IRQ/NMI (P1f). Stack lives at $0100 + SP; SP decrements on push.
+# Memory access goes through `poke!` / `peek` so the same code works against
+# either a `BusState` (where stack writes land in RAM via the $0180–$01FF
+# mirror) or a flat `Vector{UInt8}` (P1-style scratch memory).
 # --------------------------------------------------------------------------- #
 
-@inline function push8!(state::CPUState, memory::Vector{UInt8}, value::Integer)
-    memory[0x0100 + Int(state.SP) + 1] = UInt8(Int(value) & 0xFF)
+@inline function push8!(state::CPUState, memory, value::Integer)
+    poke!(memory, 0x0100 + Int(state.SP), value)
     state.SP = UInt8((Int(state.SP) - 1) & 0xFF)
     return nothing
 end
 
-@inline function pop8!(state::CPUState, memory::Vector{UInt8})
+@inline function pop8!(state::CPUState, memory)
     state.SP = UInt8((Int(state.SP) + 1) & 0xFF)
-    return memory[0x0100 + Int(state.SP) + 1]
+    return peek(memory, 0x0100 + Int(state.SP))
 end
 
-@inline function push16!(state::CPUState, memory::Vector{UInt8}, value::Integer)
+@inline function push16!(state::CPUState, memory, value::Integer)
     # High byte first so RTS pops low then high.
     push8!(state, memory, (Int(value) >> 8) & 0xFF)
     push8!(state, memory, Int(value) & 0xFF)
     return nothing
 end
 
-@inline function pop16!(state::CPUState, memory::Vector{UInt8})
+@inline function pop16!(state::CPUState, memory)
     low = UInt16(pop8!(state, memory))
     high = UInt16(pop8!(state, memory))
     return (high << 8) | low
@@ -192,14 +199,18 @@ end
 end
 
 """
-    step(state::CPUState, memory::Vector{UInt8}) -> (state, memory)
+    step(state::CPUState, memory) -> (state, memory)
 
-Execute one 6502 instruction. Mutates `state` and `memory` in place; returns
-them for convenience.
+Execute one 6502 instruction. Mutates `state` (and, where applicable, the
+memory backing) in place; returns them for convenience.
+
+`memory` may be either a `BusState` (proper 6507 bus) or a flat
+`Vector{UInt8}` (P1-style scratch memory). Multiple-dispatch `peek` /
+`poke!` handle the two cases.
 """
-function step(state::CPUState, memory::Vector{UInt8})
+function step(state::CPUState, memory)
     pc = Int(state.PC) & 0xFFFF
-    opcode = memory[pc + 1]
+    opcode = peek(memory, pc)
     mode = ADDRESSING_MODE_TABLE[Int(opcode) + 1]
     base_cycles = Int(CYCLE_TABLE[Int(opcode) + 1])
 
@@ -243,13 +254,13 @@ function step(state::CPUState, memory::Vector{UInt8})
     # --- Stores (no page-cross penalty) -----------------------------------
     elseif mnemonic === :STA
         addr, _ = resolve(mode, state, memory)
-        memory[(Int(addr) & 0xFFFF) + 1] = state.A; _advance_pc!(state, mode)
+        poke!(memory, addr, state.A); _advance_pc!(state, mode)
     elseif mnemonic === :STX
         addr, _ = resolve(mode, state, memory)
-        memory[(Int(addr) & 0xFFFF) + 1] = state.X; _advance_pc!(state, mode)
+        poke!(memory, addr, state.X); _advance_pc!(state, mode)
     elseif mnemonic === :STY
         addr, _ = resolve(mode, state, memory)
-        memory[(Int(addr) & 0xFFFF) + 1] = state.Y; _advance_pc!(state, mode)
+        poke!(memory, addr, state.Y); _advance_pc!(state, mode)
 
     # --- Bitwise A-ops ----------------------------------------------------
     elseif mnemonic === :AND
@@ -309,7 +320,7 @@ function step(state::CPUState, memory::Vector{UInt8})
             # Memory-mode RMW. Cycle table is already worst-case; no page-cross.
             addr, _ = resolve(mode, state, memory)
             result = op(state, _peek(memory, addr))
-            memory[(Int(addr) & 0xFFFF) + 1] = result
+            poke!(memory, addr, result)
             _advance_pc!(state, mode)
         end
 
@@ -383,7 +394,7 @@ function step(state::CPUState, memory::Vector{UInt8})
         value = _peek(memory, addr)
         delta = mnemonic === :INC ? 1 : -1
         new_value = UInt8((Int(value) + delta) & 0xFF)
-        memory[(Int(addr) & 0xFFFF) + 1] = new_value
+        poke!(memory, addr, new_value)
         set_zn!(state, new_value)
         _advance_pc!(state, mode)
 

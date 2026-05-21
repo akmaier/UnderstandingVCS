@@ -1,9 +1,14 @@
 """Effective-address resolution for the 6502's addressing modes.
 
-Each `resolve_*` function takes the `CPUState` (for X / Y / PC) and the memory,
-and returns `(effective_addr, page_crossed)` as plain Python ints / bools.
+Each `resolve_*` function takes the `CPUState` (for X / Y / PC) and a "world"
+(either a `jaxtari.bus.Bus` for proper 6507 emulation, or a flat
+`jnp.ndarray` for unit-test scratch memory), and returns
+`(effective_addr, page_crossed)` as plain Python ints / bools.
 `page_crossed` is only meaningful for absolute,X / absolute,Y / (indirect),Y
 modes — read instructions add +1 cycle on a crossing, store instructions do not.
+
+Memory reads are routed through `jaxtari.bus.peek` so the same code works for
+both world types.
 
 For implied / accumulator modes the address is meaningless and the dispatcher
 in `cpu.m6502` short-circuits without calling these.
@@ -15,6 +20,7 @@ from __future__ import annotations
 
 from typing import Callable, Tuple
 
+from jaxtari.bus.system import peek as _peek
 from jaxtari.cpu.tables import (
     ADDR_ABSOLUTE,
     ADDR_ABSOLUTE_X,
@@ -30,10 +36,6 @@ from jaxtari.cpu.tables import (
     ADDR_ZERO_Y,
 )
 from jaxtari.types import CPUState
-
-
-def _peek(memory, addr: int) -> int:
-    return int(memory[addr & 0xFFFF])
 
 
 def _peek16(memory, addr: int) -> int:

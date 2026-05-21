@@ -1,6 +1,7 @@
 using Test
 using JuTari
-using JuTari.CPU: step  # qualified to avoid Base.step collision; see JuTari.jl
+using JuTari.CPU: step          # qualified — avoids Base.step collision
+using JuTari.Bus: peek, poke!   # qualified — avoids Base.peek collision
 
 function _make_memory(image)
     mem = zeros(UInt8, 1 << 16)
@@ -1072,6 +1073,112 @@ end
         step(s, mem); @test s.PC == 0x8002
         @test s.SP == 0xFD
         @test (s.P & FLAG_C) != 0
+    end
+
+end
+
+@testset "JuTari P2 6507 bus + address decode" begin
+
+    @testset "RAM read/write at canonical address" begin
+        bus = initial_bus()
+        poke!(bus, 0x0080, 0x42)
+        @test peek(bus, 0x0080) == 0x42
+        @test bus.ram[1] == 0x42
+    end
+
+    @testset "RAM mirror at stack page (\$0180 aliases \$0080)" begin
+        bus = initial_bus()
+        poke!(bus, 0x0180, 0x55)
+        @test peek(bus, 0x0080) == 0x55
+        @test peek(bus, 0x0180) == 0x55
+    end
+
+    @testset "RAM uses low 7 bits of address" begin
+        bus = initial_bus()
+        poke!(bus, 0x0098, 0xAB)
+        @test peek(bus, 0x0098) == 0xAB
+        @test peek(bus, 0x0198) == 0xAB
+        @test peek(bus, 0x0498) == 0xAB
+    end
+
+    @testset "13-bit mirror — high addresses wrap" begin
+        rom = zeros(UInt8, 4096); rom[0x100 + 1] = 0xEE
+        bus = initial_bus(rom)
+        @test peek(bus, 0x1100) == 0xEE
+        @test peek(bus, 0xF100) == 0xEE
+        @test peek(bus, 0x9100) == 0xEE
+    end
+
+    @testset "TIA region reads zero and writes ignored" begin
+        bus = initial_bus()
+        @test peek(bus, 0x0000) == 0
+        @test peek(bus, 0x007F) == 0
+        ram_before = copy(bus.ram)
+        poke!(bus, 0x0001, 0xFF)
+        @test bus.ram == ram_before
+    end
+
+    @testset "RIOT I/O region reads zero and writes ignored" begin
+        bus = initial_bus()
+        @test peek(bus, 0x0280) == 0
+        @test peek(bus, 0x029F) == 0
+        ram_before = copy(bus.ram)
+        poke!(bus, 0x0284, 0xFF)
+        @test bus.ram == ram_before
+    end
+
+    @testset "ROM is read-only" begin
+        rom = fill(UInt8(0xAA), 4096)
+        bus = initial_bus(rom)
+        @test peek(bus, 0x1000) == 0xAA
+        poke!(bus, 0x1000, 0x55)
+        @test peek(bus, 0x1000) == 0xAA
+    end
+
+    @testset "Rejects non-4K ROM" begin
+        @test_throws ArgumentError initial_bus(zeros(UInt8, 8192))
+    end
+
+    @testset "LDA #imm via bus from \$F000" begin
+        rom = zeros(UInt8, 4096); rom[1] = 0xA9; rom[2] = 0x42
+        bus = initial_bus(rom)
+        s = _state(PC=0xF000)
+        step(s, bus)
+        @test s.A == 0x42
+        @test s.PC == 0xF002
+        @test s.cycles == 2
+    end
+
+    @testset "STA then LDA round-trips through RAM" begin
+        rom = zeros(UInt8, 4096)
+        program = [0xA9, 0x77, 0x85, 0x80, 0xA9, 0x00, 0xA5, 0x80]
+        for (i, b) in enumerate(program)
+            rom[i] = UInt8(b)
+        end
+        bus = initial_bus(rom)
+        s = _state(PC=0xF000)
+        for _ in 1:4
+            step(s, bus)
+        end
+        @test s.A == 0x77
+        @test bus.ram[1] == 0x77
+    end
+
+    @testset "JSR / RTS stack pushes land in RAM via the \$01xx mirror" begin
+        rom = zeros(UInt8, 4096)
+        rom[1] = 0x20; rom[2] = 0x05; rom[3] = 0xF0   # JSR $F005 at $F000
+        rom[6] = 0x60                                  # RTS at $F005
+        bus = initial_bus(rom)
+        s = _state(PC=0xF000, SP=0xFD)
+        step(s, bus)
+        @test s.PC == 0xF005
+        @test s.SP == 0xFB
+        # Pushed return address at $01FD/$01FC = RAM offsets 0x7D/0x7C.
+        @test bus.ram[0x7D + 1] == 0xF0   # high
+        @test bus.ram[0x7C + 1] == 0x02   # low
+        step(s, bus)
+        @test s.PC == 0xF003
+        @test s.SP == 0xFD
     end
 
 end
