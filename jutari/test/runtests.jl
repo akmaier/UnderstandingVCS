@@ -658,3 +658,152 @@ end
     end
 
 end
+
+@testset "JuTari P1d branches, JMP, JSR/RTS" begin
+
+    @testset "BEQ not taken when Z clear" begin
+        s = _state(PC=0x8000, P=FLAG_U)
+        mem = _make_memory(Dict(0x8000 => 0xF0, 0x8001 => 0x10))
+        step(s, mem)
+        @test s.PC == 0x8002
+        @test s.cycles == 2
+    end
+
+    @testset "BEQ taken forward, no page cross" begin
+        s = _state(PC=0x8000, P=FLAG_U | FLAG_Z)
+        mem = _make_memory(Dict(0x8000 => 0xF0, 0x8001 => 0x10))
+        step(s, mem)
+        @test s.PC == 0x8012
+        @test s.cycles == 3
+    end
+
+    @testset "BEQ taken forward with page cross" begin
+        # base = 0x80F2, target = 0x8102 → pages 0x80 vs 0x81
+        s = _state(PC=0x80F0, P=FLAG_U | FLAG_Z)
+        mem = _make_memory(Dict(0x80F0 => 0xF0, 0x80F1 => 0x10))
+        step(s, mem)
+        @test s.PC == 0x8102
+        @test s.cycles == 4
+    end
+
+    @testset "BEQ taken backward with page cross" begin
+        # base = 0x8004, offset = -16, target = 0x7FF4
+        s = _state(PC=0x8002, P=FLAG_U | FLAG_Z)
+        mem = _make_memory(Dict(0x8002 => 0xF0, 0x8003 => 0xF0))
+        step(s, mem)
+        @test s.PC == 0x7FF4
+        @test s.cycles == 4
+    end
+
+    @testset "BEQ taken backward within page" begin
+        s = _state(PC=0x8100, P=FLAG_U | FLAG_Z)
+        mem = _make_memory(Dict(0x8100 => 0xF0, 0x8101 => 0xFE))
+        step(s, mem)
+        @test s.PC == 0x8100
+        @test s.cycles == 3
+    end
+
+    @testset "BNE taken when Z clear" begin
+        s = _state(PC=0x8000, P=FLAG_U)
+        mem = _make_memory(Dict(0x8000 => 0xD0, 0x8001 => 0x05))
+        step(s, mem)
+        @test s.PC == 0x8007
+        @test s.cycles == 3
+    end
+
+    @testset "BMI taken when N set" begin
+        s = _state(PC=0x8000, P=FLAG_U | FLAG_N)
+        mem = _make_memory(Dict(0x8000 => 0x30, 0x8001 => 0x04))
+        step(s, mem)
+        @test s.PC == 0x8006
+    end
+
+    @testset "BPL not taken when N set" begin
+        s = _state(PC=0x8000, P=FLAG_U | FLAG_N)
+        mem = _make_memory(Dict(0x8000 => 0x10, 0x8001 => 0x04))
+        step(s, mem)
+        @test s.PC == 0x8002
+        @test s.cycles == 2
+    end
+
+    @testset "BCS taken when C set" begin
+        s = _state(PC=0x8000, P=FLAG_U | FLAG_C)
+        mem = _make_memory(Dict(0x8000 => 0xB0, 0x8001 => 0x02))
+        step(s, mem)
+        @test s.PC == 0x8004
+    end
+
+    @testset "BVC taken when V clear" begin
+        s = _state(PC=0x8000, P=FLAG_U)
+        mem = _make_memory(Dict(0x8000 => 0x50, 0x8001 => 0x02))
+        step(s, mem)
+        @test s.PC == 0x8004
+    end
+
+    @testset "JMP absolute" begin
+        s = _state(PC=0x8000)
+        mem = _make_memory(Dict(0x8000 => 0x4C, 0x8001 => 0x34, 0x8002 => 0x12))
+        step(s, mem)
+        @test s.PC == 0x1234
+        @test s.cycles == 3
+    end
+
+    @testset "JMP indirect normal pointer" begin
+        s = _state(PC=0x8000)
+        mem = _make_memory(Dict(
+            0x8000 => 0x6C, 0x8001 => 0x00, 0x8002 => 0x30,
+            0x3000 => 0xCD, 0x3001 => 0xAB,
+        ))
+        step(s, mem)
+        @test s.PC == 0xABCD
+        @test s.cycles == 5
+    end
+
+    @testset "JMP indirect page-wrap bug" begin
+        s = _state(PC=0x8000)
+        mem = _make_memory(Dict(
+            0x8000 => 0x6C, 0x8001 => 0xFF, 0x8002 => 0x30,
+            0x30FF => 0xCD,
+            0x3000 => 0xAB,
+            0x3100 => 0x99,
+        ))
+        step(s, mem)
+        @test s.PC == 0xABCD
+    end
+
+    @testset "JSR pushes return addr and jumps" begin
+        s = _state(PC=0x8000, SP=0xFD)
+        mem = _make_memory(Dict(0x8000 => 0x20, 0x8001 => 0x00, 0x8002 => 0x30))
+        step(s, mem)
+        @test s.PC == 0x3000
+        @test s.SP == 0xFB
+        @test mem[0x01FD + 1] == 0x80   # high
+        @test mem[0x01FC + 1] == 0x02   # low
+        @test s.cycles == 6
+    end
+
+    @testset "RTS pops and advances" begin
+        s = _state(PC=0x3050, SP=0xFB)
+        mem = _make_memory(Dict(
+            0x3050 => 0x60,
+            0x01FC => 0x02,
+            0x01FD => 0x80,
+        ))
+        step(s, mem)
+        @test s.PC == 0x8003
+        @test s.SP == 0xFD
+        @test s.cycles == 6
+    end
+
+    @testset "JSR then RTS round-trip" begin
+        s = _state(PC=0x8000, SP=0xFD)
+        mem = _make_memory(Dict(
+            0x8000 => 0x20, 0x8001 => 0x00, 0x8002 => 0x30,
+            0x3000 => 0x60,
+        ))
+        step(s, mem); @test s.PC == 0x3000
+        step(s, mem); @test s.PC == 0x8003
+        @test s.SP == 0xFD
+    end
+
+end

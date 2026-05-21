@@ -10,10 +10,13 @@ Implemented so far (PORTING_PLAN.md §5):
 - P1b2: arithmetic (ADC, SBC including BCD/decimal mode) + undocumented
         USBC (0xEB) alias for SBC immediate.
 - P1c:  shifts/rotates (ASL, LSR, ROL, ROR) in accumulator + memory modes.
+- P1d:  conditional branches (BPL/BMI/BVC/BVS/BCC/BCS/BNE/BEQ), JMP
+        (absolute + indirect with page-wrap bug), JSR, RTS. Introduces the
+        push8!/pop8! stack helpers reused by P1e and P1f.
 
-Pending: P1d (branches + JMP/JSR/RTS), P1e (stack + status flags),
-P1f (BRK/RTI/IRQ/NMI/RESET + cycle fine print). Unknown opcodes fall
-through to the stub (PC += 1, cycles += base).
+Pending: P1e (stack + status flags), P1f (BRK/RTI/IRQ/NMI/RESET + cycle
+fine print). Unknown opcodes fall through to the stub
+(PC += 1, cycles += base).
 """
 module CPU
 
@@ -21,7 +24,9 @@ include("Tables.jl")
 include("Addressing.jl")
 include("ALU.jl")
 
-using .CPUTables: ADDRESSING_MODE_TABLE, CYCLE_TABLE, ADDR_IMPLIED
+using .CPUTables: ADDRESSING_MODE_TABLE, CYCLE_TABLE,
+                  ADDR_IMPLIED, ADDR_INDIRECT,
+                  FLAG_C, FLAG_N, FLAG_V, FLAG_Z
 using .Addressing: resolve, instruction_length
 using .ALU: set_zn!, compare_flags!, bit_flags!, adc!, sbc!,
             asl_op!, lsr_op!, rol_op!, ror_op!
@@ -85,10 +90,60 @@ const OPCODES = Dict{UInt8, Symbol}(
     0x2A => :ROL, 0x26 => :ROL, 0x36 => :ROL, 0x2E => :ROL, 0x3E => :ROL,
     # ROR
     0x6A => :ROR, 0x66 => :ROR, 0x76 => :ROR, 0x6E => :ROR, 0x7E => :ROR,
+
+    # --- P1d ---------------------------------------------------------------
+    # Conditional branches
+    0x10 => :BPL, 0x30 => :BMI, 0x50 => :BVC, 0x70 => :BVS,
+    0x90 => :BCC, 0xB0 => :BCS, 0xD0 => :BNE, 0xF0 => :BEQ,
+    # JMP (absolute + indirect with page-wrap bug)
+    0x4C => :JMP, 0x6C => :JMP,
+    # Subroutine call / return
+    0x20 => :JSR, 0x60 => :RTS,
+)
+
+# Branch opcode → (flag bit, take_when_set)
+const _BRANCH_INFO = Dict{UInt8, Tuple{UInt8, Bool}}(
+    0x10 => (FLAG_N, false),  # BPL
+    0x30 => (FLAG_N, true),   # BMI
+    0x50 => (FLAG_V, false),  # BVC
+    0x70 => (FLAG_V, true),   # BVS
+    0x90 => (FLAG_C, false),  # BCC
+    0xB0 => (FLAG_C, true),   # BCS
+    0xD0 => (FLAG_Z, false),  # BNE
+    0xF0 => (FLAG_Z, true),   # BEQ
 )
 
 @inline _peek(memory::Vector{UInt8}, addr::Integer) =
     memory[(Int(addr) & 0xFFFF) + 1]
+
+# --------------------------------------------------------------------------- #
+# Stack helpers — shared by JSR/RTS (P1d), PHA/PLA/PHP/PLP (P1e), and
+# BRK/RTI/IRQ/NMI (P1f). Stack lives at $0100 + SP; SP decrements on push.
+# --------------------------------------------------------------------------- #
+
+@inline function push8!(state::CPUState, memory::Vector{UInt8}, value::Integer)
+    memory[0x0100 + Int(state.SP) + 1] = UInt8(Int(value) & 0xFF)
+    state.SP = UInt8((Int(state.SP) - 1) & 0xFF)
+    return nothing
+end
+
+@inline function pop8!(state::CPUState, memory::Vector{UInt8})
+    state.SP = UInt8((Int(state.SP) + 1) & 0xFF)
+    return memory[0x0100 + Int(state.SP) + 1]
+end
+
+@inline function push16!(state::CPUState, memory::Vector{UInt8}, value::Integer)
+    # High byte first so RTS pops low then high.
+    push8!(state, memory, (Int(value) >> 8) & 0xFF)
+    push8!(state, memory, Int(value) & 0xFF)
+    return nothing
+end
+
+@inline function pop16!(state::CPUState, memory::Vector{UInt8})
+    low = UInt16(pop8!(state, memory))
+    high = UInt16(pop8!(state, memory))
+    return (high << 8) | low
+end
 
 @inline function _stub_advance!(state::CPUState, base_cycles::Integer)
     state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
@@ -222,6 +277,40 @@ function step(state::CPUState, memory::Vector{UInt8})
             memory[(Int(addr) & 0xFFFF) + 1] = result
             _advance_pc!(state, mode)
         end
+
+    # --- Conditional branches ---------------------------------------------
+    elseif mnemonic === :BPL || mnemonic === :BMI ||
+           mnemonic === :BVC || mnemonic === :BVS ||
+           mnemonic === :BCC || mnemonic === :BCS ||
+           mnemonic === :BNE || mnemonic === :BEQ
+        flag, take_when_set = _BRANCH_INFO[opcode]
+        flag_set = (state.P & flag) != 0
+        take = take_when_set ? flag_set : !flag_set
+        if take
+            target, page = resolve(mode, state, memory)
+            state.PC = target
+            extra_cycles += 1 + (page ? 1 : 0)
+        else
+            state.PC = UInt16((Int(state.PC) + 2) & 0xFFFF)
+        end
+
+    # --- JMP (absolute and indirect) --------------------------------------
+    elseif mnemonic === :JMP
+        target, _ = resolve(mode, state, memory)
+        state.PC = target
+
+    # --- JSR --------------------------------------------------------------
+    elseif mnemonic === :JSR
+        target, _ = resolve(mode, state, memory)
+        # Push PC + 2 (address of the last byte of the JSR instruction).
+        return_addr = UInt16((Int(state.PC) + 2) & 0xFFFF)
+        push16!(state, memory, return_addr)
+        state.PC = target
+
+    # --- RTS --------------------------------------------------------------
+    elseif mnemonic === :RTS
+        return_addr = pop16!(state, memory)
+        state.PC = UInt16((Int(return_addr) + 1) & 0xFFFF)
     end
 
     state.cycles += UInt64(base_cycles + extra_cycles)

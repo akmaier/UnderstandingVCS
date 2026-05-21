@@ -8,10 +8,13 @@ Implemented so far (PORTING_PLAN.md §5):
   USBC (0xEB) alias for SBC immediate.
 - P1c: shifts/rotates (ASL, LSR, ROL, ROR) in both accumulator and memory
   (zp / zp,X / abs / abs,X) addressing modes.
+- P1d: conditional branches (BPL/BMI/BVC/BVS/BCC/BCS/BNE/BEQ), JMP
+  (absolute + indirect with page-wrap bug), JSR, RTS. Introduces the
+  push8 / pop8 stack helpers reused by P1e and P1f.
 
-Pending: P1d (branches + JMP/JSR/RTS), P1e (stack + status), P1f
-(BRK/RTI/IRQ/NMI/RESET and the cycle-counting fine print). Unknown opcodes
-fall through to the stub: PC += 1, cycles += base.
+Pending: P1e (stack + status), P1f (BRK/RTI/IRQ/NMI/RESET and the
+cycle-counting fine print). Unknown opcodes fall through to the stub:
+PC += 1, cycles += base.
 """
 
 from __future__ import annotations
@@ -32,7 +35,17 @@ from jaxtari.cpu.alu import (
     sbc,
     set_zn,
 )
-from jaxtari.cpu.tables import ADDR_IMPLIED, ADDRESSING_MODE_TABLE, CYCLE_TABLE, FLAG_U
+from jaxtari.cpu.tables import (
+    ADDR_IMPLIED,
+    ADDR_INDIRECT,
+    ADDRESSING_MODE_TABLE,
+    CYCLE_TABLE,
+    FLAG_C,
+    FLAG_N,
+    FLAG_U,
+    FLAG_V,
+    FLAG_Z,
+)
 from jaxtari.types import CPUState
 
 Memory = jnp.ndarray  # shape (1 << 16,), dtype uint8
@@ -94,6 +107,30 @@ OPCODES: dict[int, str] = {
     0x2A: "ROL", 0x26: "ROL", 0x36: "ROL", 0x2E: "ROL", 0x3E: "ROL",
     # ROR — accumulator + 4 memory modes
     0x6A: "ROR", 0x66: "ROR", 0x76: "ROR", 0x6E: "ROR", 0x7E: "ROR",
+
+    # --- P1d -----------------------------------------------------------------
+    # Conditional branches (relative, 2 bytes; +1 cycle if taken, +1 more if
+    # the branch crosses a page boundary)
+    0x10: "BPL", 0x30: "BMI", 0x50: "BVC", 0x70: "BVS",
+    0x90: "BCC", 0xB0: "BCS", 0xD0: "BNE", 0xF0: "BEQ",
+    # JMP (absolute / indirect with the documented page-wrap bug)
+    0x4C: "JMP", 0x6C: "JMP",
+    # Subroutine call / return
+    0x20: "JSR",
+    0x60: "RTS",
+}
+
+
+# Branch opcode → (flag bit, take_when_set). Used by the branch dispatcher.
+_BRANCH_INFO: dict[int, tuple[int, bool]] = {
+    0x10: (FLAG_N, False),  # BPL — branch if N=0
+    0x30: (FLAG_N, True),   # BMI — branch if N=1
+    0x50: (FLAG_V, False),  # BVC
+    0x70: (FLAG_V, True),   # BVS
+    0x90: (FLAG_C, False),  # BCC
+    0xB0: (FLAG_C, True),   # BCS
+    0xD0: (FLAG_Z, False),  # BNE
+    0xF0: (FLAG_Z, True),   # BEQ
 }
 
 
@@ -106,6 +143,36 @@ def _stub_advance(state: CPUState, base_cycles: int) -> CPUState:
         PC=jnp.uint16((int(state.PC) + 1) & 0xFFFF),
         cycles=state.cycles + jnp.uint64(base_cycles),
     )
+
+
+# --------------------------------------------------------------------------- #
+# Stack helpers — shared by JSR/RTS (P1d), PHA/PLA/PHP/PLP (P1e), and
+# BRK/RTI/IRQ/NMI (P1f). Stack lives at $0100 + SP; SP decrements on push.
+# --------------------------------------------------------------------------- #
+
+def push8(memory: Memory, sp: int, value: int) -> Tuple[Memory, int]:
+    new_memory = memory.at[0x0100 + (sp & 0xFF)].set(jnp.uint8(value & 0xFF))
+    new_sp = (sp - 1) & 0xFF
+    return new_memory, new_sp
+
+
+def pop8(memory: Memory, sp: int) -> Tuple[int, int]:
+    new_sp = (sp + 1) & 0xFF
+    value = int(memory[0x0100 + new_sp])
+    return value, new_sp
+
+
+def push16(memory: Memory, sp: int, value: int) -> Tuple[Memory, int]:
+    """Push high byte first, then low byte (so RTS pops low then high)."""
+    memory, sp = push8(memory, sp, (value >> 8) & 0xFF)
+    memory, sp = push8(memory, sp, value & 0xFF)
+    return memory, sp
+
+
+def pop16(memory: Memory, sp: int) -> Tuple[int, int]:
+    low, sp = pop8(memory, sp)
+    high, sp = pop8(memory, sp)
+    return (high << 8) | low, sp
 
 
 def _commit_load(
@@ -282,6 +349,53 @@ def step(state: CPUState, memory: Memory) -> Tuple[CPUState, Memory]:
             PC=jnp.uint16((int(state.PC) + INSTRUCTION_LENGTH[mode]) & 0xFFFF),
             cycles=state.cycles + jnp.uint64(base_cycles),
         ), new_memory
+
+    # --- Conditional branches --------------------------------------------
+    if mnemonic in ("BPL", "BMI", "BVC", "BVS", "BCC", "BCS", "BNE", "BEQ"):
+        flag, take_when_set = _BRANCH_INFO[opcode]
+        flag_set = (int(state.P) & flag) != 0
+        take = flag_set if take_when_set else not flag_set
+        if take:
+            target, page_crossed = RESOLVERS[mode](state, memory)
+            extra = 1 + (1 if page_crossed else 0)
+            new_pc = target
+        else:
+            new_pc = (int(state.PC) + 2) & 0xFFFF
+            extra = 0
+        return state._replace(
+            PC=jnp.uint16(new_pc),
+            cycles=state.cycles + jnp.uint64(base_cycles + extra),
+        ), memory
+
+    # --- JMP (absolute and indirect) -------------------------------------
+    if mnemonic == "JMP":
+        target, _ = RESOLVERS[mode](state, memory)
+        return state._replace(
+            PC=jnp.uint16(target),
+            cycles=state.cycles + jnp.uint64(base_cycles),
+        ), memory
+
+    # --- JSR ---------------------------------------------------------------
+    if mnemonic == "JSR":
+        target, _ = RESOLVERS[mode](state, memory)
+        # The 6502 pushes the address of the LAST byte of the JSR instruction
+        # (PC + 2), so RTS adds 1 to land on the instruction after JSR.
+        return_addr = (int(state.PC) + 2) & 0xFFFF
+        new_memory, new_sp = push16(memory, int(state.SP), return_addr)
+        return state._replace(
+            SP=jnp.uint8(new_sp),
+            PC=jnp.uint16(target),
+            cycles=state.cycles + jnp.uint64(base_cycles),
+        ), new_memory
+
+    # --- RTS ---------------------------------------------------------------
+    if mnemonic == "RTS":
+        return_addr, new_sp = pop16(memory, int(state.SP))
+        return state._replace(
+            SP=jnp.uint8(new_sp),
+            PC=jnp.uint16((return_addr + 1) & 0xFFFF),
+            cycles=state.cycles + jnp.uint64(base_cycles),
+        ), memory
 
     # Defensive — should be unreachable.
     return _stub_advance(state, base_cycles), memory
