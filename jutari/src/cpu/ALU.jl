@@ -14,7 +14,9 @@ which is always read as 1 on real hardware.
 module ALU
 
 using ..CPUTables: FLAG_N, FLAG_Z, FLAG_C, FLAG_V, FLAG_U
-using ..Types: CPUState
+# Three dots: see note in Addressing.jl on the JuTari.CPU.Addressing module
+# vs. JuTari.Types path.
+using ...Types: CPUState
 
 export set_zn!, compare_flags!, bit_flags!
 

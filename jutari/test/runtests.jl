@@ -1,5 +1,6 @@
 using Test
 using JuTari
+using JuTari.CPU: step  # qualified to avoid Base.step collision; see JuTari.jl
 
 function _make_memory(image)
     mem = zeros(UInt8, 1 << 16)

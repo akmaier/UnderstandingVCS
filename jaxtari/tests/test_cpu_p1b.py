@@ -19,8 +19,16 @@ def _make_memory(image: dict[int, int]) -> jnp.ndarray:
 
 
 def _state(**fields) -> CPUState:
+    """Build a CPUState with arbitrary scalar fields overridden.
+
+    Uses `astype(getattr(s, k).dtype)` rather than `type(...)` because in JAX
+    every field's concrete type is `jaxlib._jax.ArrayImpl` and that class is
+    not callable as a constructor.
+    """
     s = initial_cpu_state()
-    return s._replace(**{k: type(getattr(s, k))(v) for k, v in fields.items()})
+    return s._replace(**{
+        k: jnp.asarray(v).astype(getattr(s, k).dtype) for k, v in fields.items()
+    })
 
 
 # --------------------------------------------------------------------------- #

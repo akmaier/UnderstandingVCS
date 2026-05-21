@@ -14,7 +14,10 @@ using ..CPUTables: ADDR_IMMEDIATE, ADDR_ZERO, ADDR_ZERO_X, ADDR_ZERO_Y,
                    ADDR_ABSOLUTE, ADDR_ABSOLUTE_X, ADDR_ABSOLUTE_Y,
                    ADDR_INDIRECT, ADDR_INDIRECT_X, ADDR_INDIRECT_Y,
                    ADDR_RELATIVE, ADDR_IMPLIED
-using ..Types: CPUState
+# Three dots: Types lives at JuTari.Types, but we are at JuTari.CPU.Addressing,
+# so we need to climb two levels (past CPU) to reach it. `..Types` would resolve
+# to the non-existent JuTari.CPU.Types.
+using ...Types: CPUState
 
 export resolve, instruction_length
 

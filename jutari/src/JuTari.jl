@@ -15,11 +15,15 @@ include("cpu/M6502.jl")
 include("diff/Modes.jl")
 
 using .Types: CPUState, initial_cpu_state
-using .CPU: step
 using .CPU.CPUTables: FLAG_N, FLAG_V, FLAG_U, FLAG_B, FLAG_D, FLAG_I, FLAG_Z, FLAG_C
 using .Diff: Mode, HARD, SOFT, current_mode, set_mode!, using_mode
 
-export CPUState, initial_cpu_state, step,
+# `CPU.step` is intentionally NOT re-exported: it would collide with
+# `Base.step` (the range iterator), which makes `using JuTari` refuse to
+# import the name. Use the qualified form `JuTari.CPU.step` or do
+# `using JuTari.CPU: step` to bring it into scope unambiguously. This also
+# mirrors the jaxtari import path `jaxtari.cpu.m6502.step`.
+export CPUState, initial_cpu_state,
        FLAG_N, FLAG_V, FLAG_U, FLAG_B, FLAG_D, FLAG_I, FLAG_Z, FLAG_C,
        Mode, HARD, SOFT, current_mode, set_mode!, using_mode
 
