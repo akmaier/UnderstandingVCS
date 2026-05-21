@@ -229,3 +229,128 @@ end
     end
 
 end
+
+@testset "JuTari P1b1 bitwise / compare / BIT" begin
+
+    @testset "AND immediate" begin
+        s = _state(PC=0x8000, A=0xF0)
+        mem = _make_memory(Dict(0x8000 => 0x29, 0x8001 => 0x0F))
+        step(s, mem)
+        @test s.A == 0x00
+        @test (s.P & FLAG_Z) != 0
+        @test (s.P & FLAG_N) == 0
+        @test s.cycles == 2
+    end
+
+    @testset "ORA immediate sets N" begin
+        s = _state(PC=0x8000, A=0x01)
+        mem = _make_memory(Dict(0x8000 => 0x09, 0x8001 => 0x80))
+        step(s, mem)
+        @test s.A == 0x81
+        @test (s.P & FLAG_N) != 0
+        @test (s.P & FLAG_Z) == 0
+    end
+
+    @testset "EOR immediate toggles high bit" begin
+        s = _state(PC=0x8000, A=0xFF)
+        mem = _make_memory(Dict(0x8000 => 0x49, 0x8001 => 0x80))
+        step(s, mem)
+        @test s.A == 0x7F
+        @test (s.P & FLAG_N) == 0
+    end
+
+    @testset "AND abs,X page cross adds cycle" begin
+        s = _state(PC=0x8000, A=0xFF, X=0x10)
+        mem = _make_memory(Dict(0x8000 => 0x3D, 0x8001 => 0xF5, 0x8002 => 0x12, 0x1305 => 0x0F))
+        step(s, mem)
+        @test s.A == 0x0F
+        @test s.cycles == 5
+    end
+
+    @testset "ORA (zp),Y no page cross" begin
+        s = _state(PC=0x8000, A=0x00, Y=0x01)
+        mem = _make_memory(Dict(
+            0x8000 => 0x11, 0x8001 => 0x10,
+            0x0010 => 0x00, 0x0011 => 0x12,
+            0x1201 => 0x42,
+        ))
+        step(s, mem)
+        @test s.A == 0x42
+        @test s.cycles == 5
+    end
+
+    @testset "CMP immediate equal sets Z and C" begin
+        s = _state(PC=0x8000, A=0x42)
+        mem = _make_memory(Dict(0x8000 => 0xC9, 0x8001 => 0x42))
+        step(s, mem)
+        @test (s.P & FLAG_Z) != 0
+        @test (s.P & FLAG_C) != 0
+        @test (s.P & FLAG_N) == 0
+        @test s.A == 0x42
+        @test s.cycles == 2
+    end
+
+    @testset "CMP A greater sets C clears Z" begin
+        s = _state(PC=0x8000, A=0x80)
+        mem = _make_memory(Dict(0x8000 => 0xC9, 0x8001 => 0x40))
+        step(s, mem)
+        @test (s.P & FLAG_C) != 0
+        @test (s.P & FLAG_Z) == 0
+        @test (s.P & FLAG_N) == 0
+    end
+
+    @testset "CMP A less clears C sets N" begin
+        s = _state(PC=0x8000, A=0x10)
+        mem = _make_memory(Dict(0x8000 => 0xC9, 0x8001 => 0x20))
+        step(s, mem)
+        @test (s.P & FLAG_C) == 0
+        @test (s.P & FLAG_Z) == 0
+        @test (s.P & FLAG_N) != 0
+    end
+
+    @testset "CMP abs,X page cross adds cycle" begin
+        s = _state(PC=0x8000, A=0x10, X=0x10)
+        mem = _make_memory(Dict(0x8000 => 0xDD, 0x8001 => 0xF5, 0x8002 => 0x12, 0x1305 => 0x10))
+        step(s, mem)
+        @test (s.P & FLAG_Z) != 0
+        @test s.cycles == 5
+    end
+
+    @testset "CPX zero page equal" begin
+        s = _state(PC=0x8000, X=0xFF)
+        mem = _make_memory(Dict(0x8000 => 0xE4, 0x8001 => 0x10, 0x0010 => 0xFF))
+        step(s, mem)
+        @test (s.P & FLAG_Z) != 0
+        @test (s.P & FLAG_C) != 0
+    end
+
+    @testset "CPY immediate Y less" begin
+        s = _state(PC=0x8000, Y=0x05)
+        mem = _make_memory(Dict(0x8000 => 0xC0, 0x8001 => 0x10))
+        step(s, mem)
+        @test (s.P & FLAG_C) == 0
+        @test (s.P & FLAG_N) != 0
+    end
+
+    @testset "BIT zp Z from A AND operand" begin
+        s = _state(PC=0x8000, A=0x0F)
+        mem = _make_memory(Dict(0x8000 => 0x24, 0x8001 => 0x10, 0x0010 => 0xF0))
+        step(s, mem)
+        @test (s.P & FLAG_Z) != 0
+        @test (s.P & FLAG_N) != 0
+        @test (s.P & FLAG_V) != 0
+        @test s.A == 0x0F
+        @test s.cycles == 3
+    end
+
+    @testset "BIT abs clears V when operand bit 6 clear" begin
+        s = _state(PC=0x8000, A=0xFF, P=FLAG_U | FLAG_V)
+        mem = _make_memory(Dict(0x8000 => 0x2C, 0x8001 => 0x00, 0x8002 => 0x12, 0x1200 => 0x80))
+        step(s, mem)
+        @test (s.P & FLAG_N) != 0
+        @test (s.P & FLAG_V) == 0
+        @test (s.P & FLAG_Z) == 0
+        @test s.cycles == 4
+    end
+
+end
