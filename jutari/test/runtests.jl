@@ -2724,9 +2724,9 @@ end
         @test bus.rom == rom
     end
 
-    @testset "SOFT_SUPPORTED_OPCODES matches documented subset" begin
-        expected = Set{UInt8}([0x00, 0xEA, 0xA9, 0xA5, 0xA2, 0x85, 0x86, 0x4C])
-        @test SOFT_SUPPORTED_OPCODES == expected
+    @testset "SOFT_SUPPORTED_OPCODES contains P7b core" begin
+        p7b_core = Set{UInt8}([0x00, 0xEA, 0xA9, 0xA5, 0xA2, 0x85, 0x86, 0x4C])
+        @test p7b_core ⊆ SOFT_SUPPORTED_OPCODES
     end
 
     @testset "NOP advances PC and cycles" begin
@@ -2832,6 +2832,250 @@ end
         ram[0x10 + 1] = 0x99f0
         @test soft_ram_peek(ram, 0x10) == 0x99f0
         @test soft_ram_peek(ram, 0x11) == 0f0
+    end
+
+end
+
+@testset "JuTari P7c-a SOFT-mode load/store/transfer — forward + N/Z flags" begin
+
+    @testset "P7c-a opcode set is now present" begin
+        p7c_a = Set{UInt8}([
+            # LDA — 8 modes
+            0xA9, 0xA5, 0xB5, 0xAD, 0xBD, 0xB9, 0xA1, 0xB1,
+            # LDX — 5 modes
+            0xA2, 0xA6, 0xB6, 0xAE, 0xBE,
+            # LDY — 5 modes
+            0xA0, 0xA4, 0xB4, 0xAC, 0xBC,
+            # STA — 7 modes
+            0x85, 0x95, 0x8D, 0x9D, 0x99, 0x81, 0x91,
+            # STX — 3 modes
+            0x86, 0x96, 0x8E,
+            # STY — 3 modes
+            0x84, 0x94, 0x8C,
+            # Transfers
+            0xAA, 0xA8, 0x8A, 0x98, 0xBA, 0x9A,
+        ])
+        @test p7c_a ⊆ SOFT_SUPPORTED_OPCODES
+        @test length(p7c_a) == 37
+    end
+
+    # --- LDA across modes -------------------------------------------------- #
+
+    @testset "LDA zp,X reads RAM at zp+X" begin
+        bus = initial_soft_bus(_soft_rom_with([0xB5, 0x10]))
+        bus.ram[0x13 + 1] = Float32(0x99)
+        state = initial_soft_cpu_state()
+        state.X = 3f0
+        soft_step!(state, bus)
+        @test state.A == Float32(0x99)
+    end
+
+    @testset "LDA \$abs reads from cart when address in ROM window" begin
+        rom = _soft_rom_with([0xAD, 0x05, 0xF0])
+        rom[0x005 + 1] = Float32(0x77)
+        bus = initial_soft_bus(rom)
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test state.A == Float32(0x77)
+    end
+
+    @testset "LDA \$abs,X indexes correctly" begin
+        rom = _soft_rom_with([0xBD, 0x00, 0xF0])
+        rom[4 + 1] = Float32(0x55)
+        bus = initial_soft_bus(rom)
+        state = initial_soft_cpu_state()
+        state.X = 4f0
+        soft_step!(state, bus)
+        @test state.A == Float32(0x55)
+    end
+
+    @testset "LDA (ind,X) double-indirects via zp" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA1, 0x10]))
+        # X=2 → pointer is at zp $12 → $0030; value at RAM[$30] = 0x88.
+        bus.ram[0x12 + 1] = Float32(0x30)
+        bus.ram[0x13 + 1] = Float32(0x00)
+        bus.ram[0x30 + 1] = Float32(0x88)
+        state = initial_soft_cpu_state()
+        state.X = 2f0
+        soft_step!(state, bus)
+        @test state.A == Float32(0x88)
+    end
+
+    @testset "LDA (ind),Y adds Y *after* pointer dereference" begin
+        bus = initial_soft_bus(_soft_rom_with([0xB1, 0x40]))
+        bus.ram[0x40 + 1] = Float32(0x40)
+        bus.ram[0x41 + 1] = Float32(0x00)
+        bus.ram[0x45 + 1] = Float32(0x66)
+        state = initial_soft_cpu_state()
+        state.Y = 5f0
+        soft_step!(state, bus)
+        @test state.A == Float32(0x66)
+    end
+
+    # --- LDX / LDY --------------------------------------------------------- #
+
+    @testset "LDX \$abs,Y reads from RAM" begin
+        rom = _soft_rom_with([0xBE, 0x10, 0x00])
+        bus = initial_soft_bus(rom)
+        bus.ram[0x14 + 1] = Float32(0xAA)
+        state = initial_soft_cpu_state()
+        state.Y = 4f0
+        soft_step!(state, bus)
+        @test state.X == Float32(0xAA)
+    end
+
+    @testset "LDY \$abs,X reads from RAM" begin
+        rom = _soft_rom_with([0xBC, 0x10, 0x00])
+        bus = initial_soft_bus(rom)
+        bus.ram[0x12 + 1] = Float32(0xBB)
+        state = initial_soft_cpu_state()
+        state.X = 2f0
+        soft_step!(state, bus)
+        @test state.Y == Float32(0xBB)
+    end
+
+    # --- STA / STX / STY across modes -------------------------------------- #
+
+    @testset "STA zp,X writes to offset" begin
+        rom = _soft_rom_with([0x95, 0x20])
+        bus = initial_soft_bus(rom)
+        state = initial_soft_cpu_state()
+        state.A = Float32(0xAB); state.X = 3f0
+        soft_step!(state, bus)
+        @test bus.ram[0x23 + 1] == Float32(0xAB)
+    end
+
+    @testset "STA \$abs writes to RAM region" begin
+        rom = _soft_rom_with([0x8D, 0x30, 0x00])
+        bus = initial_soft_bus(rom)
+        state = initial_soft_cpu_state()
+        state.A = Float32(0xCD)
+        soft_step!(state, bus)
+        @test bus.ram[0x30 + 1] == Float32(0xCD)
+    end
+
+    @testset "STX zp,Y writes X" begin
+        rom = _soft_rom_with([0x96, 0x40])
+        bus = initial_soft_bus(rom)
+        state = initial_soft_cpu_state()
+        state.X = Float32(0xEE); state.Y = 2f0
+        soft_step!(state, bus)
+        @test bus.ram[0x42 + 1] == Float32(0xEE)
+    end
+
+    @testset "STY \$abs writes Y" begin
+        rom = _soft_rom_with([0x8C, 0x50, 0x00])
+        bus = initial_soft_bus(rom)
+        state = initial_soft_cpu_state()
+        state.Y = Float32(0xFF)
+        soft_step!(state, bus)
+        @test bus.ram[0x50 + 1] == Float32(0xFF)
+    end
+
+    @testset "STA (ind),Y resolves pointer then writes" begin
+        rom = _soft_rom_with([0x91, 0x40])
+        bus = initial_soft_bus(rom)
+        bus.ram[0x40 + 1] = Float32(0x60)
+        bus.ram[0x41 + 1] = Float32(0x00)
+        state = initial_soft_cpu_state()
+        state.A = Float32(0x42); state.Y = 7f0
+        soft_step!(state, bus)
+        @test bus.ram[0x67 + 1] == Float32(0x42)
+    end
+
+    # --- Transfers --------------------------------------------------------- #
+
+    @testset "TAX copies A→X and sets N when high bit set" begin
+        bus = initial_soft_bus(_soft_rom_with([0xAA]))
+        state = initial_soft_cpu_state()
+        state.A = Float32(0x80)
+        soft_step!(state, bus)
+        @test state.X == Float32(0x80)
+        @test (Int(state.P) & 0x80) != 0   # N set
+        @test (Int(state.P) & 0x02) == 0   # Z clear
+    end
+
+    @testset "TAY with zero sets Z" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA8]))
+        state = initial_soft_cpu_state()
+        state.A = 0f0
+        soft_step!(state, bus)
+        @test state.Y == 0f0
+        @test (Int(state.P) & 0x02) != 0
+    end
+
+    @testset "TXS does NOT update flags" begin
+        bus = initial_soft_bus(_soft_rom_with([0x9A]))
+        state = initial_soft_cpu_state()
+        state.X = 0f0
+        soft_step!(state, bus)
+        @test state.SP == 0f0
+        @test (Int(state.P) & 0x02) == 0   # TXS is the only flag-silent transfer
+    end
+
+    @testset "TSX copies SP→X and sets N for \$0xFD" begin
+        bus = initial_soft_bus(_soft_rom_with([0xBA]))
+        state = initial_soft_cpu_state()
+        # SP defaults to 0xFD which has bit 7 set.
+        soft_step!(state, bus)
+        @test state.X == Float32(0xFD)
+        @test (Int(state.P) & 0x80) != 0
+    end
+
+    @testset "TXA propagates to A" begin
+        bus = initial_soft_bus(_soft_rom_with([0x8A]))
+        state = initial_soft_cpu_state()
+        state.X = Float32(0x42)
+        soft_step!(state, bus)
+        @test state.A == Float32(0x42)
+    end
+
+    @testset "TYA propagates to A" begin
+        bus = initial_soft_bus(_soft_rom_with([0x98]))
+        state = initial_soft_cpu_state()
+        state.Y = Float32(0x33)
+        soft_step!(state, bus)
+        @test state.A == Float32(0x33)
+    end
+
+    # --- N/Z flag semantics ----------------------------------------------- #
+
+    @testset "LDA #0 sets Z and clears N" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x00]))
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test (Int(state.P) & 0x02) != 0
+        @test (Int(state.P) & 0x80) == 0
+    end
+
+    @testset "LDA #\$42 clears both" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x42]))
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test (Int(state.P) & 0x02) == 0
+        @test (Int(state.P) & 0x80) == 0
+    end
+
+    @testset "LDA #\$80 sets N clears Z" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x80]))
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test (Int(state.P) & 0x02) == 0
+        @test (Int(state.P) & 0x80) != 0
+    end
+
+    @testset "LDX #\$FF sets N" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA2, 0xFF]))
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test (Int(state.P) & 0x80) != 0
+    end
+
+    @testset "LDY #0 sets Z" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA0, 0x00]))
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test (Int(state.P) & 0x02) != 0
     end
 
 end

@@ -28,11 +28,15 @@ overall project goal, see [README.md](README.md).
 | **P5**  | Cart 2K / 4K / F8 / F6 / F4 with hotspot bank-switching | [`53e393f`](https://github.com/akmaier/UnderstandingVCS/commit/53e393f) | +20 | +47 | ✅ |
 | **P6**  | Console + IO actions + StellaEnvironment + TIA INPT* triggers | [`7a8f303`](https://github.com/akmaier/UnderstandingVCS/commit/7a8f303) | +29 | +39 | ✅ |
 | **P7**  | Diff primitives — RomTensor, soft_select, soft_memory_read, soft_branch, STEs | [`4b4d989`](https://github.com/akmaier/UnderstandingVCS/commit/4b4d989) | +23 | +22 | ✅ |
-| **P7b** | Parallel SOFT-mode `soft_step` (8 opcodes) + end-to-end `jax.grad` back to ROM | _next commit_ | +34 | +18 | ✅ |
+| **P7b** | Parallel SOFT-mode `soft_step` (8 opcodes) + end-to-end `jax.grad` back to ROM | [`11c8388`](https://github.com/akmaier/UnderstandingVCS/commit/11c8388) | +34 | +18 | ✅ |
+| **P7c-a** | Full load/store/transfer opcode coverage (37 opcodes — LDA/LDX/LDY/STA/STX/STY across all addressing modes + TAX/TAY/TXA/TYA/TSX/TXS) + N/Z flag updates + cart-vs-RAM bus-read dispatch | _next commit_ | +33 | +28 | ✅ |
+| **P7c-b…f** | Arithmetic, shifts, branches, stack, status, INC/DEC, BRK/RTI, TIA/RIOT writes, bank-switching | — | — | — | ⏳ |
+| **P7d** | RomTensor as a custom JAX PyTree, used as the `SoftBus.rom` slot | — | — | — | ☐ |
+| **P7e** | Julia gradient stack — Zygote / ChainRulesCore `rrule`s for the SOFT primitives so jutari can take real gradients | — | — | — | ☐ |
 | **P8**  | XAI hooks + first attribution experiment | — | — | — | ☐ |
 | **P9**  | JAX-vs-Julia benchmark + paper-shaped XAI study | — | — | — | ☐ |
 
-**Totals after P7b: jaxtari 339 tests, jutari 832 tests, 1171 green across both ports.**
+**Totals after P7c-a: jaxtari 367 tests, jutari 865 tests, 1232 green across both ports.**
 
 ## What each port can do today
 
@@ -93,50 +97,50 @@ jaxtari/jaxtari/                 jutari/src/
 The phase-by-phase deferrals build up. Listing them once here as a single
 reference of what remains:
 
+Every deferral now has a phase identifier (see PORTING_PLAN.md "Deferral identifiers" section) so it can be picked up in any order.
+
 ### CPU (P1)
-- PA7 edge-triggered IRQ (BRK-only software interrupts are implemented; the external IRQ / NMI / RESET pins are not — those need bus-level integration in P3+).
-- Cycle-counting fine print beyond page-cross and branch-taken: per-opcode quirks (e.g. RMW double-write, undocumented opcode set beyond USBC).
+- **P1g**: PA7 edge-triggered external IRQ + NMI / RESET pins (bus-level integration; BRK-only software interrupts work today).
+- **P1h**: Undocumented opcode set beyond USBC (`$EB`).
 
 ### Bus (P2)
-- Settled: 6507 13-bit mirror, RAM with stack-page mirror.
+- Settled: 6507 13-bit mirror, RAM with stack-page mirror. **No deferrals.**
 
 ### TIA (P3)
-- NUSIZ multi-copy / 2×/4×-wide player scaling (single 1×-wide copy per player today).
-- VDELP* / VDELBL vertical-delay sprite updates.
-- Sub-pixel beam-accurate rendering (mid-scanline register changes affecting the line being drawn). P3 renders at end-of-scanline.
-- Audio (AUDC*/AUDF*/AUDV* registers are stored but inert; TIASnd not modelled).
-- HMOVE +8 nibble timing quirk on real hardware.
-- CTRLPF.D2 priority swap (default priority only).
+- **P3g**: NUSIZ multi-copy / 2×/4×-wide player scaling (single 1×-wide copy per player today).
+- **P3h**: VDELP* / VDELBL vertical-delay sprite updates.
+- **P3i**: Sub-pixel beam-accurate rendering (mid-scanline register changes affecting the line being drawn). P3 renders at end-of-scanline.
+- **P3j**: Audio (AUDC*/AUDF*/AUDV* registers are stored but inert; TIASnd not modelled).
+- **P3k**: HMOVE +8 nibble timing quirk on real hardware.
+- **P3l**: CTRLPF.D2 priority swap (default priority only).
 
 ### RIOT (P4)
-- PA7 edge-triggered interrupt (INSTAT.D6 not modelled).
-- Reading INSTAT does NOT clear the expired flag (only TIM*T writes do; the chip's exact behaviour here varies between implementations).
-- Real paddle / driving-controller wiring (paddle dump-pot timing — INPT0-3 stay at `$80` "centred").
+- **P4b**: PA7 edge-triggered interrupt (INSTAT.D6 not modelled).
+- **P4c**: Real paddle / driving-controller wiring (paddle dump-pot timing — INPT0-3 stay at `$80` "centred").
+- **P4d**: Reading INSTAT does NOT clear the expired flag (only TIM*T writes do; the chip's exact behaviour here varies between implementations).
 
 ### Cart (P5)
-- SC variants of F8 / F6 / F4 (128 B on-cart RAM at `$1000–$10FF`).
-- E0, FE, 3F, 3E, MB, MC, AR, DPC formats.
-- Signature-based detection for ROMs whose size is ambiguous between formats (e.g. an 8 KB ROM could be F8, E0, or 3F — currently size → format is 1:1).
+- **P5b**: SC variants of F8 / F6 / F4 (128 B on-cart RAM at `$1000–$10FF`).
+- **P5c**: E0, FE, 3F, 3E formats.
+- **P5d**: MB, MC, AR, DPC formats.
+- **P5e**: Signature-based detection for ROMs whose size is ambiguous between formats (e.g. an 8 KB ROM could be F8, E0, or 3F — currently size → format is 1:1).
 
 ### Console / IO / Env (P6)
-- Paddle pot dump-pot timing (INPT0-3 default `$80`).
-- Phosphor blending (Stella post-processes the framebuffer for flicker).
-- Per-game `RomSettings` (Pong / Breakout / Pitfall / Atari Zoo etc. all need reverse-engineered RAM-address probes).
-- Random no-op reset (Mnih-style "skip 0..30 NOOPs at episode start" — this is a wrapper concern).
-- Two-player joystick (P1 directions stay defaulted-released).
+- **P6b**: Phosphor blending (Stella post-processes the framebuffer for flicker).
+- **P6c**: Per-game `RomSettings` (Pong / Breakout / Pitfall / Atari Zoo etc. all need reverse-engineered RAM-address probes).
+- **P6d**: Random no-op reset (Mnih-style "skip 0..30 NOOPs at episode start" — this is a wrapper concern).
+- **P6e**: Two-player joystick (P1 directions stay defaulted-released).
 
 ### Diff (P7 / P7b)
-- **P7c** is the next item: extend the SOFT-mode opcode handler table from the 8 P7b opcodes (NOP, LDA imm/zp, LDX imm, STA zp, STX zp, JMP abs, BRK) to the rest of the 151 NMOS set. Unhandled opcodes today fall through to a `_branch_default` that advances PC by 1 — gradient-safe, but forward-wrong if a real ROM hits one.
-- Status-flag updates (N/Z/C/V) in the SOFT handlers — register movement is there, flags are not.
-- TIA / RIOT writes via SOFT mode (STA $0xxx currently drops silently into the RAM region).
-- Cart bank-switching from SOFT mode (P5's hotspot mechanism isn't wired into `soft_step` yet).
-- RomTensor replacing the existing Cart class in the Bus's cart slot (the SoftBus carries a raw `jnp.ndarray`, not the `RomTensor` wrapper, because the wrapper isn't a PyTree).
-- Julia gradient verification — jutari has the same forward behaviour as jaxtari but no Zygote / ChainRulesCore `rrule` wired in yet (would need adding Zygote as a test dep).
+- **P7c-a … P7c-f**: extend the SOFT-mode opcode handler table from the 8 P7b opcodes (NOP, LDA imm/zp, LDX imm, STA zp, STX zp, JMP abs, BRK) to the rest of the 151 NMOS set + N/Z/C/V flag updates + TIA / RIOT / cart-hotspot dispatch from SOFT writes. Subdivided P1-style; see PORTING_PLAN.md §5 for the per-chunk breakdown.
+- **P7d**: RomTensor replacing the raw `jnp.ndarray` in the SoftBus's `rom` slot (the SoftBus carries a raw array today because `RomTensor` is a Python class, not a PyTree). Requires registering `RomTensor` as a custom JAX PyTree.
+- **P7e**: Julia gradient verification — jutari has the same forward behaviour as jaxtari but no Zygote / ChainRulesCore `rrule` wired in yet (would need adding Zygote as a test dep).
 
 ### Cross-cutting
-- **xitari-trace conformance harness** (PORTING_PLAN.md §4) — `tools/trace_dump.cpp` is sketched but never built; no golden traces exist yet. Both ports are validated against hand-built unit tests, not against real ROM runs. This is the most important infrastructure debt; it would catch dozens of subtle bugs at once.
-- JAX-vs-Julia bit-for-bit cross-check (PORTING_PLAN.md §4.4).
-- CI hook (no automated test runs yet).
+- **PXC1**: xitari-trace conformance harness (PORTING_PLAN.md §4) — `tools/trace_dump.cpp` is sketched but never built; no golden traces exist yet. Both ports are validated against hand-built unit tests, not against real ROM runs. **The most important single piece of infrastructure debt** — it would catch dozens of subtle bugs at once.
+- **PXC2**: JAX-vs-Julia bit-for-bit cross-check (PORTING_PLAN.md §4.4).
+- **PXC3**: CI hook (no automated test runs yet).
+- **PXC4**: Klaus Dormann `cpu_klaus_dormann.jsonl.gz` regression run (referenced as the P1 acceptance criterion but never wired up).
 
 ## How to run the test suites
 

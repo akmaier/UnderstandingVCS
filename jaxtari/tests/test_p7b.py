@@ -61,9 +61,11 @@ def test_initial_soft_bus_has_zero_ram_and_carries_rom():
     assert jnp.array_equal(bus.rom, rom)
 
 
-def test_soft_supported_opcode_set_matches_documented_subset():
-    expected = {0x00, 0xEA, 0xA9, 0xA5, 0xA2, 0x85, 0x86, 0x4C}
-    assert SOFT_SUPPORTED_OPCODES == expected
+def test_soft_supported_opcode_set_contains_p7b_core():
+    """The P7b core (NOP, LDA imm/zp, LDX imm, STA zp, STX zp, JMP abs,
+    BRK) must remain present even after P7c-a … P7c-f extend the set."""
+    p7b_core = {0x00, 0xEA, 0xA9, 0xA5, 0xA2, 0x85, 0x86, 0x4C}
+    assert p7b_core.issubset(SOFT_SUPPORTED_OPCODES)
 
 
 # --------------------------------------------------------------------------- #

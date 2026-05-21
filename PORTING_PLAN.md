@@ -206,13 +206,11 @@ Each phase ends with a green test suite for its scope, in **both** ports, before
 | **P6** | Console wiring + I/O (joysticks, paddles, switches) + StellaEnvironment + per-game RomSettings | `game_pong_5000frames`, `game_breakout_5000frames`, `game_space_invaders_5000frames` pass; ALE step/reset/act/getScreen API matches xitari semantically | ✅ (API surface) — per-game `RomSettings` deferred (GenericRomSettings stub only); paddle timing + phosphor blend deferred. |
 | **P7** | Differentiability layer (`diff/`): HARD mode is the default and must keep all conformance tests green; SOFT mode enables gradients via soft opcode dispatch, soft RAM addressing, ROM-as-weights | Gradient sanity tests pass (e.g., ∂(pixel)/∂(ROM byte) is non-zero for byte known to affect that pixel and zero for one that cannot); HARD-mode conformance still green | ✅ (**primitives only**) — `RomTensor`, `soft_select`, `soft_memory_read`, `soft_branch`, STE round/clamp shipped with jaxtari gradient tests + end-to-end ROM-attribution demo. **Integration with `step()` is the still-open P7b.** |
 | **P7b** | Parallel SOFT-mode `soft_step` (`SoftCPUState` + `SoftBus`, both float32) wired through `jax.lax.switch` over a 256-way opcode handler table; 8 opcodes handled (NOP, LDA imm/zp, LDX imm, STA zp, STX zp, JMP abs, BRK); jutari mirror shipped forward-only | `jax.grad(simulator)(rom)` on the two-instruction program `LDA #$42 / STA $00` returns a one-hot gradient at the immediate-operand byte | ✅ — jaxtari `soft_step.py`/`soft_state.py` + jutari `SoftStep.jl`/`SoftState.jl`; +18 jaxtari tests / +34 jutari tests; headline test `test_grad_lda_imm_then_sta_zp_one_hot_at_immediate` passes. **Opcode-handler expansion, N/Z/C/V flags, TIA/RIOT writes, and cart-hotspot bank-switching from SOFT mode are P7c.** |
-| **P7c** | Extend SOFT-mode opcode coverage to the rest of the 151 NMOS opcodes; add N/Z/C/V flag updates inside handlers; route SOFT writes through TIA / RIOT / cart-hotspot dispatch so `soft_step` mirrors the full HARD bus | A real ROM (e.g. a minimal Stella demo cart) runs end-to-end in SOFT mode and `jax.grad(env.step)` flows through TIA framebuffer back to ROM bytes | ⏳ |
+| **P7c** | Extend SOFT-mode opcode coverage to the rest of the 151 NMOS opcodes; add N/Z/C/V flag updates inside handlers; route SOFT writes through TIA / RIOT / cart-hotspot dispatch so `soft_step` mirrors the full HARD bus. Subdivided **P7c-a … P7c-f** matching P1's subdivision. | A real ROM (e.g. a minimal Stella demo cart) runs end-to-end in SOFT mode and `jax.grad(env.step)` flows through TIA framebuffer back to ROM bytes | ⏳ |
 | **P8** | XAI hooks + first attribution experiment | Integrated Gradients on ROM bytes recovers a known sprite-defining region in Pong | ☐ |
 | **P9** | JAX-vs-Julia benchmark + first paper-shaped XAI study | Throughput numbers + a writeup | ☐ |
 
-### Cross-cutting infrastructure debt
-
-The single most important piece of unfinished infrastructure is the **xitari-trace conformance harness** described in §4. Both ports are currently validated against hand-built unit tests rather than against real ROMs running on xitari, so subtle timing or BCD or bank-switch bugs that don't show up in our test set won't get caught. The `tools/trace_dump.cpp` sketch is committed but has never been built; no golden traces exist. Closing this would let us claim "bit-exact against xitari" rather than "passes our unit tests".
+### P1 (HARD CPU) subdivision
 
 P1 is the largest single chunk and is naturally subdivided:
 
@@ -224,6 +222,58 @@ P1 is the largest single chunk and is naturally subdivided:
 - **P1f**: interrupts (BRK/RTI/IRQ/NMI/RESET) and the cycle-counting fine print (page-crossing penalty, branch-taken penalty, `(indirect),Y` extra cycle)
 
 Don't add unofficial/illegal opcodes until P1f is green — xitari's M6502Hi/M6502Low pair tracks which set is in use, and we match whichever it links.
+
+### P7c (SOFT-mode `step()`) subdivision
+
+P7c mirrors P1's subdivision — same shape, same scope per chunk, but executed against the parallel SOFT primitives:
+
+- **P7c-a**: load/store + transfer opcodes (LDA/LDX/LDY/STA/STX/STY/TAX/TAY/TXA/TYA/TSX/TXS) with N/Z flag updates and all 12 addressing modes routed through `soft_rom_peek` / `soft_ram_peek`
+- **P7c-b**: arithmetic/logic (ADC/SBC/AND/ORA/EOR/CMP/CPX/CPY/BIT) with N/Z/C/V flag updates; BCD path matches P1b's behaviour (decimal mode honoured when D=1)
+- **P7c-c**: shifts/rotates (ASL/LSR/ROL/ROR) on accumulator and memory with N/Z/C flag updates
+- **P7c-d**: branches (BCC/BCS/BEQ/BNE/BMI/BPL/BVC/BVS) — PC update via `soft_branch` so the relaxed gradient flows through the predicate flag — plus JMP (indirect), JSR, RTS
+- **P7c-e**: stack push/pull (PHA/PLA/PHP/PLP) + status-flag manipulators (SEC/CLC/SEI/CLI/SED/CLD/CLV) + INC/DEC/INX/INY/DEX/DEY
+- **P7c-f**: BRK/RTI proper interrupt sequence + route SOFT writes through TIA / RIOT / cart-hotspot dispatch (replaces the P7b "all writes drop into RAM region" shortcut) + cart bank-switching from SOFT mode
+
+### Deferral identifiers
+
+Each per-subsystem deferral listed in STATUS.md gets a phase ID so it can be picked up in any order:
+
+**CPU (HARD)**
+- **P1g**: PA7 edge-triggered external IRQ + NMI / RESET pins (bus-level integration; BRK-only software interrupts work today)
+- **P1h**: Undocumented opcode set beyond USBC (`$EB`)
+
+**TIA**
+- **P3g**: NUSIZ multi-copy + 2×/4×-wide player scaling
+- **P3h**: VDELP* / VDELBL vertical-delay sprite updates
+- **P3i**: Beam-accurate (sub-pixel, mid-scanline) rendering — today P3 renders at end-of-scanline
+- **P3j**: Audio (AUDC*/AUDF*/AUDV* registers are stored but inert; TIASnd chip not modelled)
+- **P3k**: HMOVE +8 nibble timing quirk on real hardware
+- **P3l**: CTRLPF.D2 priority swap (today only default priority is honoured)
+
+**RIOT**
+- **P4b**: PA7 edge-triggered interrupt (INSTAT D6)
+- **P4c**: Paddle dump-pot timing — INPT0-3 stay at `$80` "centred"
+- **P4d**: INSTAT-read-clears-flag semantics (today only TIM*T writes clear; real chip varies)
+
+**Cart**
+- **P5b**: SC variants of F8 / F6 / F4 (128 B on-cart RAM at `$1000-$10FF`)
+- **P5c**: E0 + FE + 3F + 3E formats
+- **P5d**: MB + MC + AR + DPC formats
+- **P5e**: Signature-based detection for ROMs whose size is ambiguous between formats (e.g. an 8 KB ROM could be F8, E0, or 3F)
+
+**Console / IO / Env**
+- **P6b**: Phosphor blending (Stella post-processes the framebuffer for flicker)
+- **P6c**: Per-game `RomSettings` (Pong / Breakout / Pitfall / Atari Zoo etc.) — today only `GenericRomSettings` stub
+- **P6d**: Random no-op reset wrapper (Mnih-style "skip 0..30 NOOPs at episode start")
+- **P6e**: Two-player joystick (P1 directions stay defaulted-released)
+
+**Cross-cutting infrastructure**
+- **PXC1**: xitari-trace conformance harness — `tools/trace_dump.cpp` is sketched but never built; no golden traces exist; closing this lets us claim "bit-exact against xitari"
+- **PXC2**: JAX-vs-Julia bit-for-bit cross-check
+- **PXC3**: CI hook — no automated test runs yet
+- **PXC4**: Klaus Dormann `cpu_klaus_dormann.jsonl.gz` regression run (referenced as the P1 acceptance criterion but never wired up)
+
+The single most important piece of unfinished infrastructure is **PXC1** — both ports are currently validated against hand-built unit tests rather than against real ROMs running on xitari, so subtle timing or BCD or bank-switch bugs that don't show up in our test set won't get caught.
 
 ---
 
