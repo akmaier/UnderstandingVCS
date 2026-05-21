@@ -1,3 +1,26 @@
+# External dependencies (cloned/downloaded locally, see README.md "External Dependencies")
 papers/
 dqn/
 xitari/
+
+# OS / editor cruft
+.DS_Store
+**/.DS_Store
+
+# Python (jaxtari)
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Julia (jutari)
+Manifest.toml
+*.jl.cov
+*.jl.mem
+deps/build.log
+
+# Generated golden traces and ROMs (see PORTING_PLAN.md §4.2)
+tests/golden/*.jsonl
+tests/golden/roms/

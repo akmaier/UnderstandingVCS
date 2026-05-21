@@ -1,10 +1,20 @@
-# Understanding VCS: XAI for Atari Game Neural Networks
+# Understanding VCS: XAI for the Atari Simulator via Differentiable Emulation
 
 ## Project Overview
 
-This project explores the limits of Explainable Artificial Intelligence (XAI) methods in understanding neural networks trained to play Atari games on the 6502 microprocessor. Inspired by the seminal paper "Could a Neuroscientist Understand a Microprocessor?" (Jonas & Kording, 2017), we examine whether modern XAI techniques can provide meaningful insights into deep reinforcement learning agents, or whether they fall short of true understanding—just as neuroscience methods failed to reveal the hierarchical structure of the 6502 processor.
+This project asks: **can modern XAI methods produce a hierarchical, mechanistic understanding of the Atari 2600 VCS — a system whose ground truth we fully possess?** It is directly inspired by Jonas & Kording's "Could a Neuroscientist Understand a Microprocessor?" (2017), but inverts the usual XAI experiment.
 
-Our goal is to test the hypothesis that **having unlimited data and state-of-the-art XAI tools is insufficient to achieve genuine understanding of a neural network's internal computations**. By applying various XAI methods (feature attribution, concept-based explanations, mechanistic interpretability, etc.) to a Deep Q-Network (DQN) trained on classic Atari games, we aim to identify the gaps between current XAI capabilities and the kind of understanding that would allow us to truly "fix" or redesign the network.
+The conventional approach uses XAI to probe a black-box neural network (e.g., a DQN agent). This project flips the target: **the simulator itself becomes the XAI subject**. The DQN is, at most, a behaviour policy that drives the simulator into interesting states — we are not trying to explain the DQN.
+
+To make XAI methods applicable to a classical hand-written C++ emulator, we are building **two differentiable, end-to-end ports of xitari** — one in **JAX (Python)** and one in **Julia**. Once the simulator is differentiable, gradient-based attribution, concept probing, mechanistic interpretability, and ablation analyses can be turned on it directly. Because we already know the true hierarchy (6507 CPU → TIA → RIOT → cartridge bank-switching → console), every XAI claim is testable against ground truth.
+
+### Conceptual framing of the differentiable simulator
+
+- **ROM as a hardwired neural network.** A cartridge ROM is a fixed bit pattern that the CPU "executes." Read as a tensor, it is the weight matrix of a network whose forward pass is one machine cycle. Backpropagating into ROM bytes asks "which bits explain this pixel?"
+- **RAM as a Neural-Turing-Machine-like tape.** The 128 B of VCS RAM is small enough to carry as a differentiable state vector with soft (attention-style) read/write addressing. Unlike a vanilla NTM, the addressing is sometimes hard (direct, indexed) — we relax those into convex combinations only where gradients must flow.
+- **Branches and case-selects as soft switches.** `if flag then PC+=offset` and opcode-indexed dispatch become gated mixtures (softmax / Gumbel-softmax / straight-through estimators). Forward behaviour stays bit-exact when the gates are saturated; gradients flow when they are relaxed.
+
+This is the lever that lets us aim XAI tools at a system we already understand bit-for-bit.
 
 ---
 
@@ -13,50 +23,47 @@ Our goal is to test the hypothesis that **having unlimited data and state-of-the
 ```
 UnderstandingVCS/
 ├── README.md              # This file
-├── .gitignore             # Git ignore rules (excludes papers/, dqn/, xitari/)
+├── PORTING_PLAN.md        # Module-by-module plan for jaxtari/jutari (read this next)
+├── .gitignore             # Excludes papers/, dqn/, xitari/ (external deps) and .DS_Store
 ├── literature/            # AI-readable markdown versions of papers with BibTeX
 │   ├── jonas_kording_2017_pcbi.md
 │   └── mnih_2015_nature.md
-├── papers/                # PDF downloads (excluded from git)
-│   ├── jonas_kording_2017_pcbi.pdf
-│   └── mnih_2015_nature.pdf
-├── dqn/                   # DeepMind DQN repository clone (excluded from git)
-└── xitari/                # DeepMind Xitari (ALE fork) repository clone (excluded from git)
+├── jaxtari/               # JAX port of xitari (tracked) — in active development
+├── jutari/                # Julia port of xitari (tracked) — in active development
+├── papers/                # PDF downloads (excluded from git, reproducible via DOIs)
+├── dqn/                   # DeepMind DQN repository clone (excluded — used as black-box agent)
+└── xitari/                # DeepMind Xitari (ALE fork) — the bit-exact reference (excluded)
 ```
+
+`xitari/`, `dqn/`, and `papers/` are external dependencies, cloned/downloaded locally and not version-controlled here. `jaxtari/` and `jutari/` are the primary deliverables of this project and **are** version-controlled.
 
 ---
 
-## Rules / Instructions / Working Setup
+## Rules / Working Setup
 
 ### Developer Log Book via Commits
 
-**Every command, change, or action performed in this project is committed and pushed to GitHub immediately after each turn.** The commit history serves as a complete developer log book.
+**Every command, change, or action performed in this project is committed and pushed to GitHub immediately after each turn.** The commit history serves as a complete developer log.
 
 ### Commit Message Format
 
 Each commit message MUST include:
 - **The full user prompt** that triggered the changes
-- **The AI model used** (e.g., `moonshotai/Kimi-K2.6`)
+- **The AI model used** (e.g., `claude-opus-4-7[1m]`)
 - **A concise summary** of what was changed and why
 
-This ensures reproducibility and full traceability of all development steps.
+This ensures reproducibility and full traceability.
 
 ### Literature Management
 
-1. **papers/**: Downloaded PDFs of academic papers. **Excluded from git** (binary files, large, reproducible via URLs).
-2. **literature/**: Markdown conversions of papers for AI readability.
-   - Each `.md` file includes the full paper text
-   - **A BibTeX citation block at the end** for easy referencing
-   - Preserves figures and tables as best as possible
-   - These files ARE tracked in git
+1. **papers/**: Downloaded PDFs. Excluded from git (binary, reproducible via URLs).
+2. **literature/**: Markdown conversions with full text and a closing BibTeX block. Tracked in git.
 
-### External Dependencies (Cloned Repositories)
+### External Dependencies
 
-The following repositories are cloned locally but **excluded from git**:
-- `dqn/` - DeepMind's DQN implementation (Lua/Torch)
-- `xitari/` - DeepMind's fork of the Arcade Learning Environment (ALE)
-
-These are external dependencies; we reference them but do not modify or version them.
+The following live locally but are **excluded from git**:
+- `dqn/` — DeepMind's DQN implementation (Lua/Torch). Used here as an *optional* black-box action source.
+- `xitari/` — DeepMind's ALE fork. The **reference oracle** that the differentiable ports must match cycle-by-cycle.
 
 ---
 
@@ -66,126 +73,48 @@ These are external dependencies; we reference them but do not modify or version 
 
 **DOI**: [10.1371/journal.pcbi.1005268](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005268)
 
-**Core Insight**: The authors applied standard neuroscience analysis methods to a fully simulated MOS 6502 microprocessor running Atari games. They found that while these methods revealed interesting statistical structure in the data, they **failed to produce a meaningful, hierarchical understanding** of the processor's information processing. The paper argues that having perfect data and ground truth knowledge is insufficient—**the methods themselves are the bottleneck**.
+**Core insight**: Standard neuroscience methods applied to a fully simulated MOS 6502 — with perfect data and ground truth — failed to recover the processor's hierarchical organisation. The bottleneck was the methods, not the data.
 
-**Relevance to Our Project**: This is our foundational paper. We ask: if neuroscience methods failed to understand a microprocessor, can XAI methods succeed in understanding a neural network running on that same microprocessor? The 6502 serves as our "known artifact" with ground truth. If XAI cannot meaningfully explain a DQN controlling an Atari game on the 6502, what does that tell us about XAI's limitations for understanding biological brains or more complex AI systems?
-
-**Key Methods Tested in the Paper**:
-- Connectomics (circuit motif analysis)
-- Single-transistor lesion studies
-- Single-unit tuning curves (pixel luminance)
-- Pairwise correlation analysis / spike-word statistics
-- Local field potential (LFP) analysis and spectral power
-- Granger causality for functional connectivity
-- Dimensionality reduction (NMF) on whole-processor recordings
-
-**Finding**: All these methods, when applied naively, failed to reveal the true hierarchical organization (instruction fetcher → decoder → registers → ALU → memory I/O).
-
----
+**Relevance**: This is our foundational paper. Where Jonas & Kording asked whether neuroscience methods could understand a microprocessor running an Atari game, we ask whether **XAI methods can understand the whole VCS** (CPU + TIA + RIOT + cart + ROM) once we expose it through gradients. The 6507 / VCS is our "known artifact." Any failure of XAI here is informative regardless of outcome.
 
 ### 2. Human-level Control through Deep Reinforcement Learning (Mnih et al., 2015)
 
-**DOI**: [10.1038/nature14236](https://www.nature.com/articles/nature14236)
+**DOI**: [10.1038/nature14236](https://www.nature.com/articles/nature14236) · **arXiv**: [1312.5602](https://arxiv.org/abs/1312.5602)
 
-**arXiv preprint**: [1312.5602](https://arxiv.org/abs/1312.5602)
-
-**Core Insight**: DeepMind's DQN agent learns to play Atari 2600 games directly from raw pixel inputs, achieving human-level performance across 49 games using a single algorithm and architecture. The network uses **experience replay** and **target Q-networks** to stabilize training of a deep convolutional network with Q-learning.
-
-**Relevance to Our Project**: This is the RL agent we will analyze with XAI methods. The DQN architecture is the "black box" we want to understand. Because we know both the network architecture AND the underlying 6502 processor it controls, we can compare XAI-derived explanations against ground truth.
-
-**DQN Architecture Summary**:
-- **Input**: 84×84×4 grayscale image stack (4 most recent frames)
-- **Layer 1**: Conv2D(16 filters, 8×8, stride 4) + ReLU
-- **Layer 2**: Conv2D(32 filters, 4×4, stride 2) + ReLU
-- **Layer 3**: Fully connected (256 units) + ReLU
-- **Output**: Linear layer with one output per valid action (Q-values)
-
-**Training Algorithm** (Deep Q-learning with Experience Replay):
-1. Initialize replay memory D (capacity N)
-2. Initialize Q-network with random weights
-3. For each episode:
-   - Initialize state sequence s₁ = {x₁}, preprocess φ₁ = φ(s₁)
-   - For each timestep t:
-     - Select action via ε-greedy policy
-     - Execute action, observe reward rₜ and next image xₜ₊₁
-     - Store transition (φₜ, aₜ, rₜ, φₜ₊₁) in D
-     - Sample random minibatch from D
-     - Compute target: yⱼ = rⱼ for terminal states, else rⱼ + γ max Q(φⱼ₊₁, a'; θ⁻)
-     - Perform gradient descent on (yⱼ - Q(φⱼ, aⱼ; θ))²
-     - Periodically update target network weights θ⁻ ← θ
+**Relevance to the *new* project goal**: The DQN is **not** the XAI target. We use it (or any other agent) as a *policy* that drives the simulator into game-relevant trajectories, so that the XAI we run on the simulator is conditioned on realistic state distributions rather than random play. The original "explain the DQN" framing is preserved in the bibliography for context, but is no longer the research question.
 
 ---
 
 ## DQN and Xitari Breakdown
 
-### DQN (Deep Q-Network) Repository
+### DQN (Deep Q-Network)
 
-**Source**: `https://github.com/google-deepmind/dqn`
+**Source**: `https://github.com/google-deepmind/dqn`. Lua/Torch implementation of the Nature 2015 DQN. Treated here as a black-box action source. We do not modify or instrument it.
 
-**What it is**: The official implementation of the Nature 2015 DQN paper. Written in **Lua** using the **Torch 7** deep learning framework.
+### Xitari (Arcade Learning Environment fork)
 
-**Architecture** (from `dqn/dqn/convnet.lua`):
-```lua
-net = nn.Sequential()
-net:add(nn.Reshape(input_dims))        -- reshape input
-net:add(SpatialConvolution(...))       -- conv layer 1
-net:add(ReLU())
-net:add(SpatialConvolution(...))       -- conv layer 2
-net:add(ReLU())
-net:add(nn.Reshape(nel))               -- flatten
-net:add(nn.Linear(nel, n_hid))         -- FC hidden layer
-net:add(ReLU())
-net:add(nn.Linear(n_hid, n_actions))   -- output Q-values
-```
+**Source**: `https://github.com/google-deepmind/xitari`. C++ Atari 2600 emulator based on Stella, with an ALE-style RL interface.
 
-**Why DQN is suited for XAI analysis**:
-- The network architecture is **fully known and relatively small**
-- We can extract **intermediate activations** from any layer
-- The input-output mapping is well-defined (pixels → Q-values)
-- We know the **training objective** (Q-learning loss)
-- We can perform **ablation studies** by modifying specific layers
-- Feature attribution methods (Grad-CAM, SHAP, LIME) can be directly applied
-- We can inspect **what the network "looks at"** in the input frame
-- We can analyze **which features activate for specific game states**
-- The network's behavior is measurable (action selection, Q-value predictions)
+Top-level layout that the ports mirror:
 
-**DQN is a neural network artifact that XAI methods CAN analyze**.
+| xitari path | Role | Port target |
+|---|---|---|
+| `emucore/m6502/src/` | 6502/6507 CPU (M6502, M6502Hi/Low, System) | `jaxtari/cpu/`, `jutari/src/cpu/` |
+| `emucore/TIA.{cxx,hxx}` | Television Interface Adapter (video + audio) | `jaxtari/tia/`, `jutari/src/tia/` |
+| `emucore/M6532.{cxx,hxx}` | RIOT: 128 B RAM + I/O + timer | `jaxtari/riot/`, `jutari/src/riot/` |
+| `emucore/Cart*.{cxx,hxx}` | Cartridge / bank-switching types | `jaxtari/cart/`, `jutari/src/cart/` |
+| `emucore/Console.{cxx,hxx}` | Top-level VCS console wiring | `jaxtari/console.py`, `jutari/src/Console.jl` |
+| `emucore/Control.cxx`, `Joystick`, `Paddles`, `Switches` | Controllers + console switches | `jaxtari/io/`, `jutari/src/io/` |
+| `environment/` | ALE-style RL wrapper, phosphor blend | `jaxtari/env/`, `jutari/src/env/` |
+| `games/` | Per-game ROM scoring/termination rules | `jaxtari/games/`, `jutari/src/games/` |
+| `controllers/` | Agent IPC (fifo, internal, rlglue) | Out of scope for ports (use direct API) |
+| `agents/` | Sample agents | Out of scope for ports |
 
----
+The full module-by-module plan, including the differentiability layer, the bit-exact test harness against xitari, and milestone phasing, is in **[PORTING_PLAN.md](PORTING_PLAN.md)**.
 
-### Xitari (Arcade Learning Environment Fork)
+### Why Xitari is the right reference
 
-**Source**: `https://github.com/google-deepmind/xitari`
-
-**What it is**: A fork of the Arcade Learning Environment (ALE) v0.4, modified by DeepMind for DQN experiments. It is an Atari 2600 emulator based on **Stella**, the open-source Atari emulator.
-
-**Architecture** (from examining the source):
-- **emucore/**: Core emulation engine (C++ classes for 6507 CPU, TIA graphics, RIOT I/O, cartridge types)
-- **games/**: Supported game ROM metadata
-- **controllers/**: Agent interface (fifo, internal, named pipes)
-- **environment/**: ALE environment wrapper
-- **common/**: Shared utilities
-- **main.cpp**: CLI entry point
-
-**Why Xitari is NOT suited for XAI analysis**:
-
-Unlike DQN, Xitari is **not a neural network**—it is a **classical software emulator** with the following characteristics that make it unsuitable for standard XAI methods:
-
-1. **No Learned Representations**: Xitari is a hand-written C++ emulator implementing the 6502/6507 CPU, TIA chip, and Atari hardware. It contains **no trainable parameters, no weights, no gradients**.
-
-2. **Deterministic Logic**: The emulator follows fixed hardware rules (CPU instruction cycles, memory maps, video timing). There is no "prediction" or "inference" to explain—behavior is fully specified by the hardware design.
-
-3. **No Feature Hierarchy**: While the 6502 has a logical hierarchy (ALU, registers, decoder), these are **explicit hardware modules**, not learned feature detectors. XAI methods like Grad-CAM or SHAP rely on analyzing how a model's internal representations contribute to predictions—Xitari has no such representations.
-
-4. **Binary State Space**: The emulator operates on discrete binary states (transistors on/off, memory values, instruction opcodes). XAI methods designed for continuous neural activations do not apply.
-
-5. **Ground Truth is Manual Inspection**: To "understand" Xitari, one reads the C++ source code or the hardware datasheets. There is no black-box model to explain.
-
-6. **No Input-Output Mapping to Explain**: Xitari takes actions as input and produces video frames as output, but this is a direct forward simulation of hardware, not a learned mapping.
-
-7. **Different Abstraction Level**: XAI targets "why did the neural network choose action A?" Xitari answers "because the CPU executed instruction X at cycle Y, which wrote value Z to memory address W." The explanation is at the execution trace level, not the representation level.
-
-**In summary**: Xitari is the **environment/simulator**, not the **agent**. XAI explains the agent (DQN), not the environment. To "explain" Xitari, one uses reverse engineering, static analysis, and code inspection—methods from computer engineering, not XAI.
+Xitari is deterministic given a ROM, an action stream, and an RNG seed. That makes it a perfect oracle: every CPU register, every RAM byte, every TIA register, and every frame buffer the JAX/Julia ports produce can be compared byte-for-byte against xitari's trace for the same inputs. Disagreement is unambiguously a port bug.
 
 ---
 
@@ -193,41 +122,29 @@ Unlike DQN, Xitari is **not a neural network**—it is a **classical software em
 
 ### Core Hypothesis
 
-> **Modern XAI methods, despite their sophistication, will fail to produce a satisfying hierarchical understanding of the DQN's internal computations, just as neuroscience methods failed for the 6502 processor.**
+> **A complete, differentiable port of the Atari VCS — where ROMs act as weights, RAM acts as a soft tape, and control flow acts as gated switches — lets us turn modern XAI methods on a system whose true mechanism is fully known. The mismatch between XAI explanations and the verified ground-truth hierarchy will quantify the methods' limits more sharply than any biological or neural-network target can.**
 
 ### Specific Questions
 
-1. Can feature attribution methods (Grad-CAM, Integrated Gradients) reveal what the DQN "pays attention to"? Do these explanations generalize across game states?
+1. Can gradient-based attribution (Integrated Gradients, Grad-CAM analogues) localise the ROM bytes / RAM cells / TIA registers that "explain" a given pixel or score change?
+2. Do concept probes (CAVs, network dissection analogues) recover known hardware concepts — bank-switch bits, sprite registers, collision latches, timer reloads?
+3. Does mechanistic / circuit-style interpretability reconstruct the true hierarchy (instruction fetch → decode → ALU → bus → TIA/RIOT → frame) when the gates are relaxed?
+4. How do the JAX and Julia ports compare on (a) throughput vs. xitari and (b) gradient-pass cost? Are the two languages' AD systems equivalent for this workload?
+5. Where do soft-switch relaxations leak — i.e., for which instructions/branches does the differentiable version diverge from the bit-exact reference, and by how much?
 
-2. Can we identify "concepts" in the DQN's hidden layers (e.g., "ball location", "paddle position") using concept activation vectors (CAVs) or network dissection?
+### Methodology
 
-3. Can mechanistic interpretability methods (circuit tracing, attribution patching) reveal the computational graph the DQN uses to choose actions?
-
-4. Do XAI explanations align with what we know about the game structure (e.g., does the DQN really use the ball's trajectory to predict future rewards)?
-
-5. Can we "break" the DQN in a controlled way and see if XAI predicts the failure? (E.g., lesion specific channels and check if XAI predicted their importance.)
-
-6. How much does the explanation quality depend on the amount of training data? (Jonas & Kording had unlimited data for the 6502; does more data help XAI?)
-
-### Proposed Methodology
-
-1. **Train or load a pre-trained DQN** on one or more Atari games
-2. **Apply diverse XAI methods**:
-   - Input attribution: Grad-CAM, SHAP, LIME
-   - Hidden layer analysis: Network dissection, CAVs
-   - Mechanistic: Circuit tracing, attention rollout
-   - Counterfactual: Input manipulation, adversarial examples
-3. **Compare explanations to ground truth**:
-   - What does the game require? (e.g., tracking moving objects)
-   - What does the DQN actually do? (layer activation patterns)
-   - What do XAI methods say? (saliency maps, concept rankings)
-4. **Evaluate if any XAI method provides a satisfying hierarchical understanding** of how pixels → features → Q-values → actions
+1. **Port xitari to JAX and Julia, bit-exactly**, validated against per-cycle xitari traces. (See PORTING_PLAN.md.)
+2. **Layer differentiability on top**, with a flag that toggles "hard / bit-exact" mode vs. "soft / differentiable" mode.
+3. **Drive trajectories** with either random play, scripted actions, or a pre-trained DQN.
+4. **Apply XAI methods** to ROM bytes, RAM cells, TIA registers, and intermediate CPU state.
+5. **Compare to ground truth**: 6502 datasheet, TIA documentation, disassembly of the target ROM, known cartridge bank-switching schemes.
 
 ### Expected Outcomes
 
-- **Best case**: Some XAI method reveals clear, hierarchical, verifiable structure in the DQN (e.g., early layers detect sprites, middle layers track trajectories, late layers estimate value)
-- **Likely case**: XAI reveals interesting but incomplete structure—some useful insights, but no full understanding
-- **Worst case (but most informative)**: XAI produces plausible-sounding but misleading explanations, highlighting a fundamental gap between correlation-based explanation and true mechanistic understanding
+- **Best case**: XAI methods cleanly recover the documented VCS hierarchy on at least one game, validating the methods on a transparent target.
+- **Likely case**: Methods recover *parts* of the hierarchy (e.g., correctly attribute a sprite pixel to a TIA player register) but miss higher-level structure (e.g., the game's score logic in ROM).
+- **Worst / most informative case**: XAI produces confident, plausible, but **wrong** explanations on a system we can verify — a stronger version of Jonas & Kording's negative result.
 
 ---
 
@@ -259,6 +176,23 @@ Unlike DQN, Xitari is **not a neural network**—it is a **classical software em
   doi       = {10.1038/nature14236},
   publisher = {Nature Publishing Group},
   url       = {https://www.nature.com/articles/nature14236}
+}
+
+@article{Bellemare2013Arcade,
+  author    = {Bellemare, Marc G. and Naddaf, Yavar and Veness, Joel and Bowling, Michael},
+  title     = {The {Arcade} {Learning} {Environment}: An Evaluation Platform for General Agents},
+  journal   = {Journal of Artificial Intelligence Research},
+  year      = {2013},
+  volume    = {47},
+  pages     = {253--279}
+}
+
+@article{Graves2014NTM,
+  author    = {Graves, Alex and Wayne, Greg and Danihelka, Ivo},
+  title     = {Neural {Turing} {Machines}},
+  journal   = {arXiv preprint arXiv:1410.5401},
+  year      = {2014},
+  url       = {https://arxiv.org/abs/1410.5401}
 }
 ```
 
