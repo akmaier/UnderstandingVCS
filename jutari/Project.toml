@@ -1,0 +1,15 @@
+name = "JuTari"
+uuid = "53b9ca26-31ee-4b19-a179-affd40a3feac"
+authors = ["akmaier"]
+version = "0.0.1"
+
+[deps]
+
+[compat]
+julia = "1.10"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
