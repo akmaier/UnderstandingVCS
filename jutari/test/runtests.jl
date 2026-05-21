@@ -355,3 +355,182 @@ end
     end
 
 end
+
+@testset "JuTari P1b2 ADC / SBC binary and BCD" begin
+
+    # ADC binary
+    @testset "ADC binary simple" begin
+        s = _state(PC=0x8000, A=0x10, P=FLAG_U)
+        mem = _make_memory(Dict(0x8000 => 0x69, 0x8001 => 0x05))
+        step(s, mem)
+        @test s.A == 0x15
+        @test (s.P & FLAG_C) == 0
+        @test (s.P & FLAG_V) == 0
+        @test (s.P & FLAG_Z) == 0
+        @test (s.P & FLAG_N) == 0
+        @test s.cycles == 2
+    end
+
+    @testset "ADC binary uses carry in" begin
+        s = _state(PC=0x8000, A=0x10, P=FLAG_U | FLAG_C)
+        mem = _make_memory(Dict(0x8000 => 0x69, 0x8001 => 0x05))
+        step(s, mem)
+        @test s.A == 0x16
+    end
+
+    @testset "ADC binary carry out on overflow" begin
+        s = _state(PC=0x8000, A=0xFE, P=FLAG_U | FLAG_C)
+        mem = _make_memory(Dict(0x8000 => 0x69, 0x8001 => 0x01))
+        step(s, mem)
+        @test s.A == 0x00
+        @test (s.P & FLAG_C) != 0
+        @test (s.P & FLAG_Z) != 0
+    end
+
+    @testset "ADC binary positive→negative signed overflow" begin
+        s = _state(PC=0x8000, A=0x7F, P=FLAG_U)
+        mem = _make_memory(Dict(0x8000 => 0x69, 0x8001 => 0x01))
+        step(s, mem)
+        @test s.A == 0x80
+        @test (s.P & FLAG_V) != 0
+        @test (s.P & FLAG_N) != 0
+        @test (s.P & FLAG_C) == 0
+    end
+
+    @testset "ADC binary negative→positive signed overflow" begin
+        s = _state(PC=0x8000, A=0x80, P=FLAG_U)
+        mem = _make_memory(Dict(0x8000 => 0x69, 0x8001 => 0x80))
+        step(s, mem)
+        @test s.A == 0x00
+        @test (s.P & FLAG_V) != 0
+        @test (s.P & FLAG_C) != 0
+    end
+
+    @testset "ADC binary different signs → no overflow" begin
+        s = _state(PC=0x8000, A=0x7F, P=FLAG_U)
+        mem = _make_memory(Dict(0x8000 => 0x69, 0x8001 => 0x80))
+        step(s, mem)
+        @test s.A == 0xFF
+        @test (s.P & FLAG_V) == 0
+        @test (s.P & FLAG_N) != 0
+    end
+
+    # ADC decimal
+    @testset "ADC decimal simple" begin
+        s = _state(PC=0x8000, A=0x12, P=FLAG_U | FLAG_D)
+        mem = _make_memory(Dict(0x8000 => 0x69, 0x8001 => 0x34))
+        step(s, mem)
+        @test s.A == 0x46
+        @test (s.P & FLAG_C) == 0
+    end
+
+    @testset "ADC decimal carry in" begin
+        s = _state(PC=0x8000, A=0x12, P=FLAG_U | FLAG_D | FLAG_C)
+        mem = _make_memory(Dict(0x8000 => 0x69, 0x8001 => 0x34))
+        step(s, mem)
+        @test s.A == 0x47
+    end
+
+    @testset "ADC decimal overflow sets carry" begin
+        s = _state(PC=0x8000, A=0x55, P=FLAG_U | FLAG_D)
+        mem = _make_memory(Dict(0x8000 => 0x69, 0x8001 => 0x55))
+        step(s, mem)
+        @test s.A == 0x10
+        @test (s.P & FLAG_C) != 0
+    end
+
+    @testset "ADC decimal 99 + 0 + 1 = 100 → 00 with carry" begin
+        s = _state(PC=0x8000, A=0x99, P=FLAG_U | FLAG_D | FLAG_C)
+        mem = _make_memory(Dict(0x8000 => 0x69, 0x8001 => 0x00))
+        step(s, mem)
+        @test s.A == 0x00
+        @test (s.P & FLAG_C) != 0
+        @test (s.P & FLAG_Z) != 0
+    end
+
+    # SBC binary
+    @testset "SBC binary simple with carry set" begin
+        s = _state(PC=0x8000, A=0x10, P=FLAG_U | FLAG_C)
+        mem = _make_memory(Dict(0x8000 => 0xE9, 0x8001 => 0x05))
+        step(s, mem)
+        @test s.A == 0x0B
+        @test (s.P & FLAG_C) != 0
+    end
+
+    @testset "SBC binary borrow when carry clear" begin
+        s = _state(PC=0x8000, A=0x10, P=FLAG_U)
+        mem = _make_memory(Dict(0x8000 => 0xE9, 0x8001 => 0x05))
+        step(s, mem)
+        @test s.A == 0x0A
+        @test (s.P & FLAG_C) != 0
+    end
+
+    @testset "SBC binary borrow clears carry on underflow" begin
+        s = _state(PC=0x8000, A=0x05, P=FLAG_U | FLAG_C)
+        mem = _make_memory(Dict(0x8000 => 0xE9, 0x8001 => 0x10))
+        step(s, mem)
+        @test s.A == 0xF5
+        @test (s.P & FLAG_C) == 0
+    end
+
+    @testset "SBC binary signed overflow" begin
+        s = _state(PC=0x8000, A=0x50, P=FLAG_U | FLAG_C)
+        mem = _make_memory(Dict(0x8000 => 0xE9, 0x8001 => 0xB0))
+        step(s, mem)
+        @test s.A == 0xA0
+        @test (s.P & FLAG_V) != 0
+    end
+
+    @testset "Undocumented 0xEB immediate aliases SBC" begin
+        s = _state(PC=0x8000, A=0x42, P=FLAG_U | FLAG_C)
+        mem = _make_memory(Dict(0x8000 => 0xEB, 0x8001 => 0x02))
+        step(s, mem)
+        @test s.A == 0x40
+    end
+
+    # SBC decimal
+    @testset "SBC decimal simple with carry set" begin
+        s = _state(PC=0x8000, A=0x46, P=FLAG_U | FLAG_D | FLAG_C)
+        mem = _make_memory(Dict(0x8000 => 0xE9, 0x8001 => 0x12))
+        step(s, mem)
+        @test s.A == 0x34
+        @test (s.P & FLAG_C) != 0
+    end
+
+    @testset "SBC decimal borrow into next digit" begin
+        s = _state(PC=0x8000, A=0x40, P=FLAG_U | FLAG_D | FLAG_C)
+        mem = _make_memory(Dict(0x8000 => 0xE9, 0x8001 => 0x12))
+        step(s, mem)
+        @test s.A == 0x28
+    end
+
+    @testset "SBC decimal underflow wraps and clears carry" begin
+        s = _state(PC=0x8000, A=0x10, P=FLAG_U | FLAG_D | FLAG_C)
+        mem = _make_memory(Dict(0x8000 => 0xE9, 0x8001 => 0x20))
+        step(s, mem)
+        @test s.A == 0x90
+        @test (s.P & FLAG_C) == 0
+    end
+
+    # Addressing-mode smoke
+    @testset "ADC abs,X page cross adds cycle" begin
+        s = _state(PC=0x8000, A=0x01, X=0x10, P=FLAG_U)
+        mem = _make_memory(Dict(0x8000 => 0x7D, 0x8001 => 0xF5, 0x8002 => 0x12, 0x1305 => 0x02))
+        step(s, mem)
+        @test s.A == 0x03
+        @test s.cycles == 5
+    end
+
+    @testset "SBC (zp),Y no page cross" begin
+        s = _state(PC=0x8000, A=0x10, Y=0x01, P=FLAG_U | FLAG_C)
+        mem = _make_memory(Dict(
+            0x8000 => 0xF1, 0x8001 => 0x10,
+            0x0010 => 0x00, 0x0011 => 0x12,
+            0x1201 => 0x05,
+        ))
+        step(s, mem)
+        @test s.A == 0x0B
+        @test s.cycles == 5
+    end
+
+end

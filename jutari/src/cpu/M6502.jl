@@ -7,11 +7,12 @@ Implemented so far (PORTING_PLAN.md §5):
 - P1a:  load (LDA, LDX, LDY), store (STA, STX, STY),
         transfer (TAX, TAY, TXA, TYA, TSX, TXS).
 - P1b1: bitwise (AND, ORA, EOR), compare (CMP, CPX, CPY), BIT.
+- P1b2: arithmetic (ADC, SBC including BCD/decimal mode) + undocumented
+        USBC (0xEB) alias for SBC immediate.
 
-Pending: P1b2 (ADC, SBC + decimal mode), P1c (ASL/LSR/ROL/ROR),
-P1d (branches + JMP/JSR/RTS), P1e (stack + status flags),
-P1f (BRK/RTI/IRQ/NMI/RESET + cycle fine print). Unknown opcodes fall
-through to the stub (PC += 1, cycles += base).
+Pending: P1c (ASL/LSR/ROL/ROR), P1d (branches + JMP/JSR/RTS), P1e (stack +
+status flags), P1f (BRK/RTI/IRQ/NMI/RESET + cycle fine print). Unknown
+opcodes fall through to the stub (PC += 1, cycles += base).
 """
 module CPU
 
@@ -21,7 +22,7 @@ include("ALU.jl")
 
 using .CPUTables: ADDRESSING_MODE_TABLE, CYCLE_TABLE
 using .Addressing: resolve, instruction_length
-using .ALU: set_zn!, compare_flags!, bit_flags!
+using .ALU: set_zn!, compare_flags!, bit_flags!, adc!, sbc!
 using ..Types: CPUState
 
 export step
@@ -63,6 +64,15 @@ const OPCODES = Dict{UInt8, Symbol}(
     0xC0 => :CPY, 0xC4 => :CPY, 0xCC => :CPY,
     # BIT
     0x24 => :BIT, 0x2C => :BIT,
+
+    # --- P1b2 --------------------------------------------------------------
+    # ADC
+    0x69 => :ADC, 0x65 => :ADC, 0x75 => :ADC, 0x6D => :ADC,
+    0x7D => :ADC, 0x79 => :ADC, 0x61 => :ADC, 0x71 => :ADC,
+    # SBC + undocumented USBC (0xEB)
+    0xE9 => :SBC, 0xE5 => :SBC, 0xF5 => :SBC, 0xED => :SBC,
+    0xFD => :SBC, 0xF9 => :SBC, 0xE1 => :SBC, 0xF1 => :SBC,
+    0xEB => :SBC,
 )
 
 @inline _peek(memory::Vector{UInt8}, addr::Integer) =
@@ -172,6 +182,16 @@ function step(state::CPUState, memory::Vector{UInt8})
         addr, _ = resolve(mode, state, memory)
         bit_flags!(state, state.A, _peek(memory, addr))
         _advance_pc!(state, mode)
+
+    # --- ADC / SBC --------------------------------------------------------
+    elseif mnemonic === :ADC
+        addr, page = resolve(mode, state, memory)
+        adc!(state, _peek(memory, addr))
+        _advance_pc!(state, mode); page && (extra_cycles += 1)
+    elseif mnemonic === :SBC
+        addr, page = resolve(mode, state, memory)
+        sbc!(state, _peek(memory, addr))
+        _advance_pc!(state, mode); page && (extra_cycles += 1)
     end
 
     state.cycles += UInt64(base_cycles + extra_cycles)

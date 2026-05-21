@@ -4,11 +4,12 @@ Implemented so far (PORTING_PLAN.md §5):
 - P1a: load (LDA, LDX, LDY), store (STA, STX, STY), transfer
   (TAX, TAY, TXA, TYA, TSX, TXS).
 - P1b1: bitwise (AND, ORA, EOR), compare (CMP, CPX, CPY), BIT.
+- P1b2: arithmetic (ADC, SBC including BCD/decimal mode) + the undocumented
+  USBC (0xEB) alias for SBC immediate.
 
-Pending: P1b2 (ADC, SBC + decimal mode), P1c (ASL, LSR, ROL, ROR), P1d
-(branches + JMP/JSR/RTS), P1e (stack + status), P1f (BRK/RTI/IRQ/NMI/RESET
-and the cycle-counting fine print). Unknown opcodes fall through to the
-stub: PC += 1, cycles += base.
+Pending: P1c (ASL, LSR, ROL, ROR), P1d (branches + JMP/JSR/RTS), P1e (stack
++ status), P1f (BRK/RTI/IRQ/NMI/RESET and the cycle-counting fine print).
+Unknown opcodes fall through to the stub: PC += 1, cycles += base.
 """
 
 from __future__ import annotations
@@ -18,7 +19,7 @@ from typing import Tuple
 import jax.numpy as jnp
 
 from jaxtari.cpu.addressing import INSTRUCTION_LENGTH, RESOLVERS
-from jaxtari.cpu.alu import bit_flags, compare_flags, set_zn
+from jaxtari.cpu.alu import adc, bit_flags, compare_flags, sbc, set_zn
 from jaxtari.cpu.tables import ADDRESSING_MODE_TABLE, CYCLE_TABLE, FLAG_U
 from jaxtari.types import CPUState
 
@@ -62,6 +63,15 @@ OPCODES: dict[int, str] = {
     0xC0: "CPY", 0xC4: "CPY", 0xCC: "CPY",
     # BIT — 2 modes (zp, abs)
     0x24: "BIT", 0x2C: "BIT",
+
+    # --- P1b2 ----------------------------------------------------------------
+    # ADC — 8 modes
+    0x69: "ADC", 0x65: "ADC", 0x75: "ADC", 0x6D: "ADC",
+    0x7D: "ADC", 0x79: "ADC", 0x61: "ADC", 0x71: "ADC",
+    # SBC — 8 modes + 1 undocumented alias (0xEB = USBC)
+    0xE9: "SBC", 0xE5: "SBC", 0xF5: "SBC", 0xED: "SBC",
+    0xFD: "SBC", 0xF9: "SBC", 0xE1: "SBC", 0xF1: "SBC",
+    0xEB: "SBC",
 }
 
 
@@ -211,6 +221,21 @@ def step(state: CPUState, memory: Memory) -> Tuple[CPUState, Memory]:
         value = int(memory[addr & 0xFFFF])
         new_p = bit_flags(int(state.P), int(state.A), value)
         return _commit_flags_only(state, new_p, mode, base_cycles, 0), memory
+
+    # --- ADC / SBC --------------------------------------------------------
+    if mnemonic in ("ADC", "SBC"):
+        addr, page_crossed = RESOLVERS[mode](state, memory)
+        value = int(memory[addr & 0xFFFF])
+        new_a, new_p = (adc if mnemonic == "ADC" else sbc)(
+            int(state.P), int(state.A), value
+        )
+        extra = 1 if page_crossed else 0
+        return state._replace(
+            A=jnp.uint8(new_a & 0xFF),
+            P=jnp.uint8(new_p & 0xFF),
+            PC=jnp.uint16((int(state.PC) + INSTRUCTION_LENGTH[mode]) & 0xFFFF),
+            cycles=state.cycles + jnp.uint64(base_cycles + extra),
+        ), memory
 
     # Defensive — should be unreachable.
     return _stub_advance(state, base_cycles), memory
