@@ -230,7 +230,7 @@ P7c mirrors P1's subdivision — same shape, same scope per chunk, but executed 
 - **P7c-a**: load/store + transfer opcodes (LDA/LDX/LDY/STA/STX/STY/TAX/TAY/TXA/TYA/TSX/TXS) with N/Z flag updates and all 12 addressing modes routed through `soft_rom_peek` / `soft_ram_peek`
 - **P7c-b**: arithmetic/logic (ADC/SBC/AND/ORA/EOR/CMP/CPX/CPY/BIT) with N/Z/C/V flag updates; BCD path matches P1b's behaviour (decimal mode honoured when D=1)
 - **P7c-c**: shifts/rotates (ASL/LSR/ROL/ROR) on accumulator and memory with N/Z/C flag updates
-- **P7c-d**: branches (BCC/BCS/BEQ/BNE/BMI/BPL/BVC/BVS) — PC update via `soft_branch` so the relaxed gradient flows through the predicate flag — plus JMP (indirect), JSR, RTS
+- **P7c-d**: branches (BCC/BCS/BEQ/BNE/BMI/BPL/BVC/BVS) + JMP (indirect, with the NMOS page-wrap bug) + JSR / RTS. Branches use a **hard** predicate (`jnp.where` on the flag bit) so the forward PC is exact; gradient through the branch predicate is broken at the int-cast of `P`. Wiring `soft_branch` into the default handlers needs a float-valued flag representation in `SoftCPUState` and is deferred as **P7c-dx**.
 - **P7c-e**: stack push/pull (PHA/PLA/PHP/PLP) + status-flag manipulators (SEC/CLC/SEI/CLI/SED/CLD/CLV) + INC/DEC/INX/INY/DEX/DEY
 - **P7c-f**: BRK/RTI proper interrupt sequence + route SOFT writes through TIA / RIOT / cart-hotspot dispatch (replaces the P7b "all writes drop into RAM region" shortcut) + cart bank-switching from SOFT mode
 

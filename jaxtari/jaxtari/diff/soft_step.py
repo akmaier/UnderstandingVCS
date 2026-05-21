@@ -779,6 +779,120 @@ def _branch_ror_abs_x(s, b): return _shift_memory(s, b, _addr_abs_x, _ror_value,
 
 
 # --------------------------------------------------------------------------- #
+# P7c-d — branches, JMP (indirect), JSR / RTS.
+#
+# Conditional branches use a HARD predicate (`jnp.where` on the flag bit):
+# the forward PC is exact, matching HARD mode. Gradient *through the branch
+# predicate* is broken at the int-cast of state.P — the `soft_branch`
+# primitive in `jaxtari.diff` is available for callers who want a relaxed
+# PC gate, but wiring it into the default handlers needs a float-valued
+# flag representation in SoftCPUState (today the flags live int-quantised
+# inside `P`). That representation change is deferred as **P7c-dx**.
+# --------------------------------------------------------------------------- #
+
+def _wrap_byte(v: jnp.ndarray) -> jnp.ndarray:
+    """Reduce a float to its 0..255 residue without an int round-trip."""
+    return v - jnp.floor(v / 256.0) * 256.0
+
+
+def _push8(bus: SoftBus, sp: jnp.ndarray, value: jnp.ndarray):
+    """Push a byte to the stack ($0100 + SP). Returns (new_bus, new_sp).
+
+    The 6507 stack is 128 B shared with zero-page RAM; `_bus_write`'s
+    `addr & 0x7F` collapse means a push with SP in the conventional
+    upper half lands in the SOFT RAM array."""
+    addr = 0x0100 + (sp.astype(jnp.int32) & 0xFF)
+    new_bus = _bus_write(bus, addr, value)
+    return new_bus, _wrap_byte(sp - 1.0)
+
+
+def _pop8(bus: SoftBus, sp: jnp.ndarray):
+    """Pull a byte from the stack. Returns (value, new_sp)."""
+    new_sp = _wrap_byte(sp + 1.0)
+    addr = 0x0100 + (new_sp.astype(jnp.int32) & 0xFF)
+    return _bus_read(bus, addr), new_sp
+
+
+def _signed_offset(offset_byte: jnp.ndarray) -> jnp.ndarray:
+    """Interpret a 0..255 byte as a signed −128..+127 branch displacement."""
+    o = offset_byte.astype(jnp.int32) & 0xFF
+    return jnp.where(o >= 128, o - 256, o).astype(jnp.float32)
+
+
+def _do_branch(state: SoftCPUState, bus: SoftBus,
+               flag_mask: int, take_when_set: bool):
+    """Conditional branch. Reads the relative displacement at ROM[PC+1];
+    if the predicate holds, PC = (PC+2) + signed_offset, else PC += 2.
+    +1 cycle when the branch is taken (the page-cross +1 is not modelled)."""
+    offset       = _signed_offset(_operand_byte(bus, state.PC + 1.0))
+    pc_not_taken = state.PC + 2.0
+    pc_taken     = pc_not_taken + offset
+    flag_set     = (state.P.astype(jnp.int32) & flag_mask) != 0
+    take         = flag_set if take_when_set else jnp.logical_not(flag_set)
+    new_pc       = jnp.where(take, pc_taken, pc_not_taken)
+    extra        = jnp.where(take, 1.0, 0.0)
+    return state._replace(
+        PC=new_pc,
+        cycles=state.cycles + 2.0 + extra,
+    ), bus
+
+
+# Conditional branch handlers — flag bit masks from cpu.tables.
+def _branch_bpl(s, b): return _do_branch(s, b, 0x80, False)   # branch if N=0
+def _branch_bmi(s, b): return _do_branch(s, b, 0x80, True)    # branch if N=1
+def _branch_bvc(s, b): return _do_branch(s, b, 0x40, False)   # branch if V=0
+def _branch_bvs(s, b): return _do_branch(s, b, 0x40, True)    # branch if V=1
+def _branch_bcc(s, b): return _do_branch(s, b, 0x01, False)   # branch if C=0
+def _branch_bcs(s, b): return _do_branch(s, b, 0x01, True)    # branch if C=1
+def _branch_bne(s, b): return _do_branch(s, b, 0x02, False)   # branch if Z=0
+def _branch_beq(s, b): return _do_branch(s, b, 0x02, True)    # branch if Z=1
+
+
+def _branch_jmp_ind(state: SoftCPUState, bus: SoftBus):
+    """JMP ($abs): PC = word at the pointer. Reproduces the NMOS
+    page-wrap bug — when the pointer's low byte is $FF, the high byte
+    is fetched from $xx00 of the *same* page, not the next."""
+    ptr      = _addr_abs(state, bus)
+    ptr_lo   = ptr
+    ptr_hi   = (ptr & 0xFF00) | ((ptr + 1) & 0x00FF)        # page-wrap bug
+    lo       = _bus_read(bus, ptr_lo)
+    hi       = _bus_read(bus, ptr_hi)
+    new_pc   = lo + hi * 256.0
+    return state._replace(
+        PC=new_pc,
+        cycles=state.cycles + 5.0,
+    ), bus
+
+
+def _branch_jsr(state: SoftCPUState, bus: SoftBus):
+    """JSR $abs: push (PC+2) high then low; PC = operand. 6 cycles."""
+    target      = _operand_word(bus, state.PC + 1.0)
+    return_addr = state.PC + 2.0                            # last byte of JSR
+    ra_int      = return_addr.astype(jnp.int32) & 0xFFFF
+    hi          = ((ra_int >> 8) & 0xFF).astype(jnp.float32)
+    lo          = (ra_int & 0xFF).astype(jnp.float32)
+    bus, sp     = _push8(bus, state.SP, hi)
+    bus, sp     = _push8(bus, sp, lo)
+    return state._replace(
+        SP=sp,
+        PC=target,
+        cycles=state.cycles + 6.0,
+    ), bus
+
+
+def _branch_rts(state: SoftCPUState, bus: SoftBus):
+    """RTS: pull low then high; PC = word + 1. 6 cycles."""
+    lo, sp  = _pop8(bus, state.SP)
+    hi, sp  = _pop8(bus, sp)
+    ret     = lo + hi * 256.0
+    return state._replace(
+        SP=sp,
+        PC=ret + 1.0,
+        cycles=state.cycles + 6.0,
+    ), bus
+
+
+# --------------------------------------------------------------------------- #
 # Dispatch table
 # --------------------------------------------------------------------------- #
 
@@ -920,6 +1034,19 @@ _HANDLERS[0x66] = _branch_ror_zp
 _HANDLERS[0x76] = _branch_ror_zp_x
 _HANDLERS[0x6E] = _branch_ror_abs
 _HANDLERS[0x7E] = _branch_ror_abs_x
+# P7c-d — conditional branches
+_HANDLERS[0x10] = _branch_bpl
+_HANDLERS[0x30] = _branch_bmi
+_HANDLERS[0x50] = _branch_bvc
+_HANDLERS[0x70] = _branch_bvs
+_HANDLERS[0x90] = _branch_bcc
+_HANDLERS[0xB0] = _branch_bcs
+_HANDLERS[0xD0] = _branch_bne
+_HANDLERS[0xF0] = _branch_beq
+# P7c-d — JMP indirect + JSR / RTS
+_HANDLERS[0x6C] = _branch_jmp_ind
+_HANDLERS[0x20] = _branch_jsr
+_HANDLERS[0x60] = _branch_rts
 
 # Opcodes handled with full behaviour (rather than default). Exposed so
 # tests + a future P7c can introspect coverage.
@@ -949,6 +1076,9 @@ SOFT_SUPPORTED_OPCODES = frozenset({
     0x4A, 0x46, 0x56, 0x4E, 0x5E,
     0x2A, 0x26, 0x36, 0x2E, 0x3E,
     0x6A, 0x66, 0x76, 0x6E, 0x7E,
+    # P7c-d — branches + JMP indirect + JSR / RTS
+    0x10, 0x30, 0x50, 0x70, 0x90, 0xB0, 0xD0, 0xF0,
+    0x6C, 0x20, 0x60,
 })
 
 

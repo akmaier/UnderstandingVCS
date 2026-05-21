@@ -3408,3 +3408,127 @@ end
     end
 
 end
+
+@testset "JuTari P7c-d SOFT-mode branches + JMP indirect + JSR/RTS" begin
+
+    @testset "P7c-d opcode set present" begin
+        p7c_d = Set{UInt8}([0x10, 0x30, 0x50, 0x70, 0x90, 0xB0, 0xD0, 0xF0,
+                            0x6C, 0x20, 0x60])
+        @test p7c_d ⊆ SOFT_SUPPORTED_OPCODES
+        @test length(p7c_d) == 11
+    end
+
+    # Conditional branches
+    @testset "BNE taken when Z clear" begin
+        bus = initial_soft_bus(_soft_rom_with([0xD0, 0x04]))
+        state = initial_soft_cpu_state(); state.P = Float32(0x34)
+        soft_step!(state, bus)
+        @test state.PC == Float32(0xF006)
+        @test state.cycles == 3f0
+    end
+
+    @testset "BNE not taken when Z set" begin
+        bus = initial_soft_bus(_soft_rom_with([0xD0, 0x04]))
+        state = initial_soft_cpu_state(); state.P = Float32(0x36)
+        soft_step!(state, bus)
+        @test state.PC == Float32(0xF002)
+        @test state.cycles == 2f0
+    end
+
+    @testset "BEQ taken when Z set" begin
+        bus = initial_soft_bus(_soft_rom_with([0xF0, 0x10]))
+        state = initial_soft_cpu_state(); state.P = Float32(0x36)
+        soft_step!(state, bus)
+        @test state.PC == Float32(0xF012)
+    end
+
+    @testset "BCC taken when carry clear" begin
+        bus = initial_soft_bus(_soft_rom_with([0x90, 0x08]))
+        state = initial_soft_cpu_state(); state.P = Float32(0x34)
+        soft_step!(state, bus)
+        @test state.PC == Float32(0xF00A)
+    end
+
+    @testset "BCS taken when carry set" begin
+        bus = initial_soft_bus(_soft_rom_with([0xB0, 0x08]))
+        state = initial_soft_cpu_state(); state.P = Float32(0x35)
+        soft_step!(state, bus)
+        @test state.PC == Float32(0xF00A)
+    end
+
+    @testset "BMI taken when negative" begin
+        bus = initial_soft_bus(_soft_rom_with([0x30, 0x02]))
+        state = initial_soft_cpu_state(); state.P = Float32(0xB4)
+        soft_step!(state, bus)
+        @test state.PC == Float32(0xF004)
+    end
+
+    @testset "BPL taken when positive" begin
+        bus = initial_soft_bus(_soft_rom_with([0x10, 0x02]))
+        state = initial_soft_cpu_state(); state.P = Float32(0x34)
+        soft_step!(state, bus)
+        @test state.PC == Float32(0xF004)
+    end
+
+    @testset "BVC taken when overflow clear" begin
+        bus = initial_soft_bus(_soft_rom_with([0x50, 0x02]))
+        state = initial_soft_cpu_state(); state.P = Float32(0x34)
+        soft_step!(state, bus)
+        @test state.PC == Float32(0xF004)
+    end
+
+    @testset "BVS taken when overflow set" begin
+        bus = initial_soft_bus(_soft_rom_with([0x70, 0x02]))
+        state = initial_soft_cpu_state(); state.P = Float32(0x74)
+        soft_step!(state, bus)
+        @test state.PC == Float32(0xF004)
+    end
+
+    @testset "branch backward displacement subtracts" begin
+        bus = initial_soft_bus(_soft_rom_with([0xD0, 0xFE]))
+        state = initial_soft_cpu_state(); state.P = Float32(0x34)
+        soft_step!(state, bus)
+        @test state.PC == Float32(0xF000)
+    end
+
+    # JMP indirect
+    @testset "JMP indirect follows pointer" begin
+        bus = initial_soft_bus(_soft_rom_with([0x6C, 0x30, 0x00]))
+        bus.ram[0x30 + 1] = Float32(0x34)
+        bus.ram[0x31 + 1] = Float32(0x12)
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test state.PC == Float32(0x1234)
+    end
+
+    # JSR / RTS
+    @testset "JSR sets PC and decrements SP" begin
+        bus = initial_soft_bus(_soft_rom_with([0x20, 0x10, 0xF0]))
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test state.PC == Float32(0xF010)
+        @test state.SP == Float32(0xFB)
+    end
+
+    @testset "JSR then RTS returns past the JSR" begin
+        rom = _soft_rom_with([0x20, 0x10, 0xF0])
+        rom[0x010 + 1] = Float32(0x60)   # RTS at $F010
+        bus = initial_soft_bus(rom)
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)           # JSR
+        @test state.PC == Float32(0xF010)
+        soft_step!(state, bus)           # RTS
+        @test state.PC == Float32(0xF003)
+        @test state.SP == Float32(0xFD)
+    end
+
+    @testset "JSR pushes return address bytes" begin
+        bus = initial_soft_bus(_soft_rom_with([0x20, 0x10, 0xF0]))
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        # Return addr $F002: hi $F0 at $01FD→RAM[$7D], lo $02 at $01FC→RAM[$7C].
+        @test bus.ram[0x7D + 1] == Float32(0xF0)
+        @test bus.ram[0x7C + 1] == Float32(0x02)
+    end
+
+end

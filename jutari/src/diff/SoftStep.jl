@@ -621,6 +621,90 @@ _branch_ror_abs_x!(s, b) = _shift_memory!(s, b, _addr_abs_x, _ror_value, 3, 7)
 
 
 # --------------------------------------------------------------------------- #
+# P7c-d — branches, JMP (indirect), JSR / RTS.
+#
+# Conditional branches use a HARD predicate; the forward PC is exact.
+# Gradient through the branch predicate is broken at the int-cast of P;
+# a float-valued flag representation (so soft_branch can be wired into
+# the default handlers) is deferred as P7c-dx.
+# --------------------------------------------------------------------------- #
+
+@inline _wrap_byte(v::Real) = Float32(v) - floor(Float32(v) / 256f0) * 256f0
+
+function _push8!(bus::SoftBus, sp::Real, value::Real)
+    addr = 0x0100 + (Int(sp) & 0xFF)
+    _bus_write!(bus, addr, value)
+    return _wrap_byte(Float32(sp) - 1f0)
+end
+
+function _pop8(bus::SoftBus, sp::Real)
+    new_sp = _wrap_byte(Float32(sp) + 1f0)
+    addr = 0x0100 + (Int(new_sp) & 0xFF)
+    return _bus_read(bus, addr), new_sp
+end
+
+function _signed_offset(offset_byte::Real)
+    o = Int(offset_byte) & 0xFF
+    return Float32(o >= 128 ? o - 256 : o)
+end
+
+function _do_branch!(state::SoftCPUState, bus::SoftBus,
+                     flag_mask::Integer, take_when_set::Bool)
+    offset       = _signed_offset(_operand_byte(bus, state.PC + 1f0))
+    pc_not_taken = state.PC + 2f0
+    pc_taken     = pc_not_taken + offset
+    flag_set     = (Int(state.P) & flag_mask) != 0
+    take         = take_when_set ? flag_set : !flag_set
+    state.PC     = take ? pc_taken : pc_not_taken
+    state.cycles += take ? 3f0 : 2f0
+    return nothing
+end
+
+_branch_bpl!(s, b) = _do_branch!(s, b, 0x80, false)
+_branch_bmi!(s, b) = _do_branch!(s, b, 0x80, true)
+_branch_bvc!(s, b) = _do_branch!(s, b, 0x40, false)
+_branch_bvs!(s, b) = _do_branch!(s, b, 0x40, true)
+_branch_bcc!(s, b) = _do_branch!(s, b, 0x01, false)
+_branch_bcs!(s, b) = _do_branch!(s, b, 0x01, true)
+_branch_bne!(s, b) = _do_branch!(s, b, 0x02, false)
+_branch_beq!(s, b) = _do_branch!(s, b, 0x02, true)
+
+function _branch_jmp_ind!(state::SoftCPUState, bus::SoftBus)
+    ptr    = _addr_abs(state, bus)
+    ptr_lo = ptr
+    ptr_hi = (ptr & 0xFF00) | ((ptr + 1) & 0x00FF)   # NMOS page-wrap bug
+    lo     = _bus_read(bus, ptr_lo)
+    hi     = _bus_read(bus, ptr_hi)
+    state.PC      = lo + hi * 256f0
+    state.cycles += 5f0
+    return nothing
+end
+
+function _branch_jsr!(state::SoftCPUState, bus::SoftBus)
+    target      = _operand_word(bus, state.PC + 1f0)
+    ra_int      = Int(state.PC + 2f0) & 0xFFFF        # last byte of JSR
+    hi          = Float32((ra_int >> 8) & 0xFF)
+    lo          = Float32(ra_int & 0xFF)
+    sp          = _push8!(bus, state.SP, hi)
+    sp          = _push8!(bus, sp, lo)
+    state.SP      = sp
+    state.PC      = target
+    state.cycles += 6f0
+    return nothing
+end
+
+function _branch_rts!(state::SoftCPUState, bus::SoftBus)
+    lo, sp = _pop8(bus, state.SP)
+    hi, sp = _pop8(bus, sp)
+    ret    = lo + hi * 256f0
+    state.SP      = sp
+    state.PC      = ret + 1f0
+    state.cycles += 6f0
+    return nothing
+end
+
+
+# --------------------------------------------------------------------------- #
 # Dispatch table
 # --------------------------------------------------------------------------- #
 
@@ -722,6 +806,15 @@ const _HANDLERS = let
     h[0x6A + 1] = _branch_ror_acc!;   h[0x66 + 1] = _branch_ror_zp!
     h[0x76 + 1] = _branch_ror_zp_x!;  h[0x6E + 1] = _branch_ror_abs!
     h[0x7E + 1] = _branch_ror_abs_x!
+    # P7c-d — branches
+    h[0x10 + 1] = _branch_bpl!; h[0x30 + 1] = _branch_bmi!
+    h[0x50 + 1] = _branch_bvc!; h[0x70 + 1] = _branch_bvs!
+    h[0x90 + 1] = _branch_bcc!; h[0xB0 + 1] = _branch_bcs!
+    h[0xD0 + 1] = _branch_bne!; h[0xF0 + 1] = _branch_beq!
+    # P7c-d — JMP indirect + JSR / RTS
+    h[0x6C + 1] = _branch_jmp_ind!
+    h[0x20 + 1] = _branch_jsr!
+    h[0x60 + 1] = _branch_rts!
     h
 end
 
@@ -752,6 +845,9 @@ const SOFT_SUPPORTED_OPCODES = Set{UInt8}([
     0x4A, 0x46, 0x56, 0x4E, 0x5E,
     0x2A, 0x26, 0x36, 0x2E, 0x3E,
     0x6A, 0x66, 0x76, 0x6E, 0x7E,
+    # P7c-d — branches + JMP indirect + JSR / RTS
+    0x10, 0x30, 0x50, 0x70, 0x90, 0xB0, 0xD0, 0xF0,
+    0x6C, 0x20, 0x60,
 ])
 
 
