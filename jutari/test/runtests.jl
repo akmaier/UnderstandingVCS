@@ -3708,3 +3708,60 @@ end
     end
 
 end
+
+@testset "JuTari P7c-f SOFT-mode RTI + complete NMOS opcode set" begin
+
+    @testset "SOFT mode covers all 151 NMOS opcodes + USBC" begin
+        @test length(SOFT_SUPPORTED_OPCODES) == 152
+        @test 0x40 in SOFT_SUPPORTED_OPCODES   # RTI
+        @test 0xEB in SOFT_SUPPORTED_OPCODES   # USBC alias
+    end
+
+    @testset "every documented opcode group is present" begin
+        reps = UInt8[0xA9, 0x85, 0xAA, 0x69, 0xE9, 0x29, 0x09, 0x49,
+                     0xC9, 0x24, 0x0A, 0x4A, 0x2A, 0x6A, 0xD0, 0x4C,
+                     0x20, 0x60, 0x48, 0x28, 0x18, 0xE6, 0xC6, 0xE8,
+                     0x00, 0x40, 0xEA]
+        for op in reps
+            @test op in SOFT_SUPPORTED_OPCODES
+        end
+    end
+
+    @testset "RTI pops P and PC" begin
+        bus = initial_soft_bus(_soft_rom_with([0x40]))
+        state = initial_soft_cpu_state(); state.SP = Float32(0xFA)
+        bus.ram[0x7B + 1] = Float32(0x21)   # P  at $01FB
+        bus.ram[0x7C + 1] = Float32(0x34)   # PCL at $01FC
+        bus.ram[0x7D + 1] = Float32(0x12)   # PCH at $01FD
+        soft_step!(state, bus)
+        @test state.PC == Float32(0x1234)
+        @test Int(state.P) == 0x31          # 0x21 | 0x30
+        @test state.SP == Float32(0xFD)
+    end
+
+    @testset "RTI does not add 1 to PC" begin
+        bus = initial_soft_bus(_soft_rom_with([0x40]))
+        state = initial_soft_cpu_state(); state.SP = Float32(0xFA)
+        bus.ram[0x7B + 1] = 0f0
+        bus.ram[0x7C + 1] = 0f0
+        bus.ram[0x7D + 1] = Float32(0x20)
+        soft_step!(state, bus)
+        @test state.PC == Float32(0x2000)
+    end
+
+    @testset "RTI costs 6 cycles" begin
+        bus = initial_soft_bus(_soft_rom_with([0x40]))
+        state = initial_soft_cpu_state(); state.SP = Float32(0xFA)
+        soft_step!(state, bus)
+        @test state.cycles == 6f0
+    end
+
+    @testset "BRK still halts in place as sentinel" begin
+        bus = initial_soft_bus(_soft_rom_with([0x00]))
+        state = initial_soft_cpu_state()
+        pc_before = state.PC
+        soft_step!(state, bus)
+        @test state.PC == pc_before
+    end
+
+end

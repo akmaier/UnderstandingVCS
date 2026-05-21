@@ -802,6 +802,26 @@ _branch_dey!(s, b) = _incdec_reg!(s, :Y, _dec_value)
 
 
 # --------------------------------------------------------------------------- #
+# P7c-f — RTI. Completes the documented NMOS opcode set (151 opcodes +
+# the USBC $EB alias). BRK intentionally stays the end-of-trace sentinel
+# from P7b — see the soft_step docstring in the jaxtari twin for the
+# rationale. Routing SOFT writes through real TIA / RIOT / cart dispatch
+# (and a differentiable TIA) is the separate P7f phase.
+# --------------------------------------------------------------------------- #
+
+function _branch_rti!(state::SoftCPUState, bus::SoftBus)
+    popped_p, sp = _pop8(bus, state.SP)
+    lo, sp       = _pop8(bus, sp)
+    hi, sp       = _pop8(bus, sp)
+    state.SP      = sp
+    state.P       = Float32(Int(popped_p) | 0x30)   # force B + U
+    state.PC      = lo + hi * 256f0                 # no +1, unlike RTS
+    state.cycles += 6f0
+    return nothing
+end
+
+
+# --------------------------------------------------------------------------- #
 # Dispatch table
 # --------------------------------------------------------------------------- #
 
@@ -929,6 +949,8 @@ const _HANDLERS = let
     # P7c-e — INX/INY/DEX/DEY
     h[0xE8 + 1] = _branch_inx!; h[0xC8 + 1] = _branch_iny!
     h[0xCA + 1] = _branch_dex!; h[0x88 + 1] = _branch_dey!
+    # P7c-f — RTI (completes the documented NMOS opcode set)
+    h[0x40 + 1] = _branch_rti!
     h
 end
 
@@ -968,6 +990,8 @@ const SOFT_SUPPORTED_OPCODES = Set{UInt8}([
     0xE6, 0xF6, 0xEE, 0xFE,
     0xC6, 0xD6, 0xCE, 0xDE,
     0xE8, 0xC8, 0xCA, 0x88,
+    # P7c-f — RTI (completes the 151-opcode documented NMOS set)
+    0x40,
 ])
 
 

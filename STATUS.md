@@ -33,14 +33,17 @@ overall project goal, see [README.md](README.md).
 | **P7c-b** | Arithmetic + logic + compare + BIT (49 opcodes — ADC/SBC binary mode incl. USBC; AND/ORA/EOR/CMP/CPX/CPY/BIT) + N/Z/C/V flag updates | [`742fcbe`](https://github.com/akmaier/UnderstandingVCS/commit/742fcbe) | +36 | +22 | ✅ |
 | **P7c-c** | Shifts and rotates (20 opcodes — ASL/LSR/ROL/ROR accumulator + 4 memory modes each); RMW memory ops; N/Z/C flag updates | [`1530c6e`](https://github.com/akmaier/UnderstandingVCS/commit/1530c6e) | +33 | +17 | ✅ |
 | **P7c-d** | Branches (8 conditionals), JMP indirect (NMOS page-wrap bug), JSR/RTS with SOFT stack | [`a320ee3`](https://github.com/akmaier/UnderstandingVCS/commit/a320ee3) | +22 | +15 | ✅ |
-| **P7c-e** | Stack push/pull (PHA/PHP/PLA/PLP), status-flag opcodes (CLC/SEC/CLI/SEI/CLV/CLD/SED), INC/DEC memory, INX/INY/DEX/DEY — 23 opcodes | _next commit_ | +30 | +21 | ✅ |
-| **P7c-f** | BRK/RTI proper interrupt sequence, TIA/RIOT writes through SOFT bus dispatch, cart bank-switching | — | — | — | ⏳ |
+| **P7c-e** | Stack push/pull (PHA/PHP/PLA/PLP), status-flag opcodes (CLC/SEC/CLI/SEI/CLV/CLD/SED), INC/DEC memory, INX/INY/DEX/DEY — 23 opcodes | [`7eafd63`](https://github.com/akmaier/UnderstandingVCS/commit/7eafd63) | +30 | +21 | ✅ |
+| **P7c-f** | RTI — **completes the full 151-opcode documented NMOS set (+ USBC) in SOFT mode** | _next commit_ | +36 | +7 | ✅ |
 | **P7d** | RomTensor as a custom JAX PyTree, used as the `SoftBus.rom` slot | — | — | — | ☐ |
 | **P7e** | Julia gradient stack — Zygote / ChainRulesCore `rrule`s for the SOFT primitives so jutari can take real gradients | — | — | — | ☐ |
+| **P7f** | Differentiable bus + TIA — route SOFT writes through real TIA/RIOT register dispatch + cart hotspots, and a differentiable TIA so `jax.grad` flows from a framebuffer pixel back to ROM | — | — | — | ☐ |
 | **P8**  | XAI hooks + first attribution experiment | — | — | — | ☐ |
 | **P9**  | JAX-vs-Julia benchmark + paper-shaped XAI study | — | — | — | ☐ |
 
-**Totals after P7c-e: jaxtari 442 tests, jutari 986 tests, 1428 green across both ports.**
+**Totals after P7c (complete): jaxtari 449 tests, jutari 1022 tests, 1471 green across both ports.**
+
+**P7c milestone: the full 151-opcode documented NMOS 6502 set (+ the undocumented USBC `$EB` alias) now executes in SOFT mode on both ports** — `soft_step` is a complete differentiable parallel to the HARD `step()` at the instruction level. What remains for a fully-differentiable VCS is **P7f** (real TIA/RIOT/cart bus dispatch + a differentiable TIA).
 
 ## What each port can do today
 
@@ -55,7 +58,7 @@ End-to-end, both ports can:
 - Drive the SELECT / RESET / colour / difficulty switches on SWCHB.
 - Expose an ALE-shaped front-end: `reset` / `step(action) → reward` / `get_screen` / `get_ram` / `game_over` / `lives`, plus the camelCase aliases (`act`, `getScreen`, etc.) for drop-in compatibility with code written against the original C++ ALE.
 - (jaxtari only, P7) compute gradients: `RomTensor.peek(addr)` → gradient is one-hot at `addr`; `soft_select` / `soft_memory_read` / `soft_branch` are saturation-equivalent to their hard counterparts and provide useful backward signal under relaxation; STE round/clamp give identity backward through discrete forward.
-- (jaxtari only, P7b) **run a real 6502 program in SOFT mode end-to-end**: `soft_step(state, bus)` dispatches over a 256-way `jax.lax.switch` opcode table (8 opcodes handled — NOP, LDA imm/zp, LDX imm, STA zp, STX zp, JMP abs, BRK; rest fall through to a non-raising default), all register state is `float32`, ROM and RAM access is one-hot-dot-product differentiable, and `jax.grad(ram[0])(rom)` of the headline `LDA #$42 / STA $00` program returns a one-hot gradient at the immediate-operand byte. That's "this ROM byte explains this RAM cell" in working code.
+- **run a real 6502 program in SOFT mode end-to-end** (jaxtari with `jax.grad`; jutari forward-only): `soft_step(state, bus)` dispatches over a 256-way `jax.lax.switch` opcode table covering **all 151 documented NMOS opcodes + the USBC `$EB` alias** (P7c-a…f). All register state is `float32`, ROM/RAM access is one-hot-dot-product differentiable, and `jax.grad(ram[0])(rom)` of the headline `LDA #$42 / STA $00` program returns a one-hot gradient at the immediate-operand byte. That's "this ROM byte explains this RAM cell" in working code. The opcode set is complete; what is still simplified is the *bus* — TIA/RIOT register writes land in the RAM array rather than affecting chip state (real dispatch + a differentiable TIA is P7f).
 
 End-to-end XAI demo (jaxtari, P7b): the test `test_grad_lda_imm_then_sta_zp_one_hot_at_immediate` runs the two-instruction program `LDA #$42 / STA $00` in SOFT mode and asserts that `jax.grad(RAM[0])(rom)` is exactly 1.0 at `rom[1]` (the immediate operand) and 0 elsewhere. Same primitive demo as P7's `test_xai_rom_byte_attribution_demo` but with the full opcode-dispatch path involved end-to-end. This is the project's whole point in one test.
 
@@ -135,10 +138,14 @@ Every deferral now has a phase identifier (see PORTING_PLAN.md "Deferral identif
 - **P6d**: Random no-op reset (Mnih-style "skip 0..30 NOOPs at episode start" — this is a wrapper concern).
 - **P6e**: Two-player joystick (P1 directions stay defaulted-released).
 
-### Diff (P7 / P7b)
-- **P7c-a … P7c-f**: extend the SOFT-mode opcode handler table from the 8 P7b opcodes (NOP, LDA imm/zp, LDX imm, STA zp, STX zp, JMP abs, BRK) to the rest of the 151 NMOS set + N/Z/C/V flag updates + TIA / RIOT / cart-hotspot dispatch from SOFT writes. Subdivided P1-style; see PORTING_PLAN.md §5 for the per-chunk breakdown.
+### Diff (P7 / P7b / P7c)
+- **P7c-a … P7c-f are ✅ complete** — the full 151-opcode documented NMOS set executes in SOFT mode. Three deliberate SOFT-mode simplifications remain, each with its own sub-identifier:
+  - **P7c-bx**: BCD (decimal-mode) ADC/SBC — the binary path always runs regardless of the D flag.
+  - **P7c-dx**: gradient through branch predicates — branches are HARD (`jnp.where` on the flag bit); restoring predicate gradient needs a float-valued flag representation in `SoftCPUState`.
+  - BRK stays the end-of-trace sentinel (intentional for fixed-length XAI traces).
 - **P7d**: RomTensor replacing the raw `jnp.ndarray` in the SoftBus's `rom` slot (the SoftBus carries a raw array today because `RomTensor` is a Python class, not a PyTree). Requires registering `RomTensor` as a custom JAX PyTree.
 - **P7e**: Julia gradient verification — jutari has the same forward behaviour as jaxtari but no Zygote / ChainRulesCore `rrule` wired in yet (would need adding Zygote as a test dep).
+- **P7f**: Differentiable bus + TIA — `soft_step`'s `_bus_write` collapses all non-cart writes into the 128-byte RAM array, so SOFT-mode TIA/RIOT register writes have no chip-level effect. Real dispatch + a differentiable TIA is what lets `jax.grad` flow from a framebuffer pixel back to ROM. This is the largest remaining piece for an end-to-end differentiable VCS.
 
 ### Cross-cutting
 - **PXC1**: xitari-trace conformance harness (PORTING_PLAN.md §4) — `tools/trace_dump.cpp` is sketched but never built; no golden traces exist yet. Both ports are validated against hand-built unit tests, not against real ROM runs. **The most important single piece of infrastructure debt** — it would catch dozens of subtle bugs at once.

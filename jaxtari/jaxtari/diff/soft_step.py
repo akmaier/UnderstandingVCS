@@ -7,47 +7,39 @@ register state is `float32`; opcode dispatch is `jax.lax.switch` over
 all 256 opcodes. The HARD `step()` is left untouched — SOFT mode is a
 parallel execution path.
 
-**Opcode coverage:**
+**Opcode coverage — COMPLETE as of P7c-f.** All 151 documented NMOS
+6502 opcodes plus the undocumented USBC ($EB) alias are handled:
 
-  P7b (the original 8-opcode core):
-    NOP            ($EA)
-    LDA #imm/zp    ($A9 / $A5)
-    LDA $zp        ($A5)
-    LDX #imm       ($A2)
-    STA $zp        ($85)
-    STX $zp        ($86)
-    JMP $abs       ($4C)
-    BRK            ($00)
+  P7b  : NOP, the original LDA/LDX/STA/STX core, JMP abs, BRK
+  P7c-a: full load/store/transfer (LDA/LDX/LDY/STA/STX/STY all modes,
+         TAX/TAY/TXA/TYA/TSX/TXS) + N/Z flag updates
+  P7c-b: ADC/SBC (binary mode; USBC alias), AND/ORA/EOR, CMP/CPX/CPY,
+         BIT + N/Z/C/V flag updates
+  P7c-c: ASL/LSR/ROL/ROR (accumulator + 4 memory modes each)
+  P7c-d: 8 conditional branches, JMP indirect, JSR / RTS
+  P7c-e: PHA/PHP/PLA/PLP, CLC/SEC/CLI/SEI/CLV/CLD/SED, INC/DEC,
+         INX/INY/DEX/DEY
+  P7c-f: RTI
 
-  P7c-a (full load/store/transfer + N/Z flag updates):
-    LDA — all 8 addressing modes  ($A9 $A5 $B5 $AD $BD $B9 $A1 $B1)
-    LDX — all 5 addressing modes  ($A2 $A6 $B6 $AE $BE)
-    LDY — all 5 addressing modes  ($A0 $A4 $B4 $AC $BC)
-    STA — all 7 addressing modes  ($85 $95 $8D $9D $99 $81 $91)
-    STX — all 3 addressing modes  ($86 $96 $8E)
-    STY — all 3 addressing modes  ($84 $94 $8C)
-    Transfers — TAX, TAY, TXA, TYA, TSX, TXS
-                  ($AA $A8 $8A $98 $BA $9A)
+Any opcode outside the documented set still falls through to
+`_branch_default` (PC += 1, cycles += 2) — non-raising so the trace
+stays differentiable.
 
-All other opcodes fall through to `_branch_default` which advances PC
-by 1 and bumps cycles. This is intentionally lenient — a real ROM
-that hits an unhandled opcode will produce wrong forward behaviour
-but **will not** raise during `jax.grad` tracing, so the function
-remains differentiable. Extending the handler table is P7c-b … P7c-f.
-
-What this implementation does NOT (yet) do:
-  - P7c-b: ADC/SBC/AND/ORA/EOR/CMP/CPX/CPY/BIT + N/Z/C/V flag updates
-  - P7c-c: ASL/LSR/ROL/ROR + N/Z/C flags
-  - P7c-d: branches via `soft_branch` + JMP (ind) + JSR / RTS
-  - P7c-e: stack push/pop, status-flag opcodes, INC/DEC/INX/INY/DEX/DEY
-  - P7c-f: BRK/RTI proper interrupt sequence, TIA/RIOT writes via SOFT
-    bus dispatch, cart hotspot bank-switching
-
-SOFT-mode read/write address dispatch is simplified compared to the
-HARD bus: cart-range reads use `soft_rom_peek`, everything else maps
-into the 128-byte RAM array via `addr & 0x7F`. TIA/RIOT register
-behaviour is therefore wrong forward but the trace stays
-gradient-clean. Real bus dispatch lands in P7c-f.
+**Known SOFT-mode simplifications (deferred):**
+  - BCD (decimal-mode) ADC/SBC: the binary path always runs regardless
+    of the D flag. Atari ROMs almost never set decimal mode. (P7c-bx)
+  - Branch predicates are HARD (`jnp.where` on the flag bit): forward
+    PC is exact, but gradient through the predicate is broken at the
+    int-cast of `P`. A float-valued flag representation would let
+    `soft_branch` carry that gradient. (P7c-dx)
+  - BRK stays the "end-of-trace sentinel" from P7b rather than running
+    the proper interrupt sequence — the useful semantics for fixed-
+    length XAI traces.
+  - Bus dispatch is simplified: cart-range reads use `soft_rom_peek`,
+    everything else maps into the 128-byte RAM array via `addr & 0x7F`.
+    TIA / RIOT register writes therefore land in RAM rather than
+    affecting chip state or a framebuffer. Real TIA / RIOT / cart-
+    hotspot dispatch + a differentiable TIA is **P7f**.
 """
 
 from __future__ import annotations
@@ -1018,6 +1010,41 @@ def _branch_dey(s, b): return _incdec_reg(s, "Y", _dec_value), b
 
 
 # --------------------------------------------------------------------------- #
+# P7c-f — RTI. This completes the documented NMOS opcode set in SOFT mode
+# (151 opcodes + the USBC $EB alias).
+#
+# BRK is intentionally NOT given its proper interrupt sequence — it stays
+# the "end-of-trace sentinel" introduced in P7b (`_branch_brk`, halt in
+# place). For fixed-length XAI traces ("run N instructions, attribute the
+# output") a sentinel that re-executes harmlessly is the useful
+# semantics; a proper BRK would jump to the IRQ vector and keep running.
+# RTI has no such tension and gets the real sequence.
+#
+# What remains for SOFT mode beyond P7c is **P7f**: routing SOFT-mode
+# writes through real TIA / RIOT register dispatch and cart-hotspot
+# bank-switching (today `_bus_write` collapses all non-cart writes into
+# the 128-byte RAM array), plus a differentiable TIA so `jax.grad` can
+# flow from a framebuffer pixel back to ROM. That is a chip-level
+# re-implementation, not opcode work, hence its own phase.
+# --------------------------------------------------------------------------- #
+
+def _branch_rti(state: SoftCPUState, bus: SoftBus):
+    """RTI: pop P (force B+U on), then pop PC low + high. Unlike RTS
+    there is no +1 — RTI returns to the exact pushed address. 6 cycles."""
+    popped_p, sp = _pop8(bus, state.SP)
+    lo, sp       = _pop8(bus, sp)
+    hi, sp       = _pop8(bus, sp)
+    new_p        = (popped_p.astype(jnp.int32) | 0x30).astype(jnp.float32)
+    new_pc       = lo + hi * 256.0
+    return state._replace(
+        SP=sp,
+        P=new_p,
+        PC=new_pc,
+        cycles=state.cycles + 6.0,
+    ), bus
+
+
+# --------------------------------------------------------------------------- #
 # Dispatch table
 # --------------------------------------------------------------------------- #
 
@@ -1200,6 +1227,8 @@ _HANDLERS[0xE8] = _branch_inx
 _HANDLERS[0xC8] = _branch_iny
 _HANDLERS[0xCA] = _branch_dex
 _HANDLERS[0x88] = _branch_dey
+# P7c-f — RTI (completes the documented NMOS opcode set)
+_HANDLERS[0x40] = _branch_rti
 
 # Opcodes handled with full behaviour (rather than default). Exposed so
 # tests + a future P7c can introspect coverage.
@@ -1238,6 +1267,8 @@ SOFT_SUPPORTED_OPCODES = frozenset({
     0xE6, 0xF6, 0xEE, 0xFE,
     0xC6, 0xD6, 0xCE, 0xDE,
     0xE8, 0xC8, 0xCA, 0x88,
+    # P7c-f — RTI (completes the 151-opcode documented NMOS set)
+    0x40,
 })
 
 
