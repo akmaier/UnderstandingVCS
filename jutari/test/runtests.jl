@@ -3,9 +3,10 @@ using JuTari
 using JuTari.CPU: step          # qualified — avoids Base.step collision
 using JuTari.Bus: peek, poke!   # qualified — avoids Base.peek collision
 using JuTari.TIA: tia_peek, tia_poke!, tia_advance!, tia_apply_wsync!,
+                  playfield_bits, render_playfield_scanline,
                   NTSC_CPU_CYCLES_PER_SCANLINE, NTSC_SCANLINES_PER_FRAME,
                   NUM_REGISTERS, SCREEN_WIDTH, SCREEN_HEIGHT,
-                  W_COLUBK, W_WSYNC
+                  W_COLUBK, W_COLUPF, W_CTRLPF, W_PF0, W_PF1, W_PF2, W_WSYNC
 
 function _make_memory(image)
     mem = zeros(UInt8, 1 << 16)
@@ -1335,6 +1336,153 @@ end
         step(s, mem)
         @test s.cycles == 2
         @test isa(mem, Vector{UInt8})                  # still flat, not a Bus
+    end
+
+end
+
+function _set_regs!(tia, kvs...)
+    for (name, value) in kvs
+        addr = name == :pf0 ? W_PF0 :
+               name == :pf1 ? W_PF1 :
+               name == :pf2 ? W_PF2 :
+               name == :ctrlpf ? W_CTRLPF :
+               name == :colupf ? W_COLUPF :
+               name == :colubk ? W_COLUBK :
+               error("unknown TIA register $name")
+        tia_poke!(tia, addr, value)
+    end
+end
+
+@testset "JuTari P3b TIA playfield rendering" begin
+
+    # Bit layout
+    @testset "playfield_bits all zero" begin
+        @test playfield_bits(0, 0, 0) == zeros(UInt8, 20)
+    end
+
+    @testset "playfield_bits PF0 high nibble only" begin
+        @test playfield_bits(0x0F, 0, 0) == zeros(UInt8, 20)
+        result = playfield_bits(0xF0, 0, 0)
+        @test result[1:4] == UInt8[1, 1, 1, 1]
+        @test result[5:20] == zeros(UInt8, 16)
+    end
+
+    @testset "playfield_bits PF0 bit order" begin
+        @test playfield_bits(0x10, 0, 0)[1:4] == UInt8[1, 0, 0, 0]
+        @test playfield_bits(0x80, 0, 0)[1:4] == UInt8[0, 0, 0, 1]
+    end
+
+    @testset "playfield_bits PF1 MSB first" begin
+        bits = playfield_bits(0, 0x80, 0)
+        @test bits[5] == 1; @test sum(bits) == 1
+        bits = playfield_bits(0, 0x01, 0)
+        @test bits[12] == 1; @test sum(bits) == 1
+    end
+
+    @testset "playfield_bits PF2 LSB first" begin
+        bits = playfield_bits(0, 0, 0x01)
+        @test bits[13] == 1; @test sum(bits) == 1
+        bits = playfield_bits(0, 0, 0x80)
+        @test bits[20] == 1; @test sum(bits) == 1
+    end
+
+    @testset "playfield_bits all ones" begin
+        @test playfield_bits(0xF0, 0xFF, 0xFF) == ones(UInt8, 20)
+    end
+
+    # Scanline rendering
+    @testset "render all background" begin
+        tia = initial_tia_state()
+        _set_regs!(tia, :colubk=>0x1C, :colupf=>0x44)
+        scanline = render_playfield_scanline(tia)
+        @test length(scanline) == 160
+        @test count(==(0x1C), scanline) == 160
+    end
+
+    @testset "render all playfield" begin
+        tia = initial_tia_state()
+        _set_regs!(tia, :pf0=>0xF0, :pf1=>0xFF, :pf2=>0xFF, :colupf=>0x44, :colubk=>0x1C)
+        scanline = render_playfield_scanline(tia)
+        @test count(==(0x44), scanline) == 160
+    end
+
+    @testset "PF0 bit 4 lights first 4 screen pixels" begin
+        tia = initial_tia_state()
+        _set_regs!(tia, :pf0=>0x10, :colupf=>0x42, :colubk=>0x00)
+        scanline = render_playfield_scanline(tia)
+        @test scanline[1] == 0x42 && scanline[4] == 0x42
+        @test scanline[5] == 0x00
+    end
+
+    @testset "right half repeats when CTRLPF.D0 clear" begin
+        tia = initial_tia_state()
+        _set_regs!(tia, :pf0=>0x10, :ctrlpf=>0x00, :colupf=>0x42, :colubk=>0x00)
+        scanline = render_playfield_scanline(tia)
+        @test scanline[81] == 0x42 && scanline[84] == 0x42
+        @test scanline[85] == 0x00
+    end
+
+    @testset "right half mirrored when CTRLPF.D0 set" begin
+        tia = initial_tia_state()
+        _set_regs!(tia, :pf0=>0x10, :ctrlpf=>0x01, :colupf=>0x42, :colubk=>0x00)
+        scanline = render_playfield_scanline(tia)
+        @test scanline[157] == 0x42 && scanline[160] == 0x42
+        @test scanline[156] == 0x00
+        @test scanline[81] == 0x00
+    end
+
+    # Framebuffer integration
+    @testset "tia_advance! writes scanline on boundary" begin
+        tia = initial_tia_state()
+        _set_regs!(tia, :pf0=>0xF0, :colupf=>0x42, :colubk=>0x00)
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        @test tia.framebuffer[1, 1] == 0x42
+        @test tia.framebuffer[1, 16] == 0x42
+        @test tia.framebuffer[1, 17] == 0x00
+        @test tia.framebuffer[2, 1] == 0x00
+    end
+
+    @testset "tia_advance! writes multiple scanlines" begin
+        tia = initial_tia_state()
+        _set_regs!(tia, :pf0=>0xF0, :colupf=>0x42, :colubk=>0x00)
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE * 5)
+        for line in 1:5
+            @test tia.framebuffer[line, 1] == 0x42
+            @test tia.framebuffer[line, 16] == 0x42
+        end
+        @test tia.framebuffer[6, 1] == 0x00
+    end
+
+    @testset "tia_advance! does not write off-screen lines" begin
+        tia = initial_tia_state()
+        _set_regs!(tia, :pf0=>0xF0, :colupf=>0x42, :colubk=>0x00)
+        tia.scanline = 200
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        @test sum(tia.framebuffer) == 0
+    end
+
+    # End-to-end program
+    @testset "program writes playfield then WSYNC renders scanline" begin
+        rom = zeros(UInt8, 4096)
+        program = [
+            0xA9, 0xF0,   # LDA #$F0
+            0x85, 0x0D,   # STA $0D (PF0)
+            0xA9, 0x42,   # LDA #$42
+            0x85, 0x08,   # STA $08 (COLUPF)
+            0x85, 0x02,   # STA $02 (WSYNC)
+        ]
+        for (i, b) in enumerate(program)
+            rom[i] = UInt8(b)
+        end
+        bus = initial_bus(rom)
+        s = _state(PC=0xF000)
+        for _ in 1:5
+            step(s, bus)
+        end
+        @test bus.tia.framebuffer[1, 1] == 0x42
+        @test bus.tia.framebuffer[1, 16] == 0x42
+        @test bus.tia.framebuffer[1, 17] == 0x00
+        @test bus.tia.scanline == 1
     end
 
 end

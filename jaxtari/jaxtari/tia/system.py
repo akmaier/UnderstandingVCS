@@ -14,11 +14,19 @@ Per-frame timing (NTSC):
 WSYNC (write \$02) stalls the CPU until the next horizontal sync, i.e.
 the next scanline boundary.
 
-Phase P3a status (this module): register file + scanline/frame timing +
-WSYNC. Reads still return 0 stubs for collisions and INPT*. Playfield,
-player sprites, missiles, ball, collisions, HMOVE-driven positioning,
-VSYNC-driven frame ending, and framebuffer rendering all land in
-subsequent sub-phases (see PORTING_PLAN.md §5 P3).
+Phase progress:
+  - P3a: register file + scanline/frame timing + WSYNC.
+  - P3b (this sub-phase adds): playfield rendering (PF0/PF1/PF2 → 20-bit
+    pattern → 160-pixel scanline; CTRLPF.D0 selects repeat vs. mirror on
+    the right half; bits select between COLUPF and COLUBK).
+
+Pending: P3c (player sprites + HMOVE), P3d (missiles + ball), P3e
+(collision latches), P3f (VSYNC/VBLANK + frame ending). Reads still
+return 0 stubs for collisions and INPT* until P3e and a later input
+phase. Beam-racing (mid-scanline register changes affecting the
+currently-drawing scanline) is approximated: the renderer captures the
+register state as of the end of the scanline. Proper per-pixel timing
+lands in P3f / a beam-accurate follow-up.
 """
 
 from __future__ import annotations
@@ -184,17 +192,89 @@ def tia_poke(tia: TIAState, addr: int, value: int) -> TIAState:
 # --------------------------------------------------------------------------- #
 
 def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
-    """Advance the TIA by `cpu_cycles` CPU cycles.
+    """Advance the TIA by `cpu_cycles` CPU cycles, rendering each
+    completed scanline into the framebuffer.
 
-    Updates `scanline_cycle`, `scanline`, and `frame`. No rendering or
-    side-effects yet — those land in later sub-phases.
+    Rendering uses the register state as of the end-of-scanline moment
+    (current register file). Mid-scanline register changes are not yet
+    captured — beam-accurate rendering lands in P3f.
     """
     total = tia.scanline_cycle + cpu_cycles
-    new_sc, line_advance = total % NTSC_CPU_CYCLES_PER_SCANLINE, total // NTSC_CPU_CYCLES_PER_SCANLINE
+    new_sc = total % NTSC_CPU_CYCLES_PER_SCANLINE
+    line_advance = total // NTSC_CPU_CYCLES_PER_SCANLINE
+
+    fb = tia.framebuffer
+    if line_advance > 0:
+        scanline_pixels = render_playfield_scanline(tia)
+        for i in range(line_advance):
+            completed_line = (tia.scanline + i) % NTSC_SCANLINES_PER_FRAME
+            if completed_line < SCREEN_HEIGHT:
+                fb = fb.at[completed_line].set(scanline_pixels)
+
     new_line = tia.scanline + line_advance
-    frame_advance, new_line = new_line // NTSC_SCANLINES_PER_FRAME, new_line % NTSC_SCANLINES_PER_FRAME
+    frame_advance = new_line // NTSC_SCANLINES_PER_FRAME
+    new_line = new_line % NTSC_SCANLINES_PER_FRAME
     new_frame = tia.frame + frame_advance
-    return tia._replace(scanline_cycle=new_sc, scanline=new_line, frame=new_frame)
+    return tia._replace(
+        scanline_cycle=new_sc,
+        scanline=new_line,
+        frame=new_frame,
+        framebuffer=fb,
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Rendering — P3b: playfield only
+# --------------------------------------------------------------------------- #
+
+def _playfield_bits(pf0: int, pf1: int, pf2: int) -> list[int]:
+    """The TIA's 20-bit playfield pattern for the LEFT half of the scanline.
+
+    Bit-order quirks of the three registers (matches xitari/Stella):
+      PF0 — only the HIGH nibble is used. PF0 bit 4 is the leftmost
+            playfield pixel; bits 4, 5, 6, 7 → playfield pixels 0..3.
+      PF1 — all 8 bits used, MSB-first. PF1 bit 7 → pixel 4; bit 0 → pixel 11.
+      PF2 — all 8 bits used, LSB-first. PF2 bit 0 → pixel 12; bit 7 → pixel 19.
+    """
+    bits = []
+    for b in range(4):
+        bits.append((pf0 >> (4 + b)) & 1)        # PF0: bits 4..7
+    for b in range(8):
+        bits.append((pf1 >> (7 - b)) & 1)        # PF1: bits 7..0
+    for b in range(8):
+        bits.append((pf2 >> b) & 1)              # PF2: bits 0..7
+    return bits
+
+
+def render_playfield_scanline(tia: TIAState) -> jnp.ndarray:
+    """Return a 160-byte uint8 array of palette indices for one scanline,
+    rendering only the playfield (no sprites yet).
+
+    The playfield has 20 "playfield pixels" per scanline half; each is
+    4 screen pixels wide. The right half is either the same pattern as the
+    left (CTRLPF.D0 = 0) or a mirror of it (CTRLPF.D0 = 1).
+    A playfield bit of 1 produces COLUPF, a bit of 0 produces COLUBK.
+    """
+    pf0    = int(tia.registers[W_PF0])
+    pf1    = int(tia.registers[W_PF1])
+    pf2    = int(tia.registers[W_PF2])
+    ctrlpf = int(tia.registers[W_CTRLPF])
+    colupf = int(tia.registers[W_COLUPF])
+    colubk = int(tia.registers[W_COLUBK])
+    reflected = (ctrlpf & 0x01) != 0
+
+    left_bits = _playfield_bits(pf0, pf1, pf2)
+    right_bits = list(reversed(left_bits)) if reflected else left_bits
+
+    pixels: list[int] = []
+    for bit in left_bits:
+        color = colupf if bit else colubk
+        pixels.extend([color] * 4)
+    for bit in right_bits:
+        color = colupf if bit else colubk
+        pixels.extend([color] * 4)
+
+    return jnp.array(pixels, dtype=jnp.uint8)
 
 
 def tia_apply_wsync(tia: TIAState) -> tuple[int, TIAState]:

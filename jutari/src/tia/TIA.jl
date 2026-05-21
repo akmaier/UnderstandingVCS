@@ -13,16 +13,21 @@ Per-frame timing (NTSC):
 
 WSYNC (write \$02) stalls the CPU until the next scanline boundary.
 
-Phase P3a status (this module): register file + scanline/frame timing +
-WSYNC. Reads still return 0 stubs for collisions and INPT*. Playfield,
-sprites, missiles, ball, collisions, HMOVE positioning, VSYNC-driven
-frame ending, and framebuffer rendering land in subsequent sub-phases
-(see PORTING_PLAN.md §5 P3).
+Phase progress:
+  - P3a: register file + scanline/frame timing + WSYNC.
+  - P3b: playfield rendering (PF0/PF1/PF2 → 20-bit pattern → 160-pixel
+    scanline; CTRLPF.D0 toggles mirror; bits select COLUPF/COLUBK).
+
+Pending: P3c (player sprites + HMOVE), P3d (missiles + ball), P3e
+(collision latches), P3f (VSYNC/VBLANK + frame ending). Reads still
+return 0 stubs for collisions and INPT*. Beam-racing is approximated:
+the renderer captures register state as of end-of-scanline.
 """
 module TIA
 
 export TIAState, initial_tia_state,
        tia_peek, tia_poke!, tia_advance!, tia_apply_wsync!,
+       playfield_bits, render_playfield_scanline,
        NTSC_CPU_CYCLES_PER_SCANLINE, NTSC_SCANLINES_PER_FRAME,
        NUM_REGISTERS, SCREEN_WIDTH, SCREEN_HEIGHT,
        W_VSYNC, W_VBLANK, W_WSYNC, W_RSYNC, W_NUSIZ0, W_NUSIZ1,
@@ -113,18 +118,93 @@ end
 """
     tia_advance!(tia, cpu_cycles)
 
-Advance TIA by `cpu_cycles` CPU cycles. Updates `scanline_cycle`,
-`scanline`, and `frame`.
+Advance TIA by `cpu_cycles` CPU cycles, rendering each completed
+scanline into the framebuffer. Rendering uses end-of-scanline register
+state; beam-accurate rendering lands in P3f.
 """
 function tia_advance!(tia::TIAState, cpu_cycles::Integer)
     total = tia.scanline_cycle + Int(cpu_cycles)
     tia.scanline_cycle = total % NTSC_CPU_CYCLES_PER_SCANLINE
     line_advance = total ÷ NTSC_CPU_CYCLES_PER_SCANLINE
+
+    if line_advance > 0
+        scanline_pixels = render_playfield_scanline(tia)
+        for i in 0:(line_advance - 1)
+            completed_line = (tia.scanline + i) % NTSC_SCANLINES_PER_FRAME
+            if completed_line < SCREEN_HEIGHT
+                tia.framebuffer[completed_line + 1, :] .= scanline_pixels
+            end
+        end
+    end
+
     new_line = tia.scanline + line_advance
     frame_advance = new_line ÷ NTSC_SCANLINES_PER_FRAME
     tia.scanline = new_line % NTSC_SCANLINES_PER_FRAME
     tia.frame += UInt64(frame_advance)
     return nothing
+end
+
+# --------------------------------------------------------------------------- #
+# Rendering — P3b: playfield only
+# --------------------------------------------------------------------------- #
+
+"""
+    playfield_bits(pf0, pf1, pf2) -> Vector{UInt8}
+
+20-bit playfield pattern for the LEFT half of a scanline. Bit-order
+quirks (matching xitari/Stella):
+
+  - PF0: only high nibble used; bits 4..7 → playfield pixels 0..3.
+  - PF1: all 8 bits, MSB-first; bit 7 → pixel 4, bit 0 → pixel 11.
+  - PF2: all 8 bits, LSB-first; bit 0 → pixel 12, bit 7 → pixel 19.
+"""
+function playfield_bits(pf0::Integer, pf1::Integer, pf2::Integer)
+    bits = Vector{UInt8}(undef, 20)
+    @inbounds for b in 0:3
+        bits[b + 1] = UInt8((Int(pf0) >> (4 + b)) & 1)
+    end
+    @inbounds for b in 0:7
+        bits[4 + b + 1] = UInt8((Int(pf1) >> (7 - b)) & 1)
+    end
+    @inbounds for b in 0:7
+        bits[12 + b + 1] = UInt8((Int(pf2) >> b) & 1)
+    end
+    return bits
+end
+
+"""
+    render_playfield_scanline(tia) -> Vector{UInt8}
+
+Return a 160-byte vector of palette indices for one scanline — playfield
+only (no sprites). Right half is repeated or mirrored from the left half
+depending on `CTRLPF.D0`.
+"""
+function render_playfield_scanline(tia::TIAState)
+    pf0    = tia.registers[W_PF0 + 1]
+    pf1    = tia.registers[W_PF1 + 1]
+    pf2    = tia.registers[W_PF2 + 1]
+    ctrlpf = tia.registers[W_CTRLPF + 1]
+    colupf = tia.registers[W_COLUPF + 1]
+    colubk = tia.registers[W_COLUBK + 1]
+    reflected = (ctrlpf & 0x01) != 0
+
+    left = playfield_bits(pf0, pf1, pf2)
+    right = reflected ? reverse(left) : left
+
+    pixels = Vector{UInt8}(undef, 160)
+    @inbounds for i in 0:19
+        color = left[i + 1] != 0 ? colupf : colubk
+        for k in 0:3
+            pixels[i * 4 + k + 1] = color
+        end
+    end
+    @inbounds for i in 0:19
+        color = right[i + 1] != 0 ? colupf : colubk
+        for k in 0:3
+            pixels[80 + i * 4 + k + 1] = color
+        end
+    end
+    return pixels
 end
 
 """
