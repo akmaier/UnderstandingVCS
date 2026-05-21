@@ -28,6 +28,9 @@ using JuTari.IO: Action, apply_action!, console_switches!,
 using JuTari.Env: env_reset!, env_step!, get_screen, get_ram,
                   game_over, frame_number, act!, getScreen, getRAM,
                   gameOver, getEpisodeFrameNumber
+using JuTari.Diff: RomTensor, peek, peek_many,
+                   soft_select, soft_memory_read, soft_branch,
+                   straight_through_round, straight_through_clamp
 
 function _make_memory(image)
     mem = zeros(UInt8, 1 << 16)
@@ -2601,6 +2604,88 @@ end
         env = StellaEnvironment(_ram_reader_rom())
         env_reset!(env); env_step!(env, Int(LEFT))
         @test get_ram(env)[1] == 0xBF
+    end
+
+end
+
+@testset "JuTari P7 differentiability primitives (forward behaviour)" begin
+
+    # RomTensor
+    @testset "RomTensor peek matches byte value" begin
+        rom = RomTensor(UInt8.(0:15))
+        for addr in (0, 1, 7, 15)
+            @test peek(rom, addr) == Float32(addr)
+        end
+    end
+
+    @testset "RomTensor length" begin
+        @test length(RomTensor(zeros(UInt8, 1024))) == 1024
+    end
+
+    @testset "RomTensor peek_many returns vector" begin
+        rom = RomTensor(UInt8.(0:15))
+        out = peek_many(rom, [0, 5, 10])
+        @test length(out) == 3
+        @test out ≈ Float32[0, 5, 10]
+    end
+
+    # soft_select
+    @testset "soft_select saturates at large logit" begin
+        out = soft_select([0.0, 100.0, 0.0], [1.0, 2.0, 3.0])
+        @test out ≈ 2.0f0 atol=1e-3
+    end
+
+    @testset "soft_select uniform at high temperature" begin
+        out = soft_select([0.0, 100.0, 0.0], [1.0, 2.0, 3.0], temperature=1000.0)
+        @test out ≈ 2.0f0 atol=1e-2
+    end
+
+    @testset "soft_select matrix values keeps trailing dim" begin
+        values = Float32[1 2; 3 4; 5 6]                # 3 × 2
+        out = soft_select(Float32[0, 0, 0], values)
+        @test length(out) == 2
+        @test out ≈ Float32[3, 4]                       # average of each column
+    end
+
+    # soft_memory_read
+    @testset "soft_memory_read at integer addr low temperature" begin
+        out = soft_memory_read([1.0, 2.0, 3.0, 4.0, 5.0], 2.0, temperature=0.01)
+        @test out ≈ 3.0f0 atol=1e-3
+    end
+
+    @testset "soft_memory_read blends between two addresses" begin
+        out = soft_memory_read([10.0, 20.0, 30.0], 0.5, temperature=0.1)
+        @test out ≈ 15.0f0 atol=1.0
+    end
+
+    # soft_branch
+    @testset "soft_branch saturates to branch when flag high" begin
+        out = soft_branch(1.0, 0x100, 0x200, alpha=100.0)
+        @test out ≈ Float32(0x200) atol=1e-2
+    end
+
+    @testset "soft_branch saturates to no-branch when flag low" begin
+        out = soft_branch(-1.0, 0x100, 0x200, alpha=100.0)
+        @test out ≈ Float32(0x100) atol=1e-2
+    end
+
+    @testset "soft_branch midpoint at flag=0 low alpha" begin
+        out = soft_branch(0.0, 100.0, 200.0, alpha=1.0)
+        @test out ≈ 150.0f0 atol=1e-3
+    end
+
+    # Straight-through estimators (forward only — backward jacobian
+    # wiring is deferred to a P7b ChainRulesCore.rrule pass).
+    @testset "STE round forward rounds to nearest" begin
+        @test straight_through_round(2.7) == 3.0f0
+        @test straight_through_round(2.3) == 2.0f0
+        @test straight_through_round(-1.7) == -2.0f0
+    end
+
+    @testset "STE clamp forward clips" begin
+        @test straight_through_clamp(0.5, 0.0, 1.0) == 0.5f0
+        @test straight_through_clamp(2.0, 0.0, 1.0) == 1.0f0
+        @test straight_through_clamp(-0.5, 0.0, 1.0) == 0.0f0
     end
 
 end

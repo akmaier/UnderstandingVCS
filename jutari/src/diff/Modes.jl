@@ -1,23 +1,41 @@
 """
     Diff
 
-Global HARD vs SOFT execution mode toggle.
+Differentiability layer.
 
-HARD: bit-exact emulation against xitari. Integer state, hard opcode dispatch,
-indexed memory reads. No gradients. Default and what every conformance test
-in `test/conformance/` runs in.
+Mode toggle (HARD vs SOFT, default HARD): runtime flag controlling
+whether the (eventual) SOFT execution path is used in step() — see
+PORTING_PLAN.md §6.
 
-SOFT: relaxed differentiable emulation. Float state, softmax opcode dispatch,
-NTM-style soft memory reads/writes, ROM-as-weights. Gradients flow via
-Zygote.jl + ChainRulesCore.jl.
+P7 primitives:
+  RomTensor + peek    differentiable ROM byte access (one-hot dot product)
+  soft_select         softmax-weighted mixture over choices
+  soft_memory_read    NTM-style positional read of a memory vector
+  soft_branch         sigmoid-relaxed conditional PC gate
+  straight_through_round / straight_through_clamp
+                      hard forward, identity backward (when wired into
+                      an autodiff stack — P7b)
 
-The mode is a module-global so the same module code can be reused in both
-paths without threading a context through every function. Use `set_mode!` /
-`current_mode` to switch, or the `using_mode` do-block.
+Forward-behaviour implementations only in P7; full gradient-stack
+integration (Zygote / ChainRulesCore rrules + an end-to-end soft
+step() path) is the P7b follow-up.
 """
 module Diff
 
-export Mode, current_mode, set_mode!, using_mode
+# `_dot(a, b)` — local helper used by the P7 primitives below. Avoids
+# pulling in LinearAlgebra (which would need to be added to Project.toml).
+@inline _dot(a::AbstractVector, b::AbstractVector) = sum(a .* b)
+
+# Extend the Bus module's `peek` (the same multi-method dispatch
+# function we use for Vector{UInt8} / BusState reads) with a new method
+# for RomTensor. `Bus.peek` is also `Base.peek` after the Bus-import
+# step; either qualified path resolves to the same function.
+import ..Bus: peek
+
+export Mode, current_mode, set_mode!, using_mode,
+       RomTensor, peek_many,
+       soft_select, soft_memory_read, soft_branch,
+       straight_through_round, straight_through_clamp
 
 @enum Mode HARD SOFT
 
@@ -45,5 +63,14 @@ function using_mode(f, mode::Mode)
         _current[] = previous
     end
 end
+
+# ----------------------------------------------------------------------
+# P7 primitives — see PORTING_PLAN.md §6.
+# ----------------------------------------------------------------------
+include("RomAsWeights.jl")
+include("SoftSelect.jl")
+include("SoftMem.jl")
+include("SoftBranch.jl")
+include("StraightThrough.jl")
 
 end # module
