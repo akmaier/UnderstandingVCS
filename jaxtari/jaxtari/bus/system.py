@@ -16,9 +16,11 @@ hardware therefore have an effective stack of 128 bytes shared with the
 zero-page-relative RAM, and they keep SP in the upper half (initial
 SP=\$FD → first push lands at RAM \$7D).
 
-Status as of P4: address decode, RAM/ROM peek/poke, full TIA register
-file + rendering (P3), and RIOT timer + I/O ports (P4). Bank-switching
-cartridges land in P5.
+Status as of P5: address decode, RAM peek/poke, full TIA register file +
+rendering (P3), RIOT timer + I/O ports (P4), and cartridge peek/poke
+with 2K/4K/F8/F6/F4 bank-switching (P5). SC variants and the more
+exotic cart formats (E0, FE, 3F, 3E, MB, MC, AR, DPC) are deferred to a
+P5 follow-up.
 
 A second, simpler memory model — a flat 65,536-byte `jnp.ndarray` — is
 supported too, so the P1 unit tests can keep building tiny programs at
@@ -32,6 +34,7 @@ from typing import NamedTuple, Union
 
 import jax.numpy as jnp
 
+from jaxtari.cart.system import Cart, cart_peek, cart_poke, make_cart
 from jaxtari.riot.system import RIOTState, initial_riot_state, riot_peek, riot_poke
 from jaxtari.tia.system import TIAState, initial_tia_state, tia_peek, tia_poke
 
@@ -47,35 +50,29 @@ class Bus(NamedTuple):
     ----------
     ram : jnp.ndarray (128,) uint8
         128 bytes of RIOT internal RAM.
-    rom : jnp.ndarray (4096,) uint8
-        Cartridge ROM image. P2 supports flat 4K ROMs only; bank-switched
-        cartridges (8K, 16K, 32K, …) land in P5.
+    cart : Cart
+        Cartridge ROM image + (for bank-switched carts) the current bank
+        index. As of P5 supports 2K, 4K, F8, F6, F4. `Cart` is mutable
+        because hotspot reads change bank state.
     tia : TIAState
         TIA register file + scanline/frame timing state.
     riot : RIOTState
         RIOT timer + I/O port state (the 128 B RAM is in `ram` above).
     """
     ram: jnp.ndarray
-    rom: jnp.ndarray
+    cart: Cart
     tia: TIAState
     riot: RIOTState
 
 
 def initial_bus(rom: Union[jnp.ndarray, None] = None) -> Bus:
-    """Build a `Bus` with all-zero RAM, the given ROM (default: all zeros),
-    a fresh TIA state, and a fresh RIOT state."""
+    """Build a `Bus` with all-zero RAM, an auto-detected `Cart` built from
+    `rom` (default: all-zero 4 KB), and fresh TIA / RIOT states."""
     if rom is None:
         rom = jnp.zeros((4096,), dtype=jnp.uint8)
-    if rom.shape != (4096,):
-        raise ValueError(
-            f"P2 expects a flat 4K ROM; got shape {rom.shape}. "
-            f"Bank-switched ROMs land in P5."
-        )
-    if rom.dtype != jnp.uint8:
-        rom = rom.astype(jnp.uint8)
     return Bus(
         ram=jnp.zeros((128,), dtype=jnp.uint8),
-        rom=rom,
+        cart=make_cart(rom),
         tia=initial_tia_state(),
         riot=initial_riot_state(),
     )
@@ -121,8 +118,9 @@ def poke(world: World, addr: int, value: int) -> World:
 def _bus_peek(bus: Bus, addr: int) -> int:
     addr = addr & 0x1FFF  # 6507 13-bit mirror
     if addr & 0x1000:
-        # Cartridge ROM ($1000–$1FFF).
-        return int(bus.rom[addr & 0x0FFF])
+        # Cartridge — delegate to the cart, which handles bank switching
+        # for F8/F6/F4 on hotspot access (read or write).
+        return cart_peek(bus.cart, addr)
     if not (addr & 0x80):
         # TIA region (A7=0). P3a delegates the read decode to the TIA module;
         # in this sub-phase all reads still return 0 (collisions/INPT* land
@@ -138,7 +136,11 @@ def _bus_peek(bus: Bus, addr: int) -> int:
 def _bus_poke(bus: Bus, addr: int, value: int) -> Bus:
     addr = addr & 0x1FFF
     if addr & 0x1000:
-        return bus  # ROM is read-only.
+        # Cart writes don't store anything (ROM is read-only) but they
+        # CAN trigger a bank switch when they hit a hotspot. The cart
+        # mutates in place; bus identity is preserved.
+        cart_poke(bus.cart, addr, value)
+        return bus
     if not (addr & 0x80):
         # TIA write — record the byte and apply P3a side-effects (WSYNC).
         return bus._replace(tia=tia_poke(bus.tia, addr, value))

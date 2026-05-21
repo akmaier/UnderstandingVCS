@@ -18,9 +18,10 @@ nowhere useful) while \$0180–\$01FF mirrors RIOT RAM. The effective
 stack is therefore 128 B shared with zero-page-relative RAM; programs
 keep SP in the upper half.
 
-Status as of P4: address decode, RAM/ROM peek/poke, full TIA register
-file + rendering (P3), and RIOT timer + I/O ports (P4). Bank-switching
-cartridges land in P5.
+Status as of P5: address decode, RAM peek/poke, full TIA register file +
+rendering (P3), RIOT timer + I/O ports (P4), and cartridge peek/poke
+with 2K/4K/F8/F6/F4 bank-switching (P5). SC variants and the more
+exotic cart formats (E0, FE, 3F, 3E, MB, MC, AR, DPC) are deferred.
 
 Multiple dispatch handles two world types: a `BusState` (proper 6507
 bus) and a flat `Vector{UInt8}` (used by the P1 unit tests). The same
@@ -30,19 +31,19 @@ module Bus
 
 using ..TIA: TIAState, initial_tia_state, tia_peek, tia_poke!
 using ..RIOT: RIOTState, initial_riot_state, riot_peek, riot_poke!
+using ..Cart: CartState, make_cart, cart_peek, cart_poke!
 
 export BusState, initial_bus, peek, poke!
 
 """
     BusState
 
-6507 system bus state. `ram` is the 128 B RAM; `rom` is the cartridge
-ROM image (4096 bytes in P2); `tia` is the TIA state; `riot` is the
-RIOT timer + I/O state (RAM lives in `ram`).
+6507 system bus state. `ram` is the 128 B RAM; `cart` is the cartridge
+(includes ROM + bank state, P5); `tia` and `riot` are the chips' states.
 """
 mutable struct BusState
     ram::Vector{UInt8}
-    rom::Vector{UInt8}
+    cart::CartState
     tia::TIAState
     riot::RIOTState
 end
@@ -50,19 +51,12 @@ end
 """
     initial_bus(rom=nothing) -> BusState
 
-Build a `BusState` with all-zero RAM, the given 4 KB ROM (default: zeros),
-fresh TIA state, and fresh RIOT state.
+Build a `BusState` with all-zero RAM, an auto-detected cart built from
+`rom` (default: all-zero 4 KB), and fresh TIA / RIOT states.
 """
 function initial_bus(rom=nothing)
-    if rom === nothing
-        rom = zeros(UInt8, 4096)
-    else
-        rom = Vector{UInt8}(rom)
-        length(rom) == 4096 || throw(ArgumentError(
-            "P2 expects a flat 4K ROM; got length $(length(rom)). " *
-            "Bank-switched cartridges land in P5."))
-    end
-    return BusState(zeros(UInt8, 128), rom,
+    rom === nothing && (rom = zeros(UInt8, 4096))
+    return BusState(zeros(UInt8, 128), make_cart(rom),
                     initial_tia_state(), initial_riot_state())
 end
 
@@ -83,10 +77,10 @@ the 6507 address decode is applied; for a `Vector{UInt8}` the byte at
 @inline function peek(bus::BusState, addr::Integer)
     a = Int(addr) & 0x1FFF                       # 6507 13-bit mirror
     if (a & 0x1000) != 0
-        return bus.rom[(a & 0x0FFF) + 1]         # cartridge ROM
+        return cart_peek(bus.cart, a)            # cartridge (may switch bank)
     end
     if (a & 0x80) == 0
-        return tia_peek(bus.tia, a)              # TIA register read (P3a stub)
+        return tia_peek(bus.tia, a)              # TIA register read
     end
     if (a & 0x200) != 0
         return riot_peek(bus.riot, a)            # RIOT timer + I/O ports
@@ -108,7 +102,10 @@ end
 
 @inline function poke!(bus::BusState, addr::Integer, value::Integer)
     a = Int(addr) & 0x1FFF
-    (a & 0x1000) != 0 && return nothing          # ROM is read-only
+    if (a & 0x1000) != 0
+        cart_poke!(bus.cart, a, value)           # cart hotspot may switch bank
+        return nothing
+    end
     if (a & 0x80) == 0
         tia_poke!(bus.tia, a, value)             # TIA write — records byte + WSYNC
         return nothing

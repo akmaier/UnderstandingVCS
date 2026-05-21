@@ -17,6 +17,8 @@ using JuTari.TIA: tia_peek, tia_poke!, tia_advance!, tia_apply_wsync!,
                   W_VSYNC, W_VBLANK
 using JuTari.RIOT: riot_peek, riot_poke!, riot_advance!,
                    set_swcha_input!, set_swchb_input!
+using JuTari.Cart: cart_peek, cart_poke!,
+                   KIND_2K, KIND_4K, KIND_F8, KIND_F6, KIND_F4
 
 function _make_memory(image)
     mem = zeros(UInt8, 1 << 16)
@@ -1151,8 +1153,15 @@ end
         @test peek(bus, 0x1000) == 0xAA
     end
 
-    @testset "Rejects non-4K ROM" begin
-        @test_throws ArgumentError initial_bus(zeros(UInt8, 8192))
+    @testset "Rejects unrecognised ROM size" begin
+        @test_throws ArgumentError initial_bus(zeros(UInt8, 3000))
+    end
+
+    @testset "Accepts bank-switched ROM sizes" begin
+        for size in (2048, 4096, 8192, 16384, 32768)
+            bus = initial_bus(zeros(UInt8, size))
+            @test length(bus.cart.rom) == size
+        end
     end
 
     @testset "LDA #imm via bus from \$F000" begin
@@ -2208,6 +2217,159 @@ end
         s = _state(PC=0xF000)
         step(s, bus)
         @test bus.riot.intim == 124               # 200 - 76
+    end
+
+end
+
+function _multi_bank_rom(bank_size::Integer, n_banks::Integer)
+    bs, nb = Int(bank_size), Int(n_banks)
+    rom = zeros(UInt8, nb * bs)
+    for b in 0:(nb - 1)
+        for i in 1:bs
+            rom[b * bs + i] = UInt8(b)
+        end
+    end
+    return rom
+end
+
+@testset "JuTari P5 cartridge bank switching" begin
+
+    # make_cart auto-detect
+    @testset "make_cart 2K" begin
+        c = make_cart(zeros(UInt8, 2048))
+        @test c.kind == KIND_2K && c.current_bank == 0
+    end
+    @testset "make_cart 4K" begin
+        c = make_cart(zeros(UInt8, 4096))
+        @test c.kind == KIND_4K && c.current_bank == 0
+    end
+    @testset "make_cart F8 boots in bank 1" begin
+        c = make_cart(zeros(UInt8, 8192))
+        @test c.kind == KIND_F8 && c.current_bank == 1
+    end
+    @testset "make_cart F6 boots in bank 3" begin
+        c = make_cart(zeros(UInt8, 16384))
+        @test c.kind == KIND_F6 && c.current_bank == 3
+    end
+    @testset "make_cart F4 boots in bank 7" begin
+        c = make_cart(zeros(UInt8, 32768))
+        @test c.kind == KIND_F4 && c.current_bank == 7
+    end
+    @testset "make_cart rejects unknown size" begin
+        @test_throws ArgumentError make_cart(zeros(UInt8, 1234))
+    end
+
+    # 2K mirror
+    @testset "2K mirrors across 4K window" begin
+        rom = zeros(UInt8, 2048)
+        rom[1] = 0xAA; rom[0x800] = 0xBB
+        c = make_cart(rom)
+        @test cart_peek(c, 0x1000) == 0xAA
+        @test cart_peek(c, 0x17FF) == 0xBB
+        @test cart_peek(c, 0x1800) == 0xAA
+        @test cart_peek(c, 0x1FFF) == 0xBB
+    end
+
+    # 4K inert at hotspot
+    @testset "4K hotspot access is inert" begin
+        c = make_cart(fill(UInt8(0x33), 4096))
+        b0 = c.current_bank
+        @test cart_peek(c, 0x1FF8) == 0x33
+        @test c.current_bank == b0
+    end
+
+    # F8 bank switching
+    @testset "F8 initial bank 1, content matches" begin
+        c = make_cart(_multi_bank_rom(0x1000, 2))
+        @test c.current_bank == 1
+        @test cart_peek(c, 0x1000) == 0x01
+    end
+
+    @testset "F8 hotspot \$1FF8 → bank 0" begin
+        c = make_cart(_multi_bank_rom(0x1000, 2))
+        cart_peek(c, 0x1FF8)
+        @test c.current_bank == 0
+        @test cart_peek(c, 0x1000) == 0x00
+    end
+
+    @testset "F8 hotspot \$1FF9 → bank 1" begin
+        c = make_cart(_multi_bank_rom(0x1000, 2))
+        cart_peek(c, 0x1FF8); @test c.current_bank == 0
+        cart_peek(c, 0x1FF9); @test c.current_bank == 1
+    end
+
+    @testset "F8 write to hotspot also switches" begin
+        c = make_cart(_multi_bank_rom(0x1000, 2))
+        @test c.current_bank == 1
+        cart_poke!(c, 0x1FF8, 0x00)
+        @test c.current_bank == 0
+    end
+
+    # F6 bank switching
+    @testset "F6 initial bank 3" begin
+        c = make_cart(_multi_bank_rom(0x1000, 4))
+        @test c.current_bank == 3
+        @test cart_peek(c, 0x1000) == 0x03
+    end
+
+    @testset "F6 all four hotspots" begin
+        c = make_cart(_multi_bank_rom(0x1000, 4))
+        for (hot, bank) in ((0x1FF6, 0), (0x1FF7, 1), (0x1FF8, 2), (0x1FF9, 3))
+            cart_peek(c, hot)
+            @test c.current_bank == bank
+            @test cart_peek(c, 0x1500) == UInt8(bank)
+        end
+    end
+
+    # F4 bank switching
+    @testset "F4 initial bank 7" begin
+        c = make_cart(_multi_bank_rom(0x1000, 8))
+        @test c.current_bank == 7
+    end
+
+    @testset "F4 all eight hotspots" begin
+        c = make_cart(_multi_bank_rom(0x1000, 8))
+        for (hot, bank) in ((0x1FF4, 0), (0x1FF5, 1), (0x1FF6, 2), (0x1FF7, 3),
+                             (0x1FF8, 4), (0x1FF9, 5), (0x1FFA, 6), (0x1FFB, 7))
+            cart_peek(c, hot)
+            @test c.current_bank == bank
+        end
+    end
+
+    # Bus integration
+    @testset "Bus peek \$FFF8 mirror → F8 hotspot" begin
+        bus = initial_bus(_multi_bank_rom(0x1000, 2))
+        @test bus.cart.current_bank == 1
+        peek(bus, 0xFFF8)
+        @test bus.cart.current_bank == 0
+    end
+
+    @testset "Bus peek \$FFF9 mirror → F8 hotspot" begin
+        bus = initial_bus(_multi_bank_rom(0x1000, 2))
+        peek(bus, 0xFFF8); @test bus.cart.current_bank == 0
+        peek(bus, 0xFFF9); @test bus.cart.current_bank == 1
+    end
+
+    # End-to-end with CPU
+    @testset "F8 bank switch via CPU BIT" begin
+        rom = zeros(UInt8, 8192)
+        program = [
+            0xA9, 0x22,
+            0x2C, 0xF8, 0xFF,
+            0xAD, 0xFF, 0xF0,
+        ]
+        for (i, b) in enumerate(program)
+            rom[i] = UInt8(b)
+            rom[0x1000 + i] = UInt8(b)
+        end
+        rom[0x100] = UInt8(0x77)            # bank 0 data at $F0FF
+        rom[0x1100] = UInt8(0x88)           # bank 1 data at $F0FF
+        bus = initial_bus(rom)
+        @test bus.cart.current_bank == 1
+        s = _state(PC=0xF000)
+        step(s, bus); @test s.A == 0x22
+        step(s, bus); @test bus.cart.current_bank == 0
+        step(s, bus); @test s.A == 0x77
     end
 
 end

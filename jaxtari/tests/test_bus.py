@@ -76,16 +76,23 @@ def test_bus_rom_is_read_only():
     rom = jnp.full((4096,), 0xAA, dtype=jnp.uint8)
     bus = initial_bus(rom)
     assert peek(bus, 0x1000) == 0xAA
-    bus2 = poke(bus, 0x1000, 0x55)        # ROM write — must be ignored
+    bus2 = poke(bus, 0x1000, 0x55)        # ROM write — value is discarded
     assert peek(bus2, 0x1000) == 0xAA
-    # ROM array is structurally unchanged.
-    assert bool(jnp.array_equal(bus.rom, bus2.rom))
+    # ROM array is structurally unchanged (cart.rom is the same underlying array).
+    assert bool(jnp.array_equal(bus.cart.rom, bus2.cart.rom))
 
 
-def test_bus_rejects_non_4k_rom():
+def test_bus_rejects_unrecognised_rom_size():
     import pytest
-    with pytest.raises(ValueError, match="P2 expects a flat 4K ROM"):
-        initial_bus(jnp.zeros((8192,), dtype=jnp.uint8))
+    with pytest.raises(ValueError, match="unrecognised ROM size"):
+        initial_bus(jnp.zeros((3000,), dtype=jnp.uint8))
+
+
+def test_bus_accepts_bank_switched_rom_sizes():
+    """Sizes 2K/4K/8K/16K/32K all build a valid Bus as of P5."""
+    for size in (2048, 4096, 8192, 16384, 32768):
+        bus = initial_bus(jnp.zeros((size,), dtype=jnp.uint8))
+        assert bus.cart.rom.shape == (size,)
 
 
 # --------------------------------------------------------------------------- #
