@@ -15,19 +15,22 @@ WSYNC (write \$02) stalls the CPU until the next scanline boundary.
 
 Phase progress:
   - P3a: register file + scanline/frame timing + WSYNC.
-  - P3b: playfield rendering (PF0/PF1/PF2 → 20-bit pattern → 160-pixel
-    scanline; CTRLPF.D0 toggles mirror; bits select COLUPF/COLUBK).
+  - P3b: playfield rendering (PF0/PF1/PF2 + CTRLPF mirror).
+  - P3c: player sprites P0/P1 — GRP, COLUP, REFP, RESP position-reset,
+    HMP horizontal motion + HMOVE/HMCLR. NUSIZ multi-copy / size
+    scaling is NOT yet implemented (single 1×-wide copy per player).
 
-Pending: P3c (player sprites + HMOVE), P3d (missiles + ball), P3e
-(collision latches), P3f (VSYNC/VBLANK + frame ending). Reads still
-return 0 stubs for collisions and INPT*. Beam-racing is approximated:
-the renderer captures register state as of end-of-scanline.
+Pending: P3d (missiles + ball), P3e (collisions), P3f (VSYNC/VBLANK +
+frame ending). Reads still return 0 stubs for collisions and INPT*.
+Beam-racing is approximated: rendering captures register state as of
+end-of-scanline.
 """
 module TIA
 
 export TIAState, initial_tia_state,
        tia_peek, tia_poke!, tia_advance!, tia_apply_wsync!,
-       playfield_bits, render_playfield_scanline,
+       playfield_bits, render_playfield_scanline, render_scanline,
+       _hm_offset, _resp_position,
        NTSC_CPU_CYCLES_PER_SCANLINE, NTSC_SCANLINES_PER_FRAME,
        NUM_REGISTERS, SCREEN_WIDTH, SCREEN_HEIGHT,
        W_VSYNC, W_VBLANK, W_WSYNC, W_RSYNC, W_NUSIZ0, W_NUSIZ1,
@@ -72,9 +75,10 @@ const SCREEN_HEIGHT = 192
 """
     TIAState
 
-Mutable TIA state. `registers` is the 64-byte register file (last-written
-value for each address); `framebuffer` is the rendered output (zeros in
-P3a; populated by later sub-phases).
+Mutable TIA state. `registers` is the 64-byte register file; `p0_x`,
+`p1_x` are the derived player horizontal positions in screen pixels
+([0..159]) updated by RESP* / HMOVE writes; `framebuffer` is the
+rendered output.
 """
 mutable struct TIAState
     registers::Vector{UInt8}
@@ -83,12 +87,15 @@ mutable struct TIAState
     frame::UInt64
     wsync_pending::Bool
     framebuffer::Matrix{UInt8}
+    p0_x::Int
+    p1_x::Int
 end
 
 initial_tia_state() = TIAState(
     zeros(UInt8, NUM_REGISTERS),
     0, 0, UInt64(0), false,
     zeros(UInt8, SCREEN_HEIGHT, SCREEN_WIDTH),
+    0, 0,
 )
 
 """
@@ -100,18 +107,57 @@ return 0. Proper values land in P3e (collisions) and a later input phase.
 @inline tia_peek(::TIAState, ::Integer) = UInt8(0)
 
 """
+    _resp_position(scanline_cycle) -> Int
+
+Approximate RESP* timing: maps scanline_cycle to sprite position in
+[0,159]. Single linear formula `scanline_cycle * 3 - 68`, clamped.
+"""
+@inline function _resp_position(scanline_cycle::Integer)
+    pos = Int(scanline_cycle) * 3 - 68
+    pos < 0 && return 0
+    pos > 159 && return 159
+    return pos
+end
+
+"""
+    _hm_offset(hm) -> Int
+
+Convert an HM register byte to a signed motion offset. Only the high
+nibble matters, interpreted as 4-bit two's complement (+7..-8). Positive
+moves the sprite LEFT, negative RIGHT.
+"""
+@inline function _hm_offset(hm::Integer)
+    high = (Int(hm) >> 4) & 0x0F
+    return high >= 8 ? high - 16 : high
+end
+
+"""
     tia_poke!(tia, addr, value)
 
-Write a TIA register. Stores the byte and applies P3a side-effects
-(currently just WSYNC). Other side-effecting writes (HMOVE, RES*, CXCLR,
-…) land in later P3 sub-phases.
+Write a TIA register. Stores the byte and applies side-effects: WSYNC
+(P3a), player position reset / horizontal motion / HMCLR (P3c).
 """
 function tia_poke!(tia::TIAState, addr::Integer, value::Integer)
     reg = Int(addr) & 0x3F                # TIA decodes A0–A5
     tia.registers[reg + 1] = UInt8(Int(value) & 0xFF)
+
     if reg == W_WSYNC
         tia.wsync_pending = true
+    elseif reg == W_RESP0
+        tia.p0_x = _resp_position(tia.scanline_cycle)
+    elseif reg == W_RESP1
+        tia.p1_x = _resp_position(tia.scanline_cycle)
+    elseif reg == W_HMOVE
+        tia.p0_x = mod(tia.p0_x - _hm_offset(tia.registers[W_HMP0 + 1]), 160)
+        tia.p1_x = mod(tia.p1_x - _hm_offset(tia.registers[W_HMP1 + 1]), 160)
+    elseif reg == W_HMCLR
+        tia.registers[W_HMP0 + 1] = 0
+        tia.registers[W_HMP1 + 1] = 0
+        tia.registers[W_HMM0 + 1] = 0
+        tia.registers[W_HMM1 + 1] = 0
+        tia.registers[W_HMBL + 1] = 0
     end
+
     return nothing
 end
 
@@ -128,7 +174,7 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
     line_advance = total ÷ NTSC_CPU_CYCLES_PER_SCANLINE
 
     if line_advance > 0
-        scanline_pixels = render_playfield_scanline(tia)
+        scanline_pixels = render_scanline(tia)
         for i in 0:(line_advance - 1)
             completed_line = (tia.scanline + i) % NTSC_SCANLINES_PER_FRAME
             if completed_line < SCREEN_HEIGHT
@@ -176,8 +222,9 @@ end
     render_playfield_scanline(tia) -> Vector{UInt8}
 
 Return a 160-byte vector of palette indices for one scanline — playfield
-only (no sprites). Right half is repeated or mirrored from the left half
-depending on `CTRLPF.D0`.
+only (no sprites). Right half is repeated or mirrored depending on
+CTRLPF.D0. Kept for unit tests; `render_scanline` composites sprites on
+top.
 """
 function render_playfield_scanline(tia::TIAState)
     pf0    = tia.registers[W_PF0 + 1]
@@ -204,6 +251,45 @@ function render_playfield_scanline(tia::TIAState)
             pixels[80 + i * 4 + k + 1] = color
         end
     end
+    return pixels
+end
+
+"""
+    _overlay_player!(pixels, tia, player)
+
+Paint player 0 or 1 onto `pixels` (mutated). Single 1×-wide copy.
+"""
+function _overlay_player!(pixels::Vector{UInt8}, tia::TIAState, player::Int)
+    grp_reg   = player == 0 ? W_GRP0   : W_GRP1
+    color_reg = player == 0 ? W_COLUP0 : W_COLUP1
+    refp_reg  = player == 0 ? W_REFP0  : W_REFP1
+    grp = tia.registers[grp_reg + 1]
+    grp == 0 && return nothing
+    color = tia.registers[color_reg + 1]
+    reflected = (tia.registers[refp_reg + 1] & 0x08) != 0
+    x = player == 0 ? tia.p0_x : tia.p1_x
+
+    # GRP bit 7 is leftmost by default; REFP.D3 reverses bit order.
+    @inbounds for i in 0:7
+        bit_idx = reflected ? i : (7 - i)
+        if (Int(grp) >> bit_idx) & 1 != 0
+            px = mod(x + i, 160)
+            pixels[px + 1] = color
+        end
+    end
+    return nothing
+end
+
+"""
+    render_scanline(tia) -> Vector{UInt8}
+
+Composite renderer: playfield (P3b) + players (P3c). Missile/ball overlay
+and collision detection land in P3d / P3e.
+"""
+function render_scanline(tia::TIAState)
+    pixels = render_playfield_scanline(tia)
+    _overlay_player!(pixels, tia, 0)
+    _overlay_player!(pixels, tia, 1)
     return pixels
 end
 

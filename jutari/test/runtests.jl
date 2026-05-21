@@ -3,10 +3,15 @@ using JuTari
 using JuTari.CPU: step          # qualified — avoids Base.step collision
 using JuTari.Bus: peek, poke!   # qualified — avoids Base.peek collision
 using JuTari.TIA: tia_peek, tia_poke!, tia_advance!, tia_apply_wsync!,
-                  playfield_bits, render_playfield_scanline,
+                  playfield_bits, render_playfield_scanline, render_scanline,
+                  _hm_offset, _resp_position,
                   NTSC_CPU_CYCLES_PER_SCANLINE, NTSC_SCANLINES_PER_FRAME,
                   NUM_REGISTERS, SCREEN_WIDTH, SCREEN_HEIGHT,
-                  W_COLUBK, W_COLUPF, W_CTRLPF, W_PF0, W_PF1, W_PF2, W_WSYNC
+                  W_COLUBK, W_COLUPF, W_COLUP0, W_COLUP1, W_CTRLPF,
+                  W_GRP0, W_GRP1, W_REFP0, W_REFP1,
+                  W_PF0, W_PF1, W_PF2, W_WSYNC,
+                  W_RESP0, W_RESP1, W_HMP0, W_HMP1, W_HMM0, W_HMM1, W_HMBL,
+                  W_HMOVE, W_HMCLR
 
 function _make_memory(image)
     mem = zeros(UInt8, 1 << 16)
@@ -1483,6 +1488,163 @@ end
         @test bus.tia.framebuffer[1, 16] == 0x42
         @test bus.tia.framebuffer[1, 17] == 0x00
         @test bus.tia.scanline == 1
+    end
+
+end
+
+@testset "JuTari P3c TIA player sprites + RESP + HMOVE" begin
+
+    @testset "_hm_offset positive nibbles" begin
+        @test _hm_offset(0x00) == 0
+        @test _hm_offset(0x10) == 1
+        @test _hm_offset(0x70) == 7
+    end
+
+    @testset "_hm_offset negative nibbles" begin
+        @test _hm_offset(0x80) == -8
+        @test _hm_offset(0xF0) == -1
+        @test _hm_offset(0xE0) == -2
+    end
+
+    @testset "_hm_offset low nibble ignored" begin
+        @test _hm_offset(0x7F) == 7
+        @test _hm_offset(0x8F) == -8
+    end
+
+    @testset "_resp_position clamps to zero in HBLANK" begin
+        @test _resp_position(0) == 0
+        @test _resp_position(22) == 0
+    end
+
+    @testset "_resp_position visible area" begin
+        @test _resp_position(23) == 1
+    end
+
+    @testset "_resp_position clamps to 159 at far right" begin
+        @test _resp_position(76) == 159
+        @test _resp_position(100) == 159
+    end
+
+    @testset "RESP0 sets p0_x from scanline_cycle" begin
+        tia = initial_tia_state()
+        tia.scanline_cycle = 30
+        tia_poke!(tia, W_RESP0, 0x00)
+        @test tia.p0_x == 22                  # 30*3-68
+    end
+
+    @testset "RESP1 does not touch p0_x" begin
+        tia = initial_tia_state()
+        tia.scanline_cycle = 30; tia.p0_x = 50
+        tia_poke!(tia, W_RESP1, 0x00)
+        @test tia.p0_x == 50
+        @test tia.p1_x == 22
+    end
+
+    @testset "HMOVE applies HMP offsets" begin
+        tia = initial_tia_state()
+        tia.p0_x = 50; tia.p1_x = 50
+        tia_poke!(tia, W_HMP0, 0x10)          # +1 left
+        tia_poke!(tia, W_HMP1, 0xE0)          # -2 right
+        tia_poke!(tia, W_HMOVE, 0x00)
+        @test tia.p0_x == 49
+        @test tia.p1_x == 52
+    end
+
+    @testset "HMOVE wraps position" begin
+        tia = initial_tia_state(); tia.p0_x = 2
+        tia_poke!(tia, W_HMP0, 0x70)          # +7
+        tia_poke!(tia, W_HMOVE, 0x00)
+        @test tia.p0_x == 155                  # (2 - 7) mod 160
+    end
+
+    @testset "HMCLR zeros all HM registers" begin
+        tia = initial_tia_state()
+        tia_poke!(tia, W_HMP0, 0x70); tia_poke!(tia, W_HMP1, 0x80)
+        tia_poke!(tia, W_HMM0, 0x40); tia_poke!(tia, W_HMM1, 0x20)
+        tia_poke!(tia, W_HMBL, 0x10)
+        tia_poke!(tia, W_HMCLR, 0x00)
+        for reg in (W_HMP0, W_HMP1, W_HMM0, W_HMM1, W_HMBL)
+            @test tia.registers[reg + 1] == 0
+        end
+    end
+
+    # Rendering
+    @testset "player0 invisible when GRP0 = 0" begin
+        tia = initial_tia_state(); tia.p0_x = 50
+        tia_poke!(tia, W_COLUP0, 0x42)
+        scanline = render_scanline(tia)
+        @test sum(scanline) == 0
+    end
+
+    @testset "player0 all bits set paints 8 pixels" begin
+        tia = initial_tia_state(); tia.p0_x = 50
+        tia_poke!(tia, W_GRP0, 0xFF); tia_poke!(tia, W_COLUP0, 0x42)
+        scanline = render_scanline(tia)
+        for i in 51:58       # 50..57 in 0-based → 51..58 in 1-based
+            @test scanline[i] == 0x42
+        end
+        @test scanline[50] == 0
+        @test scanline[59] == 0
+    end
+
+    @testset "GRP bit 7 leftmost (default)" begin
+        tia = initial_tia_state(); tia.p0_x = 50
+        tia_poke!(tia, W_GRP0, 0x80); tia_poke!(tia, W_COLUP0, 0x42)
+        scanline = render_scanline(tia)
+        @test scanline[51] == 0x42            # pixel 50
+        @test scanline[52] == 0
+    end
+
+    @testset "GRP bit 0 rightmost (default)" begin
+        tia = initial_tia_state(); tia.p0_x = 50
+        tia_poke!(tia, W_GRP0, 0x01); tia_poke!(tia, W_COLUP0, 0x42)
+        scanline = render_scanline(tia)
+        @test scanline[58] == 0x42            # pixel 57
+        @test scanline[57] == 0
+    end
+
+    @testset "REFP reflects bit order" begin
+        tia = initial_tia_state(); tia.p0_x = 50
+        tia_poke!(tia, W_GRP0, 0x01); tia_poke!(tia, W_COLUP0, 0x42)
+        tia_poke!(tia, W_REFP0, 0x08)         # D3 set → reflected
+        scanline = render_scanline(tia)
+        @test scanline[51] == 0x42            # bit 0 now leftmost
+        @test scanline[58] == 0
+    end
+
+    @testset "player1 independent of player0" begin
+        tia = initial_tia_state(); tia.p0_x = 20; tia.p1_x = 100
+        tia_poke!(tia, W_GRP0, 0xFF); tia_poke!(tia, W_COLUP0, 0x42)
+        tia_poke!(tia, W_GRP1, 0xFF); tia_poke!(tia, W_COLUP1, 0x66)
+        scanline = render_scanline(tia)
+        for i in 21:28
+            @test scanline[i] == 0x42
+        end
+        for i in 101:108
+            @test scanline[i] == 0x66
+        end
+    end
+
+    @testset "player paints over playfield" begin
+        tia = initial_tia_state(); tia.p0_x = 4
+        tia_poke!(tia, W_GRP0, 0xFF); tia_poke!(tia, W_COLUP0, 0x42)
+        tia_poke!(tia, W_PF0, 0xF0)
+        tia_poke!(tia, W_COLUBK, 0x11); tia_poke!(tia, W_COLUPF, 0x33)
+        scanline = render_scanline(tia)
+        @test scanline[1] == 0x33             # pixel 0 — playfield only
+        for i in 5:12                         # pixels 4..11 — player overrides
+            @test scanline[i] == 0x42
+        end
+        @test scanline[13] == 0x33            # pixel 12 — playfield only
+    end
+
+    @testset "player wraps at right edge" begin
+        tia = initial_tia_state(); tia.p0_x = 155
+        tia_poke!(tia, W_GRP0, 0xFF); tia_poke!(tia, W_COLUP0, 0x42)
+        scanline = render_scanline(tia)
+        for px in (155, 156, 157, 158, 159, 0, 1, 2)
+            @test scanline[px + 1] == 0x42
+        end
     end
 
 end

@@ -16,17 +16,18 @@ the next scanline boundary.
 
 Phase progress:
   - P3a: register file + scanline/frame timing + WSYNC.
-  - P3b (this sub-phase adds): playfield rendering (PF0/PF1/PF2 → 20-bit
-    pattern → 160-pixel scanline; CTRLPF.D0 selects repeat vs. mirror on
-    the right half; bits select between COLUPF and COLUBK).
+  - P3b: playfield rendering (PF0/PF1/PF2 + CTRLPF mirror + COLU*).
+  - P3c (this sub-phase): player sprites P0/P1 — GRP graphics, COLUP
+    colour, REFP reflection bit, RESP position-reset on write, HMP
+    horizontal motion + HMOVE/HMCLR. NUSIZ multi-copy / size scaling is
+    NOT yet implemented (single 1×-wide copy per player); that lands in
+    a P3c follow-up or P3f.
 
-Pending: P3c (player sprites + HMOVE), P3d (missiles + ball), P3e
-(collision latches), P3f (VSYNC/VBLANK + frame ending). Reads still
-return 0 stubs for collisions and INPT* until P3e and a later input
-phase. Beam-racing (mid-scanline register changes affecting the
-currently-drawing scanline) is approximated: the renderer captures the
-register state as of the end of the scanline. Proper per-pixel timing
-lands in P3f / a beam-accurate follow-up.
+Pending: P3d (missiles + ball), P3e (collision latches), P3f (VSYNC /
+VBLANK + frame ending). Reads still return 0 stubs for collisions and
+INPT*. Beam-racing (mid-scanline register changes that affect the line
+being drawn) is approximated: rendering captures register state as of
+end-of-scanline.
 """
 
 from __future__ import annotations
@@ -123,26 +124,15 @@ SCREEN_HEIGHT = 192                       # NTSC visible region (vsync 3 + vblan
 class TIAState(NamedTuple):
     """Snapshot of the TIA's observable state.
 
-    Attributes
-    ----------
-    registers : (64,) uint8
-        Last byte written to each register address. In P3a this is just a
-        record of CPU writes; later sub-phases interpret these fields to
-        generate output (e.g. PF0/PF1/PF2 → playfield bits, GRP0 → player 0
-        pixels, COLUP0 → player 0 colour).
-    scanline_cycle : int
-        Current CPU cycle within the current scanline (0..75).
-    scanline : int
-        Current scanline within the current frame (0..NTSC_SCANLINES_PER_FRAME-1).
-    frame : int
-        Monotonic frame counter — increments when `scanline` wraps from 261
-        back to 0.
-    wsync_pending : bool
-        Set by a write to WSYNC (\$02); consumed by `tia_apply_wsync` to
-        stall the CPU to the next scanline boundary.
-    framebuffer : (SCREEN_HEIGHT, SCREEN_WIDTH) uint8
-        Indexed pixel colours. Zeros in P3a; populated by the rendering
-        sub-phases.
+    `registers` is a 64-byte record of CPU writes. Later sub-phases
+    interpret specific bytes (PF*, GRP*, COLU*, NUSIZ*, HM*, …) to drive
+    rendering. Some derived state lives outside the register file
+    because writes to RES* / HMOVE / HMCLR have side-effects on positions
+    that the register file alone doesn't capture: `p0_x`, `p1_x` are
+    those derived player horizontal positions in screen pixels [0..159].
+
+    `framebuffer` is the rendered output, (SCREEN_HEIGHT × SCREEN_WIDTH)
+    indexed colour bytes.
     """
     registers: jnp.ndarray
     scanline_cycle: int
@@ -150,6 +140,8 @@ class TIAState(NamedTuple):
     frame: int
     wsync_pending: bool
     framebuffer: jnp.ndarray
+    p0_x: int
+    p1_x: int
 
 
 def initial_tia_state() -> TIAState:
@@ -160,6 +152,8 @@ def initial_tia_state() -> TIAState:
         frame=0,
         wsync_pending=False,
         framebuffer=jnp.zeros((SCREEN_HEIGHT, SCREEN_WIDTH), dtype=jnp.uint8),
+        p0_x=0,
+        p1_x=0,
     )
 
 
@@ -174,16 +168,71 @@ def tia_peek(tia: TIAState, addr: int) -> int:
     return 0
 
 
+def _resp_position(scanline_cycle: int) -> int:
+    """Approximate RESP* timing: maps the current scanline_cycle to a
+    sprite horizontal position in [0, 159].
+
+    Real TIA: during HBLANK (~first 22 CPU cycles of the scanline) RESP
+    latches to a small constant position; during the visible region the
+    position reflects the current beam location. We use a single linear
+    formula `scanline_cycle * 3 - 68` (CPU cycles × 3 = colour clocks,
+    minus the 68-color-clock HBLANK), clamped into [0, 159]. Off by a
+    few pixels vs. a beam-accurate model — good enough for sprite-
+    positioning tests; beam-accurate timing lands in P3f.
+    """
+    pos = scanline_cycle * 3 - 68
+    if pos < 0:
+        return 0
+    if pos > 159:
+        return 159
+    return pos
+
+
+def _hm_offset(hm: int) -> int:
+    """Convert an HM register byte to a signed motion offset.
+
+    Only the high nibble matters and is interpreted 4-bit two's complement
+    (range +7..-8). Positive values move the sprite LEFT, negative RIGHT,
+    matching Stella's convention.
+    """
+    high = (hm >> 4) & 0x0F
+    return high - 16 if high >= 8 else high
+
+
 def tia_poke(tia: TIAState, addr: int, value: int) -> TIAState:
-    """Write a TIA register. Stores the byte and applies P3a side-effects
-    (currently just WSYNC). Other side-effecting writes (HMOVE, RES*,
-    CXCLR, …) land in later P3 sub-phases.
+    """Write a TIA register. Stores the byte and applies side-effects:
+    WSYNC stall (P3a), player position reset / horizontal motion (P3c).
+    Missile + ball, collisions, VSYNC, etc. land in later P3 sub-phases.
     """
     reg = addr & 0x3F                                    # TIA decodes A0–A5
     new_registers = tia.registers.at[reg].set(jnp.uint8(value & 0xFF))
     new_tia = tia._replace(registers=new_registers)
+
     if reg == W_WSYNC:
         new_tia = new_tia._replace(wsync_pending=True)
+    elif reg == W_RESP0:
+        new_tia = new_tia._replace(p0_x=_resp_position(new_tia.scanline_cycle))
+    elif reg == W_RESP1:
+        new_tia = new_tia._replace(p1_x=_resp_position(new_tia.scanline_cycle))
+    elif reg == W_HMOVE:
+        hmp0 = int(new_tia.registers[W_HMP0])
+        hmp1 = int(new_tia.registers[W_HMP1])
+        new_tia = new_tia._replace(
+            p0_x=(new_tia.p0_x - _hm_offset(hmp0)) % 160,
+            p1_x=(new_tia.p1_x - _hm_offset(hmp1)) % 160,
+        )
+    elif reg == W_HMCLR:
+        # HMCLR zeros all five horizontal-motion registers (HMP0/HMP1/HMM0/HMM1/HMBL).
+        new_registers = (
+            new_tia.registers
+                .at[W_HMP0].set(jnp.uint8(0))
+                .at[W_HMP1].set(jnp.uint8(0))
+                .at[W_HMM0].set(jnp.uint8(0))
+                .at[W_HMM1].set(jnp.uint8(0))
+                .at[W_HMBL].set(jnp.uint8(0))
+        )
+        new_tia = new_tia._replace(registers=new_registers)
+
     return new_tia
 
 
@@ -205,7 +254,7 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
 
     fb = tia.framebuffer
     if line_advance > 0:
-        scanline_pixels = render_playfield_scanline(tia)
+        scanline_pixels = render_scanline(tia)
         for i in range(line_advance):
             completed_line = (tia.scanline + i) % NTSC_SCANLINES_PER_FRAME
             if completed_line < SCREEN_HEIGHT:
@@ -246,15 +295,8 @@ def _playfield_bits(pf0: int, pf1: int, pf2: int) -> list[int]:
     return bits
 
 
-def render_playfield_scanline(tia: TIAState) -> jnp.ndarray:
-    """Return a 160-byte uint8 array of palette indices for one scanline,
-    rendering only the playfield (no sprites yet).
-
-    The playfield has 20 "playfield pixels" per scanline half; each is
-    4 screen pixels wide. The right half is either the same pattern as the
-    left (CTRLPF.D0 = 0) or a mirror of it (CTRLPF.D0 = 1).
-    A playfield bit of 1 produces COLUPF, a bit of 0 produces COLUBK.
-    """
+def _playfield_pixels(tia: TIAState) -> list[int]:
+    """Internal helper: 160-element Python list of playfield colours."""
     pf0    = int(tia.registers[W_PF0])
     pf1    = int(tia.registers[W_PF1])
     pf2    = int(tia.registers[W_PF2])
@@ -268,12 +310,53 @@ def render_playfield_scanline(tia: TIAState) -> jnp.ndarray:
 
     pixels: list[int] = []
     for bit in left_bits:
-        color = colupf if bit else colubk
-        pixels.extend([color] * 4)
+        pixels.extend([colupf if bit else colubk] * 4)
     for bit in right_bits:
-        color = colupf if bit else colubk
-        pixels.extend([color] * 4)
+        pixels.extend([colupf if bit else colubk] * 4)
+    return pixels
 
+
+def render_playfield_scanline(tia: TIAState) -> jnp.ndarray:
+    """Return a 160-byte uint8 array of palette indices for one scanline,
+    rendering only the playfield (no sprites). Kept for unit tests; the
+    composite renderer `render_scanline` overlays sprites on top.
+    """
+    return jnp.array(_playfield_pixels(tia), dtype=jnp.uint8)
+
+
+def _overlay_player(pixels: list[int], tia: TIAState, player: int) -> None:
+    """Paint player 0 or 1 onto `pixels` (mutated in place).
+
+    Single 1×-wide copy. NUSIZ multi-copy / 2×4× scaling is deferred to a
+    P3c follow-up or P3f. `pixels` must be a 160-element list.
+    """
+    grp_reg = W_GRP0 if player == 0 else W_GRP1
+    grp = int(tia.registers[grp_reg])
+    if grp == 0:
+        return  # nothing to draw
+    color_reg = W_COLUP0 if player == 0 else W_COLUP1
+    refp_reg = W_REFP0 if player == 0 else W_REFP1
+    color = int(tia.registers[color_reg])
+    reflected = (int(tia.registers[refp_reg]) & 0x08) != 0
+    x = tia.p0_x if player == 0 else tia.p1_x
+
+    # GRP is rendered with bit 7 as the LEFTMOST pixel by default. When
+    # REFP.D3 is set, the bit order is reversed.
+    for i in range(8):
+        bit_idx = i if reflected else (7 - i)
+        if (grp >> bit_idx) & 1:
+            px = (x + i) % 160
+            if 0 <= px < 160:
+                pixels[px] = color
+
+
+def render_scanline(tia: TIAState) -> jnp.ndarray:
+    """Composite renderer: playfield (P3b) + players (P3c). Missile/ball
+    overlay and collision detection land in P3d / P3e.
+    """
+    pixels = _playfield_pixels(tia)
+    _overlay_player(pixels, tia, player=0)
+    _overlay_player(pixels, tia, player=1)
     return jnp.array(pixels, dtype=jnp.uint8)
 
 
