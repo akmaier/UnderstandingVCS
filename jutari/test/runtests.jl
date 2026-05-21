@@ -3532,3 +3532,179 @@ end
     end
 
 end
+
+@testset "JuTari P7c-e SOFT-mode stack + status flags + INC/DEC" begin
+
+    @testset "P7c-e opcode set present" begin
+        p7c_e = Set{UInt8}([
+            0x48, 0x08, 0x68, 0x28,
+            0x18, 0x38, 0x58, 0x78, 0xB8, 0xD8, 0xF8,
+            0xE6, 0xF6, 0xEE, 0xFE,
+            0xC6, 0xD6, 0xCE, 0xDE,
+            0xE8, 0xC8, 0xCA, 0x88,
+        ])
+        @test p7c_e ⊆ SOFT_SUPPORTED_OPCODES
+        @test length(p7c_e) == 23
+    end
+
+    # Stack — PHA / PLA
+    @testset "PHA then PLA round-trips A" begin
+        bus = initial_soft_bus(_soft_rom_with([0x48, 0xA9, 0x00, 0x68]))
+        state = initial_soft_cpu_state(); state.A = Float32(0x5A)
+        soft_step!(state, bus)               # PHA
+        @test state.SP == Float32(0xFC)
+        soft_step!(state, bus)               # LDA #$00
+        @test state.A == 0f0
+        soft_step!(state, bus)               # PLA
+        @test state.A == Float32(0x5A)
+        @test state.SP == Float32(0xFD)
+    end
+
+    @testset "PLA sets Z on zero" begin
+        bus = initial_soft_bus(_soft_rom_with([0x48, 0x68]))
+        state = initial_soft_cpu_state(); state.A = 0f0
+        soft_run!(state, bus, 2)
+        @test (Int(state.P) & 0x02) != 0
+    end
+
+    # Stack — PHP / PLP
+    @testset "PHP pushes P with B+U forced" begin
+        bus = initial_soft_bus(_soft_rom_with([0x08]))
+        state = initial_soft_cpu_state(); state.P = 0f0
+        soft_step!(state, bus)
+        @test bus.ram[0x7D + 1] == Float32(0x30)
+    end
+
+    @testset "PLP forces B+U on pull" begin
+        bus = initial_soft_bus(_soft_rom_with([0x08, 0x28]))
+        state = initial_soft_cpu_state(); state.P = 0f0
+        soft_run!(state, bus, 2)
+        @test (Int(state.P) & 0x10) != 0
+        @test (Int(state.P) & 0x20) != 0
+    end
+
+    # Status-flag opcodes
+    @testset "SEC sets carry" begin
+        bus = initial_soft_bus(_soft_rom_with([0x38]))
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test (Int(state.P) & 0x01) != 0
+    end
+
+    @testset "CLC clears carry" begin
+        bus = initial_soft_bus(_soft_rom_with([0x18]))
+        state = initial_soft_cpu_state(); state.P = Float32(0x35)
+        soft_step!(state, bus)
+        @test (Int(state.P) & 0x01) == 0
+    end
+
+    @testset "SEI sets interrupt disable" begin
+        bus = initial_soft_bus(_soft_rom_with([0x78]))
+        state = initial_soft_cpu_state(); state.P = Float32(0x30)
+        soft_step!(state, bus)
+        @test (Int(state.P) & 0x04) != 0
+    end
+
+    @testset "CLI clears interrupt disable" begin
+        bus = initial_soft_bus(_soft_rom_with([0x58]))
+        state = initial_soft_cpu_state(); state.P = Float32(0x34)
+        soft_step!(state, bus)
+        @test (Int(state.P) & 0x04) == 0
+    end
+
+    @testset "SED sets decimal" begin
+        bus = initial_soft_bus(_soft_rom_with([0xF8]))
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test (Int(state.P) & 0x08) != 0
+    end
+
+    @testset "CLD clears decimal" begin
+        bus = initial_soft_bus(_soft_rom_with([0xD8]))
+        state = initial_soft_cpu_state(); state.P = Float32(0x3C)
+        soft_step!(state, bus)
+        @test (Int(state.P) & 0x08) == 0
+    end
+
+    @testset "CLV clears overflow" begin
+        bus = initial_soft_bus(_soft_rom_with([0xB8]))
+        state = initial_soft_cpu_state(); state.P = Float32(0x74)
+        soft_step!(state, bus)
+        @test (Int(state.P) & 0x40) == 0
+    end
+
+    # INC / DEC memory
+    @testset "INC zp increments RAM byte" begin
+        bus = initial_soft_bus(_soft_rom_with([0xE6, 0x20]))
+        bus.ram[0x20 + 1] = Float32(0x41)
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test bus.ram[0x20 + 1] == Float32(0x42)
+    end
+
+    @testset "INC wraps \$FF→0 sets Z" begin
+        bus = initial_soft_bus(_soft_rom_with([0xE6, 0x20]))
+        bus.ram[0x20 + 1] = Float32(0xFF)
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test bus.ram[0x20 + 1] == 0f0
+        @test (Int(state.P) & 0x02) != 0
+    end
+
+    @testset "DEC zp decrements RAM byte" begin
+        bus = initial_soft_bus(_soft_rom_with([0xC6, 0x20]))
+        bus.ram[0x20 + 1] = Float32(0x10)
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test bus.ram[0x20 + 1] == Float32(0x0F)
+    end
+
+    @testset "DEC wraps 0→\$FF sets N" begin
+        bus = initial_soft_bus(_soft_rom_with([0xC6, 0x20]))
+        bus.ram[0x20 + 1] = 0f0
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test bus.ram[0x20 + 1] == Float32(0xFF)
+        @test (Int(state.P) & 0x80) != 0
+    end
+
+    @testset "INC abs,X indexed" begin
+        bus = initial_soft_bus(_soft_rom_with([0xFE, 0x20, 0x00]))
+        bus.ram[0x24 + 1] = Float32(0x07)
+        state = initial_soft_cpu_state(); state.X = Float32(4)
+        soft_step!(state, bus)
+        @test bus.ram[0x24 + 1] == Float32(0x08)
+    end
+
+    # INX/INY/DEX/DEY
+    @testset "INX increments X" begin
+        bus = initial_soft_bus(_soft_rom_with([0xE8]))
+        state = initial_soft_cpu_state(); state.X = Float32(0x10)
+        soft_step!(state, bus)
+        @test state.X == Float32(0x11)
+    end
+
+    @testset "INY wraps and sets Z" begin
+        bus = initial_soft_bus(_soft_rom_with([0xC8]))
+        state = initial_soft_cpu_state(); state.Y = Float32(0xFF)
+        soft_step!(state, bus)
+        @test state.Y == 0f0
+        @test (Int(state.P) & 0x02) != 0
+    end
+
+    @testset "DEX decrements X" begin
+        bus = initial_soft_bus(_soft_rom_with([0xCA]))
+        state = initial_soft_cpu_state(); state.X = Float32(0x05)
+        soft_step!(state, bus)
+        @test state.X == Float32(0x04)
+    end
+
+    @testset "DEY wraps 0→\$FF sets N" begin
+        bus = initial_soft_bus(_soft_rom_with([0x88]))
+        state = initial_soft_cpu_state(); state.Y = 0f0
+        soft_step!(state, bus)
+        @test state.Y == Float32(0xFF)
+        @test (Int(state.P) & 0x80) != 0
+    end
+
+end

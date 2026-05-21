@@ -893,6 +893,131 @@ def _branch_rts(state: SoftCPUState, bus: SoftBus):
 
 
 # --------------------------------------------------------------------------- #
+# P7c-e — stack push/pull (PHA/PHP/PLA/PLP), status-flag opcodes
+# (CLC/SEC/CLI/SEI/CLV/CLD/SED), INC/DEC memory, INX/INY/DEX/DEY.
+# --------------------------------------------------------------------------- #
+
+def _branch_pha(state: SoftCPUState, bus: SoftBus):
+    """PHA: push A. 1 byte, 3 cycles."""
+    new_bus, sp = _push8(bus, state.SP, state.A)
+    return state._replace(
+        SP=sp,
+        PC=state.PC + 1.0,
+        cycles=state.cycles + 3.0,
+    ), new_bus
+
+
+def _branch_php(state: SoftCPUState, bus: SoftBus):
+    """PHP: push P with B (0x10) and U (0x20) forced on."""
+    p_pushed   = (state.P.astype(jnp.int32) | 0x30).astype(jnp.float32)
+    new_bus, sp = _push8(bus, state.SP, p_pushed)
+    return state._replace(
+        SP=sp,
+        PC=state.PC + 1.0,
+        cycles=state.cycles + 3.0,
+    ), new_bus
+
+
+def _branch_pla(state: SoftCPUState, bus: SoftBus):
+    """PLA: pull A, set N/Z. 4 cycles."""
+    value, sp = _pop8(bus, state.SP)
+    return state._replace(
+        A=value,
+        SP=sp,
+        P=_set_nz(state.P, value),
+        PC=state.PC + 1.0,
+        cycles=state.cycles + 4.0,
+    ), bus
+
+
+def _branch_plp(state: SoftCPUState, bus: SoftBus):
+    """PLP: pull P, force B and U on (xitari PSLockupTable convention)."""
+    popped, sp = _pop8(bus, state.SP)
+    new_p = (popped.astype(jnp.int32) | 0x30).astype(jnp.float32)
+    return state._replace(
+        SP=sp,
+        P=new_p,
+        PC=state.PC + 1.0,
+        cycles=state.cycles + 4.0,
+    ), bus
+
+
+def _set_flag(state: SoftCPUState, flag_mask: int, set_it: bool):
+    """Set or clear a single P bit; advance PC by 1, +2 cycles."""
+    p_int = state.P.astype(jnp.int32)
+    new_p = (p_int | flag_mask) if set_it else (p_int & (0xFF ^ flag_mask))
+    return state._replace(
+        P=new_p.astype(jnp.float32),
+        PC=state.PC + 1.0,
+        cycles=state.cycles + 2.0,
+    )
+
+
+def _branch_clc(s, b): return _set_flag(s, 0x01, False), b   # clear C
+def _branch_sec(s, b): return _set_flag(s, 0x01, True),  b   # set C
+def _branch_cli(s, b): return _set_flag(s, 0x04, False), b   # clear I
+def _branch_sei(s, b): return _set_flag(s, 0x04, True),  b   # set I
+def _branch_clv(s, b): return _set_flag(s, 0x40, False), b   # clear V
+def _branch_cld(s, b): return _set_flag(s, 0x08, False), b   # clear D
+def _branch_sed(s, b): return _set_flag(s, 0x08, True),  b   # set D
+
+
+def _inc_value(value):
+    """value + 1, wrapped to a byte. Kept float-clean so the gradient
+    on the increment path is preserved."""
+    return _wrap_byte(value + 1.0)
+
+
+def _dec_value(value):
+    return _wrap_byte(value - 1.0)
+
+
+def _incdec_memory(state, bus, addr_resolver, value_op, instr_len, cycles):
+    """RMW INC/DEC on memory — read, +/-1, write back, set N/Z."""
+    addr = addr_resolver(state, bus)
+    value = _bus_read(bus, addr)
+    new_value = value_op(value)
+    new_bus = _bus_write(bus, addr, new_value)
+    return state._replace(
+        P=_set_nz(state.P, new_value),
+        PC=state.PC + instr_len,
+        cycles=state.cycles + cycles,
+    ), new_bus
+
+
+# INC memory
+def _branch_inc_zp(s, b):    return _incdec_memory(s, b, _addr_zp,    _inc_value, 2.0, 5.0)
+def _branch_inc_zp_x(s, b):  return _incdec_memory(s, b, _addr_zp_x,  _inc_value, 2.0, 6.0)
+def _branch_inc_abs(s, b):   return _incdec_memory(s, b, _addr_abs,   _inc_value, 3.0, 6.0)
+def _branch_inc_abs_x(s, b): return _incdec_memory(s, b, _addr_abs_x, _inc_value, 3.0, 7.0)
+
+# DEC memory
+def _branch_dec_zp(s, b):    return _incdec_memory(s, b, _addr_zp,    _dec_value, 2.0, 5.0)
+def _branch_dec_zp_x(s, b):  return _incdec_memory(s, b, _addr_zp_x,  _dec_value, 2.0, 6.0)
+def _branch_dec_abs(s, b):   return _incdec_memory(s, b, _addr_abs,   _dec_value, 3.0, 6.0)
+def _branch_dec_abs_x(s, b): return _incdec_memory(s, b, _addr_abs_x, _dec_value, 3.0, 7.0)
+
+
+def _incdec_reg(state, reg: str, value_op):
+    """INX/INY/DEX/DEY — register +/-1, set N/Z. 1 byte, 2 cycles."""
+    cur = getattr(state, reg)
+    new_v = value_op(cur)
+    fields = {
+        "P": _set_nz(state.P, new_v),
+        "PC": state.PC + 1.0,
+        "cycles": state.cycles + 2.0,
+        reg: new_v,
+    }
+    return state._replace(**fields)
+
+
+def _branch_inx(s, b): return _incdec_reg(s, "X", _inc_value), b
+def _branch_iny(s, b): return _incdec_reg(s, "Y", _inc_value), b
+def _branch_dex(s, b): return _incdec_reg(s, "X", _dec_value), b
+def _branch_dey(s, b): return _incdec_reg(s, "Y", _dec_value), b
+
+
+# --------------------------------------------------------------------------- #
 # Dispatch table
 # --------------------------------------------------------------------------- #
 
@@ -1047,6 +1172,34 @@ _HANDLERS[0xF0] = _branch_beq
 _HANDLERS[0x6C] = _branch_jmp_ind
 _HANDLERS[0x20] = _branch_jsr
 _HANDLERS[0x60] = _branch_rts
+# P7c-e — stack push/pull
+_HANDLERS[0x48] = _branch_pha
+_HANDLERS[0x08] = _branch_php
+_HANDLERS[0x68] = _branch_pla
+_HANDLERS[0x28] = _branch_plp
+# P7c-e — status-flag opcodes
+_HANDLERS[0x18] = _branch_clc
+_HANDLERS[0x38] = _branch_sec
+_HANDLERS[0x58] = _branch_cli
+_HANDLERS[0x78] = _branch_sei
+_HANDLERS[0xB8] = _branch_clv
+_HANDLERS[0xD8] = _branch_cld
+_HANDLERS[0xF8] = _branch_sed
+# P7c-e — INC memory
+_HANDLERS[0xE6] = _branch_inc_zp
+_HANDLERS[0xF6] = _branch_inc_zp_x
+_HANDLERS[0xEE] = _branch_inc_abs
+_HANDLERS[0xFE] = _branch_inc_abs_x
+# P7c-e — DEC memory
+_HANDLERS[0xC6] = _branch_dec_zp
+_HANDLERS[0xD6] = _branch_dec_zp_x
+_HANDLERS[0xCE] = _branch_dec_abs
+_HANDLERS[0xDE] = _branch_dec_abs_x
+# P7c-e — INX/INY/DEX/DEY
+_HANDLERS[0xE8] = _branch_inx
+_HANDLERS[0xC8] = _branch_iny
+_HANDLERS[0xCA] = _branch_dex
+_HANDLERS[0x88] = _branch_dey
 
 # Opcodes handled with full behaviour (rather than default). Exposed so
 # tests + a future P7c can introspect coverage.
@@ -1079,6 +1232,12 @@ SOFT_SUPPORTED_OPCODES = frozenset({
     # P7c-d — branches + JMP indirect + JSR / RTS
     0x10, 0x30, 0x50, 0x70, 0x90, 0xB0, 0xD0, 0xF0,
     0x6C, 0x20, 0x60,
+    # P7c-e — stack, status flags, INC/DEC, INX/INY/DEX/DEY
+    0x48, 0x08, 0x68, 0x28,
+    0x18, 0x38, 0x58, 0x78, 0xB8, 0xD8, 0xF8,
+    0xE6, 0xF6, 0xEE, 0xFE,
+    0xC6, 0xD6, 0xCE, 0xDE,
+    0xE8, 0xC8, 0xCA, 0x88,
 })
 
 

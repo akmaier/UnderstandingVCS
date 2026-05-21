@@ -705,6 +705,103 @@ end
 
 
 # --------------------------------------------------------------------------- #
+# P7c-e — stack push/pull, status-flag opcodes, INC/DEC, INX/INY/DEX/DEY.
+# --------------------------------------------------------------------------- #
+
+function _branch_pha!(state::SoftCPUState, bus::SoftBus)
+    state.SP      = _push8!(bus, state.SP, state.A)
+    state.PC     += 1f0
+    state.cycles += 3f0
+    return nothing
+end
+
+function _branch_php!(state::SoftCPUState, bus::SoftBus)
+    p_pushed = Float32(Int(state.P) | 0x30)        # force B + U
+    state.SP      = _push8!(bus, state.SP, p_pushed)
+    state.PC     += 1f0
+    state.cycles += 3f0
+    return nothing
+end
+
+function _branch_pla!(state::SoftCPUState, bus::SoftBus)
+    value, sp = _pop8(bus, state.SP)
+    state.A       = value
+    state.SP      = sp
+    state.P       = _set_nz(state.P, value)
+    state.PC     += 1f0
+    state.cycles += 4f0
+    return nothing
+end
+
+function _branch_plp!(state::SoftCPUState, bus::SoftBus)
+    popped, sp = _pop8(bus, state.SP)
+    state.SP      = sp
+    state.P       = Float32(Int(popped) | 0x30)    # force B + U
+    state.PC     += 1f0
+    state.cycles += 4f0
+    return nothing
+end
+
+function _set_flag!(state::SoftCPUState, flag_mask::Integer, set_it::Bool)
+    p_int = Int(state.P)
+    state.P       = Float32(set_it ? (p_int | flag_mask) :
+                                     (p_int & (0xFF ⊻ flag_mask)))
+    state.PC     += 1f0
+    state.cycles += 2f0
+    return nothing
+end
+
+_branch_clc!(s, b) = _set_flag!(s, 0x01, false)
+_branch_sec!(s, b) = _set_flag!(s, 0x01, true)
+_branch_cli!(s, b) = _set_flag!(s, 0x04, false)
+_branch_sei!(s, b) = _set_flag!(s, 0x04, true)
+_branch_clv!(s, b) = _set_flag!(s, 0x40, false)
+_branch_cld!(s, b) = _set_flag!(s, 0x08, false)
+_branch_sed!(s, b) = _set_flag!(s, 0x08, true)
+
+@inline _inc_value(value::Real) = _wrap_byte(Float32(value) + 1f0)
+@inline _dec_value(value::Real) = _wrap_byte(Float32(value) - 1f0)
+
+function _incdec_memory!(state::SoftCPUState, bus::SoftBus,
+                         addr_resolver::Function, value_op::Function,
+                         instr_len::Real, cycles::Real)
+    addr = addr_resolver(state, bus)
+    value = _bus_read(bus, addr)
+    new_value = value_op(value)
+    _bus_write!(bus, addr, new_value)
+    state.P       = _set_nz(state.P, new_value)
+    state.PC     += Float32(instr_len)
+    state.cycles += Float32(cycles)
+    return nothing
+end
+
+_branch_inc_zp!(s, b)    = _incdec_memory!(s, b, _addr_zp,    _inc_value, 2, 5)
+_branch_inc_zp_x!(s, b)  = _incdec_memory!(s, b, _addr_zp_x,  _inc_value, 2, 6)
+_branch_inc_abs!(s, b)   = _incdec_memory!(s, b, _addr_abs,   _inc_value, 3, 6)
+_branch_inc_abs_x!(s, b) = _incdec_memory!(s, b, _addr_abs_x, _inc_value, 3, 7)
+
+_branch_dec_zp!(s, b)    = _incdec_memory!(s, b, _addr_zp,    _dec_value, 2, 5)
+_branch_dec_zp_x!(s, b)  = _incdec_memory!(s, b, _addr_zp_x,  _dec_value, 2, 6)
+_branch_dec_abs!(s, b)   = _incdec_memory!(s, b, _addr_abs,   _dec_value, 3, 6)
+_branch_dec_abs_x!(s, b) = _incdec_memory!(s, b, _addr_abs_x, _dec_value, 3, 7)
+
+function _incdec_reg!(state::SoftCPUState, reg::Symbol, value_op::Function)
+    cur = reg === :X ? state.X : state.Y
+    new_v = value_op(cur)
+    if reg === :X; state.X = new_v else state.Y = new_v end
+    state.P       = _set_nz(state.P, new_v)
+    state.PC     += 1f0
+    state.cycles += 2f0
+    return nothing
+end
+
+_branch_inx!(s, b) = _incdec_reg!(s, :X, _inc_value)
+_branch_iny!(s, b) = _incdec_reg!(s, :Y, _inc_value)
+_branch_dex!(s, b) = _incdec_reg!(s, :X, _dec_value)
+_branch_dey!(s, b) = _incdec_reg!(s, :Y, _dec_value)
+
+
+# --------------------------------------------------------------------------- #
 # Dispatch table
 # --------------------------------------------------------------------------- #
 
@@ -815,6 +912,23 @@ const _HANDLERS = let
     h[0x6C + 1] = _branch_jmp_ind!
     h[0x20 + 1] = _branch_jsr!
     h[0x60 + 1] = _branch_rts!
+    # P7c-e — stack push/pull
+    h[0x48 + 1] = _branch_pha!; h[0x08 + 1] = _branch_php!
+    h[0x68 + 1] = _branch_pla!; h[0x28 + 1] = _branch_plp!
+    # P7c-e — status-flag opcodes
+    h[0x18 + 1] = _branch_clc!; h[0x38 + 1] = _branch_sec!
+    h[0x58 + 1] = _branch_cli!; h[0x78 + 1] = _branch_sei!
+    h[0xB8 + 1] = _branch_clv!; h[0xD8 + 1] = _branch_cld!
+    h[0xF8 + 1] = _branch_sed!
+    # P7c-e — INC memory
+    h[0xE6 + 1] = _branch_inc_zp!;  h[0xF6 + 1] = _branch_inc_zp_x!
+    h[0xEE + 1] = _branch_inc_abs!; h[0xFE + 1] = _branch_inc_abs_x!
+    # P7c-e — DEC memory
+    h[0xC6 + 1] = _branch_dec_zp!;  h[0xD6 + 1] = _branch_dec_zp_x!
+    h[0xCE + 1] = _branch_dec_abs!; h[0xDE + 1] = _branch_dec_abs_x!
+    # P7c-e — INX/INY/DEX/DEY
+    h[0xE8 + 1] = _branch_inx!; h[0xC8 + 1] = _branch_iny!
+    h[0xCA + 1] = _branch_dex!; h[0x88 + 1] = _branch_dey!
     h
 end
 
@@ -848,6 +962,12 @@ const SOFT_SUPPORTED_OPCODES = Set{UInt8}([
     # P7c-d — branches + JMP indirect + JSR / RTS
     0x10, 0x30, 0x50, 0x70, 0x90, 0xB0, 0xD0, 0xF0,
     0x6C, 0x20, 0x60,
+    # P7c-e — stack, status flags, INC/DEC, INX/INY/DEX/DEY
+    0x48, 0x08, 0x68, 0x28,
+    0x18, 0x38, 0x58, 0x78, 0xB8, 0xD8, 0xF8,
+    0xE6, 0xF6, 0xEE, 0xFE,
+    0xC6, 0xD6, 0xCE, 0xDE,
+    0xE8, 0xC8, 0xCA, 0x88,
 ])
 
 
