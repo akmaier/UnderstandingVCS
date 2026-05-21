@@ -41,8 +41,9 @@ using ..Types: CPUState
 # Multiple-dispatch peek / poke! so `step` accepts either a `BusState`
 # (proper 6507 bus) or a flat `Vector{UInt8}` (P1-style scratch memory).
 using ..Bus: peek, poke!, BusState
-# TIA timing hook applied after each instruction when running on a Bus.
+# TIA + RIOT timing hooks applied after each instruction when running on a Bus.
 using ..TIA: tia_advance!, tia_apply_wsync!
+using ..RIOT: riot_advance!
 
 export step
 
@@ -227,8 +228,12 @@ end
 
 @inline function _tia_post_step!(state::CPUState, bus::BusState, cycles_consumed::Integer)
     tia_advance!(bus.tia, cycles_consumed)
+    riot_advance!(bus.riot, cycles_consumed)
     stall = tia_apply_wsync!(bus.tia)
-    state.cycles += UInt64(stall)
+    if stall != 0
+        state.cycles += UInt64(stall)
+        riot_advance!(bus.riot, stall)
+    end
     return nothing
 end
 

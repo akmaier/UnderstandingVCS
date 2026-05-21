@@ -63,10 +63,11 @@ def test_bus_tia_region_reads_zero_and_writes_ignored():
     assert bool(jnp.array_equal(bus.ram, bus2.ram))
 
 
-def test_bus_riot_io_region_reads_zero_and_writes_ignored():
+def test_bus_riot_io_region_does_not_corrupt_ram():
+    """As of P4 the RIOT region returns real values (port reads, timer
+    status, etc.) — see test_riot.py for the actual semantics. What still
+    holds: RIOT writes do not leak into the RAM bank."""
     bus = initial_bus()
-    assert peek(bus, 0x0280) == 0
-    assert peek(bus, 0x029F) == 0
     bus2 = poke(bus, 0x0284, 0xFF)
     assert bool(jnp.array_equal(bus.ram, bus2.ram))
 

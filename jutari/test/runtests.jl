@@ -15,6 +15,8 @@ using JuTari.TIA: tia_peek, tia_poke!, tia_advance!, tia_apply_wsync!,
                   W_ENAM0, W_ENAM1, W_ENABL, W_NUSIZ0, W_NUSIZ1,
                   W_RESM0, W_RESM1, W_RESBL, W_CXCLR,
                   W_VSYNC, W_VBLANK
+using JuTari.RIOT: riot_peek, riot_poke!, riot_advance!,
+                   set_swcha_input!, set_swchb_input!
 
 function _make_memory(image)
     mem = zeros(UInt8, 1 << 16)
@@ -1131,10 +1133,11 @@ end
         @test bus.ram == ram_before
     end
 
-    @testset "RIOT I/O region reads zero and writes ignored" begin
+    @testset "RIOT I/O region does not corrupt RAM" begin
+        # As of P4 the RIOT region returns real values — see the P4 testset
+        # for actual semantics. What still holds: RIOT writes don't leak
+        # into the RAM bank.
         bus = initial_bus()
-        @test peek(bus, 0x0280) == 0
-        @test peek(bus, 0x029F) == 0
         ram_before = copy(bus.ram)
         poke!(bus, 0x0284, 0xFF)
         @test bus.ram == ram_before
@@ -2042,6 +2045,169 @@ end
             @test tia.framebuffer[row, 1] == 0x42
         end
         @test tia.framebuffer[41, 1] == 0
+    end
+
+end
+
+@testset "JuTari P4 RIOT timer + I/O ports" begin
+
+    @testset "initial state" begin
+        r = initial_riot_state()
+        @test r.intim == 0
+        @test r.prescaler_shift == 0
+        @test r.cycles_since_tick == 0
+        @test r.timer_expired == false
+        @test r.swcha_in == 0xFF
+        @test r.swchb_in == 0xFF
+        @test r.swacnt == 0x00 && r.swbcnt == 0x00
+    end
+
+    @testset "initial port reads return inputs" begin
+        r = initial_riot_state()
+        @test riot_peek(r, 0x0280) == 0xFF
+        @test riot_peek(r, 0x0282) == 0xFF
+    end
+
+    @testset "TIM*T prescaler decode" begin
+        r = initial_riot_state(); riot_poke!(r, 0x0294, 100)
+        @test r.intim == 100 && r.prescaler_shift == 0
+        r = initial_riot_state(); riot_poke!(r, 0x0295, 50)
+        @test r.intim == 50  && r.prescaler_shift == 3
+        r = initial_riot_state(); riot_poke!(r, 0x0296, 20)
+        @test r.prescaler_shift == 6
+        r = initial_riot_state(); riot_poke!(r, 0x0297, 5)
+        @test r.prescaler_shift == 10
+    end
+
+    @testset "timer load clears expired flag" begin
+        r = initial_riot_state(); r.timer_expired = true
+        riot_poke!(r, 0x0294, 1)
+        @test r.timer_expired == false
+    end
+
+    @testset "advance under one tick does not change INTIM" begin
+        r = initial_riot_state(); riot_poke!(r, 0x0295, 50)
+        riot_advance!(r, 5)
+        @test r.intim == 50
+        @test r.cycles_since_tick == 5
+    end
+
+    @testset "advance one full tick decrements INTIM" begin
+        r = initial_riot_state(); riot_poke!(r, 0x0295, 50)
+        riot_advance!(r, 8)
+        @test r.intim == 49
+        @test r.cycles_since_tick == 0
+    end
+
+    @testset "partial then full tick" begin
+        r = initial_riot_state(); riot_poke!(r, 0x0295, 50)
+        riot_advance!(r, 5); riot_advance!(r, 3)
+        @test r.intim == 49
+    end
+
+    @testset "multiple ticks (TIM1T)" begin
+        r = initial_riot_state(); riot_poke!(r, 0x0294, 100)
+        riot_advance!(r, 30)
+        @test r.intim == 70
+    end
+
+    @testset "exact expiration on TIM1T" begin
+        r = initial_riot_state(); riot_poke!(r, 0x0294, 10)
+        riot_advance!(r, 11)
+        @test r.intim == 0xFF
+        @test r.timer_expired == true
+    end
+
+    @testset "post-expiration ticks once per cycle" begin
+        r = initial_riot_state(); riot_poke!(r, 0x0294, 10)
+        riot_advance!(r, 11)
+        riot_advance!(r, 5)
+        @test r.intim == 0xFA
+        @test r.timer_expired == true
+    end
+
+    @testset "expiration during TIM8T advance" begin
+        r = initial_riot_state(); riot_poke!(r, 0x0295, 5)
+        riot_advance!(r, 50)                     # 6*8 = 48 to expire, 2 over
+        @test r.timer_expired == true
+        @test r.intim == 0xFD
+    end
+
+    @testset "writing timer resets state" begin
+        r = initial_riot_state(); riot_poke!(r, 0x0294, 5)
+        riot_advance!(r, 100)
+        @test r.timer_expired == true
+        riot_poke!(r, 0x0295, 100)
+        @test r.timer_expired == false
+        @test r.intim == 100
+        @test r.cycles_since_tick == 0
+    end
+
+    @testset "INSTAT D7 reflects expired flag" begin
+        r = initial_riot_state(); riot_poke!(r, 0x0294, 5)
+        @test riot_peek(r, 0x0285) == 0x00
+        riot_advance!(r, 6)
+        @test (riot_peek(r, 0x0285) & 0x80) != 0
+    end
+
+    @testset "INTIM readable via peek" begin
+        r = initial_riot_state(); riot_poke!(r, 0x0294, 42)
+        @test riot_peek(r, 0x0284) == 42
+    end
+
+    @testset "SWCHA input reflected when DDR=0" begin
+        r = initial_riot_state(); set_swcha_input!(r, 0b10101010)
+        @test riot_peek(r, 0x0280) == 0b10101010
+    end
+
+    @testset "SWCHA output reflected when DDR=1" begin
+        r = initial_riot_state()
+        riot_poke!(r, 0x0281, 0xFF)
+        riot_poke!(r, 0x0280, 0x5A)
+        @test riot_peek(r, 0x0280) == 0x5A
+        set_swcha_input!(r, 0x00)
+        @test riot_peek(r, 0x0280) == 0x5A
+    end
+
+    @testset "SWCHA mixed DDR combines input and output" begin
+        r = initial_riot_state()
+        riot_poke!(r, 0x0281, 0xF0)              # DDR: high=out, low=in
+        riot_poke!(r, 0x0280, 0xA5)              # out: $A_
+        set_swcha_input!(r, 0x33)                # in: $_3
+        @test riot_peek(r, 0x0280) == 0xA3
+    end
+
+    @testset "SWCHB input reflected when DDR=0" begin
+        r = initial_riot_state(); set_swchb_input!(r, 0b01010101)
+        @test riot_peek(r, 0x0282) == 0b01010101
+    end
+
+    @testset "DDR registers readable" begin
+        r = initial_riot_state()
+        riot_poke!(r, 0x0281, 0xC3); riot_poke!(r, 0x0283, 0x3C)
+        @test riot_peek(r, 0x0281) == 0xC3
+        @test riot_peek(r, 0x0283) == 0x3C
+    end
+
+    @testset "step advances RIOT timer" begin
+        rom = fill(UInt8(0xEA), 4096)             # NOPs (2 cyc each)
+        bus = initial_bus(rom)
+        riot_poke!(bus.riot, 0x0294, 50)          # TIM1T = 50
+        s = _state(PC=0xF000)
+        for _ in 1:10
+            step(s, bus)
+        end
+        @test bus.riot.intim == 30
+        @test !bus.riot.timer_expired
+    end
+
+    @testset "WSYNC stall advances RIOT too" begin
+        rom = zeros(UInt8, 4096); rom[1] = 0x85; rom[2] = 0x02   # STA WSYNC
+        bus = initial_bus(rom)
+        riot_poke!(bus.riot, 0x0294, 200)          # TIM1T = 200
+        s = _state(PC=0xF000)
+        step(s, bus)
+        @test bus.riot.intim == 124               # 200 - 76
     end
 
 end

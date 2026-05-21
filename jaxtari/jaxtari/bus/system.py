@@ -16,10 +16,9 @@ hardware therefore have an effective stack of 128 bytes shared with the
 zero-page-relative RAM, and they keep SP in the upper half (initial
 SP=\$FD → first push lands at RAM \$7D).
 
-Status as of P3a: address decode, RAM/ROM peek/poke, and TIA register
-file + WSYNC. RIOT I/O region is still a stub (lands in P4);
-bank-switching cartridges land in P5. The TIA's rendering output
-(playfield, sprites, framebuffer) lands in subsequent P3 sub-phases.
+Status as of P4: address decode, RAM/ROM peek/poke, full TIA register
+file + rendering (P3), and RIOT timer + I/O ports (P4). Bank-switching
+cartridges land in P5.
 
 A second, simpler memory model — a flat 65,536-byte `jnp.ndarray` — is
 supported too, so the P1 unit tests can keep building tiny programs at
@@ -33,6 +32,7 @@ from typing import NamedTuple, Union
 
 import jax.numpy as jnp
 
+from jaxtari.riot.system import RIOTState, initial_riot_state, riot_peek, riot_poke
 from jaxtari.tia.system import TIAState, initial_tia_state, tia_peek, tia_poke
 
 
@@ -52,15 +52,18 @@ class Bus(NamedTuple):
         cartridges (8K, 16K, 32K, …) land in P5.
     tia : TIAState
         TIA register file + scanline/frame timing state.
+    riot : RIOTState
+        RIOT timer + I/O port state (the 128 B RAM is in `ram` above).
     """
     ram: jnp.ndarray
     rom: jnp.ndarray
     tia: TIAState
+    riot: RIOTState
 
 
 def initial_bus(rom: Union[jnp.ndarray, None] = None) -> Bus:
     """Build a `Bus` with all-zero RAM, the given ROM (default: all zeros),
-    and a fresh TIA state."""
+    a fresh TIA state, and a fresh RIOT state."""
     if rom is None:
         rom = jnp.zeros((4096,), dtype=jnp.uint8)
     if rom.shape != (4096,):
@@ -74,6 +77,7 @@ def initial_bus(rom: Union[jnp.ndarray, None] = None) -> Bus:
         ram=jnp.zeros((128,), dtype=jnp.uint8),
         rom=rom,
         tia=initial_tia_state(),
+        riot=initial_riot_state(),
     )
 
 
@@ -125,8 +129,8 @@ def _bus_peek(bus: Bus, addr: int) -> int:
         # later).
         return tia_peek(bus.tia, addr)
     if addr & 0x200:
-        # RIOT I/O (A9=1). Stub for P2; proper timer + ports land in P4.
-        return 0
+        # RIOT I/O (A9=1). P4: timer + ports.
+        return riot_peek(bus.riot, addr)
     # RIOT RAM (A7=1, A9=0). 128 bytes, mirrored at offset addr & 0x7F.
     return int(bus.ram[addr & 0x7F])
 
@@ -139,7 +143,8 @@ def _bus_poke(bus: Bus, addr: int, value: int) -> Bus:
         # TIA write — record the byte and apply P3a side-effects (WSYNC).
         return bus._replace(tia=tia_poke(bus.tia, addr, value))
     if addr & 0x200:
-        return bus  # RIOT I/O write-stub (P4).
+        # RIOT I/O write (P4): SWCHA/SWACNT/SWCHB/SWBCNT or TIM*T.
+        return bus._replace(riot=riot_poke(bus.riot, addr, value))
     return bus._replace(
         ram=bus.ram.at[addr & 0x7F].set(jnp.uint8(value & 0xFF))
     )

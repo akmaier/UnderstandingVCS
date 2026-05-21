@@ -58,6 +58,7 @@ from jaxtari.cpu.tables import (
     FLAG_V,
     FLAG_Z,
 )
+from jaxtari.riot.system import riot_advance
 from jaxtari.tia.system import tia_advance, tia_apply_wsync
 from jaxtari.types import CPUState
 
@@ -304,15 +305,19 @@ def step(state: CPUState, memory):
 
 
 def _tia_post_step(old_state: CPUState, new_state: CPUState, bus: Bus):
-    """Advance the TIA by the cycles consumed and resolve a pending WSYNC."""
+    """Advance the TIA and RIOT by the cycles consumed and resolve a
+    pending WSYNC. WSYNC's stall cycles also feed the RIOT timer (the
+    RIOT continues to tick while the CPU is held)."""
     delta = int(new_state.cycles - old_state.cycles)
     new_tia = tia_advance(bus.tia, delta)
+    new_riot = riot_advance(bus.riot, delta)
     stall, new_tia = tia_apply_wsync(new_tia)
     if stall:
         new_state = new_state._replace(
             cycles=new_state.cycles + jnp.uint64(stall),
         )
-    return new_state, bus._replace(tia=new_tia)
+        new_riot = riot_advance(new_riot, stall)
+    return new_state, bus._replace(tia=new_tia, riot=new_riot)
 
 
 def _step_inner(state: CPUState, memory):

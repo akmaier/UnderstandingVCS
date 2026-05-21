@@ -18,10 +18,9 @@ nowhere useful) while \$0180–\$01FF mirrors RIOT RAM. The effective
 stack is therefore 128 B shared with zero-page-relative RAM; programs
 keep SP in the upper half.
 
-Status as of P3a: address decode, RAM/ROM peek/poke, and TIA register
-file + WSYNC. RIOT I/O is still a stub (lands in P4); bank-switching
-cartridges land in P5. TIA rendering output (playfield, sprites,
-framebuffer) lands in subsequent P3 sub-phases.
+Status as of P4: address decode, RAM/ROM peek/poke, full TIA register
+file + rendering (P3), and RIOT timer + I/O ports (P4). Bank-switching
+cartridges land in P5.
 
 Multiple dispatch handles two world types: a `BusState` (proper 6507
 bus) and a flat `Vector{UInt8}` (used by the P1 unit tests). The same
@@ -30,27 +29,29 @@ bus) and a flat `Vector{UInt8}` (used by the P1 unit tests). The same
 module Bus
 
 using ..TIA: TIAState, initial_tia_state, tia_peek, tia_poke!
+using ..RIOT: RIOTState, initial_riot_state, riot_peek, riot_poke!
 
 export BusState, initial_bus, peek, poke!
 
 """
     BusState
 
-6507 system bus state. `ram` is the 128-byte RIOT internal RAM; `rom` is
-the cartridge ROM image (4096 bytes in P2; bank-switched cartridges land
-in P5); `tia` is the TIA register file + scanline/frame timing state.
+6507 system bus state. `ram` is the 128 B RAM; `rom` is the cartridge
+ROM image (4096 bytes in P2); `tia` is the TIA state; `riot` is the
+RIOT timer + I/O state (RAM lives in `ram`).
 """
 mutable struct BusState
     ram::Vector{UInt8}
     rom::Vector{UInt8}
     tia::TIAState
+    riot::RIOTState
 end
 
 """
     initial_bus(rom=nothing) -> BusState
 
 Build a `BusState` with all-zero RAM, the given 4 KB ROM (default: zeros),
-and a fresh TIA state.
+fresh TIA state, and fresh RIOT state.
 """
 function initial_bus(rom=nothing)
     if rom === nothing
@@ -61,7 +62,8 @@ function initial_bus(rom=nothing)
             "P2 expects a flat 4K ROM; got length $(length(rom)). " *
             "Bank-switched cartridges land in P5."))
     end
-    return BusState(zeros(UInt8, 128), rom, initial_tia_state())
+    return BusState(zeros(UInt8, 128), rom,
+                    initial_tia_state(), initial_riot_state())
 end
 
 # --------------------------------------------------------------------------- #
@@ -87,7 +89,7 @@ the 6507 address decode is applied; for a `Vector{UInt8}` the byte at
         return tia_peek(bus.tia, a)              # TIA register read (P3a stub)
     end
     if (a & 0x200) != 0
-        return UInt8(0)                          # RIOT I/O (P2 stub)
+        return riot_peek(bus.riot, a)            # RIOT timer + I/O ports
     end
     return bus.ram[(a & 0x7F) + 1]               # RIOT RAM
 end
@@ -111,7 +113,10 @@ end
         tia_poke!(bus.tia, a, value)             # TIA write — records byte + WSYNC
         return nothing
     end
-    (a & 0x200) != 0  && return nothing          # RIOT I/O write stub
+    if (a & 0x200) != 0
+        riot_poke!(bus.riot, a, value)           # RIOT timer / ports write
+        return nothing
+    end
     bus.ram[(a & 0x7F) + 1] = UInt8(Int(value) & 0xFF)
     return nothing
 end
