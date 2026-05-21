@@ -29,14 +29,15 @@ overall project goal, see [README.md](README.md).
 | **P6**  | Console + IO actions + StellaEnvironment + TIA INPT* triggers | [`7a8f303`](https://github.com/akmaier/UnderstandingVCS/commit/7a8f303) | +29 | +39 | ✅ |
 | **P7**  | Diff primitives — RomTensor, soft_select, soft_memory_read, soft_branch, STEs | [`4b4d989`](https://github.com/akmaier/UnderstandingVCS/commit/4b4d989) | +23 | +22 | ✅ |
 | **P7b** | Parallel SOFT-mode `soft_step` (8 opcodes) + end-to-end `jax.grad` back to ROM | [`11c8388`](https://github.com/akmaier/UnderstandingVCS/commit/11c8388) | +34 | +18 | ✅ |
-| **P7c-a** | Full load/store/transfer opcode coverage (37 opcodes — LDA/LDX/LDY/STA/STX/STY across all addressing modes + TAX/TAY/TXA/TYA/TSX/TXS) + N/Z flag updates + cart-vs-RAM bus-read dispatch | _next commit_ | +33 | +28 | ✅ |
-| **P7c-b…f** | Arithmetic, shifts, branches, stack, status, INC/DEC, BRK/RTI, TIA/RIOT writes, bank-switching | — | — | — | ⏳ |
+| **P7c-a** | Full load/store/transfer opcode coverage (37 opcodes) + N/Z flag updates + cart-vs-RAM bus-read dispatch | [`d6e2c18`](https://github.com/akmaier/UnderstandingVCS/commit/d6e2c18) | +33 | +28 | ✅ |
+| **P7c-b** | Arithmetic + logic + compare + BIT (49 opcodes — ADC/SBC binary mode incl. USBC; AND/ORA/EOR/CMP/CPX/CPY/BIT) + N/Z/C/V flag updates | _next commit_ | +36 | +22 | ✅ |
+| **P7c-c…f** | Shifts/rotates, branches, stack, status, INC/DEC, BRK/RTI, TIA/RIOT writes, bank-switching | — | — | — | ⏳ |
 | **P7d** | RomTensor as a custom JAX PyTree, used as the `SoftBus.rom` slot | — | — | — | ☐ |
 | **P7e** | Julia gradient stack — Zygote / ChainRulesCore `rrule`s for the SOFT primitives so jutari can take real gradients | — | — | — | ☐ |
 | **P8**  | XAI hooks + first attribution experiment | — | — | — | ☐ |
 | **P9**  | JAX-vs-Julia benchmark + paper-shaped XAI study | — | — | — | ☐ |
 
-**Totals after P7c-a: jaxtari 367 tests, jutari 865 tests, 1232 green across both ports.**
+**Totals after P7c-b: jaxtari 389 tests, jutari 901 tests, 1290 green across both ports.**
 
 ## What each port can do today
 

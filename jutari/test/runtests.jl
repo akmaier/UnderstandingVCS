@@ -3079,3 +3079,181 @@ end
     end
 
 end
+
+@testset "JuTari P7c-b SOFT-mode arithmetic + logic + compare + BIT" begin
+
+    @testset "P7c-b opcode set present" begin
+        p7c_b = Set{UInt8}([
+            # ADC
+            0x69, 0x65, 0x75, 0x6D, 0x7D, 0x79, 0x61, 0x71,
+            # SBC + USBC
+            0xE9, 0xE5, 0xF5, 0xED, 0xFD, 0xF9, 0xE1, 0xF1, 0xEB,
+            # AND
+            0x29, 0x25, 0x35, 0x2D, 0x3D, 0x39, 0x21, 0x31,
+            # ORA
+            0x09, 0x05, 0x15, 0x0D, 0x1D, 0x19, 0x01, 0x11,
+            # EOR
+            0x49, 0x45, 0x55, 0x4D, 0x5D, 0x59, 0x41, 0x51,
+            # CMP
+            0xC9, 0xC5, 0xD5, 0xCD, 0xDD, 0xD9, 0xC1, 0xD1,
+            # CPX/CPY/BIT
+            0xE0, 0xE4, 0xEC,
+            0xC0, 0xC4, 0xCC,
+            0x24, 0x2C,
+        ])
+        @test p7c_b ⊆ SOFT_SUPPORTED_OPCODES
+    end
+
+    # ADC
+    @testset "ADC #imm simple sum no carry" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x10, 0x69, 0x22]))
+        state = initial_soft_cpu_state()
+        soft_run!(state, bus, 2)
+        @test state.A == Float32(0x32)
+        @test (Int(state.P) & 0x01) == 0
+    end
+
+    @testset "ADC overflows to carry" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0xFF, 0x69, 0x01]))
+        state = initial_soft_cpu_state()
+        soft_run!(state, bus, 2)
+        @test state.A == 0f0
+        @test (Int(state.P) & 0x01) != 0
+        @test (Int(state.P) & 0x02) != 0
+    end
+
+    @testset "ADC signed overflow sets V" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x50, 0x69, 0x50]))
+        state = initial_soft_cpu_state()
+        soft_run!(state, bus, 2)
+        @test state.A == Float32(0xA0)
+        @test (Int(state.P) & 0x40) != 0
+    end
+
+    # SBC
+    @testset "SBC with C=1 (no borrow) computes diff" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x50, 0xE9, 0x30]))
+        state = initial_soft_cpu_state()
+        state.P = Float32(0x35)   # C=1
+        soft_run!(state, bus, 2)
+        @test state.A == Float32(0x20)
+        @test (Int(state.P) & 0x01) != 0
+    end
+
+    @testset "SBC borrow drops C" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x10, 0xE9, 0x20]))
+        state = initial_soft_cpu_state()
+        state.P = Float32(0x35)
+        soft_run!(state, bus, 2)
+        @test state.A == Float32(0xF0)
+        @test (Int(state.P) & 0x01) == 0
+    end
+
+    @testset "USBC \$EB aliases SBC #imm" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x80, 0xEB, 0x10]))
+        state = initial_soft_cpu_state()
+        state.P = Float32(0x35)
+        soft_run!(state, bus, 2)
+        @test state.A == Float32(0x70)
+    end
+
+    # Bitwise
+    @testset "AND #imm masks" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0xF0, 0x29, 0x0F]))
+        state = initial_soft_cpu_state()
+        soft_run!(state, bus, 2)
+        @test state.A == 0f0
+        @test (Int(state.P) & 0x02) != 0
+    end
+
+    @testset "ORA #imm sets N when high bit set" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x0F, 0x09, 0xF0]))
+        state = initial_soft_cpu_state()
+        soft_run!(state, bus, 2)
+        @test state.A == Float32(0xFF)
+        @test (Int(state.P) & 0x80) != 0
+    end
+
+    @testset "EOR #imm flips bits" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x55, 0x49, 0xFF]))
+        state = initial_soft_cpu_state()
+        soft_run!(state, bus, 2)
+        @test state.A == Float32(0xAA)
+        @test (Int(state.P) & 0x80) != 0
+    end
+
+    @testset "AND \$zp reads RAM" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x0F, 0x25, 0x20]))
+        bus.ram[0x20 + 1] = Float32(0x06)
+        state = initial_soft_cpu_state()
+        soft_run!(state, bus, 2)
+        @test state.A == Float32(0x06)
+    end
+
+    # Compare
+    @testset "CMP equal sets Z and C" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x42, 0xC9, 0x42]))
+        state = initial_soft_cpu_state()
+        soft_run!(state, bus, 2)
+        @test state.A == Float32(0x42)
+        @test (Int(state.P) & 0x02) != 0
+        @test (Int(state.P) & 0x01) != 0
+    end
+
+    @testset "CMP greater sets C clears Z" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x50, 0xC9, 0x30]))
+        state = initial_soft_cpu_state()
+        soft_run!(state, bus, 2)
+        @test (Int(state.P) & 0x01) != 0
+        @test (Int(state.P) & 0x02) == 0
+    end
+
+    @testset "CMP less clears C, sets N" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x20, 0xC9, 0x50]))
+        state = initial_soft_cpu_state()
+        soft_run!(state, bus, 2)
+        @test (Int(state.P) & 0x01) == 0
+        @test (Int(state.P) & 0x80) != 0
+    end
+
+    @testset "CPX #imm compares X" begin
+        bus = initial_soft_bus(_soft_rom_with([0xE0, 0x10]))
+        state = initial_soft_cpu_state()
+        state.X = Float32(0x10)
+        soft_step!(state, bus)
+        @test (Int(state.P) & 0x02) != 0
+        @test (Int(state.P) & 0x01) != 0
+    end
+
+    @testset "CPY #imm Y<operand clears C" begin
+        bus = initial_soft_bus(_soft_rom_with([0xC0, 0x07]))
+        state = initial_soft_cpu_state()
+        state.Y = Float32(0x05)
+        soft_step!(state, bus)
+        @test (Int(state.P) & 0x01) == 0
+    end
+
+    # BIT
+    @testset "BIT \$zp Z set when A AND op == 0" begin
+        bus = initial_soft_bus(_soft_rom_with([0x24, 0x20]))
+        bus.ram[0x20 + 1] = Float32(0xF0)
+        state = initial_soft_cpu_state()
+        state.A = Float32(0x0F)
+        soft_step!(state, bus)
+        @test (Int(state.P) & 0x02) != 0
+        @test (Int(state.P) & 0x80) != 0
+        @test (Int(state.P) & 0x40) != 0
+    end
+
+    @testset "BIT \$abs N+V from operand, Z from AND" begin
+        bus = initial_soft_bus(_soft_rom_with([0x2C, 0x30, 0x00]))
+        bus.ram[0x30 + 1] = Float32(0xC0)
+        state = initial_soft_cpu_state()
+        state.A = Float32(0xFF)
+        soft_step!(state, bus)
+        @test (Int(state.P) & 0x80) != 0
+        @test (Int(state.P) & 0x40) != 0
+        @test (Int(state.P) & 0x02) == 0
+    end
+
+end

@@ -120,13 +120,14 @@ end
 # cast back. Flag gradients are *stopped* at the cast; register-value
 # gradients are preserved.
 
-const _NZ_CLEAR_MASK = 0xFF ⊻ (0x80 | 0x02)   # = 0x7D — keep all but N and Z
+const _NZ_CLEAR_MASK   = 0xFF ⊻ (0x80 | 0x02)               # 0x7D
+const _NZC_CLEAR_MASK  = 0xFF ⊻ (0x80 | 0x02 | 0x01)        # 0x7C
+const _NZCV_CLEAR_MASK = 0xFF ⊻ (0x80 | 0x40 | 0x02 | 0x01) # 0x3C
 
 """
     _set_nz(p, value) -> Float32
 
-Update N and Z in P from `value` (a single byte). Z = 1 iff value == 0;
-N = bit 7.
+Update N and Z in P from `value`. Z = 1 iff value == 0; N = bit 7.
 """
 function _set_nz(p::Real, value::Real)
     v_int = Int(value) & 0xFF
@@ -136,6 +137,56 @@ function _set_nz(p::Real, value::Real)
     n_bit = v_int & 0x80
     return Float32(p_int | z_bit | n_bit)
 end
+
+"""
+    _set_nzc(p, value, carry) -> Float32
+
+Set N, Z (from value) and C (from `carry` 0/1) in P.
+"""
+function _set_nzc(p::Real, value::Real, carry::Integer)
+    v_int = Int(value) & 0xFF
+    p_int = Int(p) & 0xFF
+    p_int = p_int & _NZC_CLEAR_MASK
+    z_bit = v_int == 0 ? 0x02 : 0
+    n_bit = v_int & 0x80
+    c_bit = carry & 0x01
+    return Float32(p_int | z_bit | n_bit | c_bit)
+end
+
+"""
+    _set_nzcv(p, value, carry, overflow) -> Float32
+
+Set all four arithmetic flags. Used by ADC and SBC.
+"""
+function _set_nzcv(p::Real, value::Real, carry::Integer, overflow::Integer)
+    v_int = Int(value) & 0xFF
+    p_int = Int(p) & 0xFF
+    p_int = p_int & _NZCV_CLEAR_MASK
+    z_bit = v_int == 0 ? 0x02 : 0
+    n_bit = v_int & 0x80
+    c_bit = carry & 0x01
+    v_bit = overflow != 0 ? 0x40 : 0
+    return Float32(p_int | z_bit | n_bit | c_bit | v_bit)
+end
+
+"""
+    _set_bit_flags(p, a_and_operand, operand) -> Float32
+
+For BIT: Z from `A AND operand`; N from operand bit 7; V from operand bit 6.
+C is left untouched.
+"""
+function _set_bit_flags(p::Real, a_and_operand::Real, operand::Real)
+    p_int  = Int(p) & 0xFF
+    p_int  = (p_int & _NZCV_CLEAR_MASK) | (p_int & 0x01)   # preserve C
+    and_v  = Int(a_and_operand) & 0xFF
+    op_int = Int(operand) & 0xFF
+    z_bit  = and_v == 0 ? 0x02 : 0
+    n_bit  = op_int & 0x80
+    v_bit  = op_int & 0x40
+    return Float32(p_int | z_bit | n_bit | v_bit)
+end
+
+@inline _read_carry(p::Real) = Int(p) & 0x01
 
 
 # --------------------------------------------------------------------------- #
@@ -315,6 +366,175 @@ end
 
 
 # --------------------------------------------------------------------------- #
+# P7c-b — arithmetic and logic (ADC / SBC / AND / ORA / EOR / CMP / CPX /
+# CPY / BIT). Binary-mode ADC/SBC only — BCD is a P7c-bx deferral.
+# --------------------------------------------------------------------------- #
+
+function _operand_for_mode(state::SoftCPUState, bus::SoftBus, mode::Symbol)
+    if mode === :imm;   return _operand_byte(bus, state.PC + 1f0)
+    elseif mode === :zp;    return _bus_read(bus, _addr_zp(state, bus))
+    elseif mode === :zp_x;  return _bus_read(bus, _addr_zp_x(state, bus))
+    elseif mode === :zp_y;  return _bus_read(bus, _addr_zp_y(state, bus))
+    elseif mode === :abs;   return _bus_read(bus, _addr_abs(state, bus))
+    elseif mode === :abs_x; return _bus_read(bus, _addr_abs_x(state, bus))
+    elseif mode === :abs_y; return _bus_read(bus, _addr_abs_y(state, bus))
+    elseif mode === :ind_x; return _bus_read(bus, _addr_ind_x(state, bus))
+    elseif mode === :ind_y; return _bus_read(bus, _addr_ind_y(state, bus))
+    end
+    error("unknown mode $mode")
+end
+
+
+# ADC / SBC --------------------------------------------------------------- #
+
+function _adc_step!(state::SoftCPUState, bus::SoftBus, operand::Real,
+                    instr_len::Real, cycles::Real)
+    c_in       = Float32(_read_carry(state.P))
+    sum_       = state.A + Float32(operand) + c_in
+    new_a      = sum_ - floor(sum_ / 256f0) * 256f0
+    carry      = Int(sum_) > 0xFF ? 1 : 0
+    a_int      = Int(state.A) & 0xFF
+    op_int     = Int(operand) & 0xFF
+    new_a_int  = Int(new_a) & 0xFF
+    overflow   = ((a_int ⊻ new_a_int) & (op_int ⊻ new_a_int)) & 0x80
+    state.A      = new_a
+    state.P      = _set_nzcv(state.P, new_a, carry, overflow)
+    state.PC    += Float32(instr_len)
+    state.cycles += Float32(cycles)
+    return nothing
+end
+
+function _sbc_step!(state::SoftCPUState, bus::SoftBus, operand::Real,
+                    instr_len::Real, cycles::Real)
+    op_inv     = 255f0 - Float32(operand)
+    c_in       = Float32(_read_carry(state.P))
+    sum_       = state.A + op_inv + c_in
+    new_a      = sum_ - floor(sum_ / 256f0) * 256f0
+    carry      = Int(sum_) > 0xFF ? 1 : 0
+    a_int      = Int(state.A) & 0xFF
+    op_inv_i   = Int(op_inv) & 0xFF
+    new_a_int  = Int(new_a) & 0xFF
+    overflow   = ((a_int ⊻ new_a_int) & (op_inv_i ⊻ new_a_int)) & 0x80
+    state.A      = new_a
+    state.P      = _set_nzcv(state.P, new_a, carry, overflow)
+    state.PC    += Float32(instr_len)
+    state.cycles += Float32(cycles)
+    return nothing
+end
+
+# ADC handlers
+_branch_adc_imm!(s, b)    = _adc_step!(s, b, _operand_for_mode(s, b, :imm),   2, 2)
+_branch_adc_zp!(s, b)     = _adc_step!(s, b, _operand_for_mode(s, b, :zp),    2, 3)
+_branch_adc_zp_x!(s, b)   = _adc_step!(s, b, _operand_for_mode(s, b, :zp_x),  2, 4)
+_branch_adc_abs!(s, b)    = _adc_step!(s, b, _operand_for_mode(s, b, :abs),   3, 4)
+_branch_adc_abs_x!(s, b)  = _adc_step!(s, b, _operand_for_mode(s, b, :abs_x), 3, 4)
+_branch_adc_abs_y!(s, b)  = _adc_step!(s, b, _operand_for_mode(s, b, :abs_y), 3, 4)
+_branch_adc_ind_x!(s, b)  = _adc_step!(s, b, _operand_for_mode(s, b, :ind_x), 2, 6)
+_branch_adc_ind_y!(s, b)  = _adc_step!(s, b, _operand_for_mode(s, b, :ind_y), 2, 5)
+
+# SBC handlers + USBC ($EB alias)
+_branch_sbc_imm!(s, b)    = _sbc_step!(s, b, _operand_for_mode(s, b, :imm),   2, 2)
+_branch_sbc_zp!(s, b)     = _sbc_step!(s, b, _operand_for_mode(s, b, :zp),    2, 3)
+_branch_sbc_zp_x!(s, b)   = _sbc_step!(s, b, _operand_for_mode(s, b, :zp_x),  2, 4)
+_branch_sbc_abs!(s, b)    = _sbc_step!(s, b, _operand_for_mode(s, b, :abs),   3, 4)
+_branch_sbc_abs_x!(s, b)  = _sbc_step!(s, b, _operand_for_mode(s, b, :abs_x), 3, 4)
+_branch_sbc_abs_y!(s, b)  = _sbc_step!(s, b, _operand_for_mode(s, b, :abs_y), 3, 4)
+_branch_sbc_ind_x!(s, b)  = _sbc_step!(s, b, _operand_for_mode(s, b, :ind_x), 2, 6)
+_branch_sbc_ind_y!(s, b)  = _sbc_step!(s, b, _operand_for_mode(s, b, :ind_y), 2, 5)
+
+
+# Bitwise — AND / ORA / EOR ----------------------------------------------- #
+
+function _bitop_step!(state::SoftCPUState, bus::SoftBus, operand::Real,
+                      op::Function, instr_len::Real, cycles::Real)
+    a_int      = Int(state.A) & 0xFF
+    op_int     = Int(operand) & 0xFF
+    new_a_int  = op(a_int, op_int) & 0xFF
+    state.A      = Float32(new_a_int)
+    state.P      = _set_nz(state.P, new_a_int)
+    state.PC    += Float32(instr_len)
+    state.cycles += Float32(cycles)
+    return nothing
+end
+
+_branch_and_imm!(s, b)   = _bitop_step!(s, b, _operand_for_mode(s, b, :imm),   &, 2, 2)
+_branch_and_zp!(s, b)    = _bitop_step!(s, b, _operand_for_mode(s, b, :zp),    &, 2, 3)
+_branch_and_zp_x!(s, b)  = _bitop_step!(s, b, _operand_for_mode(s, b, :zp_x),  &, 2, 4)
+_branch_and_abs!(s, b)   = _bitop_step!(s, b, _operand_for_mode(s, b, :abs),   &, 3, 4)
+_branch_and_abs_x!(s, b) = _bitop_step!(s, b, _operand_for_mode(s, b, :abs_x), &, 3, 4)
+_branch_and_abs_y!(s, b) = _bitop_step!(s, b, _operand_for_mode(s, b, :abs_y), &, 3, 4)
+_branch_and_ind_x!(s, b) = _bitop_step!(s, b, _operand_for_mode(s, b, :ind_x), &, 2, 6)
+_branch_and_ind_y!(s, b) = _bitop_step!(s, b, _operand_for_mode(s, b, :ind_y), &, 2, 5)
+
+_branch_ora_imm!(s, b)   = _bitop_step!(s, b, _operand_for_mode(s, b, :imm),   |, 2, 2)
+_branch_ora_zp!(s, b)    = _bitop_step!(s, b, _operand_for_mode(s, b, :zp),    |, 2, 3)
+_branch_ora_zp_x!(s, b)  = _bitop_step!(s, b, _operand_for_mode(s, b, :zp_x),  |, 2, 4)
+_branch_ora_abs!(s, b)   = _bitop_step!(s, b, _operand_for_mode(s, b, :abs),   |, 3, 4)
+_branch_ora_abs_x!(s, b) = _bitop_step!(s, b, _operand_for_mode(s, b, :abs_x), |, 3, 4)
+_branch_ora_abs_y!(s, b) = _bitop_step!(s, b, _operand_for_mode(s, b, :abs_y), |, 3, 4)
+_branch_ora_ind_x!(s, b) = _bitop_step!(s, b, _operand_for_mode(s, b, :ind_x), |, 2, 6)
+_branch_ora_ind_y!(s, b) = _bitop_step!(s, b, _operand_for_mode(s, b, :ind_y), |, 2, 5)
+
+_branch_eor_imm!(s, b)   = _bitop_step!(s, b, _operand_for_mode(s, b, :imm),   ⊻, 2, 2)
+_branch_eor_zp!(s, b)    = _bitop_step!(s, b, _operand_for_mode(s, b, :zp),    ⊻, 2, 3)
+_branch_eor_zp_x!(s, b)  = _bitop_step!(s, b, _operand_for_mode(s, b, :zp_x),  ⊻, 2, 4)
+_branch_eor_abs!(s, b)   = _bitop_step!(s, b, _operand_for_mode(s, b, :abs),   ⊻, 3, 4)
+_branch_eor_abs_x!(s, b) = _bitop_step!(s, b, _operand_for_mode(s, b, :abs_x), ⊻, 3, 4)
+_branch_eor_abs_y!(s, b) = _bitop_step!(s, b, _operand_for_mode(s, b, :abs_y), ⊻, 3, 4)
+_branch_eor_ind_x!(s, b) = _bitop_step!(s, b, _operand_for_mode(s, b, :ind_x), ⊻, 2, 6)
+_branch_eor_ind_y!(s, b) = _bitop_step!(s, b, _operand_for_mode(s, b, :ind_y), ⊻, 2, 5)
+
+
+# CMP / CPX / CPY --------------------------------------------------------- #
+
+function _compare_step!(state::SoftCPUState, bus::SoftBus, reg_value::Real,
+                        operand::Real, instr_len::Real, cycles::Real)
+    reg_int   = Int(reg_value) & 0xFF
+    op_int    = Int(operand) & 0xFF
+    diff_int  = (reg_int - op_int) & 0xFF
+    carry     = reg_int >= op_int ? 1 : 0
+    state.P      = _set_nzc(state.P, diff_int, carry)
+    state.PC    += Float32(instr_len)
+    state.cycles += Float32(cycles)
+    return nothing
+end
+
+_branch_cmp_imm!(s, b)   = _compare_step!(s, b, s.A, _operand_for_mode(s, b, :imm),   2, 2)
+_branch_cmp_zp!(s, b)    = _compare_step!(s, b, s.A, _operand_for_mode(s, b, :zp),    2, 3)
+_branch_cmp_zp_x!(s, b)  = _compare_step!(s, b, s.A, _operand_for_mode(s, b, :zp_x),  2, 4)
+_branch_cmp_abs!(s, b)   = _compare_step!(s, b, s.A, _operand_for_mode(s, b, :abs),   3, 4)
+_branch_cmp_abs_x!(s, b) = _compare_step!(s, b, s.A, _operand_for_mode(s, b, :abs_x), 3, 4)
+_branch_cmp_abs_y!(s, b) = _compare_step!(s, b, s.A, _operand_for_mode(s, b, :abs_y), 3, 4)
+_branch_cmp_ind_x!(s, b) = _compare_step!(s, b, s.A, _operand_for_mode(s, b, :ind_x), 2, 6)
+_branch_cmp_ind_y!(s, b) = _compare_step!(s, b, s.A, _operand_for_mode(s, b, :ind_y), 2, 5)
+
+_branch_cpx_imm!(s, b)   = _compare_step!(s, b, s.X, _operand_for_mode(s, b, :imm),  2, 2)
+_branch_cpx_zp!(s, b)    = _compare_step!(s, b, s.X, _operand_for_mode(s, b, :zp),   2, 3)
+_branch_cpx_abs!(s, b)   = _compare_step!(s, b, s.X, _operand_for_mode(s, b, :abs),  3, 4)
+
+_branch_cpy_imm!(s, b)   = _compare_step!(s, b, s.Y, _operand_for_mode(s, b, :imm),  2, 2)
+_branch_cpy_zp!(s, b)    = _compare_step!(s, b, s.Y, _operand_for_mode(s, b, :zp),   2, 3)
+_branch_cpy_abs!(s, b)   = _compare_step!(s, b, s.Y, _operand_for_mode(s, b, :abs),  3, 4)
+
+
+# BIT --------------------------------------------------------------------- #
+
+function _bit_step!(state::SoftCPUState, bus::SoftBus, operand::Real,
+                    instr_len::Real, cycles::Real)
+    a_int   = Int(state.A) & 0xFF
+    op_int  = Int(operand) & 0xFF
+    and_v   = a_int & op_int
+    state.P      = _set_bit_flags(state.P, and_v, operand)
+    state.PC    += Float32(instr_len)
+    state.cycles += Float32(cycles)
+    return nothing
+end
+
+_branch_bit_zp!(s, b)  = _bit_step!(s, b, _operand_for_mode(s, b, :zp),  2, 3)
+_branch_bit_abs!(s, b) = _bit_step!(s, b, _operand_for_mode(s, b, :abs), 3, 4)
+
+
+# --------------------------------------------------------------------------- #
 # Dispatch table
 # --------------------------------------------------------------------------- #
 
@@ -368,6 +588,41 @@ const _HANDLERS = let
     h[0x98 + 1] = _branch_tya!
     h[0xBA + 1] = _branch_tsx!
     h[0x9A + 1] = _branch_txs!
+    # P7c-b — ADC
+    h[0x69 + 1] = _branch_adc_imm!;   h[0x65 + 1] = _branch_adc_zp!
+    h[0x75 + 1] = _branch_adc_zp_x!;  h[0x6D + 1] = _branch_adc_abs!
+    h[0x7D + 1] = _branch_adc_abs_x!; h[0x79 + 1] = _branch_adc_abs_y!
+    h[0x61 + 1] = _branch_adc_ind_x!; h[0x71 + 1] = _branch_adc_ind_y!
+    # P7c-b — SBC (+ USBC $EB)
+    h[0xE9 + 1] = _branch_sbc_imm!;   h[0xE5 + 1] = _branch_sbc_zp!
+    h[0xF5 + 1] = _branch_sbc_zp_x!;  h[0xED + 1] = _branch_sbc_abs!
+    h[0xFD + 1] = _branch_sbc_abs_x!; h[0xF9 + 1] = _branch_sbc_abs_y!
+    h[0xE1 + 1] = _branch_sbc_ind_x!; h[0xF1 + 1] = _branch_sbc_ind_y!
+    h[0xEB + 1] = _branch_sbc_imm!     # USBC alias
+    # P7c-b — AND
+    h[0x29 + 1] = _branch_and_imm!;   h[0x25 + 1] = _branch_and_zp!
+    h[0x35 + 1] = _branch_and_zp_x!;  h[0x2D + 1] = _branch_and_abs!
+    h[0x3D + 1] = _branch_and_abs_x!; h[0x39 + 1] = _branch_and_abs_y!
+    h[0x21 + 1] = _branch_and_ind_x!; h[0x31 + 1] = _branch_and_ind_y!
+    # P7c-b — ORA
+    h[0x09 + 1] = _branch_ora_imm!;   h[0x05 + 1] = _branch_ora_zp!
+    h[0x15 + 1] = _branch_ora_zp_x!;  h[0x0D + 1] = _branch_ora_abs!
+    h[0x1D + 1] = _branch_ora_abs_x!; h[0x19 + 1] = _branch_ora_abs_y!
+    h[0x01 + 1] = _branch_ora_ind_x!; h[0x11 + 1] = _branch_ora_ind_y!
+    # P7c-b — EOR
+    h[0x49 + 1] = _branch_eor_imm!;   h[0x45 + 1] = _branch_eor_zp!
+    h[0x55 + 1] = _branch_eor_zp_x!;  h[0x4D + 1] = _branch_eor_abs!
+    h[0x5D + 1] = _branch_eor_abs_x!; h[0x59 + 1] = _branch_eor_abs_y!
+    h[0x41 + 1] = _branch_eor_ind_x!; h[0x51 + 1] = _branch_eor_ind_y!
+    # P7c-b — CMP
+    h[0xC9 + 1] = _branch_cmp_imm!;   h[0xC5 + 1] = _branch_cmp_zp!
+    h[0xD5 + 1] = _branch_cmp_zp_x!;  h[0xCD + 1] = _branch_cmp_abs!
+    h[0xDD + 1] = _branch_cmp_abs_x!; h[0xD9 + 1] = _branch_cmp_abs_y!
+    h[0xC1 + 1] = _branch_cmp_ind_x!; h[0xD1 + 1] = _branch_cmp_ind_y!
+    # P7c-b — CPX / CPY / BIT
+    h[0xE0 + 1] = _branch_cpx_imm!; h[0xE4 + 1] = _branch_cpx_zp!; h[0xEC + 1] = _branch_cpx_abs!
+    h[0xC0 + 1] = _branch_cpy_imm!; h[0xC4 + 1] = _branch_cpy_zp!; h[0xCC + 1] = _branch_cpy_abs!
+    h[0x24 + 1] = _branch_bit_zp!;  h[0x2C + 1] = _branch_bit_abs!
     h
 end
 
@@ -383,6 +638,16 @@ const SOFT_SUPPORTED_OPCODES = Set{UInt8}([
     0x86, 0x96, 0x8E,
     0x84, 0x94, 0x8C,
     0xAA, 0xA8, 0x8A, 0x98, 0xBA, 0x9A,
+    # P7c-b — ADC / SBC / AND / ORA / EOR / CMP / CPX / CPY / BIT
+    0x69, 0x65, 0x75, 0x6D, 0x7D, 0x79, 0x61, 0x71,
+    0xE9, 0xE5, 0xF5, 0xED, 0xFD, 0xF9, 0xE1, 0xF1, 0xEB,
+    0x29, 0x25, 0x35, 0x2D, 0x3D, 0x39, 0x21, 0x31,
+    0x09, 0x05, 0x15, 0x0D, 0x1D, 0x19, 0x01, 0x11,
+    0x49, 0x45, 0x55, 0x4D, 0x5D, 0x59, 0x41, 0x51,
+    0xC9, 0xC5, 0xD5, 0xCD, 0xDD, 0xD9, 0xC1, 0xD1,
+    0xE0, 0xE4, 0xEC,
+    0xC0, 0xC4, 0xCC,
+    0x24, 0x2C,
 ])
 
 
