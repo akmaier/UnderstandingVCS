@@ -16,9 +16,10 @@ hardware therefore have an effective stack of 128 bytes shared with the
 zero-page-relative RAM, and they keep SP in the upper half (initial
 SP=\$FD → first push lands at RAM \$7D).
 
-P2 status: this module implements the address decode and the RAM/ROM
-peek/poke. TIA and RIOT regions are stubs (read 0, ignore writes); proper
-behaviour lands in P3 (TIA), P4 (RIOT), and P5 (bank-switching cartridges).
+Status as of P3a: address decode, RAM/ROM peek/poke, and TIA register
+file + WSYNC. RIOT I/O region is still a stub (lands in P4);
+bank-switching cartridges land in P5. The TIA's rendering output
+(playfield, sprites, framebuffer) lands in subsequent P3 sub-phases.
 
 A second, simpler memory model — a flat 65,536-byte `jnp.ndarray` — is
 supported too, so the P1 unit tests can keep building tiny programs at
@@ -31,6 +32,8 @@ from __future__ import annotations
 from typing import NamedTuple, Union
 
 import jax.numpy as jnp
+
+from jaxtari.tia.system import TIAState, initial_tia_state, tia_peek, tia_poke
 
 
 # --------------------------------------------------------------------------- #
@@ -47,13 +50,17 @@ class Bus(NamedTuple):
     rom : jnp.ndarray (4096,) uint8
         Cartridge ROM image. P2 supports flat 4K ROMs only; bank-switched
         cartridges (8K, 16K, 32K, …) land in P5.
+    tia : TIAState
+        TIA register file + scanline/frame timing state.
     """
     ram: jnp.ndarray
     rom: jnp.ndarray
+    tia: TIAState
 
 
 def initial_bus(rom: Union[jnp.ndarray, None] = None) -> Bus:
-    """Build a `Bus` with all-zero RAM and the given ROM (default: all zeros)."""
+    """Build a `Bus` with all-zero RAM, the given ROM (default: all zeros),
+    and a fresh TIA state."""
     if rom is None:
         rom = jnp.zeros((4096,), dtype=jnp.uint8)
     if rom.shape != (4096,):
@@ -63,7 +70,11 @@ def initial_bus(rom: Union[jnp.ndarray, None] = None) -> Bus:
         )
     if rom.dtype != jnp.uint8:
         rom = rom.astype(jnp.uint8)
-    return Bus(ram=jnp.zeros((128,), dtype=jnp.uint8), rom=rom)
+    return Bus(
+        ram=jnp.zeros((128,), dtype=jnp.uint8),
+        rom=rom,
+        tia=initial_tia_state(),
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -109,9 +120,10 @@ def _bus_peek(bus: Bus, addr: int) -> int:
         # Cartridge ROM ($1000–$1FFF).
         return int(bus.rom[addr & 0x0FFF])
     if not (addr & 0x80):
-        # TIA region (A7=0). Most TIA registers are write-only; the readable
-        # subset (INPT*, CXM*, etc.) lands in P3. Return 0 for now.
-        return 0
+        # TIA region (A7=0). P3a delegates the read decode to the TIA module;
+        # in this sub-phase all reads still return 0 (collisions/INPT* land
+        # later).
+        return tia_peek(bus.tia, addr)
     if addr & 0x200:
         # RIOT I/O (A9=1). Stub for P2; proper timer + ports land in P4.
         return 0
@@ -124,7 +136,8 @@ def _bus_poke(bus: Bus, addr: int, value: int) -> Bus:
     if addr & 0x1000:
         return bus  # ROM is read-only.
     if not (addr & 0x80):
-        return bus  # TIA write-stub (P3 will trigger real TIA side-effects).
+        # TIA write — record the byte and apply P3a side-effects (WSYNC).
+        return bus._replace(tia=tia_poke(bus.tia, addr, value))
     if addr & 0x200:
         return bus  # RIOT I/O write-stub (P4).
     return bus._replace(

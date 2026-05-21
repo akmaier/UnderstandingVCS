@@ -40,7 +40,9 @@ using .ALU: set_zn!, compare_flags!, bit_flags!, adc!, sbc!,
 using ..Types: CPUState
 # Multiple-dispatch peek / poke! so `step` accepts either a `BusState`
 # (proper 6507 bus) or a flat `Vector{UInt8}` (P1-style scratch memory).
-using ..Bus: peek, poke!
+using ..Bus: peek, poke!, BusState
+# TIA timing hook applied after each instruction when running on a Bus.
+using ..TIA: tia_advance!, tia_apply_wsync!
 
 export step
 
@@ -206,9 +208,31 @@ memory backing) in place; returns them for convenience.
 
 `memory` may be either a `BusState` (proper 6507 bus) or a flat
 `Vector{UInt8}` (P1-style scratch memory). Multiple-dispatch `peek` /
-`poke!` handle the two cases.
+`poke!` handle the two cases. When `memory` is a `BusState`, the TIA's
+scanline / frame counters are advanced by the cycles this instruction
+consumed and any WSYNC stall queued by a write to \$02 is resolved
+before returning.
 """
 function step(state::CPUState, memory)
+    pre_cycles = state.cycles
+    _step_inner!(state, memory)
+    delta = Int(state.cycles - pre_cycles)
+    _tia_post_step!(state, memory, delta)
+    return state, memory
+end
+
+# Multiple-dispatch TIA post-processing — no-op for flat memory, full
+# advance + WSYNC handling for a BusState.
+@inline _tia_post_step!(::CPUState, ::Vector{UInt8}, ::Integer) = nothing
+
+@inline function _tia_post_step!(state::CPUState, bus::BusState, cycles_consumed::Integer)
+    tia_advance!(bus.tia, cycles_consumed)
+    stall = tia_apply_wsync!(bus.tia)
+    state.cycles += UInt64(stall)
+    return nothing
+end
+
+function _step_inner!(state::CPUState, memory)
     pc = Int(state.PC) & 0xFFFF
     opcode = peek(memory, pc)
     mode = ADDRESSING_MODE_TABLE[Int(opcode) + 1]

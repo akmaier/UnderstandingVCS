@@ -31,7 +31,7 @@ from typing import Tuple
 
 import jax.numpy as jnp
 
-from jaxtari.bus.system import peek, poke
+from jaxtari.bus.system import Bus, peek, poke
 from jaxtari.cpu.addressing import INSTRUCTION_LENGTH, RESOLVERS
 from jaxtari.cpu.alu import (
     adc,
@@ -58,6 +58,7 @@ from jaxtari.cpu.tables import (
     FLAG_V,
     FLAG_Z,
 )
+from jaxtari.tia.system import tia_advance, tia_apply_wsync
 from jaxtari.types import CPUState
 
 # A "world" is whatever the CPU steps against — see jaxtari.bus.system.
@@ -291,7 +292,31 @@ def step(state: CPUState, memory):
     `memory` may be either a `jaxtari.bus.Bus` (proper 6507 bus) or a flat
     65,536-byte `jnp.ndarray` (P1-style scratch memory). All accesses go
     through `jaxtari.bus.peek` / `poke` which dispatch on the type.
+
+    When `memory` is a `Bus`, the TIA's scanline / frame counters are
+    advanced by the cycles this instruction consumed, and any WSYNC stall
+    queued by a write to \$02 is resolved before returning.
     """
+    new_state, new_memory = _step_inner(state, memory)
+    if isinstance(new_memory, Bus):
+        new_state, new_memory = _tia_post_step(state, new_state, new_memory)
+    return new_state, new_memory
+
+
+def _tia_post_step(old_state: CPUState, new_state: CPUState, bus: Bus):
+    """Advance the TIA by the cycles consumed and resolve a pending WSYNC."""
+    delta = int(new_state.cycles - old_state.cycles)
+    new_tia = tia_advance(bus.tia, delta)
+    stall, new_tia = tia_apply_wsync(new_tia)
+    if stall:
+        new_state = new_state._replace(
+            cycles=new_state.cycles + jnp.uint64(stall),
+        )
+    return new_state, bus._replace(tia=new_tia)
+
+
+def _step_inner(state: CPUState, memory):
+    """Inner dispatch — runs one instruction without any TIA post-processing."""
     pc = int(state.PC) & 0xFFFF
     opcode = peek(memory, pc)
     mode = int(ADDRESSING_MODE_TABLE[opcode])

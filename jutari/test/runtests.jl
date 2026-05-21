@@ -2,6 +2,10 @@ using Test
 using JuTari
 using JuTari.CPU: step          # qualified — avoids Base.step collision
 using JuTari.Bus: peek, poke!   # qualified — avoids Base.peek collision
+using JuTari.TIA: tia_peek, tia_poke!, tia_advance!, tia_apply_wsync!,
+                  NTSC_CPU_CYCLES_PER_SCANLINE, NTSC_SCANLINES_PER_FRAME,
+                  NUM_REGISTERS, SCREEN_WIDTH, SCREEN_HEIGHT,
+                  W_COLUBK, W_WSYNC
 
 function _make_memory(image)
     mem = zeros(UInt8, 1 << 16)
@@ -1179,6 +1183,158 @@ end
         step(s, bus)
         @test s.PC == 0xF003
         @test s.SP == 0xFD
+    end
+
+end
+
+@testset "JuTari P3a TIA register file + scanline timing + WSYNC" begin
+
+    @testset "initial TIA state is zeroed" begin
+        tia = initial_tia_state()
+        @test length(tia.registers) == NUM_REGISTERS
+        @test sum(tia.registers) == 0
+        @test tia.scanline_cycle == 0
+        @test tia.scanline == 0
+        @test tia.frame == 0
+        @test tia.wsync_pending == false
+        @test size(tia.framebuffer) == (SCREEN_HEIGHT, SCREEN_WIDTH)
+        @test sum(tia.framebuffer) == 0
+    end
+
+    @testset "tia_poke! stores byte in register file" begin
+        tia = initial_tia_state()
+        tia_poke!(tia, W_COLUBK, 0x1C)
+        @test tia.registers[W_COLUBK + 1] == 0x1C
+    end
+
+    @testset "tia_poke! WSYNC sets pending flag" begin
+        tia = initial_tia_state()
+        tia_poke!(tia, W_WSYNC, 0x00)
+        @test tia.wsync_pending == true
+    end
+
+    @testset "tia_poke! decodes only low 6 bits of address" begin
+        tia = initial_tia_state()
+        # Address $42 = $40 | $02 → register $02 (WSYNC)
+        tia_poke!(tia, 0x42, 0xFF)
+        @test tia.wsync_pending == true
+    end
+
+    @testset "tia_peek is zero stub in P3a" begin
+        tia = initial_tia_state()
+        for addr in (0x00, 0x07, 0x08, 0x0D, 0x30, 0x3F)
+            @test tia_peek(tia, addr) == 0
+        end
+    end
+
+    @testset "tia_advance! within scanline" begin
+        tia = initial_tia_state()
+        tia_advance!(tia, 30)
+        @test tia.scanline_cycle == 30
+        @test tia.scanline == 0
+        @test tia.frame == 0
+    end
+
+    @testset "tia_advance! crosses scanline boundary" begin
+        tia = initial_tia_state()
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        @test tia.scanline_cycle == 0
+        @test tia.scanline == 1
+    end
+
+    @testset "tia_advance! crosses multiple scanlines" begin
+        tia = initial_tia_state()
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE * 5 + 10)
+        @test tia.scanline_cycle == 10
+        @test tia.scanline == 5
+    end
+
+    @testset "tia_advance! crosses frame boundary" begin
+        tia = initial_tia_state()
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE * NTSC_SCANLINES_PER_FRAME)
+        @test tia.scanline_cycle == 0
+        @test tia.scanline == 0
+        @test tia.frame == 1
+    end
+
+    @testset "tia_apply_wsync! noop when no pending" begin
+        tia = initial_tia_state()
+        stall = tia_apply_wsync!(tia)
+        @test stall == 0
+    end
+
+    @testset "tia_apply_wsync! stalls to next scanline boundary" begin
+        tia = initial_tia_state()
+        tia.scanline_cycle = 20
+        tia.wsync_pending = true
+        stall = tia_apply_wsync!(tia)
+        @test stall == 56                       # 76 - 20
+        @test tia.scanline_cycle == 0
+        @test tia.scanline == 1
+        @test tia.wsync_pending == false
+    end
+
+    @testset "tia_apply_wsync! at scanline boundary is zero-cycle" begin
+        tia = initial_tia_state()
+        tia.wsync_pending = true                # scanline_cycle already 0
+        stall = tia_apply_wsync!(tia)
+        @test stall == 0
+        @test tia.scanline == 0
+        @test tia.wsync_pending == false
+    end
+
+    @testset "bus TIA write records in register file" begin
+        bus = initial_bus()
+        poke!(bus, 0x0009, 0x42)                # COLUBK = 0x42
+        @test bus.tia.registers[W_COLUBK + 1] == 0x42
+    end
+
+    @testset "bus TIA write to WSYNC sets pending flag" begin
+        bus = initial_bus()
+        poke!(bus, 0x0002, 0x00)
+        @test bus.tia.wsync_pending == true
+    end
+
+    @testset "step advances tia.scanline_cycle by instruction cycles" begin
+        rom = zeros(UInt8, 4096); rom[1] = 0xEA   # NOP at $F000
+        bus = initial_bus(rom)
+        s = _state(PC=0xF000)
+        step(s, bus)
+        @test bus.tia.scanline_cycle == 2
+        @test bus.tia.scanline == 0
+    end
+
+    @testset "step crosses scanline when enough cycles accumulate" begin
+        rom = fill(UInt8(0xEA), 4096)             # all NOPs
+        bus = initial_bus(rom)
+        s = _state(PC=0xF000)
+        for _ in 1:38                             # 76 / 2 = 38 NOPs to fill a scanline
+            step(s, bus)
+        end
+        @test bus.tia.scanline_cycle == 0
+        @test bus.tia.scanline == 1
+    end
+
+    @testset "STA WSYNC stalls CPU to next scanline" begin
+        rom = zeros(UInt8, 4096)
+        rom[1] = 0xA9; rom[2] = 0x00              # LDA #$00 (2 cyc)
+        rom[3] = 0x85; rom[4] = 0x02              # STA $02  (3 cyc) → WSYNC
+        bus = initial_bus(rom)
+        s = _state(PC=0xF000)
+        step(s, bus); @test s.cycles == 2
+        step(s, bus)
+        @test s.cycles == NTSC_CPU_CYCLES_PER_SCANLINE
+        @test bus.tia.scanline == 1
+        @test bus.tia.scanline_cycle == 0
+        @test bus.tia.wsync_pending == false
+    end
+
+    @testset "flat memory does not trigger TIA post-step" begin
+        mem = zeros(UInt8, 1 << 16); mem[1] = 0xEA    # NOP at $0000
+        s = _state(PC=0x0000)
+        step(s, mem)
+        @test s.cycles == 2
+        @test isa(mem, Vector{UInt8})                  # still flat, not a Bus
     end
 
 end

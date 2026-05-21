@@ -9,6 +9,7 @@ module JuTari
 const VERSION_STRING = "0.0.1"
 
 include("Types.jl")
+include("tia/TIA.jl")
 include("bus/Bus.jl")
 # CPU module pulls in its own includes (Tables, Addressing, ALU) — keep it
 # the sole entry point for the CPU subtree to avoid double-include of Tables.
@@ -16,6 +17,7 @@ include("cpu/M6502.jl")
 include("diff/Modes.jl")
 
 using .Types: CPUState, initial_cpu_state
+using .TIA: TIAState, initial_tia_state
 using .Bus: BusState, initial_bus
 using .CPU.CPUTables: FLAG_N, FLAG_V, FLAG_U, FLAG_B, FLAG_D, FLAG_I, FLAG_Z, FLAG_C
 using .Diff: Mode, HARD, SOFT, current_mode, set_mode!, using_mode
@@ -29,6 +31,7 @@ using .Diff: Mode, HARD, SOFT, current_mode, set_mode!, using_mode
 # This also mirrors the jaxtari import paths
 # `jaxtari.cpu.m6502.step` and `jaxtari.bus.peek/poke`.
 export CPUState, initial_cpu_state,
+       TIAState, initial_tia_state,
        BusState, initial_bus,
        FLAG_N, FLAG_V, FLAG_U, FLAG_B, FLAG_D, FLAG_I, FLAG_Z, FLAG_C,
        Mode, HARD, SOFT, current_mode, set_mode!, using_mode
