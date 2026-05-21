@@ -15,10 +15,14 @@ Implemented so far (PORTING_PLAN.md §5):
   (SEC/CLC/SEI/CLI/SED/CLD/CLV), and NOP. PHP pushes P with B set; PLP
   forces both B and U on pull, following xitari's PSLockupTable convention
   ("the 6507's B flag is always true" — see M6502.hxx line 318).
+- P1f: INC/DEC memory, INX/INY/DEX/DEY register, BRK (push PC+2, push
+  P|B|U, set I, jump via $FFFE/$FFFF IRQ vector), RTI (pop P, pop PC).
+  This completes the documented NMOS 6502 opcode set.
 
-Pending: P1f (BRK/RTI/IRQ/NMI/RESET, INC/DEC/INX/INY/DEX/DEY, and the
-cycle-counting fine print). Unknown opcodes fall through to the stub:
-PC += 1, cycles += base.
+External hardware interrupts (IRQ / NMI lines, RESET pin) are not part
+of step() — they require a wire-level integration with the bus and are
+deferred to P3 (TIA) and P6 (Console wiring). Unknown opcodes still fall
+through to the stub: PC += 1, cycles += base.
 """
 
 from __future__ import annotations
@@ -137,6 +141,18 @@ OPCODES: dict[int, str] = {
     0xD8: "CLD", 0xF8: "SED",
     # NOP (the only documented one: $EA — implied, 2 cycles)
     0xEA: "NOP",
+
+    # --- P1f -----------------------------------------------------------------
+    # INC memory (4 modes)
+    0xE6: "INC", 0xF6: "INC", 0xEE: "INC", 0xFE: "INC",
+    # DEC memory (4 modes)
+    0xC6: "DEC", 0xD6: "DEC", 0xCE: "DEC", 0xDE: "DEC",
+    # Register inc/dec (all implied)
+    0xE8: "INX", 0xC8: "INY",
+    0xCA: "DEX", 0x88: "DEY",
+    # Interrupts
+    0x00: "BRK",
+    0x40: "RTI",
 }
 
 
@@ -479,6 +495,62 @@ def step(state: CPUState, memory: Memory) -> Tuple[CPUState, Memory]:
     if mnemonic == "NOP":
         return state._replace(
             PC=jnp.uint16((int(state.PC) + 1) & 0xFFFF),
+            cycles=state.cycles + jnp.uint64(base_cycles),
+        ), memory
+
+    # --- INC / DEC memory (P1f) -------------------------------------------
+    if mnemonic in ("INC", "DEC"):
+        addr, _ = RESOLVERS[mode](state, memory)
+        value = int(memory[addr & 0xFFFF])
+        delta = 1 if mnemonic == "INC" else -1
+        new_value = (value + delta) & 0xFF
+        new_p = set_zn(int(state.P), new_value)
+        new_memory = memory.at[addr & 0xFFFF].set(jnp.uint8(new_value))
+        return state._replace(
+            P=jnp.uint8(new_p & 0xFF),
+            PC=jnp.uint16((int(state.PC) + INSTRUCTION_LENGTH[mode]) & 0xFFFF),
+            cycles=state.cycles + jnp.uint64(base_cycles),
+        ), new_memory
+
+    # --- Register inc/dec (P1f) -------------------------------------------
+    if mnemonic in ("INX", "INY", "DEX", "DEY"):
+        reg = mnemonic[-1]                       # 'X' or 'Y'
+        cur = int(state.X if reg == "X" else state.Y)
+        delta = 1 if mnemonic[0] == "I" else -1
+        new_val = (cur + delta) & 0xFF
+        p = set_zn(int(state.P), new_val)
+        fields = {
+            "P": jnp.uint8(p & 0xFF),
+            "PC": jnp.uint16((int(state.PC) + 1) & 0xFFFF),
+            "cycles": state.cycles + jnp.uint64(base_cycles),
+        }
+        fields[reg] = jnp.uint8(new_val)
+        return state._replace(**fields), memory
+
+    # --- BRK (P1f) --------------------------------------------------------
+    if mnemonic == "BRK":
+        # Push PC + 2 (skipping the BRK opcode's signature byte), then P|B|U,
+        # then set I, then load PC from the IRQ vector at $FFFE/$FFFF.
+        return_addr = (int(state.PC) + 2) & 0xFFFF
+        new_memory, sp = push16(memory, int(state.SP), return_addr)
+        new_memory, sp = push8(new_memory, sp, int(state.P) | FLAG_B | FLAG_U)
+        new_p = (int(state.P) | FLAG_I | FLAG_U) & 0xFF
+        new_pc = int(new_memory[0xFFFE]) | (int(new_memory[0xFFFF]) << 8)
+        return state._replace(
+            SP=jnp.uint8(sp),
+            P=jnp.uint8(new_p),
+            PC=jnp.uint16(new_pc),
+            cycles=state.cycles + jnp.uint64(base_cycles),
+        ), new_memory
+
+    # --- RTI (P1f) --------------------------------------------------------
+    if mnemonic == "RTI":
+        popped_p, sp = pop8(memory, int(state.SP))
+        popped_pc, sp = pop16(memory, sp)
+        return state._replace(
+            SP=jnp.uint8(sp),
+            P=jnp.uint8((popped_p | FLAG_U | FLAG_B) & 0xFF),
+            PC=jnp.uint16(popped_pc),
             cycles=state.cycles + jnp.uint64(base_cycles),
         ), memory
 

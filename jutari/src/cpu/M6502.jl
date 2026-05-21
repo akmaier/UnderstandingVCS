@@ -16,9 +16,13 @@ Implemented so far (PORTING_PLAN.md §5):
 - P1e:  stack push/pull (PHA/PHP/PLA/PLP), status-flag setters/clearers
         (SEC/CLC/SEI/CLI/SED/CLD/CLV), and NOP. PHP pushes P with B set;
         PLP forces B and U on pull (xitari/Stella convention).
+- P1f:  INC/DEC memory, INX/INY/DEX/DEY register, BRK (push PC+2, push
+        P|B|U, set I, jump via \$FFFE/\$FFFF IRQ vector), RTI (pop P,
+        pop PC). Completes the documented NMOS 6502 opcode set.
 
-Pending: P1f (BRK/RTI/IRQ/NMI/RESET, INC/DEC/INX/INY/DEX/DEY, cycle
-fine print). Unknown opcodes fall through to the stub
+External hardware interrupts (IRQ / NMI / RESET) are not part of step() —
+they require wire-level integration with the bus and land in later phases
+(P3 TIA, P6 Console). Unknown opcodes still fall through to the stub
 (PC += 1, cycles += base).
 """
 module CPU
@@ -111,6 +115,17 @@ const OPCODES = Dict{UInt8, Symbol}(
     0xB8 => :CLV,
     0xD8 => :CLD, 0xF8 => :SED,
     0xEA => :NOP,
+
+    # --- P1f ---------------------------------------------------------------
+    # INC memory
+    0xE6 => :INC, 0xF6 => :INC, 0xEE => :INC, 0xFE => :INC,
+    # DEC memory
+    0xC6 => :DEC, 0xD6 => :DEC, 0xCE => :DEC, 0xDE => :DEC,
+    # Register inc/dec
+    0xE8 => :INX, 0xC8 => :INY,
+    0xCA => :DEX, 0x88 => :DEY,
+    # Interrupts
+    0x00 => :BRK, 0x40 => :RTI,
 )
 
 # Branch opcode → (flag bit, take_when_set)
@@ -361,6 +376,47 @@ function step(state::CPUState, memory::Vector{UInt8})
         state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
     elseif mnemonic === :NOP
         state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
+
+    # --- INC / DEC memory (P1f) -------------------------------------------
+    elseif mnemonic === :INC || mnemonic === :DEC
+        addr, _ = resolve(mode, state, memory)
+        value = _peek(memory, addr)
+        delta = mnemonic === :INC ? 1 : -1
+        new_value = UInt8((Int(value) + delta) & 0xFF)
+        memory[(Int(addr) & 0xFFFF) + 1] = new_value
+        set_zn!(state, new_value)
+        _advance_pc!(state, mode)
+
+    # --- Register inc/dec (P1f) -------------------------------------------
+    elseif mnemonic === :INX
+        state.X = UInt8((Int(state.X) + 1) & 0xFF); set_zn!(state, state.X)
+        state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
+    elseif mnemonic === :INY
+        state.Y = UInt8((Int(state.Y) + 1) & 0xFF); set_zn!(state, state.Y)
+        state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
+    elseif mnemonic === :DEX
+        state.X = UInt8((Int(state.X) - 1) & 0xFF); set_zn!(state, state.X)
+        state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
+    elseif mnemonic === :DEY
+        state.Y = UInt8((Int(state.Y) - 1) & 0xFF); set_zn!(state, state.Y)
+        state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
+
+    # --- BRK / RTI (P1f) --------------------------------------------------
+    elseif mnemonic === :BRK
+        # Push PC + 2 (skipping the BRK signature byte), then P|B|U; set I;
+        # load PC from the IRQ vector at $FFFE/$FFFF.
+        return_addr = UInt16((Int(state.PC) + 2) & 0xFFFF)
+        push16!(state, memory, return_addr)
+        push8!(state, memory, state.P | FLAG_B | FLAG_U)
+        state.P = (state.P | FLAG_I | FLAG_U) & UInt8(0xFF)
+        lo = UInt16(_peek(memory, 0xFFFE))
+        hi = UInt16(_peek(memory, 0xFFFF))
+        state.PC = (hi << 8) | lo
+    elseif mnemonic === :RTI
+        popped_p = pop8!(state, memory)
+        popped_pc = pop16!(state, memory)
+        state.P = (popped_p | FLAG_U | FLAG_B) & UInt8(0xFF)
+        state.PC = popped_pc
     end
 
     state.cycles += UInt64(base_cycles + extra_cycles)

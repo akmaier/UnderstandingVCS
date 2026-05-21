@@ -940,3 +940,138 @@ end
     end
 
 end
+
+@testset "JuTari P1f INC/DEC, INX/INY/DEX/DEY, BRK/RTI" begin
+
+    @testset "INC zp increments and writes back" begin
+        s = _state(PC=0x8000)
+        mem = _make_memory(Dict(0x8000 => 0xE6, 0x8001 => 0x10, 0x0010 => 0x41))
+        step(s, mem)
+        @test mem[0x0010 + 1] == 0x42
+        @test (s.P & FLAG_Z) == 0
+        @test (s.P & FLAG_N) == 0
+        @test s.cycles == 5
+    end
+
+    @testset "INC wraps FF→00 and sets Z" begin
+        s = _state(PC=0x8000)
+        mem = _make_memory(Dict(0x8000 => 0xE6, 0x8001 => 0x10, 0x0010 => 0xFF))
+        step(s, mem)
+        @test mem[0x0010 + 1] == 0x00
+        @test (s.P & FLAG_Z) != 0
+    end
+
+    @testset "INC abs,X sets N" begin
+        s = _state(PC=0x8000, X=0x01)
+        mem = _make_memory(Dict(0x8000 => 0xFE, 0x8001 => 0x00, 0x8002 => 0x12, 0x1201 => 0x7F))
+        step(s, mem)
+        @test mem[0x1201 + 1] == 0x80
+        @test (s.P & FLAG_N) != 0
+        @test s.cycles == 7
+    end
+
+    @testset "DEC zp" begin
+        s = _state(PC=0x8000)
+        mem = _make_memory(Dict(0x8000 => 0xC6, 0x8001 => 0x10, 0x0010 => 0x01))
+        step(s, mem)
+        @test mem[0x0010 + 1] == 0x00
+        @test (s.P & FLAG_Z) != 0
+    end
+
+    @testset "DEC wraps 00→FF sets N" begin
+        s = _state(PC=0x8000)
+        mem = _make_memory(Dict(0x8000 => 0xC6, 0x8001 => 0x10, 0x0010 => 0x00))
+        step(s, mem)
+        @test mem[0x0010 + 1] == 0xFF
+        @test (s.P & FLAG_N) != 0
+    end
+
+    @testset "INX normal" begin
+        s = _state(PC=0x8000, X=0x05)
+        mem = _make_memory(Dict(0x8000 => 0xE8))
+        step(s, mem)
+        @test s.X == 0x06
+        @test s.cycles == 2
+    end
+
+    @testset "INX wraps and sets Z" begin
+        s = _state(PC=0x8000, X=0xFF)
+        mem = _make_memory(Dict(0x8000 => 0xE8))
+        step(s, mem)
+        @test s.X == 0x00
+        @test (s.P & FLAG_Z) != 0
+    end
+
+    @testset "INY sets N" begin
+        s = _state(PC=0x8000, Y=0x7F)
+        mem = _make_memory(Dict(0x8000 => 0xC8))
+        step(s, mem)
+        @test s.Y == 0x80
+        @test (s.P & FLAG_N) != 0
+    end
+
+    @testset "DEX wraps and sets N" begin
+        s = _state(PC=0x8000, X=0x00)
+        mem = _make_memory(Dict(0x8000 => 0xCA))
+        step(s, mem)
+        @test s.X == 0xFF
+        @test (s.P & FLAG_N) != 0
+    end
+
+    @testset "DEY to zero sets Z" begin
+        s = _state(PC=0x8000, Y=0x01)
+        mem = _make_memory(Dict(0x8000 => 0x88))
+        step(s, mem)
+        @test s.Y == 0x00
+        @test (s.P & FLAG_Z) != 0
+    end
+
+    @testset "BRK pushes PC+2 and jumps via vector" begin
+        s = _state(PC=0x8000, SP=0xFD, P=FLAG_U)
+        mem = _make_memory(Dict(
+            0x8000 => 0x00,
+            0xFFFE => 0x34, 0xFFFF => 0x12,
+        ))
+        step(s, mem)
+        @test mem[0x01FD + 1] == 0x80
+        @test mem[0x01FC + 1] == 0x02
+        pushed_p = mem[0x01FB + 1]
+        @test (pushed_p & FLAG_B) != 0
+        @test (pushed_p & FLAG_U) != 0
+        @test (s.P & FLAG_I) != 0
+        @test s.PC == 0x1234
+        @test s.SP == 0xFA
+        @test s.cycles == 7
+    end
+
+    @testset "RTI pops P then PC (no +1)" begin
+        s = _state(PC=0x1234, SP=0xFA)
+        mem = _make_memory(Dict(
+            0x1234 => 0x40,
+            0x01FB => FLAG_B | FLAG_U | FLAG_C,
+            0x01FC => 0x02,
+            0x01FD => 0x80,
+        ))
+        step(s, mem)
+        @test s.PC == 0x8002
+        @test (s.P & FLAG_C) != 0
+        @test (s.P & FLAG_B) != 0
+        @test (s.P & FLAG_U) != 0
+        @test s.SP == 0xFD
+        @test s.cycles == 6
+    end
+
+    @testset "BRK then RTI round-trip" begin
+        s = _state(PC=0x8000, SP=0xFD, P=FLAG_U | FLAG_C)
+        mem = _make_memory(Dict(
+            0x8000 => 0x00,
+            0x1234 => 0x40,
+            0xFFFE => 0x34, 0xFFFF => 0x12,
+        ))
+        step(s, mem); @test s.PC == 0x1234
+        step(s, mem); @test s.PC == 0x8002
+        @test s.SP == 0xFD
+        @test (s.P & FLAG_C) != 0
+    end
+
+end
