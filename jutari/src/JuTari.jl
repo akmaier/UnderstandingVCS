@@ -16,6 +16,10 @@ include("bus/Bus.jl")
 # CPU module pulls in its own includes (Tables, Addressing, ALU) — keep it
 # the sole entry point for the CPU subtree to avoid double-include of Tables.
 include("cpu/M6502.jl")
+include("Console.jl")
+include("io/IO.jl")
+include("games/RomSettings.jl")
+include("env/StellaEnvironment.jl")
 include("diff/Modes.jl")
 
 using .Types: CPUState, initial_cpu_state
@@ -23,6 +27,9 @@ using .TIA: TIAState, initial_tia_state
 using .RIOT: RIOTState, initial_riot_state
 using .Cart: CartState, make_cart
 using .Bus: BusState, initial_bus
+using .ConsoleModule: Console, initial_console
+using .RomSettingsModule: RomSettings, GenericRomSettings
+using .Env: StellaEnvironment
 using .CPU.CPUTables: FLAG_N, FLAG_V, FLAG_U, FLAG_B, FLAG_D, FLAG_I, FLAG_Z, FLAG_C
 using .Diff: Mode, HARD, SOFT, current_mode, set_mode!, using_mode
 
@@ -39,6 +46,9 @@ export CPUState, initial_cpu_state,
        RIOTState, initial_riot_state,
        CartState, make_cart,
        BusState, initial_bus,
+       Console, initial_console,
+       RomSettings, GenericRomSettings,
+       StellaEnvironment,
        FLAG_N, FLAG_V, FLAG_U, FLAG_B, FLAG_D, FLAG_I, FLAG_Z, FLAG_C,
        Mode, HARD, SOFT, current_mode, set_mode!, using_mode
 

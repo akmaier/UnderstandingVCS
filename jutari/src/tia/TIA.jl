@@ -36,6 +36,7 @@ module TIA
 export TIAState, initial_tia_state,
        tia_peek, tia_poke!, tia_advance!, tia_apply_wsync!,
        playfield_bits, render_playfield_scanline, render_scanline,
+       set_trigger!,
        _hm_offset, _resp_position,
        NTSC_CPU_CYCLES_PER_SCANLINE, NTSC_SCANLINES_PER_FRAME,
        NUM_REGISTERS, SCREEN_WIDTH, SCREEN_HEIGHT,
@@ -101,8 +102,10 @@ mutable struct TIAState
     collisions::Vector{UInt8}      # 8 collision-latch bytes ($30..$37)
     vsync_active::Bool
     vblank_active::Bool
+    inpt::Vector{UInt8}            # 6 bytes — INPT0..INPT5
 end
 
+# INPT defaults: paddle pots ($80 = centred), triggers idle high (D7=1).
 initial_tia_state() = TIAState(
     zeros(UInt8, NUM_REGISTERS),
     0, 0, UInt64(0), false,
@@ -110,17 +113,35 @@ initial_tia_state() = TIAState(
     0, 0, 0, 0, 0,
     zeros(UInt8, 8),
     false, false,
+    fill(UInt8(0x80), 6),
 )
 
 """
     tia_peek(tia, addr) -> UInt8
 
-Read a TIA register. \$30–\$37 (= addr & 0x0F in 0..7) return the
-collision latches; \$38–\$3F (INPT*) still stub to 0.
+Read a TIA register. \$30..\$37 → collision latches; \$38..\$3D → INPT0..5
+(paddle pots default \$80, triggers idle high; set_trigger! flips them);
+\$3E/\$3F → unused, return 0.
 """
 @inline function tia_peek(tia::TIAState, addr::Integer)
     reg = Int(addr) & 0x0F
-    return reg < 8 ? tia.collisions[reg + 1] : UInt8(0)
+    if reg < 8
+        return tia.collisions[reg + 1]
+    elseif reg < 14
+        return tia.inpt[reg - 8 + 1]
+    end
+    return UInt8(0)
+end
+
+"""
+    set_trigger!(tia, player, pressed)
+
+Set the fire-button line for player 0 or 1. Active-low: pressed → D7=0.
+"""
+@inline function set_trigger!(tia::TIAState, player::Integer, pressed::Bool)
+    idx = player == 0 ? 5 : 6                   # INPT4 / INPT5 → indices 5 / 6
+    tia.inpt[idx] = pressed ? UInt8(0x00) : UInt8(0x80)
+    return nothing
 end
 
 """

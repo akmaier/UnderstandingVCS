@@ -83,11 +83,12 @@ def test_initial_collisions_are_all_zero():
         assert tia_peek(tia, reg) == 0
 
 
-def test_inpt_addresses_still_return_zero():
-    """\$38-\$3D (INPT*) — still stub for now (input phase, not P3e)."""
+def test_inpt_default_values_are_p6_defaults():
+    """As of P6, INPT0-INPT3 default to \$80 (paddle centred) and INPT4/5
+    default to \$80 (trigger not pressed)."""
     tia = initial_tia_state()
     for reg in range(0x38, 0x3E):
-        assert tia_peek(tia, reg) == 0
+        assert tia_peek(tia, reg) == 0x80
 
 
 def test_cxclr_zeros_all_latches():

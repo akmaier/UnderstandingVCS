@@ -74,10 +74,11 @@ def test_tia_poke_register_index_takes_low_6_bits_of_addr():
     assert new_tia.wsync_pending is True
 
 
-def test_tia_peek_is_zero_stub_in_p3a():
+def test_tia_peek_collisions_default_to_zero():
+    """Collision latches (\$30-\$37) start zero. INPT* now have real
+    defaults (P6) — covered in test_tia_inputs.py."""
     tia = initial_tia_state()
-    # All addresses in the readable range return 0 in P3a.
-    for addr in (0x00, 0x07, 0x08, 0x0D, 0x30, 0x3F):
+    for addr in (0x00, 0x07, 0x30, 0x37, 0x3E, 0x3F):
         assert tia_peek(tia, addr) == 0
 
 

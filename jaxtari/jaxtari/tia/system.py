@@ -147,6 +147,12 @@ class TIAState(NamedTuple):
     `vsync_active` and `vblank_active` mirror the D1 bit of the
     respective registers; software toggles these to mark vertical
     retrace and the off-screen vblank/overscan periods.
+
+    `inputs` carries the values games will read from \$30-\$3D:
+    indices 0-7 are the collision latches (set by render); indices 8-13
+    are INPT0-INPT5. P6 wires INPT4 (P0 trigger) and INPT5 (P1 trigger)
+    from front-end joystick state; INPT0-INPT3 (paddle pots) default to
+    \$80 ("centred") and proper dump-pot timing is a follow-up.
     """
     registers: jnp.ndarray
     scanline_cycle: int
@@ -162,9 +168,14 @@ class TIAState(NamedTuple):
     collisions: jnp.ndarray
     vsync_active: bool
     vblank_active: bool
+    inpt: jnp.ndarray   # (6,) uint8 — INPT0..INPT5
 
 
 def initial_tia_state() -> TIAState:
+    # INPT4 / INPT5 idle high (D7=1, no trigger pressed). INPT0-3 (paddle
+    # pots) default to $80 — "centred". Proper dump-pot timing is a
+    # P6 follow-up.
+    inpt_init = jnp.array([0x80, 0x80, 0x80, 0x80, 0x80, 0x80], dtype=jnp.uint8)
     return TIAState(
         registers=jnp.zeros((NUM_REGISTERS,), dtype=jnp.uint8),
         scanline_cycle=0,
@@ -180,6 +191,7 @@ def initial_tia_state() -> TIAState:
         collisions=jnp.zeros((8,), dtype=jnp.uint8),
         vsync_active=False,
         vblank_active=False,
+        inpt=inpt_init,
     )
 
 
@@ -188,14 +200,31 @@ def initial_tia_state() -> TIAState:
 # --------------------------------------------------------------------------- #
 
 def tia_peek(tia: TIAState, addr: int) -> int:
-    """Read a TIA register. \$30–\$37 (= reg & 0x0F in [0,7]) return the
-    collision latches set by `render_scanline`; \$38–\$3F (= reg & 0x0F
-    in [8,13]) return 0 (INPT* — input handling lands in a later phase).
+    """Read a TIA register.
+
+    Reg ranges (the TIA decodes only A0-A3 for reads):
+      0..7  → collision latches (\$30-\$37), set by `render_scanline`.
+      8..13 → INPT0..INPT5 (\$38-\$3D). P6 wires the trigger inputs
+              INPT4 / INPT5 via `set_trigger`; INPT0-INPT3 (paddle pots)
+              default to \$80 (centred) — proper dump-pot timing is a
+              P6 follow-up.
+      14,15 → unused, return 0.
     """
     reg = addr & 0x0F
     if reg < 8:
         return int(tia.collisions[reg])
+    if reg < 14:
+        return int(tia.inpt[reg - 8])
     return 0
+
+
+def set_trigger(tia: TIAState, player: int, pressed: bool) -> TIAState:
+    """Set the fire-button line for player 0 or 1. Active-low: pressed →
+    D7=0, released → D7=1. Touches only the trigger bit; other INPT
+    state is preserved."""
+    idx = 4 if player == 0 else 5
+    new_byte = 0x00 if pressed else 0x80
+    return tia._replace(inpt=tia.inpt.at[idx].set(jnp.uint8(new_byte)))
 
 
 def _resp_position(scanline_cycle: int) -> int:

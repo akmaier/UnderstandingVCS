@@ -19,6 +19,15 @@ using JuTari.RIOT: riot_peek, riot_poke!, riot_advance!,
                    set_swcha_input!, set_swchb_input!
 using JuTari.Cart: cart_peek, cart_poke!,
                    KIND_2K, KIND_4K, KIND_F8, KIND_F6, KIND_F4
+using JuTari.ConsoleModule: console_reset!, console_step!, run_until_frame!
+using JuTari.IO: Action, apply_action!, console_switches!,
+                 NOOP, FIRE, UP, RIGHT, LEFT, DOWN,
+                 UPRIGHT, UPLEFT, DOWNRIGHT, DOWNLEFT,
+                 UPFIRE, RIGHTFIRE, LEFTFIRE, DOWNFIRE,
+                 UPRIGHTFIRE, UPLEFTFIRE, DOWNRIGHTFIRE, DOWNLEFTFIRE
+using JuTari.Env: env_reset!, env_step!, get_screen, get_ram,
+                  game_over, frame_number, act!, getScreen, getRAM,
+                  gameOver, getEpisodeFrameNumber
 
 function _make_memory(image)
     mem = zeros(UInt8, 1 << 16)
@@ -1241,9 +1250,11 @@ end
         @test tia.wsync_pending == true
     end
 
-    @testset "tia_peek is zero stub in P3a" begin
+    @testset "tia_peek collision latches default zero" begin
+        # Collision latches ($30-$37) and unused regs ($3E/$3F) start at 0.
+        # INPT* now have real defaults ($80) as of P6 — covered there.
         tia = initial_tia_state()
-        for addr in (0x00, 0x07, 0x08, 0x0D, 0x30, 0x3F)
+        for addr in (0x00, 0x07, 0x30, 0x37, 0x3E, 0x3F)
             @test tia_peek(tia, addr) == 0
         end
     end
@@ -1841,10 +1852,11 @@ end
         end
     end
 
-    @testset "INPT addresses still stub to 0" begin
+    @testset "INPT defaults as of P6" begin
+        # INPT0-3 (paddle pots) default $80; INPT4/5 (triggers) idle high $80.
         tia = initial_tia_state()
         for reg in 0x38:0x3D
-            @test tia_peek(tia, reg) == 0
+            @test tia_peek(tia, reg) == 0x80
         end
     end
 
@@ -2370,6 +2382,225 @@ end
         step(s, bus); @test s.A == 0x22
         step(s, bus); @test bus.cart.current_bank == 0
         step(s, bus); @test s.A == 0x77
+    end
+
+end
+
+function _frame_loop_rom()
+    rom = zeros(UInt8, 4096)
+    program = [
+        0xA9, 0x02, 0x85, 0x00,           # LDA #$02 / STA VSYNC
+        0xA9, 0x00, 0x85, 0x00,           # LDA #$00 / STA VSYNC → frame edge
+        0x4C, 0x00, 0xF0,                 # JMP $F000
+    ]
+    for (i, b) in enumerate(program)
+        rom[i] = UInt8(b)
+    end
+    rom[0x0FFD] = 0x00                    # reset vector at $1FFC/$1FFD
+    rom[0x0FFE] = 0xF0
+    # Indexing note: $0FFC = ROM offset 0x0FFC = Julia index 0x0FFD.
+    rom[0x0FFD] = 0x00
+    rom[0x0FFE] = 0xF0
+    return rom
+end
+
+function _ram_reader_rom()
+    rom = zeros(UInt8, 4096)
+    program = [
+        0xAD, 0x80, 0x02,                 # LDA $0280 (SWCHA)
+        0x85, 0x80,                       # STA $80
+        0xAD, 0x82, 0x02,                 # LDA $0282 (SWCHB)
+        0x85, 0x81,                       # STA $81
+        0xA9, 0x02, 0x85, 0x00,           # LDA #$02 / STA VSYNC
+        0xA9, 0x00, 0x85, 0x00,           # LDA #$00 / STA VSYNC
+        0x4C, 0x00, 0xF0,                 # JMP $F000
+    ]
+    for (i, b) in enumerate(program)
+        rom[i] = UInt8(b)
+    end
+    rom[0x0FFD] = 0x00
+    rom[0x0FFE] = 0xF0
+    return rom
+end
+
+@testset "JuTari P6 Console + IO + StellaEnvironment" begin
+
+    # Console
+    @testset "initial console PC is 0" begin
+        c = initial_console(_frame_loop_rom())
+        @test c.cpu.PC == 0
+    end
+
+    @testset "console_reset! loads PC from reset vector" begin
+        c = initial_console(_frame_loop_rom())
+        console_reset!(c)
+        @test c.cpu.PC == 0xF000
+    end
+
+    @testset "console_reset! zeroes RAM + TIA frame" begin
+        c = initial_console(_frame_loop_rom())
+        c.bus.ram[1] = 0xAA
+        c.bus.tia.frame = UInt64(42)
+        console_reset!(c)
+        @test c.bus.ram[1] == 0
+        @test c.bus.tia.frame == 0
+        @test sum(c.bus.tia.framebuffer) == 0
+    end
+
+    @testset "console_step! advances one instruction" begin
+        c = initial_console(_frame_loop_rom()); console_reset!(c)
+        pc_before = c.cpu.PC
+        console_step!(c)
+        @test c.cpu.PC == pc_before + 2          # LDA #$02 is 2 bytes
+    end
+
+    @testset "run_until_frame! advances frame counter" begin
+        c = initial_console(_frame_loop_rom()); console_reset!(c)
+        @test c.bus.tia.frame == 0
+        run_until_frame!(c)
+        @test c.bus.tia.frame == 1
+        run_until_frame!(c)
+        @test c.bus.tia.frame == 2
+    end
+
+    @testset "run_until_frame! works on JMP-to-self via 262-line wrap" begin
+        rom = zeros(UInt8, 4096)
+        rom[1] = 0x4C; rom[2] = 0x00; rom[3] = 0xF0  # JMP $F000
+        rom[0x0FFD] = 0x00; rom[0x0FFE] = 0xF0
+        c = initial_console(rom); console_reset!(c)
+        run_until_frame!(c)
+        @test c.bus.tia.frame == 1
+    end
+
+    # IO actions — joystick decoding
+    function _swcha_after(action::Action)
+        c = initial_console(_frame_loop_rom()); console_reset!(c)
+        apply_action!(c, Int(action))
+        return Int(c.bus.riot.swcha_in)
+    end
+
+    @testset "NOOP → all directions released" begin
+        @test _swcha_after(NOOP) == 0xFF
+    end
+    @testset "UP clears P0 UP" begin
+        @test _swcha_after(UP) == 0xEF
+    end
+    @testset "RIGHT clears P0 RIGHT" begin
+        @test _swcha_after(RIGHT) == 0x7F
+    end
+    @testset "LEFT clears P0 LEFT" begin
+        @test _swcha_after(LEFT) == 0xBF
+    end
+    @testset "DOWN clears P0 DOWN" begin
+        @test _swcha_after(DOWN) == 0xDF
+    end
+    @testset "UPRIGHT clears both" begin
+        @test _swcha_after(UPRIGHT) == 0x6F
+    end
+    @testset "DOWNLEFT clears both" begin
+        @test _swcha_after(DOWNLEFT) == 0x9F
+    end
+
+    # Fire button
+    @testset "FIRE sets INPT4 pressed" begin
+        c = initial_console(_frame_loop_rom()); console_reset!(c)
+        apply_action!(c, Int(FIRE))
+        @test c.bus.tia.inpt[5] == 0x00       # index 5 = INPT4
+    end
+
+    @testset "NOOP leaves INPT4 released" begin
+        c = initial_console(_frame_loop_rom()); console_reset!(c)
+        apply_action!(c, Int(NOOP))
+        @test c.bus.tia.inpt[5] == 0x80
+    end
+
+    @testset "UPFIRE combines direction and fire" begin
+        c = initial_console(_frame_loop_rom()); console_reset!(c)
+        apply_action!(c, Int(UPFIRE))
+        @test c.bus.riot.swcha_in == 0xEF
+        @test c.bus.tia.inpt[5] == 0x00
+    end
+
+    # Console switches
+    @testset "default SWCHB is all high" begin
+        c = initial_console(_frame_loop_rom()); console_reset!(c)
+        console_switches!(c)
+        @test c.bus.riot.swchb_in == 0xFF
+    end
+
+    @testset "SELECT + RESET press" begin
+        c = initial_console(_frame_loop_rom()); console_reset!(c)
+        console_switches!(c, select_pressed=true, reset_pressed=true)
+        @test c.bus.riot.swchb_in == (0xFF & ~0x03)
+    end
+
+    @testset "B&W mode clears bit 3" begin
+        c = initial_console(_frame_loop_rom()); console_reset!(c)
+        console_switches!(c, color=false)
+        @test (c.bus.riot.swchb_in & 0x08) == 0
+    end
+
+    @testset "difficulty B clears bits 6,7" begin
+        c = initial_console(_frame_loop_rom()); console_reset!(c)
+        console_switches!(c, p0_difficulty_a=false, p1_difficulty_a=false)
+        @test (c.bus.riot.swchb_in & 0xC0) == 0
+    end
+
+    # End-to-end via RAM-reader ROM
+    @testset "action visible to ROM via RAM" begin
+        c = initial_console(_ram_reader_rom()); console_reset!(c)
+        apply_action!(c, Int(UP))
+        run_until_frame!(c)
+        @test c.bus.ram[1] == 0xEF
+    end
+
+    # StellaEnvironment
+    @testset "env construction + reset" begin
+        env = StellaEnvironment(_frame_loop_rom())
+        env_reset!(env)
+        @test isa(env.console, Console)
+        @test frame_number(env) == 0
+    end
+
+    @testset "env_step! returns zero reward with generic settings" begin
+        env = StellaEnvironment(_frame_loop_rom())
+        env_reset!(env)
+        @test env_step!(env, Int(NOOP)) == 0
+        @test game_over(env) == false
+    end
+
+    @testset "env_step! advances frame counter" begin
+        env = StellaEnvironment(_frame_loop_rom())
+        env_reset!(env)
+        env_step!(env, Int(NOOP)); @test frame_number(env) == 1
+        env_step!(env, Int(NOOP)); @test frame_number(env) == 2
+    end
+
+    @testset "get_screen returns correct shape" begin
+        env = StellaEnvironment(_frame_loop_rom())
+        env_reset!(env); env_step!(env, Int(NOOP))
+        @test size(get_screen(env)) == (SCREEN_HEIGHT, SCREEN_WIDTH)
+    end
+
+    @testset "get_ram returns 128 bytes" begin
+        env = StellaEnvironment(_frame_loop_rom())
+        env_reset!(env)
+        @test length(get_ram(env)) == 128
+    end
+
+    @testset "ALE-style aliases" begin
+        env = StellaEnvironment(_frame_loop_rom())
+        env_reset!(env); act!(env, Int(NOOP))
+        @test size(getScreen(env)) == (SCREEN_HEIGHT, SCREEN_WIDTH)
+        @test length(getRAM(env)) == 128
+        @test gameOver(env) == false
+        @test getEpisodeFrameNumber(env) isa Int
+    end
+
+    @testset "env action propagates via RAM reader" begin
+        env = StellaEnvironment(_ram_reader_rom())
+        env_reset!(env); env_step!(env, Int(LEFT))
+        @test get_ram(env)[1] == 0xBF
     end
 
 end
