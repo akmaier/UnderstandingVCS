@@ -31,7 +31,8 @@ using .ConsoleModule: Console, initial_console
 using .RomSettingsModule: RomSettings, GenericRomSettings
 using .Env: StellaEnvironment
 using .CPU.CPUTables: FLAG_N, FLAG_V, FLAG_U, FLAG_B, FLAG_D, FLAG_I, FLAG_Z, FLAG_C
-using .Diff: Mode, HARD, SOFT, current_mode, set_mode!, using_mode
+using .Diff: Mode, HARD, SOFT, current_mode, set_mode!, using_mode,
+             SoftCPUState, SoftBus, initial_soft_cpu_state, initial_soft_bus
 
 # Functions that collide with Base (`step`, `peek`) are intentionally NOT
 # re-exported from JuTari — Julia's `using` refuses to import them when a
@@ -50,6 +51,7 @@ export CPUState, initial_cpu_state,
        RomSettings, GenericRomSettings,
        StellaEnvironment,
        FLAG_N, FLAG_V, FLAG_U, FLAG_B, FLAG_D, FLAG_I, FLAG_Z, FLAG_C,
-       Mode, HARD, SOFT, current_mode, set_mode!, using_mode
+       Mode, HARD, SOFT, current_mode, set_mode!, using_mode,
+       SoftCPUState, SoftBus, initial_soft_cpu_state, initial_soft_bus
 
 end # module

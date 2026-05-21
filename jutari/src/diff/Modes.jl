@@ -35,7 +35,10 @@ import ..Bus: peek
 export Mode, current_mode, set_mode!, using_mode,
        RomTensor, peek_many,
        soft_select, soft_memory_read, soft_branch,
-       straight_through_round, straight_through_clamp
+       straight_through_round, straight_through_clamp,
+       SoftCPUState, SoftBus, initial_soft_cpu_state, initial_soft_bus,
+       soft_step!, soft_run!, soft_rom_peek, soft_ram_peek,
+       SOFT_SUPPORTED_OPCODES
 
 @enum Mode HARD SOFT
 
@@ -72,5 +75,8 @@ include("SoftSelect.jl")
 include("SoftMem.jl")
 include("SoftBranch.jl")
 include("StraightThrough.jl")
+# P7b — parallel SOFT-mode `step!()` built on the primitives above.
+include("SoftState.jl")
+include("SoftStep.jl")
 
 end # module

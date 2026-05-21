@@ -30,7 +30,11 @@ using JuTari.Env: env_reset!, env_step!, get_screen, get_ram,
                   gameOver, getEpisodeFrameNumber
 using JuTari.Diff: RomTensor, peek, peek_many,
                    soft_select, soft_memory_read, soft_branch,
-                   straight_through_round, straight_through_clamp
+                   straight_through_round, straight_through_clamp,
+                   SoftCPUState, SoftBus,
+                   initial_soft_cpu_state, initial_soft_bus,
+                   soft_step!, soft_run!, soft_rom_peek, soft_ram_peek,
+                   SOFT_SUPPORTED_OPCODES
 
 function _make_memory(image)
     mem = zeros(UInt8, 1 << 16)
@@ -2686,6 +2690,148 @@ end
         @test straight_through_clamp(0.5, 0.0, 1.0) == 0.5f0
         @test straight_through_clamp(2.0, 0.0, 1.0) == 1.0f0
         @test straight_through_clamp(-0.5, 0.0, 1.0) == 0.0f0
+    end
+
+end
+
+# Build a (size,) Float32 ROM with the given byte sequence at offset 0
+# (= CPU address $F000 after the 13-bit mirror).
+function _soft_rom_with(opcodes_at_offset_0::Vector; size::Int = 4096)
+    rom = zeros(Float32, size)
+    for (i, b) in enumerate(opcodes_at_offset_0)
+        rom[i] = Float32(b)
+    end
+    return rom
+end
+
+@testset "JuTari P7b SOFT-mode step!() — forward behaviour" begin
+
+    @testset "initial_soft_cpu_state matches HARD reset defaults" begin
+        s = initial_soft_cpu_state()
+        @test s.A == 0f0
+        @test s.X == 0f0
+        @test s.SP == Float32(0xFD)
+        @test s.PC == Float32(0xF000)
+        @test s.P == Float32(0x34)
+        @test s.cycles == 0f0
+    end
+
+    @testset "initial_soft_bus has zero RAM and carries ROM" begin
+        rom = Float32.(0:15)
+        bus = initial_soft_bus(rom)
+        @test length(bus.ram) == 128
+        @test sum(bus.ram) == 0f0
+        @test bus.rom == rom
+    end
+
+    @testset "SOFT_SUPPORTED_OPCODES matches documented subset" begin
+        expected = Set{UInt8}([0x00, 0xEA, 0xA9, 0xA5, 0xA2, 0x85, 0x86, 0x4C])
+        @test SOFT_SUPPORTED_OPCODES == expected
+    end
+
+    @testset "NOP advances PC and cycles" begin
+        bus = initial_soft_bus(_soft_rom_with([0xEA]))
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test state.PC == Float32(0xF001)
+        @test state.cycles == 2f0
+    end
+
+    @testset "LDA #imm loads A with immediate" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x42]))
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test state.A == Float32(0x42)
+        @test state.PC == Float32(0xF002)
+    end
+
+    @testset "LDX #imm loads X" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA2, 0x33]))
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test state.X == Float32(0x33)
+    end
+
+    @testset "STA \$zp writes A to RAM" begin
+        # LDA #$42 / STA $00
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x42, 0x85, 0x00]))
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)        # LDA #$42
+        soft_step!(state, bus)        # STA $00
+        @test state.A == Float32(0x42)
+        @test bus.ram[1] == Float32(0x42)
+    end
+
+    @testset "STX \$zp writes X to RAM" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA2, 0x77, 0x86, 0x10]))
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)        # LDX #$77
+        soft_step!(state, bus)        # STX $10
+        @test bus.ram[0x10 + 1] == Float32(0x77)
+    end
+
+    @testset "LDA \$zp reads from RAM" begin
+        # Pre-poke RAM[$05] = 0x99; LDA $05 should load 0x99 into A.
+        bus = initial_soft_bus(_soft_rom_with([0xA5, 0x05]))
+        bus.ram[0x05 + 1] = Float32(0x99)
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test state.A == Float32(0x99)
+    end
+
+    @testset "JMP \$abs sets PC from operand" begin
+        bus = initial_soft_bus(_soft_rom_with([0x4C, 0x34, 0x12]))   # JMP $1234
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test state.PC == Float32(0x1234)
+    end
+
+    @testset "BRK halts in place" begin
+        bus = initial_soft_bus(_soft_rom_with([0x00]))
+        state = initial_soft_cpu_state()
+        pc_before = state.PC
+        soft_step!(state, bus)
+        @test state.PC == pc_before
+    end
+
+    @testset "default branch advances one byte on unhandled opcode" begin
+        bus = initial_soft_bus(_soft_rom_with([0xFF]))   # 0xFF is unhandled
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test state.PC == Float32(0xF001)
+    end
+
+    @testset "soft_run! executes a fixed number of instructions" begin
+        bus = initial_soft_bus(_soft_rom_with([0xEA, 0xEA, 0xEA, 0xEA, 0xEA]))
+        state = initial_soft_cpu_state()
+        soft_run!(state, bus, 5)
+        @test state.PC == Float32(0xF005)
+        @test state.cycles == 10f0
+    end
+
+    @testset "headline two-instruction program: LDA #\$42 / STA \$00" begin
+        # The jutari counterpart of the jaxtari headline gradient demo —
+        # forward-behaviour only here; gradient verification will land
+        # once Zygote.jl is wired into the diff layer (next milestone).
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x42, 0x85, 0x00]))
+        state = initial_soft_cpu_state()
+        soft_run!(state, bus, 2)
+        @test state.A == Float32(0x42)
+        @test bus.ram[1] == Float32(0x42)   # RAM[$00] in 1-based Julia
+    end
+
+    @testset "soft_rom_peek is exact at integer addresses" begin
+        rom = Float32[0, 1, 2, 3, 4, 5]
+        for i in 0:5
+            @test soft_rom_peek(rom, i) == Float32(i)
+        end
+    end
+
+    @testset "soft_ram_peek is exact at integer addresses" begin
+        ram = zeros(Float32, 128)
+        ram[0x10 + 1] = 0x99f0
+        @test soft_ram_peek(ram, 0x10) == 0x99f0
+        @test soft_ram_peek(ram, 0x11) == 0f0
     end
 
 end

@@ -15,6 +15,19 @@ from jaxtari.diff.rom_as_weights import RomTensor
 from jaxtari.diff.soft_branch import soft_branch
 from jaxtari.diff.soft_mem import soft_memory_read
 from jaxtari.diff.soft_select import soft_select
+from jaxtari.diff.soft_state import (
+    SoftBus,
+    SoftCPUState,
+    initial_soft_bus,
+    initial_soft_cpu_state,
+)
+from jaxtari.diff.soft_step import (
+    SOFT_SUPPORTED_OPCODES,
+    soft_ram_peek,
+    soft_rom_peek,
+    soft_run,
+    soft_step,
+)
 from jaxtari.diff.straight_through import (
     straight_through_clamp,
     straight_through_round,
@@ -23,11 +36,20 @@ from jaxtari.diff.straight_through import (
 __all__ = [
     "Mode",
     "RomTensor",
+    "SOFT_SUPPORTED_OPCODES",
+    "SoftBus",
+    "SoftCPUState",
     "current_mode",
+    "initial_soft_bus",
+    "initial_soft_cpu_state",
     "set_mode",
     "soft_branch",
     "soft_memory_read",
+    "soft_ram_peek",
+    "soft_rom_peek",
+    "soft_run",
     "soft_select",
+    "soft_step",
     "straight_through_clamp",
     "straight_through_round",
     "using_mode",

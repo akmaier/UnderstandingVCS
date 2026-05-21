@@ -28,11 +28,11 @@ overall project goal, see [README.md](README.md).
 | **P5**  | Cart 2K / 4K / F8 / F6 / F4 with hotspot bank-switching | [`53e393f`](https://github.com/akmaier/UnderstandingVCS/commit/53e393f) | +20 | +47 | ✅ |
 | **P6**  | Console + IO actions + StellaEnvironment + TIA INPT* triggers | [`7a8f303`](https://github.com/akmaier/UnderstandingVCS/commit/7a8f303) | +29 | +39 | ✅ |
 | **P7**  | Diff primitives — RomTensor, soft_select, soft_memory_read, soft_branch, STEs | [`4b4d989`](https://github.com/akmaier/UnderstandingVCS/commit/4b4d989) | +23 | +22 | ✅ |
-| **P7b** | Integrate diff primitives into `cpu.m6502.step()` and `Bus`'s cart slot | — | — | — | ⏳ |
+| **P7b** | Parallel SOFT-mode `soft_step` (8 opcodes) + end-to-end `jax.grad` back to ROM | _next commit_ | +34 | +18 | ✅ |
 | **P8**  | XAI hooks + first attribution experiment | — | — | — | ☐ |
 | **P9**  | JAX-vs-Julia benchmark + paper-shaped XAI study | — | — | — | ☐ |
 
-**Totals as of [`4b4d989`](https://github.com/akmaier/UnderstandingVCS/commit/4b4d989): jaxtari 321 tests, jutari 776 tests, 1097 green across both ports.**
+**Totals after P7b: jaxtari 339 tests, jutari 832 tests, 1171 green across both ports.**
 
 ## What each port can do today
 
@@ -47,10 +47,11 @@ End-to-end, both ports can:
 - Drive the SELECT / RESET / colour / difficulty switches on SWCHB.
 - Expose an ALE-shaped front-end: `reset` / `step(action) → reward` / `get_screen` / `get_ram` / `game_over` / `lives`, plus the camelCase aliases (`act`, `getScreen`, etc.) for drop-in compatibility with code written against the original C++ ALE.
 - (jaxtari only, P7) compute gradients: `RomTensor.peek(addr)` → gradient is one-hot at `addr`; `soft_select` / `soft_memory_read` / `soft_branch` are saturation-equivalent to their hard counterparts and provide useful backward signal under relaxation; STE round/clamp give identity backward through discrete forward.
+- (jaxtari only, P7b) **run a real 6502 program in SOFT mode end-to-end**: `soft_step(state, bus)` dispatches over a 256-way `jax.lax.switch` opcode table (8 opcodes handled — NOP, LDA imm/zp, LDX imm, STA zp, STX zp, JMP abs, BRK; rest fall through to a non-raising default), all register state is `float32`, ROM and RAM access is one-hot-dot-product differentiable, and `jax.grad(ram[0])(rom)` of the headline `LDA #$42 / STA $00` program returns a one-hot gradient at the immediate-operand byte. That's "this ROM byte explains this RAM cell" in working code.
 
-End-to-end XAI demo (jaxtari): given a toy "simulator" `lambda rom: rom.peek($42)²`, `jax.grad` returns a vector that is one-hot at position `$42` with value `2 × rom[$42]`. This is the project's whole point in one test.
+End-to-end XAI demo (jaxtari, P7b): the test `test_grad_lda_imm_then_sta_zp_one_hot_at_immediate` runs the two-instruction program `LDA #$42 / STA $00` in SOFT mode and asserts that `jax.grad(RAM[0])(rom)` is exactly 1.0 at `rom[1]` (the immediate operand) and 0 elsewhere. Same primitive demo as P7's `test_xai_rom_byte_attribution_demo` but with the full opcode-dispatch path involved end-to-end. This is the project's whole point in one test.
 
-## Module layout (after P7)
+## Module layout (after P7b)
 
 ```
 jaxtari/jaxtari/                 jutari/src/
@@ -80,7 +81,9 @@ jaxtari/jaxtari/                 jutari/src/
 │   ├── soft_select.py            │   ├── SoftSelect.jl
 │   ├── soft_mem.py               │   ├── SoftMem.jl
 │   ├── soft_branch.py            │   ├── SoftBranch.jl
-│   └── straight_through.py       │   └── StraightThrough.jl
+│   ├── straight_through.py       │   ├── StraightThrough.jl
+│   ├── soft_state.py             │   ├── SoftState.jl       (P7b)
+│   └── soft_step.py              │   └── SoftStep.jl        (P7b)
 ├── console.py                    ├── Console.jl
 └── __init__.py                   └── JuTari.jl
 ```
@@ -122,9 +125,12 @@ reference of what remains:
 - Random no-op reset (Mnih-style "skip 0..30 NOOPs at episode start" — this is a wrapper concern).
 - Two-player joystick (P1 directions stay defaulted-released).
 
-### Diff (P7)
-- **P7b** is the big remaining item: wire RomTensor + soft_select + soft_memory_read + soft_branch into the actual `cpu.m6502.step()` so that running a ROM in SOFT mode produces a fully-differentiable framebuffer. Today step() still does ordinary integer arithmetic; SOFT mode is a flag with no behavioural effect on execution.
-- RomTensor replacing the existing Cart class in the Bus's cart slot.
+### Diff (P7 / P7b)
+- **P7c** is the next item: extend the SOFT-mode opcode handler table from the 8 P7b opcodes (NOP, LDA imm/zp, LDX imm, STA zp, STX zp, JMP abs, BRK) to the rest of the 151 NMOS set. Unhandled opcodes today fall through to a `_branch_default` that advances PC by 1 — gradient-safe, but forward-wrong if a real ROM hits one.
+- Status-flag updates (N/Z/C/V) in the SOFT handlers — register movement is there, flags are not.
+- TIA / RIOT writes via SOFT mode (STA $0xxx currently drops silently into the RAM region).
+- Cart bank-switching from SOFT mode (P5's hotspot mechanism isn't wired into `soft_step` yet).
+- RomTensor replacing the existing Cart class in the Bus's cart slot (the SoftBus carries a raw `jnp.ndarray`, not the `RomTensor` wrapper, because the wrapper isn't a PyTree).
 - Julia gradient verification — jutari has the same forward behaviour as jaxtari but no Zygote / ChainRulesCore `rrule` wired in yet (would need adding Zygote as a test dep).
 
 ### Cross-cutting
