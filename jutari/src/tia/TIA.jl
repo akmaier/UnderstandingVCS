@@ -17,15 +17,15 @@ Phase progress:
   - P3a: register file + scanline/frame timing + WSYNC.
   - P3b: playfield rendering (PF0/PF1/PF2 + CTRLPF mirror).
   - P3c: player sprites P0/P1 (GRP, REFP, RESP, HMP, HMOVE, HMCLR).
-  - P3d: missiles M0/M1 and ball BL — ENAM0/ENAM1/ENABL enable bits,
-    RESM0/RESM1/RESBL position-reset, HMM0/HMM1/HMBL horizontal motion
-    (now also folded into HMOVE/HMCLR), and 1/2/4/8-pixel size scaling
-    driven by NUSIZ0/NUSIZ1 bits 4–5 (missiles) and CTRLPF bits 4–5
-    (ball).
+  - P3d: missiles M0/M1 and ball BL (sizes, EN*, RES*, HM*).
+  - P3e: collision latches — 8 read-only registers
+    CXM0P/CXM1P/CXP0FB/CXP1FB/CXM0FB/CXM1FB/CXBLPF/CXPPMM at \$30–\$37
+    that accumulate D6/D7 bits when objects share a pixel on any
+    rendered scanline. Writing CXCLR (\$2C) clears all 8 latches.
 
-Pending: P3e (collisions), P3f (VSYNC/VBLANK + frame ending). Reads
-still return 0 stubs for collisions and INPT*. Beam-racing is
-approximated: rendering captures register state as of end-of-scanline.
+Pending: P3f (VSYNC/VBLANK + frame ending). INPT* reads still stub
+to 0. Beam-racing is approximated; collision detection runs on the
+end-of-scanline register snapshot.
 """
 module TIA
 
@@ -94,6 +94,7 @@ mutable struct TIAState
     m0_x::Int
     m1_x::Int
     bl_x::Int
+    collisions::Vector{UInt8}      # 8 collision-latch bytes ($30..$37)
 end
 
 initial_tia_state() = TIAState(
@@ -101,15 +102,19 @@ initial_tia_state() = TIAState(
     0, 0, UInt64(0), false,
     zeros(UInt8, SCREEN_HEIGHT, SCREEN_WIDTH),
     0, 0, 0, 0, 0,
+    zeros(UInt8, 8),
 )
 
 """
     tia_peek(tia, addr) -> UInt8
 
-Read a TIA register. P3a stub: all readable registers (collisions, INPT*)
-return 0. Proper values land in P3e (collisions) and a later input phase.
+Read a TIA register. \$30–\$37 (= addr & 0x0F in 0..7) return the
+collision latches; \$38–\$3F (INPT*) still stub to 0.
 """
-@inline tia_peek(::TIAState, ::Integer) = UInt8(0)
+@inline function tia_peek(tia::TIAState, addr::Integer)
+    reg = Int(addr) & 0x0F
+    return reg < 8 ? tia.collisions[reg + 1] : UInt8(0)
+end
 
 """
     _resp_position(scanline_cycle) -> Int
@@ -170,6 +175,8 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer)
         tia.registers[W_HMM0 + 1] = 0
         tia.registers[W_HMM1 + 1] = 0
         tia.registers[W_HMBL + 1] = 0
+    elseif reg == W_CXCLR
+        fill!(tia.collisions, 0)
     end
 
     return nothing
@@ -189,6 +196,7 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
 
     if line_advance > 0
         scanline_pixels = render_scanline(tia)
+        _detect_collisions!(tia)
         for i in 0:(line_advance - 1)
             completed_line = (tia.scanline + i) % NTSC_SCANLINES_PER_FRAME
             if completed_line < SCREEN_HEIGHT
@@ -344,6 +352,104 @@ function render_scanline(tia::TIAState)
     _overlay_missile!(pixels, tia, 0)
     _overlay_player!(pixels, tia, 0)
     return pixels
+end
+
+# --------------------------------------------------------------------------- #
+# Collision detection (P3e)
+# --------------------------------------------------------------------------- #
+
+"""
+    _object_pixel_sets(tia) -> NamedTuple
+
+Per-object sets of screen-pixel indices for the current scanline. Used
+by collision detection.
+"""
+function _object_pixel_sets(tia::TIAState)
+    pf0    = tia.registers[W_PF0 + 1]
+    pf1    = tia.registers[W_PF1 + 1]
+    pf2    = tia.registers[W_PF2 + 1]
+    ctrlpf = tia.registers[W_CTRLPF + 1]
+    left_bits  = playfield_bits(pf0, pf1, pf2)
+    right_bits = (ctrlpf & 0x01) != 0 ? reverse(left_bits) : left_bits
+    pf = Set{Int}()
+    @inbounds for (i, b) in enumerate(left_bits)
+        if b != 0
+            for k in 0:3; push!(pf, (i - 1) * 4 + k); end
+        end
+    end
+    @inbounds for (i, b) in enumerate(right_bits)
+        if b != 0
+            for k in 0:3; push!(pf, 80 + (i - 1) * 4 + k); end
+        end
+    end
+
+    bl = Set{Int}()
+    if (tia.registers[W_ENABL + 1] & 0x02) != 0
+        size = 1 << ((Int(ctrlpf) >> 4) & 0x03)
+        for i in 0:(size - 1)
+            push!(bl, mod(tia.bl_x + i, 160))
+        end
+    end
+
+    function _player_set(grp_reg, refp_reg, x)
+        grp = tia.registers[grp_reg + 1]
+        out = Set{Int}()
+        grp == 0 && return out
+        reflected = (tia.registers[refp_reg + 1] & 0x08) != 0
+        for i in 0:7
+            bit_idx = reflected ? i : (7 - i)
+            if (Int(grp) >> bit_idx) & 1 != 0
+                push!(out, mod(x + i, 160))
+            end
+        end
+        return out
+    end
+
+    function _missile_set(enam_reg, nusiz_reg, x)
+        (tia.registers[enam_reg + 1] & 0x02) == 0 && return Set{Int}()
+        size = 1 << ((Int(tia.registers[nusiz_reg + 1]) >> 4) & 0x03)
+        return Set(mod(x + i, 160) for i in 0:(size - 1))
+    end
+
+    return (
+        pf = pf,
+        bl = bl,
+        p0 = _player_set(W_GRP0, W_REFP0, tia.p0_x),
+        p1 = _player_set(W_GRP1, W_REFP1, tia.p1_x),
+        m0 = _missile_set(W_ENAM0, W_NUSIZ0, tia.m0_x),
+        m1 = _missile_set(W_ENAM1, W_NUSIZ1, tia.m1_x),
+    )
+end
+
+"""
+    _detect_collisions!(tia)
+
+OR new collision bits into `tia.collisions` based on the current scanline's
+object overlap. See the bit layout in the jaxtari counterpart.
+"""
+function _detect_collisions!(tia::TIAState)
+    objs = _object_pixel_sets(tia)
+    p0, p1 = objs.p0, objs.p1
+    m0, m1 = objs.m0, objs.m1
+    bl, pf = objs.bl, objs.pf
+    hit(a, b) = !isempty(a) && !isempty(b) && !isempty(intersect(a, b))
+
+    hit(m0, p1) && (tia.collisions[1] |= 0x80)   # CXM0P D7
+    hit(m0, p0) && (tia.collisions[1] |= 0x40)   # CXM0P D6
+    hit(m1, p0) && (tia.collisions[2] |= 0x80)   # CXM1P D7
+    hit(m1, p1) && (tia.collisions[2] |= 0x40)   # CXM1P D6
+    hit(p0, pf) && (tia.collisions[3] |= 0x80)   # CXP0FB D7
+    hit(p0, bl) && (tia.collisions[3] |= 0x40)   # CXP0FB D6
+    hit(p1, pf) && (tia.collisions[4] |= 0x80)   # CXP1FB D7
+    hit(p1, bl) && (tia.collisions[4] |= 0x40)   # CXP1FB D6
+    hit(m0, pf) && (tia.collisions[5] |= 0x80)   # CXM0FB D7
+    hit(m0, bl) && (tia.collisions[5] |= 0x40)   # CXM0FB D6
+    hit(m1, pf) && (tia.collisions[6] |= 0x80)   # CXM1FB D7
+    hit(m1, bl) && (tia.collisions[6] |= 0x40)   # CXM1FB D6
+    hit(bl, pf) && (tia.collisions[7] |= 0x80)   # CXBLPF D7 (D6 unused)
+    hit(p0, p1) && (tia.collisions[8] |= 0x80)   # CXPPMM D7
+    hit(m0, m1) && (tia.collisions[8] |= 0x40)   # CXPPMM D6
+    return nothing
 end
 
 """

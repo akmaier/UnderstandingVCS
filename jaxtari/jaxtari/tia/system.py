@@ -18,15 +18,16 @@ Phase progress:
   - P3a: register file + scanline/frame timing + WSYNC.
   - P3b: playfield rendering (PF0/PF1/PF2 + CTRLPF mirror + COLU*).
   - P3c: player sprites P0/P1 (GRP, REFP, RESP, HMP, HMOVE, HMCLR).
-  - P3d (this sub-phase): missiles M0/M1 and ball BL — ENAM0/ENAM1/
-    ENABL enable bits, RESM0/RESM1/RESBL position-reset, HMM0/HMM1/HMBL
-    horizontal motion (now also folded into HMOVE/HMCLR), and the
-    1/2/4/8-pixel size scaling driven by NUSIZ0/NUSIZ1 bits 4–5
-    (missiles) and CTRLPF bits 4–5 (ball).
+  - P3d: missiles M0/M1 and ball BL (EN*, RES*, HM*, NUSIZ/CTRLPF sizes).
+  - P3e (this sub-phase): collision latches — 8 read-only registers
+    CXM0P/CXM1P/CXP0FB/CXP1FB/CXM0FB/CXM1FB/CXBLPF/CXPPMM at \$30–\$37
+    that accumulate D6/D7 bits when objects share a pixel on any
+    rendered scanline. Writing CXCLR (\$2C) clears all 8 latches.
 
-Pending: P3e (collision latches), P3f (VSYNC / VBLANK + frame ending).
-Reads still return 0 stubs for collisions and INPT*. Beam-racing is
-approximated: rendering captures register state as of end-of-scanline.
+Pending: P3f (VSYNC / VBLANK + frame ending). INPT* reads still stub
+to 0. Beam-racing is approximated: rendering captures register state as
+of end-of-scanline; collision detection runs on the same scanline
+snapshot.
 """
 
 from __future__ import annotations
@@ -133,6 +134,9 @@ class TIAState(NamedTuple):
     `framebuffer` is the rendered output, (SCREEN_HEIGHT × SCREEN_WIDTH)
     indexed colour bytes. `m0_x`, `m1_x`, `bl_x` are derived missile /
     ball positions, updated by RESM0 / RESM1 / RESBL / HMOVE writes.
+    `collisions` is an 8-byte array holding the latched values of the
+    read-only TIA collision registers \$30–\$37 (D6/D7 set on object
+    overlap; cleared by CXCLR).
     """
     registers: jnp.ndarray
     scanline_cycle: int
@@ -145,6 +149,7 @@ class TIAState(NamedTuple):
     m0_x: int
     m1_x: int
     bl_x: int
+    collisions: jnp.ndarray
 
 
 def initial_tia_state() -> TIAState:
@@ -160,6 +165,7 @@ def initial_tia_state() -> TIAState:
         m0_x=0,
         m1_x=0,
         bl_x=0,
+        collisions=jnp.zeros((8,), dtype=jnp.uint8),
     )
 
 
@@ -168,9 +174,13 @@ def initial_tia_state() -> TIAState:
 # --------------------------------------------------------------------------- #
 
 def tia_peek(tia: TIAState, addr: int) -> int:
-    """Read a TIA register. P3a stub: all readable registers (collisions,
-    INPT*) return 0. Proper values land in P3e (collisions) and a later
-    input-handling phase."""
+    """Read a TIA register. \$30–\$37 (= reg & 0x0F in [0,7]) return the
+    collision latches set by `render_scanline`; \$38–\$3F (= reg & 0x0F
+    in [8,13]) return 0 (INPT* — input handling lands in a later phase).
+    """
+    reg = addr & 0x0F
+    if reg < 8:
+        return int(tia.collisions[reg])
     return 0
 
 
@@ -250,6 +260,8 @@ def tia_poke(tia: TIAState, addr: int, value: int) -> TIAState:
                 .at[W_HMBL].set(jnp.uint8(0))
         )
         new_tia = new_tia._replace(registers=new_registers)
+    elif reg == W_CXCLR:
+        new_tia = new_tia._replace(collisions=jnp.zeros((8,), dtype=jnp.uint8))
 
     return new_tia
 
@@ -271,8 +283,10 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
     line_advance = total // NTSC_CPU_CYCLES_PER_SCANLINE
 
     fb = tia.framebuffer
+    new_collisions = tia.collisions
     if line_advance > 0:
         scanline_pixels = render_scanline(tia)
+        new_collisions = _detect_collisions(tia._replace(collisions=new_collisions))
         for i in range(line_advance):
             completed_line = (tia.scanline + i) % NTSC_SCANLINES_PER_FRAME
             if completed_line < SCREEN_HEIGHT:
@@ -287,6 +301,7 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
         scanline=new_line,
         frame=new_frame,
         framebuffer=fb,
+        collisions=new_collisions,
     )
 
 
@@ -396,12 +411,9 @@ def _overlay_ball(pixels: list[int], tia: TIAState) -> None:
 
 
 def render_scanline(tia: TIAState) -> jnp.ndarray:
-    """Composite renderer: playfield (P3b) + ball (P3d, COLUPF) +
-    players + missiles (P3c/P3d). Default priority order — players on top.
+    """Composite renderer (pixel-only — collisions live in `_scanline_with_collisions`).
 
-    Order: background ← playfield ← ball ← P1+M1 ← P0+M0. Real TIA also
-    supports CTRLPF.D2 to swap PF/BL above the players; that nuance lands
-    later.
+    Order: background ← playfield ← ball ← P1+M1 ← P0+M0.
     """
     pixels = _playfield_pixels(tia)
     _overlay_ball(pixels, tia)
@@ -410,6 +422,104 @@ def render_scanline(tia: TIAState) -> jnp.ndarray:
     _overlay_missile(pixels, tia, missile=0)
     _overlay_player(pixels, tia, player=0)
     return jnp.array(pixels, dtype=jnp.uint8)
+
+
+# --------------------------------------------------------------------------- #
+# Collision detection (P3e)
+# --------------------------------------------------------------------------- #
+
+def _object_pixel_sets(tia: TIAState) -> dict[str, set[int]]:
+    """Return per-object sets of screen-pixel indices that the object covers
+    on the current scanline. Used by both rendering and collision detection.
+    """
+    # Playfield
+    pf0    = int(tia.registers[W_PF0])
+    pf1    = int(tia.registers[W_PF1])
+    pf2    = int(tia.registers[W_PF2])
+    ctrlpf = int(tia.registers[W_CTRLPF])
+    left_bits = _playfield_bits(pf0, pf1, pf2)
+    right_bits = list(reversed(left_bits)) if (ctrlpf & 0x01) else left_bits
+    pf: set[int] = set()
+    for i, bit in enumerate(left_bits):
+        if bit:
+            pf.update(range(i * 4, i * 4 + 4))
+    for i, bit in enumerate(right_bits):
+        if bit:
+            pf.update(range(80 + i * 4, 80 + i * 4 + 4))
+
+    # Ball
+    bl: set[int] = set()
+    if int(tia.registers[W_ENABL]) & 0x02:
+        size = 1 << ((ctrlpf >> 4) & 0x03)
+        for i in range(size):
+            bl.add((tia.bl_x + i) % 160)
+
+    # Players
+    def _player_set(grp_reg: int, refp_reg: int, x: int) -> set[int]:
+        grp = int(tia.registers[grp_reg])
+        if not grp:
+            return set()
+        reflected = (int(tia.registers[refp_reg]) & 0x08) != 0
+        out: set[int] = set()
+        for i in range(8):
+            bit_idx = i if reflected else (7 - i)
+            if (grp >> bit_idx) & 1:
+                out.add((x + i) % 160)
+        return out
+
+    p0 = _player_set(W_GRP0, W_REFP0, tia.p0_x)
+    p1 = _player_set(W_GRP1, W_REFP1, tia.p1_x)
+
+    # Missiles
+    def _missile_set(enam_reg: int, nusiz_reg: int, x: int) -> set[int]:
+        if (int(tia.registers[enam_reg]) & 0x02) == 0:
+            return set()
+        size = 1 << ((int(tia.registers[nusiz_reg]) >> 4) & 0x03)
+        return {(x + i) % 160 for i in range(size)}
+
+    m0 = _missile_set(W_ENAM0, W_NUSIZ0, tia.m0_x)
+    m1 = _missile_set(W_ENAM1, W_NUSIZ1, tia.m1_x)
+
+    return {"pf": pf, "bl": bl, "p0": p0, "p1": p1, "m0": m0, "m1": m1}
+
+
+def _detect_collisions(tia: TIAState) -> jnp.ndarray:
+    """Inspect this scanline's object sets and OR new collision bits into
+    the existing `tia.collisions` latches. Returns the new 8-byte array.
+
+    Bit layout (D6 + D7 per Stella docs):
+      CXM0P  ($30): D7 = M0-P1, D6 = M0-P0
+      CXM1P  ($31): D7 = M1-P0, D6 = M1-P1
+      CXP0FB ($32): D7 = P0-PF, D6 = P0-BL
+      CXP1FB ($33): D7 = P1-PF, D6 = P1-BL
+      CXM0FB ($34): D7 = M0-PF, D6 = M0-BL
+      CXM1FB ($35): D7 = M1-PF, D6 = M1-BL
+      CXBLPF ($36): D7 = BL-PF, D6 = unused (0)
+      CXPPMM ($37): D7 = P0-P1, D6 = M0-M1
+    """
+    objs = _object_pixel_sets(tia)
+    c = list(int(b) for b in tia.collisions)
+    p0, p1, m0, m1, bl, pf = objs["p0"], objs["p1"], objs["m0"], objs["m1"], objs["bl"], objs["pf"]
+
+    def _hit(a: set[int], b: set[int]) -> bool:
+        return bool(a) and bool(b) and bool(a & b)
+
+    if _hit(m0, p1): c[0] |= 0x80
+    if _hit(m0, p0): c[0] |= 0x40
+    if _hit(m1, p0): c[1] |= 0x80
+    if _hit(m1, p1): c[1] |= 0x40
+    if _hit(p0, pf): c[2] |= 0x80
+    if _hit(p0, bl): c[2] |= 0x40
+    if _hit(p1, pf): c[3] |= 0x80
+    if _hit(p1, bl): c[3] |= 0x40
+    if _hit(m0, pf): c[4] |= 0x80
+    if _hit(m0, bl): c[4] |= 0x40
+    if _hit(m1, pf): c[5] |= 0x80
+    if _hit(m1, bl): c[5] |= 0x40
+    if _hit(bl, pf): c[6] |= 0x80
+    if _hit(p0, p1): c[7] |= 0x80
+    if _hit(m0, m1): c[7] |= 0x40
+    return jnp.array(c, dtype=jnp.uint8)
 
 
 def tia_apply_wsync(tia: TIAState) -> tuple[int, TIAState]:

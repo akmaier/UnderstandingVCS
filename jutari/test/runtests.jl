@@ -13,7 +13,7 @@ using JuTari.TIA: tia_peek, tia_poke!, tia_advance!, tia_apply_wsync!,
                   W_RESP0, W_RESP1, W_HMP0, W_HMP1, W_HMM0, W_HMM1, W_HMBL,
                   W_HMOVE, W_HMCLR,
                   W_ENAM0, W_ENAM1, W_ENABL, W_NUSIZ0, W_NUSIZ1,
-                  W_RESM0, W_RESM1, W_RESBL
+                  W_RESM0, W_RESM1, W_RESBL, W_CXCLR
 
 function _make_memory(image)
     mem = zeros(UInt8, 1 << 16)
@@ -1780,6 +1780,168 @@ end
         s = render_scanline(tia)
         for i in 51:58
             @test s[i] == 0x42
+        end
+    end
+
+end
+
+const R_CXM0P  = 0x30
+const R_CXM1P  = 0x31
+const R_CXP0FB = 0x32
+const R_CXP1FB = 0x33
+const R_CXM0FB = 0x34
+const R_CXM1FB = 0x35
+const R_CXBLPF = 0x36
+const R_CXPPMM = 0x37
+
+function _enable_p!(tia, player, x; grp=0xFF, color=0x42)
+    if player == 0
+        tia.p0_x = x
+        tia_poke!(tia, W_GRP0, grp); tia_poke!(tia, W_COLUP0, color)
+    else
+        tia.p1_x = x
+        tia_poke!(tia, W_GRP1, grp); tia_poke!(tia, W_COLUP1, color)
+    end
+end
+
+function _enable_m!(tia, missile, x; size=1)
+    if missile == 0
+        tia.m0_x = x; tia_poke!(tia, W_ENAM0, 0x02)
+        size > 1 && tia_poke!(tia, W_NUSIZ0, Dict(2=>0x10, 4=>0x20, 8=>0x30)[size])
+    else
+        tia.m1_x = x; tia_poke!(tia, W_ENAM1, 0x02)
+        size > 1 && tia_poke!(tia, W_NUSIZ1, Dict(2=>0x10, 4=>0x20, 8=>0x30)[size])
+    end
+end
+
+function _enable_bl!(tia, x; size=1)
+    tia.bl_x = x; tia_poke!(tia, W_ENABL, 0x02)
+    size > 1 && tia_poke!(tia, W_CTRLPF, Dict(2=>0x10, 4=>0x20, 8=>0x30)[size])
+end
+
+@testset "JuTari P3e TIA collision latches" begin
+
+    @testset "initial collisions are all zero" begin
+        tia = initial_tia_state()
+        for reg in 0x30:0x37
+            @test tia_peek(tia, reg) == 0
+        end
+    end
+
+    @testset "INPT addresses still stub to 0" begin
+        tia = initial_tia_state()
+        for reg in 0x38:0x3D
+            @test tia_peek(tia, reg) == 0
+        end
+    end
+
+    @testset "CXCLR zeros all latches" begin
+        tia = initial_tia_state()
+        fill!(tia.collisions, 0xC0)
+        tia_poke!(tia, W_CXCLR, 0x00)
+        for reg in 0x30:0x37
+            @test tia_peek(tia, reg) == 0
+        end
+    end
+
+    @testset "no collision when not overlapping" begin
+        tia = initial_tia_state()
+        _enable_p!(tia, 0, 10); _enable_p!(tia, 1, 100)
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        @test tia_peek(tia, R_CXPPMM) == 0
+    end
+
+    @testset "P0-P1 overlap sets CXPPMM D7" begin
+        tia = initial_tia_state()
+        _enable_p!(tia, 0, 50); _enable_p!(tia, 1, 50)
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        @test (tia_peek(tia, R_CXPPMM) & 0x80) != 0
+        @test (tia_peek(tia, R_CXPPMM) & 0x40) == 0
+    end
+
+    @testset "M0-M1 overlap sets CXPPMM D6" begin
+        tia = initial_tia_state()
+        _enable_m!(tia, 0, 80); _enable_m!(tia, 1, 80)
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        @test (tia_peek(tia, R_CXPPMM) & 0x40) != 0
+        @test (tia_peek(tia, R_CXPPMM) & 0x80) == 0
+    end
+
+    @testset "M0-P1 sets CXM0P D7" begin
+        tia = initial_tia_state()
+        _enable_m!(tia, 0, 50); _enable_p!(tia, 1, 50)
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        @test (tia_peek(tia, R_CXM0P) & 0x80) != 0
+    end
+
+    @testset "M0-P0 sets CXM0P D6" begin
+        tia = initial_tia_state()
+        _enable_m!(tia, 0, 50); _enable_p!(tia, 0, 50)
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        @test (tia_peek(tia, R_CXM0P) & 0x40) != 0
+    end
+
+    @testset "M1-P0 sets CXM1P D7" begin
+        tia = initial_tia_state()
+        _enable_m!(tia, 1, 50); _enable_p!(tia, 0, 50)
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        @test (tia_peek(tia, R_CXM1P) & 0x80) != 0
+    end
+
+    @testset "P0-PF sets CXP0FB D7" begin
+        tia = initial_tia_state()
+        _enable_p!(tia, 0, 0)
+        tia_poke!(tia, W_PF0, 0xF0)
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        @test (tia_peek(tia, R_CXP0FB) & 0x80) != 0
+    end
+
+    @testset "P0-BL sets CXP0FB D6" begin
+        tia = initial_tia_state()
+        _enable_p!(tia, 0, 50); _enable_bl!(tia, 50)
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        @test (tia_peek(tia, R_CXP0FB) & 0x40) != 0
+    end
+
+    @testset "P1-PF sets CXP1FB D7" begin
+        tia = initial_tia_state()
+        _enable_p!(tia, 1, 0); tia_poke!(tia, W_PF0, 0xF0)
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        @test (tia_peek(tia, R_CXP1FB) & 0x80) != 0
+    end
+
+    @testset "M0-PF sets CXM0FB D7" begin
+        tia = initial_tia_state()
+        _enable_m!(tia, 0, 0); tia_poke!(tia, W_PF0, 0xF0)
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        @test (tia_peek(tia, R_CXM0FB) & 0x80) != 0
+    end
+
+    @testset "BL-PF sets CXBLPF D7" begin
+        tia = initial_tia_state()
+        _enable_bl!(tia, 0); tia_poke!(tia, W_PF0, 0xF0)
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        @test (tia_peek(tia, R_CXBLPF) & 0x80) != 0
+        @test (tia_peek(tia, R_CXBLPF) & 0x40) == 0
+    end
+
+    @testset "latch persists across scanlines" begin
+        tia = initial_tia_state()
+        _enable_p!(tia, 0, 50); _enable_p!(tia, 1, 50)
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        @test (tia_peek(tia, R_CXPPMM) & 0x80) != 0
+        tia.p1_x = 100
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        @test (tia_peek(tia, R_CXPPMM) & 0x80) != 0
+    end
+
+    @testset "CXCLR clears after collision" begin
+        tia = initial_tia_state()
+        _enable_p!(tia, 0, 50); _enable_p!(tia, 1, 50)
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        tia_poke!(tia, W_CXCLR, 0x00)
+        for reg in 0x30:0x37
+            @test tia_peek(tia, reg) == 0
         end
     end
 
