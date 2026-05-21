@@ -13,8 +13,11 @@ Implemented so far (PORTING_PLAN.md §5):
 - P1d:  conditional branches (BPL/BMI/BVC/BVS/BCC/BCS/BNE/BEQ), JMP
         (absolute + indirect with page-wrap bug), JSR, RTS. Introduces the
         push8!/pop8! stack helpers reused by P1e and P1f.
+- P1e:  stack push/pull (PHA/PHP/PLA/PLP), status-flag setters/clearers
+        (SEC/CLC/SEI/CLI/SED/CLD/CLV), and NOP. PHP pushes P with B set;
+        PLP forces B and U on pull (xitari/Stella convention).
 
-Pending: P1e (stack + status flags), P1f (BRK/RTI/IRQ/NMI/RESET + cycle
+Pending: P1f (BRK/RTI/IRQ/NMI/RESET, INC/DEC/INX/INY/DEX/DEY, cycle
 fine print). Unknown opcodes fall through to the stub
 (PC += 1, cycles += base).
 """
@@ -26,7 +29,7 @@ include("ALU.jl")
 
 using .CPUTables: ADDRESSING_MODE_TABLE, CYCLE_TABLE,
                   ADDR_IMPLIED, ADDR_INDIRECT,
-                  FLAG_C, FLAG_N, FLAG_V, FLAG_Z
+                  FLAG_C, FLAG_N, FLAG_V, FLAG_Z, FLAG_I, FLAG_D, FLAG_B, FLAG_U
 using .Addressing: resolve, instruction_length
 using .ALU: set_zn!, compare_flags!, bit_flags!, adc!, sbc!,
             asl_op!, lsr_op!, rol_op!, ror_op!
@@ -99,6 +102,15 @@ const OPCODES = Dict{UInt8, Symbol}(
     0x4C => :JMP, 0x6C => :JMP,
     # Subroutine call / return
     0x20 => :JSR, 0x60 => :RTS,
+
+    # --- P1e ---------------------------------------------------------------
+    0x48 => :PHA, 0x08 => :PHP,
+    0x68 => :PLA, 0x28 => :PLP,
+    0x18 => :CLC, 0x38 => :SEC,
+    0x58 => :CLI, 0x78 => :SEI,
+    0xB8 => :CLV,
+    0xD8 => :CLD, 0xF8 => :SED,
+    0xEA => :NOP,
 )
 
 # Branch opcode → (flag bit, take_when_set)
@@ -111,6 +123,14 @@ const _BRANCH_INFO = Dict{UInt8, Tuple{UInt8, Bool}}(
     0xB0 => (FLAG_C, true),   # BCS
     0xD0 => (FLAG_Z, false),  # BNE
     0xF0 => (FLAG_Z, true),   # BEQ
+)
+
+# Status-flag opcode → (flag bit, set_or_clear). True = set; false = clear.
+const _STATUS_OP = Dict{UInt8, Tuple{UInt8, Bool}}(
+    0x18 => (FLAG_C, false), 0x38 => (FLAG_C, true),
+    0x58 => (FLAG_I, false), 0x78 => (FLAG_I, true),
+    0xB8 => (FLAG_V, false),
+    0xD8 => (FLAG_D, false), 0xF8 => (FLAG_D, true),
 )
 
 @inline _peek(memory::Vector{UInt8}, addr::Integer) =
@@ -311,6 +331,36 @@ function step(state::CPUState, memory::Vector{UInt8})
     elseif mnemonic === :RTS
         return_addr = pop16!(state, memory)
         state.PC = UInt16((Int(return_addr) + 1) & 0xFFFF)
+
+    # --- Stack push / pull (P1e) -------------------------------------------
+    elseif mnemonic === :PHA
+        push8!(state, memory, state.A)
+        state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
+    elseif mnemonic === :PHP
+        # PHP always pushes with bit 4 (B) set, matching xitari's "B always
+        # true on 6507" convention. Bit 5 (U) is already set as an invariant.
+        push8!(state, memory, state.P | FLAG_B | FLAG_U)
+        state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
+    elseif mnemonic === :PLA
+        state.A = pop8!(state, memory)
+        set_zn!(state, state.A)
+        state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
+    elseif mnemonic === :PLP
+        popped = pop8!(state, memory)
+        state.P = (popped | FLAG_U | FLAG_B) & UInt8(0xFF)
+        state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
+
+    # --- Status-flag setters / clearers + NOP ------------------------------
+    elseif mnemonic === :CLC || mnemonic === :SEC ||
+           mnemonic === :CLI || mnemonic === :SEI ||
+           mnemonic === :CLV ||
+           mnemonic === :CLD || mnemonic === :SED
+        flag, set_it = _STATUS_OP[opcode]
+        p = set_it ? (state.P | flag) : (state.P & ~flag)
+        state.P = (p | FLAG_U) & UInt8(0xFF)
+        state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
+    elseif mnemonic === :NOP
+        state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
     end
 
     state.cycles += UInt64(base_cycles + extra_cycles)

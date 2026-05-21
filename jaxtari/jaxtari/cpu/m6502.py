@@ -11,8 +11,12 @@ Implemented so far (PORTING_PLAN.md §5):
 - P1d: conditional branches (BPL/BMI/BVC/BVS/BCC/BCS/BNE/BEQ), JMP
   (absolute + indirect with page-wrap bug), JSR, RTS. Introduces the
   push8 / pop8 stack helpers reused by P1e and P1f.
+- P1e: stack push/pull (PHA/PHP/PLA/PLP), status-flag setters/clearers
+  (SEC/CLC/SEI/CLI/SED/CLD/CLV), and NOP. PHP pushes P with B set; PLP
+  forces both B and U on pull, following xitari's PSLockupTable convention
+  ("the 6507's B flag is always true" — see M6502.hxx line 318).
 
-Pending: P1e (stack + status), P1f (BRK/RTI/IRQ/NMI/RESET and the
+Pending: P1f (BRK/RTI/IRQ/NMI/RESET, INC/DEC/INX/INY/DEX/DEY, and the
 cycle-counting fine print). Unknown opcodes fall through to the stub:
 PC += 1, cycles += base.
 """
@@ -40,7 +44,10 @@ from jaxtari.cpu.tables import (
     ADDR_INDIRECT,
     ADDRESSING_MODE_TABLE,
     CYCLE_TABLE,
+    FLAG_B,
     FLAG_C,
+    FLAG_D,
+    FLAG_I,
     FLAG_N,
     FLAG_U,
     FLAG_V,
@@ -118,7 +125,31 @@ OPCODES: dict[int, str] = {
     # Subroutine call / return
     0x20: "JSR",
     0x60: "RTS",
+
+    # --- P1e -----------------------------------------------------------------
+    # Stack push / pull (all implied; PHA/PHP=3, PLA/PLP=4 cycles)
+    0x48: "PHA", 0x08: "PHP",
+    0x68: "PLA", 0x28: "PLP",
+    # Status-flag setters / clearers (all implied, 2 cycles)
+    0x18: "CLC", 0x38: "SEC",
+    0x58: "CLI", 0x78: "SEI",
+    0xB8: "CLV",
+    0xD8: "CLD", 0xF8: "SED",
+    # NOP (the only documented one: $EA — implied, 2 cycles)
+    0xEA: "NOP",
 }
+
+
+# (opcode → flag bit) for SEC/CLC/SEI/CLI/SED/CLD/CLV. The setter / clearer
+# direction is implicit in the opcode: 0x38/0x78/0xF8 set; 0x18/0x58/0xB8/0xD8
+# clear. _STATUS_FLAG[opcode] gives the bit to flip.
+_STATUS_FLAG: dict[int, int] = {
+    0x18: FLAG_C, 0x38: FLAG_C,
+    0x58: FLAG_I, 0x78: FLAG_I,
+    0xB8: FLAG_V,
+    0xD8: FLAG_D, 0xF8: FLAG_D,
+}
+_STATUS_SET_OPCODES = frozenset({0x38, 0x78, 0xF8})
 
 
 # Branch opcode → (flag bit, take_when_set). Used by the branch dispatcher.
@@ -394,6 +425,60 @@ def step(state: CPUState, memory: Memory) -> Tuple[CPUState, Memory]:
         return state._replace(
             SP=jnp.uint8(new_sp),
             PC=jnp.uint16((return_addr + 1) & 0xFFFF),
+            cycles=state.cycles + jnp.uint64(base_cycles),
+        ), memory
+
+    # --- Stack push / pull (P1e) ------------------------------------------
+    if mnemonic == "PHA":
+        new_memory, new_sp = push8(memory, int(state.SP), int(state.A))
+        return state._replace(
+            SP=jnp.uint8(new_sp),
+            PC=jnp.uint16((int(state.PC) + 1) & 0xFFFF),
+            cycles=state.cycles + jnp.uint64(base_cycles),
+        ), new_memory
+    if mnemonic == "PHP":
+        # PHP always pushes with bit 4 (B) set, matching xitari's "B always
+        # true on 6507" convention. Bit 5 (U) is already set as an invariant.
+        new_memory, new_sp = push8(
+            memory, int(state.SP), int(state.P) | FLAG_B | FLAG_U
+        )
+        return state._replace(
+            SP=jnp.uint8(new_sp),
+            PC=jnp.uint16((int(state.PC) + 1) & 0xFFFF),
+            cycles=state.cycles + jnp.uint64(base_cycles),
+        ), new_memory
+    if mnemonic == "PLA":
+        value, new_sp = pop8(memory, int(state.SP))
+        return state._replace(
+            A=jnp.uint8(value & 0xFF),
+            SP=jnp.uint8(new_sp),
+            P=jnp.uint8(set_zn(int(state.P), value) & 0xFF),
+            PC=jnp.uint16((int(state.PC) + 1) & 0xFFFF),
+            cycles=state.cycles + jnp.uint64(base_cycles),
+        ), memory
+    if mnemonic == "PLP":
+        # Force B and U set on pull (xitari PSLockupTable convention).
+        popped, new_sp = pop8(memory, int(state.SP))
+        return state._replace(
+            SP=jnp.uint8(new_sp),
+            P=jnp.uint8((popped | FLAG_U | FLAG_B) & 0xFF),
+            PC=jnp.uint16((int(state.PC) + 1) & 0xFFFF),
+            cycles=state.cycles + jnp.uint64(base_cycles),
+        ), memory
+
+    # --- Status-flag setters / clearers + NOP -----------------------------
+    if mnemonic in ("CLC", "SEC", "CLI", "SEI", "CLV", "CLD", "SED"):
+        flag = _STATUS_FLAG[opcode]
+        p = int(state.P)
+        p = (p | flag) if opcode in _STATUS_SET_OPCODES else (p & ~flag)
+        return state._replace(
+            P=jnp.uint8((p | FLAG_U) & 0xFF),
+            PC=jnp.uint16((int(state.PC) + 1) & 0xFFFF),
+            cycles=state.cycles + jnp.uint64(base_cycles),
+        ), memory
+    if mnemonic == "NOP":
+        return state._replace(
+            PC=jnp.uint16((int(state.PC) + 1) & 0xFFFF),
             cycles=state.cycles + jnp.uint64(base_cycles),
         ), memory
 

@@ -807,3 +807,136 @@ end
     end
 
 end
+
+@testset "JuTari P1e stack push/pull, status flags, NOP" begin
+
+    @testset "PHA pushes A and decrements SP" begin
+        s = _state(PC=0x8000, A=0x42, SP=0xFD)
+        mem = _make_memory(Dict(0x8000 => 0x48))
+        step(s, mem)
+        @test s.SP == 0xFC
+        @test mem[0x01FD + 1] == 0x42
+        @test s.PC == 0x8001
+        @test s.cycles == 3
+    end
+
+    @testset "PLA sets ZN and increments SP" begin
+        s = _state(PC=0x8000, A=0x00, SP=0xFC)
+        mem = _make_memory(Dict(0x8000 => 0x68, 0x01FD => 0x80))
+        step(s, mem)
+        @test s.A == 0x80
+        @test s.SP == 0xFD
+        @test (s.P & FLAG_N) != 0
+        @test (s.P & FLAG_Z) == 0
+        @test s.cycles == 4
+    end
+
+    @testset "PLA zero sets Z" begin
+        s = _state(PC=0x8000, A=0xFF, SP=0xFC)
+        mem = _make_memory(Dict(0x8000 => 0x68, 0x01FD => 0x00))
+        step(s, mem)
+        @test s.A == 0x00
+        @test (s.P & FLAG_Z) != 0
+    end
+
+    @testset "PHA / PLA round-trip preserves A" begin
+        s = _state(PC=0x8000, A=0x77, SP=0xFD)
+        mem = _make_memory(Dict(0x8000 => 0x48, 0x8001 => 0xA9, 0x8002 => 0x00, 0x8003 => 0x68))
+        step(s, mem); step(s, mem); step(s, mem)
+        @test s.A == 0x77
+        @test s.SP == 0xFD
+    end
+
+    @testset "PHP pushes P with B and U set" begin
+        s = _state(PC=0x8000, SP=0xFD, P=FLAG_U | FLAG_C)
+        mem = _make_memory(Dict(0x8000 => 0x08))
+        step(s, mem)
+        pushed = mem[0x01FD + 1]
+        @test (pushed & FLAG_B) != 0
+        @test (pushed & FLAG_U) != 0
+        @test (pushed & FLAG_C) != 0
+        @test s.SP == 0xFC
+        @test s.cycles == 3
+    end
+
+    @testset "PLP forces B and U on pull" begin
+        s = _state(PC=0x8000, SP=0xFC, P=FLAG_U)
+        mem = _make_memory(Dict(0x8000 => 0x28, 0x01FD => FLAG_N | FLAG_Z))
+        step(s, mem)
+        @test (s.P & FLAG_N) != 0
+        @test (s.P & FLAG_Z) != 0
+        @test (s.P & FLAG_B) != 0
+        @test (s.P & FLAG_U) != 0
+        @test s.SP == 0xFD
+        @test s.cycles == 4
+    end
+
+    @testset "PHP / PLP round-trip with intervening clobber" begin
+        original_p = FLAG_U | FLAG_C | FLAG_V | FLAG_N
+        s = _state(PC=0x8000, SP=0xFD, P=original_p)
+        mem = _make_memory(Dict(0x8000 => 0x08, 0x8001 => 0xA9, 0x8002 => 0x00, 0x8003 => 0x28))
+        step(s, mem); step(s, mem); step(s, mem)
+        @test s.P == (original_p | FLAG_B)
+        @test s.SP == 0xFD
+    end
+
+    @testset "SEC sets carry" begin
+        s = _state(PC=0x8000, P=FLAG_U)
+        mem = _make_memory(Dict(0x8000 => 0x38))
+        step(s, mem)
+        @test (s.P & FLAG_C) != 0
+        @test s.cycles == 2
+    end
+
+    @testset "CLC clears carry" begin
+        s = _state(PC=0x8000, P=FLAG_U | FLAG_C)
+        mem = _make_memory(Dict(0x8000 => 0x18))
+        step(s, mem)
+        @test (s.P & FLAG_C) == 0
+    end
+
+    @testset "SEI sets I" begin
+        s = _state(PC=0x8000, P=FLAG_U)
+        mem = _make_memory(Dict(0x8000 => 0x78))
+        step(s, mem)
+        @test (s.P & FLAG_I) != 0
+    end
+
+    @testset "CLI clears I" begin
+        s = _state(PC=0x8000, P=FLAG_U | FLAG_I)
+        mem = _make_memory(Dict(0x8000 => 0x58))
+        step(s, mem)
+        @test (s.P & FLAG_I) == 0
+    end
+
+    @testset "SED sets D" begin
+        s = _state(PC=0x8000, P=FLAG_U)
+        mem = _make_memory(Dict(0x8000 => 0xF8))
+        step(s, mem)
+        @test (s.P & FLAG_D) != 0
+    end
+
+    @testset "CLD clears D" begin
+        s = _state(PC=0x8000, P=FLAG_U | FLAG_D)
+        mem = _make_memory(Dict(0x8000 => 0xD8))
+        step(s, mem)
+        @test (s.P & FLAG_D) == 0
+    end
+
+    @testset "CLV clears V" begin
+        s = _state(PC=0x8000, P=FLAG_U | FLAG_V)
+        mem = _make_memory(Dict(0x8000 => 0xB8))
+        step(s, mem)
+        @test (s.P & FLAG_V) == 0
+    end
+
+    @testset "NOP advances PC and cycles" begin
+        s = _state(PC=0x8000, P=FLAG_U)
+        mem = _make_memory(Dict(0x8000 => 0xEA))
+        step(s, mem)
+        @test s.PC == 0x8001
+        @test s.cycles == 2
+        @test s.P == FLAG_U
+    end
+
+end
