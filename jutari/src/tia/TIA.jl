@@ -16,14 +16,16 @@ WSYNC (write \$02) stalls the CPU until the next scanline boundary.
 Phase progress:
   - P3a: register file + scanline/frame timing + WSYNC.
   - P3b: playfield rendering (PF0/PF1/PF2 + CTRLPF mirror).
-  - P3c: player sprites P0/P1 — GRP, COLUP, REFP, RESP position-reset,
-    HMP horizontal motion + HMOVE/HMCLR. NUSIZ multi-copy / size
-    scaling is NOT yet implemented (single 1×-wide copy per player).
+  - P3c: player sprites P0/P1 (GRP, REFP, RESP, HMP, HMOVE, HMCLR).
+  - P3d: missiles M0/M1 and ball BL — ENAM0/ENAM1/ENABL enable bits,
+    RESM0/RESM1/RESBL position-reset, HMM0/HMM1/HMBL horizontal motion
+    (now also folded into HMOVE/HMCLR), and 1/2/4/8-pixel size scaling
+    driven by NUSIZ0/NUSIZ1 bits 4–5 (missiles) and CTRLPF bits 4–5
+    (ball).
 
-Pending: P3d (missiles + ball), P3e (collisions), P3f (VSYNC/VBLANK +
-frame ending). Reads still return 0 stubs for collisions and INPT*.
-Beam-racing is approximated: rendering captures register state as of
-end-of-scanline.
+Pending: P3e (collisions), P3f (VSYNC/VBLANK + frame ending). Reads
+still return 0 stubs for collisions and INPT*. Beam-racing is
+approximated: rendering captures register state as of end-of-scanline.
 """
 module TIA
 
@@ -89,13 +91,16 @@ mutable struct TIAState
     framebuffer::Matrix{UInt8}
     p0_x::Int
     p1_x::Int
+    m0_x::Int
+    m1_x::Int
+    bl_x::Int
 end
 
 initial_tia_state() = TIAState(
     zeros(UInt8, NUM_REGISTERS),
     0, 0, UInt64(0), false,
     zeros(UInt8, SCREEN_HEIGHT, SCREEN_WIDTH),
-    0, 0,
+    0, 0, 0, 0, 0,
 )
 
 """
@@ -147,9 +152,18 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer)
         tia.p0_x = _resp_position(tia.scanline_cycle)
     elseif reg == W_RESP1
         tia.p1_x = _resp_position(tia.scanline_cycle)
+    elseif reg == W_RESM0
+        tia.m0_x = _resp_position(tia.scanline_cycle)
+    elseif reg == W_RESM1
+        tia.m1_x = _resp_position(tia.scanline_cycle)
+    elseif reg == W_RESBL
+        tia.bl_x = _resp_position(tia.scanline_cycle)
     elseif reg == W_HMOVE
         tia.p0_x = mod(tia.p0_x - _hm_offset(tia.registers[W_HMP0 + 1]), 160)
         tia.p1_x = mod(tia.p1_x - _hm_offset(tia.registers[W_HMP1 + 1]), 160)
+        tia.m0_x = mod(tia.m0_x - _hm_offset(tia.registers[W_HMM0 + 1]), 160)
+        tia.m1_x = mod(tia.m1_x - _hm_offset(tia.registers[W_HMM1 + 1]), 160)
+        tia.bl_x = mod(tia.bl_x - _hm_offset(tia.registers[W_HMBL + 1]), 160)
     elseif reg == W_HMCLR
         tia.registers[W_HMP0 + 1] = 0
         tia.registers[W_HMP1 + 1] = 0
@@ -281,15 +295,54 @@ function _overlay_player!(pixels::Vector{UInt8}, tia::TIAState, player::Int)
 end
 
 """
+    _overlay_missile!(pixels, tia, missile)
+
+Paint missile 0 or 1; width is 1/2/4/8 from NUSIZ bits 4-5. Missile
+inherits the colour of its associated player (COLUP*).
+"""
+function _overlay_missile!(pixels::Vector{UInt8}, tia::TIAState, missile::Int)
+    enam_reg = missile == 0 ? W_ENAM0 : W_ENAM1
+    (tia.registers[enam_reg + 1] & 0x02) == 0 && return nothing
+    color_reg = missile == 0 ? W_COLUP0 : W_COLUP1
+    nusiz_reg = missile == 0 ? W_NUSIZ0 : W_NUSIZ1
+    color = tia.registers[color_reg + 1]
+    size  = 1 << ((Int(tia.registers[nusiz_reg + 1]) >> 4) & 0x03)
+    x = missile == 0 ? tia.m0_x : tia.m1_x
+    @inbounds for i in 0:(size - 1)
+        pixels[mod(x + i, 160) + 1] = color
+    end
+    return nothing
+end
+
+"""
+    _overlay_ball!(pixels, tia)
+
+Paint the ball. Uses COLUPF; size 1/2/4/8 from CTRLPF bits 4-5.
+"""
+function _overlay_ball!(pixels::Vector{UInt8}, tia::TIAState)
+    (tia.registers[W_ENABL + 1] & 0x02) == 0 && return nothing
+    color = tia.registers[W_COLUPF + 1]
+    size  = 1 << ((Int(tia.registers[W_CTRLPF + 1]) >> 4) & 0x03)
+    x = tia.bl_x
+    @inbounds for i in 0:(size - 1)
+        pixels[mod(x + i, 160) + 1] = color
+    end
+    return nothing
+end
+
+"""
     render_scanline(tia) -> Vector{UInt8}
 
-Composite renderer: playfield (P3b) + players (P3c). Missile/ball overlay
-and collision detection land in P3d / P3e.
+Composite renderer: playfield + ball + players + missiles. Players paint
+on top (default priority).
 """
 function render_scanline(tia::TIAState)
     pixels = render_playfield_scanline(tia)
-    _overlay_player!(pixels, tia, 0)
+    _overlay_ball!(pixels, tia)
+    _overlay_missile!(pixels, tia, 1)
     _overlay_player!(pixels, tia, 1)
+    _overlay_missile!(pixels, tia, 0)
+    _overlay_player!(pixels, tia, 0)
     return pixels
 end
 

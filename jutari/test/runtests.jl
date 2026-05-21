@@ -11,7 +11,9 @@ using JuTari.TIA: tia_peek, tia_poke!, tia_advance!, tia_apply_wsync!,
                   W_GRP0, W_GRP1, W_REFP0, W_REFP1,
                   W_PF0, W_PF1, W_PF2, W_WSYNC,
                   W_RESP0, W_RESP1, W_HMP0, W_HMP1, W_HMM0, W_HMM1, W_HMBL,
-                  W_HMOVE, W_HMCLR
+                  W_HMOVE, W_HMCLR,
+                  W_ENAM0, W_ENAM1, W_ENABL, W_NUSIZ0, W_NUSIZ1,
+                  W_RESM0, W_RESM1, W_RESBL
 
 function _make_memory(image)
     mem = zeros(UInt8, 1 << 16)
@@ -1644,6 +1646,140 @@ end
         scanline = render_scanline(tia)
         for px in (155, 156, 157, 158, 159, 0, 1, 2)
             @test scanline[px + 1] == 0x42
+        end
+    end
+
+end
+
+@testset "JuTari P3d TIA missiles + ball" begin
+
+    @testset "missile0 invisible when disabled" begin
+        tia = initial_tia_state(); tia.m0_x = 50
+        tia_poke!(tia, W_COLUP0, 0x42)
+        scanline = render_scanline(tia)
+        @test sum(scanline) == 0
+    end
+
+    @testset "missile0 visible when enabled (D1 of ENAM0)" begin
+        tia = initial_tia_state(); tia.m0_x = 50
+        tia_poke!(tia, W_COLUP0, 0x42); tia_poke!(tia, W_ENAM0, 0x02)
+        scanline = render_scanline(tia)
+        @test scanline[51] == 0x42
+        @test scanline[50] == 0 && scanline[52] == 0
+    end
+
+    @testset "missile enable bit is bit 1 only" begin
+        tia = initial_tia_state(); tia.m0_x = 50
+        tia_poke!(tia, W_COLUP0, 0x42); tia_poke!(tia, W_ENAM0, 0x01)
+        @test sum(render_scanline(tia)) == 0
+    end
+
+    @testset "missile size 2 from NUSIZ bits 4-5" begin
+        tia = initial_tia_state(); tia.m0_x = 50
+        tia_poke!(tia, W_COLUP0, 0x42); tia_poke!(tia, W_ENAM0, 0x02)
+        tia_poke!(tia, W_NUSIZ0, 0x10)
+        s = render_scanline(tia)
+        @test s[51] == 0x42 && s[52] == 0x42
+        @test s[53] == 0
+    end
+
+    @testset "missile size 4" begin
+        tia = initial_tia_state(); tia.m0_x = 50
+        tia_poke!(tia, W_COLUP0, 0x42); tia_poke!(tia, W_ENAM0, 0x02)
+        tia_poke!(tia, W_NUSIZ0, 0x20)
+        s = render_scanline(tia)
+        for i in 51:54
+            @test s[i] == 0x42
+        end
+        @test s[55] == 0
+    end
+
+    @testset "missile size 8" begin
+        tia = initial_tia_state(); tia.m0_x = 50
+        tia_poke!(tia, W_COLUP0, 0x42); tia_poke!(tia, W_ENAM0, 0x02)
+        tia_poke!(tia, W_NUSIZ0, 0x30)
+        s = render_scanline(tia)
+        for i in 51:58
+            @test s[i] == 0x42
+        end
+        @test s[59] == 0
+    end
+
+    @testset "missile1 uses COLUP1 and NUSIZ1" begin
+        tia = initial_tia_state(); tia.m1_x = 100
+        tia_poke!(tia, W_COLUP1, 0x66); tia_poke!(tia, W_ENAM1, 0x02)
+        tia_poke!(tia, W_NUSIZ1, 0x20)
+        s = render_scanline(tia)
+        for i in 101:104
+            @test s[i] == 0x66
+        end
+        @test s[105] == 0
+    end
+
+    @testset "ball invisible when disabled" begin
+        tia = initial_tia_state(); tia.bl_x = 80
+        tia_poke!(tia, W_COLUPF, 0x44)
+        @test sum(render_scanline(tia)) == 0
+    end
+
+    @testset "ball uses COLUPF" begin
+        tia = initial_tia_state(); tia.bl_x = 80
+        tia_poke!(tia, W_COLUPF, 0x44); tia_poke!(tia, W_ENABL, 0x02)
+        s = render_scanline(tia)
+        @test s[81] == 0x44
+        @test s[80] == 0 && s[82] == 0
+    end
+
+    @testset "ball size 4 from CTRLPF bits 4-5" begin
+        tia = initial_tia_state(); tia.bl_x = 80
+        tia_poke!(tia, W_COLUPF, 0x44); tia_poke!(tia, W_ENABL, 0x02)
+        tia_poke!(tia, W_CTRLPF, 0x20)
+        s = render_scanline(tia)
+        for i in 81:84
+            @test s[i] == 0x44
+        end
+        @test s[85] == 0
+    end
+
+    @testset "ball size 8" begin
+        tia = initial_tia_state(); tia.bl_x = 80
+        tia_poke!(tia, W_COLUPF, 0x44); tia_poke!(tia, W_ENABL, 0x02)
+        tia_poke!(tia, W_CTRLPF, 0x30)
+        s = render_scanline(tia)
+        for i in 81:88
+            @test s[i] == 0x44
+        end
+    end
+
+    @testset "RESM0 sets m0_x from scanline_cycle" begin
+        tia = initial_tia_state(); tia.scanline_cycle = 30
+        tia_poke!(tia, W_RESM0, 0x00)
+        @test tia.m0_x == 22
+    end
+
+    @testset "RESBL sets bl_x from scanline_cycle" begin
+        tia = initial_tia_state(); tia.scanline_cycle = 50
+        tia_poke!(tia, W_RESBL, 0x00)
+        @test tia.bl_x == 82
+    end
+
+    @testset "HMOVE applies to missiles + ball" begin
+        tia = initial_tia_state()
+        tia.m0_x = 50; tia.m1_x = 50; tia.bl_x = 50
+        tia_poke!(tia, W_HMM0, 0x10); tia_poke!(tia, W_HMM1, 0xE0); tia_poke!(tia, W_HMBL, 0xF0)
+        tia_poke!(tia, W_HMOVE, 0x00)
+        @test tia.m0_x == 49
+        @test tia.m1_x == 52
+        @test tia.bl_x == 51
+    end
+
+    @testset "player paints over missile at same position" begin
+        tia = initial_tia_state(); tia.p0_x = 50; tia.m0_x = 50
+        tia_poke!(tia, W_GRP0, 0xFF); tia_poke!(tia, W_COLUP0, 0x42)
+        tia_poke!(tia, W_ENAM0, 0x02)
+        s = render_scanline(tia)
+        for i in 51:58
+            @test s[i] == 0x42
         end
     end
 

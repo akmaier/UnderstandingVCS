@@ -17,17 +17,16 @@ the next scanline boundary.
 Phase progress:
   - P3a: register file + scanline/frame timing + WSYNC.
   - P3b: playfield rendering (PF0/PF1/PF2 + CTRLPF mirror + COLU*).
-  - P3c (this sub-phase): player sprites P0/P1 — GRP graphics, COLUP
-    colour, REFP reflection bit, RESP position-reset on write, HMP
-    horizontal motion + HMOVE/HMCLR. NUSIZ multi-copy / size scaling is
-    NOT yet implemented (single 1×-wide copy per player); that lands in
-    a P3c follow-up or P3f.
+  - P3c: player sprites P0/P1 (GRP, REFP, RESP, HMP, HMOVE, HMCLR).
+  - P3d (this sub-phase): missiles M0/M1 and ball BL — ENAM0/ENAM1/
+    ENABL enable bits, RESM0/RESM1/RESBL position-reset, HMM0/HMM1/HMBL
+    horizontal motion (now also folded into HMOVE/HMCLR), and the
+    1/2/4/8-pixel size scaling driven by NUSIZ0/NUSIZ1 bits 4–5
+    (missiles) and CTRLPF bits 4–5 (ball).
 
-Pending: P3d (missiles + ball), P3e (collision latches), P3f (VSYNC /
-VBLANK + frame ending). Reads still return 0 stubs for collisions and
-INPT*. Beam-racing (mid-scanline register changes that affect the line
-being drawn) is approximated: rendering captures register state as of
-end-of-scanline.
+Pending: P3e (collision latches), P3f (VSYNC / VBLANK + frame ending).
+Reads still return 0 stubs for collisions and INPT*. Beam-racing is
+approximated: rendering captures register state as of end-of-scanline.
 """
 
 from __future__ import annotations
@@ -132,7 +131,8 @@ class TIAState(NamedTuple):
     those derived player horizontal positions in screen pixels [0..159].
 
     `framebuffer` is the rendered output, (SCREEN_HEIGHT × SCREEN_WIDTH)
-    indexed colour bytes.
+    indexed colour bytes. `m0_x`, `m1_x`, `bl_x` are derived missile /
+    ball positions, updated by RESM0 / RESM1 / RESBL / HMOVE writes.
     """
     registers: jnp.ndarray
     scanline_cycle: int
@@ -142,6 +142,9 @@ class TIAState(NamedTuple):
     framebuffer: jnp.ndarray
     p0_x: int
     p1_x: int
+    m0_x: int
+    m1_x: int
+    bl_x: int
 
 
 def initial_tia_state() -> TIAState:
@@ -154,6 +157,9 @@ def initial_tia_state() -> TIAState:
         framebuffer=jnp.zeros((SCREEN_HEIGHT, SCREEN_WIDTH), dtype=jnp.uint8),
         p0_x=0,
         p1_x=0,
+        m0_x=0,
+        m1_x=0,
+        bl_x=0,
     )
 
 
@@ -214,12 +220,24 @@ def tia_poke(tia: TIAState, addr: int, value: int) -> TIAState:
         new_tia = new_tia._replace(p0_x=_resp_position(new_tia.scanline_cycle))
     elif reg == W_RESP1:
         new_tia = new_tia._replace(p1_x=_resp_position(new_tia.scanline_cycle))
+    elif reg == W_RESM0:
+        new_tia = new_tia._replace(m0_x=_resp_position(new_tia.scanline_cycle))
+    elif reg == W_RESM1:
+        new_tia = new_tia._replace(m1_x=_resp_position(new_tia.scanline_cycle))
+    elif reg == W_RESBL:
+        new_tia = new_tia._replace(bl_x=_resp_position(new_tia.scanline_cycle))
     elif reg == W_HMOVE:
         hmp0 = int(new_tia.registers[W_HMP0])
         hmp1 = int(new_tia.registers[W_HMP1])
+        hmm0 = int(new_tia.registers[W_HMM0])
+        hmm1 = int(new_tia.registers[W_HMM1])
+        hmbl = int(new_tia.registers[W_HMBL])
         new_tia = new_tia._replace(
             p0_x=(new_tia.p0_x - _hm_offset(hmp0)) % 160,
             p1_x=(new_tia.p1_x - _hm_offset(hmp1)) % 160,
+            m0_x=(new_tia.m0_x - _hm_offset(hmm0)) % 160,
+            m1_x=(new_tia.m1_x - _hm_offset(hmm1)) % 160,
+            bl_x=(new_tia.bl_x - _hm_offset(hmbl)) % 160,
         )
     elif reg == W_HMCLR:
         # HMCLR zeros all five horizontal-motion registers (HMP0/HMP1/HMM0/HMM1/HMBL).
@@ -350,13 +368,47 @@ def _overlay_player(pixels: list[int], tia: TIAState, player: int) -> None:
                 pixels[px] = color
 
 
+def _overlay_missile(pixels: list[int], tia: TIAState, missile: int) -> None:
+    """Paint missile 0 or 1 onto `pixels`. Width is 1/2/4/8 pixels from
+    NUSIZ bits 4-5. Missile uses the same colour as its associated player.
+    """
+    enam_reg = W_ENAM0 if missile == 0 else W_ENAM1
+    if (int(tia.registers[enam_reg]) & 0x02) == 0:
+        return  # disabled
+    color = int(tia.registers[W_COLUP0 if missile == 0 else W_COLUP1])
+    nusiz = int(tia.registers[W_NUSIZ0 if missile == 0 else W_NUSIZ1])
+    size = 1 << ((nusiz >> 4) & 0x03)
+    x = tia.m0_x if missile == 0 else tia.m1_x
+    for i in range(size):
+        pixels[(x + i) % 160] = color
+
+
+def _overlay_ball(pixels: list[int], tia: TIAState) -> None:
+    """Paint the ball. Uses COLUPF for colour; size 1/2/4/8 from CTRLPF bits 4-5."""
+    if (int(tia.registers[W_ENABL]) & 0x02) == 0:
+        return
+    color = int(tia.registers[W_COLUPF])
+    ctrlpf = int(tia.registers[W_CTRLPF])
+    size = 1 << ((ctrlpf >> 4) & 0x03)
+    x = tia.bl_x
+    for i in range(size):
+        pixels[(x + i) % 160] = color
+
+
 def render_scanline(tia: TIAState) -> jnp.ndarray:
-    """Composite renderer: playfield (P3b) + players (P3c). Missile/ball
-    overlay and collision detection land in P3d / P3e.
+    """Composite renderer: playfield (P3b) + ball (P3d, COLUPF) +
+    players + missiles (P3c/P3d). Default priority order — players on top.
+
+    Order: background ← playfield ← ball ← P1+M1 ← P0+M0. Real TIA also
+    supports CTRLPF.D2 to swap PF/BL above the players; that nuance lands
+    later.
     """
     pixels = _playfield_pixels(tia)
-    _overlay_player(pixels, tia, player=0)
+    _overlay_ball(pixels, tia)
+    _overlay_missile(pixels, tia, missile=1)
     _overlay_player(pixels, tia, player=1)
+    _overlay_missile(pixels, tia, missile=0)
+    _overlay_player(pixels, tia, player=0)
     return jnp.array(pixels, dtype=jnp.uint8)
 
 
