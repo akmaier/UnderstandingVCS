@@ -3257,3 +3257,154 @@ end
     end
 
 end
+
+@testset "JuTari P7c-c SOFT-mode shifts and rotates" begin
+
+    @testset "P7c-c opcode set present" begin
+        p7c_c = Set{UInt8}([
+            0x0A, 0x06, 0x16, 0x0E, 0x1E,
+            0x4A, 0x46, 0x56, 0x4E, 0x5E,
+            0x2A, 0x26, 0x36, 0x2E, 0x3E,
+            0x6A, 0x66, 0x76, 0x6E, 0x7E,
+        ])
+        @test p7c_c ⊆ SOFT_SUPPORTED_OPCODES
+        @test length(p7c_c) == 20
+    end
+
+    # ASL
+    @testset "ASL acc shifts left" begin
+        bus = initial_soft_bus(_soft_rom_with([0x0A]))
+        state = initial_soft_cpu_state(); state.A = Float32(0x40)
+        soft_step!(state, bus)
+        @test state.A == Float32(0x80)
+        @test (Int(state.P) & 0x01) == 0
+        @test (Int(state.P) & 0x80) != 0
+    end
+
+    @testset "ASL acc bit 7 → C" begin
+        bus = initial_soft_bus(_soft_rom_with([0x0A]))
+        state = initial_soft_cpu_state(); state.A = Float32(0x81)
+        soft_step!(state, bus)
+        @test state.A == Float32(0x02)
+        @test (Int(state.P) & 0x01) != 0
+    end
+
+    @testset "ASL zp writes back to RAM" begin
+        bus = initial_soft_bus(_soft_rom_with([0x06, 0x20]))
+        bus.ram[0x20 + 1] = Float32(0x03)
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test bus.ram[0x20 + 1] == Float32(0x06)
+    end
+
+    # LSR
+    @testset "LSR acc bit 0 → C" begin
+        bus = initial_soft_bus(_soft_rom_with([0x4A]))
+        state = initial_soft_cpu_state(); state.A = Float32(0x03)
+        soft_step!(state, bus)
+        @test state.A == Float32(0x01)
+        @test (Int(state.P) & 0x01) != 0
+    end
+
+    @testset "LSR always clears N" begin
+        bus = initial_soft_bus(_soft_rom_with([0x4A]))
+        state = initial_soft_cpu_state(); state.A = Float32(0xFF)
+        soft_step!(state, bus)
+        @test state.A == Float32(0x7F)
+        @test (Int(state.P) & 0x80) == 0
+    end
+
+    @testset "LSR result 0 sets Z" begin
+        bus = initial_soft_bus(_soft_rom_with([0x4A]))
+        state = initial_soft_cpu_state(); state.A = Float32(0x01)
+        soft_step!(state, bus)
+        @test state.A == 0f0
+        @test (Int(state.P) & 0x02) != 0
+        @test (Int(state.P) & 0x01) != 0
+    end
+
+    @testset "LSR abs,X indexes correctly" begin
+        bus = initial_soft_bus(_soft_rom_with([0x5E, 0x20, 0x00]))
+        bus.ram[0x25 + 1] = Float32(0x04)
+        state = initial_soft_cpu_state(); state.X = Float32(5)
+        soft_step!(state, bus)
+        @test bus.ram[0x25 + 1] == Float32(0x02)
+    end
+
+    # ROL
+    @testset "ROL acc carry into bit 0" begin
+        bus = initial_soft_bus(_soft_rom_with([0x2A]))
+        state = initial_soft_cpu_state(); state.A = Float32(0x01); state.P = Float32(0x35)
+        soft_step!(state, bus)
+        @test state.A == Float32(0x03)
+        @test (Int(state.P) & 0x01) == 0
+    end
+
+    @testset "ROL acc high bit → C" begin
+        bus = initial_soft_bus(_soft_rom_with([0x2A]))
+        state = initial_soft_cpu_state(); state.A = Float32(0x80); state.P = Float32(0x34)
+        soft_step!(state, bus)
+        @test state.A == 0f0
+        @test (Int(state.P) & 0x01) != 0
+        @test (Int(state.P) & 0x02) != 0
+    end
+
+    @testset "ROL zp writes back" begin
+        bus = initial_soft_bus(_soft_rom_with([0x26, 0x10]))
+        bus.ram[0x10 + 1] = Float32(0x40)
+        state = initial_soft_cpu_state(); state.P = Float32(0x34)
+        soft_step!(state, bus)
+        @test bus.ram[0x10 + 1] == Float32(0x80)
+    end
+
+    # ROR
+    @testset "ROR acc carry into bit 7" begin
+        bus = initial_soft_bus(_soft_rom_with([0x6A]))
+        state = initial_soft_cpu_state(); state.A = Float32(0x02); state.P = Float32(0x35)
+        soft_step!(state, bus)
+        @test state.A == Float32(0x81)
+        @test (Int(state.P) & 0x01) == 0
+    end
+
+    @testset "ROR acc low bit → C" begin
+        bus = initial_soft_bus(_soft_rom_with([0x6A]))
+        state = initial_soft_cpu_state(); state.A = Float32(0x03); state.P = Float32(0x34)
+        soft_step!(state, bus)
+        @test state.A == Float32(0x01)
+        @test (Int(state.P) & 0x01) != 0
+    end
+
+    @testset "ROR abs writes back" begin
+        bus = initial_soft_bus(_soft_rom_with([0x6E, 0x30, 0x00]))
+        bus.ram[0x30 + 1] = Float32(0x02)
+        state = initial_soft_cpu_state(); state.P = Float32(0x35)
+        soft_step!(state, bus)
+        @test bus.ram[0x30 + 1] == Float32(0x81)
+    end
+
+    # Cycle / PC sanity
+    @testset "ASL acc uses 1 byte 2 cycles" begin
+        bus = initial_soft_bus(_soft_rom_with([0x0A]))
+        state = initial_soft_cpu_state(); state.A = Float32(0x01)
+        soft_step!(state, bus)
+        @test state.PC == Float32(0xF001)
+        @test state.cycles == 2f0
+    end
+
+    @testset "ASL zp uses 2 bytes 5 cycles" begin
+        bus = initial_soft_bus(_soft_rom_with([0x06, 0x20]))
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test state.PC == Float32(0xF002)
+        @test state.cycles == 5f0
+    end
+
+    @testset "ASL abs,X uses 3 bytes 7 cycles" begin
+        bus = initial_soft_bus(_soft_rom_with([0x1E, 0x00, 0x00]))
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test state.PC == Float32(0xF003)
+        @test state.cycles == 7f0
+    end
+
+end

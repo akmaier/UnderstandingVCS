@@ -685,6 +685,100 @@ def _branch_bit_abs(s, b): return _bit_step(s, b, _operand_for_mode(s, b, "abs")
 
 
 # --------------------------------------------------------------------------- #
+# P7c-c — shifts and rotates (ASL / LSR / ROL / ROR).
+# Each has 5 addressing modes: accumulator + zp/zp,X/abs/abs,X. The memory
+# modes are RMW (read-modify-write) — read, shift, write back. The value
+# computation goes via int cast (bitwise ops), so the *value* gradient
+# breaks here; the address gradient (via _addr_*) still flows.
+# --------------------------------------------------------------------------- #
+
+def _asl_value(p, value):
+    v_int  = value.astype(jnp.int32) & 0xFF
+    new_c  = (v_int >> 7) & 1
+    result = (v_int << 1) & 0xFF
+    new_v  = result.astype(jnp.float32)
+    return new_v, _set_nzc(p, new_v, new_c)
+
+
+def _lsr_value(p, value):
+    v_int  = value.astype(jnp.int32) & 0xFF
+    new_c  = v_int & 1
+    result = (v_int >> 1) & 0x7F
+    new_v  = result.astype(jnp.float32)
+    return new_v, _set_nzc(p, new_v, new_c)
+
+
+def _rol_value(p, value):
+    v_int  = value.astype(jnp.int32) & 0xFF
+    c_in   = _read_carry(p)
+    new_c  = (v_int >> 7) & 1
+    result = ((v_int << 1) | c_in) & 0xFF
+    new_v  = result.astype(jnp.float32)
+    return new_v, _set_nzc(p, new_v, new_c)
+
+
+def _ror_value(p, value):
+    v_int  = value.astype(jnp.int32) & 0xFF
+    c_in   = _read_carry(p)
+    new_c  = v_int & 1
+    result = ((v_int >> 1) | (c_in << 7)) & 0xFF
+    new_v  = result.astype(jnp.float32)
+    return new_v, _set_nzc(p, new_v, new_c)
+
+
+def _shift_acc(state, bus, value_op):
+    """Accumulator-mode shift: result goes back into A. 1 byte, 2 cycles."""
+    new_a, new_p = value_op(state.P, state.A)
+    return state._replace(
+        A=new_a, P=new_p,
+        PC=state.PC + 1.0,
+        cycles=state.cycles + 2.0,
+    ), bus
+
+
+def _shift_memory(state, bus, addr_resolver, value_op, instr_len, cycles):
+    """Memory-mode shift: read addr, transform, write back."""
+    addr = addr_resolver(state, bus)
+    value = _bus_read(bus, addr)
+    new_value, new_p = value_op(state.P, value)
+    new_bus = _bus_write(bus, addr, new_value)
+    return state._replace(
+        P=new_p,
+        PC=state.PC + instr_len,
+        cycles=state.cycles + cycles,
+    ), new_bus
+
+
+# ASL
+def _branch_asl_acc(s, b):   return _shift_acc(s, b, _asl_value)
+def _branch_asl_zp(s, b):    return _shift_memory(s, b, _addr_zp,    _asl_value, 2.0, 5.0)
+def _branch_asl_zp_x(s, b):  return _shift_memory(s, b, _addr_zp_x,  _asl_value, 2.0, 6.0)
+def _branch_asl_abs(s, b):   return _shift_memory(s, b, _addr_abs,   _asl_value, 3.0, 6.0)
+def _branch_asl_abs_x(s, b): return _shift_memory(s, b, _addr_abs_x, _asl_value, 3.0, 7.0)
+
+# LSR
+def _branch_lsr_acc(s, b):   return _shift_acc(s, b, _lsr_value)
+def _branch_lsr_zp(s, b):    return _shift_memory(s, b, _addr_zp,    _lsr_value, 2.0, 5.0)
+def _branch_lsr_zp_x(s, b):  return _shift_memory(s, b, _addr_zp_x,  _lsr_value, 2.0, 6.0)
+def _branch_lsr_abs(s, b):   return _shift_memory(s, b, _addr_abs,   _lsr_value, 3.0, 6.0)
+def _branch_lsr_abs_x(s, b): return _shift_memory(s, b, _addr_abs_x, _lsr_value, 3.0, 7.0)
+
+# ROL
+def _branch_rol_acc(s, b):   return _shift_acc(s, b, _rol_value)
+def _branch_rol_zp(s, b):    return _shift_memory(s, b, _addr_zp,    _rol_value, 2.0, 5.0)
+def _branch_rol_zp_x(s, b):  return _shift_memory(s, b, _addr_zp_x,  _rol_value, 2.0, 6.0)
+def _branch_rol_abs(s, b):   return _shift_memory(s, b, _addr_abs,   _rol_value, 3.0, 6.0)
+def _branch_rol_abs_x(s, b): return _shift_memory(s, b, _addr_abs_x, _rol_value, 3.0, 7.0)
+
+# ROR
+def _branch_ror_acc(s, b):   return _shift_acc(s, b, _ror_value)
+def _branch_ror_zp(s, b):    return _shift_memory(s, b, _addr_zp,    _ror_value, 2.0, 5.0)
+def _branch_ror_zp_x(s, b):  return _shift_memory(s, b, _addr_zp_x,  _ror_value, 2.0, 6.0)
+def _branch_ror_abs(s, b):   return _shift_memory(s, b, _addr_abs,   _ror_value, 3.0, 6.0)
+def _branch_ror_abs_x(s, b): return _shift_memory(s, b, _addr_abs_x, _ror_value, 3.0, 7.0)
+
+
+# --------------------------------------------------------------------------- #
 # Dispatch table
 # --------------------------------------------------------------------------- #
 
@@ -802,6 +896,30 @@ _HANDLERS[0xCC] = _branch_cpy_abs
 # P7c-b — BIT
 _HANDLERS[0x24] = _branch_bit_zp
 _HANDLERS[0x2C] = _branch_bit_abs
+# P7c-c — ASL (acc + 4 mem modes)
+_HANDLERS[0x0A] = _branch_asl_acc
+_HANDLERS[0x06] = _branch_asl_zp
+_HANDLERS[0x16] = _branch_asl_zp_x
+_HANDLERS[0x0E] = _branch_asl_abs
+_HANDLERS[0x1E] = _branch_asl_abs_x
+# P7c-c — LSR
+_HANDLERS[0x4A] = _branch_lsr_acc
+_HANDLERS[0x46] = _branch_lsr_zp
+_HANDLERS[0x56] = _branch_lsr_zp_x
+_HANDLERS[0x4E] = _branch_lsr_abs
+_HANDLERS[0x5E] = _branch_lsr_abs_x
+# P7c-c — ROL
+_HANDLERS[0x2A] = _branch_rol_acc
+_HANDLERS[0x26] = _branch_rol_zp
+_HANDLERS[0x36] = _branch_rol_zp_x
+_HANDLERS[0x2E] = _branch_rol_abs
+_HANDLERS[0x3E] = _branch_rol_abs_x
+# P7c-c — ROR
+_HANDLERS[0x6A] = _branch_ror_acc
+_HANDLERS[0x66] = _branch_ror_zp
+_HANDLERS[0x76] = _branch_ror_zp_x
+_HANDLERS[0x6E] = _branch_ror_abs
+_HANDLERS[0x7E] = _branch_ror_abs_x
 
 # Opcodes handled with full behaviour (rather than default). Exposed so
 # tests + a future P7c can introspect coverage.
@@ -826,6 +944,11 @@ SOFT_SUPPORTED_OPCODES = frozenset({
     0xE0, 0xE4, 0xEC,
     0xC0, 0xC4, 0xCC,
     0x24, 0x2C,
+    # P7c-c — shifts and rotates (ASL/LSR/ROL/ROR, 5 modes each)
+    0x0A, 0x06, 0x16, 0x0E, 0x1E,
+    0x4A, 0x46, 0x56, 0x4E, 0x5E,
+    0x2A, 0x26, 0x36, 0x2E, 0x3E,
+    0x6A, 0x66, 0x76, 0x6E, 0x7E,
 })
 
 

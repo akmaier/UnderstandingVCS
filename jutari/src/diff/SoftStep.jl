@@ -535,6 +535,92 @@ _branch_bit_abs!(s, b) = _bit_step!(s, b, _operand_for_mode(s, b, :abs), 3, 4)
 
 
 # --------------------------------------------------------------------------- #
+# P7c-c — shifts and rotates (ASL / LSR / ROL / ROR). Each has 5 modes:
+# accumulator + zp / zp,X / abs / abs,X. Memory modes are RMW.
+# --------------------------------------------------------------------------- #
+
+function _asl_value(p::Real, value::Real)
+    v_int  = Int(value) & 0xFF
+    new_c  = (v_int >> 7) & 1
+    result = (v_int << 1) & 0xFF
+    return Float32(result), _set_nzc(p, result, new_c)
+end
+
+function _lsr_value(p::Real, value::Real)
+    v_int  = Int(value) & 0xFF
+    new_c  = v_int & 1
+    result = (v_int >> 1) & 0x7F
+    return Float32(result), _set_nzc(p, result, new_c)
+end
+
+function _rol_value(p::Real, value::Real)
+    v_int  = Int(value) & 0xFF
+    c_in   = _read_carry(p)
+    new_c  = (v_int >> 7) & 1
+    result = ((v_int << 1) | c_in) & 0xFF
+    return Float32(result), _set_nzc(p, result, new_c)
+end
+
+function _ror_value(p::Real, value::Real)
+    v_int  = Int(value) & 0xFF
+    c_in   = _read_carry(p)
+    new_c  = v_int & 1
+    result = ((v_int >> 1) | (c_in << 7)) & 0xFF
+    return Float32(result), _set_nzc(p, result, new_c)
+end
+
+function _shift_acc!(state::SoftCPUState, bus::SoftBus, value_op::Function)
+    new_a, new_p = value_op(state.P, state.A)
+    state.A      = new_a
+    state.P      = new_p
+    state.PC    += 1f0
+    state.cycles += 2f0
+    return nothing
+end
+
+function _shift_memory!(state::SoftCPUState, bus::SoftBus,
+                        addr_resolver::Function, value_op::Function,
+                        instr_len::Real, cycles::Real)
+    addr = addr_resolver(state, bus)
+    value = _bus_read(bus, addr)
+    new_value, new_p = value_op(state.P, value)
+    _bus_write!(bus, addr, new_value)
+    state.P      = new_p
+    state.PC    += Float32(instr_len)
+    state.cycles += Float32(cycles)
+    return nothing
+end
+
+# ASL
+_branch_asl_acc!(s, b)   = _shift_acc!(s, b, _asl_value)
+_branch_asl_zp!(s, b)    = _shift_memory!(s, b, _addr_zp,    _asl_value, 2, 5)
+_branch_asl_zp_x!(s, b)  = _shift_memory!(s, b, _addr_zp_x,  _asl_value, 2, 6)
+_branch_asl_abs!(s, b)   = _shift_memory!(s, b, _addr_abs,   _asl_value, 3, 6)
+_branch_asl_abs_x!(s, b) = _shift_memory!(s, b, _addr_abs_x, _asl_value, 3, 7)
+
+# LSR
+_branch_lsr_acc!(s, b)   = _shift_acc!(s, b, _lsr_value)
+_branch_lsr_zp!(s, b)    = _shift_memory!(s, b, _addr_zp,    _lsr_value, 2, 5)
+_branch_lsr_zp_x!(s, b)  = _shift_memory!(s, b, _addr_zp_x,  _lsr_value, 2, 6)
+_branch_lsr_abs!(s, b)   = _shift_memory!(s, b, _addr_abs,   _lsr_value, 3, 6)
+_branch_lsr_abs_x!(s, b) = _shift_memory!(s, b, _addr_abs_x, _lsr_value, 3, 7)
+
+# ROL
+_branch_rol_acc!(s, b)   = _shift_acc!(s, b, _rol_value)
+_branch_rol_zp!(s, b)    = _shift_memory!(s, b, _addr_zp,    _rol_value, 2, 5)
+_branch_rol_zp_x!(s, b)  = _shift_memory!(s, b, _addr_zp_x,  _rol_value, 2, 6)
+_branch_rol_abs!(s, b)   = _shift_memory!(s, b, _addr_abs,   _rol_value, 3, 6)
+_branch_rol_abs_x!(s, b) = _shift_memory!(s, b, _addr_abs_x, _rol_value, 3, 7)
+
+# ROR
+_branch_ror_acc!(s, b)   = _shift_acc!(s, b, _ror_value)
+_branch_ror_zp!(s, b)    = _shift_memory!(s, b, _addr_zp,    _ror_value, 2, 5)
+_branch_ror_zp_x!(s, b)  = _shift_memory!(s, b, _addr_zp_x,  _ror_value, 2, 6)
+_branch_ror_abs!(s, b)   = _shift_memory!(s, b, _addr_abs,   _ror_value, 3, 6)
+_branch_ror_abs_x!(s, b) = _shift_memory!(s, b, _addr_abs_x, _ror_value, 3, 7)
+
+
+# --------------------------------------------------------------------------- #
 # Dispatch table
 # --------------------------------------------------------------------------- #
 
@@ -623,6 +709,19 @@ const _HANDLERS = let
     h[0xE0 + 1] = _branch_cpx_imm!; h[0xE4 + 1] = _branch_cpx_zp!; h[0xEC + 1] = _branch_cpx_abs!
     h[0xC0 + 1] = _branch_cpy_imm!; h[0xC4 + 1] = _branch_cpy_zp!; h[0xCC + 1] = _branch_cpy_abs!
     h[0x24 + 1] = _branch_bit_zp!;  h[0x2C + 1] = _branch_bit_abs!
+    # P7c-c — shifts and rotates
+    h[0x0A + 1] = _branch_asl_acc!;   h[0x06 + 1] = _branch_asl_zp!
+    h[0x16 + 1] = _branch_asl_zp_x!;  h[0x0E + 1] = _branch_asl_abs!
+    h[0x1E + 1] = _branch_asl_abs_x!
+    h[0x4A + 1] = _branch_lsr_acc!;   h[0x46 + 1] = _branch_lsr_zp!
+    h[0x56 + 1] = _branch_lsr_zp_x!;  h[0x4E + 1] = _branch_lsr_abs!
+    h[0x5E + 1] = _branch_lsr_abs_x!
+    h[0x2A + 1] = _branch_rol_acc!;   h[0x26 + 1] = _branch_rol_zp!
+    h[0x36 + 1] = _branch_rol_zp_x!;  h[0x2E + 1] = _branch_rol_abs!
+    h[0x3E + 1] = _branch_rol_abs_x!
+    h[0x6A + 1] = _branch_ror_acc!;   h[0x66 + 1] = _branch_ror_zp!
+    h[0x76 + 1] = _branch_ror_zp_x!;  h[0x6E + 1] = _branch_ror_abs!
+    h[0x7E + 1] = _branch_ror_abs_x!
     h
 end
 
@@ -648,6 +747,11 @@ const SOFT_SUPPORTED_OPCODES = Set{UInt8}([
     0xE0, 0xE4, 0xEC,
     0xC0, 0xC4, 0xCC,
     0x24, 0x2C,
+    # P7c-c — shifts and rotates
+    0x0A, 0x06, 0x16, 0x0E, 0x1E,
+    0x4A, 0x46, 0x56, 0x4E, 0x5E,
+    0x2A, 0x26, 0x36, 0x2E, 0x3E,
+    0x6A, 0x66, 0x76, 0x6E, 0x7E,
 ])
 
 
