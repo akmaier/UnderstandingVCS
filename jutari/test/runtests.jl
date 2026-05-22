@@ -4023,3 +4023,107 @@ end
     end
 
 end
+
+@testset "JuTari P7f-b — differentiable player sprites" begin
+
+    R_COLUP0 = 0x06; R_COLUP1 = 0x07; R_COLUPF = 0x08; R_COLUBK = 0x09
+    R_REFP0 = 0x0B; R_PF0 = 0x0D
+    R_RESP0 = 0x10; R_RESP1 = 0x11; R_GRP0 = 0x1B; R_GRP1 = 0x1C
+
+    function _bus_regs(pairs...)
+        ram = zeros(Float32, 128)
+        for (off, val) in pairs
+            ram[off + 1] = Float32(val)
+        end
+        return SoftBus(ram, zeros(Float32, 256))
+    end
+
+    @testset "GRP0 = 0 draws no player" begin
+        bus = _bus_regs(R_COLUBK => 0x00, R_GRP0 => 0x00, R_RESP0 => 0x20)
+        @test all(soft_render_scanline(bus) .== 0x00)
+    end
+
+    @testset "solid player paints 8 pixels" begin
+        bus = _bus_regs(R_COLUBK => 0x00, R_COLUP0 => 0x3A,
+                        R_GRP0 => 0xFF, R_RESP0 => 0x20)
+        scan = soft_render_scanline(bus)
+        @test all(scan[0x21:0x28] .== 0x3A)   # 1-based 0x21..0x28 == cells 0x20..0x27
+        @test scan[0x20] == 0x00
+        @test scan[0x29] == 0x00
+    end
+
+    @testset "GRP bit 7 is the leftmost pixel" begin
+        bus = _bus_regs(R_COLUBK => 0x00, R_COLUP0 => 0xFF,
+                        R_GRP0 => 0x80, R_RESP0 => 0x30)
+        scan = soft_render_scanline(bus)
+        @test scan[0x31] == 0xFF              # cell 0x30 → pixel 0
+        @test all(scan[0x32:0x38] .== 0x00)
+    end
+
+    @testset "GRP 0xAA alternates" begin
+        bus = _bus_regs(R_COLUBK => 0x00, R_COLUP0 => 0x0E,
+                        R_GRP0 => 0xAA, R_RESP0 => 0x10)
+        scan = soft_render_scanline(bus)
+        for i in 0:7
+            expected = (i % 2 == 0) ? 0x0E : 0x00
+            @test scan[0x11 + i] == expected
+        end
+    end
+
+    @testset "REFP reflects the sprite" begin
+        bus = _bus_regs(R_COLUBK => 0x00, R_COLUP0 => 0xFF, R_GRP0 => 0x80,
+                        R_RESP0 => 0x30, R_REFP0 => 0x08)
+        scan = soft_render_scanline(bus)
+        @test scan[0x38] == 0xFF             # reflected → pixel 7
+        @test all(scan[0x31:0x37] .== 0x00)
+    end
+
+    @testset "player wraps around the right edge" begin
+        bus = _bus_regs(R_COLUBK => 0x00, R_COLUP0 => 0x22,
+                        R_GRP0 => 0xFF, R_RESP0 => 158)
+        scan = soft_render_scanline(bus)
+        @test scan[159] == 0x22
+        @test scan[160] == 0x22
+        @test scan[1] == 0x22                # wrapped
+        @test scan[2] == 0x22
+    end
+
+    @testset "player draws over playfield" begin
+        bus = _bus_regs(R_COLUBK => 0x00, R_COLUPF => 0x44, R_PF0 => 0xF0,
+                        R_COLUP0 => 0x99, R_GRP0 => 0xFF, R_RESP0 => 0x04)
+        scan = soft_render_scanline(bus)
+        @test all(scan[0x05:0x0C] .== 0x99)
+    end
+
+    @testset "P0 draws over P1" begin
+        bus = _bus_regs(R_COLUBK => 0x00,
+                        R_COLUP0 => 0x11, R_GRP0 => 0xFF, R_RESP0 => 0x20,
+                        R_COLUP1 => 0x77, R_GRP1 => 0xFF, R_RESP1 => 0x20)
+        scan = soft_render_scanline(bus)
+        @test all(scan[0x21:0x28] .== 0x11)
+    end
+
+    @testset "render after a soft_run! positions + colours player 0" begin
+        # LDA #$20 / STA RESP0 / LDA #$FF / STA GRP0 / LDA #$0C / STA COLUP0
+        bus = initial_soft_bus(_soft_rom_with([
+            0xA9, 0x20, 0x85, R_RESP0,
+            0xA9, 0xFF, 0x85, R_GRP0,
+            0xA9, 0x0C, 0x85, R_COLUP0]))
+        state = initial_soft_cpu_state()
+        soft_run!(state, bus, 6)
+        scan = soft_render_scanline(bus)
+        @test all(scan[0x21:0x28] .== 0x0C)
+    end
+
+    @testset "Zygote — ∂(player pixel)/∂ram one-hot at COLUP0 cell" begin
+        ram = zeros(Float32, 128)
+        ram[R_GRP0 + 1]   = 255f0       # solid sprite
+        ram[R_RESP0 + 1]  = 32f0        # X = 0x20
+        ram[R_COLUP0 + 1] = 12f0
+        grad, = Zygote.gradient(
+            r -> soft_render_scanline(SoftBus(r, zeros(Float32, 256)))[0x25], ram)
+        @test grad[R_COLUP0 + 1] == 1f0
+        @test sum(abs.(grad)) == 1f0
+    end
+
+end
