@@ -36,7 +36,8 @@ using JuTari.Diff: RomTensor, peek, peek_many,
                    initial_soft_cpu_state, initial_soft_bus,
                    soft_step!, soft_run!, soft_rom_peek, soft_ram_peek,
                    SOFT_SUPPORTED_OPCODES,
-                   soft_render_scanline, soft_render_frame, SOFT_SCREEN_WIDTH
+                   soft_render_scanline, soft_render_frame,
+                   soft_collision_registers, SOFT_SCREEN_WIDTH
 
 function _make_memory(image)
     mem = zeros(UInt8, 1 << 16)
@@ -4231,6 +4232,80 @@ end
             r -> soft_render_scanline(SoftBus(r, zeros(Float32, 256)))[0x31], ram)
         @test grad[R_COLUPF + 1] == 1f0
         @test sum(abs.(grad)) == 1f0
+    end
+
+end
+
+@testset "JuTari P7f-d — TIA collision detection" begin
+
+    R_NUSIZ0 = 0x04; R_CTRLPF = 0x0A; R_PF0 = 0x0D
+    R_RESP0 = 0x10; R_RESP1 = 0x11; R_RESM0 = 0x12; R_RESBL = 0x14
+    R_GRP0 = 0x1B; R_GRP1 = 0x1C; R_ENAM0 = 0x1D; R_ENABL = 0x1F
+
+    # CX register indices in the returned 8-vector (1-based for Julia).
+    I_CXM0P = 1; I_CXP0FB = 3; I_CXM0FB = 5; I_CXBLPF = 7; I_CXPPMM = 8
+
+    function _bus_regs(pairs...)
+        ram = zeros(Float32, 128)
+        for (off, val) in pairs
+            ram[off + 1] = Float32(val)
+        end
+        return SoftBus(ram, zeros(Float32, 256))
+    end
+
+    @testset "collision registers vector is length 8" begin
+        @test length(soft_collision_registers(_bus_regs())) == 8
+    end
+
+    @testset "no objects → no collisions" begin
+        @test all(soft_collision_registers(_bus_regs()) .== 0f0)
+    end
+
+    @testset "disjoint players do not collide" begin
+        cx = soft_collision_registers(_bus_regs(
+            R_GRP0 => 0xFF, R_RESP0 => 0x10,
+            R_GRP1 => 0xFF, R_RESP1 => 0x40))
+        @test cx[I_CXPPMM] == 0f0
+    end
+
+    @testset "P0–P1 overlap sets CXPPMM D7" begin
+        cx = soft_collision_registers(_bus_regs(
+            R_GRP0 => 0xFF, R_RESP0 => 0x20,
+            R_GRP1 => 0xFF, R_RESP1 => 0x20))
+        @test (Int(cx[I_CXPPMM]) & 0x80) != 0
+        @test (Int(cx[I_CXPPMM]) & 0x40) == 0
+    end
+
+    @testset "M0 over P0 sets CXM0P D6" begin
+        cx = soft_collision_registers(_bus_regs(
+            R_GRP0 => 0xFF, R_RESP0 => 0x20,
+            R_RESM0 => 0x20, R_ENAM0 => 0x02, R_NUSIZ0 => 0x30))
+        @test (Int(cx[I_CXM0P]) & 0x40) != 0
+        @test (Int(cx[I_CXM0P]) & 0x80) == 0
+    end
+
+    @testset "P0 over playfield sets CXP0FB D7" begin
+        cx = soft_collision_registers(_bus_regs(
+            R_PF0 => 0xF0, R_GRP0 => 0xFF, R_RESP0 => 0x04))
+        @test (Int(cx[I_CXP0FB]) & 0x80) != 0
+    end
+
+    @testset "ball over playfield sets CXBLPF D7" begin
+        cx = soft_collision_registers(_bus_regs(
+            R_PF0 => 0xF0, R_RESBL => 0x04, R_ENABL => 0x02, R_CTRLPF => 0x30))
+        @test (Int(cx[I_CXBLPF]) & 0x80) != 0
+    end
+
+    @testset "M0 over playfield sets CXM0FB D7" begin
+        cx = soft_collision_registers(_bus_regs(
+            R_PF0 => 0xF0, R_RESM0 => 0x04, R_ENAM0 => 0x02, R_NUSIZ0 => 0x30))
+        @test (Int(cx[I_CXM0FB]) & 0x80) != 0
+    end
+
+    @testset "disabled missile does not collide" begin
+        cx = soft_collision_registers(_bus_regs(
+            R_PF0 => 0xF0, R_RESM0 => 0x04, R_ENAM0 => 0x00, R_NUSIZ0 => 0x30))
+        @test cx[I_CXM0FB] == 0f0
     end
 
 end

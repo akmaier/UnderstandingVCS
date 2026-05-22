@@ -45,10 +45,16 @@ Missiles take their player's colour; the ball takes COLUPF. They use
 the same SOFT-mode position convention as players (the RES* cell
 holds the X position).
 
-**Scope.** P7f-a…c cover background, playfield, players, missiles and
-the ball — the full visible object set. Collisions + proper TIA/RIOT
-register dispatch (P7f-d) follow. VBLANK output-blanking is not
-modelled — the render is the active-display path.
+**Collisions (P7f-d).** `soft_collision_registers` detects the 15
+pairwise object overlaps and packs them into the 8 CX latch registers,
+matching the HARD TIA's P3e layout. Collisions are a structural
+(boolean) property — forward feature parity, not a gradient path.
+
+**Scope.** P7f-a…d cover the full visible object set + collisions.
+Still deferred: VBLANK output-blanking (the render is the active-
+display path), wiring collisions into bus *reads* so a program can
+read $00-$07 as collision data ("proper TIA read-register dispatch"),
+and cart-hotspot bank-switching from SOFT mode — see STATUS.md.
 """
 
 from __future__ import annotations
@@ -171,6 +177,35 @@ def _block_mask(xpos, size_reg, enable_reg) -> jnp.ndarray:
     return enabled * (in_block @ onehots)                       # (160,)
 
 
+def _object_masks(bus):
+    """The six TIA object masks for the current scanline, each a `(160,)`
+    float32 array (1.0 where the object is present): playfield, P0, P1,
+    M0, M1, ball. Shared by `soft_render_scanline` and
+    `soft_collision_registers`.
+    """
+    ctrlpf = soft_ram_peek(bus.ram, W_CTRLPF)
+    pf = _playfield_mask(soft_ram_peek(bus.ram, W_PF0),
+                         soft_ram_peek(bus.ram, W_PF1),
+                         soft_ram_peek(bus.ram, W_PF2),
+                         ctrlpf)
+    p0 = _player_mask(soft_ram_peek(bus.ram, W_GRP0),
+                      soft_ram_peek(bus.ram, W_REFP0),
+                      soft_ram_peek(bus.ram, W_RESP0))
+    p1 = _player_mask(soft_ram_peek(bus.ram, W_GRP1),
+                      soft_ram_peek(bus.ram, W_REFP1),
+                      soft_ram_peek(bus.ram, W_RESP1))
+    m0 = _block_mask(soft_ram_peek(bus.ram, W_RESM0),
+                     soft_ram_peek(bus.ram, W_NUSIZ0),
+                     soft_ram_peek(bus.ram, W_ENAM0))
+    m1 = _block_mask(soft_ram_peek(bus.ram, W_RESM1),
+                     soft_ram_peek(bus.ram, W_NUSIZ1),
+                     soft_ram_peek(bus.ram, W_ENAM1))
+    bl = _block_mask(soft_ram_peek(bus.ram, W_RESBL),
+                     ctrlpf,
+                     soft_ram_peek(bus.ram, W_ENABL))
+    return pf, p0, p1, m0, m1, bl
+
+
 def soft_render_scanline(bus) -> jnp.ndarray:
     """Differentiable single-scanline render — background, playfield,
     the two player sprites, the two missiles and the ball.
@@ -182,44 +217,18 @@ def soft_render_scanline(bus) -> jnp.ndarray:
     COLUPF / COLUP0 / COLUP1, hence back to any ROM byte that wrote
     them — is exact.
     """
+    pf, p0, p1, m0, m1, bl = _object_masks(bus)
     colubk = soft_ram_peek(bus.ram, W_COLUBK)
     colupf = soft_ram_peek(bus.ram, W_COLUPF)
     colup0 = soft_ram_peek(bus.ram, W_COLUP0)
     colup1 = soft_ram_peek(bus.ram, W_COLUP1)
-    ctrlpf = soft_ram_peek(bus.ram, W_CTRLPF)
 
-    pf_mask  = _playfield_mask(soft_ram_peek(bus.ram, W_PF0),
-                               soft_ram_peek(bus.ram, W_PF1),
-                               soft_ram_peek(bus.ram, W_PF2),
-                               ctrlpf)
-    scanline = pf_mask * colupf + (1.0 - pf_mask) * colubk
-
-    # Ball — COLUPF colour, size from CTRLPF bits 4-5.
-    bl_mask = _block_mask(soft_ram_peek(bus.ram, W_RESBL),
-                          ctrlpf,
-                          soft_ram_peek(bus.ram, W_ENABL))
-    scanline = (1.0 - bl_mask) * scanline + bl_mask * colupf
-
-    # Missile 1, player 1, missile 0, player 0 — increasing priority.
-    m1_mask = _block_mask(soft_ram_peek(bus.ram, W_RESM1),
-                          soft_ram_peek(bus.ram, W_NUSIZ1),
-                          soft_ram_peek(bus.ram, W_ENAM1))
-    scanline = (1.0 - m1_mask) * scanline + m1_mask * colup1
-
-    p1_mask = _player_mask(soft_ram_peek(bus.ram, W_GRP1),
-                           soft_ram_peek(bus.ram, W_REFP1),
-                           soft_ram_peek(bus.ram, W_RESP1))
-    scanline = (1.0 - p1_mask) * scanline + p1_mask * colup1
-
-    m0_mask = _block_mask(soft_ram_peek(bus.ram, W_RESM0),
-                          soft_ram_peek(bus.ram, W_NUSIZ0),
-                          soft_ram_peek(bus.ram, W_ENAM0))
-    scanline = (1.0 - m0_mask) * scanline + m0_mask * colup0
-
-    p0_mask = _player_mask(soft_ram_peek(bus.ram, W_GRP0),
-                           soft_ram_peek(bus.ram, W_REFP0),
-                           soft_ram_peek(bus.ram, W_RESP0))
-    scanline = (1.0 - p0_mask) * scanline + p0_mask * colup0
+    scanline = pf * colupf + (1.0 - pf) * colubk          # background ← playfield
+    scanline = (1.0 - bl) * scanline + bl * colupf        # ball
+    scanline = (1.0 - m1) * scanline + m1 * colup1        # missile 1
+    scanline = (1.0 - p1) * scanline + p1 * colup1        # player 1
+    scanline = (1.0 - m0) * scanline + m0 * colup0        # missile 0
+    scanline = (1.0 - p0) * scanline + p0 * colup0        # player 0
     return scanline
 
 
@@ -233,3 +242,49 @@ def soft_render_frame(bus, height: int = VISIBLE_SCANLINES) -> jnp.ndarray:
     """
     scanline = soft_render_scanline(bus)
     return jnp.broadcast_to(scanline, (height, scanline.shape[0]))
+
+
+# --------------------------------------------------------------------------- #
+# P7f-d — collision detection
+# --------------------------------------------------------------------------- #
+
+# CX register layout (matches jaxtari.tia.system R_CX*):
+#   CXM0P  D7=M0-P1  D6=M0-P0
+#   CXM1P  D7=M1-P0  D6=M1-P1
+#   CXP0FB D7=P0-PF  D6=P0-BL
+#   CXP1FB D7=P1-PF  D6=P1-BL
+#   CXM0FB D7=M0-PF  D6=M0-BL
+#   CXM1FB D7=M1-PF  D6=M1-BL
+#   CXBLPF D7=BL-PF  D6=unused
+#   CXPPMM D7=P0-P1  D6=M0-M1
+
+def soft_collision_registers(bus) -> jnp.ndarray:
+    """The 8 TIA collision latch registers for the current scanline —
+    `(8,)` float32, indexed CXM0P, CXM1P, CXP0FB, CXP1FB, CXM0FB,
+    CXM1FB, CXBLPF, CXPPMM.
+
+    Two objects "collide" when their `(160,)` masks are both 1.0 at the
+    same pixel; each register packs its hit flags into D7 / D6. The
+    result is a structural (boolean) property of the scanline, so the
+    gradient through it is ~0 — collisions are forward feature parity
+    with the HARD TIA's P3e latches, not a gradient-flow path.
+
+    This function is standalone (like `soft_render_scanline`); wiring it
+    into the bus so a program can *read* $00-$07 as collision data is
+    the deferred "proper TIA read-register dispatch" part of P7f-d.
+    """
+    pf, p0, p1, m0, m1, bl = _object_masks(bus)
+
+    def hit(a, b) -> jnp.ndarray:
+        return (jnp.sum(a * b) > 0).astype(jnp.float32)
+
+    cxm0p  = hit(m0, p1) * 0x80 + hit(m0, p0) * 0x40
+    cxm1p  = hit(m1, p0) * 0x80 + hit(m1, p1) * 0x40
+    cxp0fb = hit(p0, pf) * 0x80 + hit(p0, bl) * 0x40
+    cxp1fb = hit(p1, pf) * 0x80 + hit(p1, bl) * 0x40
+    cxm0fb = hit(m0, pf) * 0x80 + hit(m0, bl) * 0x40
+    cxm1fb = hit(m1, pf) * 0x80 + hit(m1, bl) * 0x40
+    cxblpf = hit(bl, pf) * 0x80
+    cxppmm = hit(p0, p1) * 0x80 + hit(m0, m1) * 0x40
+    return jnp.stack([cxm0p, cxm1p, cxp0fb, cxp1fb,
+                      cxm0fb, cxm1fb, cxblpf, cxppmm])

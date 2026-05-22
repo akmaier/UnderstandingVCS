@@ -24,8 +24,10 @@
 # P7f-c adds missiles M0/M1 and the ball BL — solid 1/2/4/8-pixel
 # blocks. Missiles take their player's colour, the ball takes COLUPF.
 #
-# Scope: P7f-a…c cover background, playfield, players, missiles and the
-# ball. Collisions + proper register dispatch (P7f-d) follow.
+# P7f-d adds collision detection: soft_collision_registers returns the
+# 8 CX latch registers (matching the HARD TIA P3e layout).
+#
+# Scope: P7f-a…d cover the full visible object set + collisions.
 
 const SOFT_SCREEN_WIDTH      = 160
 const SOFT_VISIBLE_SCANLINES = 192
@@ -132,6 +134,38 @@ function _block_mask(xpos::Real, size_reg::Real, enable_reg::Real)
 end
 
 """
+    _object_masks(bus::SoftBus)
+
+The six TIA object masks for the current scanline, each a 160-element
+Float32 vector (1.0 where the object is present): playfield, P0, P1,
+M0, M1, ball. Shared by `soft_render_scanline` and
+`soft_collision_registers`.
+"""
+function _object_masks(bus::SoftBus)
+    ctrlpf = soft_ram_peek(bus.ram, _R_CTRLPF)
+    pf = _playfield_mask(soft_ram_peek(bus.ram, _R_PF0),
+                         soft_ram_peek(bus.ram, _R_PF1),
+                         soft_ram_peek(bus.ram, _R_PF2),
+                         ctrlpf)
+    p0 = _player_mask(soft_ram_peek(bus.ram, _R_GRP0),
+                      soft_ram_peek(bus.ram, _R_REFP0),
+                      soft_ram_peek(bus.ram, _R_RESP0))
+    p1 = _player_mask(soft_ram_peek(bus.ram, _R_GRP1),
+                      soft_ram_peek(bus.ram, _R_REFP1),
+                      soft_ram_peek(bus.ram, _R_RESP1))
+    m0 = _block_mask(soft_ram_peek(bus.ram, _R_RESM0),
+                     soft_ram_peek(bus.ram, _R_NUSIZ0),
+                     soft_ram_peek(bus.ram, _R_ENAM0))
+    m1 = _block_mask(soft_ram_peek(bus.ram, _R_RESM1),
+                     soft_ram_peek(bus.ram, _R_NUSIZ1),
+                     soft_ram_peek(bus.ram, _R_ENAM1))
+    bl = _block_mask(soft_ram_peek(bus.ram, _R_RESBL),
+                     ctrlpf,
+                     soft_ram_peek(bus.ram, _R_ENABL))
+    return pf, p0, p1, m0, m1, bl
+end
+
+"""
     soft_render_scanline(bus::SoftBus) -> Vector{Float32}
 
 Differentiable single-scanline render — background, playfield, the two
@@ -141,45 +175,43 @@ Compositing order matches the HARD TIA:
 background ← playfield ← ball ← M1 ← P1 ← M0 ← P0.
 """
 function soft_render_scanline(bus::SoftBus)
+    pf, p0, p1, m0, m1, bl = _object_masks(bus)
     colubk = soft_ram_peek(bus.ram, _R_COLUBK)
     colupf = soft_ram_peek(bus.ram, _R_COLUPF)
     colup0 = soft_ram_peek(bus.ram, _R_COLUP0)
     colup1 = soft_ram_peek(bus.ram, _R_COLUP1)
-    ctrlpf = soft_ram_peek(bus.ram, _R_CTRLPF)
 
-    pf_mask  = _playfield_mask(soft_ram_peek(bus.ram, _R_PF0),
-                               soft_ram_peek(bus.ram, _R_PF1),
-                               soft_ram_peek(bus.ram, _R_PF2),
-                               ctrlpf)
-    scanline = pf_mask .* colupf .+ (1f0 .- pf_mask) .* colubk
-
-    # Ball — COLUPF colour, size from CTRLPF bits 4-5.
-    bl_mask = _block_mask(soft_ram_peek(bus.ram, _R_RESBL),
-                          ctrlpf,
-                          soft_ram_peek(bus.ram, _R_ENABL))
-    scanline = (1f0 .- bl_mask) .* scanline .+ bl_mask .* colupf
-
-    # Missile 1, player 1, missile 0, player 0 — increasing priority.
-    m1_mask = _block_mask(soft_ram_peek(bus.ram, _R_RESM1),
-                          soft_ram_peek(bus.ram, _R_NUSIZ1),
-                          soft_ram_peek(bus.ram, _R_ENAM1))
-    scanline = (1f0 .- m1_mask) .* scanline .+ m1_mask .* colup1
-
-    p1_mask = _player_mask(soft_ram_peek(bus.ram, _R_GRP1),
-                           soft_ram_peek(bus.ram, _R_REFP1),
-                           soft_ram_peek(bus.ram, _R_RESP1))
-    scanline = (1f0 .- p1_mask) .* scanline .+ p1_mask .* colup1
-
-    m0_mask = _block_mask(soft_ram_peek(bus.ram, _R_RESM0),
-                          soft_ram_peek(bus.ram, _R_NUSIZ0),
-                          soft_ram_peek(bus.ram, _R_ENAM0))
-    scanline = (1f0 .- m0_mask) .* scanline .+ m0_mask .* colup0
-
-    p0_mask = _player_mask(soft_ram_peek(bus.ram, _R_GRP0),
-                           soft_ram_peek(bus.ram, _R_REFP0),
-                           soft_ram_peek(bus.ram, _R_RESP0))
-    scanline = (1f0 .- p0_mask) .* scanline .+ p0_mask .* colup0
+    scanline = pf .* colupf .+ (1f0 .- pf) .* colubk   # background ← playfield
+    scanline = (1f0 .- bl) .* scanline .+ bl .* colupf  # ball
+    scanline = (1f0 .- m1) .* scanline .+ m1 .* colup1  # missile 1
+    scanline = (1f0 .- p1) .* scanline .+ p1 .* colup1  # player 1
+    scanline = (1f0 .- m0) .* scanline .+ m0 .* colup0  # missile 0
+    scanline = (1f0 .- p0) .* scanline .+ p0 .* colup0  # player 0
     return scanline
+end
+
+"""
+    soft_collision_registers(bus::SoftBus) -> Vector{Float32}
+
+The 8 TIA collision latch registers for the current scanline —
+indexed CXM0P, CXM1P, CXP0FB, CXP1FB, CXM0FB, CXM1FB, CXBLPF, CXPPMM.
+Two objects collide when their masks are both 1.0 at the same pixel;
+each register packs its hit flags into D7 / D6. Collisions are a
+structural (boolean) property — forward feature parity with the HARD
+TIA's P3e latches, not a gradient-flow path.
+"""
+function soft_collision_registers(bus::SoftBus)
+    pf, p0, p1, m0, m1, bl = _object_masks(bus)
+    hit(a, b) = sum(a .* b) > 0 ? 1f0 : 0f0
+    cxm0p  = hit(m0, p1) * 0x80 + hit(m0, p0) * 0x40
+    cxm1p  = hit(m1, p0) * 0x80 + hit(m1, p1) * 0x40
+    cxp0fb = hit(p0, pf) * 0x80 + hit(p0, bl) * 0x40
+    cxp1fb = hit(p1, pf) * 0x80 + hit(p1, bl) * 0x40
+    cxm0fb = hit(m0, pf) * 0x80 + hit(m0, bl) * 0x40
+    cxm1fb = hit(m1, pf) * 0x80 + hit(m1, bl) * 0x40
+    cxblpf = hit(bl, pf) * 0x80
+    cxppmm = hit(p0, p1) * 0x80 + hit(m0, m1) * 0x40
+    return [cxm0p, cxm1p, cxp0fb, cxp1fb, cxm0fb, cxm1fb, cxblpf, cxppmm]
 end
 
 """

@@ -33,6 +33,7 @@ from jaxtari.diff.soft_step import (
     soft_step,
 )
 from jaxtari.diff.soft_tia import (
+    soft_collision_registers,
     soft_render_frame,
     soft_render_scanline,
 )
@@ -52,6 +53,7 @@ __all__ = [
     "initial_soft_cpu_state",
     "set_mode",
     "soft_branch",
+    "soft_collision_registers",
     "soft_memory_read",
     "soft_ram_peek",
     "soft_render_frame",

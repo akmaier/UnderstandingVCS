@@ -39,7 +39,8 @@ export Mode, current_mode, set_mode!, using_mode,
        SoftCPUState, SoftBus, initial_soft_cpu_state, initial_soft_bus,
        soft_step!, soft_run!, soft_rom_peek, soft_ram_peek,
        SOFT_SUPPORTED_OPCODES,
-       soft_render_scanline, soft_render_frame, SOFT_SCREEN_WIDTH
+       soft_render_scanline, soft_render_frame, soft_collision_registers,
+       SOFT_SCREEN_WIDTH
 
 @enum Mode HARD SOFT
 

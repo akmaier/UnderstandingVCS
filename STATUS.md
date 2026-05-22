@@ -39,16 +39,18 @@ overall project goal, see [README.md](README.md).
 | **P7e** | Julia gradient stack — Zygote reverse-mode AD verified through every pure SOFT primitive; one-hot constructions rewritten as broadcast comparisons so Zygote can trace them | _next commit_ | +18 | — | ✅ |
 | **P7f-a** | Differentiable TIA — `soft_render_scanline` / `soft_render_frame` (background + playfield); reads the TIA register file out of `bus.ram[0:64]`. **`jax.grad` of a framebuffer pixel back to a ROM byte now works end-to-end.** | [`2253d32`](https://github.com/akmaier/UnderstandingVCS/commit/2253d32) | +14 | +10 | ✅ |
 | **P7f-b** | Differentiable TIA — player sprites P0/P1 (GRP, REFP, single 1× copy) compositing over the playfield; SOFT convention: RESP0/RESP1 cells hold the player X | [`43371ce`](https://github.com/akmaier/UnderstandingVCS/commit/43371ce) | +25 | +11 | ✅ |
-| **P7f-c** | Differentiable TIA — missiles M0/M1 + ball BL (solid 1/2/4/8-px blocks); full HARD compositing order bg ← pf ← ball ← M1 ← P1 ← M0 ← P0 | _next commit_ | +18 | +12 | ✅ |
-| **P7f-d** | Differentiable TIA — collision latches + proper TIA/RIOT register dispatch + cart hotspots | — | — | — | ⏳ |
+| **P7f-c** | Differentiable TIA — missiles M0/M1 + ball BL (solid 1/2/4/8-px blocks); full HARD compositing order bg ← pf ← ball ← M1 ← P1 ← M0 ← P0 | [`99e2ec7`](https://github.com/akmaier/UnderstandingVCS/commit/99e2ec7) | +18 | +12 | ✅ |
+| **P7f-d** | Differentiable TIA — collision detection: `soft_collision_registers` returns the 8 CX latches (15 pairwise object overlaps) | _next commit_ | +11 | +12 | ✅ |
 | **P8**  | XAI hooks + first attribution experiment | — | — | — | ☐ |
 | **P9**  | JAX-vs-Julia benchmark + paper-shaped XAI study | — | — | — | ☐ |
 
-**Totals after P7f-c: jaxtari 500 tests, jutari 1109 tests, 1609 green across both ports.**
+**Totals after P7f-d: jaxtari 512 tests, jutari 1120 tests, 1632 green across both ports.**
 
-**P7f-a milestone — the project's headline claim is now live in code.** A SOFT program writes a colour into a TIA register, `soft_render_scanline` turns the register file into pixels, and `jax.grad(pixel)(rom)` is one-hot at the ROM byte that supplied the colour. `∂pixel / ∂ROM` — "this ROM byte explains this pixel" — runs end-to-end (test `test_grad_background_pixel_one_hot_at_colour_rom_byte`).
+**The project's headline claim is now live in code, end-to-end.** A SOFT program executes 6502 instructions, writes colours into TIA registers, and `soft_render_scanline` turns the register file into pixels — then `jax.grad(pixel)(rom)` is one-hot at the ROM byte that painted that pixel. `∂pixel / ∂ROM` — "this ROM byte explains this pixel" — runs from instruction fetch through CPU execution through TIA compositing to a framebuffer pixel (test `test_grad_background_pixel_one_hot_at_colour_rom_byte`).
 
-**P7c milestone: the full 151-opcode documented NMOS 6502 set (+ the undocumented USBC `$EB` alias) now executes in SOFT mode on both ports** — `soft_step` is a complete differentiable parallel to the HARD `step()` at the instruction level. What remains for a fully-differentiable VCS is **P7f** (real TIA/RIOT/cart bus dispatch + a differentiable TIA).
+**P7c milestone:** the full 151-opcode documented NMOS 6502 set (+ the undocumented USBC `$EB` alias) executes in SOFT mode on both ports — `soft_step` is a complete differentiable parallel to the HARD `step()` at the instruction level.
+
+**P7f milestone:** the SOFT-mode differentiable TIA renderer covers background, playfield, both players, both missiles, the ball, and all 8 collision latches — full P3a-e visible-object parity. Genuinely deferred: VBLANK output-blanking, wiring collisions into bus *reads* (P7f-dx), and cart-hotspot bank-switching (P7f-e).
 
 ## What each port can do today
 
@@ -100,7 +102,7 @@ jaxtari/jaxtari/                 jutari/src/
 │   ├── straight_through.py       │   ├── StraightThrough.jl
 │   ├── soft_state.py             │   ├── SoftState.jl       (P7b)
 │   ├── soft_step.py              │   ├── SoftStep.jl        (P7b/P7c)
-│   └── soft_tia.py               │   └── SoftTIA.jl         (P7f-a/b)
+│   └── soft_tia.py               │   └── SoftTIA.jl         (P7f-a..d)
 ├── console.py                    ├── Console.jl
 └── __init__.py                   └── JuTari.jl
 ```
@@ -152,8 +154,12 @@ Every deferral now has a phase identifier (see PORTING_PLAN.md "Deferral identif
 - BRK stays the end-of-trace sentinel (intentional for fixed-length XAI traces).
 - **P7e is ✅ complete** — Zygote (reverse-mode AD) is a jutari test dependency and gradients are verified through every pure SOFT primitive (`soft_rom_peek`, `soft_ram_peek`, `RomTensor.peek`/`peek_many`, `soft_select`, `soft_memory_read`, `soft_branch`). The one-hot constructions were rewritten as broadcast comparisons so Zygote can trace them.
   - **P7e-x** (deferred): the mutating `soft_step!` / `soft_run!` are not Zygote-differentiable (Zygote rejects array/struct mutation). End-to-end gradient through a full instruction trace in Julia needs either a functional `soft_step` rewrite or a mutation-aware AD such as Enzyme.jl. The jaxtari port already has this end-to-end (JAX is functional by construction).
-- **P7f-a / P7f-b / P7f-c are ✅ complete** — `soft_render_scanline` / `soft_render_frame` render the full visible object set differentiably: background, playfield, both player sprites, both missiles, and the ball, composited in the HARD TIA's priority order. `jax.grad` of a pixel reaches the ROM. The renderer reads the TIA register file out of `bus.ram[0:64]` (the SOFT bus collapses TIA addresses into the low RAM cells, so no SoftBus change was needed).
-- **P7f-d** (deferred): collision latches + proper TIA/RIOT register dispatch + cart-hotspot bank-switching from SOFT mode. The current `_bus_write` still collapses non-cart writes into the RAM array — fine for the rendering path (TIA registers live there) but P7f-d is where proper read-register / hotspot semantics land.
+- **P7f-a … P7f-d are ✅ complete** — `soft_render_scanline` / `soft_render_frame` render the full visible object set differentiably: background, playfield, both player sprites, both missiles, and the ball, composited in the HARD TIA's priority order; `soft_collision_registers` detects the 8 CX collision latches. `jax.grad` of a pixel reaches the ROM. The renderer reads the TIA register file out of `bus.ram[0:64]` (the SOFT bus collapses TIA addresses into the low RAM cells, so no SoftBus change was needed).
+- **Still deferred after P7f** (each a deliberate, documented gap, not a bug):
+  - **P7f-dx — collision *reads***: `soft_collision_registers` is a standalone function; a program cannot yet *read* $00-$07 as collision data because `_bus_read` returns the register-file value. Proper TIA read-register dispatch would wire it in.
+  - **P7f-e — cart-hotspot bank-switching from SOFT mode**: needs the SoftBus to carry bank state — an architectural addition.
+  - **VBLANK output-blanking**: the render is the active-display path only.
+  - **P7f-b…d positioning**: sprite/missile/ball X comes from the SOFT-mode convention that the RES* cells hold position; faithful strobe-timing positioning needs TIA timing state in the SoftBus (see the P7f architectural-prerequisite note in PORTING_PLAN.md).
 - **P7f-b…d positioning caveat**: a SOFT-mode convention treats the `RESP0`/`RESP1` cells as holding the player X position (real hardware sets it by strobe timing). Faithful strobe-timing positioning needs the SoftBus to carry TIA timing state — see the P7f architectural-prerequisite note in PORTING_PLAN.md.
 
 ### Cross-cutting
