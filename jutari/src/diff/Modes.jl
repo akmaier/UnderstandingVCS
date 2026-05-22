@@ -38,7 +38,8 @@ export Mode, current_mode, set_mode!, using_mode,
        straight_through_round, straight_through_clamp,
        SoftCPUState, SoftBus, initial_soft_cpu_state, initial_soft_bus,
        soft_step!, soft_run!, soft_rom_peek, soft_ram_peek,
-       SOFT_SUPPORTED_OPCODES
+       SOFT_SUPPORTED_OPCODES,
+       soft_render_scanline, soft_render_frame, SOFT_SCREEN_WIDTH
 
 @enum Mode HARD SOFT
 
@@ -78,5 +79,7 @@ include("StraightThrough.jl")
 # P7b — parallel SOFT-mode `step!()` built on the primitives above.
 include("SoftState.jl")
 include("SoftStep.jl")
+# P7f-a — differentiable TIA playfield renderer.
+include("SoftTIA.jl")
 
 end # module

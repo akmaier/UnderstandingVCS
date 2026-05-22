@@ -209,7 +209,7 @@ Each phase ends with a green test suite for its scope, in **both** ports, before
 | **P7c** | Extend SOFT-mode opcode coverage to the full 151-opcode documented NMOS set; add N/Z/C/V flag updates inside handlers. Subdivided **P7c-a … P7c-f** matching P1's subdivision. | All 151 documented NMOS opcodes (+ USBC `$EB`) execute in SOFT mode | ✅ — jaxtari `soft_step.py` + jutari `SoftStep.jl`; 152-opcode dispatch table. P7c-bx (BCD) is done; two deliberate simplifications remain (P7c-dx branch-predicate gradient, BRK-as-sentinel). |
 | **P7d** | `RomTensor` registered as a JAX PyTree node so it can sit in the `SoftBus.rom` slot and `jax.grad` threads the cotangent back as a `RomTensor` | `jax.grad` of a SOFT trace w.r.t. a RomTensor-backed bus returns a RomTensor cotangent, one-hot at the relevant byte | ✅ — jaxtari `rom_as_weights.py` (`tree_flatten`/`tree_unflatten`); +9 tests. jaxtari-only — PyTree is a JAX mechanism. |
 | **P7e** | Julia gradient stack — Zygote reverse-mode AD verified through the pure SOFT primitives; one-hot constructions rewritten as broadcast comparisons so Zygote can trace them | `Zygote.gradient` of each SOFT primitive matches the jaxtari `jax.grad` result (one-hot for `soft_rom_peek`, etc.) | ✅ — Zygote added as a jutari test dep; +18 tests. The mutating `soft_step!` is not Zygote-able (deferred as **P7e-x** — needs a functional rewrite or Enzyme.jl). |
-| **P7f** | Differentiable bus + TIA — route SOFT-mode writes through real TIA / RIOT register dispatch + cart hotspots (today `_bus_write` collapses non-cart writes into the 128-byte RAM array), and make the TIA differentiable so `jax.grad` flows from a framebuffer pixel back to ROM bytes | A real ROM (e.g. a minimal Stella demo cart) runs end-to-end in SOFT mode and `jax.grad(env.step)` flows through the TIA framebuffer back to ROM bytes | ⏳ |
+| **P7f** | Differentiable bus + TIA — a differentiable TIA so `jax.grad` flows from a framebuffer pixel back to ROM bytes. Subdivided **P7f-a … P7f-d** mirroring P3. | `jax.grad` of a framebuffer pixel is one-hot at the ROM byte that painted it | 🟡 in progress — **P7f-a ✅** (`soft_render_scanline`/`soft_render_frame`, background + playfield; `∂pixel/∂ROM` works end-to-end). P7f-b…d remain. |
 | **P8** | XAI hooks + first attribution experiment | Integrated Gradients on ROM bytes recovers a known sprite-defining region in Pong | ☐ |
 | **P9** | JAX-vs-Julia benchmark + first paper-shaped XAI study | Throughput numbers + a writeup | ☐ |
 
@@ -238,6 +238,15 @@ P7c mirrors P1's subdivision — same shape, same scope per chunk, but executed 
 - **P7c-f**: RTI — completes the documented NMOS opcode set. BRK is kept as the P7b end-of-trace sentinel (the useful semantics for fixed-length XAI traces) rather than running its proper interrupt sequence. **Routing SOFT writes through real TIA / RIOT / cart-hotspot dispatch is re-scoped to its own phase, P7f** — it is chip-level re-implementation work, not opcode work.
 
 All six sub-phases are ✅ complete: the full 151-opcode documented NMOS set (+ USBC `$EB`) executes in SOFT mode on both ports.
+
+### P7f (differentiable TIA) subdivision
+
+P7f mirrors P3's subdivision — a differentiable parallel to the HARD TIA render:
+
+- **P7f-a** ✅: background + playfield. `soft_render_scanline(bus)` → `(160,)` and `soft_render_frame(bus)` → `(192, 160)`. Reads the TIA register file out of `bus.ram[0x00:0x40]` (the SOFT bus collapses TIA addresses into the low RAM cells, so no SoftBus change is needed). `pixel = pf_mask · COLUPF + (1 − pf_mask) · COLUBK`; the colour gradient flows back to ROM, the playfield pattern is integer-extracted.
+- **P7f-b**: player sprites P0 / P1 — GRP, REFP, RESP positioning, NUSIZ copies.
+- **P7f-c**: missiles M0 / M1 + ball BL.
+- **P7f-d**: collision latches + proper TIA / RIOT read-register dispatch + cart-hotspot bank-switching from SOFT mode (replacing the P7b "all non-cart writes drop into the RAM array" shortcut with a real decode).
 
 ### Deferral identifiers
 

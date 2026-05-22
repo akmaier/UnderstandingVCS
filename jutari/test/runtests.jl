@@ -35,7 +35,8 @@ using JuTari.Diff: RomTensor, peek, peek_many,
                    SoftCPUState, SoftBus,
                    initial_soft_cpu_state, initial_soft_bus,
                    soft_step!, soft_run!, soft_rom_peek, soft_ram_peek,
-                   SOFT_SUPPORTED_OPCODES
+                   SOFT_SUPPORTED_OPCODES,
+                   soft_render_scanline, soft_render_frame, SOFT_SCREEN_WIDTH
 
 function _make_memory(image)
     mem = zeros(UInt8, 1 << 16)
@@ -3932,6 +3933,93 @@ end
         g, = Zygote.gradient(
             flag -> soft_branch(flag, 100.0, 200.0; alpha = 1.0), 0.0)
         @test g > 0f0                            # raising the flag → larger PC
+    end
+
+end
+
+@testset "JuTari P7f-a — differentiable TIA playfield render" begin
+
+    # TIA register offsets (= SOFT-bus RAM cells, 0-based).
+    R_COLUPF = 0x08; R_COLUBK = 0x09; R_CTRLPF = 0x0A
+    R_PF0 = 0x0D; R_PF1 = 0x0E; R_PF2 = 0x0F
+
+    # Build a SoftBus with the given TIA registers set (offset => value).
+    function _bus_regs(pairs...)
+        ram = zeros(Float32, 128)
+        for (off, val) in pairs
+            ram[off + 1] = Float32(val)
+        end
+        return SoftBus(ram, zeros(Float32, 256))
+    end
+
+    @testset "empty playfield renders all background" begin
+        bus = _bus_regs(R_COLUBK => 0x1E)
+        scan = soft_render_scanline(bus)
+        @test length(scan) == 160
+        @test all(scan .== 0x1E)
+    end
+
+    @testset "scanline width is 160" begin
+        bus = initial_soft_bus(zeros(Float32, 256))
+        @test length(soft_render_scanline(bus)) == 160
+    end
+
+    @testset "frame shape is 192 × 160" begin
+        bus = initial_soft_bus(zeros(Float32, 256))
+        frame = soft_render_frame(bus)
+        @test size(frame) == (192, 160)
+    end
+
+    @testset "frame rows all equal the scanline" begin
+        bus = _bus_regs(R_COLUBK => 0x42)
+        frame = soft_render_frame(bus)
+        scan = soft_render_scanline(bus)
+        @test all(frame[r, :] == scan for r in 1:192)
+    end
+
+    @testset "PF0 high nibble paints leftmost pixels" begin
+        bus = _bus_regs(R_COLUBK => 0x00, R_COLUPF => 0xFF, R_PF0 => 0x10)
+        scan = soft_render_scanline(bus)
+        @test all(scan[1:4] .== 0xFF)        # playfield pixel 0
+        @test all(scan[5:8] .== 0x00)        # background
+    end
+
+    @testset "full playfield paints whole scanline" begin
+        bus = _bus_regs(R_COLUBK => 0x00, R_COLUPF => 0x0E,
+                        R_PF0 => 0xF0, R_PF1 => 0xFF, R_PF2 => 0xFF)
+        scan = soft_render_scanline(bus)
+        @test all(scan .== 0x0E)
+    end
+
+    @testset "reflected playfield mirrors right half" begin
+        bus = _bus_regs(R_COLUBK => 0x00, R_COLUPF => 0xFF,
+                        R_PF0 => 0x10, R_CTRLPF => 0x01)
+        scan = soft_render_scanline(bus)
+        @test all(scan[1:4] .== 0xFF)         # left: pixel 0
+        @test all(scan[157:160] .== 0xFF)     # right: mirrored to the end
+        @test all(scan[81:84] .== 0x00)       # right half starts background
+    end
+
+    @testset "render after a soft_run! LDA/STA sets the background" begin
+        # LDA #$1E / STA $09 (COLUBK) — then render.
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x1E, 0x85, R_COLUBK]))
+        state = initial_soft_cpu_state()
+        soft_run!(state, bus, 2)
+        scan = soft_render_scanline(bus)
+        @test all(scan .== 0x1E)
+    end
+
+    @testset "Zygote — ∂pixel/∂ram is one-hot at the COLUBK cell" begin
+        # The render is a pure function of bus.ram, so Zygote can
+        # differentiate a pixel w.r.t. the register file even though the
+        # mutating soft_step! that produced the registers cannot be
+        # differentiated (P7e-x).
+        ram = zeros(Float32, 128)
+        ram[R_COLUBK + 1] = 30f0
+        grad, = Zygote.gradient(
+            r -> soft_render_scanline(SoftBus(r, zeros(Float32, 256)))[1], ram)
+        @test grad[R_COLUBK + 1] == 1f0       # empty playfield → pixel = COLUBK
+        @test sum(abs.(grad)) == 1f0
     end
 
 end

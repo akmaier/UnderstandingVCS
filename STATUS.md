@@ -37,11 +37,14 @@ overall project goal, see [README.md](README.md).
 | **P7c-f** | RTI — **completes the full 151-opcode documented NMOS set (+ USBC) in SOFT mode** | _next commit_ | +36 | +7 | ✅ |
 | **P7d** | RomTensor as a custom JAX PyTree — usable directly as the `SoftBus.rom` slot, `jax.grad` threads the cotangent back as a RomTensor (jaxtari only — PyTree is a JAX concept) | _next commit_ | — | +9 | ✅ |
 | **P7e** | Julia gradient stack — Zygote reverse-mode AD verified through every pure SOFT primitive; one-hot constructions rewritten as broadcast comparisons so Zygote can trace them | _next commit_ | +18 | — | ✅ |
-| **P7f** | Differentiable bus + TIA — route SOFT writes through real TIA/RIOT register dispatch + cart hotspots, and a differentiable TIA so `jax.grad` flows from a framebuffer pixel back to ROM | — | — | — | ☐ |
+| **P7f-a** | Differentiable TIA — `soft_render_scanline` / `soft_render_frame` (background + playfield); reads the TIA register file out of `bus.ram[0:64]`. **`jax.grad` of a framebuffer pixel back to a ROM byte now works end-to-end.** | _next commit_ | +14 | +10 | ✅ |
+| **P7f-b…d** | Differentiable TIA — player sprites (P7f-b), missiles + ball (P7f-c), collisions + proper TIA/RIOT register dispatch + cart hotspots (P7f-d) | — | — | — | ⏳ |
 | **P8**  | XAI hooks + first attribution experiment | — | — | — | ☐ |
 | **P9**  | JAX-vs-Julia benchmark + paper-shaped XAI study | — | — | — | ☐ |
 
-**Totals after P7e: jaxtari 467 tests, jutari 1052 tests, 1519 green across both ports.**
+**Totals after P7f-a: jaxtari 477 tests, jutari 1066 tests, 1543 green across both ports.**
+
+**P7f-a milestone — the project's headline claim is now live in code.** A SOFT program writes a colour into a TIA register, `soft_render_scanline` turns the register file into pixels, and `jax.grad(pixel)(rom)` is one-hot at the ROM byte that supplied the colour. `∂pixel / ∂ROM` — "this ROM byte explains this pixel" — runs end-to-end (test `test_grad_background_pixel_one_hot_at_colour_rom_byte`).
 
 **P7c milestone: the full 151-opcode documented NMOS 6502 set (+ the undocumented USBC `$EB` alias) now executes in SOFT mode on both ports** — `soft_step` is a complete differentiable parallel to the HARD `step()` at the instruction level. What remains for a fully-differentiable VCS is **P7f** (real TIA/RIOT/cart bus dispatch + a differentiable TIA).
 
@@ -94,7 +97,8 @@ jaxtari/jaxtari/                 jutari/src/
 │   ├── soft_branch.py            │   ├── SoftBranch.jl
 │   ├── straight_through.py       │   ├── StraightThrough.jl
 │   ├── soft_state.py             │   ├── SoftState.jl       (P7b)
-│   └── soft_step.py              │   └── SoftStep.jl        (P7b)
+│   ├── soft_step.py              │   ├── SoftStep.jl        (P7b/P7c)
+│   └── soft_tia.py               │   └── SoftTIA.jl         (P7f-a)
 ├── console.py                    ├── Console.jl
 └── __init__.py                   └── JuTari.jl
 ```
@@ -146,7 +150,8 @@ Every deferral now has a phase identifier (see PORTING_PLAN.md "Deferral identif
 - BRK stays the end-of-trace sentinel (intentional for fixed-length XAI traces).
 - **P7e is ✅ complete** — Zygote (reverse-mode AD) is a jutari test dependency and gradients are verified through every pure SOFT primitive (`soft_rom_peek`, `soft_ram_peek`, `RomTensor.peek`/`peek_many`, `soft_select`, `soft_memory_read`, `soft_branch`). The one-hot constructions were rewritten as broadcast comparisons so Zygote can trace them.
   - **P7e-x** (deferred): the mutating `soft_step!` / `soft_run!` are not Zygote-differentiable (Zygote rejects array/struct mutation). End-to-end gradient through a full instruction trace in Julia needs either a functional `soft_step` rewrite or a mutation-aware AD such as Enzyme.jl. The jaxtari port already has this end-to-end (JAX is functional by construction).
-- **P7f**: Differentiable bus + TIA — `soft_step`'s `_bus_write` collapses all non-cart writes into the 128-byte RAM array, so SOFT-mode TIA/RIOT register writes have no chip-level effect. Real dispatch + a differentiable TIA is what lets `jax.grad` flow from a framebuffer pixel back to ROM. This is the largest remaining piece for an end-to-end differentiable VCS.
+- **P7f-a is ✅ complete** — `soft_render_scanline` / `soft_render_frame` render background + playfield differentiably; `jax.grad` of a pixel reaches the ROM. The renderer reads the TIA register file out of `bus.ram[0:64]` (the SOFT bus collapses TIA addresses into the low RAM cells, so no SoftBus change was needed).
+- **P7f-b … P7f-d** (deferred): player sprites (P7f-b), missiles + ball (P7f-c), collision latches + proper TIA/RIOT register dispatch + cart-hotspot bank-switching from SOFT mode (P7f-d). The current `_bus_write` still collapses non-cart writes into the RAM array — fine for the rendering path (TIA registers live there) but P7f-d is where proper read-register / hotspot semantics land.
 
 ### Cross-cutting
 - **PXC1**: xitari-trace conformance harness (PORTING_PLAN.md §4) — `tools/trace_dump.cpp` is sketched but never built; no golden traces exist yet. Both ports are validated against hand-built unit tests, not against real ROM runs. **The most important single piece of infrastructure debt** — it would catch dozens of subtle bugs at once.

@@ -3,11 +3,15 @@
 See PORTING_PLAN.md §6 for the design (HARD vs SOFT mode, soft opcode
 dispatch, soft RAM addressing, ROM-as-weights, straight-through estimator).
 
-P7 ships the standalone *primitives*: RomTensor, soft_select,
-soft_memory_read, soft_branch, straight_through_round /
-straight_through_clamp. Integration with the actual `step()` dispatch
-(turning the CPU into a SOFT-mode emulator end-to-end) is a P7b
-follow-up.
+Contents:
+  - P7   primitives: RomTensor, soft_select, soft_memory_read,
+         soft_branch, straight_through_round / straight_through_clamp.
+  - P7b/P7c: `soft_step` / `soft_run` — a SOFT-mode `step()` covering
+         the full 151-opcode NMOS set.
+  - P7d: RomTensor registered as a JAX PyTree.
+  - P7f: `soft_render_scanline` / `soft_render_frame` — a differentiable
+         TIA playfield renderer, so `jax.grad` reaches a framebuffer
+         pixel.
 """
 
 from jaxtari.diff.modes import Mode, current_mode, set_mode, using_mode
@@ -28,6 +32,10 @@ from jaxtari.diff.soft_step import (
     soft_run,
     soft_step,
 )
+from jaxtari.diff.soft_tia import (
+    soft_render_frame,
+    soft_render_scanline,
+)
 from jaxtari.diff.straight_through import (
     straight_through_clamp,
     straight_through_round,
@@ -46,6 +54,8 @@ __all__ = [
     "soft_branch",
     "soft_memory_read",
     "soft_ram_peek",
+    "soft_render_frame",
+    "soft_render_scanline",
     "soft_rom_peek",
     "soft_run",
     "soft_select",
