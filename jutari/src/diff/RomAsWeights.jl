@@ -28,11 +28,15 @@ Base.size(r::RomTensor)   = (length(r.rom),)
 Differentiable single-byte read. Returns `one_hot(addr) · rom.rom`.
 The result is bit-exact-equal to `rom.rom[addr + 1]`; the dot-product
 formulation gives the autodiff system a clean Jacobian.
+
+The one-hot vector is built by broadcasting a comparison rather than
+allocate-then-`setindex!` — array mutation is invisible to Zygote, so
+the broadcast form is what makes `Zygote.gradient(peek, …)` work
+(P7e).
 """
 function peek(rom::RomTensor, addr::Integer)
     n = length(rom.rom)
-    one_hot = zeros(Float32, n)
-    one_hot[Int(addr) + 1] = 1f0
+    one_hot = Float32.((0:n - 1) .== Int(addr))
     return _dot(one_hot, rom.rom)
 end
 
@@ -40,14 +44,13 @@ end
     peek_many(rom::RomTensor, addrs) -> Vector{Float32}
 
 Differentiable batched read. Returns the values at each address in
-`addrs` as a `Vector{Float32}` of matching length.
+`addrs` as a `Vector{Float32}` of matching length. The selection
+matrix is built by a broadcast comparison (Zygote-friendly — see
+`peek`).
 """
 function peek_many(rom::RomTensor, addrs)
     n = length(rom.rom)
-    m = length(addrs)
-    A = zeros(Float32, m, n)
-    @inbounds for (i, addr) in enumerate(addrs)
-        A[i, Int(addr) + 1] = 1f0
-    end
+    idxs = Int.(addrs)
+    A = Float32.(idxs .== (0:n - 1)')        # m×n one-hot rows
     return A * rom.rom
 end

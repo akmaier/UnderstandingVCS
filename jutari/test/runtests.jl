@@ -1,4 +1,5 @@
 using Test
+using Zygote                    # P7e — reverse-mode AD for the SOFT primitives
 using JuTari
 using JuTari.CPU: step          # qualified — avoids Base.step collision
 using JuTari.Bus: peek, poke!   # qualified — avoids Base.peek collision
@@ -3835,6 +3836,102 @@ end
         state = initial_soft_cpu_state(); state.P = Float32(P_BINARY)
         soft_run!(state, bus, 2)
         @test state.A == Float32(0x11)
+    end
+
+end
+
+@testset "JuTari P7e — Zygote gradients through the SOFT primitives" begin
+
+    # The jaxtari port verifies SOFT-primitive gradients with jax.grad
+    # (test_diff.py). P7e brings the Julia port to parity: Zygote, a
+    # reverse-mode AD, differentiates the pure SOFT primitives. The
+    # one-hot constructions were rewritten as broadcast comparisons
+    # (no setindex!) precisely so Zygote can trace them.
+    #
+    # NOTE: the mutating `soft_step!` / `soft_run!` are NOT
+    # Zygote-differentiable (Zygote does not support array/struct
+    # mutation). End-to-end gradient through a full instruction trace in
+    # Julia needs either a functional `soft_step` rewrite or a
+    # mutation-aware AD such as Enzyme.jl — recorded as P7e-x.
+
+    @testset "soft_rom_peek gradient is one-hot at the address" begin
+        rom = Float32.(0:31)
+        grad, = Zygote.gradient(r -> soft_rom_peek(r, 7), rom)
+        @test grad[7 + 1] == 1f0
+        @test sum(abs.(grad)) == 1f0          # zero everywhere else
+    end
+
+    @testset "soft_ram_peek gradient is one-hot at the address" begin
+        ram = zeros(Float32, 128)
+        grad, = Zygote.gradient(r -> soft_ram_peek(r, 0x40), ram)
+        @test grad[0x40 + 1] == 1f0
+        @test sum(abs.(grad)) == 1f0
+    end
+
+    @testset "XAI demo — ∂(peek²)/∂rom is 2·value, one-hot" begin
+        # Mirrors jaxtari's test_xai_rom_byte_attribution_demo: a toy
+        # "simulator" rom -> peek(0x42)² ; the gradient localises to the
+        # one byte and carries 2·rom[0x42].
+        rom = Float32.(collect(0:255))
+        addr = 0x42
+        grad, = Zygote.gradient(r -> soft_rom_peek(r, addr)^2, rom)
+        @test grad[addr + 1] == 2f0 * rom[addr + 1]
+        other = sum(abs.(grad)) - abs(grad[addr + 1])
+        @test other == 0f0
+    end
+
+    @testset "two-level composition — the LDA→STA value path" begin
+        # The headline P7b demo (LDA #imm / STA $zp) writes ROM[1] into
+        # a RAM cell. The *value* that lands is exactly soft_rom_peek(
+        # rom, 1); its gradient is one-hot at rom[1]. This shows the
+        # gradient concept works in Julia even though the mutating
+        # soft_step! that performs the store is not itself Zygote-able.
+        rom = Float32.([0xA9, 0x42, 0x85, 0x00])
+        grad, = Zygote.gradient(r -> soft_rom_peek(r, 1), rom)
+        @test grad[1 + 1] == 1f0
+        @test sum(abs.(grad)) == 1f0
+    end
+
+    @testset "RomTensor peek gradient" begin
+        rt = RomTensor(Float32.(0:15))
+        grad, = Zygote.gradient(r -> peek(r, 5), rt)
+        # Zygote represents a struct cotangent as a NamedTuple.
+        @test grad.rom[5 + 1] == 1f0
+        @test sum(abs.(grad.rom)) == 1f0
+    end
+
+    @testset "RomTensor peek_many gradient" begin
+        rt = RomTensor(Float32.(0:15))
+        # sum of three reads → gradient is the sum of three one-hots.
+        grad, = Zygote.gradient(r -> sum(peek_many(r, [2, 5, 9])), rt)
+        @test grad.rom[2 + 1] == 1f0
+        @test grad.rom[5 + 1] == 1f0
+        @test grad.rom[9 + 1] == 1f0
+        @test sum(abs.(grad.rom)) == 3f0
+    end
+
+    @testset "soft_select gradient flows to the values" begin
+        logits = Float32[0.0, 0.0, 0.0]          # uniform mixture
+        values = Float32[10.0, 20.0, 30.0]
+        grad, = Zygote.gradient(v -> soft_select(logits, v), values)
+        # Uniform softmax → each value contributes 1/3.
+        @test all(isapprox.(grad, 1f0 / 3f0; atol = 1e-5))
+    end
+
+    @testset "soft_memory_read gradient is non-trivial" begin
+        mem = Float32[1.0, 2.0, 3.0, 4.0, 5.0]
+        grad, = Zygote.gradient(m -> soft_memory_read(m, 2.0; temperature = 1.0), mem)
+        # Weights are a softmax over distances — every cell contributes.
+        @test sum(grad) ≈ 1f0 atol = 1e-4
+        @test grad[3] > 0f0                      # the addressed cell weighs most
+    end
+
+    @testset "soft_branch gradient flows through the flag" begin
+        # At a moderate alpha the sigmoid gate is not saturated, so the
+        # flag logit carries a non-zero gradient.
+        g, = Zygote.gradient(
+            flag -> soft_branch(flag, 100.0, 200.0; alpha = 1.0), 0.0)
+        @test g > 0f0                            # raising the flag → larger PC
     end
 
 end

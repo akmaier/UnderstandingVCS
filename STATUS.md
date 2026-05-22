@@ -36,12 +36,12 @@ overall project goal, see [README.md](README.md).
 | **P7c-e** | Stack push/pull (PHA/PHP/PLA/PLP), status-flag opcodes (CLC/SEC/CLI/SEI/CLV/CLD/SED), INC/DEC memory, INX/INY/DEX/DEY — 23 opcodes | [`7eafd63`](https://github.com/akmaier/UnderstandingVCS/commit/7eafd63) | +30 | +21 | ✅ |
 | **P7c-f** | RTI — **completes the full 151-opcode documented NMOS set (+ USBC) in SOFT mode** | _next commit_ | +36 | +7 | ✅ |
 | **P7d** | RomTensor as a custom JAX PyTree — usable directly as the `SoftBus.rom` slot, `jax.grad` threads the cotangent back as a RomTensor (jaxtari only — PyTree is a JAX concept) | _next commit_ | — | +9 | ✅ |
-| **P7e** | Julia gradient stack — Zygote / ChainRulesCore `rrule`s for the SOFT primitives so jutari can take real gradients | — | — | — | ☐ |
+| **P7e** | Julia gradient stack — Zygote reverse-mode AD verified through every pure SOFT primitive; one-hot constructions rewritten as broadcast comparisons so Zygote can trace them | _next commit_ | +18 | — | ✅ |
 | **P7f** | Differentiable bus + TIA — route SOFT writes through real TIA/RIOT register dispatch + cart hotspots, and a differentiable TIA so `jax.grad` flows from a framebuffer pixel back to ROM | — | — | — | ☐ |
 | **P8**  | XAI hooks + first attribution experiment | — | — | — | ☐ |
 | **P9**  | JAX-vs-Julia benchmark + paper-shaped XAI study | — | — | — | ☐ |
 
-**Totals after P7c (complete): jaxtari 449 tests, jutari 1022 tests, 1471 green across both ports.**
+**Totals after P7e: jaxtari 467 tests, jutari 1052 tests, 1519 green across both ports.**
 
 **P7c milestone: the full 151-opcode documented NMOS 6502 set (+ the undocumented USBC `$EB` alias) now executes in SOFT mode on both ports** — `soft_step` is a complete differentiable parallel to the HARD `step()` at the instruction level. What remains for a fully-differentiable VCS is **P7f** (real TIA/RIOT/cart bus dispatch + a differentiable TIA).
 
@@ -144,7 +144,8 @@ Every deferral now has a phase identifier (see PORTING_PLAN.md "Deferral identif
 - **P7d is ✅ complete** — `RomTensor` is a JAX PyTree, usable directly in the `SoftBus.rom` slot.
 - **P7c-dx** (still deferred): gradient through branch predicates — branches are HARD (`jnp.where` on the flag bit); restoring predicate gradient needs a float-valued flag representation in `SoftCPUState`.
 - BRK stays the end-of-trace sentinel (intentional for fixed-length XAI traces).
-- **P7e**: Julia gradient verification — jutari has the same forward behaviour as jaxtari but no Zygote / ChainRulesCore `rrule` wired in yet (would need adding Zygote as a test dep).
+- **P7e is ✅ complete** — Zygote (reverse-mode AD) is a jutari test dependency and gradients are verified through every pure SOFT primitive (`soft_rom_peek`, `soft_ram_peek`, `RomTensor.peek`/`peek_many`, `soft_select`, `soft_memory_read`, `soft_branch`). The one-hot constructions were rewritten as broadcast comparisons so Zygote can trace them.
+  - **P7e-x** (deferred): the mutating `soft_step!` / `soft_run!` are not Zygote-differentiable (Zygote rejects array/struct mutation). End-to-end gradient through a full instruction trace in Julia needs either a functional `soft_step` rewrite or a mutation-aware AD such as Enzyme.jl. The jaxtari port already has this end-to-end (JAX is functional by construction).
 - **P7f**: Differentiable bus + TIA — `soft_step`'s `_bus_write` collapses all non-cart writes into the 128-byte RAM array, so SOFT-mode TIA/RIOT register writes have no chip-level effect. Real dispatch + a differentiable TIA is what lets `jax.grad` flow from a framebuffer pixel back to ROM. This is the largest remaining piece for an end-to-end differentiable VCS.
 
 ### Cross-cutting

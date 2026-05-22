@@ -55,24 +55,24 @@
 """
     soft_rom_peek(rom, addr) -> Float32
 
-Differentiable cart byte read — `one_hot(addr) · rom`.
+Differentiable cart byte read — `one_hot(addr) · rom`. The one-hot is
+built by a broadcast comparison (no `setindex!`) so the call is
+Zygote-differentiable w.r.t. `rom` — see P7e.
 """
 function soft_rom_peek(rom::AbstractVector{<:Real}, addr::Real)
     n = length(rom)
-    one_hot = zeros(Float32, n)
-    one_hot[Int(addr) + 1] = 1f0
+    one_hot = Float32.((0:n - 1) .== Int(addr))
     return _dot(one_hot, Float32.(rom))
 end
 
 """
     soft_ram_peek(ram, addr) -> Float32
 
-Differentiable RAM read.
+Differentiable RAM read — same Zygote-friendly broadcast one-hot.
 """
 function soft_ram_peek(ram::AbstractVector{<:Real}, addr::Real)
     n = length(ram)
-    one_hot = zeros(Float32, n)
-    one_hot[Int(addr) + 1] = 1f0
+    one_hot = Float32.((0:n - 1) .== Int(addr))
     return _dot(one_hot, Float32.(ram))
 end
 
