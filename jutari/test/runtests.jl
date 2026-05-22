@@ -3765,3 +3765,76 @@ end
     end
 
 end
+
+@testset "JuTari P7c-bx SOFT-mode BCD ADC/SBC" begin
+
+    # P flag bytes: U=0x20; D=0x08; C=0x01.
+    P_DECIMAL       = 0x20 | 0x08
+    P_DECIMAL_CARRY = 0x20 | 0x08 | 0x01
+    P_BINARY        = 0x20
+
+    @testset "ADC BCD simple sum" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x25, 0x69, 0x12]))
+        state = initial_soft_cpu_state(); state.P = Float32(P_DECIMAL)
+        soft_run!(state, bus, 2)
+        @test state.A == Float32(0x37)
+    end
+
+    @testset "ADC BCD decimal carry out" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x55, 0x69, 0x55]))
+        state = initial_soft_cpu_state(); state.P = Float32(P_DECIMAL)
+        soft_run!(state, bus, 2)
+        @test state.A == Float32(0x10)
+        @test (Int(state.P) & 0x01) != 0
+    end
+
+    @testset "ADC BCD uses carry in" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x09, 0x69, 0x00]))
+        state = initial_soft_cpu_state(); state.P = Float32(P_DECIMAL_CARRY)
+        soft_run!(state, bus, 2)
+        @test state.A == Float32(0x10)
+    end
+
+    @testset "ADC decimal vs binary diverge" begin
+        rom = _soft_rom_with([0xA9, 0x09, 0x69, 0x08])
+        dec = initial_soft_cpu_state(); dec.P = Float32(P_DECIMAL)
+        soft_run!(dec, initial_soft_bus(rom), 2)
+        binv = initial_soft_cpu_state(); binv.P = Float32(P_BINARY)
+        soft_run!(binv, initial_soft_bus(rom), 2)
+        @test dec.A  == Float32(0x17)   # 9 + 8 = 17 decimal
+        @test binv.A == Float32(0x11)   # 0x09 + 0x08 binary
+    end
+
+    @testset "SBC BCD simple diff" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x50, 0xE9, 0x25]))
+        state = initial_soft_cpu_state(); state.P = Float32(P_DECIMAL_CARRY)
+        soft_run!(state, bus, 2)
+        @test state.A == Float32(0x25)
+    end
+
+    @testset "SBC BCD borrow wraps" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x10, 0xE9, 0x20]))
+        state = initial_soft_cpu_state(); state.P = Float32(P_DECIMAL_CARRY)
+        soft_run!(state, bus, 2)
+        @test state.A == Float32(0x90)
+        @test (Int(state.P) & 0x01) == 0
+    end
+
+    @testset "SBC decimal vs binary diverge" begin
+        rom = _soft_rom_with([0xA9, 0x30, 0xE9, 0x11])
+        dec = initial_soft_cpu_state(); dec.P = Float32(P_DECIMAL_CARRY)
+        soft_run!(dec, initial_soft_bus(rom), 2)
+        binv = initial_soft_cpu_state(); binv.P = Float32(P_BINARY | 0x01)
+        soft_run!(binv, initial_soft_bus(rom), 2)
+        @test dec.A  == Float32(0x19)   # 30 - 11 = 19 decimal
+        @test binv.A == Float32(0x1F)   # 0x30 - 0x11 binary
+    end
+
+    @testset "ADC binary still works when D clear" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA9, 0x09, 0x69, 0x08]))
+        state = initial_soft_cpu_state(); state.P = Float32(P_BINARY)
+        soft_run!(state, bus, 2)
+        @test state.A == Float32(0x11)
+    end
+
+end

@@ -367,7 +367,9 @@ end
 
 # --------------------------------------------------------------------------- #
 # P7c-b — arithmetic and logic (ADC / SBC / AND / ORA / EOR / CMP / CPX /
-# CPY / BIT). Binary-mode ADC/SBC only — BCD is a P7c-bx deferral.
+# CPY / BIT). P7c-bx adds BCD (decimal-mode) ADC/SBC: the D flag selects
+# between the binary and BCD result. BCD formulas match xitari's
+# M6502Hi.ins decimal convention (the same one CPU.ALU uses).
 # --------------------------------------------------------------------------- #
 
 function _operand_for_mode(state::SoftCPUState, bus::SoftBus, mode::Symbol)
@@ -387,16 +389,32 @@ end
 
 # ADC / SBC --------------------------------------------------------------- #
 
+@inline _bcd_decode(b::Integer) = ((b >> 4) & 0x0F) * 10 + (b & 0x0F)
+
+function _bcd_encode(n::Integer)
+    n = mod(n, 100)
+    return ((n ÷ 10) << 4) | (n % 10)
+end
+
+@inline _decimal_flag(p::Real) = (Int(p) & 0x08) != 0
+
 function _adc_step!(state::SoftCPUState, bus::SoftBus, operand::Real,
                     instr_len::Real, cycles::Real)
-    c_in       = Float32(_read_carry(state.P))
-    sum_       = state.A + Float32(operand) + c_in
-    new_a      = sum_ - floor(sum_ / 256f0) * 256f0
-    carry      = Int(sum_) > 0xFF ? 1 : 0
-    a_int      = Int(state.A) & 0xFF
-    op_int     = Int(operand) & 0xFF
-    new_a_int  = Int(new_a) & 0xFF
-    overflow   = ((a_int ⊻ new_a_int) & (op_int ⊻ new_a_int)) & 0x80
+    c_in   = Float32(_read_carry(state.P))
+    c_int  = Int(c_in)
+    a_int  = Int(state.A) & 0xFF
+    op_int = Int(operand) & 0xFF
+    if _decimal_flag(state.P)
+        bcd_sum = _bcd_decode(a_int) + _bcd_decode(op_int) + c_int
+        new_a   = Float32(_bcd_encode(bcd_sum))
+        carry   = bcd_sum > 99 ? 1 : 0
+    else
+        sum_  = state.A + Float32(operand) + c_in
+        new_a = sum_ - floor(sum_ / 256f0) * 256f0
+        carry = Int(sum_) > 0xFF ? 1 : 0
+    end
+    na_int   = Int(new_a) & 0xFF
+    overflow = ((a_int ⊻ na_int) & (op_int ⊻ na_int)) & 0x80
     state.A      = new_a
     state.P      = _set_nzcv(state.P, new_a, carry, overflow)
     state.PC    += Float32(instr_len)
@@ -406,15 +424,26 @@ end
 
 function _sbc_step!(state::SoftCPUState, bus::SoftBus, operand::Real,
                     instr_len::Real, cycles::Real)
-    op_inv     = 255f0 - Float32(operand)
-    c_in       = Float32(_read_carry(state.P))
-    sum_       = state.A + op_inv + c_in
-    new_a      = sum_ - floor(sum_ / 256f0) * 256f0
-    carry      = Int(sum_) > 0xFF ? 1 : 0
-    a_int      = Int(state.A) & 0xFF
-    op_inv_i   = Int(op_inv) & 0xFF
-    new_a_int  = Int(new_a) & 0xFF
-    overflow   = ((a_int ⊻ new_a_int) & (op_inv_i ⊻ new_a_int)) & 0x80
+    c_in   = Float32(_read_carry(state.P))
+    c_int  = Int(c_in)
+    a_int  = Int(state.A) & 0xFF
+    op_int = Int(operand) & 0xFF
+    if _decimal_flag(state.P)
+        diff = _bcd_decode(a_int) - _bcd_decode(op_int) - (1 - c_int)
+        diff < 0 && (diff += 100)
+        new_a    = Float32(_bcd_encode(diff))
+        carry    = a_int >= (op_int + (1 - c_int)) ? 1 : 0
+        na_int   = Int(new_a) & 0xFF
+        overflow = ((a_int ⊻ na_int) & (op_int ⊻ na_int)) & 0x80
+    else
+        op_inv   = 255f0 - Float32(operand)
+        sum_     = state.A + op_inv + c_in
+        new_a    = sum_ - floor(sum_ / 256f0) * 256f0
+        carry    = Int(sum_) > 0xFF ? 1 : 0
+        op_inv_i = Int(op_inv) & 0xFF
+        na_int   = Int(new_a) & 0xFF
+        overflow = ((a_int ⊻ na_int) & (op_inv_i ⊻ na_int)) & 0x80
+    end
     state.A      = new_a
     state.P      = _set_nzcv(state.P, new_a, carry, overflow)
     state.PC    += Float32(instr_len)

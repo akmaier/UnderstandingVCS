@@ -13,8 +13,8 @@ parallel execution path.
   P7b  : NOP, the original LDA/LDX/STA/STX core, JMP abs, BRK
   P7c-a: full load/store/transfer (LDA/LDX/LDY/STA/STX/STY all modes,
          TAX/TAY/TXA/TYA/TSX/TXS) + N/Z flag updates
-  P7c-b: ADC/SBC (binary mode; USBC alias), AND/ORA/EOR, CMP/CPX/CPY,
-         BIT + N/Z/C/V flag updates
+  P7c-b: ADC/SBC (binary + BCD via P7c-bx; USBC alias), AND/ORA/EOR,
+         CMP/CPX/CPY, BIT + N/Z/C/V flag updates
   P7c-c: ASL/LSR/ROL/ROR (accumulator + 4 memory modes each)
   P7c-d: 8 conditional branches, JMP indirect, JSR / RTS
   P7c-e: PHA/PHP/PLA/PLP, CLC/SEC/CLI/SEI/CLV/CLD/SED, INC/DEC,
@@ -26,8 +26,6 @@ Any opcode outside the documented set still falls through to
 stays differentiable.
 
 **Known SOFT-mode simplifications (deferred):**
-  - BCD (decimal-mode) ADC/SBC: the binary path always runs regardless
-    of the D flag. Atari ROMs almost never set decimal mode. (P7c-bx)
   - Branch predicates are HARD (`jnp.where` on the flag bit): forward
     PC is exact, but gradient through the predicate is broken at the
     int-cast of `P`. A float-valued flag representation would let
@@ -488,11 +486,14 @@ def _branch_txs(state, bus):
 
 # --------------------------------------------------------------------------- #
 # P7c-b — arithmetic and logic (ADC / SBC / AND / ORA / EOR / CMP / CPX /
-# CPY / BIT). For ADC and SBC, BCD mode is NOT implemented in SOFT — the
-# binary path always runs regardless of the D flag, matching xitari's
-# behaviour with D=0 (Atari 2600 ROMs almost never set decimal mode and the
-# 2A03 ignored it entirely). Real BCD support for SOFT mode is a P7c-bx
-# follow-up if it's ever needed.
+# CPY / BIT).
+#
+# P7c-bx extends ADC / SBC with BCD (decimal-mode) support: both the
+# binary and the BCD result are computed, then `jnp.where` selects on the
+# D flag. The binary path stays float arithmetic (gradient-clean); the
+# BCD path is integer nibble arithmetic (gradient breaks at the int
+# cast — acceptable, decimal mode is rare on the 2600). BCD formulas
+# match xitari/M6502Hi.ins (see jaxtari.cpu.alu adc / sbc).
 # --------------------------------------------------------------------------- #
 
 def _operand_for_mode(state, bus, mode: str) -> jnp.ndarray:
@@ -522,20 +523,50 @@ def _operand_for_mode(state, bus, mode: str) -> jnp.ndarray:
 
 # ADC / SBC --------------------------------------------------------------- #
 
+def _bcd_decode(byte_int: jnp.ndarray) -> jnp.ndarray:
+    """Two BCD digits packed in a byte → integer 0..99."""
+    return ((byte_int >> 4) & 0x0F) * 10 + (byte_int & 0x0F)
+
+
+def _bcd_encode(n: jnp.ndarray) -> jnp.ndarray:
+    """Integer → BCD byte. `n` is reduced mod 100 first."""
+    n = n % 100
+    return ((n // 10) << 4) | (n % 10)
+
+
+def _decimal_flag(p: jnp.ndarray) -> jnp.ndarray:
+    """The D (decimal-mode) flag as a boolean."""
+    return (p.astype(jnp.int32) & 0x08) != 0
+
+
 def _adc_step(state: SoftCPUState, bus: SoftBus, operand: jnp.ndarray,
               instr_len: float, cycles: float):
-    """Binary-mode ADC. Float arithmetic on the value so the operand
-    gradient flows; flag updates go via int cast."""
-    c_in   = _read_carry(state.P).astype(jnp.float32)
-    sum_   = state.A + operand + c_in
-    new_a  = sum_ - jnp.floor(sum_ / 256.0) * 256.0           # & 0xFF, diff-clean
-    carry  = (sum_.astype(jnp.int32) > 0xFF).astype(jnp.int32)
-    # Signed overflow: (A^new_a) & (operand^new_a) & 0x80
-    a_int       = state.A.astype(jnp.int32) & 0xFF
-    op_int      = operand.astype(jnp.int32) & 0xFF
-    new_a_int   = new_a.astype(jnp.int32) & 0xFF
-    overflow    = ((a_int ^ new_a_int) & (op_int ^ new_a_int)) & 0x80
-    new_p       = _set_nzcv(state.P, new_a, carry, overflow)
+    """ADC with D-flag dispatch. The binary path is float arithmetic so
+    the operand gradient flows; the BCD path is integer (gradient breaks
+    at the int cast — decimal mode is rare on the 2600)."""
+    c_in    = _read_carry(state.P).astype(jnp.float32)
+    decimal = _decimal_flag(state.P)
+    a_int   = state.A.astype(jnp.int32) & 0xFF
+    op_int  = operand.astype(jnp.int32) & 0xFF
+    c_int   = c_in.astype(jnp.int32)
+
+    # --- Binary path (gradient-clean) ---
+    sum_bin   = state.A + operand + c_in
+    na_bin    = sum_bin - jnp.floor(sum_bin / 256.0) * 256.0
+    carry_bin = (sum_bin.astype(jnp.int32) > 0xFF).astype(jnp.int32)
+
+    # --- BCD path (integer) ---
+    bcd_sum   = _bcd_decode(a_int) + _bcd_decode(op_int) + c_int
+    na_bcd    = _bcd_encode(bcd_sum).astype(jnp.float32)
+    carry_bcd = (bcd_sum > 99).astype(jnp.int32)
+
+    new_a  = jnp.where(decimal, na_bcd, na_bin)
+    carry  = jnp.where(decimal, carry_bcd, carry_bin)
+    # Overflow — (A^r) & (operand^r) & 0x80 — the single formula matches
+    # both the binary signed-range check and xitari's BCD V convention.
+    na_int   = new_a.astype(jnp.int32) & 0xFF
+    overflow = ((a_int ^ na_int) & (op_int ^ na_int)) & 0x80
+    new_p    = _set_nzcv(state.P, new_a, carry, overflow)
     return state._replace(
         A=new_a,
         P=new_p,
@@ -546,18 +577,36 @@ def _adc_step(state: SoftCPUState, bus: SoftBus, operand: jnp.ndarray,
 
 def _sbc_step(state: SoftCPUState, bus: SoftBus, operand: jnp.ndarray,
               instr_len: float, cycles: float):
-    """Binary-mode SBC. Implemented as ADC with one's-complement operand
-    so the carry/overflow logic stays uniform with _adc_step."""
-    op_inv = 255.0 - operand
-    c_in   = _read_carry(state.P).astype(jnp.float32)
-    sum_   = state.A + op_inv + c_in
-    new_a  = sum_ - jnp.floor(sum_ / 256.0) * 256.0
-    carry  = (sum_.astype(jnp.int32) > 0xFF).astype(jnp.int32)
-    a_int       = state.A.astype(jnp.int32) & 0xFF
-    op_inv_int  = op_inv.astype(jnp.int32) & 0xFF
-    new_a_int   = new_a.astype(jnp.int32) & 0xFF
-    overflow    = ((a_int ^ new_a_int) & (op_inv_int ^ new_a_int)) & 0x80
-    new_p       = _set_nzcv(state.P, new_a, carry, overflow)
+    """SBC with D-flag dispatch. Binary path = ADC with one's-complement
+    operand; BCD path follows xitari's M6502Hi.ins case 0xe9."""
+    c_in    = _read_carry(state.P).astype(jnp.float32)
+    decimal = _decimal_flag(state.P)
+    a_int   = state.A.astype(jnp.int32) & 0xFF
+    op_int  = operand.astype(jnp.int32) & 0xFF
+    c_int   = c_in.astype(jnp.int32)
+
+    # --- Binary path (gradient-clean) — ADC with ~operand ---
+    op_inv     = 255.0 - operand
+    sum_bin    = state.A + op_inv + c_in
+    na_bin     = sum_bin - jnp.floor(sum_bin / 256.0) * 256.0
+    carry_bin  = (sum_bin.astype(jnp.int32) > 0xFF).astype(jnp.int32)
+    op_inv_int = op_inv.astype(jnp.int32) & 0xFF
+    na_bin_int = na_bin.astype(jnp.int32) & 0xFF
+    v_bin      = ((a_int ^ na_bin_int) & (op_inv_int ^ na_bin_int)) & 0x80
+
+    # --- BCD path (integer) ---
+    diff       = _bcd_decode(a_int) - _bcd_decode(op_int) - (1 - c_int)
+    diff_wrap  = jnp.where(diff < 0, diff + 100, diff)
+    na_bcd     = _bcd_encode(diff_wrap).astype(jnp.float32)
+    # Carry uses the ORIGINAL bytes (xitari convention), pre-op carry inverted.
+    carry_bcd  = (a_int >= (op_int + (1 - c_int))).astype(jnp.int32)
+    na_bcd_int = na_bcd.astype(jnp.int32) & 0xFF
+    v_bcd      = ((a_int ^ na_bcd_int) & (op_int ^ na_bcd_int)) & 0x80
+
+    new_a    = jnp.where(decimal, na_bcd, na_bin)
+    carry    = jnp.where(decimal, carry_bcd, carry_bin)
+    overflow = jnp.where(decimal, v_bcd, v_bin)
+    new_p    = _set_nzcv(state.P, new_a, carry, overflow)
     return state._replace(
         A=new_a,
         P=new_p,

@@ -138,12 +138,12 @@ Every deferral now has a phase identifier (see PORTING_PLAN.md "Deferral identif
 - **P6d**: Random no-op reset (Mnih-style "skip 0..30 NOOPs at episode start" — this is a wrapper concern).
 - **P6e**: Two-player joystick (P1 directions stay defaulted-released).
 
-### Diff (P7 / P7b / P7c)
-- **P7c-a … P7c-f are ✅ complete** — the full 151-opcode documented NMOS set executes in SOFT mode. Three deliberate SOFT-mode simplifications remain, each with its own sub-identifier:
-  - **P7c-bx**: BCD (decimal-mode) ADC/SBC — the binary path always runs regardless of the D flag.
-  - **P7c-dx**: gradient through branch predicates — branches are HARD (`jnp.where` on the flag bit); restoring predicate gradient needs a float-valued flag representation in `SoftCPUState`.
-  - BRK stays the end-of-trace sentinel (intentional for fixed-length XAI traces).
-- **P7d**: RomTensor replacing the raw `jnp.ndarray` in the SoftBus's `rom` slot (the SoftBus carries a raw array today because `RomTensor` is a Python class, not a PyTree). Requires registering `RomTensor` as a custom JAX PyTree.
+### Diff (P7 / P7b / P7c / P7d / P7c-bx)
+- **P7c-a … P7c-f are ✅ complete** — the full 151-opcode documented NMOS set executes in SOFT mode.
+- **P7c-bx is ✅ complete** — BCD (decimal-mode) ADC/SBC now dispatch on the D flag; binary path stays gradient-clean, BCD path is integer.
+- **P7d is ✅ complete** — `RomTensor` is a JAX PyTree, usable directly in the `SoftBus.rom` slot.
+- **P7c-dx** (still deferred): gradient through branch predicates — branches are HARD (`jnp.where` on the flag bit); restoring predicate gradient needs a float-valued flag representation in `SoftCPUState`.
+- BRK stays the end-of-trace sentinel (intentional for fixed-length XAI traces).
 - **P7e**: Julia gradient verification — jutari has the same forward behaviour as jaxtari but no Zygote / ChainRulesCore `rrule` wired in yet (would need adding Zygote as a test dep).
 - **P7f**: Differentiable bus + TIA — `soft_step`'s `_bus_write` collapses all non-cart writes into the 128-byte RAM array, so SOFT-mode TIA/RIOT register writes have no chip-level effect. Real dispatch + a differentiable TIA is what lets `jax.grad` flow from a framebuffer pixel back to ROM. This is the largest remaining piece for an end-to-end differentiable VCS.
 
