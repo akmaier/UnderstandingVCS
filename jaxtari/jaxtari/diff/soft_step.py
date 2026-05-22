@@ -47,6 +47,7 @@ from __future__ import annotations
 import jax
 import jax.numpy as jnp
 
+from jaxtari.diff.rom_as_weights import RomTensor
 from jaxtari.diff.soft_state import SoftBus, SoftCPUState
 
 
@@ -54,16 +55,24 @@ from jaxtari.diff.soft_state import SoftBus, SoftCPUState
 # Differentiable memory access
 # --------------------------------------------------------------------------- #
 
-def soft_rom_peek(rom: jnp.ndarray, addr) -> jnp.ndarray:
+def _rom_array(rom) -> jnp.ndarray:
+    """Return the underlying float array whether `rom` is a raw
+    `jnp.ndarray` or a `RomTensor` wrapper (P7d). Both are valid
+    `SoftBus.rom` payloads."""
+    return rom.rom if isinstance(rom, RomTensor) else rom
+
+
+def soft_rom_peek(rom, addr) -> jnp.ndarray:
     """Differentiable cart byte read — `one_hot(addr) · rom`.
 
-    `rom` is any 1-D numeric array. `addr` is a scalar (int or float);
-    it's treated as the offset *inside the ROM* (the 13-bit address
-    mirror is applied at the call site, not here).
+    `rom` may be a raw 1-D numeric array or a `RomTensor` (P7d). `addr`
+    is a scalar (int or float); it's treated as the offset *inside the
+    ROM* (the 13-bit address mirror is applied at the call site).
     """
-    n = rom.shape[0]
+    arr = _rom_array(rom)
+    n = arr.shape[0]
     one_hot = jax.nn.one_hot(addr, n, dtype=jnp.float32)
-    return jnp.dot(one_hot, rom.astype(jnp.float32))
+    return jnp.dot(one_hot, arr.astype(jnp.float32))
 
 
 def soft_ram_peek(ram: jnp.ndarray, addr) -> jnp.ndarray:

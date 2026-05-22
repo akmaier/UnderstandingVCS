@@ -35,7 +35,7 @@ overall project goal, see [README.md](README.md).
 | **P7c-d** | Branches (8 conditionals), JMP indirect (NMOS page-wrap bug), JSR/RTS with SOFT stack | [`a320ee3`](https://github.com/akmaier/UnderstandingVCS/commit/a320ee3) | +22 | +15 | ✅ |
 | **P7c-e** | Stack push/pull (PHA/PHP/PLA/PLP), status-flag opcodes (CLC/SEC/CLI/SEI/CLV/CLD/SED), INC/DEC memory, INX/INY/DEX/DEY — 23 opcodes | [`7eafd63`](https://github.com/akmaier/UnderstandingVCS/commit/7eafd63) | +30 | +21 | ✅ |
 | **P7c-f** | RTI — **completes the full 151-opcode documented NMOS set (+ USBC) in SOFT mode** | _next commit_ | +36 | +7 | ✅ |
-| **P7d** | RomTensor as a custom JAX PyTree, used as the `SoftBus.rom` slot | — | — | — | ☐ |
+| **P7d** | RomTensor as a custom JAX PyTree — usable directly as the `SoftBus.rom` slot, `jax.grad` threads the cotangent back as a RomTensor (jaxtari only — PyTree is a JAX concept) | _next commit_ | — | +9 | ✅ |
 | **P7e** | Julia gradient stack — Zygote / ChainRulesCore `rrule`s for the SOFT primitives so jutari can take real gradients | — | — | — | ☐ |
 | **P7f** | Differentiable bus + TIA — route SOFT writes through real TIA/RIOT register dispatch + cart hotspots, and a differentiable TIA so `jax.grad` flows from a framebuffer pixel back to ROM | — | — | — | ☐ |
 | **P8**  | XAI hooks + first attribution experiment | — | — | — | ☐ |

@@ -10,6 +10,13 @@ gradient is a clean one-hot at the accessed address.
 method computes `one_hot(addr) · rom`. For batched / multi-address use,
 `peek_many(addrs)` is provided.
 
+**P7d** registers `RomTensor` as a JAX PyTree node. That lets it sit
+directly in the `SoftBus.rom` slot — `jax.grad` traverses into the
+wrapper, treats `rom` as the single differentiable leaf, and threads
+the cotangent back out as a `RomTensor`. Before P7d the SoftBus had to
+carry a bare `jnp.ndarray` because a plain Python class is opaque to
+`jax.grad`; now either form works.
+
 This is the PORTING_PLAN.md §6.2 "ROM-as-weights" primitive — the
 single most important building block for the SOFT execution mode and
 the eventual XAI attribution work.
@@ -21,12 +28,18 @@ import jax
 import jax.numpy as jnp
 
 
+@jax.tree_util.register_pytree_node_class
 class RomTensor:
     """A cartridge ROM image with differentiable peek.
 
     Construct with any `jnp.ndarray` (typically uint8); the bytes are
     cast to float32 internally. Read via `peek(addr)`; the returned
     scalar's gradient w.r.t. `rom_tensor.rom` is one-hot at `addr`.
+
+    Registered as a JAX PyTree (P7d): the single child is the `rom`
+    array, there is no static aux data. This means a `RomTensor` can be
+    a leaf-container inside any PyTree `jax.grad` differentiates —
+    notably `SoftBus.rom`.
     """
 
     __slots__ = ("rom",)
@@ -49,3 +62,21 @@ class RomTensor:
         length N; returns a (N,) float32 vector."""
         one_hot = jax.nn.one_hot(addrs, self.size, dtype=jnp.float32)
         return one_hot @ self.rom
+
+    # --- PyTree protocol (P7d) --------------------------------------------- #
+
+    def tree_flatten(self):
+        """Children = (rom array,); no static aux data."""
+        return (self.rom,), None
+
+    @classmethod
+    def tree_unflatten(cls, aux_data, children):
+        """Rebuild from a flattened representation. Bypasses `__init__`
+        so the child (which may be a JAX tracer or a cotangent during a
+        transform) is stored verbatim, with no dtype coercion."""
+        obj = object.__new__(cls)
+        obj.rom = children[0]
+        return obj
+
+    def __repr__(self) -> str:
+        return f"RomTensor(size={self.rom.shape[0]})"
