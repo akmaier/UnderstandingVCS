@@ -4127,3 +4127,110 @@ end
     end
 
 end
+
+@testset "JuTari P7f-c — differentiable missiles + ball" begin
+
+    R_NUSIZ0 = 0x04; R_COLUP0 = 0x06; R_COLUP1 = 0x07; R_COLUPF = 0x08
+    R_COLUBK = 0x09; R_CTRLPF = 0x0A; R_RESP0 = 0x10
+    R_RESM0 = 0x12; R_RESM1 = 0x13; R_RESBL = 0x14
+    R_GRP0 = 0x1B; R_ENAM0 = 0x1D; R_ENAM1 = 0x1E; R_ENABL = 0x1F
+
+    function _bus_regs(pairs...)
+        ram = zeros(Float32, 128)
+        for (off, val) in pairs
+            ram[off + 1] = Float32(val)
+        end
+        return SoftBus(ram, zeros(Float32, 256))
+    end
+
+    @testset "missile disabled draws nothing" begin
+        bus = _bus_regs(R_COLUBK => 0x00, R_COLUP0 => 0xFF,
+                        R_RESM0 => 0x20, R_ENAM0 => 0x00)
+        @test all(soft_render_scanline(bus) .== 0x00)
+    end
+
+    @testset "missile enabled paints one pixel by default" begin
+        bus = _bus_regs(R_COLUBK => 0x00, R_COLUP0 => 0x2C,
+                        R_RESM0 => 0x20, R_ENAM0 => 0x02, R_NUSIZ0 => 0x00)
+        scan = soft_render_scanline(bus)
+        @test scan[0x21] == 0x2C            # cell 0x20
+        @test scan[0x22] == 0x00
+    end
+
+    @testset "missile uses the player colour" begin
+        bus = _bus_regs(R_COLUBK => 0x00,
+                        R_COLUP0 => 0x11, R_RESM0 => 0x10, R_ENAM0 => 0x02,
+                        R_COLUP1 => 0x77, R_RESM1 => 0x40, R_ENAM1 => 0x02)
+        scan = soft_render_scanline(bus)
+        @test scan[0x11] == 0x11           # M0 → COLUP0
+        @test scan[0x41] == 0x77           # M1 → COLUP1
+    end
+
+    @testset "missile width 2 from NUSIZ" begin
+        bus = _bus_regs(R_COLUBK => 0x00, R_COLUP0 => 0x3A,
+                        R_RESM0 => 0x20, R_ENAM0 => 0x02, R_NUSIZ0 => 0x10)
+        scan = soft_render_scanline(bus)
+        @test all(scan[0x21:0x22] .== 0x3A)
+        @test scan[0x23] == 0x00
+    end
+
+    @testset "missile width 8 from NUSIZ" begin
+        bus = _bus_regs(R_COLUBK => 0x00, R_COLUP0 => 0x3A,
+                        R_RESM0 => 0x20, R_ENAM0 => 0x02, R_NUSIZ0 => 0x30)
+        scan = soft_render_scanline(bus)
+        @test all(scan[0x21:0x28] .== 0x3A)
+        @test scan[0x29] == 0x00
+    end
+
+    @testset "ball disabled draws nothing" begin
+        bus = _bus_regs(R_COLUBK => 0x00, R_COLUPF => 0xFF,
+                        R_RESBL => 0x20, R_ENABL => 0x00)
+        @test all(soft_render_scanline(bus) .== 0x00)
+    end
+
+    @testset "ball enabled uses COLUPF" begin
+        bus = _bus_regs(R_COLUBK => 0x00, R_COLUPF => 0x4E,
+                        R_RESBL => 0x30, R_ENABL => 0x02)
+        @test soft_render_scanline(bus)[0x31] == 0x4E
+    end
+
+    @testset "ball width 4 from CTRLPF" begin
+        bus = _bus_regs(R_COLUBK => 0x00, R_COLUPF => 0x4E,
+                        R_RESBL => 0x30, R_ENABL => 0x02, R_CTRLPF => 0x20)
+        scan = soft_render_scanline(bus)
+        @test all(scan[0x31:0x34] .== 0x4E)
+        @test scan[0x35] == 0x00
+    end
+
+    @testset "ball above playfield, below players" begin
+        bus = _bus_regs(R_COLUBK => 0x00, R_COLUPF => 0x4E,
+                        R_RESBL => 0x10, R_ENABL => 0x02, R_CTRLPF => 0x30,
+                        R_COLUP0 => 0x11, R_GRP0 => 0xFF, R_RESP0 => 0x14)
+        scan = soft_render_scanline(bus)
+        @test scan[0x11] == 0x4E          # ball, no player
+        @test scan[0x15] == 0x11          # player on top of ball
+    end
+
+    @testset "render after a soft_run! enables + colours the ball" begin
+        # LDA #$30 / STA RESBL / LDA #$02 / STA ENABL / LDA #$4E / STA COLUPF
+        bus = initial_soft_bus(_soft_rom_with([
+            0xA9, 0x30, 0x85, R_RESBL,
+            0xA9, 0x02, 0x85, R_ENABL,
+            0xA9, 0x4E, 0x85, R_COLUPF]))
+        state = initial_soft_cpu_state()
+        soft_run!(state, bus, 6)
+        @test soft_render_scanline(bus)[0x31] == 0x4E
+    end
+
+    @testset "Zygote — ∂(ball pixel)/∂ram one-hot at COLUPF cell" begin
+        ram = zeros(Float32, 128)
+        ram[R_RESBL + 1]  = 48f0
+        ram[R_ENABL + 1]  = 2f0
+        ram[R_COLUPF + 1] = 78f0
+        grad, = Zygote.gradient(
+            r -> soft_render_scanline(SoftBus(r, zeros(Float32, 256)))[0x31], ram)
+        @test grad[R_COLUPF + 1] == 1f0
+        @test sum(abs.(grad)) == 1f0
+    end
+
+end

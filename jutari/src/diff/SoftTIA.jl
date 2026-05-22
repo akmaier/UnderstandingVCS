@@ -21,13 +21,18 @@
 # convention: the RESP0/RESP1 cells hold the player X position (real
 # hardware sets it by strobe timing — faithful positioning is P7f-d).
 #
-# Scope: P7f-a + P7f-b cover background + playfield + players. Missiles
-# + ball (P7f-c), collisions + proper register dispatch (P7f-d) follow.
+# P7f-c adds missiles M0/M1 and the ball BL — solid 1/2/4/8-pixel
+# blocks. Missiles take their player's colour, the ball takes COLUPF.
+#
+# Scope: P7f-a…c cover background, playfield, players, missiles and the
+# ball. Collisions + proper register dispatch (P7f-d) follow.
 
 const SOFT_SCREEN_WIDTH      = 160
 const SOFT_VISIBLE_SCANLINES = 192
 
 # TIA register offsets — also the SOFT-bus RAM cells they collapse into.
+const _R_NUSIZ0 = 0x04
+const _R_NUSIZ1 = 0x05
 const _R_COLUP0 = 0x06
 const _R_COLUP1 = 0x07
 const _R_COLUPF = 0x08
@@ -40,8 +45,14 @@ const _R_PF1    = 0x0E
 const _R_PF2    = 0x0F
 const _R_RESP0  = 0x10      # SOFT convention: holds the player 0 X position
 const _R_RESP1  = 0x11      # SOFT convention: holds the player 1 X position
+const _R_RESM0  = 0x12      # SOFT convention: holds the missile 0 X position
+const _R_RESM1  = 0x13      # SOFT convention: holds the missile 1 X position
+const _R_RESBL  = 0x14      # SOFT convention: holds the ball X position
 const _R_GRP0   = 0x1B
 const _R_GRP1   = 0x1C
+const _R_ENAM0  = 0x1D
+const _R_ENAM1  = 0x1E
+const _R_ENABL  = 0x1F
 
 """
     _playfield_mask(pf0, pf1, pf2, ctrlpf) -> Vector{Float32}
@@ -103,33 +114,70 @@ function _player_mask(grp::Real, refp::Real, xpos::Real)
 end
 
 """
+    _block_mask(xpos, size_reg, enable_reg) -> Vector{Float32}
+
+A missile / ball — a solid block of `1 << ((size_reg >> 4) & 3)`
+pixels (width 1/2/4/8) at column `xpos`, painted only when
+`enable_reg` bit 1 is set. Pure broadcasts (`d .< width`) — Zygote-
+traceable. Used for missiles (size from NUSIZ, enable from ENAM) and
+the ball (size from CTRLPF, enable from ENABL).
+"""
+function _block_mask(xpos::Real, size_reg::Real, enable_reg::Real)
+    size_log2 = (trunc(Int, size_reg) >> 4) & 0x03
+    width     = 1 << size_log2                       # 1/2/4/8
+    enabled   = Float32((trunc(Int, enable_reg) >> 1) & 1)
+    x = trunc(Int, xpos)
+    d = mod.((0:(SOFT_SCREEN_WIDTH - 1)) .- x, SOFT_SCREEN_WIDTH)   # (160,)
+    return enabled .* Float32.(d .< width)
+end
+
+"""
     soft_render_scanline(bus::SoftBus) -> Vector{Float32}
 
-Differentiable single-scanline render — background, playfield, and the
-two player sprites. Reads the TIA registers from `bus.ram[1:64]` and
-returns a 160-element colour vector. Compositing order matches the
-HARD TIA: background ← playfield ← P1 ← P0.
+Differentiable single-scanline render — background, playfield, the two
+player sprites, the two missiles and the ball. Reads the TIA registers
+from `bus.ram[1:64]` and returns a 160-element colour vector.
+Compositing order matches the HARD TIA:
+background ← playfield ← ball ← M1 ← P1 ← M0 ← P0.
 """
 function soft_render_scanline(bus::SoftBus)
     colubk = soft_ram_peek(bus.ram, _R_COLUBK)
     colupf = soft_ram_peek(bus.ram, _R_COLUPF)
-    pf0    = soft_ram_peek(bus.ram, _R_PF0)
-    pf1    = soft_ram_peek(bus.ram, _R_PF1)
-    pf2    = soft_ram_peek(bus.ram, _R_PF2)
+    colup0 = soft_ram_peek(bus.ram, _R_COLUP0)
+    colup1 = soft_ram_peek(bus.ram, _R_COLUP1)
     ctrlpf = soft_ram_peek(bus.ram, _R_CTRLPF)
-    pf_mask  = _playfield_mask(pf0, pf1, pf2, ctrlpf)
+
+    pf_mask  = _playfield_mask(soft_ram_peek(bus.ram, _R_PF0),
+                               soft_ram_peek(bus.ram, _R_PF1),
+                               soft_ram_peek(bus.ram, _R_PF2),
+                               ctrlpf)
     scanline = pf_mask .* colupf .+ (1f0 .- pf_mask) .* colubk
 
-    # Player sprites — P1 first, then P0 on top (TIA priority).
-    colup0  = soft_ram_peek(bus.ram, _R_COLUP0)
-    colup1  = soft_ram_peek(bus.ram, _R_COLUP1)
+    # Ball — COLUPF colour, size from CTRLPF bits 4-5.
+    bl_mask = _block_mask(soft_ram_peek(bus.ram, _R_RESBL),
+                          ctrlpf,
+                          soft_ram_peek(bus.ram, _R_ENABL))
+    scanline = (1f0 .- bl_mask) .* scanline .+ bl_mask .* colupf
+
+    # Missile 1, player 1, missile 0, player 0 — increasing priority.
+    m1_mask = _block_mask(soft_ram_peek(bus.ram, _R_RESM1),
+                          soft_ram_peek(bus.ram, _R_NUSIZ1),
+                          soft_ram_peek(bus.ram, _R_ENAM1))
+    scanline = (1f0 .- m1_mask) .* scanline .+ m1_mask .* colup1
+
     p1_mask = _player_mask(soft_ram_peek(bus.ram, _R_GRP1),
                            soft_ram_peek(bus.ram, _R_REFP1),
                            soft_ram_peek(bus.ram, _R_RESP1))
+    scanline = (1f0 .- p1_mask) .* scanline .+ p1_mask .* colup1
+
+    m0_mask = _block_mask(soft_ram_peek(bus.ram, _R_RESM0),
+                          soft_ram_peek(bus.ram, _R_NUSIZ0),
+                          soft_ram_peek(bus.ram, _R_ENAM0))
+    scanline = (1f0 .- m0_mask) .* scanline .+ m0_mask .* colup0
+
     p0_mask = _player_mask(soft_ram_peek(bus.ram, _R_GRP0),
                            soft_ram_peek(bus.ram, _R_REFP0),
                            soft_ram_peek(bus.ram, _R_RESP0))
-    scanline = (1f0 .- p1_mask) .* scanline .+ p1_mask .* colup1
     scanline = (1f0 .- p0_mask) .* scanline .+ p0_mask .* colup0
     return scanline
 end

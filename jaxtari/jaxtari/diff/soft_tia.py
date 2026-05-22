@@ -38,10 +38,17 @@ byte then carries a gradient to every pixel the sprite would move
 over. Faithful strobe-timing positioning waits for P7f-d (real TIA
 timing state).
 
-**Scope.** P7f-a + P7f-b cover background + playfield + players.
-Missiles + ball (P7f-c) and collisions + proper TIA/RIOT register
-dispatch (P7f-d) follow. VBLANK output-blanking is not modelled —
-the render is the active-display path.
+**Missiles + ball (P7f-c).** M0 / M1 and the ball BL are solid blocks
+of 1/2/4/8 pixels (`_block_mask`) — missile size from NUSIZ bits 4-5,
+ball size from CTRLPF bits 4-5, enabled by the ENAM* / ENABL bit 1.
+Missiles take their player's colour; the ball takes COLUPF. They use
+the same SOFT-mode position convention as players (the RES* cell
+holds the X position).
+
+**Scope.** P7f-a…c cover background, playfield, players, missiles and
+the ball — the full visible object set. Collisions + proper TIA/RIOT
+register dispatch (P7f-d) follow. VBLANK output-blanking is not
+modelled — the render is the active-display path.
 """
 
 from __future__ import annotations
@@ -56,13 +63,21 @@ from jaxtari.tia.system import (
     W_COLUP1,
     W_COLUPF,
     W_CTRLPF,
+    W_ENABL,
+    W_ENAM0,
+    W_ENAM1,
     W_GRP0,
     W_GRP1,
+    W_NUSIZ0,
+    W_NUSIZ1,
     W_PF0,
     W_PF1,
     W_PF2,
     W_REFP0,
     W_REFP1,
+    W_RESBL,
+    W_RESM0,
+    W_RESM1,
     W_RESP0,
     W_RESP1,
 )
@@ -134,36 +149,76 @@ def _player_mask(grp, refp, xpos) -> jnp.ndarray:
     return bits8 @ onehots                                 # (160,)
 
 
+def _block_mask(xpos, size_reg, enable_reg) -> jnp.ndarray:
+    """A missile / ball — a solid block of `1 << ((size_reg >> 4) & 3)`
+    pixels (width 1/2/4/8) at column `xpos`, painted only when
+    `enable_reg` bit 1 is set. Returns a `(160,)` float32 mask.
+
+    Used for both missiles (size from NUSIZ bits 4-5, enable from ENAM)
+    and the ball (size from CTRLPF bits 4-5, enable from ENABL). Width,
+    placement and the enable bit are integer-extracted — the gradient
+    payload is the colour the caller multiplies in.
+    """
+    size_log2 = (size_reg.astype(jnp.int32) >> 4) & 0x03
+    width     = 1 << size_log2                                  # 1/2/4/8
+    enabled   = ((enable_reg.astype(jnp.int32) >> 1) & 1).astype(jnp.float32)
+
+    x        = xpos.astype(jnp.int32)
+    slots    = jnp.arange(8)
+    in_block = (slots < width).astype(jnp.float32)              # (8,)
+    cols     = (x + slots) % SCREEN_WIDTH                       # (8,)
+    onehots  = jax.nn.one_hot(cols, SCREEN_WIDTH, dtype=jnp.float32)  # (8,160)
+    return enabled * (in_block @ onehots)                       # (160,)
+
+
 def soft_render_scanline(bus) -> jnp.ndarray:
     """Differentiable single-scanline render — background, playfield,
-    and the two player sprites.
+    the two player sprites, the two missiles and the ball.
 
     Reads the TIA registers from `bus.ram[0x00:0x40]` and returns a
     `(160,)` float32 array of colour values. Compositing order matches
-    the HARD TIA: background ← playfield ← P1 ← P0 (P0 on top). The
-    gradient w.r.t. every colour register — COLUBK / COLUPF / COLUP0 /
-    COLUP1, hence back to any ROM byte that wrote them — is exact.
+    the HARD TIA: background ← playfield ← ball ← M1 ← P1 ← M0 ← P0
+    (P0 on top). The gradient w.r.t. every colour register — COLUBK /
+    COLUPF / COLUP0 / COLUP1, hence back to any ROM byte that wrote
+    them — is exact.
     """
     colubk = soft_ram_peek(bus.ram, W_COLUBK)
     colupf = soft_ram_peek(bus.ram, W_COLUPF)
-    pf0    = soft_ram_peek(bus.ram, W_PF0)
-    pf1    = soft_ram_peek(bus.ram, W_PF1)
-    pf2    = soft_ram_peek(bus.ram, W_PF2)
-    ctrlpf = soft_ram_peek(bus.ram, W_CTRLPF)
-
-    pf_mask  = _playfield_mask(pf0, pf1, pf2, ctrlpf)
-    scanline = pf_mask * colupf + (1.0 - pf_mask) * colubk
-
-    # Player sprites — P1 first, then P0 on top (TIA priority).
     colup0 = soft_ram_peek(bus.ram, W_COLUP0)
     colup1 = soft_ram_peek(bus.ram, W_COLUP1)
+    ctrlpf = soft_ram_peek(bus.ram, W_CTRLPF)
+
+    pf_mask  = _playfield_mask(soft_ram_peek(bus.ram, W_PF0),
+                               soft_ram_peek(bus.ram, W_PF1),
+                               soft_ram_peek(bus.ram, W_PF2),
+                               ctrlpf)
+    scanline = pf_mask * colupf + (1.0 - pf_mask) * colubk
+
+    # Ball — COLUPF colour, size from CTRLPF bits 4-5.
+    bl_mask = _block_mask(soft_ram_peek(bus.ram, W_RESBL),
+                          ctrlpf,
+                          soft_ram_peek(bus.ram, W_ENABL))
+    scanline = (1.0 - bl_mask) * scanline + bl_mask * colupf
+
+    # Missile 1, player 1, missile 0, player 0 — increasing priority.
+    m1_mask = _block_mask(soft_ram_peek(bus.ram, W_RESM1),
+                          soft_ram_peek(bus.ram, W_NUSIZ1),
+                          soft_ram_peek(bus.ram, W_ENAM1))
+    scanline = (1.0 - m1_mask) * scanline + m1_mask * colup1
+
     p1_mask = _player_mask(soft_ram_peek(bus.ram, W_GRP1),
                            soft_ram_peek(bus.ram, W_REFP1),
                            soft_ram_peek(bus.ram, W_RESP1))
+    scanline = (1.0 - p1_mask) * scanline + p1_mask * colup1
+
+    m0_mask = _block_mask(soft_ram_peek(bus.ram, W_RESM0),
+                          soft_ram_peek(bus.ram, W_NUSIZ0),
+                          soft_ram_peek(bus.ram, W_ENAM0))
+    scanline = (1.0 - m0_mask) * scanline + m0_mask * colup0
+
     p0_mask = _player_mask(soft_ram_peek(bus.ram, W_GRP0),
                            soft_ram_peek(bus.ram, W_REFP0),
                            soft_ram_peek(bus.ram, W_RESP0))
-    scanline = (1.0 - p1_mask) * scanline + p1_mask * colup1
     scanline = (1.0 - p0_mask) * scanline + p0_mask * colup0
     return scanline
 
