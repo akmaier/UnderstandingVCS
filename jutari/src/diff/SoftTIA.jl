@@ -171,8 +171,18 @@ end
 Differentiable single-scanline render — background, playfield, the two
 player sprites, the two missiles and the ball. Reads the TIA registers
 from `bus.ram[1:64]` and returns a 160-element colour vector.
-Compositing order matches the HARD TIA:
-background ← playfield ← ball ← M1 ← P1 ← M0 ← P0.
+
+Two compositing modes, selected by CTRLPF bit 2 (PFP):
+
+  PFP=0 (default):  bg ← pf ← bl ← M1 ← P1 ← M0 ← P0
+  PFP=1 (priority): bg ← M1 ← P1 ← M0 ← P0 ← pf ← bl
+
+Both composites are evaluated unconditionally and blended by the
+integer-extracted PFP bit. The gradient w.r.t. every colour register
+(COLUBK / COLUPF / COLUP0 / COLUP1, hence back to any ROM byte that
+wrote them) is exact in both modes. The PFP bit itself is a structural
+switch — int extraction breaks the gradient at the cast, matching the
+existing convention for enable / size bits in `_block_mask`.
 """
 function soft_render_scanline(bus::SoftBus)
     pf, p0, p1, m0, m1, bl = _object_masks(bus)
@@ -180,14 +190,27 @@ function soft_render_scanline(bus::SoftBus)
     colupf = soft_ram_peek(bus.ram, _R_COLUPF)
     colup0 = soft_ram_peek(bus.ram, _R_COLUP0)
     colup1 = soft_ram_peek(bus.ram, _R_COLUP1)
+    ctrlpf = soft_ram_peek(bus.ram, _R_CTRLPF)
+    pfp_bit = Float32((Int(round(ctrlpf)) >> 2) & 1)
 
-    scanline = pf .* colupf .+ (1f0 .- pf) .* colubk   # background ← playfield
-    scanline = (1f0 .- bl) .* scanline .+ bl .* colupf  # ball
-    scanline = (1f0 .- m1) .* scanline .+ m1 .* colup1  # missile 1
-    scanline = (1f0 .- p1) .* scanline .+ p1 .* colup1  # player 1
-    scanline = (1f0 .- m0) .* scanline .+ m0 .* colup0  # missile 0
-    scanline = (1f0 .- p0) .* scanline .+ p0 .* colup0  # player 0
-    return scanline
+    # Default-priority composite: bg ← pf ← bl ← M1 ← P1 ← M0 ← P0.
+    s_def = pf .* colupf .+ (1f0 .- pf) .* colubk
+    s_def = (1f0 .- bl) .* s_def .+ bl .* colupf
+    s_def = (1f0 .- m1) .* s_def .+ m1 .* colup1
+    s_def = (1f0 .- p1) .* s_def .+ p1 .* colup1
+    s_def = (1f0 .- m0) .* s_def .+ m0 .* colup0
+    s_def = (1f0 .- p0) .* s_def .+ p0 .* colup0
+
+    # PFP composite: bg ← M1 ← P1 ← M0 ← P0 ← pf ← bl.
+    s_pfp = fill(colubk, SOFT_SCREEN_WIDTH)
+    s_pfp = (1f0 .- m1) .* s_pfp .+ m1 .* colup1
+    s_pfp = (1f0 .- p1) .* s_pfp .+ p1 .* colup1
+    s_pfp = (1f0 .- m0) .* s_pfp .+ m0 .* colup0
+    s_pfp = (1f0 .- p0) .* s_pfp .+ p0 .* colup0
+    s_pfp = (1f0 .- pf) .* s_pfp .+ pf .* colupf
+    s_pfp = (1f0 .- bl) .* s_pfp .+ bl .* colupf
+
+    return (1f0 .- pfp_bit) .* s_def .+ pfp_bit .* s_pfp
 end
 
 """

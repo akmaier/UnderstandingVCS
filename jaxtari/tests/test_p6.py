@@ -242,6 +242,82 @@ def test_action_visible_to_rom_via_ram():
 
 
 # --------------------------------------------------------------------------- #
+# P6e — two-player joystick routing (player=1 driving SWCHA low nibble)
+# --------------------------------------------------------------------------- #
+
+def test_action_p1_noop_leaves_swcha_idle():
+    c = console_reset(initial_console(_frame_loop_rom()))
+    c = apply_action(c, Action.NOOP, player=1)
+    assert int(c.bus.riot.swcha_in) == 0xFF
+
+
+def test_action_p1_up_clears_low_nibble_bit_0():
+    """P1 UP = SWCHA bit 0 (active low). All other bits stay high."""
+    c = console_reset(initial_console(_frame_loop_rom()))
+    c = apply_action(c, Action.UP, player=1)
+    assert int(c.bus.riot.swcha_in) == 0xFE
+
+
+def test_action_p1_right_clears_bit_3():
+    c = console_reset(initial_console(_frame_loop_rom()))
+    c = apply_action(c, Action.RIGHT, player=1)
+    assert int(c.bus.riot.swcha_in) == 0xF7
+
+
+def test_action_p1_left_clears_bit_2():
+    c = console_reset(initial_console(_frame_loop_rom()))
+    c = apply_action(c, Action.LEFT, player=1)
+    assert int(c.bus.riot.swcha_in) == 0xFB
+
+
+def test_action_p1_down_clears_bit_1():
+    c = console_reset(initial_console(_frame_loop_rom()))
+    c = apply_action(c, Action.DOWN, player=1)
+    assert int(c.bus.riot.swcha_in) == 0xFD
+
+
+def test_action_p1_upright_clears_bits_0_and_3():
+    c = console_reset(initial_console(_frame_loop_rom()))
+    c = apply_action(c, Action.UPRIGHT, player=1)
+    assert int(c.bus.riot.swcha_in) == 0xF6
+
+
+def test_action_p1_fire_sets_inpt5_pressed():
+    c = console_reset(initial_console(_frame_loop_rom()))
+    c = apply_action(c, Action.FIRE, player=1)
+    assert int(c.bus.tia.inpt[5]) == 0x00     # P1 trigger lives in INPT5
+    assert int(c.bus.tia.inpt[4]) == 0x80     # P0 trigger untouched
+
+
+def test_p0_and_p1_actions_compose():
+    """Two consecutive apply_action calls — one per player — must end up
+    with both players' bits set in SWCHA simultaneously."""
+    c = console_reset(initial_console(_frame_loop_rom()))
+    c = apply_action(c, Action.UP,    player=0)   # clears bit 4 → 0xEF
+    c = apply_action(c, Action.RIGHT, player=1)   # clears bit 3 → 0xE7
+    assert int(c.bus.riot.swcha_in) == 0xE7
+    # Triggers: neither was FIRE, so both stay released.
+    assert int(c.bus.tia.inpt[4]) == 0x80
+    assert int(c.bus.tia.inpt[5]) == 0x80
+
+
+def test_p1_action_does_not_clobber_p0_nibble():
+    """Driving P1 must leave the P0 nibble at whatever the previous
+    apply_action for P0 set it to — the two players' inputs must be
+    independent."""
+    c = console_reset(initial_console(_frame_loop_rom()))
+    c = apply_action(c, Action.DOWNLEFT, player=0)   # 0x9F
+    c = apply_action(c, Action.DOWN,     player=1)   # clears bit 1 → 0x9D
+    assert int(c.bus.riot.swcha_in) == 0x9D
+
+
+def test_apply_action_rejects_invalid_player():
+    c = console_reset(initial_console(_frame_loop_rom()))
+    with pytest.raises(ValueError):
+        apply_action(c, Action.NOOP, player=2)
+
+
+# --------------------------------------------------------------------------- #
 # StellaEnvironment
 # --------------------------------------------------------------------------- #
 

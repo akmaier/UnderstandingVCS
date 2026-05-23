@@ -134,12 +134,12 @@ Every deferral now has a phase identifier (see PORTING_PLAN.md "Deferral identif
 - **P3i**: Sub-pixel beam-accurate rendering (mid-scanline register changes affecting the line being drawn). P3 renders at end-of-scanline.
 - **P3j**: Audio (AUDC*/AUDF*/AUDV* registers are stored but inert; TIASnd not modelled).
 - **P3k**: HMOVE +8 nibble timing quirk on real hardware.
-- **P3l**: CTRLPF.D2 priority swap (default priority only).
+- **P3l is ✅ complete** — CTRLPF bit 2 (PFP) priority swap is honoured by both the HARD `render_scanline` and the SOFT `soft_render_scanline` (jaxtari + jutari). Default (PFP=0) keeps the original `bg ← pf ← bl ← M1 ← P1 ← M0 ← P0` order; PFP=1 swaps to `bg ← M1 ← P1 ← M0 ← P0 ← pf ← bl` so playfield + ball composite on top of sprites. The SOFT renderer blends the two composites by the integer-extracted PFP bit; gradients w.r.t. every colour register remain exact in either mode. Tests: `jaxtari/tests/test_p3l_priority.py` (8) + the `JuTari P3l — CTRLPF.D2 priority swap` testset (10) covering both renderers and a Zygote gradient through COLUPF under PFP=1.
 
 ### RIOT (P4)
 - **P4b**: PA7 edge-triggered interrupt (INSTAT.D6 not modelled).
 - **P4c**: Real paddle / driving-controller wiring (paddle dump-pot timing — INPT0-3 stay at `$80` "centred").
-- **P4d**: Reading INSTAT does NOT clear the expired flag (only TIM*T writes do; the chip's exact behaviour here varies between implementations).
+- **P4d**: Reading INTIM should clear the timer-expired flag (real MOS 6532), and reading INSTAT should clear the PA7 interrupt latch. We currently clear `timer_expired` only on TIM*T writes. **Why not yet fixed:** `riot_peek` / `peek` return a plain `int`, so a read can't mutate bus state. Threading a new bus through every memory read would touch the CPU step + every test ROM (the 6502 reads memory ~10× per opcode), which makes this a real architecture change, not a quick win. Picked up by a future *peek-with-side-effects* refactor (also unblocks PXC1-x round 3+ if a TIM*T-related read divergence shows up).
 
 ### Cart (P5)
 - **P5b**: SC variants of F8 / F6 / F4 (128 B on-cart RAM at `$1000–$10FF`).
@@ -151,7 +151,7 @@ Every deferral now has a phase identifier (see PORTING_PLAN.md "Deferral identif
 - **P6b**: Phosphor blending (Stella post-processes the framebuffer for flicker).
 - **P6c**: Per-game `RomSettings` (Pong / Breakout / Pitfall / Atari Zoo etc. all need reverse-engineered RAM-address probes).
 - **P6d**: Random no-op reset (Mnih-style "skip 0..30 NOOPs at episode start" — this is a wrapper concern).
-- **P6e**: Two-player joystick (P1 directions stay defaulted-released).
+- **P6e is ✅ complete** — `apply_action` (Python) / `apply_action!` (Julia) now take a `player=0|1` keyword. P0 routes the action's directions onto the high nibble of SWCHA + INPT4 trigger; P1 routes to the low nibble + INPT5. The non-driven player's nibble is preserved across calls, so the two-player idiom is `apply_action(c, p0_action, player=0); apply_action(c, p1_action, player=1); run_until_frame(c)`. Tests: 10 new P6e cases in `jaxtari/tests/test_p6.py` and a `P6e` block in `jutari/test/runtests.jl` covering each direction, FIRE→INPT5, P0+P1 composition, and nibble independence.
 
 ### Diff (P7 / P7b / P7c / P7d / P7c-bx)
 - **P7c-a … P7c-f are ✅ complete** — the full 151-opcode documented NMOS set executes in SOFT mode.

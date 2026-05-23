@@ -479,17 +479,68 @@ def _overlay_ball(pixels: list[int], tia: TIAState) -> None:
         pixels[(x + i) % 160] = color
 
 
+def _overlay_playfield(pixels: list[int], tia: TIAState) -> None:
+    """Re-paint the playfield (without disturbing the background) over an
+    already-rendered scanline. Used by the CTRLPF.D2 (PFP) priority swap:
+    when the PF-priority bit is set, the playfield + ball composite *on
+    top* of players + missiles, so the renderer paints sprites first and
+    then drops the playfield bits on top via this helper.
+    """
+    pf0    = int(tia.registers[W_PF0])
+    pf1    = int(tia.registers[W_PF1])
+    pf2    = int(tia.registers[W_PF2])
+    ctrlpf = int(tia.registers[W_CTRLPF])
+    colupf = int(tia.registers[W_COLUPF])
+    reflected = (ctrlpf & 0x01) != 0
+    left_bits = _playfield_bits(pf0, pf1, pf2)
+    right_bits = list(reversed(left_bits)) if reflected else left_bits
+    for i, bit in enumerate(left_bits):
+        if bit:
+            for k in range(4):
+                pixels[i * 4 + k] = colupf
+    for i, bit in enumerate(right_bits):
+        if bit:
+            for k in range(4):
+                pixels[80 + i * 4 + k] = colupf
+
+
 def render_scanline(tia: TIAState) -> jnp.ndarray:
     """Composite renderer (pixel-only — collisions live in `_scanline_with_collisions`).
 
-    Order: background ← playfield ← ball ← P1+M1 ← P0+M0.
+    Two priority modes, selected by CTRLPF bit 2 (PFP):
+
+      PFP=0 (default):    bg ← pf ← bl ← M1 ← P1 ← M0 ← P0
+      PFP=1 (priority):   bg ← M1 ← P1 ← M0 ← P0 ← pf ← bl
+
+    With PFP set, playfield and ball composite *on top* of players and
+    missiles — the canonical use case being a paddle game's score
+    display or a playfield maze that should never be covered by a
+    sprite. P3l adds this; before P3l every game ran in PFP=0 mode.
     """
-    pixels = _playfield_pixels(tia)
-    _overlay_ball(pixels, tia)
-    _overlay_missile(pixels, tia, missile=1)
-    _overlay_player(pixels, tia, player=1)
-    _overlay_missile(pixels, tia, missile=0)
-    _overlay_player(pixels, tia, player=0)
+    ctrlpf = int(tia.registers[W_CTRLPF])
+    pfp = (ctrlpf & 0x04) != 0
+
+    if not pfp:
+        # default priority
+        pixels = _playfield_pixels(tia)
+        _overlay_ball(pixels, tia)
+        _overlay_missile(pixels, tia, missile=1)
+        _overlay_player(pixels, tia, player=1)
+        _overlay_missile(pixels, tia, missile=0)
+        _overlay_player(pixels, tia, player=0)
+    else:
+        # PFP set — playfield + ball on top of sprites. Start from the
+        # background only (we re-overlay the playfield at the end), draw
+        # players + missiles, then drop the playfield + ball on top.
+        colubk = int(tia.registers[W_COLUBK])
+        pixels = [colubk] * 160
+        _overlay_missile(pixels, tia, missile=1)
+        _overlay_player(pixels, tia, player=1)
+        _overlay_missile(pixels, tia, missile=0)
+        _overlay_player(pixels, tia, player=0)
+        _overlay_playfield(pixels, tia)
+        _overlay_ball(pixels, tia)
+
     return jnp.array(pixels, dtype=jnp.uint8)
 
 

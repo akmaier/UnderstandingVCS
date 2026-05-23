@@ -212,24 +212,47 @@ def soft_render_scanline(bus) -> jnp.ndarray:
 
     Reads the TIA registers from `bus.ram[0x00:0x40]` and returns a
     `(160,)` float32 array of colour values. Compositing order matches
-    the HARD TIA: background ← playfield ← ball ← M1 ← P1 ← M0 ← P0
-    (P0 on top). The gradient w.r.t. every colour register — COLUBK /
-    COLUPF / COLUP0 / COLUP1, hence back to any ROM byte that wrote
-    them — is exact.
+    the HARD TIA and has two modes, selected by CTRLPF bit 2 (PFP):
+
+      PFP=0 (default):    bg ← pf ← bl ← M1 ← P1 ← M0 ← P0
+      PFP=1 (priority):   bg ← M1 ← P1 ← M0 ← P0 ← pf ← bl
+
+    Both composites are evaluated unconditionally and then blended by
+    the integer-extracted PFP bit. The gradient w.r.t. every colour
+    register — COLUBK / COLUPF / COLUP0 / COLUP1, hence back to any
+    ROM byte that wrote them — is exact in both modes. The PFP bit
+    itself is a structural switch (integer extraction breaks the
+    gradient at the cast), matching the existing convention for
+    enable / size bits (see `_block_mask`).
     """
     pf, p0, p1, m0, m1, bl = _object_masks(bus)
     colubk = soft_ram_peek(bus.ram, W_COLUBK)
     colupf = soft_ram_peek(bus.ram, W_COLUPF)
     colup0 = soft_ram_peek(bus.ram, W_COLUP0)
     colup1 = soft_ram_peek(bus.ram, W_COLUP1)
+    ctrlpf = soft_ram_peek(bus.ram, W_CTRLPF)
+    pfp_bit = ((ctrlpf.astype(jnp.int32) >> 2) & 1).astype(jnp.float32)  # 0.0 or 1.0
 
-    scanline = pf * colupf + (1.0 - pf) * colubk          # background ← playfield
-    scanline = (1.0 - bl) * scanline + bl * colupf        # ball
-    scanline = (1.0 - m1) * scanline + m1 * colup1        # missile 1
-    scanline = (1.0 - p1) * scanline + p1 * colup1        # player 1
-    scanline = (1.0 - m0) * scanline + m0 * colup0        # missile 0
-    scanline = (1.0 - p0) * scanline + p0 * colup0        # player 0
-    return scanline
+    # Default-priority composite: background ← playfield ← ball ←
+    # missile 1 ← player 1 ← missile 0 ← player 0.
+    s_def = pf * colupf + (1.0 - pf) * colubk
+    s_def = (1.0 - bl) * s_def + bl * colupf
+    s_def = (1.0 - m1) * s_def + m1 * colup1
+    s_def = (1.0 - p1) * s_def + p1 * colup1
+    s_def = (1.0 - m0) * s_def + m0 * colup0
+    s_def = (1.0 - p0) * s_def + p0 * colup0
+
+    # PFP composite: background ← missile 1 ← player 1 ← missile 0 ←
+    # player 0 ← playfield ← ball.
+    s_pfp = jnp.broadcast_to(colubk, (SCREEN_WIDTH,))
+    s_pfp = (1.0 - m1) * s_pfp + m1 * colup1
+    s_pfp = (1.0 - p1) * s_pfp + p1 * colup1
+    s_pfp = (1.0 - m0) * s_pfp + m0 * colup0
+    s_pfp = (1.0 - p0) * s_pfp + p0 * colup0
+    s_pfp = (1.0 - pf) * s_pfp + pf * colupf
+    s_pfp = (1.0 - bl) * s_pfp + bl * colupf
+
+    return (1.0 - pfp_bit) * s_def + pfp_bit * s_pfp
 
 
 def soft_render_frame(bus, height: int = VISIBLE_SCANLINES) -> jnp.ndarray:

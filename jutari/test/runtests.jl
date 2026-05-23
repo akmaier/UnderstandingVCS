@@ -2572,6 +2572,53 @@ end
         @test c.bus.ram[1] == 0xEF
     end
 
+    # P6e — player=1 routing to the SWCHA low nibble
+    @testset "P6e — P1 NOOP leaves SWCHA idle" begin
+        c = initial_console(_frame_loop_rom()); console_reset!(c)
+        apply_action!(c, Int(NOOP); player=1)
+        @test c.bus.riot.swcha_in == 0xFF
+    end
+
+    @testset "P6e — P1 UP clears bit 0" begin
+        c = initial_console(_frame_loop_rom()); console_reset!(c)
+        apply_action!(c, Int(UP); player=1)
+        @test c.bus.riot.swcha_in == 0xFE
+    end
+
+    @testset "P6e — P1 RIGHT clears bit 3" begin
+        c = initial_console(_frame_loop_rom()); console_reset!(c)
+        apply_action!(c, Int(RIGHT); player=1)
+        @test c.bus.riot.swcha_in == 0xF7
+    end
+
+    @testset "P6e — P1 FIRE sets INPT5 pressed (index 6) and leaves INPT4 alone" begin
+        c = initial_console(_frame_loop_rom()); console_reset!(c)
+        apply_action!(c, Int(FIRE); player=1)
+        @test c.bus.tia.inpt[6] == 0x00     # P1 trigger = INPT5 → 1-based index 6
+        @test c.bus.tia.inpt[5] == 0x80     # P0 trigger untouched
+    end
+
+    @testset "P6e — P0 then P1 compose into both nibbles" begin
+        c = initial_console(_frame_loop_rom()); console_reset!(c)
+        apply_action!(c, Int(UP);    player=0)    # 0xEF
+        apply_action!(c, Int(RIGHT); player=1)    # clears bit 3 → 0xE7
+        @test c.bus.riot.swcha_in == 0xE7
+        @test c.bus.tia.inpt[5] == 0x80
+        @test c.bus.tia.inpt[6] == 0x80
+    end
+
+    @testset "P6e — P1 action does not clobber P0 nibble" begin
+        c = initial_console(_frame_loop_rom()); console_reset!(c)
+        apply_action!(c, Int(DOWNLEFT); player=0)  # 0x9F
+        apply_action!(c, Int(DOWN);     player=1)  # clears bit 1 → 0x9D
+        @test c.bus.riot.swcha_in == 0x9D
+    end
+
+    @testset "P6e — invalid player rejected" begin
+        c = initial_console(_frame_loop_rom()); console_reset!(c)
+        @test_throws ArgumentError apply_action!(c, Int(NOOP); player=2)
+    end
+
     # StellaEnvironment
     @testset "env construction + reset" begin
         env = StellaEnvironment(_frame_loop_rom())
@@ -4364,5 +4411,90 @@ end
                 false
             end
         end
+    end
+end
+
+@testset "JuTari P3l — CTRLPF.D2 priority swap" begin
+    # When CTRLPF bit 2 (PFP) is clear (default) sprites paint on top
+    # of the playfield. When set, playfield + ball composite on top of
+    # sprites — Pong's net, Combat's maze etc.
+
+    function _setup(pfp::Bool)
+        tia = initial_tia_state()
+        tia.p0_x = 16
+        tia_poke!(tia, W_COLUBK, 0x00)
+        tia_poke!(tia, W_COLUPF, 0x42)
+        tia_poke!(tia, W_COLUP0, 0x84)
+        tia_poke!(tia, W_GRP0,   0xFF)
+        tia_poke!(tia, W_PF1,    0x80)               # PF1 bit 7 → cols 16..19
+        tia_poke!(tia, W_CTRLPF, pfp ? 0x04 : 0x00)
+        return tia
+    end
+
+    @testset "HARD PFP=0 — player wins over playfield" begin
+        tia = _setup(false)
+        scan = render_scanline(tia)
+        @test scan[17] == 0x84                       # col 16 (1-based)
+    end
+
+    @testset "HARD PFP=1 — playfield wins over player" begin
+        tia = _setup(true)
+        scan = render_scanline(tia)
+        @test scan[17] == 0x42                       # col 16 → playfield colour
+        @test scan[21] == 0x84                       # col 20 → past PF, player wins
+    end
+
+    @testset "HARD PFP=1 — ball wins over player" begin
+        tia = initial_tia_state()
+        tia.p0_x = 20; tia.bl_x = 20
+        tia_poke!(tia, W_COLUBK, 0x00)
+        tia_poke!(tia, W_COLUPF, 0x42)
+        tia_poke!(tia, W_COLUP0, 0x84)
+        tia_poke!(tia, W_GRP0,   0xFF)
+        tia_poke!(tia, W_ENABL,  0x02)
+        tia_poke!(tia, W_CTRLPF, 0x04)
+        scan = render_scanline(tia)
+        @test scan[21] == 0x42                       # col 20: ball wins
+        @test scan[22] == 0x84                       # col 21: only player
+    end
+
+    # SOFT mirror
+    R_COLUP0 = 0x06; R_COLUPF = 0x08; R_COLUBK = 0x09; R_CTRLPF = 0x0A
+    R_PF1    = 0x0E; R_RESP0  = 0x10; R_GRP0   = 0x1B
+
+    function _soft_bus(pfp::Bool)
+        ram = zeros(Float32, 128)
+        ram[R_COLUBK + 1] = 0f0
+        ram[R_COLUPF + 1] = Float32(0x42)
+        ram[R_COLUP0 + 1] = Float32(0x84)
+        ram[R_GRP0   + 1] = Float32(0xFF)
+        ram[R_PF1    + 1] = Float32(0x80)            # PF1 bit 7 → cols 16..19
+        ram[R_RESP0  + 1] = 16f0                     # SOFT convention
+        ram[R_CTRLPF + 1] = Float32(pfp ? 0x04 : 0x00)
+        return SoftBus(ram, zeros(Float32, 256))
+    end
+
+    @testset "SOFT PFP=0 — player wins" begin
+        bus = _soft_bus(false)
+        scan = soft_render_scanline(bus)
+        @test scan[17] == Float32(0x84)
+    end
+
+    @testset "SOFT PFP=1 — playfield wins" begin
+        bus = _soft_bus(true)
+        scan = soft_render_scanline(bus)
+        @test scan[17] == Float32(0x42)
+        @test scan[21] == Float32(0x84)              # past PF strip
+    end
+
+    @testset "Zygote — COLUPF still drives the overlap pixel under PFP" begin
+        # Under PFP=1 the playfield wins at col 16, so ∂pixel/∂COLUPF
+        # must be 1 there even though COLUP0 also paints in the default
+        # mode — the integer PFP-bit blend selects the PFP branch.
+        bus0 = _soft_bus(true)
+        grad, = Zygote.gradient(
+            r -> soft_render_scanline(SoftBus(r, bus0.rom))[17], bus0.ram)
+        @test grad[R_COLUPF + 1] == 1f0
+        @test grad[R_COLUP0 + 1] == 0f0
     end
 end

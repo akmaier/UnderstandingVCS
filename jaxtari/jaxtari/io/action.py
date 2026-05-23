@@ -70,53 +70,103 @@ class Action(IntEnum):
 NUM_ACTIONS = 18
 
 
-# SWCHA bit positions for player 0's joystick (active-low).
+# SWCHA bit positions for each player's joystick (active-low).
+#
+# Stella / xitari layout — high nibble is P0, low nibble is P1, in both
+# nibbles the order is RIGHT / LEFT / DOWN / UP from high bit to low.
 _P0_RIGHT = 0x80
 _P0_LEFT  = 0x40
 _P0_DOWN  = 0x20
 _P0_UP    = 0x10
-# P1 mirrors these in bits 0..3 — defaulted released for P6 (single-player).
-_P1_DEFAULT_HIGH_BITS = 0x0F  # all P1 directions released (high = 1)
+_P1_RIGHT = 0x08
+_P1_LEFT  = 0x04
+_P1_DOWN  = 0x02
+_P1_UP    = 0x01
+
+# Per-player bit masks for "all directions in this nibble released" (i.e.
+# all 1s = pulled high = nothing pressed). Used to default the *other*
+# player's nibble when only one player is being driven.
+_P0_ALL_RELEASED = _P0_RIGHT | _P0_LEFT | _P0_DOWN | _P0_UP   # 0xF0
+_P1_ALL_RELEASED = _P1_RIGHT | _P1_LEFT | _P1_DOWN | _P1_UP   # 0x0F
 
 
-# Decompose each Action into (joystick_bits_pressed, fire_pressed).
-# joystick_bits_pressed is the OR of the active-low bit masks for
-# directions that are pressed.
-_ACTION_DECODE: dict[Action, tuple[int, bool]] = {
-    Action.NOOP:          (0,                              False),
-    Action.FIRE:          (0,                              True),
-    Action.UP:            (_P0_UP,                         False),
-    Action.RIGHT:         (_P0_RIGHT,                      False),
-    Action.LEFT:          (_P0_LEFT,                       False),
-    Action.DOWN:          (_P0_DOWN,                       False),
-    Action.UPRIGHT:       (_P0_UP    | _P0_RIGHT,          False),
-    Action.UPLEFT:        (_P0_UP    | _P0_LEFT,           False),
-    Action.DOWNRIGHT:     (_P0_DOWN  | _P0_RIGHT,          False),
-    Action.DOWNLEFT:      (_P0_DOWN  | _P0_LEFT,           False),
-    Action.UPFIRE:        (_P0_UP,                         True),
-    Action.RIGHTFIRE:     (_P0_RIGHT,                      True),
-    Action.LEFTFIRE:      (_P0_LEFT,                       True),
-    Action.DOWNFIRE:      (_P0_DOWN,                       True),
-    Action.UPRIGHTFIRE:   (_P0_UP    | _P0_RIGHT,          True),
-    Action.UPLEFTFIRE:    (_P0_UP    | _P0_LEFT,           True),
-    Action.DOWNRIGHTFIRE: (_P0_DOWN  | _P0_RIGHT,          True),
-    Action.DOWNLEFTFIRE:  (_P0_DOWN  | _P0_LEFT,           True),
+# Decompose each Action into (direction_index_set, fire_pressed). The
+# direction set carries which of {UP, RIGHT, LEFT, DOWN} are pressed,
+# *independent* of the player wiring — `_action_bits_for_player` then
+# resolves the index to the right nibble of SWCHA so the same Action
+# enum can drive either player.
+_DIR_UP, _DIR_RIGHT, _DIR_LEFT, _DIR_DOWN = 0, 1, 2, 3
+
+_ACTION_DECODE: dict[Action, tuple[tuple[int, ...], bool]] = {
+    Action.NOOP:          ((),                              False),
+    Action.FIRE:          ((),                              True),
+    Action.UP:            ((_DIR_UP,),                      False),
+    Action.RIGHT:         ((_DIR_RIGHT,),                   False),
+    Action.LEFT:          ((_DIR_LEFT,),                    False),
+    Action.DOWN:          ((_DIR_DOWN,),                    False),
+    Action.UPRIGHT:       ((_DIR_UP, _DIR_RIGHT),           False),
+    Action.UPLEFT:        ((_DIR_UP, _DIR_LEFT),            False),
+    Action.DOWNRIGHT:     ((_DIR_DOWN, _DIR_RIGHT),         False),
+    Action.DOWNLEFT:      ((_DIR_DOWN, _DIR_LEFT),          False),
+    Action.UPFIRE:        ((_DIR_UP,),                      True),
+    Action.RIGHTFIRE:     ((_DIR_RIGHT,),                   True),
+    Action.LEFTFIRE:      ((_DIR_LEFT,),                    True),
+    Action.DOWNFIRE:      ((_DIR_DOWN,),                    True),
+    Action.UPRIGHTFIRE:   ((_DIR_UP, _DIR_RIGHT),           True),
+    Action.UPLEFTFIRE:    ((_DIR_UP, _DIR_LEFT),            True),
+    Action.DOWNRIGHTFIRE: ((_DIR_DOWN, _DIR_RIGHT),         True),
+    Action.DOWNLEFTFIRE:  ((_DIR_DOWN, _DIR_LEFT),          True),
+}
+
+# (player, direction_index) → SWCHA active-low bit mask.
+_DIR_TO_BIT: dict[tuple[int, int], int] = {
+    (0, _DIR_UP): _P0_UP, (0, _DIR_RIGHT): _P0_RIGHT,
+    (0, _DIR_LEFT): _P0_LEFT, (0, _DIR_DOWN): _P0_DOWN,
+    (1, _DIR_UP): _P1_UP, (1, _DIR_RIGHT): _P1_RIGHT,
+    (1, _DIR_LEFT): _P1_LEFT, (1, _DIR_DOWN): _P1_DOWN,
 }
 
 
-def apply_action(console: Console, action: int) -> Console:
-    """Drive the joystick + fire-button inputs from `action`.
-
-    Returns a new `Console` whose RIOT SWCHA and TIA INPT4 reflect the
-    requested state. Does NOT advance the CPU — call `run_until_frame`
-    after this to actually consume the inputs over a game frame.
+def _action_bits_for_player(action: int, player: int) -> tuple[int, bool]:
+    """Return `(swcha_pressed_bits, fire_pressed)` for `action` routed to
+    `player`. The pressed-bits are active-low — the caller clears those
+    bits in SWCHA, leaving the *other* player's nibble untouched.
     """
-    pressed_bits, fire_pressed = _ACTION_DECODE[Action(action)]
-    # SWCHA: high nibble = P0 directions (active low). 0xFF means
-    # "nothing pressed"; clear the bits that ARE pressed.
-    p0_byte = (0xF0 & ~pressed_bits) | _P1_DEFAULT_HIGH_BITS
-    new_riot = set_swcha_input(console.bus.riot, p0_byte)
-    new_tia = set_trigger(console.bus.tia, player=0, pressed=fire_pressed)
+    dirs, fire = _ACTION_DECODE[Action(action)]
+    bits = 0
+    for d in dirs:
+        bits |= _DIR_TO_BIT[(player, d)]
+    return bits, fire
+
+
+def apply_action(console: Console, action: int, *, player: int = 0) -> Console:
+    """Drive one player's joystick + fire-button inputs from `action`.
+
+    Returns a new `Console` whose RIOT SWCHA and the addressed player's
+    INPT trigger reflect the requested state. The *other* player's
+    nibble of SWCHA is left at whatever the previous frame's
+    `apply_action` set it to (default = released), so the canonical
+    two-player driving idiom is
+
+        console = apply_action(console, p0_action, player=0)
+        console = apply_action(console, p1_action, player=1)
+        console = run_until_frame(console)
+
+    `player` defaults to 0 so single-player code is unchanged.
+    """
+    if player not in (0, 1):
+        raise ValueError(f"player must be 0 or 1, got {player}")
+    pressed_bits, fire_pressed = _action_bits_for_player(action, player)
+
+    # SWCHA active-low: start from the bus's current value (so the
+    # untouched-nibble of the OTHER player is preserved across calls),
+    # set this player's nibble to all-released, then clear the bits
+    # that ARE pressed.
+    nibble_mask = _P0_ALL_RELEASED if player == 0 else _P1_ALL_RELEASED
+    prev = int(console.bus.riot.swcha_in)
+    p_byte = (prev & ~nibble_mask) | (nibble_mask & ~pressed_bits)
+    new_riot = set_swcha_input(console.bus.riot, p_byte)
+    new_tia = set_trigger(console.bus.tia, player=player, pressed=fire_pressed)
     new_bus = console.bus._replace(riot=new_riot, tia=new_tia)
     return console._replace(bus=new_bus)
 

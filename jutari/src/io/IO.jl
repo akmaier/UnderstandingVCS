@@ -48,41 +48,85 @@ const _P0_RIGHT = 0x80
 const _P0_LEFT  = 0x40
 const _P0_DOWN  = 0x20
 const _P0_UP    = 0x10
-const _P1_DEFAULT_HIGH_BITS = 0x0F
+const _P1_RIGHT = 0x08
+const _P1_LEFT  = 0x04
+const _P1_DOWN  = 0x02
+const _P1_UP    = 0x01
 
-# (pressed_bits, fire_pressed)
-const _ACTION_DECODE = Dict{Action, Tuple{UInt8, Bool}}(
-    NOOP          => (UInt8(0),                              false),
-    FIRE          => (UInt8(0),                              true),
-    UP            => (UInt8(_P0_UP),                         false),
-    RIGHT         => (UInt8(_P0_RIGHT),                      false),
-    LEFT          => (UInt8(_P0_LEFT),                       false),
-    DOWN          => (UInt8(_P0_DOWN),                       false),
-    UPRIGHT       => (UInt8(_P0_UP | _P0_RIGHT),             false),
-    UPLEFT        => (UInt8(_P0_UP | _P0_LEFT),              false),
-    DOWNRIGHT     => (UInt8(_P0_DOWN | _P0_RIGHT),           false),
-    DOWNLEFT      => (UInt8(_P0_DOWN | _P0_LEFT),            false),
-    UPFIRE        => (UInt8(_P0_UP),                         true),
-    RIGHTFIRE     => (UInt8(_P0_RIGHT),                      true),
-    LEFTFIRE      => (UInt8(_P0_LEFT),                       true),
-    DOWNFIRE      => (UInt8(_P0_DOWN),                       true),
-    UPRIGHTFIRE   => (UInt8(_P0_UP | _P0_RIGHT),             true),
-    UPLEFTFIRE    => (UInt8(_P0_UP | _P0_LEFT),              true),
-    DOWNRIGHTFIRE => (UInt8(_P0_DOWN | _P0_RIGHT),           true),
-    DOWNLEFTFIRE  => (UInt8(_P0_DOWN | _P0_LEFT),            true),
+const _P0_ALL_RELEASED = _P0_RIGHT | _P0_LEFT | _P0_DOWN | _P0_UP   # 0xF0
+const _P1_ALL_RELEASED = _P1_RIGHT | _P1_LEFT | _P1_DOWN | _P1_UP   # 0x0F
+
+# Direction → (P0 bit, P1 bit). Same enum drives either player; the
+# `apply_action!` resolver picks the right nibble.
+const _DIR_UP    = 0
+const _DIR_RIGHT = 1
+const _DIR_LEFT  = 2
+const _DIR_DOWN  = 3
+
+const _DIR_BIT = Dict{Tuple{Int,Int}, UInt8}(
+    (0, _DIR_UP)    => UInt8(_P0_UP),    (0, _DIR_RIGHT) => UInt8(_P0_RIGHT),
+    (0, _DIR_LEFT)  => UInt8(_P0_LEFT),  (0, _DIR_DOWN)  => UInt8(_P0_DOWN),
+    (1, _DIR_UP)    => UInt8(_P1_UP),    (1, _DIR_RIGHT) => UInt8(_P1_RIGHT),
+    (1, _DIR_LEFT)  => UInt8(_P1_LEFT),  (1, _DIR_DOWN)  => UInt8(_P1_DOWN),
 )
 
-"""
-    apply_action!(console, action)
+# (direction-index tuple, fire_pressed). Direction indices are
+# *player-agnostic* — `_action_bits_for_player` resolves them to the
+# right SWCHA nibble.
+const _ACTION_DECODE = Dict{Action, Tuple{NTuple{N, Int} where N, Bool}}(
+    NOOP          => ((),                              false),
+    FIRE          => ((),                              true),
+    UP            => ((_DIR_UP,),                      false),
+    RIGHT         => ((_DIR_RIGHT,),                   false),
+    LEFT          => ((_DIR_LEFT,),                    false),
+    DOWN          => ((_DIR_DOWN,),                    false),
+    UPRIGHT       => ((_DIR_UP, _DIR_RIGHT),           false),
+    UPLEFT        => ((_DIR_UP, _DIR_LEFT),            false),
+    DOWNRIGHT     => ((_DIR_DOWN, _DIR_RIGHT),         false),
+    DOWNLEFT      => ((_DIR_DOWN, _DIR_LEFT),          false),
+    UPFIRE        => ((_DIR_UP,),                      true),
+    RIGHTFIRE     => ((_DIR_RIGHT,),                   true),
+    LEFTFIRE      => ((_DIR_LEFT,),                    true),
+    DOWNFIRE      => ((_DIR_DOWN,),                    true),
+    UPRIGHTFIRE   => ((_DIR_UP, _DIR_RIGHT),           true),
+    UPLEFTFIRE    => ((_DIR_UP, _DIR_LEFT),            true),
+    DOWNRIGHTFIRE => ((_DIR_DOWN, _DIR_RIGHT),         true),
+    DOWNLEFTFIRE  => ((_DIR_DOWN, _DIR_LEFT),          true),
+)
 
-Drive SWCHA + INPT4 from `action`. Does NOT advance the CPU — call
-`run_until_frame!` after this to consume the inputs over a game frame.
+function _action_bits_for_player(action::Integer, player::Integer)
+    dirs, fire = _ACTION_DECODE[Action(Int(action))]
+    bits = UInt8(0)
+    for d in dirs
+        bits |= _DIR_BIT[(Int(player), d)]
+    end
+    return bits, fire
+end
+
 """
-function apply_action!(console::Console, action::Integer)
-    pressed_bits, fire_pressed = _ACTION_DECODE[Action(Int(action))]
-    p0_byte = ((0xF0 & ~pressed_bits) | _P1_DEFAULT_HIGH_BITS) & 0xFF
-    set_swcha_input!(console.bus.riot, UInt8(p0_byte))
-    set_trigger!(console.bus.tia, 0, fire_pressed)
+    apply_action!(console, action; player=0)
+
+Drive one player's joystick + fire-button inputs from `action`. The
+*other* player's nibble of SWCHA is preserved across calls, so the
+canonical two-player driving idiom is
+
+    apply_action!(console, p0_action; player=0)
+    apply_action!(console, p1_action; player=1)
+    run_until_frame!(console)
+
+`player` defaults to 0 so single-player code continues to work
+unchanged. Does NOT advance the CPU — call `run_until_frame!` to
+consume the inputs over a game frame.
+"""
+function apply_action!(console::Console, action::Integer; player::Integer = 0)
+    (player == 0 || player == 1) || throw(ArgumentError("player must be 0 or 1, got $player"))
+    pressed_bits, fire_pressed = _action_bits_for_player(action, player)
+
+    nibble_mask = player == 0 ? UInt8(_P0_ALL_RELEASED) : UInt8(_P1_ALL_RELEASED)
+    prev = console.bus.riot.swcha_in
+    p_byte = (prev & ~nibble_mask) | (nibble_mask & ~pressed_bits)
+    set_swcha_input!(console.bus.riot, UInt8(p_byte & 0xFF))
+    set_trigger!(console.bus.tia, Int(player), fire_pressed)
     return console
 end
 
