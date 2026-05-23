@@ -1132,3 +1132,303 @@ function soft_run!(state::SoftCPUState, bus::SoftBus, n_steps::Integer)
     end
     return nothing
 end
+
+
+# --------------------------------------------------------------------------- #
+# P7e-x — functional soft_step (Zygote-differentiable)
+# --------------------------------------------------------------------------- #
+#
+# The mutating `soft_step!` / `soft_run!` are not Zygote-differentiable
+# (Zygote rejects `setfield!` / `setindex!`). For end-to-end gradient
+# through a Julia trace we need a pure-functional `soft_step(state, bus)
+# -> (new_state, new_bus)` that builds *new* struct instances and new
+# RAM vectors instead of mutating in place.
+#
+# This block adds that path. The handlers below are 1:1 functional
+# mirrors of the mutating ones — same semantics, just immutable in
+# style. Opcodes not yet rewritten fall through to `_func_default`, a
+# lenient continuation (PC += 1, cycles += 2) so the trace stays
+# differentiable even past an unhandled opcode.
+#
+# Initial coverage is the "P7b core" + the most-common P7c-a opcodes —
+# enough to exercise loads, stores, transfers, the simplest flag ops
+# and an unconditional JMP, and to drive a meaningful XAI trace through
+# `soft_run`. Extending coverage to the full 151-opcode set is a
+# documented follow-up in STATUS.md (the mutating `soft_step!` retains
+# full coverage for non-AD use).
+#
+# The single non-obvious primitive is `_set_ram` — Zygote can't trace
+# `bus.ram[i] = v`, so we build a new vector via broadcast:
+#   new_ram = (1 .- mask) .* bus.ram .+ mask .* v
+# which IS traceable; the gradient flows back through both the
+# selection mask and the value.
+
+"""
+    update_state(state; A=…, X=…, Y=…, SP=…, PC=…, P=…, cycles=…) -> SoftCPUState
+
+Functional "with-modifications" constructor for `SoftCPUState`. Any
+omitted field defaults to the original value. Zygote can differentiate
+through this because it's just a struct constructor call.
+"""
+function update_state(s::SoftCPUState;
+                      A::Real      = s.A,
+                      X::Real      = s.X,
+                      Y::Real      = s.Y,
+                      SP::Real     = s.SP,
+                      PC::Real     = s.PC,
+                      P::Real      = s.P,
+                      cycles::Real = s.cycles)
+    return SoftCPUState(Float32(A), Float32(X), Float32(Y), Float32(SP),
+                         Float32(PC), Float32(P), Float32(cycles))
+end
+
+"""
+    update_bus(bus; ram=…, rom=…, riot_intim=…, …) -> SoftBus
+
+Functional with-modifications constructor for `SoftBus`. ROM defaults
+to the input (the differentiability target — usually unchanged within
+a step).
+"""
+function update_bus(b::SoftBus;
+                    ram::AbstractVector{<:Real} = b.ram,
+                    rom::AbstractVector{<:Real} = b.rom,
+                    riot_intim::Real           = b.riot_intim,
+                    riot_prescaler_shift::Real = b.riot_prescaler_shift,
+                    riot_residual_cycles::Real = b.riot_residual_cycles,
+                    riot_expired::Real         = b.riot_expired)
+    return SoftBus(Vector{Float32}(ram), Vector{Float32}(rom),
+                    Float32(riot_intim), Float32(riot_prescaler_shift),
+                    Float32(riot_residual_cycles), Float32(riot_expired))
+end
+
+"""
+    _set_ram(ram, idx, value) -> Vector{Float32}
+
+Functional single-cell RAM write — broadcast a one-hot select-and-set,
+returning a fresh vector. The construction is Zygote-friendly: the
+gradient flows back to `value` (one-hot weighted) and to the original
+`ram` (one-cold weighted).
+"""
+function _set_ram(ram::AbstractVector{<:Real}, idx::Integer, value::Real)
+    n    = length(ram)
+    mask = Float32.((0:n - 1) .== idx)
+    return (1f0 .- mask) .* Float32.(ram) .+ mask .* Float32(value)
+end
+
+
+# --- Functional bus dispatch ------------------------------------------------ #
+
+"""
+    _func_bus_read(bus, addr) -> Float32
+
+Functional sibling of `_bus_read` — same dispatch (cart / RIOT I/O /
+RAM), differentiable on the cart and RAM paths.
+"""
+function _func_bus_read(bus::SoftBus, addr::Real)
+    a_int = Int(addr) & 0x1FFF
+    if (a_int & 0x1000) != 0
+        return soft_rom_peek(bus.rom, a_int & 0x0FFF)
+    end
+    if (a_int & 0x80) != 0 && (a_int & 0x200) != 0
+        reg = a_int & 0x07
+        reg == 4 && return bus.riot_intim
+        reg == 5 && return bus.riot_expired != 0f0 ? Float32(0x80) : 0f0
+        return Float32(0xFF)
+    end
+    return soft_ram_peek(bus.ram, a_int & 0x7F)
+end
+
+"""
+    _func_bus_write(bus, addr, value) -> SoftBus
+
+Functional sibling of `_bus_write!`. Returns a *new* `SoftBus` for the
+write — ROM writes pass through unchanged; RIOT TIM*T writes load the
+timer fields; everything else lands in `bus.ram[(addr & 0x7F) + 1]`.
+"""
+function _func_bus_write(bus::SoftBus, addr::Real, value::Real)
+    a_int = Int(addr) & 0x1FFF
+    if (a_int & 0x1000) != 0
+        return bus                                          # ROM — drop
+    end
+    is_riot_io = (a_int & 0x80) != 0 && (a_int & 0x200) != 0
+    if is_riot_io && (a_int & 0x14) == 0x14
+        return update_bus(bus;
+            riot_intim           = Float32(value),
+            riot_prescaler_shift = Float32(_TIMT_SHIFTS[(a_int & 0x03) + 1]),
+            riot_residual_cycles = 0f0,
+            riot_expired         = 0f0)
+    end
+    new_ram = _set_ram(bus.ram, a_int & 0x7F, value)
+    return update_bus(bus; ram = new_ram)
+end
+
+
+# --- Functional handlers (P7b core + common P7c-a) -------------------------- #
+#
+# Every handler returns (new_state, new_bus). The naming matches the
+# mutating handlers but with no `!`.
+
+_func_default(state, bus) = update_state(state; PC=state.PC + 1f0,
+                                                cycles=state.cycles + 2f0), bus
+
+_func_nop(state, bus)     = update_state(state; PC=state.PC + 1f0,
+                                                cycles=state.cycles + 2f0), bus
+
+function _func_brk(state, bus)
+    # End-of-trace sentinel (consistent with `_branch_brk!`'s historic
+    # P7b role — full BRK→IRQ sequence is part of the per-opcode TODO).
+    return update_state(state; cycles=state.cycles + 7f0), bus
+end
+
+function _func_jmp_abs(state, bus)
+    new_pc = _operand_word(bus, state.PC + 1f0)
+    return update_state(state; PC=new_pc, cycles=state.cycles + 3f0), bus
+end
+
+# Load helpers — register := value; N/Z update; PC advance; cycle bump.
+function _func_load(state, bus, reg::Symbol, value::Real,
+                    instr_len::Real, cycles::Real)
+    new_p = _set_nz(state.P, value)
+    nt = (A=state.A, X=state.X, Y=state.Y)
+    new_reg_values = NamedTuple{(:A, :X, :Y)}((
+        reg == :A ? Float32(value) : nt.A,
+        reg == :X ? Float32(value) : nt.X,
+        reg == :Y ? Float32(value) : nt.Y))
+    return update_state(state;
+        A=new_reg_values.A, X=new_reg_values.X, Y=new_reg_values.Y,
+        P=new_p,
+        PC=state.PC + Float32(instr_len),
+        cycles=state.cycles + Float32(cycles),
+    ), bus
+end
+
+_func_lda_imm(state, bus) = _func_load(state, bus, :A,
+    _operand_byte(bus, state.PC + 1f0), 2, 2)
+_func_lda_zp(state, bus)  = _func_load(state, bus, :A,
+    _func_bus_read(bus, _addr_zp(state, bus)), 2, 3)
+_func_lda_abs(state, bus) = _func_load(state, bus, :A,
+    _func_bus_read(bus, _addr_abs(state, bus)), 3, 4)
+
+_func_ldx_imm(state, bus) = _func_load(state, bus, :X,
+    _operand_byte(bus, state.PC + 1f0), 2, 2)
+_func_ldx_zp(state, bus)  = _func_load(state, bus, :X,
+    _func_bus_read(bus, _addr_zp(state, bus)), 2, 3)
+
+_func_ldy_imm(state, bus) = _func_load(state, bus, :Y,
+    _operand_byte(bus, state.PC + 1f0), 2, 2)
+_func_ldy_zp(state, bus)  = _func_load(state, bus, :Y,
+    _func_bus_read(bus, _addr_zp(state, bus)), 2, 3)
+
+# Store helpers — no flag changes.
+function _func_store(state, bus, addr::Real, value::Real,
+                     instr_len::Real, cycles::Real)
+    new_bus = _func_bus_write(bus, addr, value)
+    return update_state(state;
+        PC=state.PC + Float32(instr_len),
+        cycles=state.cycles + Float32(cycles),
+    ), new_bus
+end
+
+_func_sta_zp(state, bus)  = _func_store(state, bus, _addr_zp(state, bus),
+                                          state.A, 2, 3)
+_func_sta_abs(state, bus) = _func_store(state, bus, _addr_abs(state, bus),
+                                          state.A, 3, 4)
+_func_stx_zp(state, bus)  = _func_store(state, bus, _addr_zp(state, bus),
+                                          state.X, 2, 3)
+_func_sty_zp(state, bus)  = _func_store(state, bus, _addr_zp(state, bus),
+                                          state.Y, 2, 3)
+
+# Transfers (TAX/TAY/TXA/TYA/TSX touch N/Z; TXS does not).
+_func_tax(state, bus) = _func_load(state, bus, :X, state.A, 1, 2)
+_func_tay(state, bus) = _func_load(state, bus, :Y, state.A, 1, 2)
+_func_txa(state, bus) = _func_load(state, bus, :A, state.X, 1, 2)
+_func_tya(state, bus) = _func_load(state, bus, :A, state.Y, 1, 2)
+_func_tsx(state, bus) = _func_load(state, bus, :X, state.SP, 1, 2)
+
+function _func_txs(state, bus)
+    return update_state(state;
+        SP=state.X, PC=state.PC + 1f0, cycles=state.cycles + 2f0,
+    ), bus
+end
+
+# SEC / CLC — single-bit flag toggles, no addressing.
+function _func_set_flag(state, bus, mask::Integer, set_it::Bool)
+    p_int = Int(state.P) & 0xFF
+    new_p = set_it ? (p_int | mask) : (p_int & (0xFF ⊻ mask))
+    return update_state(state;
+        P=Float32(new_p), PC=state.PC + 1f0, cycles=state.cycles + 2f0,
+    ), bus
+end
+
+_func_clc(state, bus) = _func_set_flag(state, bus, 0x01, false)
+_func_sec(state, bus) = _func_set_flag(state, bus, 0x01, true)
+
+# Dispatch table — functional analogue of `_HANDLERS`. Opcodes not
+# listed fall through to `_func_default`. Extending coverage is a
+# matter of writing the handler + adding the entry.
+const _FUNC_HANDLERS = let h = Function[_func_default for _ in 1:256]
+    h[0x00 + 1] = _func_brk
+    h[0xEA + 1] = _func_nop
+    h[0x4C + 1] = _func_jmp_abs
+    # Loads
+    h[0xA9 + 1] = _func_lda_imm
+    h[0xA5 + 1] = _func_lda_zp
+    h[0xAD + 1] = _func_lda_abs
+    h[0xA2 + 1] = _func_ldx_imm
+    h[0xA6 + 1] = _func_ldx_zp
+    h[0xA0 + 1] = _func_ldy_imm
+    h[0xA4 + 1] = _func_ldy_zp
+    # Stores
+    h[0x85 + 1] = _func_sta_zp
+    h[0x8D + 1] = _func_sta_abs
+    h[0x86 + 1] = _func_stx_zp
+    h[0x84 + 1] = _func_sty_zp
+    # Transfers
+    h[0xAA + 1] = _func_tax
+    h[0xA8 + 1] = _func_tay
+    h[0x8A + 1] = _func_txa
+    h[0x98 + 1] = _func_tya
+    h[0xBA + 1] = _func_tsx
+    h[0x9A + 1] = _func_txs
+    # Flag toggles
+    h[0x18 + 1] = _func_clc
+    h[0x38 + 1] = _func_sec
+    h
+end
+
+"""
+    soft_step(state::SoftCPUState, bus::SoftBus) -> (SoftCPUState, SoftBus)
+
+Functional sibling of `soft_step!`. Builds a *new* `SoftCPUState` and
+(when needed) a new `SoftBus` instead of mutating in place — Zygote
+can therefore differentiate through it.
+
+Opcode coverage as of P7e-x's initial cut: the P7b core (NOP, BRK,
+JMP abs, LDA / LDX / STA / STX) plus the common P7c-a opcodes
+(LDA/LDX/LDY zp/abs, STA/STX/STY zp, transfers, SEC/CLC). Any other
+opcode falls through to `_func_default` (PC += 1, cycles += 2) — the
+trace stays gradient-clean but forward behaviour past an unhandled
+opcode is wrong. Extending the table is mechanical; see STATUS.md
+P7e-x for the deferral list.
+"""
+function soft_step(state::SoftCPUState, bus::SoftBus)
+    rom_off       = _cart_addr(state.PC)
+    opcode_float  = soft_rom_peek(bus.rom, rom_off)
+    opcode_int    = Int(opcode_float) & 0xFF
+    return _FUNC_HANDLERS[opcode_int + 1](state, bus)
+end
+
+"""
+    soft_run(state::SoftCPUState, bus::SoftBus, n_steps::Integer)
+        -> (SoftCPUState, SoftBus)
+
+Run `n_steps` functional steps. Zygote-differentiable end-to-end — a
+gradient at any output field of the returned state (or bus.ram) flows
+back to the ROM bytes that fed every memory access along the trace.
+"""
+function soft_run(state::SoftCPUState, bus::SoftBus, n_steps::Integer)
+    for _ in 1:n_steps
+        state, bus = soft_step(state, bus)
+    end
+    return state, bus
+end

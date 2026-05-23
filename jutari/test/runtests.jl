@@ -35,6 +35,7 @@ using JuTari.Diff: RomTensor, peek, peek_many,
                    SoftCPUState, SoftBus,
                    initial_soft_cpu_state, initial_soft_bus,
                    soft_step!, soft_run!, soft_rom_peek, soft_ram_peek,
+                   soft_step, soft_run, update_state, update_bus,
                    SOFT_SUPPORTED_OPCODES,
                    soft_render_scanline, soft_render_frame,
                    soft_collision_registers, SOFT_SCREEN_WIDTH
@@ -4496,5 +4497,154 @@ end
             r -> soft_render_scanline(SoftBus(r, bus0.rom))[17], bus0.ram)
         @test grad[R_COLUPF + 1] == 1f0
         @test grad[R_COLUP0 + 1] == 0f0
+    end
+end
+
+
+@testset "JuTari P7e-x — functional soft_step (Zygote-differentiable)" begin
+    # Build a small ROM in a Float32 vector — matches the SOFT bus's
+    # internal representation. `prog` lives at offset 0 (PC=$F000 maps
+    # via the 13-bit mirror to ROM offset 0).
+    function _rom_with(prog::Vector{<:Integer})
+        rom = zeros(Float32, 256)
+        for (i, b) in enumerate(prog)
+            rom[i] = Float32(b & 0xFF)
+        end
+        return rom
+    end
+
+    @testset "soft_step is a no-op when not pre-imported" begin
+        # Smoke: the functions are exported under the same module the
+        # mutating ones come from.
+        @test soft_step isa Function
+        @test soft_run isa Function
+    end
+
+    @testset "forward — LDA imm lands in A" begin
+        # LDA #$42 ; STA $80 (one-instruction trace exercise)
+        rom = _rom_with([0xA9, 0x42, 0x85, 0x80])
+        bus = initial_soft_bus(rom)
+        state = initial_soft_cpu_state(pc=0xF000)
+        state, bus = soft_step(state, bus)
+        @test state.A == Float32(0x42)
+        @test state.PC == Float32(0xF002)
+        @test state.cycles == 2f0
+        # Second step: STA $80 stores into RAM cell 0 (0x80 & 0x7F = 0)
+        state, bus = soft_step(state, bus)
+        @test bus.ram[1] == Float32(0x42)
+        @test state.PC == Float32(0xF004)
+        @test state.cycles == 5f0
+    end
+
+    @testset "forward — soft_run matches soft_run!" begin
+        # The functional and mutating paths must agree forward for any
+        # program built from the covered opcode set. Drives an explicit
+        # equivalence check: same ROM, same initial state, identical
+        # instruction count → identical A / X / Y / PC / P + ram.
+        #
+        # We step exactly N_INSTR times (not N_BYTES) to stay inside
+        # the program — stepping past the end lands on $00 (BRK), and
+        # `_func_brk` (halt-in-place) intentionally differs from the
+        # mutating `_branch_brk!` (which jumps to the IRQ vector).
+        prog = [0xA9, 0x42,         # LDA #$42       (1)
+                0xAA,               # TAX            (2)
+                0xA8,               # TAY            (3)
+                0x85, 0x80,         # STA $80        (4)
+                0x86, 0x81,         # STX $81        (5)
+                0x84, 0x82,         # STY $82        (6)
+                0x18,               # CLC            (7)
+                0x38]               # SEC            (8)
+        n_instr = 8
+        rom = _rom_with(prog)
+
+        # Functional path
+        bus_f   = initial_soft_bus(rom)
+        state_f = initial_soft_cpu_state(pc=0xF000)
+        state_f, bus_f = soft_run(state_f, bus_f, n_instr)
+
+        # Mutating path
+        bus_m   = initial_soft_bus(rom)
+        state_m = initial_soft_cpu_state(pc=0xF000)
+        for _ in 1:n_instr
+            soft_step!(state_m, bus_m)
+        end
+
+        @test state_f.A == state_m.A
+        @test state_f.X == state_m.X
+        @test state_f.Y == state_m.Y
+        @test state_f.PC == state_m.PC
+        @test state_f.P == state_m.P
+        @test bus_f.ram == bus_m.ram
+    end
+
+    @testset "Zygote — gradient of state.A w.r.t. ROM is one-hot at the LDA operand" begin
+        # `LDA #$XX` reads the immediate from ROM[PC+1] = ROM[1]. The
+        # gradient ∂A/∂ROM should be one-hot at that index.
+        rom = _rom_with([0xA9, 0x55])
+        bus = initial_soft_bus(rom)
+        state0 = initial_soft_cpu_state(pc=0xF000)
+
+        grad, = Zygote.gradient(rom_vec -> begin
+            b = SoftBus(zeros(Float32, 128), rom_vec)
+            s = initial_soft_cpu_state(pc=0xF000)
+            s2, _ = soft_step(s, b)
+            return s2.A
+        end, rom)
+
+        @test grad[1] == 0f0          # opcode byte does not contribute to A
+        @test grad[2] == 1f0          # the immediate byte fully determines A
+        @test sum(abs.(grad[3:end])) == 0f0
+    end
+
+    @testset "Zygote — gradient through soft_run reaches the ROM" begin
+        # A 4-instruction trace: LDA #$10 ; STA $80 ; LDA $80 ; STA $81
+        # Output: bus.ram[1+1] = bus.ram[$81 cell] = $10. The gradient
+        # ∂(bus.ram[$81])/∂ROM[1] (the LDA #$10 operand) should be 1.
+        prog = [0xA9, 0x10,   # LDA #$10
+                0x85, 0x80,   # STA $80
+                0xA5, 0x80,   # LDA $80
+                0x85, 0x81]   # STA $81
+        rom0 = _rom_with(prog)
+
+        grad, = Zygote.gradient(rom_vec -> begin
+            b = SoftBus(zeros(Float32, 128), rom_vec)
+            s = initial_soft_cpu_state(pc=0xF000)
+            s_end, b_end = soft_run(s, b, 4)
+            return b_end.ram[2]                # RAM[$81 & 0x7F] = RAM[1] (0-idx) = ram[2] 1-idx
+        end, rom0)
+
+        @test grad[2] == 1f0         # LDA #$10 immediate byte
+        # The other ROM bytes don't carry value gradient (opcodes are
+        # int-extracted in soft_step's dispatch; addresses go through
+        # int casts in the addressing helpers).
+        @test sum(abs.(grad[1:1]))   == 0f0
+        @test sum(abs.(grad[3:end])) == 0f0
+    end
+
+    @testset "Zygote — gradient through transfer chain reaches the operand" begin
+        # LDA #$33 ; TAX ; STX $80 — A flows into X, then X stores into
+        # RAM[0]. The gradient ∂RAM[0]/∂ROM[1] should be 1.
+        rom0 = _rom_with([0xA9, 0x33, 0xAA, 0x86, 0x80])
+        grad, = Zygote.gradient(rom_vec -> begin
+            b = SoftBus(zeros(Float32, 128), rom_vec)
+            s = initial_soft_cpu_state(pc=0xF000)
+            s_end, b_end = soft_run(s, b, 3)
+            return b_end.ram[1]
+        end, rom0)
+        @test grad[2] == 1f0
+    end
+
+    @testset "unhandled opcode falls through cleanly (PC += 1, cycles += 2)" begin
+        # $69 (ADC #imm) is NOT in the functional handler set yet —
+        # _func_default catches it. Forward semantics are intentionally
+        # wrong past an unhandled opcode, but the trace stays
+        # gradient-clean.
+        rom = _rom_with([0x69, 0x42])
+        bus = initial_soft_bus(rom)
+        state = initial_soft_cpu_state(pc=0xF000)
+        state, bus = soft_step(state, bus)
+        @test state.PC == Float32(0xF001)       # only +1, not +2 like the real ADC
+        @test state.cycles == 2f0
+        @test state.A == 0f0                    # no real arithmetic happened
     end
 end
