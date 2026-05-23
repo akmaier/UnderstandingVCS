@@ -8,17 +8,15 @@
 //     {"frame": N, "ep_frame": N, "reward": R, "cum_reward": CR,
 //      "lives": L, "done": false, "ram": "<256 hex chars>"}
 //
-// Optional `--screen` adds:
-//     "screen": "<2 * height * width hex chars>"
+// Optional flags:
+//     --screen          adds "screen": "<2*h*w hex chars>"
+//     --cpu             adds "cpu": {"A":N,"X":N,"Y":N,"SP":N,"P":N,
+//                                    "PC":N,"cycles":N}
 //
-// Limitations
-// -----------
-// Only public ALEInterface state is exposed (RAM, screen, reward, lives, done,
-// frame number). CPU registers, TIA registers, RIOT timers, and cartridge bank
-// state are NOT accessible through the public API and require a separate
-// xitari-side patch (see PORTING_PLAN.md §4.1). For Phase P6 game-level
-// conformance against the JAX / Julia ports, frame-level RAM + screen is
-// already enough.
+// The --cpu flag uses the `friend class CpuDebug` declaration that lives in
+// xitari/emucore/m6502/src/M6502.hxx (and the matching friend in TIA.hxx /
+// future M6532 access) — see the comments next to `_CpuDebug` below for how
+// we tap into M6502's protected state without modifying xitari.
 //
 // Build: see ./Makefile (depends on a built libxitari.a + xitari headers
 // living at ../xitari).
@@ -33,6 +31,36 @@
 #include <vector>
 
 #include "ale_interface.hpp"
+#include "OSystem.hxx"
+#include "Console.hxx"
+#include "System.hxx"
+#include "M6502.hxx"
+
+// ----------------------------------------------------------------------- //
+// PXC1-x debug taps
+// ----------------------------------------------------------------------- //
+//
+// xitari was structured for a Stella-style debugger: M6502.hxx declares
+// `friend class CpuDebug;` and TIA.hxx declares `friend class TIADebug;`.
+// xitari itself never defines those classes (Stella does), so we can define
+// them here — in the same global namespace the friend declarations name —
+// and silently gain access to M6502's protected register file without
+// modifying any xitari header.
+//
+// This is the minimum-disruption path to the PXC1-x round 2+ diagnostics
+// described in PORTING_PLAN.md §4.1.
+
+namespace ale {
+class CpuDebug {
+public:
+    static uInt8 a (const M6502& cpu) { return cpu.A;  }
+    static uInt8 x (const M6502& cpu) { return cpu.X;  }
+    static uInt8 y (const M6502& cpu) { return cpu.Y;  }
+    static uInt8 sp(const M6502& cpu) { return cpu.SP; }
+    // PS() is a protected method on M6502 returning the packed NV-BDIZC byte.
+    static uInt8 p (const M6502& cpu) { return cpu.PS(); }
+};
+} // namespace ale
 
 using namespace ale;
 
@@ -67,9 +95,10 @@ static std::vector<int> load_actions(const std::string &path) {
 static void usage(const char *argv0) {
     std::fprintf(stderr,
         "usage: %s --rom <path> --actions <file> [--max-frames N] [--screen]\n"
-        "       [--repeat-last-on-exhaust]\n\n"
+        "       [--cpu] [--repeat-last-on-exhaust]\n\n"
         "Writes one JSONL line per frame to stdout.\n"
-        "Actions file: one integer ALE action per line (see ale_interface.hpp Action enum).\n",
+        "Actions file: one integer ALE action per line (see ale_interface.hpp Action enum).\n"
+        "--cpu adds a `cpu` object per line with A/X/Y/SP/P/PC + system cycles.\n",
         argv0);
 }
 
@@ -77,6 +106,7 @@ int main(int argc, char **argv) {
     std::string rom, actions_file;
     int max_frames = 0;
     bool dump_screen = false;
+    bool dump_cpu    = false;
     bool repeat_last = false;
 
     for (int i = 1; i < argc; ++i) {
@@ -85,6 +115,7 @@ int main(int argc, char **argv) {
         else if (a == "--actions" && i + 1 < argc) { actions_file = argv[++i]; }
         else if (a == "--max-frames" && i + 1 < argc) { max_frames = std::atoi(argv[++i]); }
         else if (a == "--screen") { dump_screen = true; }
+        else if (a == "--cpu") { dump_cpu = true; }
         else if (a == "--repeat-last-on-exhaust") { repeat_last = true; }
         else if (a == "-h" || a == "--help") { usage(argv[0]); return 0; }
         else { std::fprintf(stderr, "trace_dump: unknown arg %s\n", a.c_str()); usage(argv[0]); return 2; }
@@ -139,6 +170,22 @@ int main(int argc, char **argv) {
                        arr.size() * sizeof(pixel_t), screen_hex);
             std::fprintf(stdout, ",\"h\":%d,\"w\":%d,\"screen\":\"%s\"",
                          scr.height(), scr.width(), screen_hex.c_str());
+        }
+
+        if (dump_cpu) {
+            // PXC1-x round 2+: dump CPU register state at the end of the
+            // frame, via the CpuDebug friend tap defined above.
+            const M6502 &cpu = ale.osystem().console().system().m6502();
+            std::fprintf(stdout,
+                ",\"cpu\":{\"A\":%u,\"X\":%u,\"Y\":%u,\"SP\":%u,"
+                "\"P\":%u,\"PC\":%u,\"cycles\":%u}",
+                static_cast<unsigned>(CpuDebug::a(cpu)),
+                static_cast<unsigned>(CpuDebug::x(cpu)),
+                static_cast<unsigned>(CpuDebug::y(cpu)),
+                static_cast<unsigned>(CpuDebug::sp(cpu)),
+                static_cast<unsigned>(CpuDebug::p(cpu)),
+                static_cast<unsigned>(cpu.getPC()),
+                static_cast<unsigned>(ale.osystem().console().system().cycles()));
         }
 
         std::fprintf(stdout, "}\n");

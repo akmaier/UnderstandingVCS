@@ -57,11 +57,33 @@ def _ram_diff_report(reference_hex: str, actual_hex: str,
         print(f"    RAM[${i:02x}]: xitari=${e:02x}  jaxtari=${a:02x}", file=out)
 
 
+def _cpu_state(env) -> dict:
+    """Pull CPU registers out of jaxtari's HARD console for comparison
+    against the `cpu` field a `trace_dump --cpu` trace produces."""
+    cpu = env.console.cpu
+    return {
+        "A":  int(cpu.A),
+        "X":  int(cpu.X),
+        "Y":  int(cpu.Y),
+        "SP": int(cpu.SP),
+        "P":  int(cpu.P),
+        "PC": int(cpu.PC),
+    }
+
+
 def check_trace(rom_path: Path, trace_path: Path,
                 check_screen: bool = False) -> int:
     """Run the conformance check. Returns the number of frames matched
     before a divergence (or until the trace ended); raises on divergence
-    via ConformanceError."""
+    via ConformanceError.
+
+    If the reference trace was generated with `--cpu`, every frame's
+    CPU state (A, X, Y, SP, P, PC) is also diff'd. CPU divergence is
+    reported separately from RAM divergence so the cause class is
+    visible immediately: matched CPU + mismatched RAM = the two
+    emulators executed the same instructions but data-path reads
+    differed; mismatched CPU = execution itself diverged.
+    """
     rom = _load_rom(rom_path)
     env = StellaEnvironment(rom)
     # xitari's `ALEInterface::resetGame()` burns 60 NOOP frames + 4 RESET
@@ -75,6 +97,22 @@ def check_trace(rom_path: Path, trace_path: Path,
         for line in f:
             ref = json.loads(line)
             env.step(int(ref['action']))
+
+            # CPU check — only fires when the reference trace carries a
+            # "cpu" field (added by `trace_dump --cpu`).
+            if 'cpu' in ref:
+                got = _cpu_state(env)
+                ref_cpu = {k: ref['cpu'][k] for k in ("A", "X", "Y", "SP", "P", "PC")}
+                if got != ref_cpu:
+                    print(f"CPU DIVERGENCE at frame {ref['frame']}, "
+                          f"action={ref['action']}:", file=sys.stderr)
+                    for k in ("A", "X", "Y", "SP", "P", "PC"):
+                        if got[k] != ref_cpu[k]:
+                            print(f"    {k}: xitari={ref_cpu[k]}  "
+                                  f"jaxtari={got[k]}", file=sys.stderr)
+                    raise ConformanceError(
+                        f"CPU divergence at frame {ref['frame']} "
+                        f"({matched} matched)")
 
             ram = np.asarray(env.get_ram(), dtype=np.uint8)
             ram_hex = _hex_of(ram)
