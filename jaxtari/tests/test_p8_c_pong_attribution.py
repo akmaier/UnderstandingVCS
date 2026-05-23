@@ -199,30 +199,32 @@ def test_synthetic_pong_paddle_pixel_ig_recovers_pixel_value():
 
 @pytest.mark.skipif(not _PONG_ROM.exists(),
                     reason="xitari pong.bin not present in this checkout")
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "P8-cx — Pong's startup polls the RIOT INTIM timer in a busy "
-        "loop. The SOFT bus does not yet carry RIOT timer state, so "
-        "`_bus_read` returns 0 for $0284 forever and Pong never reaches "
-        "the rendering kernel — COLUP0 stays 0 even after thousands of "
-        "soft_step calls. Closing this needs a small SOFT-mode RIOT "
-        "timer (decrement per soft_step, reset on TIM*T writes, read "
-        "on $0284). Remove this xfail marker the day soft_run_scan(pong.bin) "
-        "actually paints a paddle."
-    ),
-)
-def test_real_pong_execution_attribution_xfails_on_riot_stall():
+def test_real_pong_execution_paints_paddles_after_p8cx():
+    """**P8-cx headline test.** With the SOFT-mode RIOT timer, the
+    `_bus_read` defaults for SWCHA/SWCHB, the ROM-mirror wrap inside
+    `soft_rom_peek`, the BRK→IRQ-vector proper sequence, and the
+    region-guarded TIM*T detection, Pong's startup gets past its
+    INTIM-polling loop, runs its kernel, and paints its sprite /
+    colour registers. Asserting `COLUP0` is non-zero after 50K SOFT
+    instructions pins that the SOFT execution path actually reaches
+    real Pong rendering code."""
     rom_bytes = np.fromfile(_PONG_ROM, dtype=np.uint8)
     rom = jnp.asarray(rom_bytes, dtype=jnp.float32)
     bus = SoftBus(ram=jnp.zeros((128,), dtype=jnp.float32), rom=rom)
     state = initial_soft_cpu_state()
-    # Run "enough" SOFT steps that Pong should be rendering by now.
-    state, bus = soft_run_scan(state, bus, 20_000)
-    # After 20K SOFT steps Pong WOULD have set COLUP0 to its paddle
-    # colour ($42 or similar non-zero) if execution had progressed.
-    # Asserting that pins the architectural gap.
+    state, bus = soft_run_scan(state, bus, 50_000)
+    # COLUP0 — paddle 0 colour. Non-zero ⇒ Pong reached the bit of its
+    # init / kernel that writes the player colour.
     assert float(bus.ram[_COLUP0]) != 0.0, (
-        "Pong stalled in RIOT-INTIM polling loop — needs SOFT-mode "
-        "RIOT timer (P8-cx). See test docstring."
+        "Pong didn't reach the colour-set kernel — the P8-cx pipeline "
+        "may be regressing. Run soft_run_scan on pong.bin and inspect "
+        "the trace."
+    )
+    # Several other TIA registers should also have non-zero values
+    # by this point — playfield colour, paddle positions, etc.
+    nonzero = sum(int(bus.ram[r]) != 0 for r in
+                  (_COLUP0, _COLUP1, _COLUBK, _CTRLPF, _RESP0, _RESP1))
+    assert nonzero >= 4, (
+        f"only {nonzero} of 6 watched TIA cells are non-zero after "
+        f"50K SOFT steps — Pong's kernel isn't fully running"
     )

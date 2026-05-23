@@ -61,7 +61,13 @@ Zygote-differentiable w.r.t. `rom` — see P7e.
 """
 function soft_rom_peek(rom::AbstractVector{<:Real}, addr::Real)
     n = length(rom)
-    one_hot = Float32.((0:n - 1) .== Int(addr))
+    # P8-cx: wrap the address modulo the ROM size so 2K / 4K / 8K carts
+    # mirror correctly across the 4 KB $F000-$FFFF window (the IRQ
+    # vector at $FFFE/$FFFF must read from the last two bytes of the
+    # cart, regardless of cart size). `mod` works for any ROM size,
+    # including the small fixtures the unit tests use.
+    idx = mod(Int(addr), n)
+    one_hot = Float32.((0:n - 1) .== idx)
     return _dot(one_hot, Float32.(rom))
 end
 
@@ -82,30 +88,79 @@ end
     _bus_read(bus, addr) -> Float32
 
 SOFT-mode bus read with cart-vs-RAM decode (13-bit mirror; cart range
-\$1000-\$1FFF goes through soft_rom_peek, everything else maps into the
-128 B RAM via `addr & 0x7F`). Proper TIA / RIOT register dispatch is
-P7c-f.
+\$1000-\$1FFF goes through soft_rom_peek). P8-cx dispatches RIOT I/O
+reads at \$0280-\$029F: INTIM (reg=4) → `bus.riot_intim`, INSTAT (reg=5)
+→ bit 7 from the `riot_expired` latch, anything else → \$FF (all
+switches released — the right default for SOFT execution without an
+input layer). RAM is the fallback.
 """
 function _bus_read(bus::SoftBus, addr::Real)
     a_int = Int(addr) & 0x1FFF
     if (a_int & 0x1000) != 0
         return soft_rom_peek(bus.rom, a_int & 0x0FFF)
-    else
-        return soft_ram_peek(bus.ram, a_int & 0x7F)
     end
+    # RIOT I/O region: A7=1, A9=1 → $0280-$029F
+    if (a_int & 0x80) != 0 && (a_int & 0x200) != 0
+        reg = a_int & 0x07
+        reg == 4 && return bus.riot_intim
+        reg == 5 && return bus.riot_expired != 0f0 ? Float32(0x80) : 0f0
+        return Float32(0xFF)
+    end
+    return soft_ram_peek(bus.ram, a_int & 0x7F)
 end
+
+# Prescaler-shift lookup for TIM*T addresses: low 2 bits select
+# 1/8/64/1024 cycles per tick (= 2^0/3/6/10).
+const _TIMT_SHIFTS = Int[0, 3, 6, 10]
 
 """
     _bus_write!(bus, addr, value) -> nothing
 
-SOFT-mode bus write. ROM writes are silently dropped; everything else
-mutates `bus.ram[(addr & 0x7F) + 1]`. P7c-f adds real TIA/RIOT/cart
-dispatch.
+SOFT-mode bus write. ROM writes are silently dropped. Writes to RIOT
+TIM*T (in the RIOT I/O region AND `(addr & 0x14) == 0x14`) load the
+P8-cx timer fields. Everything else mutates `bus.ram[(addr & 0x7F) + 1]`.
 """
 function _bus_write!(bus::SoftBus, addr::Real, value::Real)
     a_int = Int(addr) & 0x1FFF
-    if (a_int & 0x1000) == 0
-        bus.ram[(a_int & 0x7F) + 1] = Float32(value)
+    if (a_int & 0x1000) != 0
+        return nothing                              # ROM write — drop
+    end
+    # P8-cx: TIM*T detection must include the RIOT-region guard —
+    # without it innocuous stack addresses like $01FD match.
+    is_riot_io = (a_int & 0x80) != 0 && (a_int & 0x200) != 0
+    if is_riot_io && (a_int & 0x14) == 0x14
+        bus.riot_intim            = Float32(value)
+        bus.riot_prescaler_shift  = Float32(_TIMT_SHIFTS[(a_int & 0x03) + 1])
+        bus.riot_residual_cycles  = 0f0
+        bus.riot_expired          = 0f0
+        return nothing
+    end
+    bus.ram[(a_int & 0x7F) + 1] = Float32(value)
+    return nothing
+end
+
+"""
+    _advance_riot_timer!(bus, cpu_cycles) -> nothing
+
+P8-cx: tick the RIOT timer. Pre-expiration only — INTIM decrements
+once per `2^prescaler_shift` cycles and the `riot_expired` latch
+fires when INTIM reaches 0. The HARD RIOT switches to one-tick-per-
+cycle post-expiration; SOFT mode floors at 0 because every Atari ROM
+polling INTIM cares about the *reaches-zero* moment.
+"""
+function _advance_riot_timer!(bus::SoftBus, cpu_cycles::Real)
+    prescaler = 1 << Int(bus.riot_prescaler_shift)
+    total     = Int(bus.riot_residual_cycles) + Int(cpu_cycles)
+    ticks     = total ÷ prescaler
+    bus.riot_residual_cycles = Float32(total - ticks * prescaler)
+
+    intim_i = Int(bus.riot_intim)
+    new_intim = max(intim_i - ticks, 0)
+    expired_now = intim_i <= ticks ? 1f0 : 0f0
+    bus.riot_intim   = Float32(new_intim)
+    # Latch: once expired stays expired (until next TIM*T write).
+    if bus.riot_expired == 0f0
+        bus.riot_expired = expired_now
     end
     return nothing
 end
@@ -250,6 +305,26 @@ function _branch_default!(state::SoftCPUState, bus::SoftBus)
 end
 
 function _branch_brk!(state::SoftCPUState, bus::SoftBus)
+    # P8-cx: proper interrupt sequence (was an "end-of-trace sentinel"
+    # in P7b–P7c). Real Atari ROMs use BRK intentionally — Pong's
+    # vertical-blank kernel sits on a BRK at $F262, branching into the
+    # IRQ handler at the $FFFE/$FFFF vector. 7 cycles.
+    return_addr = state.PC + 2f0
+    ra_int = Int(return_addr) & 0xFFFF
+    hi = Float32((ra_int >> 8) & 0xFF)
+    lo = Float32(ra_int & 0xFF)
+    sp = _push8!(bus, state.SP, hi)
+    sp = _push8!(bus, sp, lo)
+    # Push P with B and U forced on.
+    p_pushed = Float32(Int(state.P) | 0x30)
+    sp = _push8!(bus, sp, p_pushed)
+    # Set I flag (U stays set as invariant).
+    state.SP = sp
+    state.P  = Float32((Int(state.P) | 0x04 | 0x20) & 0xFF)
+    # Jump to IRQ vector at $FFFE / $FFFF.
+    irq_lo = _bus_read(bus, 0xFFFE)
+    irq_hi = _bus_read(bus, 0xFFFF)
+    state.PC = irq_lo + irq_hi * 256f0
     state.cycles += 7f0
     return nothing
 end
@@ -1039,7 +1114,10 @@ function soft_step!(state::SoftCPUState, bus::SoftBus)
     rom_off = _cart_addr(state.PC)
     opcode_float = soft_rom_peek(bus.rom, rom_off)
     opcode_int = Int(opcode_float) & 0xFF
+    cycles_before = state.cycles
     _HANDLERS[opcode_int + 1](state, bus)
+    # P8-cx: tick the RIOT timer by this instruction's cycle count.
+    _advance_riot_timer!(bus, state.cycles - cycles_before)
     return nothing
 end
 

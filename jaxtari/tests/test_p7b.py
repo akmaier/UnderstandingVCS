@@ -129,12 +129,28 @@ def test_jmp_abs_sets_pc_from_operand():
     assert float(state.PC) == 0x1234
 
 
-def test_brk_halts_in_place():
-    bus = initial_soft_bus(_rom_with([0x00]))
+def test_brk_jumps_to_irq_vector():
+    """P8-cx: BRK used to be an "end-of-trace sentinel" (halt in place);
+    real Atari ROMs use BRK intentionally (Pong's vertical-blank kernel
+    sits on a BRK at $F262, branching into the IRQ handler), so SOFT
+    mode now performs the proper interrupt sequence: push PC+2, push
+    P|B|U, set I, jump to the IRQ vector at $FFFE/$FFFF. The cart's
+    last two bytes (the IRQ vector) determine where BRK lands."""
+    # 4 KB rom: BRK at offset 0, IRQ vector at $0FFE/$0FFF → cart bytes
+    # at the very end of the rom array. Set them to $34 / $12 so PC
+    # should land at $1234 after the BRK.
+    bytes_ = [0x00]
+    rom = jnp.zeros((4096,), dtype=jnp.float32)
+    for i, b in enumerate(bytes_):
+        rom = rom.at[i].set(jnp.float32(b))
+    rom = rom.at[0x0FFE].set(jnp.float32(0x34))
+    rom = rom.at[0x0FFF].set(jnp.float32(0x12))
+    bus = initial_soft_bus(rom)
     state = initial_soft_cpu_state()
-    pc_before = float(state.PC)
     state, _ = soft_step(state, bus)
-    assert float(state.PC) == pc_before        # BRK doesn't advance in the sentinel
+    assert float(state.PC) == 0x1234            # ← jumped to IRQ vector
+    # I flag is set as part of the BRK sequence.
+    assert int(state.P) & 0x04
 
 
 def test_default_branch_advances_one_byte_for_unhandled_opcode():

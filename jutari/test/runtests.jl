@@ -2797,12 +2797,19 @@ end
         @test state.PC == Float32(0x1234)
     end
 
-    @testset "BRK halts in place" begin
-        bus = initial_soft_bus(_soft_rom_with([0x00]))
+    @testset "BRK jumps to IRQ vector (P8-cx)" begin
+        # P8-cx: BRK now performs the proper interrupt sequence (was a
+        # "halt in place" sentinel). The cart's last two bytes form
+        # the IRQ vector at $FFFE / $FFFF — set them to $34 / $12 and
+        # the BRK should land at $1234.
+        rom = _soft_rom_with([0x00])
+        rom[0x0FFE + 1] = Float32(0x34)
+        rom[0x0FFF + 1] = Float32(0x12)
+        bus = initial_soft_bus(rom)
         state = initial_soft_cpu_state()
-        pc_before = state.PC
         soft_step!(state, bus)
-        @test state.PC == pc_before
+        @test state.PC == Float32(0x1234)
+        @test (Int(state.P) & 0x04) != 0     # I flag set
     end
 
     @testset "default branch advances one byte on unhandled opcode" begin
@@ -3767,12 +3774,20 @@ end
         @test state.cycles == 6f0
     end
 
-    @testset "BRK still halts in place as sentinel" begin
-        bus = initial_soft_bus(_soft_rom_with([0x00]))
+    @testset "BRK now performs proper interrupt sequence (P8-cx)" begin
+        # P8-cx: BRK is no longer a halt sentinel. With the IRQ vector
+        # pointing back at $F000 we observe the jump and a 3-byte stack
+        # push.
+        rom = _soft_rom_with([0x00])
+        rom[0x0FFE + 1] = Float32(0x00)
+        rom[0x0FFF + 1] = Float32(0xF0)
+        bus = initial_soft_bus(rom)
         state = initial_soft_cpu_state()
-        pc_before = state.PC
+        sp_before = state.SP
         soft_step!(state, bus)
-        @test state.PC == pc_before
+        @test state.PC == Float32(0xF000)
+        @test state.SP == sp_before - 3f0
+        @test (Int(state.P) & 0x04) != 0
     end
 
 end

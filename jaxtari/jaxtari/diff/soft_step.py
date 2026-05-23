@@ -64,12 +64,20 @@ def soft_rom_peek(rom, addr) -> jnp.ndarray:
     """Differentiable cart byte read — `one_hot(addr) · rom`.
 
     `rom` may be a raw 1-D numeric array or a `RomTensor` (P7d). `addr`
-    is a scalar (int or float); it's treated as the offset *inside the
-    ROM* (the 13-bit address mirror is applied at the call site).
+    is a scalar (int or float). The address is wrapped modulo the
+    ROM size so the cart mirrors correctly in the 4 KB $F000-$FFFF
+    window — a 2 KB cart like `pong.bin` is mirrored twice (P8-cx
+    needed this for IRQ-vector reads at $FFFE/$FFFF, which a naive
+    `& 0x0FFF` would index past the ROM). Cart sizes are powers of 2
+    (2K/4K/8K/16K/32K), so the `& (n - 1)` wrap is exact.
     """
     arr = _rom_array(rom)
     n = arr.shape[0]
-    one_hot = jax.nn.one_hot(addr, n, dtype=jnp.float32)
+    # `%` works for any ROM size (including the small fixtures the unit
+    # tests use); for production cart sizes (powers of 2) JAX lowers it
+    # to a bitwise AND on the integer path anyway.
+    addr_wrapped = jnp.asarray(addr).astype(jnp.int32) % n
+    one_hot = jax.nn.one_hot(addr_wrapped, n, dtype=jnp.float32)
     return jnp.dot(one_hot, arr.astype(jnp.float32))
 
 
@@ -104,31 +112,111 @@ def _bus_read(bus: SoftBus, addr) -> jnp.ndarray:
     """
     a_int       = jnp.asarray(addr).astype(jnp.int32) & 0x1FFF
     is_cart     = (a_int & 0x1000) != 0
+    is_riot_io  = (~is_cart) & ((a_int & 0x80) != 0) & ((a_int & 0x200) != 0)
     cart_offset = a_int & 0x0FFF
     ram_offset  = a_int & 0x7F
-    return jnp.where(
-        is_cart,
-        soft_rom_peek(bus.rom, cart_offset),
-        soft_ram_peek(bus.ram, ram_offset),
-    )
+
+    cart_val = soft_rom_peek(bus.rom, cart_offset)
+    ram_val  = soft_ram_peek(bus.ram, ram_offset)
+
+    # P8-cx: RIOT I/O reads ($0280-$029F band, decoded by `addr & 0x07`):
+    #   reg 4 (INTIM) → bus.riot_intim
+    #   reg 5 (INSTAT) → bit 7 = riot_expired latch
+    #   anything else (SWCHA/SWACNT/SWCHB/SWBCNT) → 0xFF, the "all
+    #   console switches released, all joystick directions released"
+    #   default. Falling through to RAM here was the bug that kept
+    #   Pong's init reading RESET-pressed because a prior VSYNC write
+    #   to $02 had clobbered ram[2] (the SOFT collapse stores TIA $02
+    #   and reads RIOT $0282 in the same cell). Returning a constant
+    #   gives Pong an idle controller — enough for its init to proceed.
+    reg = a_int & 0x07
+    riot_val = jnp.where(
+        reg == 4, bus.riot_intim,
+        jnp.where(reg == 5,
+                  jnp.where(bus.riot_expired != 0, jnp.float32(0x80), jnp.float32(0)),
+                  jnp.float32(0xFF)))
+
+    return jnp.where(is_cart, cart_val,
+                     jnp.where(is_riot_io, riot_val, ram_val))
+
+
+# Prescaler-shift lookup for TIM*T addresses: low 2 bits select
+# 1/8/64/1024 cycles per tick (= 2^0/3/6/10).
+_TIMT_SHIFTS = jnp.array([0, 3, 6, 10], dtype=jnp.float32)
 
 
 def _bus_write(bus: SoftBus, addr, value: jnp.ndarray) -> SoftBus:
     """SOFT-mode differentiable bus write.
 
-    For P7c-a the model is: ROM writes are silently dropped; everything
-    else mutates `bus.ram[addr & 0x7F]`. TIA register writes therefore
-    land in RAM rather than affecting the framebuffer — that's wrong
-    forward behaviour but keeps the trace gradient-clean. P7c-f adds
-    real TIA / RIOT / cart-hotspot routing.
+    Writes to ROM are silently dropped. Writes to RIOT TIM*T (detected
+    by `(addr & 0x14) == 0x14`, matching the HARD RIOT decode) load the
+    P8-cx timer fields — INTIM = value, prescaler from the low 2 bits,
+    residual cycles reset, expired flag cleared. Everything else
+    mutates `bus.ram[addr & 0x7F]` as before.
+
+    All branches are evaluated and selected with `jnp.where` so the
+    gradient stays clean.
     """
     a_int      = jnp.asarray(addr).astype(jnp.int32) & 0x1FFF
     ram_offset = a_int & 0x7F
     is_cart    = (a_int & 0x1000) != 0
-    current    = soft_ram_peek(bus.ram, ram_offset)
-    new_val    = jnp.where(is_cart, current, value)
-    new_ram    = bus.ram.at[ram_offset].set(new_val)
-    return bus._replace(ram=new_ram)
+    # P8-cx: TIM*T detection must ALSO require the RIOT I/O region
+    # (A7=1, A9=1) — `(addr & 0x14) == 0x14` alone matches innocuous
+    # stack addresses like $01FD (bits 2 + 4 happen to be set), and
+    # without the region guard every BRK push got reinterpreted as a
+    # timer load. Round-trip stack pushes / pops then pulled zeros and
+    # any RTI landed at PC=$0000.
+    is_riot_io = (~is_cart) & ((a_int & 0x80) != 0) & ((a_int & 0x200) != 0)
+    is_tim_t   = is_riot_io & ((a_int & 0x14) == 0x14)
+
+    # RAM path: keep current value if this is a cart or TIM*T write.
+    current   = soft_ram_peek(bus.ram, ram_offset)
+    new_val   = jnp.where(is_cart | is_tim_t, current, value)
+    new_ram   = bus.ram.at[ram_offset].set(new_val)
+
+    # P8-cx: timer load on TIM*T.
+    new_intim          = jnp.where(is_tim_t, value, bus.riot_intim)
+    new_prescaler_shft = jnp.where(
+        is_tim_t, _TIMT_SHIFTS[a_int & 0x03], bus.riot_prescaler_shift)
+    new_residual       = jnp.where(is_tim_t, jnp.float32(0), bus.riot_residual_cycles)
+    new_expired        = jnp.where(is_tim_t, jnp.float32(0), bus.riot_expired)
+
+    return bus._replace(
+        ram=new_ram,
+        riot_intim=new_intim,
+        riot_prescaler_shift=new_prescaler_shft,
+        riot_residual_cycles=new_residual,
+        riot_expired=new_expired,
+    )
+
+
+def _advance_riot_timer(bus: SoftBus, cpu_cycles) -> SoftBus:
+    """P8-cx: tick the RIOT timer by `cpu_cycles` CPU cycles.
+
+    Simplified model — pre-expiration only: INTIM decrements once per
+    `2 ** prescaler_shift` cycles; on reaching 0 the `riot_expired`
+    latch fires and INTIM stays at 0. The HARD RIOT switches to one-
+    tick-per-cycle after expiration; SOFT mode floors at 0 because
+    every Atari ROM polling INTIM cares about the *reaches-zero*
+    moment, not the post-expiration wrap-around timing.
+    """
+    prescaler   = jnp.int32(1) << bus.riot_prescaler_shift.astype(jnp.int32)
+    total       = bus.riot_residual_cycles.astype(jnp.int32) + cpu_cycles.astype(jnp.int32)
+    ticks       = total // prescaler
+    residual    = (total - ticks * prescaler).astype(jnp.float32)
+
+    intim_i     = bus.riot_intim.astype(jnp.int32)
+    new_intim_i = jnp.maximum(intim_i - ticks, 0)
+    new_expired = (intim_i <= ticks).astype(jnp.float32)
+    # `riot_expired` latches — once set, stays set until the next TIM*T
+    # write clears it.
+    new_expired = jnp.where(bus.riot_expired != 0, bus.riot_expired, new_expired)
+
+    return bus._replace(
+        riot_intim=new_intim_i.astype(jnp.float32),
+        riot_residual_cycles=residual,
+        riot_expired=new_expired,
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -285,10 +373,39 @@ def _branch_default(state: SoftCPUState, bus: SoftBus):
 
 
 def _branch_brk(state: SoftCPUState, bus: SoftBus):
-    """End-of-trace sentinel — halt in place. PC doesn't advance so
-    a run-until-BRK loop terminates by hitting the same instruction
-    twice (callers should break out of the loop when PC stops changing)."""
-    return state._replace(cycles=state.cycles + 7.0), bus
+    """BRK — proper interrupt sequence: push PC+2, push P|B|U, set the
+    I flag, jump to the IRQ vector at $FFFE/$FFFF.
+
+    P8-cx note: P7b through P7c had BRK as an "end-of-trace sentinel"
+    (halt in place) because the early XAI traces didn't hit it. Real
+    Atari ROMs use BRK intentionally — Pong's vertical-blank kernel
+    sits on a BRK at $F262, branching into the IRQ handler at the
+    vector — so SOFT mode now performs the proper sequence. 7 cycles.
+    Uses `_push8` (defined later in the module, looked up at call
+    time)."""
+    return_addr = state.PC + 2.0
+    ra_int = return_addr.astype(jnp.int32) & 0xFFFF
+    hi = ((ra_int >> 8) & 0xFF).astype(jnp.float32)
+    lo = (ra_int & 0xFF).astype(jnp.float32)
+    # Push the return address (high first, then low — RTI pops low then high)
+    bus, sp = _push8(bus, state.SP, hi)
+    bus, sp = _push8(bus, sp, lo)
+    # Push P with B and U forced on (the BRK-pushed copy of P).
+    p_pushed = (state.P.astype(jnp.int32) | 0x30).astype(jnp.float32)
+    bus, sp = _push8(bus, sp, p_pushed)
+    # Set I flag (keep U set as an invariant).
+    new_p = (state.P.astype(jnp.int32) | 0x04 | 0x20).astype(jnp.float32)
+    # Jump to the IRQ vector at $FFFE / $FFFF. (`_bus_read` handles
+    # the 2K/4K cart mirror via the wrap inside `soft_rom_peek`.)
+    irq_lo = _bus_read(bus, 0xFFFE)
+    irq_hi = _bus_read(bus, 0xFFFF)
+    new_pc = irq_lo + irq_hi * 256.0
+    return state._replace(
+        SP=sp,
+        P=new_p,
+        PC=new_pc,
+        cycles=state.cycles + 7.0,
+    ), bus
 
 
 def _branch_nop(state: SoftCPUState, bus: SoftBus):
@@ -1339,12 +1456,16 @@ def soft_step(state: SoftCPUState, bus: SoftBus):
 
     Memory access is differentiable (one-hot dot product on ROM and
     RAM). Dispatch is `jax.lax.switch` over the 256-way opcode table.
-    Returns `(new_state, new_bus)`.
+    Returns `(new_state, new_bus)`. After the opcode handler runs, the
+    RIOT timer (P8-cx) is ticked by the instruction's cycle count.
     """
     rom_off = _cart_addr(state.PC)
     opcode_float = soft_rom_peek(bus.rom, rom_off)
     opcode_int = opcode_float.astype(jnp.int32)
-    return jax.lax.switch(opcode_int, _HANDLERS, state, bus)
+    cycles_before = state.cycles
+    new_state, new_bus = jax.lax.switch(opcode_int, _HANDLERS, state, bus)
+    new_bus = _advance_riot_timer(new_bus, new_state.cycles - cycles_before)
+    return new_state, new_bus
 
 
 def soft_run(state: SoftCPUState, bus: SoftBus, n_steps: int):

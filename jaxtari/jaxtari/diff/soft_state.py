@@ -57,20 +57,35 @@ def initial_soft_cpu_state(pc: float = 0xF000) -> SoftCPUState:
 
 
 class SoftBus(NamedTuple):
-    """SOFT-mode bus: float-valued RAM + raw ROM array.
+    """SOFT-mode bus: float-valued RAM + raw ROM array, plus the
+    minimal RIOT timer state introduced in **P8-cx**.
 
     The ROM is the differentiability target: `jax.grad` of any output
     that depends on a `soft_rom_peek(bus.rom, addr)` call flows back
     here, one-hot at the accessed address.
+
+    P8-cx adds four scalar fields modelling the RIOT M6532 interval
+    timer — enough to get past the standard "load TIM*T → poll INTIM"
+    boot pattern that stalled the SOFT execution of real ROMs (Pong's
+    init being the headline case). All four default to inert values so
+    existing tests / SoftBus constructions are not affected — the
+    timer only matters once a program writes TIM1T/TIM8T/TIM64T/TIM1024T.
     """
     ram: jnp.ndarray    # (128,) float32
     rom: jnp.ndarray    # (N,)   any numeric dtype — float32 conversion at peek
+    # P8-cx RIOT timer (defaults are inert; first TIM*T write activates):
+    riot_intim: jnp.ndarray = jnp.float32(0.0)
+    riot_prescaler_shift: jnp.ndarray = jnp.float32(0.0)   # 0/3/6/10 → 1/8/64/1024×
+    riot_residual_cycles: jnp.ndarray = jnp.float32(0.0)
+    riot_expired: jnp.ndarray = jnp.float32(0.0)           # latch, 1.0 = INTIM reached 0
 
 
 def initial_soft_bus(rom: jnp.ndarray) -> SoftBus:
     """Build a `SoftBus` with all-zero RAM and the given ROM. The ROM
     may be any byte length the cart formats support (2K/4K/8K/16K/32K);
-    `soft_rom_peek` handles the 13-bit address mirror.
+    `soft_rom_peek` handles the 13-bit address mirror. RIOT timer
+    fields default to inert; they activate the moment a program writes
+    TIM*T (see P8-cx in `soft_step`).
     """
     return SoftBus(
         ram=jnp.zeros((128,), dtype=jnp.float32),

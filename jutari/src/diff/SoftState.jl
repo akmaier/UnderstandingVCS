@@ -48,21 +48,39 @@ initial_soft_cpu_state(; pc::Real = 0xF000) =
 """
     SoftBus
 
-SOFT-mode bus: float-valued RAM + raw ROM array. The ROM is the
-differentiability target — a gradient at any output that depends on a
+SOFT-mode bus: float-valued RAM + raw ROM array + the minimal RIOT
+timer state introduced in **P8-cx**. The ROM is the differentiability
+target — a gradient at any output that depends on a
 `soft_rom_peek(bus.rom, addr)` call flows back here, one-hot at the
 accessed address.
+
+P8-cx adds four scalar fields modelling the RIOT M6532 interval timer
+— enough to get past the standard "load TIM*T → poll INTIM" boot
+pattern that stalled SOFT execution of real ROMs. All four default to
+inert values so existing constructions are unaffected.
 """
 mutable struct SoftBus
     ram::Vector{Float32}    # 128-element
     rom::Vector{Float32}    # N-element
+    # P8-cx RIOT timer (inert defaults; activated by the first TIM*T write).
+    riot_intim::Float32
+    riot_prescaler_shift::Float32   # 0/3/6/10 → 1/8/64/1024×
+    riot_residual_cycles::Float32
+    riot_expired::Float32            # latch, 1.0 = INTIM reached 0
 end
+
+"""
+    SoftBus(ram, rom) — convenience constructor preserving the pre-P8-cx
+    signature (RIOT timer fields default to inert).
+"""
+SoftBus(ram::Vector{Float32}, rom::Vector{Float32}) =
+    SoftBus(ram, rom, 0f0, 0f0, 0f0, 0f0)
 
 """
     initial_soft_bus(rom) -> SoftBus
 
-Build a `SoftBus` with all-zero RAM and the given ROM (converted to
-`Vector{Float32}`).
+Build a `SoftBus` with all-zero RAM, the given ROM, and an inert RIOT
+timer (first TIM*T write activates it).
 """
 initial_soft_bus(rom::AbstractVector) =
     SoftBus(zeros(Float32, 128), Vector{Float32}(rom))

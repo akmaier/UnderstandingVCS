@@ -102,14 +102,24 @@ def test_rti_costs_6_cycles():
     assert float(state.cycles) == 6.0
 
 
-def test_brk_still_halts_in_place_as_sentinel():
-    """P7c-f keeps BRK as the end-of-trace sentinel — it must NOT have
-    grown a proper interrupt sequence."""
-    bus = initial_soft_bus(_rom_with([0x00]))
+def test_brk_now_performs_proper_interrupt_sequence():
+    """P8-cx: BRK is no longer a halt-in-place sentinel — it pushes
+    PC+2, pushes P|B|U, sets I, and jumps to the IRQ vector at
+    $FFFE/$FFFF. With the IRQ vector pointing back at the BRK itself
+    we observe the jump and a tripled stack push (3 bytes for one BRK).
+    """
+    rom = _rom_with([0x00])               # BRK at offset 0
+    # IRQ vector $FFFE/$FFFF: point it at $F000 itself (the BRK), so
+    # we can recognise the jump.
+    rom = rom.at[0x0FFE].set(jnp.float32(0x00))
+    rom = rom.at[0x0FFF].set(jnp.float32(0xF0))
+    bus = initial_soft_bus(rom)
     state = initial_soft_cpu_state()
-    pc_before = float(state.PC)
+    sp_before = float(state.SP)
     state, _ = soft_step(state, bus)
-    assert float(state.PC) == pc_before
+    assert float(state.PC) == 0xF000      # jumped to (vector) — same address
+    assert float(state.SP) == sp_before - 3.0
+    assert int(state.P) & 0x04            # I flag set
 
 
 def test_jsr_rti_pair_runs_without_raising():
