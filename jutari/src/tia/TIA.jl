@@ -250,10 +250,14 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
         end
     end
 
+    # PXC1-x: don't increment the frame counter on scanline-wrap. The
+    # frame counter is driven *only* by the software VSYNC 1→0 edge
+    # (line 189 above). The previous "scanline-wrap as safety fallback"
+    # double-counted every frame on ROMs that drove VSYNC normally —
+    # the wrap fired one or two scanlines before the VSYNC handler did,
+    # and both incremented `frame` for the same frame boundary.
     new_line = tia.scanline + line_advance
-    frame_advance = new_line ÷ NTSC_SCANLINES_PER_FRAME
     tia.scanline = new_line % NTSC_SCANLINES_PER_FRAME
-    tia.frame += UInt64(frame_advance)
     return nothing
 end
 

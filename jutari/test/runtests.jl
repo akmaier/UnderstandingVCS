@@ -1291,12 +1291,16 @@ end
         @test tia.scanline == 5
     end
 
-    @testset "tia_advance! crosses frame boundary" begin
+    @testset "tia_advance! wraps scanline without touching frame counter" begin
+        # PXC1-x: the frame counter is driven *only* by the software
+        # VSYNC 1→0 edge. The scanline-wrap fallback used to double-count
+        # every frame on ROMs that drove VSYNC normally. tia_advance!
+        # past 262 scanlines now wraps scanline silently.
         tia = initial_tia_state()
         tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE * NTSC_SCANLINES_PER_FRAME)
         @test tia.scanline_cycle == 0
         @test tia.scanline == 0
-        @test tia.frame == 1
+        @test tia.frame == 0      # was 1 before PXC1-x; frame is VSYNC-driven now
     end
 
     @testset "tia_apply_wsync! noop when no pending" begin
@@ -2473,13 +2477,17 @@ end
         @test c.bus.tia.frame == 2
     end
 
-    @testset "run_until_frame! works on JMP-to-self via 262-line wrap" begin
+    @testset "run_until_frame! errors on runaway JMP-to-self ROM (PXC1-x)" begin
+        # PXC1-x: the frame counter is now driven only by software
+        # VSYNC. A ROM that never writes VSYNC genuinely can't end a
+        # frame, so run_until_frame! hits its instruction limit and
+        # throws. The previous scanline-wrap fallback was removed
+        # because it double-counted real frames.
         rom = zeros(UInt8, 4096)
         rom[1] = 0x4C; rom[2] = 0x00; rom[3] = 0xF0  # JMP $F000
         rom[0x0FFD] = 0x00; rom[0x0FFE] = 0xF0
         c = initial_console(rom); console_reset!(c)
-        run_until_frame!(c)
-        @test c.bus.tia.frame == 1
+        @test_throws Exception run_until_frame!(c)
     end
 
     # IO actions — joystick decoding

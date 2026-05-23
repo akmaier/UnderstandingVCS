@@ -111,14 +111,20 @@ def test_tia_advance_crosses_multiple_scanlines():
     assert new_tia.frame == 0
 
 
-def test_tia_advance_crosses_frame_boundary():
-    """One full frame is 262 * 76 = 19,912 CPU cycles."""
+def test_tia_advance_wraps_scanline_without_touching_frame_counter():
+    """One full frame is 262 * 76 = 19,912 CPU cycles. After PXC1-x
+    the frame counter is driven *only* by the software VSYNC 1→0 edge.
+    The previous "scanline-wrap as safety fallback" code also bumped
+    `frame`, which double-counted every frame on ROMs that drove VSYNC
+    normally (each real frame fired the wrap + the VSYNC handler).
+    `tia_advance` past 262 scanlines now wraps scanline → 0 silently
+    and leaves `frame` alone."""
     tia = initial_tia_state()
     n = NTSC_CPU_CYCLES_PER_SCANLINE * NTSC_SCANLINES_PER_FRAME
     new_tia = tia_advance(tia, n)
     assert new_tia.scanline_cycle == 0
     assert new_tia.scanline == 0
-    assert new_tia.frame == 1
+    assert new_tia.frame == 0    # was 1 before PXC1-x; frame is VSYNC-driven now
 
 
 def test_tia_apply_wsync_noop_when_no_pending():

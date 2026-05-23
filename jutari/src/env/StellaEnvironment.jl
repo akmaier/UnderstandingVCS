@@ -11,7 +11,7 @@ Phosphor blending is intentionally absent in P6.
 module Env
 
 using ..ConsoleModule: Console, console_reset!, run_until_frame!, initial_console
-using ..IO: apply_action!
+using ..IO: apply_action!, console_switches!, NOOP
 using ..RomSettingsModule: RomSettings, GenericRomSettings,
                            romsettings_reset!, romsettings_is_terminal,
                            romsettings_get_reward, romsettings_lives
@@ -41,10 +41,40 @@ end
 StellaEnvironment(rom, settings::RomSettings = GenericRomSettings()) =
     StellaEnvironment(initial_console(rom), settings, false)
 
-function env_reset!(env::StellaEnvironment)
+"""
+    env_reset!(env; boot_noop_steps=0, boot_reset_steps=0)
+
+Reset the console (PC ← cart reset vector). For ALE / xitari parity
+(matching `ALEInterface::resetGame`), pass `boot_noop_steps=60,
+boot_reset_steps=4` — xitari's reset burns 60 deterministic NOOP
+frames so the cart's startup routine settles, then 4 frames with the
+RESET switch held. The PXC1 conformance harness uses these values;
+the default of 0 preserves the historical jutari behaviour where the
+caller decides the startup convention.
+"""
+function env_reset!(env::StellaEnvironment;
+                    boot_noop_steps::Integer = 0,
+                    boot_reset_steps::Integer = 0)
     console_reset!(env.console)
     romsettings_reset!(env.settings)
     env.terminal = false
+
+    # --- Boot-burn: NOOP frames -----------------------------------------
+    for _ in 1:boot_noop_steps
+        apply_action!(env.console, Int(NOOP))
+        run_until_frame!(env.console)
+    end
+
+    # --- Boot-burn: RESET-switch frames ---------------------------------
+    if boot_reset_steps > 0
+        console_switches!(env.console; reset_pressed = true)
+        for _ in 1:boot_reset_steps
+            apply_action!(env.console, Int(NOOP))
+            run_until_frame!(env.console)
+        end
+        console_switches!(env.console; reset_pressed = false)
+    end
+
     return env
 end
 

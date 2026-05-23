@@ -62,14 +62,15 @@ def test_pong_noop_trace_fixture_exists():
     raises=ConformanceError,
     strict=True,
     reason=(
-        "Bit-exact xitari-vs-jaxtari conformance is a downstream "
-        "project the harness enables, not a property of jaxtari today. "
-        "On the bundled `pong_noop_10` fixture jaxtari's RAM diverges "
-        "at frame 1 — see `python tools/check_trace.py --rom "
+        "Bit-exact xitari↔jaxtari conformance is being closed in "
+        "PXC1-x rounds. Round 1 (boot-burn parity + frame-counter "
+        "double-count fix in tia_advance) reduced the divergence on "
+        "`pong_noop_10` from 25 RAM bytes to 10 — still non-zero, so "
+        "this still xfails. Run `python tools/check_trace.py --rom "
         "xitari/roms/pong.bin --trace "
-        "tools/fixtures/traces/pong_noop_10.jsonl` for the per-byte "
-        "diff. Remove this xfail marker the day jaxtari matches "
-        "xitari frame-for-frame."
+        "tools/fixtures/traces/pong_noop_10.jsonl` for the current "
+        "per-byte diff. Remove this xfail marker the day jaxtari "
+        "matches xitari frame-for-frame on this fixture."
     ),
 )
 def test_jaxtari_matches_xitari_pong_noop_10_frames():

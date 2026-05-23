@@ -64,7 +64,11 @@ def check_trace(rom_path: Path, trace_path: Path,
     via ConformanceError."""
     rom = _load_rom(rom_path)
     env = StellaEnvironment(rom)
-    env.reset()
+    # xitari's `ALEInterface::resetGame()` burns 60 NOOP frames + 4 RESET
+    # switch frames before the user's first `act()` (see
+    # xitari/environment/stella_environment.cpp). The conformance harness
+    # must match.
+    env.reset(boot_noop_steps=60, boot_reset_steps=4)
 
     matched = 0
     with open(trace_path) as f:

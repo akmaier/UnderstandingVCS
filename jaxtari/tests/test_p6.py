@@ -112,9 +112,14 @@ def test_run_until_frame_advances_two_frames_back_to_back():
 
 
 def test_run_until_frame_raises_on_runaway_rom():
-    """A ROM that never writes VSYNC should still wrap via the 262-line
-    safety net — but the limit is meant to catch outright infinite loops
-    where no frame edge ever fires. Use a JMP-to-self program."""
+    """After PXC1-x the frame counter is driven *only* by the software
+    VSYNC 1→0 edge — the scanline-wrap fallback was removed because it
+    was double-counting frames for ROMs that drove VSYNC normally. A
+    ROM that never writes VSYNC therefore now genuinely *can't* end a
+    frame, and `run_until_frame` hits its instruction limit and
+    raises. This test pins that contract: a JMP-to-self program
+    raises rather than silently wrapping."""
+    import pytest
     rom = jnp.zeros((4096,), dtype=jnp.uint8)
     rom = rom.at[0].set(jnp.uint8(0x4C))      # JMP $F000
     rom = rom.at[1].set(jnp.uint8(0x00))
@@ -122,11 +127,8 @@ def test_run_until_frame_raises_on_runaway_rom():
     rom = rom.at[0x0FFC].set(jnp.uint8(0x00))
     rom = rom.at[0x0FFD].set(jnp.uint8(0xF0))
     c = console_reset(initial_console(rom))
-    # JMP itself is 3 cycles. Many JMPs fit in one scanline (76 cyc),
-    # so the safety net at 262 scanlines DOES eventually fire — just
-    # not infinitely. Run one frame; it should succeed via the wrap.
-    c = run_until_frame(c)
-    assert int(c.bus.tia.frame) == 1
+    with pytest.raises(RuntimeError, match="run_until_frame"):
+        run_until_frame(c)
 
 
 # --------------------------------------------------------------------------- #

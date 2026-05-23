@@ -286,7 +286,7 @@ Each per-subsystem deferral listed in STATUS.md gets a phase ID so it can be pic
 - **P6e**: Two-player joystick (P1 directions stay defaulted-released)
 
 **Cross-cutting infrastructure**
-- **PXC1** ✅ (harness landed; bit-exact gap downstream): `tools/trace_dump.cpp` builds against xitari, generates JSONL frame traces; `tools/check_trace.{py,jl}` replay them against jaxtari / jutari; pytest test + Julia `@test_broken` testset record the current divergence on the committed `pong_noop_10` fixture as expected-failed. **The same 25 RAM bytes diverge identically in both ports**, so PXC2 is implicitly satisfied for this fixture. Closing the divergence is **PXC1-x** — its own bug-fixing effort the harness now enables.
+- **PXC1** ✅ + **PXC1-x round 1** ✅: harness landed and the first two real emulation gaps closed (ALE-equivalent boot-burn via `env.reset(boot_noop_steps=60, boot_reset_steps=4)`; TIA frame-counter double-count in `tia_advance`). Divergence on `pong_noop_10` dropped from 25 → 10 RAM bytes; both ports still diverge identically (PXC2 implicit). Round 2+ closes the remaining 10 — likely TIA scanline-cycle / RIOT timing detail.
 - **PXC2**: JAX-vs-Julia bit-for-bit cross-check
 - **PXC3**: CI hook — no automated test runs yet
 - **PXC4**: Klaus Dormann `cpu_klaus_dormann.jsonl.gz` regression run (referenced as the P1 acceptance criterion but never wired up)

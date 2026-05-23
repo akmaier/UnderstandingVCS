@@ -356,13 +356,19 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
                     fb = fb.at[completed_line].set(scanline_pixels)
 
     new_line = tia.scanline + line_advance
-    frame_advance = new_line // NTSC_SCANLINES_PER_FRAME
+    # PXC1-x: don't increment the frame counter on scanline-wrap. The
+    # frame counter is driven *only* by the software VSYNC 1→0 edge (see
+    # `tia_poke` for `W_VSYNC`). The previous "safety fallback" of also
+    # bumping `frame` here caused a double-count for any ROM that drove
+    # VSYNC normally: the wrap fired one or two scanlines BEFORE the
+    # VSYNC handler did, and both incremented `frame` for the same
+    # frame boundary — which is why `run_until_frame` was completing
+    # every other "frame" in just ~80 CPU cycles (one scanline) instead
+    # of the natural ~19,912.
     new_line = new_line % NTSC_SCANLINES_PER_FRAME
-    new_frame = tia.frame + frame_advance
     return tia._replace(
         scanline_cycle=new_sc,
         scanline=new_line,
-        frame=new_frame,
         framebuffer=fb,
         collisions=new_collisions,
     )

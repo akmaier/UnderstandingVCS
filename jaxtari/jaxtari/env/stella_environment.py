@@ -18,7 +18,7 @@ import jax.numpy as jnp
 
 from jaxtari.console import Console, console_reset, initial_console, run_until_frame
 from jaxtari.games.rom_settings import GenericRomSettings, RomSettings
-from jaxtari.io.action import Action, apply_action
+from jaxtari.io.action import Action, apply_action, console_switches
 
 
 class StellaEnvironment:
@@ -42,15 +42,46 @@ class StellaEnvironment:
 
     # --- Lifecycle ---------------------------------------------------------
 
-    def reset(self) -> None:
+    def reset(self, *, boot_noop_steps: int = 0,
+              boot_reset_steps: int = 0) -> None:
         """Reset the console (PC ← cart reset vector) and the settings.
-        Steps a few frames so VSYNC has fired at least once and the
-        framebuffer holds a meaningful image."""
+
+        Parameters
+        ----------
+        boot_noop_steps
+            Number of NOOP frames to burn after the hardware reset
+            before user actions start. **Default 0** — preserves the
+            historical jaxtari behaviour where the caller decides the
+            startup convention. Set to **60** for ALE / xitari parity
+            (xitari's `resetGame()` burns 60 deterministic NOOP frames
+            so the cart's startup routine has time to settle before
+            "frame 1").
+        boot_reset_steps
+            Number of frames to burn with the console RESET switch held
+            pressed, after the NOOP burn. **Default 0**. Set to **4**
+            for ALE / xitari parity (xitari's `resetGame()` then holds
+            the RESET switch for `system_reset_steps` frames, default 4).
+
+        Together, `reset(boot_noop_steps=60, boot_reset_steps=4)`
+        reproduces xitari's `ALEInterface::resetGame()` startup — the
+        PXC1 conformance harness uses these values.
+        """
         self._console = console_reset(self._console)
         self._settings.reset()
         self._terminal = False
-        # Don't burn frames automatically — the caller decides whether
-        # they want "noop skip" behaviour at the start of an episode.
+
+        # --- Boot-burn: NOOP frames -------------------------------------- #
+        for _ in range(boot_noop_steps):
+            self._console = apply_action(self._console, int(Action.NOOP))
+            self._console = run_until_frame(self._console)
+
+        # --- Boot-burn: RESET-switch frames ------------------------------ #
+        if boot_reset_steps > 0:
+            self._console = console_switches(self._console, reset_pressed=True)
+            for _ in range(boot_reset_steps):
+                self._console = apply_action(self._console, int(Action.NOOP))
+                self._console = run_until_frame(self._console)
+            self._console = console_switches(self._console, reset_pressed=False)
 
     def step(self, action: int) -> int:
         """Apply `action`, run one console frame, return the per-step reward.

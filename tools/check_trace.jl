@@ -45,7 +45,8 @@ matched the reference. Throws when a divergence is hit.
 function check_trace(rom_path::AbstractString, trace_path::AbstractString)
     rom = read(rom_path)              # Vector{UInt8}
     env = StellaEnvironment(rom)
-    env_reset!(env)
+    # Match xitari's ALEInterface::resetGame — see tools/check_trace.py.
+    env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)
 
     matched = 0
     open(trace_path) do io
