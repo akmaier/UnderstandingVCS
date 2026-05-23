@@ -31,7 +31,22 @@ import jax.numpy as jnp
 
 
 class SoftCPUState(NamedTuple):
-    """CPU registers as float32 scalars."""
+    """CPU registers as float32 scalars.
+
+    The status flag byte `P` keeps the canonical 8-bit layout
+    (NV-BDIZC) so PHP / PLP / RTI continue to push and pull the same
+    byte the HARD CPU does. **P7c-dx** adds four parallel scalar
+    fields `P_N` / `P_Z` / `P_C` / `P_V` that mirror the same flag
+    bits as floats — that's the differentiability hook for control
+    flow: `_do_branch` reads its predicate out of the matching float
+    field and feeds it to `soft_branch` so the branch's PC selection
+    becomes a sigmoid blend (with `straight_through` keeping the
+    forward result bit-exact). All four default to 0.0 so older
+    constructions that built `SoftCPUState(..., P=0x34)` keep working
+    — 0x34 has N=Z=C=V=0 anyway, and any flag-touching opcode
+    immediately re-syncs both the packed `P` and the floats via
+    `_with_p` in `soft_step`.
+    """
     A: jnp.ndarray
     X: jnp.ndarray
     Y: jnp.ndarray
@@ -39,12 +54,18 @@ class SoftCPUState(NamedTuple):
     PC: jnp.ndarray
     P: jnp.ndarray
     cycles: jnp.ndarray
+    P_N: jnp.ndarray = jnp.float32(0.0)
+    P_Z: jnp.ndarray = jnp.float32(0.0)
+    P_C: jnp.ndarray = jnp.float32(0.0)
+    P_V: jnp.ndarray = jnp.float32(0.0)
 
 
 def initial_soft_cpu_state(pc: float = 0xF000) -> SoftCPUState:
     """SOFT-mode CPU state after RESET. PC defaults to \$F000 — the
     standard cart-mapped reset entry point — so a fresh ROM at offset 0
-    starts executing immediately."""
+    starts executing immediately. P=0x34 (I=1, B=1, U=1, N=Z=C=V=0)
+    matches HARD reset; the float-flag mirrors are zeroed accordingly.
+    """
     return SoftCPUState(
         A=jnp.float32(0.0),
         X=jnp.float32(0.0),
@@ -53,6 +74,10 @@ def initial_soft_cpu_state(pc: float = 0xF000) -> SoftCPUState:
         PC=jnp.float32(pc),
         P=jnp.float32(0x34),                # I=1, B=1, U=1 — matches HARD reset
         cycles=jnp.float32(0.0),
+        P_N=jnp.float32(0.0),
+        P_Z=jnp.float32(0.0),
+        P_C=jnp.float32(0.0),
+        P_V=jnp.float32(0.0),
     )
 
 

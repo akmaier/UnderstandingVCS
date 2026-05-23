@@ -46,6 +46,7 @@ import jax
 import jax.numpy as jnp
 
 from jaxtari.diff.rom_as_weights import RomTensor
+from jaxtari.diff.soft_branch import soft_branch
 from jaxtari.diff.soft_state import SoftBus, SoftCPUState
 
 
@@ -292,6 +293,50 @@ def _read_carry(p: jnp.ndarray) -> jnp.ndarray:
 
 
 # --------------------------------------------------------------------------- #
+# P7c-dx — float-valued flag mirrors.
+#
+# `SoftCPUState` now carries `P_N` / `P_Z` / `P_C` / `P_V` alongside the
+# packed `P` byte. Every `state._replace(P=...)` site routes through
+# `_with_p` instead — that single helper recomputes the four floats
+# from the new packed byte, keeping them in lock-step. The packed P
+# stays the single source of truth so PHP / PLP / RTI continue to work
+# without separate logic.
+#
+# The hook that *uses* the floats is `_do_branch`: it feeds the matching
+# float into `soft_branch`, so the PC blend becomes sigmoid-smooth — a
+# `jax.grad` over a trace gets a meaningful gradient through the branch
+# predicate (weighted by the sigmoid's slope at the flag boundary).
+# Forward correctness is preserved with a straight-through round, so
+# `pong_noop_10` and every existing test still pass bit-exact.
+# --------------------------------------------------------------------------- #
+
+def _float_flags_from_p(p: jnp.ndarray):
+    """Split a packed status byte into its (N, Z, C, V) float mirrors.
+    Each return value is a 0.0/1.0 float — int-extracted, so the
+    gradient is zero w.r.t. the underlying packed P (as expected for a
+    structural flag bit), but the float itself slots cleanly into
+    `soft_branch`."""
+    pi = p.astype(jnp.int32) & 0xFF
+    return (
+        ((pi >> 7) & 1).astype(jnp.float32),    # N (bit 7)
+        ((pi >> 1) & 1).astype(jnp.float32),    # Z (bit 1)
+        ((pi >> 0) & 1).astype(jnp.float32),    # C (bit 0)
+        ((pi >> 6) & 1).astype(jnp.float32),    # V (bit 6)
+    )
+
+
+def _with_p(state: SoftCPUState, new_p: jnp.ndarray, **other_fields) -> SoftCPUState:
+    """Drop-in replacement for `state._replace(P=new_p, **other_fields)`
+    that also syncs the four float-flag mirrors from the new packed P.
+    Use this *every* time a flag-touching opcode updates P — the
+    packed byte stays the source of truth; the floats are derived.
+    """
+    n_f, z_f, c_f, v_f = _float_flags_from_p(new_p)
+    return state._replace(P=new_p, P_N=n_f, P_Z=z_f, P_C=c_f, P_V=v_f,
+                          **other_fields)
+
+
+# --------------------------------------------------------------------------- #
 # Addressing-mode resolvers — operand value for reads, effective address for
 # stores. The HARD path uses RESOLVERS[mode] from cpu.addressing; the SOFT
 # path needs differentiable variants that route through soft_rom_peek and
@@ -400,9 +445,8 @@ def _branch_brk(state: SoftCPUState, bus: SoftBus):
     irq_lo = _bus_read(bus, 0xFFFE)
     irq_hi = _bus_read(bus, 0xFFFF)
     new_pc = irq_lo + irq_hi * 256.0
-    return state._replace(
+    return _with_p(state, new_p,
         SP=sp,
-        P=new_p,
         PC=new_pc,
         cycles=state.cycles + 7.0,
     ), bus
@@ -432,12 +476,11 @@ def _do_load(state: SoftCPUState, bus: SoftBus, reg: str,
     PC advance; cycles bump. `reg` is one of "A", "X", "Y"."""
     new_p = _set_nz(state.P, value)
     fields = {
-        "P":      new_p,
         "PC":     state.PC + instr_len,
         "cycles": state.cycles + cycles,
         reg:      value,
     }
-    return state._replace(**fields), bus
+    return _with_p(state, new_p, **fields), bus
 
 
 # LDA (immediate, zp, zp,X, abs, abs,X, abs,Y, (ind,X), (ind),Y) -------------
@@ -684,9 +727,8 @@ def _adc_step(state: SoftCPUState, bus: SoftBus, operand: jnp.ndarray,
     na_int   = new_a.astype(jnp.int32) & 0xFF
     overflow = ((a_int ^ na_int) & (op_int ^ na_int)) & 0x80
     new_p    = _set_nzcv(state.P, new_a, carry, overflow)
-    return state._replace(
+    return _with_p(state, new_p,
         A=new_a,
-        P=new_p,
         PC=state.PC + instr_len,
         cycles=state.cycles + cycles,
     ), bus
@@ -724,9 +766,8 @@ def _sbc_step(state: SoftCPUState, bus: SoftBus, operand: jnp.ndarray,
     carry    = jnp.where(decimal, carry_bcd, carry_bin)
     overflow = jnp.where(decimal, v_bcd, v_bin)
     new_p    = _set_nzcv(state.P, new_a, carry, overflow)
-    return state._replace(
+    return _with_p(state, new_p,
         A=new_a,
-        P=new_p,
         PC=state.PC + instr_len,
         cycles=state.cycles + cycles,
     ), bus
@@ -763,9 +804,8 @@ def _bitop_step(state, bus, operand, op, instr_len, cycles):
     op_int   = operand.astype(jnp.int32) & 0xFF
     new_a_int = op(a_int, op_int) & 0xFF
     new_a    = new_a_int.astype(jnp.float32)
-    return state._replace(
+    return _with_p(state, _set_nz(state.P, new_a),
         A=new_a,
-        P=_set_nz(state.P, new_a),
         PC=state.PC + instr_len,
         cycles=state.cycles + cycles,
     ), bus
@@ -808,8 +848,7 @@ def _compare_step(state, bus, reg_value, operand, instr_len, cycles):
     diff_int  = (reg_int - op_int) & 0xFF
     diff_f    = diff_int.astype(jnp.float32)
     carry     = (reg_int >= op_int).astype(jnp.int32)
-    return state._replace(
-        P=_set_nzc(state.P, diff_f, carry),
+    return _with_p(state, _set_nzc(state.P, diff_f, carry),
         PC=state.PC + instr_len,
         cycles=state.cycles + cycles,
     ), bus
@@ -840,8 +879,7 @@ def _bit_step(state, bus, operand, instr_len, cycles):
     a_int   = state.A.astype(jnp.int32) & 0xFF
     op_int  = operand.astype(jnp.int32) & 0xFF
     and_v   = (a_int & op_int).astype(jnp.float32)
-    return state._replace(
-        P=_set_bit_flags(state.P, and_v, operand),
+    return _with_p(state, _set_bit_flags(state.P, and_v, operand),
         PC=state.PC + instr_len,
         cycles=state.cycles + cycles,
     ), bus
@@ -896,8 +934,8 @@ def _ror_value(p, value):
 def _shift_acc(state, bus, value_op):
     """Accumulator-mode shift: result goes back into A. 1 byte, 2 cycles."""
     new_a, new_p = value_op(state.P, state.A)
-    return state._replace(
-        A=new_a, P=new_p,
+    return _with_p(state, new_p,
+        A=new_a,
         PC=state.PC + 1.0,
         cycles=state.cycles + 2.0,
     ), bus
@@ -909,8 +947,7 @@ def _shift_memory(state, bus, addr_resolver, value_op, instr_len, cycles):
     value = _bus_read(bus, addr)
     new_value, new_p = value_op(state.P, value)
     new_bus = _bus_write(bus, addr, new_value)
-    return state._replace(
-        P=new_p,
+    return _with_p(state, new_p,
         PC=state.PC + instr_len,
         cycles=state.cycles + cycles,
     ), new_bus
@@ -948,13 +985,14 @@ def _branch_ror_abs_x(s, b): return _shift_memory(s, b, _addr_abs_x, _ror_value,
 # --------------------------------------------------------------------------- #
 # P7c-d — branches, JMP (indirect), JSR / RTS.
 #
-# Conditional branches use a HARD predicate (`jnp.where` on the flag bit):
-# the forward PC is exact, matching HARD mode. Gradient *through the branch
-# predicate* is broken at the int-cast of state.P — the `soft_branch`
-# primitive in `jaxtari.diff` is available for callers who want a relaxed
-# PC gate, but wiring it into the default handlers needs a float-valued
-# flag representation in SoftCPUState (today the flags live int-quantised
-# inside `P`). That representation change is deferred as **P7c-dx**.
+# P7c-dx: branches now feed `soft_branch` from the per-flag float mirrors
+# (`P_N` / `P_Z` / `P_C` / `P_V`) that `_with_p` keeps in sync with the
+# packed `P` byte. The PC blend is sigmoid-gated; a straight-through
+# trick keeps the *forward* PC bit-exact (so PXC1 conformance is
+# unaffected) while the gradient flows through both branch destinations.
+# A reverse-mode pass over `soft_run` therefore now carries a usable
+# gradient through conditional control flow — that's the whole point of
+# P7c-dx.
 # --------------------------------------------------------------------------- #
 
 def _wrap_byte(v: jnp.ndarray) -> jnp.ndarray:
@@ -986,33 +1024,77 @@ def _signed_offset(offset_byte: jnp.ndarray) -> jnp.ndarray:
     return jnp.where(o >= 128, o - 256, o).astype(jnp.float32)
 
 
+def _straight_through(soft: jnp.ndarray, hard: jnp.ndarray) -> jnp.ndarray:
+    """Forward = `hard`; backward = ∂soft. Lets `_do_branch` keep the
+    PXC1 bit-exact forward semantics (the new PC is whatever the hard
+    branch chose) while routing the gradient through the sigmoid-
+    blended `soft` value, so a `jax.grad` of a trace gets a meaningful
+    contribution from both branch destinations."""
+    return soft + jax.lax.stop_gradient(hard - soft)
+
+
 def _do_branch(state: SoftCPUState, bus: SoftBus,
-               flag_mask: int, take_when_set: bool):
-    """Conditional branch. Reads the relative displacement at ROM[PC+1];
-    if the predicate holds, PC = (PC+2) + signed_offset, else PC += 2.
-    +1 cycle when the branch is taken (the page-cross +1 is not modelled)."""
+               flag_attr: str, flag_mask: int, take_when_set: bool):
+    """Conditional branch.
+
+    `flag_attr` is one of `"P_N"`, `"P_Z"`, `"P_C"`, `"P_V"` (the
+    float-valued mirror `_with_p` keeps in sync with `P`) and
+    `flag_mask` is the matching packed-byte bit (0x80 / 0x02 / 0x01 /
+    0x40). Reads the relative displacement at ROM[PC+1]; if the
+    predicate holds, PC = (PC+2) + signed_offset, else PC += 2; +1
+    cycle when the branch is taken (page-cross +1 is not modelled).
+
+    Forward semantics come from the packed `state.P` byte (so tests
+    that only set `P` keep working bit-exact, and PXC1 conformance is
+    unaffected). The *gradient* runs through `state.P_X`'s float
+    mirror via `soft_branch`: a caller that injects a soft flag value
+    into `state.P_X` for an XAI experiment gets gradient through the
+    sigmoid blend of `pc_not_taken` and `pc_taken`. The two paths are
+    glued together with a straight-through trick — forward = `pc_hard`,
+    backward = ∂`pc_soft`.
+    """
     offset       = _signed_offset(_operand_byte(bus, state.PC + 1.0))
     pc_not_taken = state.PC + 2.0
     pc_taken     = pc_not_taken + offset
-    flag_set     = (state.P.astype(jnp.int32) & flag_mask) != 0
-    take         = flag_set if take_when_set else jnp.logical_not(flag_set)
-    new_pc       = jnp.where(take, pc_taken, pc_not_taken)
-    extra        = jnp.where(take, 1.0, 0.0)
+
+    # Float flag for the gradient path — what the caller can override.
+    flag_soft  = getattr(state, flag_attr)
+    logit_sign = 1.0 if take_when_set else -1.0
+    flag_logit = logit_sign * (2.0 * flag_soft - 1.0)
+
+    # Soft PC — sigmoid-blended.
+    pc_soft = soft_branch(flag_logit, pc_not_taken, pc_taken, alpha=10.0)
+
+    # Hard PC: read from `state.P` directly so a test that mutates only
+    # P (and not P_X) still picks the right branch on forward.
+    flag_set  = (state.P.astype(jnp.int32) & flag_mask) != 0
+    take_hard = flag_set if take_when_set else jnp.logical_not(flag_set)
+    pc_hard   = jnp.where(take_hard, pc_taken, pc_not_taken)
+
+    new_pc = _straight_through(pc_soft, pc_hard)
+
+    # Cycles +1 when taken. Same straight-through dance — hard for
+    # forward, soft (sigmoid weight) for gradient.
+    extra_hard = jnp.where(take_hard, 1.0, 0.0)
+    extra_soft = jax.nn.sigmoid(10.0 * flag_logit)       # 0..1
+    extra      = _straight_through(extra_soft, extra_hard)
+
     return state._replace(
         PC=new_pc,
         cycles=state.cycles + 2.0 + extra,
     ), bus
 
 
-# Conditional branch handlers — flag bit masks from cpu.tables.
-def _branch_bpl(s, b): return _do_branch(s, b, 0x80, False)   # branch if N=0
-def _branch_bmi(s, b): return _do_branch(s, b, 0x80, True)    # branch if N=1
-def _branch_bvc(s, b): return _do_branch(s, b, 0x40, False)   # branch if V=0
-def _branch_bvs(s, b): return _do_branch(s, b, 0x40, True)    # branch if V=1
-def _branch_bcc(s, b): return _do_branch(s, b, 0x01, False)   # branch if C=0
-def _branch_bcs(s, b): return _do_branch(s, b, 0x01, True)    # branch if C=1
-def _branch_bne(s, b): return _do_branch(s, b, 0x02, False)   # branch if Z=0
-def _branch_beq(s, b): return _do_branch(s, b, 0x02, True)    # branch if Z=1
+# Conditional branch handlers — pass both the float-flag field name
+# (gradient path) and the packed-byte mask (forward path).
+def _branch_bpl(s, b): return _do_branch(s, b, "P_N", 0x80, False)   # branch if N=0
+def _branch_bmi(s, b): return _do_branch(s, b, "P_N", 0x80, True)    # branch if N=1
+def _branch_bvc(s, b): return _do_branch(s, b, "P_V", 0x40, False)   # branch if V=0
+def _branch_bvs(s, b): return _do_branch(s, b, "P_V", 0x40, True)    # branch if V=1
+def _branch_bcc(s, b): return _do_branch(s, b, "P_C", 0x01, False)   # branch if C=0
+def _branch_bcs(s, b): return _do_branch(s, b, "P_C", 0x01, True)    # branch if C=1
+def _branch_bne(s, b): return _do_branch(s, b, "P_Z", 0x02, False)   # branch if Z=0
+def _branch_beq(s, b): return _do_branch(s, b, "P_Z", 0x02, True)    # branch if Z=1
 
 
 def _branch_jmp_ind(state: SoftCPUState, bus: SoftBus):
@@ -1088,10 +1170,9 @@ def _branch_php(state: SoftCPUState, bus: SoftBus):
 def _branch_pla(state: SoftCPUState, bus: SoftBus):
     """PLA: pull A, set N/Z. 4 cycles."""
     value, sp = _pop8(bus, state.SP)
-    return state._replace(
+    return _with_p(state, _set_nz(state.P, value),
         A=value,
         SP=sp,
-        P=_set_nz(state.P, value),
         PC=state.PC + 1.0,
         cycles=state.cycles + 4.0,
     ), bus
@@ -1101,9 +1182,8 @@ def _branch_plp(state: SoftCPUState, bus: SoftBus):
     """PLP: pull P, force B and U on (xitari PSLockupTable convention)."""
     popped, sp = _pop8(bus, state.SP)
     new_p = (popped.astype(jnp.int32) | 0x30).astype(jnp.float32)
-    return state._replace(
+    return _with_p(state, new_p,
         SP=sp,
-        P=new_p,
         PC=state.PC + 1.0,
         cycles=state.cycles + 4.0,
     ), bus
@@ -1112,9 +1192,9 @@ def _branch_plp(state: SoftCPUState, bus: SoftBus):
 def _set_flag(state: SoftCPUState, flag_mask: int, set_it: bool):
     """Set or clear a single P bit; advance PC by 1, +2 cycles."""
     p_int = state.P.astype(jnp.int32)
-    new_p = (p_int | flag_mask) if set_it else (p_int & (0xFF ^ flag_mask))
-    return state._replace(
-        P=new_p.astype(jnp.float32),
+    new_p = ((p_int | flag_mask) if set_it
+             else (p_int & (0xFF ^ flag_mask))).astype(jnp.float32)
+    return _with_p(state, new_p,
         PC=state.PC + 1.0,
         cycles=state.cycles + 2.0,
     )
@@ -1145,8 +1225,7 @@ def _incdec_memory(state, bus, addr_resolver, value_op, instr_len, cycles):
     value = _bus_read(bus, addr)
     new_value = value_op(value)
     new_bus = _bus_write(bus, addr, new_value)
-    return state._replace(
-        P=_set_nz(state.P, new_value),
+    return _with_p(state, _set_nz(state.P, new_value),
         PC=state.PC + instr_len,
         cycles=state.cycles + cycles,
     ), new_bus
@@ -1170,12 +1249,11 @@ def _incdec_reg(state, reg: str, value_op):
     cur = getattr(state, reg)
     new_v = value_op(cur)
     fields = {
-        "P": _set_nz(state.P, new_v),
         "PC": state.PC + 1.0,
         "cycles": state.cycles + 2.0,
         reg: new_v,
     }
-    return state._replace(**fields)
+    return _with_p(state, _set_nz(state.P, new_v), **fields)
 
 
 def _branch_inx(s, b): return _incdec_reg(s, "X", _inc_value), b
@@ -1211,9 +1289,8 @@ def _branch_rti(state: SoftCPUState, bus: SoftBus):
     hi, sp       = _pop8(bus, sp)
     new_p        = (popped_p.astype(jnp.int32) | 0x30).astype(jnp.float32)
     new_pc       = lo + hi * 256.0
-    return state._replace(
+    return _with_p(state, new_p,
         SP=sp,
-        P=new_p,
         PC=new_pc,
         cycles=state.cycles + 6.0,
     ), bus
