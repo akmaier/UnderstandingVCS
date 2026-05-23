@@ -41,10 +41,14 @@ overall project goal, see [README.md](README.md).
 | **P7f-b** | Differentiable TIA — player sprites P0/P1 (GRP, REFP, single 1× copy) compositing over the playfield; SOFT convention: RESP0/RESP1 cells hold the player X | [`43371ce`](https://github.com/akmaier/UnderstandingVCS/commit/43371ce) | +25 | +11 | ✅ |
 | **P7f-c** | Differentiable TIA — missiles M0/M1 + ball BL (solid 1/2/4/8-px blocks); full HARD compositing order bg ← pf ← ball ← M1 ← P1 ← M0 ← P0 | [`99e2ec7`](https://github.com/akmaier/UnderstandingVCS/commit/99e2ec7) | +18 | +12 | ✅ |
 | **P7f-d** | Differentiable TIA — collision detection: `soft_collision_registers` returns the 8 CX latches (15 pairwise object overlaps) | _next commit_ | +11 | +12 | ✅ |
-| **P8**  | XAI hooks + first attribution experiment | — | — | — | ☐ |
+| **P8-a** | XAI primitive — Integrated Gradients on top of `jax.grad` (midpoint Riemann; exact for linear/quadratic `f`; completeness axiom enforced) | _next commit_ | — | +7 | ✅ |
+| **P8-b** | First attribution experiment — three attribution semantics (plain gradient / occlusion / smart-baseline IG) on a SOFT-mode kernel, plus the recorded finding that naive zero-baseline IG collapses on opcode bytes | _next commit_ | — | +4 | ✅ |
+| **P8-c** | Attribution on a real Atari ROM (e.g. Pong sprite-defining region) — waits for PXC1-x (the jaxtari/jutari ↔ xitari bit-exact gap closure) before it's meaningful | — | — | — | ⏳ |
 | **P9**  | JAX-vs-Julia benchmark + paper-shaped XAI study | — | — | — | ☐ |
 
-**Totals after PXC1: jaxtari 515 tests (+ 1 xfail), jutari 1122 tests (+ 1 broken) — 1637 effective, 1635 strict-green across both ports.** (xfail/broken markers track the recorded jaxtari/jutari-vs-xitari bit-exact gap on `pong_noop_10`.)
+**Totals after P8-a/b: jaxtari 526 tests (+ 1 xfail), jutari 1122 tests (+ 1 broken) — 1648 effective.** (xfail/broken markers track the PXC1-x bit-exact gap.)
+
+**P8 milestone — first XAI signal from the differentiable VCS.** A SOFT program executes, the differentiable TIA renders a pixel, and three attribution methods correctly identify the ROM byte that explains it: plain `jax.grad` (source), occlusion (necessity), smart-baseline IG (quantified contribution). The naive zero-baseline IG fails on opcode bytes — a recorded finding about XAI on discrete-input emulators.
 
 **The project's headline claim is now live in code, end-to-end.** A SOFT program executes 6502 instructions, writes colours into TIA registers, and `soft_render_scanline` turns the register file into pixels — then `jax.grad(pixel)(rom)` is one-hot at the ROM byte that painted that pixel. `∂pixel / ∂ROM` — "this ROM byte explains this pixel" — runs from instruction fetch through CPU execution through TIA compositing to a framebuffer pixel (test `test_grad_background_pixel_one_hot_at_colour_rom_byte`).
 
