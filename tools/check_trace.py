@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+"""PXC1 conformance harness — replay a JSONL trace against jaxtari.
+
+Reads a JSONL trace produced by `tools/trace_dump` (run against xitari /
+ALE) and replays the same action sequence against jaxtari's
+`StellaEnvironment`. At each frame the harness compares jaxtari's RAM
+(and optionally the screen) against the reference trace's value; the
+first divergence is reported, with a byte-level diff of the offending
+frame.
+
+Usage
+-----
+
+    python tools/check_trace.py \\
+        --rom xitari/roms/pong.bin \\
+        --trace tools/fixtures/traces/pong_noop_10.jsonl
+
+    # also check the framebuffer (requires the trace to have been
+    # generated with --screen):
+    python tools/check_trace.py --rom <rom> --trace <trace> --check-screen
+
+Exit code
+---------
+
+    0  every frame's RAM (and screen, if checked) matches the reference
+    1  divergence — diagnostic on stderr
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+
+from jaxtari.env.stella_environment import StellaEnvironment
+
+
+def _load_rom(path: Path) -> np.ndarray:
+    return np.fromfile(path, dtype=np.uint8)
+
+
+def _hex_of(arr: np.ndarray) -> str:
+    return ''.join(f'{int(b):02x}' for b in arr)
+
+
+def _ram_diff_report(reference_hex: str, actual_hex: str,
+                     frame: int, action: int, out) -> None:
+    ref = bytes.fromhex(reference_hex)
+    act = bytes.fromhex(actual_hex)
+    diffs = [(i, ref[i], act[i]) for i in range(len(ref)) if ref[i] != act[i]]
+    print(f"DIVERGENCE at frame {frame}, action={action}", file=out)
+    print(f"  {len(diffs)} of {len(ref)} RAM bytes differ. First 16:", file=out)
+    for i, e, a in diffs[:16]:
+        print(f"    RAM[${i:02x}]: xitari=${e:02x}  jaxtari=${a:02x}", file=out)
+
+
+def check_trace(rom_path: Path, trace_path: Path,
+                check_screen: bool = False) -> int:
+    """Run the conformance check. Returns the number of frames matched
+    before a divergence (or until the trace ended); raises on divergence
+    via ConformanceError."""
+    rom = _load_rom(rom_path)
+    env = StellaEnvironment(rom)
+    env.reset()
+
+    matched = 0
+    with open(trace_path) as f:
+        for line in f:
+            ref = json.loads(line)
+            env.step(int(ref['action']))
+
+            ram = np.asarray(env.get_ram(), dtype=np.uint8)
+            ram_hex = _hex_of(ram)
+            if ram_hex != ref['ram']:
+                _ram_diff_report(ref['ram'], ram_hex,
+                                 int(ref['frame']), int(ref['action']),
+                                 sys.stderr)
+                raise ConformanceError(
+                    f"RAM divergence at frame {ref['frame']} ({matched} matched)")
+
+            if check_screen and 'screen' in ref:
+                screen = np.asarray(env.get_screen(), dtype=np.uint8)
+                if _hex_of(screen.ravel()) != ref['screen']:
+                    raise ConformanceError(
+                        f"screen divergence at frame {ref['frame']} "
+                        f"({matched} matched)")
+
+            matched += 1
+    return matched
+
+
+class ConformanceError(AssertionError):
+    """Raised when a jaxtari frame diverges from the xitari reference."""
+
+
+def main(argv=None) -> int:
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--rom', required=True, type=Path)
+    p.add_argument('--trace', required=True, type=Path)
+    p.add_argument('--check-screen', action='store_true')
+    args = p.parse_args(argv)
+
+    try:
+        matched = check_trace(args.rom, args.trace, args.check_screen)
+    except ConformanceError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    print(f"OK — {matched} frame(s) match the xitari reference", file=sys.stderr)
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

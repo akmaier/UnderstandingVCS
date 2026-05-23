@@ -4309,3 +4309,37 @@ end
     end
 
 end
+
+@testset "JuTari PXC1 — xitari conformance harness" begin
+    # tools/check_trace.jl is at the repo root, two levels up from this file.
+    _repo_root   = normpath(joinpath(@__DIR__, "..", ".."))
+    _check_trace = joinpath(_repo_root, "tools", "check_trace.jl")
+    _trace_path  = joinpath(_repo_root, "tools", "fixtures", "traces",
+                            "pong_noop_10.jsonl")
+    _rom_path    = joinpath(_repo_root, "xitari", "roms", "pong.bin")
+
+    include(_check_trace)
+
+    @testset "fixture trace ships with the harness" begin
+        @test isfile(_trace_path)
+    end
+
+    @testset "harness check_trace function loads" begin
+        @test isdefined(@__MODULE__, :check_trace)
+    end
+
+    if isfile(_rom_path) && isfile(_trace_path)
+        # @test_broken is Julia's xfail: passes when the inner test FAILS;
+        # reports when it starts passing — exactly the right primitive for
+        # tracking the not-yet-closed bit-exact gap between jutari and
+        # xitari. The harness landing is the PXC1 deliverable; closing the
+        # divergence is a separate downstream effort the harness enables.
+        @testset "jutari matches xitari on pong_noop_10 (currently broken)" begin
+            @test_broken try
+                check_trace(_rom_path, _trace_path) == 10
+            catch
+                false
+            end
+        end
+    end
+end

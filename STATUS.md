@@ -44,7 +44,7 @@ overall project goal, see [README.md](README.md).
 | **P8**  | XAI hooks + first attribution experiment | — | — | — | ☐ |
 | **P9**  | JAX-vs-Julia benchmark + paper-shaped XAI study | — | — | — | ☐ |
 
-**Totals after P7f-d: jaxtari 512 tests, jutari 1120 tests, 1632 green across both ports.**
+**Totals after PXC1: jaxtari 515 tests (+ 1 xfail), jutari 1122 tests (+ 1 broken) — 1637 effective, 1635 strict-green across both ports.** (xfail/broken markers track the recorded jaxtari/jutari-vs-xitari bit-exact gap on `pong_noop_10`.)
 
 **The project's headline claim is now live in code, end-to-end.** A SOFT program executes 6502 instructions, writes colours into TIA registers, and `soft_render_scanline` turns the register file into pixels — then `jax.grad(pixel)(rom)` is one-hot at the ROM byte that painted that pixel. `∂pixel / ∂ROM` — "this ROM byte explains this pixel" — runs from instruction fetch through CPU execution through TIA compositing to a framebuffer pixel (test `test_grad_background_pixel_one_hot_at_colour_rom_byte`).
 
@@ -163,8 +163,8 @@ Every deferral now has a phase identifier (see PORTING_PLAN.md "Deferral identif
 - **P7f-b…d positioning caveat**: a SOFT-mode convention treats the `RESP0`/`RESP1` cells as holding the player X position (real hardware sets it by strobe timing). Faithful strobe-timing positioning needs the SoftBus to carry TIA timing state — see the P7f architectural-prerequisite note in PORTING_PLAN.md.
 
 ### Cross-cutting
-- **PXC1**: xitari-trace conformance harness (PORTING_PLAN.md §4) — `tools/trace_dump.cpp` is sketched but never built; no golden traces exist yet. Both ports are validated against hand-built unit tests, not against real ROM runs. **The most important single piece of infrastructure debt** — it would catch dozens of subtle bugs at once.
-- **PXC2**: JAX-vs-Julia bit-for-bit cross-check (PORTING_PLAN.md §4.4).
+- **PXC1 is ✅ shipped (harness landed; bit-exact gap is downstream work)** — `tools/trace_dump.cpp` builds against xitari (`make` in `tools/`), produces frame-level JSONL traces of RAM + screen; a committed `pong_noop_10` golden fixture lives at `tools/fixtures/traces/`. `tools/check_trace.py` and `tools/check_trace.jl` replay a trace against jaxtari / jutari and diff the per-frame RAM. Pytest test + Julia `@test_broken` testset record the current bit-exact gap as **expected-failed** (25 of 128 RAM bytes diverge at frame 1 on pong; **the same 25 bytes diverge identically in both ports**, which implicitly satisfies PXC2 for this fixture). Closing that gap — call it **PXC1-x** — is its own bug-fixing effort the harness now enables.
+- **PXC2** (implicit for the pong_noop_10 fixture — both ports diverge identically): formal JAX-vs-Julia bit-for-bit cross-check across more fixtures + a fresh test that asserts jaxtari ≡ jutari directly.
 - **PXC3**: CI hook (no automated test runs yet).
 - **PXC4**: Klaus Dormann `cpu_klaus_dormann.jsonl.gz` regression run (referenced as the P1 acceptance criterion but never wired up).
 

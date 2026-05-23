@@ -24,3 +24,7 @@ deps/build.log
 # Generated golden traces and ROMs (see PORTING_PLAN.md §4.2)
 tests/golden/*.jsonl
 tests/golden/roms/
+
+# PXC1 — built C++ binary (built locally from tools/trace_dump.cpp)
+tools/trace_dump
+tools/*.o

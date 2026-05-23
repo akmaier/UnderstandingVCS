@@ -286,12 +286,12 @@ Each per-subsystem deferral listed in STATUS.md gets a phase ID so it can be pic
 - **P6e**: Two-player joystick (P1 directions stay defaulted-released)
 
 **Cross-cutting infrastructure**
-- **PXC1**: xitari-trace conformance harness — `tools/trace_dump.cpp` is sketched but never built; no golden traces exist; closing this lets us claim "bit-exact against xitari"
+- **PXC1** ✅ (harness landed; bit-exact gap downstream): `tools/trace_dump.cpp` builds against xitari, generates JSONL frame traces; `tools/check_trace.{py,jl}` replay them against jaxtari / jutari; pytest test + Julia `@test_broken` testset record the current divergence on the committed `pong_noop_10` fixture as expected-failed. **The same 25 RAM bytes diverge identically in both ports**, so PXC2 is implicitly satisfied for this fixture. Closing the divergence is **PXC1-x** — its own bug-fixing effort the harness now enables.
 - **PXC2**: JAX-vs-Julia bit-for-bit cross-check
 - **PXC3**: CI hook — no automated test runs yet
 - **PXC4**: Klaus Dormann `cpu_klaus_dormann.jsonl.gz` regression run (referenced as the P1 acceptance criterion but never wired up)
 
-The single most important piece of unfinished infrastructure is **PXC1** — both ports are currently validated against hand-built unit tests rather than against real ROMs running on xitari, so subtle timing or BCD or bank-switch bugs that don't show up in our test set won't get caught.
+The most important piece of unfinished infrastructure used to be **PXC1**; the harness has now landed and the first divergences are recorded. The remaining work is **PXC1-x** (closing the per-byte gap between jaxtari / jutari and xitari on real ROMs).
 
 ---
 
