@@ -30,6 +30,7 @@ from jaxtari.diff.soft_step import (
     soft_ram_peek,
     soft_rom_peek,
     soft_run,
+    soft_run_scan,
     soft_step,
 )
 from jaxtari.diff.soft_tia import (
@@ -60,6 +61,7 @@ __all__ = [
     "soft_render_scanline",
     "soft_rom_peek",
     "soft_run",
+    "soft_run_scan",
     "soft_select",
     "soft_step",
     "straight_through_clamp",

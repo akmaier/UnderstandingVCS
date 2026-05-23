@@ -43,10 +43,13 @@ overall project goal, see [README.md](README.md).
 | **P7f-d** | Differentiable TIA — collision detection: `soft_collision_registers` returns the 8 CX latches (15 pairwise object overlaps) | _next commit_ | +11 | +12 | ✅ |
 | **P8-a** | XAI primitive — Integrated Gradients on top of `jax.grad` (midpoint Riemann; exact for linear/quadratic `f`; completeness axiom enforced) | _next commit_ | — | +7 | ✅ |
 | **P8-b** | First attribution experiment — three attribution semantics (plain gradient / occlusion / smart-baseline IG) on a SOFT-mode kernel, plus the recorded finding that naive zero-baseline IG collapses on opcode bytes | _next commit_ | — | +4 | ✅ |
-| **P8-c** | Attribution on a real Atari ROM (e.g. Pong sprite-defining region) — waits for PXC1-x (the jaxtari/jutari ↔ xitari bit-exact gap closure) before it's meaningful | — | — | — | ⏳ |
+| **P8-c** | Pong-like state attribution: hand-set TIA registers representing a mid-Pong-frame; IG / `jax.grad` localises a paddle pixel to COLUP0, a wall pixel to COLUPF, a background pixel to COLUBK. **Plus** `soft_run_scan` (jax.lax.scan-backed) for thousands-of-instruction SOFT traces, smoke-tested on real `pong.bin`. | _next commit_ | — | +6 (+1 xfail) | ✅ |
+| **P8-cx** | Real-Pong execution attribution — needs the SOFT bus to carry RIOT timer state (Pong's startup busy-waits on INTIM). Pinned as xfail; closing this paints a paddle from soft_run_scan(pong.bin) and runs IG on a real-rendered pixel. | — | — | — | ⏳ |
 | **P9**  | JAX-vs-Julia benchmark + paper-shaped XAI study | — | — | — | ☐ |
 
-**Totals after PXC1-x round 1: jaxtari 526 tests (+ 1 xfail), jutari 1122 tests (+ 1 broken) — 1648 effective.** (Test counts unchanged; two TIA tests were updated to reflect the corrected semantics, two emulation bugs were fixed, divergence on `pong_noop_10` dropped 25 → 10 RAM bytes.)
+**Totals after P8-c: jaxtari 532 tests (+ 2 xfail), jutari 1122 tests (+ 1 broken) — 1655 effective.** Both xfails record real architectural prereqs (PXC1-x round 2+ for bit-exact pong; P8-cx for the SOFT-mode RIOT timer).
+
+**Pong-like attribution works end-to-end.** A `SoftBus` hand-set to the TIA register state of a mid-Pong-frame is rendered by `soft_render_scanline`; `jax.grad` of a paddle pixel is one-hot at the COLUP0 cell, of a wall pixel at COLUPF, of a background pixel at COLUBK; IG with a smart baseline recovers the exact paddle colour with completeness. The real `pong.bin` runs for 5,000 SOFT instructions in `soft_run_scan` without crashing; full execution-based attribution waits for **P8-cx** — Pong's startup busy-waits on the RIOT INTIM timer the SOFT bus doesn't carry yet.
 
 **P8 milestone — first XAI signal from the differentiable VCS.** A SOFT program executes, the differentiable TIA renders a pixel, and three attribution methods correctly identify the ROM byte that explains it: plain `jax.grad` (source), occlusion (necessity), smart-baseline IG (quantified contribution). The naive zero-baseline IG fails on opcode bytes — a recorded finding about XAI on discrete-input emulators.
 

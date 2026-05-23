@@ -1349,11 +1349,41 @@ def soft_step(state: SoftCPUState, bus: SoftBus):
 
 def soft_run(state: SoftCPUState, bus: SoftBus, n_steps: int):
     """Execute exactly `n_steps` instructions in sequence (Python loop
-    — gets unrolled by jax.jit if you wrap this in jit). Useful when the
-    trace length is known statically, which is the common XAI case
-    ("run 1000 instructions and tell me which ROM bytes affected the
-    output").
+    — gets unrolled by jax.jit if you wrap this in jit). Use this for
+    short traces (~tens to a few hundred instructions); for thousands
+    of instructions on a real ROM, `soft_run_scan` is dramatically
+    faster — it lowers to a single compiled loop body instead of an
+    unrolled trace whose size grows with `n_steps`.
     """
     for _ in range(n_steps):
         state, bus = soft_step(state, bus)
     return state, bus
+
+
+def soft_run_scan(state: SoftCPUState, bus: SoftBus, n_steps: int):
+    """Execute `n_steps` instructions via `jax.lax.scan`.
+
+    P8-c: when SOFT mode runs a real Atari ROM, the trace is many
+    thousands of instructions — Pong alone runs ~6,000 instructions per
+    frame. The naive Python-loop `soft_run` unrolls into a JAX trace
+    whose size grows with `n_steps`, so a 5,000-step run becomes a
+    5,000-deep computation graph that takes tens of seconds to trace
+    and minutes to JIT-compile.
+
+    `soft_run_scan` instead compiles the per-step body **once** and
+    runs it `n_steps` times under `jax.lax.scan` — trace size is
+    constant, compilation is O(1), and the per-step overhead drops by
+    orders of magnitude. The function is `jax.jit`-wrapped so a second
+    call at the same `n_steps` reuses the cached compilation.
+    """
+    def _step(carry, _):
+        s, b = carry
+        s, b = soft_step(s, b)
+        return (s, b), None
+
+    @jax.jit
+    def _run(s, b):
+        (s, b), _ = jax.lax.scan(_step, (s, b), None, length=n_steps)
+        return s, b
+
+    return _run(state, bus)
