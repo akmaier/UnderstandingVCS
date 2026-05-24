@@ -86,6 +86,7 @@ from jaxtari.tia.system import (
     W_RESM1,
     W_RESP0,
     W_RESP1,
+    W_VBLANK,
 )
 
 SCREEN_WIDTH = 160
@@ -289,6 +290,14 @@ def soft_render_scanline(bus) -> jnp.ndarray:
     itself is a structural switch (integer extraction breaks the
     gradient at the cast), matching the existing convention for
     enable / size bits (see `_block_mask`).
+
+    **VBLANK blanking.** When VBLANK ($01) bit 1 is set, real TIA
+    output is forced to black. The final result is multiplied by
+    `(1 - vblank_bit)` so the scanline goes to zero (= palette
+    index 0 = black in NTSC). The integer extraction breaks the
+    gradient through the VBLANK bit itself, same as PFP — but
+    gradient through colour / sprite registers stays exact in
+    *both* the blanked and unblanked branches.
     """
     pf, p0, p1, m0, m1, bl = _object_masks(bus)
     colubk = soft_ram_peek(bus.ram, W_COLUBK)
@@ -296,7 +305,9 @@ def soft_render_scanline(bus) -> jnp.ndarray:
     colup0 = soft_ram_peek(bus.ram, W_COLUP0)
     colup1 = soft_ram_peek(bus.ram, W_COLUP1)
     ctrlpf = soft_ram_peek(bus.ram, W_CTRLPF)
-    pfp_bit = ((ctrlpf.astype(jnp.int32) >> 2) & 1).astype(jnp.float32)  # 0.0 or 1.0
+    vblank = soft_ram_peek(bus.ram, W_VBLANK)
+    pfp_bit = ((ctrlpf.astype(jnp.int32) >> 2) & 1).astype(jnp.float32)
+    vblank_bit = ((vblank.astype(jnp.int32) >> 1) & 1).astype(jnp.float32)
 
     # Default-priority composite: background ← playfield ← ball ←
     # missile 1 ← player 1 ← missile 0 ← player 0.
@@ -317,7 +328,9 @@ def soft_render_scanline(bus) -> jnp.ndarray:
     s_pfp = (1.0 - pf) * s_pfp + pf * colupf
     s_pfp = (1.0 - bl) * s_pfp + bl * colupf
 
-    return (1.0 - pfp_bit) * s_def + pfp_bit * s_pfp
+    scanline = (1.0 - pfp_bit) * s_def + pfp_bit * s_pfp
+    # VBLANK: zero the scanline when bit 1 of $01 is set.
+    return scanline * (1.0 - vblank_bit)
 
 
 def soft_render_frame(bus, height: int = VISIBLE_SCANLINES) -> jnp.ndarray:

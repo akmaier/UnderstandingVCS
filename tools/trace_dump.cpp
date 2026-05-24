@@ -108,6 +108,7 @@ int main(int argc, char **argv) {
     bool dump_screen = false;
     bool dump_cpu    = false;
     bool repeat_last = false;
+    bool auto_reset  = false;
 
     for (int i = 1; i < argc; ++i) {
         std::string a = argv[i];
@@ -117,6 +118,11 @@ int main(int argc, char **argv) {
         else if (a == "--screen") { dump_screen = true; }
         else if (a == "--cpu") { dump_cpu = true; }
         else if (a == "--repeat-last-on-exhaust") { repeat_last = true; }
+        // --auto-reset: when the cart declares gameOver, call
+        // resetGame() and keep going. Useful for fixed-length video
+        // captures of games that end quickly under random play
+        // (e.g. Breakout's 5-life-then-dead default).
+        else if (a == "--auto-reset") { auto_reset = true; }
         else if (a == "-h" || a == "--help") { usage(argv[0]); return 0; }
         else { std::fprintf(stderr, "trace_dump: unknown arg %s\n", a.c_str()); usage(argv[0]); return 2; }
     }
@@ -139,7 +145,13 @@ int main(int argc, char **argv) {
 
     while (true) {
         if (max_frames > 0 && frame_count >= max_frames) break;
-        if (ale.gameOver()) break;
+        if (ale.gameOver()) {
+            if (auto_reset) {
+                ale.resetGame();
+            } else {
+                break;
+            }
+        }
 
         int act_id;
         if (a_idx < actions.size()) {
