@@ -161,6 +161,10 @@ def main() -> int:
                          "shows all writes if omitted")
     ap.add_argument("--max-rows", type=int, default=80,
                     help="cap output rows (default 80)")
+    ap.add_argument("--reads", action="store_true",
+                    help="also log TIA / RIOT reads (data-path source-of-"
+                         "truth for the divergent registers); without it "
+                         "only RAM writes are shown")
     args = ap.parse_args()
 
     target_cells: set[int] | None = None
@@ -180,10 +184,12 @@ def main() -> int:
             console = run_until_frame(console)
         console = _switches_apply(console, reset_pressed=False)
 
-    # Capture writes: single-step the CPU and record (PC, A, X, Y, P,
-    # addr, value) for every bus poke landing in the 128B RAM bank.
-    rows: list[tuple[int, int, int, int, int, int, int]] = []
+    # Capture writes AND (optionally) reads. Each row is
+    # ("W"|"R", pc, a, x, y, p, addr, value). Single-step the CPU so
+    # the PC + register snapshot at each event is bit-accurate.
+    rows: list[tuple[str, int, int, int, int, int, int, int]] = []
     original_bus_poke = _bus_module._bus_poke
+    original_bus_peek = _bus_module._bus_peek
 
     def make_traced_poke(pc_before: int, a: int, x: int, y: int, p: int):
         def traced(bus, addr, value):
@@ -192,8 +198,26 @@ def main() -> int:
                     and not (addr_masked & 0x200):
                 ram_idx = addr_masked & 0x7F
                 if target_cells is None or ram_idx in target_cells:
-                    rows.append((pc_before, a, x, y, p, ram_idx, value & 0xFF))
+                    rows.append(("W", pc_before, a, x, y, p,
+                                 ram_idx, value & 0xFF))
             return original_bus_poke(bus, addr, value)
+        return traced
+
+    def make_traced_peek(pc_before: int, a: int, x: int, y: int, p: int):
+        def traced(bus, addr):
+            addr_masked = addr & 0x1FFF
+            value, new_bus = original_bus_peek(bus, addr)
+            if args.reads:
+                # Only log TIA reads (A12=0, A7=0) and RIOT I/O reads
+                # (A12=0, A7=1, A9=1) — those are the data-path of
+                # interest. RAM reads are too numerous.
+                is_tia      = (not (addr_masked & 0x1000)) and (not (addr_masked & 0x80))
+                is_riot_io  = ((not (addr_masked & 0x1000)) and
+                               (addr_masked & 0x80) and (addr_masked & 0x200))
+                if is_tia or is_riot_io:
+                    rows.append(("R", pc_before, a, x, y, p,
+                                 addr_masked, value & 0xFF))
+            return value, new_bus
         return traced
 
     # Walk one frame's worth of instructions at a time (a generous cap
@@ -209,28 +233,38 @@ def main() -> int:
             p_before  = int(console.cpu.P)
             _bus_module._bus_poke = make_traced_poke(
                 pc_before, a_before, x_before, y_before, p_before)
+            _bus_module._bus_peek = make_traced_peek(
+                pc_before, a_before, x_before, y_before, p_before)
             try:
                 new_cpu, new_bus = cpu_step(console.cpu, console.bus)
             finally:
                 _bus_module._bus_poke = original_bus_poke
+                _bus_module._bus_peek = original_bus_peek
             console = Console(cpu=new_cpu, bus=new_bus)
             if int(console.bus.tia.frame) != start_frame:
                 break
 
     rows = rows[: args.max_rows]
     if not rows:
-        print("(no writes matched the filter — try widening --cells or --frames)")
+        print("(no events matched — try widening --cells / --reads / --frames)")
         return 0
 
-    print(f"# {len(rows)} RAM writes captured during {args.frames} frame(s)")
+    kind_w = sum(1 for r in rows if r[0] == "W")
+    kind_r = sum(1 for r in rows if r[0] == "R")
+    print(f"# {len(rows)} events captured during {args.frames} frame(s) "
+          f"({kind_w} writes, {kind_r} TIA/RIOT reads)")
     if target_cells is not None:
-        print(f"# filter: cells = {sorted(target_cells)}")
+        print(f"# write filter: cells = {sorted(target_cells)}")
     print()
-    print(f"{'PC':>8s}  A    X    Y    P   {'addr':>4s}  {'val':>4s}  opcode")
-    print("-" * 90)
-    for pc, a, x, y, p, ram_idx, value in rows:
-        print(f"  ${pc:04X}  ${a:02X}  ${x:02X}  ${y:02X}  ${p:02X}  "
-              f"${ram_idx:02X}  ${value:02X}  {_disasm(rom, pc)}")
+    print(f"{'op':>2s}  {'PC':>8s}  A    X    Y    P   {'addr':>5s}  {'val':>4s}  opcode")
+    print("-" * 95)
+    for kind, pc, a, x, y, p, addr, value in rows:
+        if kind == "W":
+            disasm = _disasm(rom, pc)
+        else:
+            disasm = "(TIA/RIOT read)"
+        print(f"  {kind}   ${pc:04X}  ${a:02X}  ${x:02X}  ${y:02X}  ${p:02X}  "
+              f"${addr:04X}  ${value:02X}  {disasm}")
     return 0
 
 
