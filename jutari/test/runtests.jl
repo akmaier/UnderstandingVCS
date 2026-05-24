@@ -37,6 +37,7 @@ using JuTari.Diff: RomTensor, peek, peek_many,
                    initial_soft_cpu_state, initial_soft_bus,
                    soft_step!, soft_run!, soft_rom_peek, soft_ram_peek,
                    soft_step, soft_run, update_state, update_bus, _set_ram,
+                   _with_p, _float_flags_from_p,
                    SOFT_SUPPORTED_OPCODES,
                    soft_render_scanline, soft_render_frame,
                    soft_collision_registers, SOFT_SCREEN_WIDTH
@@ -4974,6 +4975,87 @@ end
         @test (Int(state.P) & 0x30) == 0x30        # B + U forced on
         @test state.SP == Float32(0xFF)            # 3 pops past $FC
     end
+
+    # --- P7c-dx — float-valued flag mirrors -------------------------------- #
+    #
+    # The mirrors `P_N` / `P_Z` / `P_C` / `P_V` are kept in lock-step
+    # with the packed `P` byte by `_with_p`. Forward semantics are
+    # still driven by the packed byte (PXC1 conformance + existing
+    # tests stay bit-exact), but the gradient path through `_func_do_branch`
+    # reads the float mirror so an XAI caller can inject soft flag values.
+
+    @testset "_float_flags_from_p splits packed P into NZCV floats" begin
+        n, z, c, v = _float_flags_from_p(0xC3)   # 11000011 → N=1, V=1, Z=1, C=1
+        @test n == 1f0 && v == 1f0 && z == 1f0 && c == 1f0
+        n, z, c, v = _float_flags_from_p(0x00)
+        @test n == 0f0 && v == 0f0 && z == 0f0 && c == 0f0
+        n, z, c, v = _float_flags_from_p(0x42)   # 01000010 → V=1, Z=1, N=0, C=0
+        @test n == 0f0 && z == 1f0 && c == 0f0 && v == 1f0
+    end
+
+    @testset "initial_soft_cpu_state has zero float mirrors (P=0x34, N=Z=C=V=0)" begin
+        s = initial_soft_cpu_state()
+        @test s.P == Float32(0x34)
+        @test s.P_N == 0f0 && s.P_Z == 0f0 && s.P_C == 0f0 && s.P_V == 0f0
+    end
+
+    @testset "LDA #0 syncs P_Z=1 via _with_p" begin
+        rom = _rom_with([0xA9, 0x00])
+        bus = initial_soft_bus(rom)
+        state = initial_soft_cpu_state(pc=0xF000)
+        state, _ = soft_step(state, bus)
+        @test state.A == 0f0
+        @test (Int(state.P) & 0x02) != 0     # Z=1 in packed
+        @test state.P_Z == 1f0                # mirrored to float
+        @test state.P_N == 0f0
+    end
+
+    @testset "LDA #0x80 syncs P_N=1 via _with_p" begin
+        rom = _rom_with([0xA9, 0x80])
+        bus = initial_soft_bus(rom)
+        state = initial_soft_cpu_state(pc=0xF000)
+        state, _ = soft_step(state, bus)
+        @test (Int(state.P) & 0x80) != 0     # N=1 in packed
+        @test state.P_N == 1f0
+        @test state.P_Z == 0f0
+    end
+
+    @testset "SEC syncs P_C=1, CLC syncs P_C=0" begin
+        rom = _rom_with([0x38, 0x18])         # SEC ; CLC
+        bus = initial_soft_bus(rom)
+        state = initial_soft_cpu_state(pc=0xF000)
+        state, _ = soft_step(state, bus)
+        @test (Int(state.P) & 0x01) != 0
+        @test state.P_C == 1f0
+        state, _ = soft_step(state, bus)
+        @test (Int(state.P) & 0x01) == 0
+        @test state.P_C == 0f0
+    end
+
+    @testset "Forward branch is exact when only packed P is set" begin
+        # A test that sets P=0x02 (Z=1) without bumping P_Z explicitly
+        # should STILL take the BEQ branch — forward semantics come
+        # from packed P. This is the conformance-preservation goal.
+        rom = _rom_with([0xF0, 0x05])          # BEQ +5
+        bus = initial_soft_bus(rom)
+        state = initial_soft_cpu_state(pc=0xF000)
+        state = update_state(state; P=Float32(0x02))   # Z=1, P_Z still 0
+        state, _ = soft_step(state, bus)
+        # BEQ at $F000 with offset +5 → PC = $F002 + 5 = $F007.
+        @test state.PC == Float32(0xF007)
+    end
+
+    # Gradient through `_func_do_branch`'s soft path is **deferred** —
+    # the straight-through (forward = pc_hard, backward = ∂pc_soft)
+    # trick used by the jaxtari twin relies on `jax.lax.stop_gradient`;
+    # Julia's equivalent needs a `ChainRulesCore.@ignore_derivatives`
+    # rrule wiring that jutari doesn't pull in yet (Zygote is only a
+    # test dependency, and ChainRulesCore isn't a runtime dep). For
+    # now `pc_soft + (pc_hard - pc_soft)` cancels at the Float32 level,
+    # so Zygote sees no gradient contribution. Forward semantics are
+    # exact (the test above confirms), which is what PXC1 conformance
+    # requires. The gradient wiring lands in a follow-up that adds
+    # ChainRulesCore as a runtime dep.
 end
 
 

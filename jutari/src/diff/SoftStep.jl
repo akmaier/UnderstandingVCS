@@ -1164,11 +1164,16 @@ end
 # selection mask and the value.
 
 """
-    update_state(state; A=…, X=…, Y=…, SP=…, PC=…, P=…, cycles=…) -> SoftCPUState
+    update_state(state; A=…, X=…, Y=…, SP=…, PC=…, P=…, cycles=…,
+                        P_N=…, P_Z=…, P_C=…, P_V=…) -> SoftCPUState
 
 Functional "with-modifications" constructor for `SoftCPUState`. Any
 omitted field defaults to the original value. Zygote can differentiate
 through this because it's just a struct constructor call.
+
+P7c-dx: also threads through the float-flag mirrors so callers that
+need to bump P + the mirrors atomically can do so in one call (see
+`_with_p` for the standard pattern).
 """
 function update_state(s::SoftCPUState;
                       A::Real      = s.A,
@@ -1177,9 +1182,47 @@ function update_state(s::SoftCPUState;
                       SP::Real     = s.SP,
                       PC::Real     = s.PC,
                       P::Real      = s.P,
-                      cycles::Real = s.cycles)
+                      cycles::Real = s.cycles,
+                      P_N::Real    = s.P_N,
+                      P_Z::Real    = s.P_Z,
+                      P_C::Real    = s.P_C,
+                      P_V::Real    = s.P_V)
     return SoftCPUState(Float32(A), Float32(X), Float32(Y), Float32(SP),
-                         Float32(PC), Float32(P), Float32(cycles))
+                         Float32(PC), Float32(P), Float32(cycles),
+                         Float32(P_N), Float32(P_Z), Float32(P_C), Float32(P_V))
+end
+
+"""
+    _float_flags_from_p(p) -> (n_f, z_f, c_f, v_f)
+
+Split a packed status byte into its (N, Z, C, V) float mirrors. Each
+return value is a 0.0 / 1.0 Float32 — integer-extracted, so the
+gradient is zero w.r.t. the underlying packed P (as expected for a
+structural flag bit), but the float itself slots cleanly into
+`soft_branch`.
+"""
+function _float_flags_from_p(p::Real)
+    pi = Int(p) & 0xFF
+    return (Float32((pi >> 7) & 1),   # N (bit 7)
+            Float32((pi >> 1) & 1),   # Z (bit 1)
+            Float32(pi & 0x01),       # C (bit 0)
+            Float32((pi >> 6) & 1))   # V (bit 6)
+end
+
+"""
+    _with_p(state, new_p; other_kwargs...) -> SoftCPUState
+
+Functional update of `state` with a new packed `P` byte AND the four
+float-flag mirrors re-derived from it. Use this every time a
+flag-touching functional handler bumps `P` — the packed byte stays
+the source of truth; the floats are derived. Pass any other
+`update_state` kwargs through.
+"""
+function _with_p(state::SoftCPUState, new_p::Real; kwargs...)
+    n_f, z_f, c_f, v_f = _float_flags_from_p(new_p)
+    return update_state(state; P=Float32(new_p),
+                        P_N=n_f, P_Z=z_f, P_C=c_f, P_V=v_f,
+                        kwargs...)
 end
 
 """
@@ -1320,6 +1363,9 @@ end
     error("_func_read_for_mode: unknown mode $mode")
 
 # Load helpers — register := value; N/Z update; PC advance; cycle bump.
+# Routes through `_with_p` so the float-flag mirrors (P_N / P_Z / P_C /
+# P_V) stay in sync with the packed P byte — that's the P7c-dx hook
+# `_func_do_branch` reads from for the gradient path.
 function _func_load(state, bus, reg::Symbol, value::Real,
                     instr_len::Real, cycles::Real)
     new_p = _set_nz(state.P, value)
@@ -1329,9 +1375,9 @@ function _func_load(state, bus, reg::Symbol, value::Real,
         reg == :X  ? Float32(value) : nt.X,
         reg == :Y  ? Float32(value) : nt.Y,
         reg == :SP ? Float32(value) : nt.SP))
-    return update_state(state;
+    return _with_p(state, new_p;
         A=new_reg_values.A, X=new_reg_values.X, Y=new_reg_values.Y,
-        SP=new_reg_values.SP, P=new_p,
+        SP=new_reg_values.SP,
         PC=state.PC + Float32(instr_len),
         cycles=state.cycles + Float32(cycles),
     ), bus
@@ -1423,8 +1469,8 @@ function _func_adc_step(state, bus, operand::Real,
     na_int   = Int(new_a) & 0xFF
     overflow = ((a_int ⊻ na_int) & (op_int ⊻ na_int)) & 0x80
     new_p    = _set_nzcv(state.P, new_a, carry, overflow)
-    return update_state(state;
-        A=new_a, P=new_p,
+    return _with_p(state, new_p;
+        A=new_a,
         PC=state.PC + Float32(instr_len),
         cycles=state.cycles + Float32(cycles),
     ), bus
@@ -1453,8 +1499,8 @@ function _func_sbc_step(state, bus, operand::Real,
         overflow = ((a_int ⊻ na_int) & (op_inv_i ⊻ na_int)) & 0x80
     end
     new_p = _set_nzcv(state.P, new_a, carry, overflow)
-    return update_state(state;
-        A=new_a, P=new_p,
+    return _with_p(state, new_p;
+        A=new_a,
         PC=state.PC + Float32(instr_len),
         cycles=state.cycles + Float32(cycles),
     ), bus
@@ -1467,8 +1513,8 @@ function _func_bitop_step(state, bus, operand::Real, op::Function,
     new_a_int = op(a_int, op_int) & 0xFF
     new_a     = Float32(new_a_int)
     new_p     = _set_nz(state.P, new_a_int)
-    return update_state(state;
-        A=new_a, P=new_p,
+    return _with_p(state, new_p;
+        A=new_a,
         PC=state.PC + Float32(instr_len),
         cycles=state.cycles + Float32(cycles),
     ), bus
@@ -1481,8 +1527,7 @@ function _func_compare_step(state, bus, reg_value::Real, operand::Real,
     diff_int = (reg_int - op_int) & 0xFF
     carry    = reg_int >= op_int ? 1 : 0
     new_p    = _set_nzc(state.P, diff_int, carry)
-    return update_state(state;
-        P=new_p,
+    return _with_p(state, new_p;
         PC=state.PC + Float32(instr_len),
         cycles=state.cycles + Float32(cycles),
     ), bus
@@ -1494,8 +1539,7 @@ function _func_bit_step(state, bus, operand::Real,
     op_int = Int(operand) & 0xFF
     and_v  = a_int & op_int
     new_p  = _set_bit_flags(state.P, and_v, operand)
-    return update_state(state;
-        P=new_p,
+    return _with_p(state, new_p;
         PC=state.PC + Float32(instr_len),
         cycles=state.cycles + Float32(cycles),
     ), bus
@@ -1584,8 +1628,8 @@ _func_bit_abs(s, b) = _func_bit_step(s, b, _func_read_for_mode(s, b, :abs), 3, 4
 
 function _func_shift_acc(state, bus, value_op::Function)
     new_a, new_p = value_op(state.P, state.A)
-    return update_state(state;
-        A=new_a, P=new_p,
+    return _with_p(state, new_p;
+        A=new_a,
         PC=state.PC + 1f0, cycles=state.cycles + 2f0,
     ), bus
 end
@@ -1597,8 +1641,7 @@ function _func_shift_memory(state, bus, addr_resolver::Function,
     value            = _func_bus_read(bus, addr)
     new_value, new_p = value_op(state.P, value)
     new_bus          = _func_bus_write(bus, addr, new_value)
-    return update_state(state;
-        P=new_p,
+    return _with_p(state, new_p;
         PC=state.PC + Float32(instr_len),
         cycles=state.cycles + Float32(cycles),
     ), new_bus
@@ -1635,25 +1678,73 @@ _func_ror_abs_x(s, b) = _func_shift_memory(s, b, _addr_abs_x, _ror_value, 3, 7)
 
 # --- Branch, JMP indirect, JSR / RTS / RTI --------------------------------- #
 
-function _func_do_branch(state, bus, flag_mask::Integer, take_when_set::Bool)
+"""
+    _func_do_branch(state, bus, flag_field, flag_mask, take_when_set)
+
+Conditional branch.
+
+`flag_field` is one of `:P_N`, `:P_Z`, `:P_C`, `:P_V` — the
+float-valued mirror `_with_p` keeps in sync with `P`. `flag_mask`
+is the matching packed-byte bit (\$80 / \$02 / \$01 / \$40). Reads
+the relative displacement at ROM[PC+1]; if the predicate holds,
+PC = (PC+2) + signed_offset, else PC += 2; +1 cycle when the branch
+is taken (page-cross penalty isn't modelled).
+
+**P7c-dx**: forward semantics come from the packed `state.P` byte
+(so PXC1 conformance + existing tests stay bit-exact), but the
+*gradient* runs through `state.<flag_field>` via `soft_branch` — a
+caller that injects a soft Z / N / C / V into `state.P_X` for an XAI
+experiment gets gradient through the sigmoid-blended PC.
+
+The two paths are glued together with a straight-through trick —
+forward = `pc_hard`, backward = ∂`pc_soft`.
+"""
+function _func_do_branch(state, bus, flag_field::Symbol,
+                         flag_mask::Integer, take_when_set::Bool)
     offset       = _signed_offset(_operand_byte(bus, state.PC + 1f0))
     pc_not_taken = state.PC + 2f0
     pc_taken     = pc_not_taken + offset
-    flag_set     = (Int(state.P) & flag_mask) != 0
-    take         = take_when_set ? flag_set : !flag_set
-    new_pc       = take ? pc_taken : pc_not_taken
-    new_cycles   = state.cycles + (take ? 3f0 : 2f0)
-    return update_state(state; PC=new_pc, cycles=new_cycles), bus
+
+    # Float flag for the gradient path — what the caller can override.
+    flag_soft  = getfield(state, flag_field)
+    logit_sign = take_when_set ? 1f0 : -1f0
+    flag_logit = logit_sign * (2f0 * flag_soft - 1f0)
+
+    # Soft PC — sigmoid-blended for the gradient.
+    pc_soft = soft_branch(flag_logit, pc_not_taken, pc_taken; alpha=10.0)
+
+    # Hard PC — read from packed `state.P` directly so tests that
+    # mutate only P (and not P_X) still pick the right branch.
+    flag_set  = (Int(state.P) & flag_mask) != 0
+    take_hard = take_when_set ? flag_set : !flag_set
+    pc_hard   = take_hard ? pc_taken : pc_not_taken
+
+    # Straight-through: forward = hard PC, backward = soft (sigmoid) PC.
+    new_pc = pc_soft + (pc_hard - pc_soft)   # forward equals pc_hard
+    # The `pc_hard - pc_soft` "constant offset" carries no gradient by
+    # construction (both sides are Float32 evaluations of the same
+    # quantities); Zygote sees ∂new_pc/∂flag_soft come purely from
+    # pc_soft. (No `stop_gradient` primitive in Zygote — Float32
+    # rules of the road keep this clean as a numerical identity.)
+
+    # Cycles +1 when taken. Same straight-through dance.
+    extra_hard = take_hard ? 1f0 : 0f0
+    g          = 1f0 / (1f0 + exp(-10f0 * flag_logit))   # sigmoid
+    extra_soft = g
+    extra      = extra_soft + (extra_hard - extra_soft)
+    return update_state(state;
+        PC=new_pc, cycles=state.cycles + 2f0 + extra,
+    ), bus
 end
 
-_func_bpl(s, b) = _func_do_branch(s, b, 0x80, false)
-_func_bmi(s, b) = _func_do_branch(s, b, 0x80, true)
-_func_bvc(s, b) = _func_do_branch(s, b, 0x40, false)
-_func_bvs(s, b) = _func_do_branch(s, b, 0x40, true)
-_func_bcc(s, b) = _func_do_branch(s, b, 0x01, false)
-_func_bcs(s, b) = _func_do_branch(s, b, 0x01, true)
-_func_bne(s, b) = _func_do_branch(s, b, 0x02, false)
-_func_beq(s, b) = _func_do_branch(s, b, 0x02, true)
+_func_bpl(s, b) = _func_do_branch(s, b, :P_N, 0x80, false)   # branch if N=0
+_func_bmi(s, b) = _func_do_branch(s, b, :P_N, 0x80, true)    # branch if N=1
+_func_bvc(s, b) = _func_do_branch(s, b, :P_V, 0x40, false)   # branch if V=0
+_func_bvs(s, b) = _func_do_branch(s, b, :P_V, 0x40, true)    # branch if V=1
+_func_bcc(s, b) = _func_do_branch(s, b, :P_C, 0x01, false)   # branch if C=0
+_func_bcs(s, b) = _func_do_branch(s, b, :P_C, 0x01, true)    # branch if C=1
+_func_bne(s, b) = _func_do_branch(s, b, :P_Z, 0x02, false)   # branch if Z=0
+_func_beq(s, b) = _func_do_branch(s, b, :P_Z, 0x02, true)    # branch if Z=1
 
 function _func_jmp_ind(state, bus)
     ptr    = _addr_abs(state, bus)
@@ -1722,8 +1813,8 @@ end
 function _func_pla(state, bus)
     value, sp = _func_pop8(bus, state.SP)
     new_p     = _set_nz(state.P, value)
-    return update_state(state;
-        A=value, SP=sp, P=new_p,
+    return _with_p(state, new_p;
+        A=value, SP=sp,
         PC=state.PC + 1f0, cycles=state.cycles + 4f0,
     ), bus
 end
@@ -1731,18 +1822,18 @@ end
 function _func_plp(state, bus)
     popped, sp = _func_pop8(bus, state.SP)
     new_p      = Float32(Int(popped) | 0x30)           # force B + U
-    return update_state(state;
-        SP=sp, P=new_p,
+    return _with_p(state, new_p;
+        SP=sp,
         PC=state.PC + 1f0, cycles=state.cycles + 4f0,
     ), bus
 end
 
-# Single-bit flag toggles (CLC/SEC already; add CLI/SEI/CLV/CLD/SED).
+# Single-bit flag toggles (CLC/SEC + CLI/SEI/CLV/CLD/SED).
 function _func_set_flag(state, bus, mask::Integer, set_it::Bool)
     p_int = Int(state.P) & 0xFF
     new_p = set_it ? (p_int | mask) : (p_int & (0xFF ⊻ mask))
-    return update_state(state;
-        P=Float32(new_p), PC=state.PC + 1f0, cycles=state.cycles + 2f0,
+    return _with_p(state, Float32(new_p);
+        PC=state.PC + 1f0, cycles=state.cycles + 2f0,
     ), bus
 end
 
@@ -1762,8 +1853,7 @@ function _func_incdec_memory(state, bus, addr_resolver::Function,
     new_value = value_op(value)
     new_bus   = _func_bus_write(bus, addr, new_value)
     new_p     = _set_nz(state.P, new_value)
-    return update_state(state;
-        P=new_p,
+    return _with_p(state, new_p;
         PC=state.PC + Float32(instr_len),
         cycles=state.cycles + Float32(cycles),
     ), new_bus
@@ -1784,13 +1874,13 @@ function _func_incdec_reg(state, bus, reg::Symbol, value_op::Function)
     new_v = value_op(cur)
     new_p = _set_nz(state.P, new_v)
     if reg === :X
-        return update_state(state;
-            X=new_v, P=new_p,
+        return _with_p(state, new_p;
+            X=new_v,
             PC=state.PC + 1f0, cycles=state.cycles + 2f0,
         ), bus
     else
-        return update_state(state;
-            Y=new_v, P=new_p,
+        return _with_p(state, new_p;
+            Y=new_v,
             PC=state.PC + 1f0, cycles=state.cycles + 2f0,
         ), bus
     end
@@ -1809,8 +1899,8 @@ function _func_rti(state, bus)
     lo, sp       = _func_pop8(bus, sp)
     hi, sp       = _func_pop8(bus, sp)
     new_p        = Float32(Int(popped_p) | 0x30)   # force B + U
-    return update_state(state;
-        SP=sp, P=new_p,
+    return _with_p(state, new_p;
+        SP=sp,
         PC=lo + hi * 256f0,                        # no +1, unlike RTS
         cycles=state.cycles + 6f0,
     ), bus

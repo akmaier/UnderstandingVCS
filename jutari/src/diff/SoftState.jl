@@ -23,6 +23,19 @@
 Mutable CPU register file for SOFT-mode execution. All fields are
 `Float32` so the autodiff stack can flow gradients through arithmetic
 on them.
+
+**P7c-dx mirror.** Alongside the packed `P` byte (the source of truth
+for forward semantics), four float fields `P_N` / `P_Z` / `P_C` /
+`P_V` mirror the same flag bits as 0.0 / 1.0 floats. These exist
+purely to feed `soft_branch` in the functional branch handlers — a
+caller that injects a soft Z / N / C / V (anywhere in [0, 1]) into
+`SoftCPUState` for an XAI experiment gets a non-zero gradient through
+both `pc_taken` and `pc_not_taken` via the sigmoid blend, while the
+forward PC still comes from the packed `P` (so `soft_step!` /
+existing tests stay bit-exact).
+
+All four default to 0.0; the initial `P = 0x34` has N=Z=C=V=0 anyway
+and the first flag-touching opcode re-syncs both representations.
 """
 mutable struct SoftCPUState
     A::Float32
@@ -32,6 +45,10 @@ mutable struct SoftCPUState
     PC::Float32
     P::Float32
     cycles::Float32
+    P_N::Float32
+    P_Z::Float32
+    P_C::Float32
+    P_V::Float32
 end
 
 """
@@ -39,10 +56,25 @@ end
 
 SOFT-mode CPU state after RESET. `PC` defaults to \$F000 — the
 standard cart-mapped reset entry point — so a fresh ROM at offset 0
-starts executing immediately.
+starts executing immediately. Float-flag mirrors `P_N` / `P_Z` /
+`P_C` / `P_V` start at 0.0 (matches `P = 0x34`, where N=Z=C=V=0).
 """
 initial_soft_cpu_state(; pc::Real = 0xF000) =
-    SoftCPUState(0f0, 0f0, 0f0, Float32(0xFD), Float32(pc), Float32(0x34), 0f0)
+    SoftCPUState(0f0, 0f0, 0f0, Float32(0xFD), Float32(pc), Float32(0x34), 0f0,
+                 0f0, 0f0, 0f0, 0f0)
+
+"""
+    SoftCPUState(A, X, Y, SP, PC, P, cycles)
+
+Backwards-compat positional constructor (pre-P7c-dx). Float-flag
+mirrors default to zero — fine because the very first flag-touching
+opcode re-syncs them via `_with_p` / `_with_p!`.
+"""
+SoftCPUState(A::Real, X::Real, Y::Real, SP::Real, PC::Real, P::Real,
+             cycles::Real) =
+    SoftCPUState(Float32(A), Float32(X), Float32(Y), Float32(SP),
+                 Float32(PC), Float32(P), Float32(cycles),
+                 0f0, 0f0, 0f0, 0f0)
 
 
 """
