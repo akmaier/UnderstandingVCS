@@ -53,6 +53,7 @@ KIND_F4   = 4
 KIND_F8SC = 5     # P5b — F8 + 128 B on-cart RAM
 KIND_F6SC = 6     # P5b — F6 + 128 B on-cart RAM
 KIND_F4SC = 7     # P5b — F4 + 128 B on-cart RAM
+KIND_E0   = 8     # P5c — Parker Bros 8K, 4 × 1K slice slots
 
 _SIZE_TO_KIND = {
     2048:  KIND_2K,
@@ -65,12 +66,14 @@ _SIZE_TO_KIND = {
 # F8SC / F6SC / F4SC all carry the 128 B on-cart RAM at $1000-$10FF.
 _SC_KINDS = frozenset({KIND_F8SC, KIND_F6SC, KIND_F4SC})
 
-# Map each SC kind back to its expected ROM size, used by `make_cart`
-# to reject silly inputs early ("KIND_F6SC requires 16384 bytes").
+# Map size-sensitive kinds back to their expected ROM size, used by
+# `make_cart` to reject silly inputs early. Covers all formats that
+# can be selected by an explicit `kind=` override.
 _SC_EXPECTED_SIZE = {
     KIND_F8SC: 8192,
     KIND_F6SC: 16384,
     KIND_F4SC: 32768,
+    KIND_E0:   8192,         # P5c
 }
 
 # Bank-switch hotspot addresses within the 13-bit-masked cart window.
@@ -82,6 +85,9 @@ F4_HOTSPOTS = {
 }
 
 # Bank typically containing the reset vector at power-on — the highest bank.
+# For E0, "bank" is a tuple of (slot0_slice, slot1_slice, slot2_slice) since
+# the format selects three different 1K slices simultaneously. The last 1K
+# is fixed at slice 7; we don't track it.
 _DEFAULT_BANK = {
     KIND_2K:   0,
     KIND_4K:   0,
@@ -91,7 +97,19 @@ _DEFAULT_BANK = {
     KIND_F6SC: 3,
     KIND_F4:   7,
     KIND_F4SC: 7,
+    KIND_E0:   0,                   # placeholder; E0 uses `slice_slots` instead
 }
+
+# E0 cart: 8K split into 8 × 1K slices. Three slots at $1000-$13FF /
+# $1400-$17FF / $1800-$1BFF map to one of the 8 slices each, via hotspot
+# reads/writes:
+#   $1FE0..$1FE7  → set slot 0 to slice 0..7
+#   $1FE8..$1FEF  → set slot 1 to slice 0..7
+#   $1FF0..$1FF7  → set slot 2 to slice 0..7
+# The fourth slot at $1C00-$1FFF is hard-wired to slice 7 (which holds
+# the reset vector at $FFFC/$FFFD = $1FFC/$1FFD in cart-window terms).
+E0_HOTSPOT_BASE = (0x1FE0, 0x1FE8, 0x1FF0)
+E0_FIXED_SLICE  = 7
 
 # F8SC on-cart RAM layout (P5b). 128 bytes, write at $1000-$107F and read
 # at $1080-$10FF. Both areas alias the same 128-byte buffer via
@@ -118,7 +136,7 @@ class Cart:
     would ripple through every memory-access call site in the CPU.
     """
 
-    __slots__ = ("kind", "rom", "current_bank", "ram")
+    __slots__ = ("kind", "rom", "current_bank", "ram", "slice_slots")
 
     def __init__(self, kind: int, rom: jnp.ndarray) -> None:
         self.kind = kind
@@ -129,12 +147,21 @@ class Cart:
         # RAM (SOFT mode doesn't yet model bank state at all — see
         # STATUS.md P7f-e).
         self.ram = bytearray(_SC_RAM_BYTES) if kind in _SC_KINDS else bytearray(0)
+        # P5c — E0: three mutable 1K-slice indices. The fourth slot is
+        # fixed at slice 7. Default boot state is (0, 0, 0) — Parker
+        # Bros titles all start their reset vector inside slot 3 (the
+        # fixed slice) so any initial slot-0..2 mapping works.
+        self.slice_slots = [0, 0, 0] if kind == KIND_E0 else []
 
     def __repr__(self) -> str:
         names = {KIND_2K: "2K", KIND_4K: "4K",
                  KIND_F8: "F8", KIND_F8SC: "F8SC",
                  KIND_F6: "F6", KIND_F6SC: "F6SC",
-                 KIND_F4: "F4", KIND_F4SC: "F4SC"}
+                 KIND_F4: "F4", KIND_F4SC: "F4SC",
+                 KIND_E0: "E0"}
+        if self.kind == KIND_E0:
+            return (f"Cart({names[self.kind]}, rom_size={len(self.rom)}, "
+                    f"slices={tuple(self.slice_slots)})")
         return (f"Cart({names[self.kind]}, "
                 f"rom_size={len(self.rom)}, bank={self.current_bank})")
 
@@ -181,6 +208,15 @@ def cart_peek(cart: Cart, addr: int) -> int:
     if cart.kind == KIND_4K:
         return int(cart.rom[a & 0x0FFF])
 
+    # P5c — E0: four 1K slots, three mutable + one fixed at slice 7.
+    # Reads compute (slice, in-slice-offset) from the cart-window
+    # address; hotspot reads (slot 3 only, $1FE0-$1FF7) ALSO trigger
+    # a slice swap as a side-effect of the read.
+    if cart.kind == KIND_E0:
+        value = int(cart.rom[_e0_offset(cart, a)])
+        _maybe_switch_e0(cart, a)
+        return value
+
     # P5b — F8SC / F6SC / F4SC on-cart RAM dispatch. The read area at
     # $1080-$10FF returns the 128-byte RAM buffer (mirrored every 128
     # bytes). The write area at $1000-$107F passes through to ROM on
@@ -205,10 +241,15 @@ def cart_poke(cart: Cart, addr: int, value: int) -> None:
     ($1000-$107F) store into the 128-byte on-cart RAM buffer; writes
     elsewhere fall through to the normal "ROM is read-only / hotspots
     might fire" path.
+
+    P5c — E0 hotspots also fire on writes (every cart access).
     """
     a = addr & 0x1FFF
     if cart.kind in _SC_KINDS and (a & 0x1F80) == _SC_WRITE_BASE:
         cart.ram[a & _SC_OFFSET_MASK] = value & 0xFF
+        return
+    if cart.kind == KIND_E0:
+        _maybe_switch_e0(cart, a)
         return
     _maybe_switch_bank(cart, a)
 
@@ -227,3 +268,26 @@ def _maybe_switch_bank(cart: Cart, masked_addr: int) -> None:
     elif cart.kind in (KIND_F4, KIND_F4SC):
         if masked_addr in F4_HOTSPOTS:
             cart.current_bank = F4_HOTSPOTS[masked_addr]
+
+
+def _e0_offset(cart: Cart, masked_addr: int) -> int:
+    """Translate a cart-window address `$1000-$1FFF` to the absolute
+    ROM offset, honouring E0's three mutable slice slots and the
+    fixed-slice-7 fourth slot."""
+    slot = (masked_addr - 0x1000) >> 10            # 0..3
+    in_slice = masked_addr & 0x03FF                # offset within the 1K slice
+    if slot < 3:
+        slice_idx = cart.slice_slots[slot]
+    else:
+        slice_idx = E0_FIXED_SLICE
+    return slice_idx * 0x0400 + in_slice
+
+
+def _maybe_switch_e0(cart: Cart, masked_addr: int) -> None:
+    """E0 hotspot side-effect: $1FE0..$1FE7 → set slot 0, $1FE8..$1FEF
+    → slot 1, $1FF0..$1FF7 → slot 2. Hotspots fire on any cart access
+    (read or write) — same convention as F8/F6/F4."""
+    for slot_idx, base in enumerate(E0_HOTSPOT_BASE):
+        if base <= masked_addr <= base + 7:
+            cart.slice_slots[slot_idx] = masked_addr - base
+            return

@@ -7,6 +7,7 @@ helper.
 from jaxtari.cart.system import (
     KIND_2K,
     KIND_4K,
+    KIND_E0,
     KIND_F4,
     KIND_F4SC,
     KIND_F6,
@@ -22,6 +23,7 @@ from jaxtari.cart.system import (
 __all__ = [
     "KIND_2K",
     "KIND_4K",
+    "KIND_E0",
     "KIND_F4",
     "KIND_F4SC",
     "KIND_F6",

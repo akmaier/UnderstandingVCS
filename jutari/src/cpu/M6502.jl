@@ -32,7 +32,7 @@ include("Addressing.jl")
 include("ALU.jl")
 
 using .CPUTables: ADDRESSING_MODE_TABLE, CYCLE_TABLE,
-                  ADDR_IMPLIED, ADDR_INDIRECT,
+                  ADDR_ABSOLUTE_X, ADDR_IMPLIED, ADDR_INDIRECT,
                   FLAG_C, FLAG_N, FLAG_V, FLAG_Z, FLAG_I, FLAG_D, FLAG_B, FLAG_U
 using .Addressing: resolve, instruction_length
 using .ALU: set_zn!, compare_flags!, bit_flags!, adc!, sbc!,
@@ -132,6 +132,34 @@ const OPCODES = Dict{UInt8, Symbol}(
     0xCA => :DEX, 0x88 => :DEY,
     # Interrupts
     0x00 => :BRK, 0x40 => :RTI,
+
+    # --- P1h — common undocumented NMOS 6502 opcodes -----------------------
+    # Mirrors `jaxtari/jaxtari/cpu/m6502.py` P1h block. The well-behaved
+    # subset (NOPs, LAX, SAX). Unstable LAX #imm ($AB) and the RMW combos
+    # (DCP / ISC / RLA / RRA / SLO / SRE) stay deferred.
+
+    # 1-byte 2-cycle NOPs (implied).
+    0x1A => :NOP, 0x3A => :NOP, 0x5A => :NOP, 0x7A => :NOP,
+    0xDA => :NOP, 0xFA => :NOP,
+    # 2-byte 2-cycle NOPs (immediate — operand read + discarded).
+    0x80 => :NOP, 0x82 => :NOP, 0x89 => :NOP, 0xC2 => :NOP, 0xE2 => :NOP,
+    # 2-byte zp NOPs.
+    0x04 => :NOP, 0x44 => :NOP, 0x64 => :NOP,
+    # 2-byte zp,X NOPs.
+    0x14 => :NOP, 0x34 => :NOP, 0x54 => :NOP, 0x74 => :NOP,
+    0xD4 => :NOP, 0xF4 => :NOP,
+    # 3-byte abs NOP.
+    0x0C => :NOP,
+    # 3-byte abs,X NOPs (+1 cycle if page-crossed, same as documented abs,X).
+    0x1C => :NOP, 0x3C => :NOP, 0x5C => :NOP, 0x7C => :NOP,
+    0xDC => :NOP, 0xFC => :NOP,
+
+    # LAX — load A and X from the same operand (6 modes).
+    0xA7 => :LAX, 0xB7 => :LAX, 0xAF => :LAX, 0xBF => :LAX,
+    0xA3 => :LAX, 0xB3 => :LAX,
+
+    # SAX — store A AND X (4 modes), no flag effects.
+    0x87 => :SAX, 0x97 => :SAX, 0x8F => :SAX, 0x83 => :SAX,
 )
 
 # Branch opcode → (flag bit, take_when_set)
@@ -415,7 +443,30 @@ function _step_inner!(state::CPUState, memory)
         state.P = (p | FLAG_U) & UInt8(0xFF)
         state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
     elseif mnemonic === :NOP
-        state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
+        # Documented $EA NOP + all P1h undocumented NOPs share this
+        # path. INSTRUCTION_LENGTH[mode] advances PC by the right
+        # amount (1 for implied, 2 for imm/zp/zp,X, 3 for abs/abs,X).
+        # Abs,X NOPs take +1 cycle when the read crosses a page,
+        # matching the documented abs,X read penalty.
+        if mode == ADDR_ABSOLUTE_X
+            _, page = resolve(mode, state, memory)
+            page && (extra_cycles += 1)
+        end
+        _advance_pc!(state, mode)
+
+    # --- LAX (P1h) — load A and X from the same operand; N/Z from value ---
+    elseif mnemonic === :LAX
+        addr, page = resolve(mode, state, memory)
+        value = _peek(memory, addr)
+        state.A = value; state.X = value
+        set_zn!(state, value)
+        _advance_pc!(state, mode); page && (extra_cycles += 1)
+
+    # --- SAX (P1h) — store A AND X, no flag side-effects ----------------
+    elseif mnemonic === :SAX
+        addr, _ = resolve(mode, state, memory)
+        poke!(memory, addr, UInt8(Int(state.A) & Int(state.X) & 0xFF))
+        _advance_pc!(state, mode)
 
     # --- INC / DEC memory (P1f) -------------------------------------------
     elseif mnemonic === :INC || mnemonic === :DEC

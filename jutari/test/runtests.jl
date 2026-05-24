@@ -1114,6 +1114,165 @@ end
 
 end
 
+@testset "JuTari P1h common undocumented NMOS opcodes" begin
+    # Mirror of `jaxtari/tests/test_p1h_undocumented.py` — same opcode
+    # set, same expected semantics.
+
+    @testset "unofficial NOP \$1A implied" begin
+        s = _state(PC=0x8000)
+        mem = _make_memory(Dict(0x8000 => 0x1A))
+        step(s, mem)
+        @test s.PC == 0x8001
+        @test s.cycles == 2
+        @test s.A == 0 && s.X == 0
+    end
+
+    @testset "unofficial 1-byte NOPs (\$3A/\$5A/\$7A/\$DA/\$FA)" begin
+        for opcode in (0x3A, 0x5A, 0x7A, 0xDA, 0xFA)
+            s = _state(PC=0x8000)
+            mem = _make_memory(Dict(0x8000 => opcode))
+            step(s, mem)
+            @test s.PC == 0x8001
+            @test s.cycles == 2
+        end
+    end
+
+    @testset "unofficial NOP imm \$80 consumes operand byte" begin
+        s = _state(PC=0x8000)
+        mem = _make_memory(Dict(0x8000 => 0x80, 0x8001 => 0xFF))
+        step(s, mem)
+        @test s.PC == 0x8002
+        @test s.cycles == 2
+    end
+
+    @testset "unofficial NOP zp \$04 consumes operand" begin
+        s = _state(PC=0x8000)
+        mem = _make_memory(Dict(0x8000 => 0x04, 0x8001 => 0x42, 0x0042 => 0x99))
+        step(s, mem)
+        @test s.PC == 0x8002
+        @test s.cycles == 3
+        # Memory unchanged.
+        @test mem[0x0042 + 1] == 0x99
+    end
+
+    @testset "unofficial NOP zp,X \$14" begin
+        s = _state(PC=0x8000, X=0x10)
+        mem = _make_memory(Dict(0x8000 => 0x14, 0x8001 => 0x05))
+        step(s, mem)
+        @test s.PC == 0x8002
+        @test s.cycles == 4
+    end
+
+    @testset "unofficial NOP abs \$0C" begin
+        s = _state(PC=0x8000)
+        mem = _make_memory(Dict(0x8000 => 0x0C, 0x8001 => 0x34, 0x8002 => 0x12))
+        step(s, mem)
+        @test s.PC == 0x8003
+        @test s.cycles == 4
+    end
+
+    @testset "unofficial NOP abs,X \$1C no page cross" begin
+        s = _state(PC=0x8000, X=0x10)
+        mem = _make_memory(Dict(0x8000 => 0x1C, 0x8001 => 0x00, 0x8002 => 0x12))
+        step(s, mem)
+        @test s.PC == 0x8003
+        @test s.cycles == 4
+    end
+
+    @testset "unofficial NOP abs,X \$1C page cross adds cycle" begin
+        s = _state(PC=0x8000, X=0x10)
+        mem = _make_memory(Dict(0x8000 => 0x1C, 0x8001 => 0xF5, 0x8002 => 0x12))
+        step(s, mem)
+        @test s.PC == 0x8003
+        @test s.cycles == 5
+    end
+
+    @testset "unofficial NOP preserves flags" begin
+        s = _state(PC=0x8000, P=FLAG_U | FLAG_N)
+        before_p = s.P
+        mem = _make_memory(Dict(0x8000 => 0x1A))
+        step(s, mem)
+        @test s.P == before_p
+    end
+
+    # LAX
+    @testset "LAX zp loads A and X" begin
+        s = _state(PC=0x8000)
+        mem = _make_memory(Dict(0x8000 => 0xA7, 0x8001 => 0x42, 0x0042 => 0x77))
+        step(s, mem)
+        @test s.A == 0x77 && s.X == 0x77
+        @test s.PC == 0x8002
+    end
+
+    @testset "LAX sets N on negative load" begin
+        s = _state(PC=0x8000)
+        mem = _make_memory(Dict(0x8000 => 0xA7, 0x8001 => 0x42, 0x0042 => 0x80))
+        step(s, mem)
+        @test s.A == 0x80 && s.X == 0x80
+        @test (s.P & FLAG_N) != 0
+    end
+
+    @testset "LAX sets Z on zero load" begin
+        s = _state(PC=0x8000, A=0xFF, X=0xFF)
+        mem = _make_memory(Dict(0x8000 => 0xA7, 0x8001 => 0x42, 0x0042 => 0x00))
+        step(s, mem)
+        @test s.A == 0 && s.X == 0
+        @test (s.P & FLAG_Z) != 0
+    end
+
+    @testset "LAX abs" begin
+        s = _state(PC=0x8000)
+        mem = _make_memory(Dict(0x8000 => 0xAF, 0x8001 => 0x00, 0x8002 => 0x20,
+                                0x2000 => 0x55))
+        step(s, mem)
+        @test s.A == 0x55 && s.X == 0x55
+    end
+
+    @testset "LAX (ind),Y" begin
+        s = _state(PC=0x8000, Y=0x01)
+        mem = _make_memory(Dict(
+            0x8000 => 0xB3, 0x8001 => 0x10,
+            0x0010 => 0x00, 0x0011 => 0x12,
+            0x1201 => 0x42,
+        ))
+        step(s, mem)
+        @test s.A == 0x42 && s.X == 0x42
+    end
+
+    # SAX
+    @testset "SAX zp stores A AND X" begin
+        s = _state(PC=0x8000, A=0xF0, X=0x0F)
+        mem = _make_memory(Dict(0x8000 => 0x87, 0x8001 => 0x42))
+        step(s, mem)
+        @test mem[0x0042 + 1] == 0x00       # 0xF0 & 0x0F
+    end
+
+    @testset "SAX preserves flags" begin
+        s = _state(PC=0x8000, A=0xFF, X=0x80, P=FLAG_U | FLAG_N | FLAG_Z)
+        before_p = s.P
+        mem = _make_memory(Dict(0x8000 => 0x87, 0x8001 => 0x42))
+        step(s, mem)
+        @test s.P == before_p
+    end
+
+    @testset "SAX abs" begin
+        s = _state(PC=0x8000, A=0xFF, X=0x42)
+        mem = _make_memory(Dict(0x8000 => 0x8F, 0x8001 => 0x00, 0x8002 => 0x20))
+        step(s, mem)
+        @test mem[0x2000 + 1] == 0x42
+    end
+
+    @testset "SAX (ind,X)" begin
+        s = _state(PC=0x8000, A=0xFF, X=0x04)
+        mem = _make_memory(Dict(
+            0x8000 => 0x83, 0x8001 => 0xFE,
+            0x0002 => 0x34, 0x0003 => 0x12,
+        ))
+        step(s, mem)
+        @test mem[0x1234 + 1] == 0x04       # 0xFF & 0x04
+    end
+end
+
 @testset "JuTari P2 6507 bus + address decode" begin
 
     @testset "RAM read/write at canonical address" begin
