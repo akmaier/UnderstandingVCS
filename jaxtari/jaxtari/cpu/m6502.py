@@ -253,10 +253,14 @@ def push8(memory, sp: int, value: int):
     return new_memory, new_sp
 
 
-def pop8(memory, sp: int) -> Tuple[int, int]:
+def pop8(memory, sp: int):
+    """Pull a byte from the stack. Returns `(value, new_sp, new_memory)`
+    — the new_memory tuple member carries any side-effect bus update
+    forward (P4d's read-clears-flag semantic; a stack pop never
+    actually hits a RIOT register but the API stays uniform)."""
     new_sp = (sp + 1) & 0xFF
-    value = peek(memory, 0x0100 + new_sp)
-    return value, new_sp
+    value, new_memory = peek(memory, 0x0100 + new_sp)
+    return value, new_sp, new_memory
 
 
 def push16(memory: Memory, sp: int, value: int) -> Tuple[Memory, int]:
@@ -266,10 +270,11 @@ def push16(memory: Memory, sp: int, value: int) -> Tuple[Memory, int]:
     return memory, sp
 
 
-def pop16(memory: Memory, sp: int) -> Tuple[int, int]:
-    low, sp = pop8(memory, sp)
-    high, sp = pop8(memory, sp)
-    return (high << 8) | low, sp
+def pop16(memory: Memory, sp: int):
+    """Pull a 16-bit word. Returns `(value, new_sp, new_memory)`."""
+    low,  sp, memory = pop8(memory, sp)
+    high, sp, memory = pop8(memory, sp)
+    return (high << 8) | low, sp, memory
 
 
 def _commit_load(
@@ -365,9 +370,18 @@ def _tia_post_step(old_state: CPUState, new_state: CPUState, bus: Bus):
 
 
 def _step_inner(state: CPUState, memory):
-    """Inner dispatch — runs one instruction without any TIA post-processing."""
+    """Inner dispatch — runs one instruction without any TIA post-processing.
+
+    **P4d**: every `peek(memory, ...)` now returns `(value, new_memory)`
+    — the new_memory carries any read-side-effect bus update forward
+    (e.g. INTIM-read-clears-timer-expired-latch). Every resolver also
+    returns `(addr, page_crossed, new_memory)` for the same reason.
+    The previous return-only-value API was the architectural blocker
+    for P4d; threading the new memory through every read site is the
+    cost of getting bit-exact PXC1-x semantics.
+    """
     pc = int(state.PC) & 0xFFFF
-    opcode = peek(memory, pc)
+    opcode, memory = peek(memory, pc)
     mode = int(ADDRESSING_MODE_TABLE[opcode])
     base_cycles = int(CYCLE_TABLE[opcode])
 
@@ -393,22 +407,22 @@ def _step_inner(state: CPUState, memory):
 
     # --- Loads -------------------------------------------------------------
     if mnemonic in ("LDA", "LDX", "LDY"):
-        addr, page_crossed = RESOLVERS[mode](state, memory)
-        value = peek(memory, addr)
+        addr, page_crossed, memory = RESOLVERS[mode](state, memory)
+        value, memory = peek(memory, addr)
         reg = {"LDA": "A", "LDX": "X", "LDY": "Y"}[mnemonic]
         extra = 1 if page_crossed else 0
         return _commit_load(state, reg, value, mode, base_cycles, extra), memory
 
     # --- Stores ------------------------------------------------------------
     if mnemonic in ("STA", "STX", "STY"):
-        addr, _ = RESOLVERS[mode](state, memory)
+        addr, _, memory = RESOLVERS[mode](state, memory)
         value = {"STA": int(state.A), "STX": int(state.X), "STY": int(state.Y)}[mnemonic]
         return _commit_store(state, memory, addr, value, mode, base_cycles)
 
     # --- Bitwise A-ops (AND / ORA / EOR) -----------------------------------
     if mnemonic in ("AND", "ORA", "EOR"):
-        addr, page_crossed = RESOLVERS[mode](state, memory)
-        value = peek(memory, addr)
+        addr, page_crossed, memory = RESOLVERS[mode](state, memory)
+        value, memory = peek(memory, addr)
         a = int(state.A)
         if mnemonic == "AND":
             new_a = a & value
@@ -421,30 +435,28 @@ def _step_inner(state: CPUState, memory):
 
     # --- Compares (CMP / CPX / CPY) ----------------------------------------
     if mnemonic in ("CMP", "CPX", "CPY"):
-        addr, page_crossed = RESOLVERS[mode](state, memory)
-        value = peek(memory, addr)
+        addr, page_crossed, memory = RESOLVERS[mode](state, memory)
+        value, memory = peek(memory, addr)
         reg_val = {
             "CMP": int(state.A),
             "CPX": int(state.X),
             "CPY": int(state.Y),
         }[mnemonic]
         new_p = compare_flags(int(state.P), reg_val, value)
-        # Only CMP has indexed/indirect modes that can page-cross; CPX/CPY use
-        # only immediate / zp / abs, so `page_crossed` is False for them.
         extra = 1 if page_crossed else 0
         return _commit_flags_only(state, new_p, mode, base_cycles, extra), memory
 
     # --- BIT --------------------------------------------------------------
     if mnemonic == "BIT":
-        addr, _ = RESOLVERS[mode](state, memory)
-        value = peek(memory, addr)
+        addr, _, memory = RESOLVERS[mode](state, memory)
+        value, memory = peek(memory, addr)
         new_p = bit_flags(int(state.P), int(state.A), value)
         return _commit_flags_only(state, new_p, mode, base_cycles, 0), memory
 
     # --- ADC / SBC --------------------------------------------------------
     if mnemonic in ("ADC", "SBC"):
-        addr, page_crossed = RESOLVERS[mode](state, memory)
-        value = peek(memory, addr)
+        addr, page_crossed, memory = RESOLVERS[mode](state, memory)
+        value, memory = peek(memory, addr)
         new_a, new_p = (adc if mnemonic == "ADC" else sbc)(
             int(state.P), int(state.A), value
         )
@@ -468,17 +480,16 @@ def _step_inner(state: CPUState, memory):
                 PC=jnp.uint16((int(state.PC) + 1) & 0xFFFF),
                 cycles=state.cycles + jnp.uint64(base_cycles),
             ), memory
-        # Memory-mode RMW. No page-cross penalty (the cycle table already
-        # encodes the worst case for these opcodes).
-        addr, _ = RESOLVERS[mode](state, memory)
-        value = peek(memory, addr)
+        # Memory-mode RMW.
+        addr, _, memory = RESOLVERS[mode](state, memory)
+        value, memory = peek(memory, addr)
         new_value, new_p = op(int(state.P), value)
-        new_memory = poke(memory, addr, new_value)
+        memory = poke(memory, addr, new_value)
         return state._replace(
             P=jnp.uint8(new_p & 0xFF),
             PC=jnp.uint16((int(state.PC) + INSTRUCTION_LENGTH[mode]) & 0xFFFF),
             cycles=state.cycles + jnp.uint64(base_cycles),
-        ), new_memory
+        ), memory
 
     # --- Conditional branches --------------------------------------------
     if mnemonic in ("BPL", "BMI", "BVC", "BVS", "BCC", "BCS", "BNE", "BEQ"):
@@ -486,7 +497,7 @@ def _step_inner(state: CPUState, memory):
         flag_set = (int(state.P) & flag) != 0
         take = flag_set if take_when_set else not flag_set
         if take:
-            target, page_crossed = RESOLVERS[mode](state, memory)
+            target, page_crossed, memory = RESOLVERS[mode](state, memory)
             extra = 1 + (1 if page_crossed else 0)
             new_pc = target
         else:
@@ -499,7 +510,7 @@ def _step_inner(state: CPUState, memory):
 
     # --- JMP (absolute and indirect) -------------------------------------
     if mnemonic == "JMP":
-        target, _ = RESOLVERS[mode](state, memory)
+        target, _, memory = RESOLVERS[mode](state, memory)
         return state._replace(
             PC=jnp.uint16(target),
             cycles=state.cycles + jnp.uint64(base_cycles),
@@ -507,20 +518,18 @@ def _step_inner(state: CPUState, memory):
 
     # --- JSR ---------------------------------------------------------------
     if mnemonic == "JSR":
-        target, _ = RESOLVERS[mode](state, memory)
-        # The 6502 pushes the address of the LAST byte of the JSR instruction
-        # (PC + 2), so RTS adds 1 to land on the instruction after JSR.
+        target, _, memory = RESOLVERS[mode](state, memory)
         return_addr = (int(state.PC) + 2) & 0xFFFF
-        new_memory, new_sp = push16(memory, int(state.SP), return_addr)
+        memory, new_sp = push16(memory, int(state.SP), return_addr)
         return state._replace(
             SP=jnp.uint8(new_sp),
             PC=jnp.uint16(target),
             cycles=state.cycles + jnp.uint64(base_cycles),
-        ), new_memory
+        ), memory
 
     # --- RTS ---------------------------------------------------------------
     if mnemonic == "RTS":
-        return_addr, new_sp = pop16(memory, int(state.SP))
+        return_addr, new_sp, memory = pop16(memory, int(state.SP))
         return state._replace(
             SP=jnp.uint8(new_sp),
             PC=jnp.uint16((return_addr + 1) & 0xFFFF),
@@ -529,25 +538,23 @@ def _step_inner(state: CPUState, memory):
 
     # --- Stack push / pull (P1e) ------------------------------------------
     if mnemonic == "PHA":
-        new_memory, new_sp = push8(memory, int(state.SP), int(state.A))
+        memory, new_sp = push8(memory, int(state.SP), int(state.A))
         return state._replace(
             SP=jnp.uint8(new_sp),
             PC=jnp.uint16((int(state.PC) + 1) & 0xFFFF),
             cycles=state.cycles + jnp.uint64(base_cycles),
-        ), new_memory
+        ), memory
     if mnemonic == "PHP":
-        # PHP always pushes with bit 4 (B) set, matching xitari's "B always
-        # true on 6507" convention. Bit 5 (U) is already set as an invariant.
-        new_memory, new_sp = push8(
+        memory, new_sp = push8(
             memory, int(state.SP), int(state.P) | FLAG_B | FLAG_U
         )
         return state._replace(
             SP=jnp.uint8(new_sp),
             PC=jnp.uint16((int(state.PC) + 1) & 0xFFFF),
             cycles=state.cycles + jnp.uint64(base_cycles),
-        ), new_memory
+        ), memory
     if mnemonic == "PLA":
-        value, new_sp = pop8(memory, int(state.SP))
+        value, new_sp, memory = pop8(memory, int(state.SP))
         return state._replace(
             A=jnp.uint8(value & 0xFF),
             SP=jnp.uint8(new_sp),
@@ -556,8 +563,7 @@ def _step_inner(state: CPUState, memory):
             cycles=state.cycles + jnp.uint64(base_cycles),
         ), memory
     if mnemonic == "PLP":
-        # Force B and U set on pull (xitari PSLockupTable convention).
-        popped, new_sp = pop8(memory, int(state.SP))
+        popped, new_sp, memory = pop8(memory, int(state.SP))
         return state._replace(
             SP=jnp.uint8(new_sp),
             P=jnp.uint8((popped | FLAG_U | FLAG_B) & 0xFF),
@@ -576,16 +582,9 @@ def _step_inner(state: CPUState, memory):
             cycles=state.cycles + jnp.uint64(base_cycles),
         ), memory
     if mnemonic == "NOP":
-        # The documented $EA NOP plus the P1h undocumented NOPs all share
-        # this path. The undocumented NOPs come in implied / immediate /
-        # zp / zp,X / abs / abs,X flavours; INSTRUCTION_LENGTH[mode]
-        # advances PC by the right amount (1 for implied $EA / $1A etc.;
-        # 2 for #imm / $zp / $zp,X; 3 for $abs / $abs,X). The abs,X
-        # NOPs take a +1 cycle when the read crosses a page — match the
-        # documented absolute,X read penalty.
         extra = 0
         if mode == ADDR_ABSOLUTE_X:
-            _, page_crossed = RESOLVERS[mode](state, memory)
+            _, page_crossed, memory = RESOLVERS[mode](state, memory)
             extra = 1 if page_crossed else 0
         return state._replace(
             PC=jnp.uint16((int(state.PC) + INSTRUCTION_LENGTH[mode]) & 0xFFFF),
@@ -594,8 +593,8 @@ def _step_inner(state: CPUState, memory):
 
     # --- LAX (P1h) — load A and X from the same operand. N/Z from value. ---
     if mnemonic == "LAX":
-        addr, page_crossed = RESOLVERS[mode](state, memory)
-        value = peek(memory, addr)
+        addr, page_crossed, memory = RESOLVERS[mode](state, memory)
+        value, memory = peek(memory, addr)
         extra = 1 if page_crossed else 0
         p = set_zn(int(state.P), value)
         return state._replace(
@@ -608,26 +607,26 @@ def _step_inner(state: CPUState, memory):
 
     # --- SAX (P1h) — store A AND X, no flag side-effects. ------------------
     if mnemonic == "SAX":
-        addr, _ = RESOLVERS[mode](state, memory)
-        new_memory = poke(memory, addr, int(state.A) & int(state.X) & 0xFF)
+        addr, _, memory = RESOLVERS[mode](state, memory)
+        memory = poke(memory, addr, int(state.A) & int(state.X) & 0xFF)
         return state._replace(
             PC=jnp.uint16((int(state.PC) + INSTRUCTION_LENGTH[mode]) & 0xFFFF),
             cycles=state.cycles + jnp.uint64(base_cycles),
-        ), new_memory
+        ), memory
 
     # --- INC / DEC memory (P1f) -------------------------------------------
     if mnemonic in ("INC", "DEC"):
-        addr, _ = RESOLVERS[mode](state, memory)
-        value = peek(memory, addr)
+        addr, _, memory = RESOLVERS[mode](state, memory)
+        value, memory = peek(memory, addr)
         delta = 1 if mnemonic == "INC" else -1
         new_value = (value + delta) & 0xFF
         new_p = set_zn(int(state.P), new_value)
-        new_memory = poke(memory, addr, new_value)
+        memory = poke(memory, addr, new_value)
         return state._replace(
             P=jnp.uint8(new_p & 0xFF),
             PC=jnp.uint16((int(state.PC) + INSTRUCTION_LENGTH[mode]) & 0xFFFF),
             cycles=state.cycles + jnp.uint64(base_cycles),
-        ), new_memory
+        ), memory
 
     # --- Register inc/dec (P1f) -------------------------------------------
     if mnemonic in ("INX", "INY", "DEX", "DEY"):
@@ -646,24 +645,24 @@ def _step_inner(state: CPUState, memory):
 
     # --- BRK (P1f) --------------------------------------------------------
     if mnemonic == "BRK":
-        # Push PC + 2 (skipping the BRK opcode's signature byte), then P|B|U,
-        # then set I, then load PC from the IRQ vector at $FFFE/$FFFF.
         return_addr = (int(state.PC) + 2) & 0xFFFF
-        new_memory, sp = push16(memory, int(state.SP), return_addr)
-        new_memory, sp = push8(new_memory, sp, int(state.P) | FLAG_B | FLAG_U)
+        memory, sp = push16(memory, int(state.SP), return_addr)
+        memory, sp = push8(memory, sp, int(state.P) | FLAG_B | FLAG_U)
         new_p = (int(state.P) | FLAG_I | FLAG_U) & 0xFF
-        new_pc = peek(new_memory, 0xFFFE) | (peek(new_memory, 0xFFFF) << 8)
+        irq_lo, memory = peek(memory, 0xFFFE)
+        irq_hi, memory = peek(memory, 0xFFFF)
+        new_pc = irq_lo | (irq_hi << 8)
         return state._replace(
             SP=jnp.uint8(sp),
             P=jnp.uint8(new_p),
             PC=jnp.uint16(new_pc),
             cycles=state.cycles + jnp.uint64(base_cycles),
-        ), new_memory
+        ), memory
 
     # --- RTI (P1f) --------------------------------------------------------
     if mnemonic == "RTI":
-        popped_p, sp = pop8(memory, int(state.SP))
-        popped_pc, sp = pop16(memory, sp)
+        popped_p, sp, memory = pop8(memory, int(state.SP))
+        popped_pc, sp, memory = pop16(memory, sp)
         return state._replace(
             SP=jnp.uint8(sp),
             P=jnp.uint8((popped_p | FLAG_U | FLAG_B) & 0xFF),

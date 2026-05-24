@@ -93,16 +93,27 @@ def initial_bus(rom: Union[jnp.ndarray, None] = None,
 World = Union[Bus, jnp.ndarray]
 
 
-def peek(world: World, addr: int) -> int:
+def peek(world: World, addr: int):
     """Read a byte from `world` at the 16-bit address `addr`.
 
-    For a Bus, the 6507 address decode is honoured (13-bit mirror, then
-    TIA / RIOT / RAM / ROM region selection).
-    For a flat `jnp.ndarray`, the byte at `addr & 0xFFFF` is returned.
+    **Returns** `(value, new_world)` — the byte read plus a possibly-
+    updated world. The 6507 has read-with-side-effects on some RIOT
+    addresses (P4d: INTIM read clears the timer-expired latch), so a
+    pure-functional bus model needs the caller to thread the returned
+    world forward. Most reads return the same world unchanged; only
+    RIOT reads with side effects construct a new bus.
+
+    For a flat `jnp.ndarray` (the P1 unit-test scratch memory), the
+    array is always returned unchanged.
+
+    The pre-P4d signature was `peek(world, addr) -> int` — the
+    sweeping change to a tuple return is the cost of getting
+    bit-exact PXC1-x semantics; see the P4d note in STATUS.md for
+    rationale.
     """
     if isinstance(world, Bus):
         return _bus_peek(world, addr)
-    return int(world[addr & 0xFFFF])
+    return int(world[addr & 0xFFFF]), world
 
 
 def poke(world: World, addr: int, value: int) -> World:
@@ -121,22 +132,27 @@ def poke(world: World, addr: int, value: int) -> World:
 # Bus internals
 # --------------------------------------------------------------------------- #
 
-def _bus_peek(bus: Bus, addr: int) -> int:
+def _bus_peek(bus: Bus, addr: int):
+    """Internal bus read — returns `(value, new_bus)`."""
     addr = addr & 0x1FFF  # 6507 13-bit mirror
     if addr & 0x1000:
         # Cartridge — delegate to the cart, which handles bank switching
-        # for F8/F6/F4 on hotspot access (read or write).
-        return cart_peek(bus.cart, addr)
+        # for F8/F6/F4 on hotspot access (read or write). Cart mutates
+        # in place (it's a mutable class), so bus identity preserved.
+        return cart_peek(bus.cart, addr), bus
     if not (addr & 0x80):
-        # TIA region (A7=0). P3a delegates the read decode to the TIA module;
-        # in this sub-phase all reads still return 0 (collisions/INPT* land
-        # later).
-        return tia_peek(bus.tia, addr)
+        # TIA region (A7=0). Currently side-effect free.
+        return tia_peek(bus.tia, addr), bus
     if addr & 0x200:
-        # RIOT I/O (A9=1). P4: timer + ports.
-        return riot_peek(bus.riot, addr)
+        # RIOT I/O (A9=1). P4d: INTIM read clears timer_expired —
+        # riot_peek now returns (value, new_riot). Thread the new
+        # RIOT into a new Bus if it changed.
+        value, new_riot = riot_peek(bus.riot, addr)
+        if new_riot is bus.riot:
+            return value, bus
+        return value, bus._replace(riot=new_riot)
     # RIOT RAM (A7=1, A9=0). 128 bytes, mirrored at offset addr & 0x7F.
-    return int(bus.ram[addr & 0x7F])
+    return int(bus.ram[addr & 0x7F]), bus
 
 
 def _bus_poke(bus: Bus, addr: int, value: int) -> Bus:

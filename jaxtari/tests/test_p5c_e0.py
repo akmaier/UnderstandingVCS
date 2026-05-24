@@ -151,6 +151,6 @@ def test_e0_non_hotspot_write_does_not_switch():
 def test_e0_bus_peek_threads_through_cart():
     """A CPU peek of $1000 via the bus should land in E0 slot 0."""
     bus = initial_bus(_slice_rom(), cart_kind=KIND_E0)
-    assert peek(bus, 0x1000) == 0
+    assert peek(bus, 0x1000)[0] == 0
     peek(bus, 0x1FE3)
-    assert peek(bus, 0x1000) == 3
+    assert peek(bus, 0x1000)[0] == 3

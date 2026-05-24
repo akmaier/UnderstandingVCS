@@ -17,7 +17,7 @@ using JuTari.TIA: tia_peek, tia_poke!, tia_advance!, tia_apply_wsync!,
                   W_RESM0, W_RESM1, W_RESBL, W_CXCLR,
                   W_VSYNC, W_VBLANK,
                   W_VDELP0, W_VDELP1, W_VDELBL
-using JuTari.RIOT: riot_peek, riot_poke!, riot_advance!,
+using JuTari.RIOT: riot_peek, riot_peek!, riot_poke!, riot_advance!,
                    set_swcha_input!, set_swchb_input!
 using JuTari.Cart: cart_peek, cart_poke!,
                    KIND_2K, KIND_4K, KIND_F8, KIND_F6, KIND_F4
@@ -2349,6 +2349,27 @@ end
     @testset "INTIM readable via peek" begin
         r = initial_riot_state(); riot_poke!(r, 0x0294, 42)
         @test riot_peek(r, 0x0284) == 42
+    end
+
+    # P4d — INTIM read clears the timer-expired latch (real MOS 6532
+    # semantic; pre-P4d the latch was only cleared by writing TIM*T).
+    @testset "P4d — INTIM read clears timer_expired latch" begin
+        r = initial_riot_state(); riot_poke!(r, 0x0294, 1)
+        riot_advance!(r, 2)                       # expire (1 + 1 tick)
+        @test r.timer_expired == true
+        @test (riot_peek(r, 0x0285) & 0x80) != 0  # INSTAT sees expired
+        # Read INTIM → clears the latch.
+        riot_peek!(r, 0x0284)
+        @test r.timer_expired == false
+        @test (riot_peek(r, 0x0285) & 0x80) == 0  # INSTAT sees cleared
+    end
+
+    @testset "P4d — INSTAT read does NOT clear timer_expired" begin
+        r = initial_riot_state(); riot_poke!(r, 0x0294, 1)
+        riot_advance!(r, 2)
+        @test r.timer_expired == true
+        riot_peek!(r, 0x0285)                     # INSTAT read
+        @test r.timer_expired == true             # still set (INSTAT only clears PA7)
     end
 
     @testset "SWCHA input reflected when DDR=0" begin

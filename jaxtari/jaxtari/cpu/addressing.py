@@ -3,12 +3,18 @@
 Each `resolve_*` function takes the `CPUState` (for X / Y / PC) and a "world"
 (either a `jaxtari.bus.Bus` for proper 6507 emulation, or a flat
 `jnp.ndarray` for unit-test scratch memory), and returns
-`(effective_addr, page_crossed)` as plain Python ints / bools.
+`(effective_addr, page_crossed, new_memory)` as plain Python ints / bools
+plus a possibly-updated world. **The new_memory threading is P4d** —
+RIOT reads can clear latches, so the caller has to carry the new
+world forward (`memory = new_memory` after each resolver call).
+
 `page_crossed` is only meaningful for absolute,X / absolute,Y / (indirect),Y
 modes — read instructions add +1 cycle on a crossing, store instructions do not.
 
-Memory reads are routed through `jaxtari.bus.peek` so the same code works for
-both world types.
+Memory reads are routed through `jaxtari.bus.peek` (which now also
+returns `(value, new_world)`) so the same code works for both world
+types and a single resolver call correctly threads any RIOT side-
+effects produced during address resolution.
 
 For implied / accumulator modes the address is meaningless and the dispatcher
 in `cpu.m6502` short-circuits without calling these.
@@ -38,80 +44,89 @@ from jaxtari.cpu.tables import (
 from jaxtari.types import CPUState
 
 
-def _peek16(memory, addr: int) -> int:
-    """Little-endian 16-bit read across two consecutive bytes (no page-wrap quirk)."""
-    return _peek(memory, addr) | (_peek(memory, addr + 1) << 8)
+def _peek16(memory, addr: int):
+    """Little-endian 16-bit read across two consecutive bytes (no page-wrap
+    quirk). Returns `(word, new_memory)` so any side-effect bus updates
+    from either byte read carry forward."""
+    lo, memory = _peek(memory, addr)
+    hi, memory = _peek(memory, addr + 1)
+    return lo | (hi << 8), memory
 
 
-def resolve_immediate(state: CPUState, memory) -> Tuple[int, bool]:
-    return (int(state.PC) + 1) & 0xFFFF, False
+def resolve_immediate(state: CPUState, memory):
+    return (int(state.PC) + 1) & 0xFFFF, False, memory
 
 
-def resolve_zero(state: CPUState, memory) -> Tuple[int, bool]:
-    return _peek(memory, int(state.PC) + 1), False
+def resolve_zero(state: CPUState, memory):
+    operand, memory = _peek(memory, int(state.PC) + 1)
+    return operand, False, memory
 
 
-def resolve_zero_x(state: CPUState, memory) -> Tuple[int, bool]:
-    return (_peek(memory, int(state.PC) + 1) + int(state.X)) & 0xFF, False
+def resolve_zero_x(state: CPUState, memory):
+    operand, memory = _peek(memory, int(state.PC) + 1)
+    return (operand + int(state.X)) & 0xFF, False, memory
 
 
-def resolve_zero_y(state: CPUState, memory) -> Tuple[int, bool]:
-    return (_peek(memory, int(state.PC) + 1) + int(state.Y)) & 0xFF, False
+def resolve_zero_y(state: CPUState, memory):
+    operand, memory = _peek(memory, int(state.PC) + 1)
+    return (operand + int(state.Y)) & 0xFF, False, memory
 
 
-def resolve_absolute(state: CPUState, memory) -> Tuple[int, bool]:
-    return _peek16(memory, int(state.PC) + 1), False
+def resolve_absolute(state: CPUState, memory):
+    addr, memory = _peek16(memory, int(state.PC) + 1)
+    return addr, False, memory
 
 
-def resolve_absolute_x(state: CPUState, memory) -> Tuple[int, bool]:
-    base = _peek16(memory, int(state.PC) + 1)
+def resolve_absolute_x(state: CPUState, memory):
+    base, memory = _peek16(memory, int(state.PC) + 1)
     eff = (base + int(state.X)) & 0xFFFF
-    return eff, (base & 0xFF00) != (eff & 0xFF00)
+    return eff, (base & 0xFF00) != (eff & 0xFF00), memory
 
 
-def resolve_absolute_y(state: CPUState, memory) -> Tuple[int, bool]:
-    base = _peek16(memory, int(state.PC) + 1)
+def resolve_absolute_y(state: CPUState, memory):
+    base, memory = _peek16(memory, int(state.PC) + 1)
     eff = (base + int(state.Y)) & 0xFFFF
-    return eff, (base & 0xFF00) != (eff & 0xFF00)
+    return eff, (base & 0xFF00) != (eff & 0xFF00), memory
 
 
-def resolve_indirect_x(state: CPUState, memory) -> Tuple[int, bool]:
+def resolve_indirect_x(state: CPUState, memory):
     """`(zp,X)`: pointer = (operand + X) & 0xFF, address = mem[pointer..+1] (zp-wrapped)."""
-    zp = (_peek(memory, int(state.PC) + 1) + int(state.X)) & 0xFF
-    lo = _peek(memory, zp)
-    hi = _peek(memory, (zp + 1) & 0xFF)
-    return lo | (hi << 8), False
+    operand, memory = _peek(memory, int(state.PC) + 1)
+    zp = (operand + int(state.X)) & 0xFF
+    lo, memory = _peek(memory, zp)
+    hi, memory = _peek(memory, (zp + 1) & 0xFF)
+    return lo | (hi << 8), False, memory
 
 
-def resolve_indirect_y(state: CPUState, memory) -> Tuple[int, bool]:
+def resolve_indirect_y(state: CPUState, memory):
     """`(zp),Y`: address = mem[zp..+1] (zp-wrapped) + Y."""
-    zp = _peek(memory, int(state.PC) + 1)
-    lo = _peek(memory, zp)
-    hi = _peek(memory, (zp + 1) & 0xFF)
+    zp, memory = _peek(memory, int(state.PC) + 1)
+    lo, memory = _peek(memory, zp)
+    hi, memory = _peek(memory, (zp + 1) & 0xFF)
     base = lo | (hi << 8)
     eff = (base + int(state.Y)) & 0xFFFF
-    return eff, (base & 0xFF00) != (eff & 0xFF00)
+    return eff, (base & 0xFF00) != (eff & 0xFF00), memory
 
 
-def resolve_relative(state: CPUState, memory) -> Tuple[int, bool]:
+def resolve_relative(state: CPUState, memory):
     """Branch target = PC + 2 + signed(operand). `page_crossed` reports if it crosses."""
-    offset = _peek(memory, int(state.PC) + 1)
+    offset, memory = _peek(memory, int(state.PC) + 1)
     if offset >= 0x80:
         offset -= 0x100
     base = (int(state.PC) + 2) & 0xFFFF
     eff = (base + offset) & 0xFFFF
-    return eff, (base & 0xFF00) != (eff & 0xFF00)
+    return eff, (base & 0xFF00) != (eff & 0xFF00), memory
 
 
-def resolve_indirect(state: CPUState, memory) -> Tuple[int, bool]:
+def resolve_indirect(state: CPUState, memory):
     """JMP indirect, faithfully replicating the 6502 page-wrap bug at $xxFF."""
-    ptr = _peek16(memory, int(state.PC) + 1)
-    lo = _peek(memory, ptr)
-    hi = _peek(memory, (ptr & 0xFF00) | ((ptr + 1) & 0xFF))
-    return lo | (hi << 8), False
+    ptr, memory = _peek16(memory, int(state.PC) + 1)
+    lo, memory = _peek(memory, ptr)
+    hi, memory = _peek(memory, (ptr & 0xFF00) | ((ptr + 1) & 0xFF))
+    return lo | (hi << 8), False, memory
 
 
-Resolver = Callable[[CPUState, object], Tuple[int, bool]]
+Resolver = Callable[[CPUState, object], Tuple[int, bool, object]]
 
 RESOLVERS: dict[int, Resolver] = {
     ADDR_IMMEDIATE:  resolve_immediate,

@@ -54,7 +54,12 @@ def console_reset(console: Console) -> Console:
         riot=fresh_bus.riot,
     )
     fresh_cpu = initial_cpu_state()
-    reset_pc = peek(new_bus, 0xFFFC) | (peek(new_bus, 0xFFFD) << 8)
+    # P4d: peek returns `(value, new_bus)`. Vector reads don't have
+    # side effects on the cart-mirror addresses ($FFFC/$FFFD) but we
+    # thread the bus through for consistency.
+    lo, new_bus = peek(new_bus, 0xFFFC)
+    hi, new_bus = peek(new_bus, 0xFFFD)
+    reset_pc = lo | (hi << 8)
     new_cpu = fresh_cpu._replace(PC=jnp.uint16(reset_pc))
     return Console(cpu=new_cpu, bus=new_bus)
 

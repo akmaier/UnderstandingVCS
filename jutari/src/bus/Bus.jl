@@ -30,7 +30,7 @@ bus) and a flat `Vector{UInt8}` (used by the P1 unit tests). The same
 module Bus
 
 using ..TIA: TIAState, initial_tia_state, tia_peek, tia_poke!
-using ..RIOT: RIOTState, initial_riot_state, riot_peek, riot_poke!
+using ..RIOT: RIOTState, initial_riot_state, riot_peek!, riot_poke!
 using ..Cart: CartState, make_cart, cart_peek, cart_poke!
 
 export BusState, initial_bus, peek, poke!
@@ -83,7 +83,7 @@ the 6507 address decode is applied; for a `Vector{UInt8}` the byte at
         return tia_peek(bus.tia, a)              # TIA register read
     end
     if (a & 0x200) != 0
-        return riot_peek(bus.riot, a)            # RIOT timer + I/O ports
+        return riot_peek!(bus.riot, a)           # RIOT timer + I/O ports (P4d: reads have side effects)
     end
     return bus.ram[(a & 0x7F) + 1]               # RIOT RAM
 end

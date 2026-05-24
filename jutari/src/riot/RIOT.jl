@@ -27,7 +27,7 @@ every CPU cycle.
 module RIOT
 
 export RIOTState, initial_riot_state,
-       riot_peek, riot_poke!, riot_advance!,
+       riot_peek, riot_peek!, riot_poke!, riot_advance!,
        set_swcha_input!, set_swchb_input!
 
 const _PRESCALER_SHIFT = (0, 3, 6, 10)
@@ -78,12 +78,25 @@ end
 # --------------------------------------------------------------------------- #
 
 """
-    riot_peek(riot, addr) -> UInt8
+    riot_peek!(riot, addr) -> UInt8
 
 Read a RIOT register. `addr` is the CPU bus address (anywhere in the
-RIOT mirror band).
+RIOT mirror band). **Mutating** because real-hardware reads of INTIM /
+INSTAT have side-effects on the latches:
+
+  * INTIM (reg=4, addresses `\$0284` / `\$0286`): returns the timer
+    count, then **clears the timer-expired latch**. Pre-P4d the latch
+    was only cleared by writing a fresh value to TIM*T; the canonical
+    MOS 6532 datasheet says reading INTIM also clears it, which a few
+    Atari games (and the cycle-accurate parts of xitari) depend on.
+
+  * INSTAT (reg=5, addresses `\$0285` / `\$0287`): returns D7 = the
+    timer-expired latch AND D6 = the PA7 latch. **Reading INSTAT
+    clears ONLY the PA7 latch** (not the timer latch — that's an INTIM
+    semantic). PA7 isn't modelled yet (deferred as P4b), so for the
+    moment this is a no-op beyond returning D7.
 """
-function riot_peek(riot::RIOTState, addr::Integer)
+function riot_peek!(riot::RIOTState, addr::Integer)
     reg = Int(addr) & 0x07
     if reg == 0
         return UInt8(((riot.swcha_out & riot.swacnt) |
@@ -96,12 +109,24 @@ function riot_peek(riot::RIOTState, addr::Integer)
     elseif reg == 3
         return riot.swbcnt
     elseif reg == 4
-        return riot.intim
+        # P4d: INTIM read clears the timer-expired latch.
+        value = riot.intim
+        riot.timer_expired = false
+        return value
     elseif reg == 5
+        # INSTAT — D7 = timer latch (unchanged by this read), D6 =
+        # PA7 latch (cleared by this read in real hardware; PA7
+        # isn't modelled yet so this is a no-op).
         return riot.timer_expired ? UInt8(0x80) : UInt8(0x00)
     end
     return UInt8(0)
 end
+
+# Backwards-compatibility alias — existing callers that don't need
+# the new mutating semantics (or that read the bus from a const
+# reference) can still use the old name. New code should prefer
+# the `!` variant since reads ARE state-changing on real hardware.
+const riot_peek = riot_peek!
 
 """
     riot_poke!(riot, addr, value)

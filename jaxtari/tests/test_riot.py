@@ -44,8 +44,8 @@ def test_initial_riot_state():
 def test_initial_port_reads_return_input_lines():
     """Default DDR=0 → ports report the input lines (0xFF on power-on)."""
     r = initial_riot_state()
-    assert riot_peek(r, 0x0280) == 0xFF        # SWCHA
-    assert riot_peek(r, 0x0282) == 0xFF        # SWCHB
+    assert riot_peek(r, 0x0280)[0] == 0xFF     # SWCHA  (peek now returns (value, riot))
+    assert riot_peek(r, 0x0282)[0] == 0xFF     # SWCHB
 
 
 # --------------------------------------------------------------------------- #
@@ -157,18 +157,43 @@ def test_writing_timer_clears_expired_and_resets_prescaler():
 
 def test_instat_zero_before_expiration():
     r = riot_poke(initial_riot_state(), 0x0294, 5)
-    assert riot_peek(r, 0x0285) == 0x00
+    assert riot_peek(r, 0x0285)[0] == 0x00
 
 
 def test_instat_d7_set_after_expiration():
     r = riot_poke(initial_riot_state(), 0x0294, 5)
     r = riot_advance(r, 6)
-    assert riot_peek(r, 0x0285) & 0x80 != 0
+    assert riot_peek(r, 0x0285)[0] & 0x80 != 0
 
 
 def test_intim_readable_via_peek():
     r = riot_poke(initial_riot_state(), 0x0294, 42)
-    assert riot_peek(r, 0x0284) == 42
+    assert riot_peek(r, 0x0284)[0] == 42
+
+
+# --------------------------------------------------------------------------- #
+# P4d — INTIM read clears the timer-expired latch (real MOS 6532 semantic).
+# --------------------------------------------------------------------------- #
+
+def test_p4d_intim_read_clears_timer_expired():
+    r = riot_poke(initial_riot_state(), 0x0294, 1)
+    r = riot_advance(r, 2)                          # expire
+    assert r.timer_expired is True
+    # INTIM read returns the value AND clears the latch.
+    value, r_after = riot_peek(r, 0x0284)
+    assert r_after.timer_expired is False
+    # Sanity: subsequent INSTAT read sees the cleared latch.
+    assert riot_peek(r_after, 0x0285)[0] & 0x80 == 0
+
+
+def test_p4d_instat_read_does_NOT_clear_timer_expired():
+    r = riot_poke(initial_riot_state(), 0x0294, 1)
+    r = riot_advance(r, 2)
+    assert r.timer_expired is True
+    # INSTAT read returns value AND leaves the latch alone (PA7 clear
+    # only — not modelled yet).
+    _, r_after = riot_peek(r, 0x0285)
+    assert r_after.timer_expired is True
 
 
 # --------------------------------------------------------------------------- #
@@ -178,17 +203,17 @@ def test_intim_readable_via_peek():
 def test_swcha_input_reflected_when_ddr_zero():
     r = initial_riot_state()
     r = set_swcha_input(r, 0b10101010)
-    assert riot_peek(r, 0x0280) == 0b10101010
+    assert riot_peek(r, 0x0280)[0] == 0b10101010
 
 
 def test_swcha_output_reflected_when_ddr_one():
     r = initial_riot_state()
     r = riot_poke(r, 0x0281, 0xFF)               # SWACNT = all output
     r = riot_poke(r, 0x0280, 0x5A)               # SWCHA out = $5A
-    assert riot_peek(r, 0x0280) == 0x5A
+    assert riot_peek(r, 0x0280)[0] == 0x5A
     # Inputs are now ignored because all bits are configured as outputs.
     r = set_swcha_input(r, 0x00)
-    assert riot_peek(r, 0x0280) == 0x5A
+    assert riot_peek(r, 0x0280)[0] == 0x5A
 
 
 def test_swcha_mixed_ddr_combines_input_and_output():
@@ -198,21 +223,21 @@ def test_swcha_mixed_ddr_combines_input_and_output():
     r = riot_poke(r, 0x0280, 0xA5)               # SWCHA out: high nibble used
     r = set_swcha_input(r, 0x33)                 # SWCHA in: low nibble used
     # Result: high nibble from out ($A0), low nibble from in ($03) → $A3.
-    assert riot_peek(r, 0x0280) == 0xA3
+    assert riot_peek(r, 0x0280)[0] == 0xA3
 
 
 def test_swchb_input_reflected_when_ddr_zero():
     r = initial_riot_state()
     r = set_swchb_input(r, 0b01010101)
-    assert riot_peek(r, 0x0282) == 0b01010101
+    assert riot_peek(r, 0x0282)[0] == 0b01010101
 
 
 def test_ddr_registers_readable():
     r = initial_riot_state()
     r = riot_poke(r, 0x0281, 0xC3)
     r = riot_poke(r, 0x0283, 0x3C)
-    assert riot_peek(r, 0x0281) == 0xC3
-    assert riot_peek(r, 0x0283) == 0x3C
+    assert riot_peek(r, 0x0281)[0] == 0xC3
+    assert riot_peek(r, 0x0283)[0] == 0x3C
 
 
 # --------------------------------------------------------------------------- #

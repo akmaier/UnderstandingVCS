@@ -20,7 +20,7 @@ from jaxtari.types import CPUState, initial_cpu_state
 def test_bus_ram_read_write_at_canonical_address():
     bus = initial_bus()
     bus = poke(bus, 0x0080, 0x42)   # canonical RAM slot
-    assert peek(bus, 0x0080) == 0x42
+    assert peek(bus, 0x0080)[0] == 0x42
     # Internal storage is at offset 0 of the 128 B RAM.
     assert int(bus.ram[0x00]) == 0x42
 
@@ -29,17 +29,17 @@ def test_bus_ram_mirror_at_stack_page():
     """$0180 (RAM mirror in the stack page) should alias $0080."""
     bus = initial_bus()
     bus = poke(bus, 0x0180, 0x55)
-    assert peek(bus, 0x0080) == 0x55
-    assert peek(bus, 0x0180) == 0x55
+    assert peek(bus, 0x0080)[0] == 0x55
+    assert peek(bus, 0x0180)[0] == 0x55
 
 
 def test_bus_ram_uses_low_7_bits_of_address():
     """All addresses with A12=0, A7=1, A9=0 land in the same 128 B RAM."""
     bus = initial_bus()
     bus = poke(bus, 0x0098, 0xAB)        # RAM index 0x18
-    assert peek(bus, 0x0098) == 0xAB
-    assert peek(bus, 0x0198) == 0xAB      # mirror in stack page
-    assert peek(bus, 0x0498) == 0xAB      # mirror at A9=A10=1 still hits RAM (A9=0 here)
+    assert peek(bus, 0x0098)[0] == 0xAB
+    assert peek(bus, 0x0198)[0] == 0xAB   # mirror in stack page
+    assert peek(bus, 0x0498)[0] == 0xAB   # mirror at A9=A10=1 still hits RAM (A9=0 here)
 
 
 def test_bus_13bit_mirror_high_addresses_wrap():
@@ -47,17 +47,17 @@ def test_bus_13bit_mirror_high_addresses_wrap():
     rom = jnp.zeros((4096,), dtype=jnp.uint8).at[0x100].set(jnp.uint8(0xEE))
     bus = initial_bus(rom)
     # ROM byte at ROM offset 0x100 = bus address 0x1100
-    assert peek(bus, 0x1100) == 0xEE
+    assert peek(bus, 0x1100)[0] == 0xEE
     # 13-bit mirror: $F100 → $1100
-    assert peek(bus, 0xF100) == 0xEE
+    assert peek(bus, 0xF100)[0] == 0xEE
     # 13-bit mirror: $9100 → $1100
-    assert peek(bus, 0x9100) == 0xEE
+    assert peek(bus, 0x9100)[0] == 0xEE
 
 
 def test_bus_tia_region_reads_zero_and_writes_ignored():
     bus = initial_bus()
-    assert peek(bus, 0x0000) == 0         # TIA register $00 (P2 stub)
-    assert peek(bus, 0x007F) == 0         # last TIA register in the bank
+    assert peek(bus, 0x0000)[0] == 0      # TIA register $00 (P2 stub)
+    assert peek(bus, 0x007F)[0] == 0      # last TIA register in the bank
     bus2 = poke(bus, 0x0001, 0xFF)        # write should be silently dropped
     # RAM is unchanged (TIA write doesn't leak into RAM).
     assert bool(jnp.array_equal(bus.ram, bus2.ram))
@@ -75,9 +75,9 @@ def test_bus_riot_io_region_does_not_corrupt_ram():
 def test_bus_rom_is_read_only():
     rom = jnp.full((4096,), 0xAA, dtype=jnp.uint8)
     bus = initial_bus(rom)
-    assert peek(bus, 0x1000) == 0xAA
+    assert peek(bus, 0x1000)[0] == 0xAA
     bus2 = poke(bus, 0x1000, 0x55)        # ROM write — value is discarded
-    assert peek(bus2, 0x1000) == 0xAA
+    assert peek(bus2, 0x1000)[0] == 0xAA
     # ROM array is structurally unchanged (cart.rom is the same underlying array).
     assert bool(jnp.array_equal(bus.cart.rom, bus2.cart.rom))
 

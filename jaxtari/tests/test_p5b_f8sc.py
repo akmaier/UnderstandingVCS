@@ -153,7 +153,7 @@ def test_bus_peek_poke_round_trip_through_f8sc_ram():
     SC RAM, not fall into the ROM-read-only path."""
     bus = initial_bus(jnp.zeros((8192,), dtype=jnp.uint8), cart_kind=KIND_F8SC)
     bus = poke(bus, 0x1000 + 0x20, 0x99)
-    assert peek(bus, 0x1080 + 0x20) == 0x99
+    assert peek(bus, 0x1080 + 0x20)[0] == 0x99
 
 
 # --------------------------------------------------------------------------- #

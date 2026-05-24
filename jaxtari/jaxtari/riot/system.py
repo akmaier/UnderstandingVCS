@@ -113,25 +113,36 @@ def set_swchb_input(riot: RIOTState, value: int) -> RIOTState:
 # Register access
 # --------------------------------------------------------------------------- #
 
-def riot_peek(riot: RIOTState, addr: int) -> int:
-    """Read a RIOT register. `addr` is the CPU bus address (anywhere in
-    the RIOT mirror band)."""
+def riot_peek(riot: RIOTState, addr: int):
+    """Read a RIOT register. Returns `(value, new_riot)`.
+
+    `addr` is the CPU bus address (anywhere in the RIOT mirror band).
+    Most reads return the SAME `riot` object — only INTIM (reg=4) has
+    a side effect: it clears the timer-expired latch, matching the
+    real MOS 6532's read-clears-flag semantic (**P4d**).
+
+    INSTAT (reg=5) returns D7 = timer_expired but does NOT clear it
+    on read — that's an INTIM-only side effect. INSTAT clears the
+    PA7 latch on real hardware, but PA7 isn't modelled yet (deferred
+    as **P4b**), so for the moment INSTAT reads are pure.
+    """
     reg = addr & 0x07
     if reg == 0:
-        return ((riot.swcha_out & riot.swacnt) |
-                (riot.swcha_in  & (~riot.swacnt & 0xFF))) & 0xFF
+        return (((riot.swcha_out & riot.swacnt) |
+                 (riot.swcha_in  & (~riot.swacnt & 0xFF))) & 0xFF, riot)
     if reg == 1:
-        return riot.swacnt
+        return riot.swacnt, riot
     if reg == 2:
-        return ((riot.swchb_out & riot.swbcnt) |
-                (riot.swchb_in  & (~riot.swbcnt & 0xFF))) & 0xFF
+        return (((riot.swchb_out & riot.swbcnt) |
+                 (riot.swchb_in  & (~riot.swbcnt & 0xFF))) & 0xFF, riot)
     if reg == 3:
-        return riot.swbcnt
+        return riot.swbcnt, riot
     if reg == 4:
-        return riot.intim
+        # P4d: INTIM read clears the timer-expired latch.
+        return riot.intim, riot._replace(timer_expired=False)
     if reg == 5:
-        return 0x80 if riot.timer_expired else 0x00
-    return 0
+        return (0x80 if riot.timer_expired else 0x00), riot
+    return 0, riot
 
 
 def riot_poke(riot: RIOTState, addr: int, value: int) -> RIOTState:
