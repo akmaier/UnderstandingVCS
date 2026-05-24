@@ -169,6 +169,14 @@ class TIAState(NamedTuple):
     vsync_active: bool
     vblank_active: bool
     inpt: jnp.ndarray   # (6,) uint8 — INPT0..INPT5
+    # P3h: VDELP / VDELBL "vertical delay" shadow copies. When VDELPx
+    # bit 0 is set, the player renders from the *old* GRPx (the value
+    # captured the last time the OTHER player's GRP was written —
+    # that's the trick games use to swap two sets of player graphics
+    # synchronously). Same logic for the ball with VDELBL + ENABL.
+    grp0_old: int   # uint8 shadow of GRP0
+    grp1_old: int   # uint8 shadow of GRP1
+    enabl_old: int  # uint8 shadow of ENABL
 
 
 def initial_tia_state() -> TIAState:
@@ -192,6 +200,9 @@ def initial_tia_state() -> TIAState:
         vsync_active=False,
         vblank_active=False,
         inpt=inpt_init,
+        grp0_old=0,
+        grp1_old=0,
+        enabl_old=0,
     )
 
 
@@ -345,6 +356,20 @@ def tia_poke(tia: TIAState, addr: int, value: int) -> TIAState:
         new_tia = new_tia._replace(registers=new_registers)
     elif reg == W_CXCLR:
         new_tia = new_tia._replace(collisions=jnp.zeros((8,), dtype=jnp.uint8))
+    elif reg == W_GRP0:
+        # P3h: writing GRP0 latches the CURRENT GRP1 into grp1_old (so
+        # a VDELP1-enabled P1 renders the *previous* GRP1 from now on).
+        # Mirror for GRP1 below.
+        new_tia = new_tia._replace(grp1_old=int(tia.registers[W_GRP1]))
+    elif reg == W_GRP1:
+        # Writing GRP1 also latches the CURRENT ENABL into enabl_old
+        # — xitari/Stella convention: any GRP1 write moves the ball's
+        # delayed-enable shadow forward (mirroring the original TIA
+        # circuit that ties the ball's delayed-enable to a GRP1 strobe).
+        new_tia = new_tia._replace(
+            grp0_old=int(tia.registers[W_GRP0]),
+            enabl_old=int(tia.registers[W_ENABL]),
+        )
 
     return new_tia
 
@@ -490,6 +515,25 @@ def _nusiz_player_layout(nusiz: int) -> tuple[tuple[int, ...], int]:
     return _NUSIZ_PLAYER_LAYOUT[nusiz & 0x07]
 
 
+def _vdel_grp(tia: TIAState, player: int) -> int:
+    """P3h: return the player's current GRP byte, honouring VDELP.
+    When VDELPx bit 0 is set, render uses the shadow GRPx_old (which
+    `tia_poke` latched on the previous GRP-of-the-other-player write)
+    instead of the live GRPx.
+    """
+    if player == 0:
+        return int(tia.grp0_old) if (int(tia.registers[W_VDELP0]) & 1) \
+            else int(tia.registers[W_GRP0])
+    return int(tia.grp1_old) if (int(tia.registers[W_VDELP1]) & 1) \
+        else int(tia.registers[W_GRP1])
+
+
+def _vdel_enabl(tia: TIAState) -> int:
+    """P3h: return the ball's current ENABL byte, honouring VDELBL."""
+    return int(tia.enabl_old) if (int(tia.registers[W_VDELBL]) & 1) \
+        else int(tia.registers[W_ENABL])
+
+
 def _overlay_player(pixels: list[int], tia: TIAState, player: int) -> None:
     """Paint player 0 or 1 onto `pixels` (mutated in place).
 
@@ -497,10 +541,10 @@ def _overlay_player(pixels: list[int], tia: TIAState, player: int) -> None:
     close/medium/wide spacing) and 2×/4× horizontal scaling for the
     single-copy modes. The same NUSIZ value also drives the matching
     missile via `_overlay_missile` and the collision-set computation
-    in `_object_pixel_sets`.
+    in `_object_pixel_sets`. **P3h**: GRP comes from `_vdel_grp` which
+    routes through the VDELP shadow when the delayed-update bit is set.
     """
-    grp_reg = W_GRP0 if player == 0 else W_GRP1
-    grp = int(tia.registers[grp_reg])
+    grp = _vdel_grp(tia, player)
     if grp == 0:
         return  # nothing to draw
     color_reg = W_COLUP0 if player == 0 else W_COLUP1
@@ -546,8 +590,10 @@ def _overlay_missile(pixels: list[int], tia: TIAState, missile: int) -> None:
 
 
 def _overlay_ball(pixels: list[int], tia: TIAState) -> None:
-    """Paint the ball. Uses COLUPF for colour; size 1/2/4/8 from CTRLPF bits 4-5."""
-    if (int(tia.registers[W_ENABL]) & 0x02) == 0:
+    """Paint the ball. Uses COLUPF for colour; size 1/2/4/8 from CTRLPF bits 4-5.
+    **P3h**: ENABL routed through `_vdel_enabl` to honour VDELBL.
+    """
+    if (_vdel_enabl(tia) & 0x02) == 0:
         return
     color = int(tia.registers[W_COLUPF])
     ctrlpf = int(tia.registers[W_CTRLPF])
@@ -647,15 +693,19 @@ def _object_pixel_sets(tia: TIAState) -> dict[str, set[int]]:
 
     # Ball
     bl: set[int] = set()
-    if int(tia.registers[W_ENABL]) & 0x02:
+    if _vdel_enabl(tia) & 0x02:                  # P3h: VDELBL-aware
         size = 1 << ((ctrlpf >> 4) & 0x03)
         for i in range(size):
             bl.add((tia.bl_x + i) % 160)
 
     # Players — respect NUSIZ multi-copy + scale (P3g) so collisions
     # involving the 2nd/3rd copies and the wide modes are detected.
+    # P3h: GRP comes via _vdel_grp so VDELP delayed updates also
+    # apply to collision detection.
     def _player_set(grp_reg: int, refp_reg: int, nusiz_reg: int, x: int) -> set[int]:
-        grp = int(tia.registers[grp_reg])
+        # `grp_reg` selects the player index (0 or 1) implicitly: W_GRP0 → 0.
+        player = 0 if grp_reg == W_GRP0 else 1
+        grp = _vdel_grp(tia, player)
         if not grp:
             return set()
         reflected = (int(tia.registers[refp_reg]) & 0x08) != 0
