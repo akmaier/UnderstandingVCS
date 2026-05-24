@@ -165,3 +165,59 @@ def test_step_jsr_rts_via_bus_stack_lives_in_ram():
     s, bus = step(s, bus)            # RTS
     assert int(s.PC) == 0xF003
     assert int(s.SP) == 0xFD
+
+
+# --------------------------------------------------------------------------- #
+# Floating-bus quirk (PXC1-x round 3 — TIA reads OR in last-bus-byte noise on
+# the un-driven data lines, matching xitari's `System::peek/poke` + the real
+# 1A05 hardware).
+# --------------------------------------------------------------------------- #
+
+def test_bus_data_bus_state_initial():
+    """Fresh bus: `data_bus_state` is 0."""
+    bus = initial_bus()
+    assert bus.data_bus_state == 0
+
+
+def test_bus_data_bus_state_updated_by_ram_write():
+    bus = initial_bus()
+    bus = poke(bus, 0x0080, 0x48)
+    assert bus.data_bus_state == 0x48
+
+
+def test_bus_data_bus_state_updated_by_ram_read():
+    bus = initial_bus()
+    bus = poke(bus, 0x0080, 0xA5)
+    # After the poke, data_bus_state is 0xA5. Reading another RAM cell
+    # (value 0) updates it to 0.
+    _, bus = peek(bus, 0x0081)
+    assert bus.data_bus_state == 0
+
+
+def test_bus_tia_read_or_noise_into_undriven_bits():
+    """Floating-bus: CXM0P (reg 0, driven mask $C0) returns the driven
+    bits + the low 6 of `data_bus_state`."""
+    bus = initial_bus()
+    # Seed noise via a RAM poke. Noise = 0x48 = 0100_1000 → low6 = 0x08.
+    bus = poke(bus, 0x0080, 0x48)
+    value, _ = peek(bus, 0x0000)        # CXM0P. No collisions → driven=0.
+    assert value == 0x08, f"expected noise bits 0x08, got {value:#04x}"
+
+
+def test_bus_tia_read_full_noise_on_unused_register():
+    """Reg $0F has no driven bits — TIA returns full floating-bus byte."""
+    bus = initial_bus()
+    bus = poke(bus, 0x0080, 0xFE)
+    value, _ = peek(bus, 0x000F)
+    assert value == 0xFE
+
+
+def test_bus_inpt4_d7_high_with_noise():
+    """INPT4 (reg $0C, driven mask $80): D7 from trigger latch, D6-D0
+    from noise. Default INPT init is 0x80 → trigger up, so result is
+    0x80 | low7(noise)."""
+    bus = initial_bus()
+    bus = poke(bus, 0x0080, 0x73)       # noise = 0x73
+    value, _ = peek(bus, 0x000C)
+    # D7 driven (1, trigger idle) + D6..D0 from noise (0x73 & 0x7F = 0x73).
+    assert value == 0x80 | (0x73 & 0x7F)

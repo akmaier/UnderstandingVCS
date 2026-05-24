@@ -58,11 +58,19 @@ class Bus(NamedTuple):
         TIA register file + scanline/frame timing state.
     riot : RIOTState
         RIOT timer + I/O port state (the 128 B RAM is in `ram` above).
+    data_bus_state : int
+        Last byte that crossed the data bus — updated on every peek and
+        poke. The TIA only drives the high 1–2 data lines on a read;
+        the low 6 (and on some registers low 7) "float" and resolve to
+        whatever was last on the bus. xitari's `System::peek/poke` mirrors
+        this — see `_bus_peek` for how the noise is OR'd into TIA reads.
+        Pure-Python int (NamedTuple field) — no JAX state.
     """
     ram: jnp.ndarray
     cart: Cart
     tia: TIAState
     riot: RIOTState
+    data_bus_state: int = 0
 
 
 def initial_bus(rom: Union[jnp.ndarray, None] = None,
@@ -81,6 +89,7 @@ def initial_bus(rom: Union[jnp.ndarray, None] = None,
         cart=make_cart(rom, kind=cart_kind),
         tia=initial_tia_state(),
         riot=initial_riot_state(),
+        data_bus_state=0,
     )
 
 
@@ -132,43 +141,85 @@ def poke(world: World, addr: int, value: int) -> World:
 # Bus internals
 # --------------------------------------------------------------------------- #
 
+# TIA-read driven-bits mask: which bits the TIA actively drives. The
+# other bits float and resolve to the last data-bus byte. Matches
+# xitari's TIA::peek (and the real 1A05 hardware).
+#
+#   CXM0P/CXM1P/CXP0FB/CXP1FB/CXM0FB/CXM1FB (regs 0..5): D7+D6 driven
+#   CXBLPF (reg 6):                                       D7 only driven
+#   CXPPMM (reg 7):                                       D7+D6 driven
+#   INPT0..INPT5 (regs 8..13):                            D7 only driven
+#   regs 14, 15:                                          fully float
+_TIA_PEEK_DRIVEN_MASK = (
+    0xC0, 0xC0, 0xC0, 0xC0, 0xC0, 0xC0,    # collisions 0..5
+    0x80, 0xC0,                              # CXBLPF, CXPPMM
+    0x80, 0x80, 0x80, 0x80, 0x80, 0x80,      # INPT0..5
+    0x00, 0x00,                              # unused regs $0E, $0F
+)
+
+
 def _bus_peek(bus: Bus, addr: int):
-    """Internal bus read — returns `(value, new_bus)`."""
-    addr = addr & 0x1FFF  # 6507 13-bit mirror
-    if addr & 0x1000:
+    """Internal bus read — returns `(value, new_bus)`.
+
+    On the real 6507, *every* bus operation updates the data-bus
+    latches — and TIA reads with under-driven outputs reveal the latch
+    on the floating data lines (D5-D0 for collision/INPT, more for
+    address $0E/$0F). xitari emulates this via `mySystem->getDataBusState()
+    & 0x3F`; we mirror it here by tracking `data_bus_state` on the
+    Bus and OR'ing the noise into TIA reads with the per-register
+    floating mask. This is the "PXC1-x round 3" fix that closes the
+    last 10-byte RAM divergence on `pong_noop_10`.
+    """
+    addr_masked = addr & 0x1FFF  # 6507 13-bit mirror
+    if addr_masked & 0x1000:
         # Cartridge — delegate to the cart, which handles bank switching
-        # for F8/F6/F4 on hotspot access (read or write). Cart mutates
-        # in place (it's a mutable class), so bus identity preserved.
-        return cart_peek(bus.cart, addr), bus
-    if not (addr & 0x80):
-        # TIA region (A7=0). Currently side-effect free.
-        return tia_peek(bus.tia, addr), bus
-    if addr & 0x200:
-        # RIOT I/O (A9=1). P4d: INTIM read clears timer_expired —
-        # riot_peek now returns (value, new_riot). Thread the new
-        # RIOT into a new Bus if it changed.
-        value, new_riot = riot_peek(bus.riot, addr)
+        # for F8/F6/F4 on hotspot access. Cart mutates in place.
+        value = cart_peek(bus.cart, addr_masked)
+        return value, bus._replace(data_bus_state=value & 0xFF)
+    if not (addr_masked & 0x80):
+        # TIA region (A7=0). Floating-bus quirk applies — OR noise into
+        # the un-driven bits, then store the FINAL returned value as
+        # the new bus state (xitari sets myDataBusState = result of
+        # the device peek).
+        raw = tia_peek(bus.tia, addr_masked)
+        mask = _TIA_PEEK_DRIVEN_MASK[addr_masked & 0x0F]
+        noise = bus.data_bus_state & (~mask & 0xFF)
+        value = ((raw & mask) | noise) & 0xFF
+        return value, bus._replace(data_bus_state=value)
+    if addr_masked & 0x200:
+        # RIOT I/O (A9=1). P4d: INTIM read clears timer_expired.
+        value, new_riot = riot_peek(bus.riot, addr_masked)
+        value &= 0xFF
         if new_riot is bus.riot:
-            return value, bus
-        return value, bus._replace(riot=new_riot)
+            return value, bus._replace(data_bus_state=value)
+        return value, bus._replace(riot=new_riot, data_bus_state=value)
     # RIOT RAM (A7=1, A9=0). 128 bytes, mirrored at offset addr & 0x7F.
-    return int(bus.ram[addr & 0x7F]), bus
+    value = int(bus.ram[addr_masked & 0x7F])
+    return value, bus._replace(data_bus_state=value)
 
 
 def _bus_poke(bus: Bus, addr: int, value: int) -> Bus:
-    addr = addr & 0x1FFF
-    if addr & 0x1000:
-        # Cart writes don't store anything (ROM is read-only) but they
-        # CAN trigger a bank switch when they hit a hotspot. The cart
-        # mutates in place; bus identity is preserved.
-        cart_poke(bus.cart, addr, value)
-        return bus
-    if not (addr & 0x80):
+    """Bus write — updates `data_bus_state` to the value just written
+    (xitari: `myDataBusState = value` after every poke)."""
+    value8 = value & 0xFF
+    addr_masked = addr & 0x1FFF
+    if addr_masked & 0x1000:
+        # Cart writes don't store anything but may trigger bank switch.
+        cart_poke(bus.cart, addr_masked, value8)
+        return bus._replace(data_bus_state=value8)
+    if not (addr_masked & 0x80):
         # TIA write — record the byte and apply P3a side-effects (WSYNC).
-        return bus._replace(tia=tia_poke(bus.tia, addr, value))
-    if addr & 0x200:
+        return bus._replace(
+            tia=tia_poke(bus.tia, addr_masked, value8),
+            data_bus_state=value8,
+        )
+    if addr_masked & 0x200:
         # RIOT I/O write (P4): SWCHA/SWACNT/SWCHB/SWBCNT or TIM*T.
-        return bus._replace(riot=riot_poke(bus.riot, addr, value))
+        return bus._replace(
+            riot=riot_poke(bus.riot, addr_masked, value8),
+            data_bus_state=value8,
+        )
     return bus._replace(
-        ram=bus.ram.at[addr & 0x7F].set(jnp.uint8(value & 0xFF))
+        ram=bus.ram.at[addr_masked & 0x7F].set(jnp.uint8(value8)),
+        data_bus_state=value8,
     )
