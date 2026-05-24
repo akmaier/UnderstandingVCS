@@ -180,9 +180,17 @@ class TIAState(NamedTuple):
 
 
 def initial_tia_state() -> TIAState:
-    # INPT4 / INPT5 idle high (D7=1, no trigger pressed). INPT0-3 (paddle
-    # pots) default to $80 — "centred". Proper dump-pot timing is a
-    # P6 follow-up.
+    # INPT4 / INPT5 idle high (D7=1, no trigger pressed). INPT0-3
+    # (paddle pots) default to $80 — "centred". xitari's actual
+    # behaviour is dynamic: while the pot capacitor is charging
+    # through the position-dependent resistor, INPT reads
+    # `0x80 | noise`; once charged, INPT reads `noise`. Real
+    # paddle-position is encoded in the cycle of that transition.
+    # PXC1-x round 4 diagnostic identified the INPT1/INPT3 reads
+    # at Pong PCs $F62C/$F633 as the mid-frame divergence source,
+    # but a quick static change to $00 *worsens* the gap (15 bytes
+    # vs the current 10), so the proper fix is the full dump-pot
+    # timing model — a P4c extension that hasn't landed yet.
     inpt_init = jnp.array([0x80, 0x80, 0x80, 0x80, 0x80, 0x80], dtype=jnp.uint8)
     return TIAState(
         registers=jnp.zeros((NUM_REGISTERS,), dtype=jnp.uint8),
