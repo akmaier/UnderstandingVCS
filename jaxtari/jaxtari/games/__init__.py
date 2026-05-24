@@ -12,6 +12,26 @@ real per-game scorer. Breakout / Space Invaders / Pitfall etc. land in
 follow-up commits each.
 """
 
+from jaxtari.games.atari_classics import (
+    BEAMRIDER_LIVES_ADDR,
+    BEAMRIDER_SCORE_ADDRS,
+    BEAMRIDER_TERM_ADDR,
+    BeamriderRomSettings,
+    ENDURO_DEATH_ADDR,
+    ENDURO_DEATH_VALUE,
+    ENDURO_LEVEL_ADDR,
+    ENDURO_SCORE_HI_ADDR,
+    ENDURO_SCORE_LO_ADDR,
+    EnduroRomSettings,
+    PITFALL_INITIAL_SCORE,
+    PITFALL_LIVES_ADDR,
+    PITFALL_LOGO_ADDR,
+    PITFALL_SCORE_ADDRS,
+    PitfallRomSettings,
+    SEAQUEST_SCORE_ADDRS,
+    SEAQUEST_TERM_ADDR,
+    SeaquestRomSettings,
+)
 from jaxtari.games.breakout import (
     BREAKOUT_LIVES_ADDR,
     BREAKOUT_SCORE_HI_ADDR,
@@ -80,4 +100,23 @@ __all__ = [
     "MSPACMAN_LIVES_ADDR",
     "MSPACMAN_DEATH_TIMER",
     "MSPACMAN_DEATH_VALUE",
+    # Pitfall / BeamRider / Enduro / Seaquest (P6c third batch).
+    "PitfallRomSettings",
+    "PITFALL_SCORE_ADDRS",
+    "PITFALL_LIVES_ADDR",
+    "PITFALL_LOGO_ADDR",
+    "PITFALL_INITIAL_SCORE",
+    "BeamriderRomSettings",
+    "BEAMRIDER_SCORE_ADDRS",
+    "BEAMRIDER_LIVES_ADDR",
+    "BEAMRIDER_TERM_ADDR",
+    "EnduroRomSettings",
+    "ENDURO_SCORE_HI_ADDR",
+    "ENDURO_SCORE_LO_ADDR",
+    "ENDURO_LEVEL_ADDR",
+    "ENDURO_DEATH_ADDR",
+    "ENDURO_DEATH_VALUE",
+    "SeaquestRomSettings",
+    "SEAQUEST_SCORE_ADDRS",
+    "SEAQUEST_TERM_ADDR",
 ]
