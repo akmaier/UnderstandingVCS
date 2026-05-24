@@ -12,6 +12,7 @@ single-frame flicker) is intentionally absent in P6; it's a follow-up.
 
 from __future__ import annotations
 
+import random as _random
 from typing import Optional
 
 import jax.numpy as jnp
@@ -43,7 +44,9 @@ class StellaEnvironment:
     # --- Lifecycle ---------------------------------------------------------
 
     def reset(self, *, boot_noop_steps: int = 0,
-              boot_reset_steps: int = 0) -> None:
+              boot_reset_steps: int = 0,
+              random_noop_max: int = 0,
+              seed: Optional[int] = None) -> None:
         """Reset the console (PC ← cart reset vector) and the settings.
 
         Parameters
@@ -61,11 +64,29 @@ class StellaEnvironment:
             pressed, after the NOOP burn. **Default 0**. Set to **4**
             for ALE / xitari parity (xitari's `resetGame()` then holds
             the RESET switch for `system_reset_steps` frames, default 4).
+        random_noop_max
+            **P6d** — additional NOOP frames to burn at episode start,
+            chosen uniformly from `[0, random_noop_max]`. **Default 0**
+            (deterministic). Set to **30** for the canonical Mnih-style
+            "skip 0..30 NOOPs at episode start" episode-randomization
+            recipe — gives a stochastic-policy agent a different
+            starting state per episode without affecting the
+            deterministic xitari-parity startup. Sampled once per
+            `reset()` call.
+        seed
+            Optional integer seed for the random-noop RNG. If `None`,
+            uses the default `random` module state (so callers that
+            seed `random.seed(...)` at the top of an experiment get
+            reproducible runs across `reset()` calls).
 
         Together, `reset(boot_noop_steps=60, boot_reset_steps=4)`
         reproduces xitari's `ALEInterface::resetGame()` startup — the
-        PXC1 conformance harness uses these values.
+        PXC1 conformance harness uses these values. Adding
+        `random_noop_max=30` layers Mnih-style episode randomization
+        on top.
         """
+        if boot_noop_steps < 0 or boot_reset_steps < 0 or random_noop_max < 0:
+            raise ValueError("boot_* / random_noop_max must be non-negative")
         self._console = console_reset(self._console)
         self._settings.reset()
         self._terminal = False
@@ -82,6 +103,14 @@ class StellaEnvironment:
                 self._console = apply_action(self._console, int(Action.NOOP))
                 self._console = run_until_frame(self._console)
             self._console = console_switches(self._console, reset_pressed=False)
+
+        # --- P6d: random-NOOP episode randomization ---------------------- #
+        if random_noop_max > 0:
+            rng = _random.Random(seed) if seed is not None else _random
+            n = rng.randint(0, random_noop_max)
+            for _ in range(n):
+                self._console = apply_action(self._console, int(Action.NOOP))
+                self._console = run_until_frame(self._console)
 
     def step(self, action: int) -> int:
         """Apply `action`, run one console frame, return the per-step reward.

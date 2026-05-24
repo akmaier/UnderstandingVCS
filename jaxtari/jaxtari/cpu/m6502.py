@@ -45,6 +45,7 @@ from jaxtari.cpu.alu import (
     set_zn,
 )
 from jaxtari.cpu.tables import (
+    ADDR_ABSOLUTE_X,
     ADDR_IMPLIED,
     ADDR_INDIRECT,
     ADDRESSING_MODE_TABLE,
@@ -159,6 +160,49 @@ OPCODES: dict[int, str] = {
     # Interrupts
     0x00: "BRK",
     0x40: "RTI",
+
+    # --- P1h — common undocumented NMOS 6502 opcodes ------------------------
+    #
+    # NMOS 6502 has a wide undocumented opcode set; some carts (and many
+    # 6502 test ROMs) rely on the well-behaved subset:
+    #
+    #   NOP variants  — extra implied / imm / zp / zp,X / abs / abs,X
+    #                   NOPs that just consume cycles and (for the
+    #                   addressing-mode variants) dummy-read the operand.
+    #   LAX           — load A AND X from the same operand (LDA + TAX, no
+    #                   flag side-effects beyond N/Z from the load).
+    #   SAX           — store (A AND X) at the operand address; never
+    #                   touches flags.
+    #
+    # The famous "magic AND" LAX #imm ($AB) is intentionally left out —
+    # it's unstable on real hardware. Similarly the combo RMW opcodes
+    # (DCP / ISC / RLA / RRA / SLO / SRE) are kept deferred; the NOPs
+    # are by far the most common XAI-relevant subset.
+
+    # Undocumented one-byte 2-cycle NOPs (implied).
+    0x1A: "NOP", 0x3A: "NOP", 0x5A: "NOP", 0x7A: "NOP",
+    0xDA: "NOP", 0xFA: "NOP",
+    # Undocumented two-byte 2-cycle NOPs (immediate — operand is read but
+    # discarded).
+    0x80: "NOP", 0x82: "NOP", 0x89: "NOP", 0xC2: "NOP", 0xE2: "NOP",
+    # Undocumented zero-page NOPs (read operand byte, discard).
+    0x04: "NOP", 0x44: "NOP", 0x64: "NOP",
+    # Undocumented zero-page,X NOPs.
+    0x14: "NOP", 0x34: "NOP", 0x54: "NOP", 0x74: "NOP",
+    0xD4: "NOP", 0xF4: "NOP",
+    # Undocumented absolute NOP.
+    0x0C: "NOP",
+    # Undocumented absolute,X NOPs (+1 cycle if page-crossed, same as a
+    # documented absolute,X read).
+    0x1C: "NOP", 0x3C: "NOP", 0x5C: "NOP", 0x7C: "NOP",
+    0xDC: "NOP", 0xFC: "NOP",
+
+    # LAX — load A and X from the same operand. 6 modes.
+    0xA7: "LAX", 0xB7: "LAX", 0xAF: "LAX", 0xBF: "LAX",
+    0xA3: "LAX", 0xB3: "LAX",
+
+    # SAX — store A AND X. 4 modes.
+    0x87: "SAX", 0x97: "SAX", 0x8F: "SAX", 0x83: "SAX",
 }
 
 
@@ -532,10 +576,44 @@ def _step_inner(state: CPUState, memory):
             cycles=state.cycles + jnp.uint64(base_cycles),
         ), memory
     if mnemonic == "NOP":
+        # The documented $EA NOP plus the P1h undocumented NOPs all share
+        # this path. The undocumented NOPs come in implied / immediate /
+        # zp / zp,X / abs / abs,X flavours; INSTRUCTION_LENGTH[mode]
+        # advances PC by the right amount (1 for implied $EA / $1A etc.;
+        # 2 for #imm / $zp / $zp,X; 3 for $abs / $abs,X). The abs,X
+        # NOPs take a +1 cycle when the read crosses a page — match the
+        # documented absolute,X read penalty.
+        extra = 0
+        if mode == ADDR_ABSOLUTE_X:
+            _, page_crossed = RESOLVERS[mode](state, memory)
+            extra = 1 if page_crossed else 0
         return state._replace(
-            PC=jnp.uint16((int(state.PC) + 1) & 0xFFFF),
-            cycles=state.cycles + jnp.uint64(base_cycles),
+            PC=jnp.uint16((int(state.PC) + INSTRUCTION_LENGTH[mode]) & 0xFFFF),
+            cycles=state.cycles + jnp.uint64(base_cycles + extra),
         ), memory
+
+    # --- LAX (P1h) — load A and X from the same operand. N/Z from value. ---
+    if mnemonic == "LAX":
+        addr, page_crossed = RESOLVERS[mode](state, memory)
+        value = peek(memory, addr)
+        extra = 1 if page_crossed else 0
+        p = set_zn(int(state.P), value)
+        return state._replace(
+            A=jnp.uint8(value & 0xFF),
+            X=jnp.uint8(value & 0xFF),
+            P=jnp.uint8(p & 0xFF),
+            PC=jnp.uint16((int(state.PC) + INSTRUCTION_LENGTH[mode]) & 0xFFFF),
+            cycles=state.cycles + jnp.uint64(base_cycles + extra),
+        ), memory
+
+    # --- SAX (P1h) — store A AND X, no flag side-effects. ------------------
+    if mnemonic == "SAX":
+        addr, _ = RESOLVERS[mode](state, memory)
+        new_memory = poke(memory, addr, int(state.A) & int(state.X) & 0xFF)
+        return state._replace(
+            PC=jnp.uint16((int(state.PC) + INSTRUCTION_LENGTH[mode]) & 0xFFFF),
+            cycles=state.cycles + jnp.uint64(base_cycles),
+        ), new_memory
 
     # --- INC / DEC memory (P1f) -------------------------------------------
     if mnemonic in ("INC", "DEC"):

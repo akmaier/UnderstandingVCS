@@ -378,3 +378,68 @@ def test_env_action_propagates_to_ram_via_reader_rom():
     env.step(Action.LEFT)
     # RAM[$80] should reflect the LEFT button press.
     assert int(env.get_ram()[0]) == 0xBF
+
+
+# --------------------------------------------------------------------------- #
+# P6d — random NOOP reset (Mnih-style episode randomization)
+# --------------------------------------------------------------------------- #
+
+def test_env_reset_random_noop_zero_max_is_deterministic():
+    """random_noop_max=0 leaves the frame counter at exactly the boot
+    burn-in count (here, 0)."""
+    env = StellaEnvironment(_frame_loop_rom())
+    env.reset(random_noop_max=0)
+    assert env.frame_number() == 0
+
+
+def test_env_reset_random_noop_with_fixed_seed_is_reproducible():
+    """A fixed seed produces the same frame_number across resets."""
+    env1 = StellaEnvironment(_frame_loop_rom())
+    env1.reset(random_noop_max=10, seed=42)
+    n1 = env1.frame_number()
+
+    env2 = StellaEnvironment(_frame_loop_rom())
+    env2.reset(random_noop_max=10, seed=42)
+    n2 = env2.frame_number()
+
+    assert n1 == n2
+
+
+def test_env_reset_random_noop_respects_max():
+    """The post-reset frame_number is in [0, random_noop_max] inclusive."""
+    for seed in range(8):
+        env = StellaEnvironment(_frame_loop_rom())
+        env.reset(random_noop_max=5, seed=seed)
+        assert 0 <= env.frame_number() <= 5
+
+
+def test_env_reset_random_noop_stacks_with_boot_burn():
+    """random_noop_max is *additive* on top of boot_noop_steps +
+    boot_reset_steps. With boot=3+0 and random_max=2/seed=fixed, the
+    final frame_number is boot_noop_steps + boot_reset_steps + random."""
+    env = StellaEnvironment(_frame_loop_rom())
+    env.reset(boot_noop_steps=3, boot_reset_steps=0,
+              random_noop_max=2, seed=0)
+    n = env.frame_number()
+    assert 3 <= n <= 5
+
+
+def test_env_reset_rejects_negative():
+    env = StellaEnvironment(_frame_loop_rom())
+    import pytest
+    with pytest.raises(ValueError):
+        env.reset(random_noop_max=-1)
+
+
+def test_env_reset_different_seeds_produce_different_states():
+    """Sanity check: two different seeds with a non-trivial max should
+    produce different starting frames (with overwhelming probability).
+    This catches a regression where the seed is silently ignored."""
+    starts = set()
+    for seed in range(20):
+        env = StellaEnvironment(_frame_loop_rom())
+        env.reset(random_noop_max=30, seed=seed)
+        starts.add(env.frame_number())
+    # With 20 seeds drawing from {0..30} we expect well more than one
+    # distinct outcome.
+    assert len(starts) >= 3
