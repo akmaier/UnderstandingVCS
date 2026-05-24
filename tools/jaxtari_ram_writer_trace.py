@@ -67,10 +67,13 @@ def _load_rom(path: Path) -> np.ndarray:
     return np.fromfile(path, dtype=np.uint8)
 
 
-# Tiny 6502 disassembler — just enough to label the writing opcode.
-# Each entry: (mnemonic, addressing-mode string, length). Unimplemented
-# opcodes render as "??? $XX" with length 1.
+# Small 6502 disassembler — covers all the opcodes the diagnostic tool
+# might attribute a write to (every STA/STX/STY/INC/DEC/shift/RMW mode +
+# PHA/PHP), plus the loads and branches so `--reads` rows also get
+# readable labels. Each entry: (mnemonic, addressing-mode string,
+# length). Unimplemented opcodes render as "??? $XX" with length 1.
 _DISASM_TABLE: dict[int, tuple[str, str, int]] = {
+    # --- Stores
     0x85: ("STA", "zp", 2),     0x95: ("STA", "zp,X", 2),
     0x8D: ("STA", "abs", 3),    0x9D: ("STA", "abs,X", 3),
     0x99: ("STA", "abs,Y", 3),  0x81: ("STA", "(zp,X)", 2),
@@ -79,10 +82,12 @@ _DISASM_TABLE: dict[int, tuple[str, str, int]] = {
     0x8E: ("STX", "abs", 3),
     0x84: ("STY", "zp", 2),     0x94: ("STY", "zp,X", 2),
     0x8C: ("STY", "abs", 3),
+    # --- INC / DEC memory
     0xE6: ("INC", "zp", 2),     0xF6: ("INC", "zp,X", 2),
     0xEE: ("INC", "abs", 3),    0xFE: ("INC", "abs,X", 3),
     0xC6: ("DEC", "zp", 2),     0xD6: ("DEC", "zp,X", 2),
     0xCE: ("DEC", "abs", 3),    0xDE: ("DEC", "abs,X", 3),
+    # --- Shifts (RMW memory modes)
     0x06: ("ASL", "zp", 2),     0x16: ("ASL", "zp,X", 2),
     0x0E: ("ASL", "abs", 3),    0x1E: ("ASL", "abs,X", 3),
     0x46: ("LSR", "zp", 2),     0x56: ("LSR", "zp,X", 2),
@@ -91,7 +96,42 @@ _DISASM_TABLE: dict[int, tuple[str, str, int]] = {
     0x2E: ("ROL", "abs", 3),    0x3E: ("ROL", "abs,X", 3),
     0x66: ("ROR", "zp", 2),     0x76: ("ROR", "zp,X", 2),
     0x6E: ("ROR", "abs", 3),    0x7E: ("ROR", "abs,X", 3),
+    # --- Stack push / pull
     0x48: ("PHA", "impl", 1),   0x08: ("PHP", "impl", 1),
+    0x68: ("PLA", "impl", 1),   0x28: ("PLP", "impl", 1),
+    # --- Loads (useful when `--reads` shows a TIA peek attributed to LDA)
+    0xA9: ("LDA", "imm", 2),    0xA5: ("LDA", "zp", 2),
+    0xB5: ("LDA", "zp,X", 2),   0xAD: ("LDA", "abs", 3),
+    0xBD: ("LDA", "abs,X", 3),  0xB9: ("LDA", "abs,Y", 3),
+    0xA1: ("LDA", "(zp,X)", 2), 0xB1: ("LDA", "(zp),Y", 2),
+    0xA2: ("LDX", "imm", 2),    0xA6: ("LDX", "zp", 2),
+    0xB6: ("LDX", "zp,Y", 2),   0xAE: ("LDX", "abs", 3),
+    0xBE: ("LDX", "abs,Y", 3),
+    0xA0: ("LDY", "imm", 2),    0xA4: ("LDY", "zp", 2),
+    0xB4: ("LDY", "zp,X", 2),   0xAC: ("LDY", "abs", 3),
+    0xBC: ("LDY", "abs,X", 3),
+    # --- Transfers
+    0xAA: ("TAX", "impl", 1),   0xA8: ("TAY", "impl", 1),
+    0x8A: ("TXA", "impl", 1),   0x98: ("TYA", "impl", 1),
+    0xBA: ("TSX", "impl", 1),   0x9A: ("TXS", "impl", 1),
+    # --- Branches (rel)
+    0x10: ("BPL", "rel", 2),    0x30: ("BMI", "rel", 2),
+    0x50: ("BVC", "rel", 2),    0x70: ("BVS", "rel", 2),
+    0x90: ("BCC", "rel", 2),    0xB0: ("BCS", "rel", 2),
+    0xD0: ("BNE", "rel", 2),    0xF0: ("BEQ", "rel", 2),
+    # --- Control flow
+    0x4C: ("JMP", "abs", 3),    0x6C: ("JMP", "(abs)", 3),
+    0x20: ("JSR", "abs", 3),    0x60: ("RTS", "impl", 1),
+    0x40: ("RTI", "impl", 1),
+    # --- Status flags + NOP/BRK
+    0x18: ("CLC", "impl", 1),   0x38: ("SEC", "impl", 1),
+    0x58: ("CLI", "impl", 1),   0x78: ("SEI", "impl", 1),
+    0xB8: ("CLV", "impl", 1),   0xD8: ("CLD", "impl", 1),
+    0xF8: ("SED", "impl", 1),
+    0xEA: ("NOP", "impl", 1),   0x00: ("BRK", "impl", 1),
+    # --- INX/INY/DEX/DEY
+    0xE8: ("INX", "impl", 1),   0xC8: ("INY", "impl", 1),
+    0xCA: ("DEX", "impl", 1),   0x88: ("DEY", "impl", 1),
 }
 
 
@@ -111,9 +151,19 @@ def _disasm(rom: np.ndarray, pc: int) -> str:
     mnem, mode, length = entry
     operand_bytes = rom[rom_off + 1 : rom_off + length]
     operand_hex = " ".join(f"${b:02X}" for b in operand_bytes)
+    if length == 1:
+        return f"{mnem}                 (raw {op:02X})"
     if length == 2:
         operand = int(operand_bytes[0]) if len(operand_bytes) else 0
-        if mode == "zp":
+        if mode == "imm":
+            return f"{mnem} #${operand:02X}           (raw {op:02X} {operand:02X})"
+        elif mode == "rel":
+            # Signed byte → target = pc + 2 + signed(operand)
+            signed = operand - 0x100 if operand >= 0x80 else operand
+            target = (pc + 2 + signed) & 0xFFFF
+            return (f"{mnem} ${target:04X}         "
+                    f"(raw {op:02X} {operand:02X}, rel{signed:+d})")
+        elif mode == "zp":
             return f"{mnem} ${operand:02X}            (raw {op:02X} {operand:02X})"
         elif mode == "zp,X":
             return f"{mnem} ${operand:02X},X          (raw {op:02X} {operand:02X})"
@@ -130,6 +180,10 @@ def _disasm(rom: np.ndarray, pc: int) -> str:
             suffix = ",X"
         elif mode == "abs,Y":
             suffix = ",Y"
+        elif mode == "(abs)":
+            suffix = ""
+            return (f"{mnem} (${addr:04X})        "
+                    f"(raw {op:02X} {operand_bytes[0]:02X} {operand_bytes[1]:02X})")
         return (f"{mnem} ${addr:04X}{suffix}        "
                 f"(raw {op:02X} {operand_bytes[0]:02X} {operand_bytes[1]:02X})")
     return f"{mnem} {mode}  (raw {operand_hex})"
