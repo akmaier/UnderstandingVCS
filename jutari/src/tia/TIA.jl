@@ -326,26 +326,64 @@ function render_playfield_scanline(tia::TIAState)
 end
 
 """
+P3g — NUSIZ low-3-bit decode: `(copy_offsets, scale)`. Matches
+jaxtari `_NUSIZ_PLAYER_LAYOUT` byte-for-byte:
+
+  000  1 copy, 1× wide
+  001  2 copies, 16-pixel spacing, 1× wide   (close)
+  010  2 copies, 32-pixel spacing, 1× wide   (medium)
+  011  3 copies, 16-pixel spacing, 1× wide
+  100  2 copies, 64-pixel spacing, 1× wide   (wide)
+  101  1 copy, 2× wide   (double-sized player)
+  110  3 copies, 32-pixel spacing, 1× wide
+  111  1 copy, 4× wide   (quadruple-sized player)
+"""
+const _NUSIZ_PLAYER_LAYOUT = (
+    ((0,),         1),
+    ((0, 16),      1),
+    ((0, 32),      1),
+    ((0, 16, 32),  1),
+    ((0, 64),      1),
+    ((0,),         2),
+    ((0, 32, 64),  1),
+    ((0,),         4),
+)
+
+@inline _nusiz_player_layout(nusiz::Integer) =
+    _NUSIZ_PLAYER_LAYOUT[(Int(nusiz) & 0x07) + 1]
+
+"""
     _overlay_player!(pixels, tia, player)
 
-Paint player 0 or 1 onto `pixels` (mutated). Single 1×-wide copy.
+Paint player 0 or 1 onto `pixels` (mutated). **P3g**: NUSIZ low 3
+bits decode into per-copy X offsets + per-bit scale (1/2/4), so
+multi-copy + 2×/4×-wide layouts paint correctly. The matching
+missile inherits the same multi-copy layout via `_overlay_missile!`.
 """
 function _overlay_player!(pixels::Vector{UInt8}, tia::TIAState, player::Int)
     grp_reg   = player == 0 ? W_GRP0   : W_GRP1
     color_reg = player == 0 ? W_COLUP0 : W_COLUP1
     refp_reg  = player == 0 ? W_REFP0  : W_REFP1
+    nusiz_reg = player == 0 ? W_NUSIZ0 : W_NUSIZ1
     grp = tia.registers[grp_reg + 1]
     grp == 0 && return nothing
     color = tia.registers[color_reg + 1]
     reflected = (tia.registers[refp_reg + 1] & 0x08) != 0
     x = player == 0 ? tia.p0_x : tia.p1_x
+    copy_offsets, scale = _nusiz_player_layout(tia.registers[nusiz_reg + 1])
 
     # GRP bit 7 is leftmost by default; REFP.D3 reverses bit order.
-    @inbounds for i in 0:7
-        bit_idx = reflected ? i : (7 - i)
-        if (Int(grp) >> bit_idx) & 1 != 0
-            px = mod(x + i, 160)
-            pixels[px + 1] = color
+    # Each of the 8 bits paints `scale` adjacent screen pixels, at
+    # every requested copy offset.
+    @inbounds for copy_off in copy_offsets
+        base = mod(x + copy_off, 160)
+        for i in 0:7
+            bit_idx = reflected ? i : (7 - i)
+            if (Int(grp) >> bit_idx) & 1 != 0
+                for k in 0:(scale - 1)
+                    pixels[mod(base + i * scale + k, 160) + 1] = color
+                end
+            end
         end
     end
     return nothing
@@ -354,8 +392,10 @@ end
 """
     _overlay_missile!(pixels, tia, missile)
 
-Paint missile 0 or 1; width is 1/2/4/8 from NUSIZ bits 4-5. Missile
-inherits the colour of its associated player (COLUP*).
+Paint missile 0 or 1. NUSIZ low 3 bits select multi-copy + spacing
+(same layout as the matching player); NUSIZ bits 4-5 set each copy's
+*width* (1/2/4/8 pixels). Missile inherits the colour of its
+associated player (COLUP*).
 """
 function _overlay_missile!(pixels::Vector{UInt8}, tia::TIAState, missile::Int)
     enam_reg = missile == 0 ? W_ENAM0 : W_ENAM1
@@ -363,10 +403,15 @@ function _overlay_missile!(pixels::Vector{UInt8}, tia::TIAState, missile::Int)
     color_reg = missile == 0 ? W_COLUP0 : W_COLUP1
     nusiz_reg = missile == 0 ? W_NUSIZ0 : W_NUSIZ1
     color = tia.registers[color_reg + 1]
-    size  = 1 << ((Int(tia.registers[nusiz_reg + 1]) >> 4) & 0x03)
+    nusiz = tia.registers[nusiz_reg + 1]
+    width = 1 << ((Int(nusiz) >> 4) & 0x03)
+    copy_offsets, _ = _nusiz_player_layout(nusiz)
     x = missile == 0 ? tia.m0_x : tia.m1_x
-    @inbounds for i in 0:(size - 1)
-        pixels[mod(x + i, 160) + 1] = color
+    @inbounds for copy_off in copy_offsets
+        base = mod(x + copy_off, 160)
+        for i in 0:(width - 1)
+            pixels[mod(base + i, 160) + 1] = color
+        end
     end
     return nothing
 end
@@ -501,15 +546,23 @@ function _object_pixel_sets(tia::TIAState)
         end
     end
 
-    function _player_set(grp_reg, refp_reg, x)
+    # P3g: respect NUSIZ multi-copy + scale so collisions involving
+    # the 2nd/3rd copies and the wide modes are detected.
+    function _player_set(grp_reg, refp_reg, nusiz_reg, x)
         grp = tia.registers[grp_reg + 1]
         out = Set{Int}()
         grp == 0 && return out
         reflected = (tia.registers[refp_reg + 1] & 0x08) != 0
-        for i in 0:7
-            bit_idx = reflected ? i : (7 - i)
-            if (Int(grp) >> bit_idx) & 1 != 0
-                push!(out, mod(x + i, 160))
+        copy_offsets, scale = _nusiz_player_layout(tia.registers[nusiz_reg + 1])
+        for copy_off in copy_offsets
+            base = mod(x + copy_off, 160)
+            for i in 0:7
+                bit_idx = reflected ? i : (7 - i)
+                if (Int(grp) >> bit_idx) & 1 != 0
+                    for k in 0:(scale - 1)
+                        push!(out, mod(base + i * scale + k, 160))
+                    end
+                end
             end
         end
         return out
@@ -517,15 +570,24 @@ function _object_pixel_sets(tia::TIAState)
 
     function _missile_set(enam_reg, nusiz_reg, x)
         (tia.registers[enam_reg + 1] & 0x02) == 0 && return Set{Int}()
-        size = 1 << ((Int(tia.registers[nusiz_reg + 1]) >> 4) & 0x03)
-        return Set(mod(x + i, 160) for i in 0:(size - 1))
+        nusiz = tia.registers[nusiz_reg + 1]
+        width = 1 << ((Int(nusiz) >> 4) & 0x03)
+        copy_offsets, _ = _nusiz_player_layout(nusiz)
+        out = Set{Int}()
+        for copy_off in copy_offsets
+            base = mod(x + copy_off, 160)
+            for i in 0:(width - 1)
+                push!(out, mod(base + i, 160))
+            end
+        end
+        return out
     end
 
     return (
         pf = pf,
         bl = bl,
-        p0 = _player_set(W_GRP0, W_REFP0, tia.p0_x),
-        p1 = _player_set(W_GRP1, W_REFP1, tia.p1_x),
+        p0 = _player_set(W_GRP0, W_REFP0, W_NUSIZ0, tia.p0_x),
+        p1 = _player_set(W_GRP1, W_REFP1, W_NUSIZ1, tia.p1_x),
         m0 = _missile_set(W_ENAM0, W_NUSIZ0, tia.m0_x),
         m1 = _missile_set(W_ENAM1, W_NUSIZ1, tia.m1_x),
     )

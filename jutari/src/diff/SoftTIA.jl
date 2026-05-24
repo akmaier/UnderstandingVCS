@@ -88,49 +88,124 @@ function _playfield_mask(pf0::Real, pf1::Real, pf2::Real, ctrlpf::Real)
     return vcat(left, right)                         # 160
 end
 
-"""
-    _player_mask(grp, refp, xpos) -> Vector{Float32}
+# P3g — NUSIZ multi-copy + 2×/4×-wide player scaling. Mirror of
+# jaxtari's _NUSIZ_PLAYER_LAYOUT byte-for-byte:
+#
+#   000  1 copy, 1× wide
+#   001  2 copies, 16-pixel spacing, 1× wide
+#   010  2 copies, 32-pixel spacing, 1× wide
+#   011  3 copies, 16-pixel spacing, 1× wide
+#   100  2 copies, 64-pixel spacing, 1× wide
+#   101  1 copy, 2× wide
+#   110  3 copies, 32-pixel spacing, 1× wide
+#   111  1 copy, 4× wide
+const _SOFT_NUSIZ_PLAYER_LAYOUT = (
+    ((0,),         1),
+    ((0, 16),      1),
+    ((0, 32),      1),
+    ((0, 16, 32),  1),
+    ((0, 64),      1),
+    ((0,),         2),
+    ((0, 32, 64),  1),
+    ((0,),         4),
+)
 
-A single 8-pixel player sprite expanded to a 160-element mask (1.0
-where the sprite paints). GRP bit 7 is the leftmost pixel; REFP bit 3
-(0x08) reverses the order. The sprite is placed at column `xpos`,
-wrapping mod 160.
-
-Built from pure broadcasts + `.+` only — no array literal, typed
-comprehension, or `setindex!` — so the surrounding render stays
-Zygote-traceable (P7e). `d` is the per-column offset into the sprite;
-each of the 8 sprite bits contributes `bit * (d .== k)`.
 """
-function _player_mask(grp::Real, refp::Real, xpos::Real)
+    _player_mask_single(grp, refp, xpos, scale) -> Vector{Float32}
+
+One copy of a player sprite at column `xpos` with each bit replicated
+`scale` times (1/2/4 — covers the NUSIZ double / quad modes). Returns
+a 160-element Float32 mask. Built from pure broadcasts so the
+surrounding render stays Zygote-traceable (P7e).
+"""
+function _player_mask_single(grp::Real, refp::Real, xpos::Real, scale::Integer)
     grp_i     = trunc(Int, grp)
     reflected = (trunc(Int, refp) & 0x08) != 0
     x         = trunc(Int, xpos)
     d = mod.((0:(SOFT_SCREEN_WIDTH - 1)) .- x, SOFT_SCREEN_WIDTH)   # (160,)
-    # sprite bit k (k = 0 is the leftmost pixel)
+    # Each sprite bit k spans `scale` adjacent screen pixels. The
+    # bit-index for a given d is `d ÷ scale`, valid for d in [0, 8*scale).
     spritebit(k) = Float32(reflected ? ((grp_i >> k) & 1) :
                                        ((grp_i >> (7 - k)) & 1))
-    return spritebit(0) .* (d .== 0) .+ spritebit(1) .* (d .== 1) .+
-           spritebit(2) .* (d .== 2) .+ spritebit(3) .* (d .== 3) .+
-           spritebit(4) .* (d .== 4) .+ spritebit(5) .* (d .== 5) .+
-           spritebit(6) .* (d .== 6) .+ spritebit(7) .* (d .== 7)
+    width = 8 * scale
+    mask  = zeros(Float32, SOFT_SCREEN_WIDTH)
+    # Sum-of-per-bit-contributions — broadcast-friendly so Zygote can
+    # trace it (a Julia for-loop with `+=` on the local mask also
+    # works because Zygote handles vector-valued local accumulation;
+    # the dot-product / one-hot form would be cleaner but the
+    # accumulator pattern matches the jaxtari `_player_mask_single`
+    # logic 1:1 and stays readable).
+    for k in 0:7
+        bit = spritebit(k)
+        bit == 0f0 && continue
+        for s in 0:(scale - 1)
+            mask = mask .+ bit .* (d .== (k * scale + s))
+        end
+    end
+    return mask
 end
 
 """
-    _block_mask(xpos, size_reg, enable_reg) -> Vector{Float32}
+    _player_mask(grp, refp, xpos, nusiz) -> Vector{Float32}
 
-A missile / ball — a solid block of `1 << ((size_reg >> 4) & 3)`
-pixels (width 1/2/4/8) at column `xpos`, painted only when
-`enable_reg` bit 1 is set. Pure broadcasts (`d .< width`) — Zygote-
-traceable. Used for missiles (size from NUSIZ, enable from ENAM) and
-the ball (size from CTRLPF, enable from ENABL).
+P3g: a player sprite with NUSIZ-driven multi-copy + 2×/4× scaling.
+All 8 NUSIZ modes are evaluated unconditionally and blended by the
+integer-extracted `nusiz & 7` — same pattern as the CTRLPF.D2
+priority swap.
 """
-function _block_mask(xpos::Real, size_reg::Real, enable_reg::Real)
+function _player_mask(grp::Real, refp::Real, xpos::Real, nusiz::Real)
+    nusiz_low = trunc(Int, nusiz) & 0x07
+    per_mode = ntuple(8) do mode_idx
+        offsets, scale = _SOFT_NUSIZ_PLAYER_LAYOUT[mode_idx]
+        m = zeros(Float32, SOFT_SCREEN_WIDTH)
+        for off in offsets
+            m = m .+ _player_mask_single(grp, refp, xpos + off, scale)
+        end
+        clamp.(m, 0f0, 1f0)
+    end
+    # One-hot select by NUSIZ mode (integer extraction breaks the
+    # gradient on the bit itself, same convention as `_block_mask`).
+    sel = Float32.((0:7) .== nusiz_low)
+    return sum(sel[i] .* per_mode[i] for i in 1:8)
+end
+
+"""
+    _block_mask_single(xpos, size_reg, enable_reg) -> Vector{Float32}
+
+One copy of a missile / ball block at column `xpos`, width
+`1 << ((size_reg >> 4) & 3)` (1/2/4/8), enabled by `enable_reg` bit 1.
+"""
+function _block_mask_single(xpos::Real, size_reg::Real, enable_reg::Real)
     size_log2 = (trunc(Int, size_reg) >> 4) & 0x03
     width     = 1 << size_log2                       # 1/2/4/8
     enabled   = Float32((trunc(Int, enable_reg) >> 1) & 1)
     x = trunc(Int, xpos)
     d = mod.((0:(SOFT_SCREEN_WIDTH - 1)) .- x, SOFT_SCREEN_WIDTH)   # (160,)
     return enabled .* Float32.(d .< width)
+end
+
+"""
+    _block_mask(xpos, size_reg, enable_reg, nusiz=nothing) -> Vector{Float32}
+
+Missile / ball block with optional NUSIZ-driven multi-copy. The ball
+ignores `nusiz` (it doesn't share NUSIZ; its sizing comes from CTRLPF
+passed in via `size_reg`). Missiles pass NUSIZ so the same multi-copy
+the player uses applies. P3g.
+"""
+function _block_mask(xpos::Real, size_reg::Real, enable_reg::Real,
+                     nusiz::Union{Real,Nothing} = nothing)
+    nusiz === nothing && return _block_mask_single(xpos, size_reg, enable_reg)
+    nusiz_low = trunc(Int, nusiz) & 0x07
+    per_mode = ntuple(8) do mode_idx
+        offsets, _ = _SOFT_NUSIZ_PLAYER_LAYOUT[mode_idx]
+        m = zeros(Float32, SOFT_SCREEN_WIDTH)
+        for off in offsets
+            m = m .+ _block_mask_single(xpos + off, size_reg, enable_reg)
+        end
+        clamp.(m, 0f0, 1f0)
+    end
+    sel = Float32.((0:7) .== nusiz_low)
+    return sum(sel[i] .* per_mode[i] for i in 1:8)
 end
 
 """
@@ -147,18 +222,28 @@ function _object_masks(bus::SoftBus)
                          soft_ram_peek(bus.ram, _R_PF1),
                          soft_ram_peek(bus.ram, _R_PF2),
                          ctrlpf)
+    nusiz0 = soft_ram_peek(bus.ram, _R_NUSIZ0)
+    nusiz1 = soft_ram_peek(bus.ram, _R_NUSIZ1)
     p0 = _player_mask(soft_ram_peek(bus.ram, _R_GRP0),
                       soft_ram_peek(bus.ram, _R_REFP0),
-                      soft_ram_peek(bus.ram, _R_RESP0))
+                      soft_ram_peek(bus.ram, _R_RESP0),
+                      nusiz0)
     p1 = _player_mask(soft_ram_peek(bus.ram, _R_GRP1),
                       soft_ram_peek(bus.ram, _R_REFP1),
-                      soft_ram_peek(bus.ram, _R_RESP1))
+                      soft_ram_peek(bus.ram, _R_RESP1),
+                      nusiz1)
+    # P3g: missiles inherit NUSIZ low 3 bits for multi-copy; the size
+    # bits (4-5) come from the same NUSIZ register passed as size_reg.
     m0 = _block_mask(soft_ram_peek(bus.ram, _R_RESM0),
-                     soft_ram_peek(bus.ram, _R_NUSIZ0),
-                     soft_ram_peek(bus.ram, _R_ENAM0))
+                     nusiz0,
+                     soft_ram_peek(bus.ram, _R_ENAM0),
+                     nusiz0)
     m1 = _block_mask(soft_ram_peek(bus.ram, _R_RESM1),
-                     soft_ram_peek(bus.ram, _R_NUSIZ1),
-                     soft_ram_peek(bus.ram, _R_ENAM1))
+                     nusiz1,
+                     soft_ram_peek(bus.ram, _R_ENAM1),
+                     nusiz1)
+    # Ball uses CTRLPF for sizing and does NOT participate in NUSIZ
+    # multi-copy (its layout is one solid block).
     bl = _block_mask(soft_ram_peek(bus.ram, _R_RESBL),
                      ctrlpf,
                      soft_ram_peek(bus.ram, _R_ENABL))

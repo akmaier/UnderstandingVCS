@@ -4648,3 +4648,149 @@ end
         @test state.A == 0f0                    # no real arithmetic happened
     end
 end
+
+
+@testset "JuTari P3g — NUSIZ multi-copy + 2×/4× player scaling" begin
+    # NUSIZ low 3 bits select sprite layout — mirror of jaxtari's
+    # `_NUSIZ_PLAYER_LAYOUT`. Same 8 modes; same multi-copy + scale.
+
+    # --- HARD path ----------------------------------------------------------
+    function _setup(nusiz::Integer, x::Integer = 0)
+        tia = initial_tia_state()
+        tia.p0_x = x
+        tia_poke!(tia, W_COLUBK, 0x00)
+        tia_poke!(tia, W_COLUP0, 0x42)
+        tia_poke!(tia, W_GRP0,   0xFF)
+        tia_poke!(tia, W_NUSIZ0, UInt8(nusiz))
+        return tia
+    end
+
+    @testset "HARD NUSIZ 000 — single copy" begin
+        tia = _setup(0b000, 0)
+        scan = render_scanline(tia)
+        @test all(scan[i + 1] == 0x42 for i in 0:7)
+        @test scan[9]  == 0
+        @test scan[17] == 0
+    end
+
+    @testset "HARD NUSIZ 001 — two close copies" begin
+        tia = _setup(0b001, 0)
+        scan = render_scanline(tia)
+        @test all(scan[i + 1] == 0x42 for i in 0:7)
+        @test scan[9]  == 0
+        @test all(scan[i + 1] == 0x42 for i in 16:23)
+        @test scan[25] == 0
+    end
+
+    @testset "HARD NUSIZ 011 — three close copies" begin
+        tia = _setup(0b011, 0)
+        scan = render_scanline(tia)
+        for base in (0, 16, 32)
+            @test all(scan[base + i + 1] == 0x42 for i in 0:7)
+        end
+        @test scan[9]  == 0
+        @test scan[25] == 0
+        @test scan[41] == 0
+    end
+
+    @testset "HARD NUSIZ 100 — two wide copies" begin
+        tia = _setup(0b100, 0)
+        scan = render_scanline(tia)
+        @test all(scan[i + 1] == 0x42 for i in 0:7)
+        @test scan[64]    == 0
+        @test all(scan[i + 1] == 0x42 for i in 64:71)
+    end
+
+    @testset "HARD NUSIZ 101 — double-size player" begin
+        tia = _setup(0b101, 0)
+        scan = render_scanline(tia)
+        @test all(scan[i + 1] == 0x42 for i in 0:15)
+        @test scan[17] == 0
+    end
+
+    @testset "HARD NUSIZ 111 — quadruple-size player" begin
+        tia = _setup(0b111, 0)
+        scan = render_scanline(tia)
+        @test all(scan[i + 1] == 0x42 for i in 0:31)
+        @test scan[33] == 0
+    end
+
+    @testset "HARD double-size GRP=0x80 paints bit 7 across 2 px" begin
+        tia = initial_tia_state(); tia.p0_x = 10
+        tia_poke!(tia, W_COLUBK, 0x00); tia_poke!(tia, W_COLUP0, 0x42)
+        tia_poke!(tia, W_GRP0, 0x80)                  # bit 7 only
+        tia_poke!(tia, W_NUSIZ0, 0b101)               # 2× scale
+        scan = render_scanline(tia)
+        @test scan[11] == 0x42
+        @test scan[12] == 0x42
+        @test scan[13] == 0
+    end
+
+    @testset "HARD missile inherits NUSIZ multi-copy" begin
+        tia = initial_tia_state(); tia.m0_x = 0
+        tia_poke!(tia, W_COLUBK, 0x00)
+        tia_poke!(tia, W_COLUP0, 0x55)
+        tia_poke!(tia, W_ENAM0,  0x02)
+        tia_poke!(tia, W_NUSIZ0, 0b011)               # 3 close copies
+        scan = render_scanline(tia)
+        @test scan[1]  == 0x55
+        @test scan[17] == 0x55
+        @test scan[33] == 0x55
+        @test scan[2]  == 0
+    end
+
+    # --- SOFT path ----------------------------------------------------------
+    R_COLUP0 = 0x06; R_COLUBK = 0x09
+    R_NUSIZ0_SOFT = 0x04; R_GRP0_SOFT = 0x1B; R_RESP0_SOFT = 0x10
+
+    function _soft_bus(nusiz::Integer, x::Integer = 0)
+        ram = zeros(Float32, 128)
+        ram[R_COLUBK + 1] = 0f0
+        ram[R_COLUP0 + 1] = Float32(0x42)
+        ram[R_GRP0_SOFT + 1]  = Float32(0xFF)
+        ram[R_NUSIZ0_SOFT + 1] = Float32(nusiz)
+        ram[R_RESP0_SOFT + 1] = Float32(x)
+        return SoftBus(ram, zeros(Float32, 256))
+    end
+
+    @testset "SOFT NUSIZ 011 — three close copies" begin
+        bus = _soft_bus(0b011, 0)
+        scan = soft_render_scanline(bus)
+        for base in (0, 16, 32)
+            @test all(Int(scan[base + i + 1]) == 0x42 for i in 0:7)
+        end
+        @test Int(scan[9])  == 0
+        @test Int(scan[25]) == 0
+    end
+
+    @testset "SOFT NUSIZ 111 — quad-size player" begin
+        bus = _soft_bus(0b111, 0)
+        scan = soft_render_scanline(bus)
+        for i in 0:31
+            @test Int(scan[i + 1]) == 0x42
+        end
+        @test Int(scan[33]) == 0
+    end
+
+    @testset "Zygote — COLUP0 gradient reaches the second copy in NUSIZ=001" begin
+        bus0 = _soft_bus(0b001, 0)
+        # Column 4 (first copy) and column 20 (second copy) both
+        # should have ∂pixel/∂COLUP0 == 1.
+        grad_first, = Zygote.gradient(
+            r -> soft_render_scanline(SoftBus(r, bus0.rom))[5], bus0.ram)
+        grad_second, = Zygote.gradient(
+            r -> soft_render_scanline(SoftBus(r, bus0.rom))[21], bus0.ram)
+        @test grad_first[R_COLUP0 + 1]  == 1f0
+        @test grad_second[R_COLUP0 + 1] == 1f0
+    end
+
+    @testset "SOFT NUSIZ=0 default — single 8-pixel copy (regression guard)" begin
+        bus = _soft_bus(0b000, 0)
+        scan = soft_render_scanline(bus)
+        for i in 0:7
+            @test Int(scan[i + 1]) == 0x42
+        end
+        @test Int(scan[9])  == 0
+        @test Int(scan[17]) == 0
+    end
+end
