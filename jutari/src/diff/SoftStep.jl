@@ -1706,7 +1706,13 @@ function _func_do_branch(state, bus, flag_field::Symbol,
     pc_taken     = pc_not_taken + offset
 
     # Float flag for the gradient path — what the caller can override.
-    flag_soft  = getfield(state, flag_field)
+    # Zygote traces dot-access on mutable structs cleanly; runtime-Symbol
+    # getfield can be opaque to the rrule generator, so dispatch by name.
+    flag_soft  = flag_field === :P_N ? state.P_N :
+                 flag_field === :P_Z ? state.P_Z :
+                 flag_field === :P_C ? state.P_C :
+                 flag_field === :P_V ? state.P_V :
+                 error("_func_do_branch: unknown flag_field $flag_field")
     logit_sign = take_when_set ? 1f0 : -1f0
     flag_logit = logit_sign * (2f0 * flag_soft - 1f0)
 
@@ -1720,18 +1726,17 @@ function _func_do_branch(state, bus, flag_field::Symbol,
     pc_hard   = take_hard ? pc_taken : pc_not_taken
 
     # Straight-through: forward = hard PC, backward = soft (sigmoid) PC.
-    new_pc = pc_soft + (pc_hard - pc_soft)   # forward equals pc_hard
-    # The `pc_hard - pc_soft` "constant offset" carries no gradient by
-    # construction (both sides are Float32 evaluations of the same
-    # quantities); Zygote sees ∂new_pc/∂flag_soft come purely from
-    # pc_soft. (No `stop_gradient` primitive in Zygote — Float32
-    # rules of the road keep this clean as a numerical identity.)
+    # `_stop_gradient` makes the additive offset opaque to Zygote, so
+    # the backward pass sees only the `pc_soft` term — matching the
+    # jaxtari `pc_soft + jax.lax.stop_gradient(pc_hard - pc_soft)`
+    # straight-through construction.
+    new_pc = pc_soft + _stop_gradient(pc_hard - pc_soft)
 
     # Cycles +1 when taken. Same straight-through dance.
     extra_hard = take_hard ? 1f0 : 0f0
     g          = 1f0 / (1f0 + exp(-10f0 * flag_logit))   # sigmoid
     extra_soft = g
-    extra      = extra_soft + (extra_hard - extra_soft)
+    extra      = extra_soft + _stop_gradient(extra_hard - extra_soft)
     return update_state(state;
         PC=new_pc, cycles=state.cycles + 2f0 + extra,
     ), bus

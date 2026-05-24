@@ -22,9 +22,33 @@ step() path) is the P7b follow-up.
 """
 module Diff
 
+# ChainRulesCore for `_stop_gradient` — used by `_func_do_branch` to
+# build the straight-through estimator (forward = pc_hard, backward =
+# ∂pc_soft). Without this the cancellation `pc_soft + (pc_hard - pc_soft)`
+# collapses at the Float32 level and Zygote sees no gradient through
+# the float-flag mirrors (P7c-dx gradient hook).
+import ChainRulesCore
+
 # `_dot(a, b)` — local helper used by the P7 primitives below. Avoids
 # pulling in LinearAlgebra (which would need to be added to Project.toml).
 @inline _dot(a::AbstractVector, b::AbstractVector) = sum(a .* b)
+
+"""
+    _stop_gradient(x) -> x
+
+Identity on the forward pass; backward pass propagates no gradient.
+Julia's equivalent of `jax.lax.stop_gradient` — used to build the
+straight-through estimator inside `_func_do_branch` so the forward
+PC is bit-exact (matching the packed `P` decision) while the
+backward gradient runs through the sigmoid-blended soft PC.
+
+Implemented via a manual `rrule` because `ChainRulesCore.@ignore_derivatives`
+isn't directly composable here.
+"""
+@inline _stop_gradient(x) = x
+
+ChainRulesCore.rrule(::typeof(_stop_gradient), x) =
+    x, _ -> (ChainRulesCore.NoTangent(), ChainRulesCore.ZeroTangent())
 
 # Extend the Bus module's `peek` (the same multi-method dispatch
 # function we use for Vector{UInt8} / BusState reads) with a new method
