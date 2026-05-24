@@ -227,6 +227,30 @@ def set_trigger(tia: TIAState, player: int, pressed: bool) -> TIAState:
     return tia._replace(inpt=tia.inpt.at[idx].set(jnp.uint8(new_byte)))
 
 
+def set_paddle(tia: TIAState, paddle: int, value: int) -> TIAState:
+    """P4c — set the paddle pot reading for one of the four paddles
+    (0..3 → INPT0..INPT3).
+
+    `value` is the paddle "wheel position" in the range 0..255. Real
+    Atari paddles work via a capacitor that charges through a
+    pot-controlled resistor; the INPT register reads D7 = 1 until the
+    cap voltage clears a threshold, then D7 = 0. Games measure the
+    paddle angle by polling the number of cycles between the start of
+    the scanline and the moment INPT D7 flips to 0 — so on real
+    hardware the *value* INPT returns at any single instant is just
+    a boolean, the analog position is encoded in *timing*.
+
+    The capacitor-charge model is more work than P4c needs; instead
+    this helper just stores `value` directly in the INPT cell. Games
+    that read INPT once per scanline (the vast majority) get a
+    sensible per-paddle value back. Faithful dump-pot timing is a
+    separate deferral — see STATUS.md P4c.
+    """
+    if paddle not in (0, 1, 2, 3):
+        raise ValueError(f"paddle must be 0..3, got {paddle}")
+    return tia._replace(inpt=tia.inpt.at[paddle].set(jnp.uint8(value & 0xFF)))
+
+
 def _resp_position(scanline_cycle: int) -> int:
     """Approximate RESP* timing: maps the current scanline_cycle to a
     sprite horizontal position in [0, 159].

@@ -74,6 +74,9 @@ class PongRomSettings(RomSettings):
 def _scores(console: Console) -> tuple[int, int]:
     """Pull the (P0, P1) score bytes from the console's RAM. RAM is a
     `(128,)` uint8 array indexed by `addr & 0x7F`, so the canonical
-    `$0014` / `$0015` map directly to indices 0x14 / 0x15."""
+    `$0014` / `$0015` map to indices 0x14 / 0x15 — both already inside
+    the 128-byte window, but we mask for consistency with the games
+    whose score addresses live in the $80-$FF mirror."""
     ram = console.bus.ram
-    return int(ram[PONG_P0_SCORE_ADDR]), int(ram[PONG_P1_SCORE_ADDR])
+    return (int(ram[PONG_P0_SCORE_ADDR & 0x7F]),
+            int(ram[PONG_P1_SCORE_ADDR & 0x7F]))
