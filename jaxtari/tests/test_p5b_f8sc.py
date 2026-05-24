@@ -154,3 +154,71 @@ def test_bus_peek_poke_round_trip_through_f8sc_ram():
     bus = initial_bus(jnp.zeros((8192,), dtype=jnp.uint8), cart_kind=KIND_F8SC)
     bus = poke(bus, 0x1000 + 0x20, 0x99)
     assert peek(bus, 0x1080 + 0x20) == 0x99
+
+
+# --------------------------------------------------------------------------- #
+# F6SC + F4SC — same SC RAM dispatch, more banks
+# --------------------------------------------------------------------------- #
+
+from jaxtari.cart import KIND_F4SC, KIND_F6SC
+
+
+def test_f6sc_has_4_banks_and_boots_in_bank_3():
+    cart = make_cart(jnp.zeros((16384,), dtype=jnp.uint8), kind=KIND_F6SC)
+    assert cart.kind == KIND_F6SC
+    assert cart.current_bank == 3
+    assert len(cart.ram) == 128
+
+
+def test_f4sc_has_8_banks_and_boots_in_bank_7():
+    cart = make_cart(jnp.zeros((32768,), dtype=jnp.uint8), kind=KIND_F4SC)
+    assert cart.kind == KIND_F4SC
+    assert cart.current_bank == 7
+    assert len(cart.ram) == 128
+
+
+def test_f6sc_ram_round_trip():
+    cart = make_cart(jnp.zeros((16384,), dtype=jnp.uint8), kind=KIND_F6SC)
+    cart_poke(cart, 0x1000 + 0x40, 0x33)
+    assert cart_peek(cart, 0x1080 + 0x40) == 0x33
+
+
+def test_f4sc_ram_round_trip():
+    cart = make_cart(jnp.zeros((32768,), dtype=jnp.uint8), kind=KIND_F4SC)
+    cart_poke(cart, 0x1000 + 0x10, 0xEE)
+    assert cart_peek(cart, 0x1080 + 0x10) == 0xEE
+
+
+def test_f6sc_bank_switching_uses_f6_hotspots():
+    cart = make_cart(jnp.zeros((16384,), dtype=jnp.uint8), kind=KIND_F6SC)
+    assert cart.current_bank == 3
+    cart_peek(cart, 0x1FF6)
+    assert cart.current_bank == 0
+    cart_peek(cart, 0x1FF9)
+    assert cart.current_bank == 3
+
+
+def test_f4sc_bank_switching_uses_f4_hotspots():
+    cart = make_cart(jnp.zeros((32768,), dtype=jnp.uint8), kind=KIND_F4SC)
+    assert cart.current_bank == 7
+    cart_peek(cart, 0x1FF4)
+    assert cart.current_bank == 0
+    cart_peek(cart, 0x1FFB)
+    assert cart.current_bank == 7
+
+
+def test_f6sc_requires_16k_rom():
+    with pytest.raises(ValueError):
+        make_cart(jnp.zeros((8192,), dtype=jnp.uint8), kind=KIND_F6SC)
+
+
+def test_f4sc_requires_32k_rom():
+    with pytest.raises(ValueError):
+        make_cart(jnp.zeros((16384,), dtype=jnp.uint8), kind=KIND_F4SC)
+
+
+def test_f6sc_ram_persists_across_bank_switch():
+    cart = make_cart(jnp.zeros((16384,), dtype=jnp.uint8), kind=KIND_F6SC)
+    cart_poke(cart, 0x1000 + 0x05, 0x42)
+    cart_peek(cart, 0x1FF7)             # bank 1
+    assert cart_peek(cart, 0x1080 + 0x05) == 0x42

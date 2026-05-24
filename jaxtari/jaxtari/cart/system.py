@@ -51,13 +51,26 @@ KIND_F8   = 2
 KIND_F6   = 3
 KIND_F4   = 4
 KIND_F8SC = 5     # P5b — F8 + 128 B on-cart RAM
+KIND_F6SC = 6     # P5b — F6 + 128 B on-cart RAM
+KIND_F4SC = 7     # P5b — F4 + 128 B on-cart RAM
 
 _SIZE_TO_KIND = {
     2048:  KIND_2K,
     4096:  KIND_4K,
     8192:  KIND_F8,         # F8SC is the same size; pass `kind=` to override
-    16384: KIND_F6,
-    32768: KIND_F4,
+    16384: KIND_F6,         # F6SC same — pass `kind=KIND_F6SC` to override
+    32768: KIND_F4,         # F4SC same — pass `kind=KIND_F4SC` to override
+}
+
+# F8SC / F6SC / F4SC all carry the 128 B on-cart RAM at $1000-$10FF.
+_SC_KINDS = frozenset({KIND_F8SC, KIND_F6SC, KIND_F4SC})
+
+# Map each SC kind back to its expected ROM size, used by `make_cart`
+# to reject silly inputs early ("KIND_F6SC requires 16384 bytes").
+_SC_EXPECTED_SIZE = {
+    KIND_F8SC: 8192,
+    KIND_F6SC: 16384,
+    KIND_F4SC: 32768,
 }
 
 # Bank-switch hotspot addresses within the 13-bit-masked cart window.
@@ -75,7 +88,9 @@ _DEFAULT_BANK = {
     KIND_F8:   1,
     KIND_F8SC: 1,
     KIND_F6:   3,
+    KIND_F6SC: 3,
     KIND_F4:   7,
+    KIND_F4SC: 7,
 }
 
 # F8SC on-cart RAM layout (P5b). 128 bytes, write at $1000-$107F and read
@@ -113,11 +128,13 @@ class Cart:
         # mutate per write, and we never need gradient flow through cart
         # RAM (SOFT mode doesn't yet model bank state at all — see
         # STATUS.md P7f-e).
-        self.ram = bytearray(_SC_RAM_BYTES) if kind == KIND_F8SC else bytearray(0)
+        self.ram = bytearray(_SC_RAM_BYTES) if kind in _SC_KINDS else bytearray(0)
 
     def __repr__(self) -> str:
-        names = {KIND_2K: "2K", KIND_4K: "4K", KIND_F8: "F8",
-                 KIND_F8SC: "F8SC", KIND_F6: "F6", KIND_F4: "F4"}
+        names = {KIND_2K: "2K", KIND_4K: "4K",
+                 KIND_F8: "F8", KIND_F8SC: "F8SC",
+                 KIND_F6: "F6", KIND_F6SC: "F6SC",
+                 KIND_F4: "F4", KIND_F4SC: "F4SC"}
         return (f"Cart({names[self.kind]}, "
                 f"rom_size={len(self.rom)}, bank={self.current_bank})")
 
@@ -140,9 +157,10 @@ def make_cart(rom: jnp.ndarray, *, kind: int | None = None) -> Cart:
             )
         kind = _SIZE_TO_KIND[n]
     else:
-        if kind == KIND_F8SC and n != 8192:
+        expected = _SC_EXPECTED_SIZE.get(kind)
+        if expected is not None and n != expected:
             raise ValueError(
-                f"KIND_F8SC requires an 8192-byte ROM (got {n}).")
+                f"kind {kind!r} requires a {expected}-byte ROM (got {n}).")
     if rom.dtype != jnp.uint8:
         rom = rom.astype(jnp.uint8)
     return Cart(kind=kind, rom=rom)
@@ -163,14 +181,14 @@ def cart_peek(cart: Cart, addr: int) -> int:
     if cart.kind == KIND_4K:
         return int(cart.rom[a & 0x0FFF])
 
-    # P5b — F8SC on-cart RAM dispatch. The read area at $1080-$10FF
-    # returns the 128-byte RAM buffer (mirrored every 128 bytes). The
-    # write area at $1000-$107F passes through to ROM on reads (real
-    # hardware blocks ROM here, but most software only *reads* from the
-    # read window — a value from the bank is the de-facto "open bus"
-    # behaviour Stella exposes). Hotspots fire only outside the RAM
-    # window.
-    if cart.kind == KIND_F8SC and (a & 0x1F80) == _SC_READ_BASE:
+    # P5b — F8SC / F6SC / F4SC on-cart RAM dispatch. The read area at
+    # $1080-$10FF returns the 128-byte RAM buffer (mirrored every 128
+    # bytes). The write area at $1000-$107F passes through to ROM on
+    # reads (real hardware blocks ROM here, but most software only
+    # *reads* from the read window — a value from the bank is the
+    # de-facto "open bus" behaviour Stella exposes). Hotspots fire
+    # only outside the RAM window.
+    if cart.kind in _SC_KINDS and (a & 0x1F80) == _SC_READ_BASE:
         return int(cart.ram[a & _SC_OFFSET_MASK])
 
     bank_offset = cart.current_bank * 0x1000
@@ -183,12 +201,13 @@ def cart_poke(cart: Cart, addr: int, value: int) -> None:
     """ROM is read-only, so the value is discarded. But hotspot accesses
     still fire on writes, switching the bank.
 
-    P5b — F8SC writes to the RAM-write area ($1000-$107F) store into
-    the 128-byte on-cart RAM buffer; writes elsewhere fall through to
-    the normal "ROM is read-only / hotspots might fire" path.
+    P5b — F8SC / F6SC / F4SC writes to the RAM-write area
+    ($1000-$107F) store into the 128-byte on-cart RAM buffer; writes
+    elsewhere fall through to the normal "ROM is read-only / hotspots
+    might fire" path.
     """
     a = addr & 0x1FFF
-    if cart.kind == KIND_F8SC and (a & 0x1F80) == _SC_WRITE_BASE:
+    if cart.kind in _SC_KINDS and (a & 0x1F80) == _SC_WRITE_BASE:
         cart.ram[a & _SC_OFFSET_MASK] = value & 0xFF
         return
     _maybe_switch_bank(cart, a)
@@ -199,12 +218,12 @@ def cart_poke(cart: Cart, addr: int, value: int) -> None:
 # --------------------------------------------------------------------------- #
 
 def _maybe_switch_bank(cart: Cart, masked_addr: int) -> None:
-    if cart.kind == KIND_F8 or cart.kind == KIND_F8SC:
+    if cart.kind in (KIND_F8, KIND_F8SC):
         if masked_addr in F8_HOTSPOTS:
             cart.current_bank = F8_HOTSPOTS[masked_addr]
-    elif cart.kind == KIND_F6:
+    elif cart.kind in (KIND_F6, KIND_F6SC):
         if masked_addr in F6_HOTSPOTS:
             cart.current_bank = F6_HOTSPOTS[masked_addr]
-    elif cart.kind == KIND_F4:
+    elif cart.kind in (KIND_F4, KIND_F4SC):
         if masked_addr in F4_HOTSPOTS:
             cart.current_bank = F4_HOTSPOTS[masked_addr]
