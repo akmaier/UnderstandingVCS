@@ -185,9 +185,12 @@ def main() -> int:
         console = _switches_apply(console, reset_pressed=False)
 
     # Capture writes AND (optionally) reads. Each row is
-    # ("W"|"R", pc, a, x, y, p, addr, value). Single-step the CPU so
-    # the PC + register snapshot at each event is bit-accurate.
-    rows: list[tuple[str, int, int, int, int, int, int, int]] = []
+    # ("W"|"R", pc, a, x, y, p, bus_state_before, addr, value).
+    # `bus_state_before` is the data_bus_state at event time — for
+    # reads this is what feeds the floating-bus OR; for writes it's
+    # what was on the bus just before the store. Single-step the CPU
+    # so the PC + register snapshot at each event is bit-accurate.
+    rows: list[tuple[str, int, int, int, int, int, int, int, int]] = []
     original_bus_poke = _bus_module._bus_poke
     original_bus_peek = _bus_module._bus_peek
 
@@ -199,6 +202,7 @@ def main() -> int:
                 ram_idx = addr_masked & 0x7F
                 if target_cells is None or ram_idx in target_cells:
                     rows.append(("W", pc_before, a, x, y, p,
+                                 int(bus.data_bus_state),
                                  ram_idx, value & 0xFF))
             return original_bus_poke(bus, addr, value)
         return traced
@@ -206,6 +210,7 @@ def main() -> int:
     def make_traced_peek(pc_before: int, a: int, x: int, y: int, p: int):
         def traced(bus, addr):
             addr_masked = addr & 0x1FFF
+            bus_state_before = int(bus.data_bus_state)
             value, new_bus = original_bus_peek(bus, addr)
             if args.reads:
                 # Only log TIA reads (A12=0, A7=0) and RIOT I/O reads
@@ -216,6 +221,7 @@ def main() -> int:
                                (addr_masked & 0x80) and (addr_masked & 0x200))
                 if is_tia or is_riot_io:
                     rows.append(("R", pc_before, a, x, y, p,
+                                 bus_state_before,
                                  addr_masked, value & 0xFF))
             return value, new_bus
         return traced
@@ -256,15 +262,15 @@ def main() -> int:
     if target_cells is not None:
         print(f"# write filter: cells = {sorted(target_cells)}")
     print()
-    print(f"{'op':>2s}  {'PC':>8s}  A    X    Y    P   {'addr':>5s}  {'val':>4s}  opcode")
-    print("-" * 95)
-    for kind, pc, a, x, y, p, addr, value in rows:
+    print(f"{'op':>2s}  {'PC':>8s}  A    X    Y    P   bus  {'addr':>5s}  {'val':>4s}  opcode")
+    print("-" * 100)
+    for kind, pc, a, x, y, p, bus_state, addr, value in rows:
         if kind == "W":
             disasm = _disasm(rom, pc)
         else:
             disasm = "(TIA/RIOT read)"
         print(f"  {kind}   ${pc:04X}  ${a:02X}  ${x:02X}  ${y:02X}  ${p:02X}  "
-              f"${addr:04X}  ${value:02X}  {disasm}")
+              f"${bus_state:02X}  ${addr:04X}  ${value:02X}  {disasm}")
     return 0
 
 
