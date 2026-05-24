@@ -426,11 +426,54 @@ def render_playfield_scanline(tia: TIAState) -> jnp.ndarray:
     return jnp.array(_playfield_pixels(tia), dtype=jnp.uint8)
 
 
+# --------------------------------------------------------------------------- #
+# P3g — NUSIZ multi-copy + 2×/4×-wide player scaling
+# --------------------------------------------------------------------------- #
+#
+# NUSIZ0 / NUSIZ1 low 3 bits encode the player layout (8 modes — match
+# xitari M_NUSIZ table). The high 2 bits (4-5) control the missile
+# *width* (1/2/4/8); player multi-copy follows the same low-nibble
+# pattern as its missile.
+#
+#   000  1 copy, 1× wide
+#   001  2 copies, 16-pixel spacing, 1× wide   ("close")
+#   010  2 copies, 32-pixel spacing, 1× wide   ("medium")
+#   011  3 copies, 16-pixel spacing, 1× wide
+#   100  2 copies, 64-pixel spacing, 1× wide   ("wide")
+#   101  1 copy, 2× wide   (double-sized player)
+#   110  3 copies, 32-pixel spacing, 1× wide
+#   111  1 copy, 4× wide   (quadruple-sized player)
+#
+# `_nusiz_player_layout` returns `(copy_offsets, scale)` so the same
+# helper drives both the rendering and the collision-set construction.
+
+_NUSIZ_PLAYER_LAYOUT = {
+    0b000: ((0,),                 1),
+    0b001: ((0, 16),              1),
+    0b010: ((0, 32),              1),
+    0b011: ((0, 16, 32),          1),
+    0b100: ((0, 64),              1),
+    0b101: ((0,),                 2),
+    0b110: ((0, 32, 64),          1),
+    0b111: ((0,),                 4),
+}
+
+
+def _nusiz_player_layout(nusiz: int) -> tuple[tuple[int, ...], int]:
+    """Decode NUSIZ low 3 bits into `(copy_offsets, scale)` where
+    `copy_offsets` are the per-copy X displacements from the sprite's
+    base position and `scale` is the per-bit pixel width (1/2/4)."""
+    return _NUSIZ_PLAYER_LAYOUT[nusiz & 0x07]
+
+
 def _overlay_player(pixels: list[int], tia: TIAState, player: int) -> None:
     """Paint player 0 or 1 onto `pixels` (mutated in place).
 
-    Single 1×-wide copy. NUSIZ multi-copy / 2×4× scaling is deferred to a
-    P3c follow-up or P3f. `pixels` must be a 160-element list.
+    P3g: respects NUSIZ low 3 bits — multi-copy (2 or 3 copies with
+    close/medium/wide spacing) and 2×/4× horizontal scaling for the
+    single-copy modes. The same NUSIZ value also drives the matching
+    missile via `_overlay_missile` and the collision-set computation
+    in `_object_pixel_sets`.
     """
     grp_reg = W_GRP0 if player == 0 else W_GRP1
     grp = int(tia.registers[grp_reg])
@@ -438,33 +481,44 @@ def _overlay_player(pixels: list[int], tia: TIAState, player: int) -> None:
         return  # nothing to draw
     color_reg = W_COLUP0 if player == 0 else W_COLUP1
     refp_reg = W_REFP0 if player == 0 else W_REFP1
+    nusiz_reg = W_NUSIZ0 if player == 0 else W_NUSIZ1
     color = int(tia.registers[color_reg])
     reflected = (int(tia.registers[refp_reg]) & 0x08) != 0
     x = tia.p0_x if player == 0 else tia.p1_x
+    copy_offsets, scale = _nusiz_player_layout(int(tia.registers[nusiz_reg]))
 
     # GRP is rendered with bit 7 as the LEFTMOST pixel by default. When
-    # REFP.D3 is set, the bit order is reversed.
-    for i in range(8):
-        bit_idx = i if reflected else (7 - i)
-        if (grp >> bit_idx) & 1:
-            px = (x + i) % 160
-            if 0 <= px < 160:
-                pixels[px] = color
+    # REFP.D3 is set, the bit order is reversed. Each of the 8 bits
+    # spans `scale` screen pixels; each of the (1, 2, or 3) copies is
+    # painted at `x + copy_offset`.
+    for copy_off in copy_offsets:
+        base = (x + copy_off) % 160
+        for i in range(8):
+            bit_idx = i if reflected else (7 - i)
+            if (grp >> bit_idx) & 1:
+                for k in range(scale):
+                    px = (base + i * scale + k) % 160
+                    pixels[px] = color
 
 
 def _overlay_missile(pixels: list[int], tia: TIAState, missile: int) -> None:
-    """Paint missile 0 or 1 onto `pixels`. Width is 1/2/4/8 pixels from
-    NUSIZ bits 4-5. Missile uses the same colour as its associated player.
+    """Paint missile 0 or 1 onto `pixels`. NUSIZ low 3 bits select
+    multi-copy + spacing (same layout as the matching player); NUSIZ
+    bits 4-5 set each copy's *width* (1/2/4/8 pixels). Missile uses
+    the same colour as its associated player.
     """
     enam_reg = W_ENAM0 if missile == 0 else W_ENAM1
     if (int(tia.registers[enam_reg]) & 0x02) == 0:
         return  # disabled
     color = int(tia.registers[W_COLUP0 if missile == 0 else W_COLUP1])
     nusiz = int(tia.registers[W_NUSIZ0 if missile == 0 else W_NUSIZ1])
-    size = 1 << ((nusiz >> 4) & 0x03)
+    width = 1 << ((nusiz >> 4) & 0x03)
+    copy_offsets, _ = _nusiz_player_layout(nusiz)
     x = tia.m0_x if missile == 0 else tia.m1_x
-    for i in range(size):
-        pixels[(x + i) % 160] = color
+    for copy_off in copy_offsets:
+        base = (x + copy_off) % 160
+        for i in range(width):
+            pixels[(base + i) % 160] = color
 
 
 def _overlay_ball(pixels: list[int], tia: TIAState) -> None:
@@ -574,28 +628,41 @@ def _object_pixel_sets(tia: TIAState) -> dict[str, set[int]]:
         for i in range(size):
             bl.add((tia.bl_x + i) % 160)
 
-    # Players
-    def _player_set(grp_reg: int, refp_reg: int, x: int) -> set[int]:
+    # Players — respect NUSIZ multi-copy + scale (P3g) so collisions
+    # involving the 2nd/3rd copies and the wide modes are detected.
+    def _player_set(grp_reg: int, refp_reg: int, nusiz_reg: int, x: int) -> set[int]:
         grp = int(tia.registers[grp_reg])
         if not grp:
             return set()
         reflected = (int(tia.registers[refp_reg]) & 0x08) != 0
+        copy_offsets, scale = _nusiz_player_layout(int(tia.registers[nusiz_reg]))
         out: set[int] = set()
-        for i in range(8):
-            bit_idx = i if reflected else (7 - i)
-            if (grp >> bit_idx) & 1:
-                out.add((x + i) % 160)
+        for copy_off in copy_offsets:
+            base = (x + copy_off) % 160
+            for i in range(8):
+                bit_idx = i if reflected else (7 - i)
+                if (grp >> bit_idx) & 1:
+                    for k in range(scale):
+                        out.add((base + i * scale + k) % 160)
         return out
 
-    p0 = _player_set(W_GRP0, W_REFP0, tia.p0_x)
-    p1 = _player_set(W_GRP1, W_REFP1, tia.p1_x)
+    p0 = _player_set(W_GRP0, W_REFP0, W_NUSIZ0, tia.p0_x)
+    p1 = _player_set(W_GRP1, W_REFP1, W_NUSIZ1, tia.p1_x)
 
-    # Missiles
+    # Missiles — same multi-copy from NUSIZ low 3 bits, width from
+    # NUSIZ bits 4-5.
     def _missile_set(enam_reg: int, nusiz_reg: int, x: int) -> set[int]:
         if (int(tia.registers[enam_reg]) & 0x02) == 0:
             return set()
-        size = 1 << ((int(tia.registers[nusiz_reg]) >> 4) & 0x03)
-        return {(x + i) % 160 for i in range(size)}
+        nusiz = int(tia.registers[nusiz_reg])
+        width = 1 << ((nusiz >> 4) & 0x03)
+        copy_offsets, _ = _nusiz_player_layout(nusiz)
+        out: set[int] = set()
+        for copy_off in copy_offsets:
+            base = (x + copy_off) % 160
+            for i in range(width):
+                out.add((base + i) % 160)
+        return out
 
     m0 = _missile_set(W_ENAM0, W_NUSIZ0, tia.m0_x)
     m1 = _missile_set(W_ENAM1, W_NUSIZ1, tia.m1_x)

@@ -126,19 +126,34 @@ def _playfield_mask(pf0, pf1, pf2, ctrlpf) -> jnp.ndarray:
     return jnp.concatenate([left, right])         # (160,)
 
 
-def _player_mask(grp, refp, xpos) -> jnp.ndarray:
-    """A single 8-pixel player sprite expanded to a `(160,)` float32 mask
-    (1.0 where the sprite paints a pixel).
+# P3g — NUSIZ multi-copy + 2×/4×-wide player scaling.
+# Mirror of jaxtari.tia.system._NUSIZ_PLAYER_LAYOUT; kept inline here to
+# avoid a SOFT-side dependency on HARD-mode internals.
+#
+#   000  1 copy, 1× wide
+#   001  2 copies, 16-pixel spacing, 1× wide
+#   010  2 copies, 32-pixel spacing, 1× wide
+#   011  3 copies, 16-pixel spacing, 1× wide
+#   100  2 copies, 64-pixel spacing, 1× wide
+#   101  1 copy, 2× wide
+#   110  3 copies, 32-pixel spacing, 1× wide
+#   111  1 copy, 4× wide
+_NUSIZ_PLAYER_LAYOUT = [
+    ((0,),         1),
+    ((0, 16),      1),
+    ((0, 32),      1),
+    ((0, 16, 32),  1),
+    ((0, 64),      1),
+    ((0,),         2),
+    ((0, 32, 64),  1),
+    ((0,),         4),
+]
 
-    GRP bit 7 is the leftmost sprite pixel by default; when REFP bit 3
-    (0x08) is set the 8-bit order is reversed. The sprite is placed at
-    screen column `xpos`, wrapping mod 160 — matching the HARD
-    `_overlay_player`.
 
-    The colour gradient flows (the caller multiplies this mask by
-    COLUP*); the GRP *pattern* and the integer placement are integer-
-    extracted, so their gradient breaks — same split as the playfield.
-    """
+def _player_mask_single(grp, refp, xpos, scale) -> jnp.ndarray:
+    """One copy of a player sprite at `xpos` with each bit replicated
+    `scale` times (1/2/4 — drives the NUSIZ double / quad modes).
+    Returns a `(160,)` float32 mask."""
     grp_i     = grp.astype(jnp.int32)
     reflected = (refp.astype(jnp.int32) & 0x08) != 0
 
@@ -149,22 +164,41 @@ def _player_mask(grp, refp, xpos) -> jnp.ndarray:
         bits.append(jnp.where(reflected, refl, normal))
     bits8 = jnp.stack(bits).astype(jnp.float32)            # (8,)
 
-    x       = xpos.astype(jnp.int32)
-    cols    = (x + jnp.arange(8)) % SCREEN_WIDTH           # (8,) screen columns
-    onehots = jax.nn.one_hot(cols, SCREEN_WIDTH, dtype=jnp.float32)  # (8,160)
-    return bits8 @ onehots                                 # (160,)
+    x        = xpos.astype(jnp.int32)
+    # Per-pixel weights: bit i contributes `scale` adjacent pixels.
+    pix      = jnp.arange(8 * scale)
+    bit_idx  = pix // scale                                 # (8*scale,)
+    weights  = bits8[bit_idx]                               # (8*scale,)
+    cols     = (x + pix) % SCREEN_WIDTH                     # (8*scale,)
+    onehots  = jax.nn.one_hot(cols, SCREEN_WIDTH, dtype=jnp.float32)
+    return weights @ onehots                                # (160,)
 
 
-def _block_mask(xpos, size_reg, enable_reg) -> jnp.ndarray:
-    """A missile / ball — a solid block of `1 << ((size_reg >> 4) & 3)`
-    pixels (width 1/2/4/8) at column `xpos`, painted only when
-    `enable_reg` bit 1 is set. Returns a `(160,)` float32 mask.
+def _player_mask(grp, refp, xpos, nusiz) -> jnp.ndarray:
+    """A player sprite expanded to a `(160,)` float32 mask, with
+    NUSIZ-driven multi-copy + 2×/4× scaling (P3g).
 
-    Used for both missiles (size from NUSIZ bits 4-5, enable from ENAM)
-    and the ball (size from CTRLPF bits 4-5, enable from ENABL). Width,
-    placement and the enable bit are integer-extracted — the gradient
-    payload is the colour the caller multiplies in.
+    All 8 NUSIZ modes are evaluated unconditionally and blended by the
+    integer-extracted `nusiz & 7` — same pattern as the CTRLPF.D2
+    priority swap. Per-mode masks are summed across copies and clipped
+    to [0, 1] so overlapping pixels stay binary.
     """
+    nusiz_low = nusiz.astype(jnp.int32) & 0x07
+    per_mode = []
+    for offsets, scale in _NUSIZ_PLAYER_LAYOUT:
+        m = jnp.zeros(SCREEN_WIDTH, dtype=jnp.float32)
+        for off in offsets:
+            m = m + _player_mask_single(grp, refp, xpos + off, scale)
+        per_mode.append(jnp.clip(m, 0.0, 1.0))
+    stack = jnp.stack(per_mode)                                  # (8, 160)
+    sel   = jax.nn.one_hot(nusiz_low, 8, dtype=jnp.float32)      # (8,)
+    return sel @ stack                                           # (160,)
+
+
+def _block_mask_single(xpos, size_reg, enable_reg) -> jnp.ndarray:
+    """One copy of a missile / ball block — `1 << ((size_reg >> 4) & 3)`
+    pixels wide at column `xpos`, enabled by `enable_reg` bit 1.
+    `(160,)` float32 mask."""
     size_log2 = (size_reg.astype(jnp.int32) >> 4) & 0x03
     width     = 1 << size_log2                                  # 1/2/4/8
     enabled   = ((enable_reg.astype(jnp.int32) >> 1) & 1).astype(jnp.float32)
@@ -172,9 +206,30 @@ def _block_mask(xpos, size_reg, enable_reg) -> jnp.ndarray:
     x        = xpos.astype(jnp.int32)
     slots    = jnp.arange(8)
     in_block = (slots < width).astype(jnp.float32)              # (8,)
-    cols     = (x + slots) % SCREEN_WIDTH                       # (8,)
-    onehots  = jax.nn.one_hot(cols, SCREEN_WIDTH, dtype=jnp.float32)  # (8,160)
-    return enabled * (in_block @ onehots)                       # (160,)
+    cols     = (x + slots) % SCREEN_WIDTH
+    onehots  = jax.nn.one_hot(cols, SCREEN_WIDTH, dtype=jnp.float32)
+    return enabled * (in_block @ onehots)
+
+
+def _block_mask(xpos, size_reg, enable_reg, nusiz=None) -> jnp.ndarray:
+    """A missile / ball block with optional NUSIZ-driven multi-copy.
+
+    The ball ignores `nusiz` (it doesn't share NUSIZ; its sizing comes
+    from CTRLPF passed in via `size_reg`). Missiles pass NUSIZ so the
+    same multi-copy / spacing the player uses applies. P3g.
+    """
+    if nusiz is None:
+        return _block_mask_single(xpos, size_reg, enable_reg)
+    nusiz_low = nusiz.astype(jnp.int32) & 0x07
+    per_mode = []
+    for offsets, _ in _NUSIZ_PLAYER_LAYOUT:
+        m = jnp.zeros(SCREEN_WIDTH, dtype=jnp.float32)
+        for off in offsets:
+            m = m + _block_mask_single(xpos + off, size_reg, enable_reg)
+        per_mode.append(jnp.clip(m, 0.0, 1.0))
+    stack = jnp.stack(per_mode)
+    sel   = jax.nn.one_hot(nusiz_low, 8, dtype=jnp.float32)
+    return sel @ stack
 
 
 def _object_masks(bus):
@@ -188,18 +243,28 @@ def _object_masks(bus):
                          soft_ram_peek(bus.ram, W_PF1),
                          soft_ram_peek(bus.ram, W_PF2),
                          ctrlpf)
+    nusiz0 = soft_ram_peek(bus.ram, W_NUSIZ0)
+    nusiz1 = soft_ram_peek(bus.ram, W_NUSIZ1)
     p0 = _player_mask(soft_ram_peek(bus.ram, W_GRP0),
                       soft_ram_peek(bus.ram, W_REFP0),
-                      soft_ram_peek(bus.ram, W_RESP0))
+                      soft_ram_peek(bus.ram, W_RESP0),
+                      nusiz0)
     p1 = _player_mask(soft_ram_peek(bus.ram, W_GRP1),
                       soft_ram_peek(bus.ram, W_REFP1),
-                      soft_ram_peek(bus.ram, W_RESP1))
+                      soft_ram_peek(bus.ram, W_RESP1),
+                      nusiz1)
+    # P3g: missiles inherit NUSIZ low 3 bits for multi-copy; the size
+    # bits (4-5) come from the same NUSIZ register passed as size_reg.
     m0 = _block_mask(soft_ram_peek(bus.ram, W_RESM0),
-                     soft_ram_peek(bus.ram, W_NUSIZ0),
-                     soft_ram_peek(bus.ram, W_ENAM0))
+                     nusiz0,
+                     soft_ram_peek(bus.ram, W_ENAM0),
+                     nusiz0)
     m1 = _block_mask(soft_ram_peek(bus.ram, W_RESM1),
-                     soft_ram_peek(bus.ram, W_NUSIZ1),
-                     soft_ram_peek(bus.ram, W_ENAM1))
+                     nusiz1,
+                     soft_ram_peek(bus.ram, W_ENAM1),
+                     nusiz1)
+    # Ball uses CTRLPF for sizing and does NOT participate in NUSIZ
+    # multi-copy (its layout is one solid block).
     bl = _block_mask(soft_ram_peek(bus.ram, W_RESBL),
                      ctrlpf,
                      soft_ram_peek(bus.ram, W_ENABL))
