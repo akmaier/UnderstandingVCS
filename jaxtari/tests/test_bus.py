@@ -204,20 +204,24 @@ def test_bus_tia_read_or_noise_into_undriven_bits():
     assert value == 0x08, f"expected noise bits 0x08, got {value:#04x}"
 
 
-def test_bus_tia_read_full_noise_on_unused_register():
-    """Reg $0F has no driven bits — TIA returns full floating-bus byte."""
+def test_bus_tia_read_low_6_bits_of_noise_on_unused_register():
+    """Reg $0F has no driven bits — TIA returns the low 6 bits of the
+    floating-bus byte. xitari does `noise = getDataBusState() & 0x3F`
+    unconditionally; bits 6 and 7 of un-driven reads read as 0
+    (the TIA bus simply doesn't drive them, and the floating-bus
+    quirk only applies up to bit 5)."""
     bus = initial_bus()
     bus = poke(bus, 0x0080, 0xFE)
     value, _ = peek(bus, 0x000F)
-    assert value == 0xFE
+    assert value == 0xFE & 0x3F     # = 0x3E
 
 
 def test_bus_inpt4_d7_high_with_noise():
-    """INPT4 (reg $0C, driven mask $80): D7 from trigger latch, D6-D0
-    from noise. Default INPT init is 0x80 → trigger up, so result is
-    0x80 | low7(noise)."""
+    """INPT4 (reg $0C, driven mask $80): D7 from trigger latch, D5-D0
+    from low-6 noise (bit 6 reads as 0 — undriven, not part of the
+    floating-bus range). Default INPT init is 0x80 → trigger idle, so
+    result is 0x80 | low6(noise)."""
     bus = initial_bus()
-    bus = poke(bus, 0x0080, 0x73)       # noise = 0x73
+    bus = poke(bus, 0x0080, 0x73)       # noise = 0x73 → low6 = 0x33
     value, _ = peek(bus, 0x000C)
-    # D7 driven (1, trigger idle) + D6..D0 from noise (0x73 & 0x7F = 0x73).
-    assert value == 0x80 | (0x73 & 0x7F)
+    assert value == 0x80 | (0x73 & 0x3F)  # = 0x80 | 0x33 = 0xB3

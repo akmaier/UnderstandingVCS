@@ -142,20 +142,44 @@ def poke(world: World, addr: int, value: int) -> World:
 # --------------------------------------------------------------------------- #
 
 # TIA-read driven-bits mask: which bits the TIA actively drives. The
-# other bits float and resolve to the last data-bus byte. Matches
-# xitari's TIA::peek (and the real 1A05 hardware).
+# **noise** (floating-bus contribution) is *always* `data_bus_state &
+# 0x3F` — only the low 6 bits float, never bits 6 or 7 (xitari does
+# `noise = mySystem->getDataBusState() & 0x3F` unconditionally before
+# the per-register OR). Bits the TIA neither drives nor lets float
+# (e.g. D6 of CXBLPF / D6 of INPT) read as 0.
 #
-#   CXM0P/CXM1P/CXP0FB/CXP1FB/CXM0FB/CXM1FB (regs 0..5): D7+D6 driven
-#   CXBLPF (reg 6):                                       D7 only driven
-#   CXPPMM (reg 7):                                       D7+D6 driven
-#   INPT0..INPT5 (regs 8..13):                            D7 only driven
-#   regs 14, 15:                                          fully float
+# Driven masks:
+#   CXM0P/CXM1P/CXP0FB/CXP1FB/CXM0FB/CXM1FB (regs 0..5): D7+D6 (0xC0)
+#   CXBLPF (reg 6):                                       D7 only (0x80)
+#   CXPPMM (reg 7):                                       D7+D6 (0xC0)
+#   INPT0..INPT3 (regs 8..11): paddle pots — D7 driven from the
+#                              stored value. Default is $80 (centred),
+#                              matching xitari's `0x80 | noise`
+#                              charging-cap branch. The proper xitari
+#                              `r == maximumResistance` branch (which
+#                              returns just `noise` for a Joystick
+#                              controller) needs a dump-pot timing
+#                              model. PXC1-x round 4 confirmed a
+#                              simple driven=0 change *worsens* the
+#                              gap (10→15 bytes) so the full model is
+#                              needed, not just the mask change.
+#   INPT4..INPT5 (regs 12..13): triggers — D7 driven (mask 0x80)
+#   regs 14, 15:                                          nothing (0x00)
 _TIA_PEEK_DRIVEN_MASK = (
     0xC0, 0xC0, 0xC0, 0xC0, 0xC0, 0xC0,    # collisions 0..5
     0x80, 0xC0,                              # CXBLPF, CXPPMM
-    0x80, 0x80, 0x80, 0x80, 0x80, 0x80,      # INPT0..5
+    0x80, 0x80, 0x80, 0x80,                  # INPT0..3 (paddle D7 from value)
+    0x80, 0x80,                              # INPT4, INPT5 (trigger D7 driven)
     0x00, 0x00,                              # unused regs $0E, $0F
 )
+
+# Noise mask — the low 6 bits of `data_bus_state` always make it to
+# the TIA read, no matter which register. Bits 6 and 7 are either
+# driven (per the per-register driven mask) or read as 0. This is
+# a tighter / more-faithful PXC1-x round 3 fix than the original
+# "noise into all un-driven bits" — matches xitari's
+# `noise = getDataBusState() & 0x3F` unconditional masking.
+_TIA_NOISE_MASK = 0x3F
 
 
 def _bus_peek(bus: Bus, addr: int):
@@ -177,13 +201,16 @@ def _bus_peek(bus: Bus, addr: int):
         value = cart_peek(bus.cart, addr_masked)
         return value, bus._replace(data_bus_state=value & 0xFF)
     if not (addr_masked & 0x80):
-        # TIA region (A7=0). Floating-bus quirk applies — OR noise into
-        # the un-driven bits, then store the FINAL returned value as
-        # the new bus state (xitari sets myDataBusState = result of
-        # the device peek).
+        # TIA region (A7=0). Floating-bus quirk applies — OR noise
+        # (always low 6 bits of `data_bus_state`) into the bits the
+        # TIA leaves un-driven. Bits the TIA neither drives nor lets
+        # float (e.g. D6 of CXBLPF / INPT) read as 0. xitari does
+        # `noise = mySystem->getDataBusState() & 0x3F` unconditionally
+        # before the per-register OR; we mirror that here. The final
+        # returned value is stored back as the new data-bus state.
         raw = tia_peek(bus.tia, addr_masked)
         mask = _TIA_PEEK_DRIVEN_MASK[addr_masked & 0x0F]
-        noise = bus.data_bus_state & (~mask & 0xFF)
+        noise = bus.data_bus_state & _TIA_NOISE_MASK
         value = ((raw & mask) | noise) & 0xFF
         return value, bus._replace(data_bus_state=value)
     if addr_masked & 0x200:

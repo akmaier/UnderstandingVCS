@@ -1417,17 +1417,18 @@ end
         @test v == 0x08
     end
 
-    @testset "TIA reg \$0F returns full floating-bus byte" begin
+    @testset "TIA reg \$0F returns low-6 bits of the floating-bus byte" begin
         bus = initial_bus()
         poke!(bus, 0x0080, 0xFE)
-        @test peek(bus, 0x000F) == 0xFE
+        # xitari masks noise unconditionally to 0x3F, bits 6/7 read 0.
+        @test peek(bus, 0x000F) == (0xFE & 0x3F)   # = 0x3E
     end
 
-    @testset "INPT4 returns D7 driven + D6-D0 noise" begin
+    @testset "INPT4 returns D7 driven + D5-D0 noise (D6 = 0)" begin
         bus = initial_bus()
         poke!(bus, 0x0080, 0x73)
         v = peek(bus, 0x000C)
-        @test v == (0x80 | (0x73 & 0x7F))
+        @test v == (0x80 | (0x73 & 0x3F))   # = 0x80 | 0x33 = 0xB3
     end
 
 end

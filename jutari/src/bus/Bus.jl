@@ -74,20 +74,26 @@ end
 # --------------------------------------------------------------------------- #
 
 # TIA-read driven-bits mask — which bits the TIA actively drives. The
-# other bits float and resolve to the last data-bus byte. Matches
-# xitari's TIA::peek (and the real 1A05 hardware). 1-indexed for Julia.
+# **noise** (floating-bus contribution) is always `data_bus_state &
+# 0x3F` — only the low 6 bits float, never bits 6 or 7 (xitari does
+# `noise = mySystem->getDataBusState() & 0x3F` unconditionally before
+# the per-register OR). Bits the TIA neither drives nor lets float
+# (e.g. D6 of CXBLPF / D6 of INPT) read as 0. 1-indexed for Julia.
 #
 #   CXM0P/CXM1P/CXP0FB/CXP1FB/CXM0FB/CXM1FB (regs 0..5): D7+D6 driven (0xC0)
 #   CXBLPF (reg 6):                                       D7 only      (0x80)
 #   CXPPMM (reg 7):                                       D7+D6 driven (0xC0)
 #   INPT0..INPT5 (regs 8..13):                            D7 only      (0x80)
-#   regs 14, 15:                                          fully float  (0x00)
+#   regs 14, 15:                                          nothing      (0x00)
 const _TIA_PEEK_DRIVEN_MASK = (
     0xC0, 0xC0, 0xC0, 0xC0, 0xC0, 0xC0,
     0x80, 0xC0,
     0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
     0x00, 0x00,
 )
+
+# Noise is always low 6 bits of the data bus, masked unconditionally.
+const _TIA_NOISE_MASK = UInt8(0x3F)
 
 """
     peek(world, addr) -> UInt8
@@ -113,7 +119,7 @@ on every read. For TIA reads, the un-driven bits are taken from the
     if (a & 0x80) == 0
         raw = tia_peek(bus.tia, a)               # TIA register read
         mask = UInt8(_TIA_PEEK_DRIVEN_MASK[(a & 0x0F) + 1])
-        noise = bus.data_bus_state & UInt8(~mask & 0xFF)
+        noise = bus.data_bus_state & _TIA_NOISE_MASK
         v = UInt8(((raw & mask) | noise) & 0xFF)
         bus.data_bus_state = v
         return v
