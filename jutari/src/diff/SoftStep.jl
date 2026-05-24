@@ -1263,10 +1263,28 @@ function _func_bus_write(bus::SoftBus, addr::Real, value::Real)
 end
 
 
-# --- Functional handlers (P7b core + common P7c-a) -------------------------- #
+# --- Functional handlers — full 151-opcode coverage (P7e-x extension) ------ #
 #
 # Every handler returns (new_state, new_bus). The naming matches the
-# mutating handlers but with no `!`.
+# mutating handlers but with no `!`. The extension fills in everything
+# the mutating `_HANDLERS` table covers — load/store/transfer (every
+# mode), ADC/SBC (binary + BCD), AND/ORA/EOR, CMP/CPX/CPY, BIT, ASL/LSR/
+# ROL/ROR (acc + 4 memory modes), 8 conditional branches, JMP indirect,
+# JSR / RTS, PHA / PHP / PLA / PLP, all 7 status-flag opcodes, INC/DEC
+# memory + INX/INY/DEX/DEY, RTI. The full documented NMOS set + USBC
+# ($EB) alias.
+#
+# Implementation notes:
+#   * `_func_bus_write` returns a new SoftBus (no mutation), so RMW
+#     handlers thread the bus through `(state, bus) → (s', b')` cleanly.
+#   * `_func_push8` / `_func_pop8` are the stack helpers (also pure).
+#   * `Int(...)` casts inside handlers break the gradient at structural
+#     positions (same convention as the mutating side) — flag bits used
+#     by branches and conditional flags. The float-flag mirrors needed
+#     for full gradient through branches are jaxtari's P7c-dx; jutari's
+#     equivalent lands as a follow-up to this extension.
+#   * Every handler keeps the same cycle counts and PC advance as its
+#     mutating sibling (forward parity with `soft_step!`).
 
 _func_default(state, bus) = update_state(state; PC=state.PC + 1f0,
                                                 cycles=state.cycles + 2f0), bus
@@ -1276,7 +1294,8 @@ _func_nop(state, bus)     = update_state(state; PC=state.PC + 1f0,
 
 function _func_brk(state, bus)
     # End-of-trace sentinel (consistent with `_branch_brk!`'s historic
-    # P7b role — full BRK→IRQ sequence is part of the per-opcode TODO).
+    # P7b role — full BRK→IRQ sequence is the next deferral after this
+    # extension).
     return update_state(state; cycles=state.cycles + 7f0), bus
 end
 
@@ -1285,39 +1304,62 @@ function _func_jmp_abs(state, bus)
     return update_state(state; PC=new_pc, cycles=state.cycles + 3f0), bus
 end
 
+# --- Load / store helpers --------------------------------------------------- #
+
+# Reads through the functional bus dispatch.
+@inline _func_read_for_mode(state, bus, mode::Symbol) =
+    mode === :imm   ? _operand_byte(bus, state.PC + 1f0) :
+    mode === :zp    ? _func_bus_read(bus, _addr_zp(state, bus)) :
+    mode === :zp_x  ? _func_bus_read(bus, _addr_zp_x(state, bus)) :
+    mode === :zp_y  ? _func_bus_read(bus, _addr_zp_y(state, bus)) :
+    mode === :abs   ? _func_bus_read(bus, _addr_abs(state, bus)) :
+    mode === :abs_x ? _func_bus_read(bus, _addr_abs_x(state, bus)) :
+    mode === :abs_y ? _func_bus_read(bus, _addr_abs_y(state, bus)) :
+    mode === :ind_x ? _func_bus_read(bus, _addr_ind_x(state, bus)) :
+    mode === :ind_y ? _func_bus_read(bus, _addr_ind_y(state, bus)) :
+    error("_func_read_for_mode: unknown mode $mode")
+
 # Load helpers — register := value; N/Z update; PC advance; cycle bump.
 function _func_load(state, bus, reg::Symbol, value::Real,
                     instr_len::Real, cycles::Real)
     new_p = _set_nz(state.P, value)
-    nt = (A=state.A, X=state.X, Y=state.Y)
-    new_reg_values = NamedTuple{(:A, :X, :Y)}((
-        reg == :A ? Float32(value) : nt.A,
-        reg == :X ? Float32(value) : nt.X,
-        reg == :Y ? Float32(value) : nt.Y))
+    nt = (A=state.A, X=state.X, Y=state.Y, SP=state.SP)
+    new_reg_values = NamedTuple{(:A, :X, :Y, :SP)}((
+        reg == :A  ? Float32(value) : nt.A,
+        reg == :X  ? Float32(value) : nt.X,
+        reg == :Y  ? Float32(value) : nt.Y,
+        reg == :SP ? Float32(value) : nt.SP))
     return update_state(state;
         A=new_reg_values.A, X=new_reg_values.X, Y=new_reg_values.Y,
-        P=new_p,
+        SP=new_reg_values.SP, P=new_p,
         PC=state.PC + Float32(instr_len),
         cycles=state.cycles + Float32(cycles),
     ), bus
 end
 
-_func_lda_imm(state, bus) = _func_load(state, bus, :A,
-    _operand_byte(bus, state.PC + 1f0), 2, 2)
-_func_lda_zp(state, bus)  = _func_load(state, bus, :A,
-    _func_bus_read(bus, _addr_zp(state, bus)), 2, 3)
-_func_lda_abs(state, bus) = _func_load(state, bus, :A,
-    _func_bus_read(bus, _addr_abs(state, bus)), 3, 4)
+# LDA (all 8 modes)
+_func_lda_imm(state, bus)   = _func_load(state, bus, :A, _func_read_for_mode(state, bus, :imm),   2, 2)
+_func_lda_zp(state, bus)    = _func_load(state, bus, :A, _func_read_for_mode(state, bus, :zp),    2, 3)
+_func_lda_zp_x(state, bus)  = _func_load(state, bus, :A, _func_read_for_mode(state, bus, :zp_x),  2, 4)
+_func_lda_abs(state, bus)   = _func_load(state, bus, :A, _func_read_for_mode(state, bus, :abs),   3, 4)
+_func_lda_abs_x(state, bus) = _func_load(state, bus, :A, _func_read_for_mode(state, bus, :abs_x), 3, 4)
+_func_lda_abs_y(state, bus) = _func_load(state, bus, :A, _func_read_for_mode(state, bus, :abs_y), 3, 4)
+_func_lda_ind_x(state, bus) = _func_load(state, bus, :A, _func_read_for_mode(state, bus, :ind_x), 2, 6)
+_func_lda_ind_y(state, bus) = _func_load(state, bus, :A, _func_read_for_mode(state, bus, :ind_y), 2, 5)
 
-_func_ldx_imm(state, bus) = _func_load(state, bus, :X,
-    _operand_byte(bus, state.PC + 1f0), 2, 2)
-_func_ldx_zp(state, bus)  = _func_load(state, bus, :X,
-    _func_bus_read(bus, _addr_zp(state, bus)), 2, 3)
+# LDX (5 modes: imm/zp/zp,Y/abs/abs,Y)
+_func_ldx_imm(state, bus)   = _func_load(state, bus, :X, _func_read_for_mode(state, bus, :imm),   2, 2)
+_func_ldx_zp(state, bus)    = _func_load(state, bus, :X, _func_read_for_mode(state, bus, :zp),    2, 3)
+_func_ldx_zp_y(state, bus)  = _func_load(state, bus, :X, _func_read_for_mode(state, bus, :zp_y),  2, 4)
+_func_ldx_abs(state, bus)   = _func_load(state, bus, :X, _func_read_for_mode(state, bus, :abs),   3, 4)
+_func_ldx_abs_y(state, bus) = _func_load(state, bus, :X, _func_read_for_mode(state, bus, :abs_y), 3, 4)
 
-_func_ldy_imm(state, bus) = _func_load(state, bus, :Y,
-    _operand_byte(bus, state.PC + 1f0), 2, 2)
-_func_ldy_zp(state, bus)  = _func_load(state, bus, :Y,
-    _func_bus_read(bus, _addr_zp(state, bus)), 2, 3)
+# LDY (5 modes: imm/zp/zp,X/abs/abs,X)
+_func_ldy_imm(state, bus)   = _func_load(state, bus, :Y, _func_read_for_mode(state, bus, :imm),   2, 2)
+_func_ldy_zp(state, bus)    = _func_load(state, bus, :Y, _func_read_for_mode(state, bus, :zp),    2, 3)
+_func_ldy_zp_x(state, bus)  = _func_load(state, bus, :Y, _func_read_for_mode(state, bus, :zp_x),  2, 4)
+_func_ldy_abs(state, bus)   = _func_load(state, bus, :Y, _func_read_for_mode(state, bus, :abs),   3, 4)
+_func_ldy_abs_x(state, bus) = _func_load(state, bus, :Y, _func_read_for_mode(state, bus, :abs_x), 3, 4)
 
 # Store helpers — no flag changes.
 function _func_store(state, bus, addr::Real, value::Real,
@@ -1329,20 +1371,30 @@ function _func_store(state, bus, addr::Real, value::Real,
     ), new_bus
 end
 
-_func_sta_zp(state, bus)  = _func_store(state, bus, _addr_zp(state, bus),
-                                          state.A, 2, 3)
-_func_sta_abs(state, bus) = _func_store(state, bus, _addr_abs(state, bus),
-                                          state.A, 3, 4)
-_func_stx_zp(state, bus)  = _func_store(state, bus, _addr_zp(state, bus),
-                                          state.X, 2, 3)
-_func_sty_zp(state, bus)  = _func_store(state, bus, _addr_zp(state, bus),
-                                          state.Y, 2, 3)
+# STA (7 modes)
+_func_sta_zp(state, bus)    = _func_store(state, bus, _addr_zp(state, bus),    state.A, 2, 3)
+_func_sta_zp_x(state, bus)  = _func_store(state, bus, _addr_zp_x(state, bus),  state.A, 2, 4)
+_func_sta_abs(state, bus)   = _func_store(state, bus, _addr_abs(state, bus),   state.A, 3, 4)
+_func_sta_abs_x(state, bus) = _func_store(state, bus, _addr_abs_x(state, bus), state.A, 3, 5)
+_func_sta_abs_y(state, bus) = _func_store(state, bus, _addr_abs_y(state, bus), state.A, 3, 5)
+_func_sta_ind_x(state, bus) = _func_store(state, bus, _addr_ind_x(state, bus), state.A, 2, 6)
+_func_sta_ind_y(state, bus) = _func_store(state, bus, _addr_ind_y(state, bus), state.A, 2, 6)
+
+# STX (3 modes)
+_func_stx_zp(state, bus)    = _func_store(state, bus, _addr_zp(state, bus),    state.X, 2, 3)
+_func_stx_zp_y(state, bus)  = _func_store(state, bus, _addr_zp_y(state, bus),  state.X, 2, 4)
+_func_stx_abs(state, bus)   = _func_store(state, bus, _addr_abs(state, bus),   state.X, 3, 4)
+
+# STY (3 modes)
+_func_sty_zp(state, bus)    = _func_store(state, bus, _addr_zp(state, bus),    state.Y, 2, 3)
+_func_sty_zp_x(state, bus)  = _func_store(state, bus, _addr_zp_x(state, bus),  state.Y, 2, 4)
+_func_sty_abs(state, bus)   = _func_store(state, bus, _addr_abs(state, bus),   state.Y, 3, 4)
 
 # Transfers (TAX/TAY/TXA/TYA/TSX touch N/Z; TXS does not).
-_func_tax(state, bus) = _func_load(state, bus, :X, state.A, 1, 2)
-_func_tay(state, bus) = _func_load(state, bus, :Y, state.A, 1, 2)
-_func_txa(state, bus) = _func_load(state, bus, :A, state.X, 1, 2)
-_func_tya(state, bus) = _func_load(state, bus, :A, state.Y, 1, 2)
+_func_tax(state, bus) = _func_load(state, bus, :X, state.A,  1, 2)
+_func_tay(state, bus) = _func_load(state, bus, :Y, state.A,  1, 2)
+_func_txa(state, bus) = _func_load(state, bus, :A, state.X,  1, 2)
+_func_tya(state, bus) = _func_load(state, bus, :A, state.Y,  1, 2)
 _func_tsx(state, bus) = _func_load(state, bus, :X, state.SP, 1, 2)
 
 function _func_txs(state, bus)
@@ -1351,7 +1403,341 @@ function _func_txs(state, bus)
     ), bus
 end
 
-# SEC / CLC — single-bit flag toggles, no addressing.
+# --- ALU helpers (ADC/SBC + binary, AND/ORA/EOR, CMP, BIT) ----------------- #
+
+function _func_adc_step(state, bus, operand::Real,
+                        instr_len::Real, cycles::Real)
+    c_in   = Float32(_read_carry(state.P))
+    c_int  = Int(c_in)
+    a_int  = Int(state.A) & 0xFF
+    op_int = Int(operand) & 0xFF
+    if _decimal_flag(state.P)
+        bcd_sum = _bcd_decode(a_int) + _bcd_decode(op_int) + c_int
+        new_a   = Float32(_bcd_encode(bcd_sum))
+        carry   = bcd_sum > 99 ? 1 : 0
+    else
+        sum_  = state.A + Float32(operand) + c_in
+        new_a = sum_ - floor(sum_ / 256f0) * 256f0
+        carry = Int(sum_) > 0xFF ? 1 : 0
+    end
+    na_int   = Int(new_a) & 0xFF
+    overflow = ((a_int ⊻ na_int) & (op_int ⊻ na_int)) & 0x80
+    new_p    = _set_nzcv(state.P, new_a, carry, overflow)
+    return update_state(state;
+        A=new_a, P=new_p,
+        PC=state.PC + Float32(instr_len),
+        cycles=state.cycles + Float32(cycles),
+    ), bus
+end
+
+function _func_sbc_step(state, bus, operand::Real,
+                        instr_len::Real, cycles::Real)
+    c_in   = Float32(_read_carry(state.P))
+    c_int  = Int(c_in)
+    a_int  = Int(state.A) & 0xFF
+    op_int = Int(operand) & 0xFF
+    if _decimal_flag(state.P)
+        diff = _bcd_decode(a_int) - _bcd_decode(op_int) - (1 - c_int)
+        diff < 0 && (diff += 100)
+        new_a    = Float32(_bcd_encode(diff))
+        carry    = a_int >= (op_int + (1 - c_int)) ? 1 : 0
+        na_int   = Int(new_a) & 0xFF
+        overflow = ((a_int ⊻ na_int) & (op_int ⊻ na_int)) & 0x80
+    else
+        op_inv   = 255f0 - Float32(operand)
+        sum_     = state.A + op_inv + c_in
+        new_a    = sum_ - floor(sum_ / 256f0) * 256f0
+        carry    = Int(sum_) > 0xFF ? 1 : 0
+        op_inv_i = Int(op_inv) & 0xFF
+        na_int   = Int(new_a) & 0xFF
+        overflow = ((a_int ⊻ na_int) & (op_inv_i ⊻ na_int)) & 0x80
+    end
+    new_p = _set_nzcv(state.P, new_a, carry, overflow)
+    return update_state(state;
+        A=new_a, P=new_p,
+        PC=state.PC + Float32(instr_len),
+        cycles=state.cycles + Float32(cycles),
+    ), bus
+end
+
+function _func_bitop_step(state, bus, operand::Real, op::Function,
+                          instr_len::Real, cycles::Real)
+    a_int     = Int(state.A) & 0xFF
+    op_int    = Int(operand) & 0xFF
+    new_a_int = op(a_int, op_int) & 0xFF
+    new_a     = Float32(new_a_int)
+    new_p     = _set_nz(state.P, new_a_int)
+    return update_state(state;
+        A=new_a, P=new_p,
+        PC=state.PC + Float32(instr_len),
+        cycles=state.cycles + Float32(cycles),
+    ), bus
+end
+
+function _func_compare_step(state, bus, reg_value::Real, operand::Real,
+                            instr_len::Real, cycles::Real)
+    reg_int  = Int(reg_value) & 0xFF
+    op_int   = Int(operand) & 0xFF
+    diff_int = (reg_int - op_int) & 0xFF
+    carry    = reg_int >= op_int ? 1 : 0
+    new_p    = _set_nzc(state.P, diff_int, carry)
+    return update_state(state;
+        P=new_p,
+        PC=state.PC + Float32(instr_len),
+        cycles=state.cycles + Float32(cycles),
+    ), bus
+end
+
+function _func_bit_step(state, bus, operand::Real,
+                        instr_len::Real, cycles::Real)
+    a_int  = Int(state.A) & 0xFF
+    op_int = Int(operand) & 0xFF
+    and_v  = a_int & op_int
+    new_p  = _set_bit_flags(state.P, and_v, operand)
+    return update_state(state;
+        P=new_p,
+        PC=state.PC + Float32(instr_len),
+        cycles=state.cycles + Float32(cycles),
+    ), bus
+end
+
+# ADC (8 modes)
+_func_adc_imm(s, b)   = _func_adc_step(s, b, _func_read_for_mode(s, b, :imm),   2, 2)
+_func_adc_zp(s, b)    = _func_adc_step(s, b, _func_read_for_mode(s, b, :zp),    2, 3)
+_func_adc_zp_x(s, b)  = _func_adc_step(s, b, _func_read_for_mode(s, b, :zp_x),  2, 4)
+_func_adc_abs(s, b)   = _func_adc_step(s, b, _func_read_for_mode(s, b, :abs),   3, 4)
+_func_adc_abs_x(s, b) = _func_adc_step(s, b, _func_read_for_mode(s, b, :abs_x), 3, 4)
+_func_adc_abs_y(s, b) = _func_adc_step(s, b, _func_read_for_mode(s, b, :abs_y), 3, 4)
+_func_adc_ind_x(s, b) = _func_adc_step(s, b, _func_read_for_mode(s, b, :ind_x), 2, 6)
+_func_adc_ind_y(s, b) = _func_adc_step(s, b, _func_read_for_mode(s, b, :ind_y), 2, 5)
+
+# SBC (8 modes + USBC alias on $EB)
+_func_sbc_imm(s, b)   = _func_sbc_step(s, b, _func_read_for_mode(s, b, :imm),   2, 2)
+_func_sbc_zp(s, b)    = _func_sbc_step(s, b, _func_read_for_mode(s, b, :zp),    2, 3)
+_func_sbc_zp_x(s, b)  = _func_sbc_step(s, b, _func_read_for_mode(s, b, :zp_x),  2, 4)
+_func_sbc_abs(s, b)   = _func_sbc_step(s, b, _func_read_for_mode(s, b, :abs),   3, 4)
+_func_sbc_abs_x(s, b) = _func_sbc_step(s, b, _func_read_for_mode(s, b, :abs_x), 3, 4)
+_func_sbc_abs_y(s, b) = _func_sbc_step(s, b, _func_read_for_mode(s, b, :abs_y), 3, 4)
+_func_sbc_ind_x(s, b) = _func_sbc_step(s, b, _func_read_for_mode(s, b, :ind_x), 2, 6)
+_func_sbc_ind_y(s, b) = _func_sbc_step(s, b, _func_read_for_mode(s, b, :ind_y), 2, 5)
+
+# AND
+_func_and_imm(s, b)   = _func_bitop_step(s, b, _func_read_for_mode(s, b, :imm),   &, 2, 2)
+_func_and_zp(s, b)    = _func_bitop_step(s, b, _func_read_for_mode(s, b, :zp),    &, 2, 3)
+_func_and_zp_x(s, b)  = _func_bitop_step(s, b, _func_read_for_mode(s, b, :zp_x),  &, 2, 4)
+_func_and_abs(s, b)   = _func_bitop_step(s, b, _func_read_for_mode(s, b, :abs),   &, 3, 4)
+_func_and_abs_x(s, b) = _func_bitop_step(s, b, _func_read_for_mode(s, b, :abs_x), &, 3, 4)
+_func_and_abs_y(s, b) = _func_bitop_step(s, b, _func_read_for_mode(s, b, :abs_y), &, 3, 4)
+_func_and_ind_x(s, b) = _func_bitop_step(s, b, _func_read_for_mode(s, b, :ind_x), &, 2, 6)
+_func_and_ind_y(s, b) = _func_bitop_step(s, b, _func_read_for_mode(s, b, :ind_y), &, 2, 5)
+
+# ORA
+_func_ora_imm(s, b)   = _func_bitop_step(s, b, _func_read_for_mode(s, b, :imm),   |, 2, 2)
+_func_ora_zp(s, b)    = _func_bitop_step(s, b, _func_read_for_mode(s, b, :zp),    |, 2, 3)
+_func_ora_zp_x(s, b)  = _func_bitop_step(s, b, _func_read_for_mode(s, b, :zp_x),  |, 2, 4)
+_func_ora_abs(s, b)   = _func_bitop_step(s, b, _func_read_for_mode(s, b, :abs),   |, 3, 4)
+_func_ora_abs_x(s, b) = _func_bitop_step(s, b, _func_read_for_mode(s, b, :abs_x), |, 3, 4)
+_func_ora_abs_y(s, b) = _func_bitop_step(s, b, _func_read_for_mode(s, b, :abs_y), |, 3, 4)
+_func_ora_ind_x(s, b) = _func_bitop_step(s, b, _func_read_for_mode(s, b, :ind_x), |, 2, 6)
+_func_ora_ind_y(s, b) = _func_bitop_step(s, b, _func_read_for_mode(s, b, :ind_y), |, 2, 5)
+
+# EOR
+_func_eor_imm(s, b)   = _func_bitop_step(s, b, _func_read_for_mode(s, b, :imm),   ⊻, 2, 2)
+_func_eor_zp(s, b)    = _func_bitop_step(s, b, _func_read_for_mode(s, b, :zp),    ⊻, 2, 3)
+_func_eor_zp_x(s, b)  = _func_bitop_step(s, b, _func_read_for_mode(s, b, :zp_x),  ⊻, 2, 4)
+_func_eor_abs(s, b)   = _func_bitop_step(s, b, _func_read_for_mode(s, b, :abs),   ⊻, 3, 4)
+_func_eor_abs_x(s, b) = _func_bitop_step(s, b, _func_read_for_mode(s, b, :abs_x), ⊻, 3, 4)
+_func_eor_abs_y(s, b) = _func_bitop_step(s, b, _func_read_for_mode(s, b, :abs_y), ⊻, 3, 4)
+_func_eor_ind_x(s, b) = _func_bitop_step(s, b, _func_read_for_mode(s, b, :ind_x), ⊻, 2, 6)
+_func_eor_ind_y(s, b) = _func_bitop_step(s, b, _func_read_for_mode(s, b, :ind_y), ⊻, 2, 5)
+
+# CMP
+_func_cmp_imm(s, b)   = _func_compare_step(s, b, s.A, _func_read_for_mode(s, b, :imm),   2, 2)
+_func_cmp_zp(s, b)    = _func_compare_step(s, b, s.A, _func_read_for_mode(s, b, :zp),    2, 3)
+_func_cmp_zp_x(s, b)  = _func_compare_step(s, b, s.A, _func_read_for_mode(s, b, :zp_x),  2, 4)
+_func_cmp_abs(s, b)   = _func_compare_step(s, b, s.A, _func_read_for_mode(s, b, :abs),   3, 4)
+_func_cmp_abs_x(s, b) = _func_compare_step(s, b, s.A, _func_read_for_mode(s, b, :abs_x), 3, 4)
+_func_cmp_abs_y(s, b) = _func_compare_step(s, b, s.A, _func_read_for_mode(s, b, :abs_y), 3, 4)
+_func_cmp_ind_x(s, b) = _func_compare_step(s, b, s.A, _func_read_for_mode(s, b, :ind_x), 2, 6)
+_func_cmp_ind_y(s, b) = _func_compare_step(s, b, s.A, _func_read_for_mode(s, b, :ind_y), 2, 5)
+
+# CPX / CPY
+_func_cpx_imm(s, b) = _func_compare_step(s, b, s.X, _func_read_for_mode(s, b, :imm), 2, 2)
+_func_cpx_zp(s, b)  = _func_compare_step(s, b, s.X, _func_read_for_mode(s, b, :zp),  2, 3)
+_func_cpx_abs(s, b) = _func_compare_step(s, b, s.X, _func_read_for_mode(s, b, :abs), 3, 4)
+
+_func_cpy_imm(s, b) = _func_compare_step(s, b, s.Y, _func_read_for_mode(s, b, :imm), 2, 2)
+_func_cpy_zp(s, b)  = _func_compare_step(s, b, s.Y, _func_read_for_mode(s, b, :zp),  2, 3)
+_func_cpy_abs(s, b) = _func_compare_step(s, b, s.Y, _func_read_for_mode(s, b, :abs), 3, 4)
+
+# BIT
+_func_bit_zp(s, b)  = _func_bit_step(s, b, _func_read_for_mode(s, b, :zp),  2, 3)
+_func_bit_abs(s, b) = _func_bit_step(s, b, _func_read_for_mode(s, b, :abs), 3, 4)
+
+
+# --- Shift / rotate helpers ------------------------------------------------- #
+#
+# `_func_shift_acc` writes the result back to A; `_func_shift_memory` does
+# a read-modify-write through the functional bus dispatch. Both routines
+# share `_asl_value` / `_lsr_value` / `_rol_value` / `_ror_value` with
+# the mutating side — these are pure already.
+
+function _func_shift_acc(state, bus, value_op::Function)
+    new_a, new_p = value_op(state.P, state.A)
+    return update_state(state;
+        A=new_a, P=new_p,
+        PC=state.PC + 1f0, cycles=state.cycles + 2f0,
+    ), bus
+end
+
+function _func_shift_memory(state, bus, addr_resolver::Function,
+                            value_op::Function,
+                            instr_len::Real, cycles::Real)
+    addr             = addr_resolver(state, bus)
+    value            = _func_bus_read(bus, addr)
+    new_value, new_p = value_op(state.P, value)
+    new_bus          = _func_bus_write(bus, addr, new_value)
+    return update_state(state;
+        P=new_p,
+        PC=state.PC + Float32(instr_len),
+        cycles=state.cycles + Float32(cycles),
+    ), new_bus
+end
+
+# ASL
+_func_asl_acc(s, b)   = _func_shift_acc(s, b, _asl_value)
+_func_asl_zp(s, b)    = _func_shift_memory(s, b, _addr_zp,    _asl_value, 2, 5)
+_func_asl_zp_x(s, b)  = _func_shift_memory(s, b, _addr_zp_x,  _asl_value, 2, 6)
+_func_asl_abs(s, b)   = _func_shift_memory(s, b, _addr_abs,   _asl_value, 3, 6)
+_func_asl_abs_x(s, b) = _func_shift_memory(s, b, _addr_abs_x, _asl_value, 3, 7)
+
+# LSR
+_func_lsr_acc(s, b)   = _func_shift_acc(s, b, _lsr_value)
+_func_lsr_zp(s, b)    = _func_shift_memory(s, b, _addr_zp,    _lsr_value, 2, 5)
+_func_lsr_zp_x(s, b)  = _func_shift_memory(s, b, _addr_zp_x,  _lsr_value, 2, 6)
+_func_lsr_abs(s, b)   = _func_shift_memory(s, b, _addr_abs,   _lsr_value, 3, 6)
+_func_lsr_abs_x(s, b) = _func_shift_memory(s, b, _addr_abs_x, _lsr_value, 3, 7)
+
+# ROL
+_func_rol_acc(s, b)   = _func_shift_acc(s, b, _rol_value)
+_func_rol_zp(s, b)    = _func_shift_memory(s, b, _addr_zp,    _rol_value, 2, 5)
+_func_rol_zp_x(s, b)  = _func_shift_memory(s, b, _addr_zp_x,  _rol_value, 2, 6)
+_func_rol_abs(s, b)   = _func_shift_memory(s, b, _addr_abs,   _rol_value, 3, 6)
+_func_rol_abs_x(s, b) = _func_shift_memory(s, b, _addr_abs_x, _rol_value, 3, 7)
+
+# ROR
+_func_ror_acc(s, b)   = _func_shift_acc(s, b, _ror_value)
+_func_ror_zp(s, b)    = _func_shift_memory(s, b, _addr_zp,    _ror_value, 2, 5)
+_func_ror_zp_x(s, b)  = _func_shift_memory(s, b, _addr_zp_x,  _ror_value, 2, 6)
+_func_ror_abs(s, b)   = _func_shift_memory(s, b, _addr_abs,   _ror_value, 3, 6)
+_func_ror_abs_x(s, b) = _func_shift_memory(s, b, _addr_abs_x, _ror_value, 3, 7)
+
+
+# --- Branch, JMP indirect, JSR / RTS / RTI --------------------------------- #
+
+function _func_do_branch(state, bus, flag_mask::Integer, take_when_set::Bool)
+    offset       = _signed_offset(_operand_byte(bus, state.PC + 1f0))
+    pc_not_taken = state.PC + 2f0
+    pc_taken     = pc_not_taken + offset
+    flag_set     = (Int(state.P) & flag_mask) != 0
+    take         = take_when_set ? flag_set : !flag_set
+    new_pc       = take ? pc_taken : pc_not_taken
+    new_cycles   = state.cycles + (take ? 3f0 : 2f0)
+    return update_state(state; PC=new_pc, cycles=new_cycles), bus
+end
+
+_func_bpl(s, b) = _func_do_branch(s, b, 0x80, false)
+_func_bmi(s, b) = _func_do_branch(s, b, 0x80, true)
+_func_bvc(s, b) = _func_do_branch(s, b, 0x40, false)
+_func_bvs(s, b) = _func_do_branch(s, b, 0x40, true)
+_func_bcc(s, b) = _func_do_branch(s, b, 0x01, false)
+_func_bcs(s, b) = _func_do_branch(s, b, 0x01, true)
+_func_bne(s, b) = _func_do_branch(s, b, 0x02, false)
+_func_beq(s, b) = _func_do_branch(s, b, 0x02, true)
+
+function _func_jmp_ind(state, bus)
+    ptr    = _addr_abs(state, bus)
+    ptr_lo = ptr
+    ptr_hi = (ptr & 0xFF00) | ((ptr + 1) & 0x00FF)   # NMOS page-wrap bug
+    lo     = _func_bus_read(bus, ptr_lo)
+    hi     = _func_bus_read(bus, ptr_hi)
+    return update_state(state;
+        PC=lo + hi * 256f0, cycles=state.cycles + 5f0,
+    ), bus
+end
+
+# Stack helpers (pure).
+function _func_push8(bus::SoftBus, sp::Real, value::Real)
+    addr    = 0x0100 + (Int(sp) & 0xFF)
+    new_bus = _func_bus_write(bus, addr, value)
+    new_sp  = _wrap_byte(Float32(sp) - 1f0)
+    return new_bus, new_sp
+end
+
+function _func_pop8(bus::SoftBus, sp::Real)
+    new_sp = _wrap_byte(Float32(sp) + 1f0)
+    addr   = 0x0100 + (Int(new_sp) & 0xFF)
+    return _func_bus_read(bus, addr), new_sp
+end
+
+function _func_jsr(state, bus)
+    target = _operand_word(bus, state.PC + 1f0)
+    ra_int = Int(state.PC + 2f0) & 0xFFFF        # last byte of JSR
+    hi     = Float32((ra_int >> 8) & 0xFF)
+    lo     = Float32(ra_int & 0xFF)
+    bus, sp = _func_push8(bus, state.SP, hi)
+    bus, sp = _func_push8(bus, sp, lo)
+    return update_state(state;
+        SP=sp, PC=target, cycles=state.cycles + 6f0,
+    ), bus
+end
+
+function _func_rts(state, bus)
+    lo, sp = _func_pop8(bus, state.SP)
+    hi, sp = _func_pop8(bus, sp)
+    ret    = lo + hi * 256f0
+    return update_state(state;
+        SP=sp, PC=ret + 1f0, cycles=state.cycles + 6f0,
+    ), bus
+end
+
+
+# --- Stack push/pull, status flags, INC/DEC, INX/INY/DEX/DEY --------------- #
+
+function _func_pha(state, bus)
+    new_bus, sp = _func_push8(bus, state.SP, state.A)
+    return update_state(state;
+        SP=sp, PC=state.PC + 1f0, cycles=state.cycles + 3f0,
+    ), new_bus
+end
+
+function _func_php(state, bus)
+    p_pushed     = Float32(Int(state.P) | 0x30)        # force B + U
+    new_bus, sp  = _func_push8(bus, state.SP, p_pushed)
+    return update_state(state;
+        SP=sp, PC=state.PC + 1f0, cycles=state.cycles + 3f0,
+    ), new_bus
+end
+
+function _func_pla(state, bus)
+    value, sp = _func_pop8(bus, state.SP)
+    new_p     = _set_nz(state.P, value)
+    return update_state(state;
+        A=value, SP=sp, P=new_p,
+        PC=state.PC + 1f0, cycles=state.cycles + 4f0,
+    ), bus
+end
+
+function _func_plp(state, bus)
+    popped, sp = _func_pop8(bus, state.SP)
+    new_p      = Float32(Int(popped) | 0x30)           # force B + U
+    return update_state(state;
+        SP=sp, P=new_p,
+        PC=state.PC + 1f0, cycles=state.cycles + 4f0,
+    ), bus
+end
+
+# Single-bit flag toggles (CLC/SEC already; add CLI/SEI/CLV/CLD/SED).
 function _func_set_flag(state, bus, mask::Integer, set_it::Bool)
     p_int = Int(state.P) & 0xFF
     new_p = set_it ? (p_int | mask) : (p_int & (0xFF ⊻ mask))
@@ -1362,27 +1748,120 @@ end
 
 _func_clc(state, bus) = _func_set_flag(state, bus, 0x01, false)
 _func_sec(state, bus) = _func_set_flag(state, bus, 0x01, true)
+_func_cli(state, bus) = _func_set_flag(state, bus, 0x04, false)
+_func_sei(state, bus) = _func_set_flag(state, bus, 0x04, true)
+_func_clv(state, bus) = _func_set_flag(state, bus, 0x40, false)
+_func_cld(state, bus) = _func_set_flag(state, bus, 0x08, false)
+_func_sed(state, bus) = _func_set_flag(state, bus, 0x08, true)
+
+function _func_incdec_memory(state, bus, addr_resolver::Function,
+                             value_op::Function,
+                             instr_len::Real, cycles::Real)
+    addr      = addr_resolver(state, bus)
+    value     = _func_bus_read(bus, addr)
+    new_value = value_op(value)
+    new_bus   = _func_bus_write(bus, addr, new_value)
+    new_p     = _set_nz(state.P, new_value)
+    return update_state(state;
+        P=new_p,
+        PC=state.PC + Float32(instr_len),
+        cycles=state.cycles + Float32(cycles),
+    ), new_bus
+end
+
+_func_inc_zp(s, b)    = _func_incdec_memory(s, b, _addr_zp,    _inc_value, 2, 5)
+_func_inc_zp_x(s, b)  = _func_incdec_memory(s, b, _addr_zp_x,  _inc_value, 2, 6)
+_func_inc_abs(s, b)   = _func_incdec_memory(s, b, _addr_abs,   _inc_value, 3, 6)
+_func_inc_abs_x(s, b) = _func_incdec_memory(s, b, _addr_abs_x, _inc_value, 3, 7)
+
+_func_dec_zp(s, b)    = _func_incdec_memory(s, b, _addr_zp,    _dec_value, 2, 5)
+_func_dec_zp_x(s, b)  = _func_incdec_memory(s, b, _addr_zp_x,  _dec_value, 2, 6)
+_func_dec_abs(s, b)   = _func_incdec_memory(s, b, _addr_abs,   _dec_value, 3, 6)
+_func_dec_abs_x(s, b) = _func_incdec_memory(s, b, _addr_abs_x, _dec_value, 3, 7)
+
+function _func_incdec_reg(state, bus, reg::Symbol, value_op::Function)
+    cur   = reg === :X ? state.X : state.Y
+    new_v = value_op(cur)
+    new_p = _set_nz(state.P, new_v)
+    if reg === :X
+        return update_state(state;
+            X=new_v, P=new_p,
+            PC=state.PC + 1f0, cycles=state.cycles + 2f0,
+        ), bus
+    else
+        return update_state(state;
+            Y=new_v, P=new_p,
+            PC=state.PC + 1f0, cycles=state.cycles + 2f0,
+        ), bus
+    end
+end
+
+_func_inx(s, b) = _func_incdec_reg(s, b, :X, _inc_value)
+_func_iny(s, b) = _func_incdec_reg(s, b, :Y, _inc_value)
+_func_dex(s, b) = _func_incdec_reg(s, b, :X, _dec_value)
+_func_dey(s, b) = _func_incdec_reg(s, b, :Y, _dec_value)
+
+
+# --- RTI (completes the 151-opcode documented NMOS set) -------------------- #
+
+function _func_rti(state, bus)
+    popped_p, sp = _func_pop8(bus, state.SP)
+    lo, sp       = _func_pop8(bus, sp)
+    hi, sp       = _func_pop8(bus, sp)
+    new_p        = Float32(Int(popped_p) | 0x30)   # force B + U
+    return update_state(state;
+        SP=sp, P=new_p,
+        PC=lo + hi * 256f0,                        # no +1, unlike RTS
+        cycles=state.cycles + 6f0,
+    ), bus
+end
+
 
 # Dispatch table — functional analogue of `_HANDLERS`. Opcodes not
 # listed fall through to `_func_default`. Extending coverage is a
 # matter of writing the handler + adding the entry.
 const _FUNC_HANDLERS = let h = Function[_func_default for _ in 1:256]
+    # P7b core
     h[0x00 + 1] = _func_brk
     h[0xEA + 1] = _func_nop
     h[0x4C + 1] = _func_jmp_abs
-    # Loads
+    # LDA
     h[0xA9 + 1] = _func_lda_imm
     h[0xA5 + 1] = _func_lda_zp
+    h[0xB5 + 1] = _func_lda_zp_x
     h[0xAD + 1] = _func_lda_abs
+    h[0xBD + 1] = _func_lda_abs_x
+    h[0xB9 + 1] = _func_lda_abs_y
+    h[0xA1 + 1] = _func_lda_ind_x
+    h[0xB1 + 1] = _func_lda_ind_y
+    # LDX
     h[0xA2 + 1] = _func_ldx_imm
     h[0xA6 + 1] = _func_ldx_zp
+    h[0xB6 + 1] = _func_ldx_zp_y
+    h[0xAE + 1] = _func_ldx_abs
+    h[0xBE + 1] = _func_ldx_abs_y
+    # LDY
     h[0xA0 + 1] = _func_ldy_imm
     h[0xA4 + 1] = _func_ldy_zp
-    # Stores
+    h[0xB4 + 1] = _func_ldy_zp_x
+    h[0xAC + 1] = _func_ldy_abs
+    h[0xBC + 1] = _func_ldy_abs_x
+    # STA
     h[0x85 + 1] = _func_sta_zp
+    h[0x95 + 1] = _func_sta_zp_x
     h[0x8D + 1] = _func_sta_abs
+    h[0x9D + 1] = _func_sta_abs_x
+    h[0x99 + 1] = _func_sta_abs_y
+    h[0x81 + 1] = _func_sta_ind_x
+    h[0x91 + 1] = _func_sta_ind_y
+    # STX
     h[0x86 + 1] = _func_stx_zp
+    h[0x96 + 1] = _func_stx_zp_y
+    h[0x8E + 1] = _func_stx_abs
+    # STY
     h[0x84 + 1] = _func_sty_zp
+    h[0x94 + 1] = _func_sty_zp_x
+    h[0x8C + 1] = _func_sty_abs
     # Transfers
     h[0xAA + 1] = _func_tax
     h[0xA8 + 1] = _func_tay
@@ -1390,9 +1869,82 @@ const _FUNC_HANDLERS = let h = Function[_func_default for _ in 1:256]
     h[0x98 + 1] = _func_tya
     h[0xBA + 1] = _func_tsx
     h[0x9A + 1] = _func_txs
-    # Flag toggles
-    h[0x18 + 1] = _func_clc
-    h[0x38 + 1] = _func_sec
+    # ADC
+    h[0x69 + 1] = _func_adc_imm;   h[0x65 + 1] = _func_adc_zp
+    h[0x75 + 1] = _func_adc_zp_x;  h[0x6D + 1] = _func_adc_abs
+    h[0x7D + 1] = _func_adc_abs_x; h[0x79 + 1] = _func_adc_abs_y
+    h[0x61 + 1] = _func_adc_ind_x; h[0x71 + 1] = _func_adc_ind_y
+    # SBC (+ USBC $EB)
+    h[0xE9 + 1] = _func_sbc_imm;   h[0xE5 + 1] = _func_sbc_zp
+    h[0xF5 + 1] = _func_sbc_zp_x;  h[0xED + 1] = _func_sbc_abs
+    h[0xFD + 1] = _func_sbc_abs_x; h[0xF9 + 1] = _func_sbc_abs_y
+    h[0xE1 + 1] = _func_sbc_ind_x; h[0xF1 + 1] = _func_sbc_ind_y
+    h[0xEB + 1] = _func_sbc_imm
+    # AND
+    h[0x29 + 1] = _func_and_imm;   h[0x25 + 1] = _func_and_zp
+    h[0x35 + 1] = _func_and_zp_x;  h[0x2D + 1] = _func_and_abs
+    h[0x3D + 1] = _func_and_abs_x; h[0x39 + 1] = _func_and_abs_y
+    h[0x21 + 1] = _func_and_ind_x; h[0x31 + 1] = _func_and_ind_y
+    # ORA
+    h[0x09 + 1] = _func_ora_imm;   h[0x05 + 1] = _func_ora_zp
+    h[0x15 + 1] = _func_ora_zp_x;  h[0x0D + 1] = _func_ora_abs
+    h[0x1D + 1] = _func_ora_abs_x; h[0x19 + 1] = _func_ora_abs_y
+    h[0x01 + 1] = _func_ora_ind_x; h[0x11 + 1] = _func_ora_ind_y
+    # EOR
+    h[0x49 + 1] = _func_eor_imm;   h[0x45 + 1] = _func_eor_zp
+    h[0x55 + 1] = _func_eor_zp_x;  h[0x4D + 1] = _func_eor_abs
+    h[0x5D + 1] = _func_eor_abs_x; h[0x59 + 1] = _func_eor_abs_y
+    h[0x41 + 1] = _func_eor_ind_x; h[0x51 + 1] = _func_eor_ind_y
+    # CMP
+    h[0xC9 + 1] = _func_cmp_imm;   h[0xC5 + 1] = _func_cmp_zp
+    h[0xD5 + 1] = _func_cmp_zp_x;  h[0xCD + 1] = _func_cmp_abs
+    h[0xDD + 1] = _func_cmp_abs_x; h[0xD9 + 1] = _func_cmp_abs_y
+    h[0xC1 + 1] = _func_cmp_ind_x; h[0xD1 + 1] = _func_cmp_ind_y
+    # CPX / CPY / BIT
+    h[0xE0 + 1] = _func_cpx_imm; h[0xE4 + 1] = _func_cpx_zp; h[0xEC + 1] = _func_cpx_abs
+    h[0xC0 + 1] = _func_cpy_imm; h[0xC4 + 1] = _func_cpy_zp; h[0xCC + 1] = _func_cpy_abs
+    h[0x24 + 1] = _func_bit_zp;  h[0x2C + 1] = _func_bit_abs
+    # Shifts / rotates
+    h[0x0A + 1] = _func_asl_acc;   h[0x06 + 1] = _func_asl_zp
+    h[0x16 + 1] = _func_asl_zp_x;  h[0x0E + 1] = _func_asl_abs
+    h[0x1E + 1] = _func_asl_abs_x
+    h[0x4A + 1] = _func_lsr_acc;   h[0x46 + 1] = _func_lsr_zp
+    h[0x56 + 1] = _func_lsr_zp_x;  h[0x4E + 1] = _func_lsr_abs
+    h[0x5E + 1] = _func_lsr_abs_x
+    h[0x2A + 1] = _func_rol_acc;   h[0x26 + 1] = _func_rol_zp
+    h[0x36 + 1] = _func_rol_zp_x;  h[0x2E + 1] = _func_rol_abs
+    h[0x3E + 1] = _func_rol_abs_x
+    h[0x6A + 1] = _func_ror_acc;   h[0x66 + 1] = _func_ror_zp
+    h[0x76 + 1] = _func_ror_zp_x;  h[0x6E + 1] = _func_ror_abs
+    h[0x7E + 1] = _func_ror_abs_x
+    # Branches
+    h[0x10 + 1] = _func_bpl; h[0x30 + 1] = _func_bmi
+    h[0x50 + 1] = _func_bvc; h[0x70 + 1] = _func_bvs
+    h[0x90 + 1] = _func_bcc; h[0xB0 + 1] = _func_bcs
+    h[0xD0 + 1] = _func_bne; h[0xF0 + 1] = _func_beq
+    # JMP indirect + JSR / RTS
+    h[0x6C + 1] = _func_jmp_ind
+    h[0x20 + 1] = _func_jsr
+    h[0x60 + 1] = _func_rts
+    # Stack push/pull
+    h[0x48 + 1] = _func_pha; h[0x08 + 1] = _func_php
+    h[0x68 + 1] = _func_pla; h[0x28 + 1] = _func_plp
+    # Status flags
+    h[0x18 + 1] = _func_clc; h[0x38 + 1] = _func_sec
+    h[0x58 + 1] = _func_cli; h[0x78 + 1] = _func_sei
+    h[0xB8 + 1] = _func_clv; h[0xD8 + 1] = _func_cld
+    h[0xF8 + 1] = _func_sed
+    # INC memory
+    h[0xE6 + 1] = _func_inc_zp;  h[0xF6 + 1] = _func_inc_zp_x
+    h[0xEE + 1] = _func_inc_abs; h[0xFE + 1] = _func_inc_abs_x
+    # DEC memory
+    h[0xC6 + 1] = _func_dec_zp;  h[0xD6 + 1] = _func_dec_zp_x
+    h[0xCE + 1] = _func_dec_abs; h[0xDE + 1] = _func_dec_abs_x
+    # INX/INY/DEX/DEY
+    h[0xE8 + 1] = _func_inx; h[0xC8 + 1] = _func_iny
+    h[0xCA + 1] = _func_dex; h[0x88 + 1] = _func_dey
+    # RTI
+    h[0x40 + 1] = _func_rti
     h
 end
 
@@ -1403,13 +1955,19 @@ Functional sibling of `soft_step!`. Builds a *new* `SoftCPUState` and
 (when needed) a new `SoftBus` instead of mutating in place — Zygote
 can therefore differentiate through it.
 
-Opcode coverage as of P7e-x's initial cut: the P7b core (NOP, BRK,
-JMP abs, LDA / LDX / STA / STX) plus the common P7c-a opcodes
-(LDA/LDX/LDY zp/abs, STA/STX/STY zp, transfers, SEC/CLC). Any other
-opcode falls through to `_func_default` (PC += 1, cycles += 2) — the
-trace stays gradient-clean but forward behaviour past an unhandled
-opcode is wrong. Extending the table is mechanical; see STATUS.md
-P7e-x for the deferral list.
+Opcode coverage as of the **P7e-x extension**: the **full 151-opcode
+documented NMOS set** + the USBC (\$EB) alias, matching the mutating
+`soft_step!` 1:1 — load/store/transfer (every mode), ADC/SBC
+(binary + BCD), AND/ORA/EOR, CMP/CPX/CPY, BIT, ASL/LSR/ROL/ROR
+(acc + 4 memory modes each), 8 conditional branches, JMP indirect,
+JSR / RTS, PHA/PHP/PLA/PLP, all 7 status-flag opcodes (CLC/SEC/CLI/
+SEI/CLV/CLD/SED), INC/DEC memory (4 modes), INX/INY/DEX/DEY, RTI.
+BRK keeps the end-of-trace sentinel role from P7b (the full IRQ
+sequence is the next deferral).
+
+Anything outside that set falls through to `_func_default` (PC += 1,
+cycles += 2) — the trace stays gradient-clean but forward behaviour
+past an unhandled opcode is wrong.
 """
 function soft_step(state::SoftCPUState, bus::SoftBus)
     rom_off       = _cart_addr(state.PC)

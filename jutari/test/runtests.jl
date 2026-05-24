@@ -36,7 +36,7 @@ using JuTari.Diff: RomTensor, peek, peek_many,
                    SoftCPUState, SoftBus,
                    initial_soft_cpu_state, initial_soft_bus,
                    soft_step!, soft_run!, soft_rom_peek, soft_ram_peek,
-                   soft_step, soft_run, update_state, update_bus,
+                   soft_step, soft_run, update_state, update_bus, _set_ram,
                    SOFT_SUPPORTED_OPCODES,
                    soft_render_scanline, soft_render_frame,
                    soft_collision_registers, SOFT_SCREEN_WIDTH
@@ -4859,17 +4859,120 @@ end
     end
 
     @testset "unhandled opcode falls through cleanly (PC += 1, cycles += 2)" begin
-        # $69 (ADC #imm) is NOT in the functional handler set yet —
-        # _func_default catches it. Forward semantics are intentionally
-        # wrong past an unhandled opcode, but the trace stays
-        # gradient-clean.
-        rom = _rom_with([0x69, 0x42])
+        # After the P7e-x extension, ADC and the rest of the 151-opcode
+        # documented NMOS set are all handled. Pick an undocumented
+        # opcode that's NOT in the functional table to exercise the
+        # fall-through path: $FF (ISC abs,X — undocumented, never
+        # implemented in jutari soft mode).
+        rom = _rom_with([0xFF])
         bus = initial_soft_bus(rom)
         state = initial_soft_cpu_state(pc=0xF000)
         state, bus = soft_step(state, bus)
-        @test state.PC == Float32(0xF001)       # only +1, not +2 like the real ADC
+        @test state.PC == Float32(0xF001)       # only +1, the default advance
         @test state.cycles == 2f0
         @test state.A == 0f0                    # no real arithmetic happened
+    end
+
+    # --- P7e-x extension — new handler coverage ---------------------------- #
+    #
+    # Spot-checks for handlers added in the extension (ADC, AND, shifts,
+    # branches, JSR/RTS, INC, RTI). Forward parity vs the mutating
+    # `soft_step!` is the primary signal; gradient tests focus on the
+    # arithmetic ones (ADC, ORA) where the value flows.
+
+    @testset "ADC #imm — binary add lands in A with carry" begin
+        # CLC ; LDA #$10 ; ADC #$22 — A should be $32, C clear.
+        rom = _rom_with([0x18, 0xA9, 0x10, 0x69, 0x22])
+        bus = initial_soft_bus(rom)
+        state = initial_soft_cpu_state(pc=0xF000)
+        state, _ = soft_run(state, bus, 3)
+        @test state.A == Float32(0x32)
+        @test (Int(state.P) & 0x01) == 0
+    end
+
+    @testset "AND #imm — bitwise mask" begin
+        rom = _rom_with([0xA9, 0xF0, 0x29, 0x3C])      # LDA #$F0 ; AND #$3C → $30
+        bus = initial_soft_bus(rom)
+        state = initial_soft_cpu_state(pc=0xF000)
+        state, _ = soft_run(state, bus, 2)
+        @test state.A == Float32(0x30)
+    end
+
+    @testset "BNE skips the next instruction when Z=0" begin
+        # LDA #$01 ; BNE +2 ; LDA #$FF ; (skipped) ; LDA #$42
+        rom = _rom_with([0xA9, 0x01, 0xD0, 0x02, 0xA9, 0xFF, 0xA9, 0x42])
+        bus = initial_soft_bus(rom)
+        state = initial_soft_cpu_state(pc=0xF000)
+        # Run LDA #$01 ; BNE ; LDA #$42 — the LDA #$FF is skipped.
+        state, _ = soft_run(state, bus, 3)
+        @test state.A == Float32(0x42)
+    end
+
+    @testset "JSR / RTS round trip through the stack" begin
+        # $F000: JSR $F005   ($20 $05 $F0)
+        # $F003: LDA #$11    (will run AFTER RTS returns)
+        # $F005: RTS         ($60)
+        rom = _rom_with([0x20, 0x05, 0xF0, 0xA9, 0x11, 0x60])
+        bus = initial_soft_bus(rom)
+        state = initial_soft_cpu_state(pc=0xF000)
+        # JSR + RTS — should land back at $F003.
+        state, _ = soft_run(state, bus, 2)
+        @test state.PC == Float32(0xF003)
+    end
+
+    @testset "INC \$80 increments RAM and sets flags" begin
+        # Seed RAM[0] = 0x7F, then INC $80 → 0x80 (N=1, Z=0).
+        rom = _rom_with([0xE6, 0x80])
+        bus = initial_soft_bus(rom)
+        bus = update_bus(bus; ram=_set_ram(bus.ram, 0, 0x7F))
+        state = initial_soft_cpu_state(pc=0xF000)
+        state, bus = soft_step(state, bus)
+        @test bus.ram[1] == Float32(0x80)
+        @test (Int(state.P) & 0x80) != 0     # N=1
+    end
+
+    @testset "ASL accumulator shifts A and sets carry" begin
+        # LDA #$81 ; ASL A
+        rom = _rom_with([0xA9, 0x81, 0x0A])
+        bus = initial_soft_bus(rom)
+        state = initial_soft_cpu_state(pc=0xF000)
+        state, _ = soft_run(state, bus, 2)
+        @test state.A == Float32(0x02)         # 0x81 << 1 = 0x102 → 0x02 + C
+        @test (Int(state.P) & 0x01) != 0       # C=1
+    end
+
+    @testset "Zygote gradient through ADC reaches both operands" begin
+        # LDA #X ; ADC #Y → A = X + Y. Gradient w.r.t. rom[1] (X) and
+        # rom[3] (Y) should both be ~1 at A.
+        rom0 = _rom_with([0xA9, 0x05, 0x69, 0x07])
+        grad = Zygote.gradient(rom -> begin
+            s = initial_soft_cpu_state(pc=0xF000)
+            b = update_bus(initial_soft_bus(rom); rom=Float32.(rom))
+            # CLC implicit via initial P=0x34 (C=0), so a clean add.
+            s, _ = soft_run(s, b, 2)
+            return s.A
+        end, rom0)[1]
+        @test grad[2] ≈ 1f0                    # X (rom[1])
+        @test grad[4] ≈ 1f0                    # Y (rom[3])
+    end
+
+    @testset "RTI pops P + PC from the stack" begin
+        # Manually craft a stack frame: P at $01FD, PC-lo at $01FE,
+        # PC-hi at $01FF. With SP starting at $FC, RTI pops in order:
+        # P first ($01FD), then PC-lo ($01FE), then PC-hi ($01FF) —
+        # restoring PC = lo + hi*256 and P = popped | 0x30 (B+U forced).
+        rom = _rom_with([0x40])                # RTI at $F000
+        bus = initial_soft_bus(rom)
+        # RAM[$01FD] = RAM[0x7D] (1-indexed: +1) = 0x24 (P, becomes 0x34 after | 0x30)
+        bus = update_bus(bus; ram=_set_ram(bus.ram, 0x7D, 0x24))
+        bus = update_bus(bus; ram=_set_ram(bus.ram, 0x7E, 0x34))   # lo
+        bus = update_bus(bus; ram=_set_ram(bus.ram, 0x7F, 0x12))   # hi
+        state = initial_soft_cpu_state(pc=0xF000)
+        state = update_state(state; SP=Float32(0xFC))
+        state, _ = soft_step(state, bus)
+        @test state.PC == Float32(0x1234)
+        @test (Int(state.P) & 0x30) == 0x30        # B + U forced on
+        @test state.SP == Float32(0xFF)            # 3 pops past $FC
     end
 end
 
