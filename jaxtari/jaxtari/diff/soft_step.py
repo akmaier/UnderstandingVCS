@@ -99,53 +99,36 @@ def _cart_addr(pc_offset) -> jnp.ndarray:
 
 
 def _bus_read(bus: SoftBus, addr) -> jnp.ndarray:
-    """SOFT-mode differentiable bus read with cart / TIA / RIOT / RAM decode.
+    """SOFT-mode differentiable bus read with cart-vs-RAM decode.
 
     Cart range ($1000-$1FFF after 13-bit mirror): `soft_rom_peek`.
-    TIA reads with addr A4=0 AND (addr & 0x0F) < 8: collision register
-    via `soft_collision_registers` (P7f-dx — was the deferred "proper
-    TIA read-register dispatch" hook).
-    RIOT I/O ($0280-$029F band): INTIM / INSTAT / 0xFF defaults.
-    Everything else (TIA non-collision reads / RAM / mirrors):
-    `soft_ram_peek(addr & 0x7F)` — the SOFT collapse that lets a single
-    array stand in for the TIA register file plus the 128-byte RAM.
+    Everything else: `soft_ram_peek(addr & 0x7F)` — a simplified model
+    that collapses TIA / RIOT / RAM into a single 128-byte array.
+    Proper TIA / RIOT register dispatch is P7c-f / P7f-dx (deferred).
 
-    All branches are computed unconditionally and `jnp.where`-selected
-    so the gradient flows through whichever path is taken.
+    `jnp.where` picks the right branch and the gradient flows through
+    both — the wrong branch contributes 0 because its `one_hot` weight
+    is unused, but the cost is two peeks instead of one. The clean
+    gradient is the point.
+
+    **P7f-dx attempt (reverted)**: an earlier change in this batch
+    wired `soft_collision_registers` into the $30-$37 range so SOFT
+    programs could `LDA $30` for CXM0P etc. That broke the existing
+    SOFT bus collapse contract — several P7c-c / P7c-d tests use the
+    $30 cell as a normal RAM byte (which is what the SOFT collapse
+    has always promised). Proper TIA/RAM separation in SOFT mode is
+    the architectural prerequisite — see STATUS.md P7f-dx for the
+    deferral rationale. Callers that want collision values today
+    should call `soft_collision_registers(bus)` directly.
     """
-    # Lazy import — soft_tia imports soft_step.soft_ram_peek, so a top-
-    # level import here would be circular.
-    from jaxtari.diff.soft_tia import soft_collision_registers
-
     a_int       = jnp.asarray(addr).astype(jnp.int32) & 0x1FFF
     is_cart     = (a_int & 0x1000) != 0
     is_riot_io  = (~is_cart) & ((a_int & 0x80) != 0) & ((a_int & 0x200) != 0)
-    # TIA collision register dispatch (P7f-dx). Restricted to the
-    # canonical $30-$37 range — real hardware mirrors them at $00-$07
-    # too via the A0-A3-only read decode, but the SOFT bus collapses
-    # *everything* below the cart into a 128-byte RAM array via
-    # `addr & 0x7F`, and existing P7c-e INC/DEC tests rely on the low
-    # zero-page being the RAM, not the TIA-collision mirror. The
-    # canonical $30-$37 addresses are unambiguous (they fall outside
-    # the SOFT-bus's RAM-collapse expectation and inside the TIA
-    # half by the A7=0 / A4=1 decode).
-    is_collision = (~is_cart) & ((a_int & 0x3F) >= 0x30) & ((a_int & 0x3F) <= 0x37)
     cart_offset = a_int & 0x0FFF
     ram_offset  = a_int & 0x7F
 
     cart_val = soft_rom_peek(bus.rom, cart_offset)
     ram_val  = soft_ram_peek(bus.ram, ram_offset)
-
-    # P7f-dx — collision register dispatch. `soft_collision_registers`
-    # returns an (8,) vector indexed [CXM0P, CXM1P, CXP0FB, CXP1FB,
-    # CXM0FB, CXM1FB, CXBLPF, CXPPMM] — same order as the bus addresses
-    # $00-$07. Pick the right cell via a one-hot dot product so the
-    # gradient through the chosen latch flows back to the object
-    # positions / patterns in bus.ram.
-    cx_vec       = soft_collision_registers(bus)
-    cx_index     = a_int & 0x07
-    cx_one_hot   = jax.nn.one_hot(cx_index, 8, dtype=jnp.float32)
-    collision_val = jnp.dot(cx_one_hot, cx_vec)
 
     # P8-cx: RIOT I/O reads ($0280-$029F band, decoded by `addr & 0x07`):
     #   reg 4 (INTIM) → bus.riot_intim
@@ -164,10 +147,8 @@ def _bus_read(bus: SoftBus, addr) -> jnp.ndarray:
                   jnp.where(bus.riot_expired != 0, jnp.float32(0x80), jnp.float32(0)),
                   jnp.float32(0xFF)))
 
-    return jnp.where(
-        is_cart, cart_val,
-        jnp.where(is_riot_io, riot_val,
-                  jnp.where(is_collision, collision_val, ram_val)))
+    return jnp.where(is_cart, cart_val,
+                     jnp.where(is_riot_io, riot_val, ram_val))
 
 
 # Prescaler-shift lookup for TIM*T addresses: low 2 bits select
