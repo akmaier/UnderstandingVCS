@@ -15,7 +15,8 @@ using JuTari.TIA: tia_peek, tia_poke!, tia_advance!, tia_apply_wsync!,
                   W_HMOVE, W_HMCLR,
                   W_ENAM0, W_ENAM1, W_ENABL, W_NUSIZ0, W_NUSIZ1,
                   W_RESM0, W_RESM1, W_RESBL, W_CXCLR,
-                  W_VSYNC, W_VBLANK
+                  W_VSYNC, W_VBLANK,
+                  W_VDELP0, W_VDELP1, W_VDELBL
 using JuTari.RIOT: riot_peek, riot_poke!, riot_advance!,
                    set_swcha_input!, set_swchb_input!
 using JuTari.Cart: cart_peek, cart_poke!,
@@ -4805,6 +4806,98 @@ end
         @test state.PC == Float32(0xF001)       # only +1, not +2 like the real ADC
         @test state.cycles == 2f0
         @test state.A == 0f0                    # no real arithmetic happened
+    end
+end
+
+
+@testset "JuTari P3h — VDELP / VDELBL vertical-delay sprite updates" begin
+    # Shadow latch semantics
+    @testset "GRP1 write latches current GRP0 into grp0_old" begin
+        tia = initial_tia_state()
+        tia_poke!(tia, W_GRP0, 0xAA)
+        tia_poke!(tia, W_GRP1, 0x55)
+        @test tia.grp0_old == 0xAA
+    end
+
+    @testset "GRP0 write latches current GRP1 into grp1_old" begin
+        tia = initial_tia_state()
+        tia_poke!(tia, W_GRP1, 0xBB)
+        tia_poke!(tia, W_GRP0, 0x44)
+        @test tia.grp1_old == 0xBB
+    end
+
+    @testset "GRP1 write also latches ENABL into enabl_old" begin
+        tia = initial_tia_state()
+        tia_poke!(tia, W_ENABL, 0x02)
+        tia_poke!(tia, W_GRP1, 0x00)
+        @test tia.enabl_old == 0x02
+    end
+
+    @testset "GRP0 write does NOT touch enabl_old" begin
+        tia = initial_tia_state()
+        tia_poke!(tia, W_ENABL, 0x02)
+        tia_poke!(tia, W_GRP0, 0x00)
+        @test tia.enabl_old == 0
+    end
+
+    # Rendering
+    @testset "VDELP0=0 renders current GRP0" begin
+        tia = initial_tia_state(); tia.p0_x = 4
+        tia_poke!(tia, W_COLUBK, 0x00); tia_poke!(tia, W_COLUP0, 0x42)
+        tia_poke!(tia, W_VDELP0, 0x00)
+        tia_poke!(tia, W_GRP0, 0xFF)
+        scan = render_scanline(tia)
+        @test scan[5]  == 0x42
+        @test scan[12] == 0x42
+    end
+
+    @testset "VDELP0=1 renders shadow GRP0 (empty here)" begin
+        tia = initial_tia_state(); tia.p0_x = 4
+        tia_poke!(tia, W_COLUBK, 0x00); tia_poke!(tia, W_COLUP0, 0x42)
+        tia_poke!(tia, W_VDELP0, 0x01)
+        tia.grp0_old = 0x00              # explicit shadow value
+        tia_poke!(tia, W_GRP0, 0xFF)
+        scan = render_scanline(tia)
+        @test scan[5] == 0
+    end
+
+    @testset "VDELP0=1 with shadow bit 7 paints leftmost pixel only" begin
+        tia = initial_tia_state(); tia.p0_x = 4
+        tia_poke!(tia, W_COLUBK, 0x00); tia_poke!(tia, W_COLUP0, 0x42)
+        tia_poke!(tia, W_VDELP0, 0x01)
+        tia.grp0_old = 0x80              # bit 7 → leftmost
+        tia_poke!(tia, W_GRP0, 0x00)
+        scan = render_scanline(tia)
+        @test scan[5] == 0x42
+        @test scan[6] == 0
+    end
+
+    @testset "VDELBL=0 renders current ENABL" begin
+        tia = initial_tia_state(); tia.bl_x = 10
+        tia_poke!(tia, W_COLUBK, 0x00); tia_poke!(tia, W_COLUPF, 0x33)
+        tia_poke!(tia, W_ENABL, 0x02)
+        scan = render_scanline(tia)
+        @test scan[11] == 0x33
+    end
+
+    @testset "VDELBL=1 uses shadow ENABL — invisible when shadow off" begin
+        tia = initial_tia_state(); tia.bl_x = 10
+        tia.enabl_old = 0x00
+        tia_poke!(tia, W_COLUBK, 0x00); tia_poke!(tia, W_COLUPF, 0x33)
+        tia_poke!(tia, W_VDELBL, 0x01)
+        tia_poke!(tia, W_ENABL, 0x02)    # current = on, shadow = off → off
+        scan = render_scanline(tia)
+        @test scan[11] == 0
+    end
+
+    @testset "VDELBL=1 with enabled shadow paints even when current ENABL=0" begin
+        tia = initial_tia_state(); tia.bl_x = 10
+        tia.enabl_old = 0x02
+        tia_poke!(tia, W_COLUBK, 0x00); tia_poke!(tia, W_COLUPF, 0x33)
+        tia_poke!(tia, W_VDELBL, 0x01)
+        tia_poke!(tia, W_ENABL, 0x00)
+        scan = render_scanline(tia)
+        @test scan[11] == 0x33
     end
 end
 

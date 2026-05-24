@@ -103,6 +103,14 @@ mutable struct TIAState
     vsync_active::Bool
     vblank_active::Bool
     inpt::Vector{UInt8}            # 6 bytes — INPT0..INPT5
+    # P3h: VDELP / VDELBL shadow copies. When VDELPx bit 0 is set,
+    # the player renders from the *old* GRPx (captured the last time
+    # the OTHER player's GRP was written). Same for the ball with
+    # VDELBL + ENABL (the ENABL shadow latches on GRP1 writes,
+    # matching xitari / Stella convention).
+    grp0_old::UInt8
+    grp1_old::UInt8
+    enabl_old::UInt8
 end
 
 # INPT defaults: paddle pots ($80 = centred), triggers idle high (D7=1).
@@ -114,6 +122,7 @@ initial_tia_state() = TIAState(
     zeros(UInt8, 8),
     false, false,
     fill(UInt8(0x80), 6),
+    UInt8(0), UInt8(0), UInt8(0),    # grp0_old / grp1_old / enabl_old
 )
 
 """
@@ -218,6 +227,18 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer)
         tia.registers[W_HMBL + 1] = 0
     elseif reg == W_CXCLR
         fill!(tia.collisions, 0)
+    elseif reg == W_GRP0
+        # P3h: writing GRP0 latches the CURRENT GRP1 into grp1_old
+        # so a VDELP1-enabled P1 renders the previous GRP1 from now
+        # on. GRP1 hasn't been touched by this write so reading
+        # `registers[W_GRP1+1]` returns the still-current GRP1.
+        tia.grp1_old = tia.registers[W_GRP1 + 1]
+    elseif reg == W_GRP1
+        # Writing GRP1 latches both GRP0 (for VDELP0) and ENABL
+        # (for VDELBL — Stella's TIA-circuit convention ties the
+        # ball-delay strobe into the GRP1 latch).
+        tia.grp0_old  = tia.registers[W_GRP0 + 1]
+        tia.enabl_old = tia.registers[W_ENABL + 1]
     end
 
     return nothing
@@ -360,12 +381,31 @@ bits decode into per-copy X offsets + per-bit scale (1/2/4), so
 multi-copy + 2×/4×-wide layouts paint correctly. The matching
 missile inherits the same multi-copy layout via `_overlay_missile!`.
 """
+# P3h: `_vdel_grp` / `_vdel_enabl` return the current GRP / ENABL
+# byte the renderer should use, honouring VDELP0 / VDELP1 / VDELBL.
+# When VDELPx / VDELBL bit 0 is set, the shadow value (latched on
+# the previous GRP-of-the-other-player / GRP1 write) is returned;
+# otherwise the live register byte. Stella convention.
+@inline function _vdel_grp(tia::TIAState, player::Int)
+    if player == 0
+        return (tia.registers[W_VDELP0 + 1] & UInt8(0x01)) != 0 ?
+               tia.grp0_old : tia.registers[W_GRP0 + 1]
+    else
+        return (tia.registers[W_VDELP1 + 1] & UInt8(0x01)) != 0 ?
+               tia.grp1_old : tia.registers[W_GRP1 + 1]
+    end
+end
+
+@inline _vdel_enabl(tia::TIAState) =
+    (tia.registers[W_VDELBL + 1] & UInt8(0x01)) != 0 ?
+        tia.enabl_old : tia.registers[W_ENABL + 1]
+
 function _overlay_player!(pixels::Vector{UInt8}, tia::TIAState, player::Int)
-    grp_reg   = player == 0 ? W_GRP0   : W_GRP1
     color_reg = player == 0 ? W_COLUP0 : W_COLUP1
     refp_reg  = player == 0 ? W_REFP0  : W_REFP1
     nusiz_reg = player == 0 ? W_NUSIZ0 : W_NUSIZ1
-    grp = tia.registers[grp_reg + 1]
+    # P3h: GRP via VDELP-aware lookup.
+    grp = _vdel_grp(tia, player)
     grp == 0 && return nothing
     color = tia.registers[color_reg + 1]
     reflected = (tia.registers[refp_reg + 1] & 0x08) != 0
@@ -422,7 +462,8 @@ end
 Paint the ball. Uses COLUPF; size 1/2/4/8 from CTRLPF bits 4-5.
 """
 function _overlay_ball!(pixels::Vector{UInt8}, tia::TIAState)
-    (tia.registers[W_ENABL + 1] & 0x02) == 0 && return nothing
+    # P3h: ENABL via VDELBL-aware lookup.
+    (_vdel_enabl(tia) & UInt8(0x02)) == 0 && return nothing
     color = tia.registers[W_COLUPF + 1]
     size  = 1 << ((Int(tia.registers[W_CTRLPF + 1]) >> 4) & 0x03)
     x = tia.bl_x
@@ -539,7 +580,8 @@ function _object_pixel_sets(tia::TIAState)
     end
 
     bl = Set{Int}()
-    if (tia.registers[W_ENABL + 1] & 0x02) != 0
+    # P3h: ENABL via VDELBL-aware lookup.
+    if (_vdel_enabl(tia) & UInt8(0x02)) != 0
         size = 1 << ((Int(ctrlpf) >> 4) & 0x03)
         for i in 0:(size - 1)
             push!(bl, mod(tia.bl_x + i, 160))
@@ -548,8 +590,10 @@ function _object_pixel_sets(tia::TIAState)
 
     # P3g: respect NUSIZ multi-copy + scale so collisions involving
     # the 2nd/3rd copies and the wide modes are detected.
+    # P3h: GRP via VDELP-aware lookup.
     function _player_set(grp_reg, refp_reg, nusiz_reg, x)
-        grp = tia.registers[grp_reg + 1]
+        player = grp_reg == W_GRP0 ? 0 : 1
+        grp = _vdel_grp(tia, player)
         out = Set{Int}()
         grp == 0 && return out
         reflected = (tia.registers[refp_reg + 1] & 0x08) != 0
