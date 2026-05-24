@@ -270,8 +270,8 @@ Each per-subsystem deferral listed in STATUS.md gets a phase ID so it can be pic
 
 **RIOT**
 - **P4b**: PA7 edge-triggered interrupt (INSTAT D6)
-- **P4c**: Paddle dump-pot timing — INPT0-3 stay at `$80` "centred"
-- **P4d**: INSTAT-read-clears-flag semantics (today only TIM*T writes clear; real chip varies)
+- **P4c**: Paddle dump-pot timing — INPT0-3 stay at `$80` "centred" (PXC1-x round 4 diagnostic confirms this is the chained source of the residual `pong_noop_10` divergence; the real-hardware fix is a per-pin `inpt_dump_disabled_cycle` + xitari's `(1.6·r·0.01e-6)·1.19e6` threshold formula)
+- **P4d** ✅: INTIM-read-clears-flag semantics done (jaxtari + jutari, completed via the peek-with-side-effects refactor). INSTAT-clears-PA7 still deferred (PA7 latch unmodelled — P4b).
 
 **Cart**
 - **P5b**: SC variants of F8 / F6 / F4 (128 B on-cart RAM at `$1000-$10FF`)
@@ -286,7 +286,7 @@ Each per-subsystem deferral listed in STATUS.md gets a phase ID so it can be pic
 - **P6e**: Two-player joystick (P1 directions stay defaulted-released)
 
 **Cross-cutting infrastructure**
-- **PXC1** ✅ + **PXC1-x round 1** ✅: harness landed and the first two real emulation gaps closed (ALE-equivalent boot-burn via `env.reset(boot_noop_steps=60, boot_reset_steps=4)`; TIA frame-counter double-count in `tia_advance`). Divergence on `pong_noop_10` dropped from 25 → 10 RAM bytes; both ports still diverge identically (PXC2 implicit). Round 2+ closes the remaining 10 — likely TIA scanline-cycle / RIOT timing detail.
+- **PXC1** ✅ + **PXC1-x round 1** ✅: harness landed and the first two real emulation gaps closed (ALE-equivalent boot-burn via `env.reset(boot_noop_steps=60, boot_reset_steps=4)`; TIA frame-counter double-count in `tia_advance`). Divergence on `pong_noop_10` dropped from 25 → 10 RAM bytes; both ports still diverge identically (PXC2 implicit). Round 2+ ✅ ruled out CPU as the source (registers match exactly at every frame boundary). Round 3 ✅ added the TIA floating-bus quirk (jaxtari + jutari) — real-hardware-correctness work but no change to the pong_noop_10 pattern. Round 3.5 ✅ tightened the noise mask to `0x3F` (matches xitari `getDataBusState() & 0x3F`). Round 4 ✅ landed the `tools/jaxtari_ram_writer_trace.py` diagnostic; identified INPT0-3 paddle reads as the data-path source and named the next two gating items: **dump-pot timing model** (P4c extension) + **per-cycle bus-state accuracy** in the CPU (dummy reads).
 - **PXC2**: JAX-vs-Julia bit-for-bit cross-check
 - **PXC3**: CI hook — no automated test runs yet
 - **PXC4**: Klaus Dormann `cpu_klaus_dormann.jsonl.gz` regression run (referenced as the P1 acceptance criterion but never wired up)
