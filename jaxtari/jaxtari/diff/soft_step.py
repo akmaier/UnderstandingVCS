@@ -120,14 +120,16 @@ def _bus_read(bus: SoftBus, addr) -> jnp.ndarray:
     a_int       = jnp.asarray(addr).astype(jnp.int32) & 0x1FFF
     is_cart     = (a_int & 0x1000) != 0
     is_riot_io  = (~is_cart) & ((a_int & 0x80) != 0) & ((a_int & 0x200) != 0)
-    # TIA collision register: addr A7=0 (TIA region), addr A4=0 (collision
-    # half of the read decode, $00-$0F), and the low nibble < 8. Real TIA
-    # only decodes A0..A3 for reads, so $30..$37 also hits the latches —
-    # we use the canonical $30-$37 detection (matches the W_CXCLR=$2C
-    # write counterpart) without claiming a full read mirror.
-    low_nib     = a_int & 0x0F
-    is_tia      = (~is_cart) & ((a_int & 0x80) == 0)
-    is_collision = is_tia & (low_nib < 8)
+    # TIA collision register dispatch (P7f-dx). Restricted to the
+    # canonical $30-$37 range — real hardware mirrors them at $00-$07
+    # too via the A0-A3-only read decode, but the SOFT bus collapses
+    # *everything* below the cart into a 128-byte RAM array via
+    # `addr & 0x7F`, and existing P7c-e INC/DEC tests rely on the low
+    # zero-page being the RAM, not the TIA-collision mirror. The
+    # canonical $30-$37 addresses are unambiguous (they fall outside
+    # the SOFT-bus's RAM-collapse expectation and inside the TIA
+    # half by the A7=0 / A4=1 decode).
+    is_collision = (~is_cart) & ((a_int & 0x3F) >= 0x30) & ((a_int & 0x3F) <= 0x37)
     cart_offset = a_int & 0x0FFF
     ram_offset  = a_int & 0x7F
 
