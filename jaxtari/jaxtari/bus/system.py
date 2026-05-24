@@ -65,14 +65,20 @@ class Bus(NamedTuple):
     riot: RIOTState
 
 
-def initial_bus(rom: Union[jnp.ndarray, None] = None) -> Bus:
+def initial_bus(rom: Union[jnp.ndarray, None] = None,
+                *, cart_kind: int | None = None) -> Bus:
     """Build a `Bus` with all-zero RAM, an auto-detected `Cart` built from
-    `rom` (default: all-zero 4 KB), and fresh TIA / RIOT states."""
+    `rom` (default: all-zero 4 KB), and fresh TIA / RIOT states.
+
+    `cart_kind` overrides cart-format auto-detection — required for
+    F8SC (8K cart with on-cart RAM), which is size-indistinguishable
+    from plain F8.
+    """
     if rom is None:
         rom = jnp.zeros((4096,), dtype=jnp.uint8)
     return Bus(
         ram=jnp.zeros((128,), dtype=jnp.uint8),
-        cart=make_cart(rom),
+        cart=make_cart(rom, kind=cart_kind),
         tia=initial_tia_state(),
         riot=initial_riot_state(),
     )
