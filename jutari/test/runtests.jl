@@ -1386,6 +1386,49 @@ end
         @test s.SP == 0xFD
     end
 
+    # ----------------------------------------------------------------- #
+    # PXC1-x round 3 — TIA floating-bus on un-driven data lines.
+    # Matches xitari's System::peek/poke + TIA::peek noise OR.
+    # ----------------------------------------------------------------- #
+
+    @testset "data_bus_state initial = 0" begin
+        bus = initial_bus()
+        @test bus.data_bus_state == 0x00
+    end
+
+    @testset "data_bus_state updated by RAM write" begin
+        bus = initial_bus()
+        poke!(bus, 0x0080, 0x48)
+        @test bus.data_bus_state == 0x48
+    end
+
+    @testset "data_bus_state updated by RAM read" begin
+        bus = initial_bus()
+        poke!(bus, 0x0080, 0xA5)
+        peek(bus, 0x0081)               # reads 0
+        @test bus.data_bus_state == 0x00
+    end
+
+    @testset "TIA read OR's floating-bus noise into un-driven bits" begin
+        bus = initial_bus()
+        poke!(bus, 0x0080, 0x48)        # noise = 0x48 → low6 = 0x08
+        v = peek(bus, 0x0000)           # CXM0P, driven=0
+        @test v == 0x08
+    end
+
+    @testset "TIA reg \$0F returns full floating-bus byte" begin
+        bus = initial_bus()
+        poke!(bus, 0x0080, 0xFE)
+        @test peek(bus, 0x000F) == 0xFE
+    end
+
+    @testset "INPT4 returns D7 driven + D6-D0 noise" begin
+        bus = initial_bus()
+        poke!(bus, 0x0080, 0x73)
+        v = peek(bus, 0x000C)
+        @test v == (0x80 | (0x73 & 0x7F))
+    end
+
 end
 
 @testset "JuTari P3a TIA register file + scanline timing + WSYNC" begin

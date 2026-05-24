@@ -40,12 +40,21 @@ export BusState, initial_bus, peek, poke!
 
 6507 system bus state. `ram` is the 128 B RAM; `cart` is the cartridge
 (includes ROM + bank state, P5); `tia` and `riot` are the chips' states.
+
+`data_bus_state` tracks the last byte that crossed the data bus —
+updated on every `peek` / `poke!`. The real TIA only actively
+drives 1-2 of the 8 data lines on a read; the rest "float" and
+resolve to whatever was last on the bus. This is the PXC1-x
+round 3 quirk that matches xitari's `System::peek/poke` + the
+real 1A05 hardware. See `peek(bus::BusState, ...)` for how the
+per-register driven mask is applied.
 """
 mutable struct BusState
     ram::Vector{UInt8}
     cart::CartState
     tia::TIAState
     riot::RIOTState
+    data_bus_state::UInt8
 end
 
 """
@@ -57,12 +66,28 @@ Build a `BusState` with all-zero RAM, an auto-detected cart built from
 function initial_bus(rom=nothing)
     rom === nothing && (rom = zeros(UInt8, 4096))
     return BusState(zeros(UInt8, 128), make_cart(rom),
-                    initial_tia_state(), initial_riot_state())
+                    initial_tia_state(), initial_riot_state(), 0x00)
 end
 
 # --------------------------------------------------------------------------- #
 # peek / poke! — multiple dispatch on the world type
 # --------------------------------------------------------------------------- #
+
+# TIA-read driven-bits mask — which bits the TIA actively drives. The
+# other bits float and resolve to the last data-bus byte. Matches
+# xitari's TIA::peek (and the real 1A05 hardware). 1-indexed for Julia.
+#
+#   CXM0P/CXM1P/CXP0FB/CXP1FB/CXM0FB/CXM1FB (regs 0..5): D7+D6 driven (0xC0)
+#   CXBLPF (reg 6):                                       D7 only      (0x80)
+#   CXPPMM (reg 7):                                       D7+D6 driven (0xC0)
+#   INPT0..INPT5 (regs 8..13):                            D7 only      (0x80)
+#   regs 14, 15:                                          fully float  (0x00)
+const _TIA_PEEK_DRIVEN_MASK = (
+    0xC0, 0xC0, 0xC0, 0xC0, 0xC0, 0xC0,
+    0x80, 0xC0,
+    0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+    0x00, 0x00,
+)
 
 """
     peek(world, addr) -> UInt8
@@ -70,6 +95,10 @@ end
 Read a byte from `world` at the 16-bit CPU address `addr`. For a `BusState`
 the 6507 address decode is applied; for a `Vector{UInt8}` the byte at
 `(addr & 0xFFFF) + 1` is returned (1-based Julia indexing).
+
+PXC1-x round 3: `peek(bus::BusState, ...)` updates `bus.data_bus_state`
+on every read. For TIA reads, the un-driven bits are taken from the
+*previous* `data_bus_state` (the floating-bus quirk).
 """
 @inline peek(memory::Vector{UInt8}, addr::Integer) =
     memory[(Int(addr) & 0xFFFF) + 1]
@@ -77,15 +106,26 @@ the 6507 address decode is applied; for a `Vector{UInt8}` the byte at
 @inline function peek(bus::BusState, addr::Integer)
     a = Int(addr) & 0x1FFF                       # 6507 13-bit mirror
     if (a & 0x1000) != 0
-        return cart_peek(bus.cart, a)            # cartridge (may switch bank)
+        v = cart_peek(bus.cart, a)               # cartridge (may switch bank)
+        bus.data_bus_state = v
+        return v
     end
     if (a & 0x80) == 0
-        return tia_peek(bus.tia, a)              # TIA register read
+        raw = tia_peek(bus.tia, a)               # TIA register read
+        mask = UInt8(_TIA_PEEK_DRIVEN_MASK[(a & 0x0F) + 1])
+        noise = bus.data_bus_state & UInt8(~mask & 0xFF)
+        v = UInt8(((raw & mask) | noise) & 0xFF)
+        bus.data_bus_state = v
+        return v
     end
     if (a & 0x200) != 0
-        return riot_peek!(bus.riot, a)           # RIOT timer + I/O ports (P4d: reads have side effects)
+        v = riot_peek!(bus.riot, a)              # RIOT timer + I/O ports (P4d)
+        bus.data_bus_state = v
+        return v
     end
-    return bus.ram[(a & 0x7F) + 1]               # RIOT RAM
+    v = bus.ram[(a & 0x7F) + 1]                  # RIOT RAM
+    bus.data_bus_state = v
+    return v
 end
 
 """
@@ -93,7 +133,9 @@ end
 
 Write `value` (low 8 bits) to `world` at `addr`. Mutates in place. For a
 `BusState`, RAM writes land; ROM / TIA / RIOT writes are silently dropped
-(TIA/RIOT proper behaviour lands in P3/P4).
+(TIA/RIOT proper behaviour lands in P3/P4). On a `BusState` the
+`data_bus_state` is updated to the byte being written (xitari mirrors
+this in `System::poke` — needed by the floating-bus quirk).
 """
 @inline function poke!(memory::Vector{UInt8}, addr::Integer, value::Integer)
     memory[(Int(addr) & 0xFFFF) + 1] = UInt8(Int(value) & 0xFF)
@@ -102,6 +144,8 @@ end
 
 @inline function poke!(bus::BusState, addr::Integer, value::Integer)
     a = Int(addr) & 0x1FFF
+    v8 = UInt8(Int(value) & 0xFF)
+    bus.data_bus_state = v8
     if (a & 0x1000) != 0
         cart_poke!(bus.cart, a, value)           # cart hotspot may switch bank
         return nothing
@@ -114,7 +158,7 @@ end
         riot_poke!(bus.riot, a, value)           # RIOT timer / ports write
         return nothing
     end
-    bus.ram[(a & 0x7F) + 1] = UInt8(Int(value) & 0xFF)
+    bus.ram[(a & 0x7F) + 1] = v8
     return nothing
 end
 
