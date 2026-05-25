@@ -53,11 +53,15 @@ JAXTARI_OUT      = 'jaxtari_frames.raw'
 JUTARI_OUT       = 'jutari_frames.raw'
 COMP_DIR         = 'composites'
 
-# xitari renders 210 × 160; jaxtari / jutari render 192 × 160. Crop
-# xitari to the middle 192 lines (offset 18 from the top) so the
-# visible playfield aligns with the other two renderers.
-XITARI_TOP_CROP = 18
-XITARI_ROWS     = 192
+# Task #53 (vertical-alignment fix): jaxtari / jutari `get_screen()`
+# now return the ALE-standard (210, 160) crop — `Display.YStart=34` +
+# `Display.Height=210` — same as xitari. All three engines render
+# the same scanline range (34..243), so the previous
+# XITARI_TOP_CROP=18 workaround (which cropped xitari to 192 rows but
+# kept jaxtari/jutari at scanline 0..191 — a 52-line misalignment) is
+# no longer needed.
+XITARI_TOP_CROP = 0
+XITARI_ROWS     = 210
 COLS            = 160
 
 SCALE = 3          # 3× upscale → 480 × 576 panel, 1440 × 576 frame.

@@ -135,9 +135,21 @@ class StellaEnvironment:
         return self._console
 
     def get_screen(self) -> jnp.ndarray:
-        """Return the current framebuffer, shape (SCREEN_HEIGHT, SCREEN_WIDTH),
-        uint8 indexed colour."""
-        return self._console.bus.tia.framebuffer
+        """Return the visible portion of the current framebuffer.
+
+        Shape `(VISIBLE_HEIGHT, SCREEN_WIDTH) = (210, 160)`, uint8 indexed
+        colour — matches xitari/ALE's `Display.YStart=34`/`Display.Height=210`
+        default crop. The top 34 scanlines (VSYNC + VBLANK + any
+        score-header area outside xitari's display window) are cropped
+        out, so jaxtari videos line up vertically with xitari videos.
+
+        The full internal framebuffer (244 rows, scanlines 0..243) is
+        still on `console.bus.tia.framebuffer` for tests / debugging
+        that want the uncropped view.
+        """
+        from jaxtari.tia.system import Y_START, VISIBLE_HEIGHT
+        fb = self._console.bus.tia.framebuffer
+        return fb[Y_START : Y_START + VISIBLE_HEIGHT]
 
     def get_ram(self) -> jnp.ndarray:
         """Return the 128-byte RIOT RAM."""

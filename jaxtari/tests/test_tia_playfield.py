@@ -187,11 +187,16 @@ def test_tia_advance_writes_multiple_scanlines():
 
 
 def test_tia_advance_does_not_write_offscreen_lines():
-    """Scanlines >= SCREEN_HEIGHT (192) shouldn't write to framebuffer."""
+    """Scanlines >= SCREEN_HEIGHT (244) shouldn't write to framebuffer.
+
+    NB: the framebuffer height was bumped from 192 to 244 in the
+    video-alignment fix (xitari/ALE crop now happens in `get_screen`,
+    not at framebuffer-write time). 250 is unambiguously off-screen
+    against the new 244-row internal buffer."""
     tia = initial_tia_state()
     tia = _set_regs(tia, pf0=0xF0, colupf=0x42, colubk=0x00)
-    # Jump to scanline 200 (off-screen).
-    tia = tia._replace(scanline=200)
+    # Jump to scanline 250 (off-screen — beyond the 244-row framebuffer).
+    tia = tia._replace(scanline=250)
     tia = tia_advance(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
     # No row in the framebuffer should be touched.
     assert int(tia.framebuffer.sum()) == 0

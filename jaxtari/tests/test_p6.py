@@ -345,11 +345,17 @@ def test_env_step_advances_frame_counter():
 
 
 def test_env_get_screen_returns_framebuffer_shape():
+    """`env.get_screen()` returns the ALE/xitari visible region —
+    `(VISIBLE_HEIGHT=210, SCREEN_WIDTH=160)`. The internal framebuffer
+    on `env.console.bus.tia.framebuffer` is taller (244 rows, covers
+    full NTSC visible region); `get_screen` crops to the
+    `Display.YStart=34`/`Display.Height=210` window so the user-facing
+    screen aligns vertically with xitari videos."""
     env = StellaEnvironment(_frame_loop_rom())
     env.reset()
     env.step(Action.NOOP)
     screen = env.get_screen()
-    assert screen.shape == (192, 160)
+    assert screen.shape == (210, 160)
     assert screen.dtype == jnp.uint8
 
 
@@ -366,7 +372,9 @@ def test_env_ale_aliases_exist():
     env.reset()
     assert env.act is env.step or callable(env.act)
     env.act(Action.NOOP)
-    assert env.getScreen().shape == (192, 160)
+    # Matches `get_screen()`'s cropped (210, 160) shape — the ALE
+    # `Display.YStart=34`/`Display.Height=210` default crop.
+    assert env.getScreen().shape == (210, 160)
     assert env.getRAM().shape == (128,)
     assert env.gameOver() is False
     assert isinstance(env.getEpisodeFrameNumber(), int)

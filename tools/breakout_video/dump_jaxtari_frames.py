@@ -1,5 +1,14 @@
 """Run jaxtari on Breakout with a given action sequence and dump
-per-frame screens as a flat `(n_frames, 192, 160)` uint8 binary file.
+per-frame screens as a flat `(n_frames, 210, 160)` uint8 binary
+file.
+
+Task #53 (vertical-alignment fix): output shape is `(n, 210, 160)`,
+not the old `(n, 192, 160)`. `env.get_screen()` now returns the
+ALE-standard `Display.YStart=34` / `Display.Height=210` crop (same as
+xitari), so the per-frame screen vertically aligns with
+`dump_xitari_frames.py`'s output. The video composer
+(`render_breakout_compare.py`) accordingly stopped cropping
+xitari to 192 lines from row 18.
 """
 
 from __future__ import annotations
@@ -41,7 +50,7 @@ def main(argv=None) -> int:
     actions = _load_actions(args.actions)
     n = min(args.max_frames, len(actions))
 
-    frames = np.empty((n, 192, 160), dtype=np.uint8)
+    frames = np.empty((n, 210, 160), dtype=np.uint8)
     for i in range(n):
         env.step(int(actions[i]))
         frames[i] = np.asarray(env.get_screen(), dtype=np.uint8)
@@ -50,7 +59,7 @@ def main(argv=None) -> int:
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     frames.tofile(args.out)
-    print(f"wrote {n} frames of shape (192, 160) to {args.out}",
+    print(f"wrote {n} frames of shape (210, 160) to {args.out}",
           file=sys.stderr)
     return 0
 

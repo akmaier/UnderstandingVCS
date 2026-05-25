@@ -1,7 +1,13 @@
 #!/usr/bin/env julia
 # Run jutari on Breakout with a given action sequence and dump
-# per-frame screens as a flat (n_frames, 192, 160) uint8 binary
+# per-frame screens as a flat (n_frames, 210, 160) uint8 binary
 # file. Matches the layout the Python compositor expects.
+#
+# Task #53 (vertical-alignment fix): output shape bumped from (n, 192,
+# 160) to (n, 210, 160). `get_screen` now returns the ALE-standard
+# `Display.YStart=34` / `Display.Height=210` crop (same as xitari),
+# so the per-frame screen vertically aligns with `dump_xitari_frames.py`'s
+# output.
 
 using Pkg
 Pkg.activate(joinpath(@__DIR__, "..", "..", "jutari"))
@@ -49,25 +55,21 @@ function main(argv::Vector{String} = ARGS)
     actions = _load_actions(actions_path)
     n = min(max_frames, length(actions))
 
-    # Pre-allocate the (n, 192, 160) buffer. Julia is column-major,
+    # Pre-allocate the (n, 210, 160) buffer. Julia is column-major,
     # but the Python reader will reshape from a flat byte stream as
-    # (n, 192, 160) so we just need to dump in the (n, 192, 160) row-
-    # major order — write frame-by-frame as (192, 160) row-major
-    # bytes by transposing if needed.
+    # (n, 210, 160) so we just need to dump in the (n, 210, 160)
+    # row-major order — explicit per-cell write below sidesteps the
+    # layout question entirely.
     open(out_path, "w") do io
         for i in 1:n
             env_step!(env, actions[i])
-            screen = get_screen(env)            # (192, 160) UInt8, row-major in Julia? Let's check by writing transposed.
-            # `screen` in jutari is laid out as the framebuffer:
-            # Matrix{UInt8} of size (192, 160) where row r, col c is
-            # `screen[r, c]`. Julia stores column-major in memory, so
-            # writing `screen` directly yields column-major bytes.
-            # Python reads back as (192, 160) C-order, which expects
-            # row-major. So we write `permutedims(screen, (1, 2))`
-            # explicitly transposed to row-major.
-            row_major = collect(transpose(transpose(screen)))   # nop on layout?
-            # Simpler / explicit: build row-major bytes.
-            for r in 1:192
+            screen = get_screen(env)            # (210, 160) UInt8
+            # Explicit row-major byte write. `screen` in jutari is a
+            # 2D Matrix{UInt8} of size (VISIBLE_HEIGHT, SCREEN_WIDTH)
+            # = (210, 160). Python reads back as (210, 160) C-order
+            # (row-major), so we iterate rows-then-cols and write each
+            # byte directly.
+            for r in 1:210
                 for c in 1:160
                     write(io, UInt8(screen[r, c]))
                 end
@@ -77,7 +79,7 @@ function main(argv::Vector{String} = ARGS)
             end
         end
     end
-    println(stderr, "wrote $n frames of shape (192, 160) to $out_path")
+    println(stderr, "wrote $n frames of shape (210, 160) to $out_path")
     return 0
 end
 

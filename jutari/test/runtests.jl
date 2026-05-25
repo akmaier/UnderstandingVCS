@@ -8,6 +8,7 @@ using JuTari.TIA: tia_peek, tia_poke!, tia_advance!, tia_apply_wsync!,
                   _hm_offset, _resp_position,
                   NTSC_CPU_CYCLES_PER_SCANLINE, NTSC_SCANLINES_PER_FRAME,
                   NUM_REGISTERS, SCREEN_WIDTH, SCREEN_HEIGHT,
+                  Y_START, VISIBLE_HEIGHT,
                   W_COLUBK, W_COLUPF, W_COLUP0, W_COLUP1, W_CTRLPF,
                   W_GRP0, W_GRP1, W_REFP0, W_REFP1,
                   W_PF0, W_PF1, W_PF2, W_WSYNC,
@@ -1705,9 +1706,13 @@ end
     end
 
     @testset "tia_advance! does not write off-screen lines" begin
+        # Task #53 vertical-align: framebuffer height bumped from 192 to
+        # 244 (covers full visible NTSC region). Scanline 200 is now
+        # ON-screen (lands in framebuffer[201, :] — Julia 1-based);
+        # 250 is the new "off-screen" sentinel.
         tia = initial_tia_state()
         _set_regs!(tia, :pf0=>0xF0, :colupf=>0x42, :colubk=>0x00)
-        tia.scanline = 200
+        tia.scanline = 250
         tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
         @test sum(tia.framebuffer) == 0
     end
@@ -2869,9 +2874,13 @@ end
     end
 
     @testset "get_screen returns correct shape" begin
+        # Task #53 vertical-align: `get_screen` returns the ALE/xitari
+        # `Display.YStart=34` / `Display.Height=210` crop —
+        # `(VISIBLE_HEIGHT, SCREEN_WIDTH) = (210, 160)` — not the full
+        # `(SCREEN_HEIGHT, SCREEN_WIDTH) = (244, 160)` internal framebuffer.
         env = StellaEnvironment(_frame_loop_rom())
         env_reset!(env); env_step!(env, Int(NOOP))
-        @test size(get_screen(env)) == (SCREEN_HEIGHT, SCREEN_WIDTH)
+        @test size(get_screen(env)) == (VISIBLE_HEIGHT, SCREEN_WIDTH)
     end
 
     @testset "get_ram returns 128 bytes" begin
@@ -2883,7 +2892,7 @@ end
     @testset "ALE-style aliases" begin
         env = StellaEnvironment(_frame_loop_rom())
         env_reset!(env); act!(env, Int(NOOP))
-        @test size(getScreen(env)) == (SCREEN_HEIGHT, SCREEN_WIDTH)
+        @test size(getScreen(env)) == (VISIBLE_HEIGHT, SCREEN_WIDTH)
         @test length(getRAM(env)) == 128
         @test gameOver(env) == false
         @test getEpisodeFrameNumber(env) isa Int

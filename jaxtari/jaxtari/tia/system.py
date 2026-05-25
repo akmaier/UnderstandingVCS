@@ -120,7 +120,26 @@ NUM_REGISTERS = 64
 NTSC_CPU_CYCLES_PER_SCANLINE = 76        # 228 color clocks / 3
 NTSC_SCANLINES_PER_FRAME = 262
 SCREEN_WIDTH = 160
-SCREEN_HEIGHT = 192                       # NTSC visible region (vsync 3 + vblank 37 + visible 192 + overscan 30 = 262)
+
+# Internal framebuffer height — covers scanlines 0..243 (everything xitari
+# would ever show with its default `Display.Height=210` starting at
+# `Display.YStart=34`). The unused 0..33 + 244..261 regions stay empty
+# (VSYNC + post-overscan) but having them in the buffer lets the renderer
+# index the framebuffer directly by absolute scanline number without any
+# per-scanline offset arithmetic — which keeps the unit tests' `framebuffer[N]
+# == scanline-N render` invariant intact (matches the pre-vertical-alignment
+# layout) while still capturing scanlines 192..243 which the old 192-row
+# framebuffer was dropping.
+SCREEN_HEIGHT = 244
+
+# ALE / xitari visible-region crop. The default `Display.YStart` is 34 and
+# the default `Display.Height` is 210 (see xitari/emucore/Props.cxx:300-301).
+# `StellaEnvironment.get_screen()` returns `framebuffer[Y_START:Y_START +
+# VISIBLE_HEIGHT]` so the user-facing screen matches what xitari / ALE
+# present — top 34 lines (VSYNC + VBLANK + any score-header area outside
+# xitari's display window) cropped out, height standardised at 210.
+Y_START = 34
+VISIBLE_HEIGHT = 210
 
 
 # --------------------------------------------------------------------------- #

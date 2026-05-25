@@ -15,6 +15,7 @@ using ..IO: apply_action!, console_switches!, NOOP
 using ..RomSettingsModule: RomSettings, GenericRomSettings,
                            romsettings_reset!, romsettings_is_terminal,
                            romsettings_get_reward, romsettings_lives
+using ..TIA: Y_START, VISIBLE_HEIGHT
 
 export StellaEnvironment, env_reset!, env_step!,
        get_screen, get_ram, game_over, lives, frame_number,
@@ -87,7 +88,22 @@ function env_step!(env::StellaEnvironment, action::Integer)
     return reward
 end
 
-get_screen(env::StellaEnvironment) = env.console.bus.tia.framebuffer
+"""
+    get_screen(env) -> Matrix{UInt8} of size (VISIBLE_HEIGHT, SCREEN_WIDTH)
+                                            = (210, 160)
+
+Return the visible portion of the current framebuffer — matches
+xitari/ALE's `Display.YStart=34` / `Display.Height=210` default crop.
+The first 34 scanlines (VSYNC + VBLANK + any score-header area outside
+xitari's display window) are cropped out, so jutari videos line up
+vertically with xitari videos.
+
+The full internal framebuffer (244 rows, scanlines 0..243) is still
+on `env.console.bus.tia.framebuffer` for tests / debugging that want
+the uncropped view.
+"""
+get_screen(env::StellaEnvironment) =
+    @view env.console.bus.tia.framebuffer[Y_START + 1 : Y_START + VISIBLE_HEIGHT, :]
 get_ram(env::StellaEnvironment)    = env.console.bus.ram
 game_over(env::StellaEnvironment)  = env.terminal
 lives(env::StellaEnvironment)      = Int(romsettings_lives(env.settings, env.console))

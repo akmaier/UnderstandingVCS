@@ -40,6 +40,7 @@ export TIAState, initial_tia_state,
        _hm_offset, _resp_position,
        NTSC_CPU_CYCLES_PER_SCANLINE, NTSC_SCANLINES_PER_FRAME,
        NUM_REGISTERS, SCREEN_WIDTH, SCREEN_HEIGHT,
+       Y_START, VISIBLE_HEIGHT,
        W_VSYNC, W_VBLANK, W_WSYNC, W_RSYNC, W_NUSIZ0, W_NUSIZ1,
        W_COLUP0, W_COLUP1, W_COLUPF, W_COLUBK, W_CTRLPF, W_REFP0, W_REFP1,
        W_PF0, W_PF1, W_PF2, W_RESP0, W_RESP1, W_RESM0, W_RESM1, W_RESBL,
@@ -77,7 +78,21 @@ const NUM_REGISTERS = 64
 const NTSC_CPU_CYCLES_PER_SCANLINE = 76
 const NTSC_SCANLINES_PER_FRAME = 262
 const SCREEN_WIDTH = 160
-const SCREEN_HEIGHT = 192
+# Internal framebuffer height — covers scanlines 0..243 (everything
+# xitari would ever show with its default `Display.Height=210` starting
+# at `Display.YStart=34`). The unused 0..33 + 244..261 regions stay
+# empty (VSYNC + post-overscan) but keeping the buffer indexed by
+# absolute scanline number preserves the unit-tests' `framebuffer[N+1,:]
+# == scanline-N render` invariant.
+const SCREEN_HEIGHT = 244
+# ALE / xitari visible-region crop. Matches xitari's `Display.YStart=34` +
+# `Display.Height=210` (see xitari/emucore/Props.cxx:300-301).
+# `StellaEnvironment.get_screen()` returns `framebuffer[Y_START+1 :
+# Y_START + VISIBLE_HEIGHT, :]` so the user-facing screen lines up
+# vertically with xitari/ALE — top 34 lines (VSYNC + VBLANK + any
+# score-header area outside xitari's display window) cropped out.
+const Y_START = 34
+const VISIBLE_HEIGHT = 210
 
 """
     TIAState
