@@ -556,10 +556,18 @@ def _step_inner(state: CPUState, memory):
 
     # --- RTS ---------------------------------------------------------------
     if mnemonic == "RTS":
+        # Task #50: NMOS 6502 RTS emits two dummy peeks beyond the
+        # two real pops: (1) discard read of $0100+SP (pre-increment)
+        # at cycle 3, before the first pop; and (2) discard read of
+        # the return address itself at cycle 6, after PC = popped+1.
+        # Both update the floating-bus latch.
+        _, memory = peek(memory, 0x0100 + int(state.SP))   # cycle-3 discard
         return_addr, new_sp, memory = pop16(memory, int(state.SP))
+        new_pc = (return_addr + 1) & 0xFFFF
+        _, memory = peek(memory, new_pc - 1)               # cycle-6 PCL discard
         return state._replace(
             SP=jnp.uint8(new_sp),
-            PC=jnp.uint16((return_addr + 1) & 0xFFFF),
+            PC=jnp.uint16(new_pc),
             cycles=state.cycles + jnp.uint64(base_cycles),
         ), memory
 
@@ -581,6 +589,10 @@ def _step_inner(state: CPUState, memory):
             cycles=state.cycles + jnp.uint64(base_cycles),
         ), memory
     if mnemonic == "PLA":
+        # Task #50: NMOS PLA cycle 3 is a discard read of $0100+SP
+        # (pre-increment), before the cycle-4 real pop. Updates the
+        # floating-bus latch.
+        _, memory = peek(memory, 0x0100 + int(state.SP))   # cycle-3 discard
         value, new_sp, memory = pop8(memory, int(state.SP))
         return state._replace(
             A=jnp.uint8(value & 0xFF),
@@ -590,6 +602,7 @@ def _step_inner(state: CPUState, memory):
             cycles=state.cycles + jnp.uint64(base_cycles),
         ), memory
     if mnemonic == "PLP":
+        _, memory = peek(memory, 0x0100 + int(state.SP))   # cycle-3 discard
         popped, new_sp, memory = pop8(memory, int(state.SP))
         return state._replace(
             SP=jnp.uint8(new_sp),
@@ -693,6 +706,10 @@ def _step_inner(state: CPUState, memory):
 
     # --- RTI (P1f) --------------------------------------------------------
     if mnemonic == "RTI":
+        # Task #50: NMOS RTI cycle 3 is a discard read of $0100+SP
+        # (pre-increment), before the three real pops at cycles 4-6.
+        # Updates the floating-bus latch.
+        _, memory = peek(memory, 0x0100 + int(state.SP))   # cycle-3 discard
         popped_p, sp, memory = pop8(memory, int(state.SP))
         popped_pc, sp, memory = pop16(memory, sp)
         return state._replace(

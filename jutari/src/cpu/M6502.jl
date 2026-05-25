@@ -432,8 +432,14 @@ function _step_inner!(state::CPUState, memory)
 
     # --- RTS --------------------------------------------------------------
     elseif mnemonic === :RTS
+        # Task #50: NMOS RTS dummy peeks at cycle 3 (discard $0100+SP
+        # pre-pop) and cycle 6 (discard the just-popped PCL before the
+        # next instruction). Mirrors jaxtari.
+        _peek(memory, 0x0100 + Int(state.SP))              # cycle-3 discard
         return_addr = pop16!(state, memory)
-        state.PC = UInt16((Int(return_addr) + 1) & 0xFFFF)
+        new_pc = UInt16((Int(return_addr) + 1) & 0xFFFF)
+        _peek(memory, UInt16(Int(new_pc) - 1))             # cycle-6 PCL discard
+        state.PC = new_pc
 
     # --- Stack push / pull (P1e) -------------------------------------------
     elseif mnemonic === :PHA
@@ -445,10 +451,13 @@ function _step_inner!(state::CPUState, memory)
         push8!(state, memory, state.P | FLAG_B | FLAG_U)
         state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
     elseif mnemonic === :PLA
+        # Task #50: NMOS PLA cycle-3 discard read of $0100+SP (pre-pop).
+        _peek(memory, 0x0100 + Int(state.SP))              # cycle-3 discard
         state.A = pop8!(state, memory)
         set_zn!(state, state.A)
         state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
     elseif mnemonic === :PLP
+        _peek(memory, 0x0100 + Int(state.SP))              # cycle-3 discard
         popped = pop8!(state, memory)
         state.P = (popped | FLAG_U | FLAG_B) & UInt8(0xFF)
         state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
@@ -528,6 +537,8 @@ function _step_inner!(state::CPUState, memory)
         hi = UInt16(_peek(memory, 0xFFFF))
         state.PC = (hi << 8) | lo
     elseif mnemonic === :RTI
+        # Task #50: NMOS RTI cycle-3 discard read of $0100+SP (pre-pop).
+        _peek(memory, 0x0100 + Int(state.SP))              # cycle-3 discard
         popped_p = pop8!(state, memory)
         popped_pc = pop16!(state, memory)
         state.P = (popped_p | FLAG_U | FLAG_B) & UInt8(0xFF)
