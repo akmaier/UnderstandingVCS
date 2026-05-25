@@ -63,14 +63,23 @@ def test_pong_noop_trace_fixture_exists():
     strict=True,
     reason=(
         "Bit-exact xitari↔jaxtari conformance is being closed in "
-        "PXC1-x rounds. Round 1 (boot-burn parity + frame-counter "
-        "double-count fix in tia_advance) reduced the divergence on "
-        "`pong_noop_10` from 25 RAM bytes to 10 — still non-zero, so "
-        "this still xfails. Run `python tools/check_trace.py --rom "
-        "xitari/roms/pong.bin --trace "
-        "tools/fixtures/traces/pong_noop_10.jsonl` for the current "
-        "per-byte diff. Remove this xfail marker the day jaxtari "
-        "matches xitari frame-for-frame on this fixture."
+        "PXC1-x rounds. Status as of round 4.5 + the PXC2 multi-ROM "
+        "expansion (see tests/test_pxc2_jaxtari_vs_jutari.py): "
+        "pong_noop_10 still diverges by exactly 10 RAM bytes, and "
+        "the root cause is now well-characterized as "
+        "data_bus_state drift from missing 6502 internal-cycle bus "
+        "exposures (RMW dummy-writes, JSR pre-push discard, branch "
+        "extra-cycle, indirect dummy reads — task #50). The "
+        "manifestation is ROM-specific: Space Invaders shows **0** "
+        "bytes (joystick, minimal init reads), Breakout shows 4 "
+        "(paddle, narrow), Pong shows 10, Pitfall shows 19 "
+        "(joystick, but reads INPT5 + RIOT more aggressively). "
+        "Closing this conformance gap thus needs task #50 (per-cycle "
+        "bus accuracy) and the P4c dump-pot model on top. Run "
+        "`python tools/check_trace.py --rom xitari/roms/pong.bin "
+        "--trace tools/fixtures/traces/pong_noop_10.jsonl` for the "
+        "current per-byte diff. Remove this xfail marker the day "
+        "jaxtari matches xitari frame-for-frame on this fixture."
     ),
 )
 def test_jaxtari_matches_xitari_pong_noop_10_frames():
