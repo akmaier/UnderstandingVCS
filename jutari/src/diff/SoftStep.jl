@@ -926,6 +926,97 @@ end
 
 
 # --------------------------------------------------------------------------- #
+# P1h — common undocumented NMOS 6502 opcodes (SOFT mirror)
+# --------------------------------------------------------------------------- #
+#
+# 27 NOP variants + 6 LAX modes + 4 SAX modes = 37 opcodes. Mirrors
+# the jaxtari SOFT P1h block — same semantics:
+#   * NOP variants: PC += correct-length, cycles bump, addressing-mode
+#     variants issue a `_bus_read` of the would-be-fetched operand.
+#   * LAX: A = X = mem[operand]; N/Z from value.
+#   * SAX: mem[operand] = (A AND X), no flag side-effects.
+#
+# The "magic AND" LAX #imm ($AB) + RMW combo opcodes (DCP/ISC/RLA/RRA/
+# SLO/SRE) stay deferred.
+
+function _branch_nop_implied_1byte!(state::SoftCPUState, bus::SoftBus)
+    state.PC     += 1f0
+    state.cycles += 2f0
+    return nothing
+end
+
+function _branch_nop_imm!(state::SoftCPUState, bus::SoftBus)
+    _ = _operand_byte(bus, state.PC + 1f0)
+    state.PC     += 2f0
+    state.cycles += 2f0
+    return nothing
+end
+
+function _branch_nop_zp!(state::SoftCPUState, bus::SoftBus)
+    _ = _bus_read(bus, _addr_zp(state, bus))
+    state.PC     += 2f0
+    state.cycles += 3f0
+    return nothing
+end
+
+function _branch_nop_zp_x!(state::SoftCPUState, bus::SoftBus)
+    _ = _bus_read(bus, _addr_zp_x(state, bus))
+    state.PC     += 2f0
+    state.cycles += 4f0
+    return nothing
+end
+
+function _branch_nop_abs!(state::SoftCPUState, bus::SoftBus)
+    _ = _bus_read(bus, _addr_abs(state, bus))
+    state.PC     += 3f0
+    state.cycles += 4f0
+    return nothing
+end
+
+function _branch_nop_abs_x!(state::SoftCPUState, bus::SoftBus)
+    _ = _bus_read(bus, _addr_abs_x(state, bus))
+    state.PC     += 3f0
+    state.cycles += 4f0
+    return nothing
+end
+
+# --- LAX (load A and X from the same operand) ----------------------------- #
+
+function _do_lax!(state::SoftCPUState, bus::SoftBus, value::Real,
+                  instr_len::Real, cycles::Real)
+    state.P       = _set_nz(state.P, value)
+    state.A       = Float32(value)
+    state.X       = Float32(value)
+    state.PC     += Float32(instr_len)
+    state.cycles += Float32(cycles)
+    return nothing
+end
+
+_branch_lax_zp!(state, bus)    = _do_lax!(state, bus, _bus_read(bus, _addr_zp(state, bus)),    2, 3)
+_branch_lax_zp_y!(state, bus)  = _do_lax!(state, bus, _bus_read(bus, _addr_zp_y(state, bus)),  2, 4)
+_branch_lax_abs!(state, bus)   = _do_lax!(state, bus, _bus_read(bus, _addr_abs(state, bus)),   3, 4)
+_branch_lax_abs_y!(state, bus) = _do_lax!(state, bus, _bus_read(bus, _addr_abs_y(state, bus)), 3, 4)
+_branch_lax_ind_x!(state, bus) = _do_lax!(state, bus, _bus_read(bus, _addr_ind_x(state, bus)), 2, 6)
+_branch_lax_ind_y!(state, bus) = _do_lax!(state, bus, _bus_read(bus, _addr_ind_y(state, bus)), 2, 5)
+
+# --- SAX (store A AND X) -------------------------------------------------- #
+
+function _do_sax!(state::SoftCPUState, bus::SoftBus, addr::Real,
+                  instr_len::Real, cycles::Real)
+    value = Float32(Int(state.A) & Int(state.X))
+    _bus_write!(bus, addr, value)
+    state.PC     += Float32(instr_len)
+    state.cycles += Float32(cycles)
+    return nothing
+end
+
+_branch_sax_zp!(state, bus)    = _do_sax!(state, bus, _addr_zp(state, bus),    2, 3)
+_branch_sax_zp_y!(state, bus)  = _do_sax!(state, bus, _addr_zp_y(state, bus),  2, 4)
+_branch_sax_abs!(state, bus)   = _do_sax!(state, bus, _addr_abs(state, bus),   3, 4)
+_branch_sax_ind_x!(state, bus) = _do_sax!(state, bus, _addr_ind_x(state, bus), 2, 6)
+
+
+# --------------------------------------------------------------------------- #
 # Dispatch table
 # --------------------------------------------------------------------------- #
 
@@ -1055,6 +1146,52 @@ const _HANDLERS = let
     h[0xCA + 1] = _branch_dex!; h[0x88 + 1] = _branch_dey!
     # P7c-f — RTI (completes the documented NMOS opcode set)
     h[0x40 + 1] = _branch_rti!
+    # P1h — undocumented NMOS opcodes (NOP / LAX / SAX) — SOFT mirror.
+    # Implied 1-byte NOPs.
+    h[0x1A + 1] = _branch_nop_implied_1byte!
+    h[0x3A + 1] = _branch_nop_implied_1byte!
+    h[0x5A + 1] = _branch_nop_implied_1byte!
+    h[0x7A + 1] = _branch_nop_implied_1byte!
+    h[0xDA + 1] = _branch_nop_implied_1byte!
+    h[0xFA + 1] = _branch_nop_implied_1byte!
+    # Immediate 2-byte NOPs.
+    h[0x80 + 1] = _branch_nop_imm!
+    h[0x82 + 1] = _branch_nop_imm!
+    h[0x89 + 1] = _branch_nop_imm!
+    h[0xC2 + 1] = _branch_nop_imm!
+    h[0xE2 + 1] = _branch_nop_imm!
+    # Zero-page NOPs.
+    h[0x04 + 1] = _branch_nop_zp!
+    h[0x44 + 1] = _branch_nop_zp!
+    h[0x64 + 1] = _branch_nop_zp!
+    # Zero-page,X NOPs.
+    h[0x14 + 1] = _branch_nop_zp_x!
+    h[0x34 + 1] = _branch_nop_zp_x!
+    h[0x54 + 1] = _branch_nop_zp_x!
+    h[0x74 + 1] = _branch_nop_zp_x!
+    h[0xD4 + 1] = _branch_nop_zp_x!
+    h[0xF4 + 1] = _branch_nop_zp_x!
+    # Absolute NOP.
+    h[0x0C + 1] = _branch_nop_abs!
+    # Absolute,X NOPs.
+    h[0x1C + 1] = _branch_nop_abs_x!
+    h[0x3C + 1] = _branch_nop_abs_x!
+    h[0x5C + 1] = _branch_nop_abs_x!
+    h[0x7C + 1] = _branch_nop_abs_x!
+    h[0xDC + 1] = _branch_nop_abs_x!
+    h[0xFC + 1] = _branch_nop_abs_x!
+    # LAX (6 modes).
+    h[0xA7 + 1] = _branch_lax_zp!
+    h[0xB7 + 1] = _branch_lax_zp_y!
+    h[0xAF + 1] = _branch_lax_abs!
+    h[0xBF + 1] = _branch_lax_abs_y!
+    h[0xA3 + 1] = _branch_lax_ind_x!
+    h[0xB3 + 1] = _branch_lax_ind_y!
+    # SAX (4 modes).
+    h[0x87 + 1] = _branch_sax_zp!
+    h[0x97 + 1] = _branch_sax_zp_y!
+    h[0x8F + 1] = _branch_sax_abs!
+    h[0x83 + 1] = _branch_sax_ind_x!
     h
 end
 
@@ -1096,6 +1233,23 @@ const SOFT_SUPPORTED_OPCODES = Set{UInt8}([
     0xE8, 0xC8, 0xCA, 0x88,
     # P7c-f — RTI (completes the 151-opcode documented NMOS set)
     0x40,
+    # P1h — undocumented NMOS opcodes (NOP / LAX / SAX) — 37 total.
+    # Implied 1-byte NOPs.
+    0x1A, 0x3A, 0x5A, 0x7A, 0xDA, 0xFA,
+    # Immediate NOPs.
+    0x80, 0x82, 0x89, 0xC2, 0xE2,
+    # Zero-page NOPs.
+    0x04, 0x44, 0x64,
+    # Zero-page,X NOPs.
+    0x14, 0x34, 0x54, 0x74, 0xD4, 0xF4,
+    # Absolute NOP.
+    0x0C,
+    # Absolute,X NOPs.
+    0x1C, 0x3C, 0x5C, 0x7C, 0xDC, 0xFC,
+    # LAX.
+    0xA7, 0xB7, 0xAF, 0xBF, 0xA3, 0xB3,
+    # SAX.
+    0x87, 0x97, 0x8F, 0x83,
 ])
 
 

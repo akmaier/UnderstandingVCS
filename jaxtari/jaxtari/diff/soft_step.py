@@ -1492,6 +1492,205 @@ _HANDLERS[0x88] = _branch_dey
 # P7c-f — RTI (completes the documented NMOS opcode set)
 _HANDLERS[0x40] = _branch_rti
 
+
+# --- P1h — common undocumented NMOS 6502 opcodes (SOFT mirror) ----------- #
+#
+# These mirror the HARD-mode subset in `jaxtari/cpu/m6502.py`. SOFT
+# semantics:
+#   * NOP variants: advance PC by the correct opcode length, bump
+#     cycles, and (for the addressing-mode variants) issue a
+#     `_bus_read` of the operand the real chip would dummy-fetch. The
+#     read result is discarded; we keep it so any future per-cycle
+#     data-bus tracking sees the same bus activity as the HARD path.
+#   * LAX: load A *and* X from the same operand; N/Z set from value.
+#     Equivalent to `LDA + TAX` with no inter-instruction flag mess.
+#   * SAX: store (A AND X) at the operand address; no flag side-effects.
+#
+# Page-crossing for the abs,X NOPs / LAX abs,Y is the same convention
+# the existing SOFT documented handlers use (no +1 cycle modelled —
+# matches the worst-case-cycle SOFT convention for absolute,X reads).
+# The "magic AND" LAX #imm ($AB) is intentionally left out (unstable
+# on real hardware); RMW combo opcodes (DCP/ISC/RLA/RRA/SLO/SRE)
+# stay deferred.
+
+# Implied-mode 1-byte NOPs (2 cycles each, no operand fetch).
+def _branch_nop_implied_1byte(state, bus):
+    return state._replace(
+        PC=state.PC + 1.0,
+        cycles=state.cycles + 2.0,
+    ), bus
+
+
+# Two-byte 2-cycle NOPs — immediate operand is fetched and discarded.
+def _branch_nop_imm(state, bus):
+    _ = _operand_byte(bus, state.PC + 1.0)        # dummy operand read
+    return state._replace(
+        PC=state.PC + 2.0,
+        cycles=state.cycles + 2.0,
+    ), bus
+
+
+# Zero-page NOPs — 2 bytes, 3 cycles. Dummy-reads the zp byte.
+def _branch_nop_zp(state, bus):
+    _ = _bus_read(bus, _addr_zp(state, bus))
+    return state._replace(
+        PC=state.PC + 2.0,
+        cycles=state.cycles + 3.0,
+    ), bus
+
+
+# Zero-page,X NOPs — 2 bytes, 4 cycles.
+def _branch_nop_zp_x(state, bus):
+    _ = _bus_read(bus, _addr_zp_x(state, bus))
+    return state._replace(
+        PC=state.PC + 2.0,
+        cycles=state.cycles + 4.0,
+    ), bus
+
+
+# Absolute NOP — 3 bytes, 4 cycles.
+def _branch_nop_abs(state, bus):
+    _ = _bus_read(bus, _addr_abs(state, bus))
+    return state._replace(
+        PC=state.PC + 3.0,
+        cycles=state.cycles + 4.0,
+    ), bus
+
+
+# Absolute,X NOPs — 3 bytes, 4 cycles (no +1 page-cross penalty
+# modelled, matching the SOFT LDA abs,X handler convention).
+def _branch_nop_abs_x(state, bus):
+    _ = _bus_read(bus, _addr_abs_x(state, bus))
+    return state._replace(
+        PC=state.PC + 3.0,
+        cycles=state.cycles + 4.0,
+    ), bus
+
+
+# --- LAX (load A and X from the same operand) ----------------------------- #
+
+def _do_lax(state, bus, value, instr_len, cycles):
+    """LAX = LDA + TAX without going through TAX. Sets N/Z from value;
+    both A and X get the loaded byte."""
+    new_p = _set_nz(state.P, value)
+    return _with_p(state, new_p,
+        A=value,
+        X=value,
+        PC=state.PC + instr_len,
+        cycles=state.cycles + cycles,
+    ), bus
+
+
+def _branch_lax_zp(state, bus):
+    val = _bus_read(bus, _addr_zp(state, bus))
+    return _do_lax(state, bus, val, 2.0, 3.0)
+
+
+def _branch_lax_zp_y(state, bus):
+    val = _bus_read(bus, _addr_zp_y(state, bus))
+    return _do_lax(state, bus, val, 2.0, 4.0)
+
+
+def _branch_lax_abs(state, bus):
+    val = _bus_read(bus, _addr_abs(state, bus))
+    return _do_lax(state, bus, val, 3.0, 4.0)
+
+
+def _branch_lax_abs_y(state, bus):
+    val = _bus_read(bus, _addr_abs_y(state, bus))
+    return _do_lax(state, bus, val, 3.0, 4.0)
+
+
+def _branch_lax_ind_x(state, bus):
+    val = _bus_read(bus, _addr_ind_x(state, bus))
+    return _do_lax(state, bus, val, 2.0, 6.0)
+
+
+def _branch_lax_ind_y(state, bus):
+    val = _bus_read(bus, _addr_ind_y(state, bus))
+    return _do_lax(state, bus, val, 2.0, 5.0)
+
+
+# --- SAX (store A AND X) -------------------------------------------------- #
+
+def _do_sax(state, bus, addr, instr_len, cycles):
+    """SAX = STA with the byte = A AND X. No flag effects."""
+    # AND happens in int space (every SOFT byte is float; widen via
+    # int32 to perform the bitwise AND faithfully).
+    a_int = state.A.astype(jnp.int32)
+    x_int = state.X.astype(jnp.int32)
+    value = (a_int & x_int).astype(jnp.float32)
+    new_bus = _bus_write(bus, addr, value)
+    return state._replace(
+        PC=state.PC + instr_len,
+        cycles=state.cycles + cycles,
+    ), new_bus
+
+
+def _branch_sax_zp(state, bus):
+    return _do_sax(state, bus, _addr_zp(state, bus), 2.0, 3.0)
+
+
+def _branch_sax_zp_y(state, bus):
+    return _do_sax(state, bus, _addr_zp_y(state, bus), 2.0, 4.0)
+
+
+def _branch_sax_abs(state, bus):
+    return _do_sax(state, bus, _addr_abs(state, bus), 3.0, 4.0)
+
+
+def _branch_sax_ind_x(state, bus):
+    return _do_sax(state, bus, _addr_ind_x(state, bus), 2.0, 6.0)
+
+
+# Implied 1-byte NOPs.
+_HANDLERS[0x1A] = _branch_nop_implied_1byte
+_HANDLERS[0x3A] = _branch_nop_implied_1byte
+_HANDLERS[0x5A] = _branch_nop_implied_1byte
+_HANDLERS[0x7A] = _branch_nop_implied_1byte
+_HANDLERS[0xDA] = _branch_nop_implied_1byte
+_HANDLERS[0xFA] = _branch_nop_implied_1byte
+# Immediate 2-byte NOPs.
+_HANDLERS[0x80] = _branch_nop_imm
+_HANDLERS[0x82] = _branch_nop_imm
+_HANDLERS[0x89] = _branch_nop_imm
+_HANDLERS[0xC2] = _branch_nop_imm
+_HANDLERS[0xE2] = _branch_nop_imm
+# Zero-page NOPs.
+_HANDLERS[0x04] = _branch_nop_zp
+_HANDLERS[0x44] = _branch_nop_zp
+_HANDLERS[0x64] = _branch_nop_zp
+# Zero-page,X NOPs.
+_HANDLERS[0x14] = _branch_nop_zp_x
+_HANDLERS[0x34] = _branch_nop_zp_x
+_HANDLERS[0x54] = _branch_nop_zp_x
+_HANDLERS[0x74] = _branch_nop_zp_x
+_HANDLERS[0xD4] = _branch_nop_zp_x
+_HANDLERS[0xF4] = _branch_nop_zp_x
+# Absolute NOP.
+_HANDLERS[0x0C] = _branch_nop_abs
+# Absolute,X NOPs.
+_HANDLERS[0x1C] = _branch_nop_abs_x
+_HANDLERS[0x3C] = _branch_nop_abs_x
+_HANDLERS[0x5C] = _branch_nop_abs_x
+_HANDLERS[0x7C] = _branch_nop_abs_x
+_HANDLERS[0xDC] = _branch_nop_abs_x
+_HANDLERS[0xFC] = _branch_nop_abs_x
+
+# LAX (6 modes).
+_HANDLERS[0xA7] = _branch_lax_zp
+_HANDLERS[0xB7] = _branch_lax_zp_y
+_HANDLERS[0xAF] = _branch_lax_abs
+_HANDLERS[0xBF] = _branch_lax_abs_y
+_HANDLERS[0xA3] = _branch_lax_ind_x
+_HANDLERS[0xB3] = _branch_lax_ind_y
+
+# SAX (4 modes).
+_HANDLERS[0x87] = _branch_sax_zp
+_HANDLERS[0x97] = _branch_sax_zp_y
+_HANDLERS[0x8F] = _branch_sax_abs
+_HANDLERS[0x83] = _branch_sax_ind_x
+
 # Opcodes handled with full behaviour (rather than default). Exposed so
 # tests + a future P7c can introspect coverage.
 SOFT_SUPPORTED_OPCODES = frozenset({
@@ -1531,6 +1730,24 @@ SOFT_SUPPORTED_OPCODES = frozenset({
     0xE8, 0xC8, 0xCA, 0x88,
     # P7c-f — RTI (completes the 151-opcode documented NMOS set)
     0x40,
+    # P1h — undocumented NMOS opcodes (NOP / LAX / SAX) — SOFT mirror
+    # of the HARD path. 28 opcodes total: 18 NOPs + 6 LAX + 4 SAX.
+    # Implied 1-byte NOPs.
+    0x1A, 0x3A, 0x5A, 0x7A, 0xDA, 0xFA,
+    # Immediate NOPs.
+    0x80, 0x82, 0x89, 0xC2, 0xE2,
+    # Zero-page NOPs.
+    0x04, 0x44, 0x64,
+    # Zero-page,X NOPs.
+    0x14, 0x34, 0x54, 0x74, 0xD4, 0xF4,
+    # Absolute NOP.
+    0x0C,
+    # Absolute,X NOPs.
+    0x1C, 0x3C, 0x5C, 0x7C, 0xDC, 0xFC,
+    # LAX.
+    0xA7, 0xB7, 0xAF, 0xBF, 0xA3, 0xB3,
+    # SAX.
+    0x87, 0x97, 0x8F, 0x83,
 })
 
 

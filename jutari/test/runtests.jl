@@ -4004,9 +4004,19 @@ end
 @testset "JuTari P7c-f SOFT-mode RTI + complete NMOS opcode set" begin
 
     @testset "SOFT mode covers all 151 NMOS opcodes + USBC" begin
-        @test length(SOFT_SUPPORTED_OPCODES) == 152
+        # P7c-f baseline: 151 documented NMOS + USBC ($EB) = 152.
+        # The P1h SOFT mirror adds another 37 undocumented (27 NOPs +
+        # 6 LAX + 4 SAX) → 189 total. Use `>=` so future P1h-x
+        # additions (DCP/ISC/RLA/RRA/SLO/SRE, LAX #imm $AB) can land
+        # without churning this milestone test.
+        @test length(SOFT_SUPPORTED_OPCODES) >= 189
         @test 0x40 in SOFT_SUPPORTED_OPCODES   # RTI
         @test 0xEB in SOFT_SUPPORTED_OPCODES   # USBC alias
+        # Spot-check a P1h opcode from each subset so a regression
+        # that drops the SOFT mirror is caught.
+        @test 0x1A in SOFT_SUPPORTED_OPCODES   # NOP implied
+        @test 0xA7 in SOFT_SUPPORTED_OPCODES   # LAX zp
+        @test 0x87 in SOFT_SUPPORTED_OPCODES   # SAX zp
     end
 
     @testset "every documented opcode group is present" begin
@@ -4062,6 +4072,156 @@ end
         @test state.PC == Float32(0xF000)
         @test state.SP == sp_before - 3f0
         @test (Int(state.P) & 0x04) != 0
+    end
+
+end
+
+@testset "JuTari P1h SOFT-mode undocumented opcodes" begin
+    # Mirror of `jaxtari/tests/test_p1h_soft.py` for the jutari SOFT
+    # path. Same 37 opcodes (27 NOPs + 6 LAX + 4 SAX); semantics laid
+    # out in src/diff/SoftStep.jl.
+
+    @testset "P1h opcode set present in SOFT dispatch" begin
+        p1h = Set{UInt8}([
+            # Implied 1-byte NOPs.
+            0x1A, 0x3A, 0x5A, 0x7A, 0xDA, 0xFA,
+            # Immediate NOPs.
+            0x80, 0x82, 0x89, 0xC2, 0xE2,
+            # Zero-page NOPs.
+            0x04, 0x44, 0x64,
+            # Zero-page,X NOPs.
+            0x14, 0x34, 0x54, 0x74, 0xD4, 0xF4,
+            # Absolute NOP.
+            0x0C,
+            # Absolute,X NOPs.
+            0x1C, 0x3C, 0x5C, 0x7C, 0xDC, 0xFC,
+            # LAX.
+            0xA7, 0xB7, 0xAF, 0xBF, 0xA3, 0xB3,
+            # SAX.
+            0x87, 0x97, 0x8F, 0x83,
+        ])
+        @test p1h ⊆ SOFT_SUPPORTED_OPCODES
+        @test length(p1h) == 37
+    end
+
+    @testset "NOP implied 1-byte (every opcode)" begin
+        for op in (0x1A, 0x3A, 0x5A, 0x7A, 0xDA, 0xFA)
+            bus = initial_soft_bus(_soft_rom_with([UInt8(op)]))
+            state = initial_soft_cpu_state()
+            pc_before = state.PC
+            soft_step!(state, bus)
+            @test state.PC == pc_before + 1f0
+            @test state.cycles == 2f0
+        end
+    end
+
+    @testset "NOP imm consumes operand byte" begin
+        for op in (0x80, 0x82, 0x89, 0xC2, 0xE2)
+            bus = initial_soft_bus(_soft_rom_with([UInt8(op), 0x77]))
+            state = initial_soft_cpu_state()
+            pc_before = state.PC
+            soft_step!(state, bus)
+            @test state.PC == pc_before + 2f0
+            @test state.cycles == 2f0
+        end
+    end
+
+    @testset "NOP zp is 3 cycles" begin
+        for op in (0x04, 0x44, 0x64)
+            bus = initial_soft_bus(_soft_rom_with([UInt8(op), 0x40]))
+            state = initial_soft_cpu_state()
+            soft_step!(state, bus)
+            @test state.cycles == 3f0
+        end
+    end
+
+    @testset "NOP zp,X is 4 cycles" begin
+        for op in (0x14, 0x34, 0x54, 0x74, 0xD4, 0xF4)
+            bus = initial_soft_bus(_soft_rom_with([UInt8(op), 0x40]))
+            state = initial_soft_cpu_state(); state.X = Float32(0x05)
+            soft_step!(state, bus)
+            @test state.cycles == 4f0
+        end
+    end
+
+    @testset "NOP abs is 4 cycles" begin
+        bus = initial_soft_bus(_soft_rom_with([0x0C, 0x34, 0x12]))
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test state.cycles == 4f0
+    end
+
+    @testset "NOP abs,X is 4 cycles" begin
+        for op in (0x1C, 0x3C, 0x5C, 0x7C, 0xDC, 0xFC)
+            bus = initial_soft_bus(_soft_rom_with([UInt8(op), 0x00, 0x10]))
+            state = initial_soft_cpu_state(); state.X = Float32(0x10)
+            soft_step!(state, bus)
+            @test state.cycles == 4f0
+        end
+    end
+
+    @testset "LAX zp loads A and X from same byte" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA7, 0x40]))
+        bus.ram[0x40 + 1] = Float32(0x55)
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test state.A == Float32(0x55)
+        @test state.X == Float32(0x55)
+        @test state.cycles == 3f0
+        # N=0, Z=0 (positive nonzero).
+        @test (Int(state.P) & 0x82) == 0
+    end
+
+    @testset "LAX zp,Y is 4 cycles + sets N for high-bit byte" begin
+        bus = initial_soft_bus(_soft_rom_with([0xB7, 0x40]))
+        bus.ram[0x45 + 1] = Float32(0xCC)
+        state = initial_soft_cpu_state(); state.Y = Float32(0x05)
+        soft_step!(state, bus)
+        @test state.A == Float32(0xCC)
+        @test state.X == Float32(0xCC)
+        @test state.cycles == 4f0
+        @test (Int(state.P) & 0x80) != 0   # N set
+        @test (Int(state.P) & 0x02) == 0   # Z clear
+    end
+
+    @testset "LAX of zero sets Z" begin
+        bus = initial_soft_bus(_soft_rom_with([0xA7, 0x40]))
+        bus.ram[0x40 + 1] = 0f0
+        state = initial_soft_cpu_state()
+        soft_step!(state, bus)
+        @test state.A == 0f0
+        @test state.X == 0f0
+        @test (Int(state.P) & 0x02) != 0   # Z set
+        @test (Int(state.P) & 0x80) == 0   # N clear
+    end
+
+    @testset "SAX zp stores A AND X without touching flags" begin
+        bus = initial_soft_bus(_soft_rom_with([0x87, 0x40]))
+        state = initial_soft_cpu_state()
+        state.A = Float32(0xFC); state.X = Float32(0xAA)
+        p_before = state.P
+        soft_step!(state, bus)
+        @test bus.ram[0x40 + 1] == Float32(0xA8)   # 0xFC AND 0xAA
+        @test state.cycles == 3f0
+        @test state.P == p_before                  # flags untouched
+    end
+
+    @testset "SAX zp,Y is 4 cycles" begin
+        bus = initial_soft_bus(_soft_rom_with([0x97, 0x40]))
+        state = initial_soft_cpu_state()
+        state.A = Float32(0xF0); state.X = Float32(0x0F); state.Y = Float32(0x05)
+        soft_step!(state, bus)
+        @test bus.ram[0x45 + 1] == 0f0             # 0xF0 AND 0x0F = 0
+        @test state.cycles == 4f0
+    end
+
+    @testset "SAX abs into RAM mirror" begin
+        bus = initial_soft_bus(_soft_rom_with([0x8F, 0x80, 0x00]))
+        state = initial_soft_cpu_state()
+        state.A = Float32(0xFF); state.X = Float32(0x33)
+        soft_step!(state, bus)
+        @test bus.ram[0 + 1] == Float32(0x33)
+        @test state.cycles == 4f0
     end
 
 end

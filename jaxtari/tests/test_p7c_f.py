@@ -31,12 +31,21 @@ def _rom_with(bytes_: list[int], size: int = 4096) -> jnp.ndarray:
 # --------------------------------------------------------------------------- #
 
 def test_soft_mode_covers_all_151_documented_nmos_opcodes():
-    """The documented NMOS 6502 has 151 opcodes; xitari also implements
-    the undocumented USBC ($EB). SOFT mode should now handle all of
-    them — 152 total."""
-    assert len(SOFT_SUPPORTED_OPCODES) == 152
+    """The documented NMOS 6502 has 151 opcodes; xitari implements
+    USBC ($EB) on top → 152 documented. The P1h SOFT mirror adds
+    another 37 undocumented (27 NOPs + 6 LAX + 4 SAX) → 189 total.
+
+    The assertion uses `>=` instead of `==` so a future P1h-x round
+    (DCP/ISC/RLA/RRA/SLO/SRE + LAX #imm $AB) can land without a
+    tickle-the-magic-constant churn here."""
+    assert len(SOFT_SUPPORTED_OPCODES) >= 189
     assert 0x40 in SOFT_SUPPORTED_OPCODES   # RTI — the P7c-f addition
     assert 0xEB in SOFT_SUPPORTED_OPCODES   # USBC alias
+    # Spot-check: at least one P1h opcode from each undocumented subset
+    # so a future regression that drops the SOFT-mirror is caught.
+    assert 0x1A in SOFT_SUPPORTED_OPCODES   # NOP implied
+    assert 0xA7 in SOFT_SUPPORTED_OPCODES   # LAX zp
+    assert 0x87 in SOFT_SUPPORTED_OPCODES   # SAX zp
 
 
 def test_every_documented_opcode_group_is_present():
