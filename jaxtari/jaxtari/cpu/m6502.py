@@ -46,8 +46,10 @@ from jaxtari.cpu.alu import (
 )
 from jaxtari.cpu.tables import (
     ADDR_ABSOLUTE_X,
+    ADDR_ABSOLUTE_Y,
     ADDR_IMPLIED,
     ADDR_INDIRECT,
+    ADDR_INDIRECT_Y,
     ADDRESSING_MODE_TABLE,
     CYCLE_TABLE,
     FLAG_B,
@@ -242,6 +244,26 @@ def _stub_advance(state: CPUState, base_cycles: int) -> CPUState:
     )
 
 
+def _store_rmw_wrong_page_peek(memory, mode: int, eff: int, page_crossed: bool):
+    """Task #50: NMOS 6502 STORE and RMW with abs,X / abs,Y / (zp),Y modes
+    emit an **unconditional** wrong-page dummy peek at cycle 4 — not just
+    on page cross. (LOAD instructions only do it on cross, which is what
+    the resolvers already handle.)
+
+    The resolver already does the cross case, so this helper only fires
+    when NOT crossed (in which case the wrong-page address equals the
+    effective address — but on real hardware the chip still puts that
+    address on the bus and reads it back, updating the floating-bus
+    latch the TIA's INPT / collision reads OR into D5-D0).
+    """
+    if page_crossed:
+        return memory                                # resolver already handled
+    if mode not in (ADDR_ABSOLUTE_X, ADDR_ABSOLUTE_Y, ADDR_INDIRECT_Y):
+        return memory                                # only these modes need it
+    _, memory = peek(memory, eff)                    # always-on wrong-page peek
+    return memory
+
+
 # --------------------------------------------------------------------------- #
 # Stack helpers — shared by JSR/RTS (P1d), PHA/PLA/PHP/PLP (P1e), and
 # BRK/RTI/IRQ/NMI (P1f). Stack lives at $0100 + SP; SP decrements on push.
@@ -415,7 +437,14 @@ def _step_inner(state: CPUState, memory):
 
     # --- Stores ------------------------------------------------------------
     if mnemonic in ("STA", "STX", "STY"):
-        addr, _, memory = RESOLVERS[mode](state, memory)
+        addr, page_crossed, memory = RESOLVERS[mode](state, memory)
+        # Task #50: store with abs,X / abs,Y / (zp),Y emits an
+        # unconditional wrong-page dummy peek at cycle 4 (even when
+        # NOT crossed — in which case it equals eff_addr but the chip
+        # still puts that address on the bus and reads back, updating
+        # the floating-bus latch). LOAD only does it on cross, handled
+        # by the resolver; STORE must add the no-cross case.
+        memory = _store_rmw_wrong_page_peek(memory, mode, addr, page_crossed)
         value = {"STA": int(state.A), "STX": int(state.X), "STY": int(state.Y)}[mnemonic]
         return _commit_store(state, memory, addr, value, mode, base_cycles)
 
@@ -487,7 +516,11 @@ def _step_inner(state: CPUState, memory):
         # the floating-bus latch that subsequent TIA reads OR into
         # their result. (Mirrors xitari's M6502 RMW emulation +
         # System::poke updating myDataBusState on every write.)
-        addr, _, memory = RESOLVERS[mode](state, memory)
+        #
+        # Plus: for abs,X mode the cycle-4 wrong-page peek is
+        # unconditional (same as STORE), not just on cross.
+        addr, page_crossed, memory = RESOLVERS[mode](state, memory)
+        memory = _store_rmw_wrong_page_peek(memory, mode, addr, page_crossed)
         value, memory = peek(memory, addr)
         memory = poke(memory, addr, value)              # RMW dummy write
         new_value, new_p = op(int(state.P), value)
@@ -659,8 +692,10 @@ def _step_inner(state: CPUState, memory):
         # Task #50: NMOS 6502 RMW double-write — INC/DEC write the
         # OLD value back as a dummy/internal cycle before writing the
         # NEW value. Same data-bus side effect as the shifts/rotates
-        # block above.
-        addr, _, memory = RESOLVERS[mode](state, memory)
+        # block above. Plus the unconditional cycle-4 wrong-page peek
+        # for abs,X mode.
+        addr, page_crossed, memory = RESOLVERS[mode](state, memory)
+        memory = _store_rmw_wrong_page_peek(memory, mode, addr, page_crossed)
         value, memory = peek(memory, addr)
         memory = poke(memory, addr, value)              # RMW dummy write
         delta = 1 if mnemonic == "INC" else -1
@@ -690,6 +725,11 @@ def _step_inner(state: CPUState, memory):
 
     # --- BRK (P1f) --------------------------------------------------------
     if mnemonic == "BRK":
+        # Task #50: NMOS BRK cycle 2 is a discard read of PC+1 (the
+        # padding byte; BRK is technically a 2-byte instruction even
+        # though the second byte is never executed). Visible on the
+        # data bus → updates the floating-bus latch.
+        _, memory = peek(memory, (int(state.PC) + 1) & 0xFFFF)   # cycle-2 discard
         return_addr = (int(state.PC) + 2) & 0xFFFF
         memory, sp = push16(memory, int(state.SP), return_addr)
         memory, sp = push8(memory, sp, int(state.P) | FLAG_B | FLAG_U)

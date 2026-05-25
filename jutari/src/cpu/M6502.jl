@@ -32,7 +32,7 @@ include("Addressing.jl")
 include("ALU.jl")
 
 using .CPUTables: ADDRESSING_MODE_TABLE, CYCLE_TABLE,
-                  ADDR_ABSOLUTE_X, ADDR_IMPLIED, ADDR_INDIRECT,
+                  ADDR_ABSOLUTE_X, ADDR_ABSOLUTE_Y, ADDR_IMPLIED, ADDR_INDIRECT, ADDR_INDIRECT_Y,
                   FLAG_C, FLAG_N, FLAG_V, FLAG_Z, FLAG_I, FLAG_D, FLAG_B, FLAG_U
 using .Addressing: resolve, instruction_length
 using .ALU: set_zn!, compare_flags!, bit_flags!, adc!, sbc!,
@@ -200,6 +200,20 @@ const _peek = peek
     return nothing
 end
 
+# Task #50: STORE / RMW with abs,X / abs,Y / (zp),Y emit an unconditional
+# cycle-4 wrong-page dummy peek even when NO page cross. (LOAD only does
+# it on cross — handled in the resolvers.) Mirrors jaxtari's
+# `_store_rmw_wrong_page_peek`.
+@inline function _store_rmw_wrong_page_peek!(memory, mode::Integer, eff::Integer,
+                                              page_crossed::Bool)
+    page_crossed && return                                  # resolver handled
+    if mode != ADDR_ABSOLUTE_X && mode != ADDR_ABSOLUTE_Y && mode != ADDR_INDIRECT_Y
+        return                                              # only these modes
+    end
+    _peek(memory, eff)                                      # unconditional dummy
+    return
+end
+
 @inline function pop8!(state::CPUState, memory)
     state.SP = UInt8((Int(state.SP) + 1) & 0xFF)
     return peek(memory, 0x0100 + Int(state.SP))
@@ -309,14 +323,20 @@ function _step_inner!(state::CPUState, memory)
         _advance_pc!(state, mode); page && (extra_cycles += 1)
 
     # --- Stores (no page-cross penalty) -----------------------------------
+    # Task #50: STA/STX/STY with abs,X / abs,Y / (zp),Y emit an unconditional
+    # cycle-4 wrong-page dummy peek (resolver only does it on cross — for
+    # stores we ALSO need the no-cross case). Mirrors jaxtari.
     elseif mnemonic === :STA
-        addr, _ = resolve(mode, state, memory)
+        addr, page = resolve(mode, state, memory)
+        _store_rmw_wrong_page_peek!(memory, mode, addr, page)
         poke!(memory, addr, state.A); _advance_pc!(state, mode)
     elseif mnemonic === :STX
-        addr, _ = resolve(mode, state, memory)
+        addr, page = resolve(mode, state, memory)
+        _store_rmw_wrong_page_peek!(memory, mode, addr, page)
         poke!(memory, addr, state.X); _advance_pc!(state, mode)
     elseif mnemonic === :STY
-        addr, _ = resolve(mode, state, memory)
+        addr, page = resolve(mode, state, memory)
+        _store_rmw_wrong_page_peek!(memory, mode, addr, page)
         poke!(memory, addr, state.Y); _advance_pc!(state, mode)
 
     # --- Bitwise A-ops ----------------------------------------------------
@@ -376,9 +396,10 @@ function _step_inner!(state::CPUState, memory)
         else
             # Memory-mode RMW. Task #50: NMOS 6502 emits the
             # double-write — old value first (dummy/internal cycle),
-            # then new value. Same data-bus side effect as the
-            # jaxtari-side fix.
-            addr, _ = resolve(mode, state, memory)
+            # then new value. Plus the unconditional cycle-4 wrong-
+            # page peek for abs,X mode (same as STORE).
+            addr, page = resolve(mode, state, memory)
+            _store_rmw_wrong_page_peek!(memory, mode, addr, page)
             value  = _peek(memory, addr)
             poke!(memory, addr, value)                  # RMW dummy write
             poke!(memory, addr, op(state, value))
@@ -493,16 +514,20 @@ function _step_inner!(state::CPUState, memory)
 
     # --- SAX (P1h) — store A AND X, no flag side-effects ----------------
     elseif mnemonic === :SAX
-        addr, _ = resolve(mode, state, memory)
+        # Task #50: SAX is a store — emits the unconditional wrong-page
+        # peek if mode is abs,X / abs,Y / (zp),Y (none of the documented
+        # SAX modes hit those, but kept consistent with STA/STX/STY).
+        addr, page = resolve(mode, state, memory)
+        _store_rmw_wrong_page_peek!(memory, mode, addr, page)
         poke!(memory, addr, UInt8(Int(state.A) & Int(state.X) & 0xFF))
         _advance_pc!(state, mode)
 
     # --- INC / DEC memory (P1f) -------------------------------------------
     elseif mnemonic === :INC || mnemonic === :DEC
-        # Task #50: NMOS 6502 RMW double-write — dummy write of OLD
-        # value before the new value. Same data-bus side effect as
-        # the shifts/rotates block above.
-        addr, _ = resolve(mode, state, memory)
+        # Task #50: NMOS RMW double-write + unconditional cycle-4
+        # wrong-page peek for abs,X mode (same as STORE).
+        addr, page = resolve(mode, state, memory)
+        _store_rmw_wrong_page_peek!(memory, mode, addr, page)
         value = _peek(memory, addr)
         poke!(memory, addr, value)                       # RMW dummy write
         delta = mnemonic === :INC ? 1 : -1
@@ -529,6 +554,11 @@ function _step_inner!(state::CPUState, memory)
     elseif mnemonic === :BRK
         # Push PC + 2 (skipping the BRK signature byte), then P|B|U; set I;
         # load PC from the IRQ vector at $FFFE/$FFFF.
+        #
+        # Task #50: NMOS BRK cycle 2 is a discard read of PC+1 (the
+        # padding byte). Visible on the data bus → updates the
+        # floating-bus latch.
+        _peek(memory, UInt16((Int(state.PC) + 1) & 0xFFFF))   # cycle-2 discard
         return_addr = UInt16((Int(state.PC) + 2) & 0xFFFF)
         push16!(state, memory, return_addr)
         push8!(state, memory, state.P | FLAG_B | FLAG_U)
