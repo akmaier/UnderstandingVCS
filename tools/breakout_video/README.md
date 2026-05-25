@@ -11,10 +11,22 @@ deterministic random paddle-motion action sequence (seed 42):
 
 The "diff" panel highlights every pixel where the two emulators
 produce a different palette index in bright magenta; identical
-pixels stay black. The persistent magenta you see is the **PXC1
-documented 10-byte RAM divergence** manifesting visually — the
-real-mode TIA renderer in jaxtari / jutari draws Breakout's
-brick rainbow and score readout slightly differently from xitari.
+pixels stay black. The persistent magenta you see is the
+combination of two known **rendering** gaps (NOT vertical
+alignment — see task #53 for that fix):
+
+  * the **PXC1 RAM-divergence chain** — paddle/RIOT data-path
+    differences propagate into stored sprite positions and tint
+    several pixels per frame;
+  * the **HARD-mode TIA NUSIZ / sprite-bracket rendering bug**
+    that splits Breakout's brick stripe into separated copies
+    instead of one continuous row.
+
+Vertical alignment, formerly listed as a third gap, was the
+`Display.YStart=34` / `Display.Height=210` crop that xitari
+applies but jaxtari/jutari were not — that's **fixed as of
+task #53**, so the scores, brick rainbow, and paddle all sit at
+the same Y position in every panel now.
 
 ## Why is the jaxtari video only 10 s?
 
