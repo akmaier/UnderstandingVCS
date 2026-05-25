@@ -505,6 +505,19 @@ def _step_inner(state: CPUState, memory):
         take = flag_set if take_when_set else not flag_set
         if take:
             target, page_crossed, memory = RESOLVERS[mode](state, memory)
+            # Task #50: real NMOS 6502 branch-taken has a "wasted
+            # opcode prefetch" — at cycle 3 it peeks PC+2 (the
+            # would-be next opcode before the branch redirects). If
+            # the branch crosses a page, cycle 4 then peeks at the
+            # wrong page's high byte before the actual fetch
+            # corrects. Both are dummy peeks that update the
+            # floating-bus latch.
+            _, memory = peek(memory, (int(state.PC) + 2) & 0xFFFF)
+            if page_crossed:
+                # Wrong-page dummy peek: the target's low byte with
+                # the PC+2 high byte (the un-corrected high byte).
+                wrong_addr = ((int(state.PC) + 2) & 0xFF00) | (target & 0xFF)
+                _, memory = peek(memory, wrong_addr)
             extra = 1 + (1 if page_crossed else 0)
             new_pc = target
         else:
@@ -525,7 +538,14 @@ def _step_inner(state: CPUState, memory):
 
     # --- JSR ---------------------------------------------------------------
     if mnemonic == "JSR":
+        # Task #50: real NMOS 6502 JSR has a "pre-push internal cycle"
+        # at cycle 3 that reads from $0100+SP (the byte that's about
+        # to be overwritten by the PCH push) and discards the result.
+        # This pre-push read is visible on the data bus, so it updates
+        # the floating-bus latch the TIA's INPT/collision reads OR
+        # into D5-D0. Mirrors xitari's M6502 JSR implementation.
         target, _, memory = RESOLVERS[mode](state, memory)
+        _, memory = peek(memory, 0x0100 + int(state.SP))   # pre-push discard
         return_addr = (int(state.PC) + 2) & 0xFFFF
         memory, new_sp = push16(memory, int(state.SP), return_addr)
         return state._replace(

@@ -90,8 +90,17 @@ def resolve_absolute_y(state: CPUState, memory):
 
 
 def resolve_indirect_x(state: CPUState, memory):
-    """`(zp,X)`: pointer = (operand + X) & 0xFF, address = mem[pointer..+1] (zp-wrapped)."""
+    """`(zp,X)`: pointer = (operand + X) & 0xFF, address = mem[pointer..+1] (zp-wrapped).
+
+    Task #50: real NMOS 6502 inserts a one-cycle "internal" peek of
+    `zp` (the operand byte itself, BEFORE adding X) at cycle 3,
+    discarding the result. This dummy peek is visible on the data
+    bus, so it updates the floating-bus latch the TIA's INPT/
+    collision reads OR into D5-D0. Mirrors xitari's M6502 (zp,X)
+    handling.
+    """
     operand, memory = _peek(memory, int(state.PC) + 1)
+    _, memory       = _peek(memory, operand)               # internal-cycle peek
     zp = (operand + int(state.X)) & 0xFF
     lo, memory = _peek(memory, zp)
     hi, memory = _peek(memory, (zp + 1) & 0xFF)

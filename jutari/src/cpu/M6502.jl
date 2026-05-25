@@ -395,6 +395,17 @@ function _step_inner!(state::CPUState, memory)
         take = take_when_set ? flag_set : !flag_set
         if take
             target, page = resolve(mode, state, memory)
+            # Task #50: real NMOS 6502 branch-taken has a "wasted
+            # opcode prefetch" of PC+2 at cycle 3; on page cross,
+            # cycle 4 peeks the wrong-page address before the actual
+            # corrected fetch. Both dummy peeks update the floating-
+            # bus latch.
+            pc_plus_2 = UInt16((Int(state.PC) + 2) & 0xFFFF)
+            _peek(memory, pc_plus_2)                    # prefetch dummy
+            if page
+                wrong_addr = UInt16((Int(pc_plus_2) & 0xFF00) | (Int(target) & 0xFF))
+                _peek(memory, wrong_addr)               # wrong-page dummy
+            end
             state.PC = target
             extra_cycles += 1 + (page ? 1 : 0)
         else
@@ -408,7 +419,12 @@ function _step_inner!(state::CPUState, memory)
 
     # --- JSR --------------------------------------------------------------
     elseif mnemonic === :JSR
+        # Task #50: real NMOS 6502 JSR pre-push internal cycle peeks
+        # $0100+SP (the byte about to be overwritten by the PCH push)
+        # and discards the result. Visible on the data bus → updates
+        # the floating-bus latch.
         target, _ = resolve(mode, state, memory)
+        _peek(memory, 0x0100 + Int(state.SP))          # pre-push discard
         # Push PC + 2 (address of the last byte of the JSR instruction).
         return_addr = UInt16((Int(state.PC) + 2) & 0xFFFF)
         push16!(state, memory, return_addr)

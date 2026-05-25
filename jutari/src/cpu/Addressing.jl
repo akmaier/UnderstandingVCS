@@ -68,7 +68,13 @@ function resolve_absolute_y(state::CPUState, memory)
 end
 
 function resolve_indirect_x(state::CPUState, memory)
-    zp = UInt8((Int(_peek(memory, _operand_addr(state))) + Int(state.X)) & 0xFF)
+    # Task #50: real NMOS 6502 (zp,X) inserts an internal-cycle peek
+    # of `zp` (the operand byte before adding X) and discards the
+    # result. Visible on the data bus → updates the floating-bus
+    # latch. Mirrors jaxtari `resolve_indirect_x`.
+    operand = _peek(memory, _operand_addr(state))
+    _peek(memory, operand)                              # internal-cycle peek
+    zp = UInt8((Int(operand) + Int(state.X)) & 0xFF)
     lo = UInt16(_peek(memory, zp))
     hi = UInt16(_peek(memory, UInt8((Int(zp) + 1) & 0xFF)))
     return (hi << 8) | lo, false
