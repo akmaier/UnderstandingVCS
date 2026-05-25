@@ -78,15 +78,28 @@ def resolve_absolute(state: CPUState, memory):
 
 
 def resolve_absolute_x(state: CPUState, memory):
+    """`abs,X`: effective = base + X. Task #50: on a page cross the
+    real 6502 does a "wrong-page" dummy peek at (base_hi, eff_lo)
+    before the corrected fetch — visible on the data bus, so the
+    floating-bus latch updates."""
     base, memory = _peek16(memory, int(state.PC) + 1)
     eff = (base + int(state.X)) & 0xFFFF
-    return eff, (base & 0xFF00) != (eff & 0xFF00), memory
+    page_crossed = (base & 0xFF00) != (eff & 0xFF00)
+    if page_crossed:
+        wrong_addr = (base & 0xFF00) | (eff & 0xFF)
+        _, memory = _peek(memory, wrong_addr)              # wrong-page dummy
+    return eff, page_crossed, memory
 
 
 def resolve_absolute_y(state: CPUState, memory):
+    """`abs,Y`: as `abs,X` — page-cross wrong-page dummy peek."""
     base, memory = _peek16(memory, int(state.PC) + 1)
     eff = (base + int(state.Y)) & 0xFFFF
-    return eff, (base & 0xFF00) != (eff & 0xFF00), memory
+    page_crossed = (base & 0xFF00) != (eff & 0xFF00)
+    if page_crossed:
+        wrong_addr = (base & 0xFF00) | (eff & 0xFF)
+        _, memory = _peek(memory, wrong_addr)              # wrong-page dummy
+    return eff, page_crossed, memory
 
 
 def resolve_indirect_x(state: CPUState, memory):
@@ -108,13 +121,22 @@ def resolve_indirect_x(state: CPUState, memory):
 
 
 def resolve_indirect_y(state: CPUState, memory):
-    """`(zp),Y`: address = mem[zp..+1] (zp-wrapped) + Y."""
+    """`(zp),Y`: address = mem[zp..+1] (zp-wrapped) + Y.
+
+    Task #50: on a page cross the real 6502 does a "wrong-page"
+    dummy peek at (base_hi, eff_lo) before the corrected fetch —
+    visible on the data bus, so the floating-bus latch updates.
+    """
     zp, memory = _peek(memory, int(state.PC) + 1)
     lo, memory = _peek(memory, zp)
     hi, memory = _peek(memory, (zp + 1) & 0xFF)
     base = lo | (hi << 8)
     eff = (base + int(state.Y)) & 0xFFFF
-    return eff, (base & 0xFF00) != (eff & 0xFF00), memory
+    page_crossed = (base & 0xFF00) != (eff & 0xFF00)
+    if page_crossed:
+        wrong_addr = (base & 0xFF00) | (eff & 0xFF)
+        _, memory = _peek(memory, wrong_addr)              # wrong-page dummy
+    return eff, page_crossed, memory
 
 
 def resolve_relative(state: CPUState, memory):

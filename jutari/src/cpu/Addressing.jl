@@ -56,15 +56,28 @@ function resolve_absolute(state::CPUState, memory)
 end
 
 function resolve_absolute_x(state::CPUState, memory)
+    # Task #50: real NMOS 6502 abs,X / abs,Y do a "wrong-page" dummy
+    # peek at (base_hi, eff_lo) on page cross — visible on the data
+    # bus, so the floating-bus latch updates. Mirrors jaxtari.
     base = _peek16(memory, _operand_addr(state))
     eff  = UInt16((Int(base) + Int(state.X)) & 0xFFFF)
-    return eff, (Int(base) & 0xFF00) != (Int(eff) & 0xFF00)
+    page = (Int(base) & 0xFF00) != (Int(eff) & 0xFF00)
+    if page
+        wrong = UInt16((Int(base) & 0xFF00) | (Int(eff) & 0xFF))
+        _peek(memory, wrong)                                # wrong-page dummy
+    end
+    return eff, page
 end
 
 function resolve_absolute_y(state::CPUState, memory)
     base = _peek16(memory, _operand_addr(state))
     eff  = UInt16((Int(base) + Int(state.Y)) & 0xFFFF)
-    return eff, (Int(base) & 0xFF00) != (Int(eff) & 0xFF00)
+    page = (Int(base) & 0xFF00) != (Int(eff) & 0xFF00)
+    if page
+        wrong = UInt16((Int(base) & 0xFF00) | (Int(eff) & 0xFF))
+        _peek(memory, wrong)                                # wrong-page dummy
+    end
+    return eff, page
 end
 
 function resolve_indirect_x(state::CPUState, memory)
@@ -81,12 +94,19 @@ function resolve_indirect_x(state::CPUState, memory)
 end
 
 function resolve_indirect_y(state::CPUState, memory)
+    # Task #50: (zp),Y page-cross wrong-page dummy peek (mirrors
+    # jaxtari `resolve_indirect_y`).
     zp   = _peek(memory, _operand_addr(state))
     lo   = UInt16(_peek(memory, zp))
     hi   = UInt16(_peek(memory, UInt8((Int(zp) + 1) & 0xFF)))
     base = (hi << 8) | lo
     eff  = UInt16((Int(base) + Int(state.Y)) & 0xFFFF)
-    return eff, (Int(base) & 0xFF00) != (Int(eff) & 0xFF00)
+    page = (Int(base) & 0xFF00) != (Int(eff) & 0xFF00)
+    if page
+        wrong = UInt16((Int(base) & 0xFF00) | (Int(eff) & 0xFF))
+        _peek(memory, wrong)                                # wrong-page dummy
+    end
+    return eff, page
 end
 
 function resolve_relative(state::CPUState, memory)
