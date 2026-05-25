@@ -421,7 +421,10 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
     # VSYNC handler did, and both incremented `frame` for the same
     # frame boundary — which is why `run_until_frame` was completing
     # every other "frame" in just ~80 CPU cycles (one scanline) instead
-    # of the natural ~19,912.
+    # of the natural ~19,912. The trade-off: a ROM that goes long
+    # stretches without toggling VSYNC at all (e.g. Q*Bert's boot
+    # sequence) needs `run_until_frame`'s instruction limit to be
+    # generous enough — see `console._FRAME_INSTRUCTION_LIMIT`.
     new_line = new_line % NTSC_SCANLINES_PER_FRAME
     return tia._replace(
         scanline_cycle=new_sc,

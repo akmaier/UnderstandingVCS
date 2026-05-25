@@ -23,7 +23,12 @@ from jaxtari.types import CPUState, initial_cpu_state
 # Hard ceiling on the number of CPU instructions allowed inside one
 # `run_until_frame`. ~30k is well above the natural 19,912 CPU cycles per
 # NTSC frame; a ROM that exceeds it has either crashed or is in a tight
-# loop ignoring VSYNC.
+# loop ignoring VSYNC. (Tried bumping to 1M during the Q*Bert
+# investigation — task #52 — but Q*Bert's RESET-pressed self-test
+# doesn't toggle VSYNC for arbitrarily long, so a higher limit just
+# delays the same failure. The real fix is in env_reset's RESET
+# handling for games that treat console RESET as "enter test mode",
+# not the per-frame budget.)
 _FRAME_INSTRUCTION_LIMIT = 100_000
 
 
