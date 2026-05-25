@@ -15,7 +15,8 @@ using ..ConsoleModule: Console
 
 export RomSettings, GenericRomSettings,
        romsettings_reset!, romsettings_is_terminal,
-       romsettings_get_reward, romsettings_lives
+       romsettings_get_reward, romsettings_lives,
+       romsettings_uses_paddles
 
 abstract type RomSettings end
 
@@ -25,8 +26,15 @@ romsettings_reset!(::RomSettings)             = nothing
 romsettings_is_terminal(::RomSettings, ::Console) = false
 romsettings_get_reward(::RomSettings, ::Console) = 0
 romsettings_lives(::RomSettings, ::Console)      = 0
+# Default: joystick. Override `romsettings_uses_paddles(::MyType) =
+# true` in per-game subtypes whose stella.pro entry has
+# Controller.Left/Right "PADDLES" — `StellaEnvironment` reads this
+# to auto-translate LEFT/RIGHT actions into INPT0 dump-pot
+# paddle-position changes. Mirror of xitari's `m_use_paddles`
+# auto-detection from the cart's properties.
+romsettings_uses_paddles(::RomSettings)          = false
 
-"""No-op RomSettings — never terminal, zero reward."""
+"""No-op RomSettings — never terminal, zero reward, joystick-only."""
 mutable struct GenericRomSettings <: RomSettings
     GenericRomSettings() = new()
 end

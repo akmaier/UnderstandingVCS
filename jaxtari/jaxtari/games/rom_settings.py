@@ -38,9 +38,19 @@ class RomSettings(Protocol):
         """Return the player's remaining lives, or 0 if the game has no
         explicit life counter."""
 
+    def uses_paddles(self) -> bool:
+        """Return True when the game expects paddle controllers
+        (Breakout, Pong/Video Olympics, Warlords, Casino, …) so
+        `StellaEnvironment` translates LEFT/RIGHT actions into
+        INPT0 dump-pot paddle-position changes. xitari reads this
+        from stella.pro's `Controller.Left "PADDLES"`; jaxtari
+        encodes it directly on the per-game settings class.
+        Default `False` matches the majority of ROMs (joystick-only).
+        """
+
 
 class GenericRomSettings:
-    """No-op stub: reward = 0, never terminal, no lives.
+    """No-op stub: reward = 0, never terminal, no lives, joystick-only.
 
     Use this when you want to run a ROM without per-game scoring (e.g.
     for collecting raw screen frames or building a goldens dataset).
@@ -57,3 +67,8 @@ class GenericRomSettings:
 
     def lives(self, console: Console) -> int:
         return 0
+
+    def uses_paddles(self) -> bool:
+        # Default: assume joystick. Override in per-game subclasses
+        # whose stella.pro entry has Controller.Left/Right "PADDLES".
+        return False

@@ -59,26 +59,24 @@ class StellaEnvironment:
           frame  = env.get_screen()
     """
 
-    def __init__(self, rom, settings: Optional[RomSettings] = None, *,
-                 use_paddles: bool = False) -> None:
+    def __init__(self, rom, settings: Optional[RomSettings] = None) -> None:
         """Construct an env over `rom`. `settings` is the per-game
         RomSettings (defaults to GenericRomSettings).
 
-        `use_paddles` (task #54): when True, LEFT/RIGHT actions are
-        interpreted as paddle-position changes (xitari-faithful: the
-        position is in xitari's resistance scale, ±PADDLE_DELTA per
-        action, written to the TIA via `set_paddle_resistance` so
-        INPT0/INPT1 take the dump-pot cycle-threshold branch). This
-        is the right mode for paddle games — Breakout, Pong / Video
-        Olympics, Casino, Warlords. Default `False` keeps the prior
-        joystick-only behaviour for non-paddle ROMs.
+        Whether LEFT/RIGHT actions drive a joystick or a paddle is
+        decided by `settings.uses_paddles()` — auto-detected per game
+        from the settings class (BreakoutRomSettings / PongRomSettings
+        / …). xitari handles the same decision from stella.pro's
+        `Controller.Left "PADDLES"` property; jaxtari encodes it on
+        the per-game settings class so the env stays oblivious to
+        stella.pro.
         """
         self._console: Console = initial_console(rom)
         self._settings: RomSettings = settings if settings is not None else GenericRomSettings()
         self._terminal: bool = False
-        self._use_paddles: bool = use_paddles
         # Default both paddles to centre. Written to the TIA on every
-        # step when `use_paddles` is True. Stays unused otherwise.
+        # step when `settings.uses_paddles()` is True. Stays unused
+        # otherwise.
         self._left_paddle:  int = _PADDLE_DEFAULT
         self._right_paddle: int = _PADDLE_DEFAULT
         # `reset()` is required before `step` can be used; we don't call
@@ -169,7 +167,7 @@ class StellaEnvironment:
         """
         if self._terminal:
             return 0
-        if self._use_paddles:
+        if self._settings.uses_paddles():
             self._apply_paddle_action(int(action))
         self._console = apply_action(self._console, int(action))
         self._console = run_until_frame(self._console)

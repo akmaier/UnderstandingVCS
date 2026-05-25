@@ -70,6 +70,14 @@ class PongRomSettings(RomSettings):
         # progress signal.
         return 0
 
+    def uses_paddles(self) -> bool:
+        # The shipped `xitari/roms/pong.bin` is actually Video Olympics
+        # (Atari 1978, md5 60e0ea3c…) — a paddle game (xitari stella.pro:
+        # `Controller.Left/Right "PADDLES"`, `Controller.SwapPaddles "YES"`).
+        # Setting this True makes StellaEnvironment translate LEFT/RIGHT
+        # actions into INPT0 dump-pot paddle-position changes.
+        return True
+
 
 def _scores(console: Console) -> tuple[int, int]:
     """Pull the (P0, P1) score bytes from the console's RAM. RAM is a

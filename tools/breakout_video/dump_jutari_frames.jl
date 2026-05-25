@@ -14,6 +14,7 @@ Pkg.activate(joinpath(@__DIR__, "..", "..", "jutari"))
 
 using JuTari
 using JuTari.Env: StellaEnvironment, env_reset!, env_step!, get_screen
+using JuTari.PaddleGames: BreakoutRomSettings
 
 function _load_actions(path::AbstractString)
     out = Int[]
@@ -49,12 +50,11 @@ function main(argv::Vector{String} = ARGS)
     rom_path, actions_path, out_path, max_frames = _parse_args(argv)
 
     rom = read(rom_path)
-    # Task #54 — Breakout is a paddle game; LEFT/RIGHT actions need
-    # to translate into INPT0 dump-pot resistance changes (xitari's
-    # `applyActionPaddles` semantic) for the paddle to actually move
-    # on screen. `use_paddles=true` flips StellaEnvironment into that
-    # mode.
-    env = StellaEnvironment(rom; use_paddles = true)
+    # `BreakoutRomSettings` overrides `romsettings_uses_paddles = true`,
+    # so `StellaEnvironment` auto-translates LEFT/RIGHT actions into
+    # INPT0 dump-pot paddle-position changes — same shape as xitari's
+    # `m_use_paddles` autodetection from stella.pro.
+    env = StellaEnvironment(rom, BreakoutRomSettings())
     env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)
 
     actions = _load_actions(actions_path)

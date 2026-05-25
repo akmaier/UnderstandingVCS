@@ -16,7 +16,8 @@ using ..IO: apply_action!, console_switches!, NOOP, LEFT, RIGHT,
             UPLEFTFIRE, UPRIGHTFIRE, DOWNLEFTFIRE, DOWNRIGHTFIRE
 using ..RomSettingsModule: RomSettings, GenericRomSettings,
                            romsettings_reset!, romsettings_is_terminal,
-                           romsettings_get_reward, romsettings_lives
+                           romsettings_get_reward, romsettings_lives,
+                           romsettings_uses_paddles
 using ..TIA: Y_START, VISIBLE_HEIGHT, set_paddle_resistance!
 
 export StellaEnvironment, env_reset!, env_step!,
@@ -52,23 +53,22 @@ Thin one-shot wrapper around a `Console` + `RomSettings`. Lifecycle:
         frame  = get_screen(env)
     end
 
-Task #54: pass `use_paddles=true` for paddle games (Breakout, Pong,
-Warlords, Casino, …) so LEFT/RIGHT actions move the paddle by
-±PADDLE_DELTA per step in xitari's resistance scale.
+Whether LEFT/RIGHT actions drive a joystick or a paddle is decided
+per-game by `romsettings_uses_paddles(settings)` (default False —
+override on per-game subtypes like `BreakoutRomSettings`). Mirror of
+xitari's stella.pro-driven `m_use_paddles` autodetection.
 """
 mutable struct StellaEnvironment
     console::Console
     settings::RomSettings
     terminal::Bool
-    use_paddles::Bool
     left_paddle::Int
     right_paddle::Int
 end
 
-StellaEnvironment(rom, settings::RomSettings = GenericRomSettings();
-                  use_paddles::Bool = false) =
+StellaEnvironment(rom, settings::RomSettings = GenericRomSettings()) =
     StellaEnvironment(initial_console(rom), settings, false,
-                      use_paddles, _PADDLE_DEFAULT, _PADDLE_DEFAULT)
+                      _PADDLE_DEFAULT, _PADDLE_DEFAULT)
 
 """
     env_reset!(env; boot_noop_steps=0, boot_reset_steps=0)
@@ -109,7 +109,7 @@ end
 
 function env_step!(env::StellaEnvironment, action::Integer)
     env.terminal && return 0
-    if env.use_paddles
+    if romsettings_uses_paddles(env.settings)
         _apply_paddle_action!(env, Int(action))
     end
     apply_action!(env.console, action)

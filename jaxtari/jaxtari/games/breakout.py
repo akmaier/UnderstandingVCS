@@ -70,3 +70,9 @@ class BreakoutRomSettings(RomSettings):
 
     def lives(self, console: Console) -> int:
         return _lives(console)
+
+    def uses_paddles(self) -> bool:
+        # Breakout is a paddle game (xitari stella.pro: `Controller.Left
+        # "PADDLES"`). Setting this True makes StellaEnvironment translate
+        # LEFT/RIGHT actions into INPT0 dump-pot paddle-position changes.
+        return True
