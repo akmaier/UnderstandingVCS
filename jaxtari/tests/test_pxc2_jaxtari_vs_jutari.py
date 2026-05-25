@@ -114,6 +114,30 @@ _PXC2_CASES = (
         jutari_trace="pitfall_noop_10_jutari.jsonl",
         expected_xitari_divergence=19,
     ),
+    _RomCase(
+        # Joystick-only ROM. Observed divergence: 4 bytes — same as
+        # Breakout. Sits in the low-RIOT-poll range with paddle-INPT
+        # impact close to zero (joystick) but enough bus-noise reads
+        # to manifest a few cells.
+        name="seaquest_noop_10",
+        rom_filename="seaquest.bin",
+        xitari_trace="seaquest_noop_10.jsonl",
+        jutari_trace="seaquest_noop_10_jutari.jsonl",
+        expected_xitari_divergence=4,
+    ),
+    _RomCase(
+        # Joystick-only ROM. Observed divergence: **47 bytes** — the
+        # highest among the 6 PXC2 cases by a wide margin. Enduro's
+        # boot does substantial timer / switch polling (it's a long
+        # race game with intricate setup) so the data_bus_state drift
+        # chains into many RAM cells. Same root cause as the others
+        # — just a more extreme manifestation.
+        name="enduro_noop_10",
+        rom_filename="enduro.bin",
+        xitari_trace="enduro_noop_10.jsonl",
+        jutari_trace="enduro_noop_10_jutari.jsonl",
+        expected_xitari_divergence=47,
+    ),
 )
 
 
