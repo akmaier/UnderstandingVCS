@@ -36,10 +36,30 @@ from pathlib import Path
 import numpy as np
 
 from jaxtari.env.stella_environment import StellaEnvironment
+from jaxtari.games.rom_settings import GenericRomSettings, RomSettings
+from jaxtari.games.breakout import BreakoutRomSettings
+from jaxtari.games.pong import PongRomSettings
 
 
 def _load_rom(path: Path) -> np.ndarray:
     return np.fromfile(path, dtype=np.uint8)
+
+
+# Per-ROM auto-detection of which RomSettings to use. Currently keyed
+# on basename — xitari does the same job via stella.pro's MD5 →
+# property lookup but we don't ship stella.pro, so a small filename
+# table is the pragmatic equivalent. Add a row when you bring a new
+# paddle/joystick ROM under conformance test. Default falls back to
+# `GenericRomSettings` (joystick).
+_SETTINGS_BY_BASENAME: dict[str, type[RomSettings]] = {
+    "breakout.bin": BreakoutRomSettings,
+    "pong.bin":     PongRomSettings,
+}
+
+
+def _settings_for_rom(rom_path: Path) -> RomSettings:
+    cls = _SETTINGS_BY_BASENAME.get(rom_path.name, GenericRomSettings)
+    return cls()
 
 
 def _hex_of(arr: np.ndarray) -> str:
@@ -85,7 +105,14 @@ def check_trace(rom_path: Path, trace_path: Path,
     differed; mismatched CPU = execution itself diverged.
     """
     rom = _load_rom(rom_path)
-    env = StellaEnvironment(rom)
+    # PXC1-x round 5 — pick the right RomSettings for the ROM so
+    # `StellaEnvironment` auto-applies paddle-action handling (and
+    # therefore activates the dump-pot model on INPT0/INPT1) for
+    # paddle games. Without this jaxtari's INPT reads return a static
+    # `0x80` instead of the cycle-dependent value xitari produces,
+    # which is one of the documented PXC1 RAM-divergence sources.
+    settings = _settings_for_rom(rom_path)
+    env = StellaEnvironment(rom, settings)
     # xitari's `ALEInterface::resetGame()` burns 60 NOOP frames + 4 RESET
     # switch frames before the user's first `act()` (see
     # xitari/environment/stella_environment.cpp). The conformance harness

@@ -24,6 +24,20 @@ Pkg.activate(joinpath(@__DIR__, "..", "jutari"))
 
 using JuTari
 using JuTari.Env: StellaEnvironment, env_reset!, env_step!, get_ram, frame_number
+using JuTari.RomSettingsModule: GenericRomSettings, RomSettings
+using JuTari.PaddleGames: BreakoutRomSettings, PongRomSettings
+
+# Per-ROM RomSettings autodetection — mirror of jaxtari `tools/check_trace.py`.
+# Activates the dump-pot model + paddle-action handling for paddle
+# games so jutari matches xitari's INPT0/INPT1 cycle-dependent reads.
+const _SETTINGS_BY_BASENAME = Dict{String,Function}(
+    "breakout.bin" => () -> BreakoutRomSettings(),
+    "pong.bin"     => () -> PongRomSettings(),
+)
+_settings_for_rom(rom_path::AbstractString) =
+    haskey(_SETTINGS_BY_BASENAME, basename(rom_path)) ?
+        _SETTINGS_BY_BASENAME[basename(rom_path)]() :
+        GenericRomSettings()
 
 function _hex_of(bytes::AbstractVector{UInt8})
     io = IOBuffer()
@@ -71,7 +85,7 @@ function main(argv::Vector{String} = ARGS)
     end
 
     rom = read(rom_path)
-    env = StellaEnvironment(rom)
+    env = StellaEnvironment(rom, _settings_for_rom(rom_path))
     env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)
 
     open(out_path, "w") do io

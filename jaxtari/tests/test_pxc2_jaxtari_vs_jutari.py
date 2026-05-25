@@ -42,6 +42,18 @@ from jaxtari.env.stella_environment import StellaEnvironment
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 
+# Per-ROM RomSettings auto-selection (PXC1-x round 5). Paddle games
+# need their per-game RomSettings so `StellaEnvironment` activates the
+# dump-pot + paddle-action paths; joystick games default to
+# GenericRomSettings (None here). Mirror of jaxtari `tools/check_trace.py`
+# and jutari `tools/jutari_trace_dump.jl`.
+from jaxtari.games.breakout import BreakoutRomSettings as _BreakoutRomSettings
+from jaxtari.games.pong import PongRomSettings as _PongRomSettings
+_SETTINGS_FACTORY_BY_ROM = {
+    "pong.bin":     _PongRomSettings,
+    "breakout.bin": _BreakoutRomSettings,
+}
+
 
 class _RomCase(NamedTuple):
     """One row in the PXC2 cross-check table."""
@@ -72,14 +84,14 @@ _PXC2_CASES = (
         rom_filename="pong.bin",
         xitari_trace="pong_noop_10.jsonl",
         jutari_trace="pong_noop_10_jutari.jsonl",
-        expected_xitari_divergence=10,     # PXC1-x round 1 outcome
+        expected_xitari_divergence=9,      # PXC1-x round 5: 10 → 9 with dump-pot
     ),
     _RomCase(
         name="breakout_noop_10",
         rom_filename="breakout.bin",
         xitari_trace="breakout_noop_10.jsonl",
         jutari_trace="breakout_noop_10_jutari.jsonl",
-        expected_xitari_divergence=4,      # PXC2-Breakout (round 4.5 era)
+        expected_xitari_divergence=3,      # PXC1-x round 5: 4 → 3 with dump-pot
     ),
     _RomCase(
         # Joystick-only game (no `Controller.Left/Right` props for this
@@ -189,9 +201,17 @@ def _load_ram_per_frame(trace_path: Path) -> list[bytes]:
     return rams
 
 
-def _jaxtari_ram_per_frame(rom_bytes: bytes, actions: list[int]) -> list[bytes]:
+def _jaxtari_ram_per_frame(rom_bytes: bytes, actions: list[int],
+                           settings_factory=None) -> list[bytes]:
     rom_array = np.frombuffer(rom_bytes, dtype=np.uint8)
-    env = StellaEnvironment(rom_array)
+    # PXC1-x round 5: paddle games need per-game RomSettings so the
+    # `StellaEnvironment` activates paddle-action handling + the
+    # dump-pot model on INPT0/INPT1 (jaxtari → xitari pixel parity
+    # for the cycle-dependent INPT reads). Joystick games default to
+    # GenericRomSettings.
+    settings = settings_factory() if settings_factory is not None else None
+    env = StellaEnvironment(rom_array, settings) if settings is not None \
+          else StellaEnvironment(rom_array)
     # Match xitari's `ALEInterface::resetGame()` boot burn — same as the
     # PXC1 harness.
     env.reset(boot_noop_steps=60, boot_reset_steps=4)
@@ -231,7 +251,9 @@ def test_jaxtari_matches_jutari_per_frame_ram(case: _RomCase):
     rom_bytes    = _rom_path(case).read_bytes()
     actions      = _load_actions(_xitari_trace_path(case))
     jutari_rams  = _load_ram_per_frame(_jutari_trace_path(case))
-    jaxtari_rams = _jaxtari_ram_per_frame(rom_bytes, actions)
+    jaxtari_rams = _jaxtari_ram_per_frame(
+        rom_bytes, actions,
+        settings_factory=_SETTINGS_FACTORY_BY_ROM.get(case.rom_filename))
 
     assert len(jutari_rams) == len(jaxtari_rams), (
         f"[{case.name}] frame-count mismatch between jutari fixture "
@@ -264,7 +286,9 @@ def test_pxc2_jaxtari_vs_xitari_divergence_pattern_unchanged(case: _RomCase):
     rom_bytes    = _rom_path(case).read_bytes()
     actions      = _load_actions(_xitari_trace_path(case))
     xitari_rams  = _load_ram_per_frame(_xitari_trace_path(case))
-    jaxtari_rams = _jaxtari_ram_per_frame(rom_bytes, actions)
+    jaxtari_rams = _jaxtari_ram_per_frame(
+        rom_bytes, actions,
+        settings_factory=_SETTINGS_FACTORY_BY_ROM.get(case.rom_filename))
 
     last_xi = xitari_rams[-1]
     last_jx = jaxtari_rams[-1]

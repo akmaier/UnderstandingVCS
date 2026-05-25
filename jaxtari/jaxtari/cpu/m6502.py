@@ -480,9 +480,16 @@ def _step_inner(state: CPUState, memory):
                 PC=jnp.uint16((int(state.PC) + 1) & 0xFFFF),
                 cycles=state.cycles + jnp.uint64(base_cycles),
             ), memory
-        # Memory-mode RMW.
+        # Memory-mode RMW. Task #50: NMOS 6502 emits the famous
+        # double-write — the cell is written *twice*: first with the
+        # OLD value (dummy/internal cycle), then with the NEW value.
+        # The dummy write is visible on the data bus, so it updates
+        # the floating-bus latch that subsequent TIA reads OR into
+        # their result. (Mirrors xitari's M6502 RMW emulation +
+        # System::poke updating myDataBusState on every write.)
         addr, _, memory = RESOLVERS[mode](state, memory)
         value, memory = peek(memory, addr)
+        memory = poke(memory, addr, value)              # RMW dummy write
         new_value, new_p = op(int(state.P), value)
         memory = poke(memory, addr, new_value)
         return state._replace(
@@ -616,8 +623,13 @@ def _step_inner(state: CPUState, memory):
 
     # --- INC / DEC memory (P1f) -------------------------------------------
     if mnemonic in ("INC", "DEC"):
+        # Task #50: NMOS 6502 RMW double-write — INC/DEC write the
+        # OLD value back as a dummy/internal cycle before writing the
+        # NEW value. Same data-bus side effect as the shifts/rotates
+        # block above.
         addr, _, memory = RESOLVERS[mode](state, memory)
         value, memory = peek(memory, addr)
+        memory = poke(memory, addr, value)              # RMW dummy write
         delta = 1 if mnemonic == "INC" else -1
         new_value = (value + delta) & 0xFF
         new_p = set_zn(int(state.P), new_value)

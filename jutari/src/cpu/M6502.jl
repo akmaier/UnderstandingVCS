@@ -374,10 +374,14 @@ function _step_inner!(state::CPUState, memory)
             state.A = op(state, state.A)
             state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
         else
-            # Memory-mode RMW. Cycle table is already worst-case; no page-cross.
+            # Memory-mode RMW. Task #50: NMOS 6502 emits the
+            # double-write — old value first (dummy/internal cycle),
+            # then new value. Same data-bus side effect as the
+            # jaxtari-side fix.
             addr, _ = resolve(mode, state, memory)
-            result = op(state, _peek(memory, addr))
-            poke!(memory, addr, result)
+            value  = _peek(memory, addr)
+            poke!(memory, addr, value)                  # RMW dummy write
+            poke!(memory, addr, op(state, value))
             _advance_pc!(state, mode)
         end
 
@@ -470,8 +474,12 @@ function _step_inner!(state::CPUState, memory)
 
     # --- INC / DEC memory (P1f) -------------------------------------------
     elseif mnemonic === :INC || mnemonic === :DEC
+        # Task #50: NMOS 6502 RMW double-write — dummy write of OLD
+        # value before the new value. Same data-bus side effect as
+        # the shifts/rotates block above.
         addr, _ = resolve(mode, state, memory)
         value = _peek(memory, addr)
+        poke!(memory, addr, value)                       # RMW dummy write
         delta = mnemonic === :INC ? 1 : -1
         new_value = UInt8((Int(value) + delta) & 0xFF)
         poke!(memory, addr, new_value)

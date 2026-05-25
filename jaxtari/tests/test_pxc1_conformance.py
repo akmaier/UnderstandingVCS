@@ -63,9 +63,13 @@ def test_pong_noop_trace_fixture_exists():
     strict=True,
     reason=(
         "Bit-exact xitari↔jaxtari conformance is being closed in "
-        "PXC1-x rounds. Status as of round 4.5 + the PXC2 multi-ROM "
-        "expansion (see tests/test_pxc2_jaxtari_vs_jutari.py): "
-        "pong_noop_10 still diverges by exactly 10 RAM bytes, and "
+        "PXC1-x rounds. Status as of round 5 (dump-pot model + "
+        "paddle-action handling auto-applied via "
+        "PongRomSettings.uses_paddles=True): "
+        "pong_noop_10 now diverges by 9 RAM bytes (was 10 — RAM[$04] "
+        "recovered when INPT0/INPT1 switched from static 0x80 to the "
+        "xitari cycle-threshold path). The remaining 9 are still "
+        "active investigation, and "
         "the root cause is now well-characterized as "
         "data_bus_state drift from missing 6502 internal-cycle bus "
         "exposures (RMW dummy-writes, JSR pre-push discard, branch "
