@@ -270,7 +270,7 @@ Each per-subsystem deferral listed in STATUS.md gets a phase ID so it can be pic
 
 **RIOT**
 - **P4b**: PA7 edge-triggered interrupt (INSTAT D6)
-- **P4c**: Paddle dump-pot timing — INPT0-3 stay at `$80` "centred" (PXC1-x round 4 diagnostic confirms this is the chained source of the residual `pong_noop_10` divergence; the real-hardware fix is a per-pin `inpt_dump_disabled_cycle` + xitari's `(1.6·r·0.01e-6)·1.19e6` threshold formula)
+- **P4c**: Paddle dump-pot timing — INPT0-3 stay at `$80` "centred" (PXC1-x round 4 diagnostic confirms this is the chained source of the residual `pong_noop_10` divergence; the real-hardware fix is a per-pin `inpt_dump_disabled_cycle` + xitari's `(1.6·r·0.01e-6)·1.19e6` threshold formula). **Round 4.5 + PXC2-Breakout/SpaceInvaders strengthens this**: Space Invaders (a joystick-only ROM that doesn't read INPT0-3) shows **0 bytes** divergence, while paddle ROMs (pong: 10, breakout: 4) show counts proportional to how many RAM cells get touched by INPT0-3-derived data. So jaxtari is **already at conformance parity for any non-paddle ROM** — closing the remaining gap is a paddle-specific quality-of-life fix, not a general 6502 emulation defect.
 - **P4d** ✅: INTIM-read-clears-flag semantics done (jaxtari + jutari, completed via the peek-with-side-effects refactor). INSTAT-clears-PA7 still deferred (PA7 latch unmodelled — P4b).
 
 **Cart**

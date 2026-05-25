@@ -81,6 +81,20 @@ _PXC2_CASES = (
         jutari_trace="breakout_noop_10_jutari.jsonl",
         expected_xitari_divergence=4,      # PXC2-Breakout (round 4.5 era)
     ),
+    _RomCase(
+        # Joystick-only game (no `Controller.Left/Right` props for this
+        # MD5 → defaults to Joystick). Observed divergence: **0 bytes**
+        # — jaxtari matches xitari bit-perfectly. This is the strong
+        # confirmation of the round 4.5 finding: the residual
+        # pong/breakout divergence is *paddle-INPT-specific*, not a
+        # general 6502 emulation gap. Any ROM that doesn't read
+        # INPT0-3 is already at conformance parity.
+        name="space_invaders_noop_10",
+        rom_filename="space_invaders.bin",
+        xitari_trace="space_invaders_noop_10.jsonl",
+        jutari_trace="space_invaders_noop_10_jutari.jsonl",
+        expected_xitari_divergence=0,
+    ),
 )
 
 
