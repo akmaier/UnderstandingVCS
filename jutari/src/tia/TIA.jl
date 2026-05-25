@@ -36,7 +36,7 @@ module TIA
 export TIAState, initial_tia_state,
        tia_peek, tia_poke!, tia_advance!, tia_apply_wsync!,
        playfield_bits, render_playfield_scanline, render_scanline,
-       set_trigger!,
+       set_trigger!, set_paddle_resistance!,
        _hm_offset, _resp_position,
        NTSC_CPU_CYCLES_PER_SCANLINE, NTSC_SCANLINES_PER_FRAME,
        NUM_REGISTERS, SCREEN_WIDTH, SCREEN_HEIGHT,
@@ -126,6 +126,20 @@ mutable struct TIAState
     grp0_old::UInt8
     grp1_old::UInt8
     enabl_old::UInt8
+    # P4c (dump-pot) — paddle-pot capacitor charge model. VBLANK D7
+    # grounds the cap (`dump_enabled`); on its 1→0 transition the
+    # cap starts charging and `dump_disabled_cycle` records when.
+    # `paddle_use_dump_pot[i]` is a per-paddle opt-in: False keeps
+    # the simple "INPT returns inpt[i]" semantic the existing P4c
+    # tests rely on; True activates the cycle-threshold path with
+    # `paddle_resistance[i]` as the (xitari-scale) resistance.
+    # `total_cycles` is a monotonic CPU cycle counter ticked by
+    # `tia_advance!` for the threshold comparison.
+    total_cycles::Int
+    dump_enabled::Bool
+    dump_disabled_cycle::Int
+    paddle_use_dump_pot::Vector{Bool}      # length 4
+    paddle_resistance::Vector{UInt32}      # length 4
 end
 
 # INPT defaults: paddle pots ($80 = centred), triggers idle high (D7=1).
@@ -138,19 +152,35 @@ initial_tia_state() = TIAState(
     false, false,
     fill(UInt8(0x80), 6),
     UInt8(0), UInt8(0), UInt8(0),    # grp0_old / grp1_old / enabl_old
+    # P4c dump-pot state: cycles=0, not enabled, no opt-ins.
+    0, false, 0,
+    fill(false, 4),
+    zeros(UInt32, 4),
 )
 
 """
     tia_peek(tia, addr) -> UInt8
 
-Read a TIA register. \$30..\$37 → collision latches; \$38..\$3D → INPT0..5
-(paddle pots default \$80, triggers idle high; set_trigger! flips them);
-\$3E/\$3F → unused, return 0.
+Read a TIA register. \$30..\$37 → collision latches; \$38..\$3B → INPT0..3
+(paddle pots — default \$80 directly; with `paddle_use_dump_pot[i]` set,
+xitari-style cycle-threshold dump-pot model applies); \$3C/\$3D → INPT4/5
+(triggers idle high; `set_trigger!` flips them); \$3E/\$3F → unused.
 """
 @inline function tia_peek(tia::TIAState, addr::Integer)
     reg = Int(addr) & 0x0F
     if reg < 8
         return tia.collisions[reg + 1]
+    elseif reg < 12
+        # INPT0..INPT3 — paddle pots with optional dump-pot timing.
+        i = reg - 8 + 1                     # Julia 1-based
+        if tia.paddle_use_dump_pot[i]
+            tia.dump_enabled && return UInt8(0)
+            r       = Int(tia.paddle_resistance[i])
+            needed  = Int(round(1.6 * r * 0.01e-6 * 1.19e6))
+            charged = tia.total_cycles > (tia.dump_disabled_cycle + needed)
+            return charged ? UInt8(0x80) : UInt8(0)
+        end
+        return tia.inpt[i]
     elseif reg < 14
         return tia.inpt[reg - 8 + 1]
     end
@@ -165,6 +195,24 @@ Set the fire-button line for player 0 or 1. Active-low: pressed → D7=0.
 @inline function set_trigger!(tia::TIAState, player::Integer, pressed::Bool)
     idx = player == 0 ? 5 : 6                   # INPT4 / INPT5 → indices 5 / 6
     tia.inpt[idx] = pressed ? UInt8(0x00) : UInt8(0x80)
+    return nothing
+end
+
+"""
+    set_paddle_resistance!(tia, paddle, resistance)
+
+P4c (dump-pot) — opt the given paddle (0..3) into xitari's
+cycle-threshold dump-pot model. `resistance` is in xitari's scale
+(PADDLE_MIN = 27_450, PADDLE_MAX = 790_196). After this call INPT
+reads on that paddle return D7 = 1 once `total_cycles >
+dump_disabled_cycle + int(1.6·r·0.01e-6·1.19e6)`, mirroring the
+jaxtari helper of the same name.
+"""
+@inline function set_paddle_resistance!(tia::TIAState, paddle::Integer, resistance::Integer)
+    0 <= paddle <= 3 || error("paddle must be 0..3, got $paddle")
+    i = paddle + 1
+    tia.paddle_use_dump_pot[i] = true
+    tia.paddle_resistance[i]   = UInt32(Int(resistance) & 0xFFFFFFFF)
     return nothing
 end
 
@@ -218,6 +266,18 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer)
         end
     elseif reg == W_VBLANK
         tia.vblank_active = (Int(value) & 0x02) != 0
+        # P4c (dump-pot) — VBLANK D7 grounds the paddle-pot cap. On
+        # the 1→0 transition we capture the cycle so subsequent
+        # INPT0-3 reads can ask "has the cap charged past the
+        # xitari-formula threshold?". Mirrors jaxtari's identical
+        # check in tia_poke.
+        new_dump = (Int(value) & 0x80) != 0
+        if tia.dump_enabled && !new_dump
+            tia.dump_enabled = false
+            tia.dump_disabled_cycle = tia.total_cycles
+        elseif new_dump && !tia.dump_enabled
+            tia.dump_enabled = true
+        end
     elseif reg == W_RESP0
         tia.p0_x = _resp_position(tia.scanline_cycle)
     elseif reg == W_RESP1
@@ -267,6 +327,10 @@ scanline into the framebuffer. Rendering uses end-of-scanline register
 state; beam-accurate rendering lands in P3f.
 """
 function tia_advance!(tia::TIAState, cpu_cycles::Integer)
+    # P4c (dump-pot): keep a monotonic CPU-cycle counter so
+    # `tia_peek` can decide whether the paddle cap has charged
+    # past its xitari-formula threshold yet.
+    tia.total_cycles += Int(cpu_cycles)
     total = tia.scanline_cycle + Int(cpu_cycles)
     tia.scanline_cycle = total % NTSC_CPU_CYCLES_PER_SCANLINE
     line_advance = total ÷ NTSC_CPU_CYCLES_PER_SCANLINE

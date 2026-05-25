@@ -196,6 +196,23 @@ class TIAState(NamedTuple):
     grp0_old: int   # uint8 shadow of GRP0
     grp1_old: int   # uint8 shadow of GRP1
     enabl_old: int  # uint8 shadow of ENABL
+    # P4c (dump-pot): xitari's INPT0_3 implementation reads the paddle
+    # pot through a capacitor that charges over `t = 1.6 · r · 0.01µF`
+    # seconds (≈ `t · 1.19 MHz` CPU cycles). VBLANK's D7 bit grounds
+    # the cap (dump enabled); the 1→0 transition releases it and
+    # `dump_disabled_cycle` captures the moment so subsequent INPT
+    # reads can compute "have we charged past the threshold yet?".
+    # `paddle_use_dump_pot[i]` is the per-pin opt-in: False keeps
+    # the simple "INPT returns inpt[i]" semantic used by the existing
+    # tests; True activates the cycle-threshold path with
+    # `paddle_resistance[i]` as the (xitari-scale) resistance.
+    # `total_cycles` is a monotonic CPU cycle counter ticked by
+    # `tia_advance` so the threshold comparison has a reference.
+    total_cycles: int = 0
+    dump_enabled: bool = False
+    dump_disabled_cycle: int = 0
+    paddle_use_dump_pot: jnp.ndarray = jnp.zeros((4,), dtype=bool)
+    paddle_resistance: jnp.ndarray = jnp.zeros((4,), dtype=jnp.uint32)
 
 
 def initial_tia_state() -> TIAState:
@@ -227,6 +244,11 @@ def initial_tia_state() -> TIAState:
         vsync_active=False,
         vblank_active=False,
         inpt=inpt_init,
+        total_cycles=0,
+        dump_enabled=False,
+        dump_disabled_cycle=0,
+        paddle_use_dump_pot=jnp.zeros((4,), dtype=bool),
+        paddle_resistance=jnp.zeros((4,), dtype=jnp.uint32),
         grp0_old=0,
         grp1_old=0,
         enabl_old=0,
@@ -242,16 +264,43 @@ def tia_peek(tia: TIAState, addr: int) -> int:
 
     Reg ranges (the TIA decodes only A0-A3 for reads):
       0..7  → collision latches (\$30-\$37), set by `render_scanline`.
-      8..13 → INPT0..INPT5 (\$38-\$3D). P6 wires the trigger inputs
-              INPT4 / INPT5 via `set_trigger`; INPT0-INPT3 (paddle pots)
-              default to \$80 (centred) — proper dump-pot timing is a
-              P6 follow-up.
+      8..11 → INPT0..INPT3 (\$38-\$3B). Two modes per pin:
+              * `paddle_use_dump_pot[i]` False (default) → return
+                `inpt[i]` as-is. Preserves the simple "set_paddle stores
+                a byte, INPT returns it" contract the existing P4c
+                tests rely on.
+              * `paddle_use_dump_pot[i]` True → real xitari-style
+                dump-pot timing: D7 = 1 once `total_cycles` exceeds
+                `dump_disabled_cycle + (1.6·r·0.01µF·1.19MHz)`,
+                else D7 = 0. With `dump_enabled` the cap stays
+                grounded → D7 = 0 always. This is what `set_paddle_resistance`
+                opts a paddle into for the ALE-style paddle-action
+                drive used by paddle games (Breakout, Pong, etc.).
+      12,13 → INPT4..INPT5 (\$3C/\$3D), the fire triggers — wired
+              by `set_trigger`.
       14,15 → unused, return 0.
     """
     reg = addr & 0x0F
     if reg < 8:
         return int(tia.collisions[reg])
+    if reg < 12:
+        # INPT0..INPT3 — paddle pots with optional dump-pot timing.
+        i = reg - 8
+        if bool(tia.paddle_use_dump_pot[i]):
+            # Dump enabled: cap grounded → never charges → D7 stays 0.
+            if tia.dump_enabled:
+                return 0
+            # xitari formula:
+            #   t       = 1.6 · r · 0.01e-6     seconds
+            #   needed  = int(t · 1.19e6)       CPU cycles
+            #   D7 = 1 iff cycles > dump_disabled_cycle + needed.
+            r       = int(tia.paddle_resistance[i])
+            needed  = int(1.6 * r * 0.01e-6 * 1.19e6)
+            charged = int(tia.total_cycles) > (int(tia.dump_disabled_cycle) + needed)
+            return 0x80 if charged else 0
+        return int(tia.inpt[i])
     if reg < 14:
+        # INPT4..INPT5 — fire triggers.
         return int(tia.inpt[reg - 8])
     return 0
 
@@ -286,7 +335,39 @@ def set_paddle(tia: TIAState, paddle: int, value: int) -> TIAState:
     """
     if paddle not in (0, 1, 2, 3):
         raise ValueError(f"paddle must be 0..3, got {paddle}")
+    # Reset dump-pot opt-in: callers using the byte-store interface
+    # don't want their inpt[i] value overridden by the cycle-threshold
+    # formula on the next INPT read.
+    new_use = tia.paddle_use_dump_pot.at[paddle].set(False)
+    tia = tia._replace(paddle_use_dump_pot=new_use)
     return tia._replace(inpt=tia.inpt.at[paddle].set(jnp.uint8(value & 0xFF)))
+
+
+def set_paddle_resistance(tia: TIAState, paddle: int, resistance: int) -> TIAState:
+    """P4c (dump-pot) — opt one paddle into the cycle-threshold dump-pot
+    model with a specific resistance value.
+
+    `resistance` is in xitari's scale: `PADDLE_MIN = 27_450` (fully one
+    direction) to `PADDLE_MAX = 790_196` (fully the other direction).
+    Once set, INPT0/1/2/3 reads on that paddle no longer return the
+    `inpt[i]` byte directly — instead `D7` flips from 0 to 1 after
+    enough CPU cycles have elapsed since VBLANK D7's 1→0 transition,
+    where `enough = int(1.6 · resistance · 0.01e-6 · 1.19e6)`. Games
+    that poll INPT in a tight loop measuring cycle-count to D7 (which
+    is essentially every paddle game — Breakout, Pong / Video Olympics,
+    Casino, Warlords, …) read the resistance as a "where is the
+    paddle?" timing value.
+
+    This is the helper `StellaEnvironment` uses when `use_paddles=True`
+    to drive paddle motion from LEFT/RIGHT actions; manual callers
+    can also use it directly if they want full xitari-faithful
+    paddle-pot semantics.
+    """
+    if paddle not in (0, 1, 2, 3):
+        raise ValueError(f"paddle must be 0..3, got {paddle}")
+    new_use  = tia.paddle_use_dump_pot.at[paddle].set(True)
+    new_res  = tia.paddle_resistance.at[paddle].set(jnp.uint32(int(resistance) & 0xFFFFFFFF))
+    return tia._replace(paddle_use_dump_pot=new_use, paddle_resistance=new_res)
 
 
 def _resp_position(scanline_cycle: int) -> int:
@@ -347,6 +428,21 @@ def tia_poke(tia: TIAState, addr: int, value: int) -> TIAState:
             new_tia = new_tia._replace(vsync_active=new_vsync)
     elif reg == W_VBLANK:
         new_tia = new_tia._replace(vblank_active=(value & 0x02) != 0)
+        # P4c (dump-pot): VBLANK D7 grounds the paddle-pot cap. The 1→0
+        # transition releases it; capture the cycle so subsequent
+        # INPT0-3 reads can ask "have we charged past the threshold
+        # yet?". Mirrors xitari's myDumpEnabled/myDumpDisabledCycle
+        # tracking in TIA::poke for VBLANK.
+        new_dump = (value & 0x80) != 0
+        if tia.dump_enabled and not new_dump:
+            # Falling edge — cap starts charging now.
+            new_tia = new_tia._replace(
+                dump_enabled=False,
+                dump_disabled_cycle=int(new_tia.total_cycles),
+            )
+        elif new_dump and not tia.dump_enabled:
+            # Rising edge — cap grounded.
+            new_tia = new_tia._replace(dump_enabled=True)
     elif reg == W_RESP0:
         new_tia = new_tia._replace(p0_x=_resp_position(new_tia.scanline_cycle))
     elif reg == W_RESP1:
@@ -450,6 +546,10 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
         scanline=new_line,
         framebuffer=fb,
         collisions=new_collisions,
+        # P4c (dump-pot): keep a monotonic CPU-cycle counter so
+        # `tia_peek` can decide whether the paddle cap has charged
+        # past its xitari-formula threshold yet.
+        total_cycles=int(tia.total_cycles) + int(cpu_cycles),
     )
 
 

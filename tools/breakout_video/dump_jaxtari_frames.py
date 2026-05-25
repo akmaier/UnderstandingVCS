@@ -42,7 +42,12 @@ def main(argv=None) -> int:
     args = p.parse_args(argv)
 
     rom = np.fromfile(args.rom, dtype=np.uint8)
-    env = StellaEnvironment(rom)
+    # Task #54 — Breakout is a paddle game; LEFT/RIGHT actions need
+    # to translate into INPT0 dump-pot resistance changes (xitari's
+    # `applyActionPaddles` semantic) for the paddle to actually move
+    # on screen. `use_paddles=True` flips StellaEnvironment into that
+    # mode.
+    env = StellaEnvironment(rom, use_paddles=True)
     # Match the ALE / xitari boot burn so frame 1 alignment matches
     # `tools/trace_dump`'s output.
     env.reset(boot_noop_steps=60, boot_reset_steps=4)
