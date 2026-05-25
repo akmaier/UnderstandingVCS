@@ -95,6 +95,25 @@ _PXC2_CASES = (
         jutari_trace="space_invaders_noop_10_jutari.jsonl",
         expected_xitari_divergence=0,
     ),
+    _RomCase(
+        # Second joystick-only witness (after Space Invaders). Boots
+        # cleanly in both ports (unlike Asteroids → game-over-at-boot
+        # and Q*Bert → jutari boot hang, see task #52). Observed
+        # divergence: **19 bytes** — the "joystick ROMs are bit-perfect"
+        # generalization from Space Invaders is therefore *too strong*.
+        # The correct statement: SI happens to read very little
+        # bus-noise-affected state during boot; Pitfall reads more
+        # (probably INPT5 trigger + RIOT timer reads), so it inherits
+        # the same root cause as Pong (data_bus_state drift from
+        # missing 6502 internal-cycle bus exposures) but in different
+        # cells. jaxtari ≡ jutari still holds (PXC2 invariant: both
+        # ports diverge from xitari in the same way).
+        name="pitfall_noop_10",
+        rom_filename="pitfall.bin",
+        xitari_trace="pitfall_noop_10.jsonl",
+        jutari_trace="pitfall_noop_10_jutari.jsonl",
+        expected_xitari_divergence=19,
+    ),
 )
 
 
