@@ -121,6 +121,17 @@ NTSC_CPU_CYCLES_PER_SCANLINE = 76        # 228 color clocks / 3
 NTSC_SCANLINES_PER_FRAME = 262
 SCREEN_WIDTH = 160
 
+# P3i-a: color-clock scaffolding. The TIA actually operates at 3× the
+# CPU rate — one CPU cycle = 3 color clocks. A scanline is 228 color
+# clocks: 68 of HBLANK (the chip blanks output while the CRT beam
+# retraces) followed by 160 visible pixels. `color_clock` on the TIA
+# state tracks the current beam position 0..227 within the scanline,
+# and `render_pixel(tia, c)` is the per-color-clock pixel kernel that
+# P3i-b/c/d/e/f progressively replace `render_scanline` with.
+COLOR_CLOCKS_PER_CPU_CYCLE = 3
+HBLANK_COLOR_CLOCKS = 68
+COLOR_CLOCKS_PER_SCANLINE = 228          # = NTSC_CPU_CYCLES_PER_SCANLINE × 3
+
 # Internal framebuffer height — covers scanlines 0..243 (everything xitari
 # would ever show with its default `Display.Height=210` starting at
 # `Display.YStart=34`). The unused 0..33 + 244..261 regions stay empty
@@ -213,6 +224,14 @@ class TIAState(NamedTuple):
     dump_disabled_cycle: int = 0
     paddle_use_dump_pot: jnp.ndarray = jnp.zeros((4,), dtype=bool)
     paddle_resistance: jnp.ndarray = jnp.zeros((4,), dtype=jnp.uint32)
+    # P3i-a: current beam color-clock position within the scanline,
+    # 0..227. Always derivable as `scanline_cycle * 3` at CPU-cycle
+    # granularity, but stored as a field so it survives across the
+    # boundary where scanline_cycle wraps (i.e. mid-CPU-cycle resolution
+    # if a future P3i-c lets `tia_poke` apply at sub-cycle color clocks).
+    # P3i-a/b only advance it on CPU-cycle boundaries — sub-cycle
+    # resolution lands in P3i-c with `ourPokeDelayTable`.
+    color_clock: int = 0
 
 
 def initial_tia_state() -> TIAState:
@@ -252,6 +271,7 @@ def initial_tia_state() -> TIAState:
         grp0_old=0,
         grp1_old=0,
         enabl_old=0,
+        color_clock=0,
     )
 
 
@@ -505,27 +525,46 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
     """Advance the TIA by `cpu_cycles` CPU cycles, rendering each
     completed scanline into the framebuffer.
 
-    Rendering uses the register state as of the end-of-scanline moment
-    (current register file). Mid-scanline register changes are not yet
-    captured — beam-accurate rendering lands in P3f.
+    **P3i-a / P3i-b**: the framebuffer write now goes through the
+    `render_pixel` per-color-clock kernel (160 calls per visible
+    scanline, looped over color clocks 68..227). For now the kernel
+    sees the same register state at every color clock — so the output
+    is bit-exact equivalent to the pre-P3i `render_scanline` write.
+    Sub-phases P3i-c onwards add per-poke timing so mid-scanline
+    register writes (the actual P3i payoff) start to bite. `tia.color_clock`
+    also advances 3× per CPU cycle and is the field P3i-c/d/e/f hang
+    write-delay arithmetic off of.
     """
     total = tia.scanline_cycle + cpu_cycles
     new_sc = total % NTSC_CPU_CYCLES_PER_SCANLINE
     line_advance = total // NTSC_CPU_CYCLES_PER_SCANLINE
+    # P3i-a: color_clock advances by 3 per CPU cycle, wrapping at 228.
+    new_color_clock = (tia.color_clock + cpu_cycles * COLOR_CLOCKS_PER_CPU_CYCLE) \
+                      % COLOR_CLOCKS_PER_SCANLINE
 
     fb = tia.framebuffer
     new_collisions = tia.collisions
     if line_advance > 0:
-        scanline_pixels = render_scanline(tia)
+        # P3i-b: per-color-clock framebuffer write. The kernel
+        # `render_pixel(tia, c, cached_sets)` reads the same register
+        # state every call (P3i-a/b state) — same output as the old
+        # `render_scanline` write below it. Object-set computation is
+        # hoisted to once per scanline so the per-color-clock loop
+        # doesn't redo it 160×. P3i-c will replace this with a true
+        # per-color-clock evaluation that re-applies pending pokes
+        # at their `ourPokeDelayTable`-derived activation color clock.
+        cached_sets = _object_pixel_sets(tia)
         new_collisions = _detect_collisions(tia._replace(collisions=new_collisions))
-        # When VBLANK is active, the TIA blanks its output — completed
-        # scanlines are NOT written to the framebuffer. Collision
-        # detection still runs (matching real hardware).
         if not tia.vblank_active:
+            row = jnp.array(
+                [render_pixel(tia, c, cached_sets)
+                 for c in range(HBLANK_COLOR_CLOCKS, COLOR_CLOCKS_PER_SCANLINE)],
+                dtype=jnp.uint8,
+            )
             for i in range(line_advance):
                 completed_line = (tia.scanline + i) % NTSC_SCANLINES_PER_FRAME
                 if completed_line < SCREEN_HEIGHT:
-                    fb = fb.at[completed_line].set(scanline_pixels)
+                    fb = fb.at[completed_line].set(row)
 
     new_line = tia.scanline + line_advance
     # PXC1-x: don't increment the frame counter on scanline-wrap. The
@@ -544,6 +583,7 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
     return tia._replace(
         scanline_cycle=new_sc,
         scanline=new_line,
+        color_clock=new_color_clock,
         framebuffer=fb,
         collisions=new_collisions,
         # P4c (dump-pot): keep a monotonic CPU-cycle counter so
@@ -796,6 +836,63 @@ def render_scanline(tia: TIAState) -> jnp.ndarray:
         _overlay_ball(pixels, tia)
 
     return jnp.array(pixels, dtype=jnp.uint8)
+
+
+def render_pixel(tia: TIAState, color_clock: int, cached_sets=None) -> int:
+    """P3i-a: per-color-clock pixel kernel.
+
+    Returns the pixel value (palette index, uint8) at beam position
+    `color_clock` (0..227) within the current scanline. HBLANK positions
+    (0..67) are not visible — returns 0. Visible positions (68..227) map
+    to framebuffer X = `color_clock - HBLANK_COLOR_CLOCKS` (0..159).
+
+    Compositing matches `render_scanline` exactly — same two priority
+    modes (PFP=0 default, PFP=1 swaps PF/BL above sprites). The function
+    is *pure* in `tia` (no mutations) and *bit-exact-equivalent* to
+    `render_scanline(tia)[color_clock - HBLANK_COLOR_CLOCKS]` for every
+    visible color clock. Sub-phase P3i-c will make the kernel sensitive
+    to *mid-scanline* register writes; P3i-a only proves the API is
+    equivalent.
+
+    `cached_sets` is an optional precomputed `_object_pixel_sets(tia)`
+    return value. Passing it lets `tia_advance` compute the per-object
+    coverage once per scanline and reuse it across all 160 visible color
+    clocks (P3i-b's per-color-clock loop), keeping per-scanline cost the
+    same as before.
+    """
+    if color_clock < HBLANK_COLOR_CLOCKS:
+        return 0                                          # HBLANK — invisible
+    x = color_clock - HBLANK_COLOR_CLOCKS                 # 0..159
+    if x >= SCREEN_WIDTH:
+        return 0                                          # past visible region
+
+    colubk = int(tia.registers[W_COLUBK])
+    colupf = int(tia.registers[W_COLUPF])
+    colup0 = int(tia.registers[W_COLUP0])
+    colup1 = int(tia.registers[W_COLUP1])
+    ctrlpf = int(tia.registers[W_CTRLPF])
+    pfp    = (ctrlpf & 0x04) != 0                         # P3l priority bit
+
+    sets = cached_sets if cached_sets is not None else _object_pixel_sets(tia)
+
+    pixel = colubk
+    if not pfp:
+        # Default priority: bg ← pf ← bl ← M1 ← P1 ← M0 ← P0
+        if x in sets["pf"]: pixel = colupf
+        if x in sets["bl"]: pixel = colupf
+        if x in sets["m1"]: pixel = colup1
+        if x in sets["p1"]: pixel = colup1
+        if x in sets["m0"]: pixel = colup0
+        if x in sets["p0"]: pixel = colup0
+    else:
+        # PFP priority: bg ← M1 ← P1 ← M0 ← P0 ← pf ← bl
+        if x in sets["m1"]: pixel = colup1
+        if x in sets["p1"]: pixel = colup1
+        if x in sets["m0"]: pixel = colup0
+        if x in sets["p0"]: pixel = colup0
+        if x in sets["pf"]: pixel = colupf
+        if x in sets["bl"]: pixel = colupf
+    return pixel
 
 
 # --------------------------------------------------------------------------- #

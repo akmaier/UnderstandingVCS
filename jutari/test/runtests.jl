@@ -5478,3 +5478,141 @@ end
         @test Int(scan[17]) == 0
     end
 end
+
+
+# --------------------------------------------------------------------------- #
+# P3i-a + P3i-b — per-color-clock render kernel scaffolding (jutari).
+#
+# Mirrors `jaxtari/tests/test_p3i_render_pixel.py`. Pins the invariant
+# that `render_pixel(tia, c)` equals `render_scanline(tia)[c-67]` for
+# every visible color clock — P3i-c will start breaking it intentionally
+# when mid-scanline pokes apply at their `ourPokeDelayTable` activation
+# color clock.
+# --------------------------------------------------------------------------- #
+
+using JuTari.TIA: render_pixel,
+                  COLOR_CLOCKS_PER_CPU_CYCLE, COLOR_CLOCKS_PER_SCANLINE,
+                  HBLANK_COLOR_CLOCKS
+
+@testset "JuTari P3i-a + P3i-b — color-clock scaffolding" begin
+
+    @testset "constants" begin
+        @test COLOR_CLOCKS_PER_CPU_CYCLE == 3
+        @test COLOR_CLOCKS_PER_SCANLINE == NTSC_CPU_CYCLES_PER_SCANLINE * 3
+        @test COLOR_CLOCKS_PER_SCANLINE == 228
+        @test HBLANK_COLOR_CLOCKS == 68
+        @test COLOR_CLOCKS_PER_SCANLINE - HBLANK_COLOR_CLOCKS == SCREEN_WIDTH
+    end
+
+    @testset "initial color_clock is zero" begin
+        tia = initial_tia_state()
+        @test tia.color_clock == 0
+    end
+
+    @testset "render_pixel returns 0 for HBLANK positions" begin
+        tia = initial_tia_state()
+        tia_poke!(tia, W_COLUBK, 0x42)
+        for c in (0, 1, 17, 50, 67)
+            @test render_pixel(tia, c) == 0x00
+        end
+    end
+
+    @testset "render_pixel returns 0 past visible region" begin
+        tia = initial_tia_state()
+        tia_poke!(tia, W_COLUBK, 0x42)
+        @test render_pixel(tia, 228) == 0x00
+        @test render_pixel(tia, 1000) == 0x00
+    end
+
+    function _exhaustive_equivalence(tia)
+        scan = render_scanline(tia)
+        for c in HBLANK_COLOR_CLOCKS:(COLOR_CLOCKS_PER_SCANLINE - 1)
+            x = c - HBLANK_COLOR_CLOCKS
+            actual = render_pixel(tia, c)
+            expected = scan[x + 1]                  # Julia 1-based
+            @test actual == expected
+        end
+    end
+
+    @testset "render_pixel ≡ render_scanline (all-zero)" begin
+        _exhaustive_equivalence(initial_tia_state())
+    end
+
+    @testset "render_pixel ≡ render_scanline (solid background)" begin
+        tia = initial_tia_state()
+        tia_poke!(tia, W_COLUBK, 0x42)
+        _exhaustive_equivalence(tia)
+    end
+
+    @testset "render_pixel ≡ render_scanline (playfield)" begin
+        tia = initial_tia_state()
+        tia_poke!(tia, W_PF0, 0xF0)
+        tia_poke!(tia, W_PF1, 0xAA)
+        tia_poke!(tia, W_PF2, 0x55)
+        tia_poke!(tia, W_COLUPF, 0x42)
+        tia_poke!(tia, W_COLUBK, 0x10)
+        _exhaustive_equivalence(tia)
+    end
+
+    @testset "render_pixel ≡ render_scanline (player)" begin
+        tia = initial_tia_state()
+        tia.scanline_cycle = 40                     # → p0_x ≈ 52
+        tia_poke!(tia, W_RESP0, 0)
+        tia_poke!(tia, W_GRP0, 0xAA)
+        tia_poke!(tia, W_COLUP0, 0x66)
+        tia_poke!(tia, W_COLUBK, 0x10)
+        _exhaustive_equivalence(tia)
+    end
+
+    @testset "render_pixel ≡ render_scanline (priority swap)" begin
+        tia = initial_tia_state()
+        tia.scanline_cycle = 40
+        tia_poke!(tia, W_RESP0, 0)
+        tia_poke!(tia, W_GRP0, 0xFF)
+        tia_poke!(tia, W_COLUP0, 0x66)
+        tia_poke!(tia, W_PF1, 0xFF)
+        tia_poke!(tia, W_COLUPF, 0x42)
+        tia_poke!(tia, W_COLUBK, 0x10)
+        tia_poke!(tia, W_CTRLPF, 0x04)              # PFP priority bit
+        _exhaustive_equivalence(tia)
+    end
+
+    @testset "color_clock advances 3× per CPU cycle" begin
+        tia = initial_tia_state()
+        tia_advance!(tia, 1)
+        @test tia.color_clock == 3
+        tia_advance!(tia, 5)
+        @test tia.color_clock == 18                 # 3 + 5·3 = 18
+    end
+
+    @testset "color_clock wraps at scanline boundary" begin
+        tia = initial_tia_state()
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        @test tia.color_clock == 0
+        @test tia.scanline_cycle == 0
+        @test tia.scanline == 1
+    end
+
+    @testset "P3i-b framebuffer matches pre-P3i render" begin
+        tia = initial_tia_state()
+        tia_poke!(tia, W_PF0, 0xF0)
+        tia_poke!(tia, W_PF1, 0xAA)
+        tia_poke!(tia, W_COLUPF, 0x42)
+        tia_poke!(tia, W_COLUBK, 0x10)
+        # Render one full scanline.
+        expected = render_scanline(tia)
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        # The completed scanline's row in the framebuffer should equal
+        # the standalone `render_scanline` output.
+        @test all(tia.framebuffer[1, :] .== expected)
+    end
+
+    @testset "P3i-b VBLANK still suppresses framebuffer writes" begin
+        tia = initial_tia_state()
+        tia_poke!(tia, W_PF0, 0xF0)
+        tia_poke!(tia, W_COLUPF, 0x42)
+        tia.vblank_active = true
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        @test sum(tia.framebuffer) == 0
+    end
+end

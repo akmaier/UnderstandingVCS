@@ -35,12 +35,13 @@ module TIA
 
 export TIAState, initial_tia_state,
        tia_peek, tia_poke!, tia_advance!, tia_apply_wsync!,
-       playfield_bits, render_playfield_scanline, render_scanline,
+       playfield_bits, render_playfield_scanline, render_scanline, render_pixel,
        set_trigger!, set_paddle_resistance!,
        _hm_offset, _resp_position,
        NTSC_CPU_CYCLES_PER_SCANLINE, NTSC_SCANLINES_PER_FRAME,
        NUM_REGISTERS, SCREEN_WIDTH, SCREEN_HEIGHT,
        Y_START, VISIBLE_HEIGHT,
+       COLOR_CLOCKS_PER_CPU_CYCLE, COLOR_CLOCKS_PER_SCANLINE, HBLANK_COLOR_CLOCKS,
        W_VSYNC, W_VBLANK, W_WSYNC, W_RSYNC, W_NUSIZ0, W_NUSIZ1,
        W_COLUP0, W_COLUP1, W_COLUPF, W_COLUBK, W_CTRLPF, W_REFP0, W_REFP1,
        W_PF0, W_PF1, W_PF2, W_RESP0, W_RESP1, W_RESM0, W_RESM1, W_RESBL,
@@ -93,6 +94,16 @@ const SCREEN_HEIGHT = 244
 # score-header area outside xitari's display window) cropped out.
 const Y_START = 34
 const VISIBLE_HEIGHT = 210
+# P3i-a: color-clock scaffolding. The TIA actually operates at 3× the
+# CPU rate — one CPU cycle = 3 color clocks. A scanline is 228 color
+# clocks: 68 of HBLANK (chip blanks output while the CRT beam
+# retraces) followed by 160 visible pixels. `color_clock` on TIAState
+# tracks the beam position 0..227 within the scanline; `render_pixel`
+# is the per-color-clock kernel that P3i-c/d/e/f progressively replace
+# `render_scanline` with.
+const COLOR_CLOCKS_PER_CPU_CYCLE = 3
+const HBLANK_COLOR_CLOCKS = 68
+const COLOR_CLOCKS_PER_SCANLINE = 228
 
 """
     TIAState
@@ -140,6 +151,12 @@ mutable struct TIAState
     dump_disabled_cycle::Int
     paddle_use_dump_pot::Vector{Bool}      # length 4
     paddle_resistance::Vector{UInt32}      # length 4
+    # P3i-a: current beam color-clock position within the scanline,
+    # 0..227. Advances 3× per CPU cycle alongside `scanline_cycle`.
+    # P3i-c will hang `ourPokeDelayTable` arithmetic off this field
+    # so mid-scanline `tia_poke!` calls land at their real activation
+    # color clock instead of taking effect immediately.
+    color_clock::Int
 end
 
 # INPT defaults: paddle pots ($80 = centred), triggers idle high (D7=1).
@@ -156,6 +173,7 @@ initial_tia_state() = TIAState(
     0, false, 0,
     fill(false, 4),
     zeros(UInt32, 4),
+    0,                                # P3i-a: color_clock = 0
 )
 
 """
@@ -323,8 +341,17 @@ end
     tia_advance!(tia, cpu_cycles)
 
 Advance TIA by `cpu_cycles` CPU cycles, rendering each completed
-scanline into the framebuffer. Rendering uses end-of-scanline register
-state; beam-accurate rendering lands in P3f.
+scanline into the framebuffer.
+
+**P3i-a / P3i-b**: the framebuffer write now goes through the
+`render_pixel` per-color-clock kernel (160 calls per visible scanline,
+looped over color clocks 68..227). For now the kernel sees the same
+register state at every color clock — so the output is bit-exact
+equivalent to the pre-P3i `render_scanline` write. Sub-phases P3i-c
+onwards add per-poke timing so mid-scanline register writes (the
+actual P3i payoff) start to bite. `tia.color_clock` also advances 3×
+per CPU cycle and is the field P3i-c/d/e/f hang write-delay
+arithmetic off of.
 """
 function tia_advance!(tia::TIAState, cpu_cycles::Integer)
     # P4c (dump-pot): keep a monotonic CPU-cycle counter so
@@ -334,17 +361,31 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
     total = tia.scanline_cycle + Int(cpu_cycles)
     tia.scanline_cycle = total % NTSC_CPU_CYCLES_PER_SCANLINE
     line_advance = total ÷ NTSC_CPU_CYCLES_PER_SCANLINE
+    # P3i-a: color_clock advances 3× per CPU cycle, wrapping at 228.
+    tia.color_clock = (tia.color_clock + Int(cpu_cycles) * COLOR_CLOCKS_PER_CPU_CYCLE) %
+                      COLOR_CLOCKS_PER_SCANLINE
 
     if line_advance > 0
-        scanline_pixels = render_scanline(tia)
+        # P3i-b: per-color-clock framebuffer write. Object-set
+        # computation hoisted to once per scanline so the per-color-
+        # clock loop isn't O(n²) — same total work as the old
+        # `render_scanline` write. P3i-c will replace this with a
+        # genuine per-color-clock evaluation that re-applies pending
+        # `tia_poke!` events at their `ourPokeDelayTable` activation
+        # color clock.
+        cached_sets = _object_pixel_sets(tia)
         _detect_collisions!(tia)
-        # When VBLANK is active, output is blanked — collisions still
-        # accumulate but framebuffer writes are suppressed.
         if !tia.vblank_active
+            # Build one row by calling render_pixel for each visible
+            # color clock 68..227 → framebuffer X 0..159.
+            row = Vector{UInt8}(undef, SCREEN_WIDTH)
+            for c in HBLANK_COLOR_CLOCKS:(COLOR_CLOCKS_PER_SCANLINE - 1)
+                row[c - HBLANK_COLOR_CLOCKS + 1] = render_pixel(tia, c, cached_sets)
+            end
             for i in 0:(line_advance - 1)
                 completed_line = (tia.scanline + i) % NTSC_SCANLINES_PER_FRAME
                 if completed_line < SCREEN_HEIGHT
-                    tia.framebuffer[completed_line + 1, :] .= scanline_pixels
+                    tia.framebuffer[completed_line + 1, :] .= row
                 end
             end
         end
@@ -627,6 +668,62 @@ function render_scanline(tia::TIAState)
         _overlay_ball!(pixels, tia)
     end
     return pixels
+end
+
+"""
+    render_pixel(tia, color_clock, cached_sets=nothing) -> UInt8
+
+P3i-a: per-color-clock pixel kernel. Returns the pixel value at beam
+position `color_clock` (0..227) within the current scanline. HBLANK
+positions (0..67) and positions past the visible region return 0.
+Visible positions (68..227) map to framebuffer X = `color_clock - 68`.
+
+Bit-exact equivalent to `render_scanline(tia)[color_clock - 67]` for
+every visible color clock — P3i-c will start breaking that equivalence
+when mid-scanline pokes apply at their `ourPokeDelayTable` activation
+color clock instead of immediately.
+
+`cached_sets` is the `_object_pixel_sets(tia)` return value precomputed
+once per scanline so `tia_advance!`'s per-color-clock loop doesn't
+redo it 160 times. Mirrors `jaxtari/jaxtari/tia/system.py::render_pixel`.
+"""
+function render_pixel(tia::TIAState, color_clock::Integer, cached_sets=nothing)
+    if color_clock < HBLANK_COLOR_CLOCKS
+        return UInt8(0)
+    end
+    x = Int(color_clock) - HBLANK_COLOR_CLOCKS
+    if x >= SCREEN_WIDTH
+        return UInt8(0)
+    end
+
+    colubk = tia.registers[W_COLUBK + 1]
+    colupf = tia.registers[W_COLUPF + 1]
+    colup0 = tia.registers[W_COLUP0 + 1]
+    colup1 = tia.registers[W_COLUP1 + 1]
+    ctrlpf = tia.registers[W_CTRLPF + 1]
+    pfp = (ctrlpf & 0x04) != 0
+
+    sets = cached_sets === nothing ? _object_pixel_sets(tia) : cached_sets
+
+    pixel = colubk
+    if !pfp
+        # Default: bg ← pf ← bl ← M1 ← P1 ← M0 ← P0
+        if x in sets.pf; pixel = colupf; end
+        if x in sets.bl; pixel = colupf; end
+        if x in sets.m1; pixel = colup1; end
+        if x in sets.p1; pixel = colup1; end
+        if x in sets.m0; pixel = colup0; end
+        if x in sets.p0; pixel = colup0; end
+    else
+        # PFP: bg ← M1 ← P1 ← M0 ← P0 ← pf ← bl
+        if x in sets.m1; pixel = colup1; end
+        if x in sets.p1; pixel = colup1; end
+        if x in sets.m0; pixel = colup0; end
+        if x in sets.p0; pixel = colup0; end
+        if x in sets.pf; pixel = colupf; end
+        if x in sets.bl; pixel = colupf; end
+    end
+    return pixel
 end
 
 # --------------------------------------------------------------------------- #
