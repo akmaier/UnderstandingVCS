@@ -79,6 +79,19 @@ class Bus(NamedTuple):
     tia: TIAState
     riot: RIOTState
     data_bus_state: int = 0
+    # P3i-g part 2 (mid-scanline TIA-read CPU↔TIA cycle threading):
+    # CPU cycles consumed since the last `tia_advance`. Each bus
+    # operation (peek or poke) bumps this by 1. When a TIA read at
+    # addr<$80 happens, the accumulator is flushed via
+    # `tia_advance(tia, pending)` BEFORE the read — so the TIA
+    # collisions / inputs reflect the precise sub-instruction beam
+    # position. NOTE: our bus-op count under-models cycles for
+    # instructions whose internal cycles aren't visible as peeks
+    # (NOP, register-only ops). The `tia_advanced_this_instruction`
+    # tracker exists so `_tia_post_step` can drain the FULL
+    # instruction-cycles delta even when bus ops were fewer.
+    pending_tia_cycles: int = 0
+    tia_advanced_this_instruction: int = 0
 
 
 def initial_bus(rom: Union[jnp.ndarray, None] = None,
@@ -98,6 +111,8 @@ def initial_bus(rom: Union[jnp.ndarray, None] = None,
         tia=initial_tia_state(),
         riot=initial_riot_state(),
         data_bus_state=0,
+        pending_tia_cycles=0,
+        tia_advanced_this_instruction=0,
     )
 
 
@@ -233,11 +248,17 @@ def _bus_peek(bus: Bus, addr: int):
     last 10-byte RAM divergence on `pong_noop_10`.
     """
     addr_masked = addr & 0x1FFF  # 6507 13-bit mirror
+    # P3i-g part 2: count this bus op as 1 CPU cycle (every 6502 cycle
+    # IS one bus op, so this is exact). For TIA-region peeks, we'll
+    # flush via `tia_advance` BEFORE the read so collisions/inputs
+    # reflect the precise mid-instruction beam position.
+    new_pending = bus.pending_tia_cycles + 1
     if addr_masked & 0x1000:
         # Cartridge — delegate to the cart, which handles bank switching
         # for F8/F6/F4 on hotspot access. Cart mutates in place.
         value = cart_peek(bus.cart, addr_masked)
-        return value, bus._replace(data_bus_state=value & 0xFF)
+        return value, bus._replace(data_bus_state=value & 0xFF,
+                                   pending_tia_cycles=new_pending)
     if not (addr_masked & 0x80):
         # TIA region (A7=0). Floating-bus quirk applies — OR noise
         # (always low 6 bits of `data_bus_state`) into the bits the
@@ -247,39 +268,49 @@ def _bus_peek(bus: Bus, addr: int):
         # before the per-register OR; we mirror that here. The final
         # returned value is stored back as the new data-bus state.
         #
-        # P3i-d2: for collision-register reads (regs $00-$07), run a
-        # partial-scanline per-pixel collision evaluation up to the
-        # current beam position BEFORE returning the latch. xitari's
-        # `TIA::peek` calls `updateFrame(mySystem->cycles() * 3)`
-        # which forces collision detection up to the current cycle;
-        # our `tia.color_clock` is at instruction-start (off by 0..6
-        # CPU cycles = 0..18 color clocks from the actual peek
-        # moment), but the partial-scanline OR is still closer to
-        # xitari than the previous "use last-scanline-OR" semantic.
-        # OR'ing into `tia.collisions` is idempotent so the eventual
-        # full-scanline render in `tia_advance` can re-cover the same
-        # color-clock range without double-count.
+        # P3i-g part 2 (mid-instruction TIA-read threading): flush the
+        # accumulated pending cycles via `tia_advance` BEFORE the read,
+        # so the TIA's collisions / scanline / color_clock all reflect
+        # the precise sub-instruction CPU cycle. Without this the TIA
+        # was always at "instruction-start" cycle (off by 0..18 color
+        # clocks) for any read in the middle/end of a multi-cycle
+        # instruction. Mirrors xitari's `TIA::peek` calling
+        # `updateFrame(mySystem->cycles() * 3)` per peek.
+        from jaxtari.tia.system import tia_advance as _tia_advance
         new_tia = bus.tia
+        flushed = new_pending
+        if flushed > 0:
+            new_tia = _tia_advance(new_tia, flushed)
+        # P3i-d2: for collision-register reads (regs $00-$07), run the
+        # partial-scanline per-pixel collision evaluation to catch up
+        # the LATCH state to the now-current beam. (After the
+        # `_tia_advance` above, color_clock is at the correct
+        # sub-instruction cycle.)
         if (addr_masked & 0x0F) < 8:
-            new_tia = _tia_catch_up_collisions(bus.tia)
+            new_tia = _tia_catch_up_collisions(new_tia)
         raw = tia_peek(new_tia, addr_masked)
         mask = _TIA_PEEK_DRIVEN_MASK[addr_masked & 0x0F]
         noise = bus.data_bus_state & _TIA_NOISE_MASK
         value = ((raw & mask) | noise) & 0xFF
-        new_bus = bus._replace(data_bus_state=value)
-        if new_tia is not bus.tia:
-            new_bus = new_bus._replace(tia=new_tia)
-        return value, new_bus
+        return value, bus._replace(
+            tia=new_tia,
+            data_bus_state=value,
+            pending_tia_cycles=0,                # flushed
+            tia_advanced_this_instruction=bus.tia_advanced_this_instruction + flushed,
+        )
     if addr_masked & 0x200:
         # RIOT I/O (A9=1). P4d: INTIM read clears timer_expired.
         value, new_riot = riot_peek(bus.riot, addr_masked)
         value &= 0xFF
         if new_riot is bus.riot:
-            return value, bus._replace(data_bus_state=value)
-        return value, bus._replace(riot=new_riot, data_bus_state=value)
+            return value, bus._replace(data_bus_state=value,
+                                       pending_tia_cycles=new_pending)
+        return value, bus._replace(riot=new_riot, data_bus_state=value,
+                                   pending_tia_cycles=new_pending)
     # RIOT RAM (A7=1, A9=0). 128 bytes, mirrored at offset addr & 0x7F.
     value = int(bus.ram[addr_masked & 0x7F])
-    return value, bus._replace(data_bus_state=value)
+    return value, bus._replace(data_bus_state=value,
+                               pending_tia_cycles=new_pending)
 
 
 def _bus_poke(bus: Bus, addr: int, value: int) -> Bus:
@@ -287,23 +318,37 @@ def _bus_poke(bus: Bus, addr: int, value: int) -> Bus:
     (xitari: `myDataBusState = value` after every poke)."""
     value8 = value & 0xFF
     addr_masked = addr & 0x1FFF
+    # P3i-g part 2: count this bus op as 1 CPU cycle.
+    new_pending = bus.pending_tia_cycles + 1
     if addr_masked & 0x1000:
         # Cart writes don't store anything but may trigger bank switch.
         cart_poke(bus.cart, addr_masked, value8)
-        return bus._replace(data_bus_state=value8)
+        return bus._replace(data_bus_state=value8,
+                            pending_tia_cycles=new_pending)
     if not (addr_masked & 0x80):
-        # TIA write — record the byte and apply P3a side-effects (WSYNC).
+        # TIA write — flush pending cycles BEFORE writing so the write
+        # lands at the precise sub-instruction color clock. Mirrors
+        # xitari's `TIA::poke` being called AFTER `updateFrame(clock)`.
+        from jaxtari.tia.system import tia_advance as _tia_advance
+        new_tia = bus.tia
+        flushed = new_pending
+        if flushed > 0:
+            new_tia = _tia_advance(new_tia, flushed)
         return bus._replace(
-            tia=tia_poke(bus.tia, addr_masked, value8),
+            tia=tia_poke(new_tia, addr_masked, value8),
             data_bus_state=value8,
+            pending_tia_cycles=0,                # flushed
+            tia_advanced_this_instruction=bus.tia_advanced_this_instruction + flushed,
         )
     if addr_masked & 0x200:
         # RIOT I/O write (P4): SWCHA/SWACNT/SWCHB/SWBCNT or TIM*T.
         return bus._replace(
             riot=riot_poke(bus.riot, addr_masked, value8),
             data_bus_state=value8,
+            pending_tia_cycles=new_pending,
         )
     return bus._replace(
         ram=bus.ram.at[addr_masked & 0x7F].set(jnp.uint8(value8)),
         data_bus_state=value8,
+        pending_tia_cycles=new_pending,
     )
