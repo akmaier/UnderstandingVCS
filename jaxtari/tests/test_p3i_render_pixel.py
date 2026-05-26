@@ -363,3 +363,90 @@ def test_multiple_mid_scanline_pf_writes_apply_in_beam_order():
     assert int(tia.registers[W_PF0]) == 0xF0
     assert int(tia.registers[W_PF1]) == 0xFF
     assert int(tia.registers[W_PF2]) == 0xFF
+
+
+# --------------------------------------------------------------------------- #
+# P3i-f: HMOVE blank bug (the "HMOVE comb" — leftmost 8 visible pixels
+# of the scanline FOLLOWING a properly-timed HMOVE write get blanked)
+# --------------------------------------------------------------------------- #
+
+from jaxtari.tia.system import (
+    _hmove_blank_enabled_at,
+    _HMOVE_BLANK_ENABLE_CYCLES,
+    W_HMOVE,
+)
+
+
+def test_hmove_blank_enable_table_matches_xitari():
+    """`_HMOVE_BLANK_ENABLE_CYCLES` should match xitari's
+    `ourHMOVEBlankEnableCycles[128]` for indices 0..75. Per xitari:
+    True for cycles 0..20 (inclusive — typical HMOVE-after-WSYNC
+    placement, with the boundary at cycle 21 flipping to False),
+    False for 21..74, True at cycle 75."""
+    # 0..20 inclusive should be True
+    for c in range(21):
+        assert _HMOVE_BLANK_ENABLE_CYCLES[c] is True, f"cycle {c}"
+    # 21..74 should be False
+    for c in range(21, 75):
+        assert _HMOVE_BLANK_ENABLE_CYCLES[c] is False, f"cycle {c}"
+    # Cycle 75 should be True
+    assert _HMOVE_BLANK_ENABLE_CYCLES[75] is True
+
+
+def test_hmove_blank_enabled_at_helper():
+    """`_hmove_blank_enabled_at(c)` returns the table entry at c modulo
+    the scanline (76 CPU cycles)."""
+    assert _hmove_blank_enabled_at(0) is True
+    assert _hmove_blank_enabled_at(10) is True
+    assert _hmove_blank_enabled_at(20) is True
+    assert _hmove_blank_enabled_at(21) is False
+    assert _hmove_blank_enabled_at(50) is False
+    assert _hmove_blank_enabled_at(75) is True
+
+
+def test_hmove_at_hblank_sets_blank_pending():
+    """An HMOVE write at scanline_cycle=0 (typical, right after
+    WSYNC) sets `hmove_blank_pending=True`."""
+    tia = initial_tia_state()
+    tia = tia_poke(tia, W_HMOVE, 0)
+    assert tia.hmove_blank_pending is True
+
+
+def test_hmove_at_mid_scanline_does_not_set_blank():
+    """An HMOVE write at scanline_cycle=40 (well into the visible
+    region) does NOT set the blank — `_HMOVE_BLANK_ENABLE_CYCLES[40]`
+    is False."""
+    tia = initial_tia_state()._replace(scanline_cycle=40, color_clock=120)
+    tia = tia_poke(tia, W_HMOVE, 0)
+    assert tia.hmove_blank_pending is False
+
+
+def test_hmove_blank_blacks_first_8_visible_pixels():
+    """When HMOVE blank fires, the first 8 visible color clocks
+    (framebuffer pixels 0..7) render as 0 regardless of background.
+    Pixel 8 and beyond render normally."""
+    tia = initial_tia_state()
+    tia = tia_poke(tia, W_COLUBK, 0x42)         # solid background
+    tia = tia_poke(tia, W_HMOVE, 0)
+    assert tia.hmove_blank_pending is True
+    tia = tia_advance(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+    # First 8 pixels blank (0).
+    for x in range(8):
+        assert int(tia.framebuffer[0, x]) == 0, f"x={x} should be blanked"
+    # Pixel 8 and beyond use COLUBK = 0x42.
+    for x in (8, 15, 50, 159):
+        assert int(tia.framebuffer[0, x]) == 0x42, f"x={x} should be COLUBK"
+
+
+def test_hmove_blank_clears_after_scanline_renders():
+    """After the scanline with the blank renders, the flag clears so
+    subsequent scanlines render normally."""
+    tia = initial_tia_state()
+    tia = tia_poke(tia, W_COLUBK, 0x42)
+    tia = tia_poke(tia, W_HMOVE, 0)
+    tia = tia_advance(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+    assert tia.hmove_blank_pending is False
+    # Run another scanline — all pixels should be COLUBK.
+    tia = tia_advance(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+    for x in range(160):
+        assert int(tia.framebuffer[1, x]) == 0x42

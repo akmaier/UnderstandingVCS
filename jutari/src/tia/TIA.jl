@@ -130,6 +130,28 @@ end
     return d == -1 ? _pf_dynamic_delay(color_clock) : Int(d)
 end
 
+# P3i-f: HMOVE blank enable table, indexed by CPU cycle within the
+# scanline (0..75). Verbatim port of xitari's
+# `ourHMOVEBlankEnableCycles[128]` (indices 0..75 used). A True at
+# cycle x means "writing HMOVE at this cycle triggers the blank
+# bug." Mirrors jaxtari `_HMOVE_BLANK_ENABLE_CYCLES`.
+const _HMOVE_BLANK_ENABLE_CYCLES = Bool[
+    true,  true,  true,  true,  true,  true,  true,  true,  true,  true,   # 00-09
+    true,  true,  true,  true,  true,  true,  true,  true,  true,  true,   # 10-19
+    true,  false, false, false, false, false, false, false, false, false,  # 20-29
+    false, false, false, false, false, false, false, false, false, false,  # 30-39
+    false, false, false, false, false, false, false, false, false, false,  # 40-49
+    false, false, false, false, false, false, false, false, false, false,  # 50-59
+    false, false, false, false, false, false, false, false, false, false,  # 60-69
+    false, false, false, false, false, true,                               # 70-75
+]
+
+@inline function _hmove_blank_enabled_at(scanline_cycle::Integer)
+    sc = Int(scanline_cycle) & 0x7F                  # mod 128
+    sc >= NTSC_CPU_CYCLES_PER_SCANLINE && return false
+    return _HMOVE_BLANK_ENABLE_CYCLES[sc + 1]        # Julia 1-indexed
+end
+
 """
     TIAState
 
@@ -187,6 +209,12 @@ mutable struct TIAState
     # is `(activation_color_clock, reg, value)`. Drained scanline-by-
     # scanline by `tia_advance!`. Mirrors jaxtari `pending_writes`.
     pending_writes::Vector{Tuple{Int,Int,UInt8}}
+    # P3i-f: HMOVE blank bug — when HMOVE is written at the right
+    # cycle within the scanline, the chip black-bars the first 8
+    # visible color clocks (the "HMOVE comb"). True from HMOVE write
+    # until those 8 pixels finish rendering; auto-cleared by the
+    # per-color-clock render loop. Mirrors jaxtari `hmove_blank_pending`.
+    hmove_blank_pending::Bool
 end
 
 # INPT defaults: paddle pots ($80 = centred), triggers idle high (D7=1).
@@ -205,6 +233,7 @@ initial_tia_state() = TIAState(
     zeros(UInt32, 4),
     0,                                # P3i-a: color_clock = 0
     Tuple{Int,Int,UInt8}[],            # P3i-c: empty pending_writes
+    false,                             # P3i-f: hmove_blank_pending = false
 )
 
 """
@@ -383,6 +412,11 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer)
         tia.m0_x = mod(tia.m0_x - _hm_offset(tia.registers[W_HMM0 + 1]), 160)
         tia.m1_x = mod(tia.m1_x - _hm_offset(tia.registers[W_HMM1 + 1]), 160)
         tia.bl_x = mod(tia.bl_x - _hm_offset(tia.registers[W_HMBL + 1]), 160)
+        # P3i-f: trigger HMOVE-blank bug if this write lands at a
+        # cycle where it would on real hardware (xitari's
+        # `ourHMOVEBlankEnableCycles[x]` lookup). Most HMOVE writes
+        # happen right after WSYNC so the blank fires.
+        tia.hmove_blank_pending = _hmove_blank_enabled_at(tia.scanline_cycle)
     elseif reg == W_HMCLR
         tia.registers[W_HMP0 + 1] = 0
         tia.registers[W_HMP1 + 1] = 0
@@ -453,6 +487,11 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
             row = Vector{UInt8}(undef, SCREEN_WIDTH)
             write_idx = 1
             cached_sets = _object_pixel_sets(tia)
+            # P3i-f: HMOVE-blank window. When `hmove_blank_pending` is
+            # true at scanline start, the first 8 visible color clocks
+            # (c=68..75 → x=0..7) render as 0 (black bar); collision
+            # detection still runs. After c >= 76 the flag clears.
+            hmove_blank_active = tia.hmove_blank_pending
             for c in HBLANK_COLOR_CLOCKS:(COLOR_CLOCKS_PER_SCANLINE - 1)
                 # Apply any pending writes whose activation_clock <= c
                 # before rendering the pixel.
@@ -464,7 +503,18 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
                     write_idx += 1
                 end
                 x = c - HBLANK_COLOR_CLOCKS
-                row[x + 1] = render_pixel(tia, c, cached_sets)
+                # P3i-f: HMOVE-blank window covers leftmost 8 visible
+                # pixels (c in [68..75]). After that, the flag clears.
+                if hmove_blank_active && c >= HBLANK_COLOR_CLOCKS + 8
+                    hmove_blank_active = false
+                end
+                if hmove_blank_active
+                    row[x + 1] = UInt8(0)
+                else
+                    row[x + 1] = render_pixel(tia, c, cached_sets)
+                end
+                # Collision still accumulates during blank (output
+                # blanking doesn't disable the collision pipeline).
                 _apply_pixel_collisions!(tia, x, cached_sets)
             end
             # Drain any pending writes that didn't activate within the
@@ -495,6 +545,8 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
         end
         # All pending writes have been drained into tia.registers.
         empty!(tia.pending_writes)
+        # P3i-f: clear blank after the scanline that consumed it.
+        tia.hmove_blank_pending = false
     end
 
     # PXC1-x: don't increment the frame counter on scanline-wrap. The
