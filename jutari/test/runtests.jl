@@ -1777,18 +1777,22 @@ end
     end
 
     @testset "RESP0 sets p0_x from scanline_cycle" begin
+        # P3i-e: RESP0 uses xitari-exact `(color_clock - HBLANK + 5) % 160`
+        # at visible color clocks. With color_clock = 30*3 = 90:
+        # (90-68+5) % 160 = 27.
         tia = initial_tia_state()
         tia.scanline_cycle = 30
+        tia.color_clock = 90
         tia_poke!(tia, W_RESP0, 0x00)
-        @test tia.p0_x == 22                  # 30*3-68
+        @test tia.p0_x == 27
     end
 
     @testset "RESP1 does not touch p0_x" begin
         tia = initial_tia_state()
-        tia.scanline_cycle = 30; tia.p0_x = 50
+        tia.scanline_cycle = 30; tia.color_clock = 90; tia.p0_x = 50
         tia_poke!(tia, W_RESP1, 0x00)
         @test tia.p0_x == 50
-        @test tia.p1_x == 22
+        @test tia.p1_x == 27          # same P3i-e formula as RESP0
     end
 
     @testset "HMOVE applies HMP offsets" begin
@@ -2001,15 +2005,20 @@ end
     end
 
     @testset "RESM0 sets m0_x from scanline_cycle" begin
-        tia = initial_tia_state(); tia.scanline_cycle = 30
+        # P3i-e: RESM0 uses xitari-exact `(color_clock - HBLANK + 4) % 160`
+        # at visible color clocks. With color_clock = 30*3 = 90:
+        # (90-68+4) % 160 = 26.
+        tia = initial_tia_state(); tia.scanline_cycle = 30; tia.color_clock = 90
         tia_poke!(tia, W_RESM0, 0x00)
-        @test tia.m0_x == 22
+        @test tia.m0_x == 26
     end
 
     @testset "RESBL sets bl_x from scanline_cycle" begin
-        tia = initial_tia_state(); tia.scanline_cycle = 50
+        # P3i-e: RESBL uses the same missile+ball formula. With
+        # color_clock = 50*3 = 150: (150-68+4) % 160 = 86.
+        tia = initial_tia_state(); tia.scanline_cycle = 50; tia.color_clock = 150
         tia_poke!(tia, W_RESBL, 0x00)
-        @test tia.bl_x == 82
+        @test tia.bl_x == 86
     end
 
     @testset "HMOVE applies to missiles + ball" begin

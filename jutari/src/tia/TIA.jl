@@ -268,14 +268,31 @@ end
 """
     _resp_position(scanline_cycle) -> Int
 
-Approximate RESP* timing: maps scanline_cycle to sprite position in
-[0,159]. Single linear formula `scanline_cycle * 3 - 68`, clamped.
+Legacy RESP* timing helper retained for backward compatibility with
+pre-P3i-e callers. New code should use `_resp_player_position` /
+`_resp_missile_ball_position` which apply xitari's exact constants.
 """
 @inline function _resp_position(scanline_cycle::Integer)
     pos = Int(scanline_cycle) * 3 - 68
     pos < 0 && return 0
     pos > 159 && return 159
     return pos
+end
+
+# P3i-e: xitari-exact RESP0/RESP1 — HBLANK constant 3, visible +5
+# offset. Mirrors `jaxtari/jaxtari/tia/system.py::_resp_player_position`.
+@inline function _resp_player_position(color_clock::Integer)
+    c = Int(color_clock)
+    c < HBLANK_COLOR_CLOCKS && return 3
+    return ((c - HBLANK_COLOR_CLOCKS) + 5) % SCREEN_WIDTH
+end
+
+# P3i-e: xitari-exact RESM0/RESM1/RESBL — HBLANK constant 2, visible
+# +4 offset. Mirrors `jaxtari/jaxtari/tia/system.py::_resp_missile_ball_position`.
+@inline function _resp_missile_ball_position(color_clock::Integer)
+    c = Int(color_clock)
+    c < HBLANK_COLOR_CLOCKS && return 2
+    return ((c - HBLANK_COLOR_CLOCKS) + 4) % SCREEN_WIDTH
 end
 
 """
@@ -349,15 +366,17 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer)
             tia.dump_enabled = true
         end
     elseif reg == W_RESP0
-        tia.p0_x = _resp_position(tia.scanline_cycle)
+        # P3i-e: xitari-exact player position from current color clock.
+        tia.p0_x = _resp_player_position(tia.color_clock)
     elseif reg == W_RESP1
-        tia.p1_x = _resp_position(tia.scanline_cycle)
+        tia.p1_x = _resp_player_position(tia.color_clock)
     elseif reg == W_RESM0
-        tia.m0_x = _resp_position(tia.scanline_cycle)
+        # P3i-e: missile/ball use the +4 offset / HBLANK constant 2.
+        tia.m0_x = _resp_missile_ball_position(tia.color_clock)
     elseif reg == W_RESM1
-        tia.m1_x = _resp_position(tia.scanline_cycle)
+        tia.m1_x = _resp_missile_ball_position(tia.color_clock)
     elseif reg == W_RESBL
-        tia.bl_x = _resp_position(tia.scanline_cycle)
+        tia.bl_x = _resp_missile_ball_position(tia.color_clock)
     elseif reg == W_HMOVE
         tia.p0_x = mod(tia.p0_x - _hm_offset(tia.registers[W_HMP0 + 1]), 160)
         tia.p1_x = mod(tia.p1_x - _hm_offset(tia.registers[W_HMP1 + 1]), 160)

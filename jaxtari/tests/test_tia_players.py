@@ -77,17 +77,19 @@ def test_resp_position_clamps_to_159_at_far_right():
 # --------------------------------------------------------------------------- #
 
 def test_resp0_sets_p0_x_from_scanline_cycle():
-    tia = initial_tia_state()._replace(scanline_cycle=30)
+    # P3i-e: RESP0 uses xitari-exact formula `(color_clock - HBLANK + 5) % 160`
+    # at visible color clocks, latched to 3 during HBLANK. With
+    # color_clock = 30*3 = 90: (90-68+5) % 160 = 27.
+    tia = initial_tia_state()._replace(scanline_cycle=30, color_clock=90)
     tia = tia_poke(tia, W_RESP0, 0x00)
-    # 30*3-68 = 22
-    assert tia.p0_x == 22
+    assert tia.p0_x == 27
 
 
 def test_resp1_does_not_touch_p0_x():
-    tia = initial_tia_state()._replace(scanline_cycle=30, p0_x=50)
+    tia = initial_tia_state()._replace(scanline_cycle=30, color_clock=90, p0_x=50)
     tia = tia_poke(tia, W_RESP1, 0x00)
     assert tia.p0_x == 50
-    assert tia.p1_x == 22
+    assert tia.p1_x == 27       # same P3i-e formula as RESP0
 
 
 def test_hmove_applies_hmp_offsets_to_both_players():

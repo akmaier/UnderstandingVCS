@@ -441,16 +441,15 @@ def set_paddle_resistance(tia: TIAState, paddle: int, resistance: int) -> TIASta
 
 
 def _resp_position(scanline_cycle: int) -> int:
-    """Approximate RESP* timing: maps the current scanline_cycle to a
-    sprite horizontal position in [0, 159].
+    """Legacy RESP* timing helper kept for backward compatibility with
+    pre-P3i-e tests. Maps `scanline_cycle` to a sprite horizontal
+    position via the simple `scanline_cycle * 3 - 68` formula clamped
+    to [0, 159].
 
-    Real TIA: during HBLANK (~first 22 CPU cycles of the scanline) RESP
-    latches to a small constant position; during the visible region the
-    position reflects the current beam location. We use a single linear
-    formula `scanline_cycle * 3 - 68` (CPU cycles × 3 = colour clocks,
-    minus the 68-color-clock HBLANK), clamped into [0, 159]. Off by a
-    few pixels vs. a beam-accurate model — good enough for sprite-
-    positioning tests; beam-accurate timing lands in P3f.
+    New code (post-P3i-e) should use `_resp_player_position(color_clock)`
+    or `_resp_missile_ball_position(color_clock)` — they apply xitari's
+    exact reset-during-HBLANK constants (3 for players, 2 for
+    missiles/ball) and the +5 / +4 visible-region offsets.
     """
     pos = scanline_cycle * 3 - 68
     if pos < 0:
@@ -458,6 +457,36 @@ def _resp_position(scanline_cycle: int) -> int:
     if pos > 159:
         return 159
     return pos
+
+
+def _resp_player_position(color_clock: int) -> int:
+    """P3i-e: xitari-exact RESP0/RESP1 sprite-reset position. During
+    HBLANK (color clocks 0..67) the H counter is still in retrace and
+    the player latches to constant position 3; in the visible region
+    the position is `(color_clock - 68 + 5) % 160` — the 5-color-clock
+    offset captures the propagation delay between the RESP* register
+    write and the actual sprite-counter latch.
+
+    Mirrors xitari `TIA::poke` case 0x10/0x11:
+        `hpos < HBLANK ? 3 : ((hpos - HBLANK + 5) % 160)`
+    """
+    if color_clock < HBLANK_COLOR_CLOCKS:
+        return 3
+    return ((color_clock - HBLANK_COLOR_CLOCKS) + 5) % SCREEN_WIDTH
+
+
+def _resp_missile_ball_position(color_clock: int) -> int:
+    """P3i-e: xitari-exact RESM0/RESM1/RESBL reset position. Missile
+    and ball share the same formula — HBLANK-constant 2, visible
+    offset +4 — differing from the player formula by 1 in both
+    constants (a real TIA-circuit asymmetry, not a quirk).
+
+    Mirrors xitari `TIA::poke` case 0x12/0x13/0x14:
+        `hpos < HBLANK ? 2 : ((hpos - HBLANK + 4) % 160)`
+    """
+    if color_clock < HBLANK_COLOR_CLOCKS:
+        return 2
+    return ((color_clock - HBLANK_COLOR_CLOCKS) + 4) % SCREEN_WIDTH
 
 
 def _hm_offset(hm: int) -> int:
@@ -551,15 +580,19 @@ def tia_poke(tia: TIAState, addr: int, value: int) -> TIAState:
             # Rising edge — cap grounded.
             new_tia = new_tia._replace(dump_enabled=True)
     elif reg == W_RESP0:
-        new_tia = new_tia._replace(p0_x=_resp_position(new_tia.scanline_cycle))
+        # P3i-e: xitari-exact RESP0 — HBLANK constant 3, visible +5
+        # offset, computed from the current color_clock (not the old
+        # scanline_cycle*3 approximation).
+        new_tia = new_tia._replace(p0_x=_resp_player_position(new_tia.color_clock))
     elif reg == W_RESP1:
-        new_tia = new_tia._replace(p1_x=_resp_position(new_tia.scanline_cycle))
+        new_tia = new_tia._replace(p1_x=_resp_player_position(new_tia.color_clock))
     elif reg == W_RESM0:
-        new_tia = new_tia._replace(m0_x=_resp_position(new_tia.scanline_cycle))
+        # P3i-e: missile/ball use the +4 offset / HBLANK constant 2.
+        new_tia = new_tia._replace(m0_x=_resp_missile_ball_position(new_tia.color_clock))
     elif reg == W_RESM1:
-        new_tia = new_tia._replace(m1_x=_resp_position(new_tia.scanline_cycle))
+        new_tia = new_tia._replace(m1_x=_resp_missile_ball_position(new_tia.color_clock))
     elif reg == W_RESBL:
-        new_tia = new_tia._replace(bl_x=_resp_position(new_tia.scanline_cycle))
+        new_tia = new_tia._replace(bl_x=_resp_missile_ball_position(new_tia.color_clock))
     elif reg == W_HMOVE:
         hmp0 = int(new_tia.registers[W_HMP0])
         hmp1 = int(new_tia.registers[W_HMP1])

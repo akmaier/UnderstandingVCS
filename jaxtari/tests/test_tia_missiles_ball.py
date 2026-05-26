@@ -150,15 +150,20 @@ def test_ball_size_8():
 # --------------------------------------------------------------------------- #
 
 def test_resm0_sets_m0_x_from_scanline_cycle():
-    tia = initial_tia_state()._replace(scanline_cycle=30)
+    # P3i-e: RESM0 uses xitari-exact `(color_clock - HBLANK + 4) % 160`
+    # at visible color clocks, latched to 2 during HBLANK. With
+    # color_clock = 30*3 = 90: (90-68+4) % 160 = 26.
+    tia = initial_tia_state()._replace(scanline_cycle=30, color_clock=90)
     tia = tia_poke(tia, W_RESM0, 0x00)
-    assert tia.m0_x == 22                     # 30*3-68
+    assert tia.m0_x == 26
 
 
 def test_resbl_sets_bl_x_from_scanline_cycle():
-    tia = initial_tia_state()._replace(scanline_cycle=50)
+    # P3i-e: RESBL uses the same missile+ball formula. With
+    # color_clock = 50*3 = 150: (150-68+4) % 160 = 86.
+    tia = initial_tia_state()._replace(scanline_cycle=50, color_clock=150)
     tia = tia_poke(tia, W_RESBL, 0x00)
-    assert tia.bl_x == 82                     # 50*3-68
+    assert tia.bl_x == 86
 
 
 def test_hmove_applies_to_missiles_and_ball():
