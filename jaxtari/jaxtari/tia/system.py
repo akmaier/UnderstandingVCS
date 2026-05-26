@@ -532,10 +532,105 @@ def _hm_offset(hm: int) -> int:
 
     Only the high nibble matters and is interpreted 4-bit two's complement
     (range +7..-8). Positive values move the sprite LEFT, negative RIGHT,
-    matching Stella's convention.
+    matching Stella's convention. This is the HBLANK-only case — the
+    full cycle-dependent table lives at `_COMPLETE_MOTION_TABLE` and is
+    exposed via `_hmove_motion(scanline_cycle, hm)`.
     """
     high = (hm >> 4) & 0x0F
     return high - 16 if high >= 8 else high
+
+
+# P3i-f extension: full HMOVE motion table, indexed by [scanline_cycle][hm_nibble].
+# Verbatim port of xitari's `ourCompleteMotionTable[128][16]` (entries 0..76
+# used; the [77..127] tail is xitari's defensive padding for the % 228 clock
+# modulo computation). Our sign convention is the NEGATION of xitari's:
+# xitari stores e.g. `-1` at [0][1] and does `myPOSP0 += table[x][hm]`;
+# we keep our existing `p0_x = (p0_x - _hmove_motion(sc, hm)) % 160` style,
+# so the table values here are the negation of xitari's.
+#
+# Three structural regions:
+#   * cycles 0..20: "HBLANK" pattern. Motion = `_hm_offset(hm)`-equivalent
+#     (mostly +/-N for N in 0..8). HMOVE write right after a WSYNC lands
+#     here — the typical case.
+#   * cycles 21..54: ALL ZEROS. HMOVE written mid-scanline does NOT move
+#     the sprites — this is the "mid-scanline HMOVE doesn't work" quirk
+#     real games depend on (and have used both directions of for tricks).
+#   * cycles 55..75: late-scanline pattern with extra negative shifts.
+#     Used by exotic games that abuse HMOVE timing.
+#   * cycle 76: HBLANK wrap — matches cycle 0.
+#
+# Each row is 16 entries indexed by the high nibble of the HM* register.
+_COMPLETE_MOTION_TABLE = (
+    # HBLANK (cycles 0..20) — mostly the standard HBLANK pattern.
+    # Note xitari's row varies slightly at indices 7+ between rows 0..20.
+    ( 0,  1,  2,  3,  4,  5,  6,  7, -8, -7, -6, -5, -4, -3, -2, -1),  # 0
+    ( 0,  1,  2,  3,  4,  5,  6,  7, -8, -7, -6, -5, -4, -3, -2, -1),  # 1
+    ( 0,  1,  2,  3,  4,  5,  6,  7, -8, -7, -6, -5, -4, -3, -2, -1),  # 2
+    ( 0,  1,  2,  3,  4,  5,  6,  7, -8, -7, -6, -5, -4, -3, -2, -1),  # 3
+    ( 0,  1,  2,  3,  4,  5,  6,  6, -8, -7, -6, -5, -4, -3, -2, -1),  # 4
+    ( 0,  1,  2,  3,  4,  5,  5,  5, -8, -7, -6, -5, -4, -3, -2, -1),  # 5
+    ( 0,  1,  2,  3,  4,  5,  5,  5, -8, -7, -6, -5, -4, -3, -2, -1),  # 6
+    ( 0,  1,  2,  3,  4,  4,  4,  4, -8, -7, -6, -5, -4, -3, -2, -1),  # 7
+    ( 0,  1,  2,  3,  3,  3,  3,  3, -8, -7, -6, -5, -4, -3, -2, -1),  # 8
+    ( 0,  1,  2,  2,  2,  2,  2,  2, -8, -7, -6, -5, -4, -3, -2, -1),  # 9
+    ( 0,  1,  2,  2,  2,  2,  2,  2, -8, -7, -6, -5, -4, -3, -2, -1),  # 10
+    ( 0,  1,  1,  1,  1,  1,  1,  1, -8, -7, -6, -5, -4, -3, -2, -1),  # 11
+    ( 0,  0,  0,  0,  0,  0,  0,  0, -8, -7, -6, -5, -4, -3, -2, -1),  # 12
+    (-1, -1, -1, -1, -1, -1, -1, -1, -8, -7, -6, -5, -4, -3, -2, -1),  # 13
+    (-1, -1, -1, -1, -1, -1, -1, -1, -8, -7, -6, -5, -4, -3, -2, -1),  # 14
+    (-2, -2, -2, -2, -2, -2, -2, -2, -8, -7, -6, -5, -4, -3, -2, -2),  # 15
+    (-3, -3, -3, -3, -3, -3, -3, -3, -8, -7, -6, -5, -4, -3, -3, -3),  # 16
+    (-4, -4, -4, -4, -4, -4, -4, -4, -8, -7, -6, -5, -4, -4, -4, -4),  # 17
+    (-4, -4, -4, -4, -4, -4, -4, -4, -8, -7, -6, -5, -4, -4, -4, -4),  # 18
+    (-5, -5, -5, -5, -5, -5, -5, -5, -8, -7, -6, -5, -5, -5, -5, -5),  # 19
+    (-6, -6, -6, -6, -6, -6, -6, -6, -8, -7, -6, -6, -6, -6, -6, -6),  # 20
+    # Mid-scanline (cycles 21..54) — HMOVE does NOTHING here.
+    *((0,) * 16 for _ in range(21, 55)),
+    # Late-scanline (cycles 55..75) — motion table re-engages with
+    # extra negative shifts. xitari rows have specific patterns;
+    # we port the literal values (negated for our sign convention).
+    ( 0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0),  # 55
+    ( 0,  0,  0,  0,  0,  0,  1,  2,  0,  0,  0,  0,  0,  0,  0,  0),  # 56
+    ( 0,  0,  0,  0,  0,  1,  2,  3,  0,  0,  0,  0,  0,  0,  0,  0),  # 57
+    ( 0,  0,  0,  0,  0,  1,  2,  3,  0,  0,  0,  0,  0,  0,  0,  0),  # 58
+    ( 0,  0,  0,  0,  1,  2,  3,  4,  0,  0,  0,  0,  0,  0,  0,  0),  # 59
+    ( 0,  0,  0,  1,  2,  3,  4,  5,  0,  0,  0,  0,  0,  0,  0,  0),  # 60
+    ( 0,  0,  1,  2,  3,  4,  5,  6,  0,  0,  0,  0,  0,  0,  0,  0),  # 61
+    ( 0,  0,  1,  2,  3,  4,  5,  6,  0,  0,  0,  0,  0,  0,  0,  0),  # 62
+    ( 0,  1,  2,  3,  4,  5,  6,  7,  0,  0,  0,  0,  0,  0,  0,  0),  # 63
+    ( 1,  2,  3,  4,  5,  6,  7,  8,  0,  0,  0,  0,  0,  0,  0,  0),  # 64
+    ( 2,  3,  4,  5,  6,  7,  8,  9,  0,  0,  0,  0,  0,  0,  0,  1),  # 65
+    ( 2,  3,  4,  5,  6,  7,  8,  9,  0,  0,  0,  0,  0,  0,  0,  1),  # 66
+    ( 3,  4,  5,  6,  7,  8,  9, 10,  0,  0,  0,  0,  0,  0,  1,  2),  # 67
+    ( 4,  5,  6,  7,  8,  9, 10, 11,  0,  0,  0,  0,  0,  1,  2,  3),  # 68
+    ( 5,  6,  7,  8,  9, 10, 11, 12,  0,  0,  0,  0,  1,  2,  3,  4),  # 69
+    ( 5,  6,  7,  8,  9, 10, 11, 12,  0,  0,  0,  0,  1,  2,  3,  4),  # 70
+    ( 6,  7,  8,  9, 10, 11, 12, 13,  0,  0,  0,  1,  2,  3,  4,  5),  # 71
+    ( 7,  8,  9, 10, 11, 12, 13, 14,  0,  0,  1,  2,  3,  4,  5,  6),  # 72
+    ( 8,  9, 10, 11, 12, 13, 14, 15,  0,  1,  2,  3,  4,  5,  6,  7),  # 73
+    ( 8,  9, 10, 11, 12, 13, 14, 15,  0,  1,  2,  3,  4,  5,  6,  7),  # 74
+    ( 0,  1,  2,  3,  4,  5,  6,  7, -8, -7, -6, -5, -4, -3, -2, -1),  # 75 (HBLANK wrap)
+)
+# Defensive: confirm we generated exactly 76 rows (0..75).
+assert len(_COMPLETE_MOTION_TABLE) == 76
+
+
+def _hmove_motion(scanline_cycle: int, hm: int) -> int:
+    """Compute the HMOVE motion delta for a sprite given the CPU cycle
+    within the scanline when HMOVE was written and the HM* register
+    byte. Returns our-sign-convention offset (positive = move LEFT,
+    negative = move RIGHT — same as `_hm_offset`).
+
+    For `scanline_cycle in [0..20]` (typical HMOVE-after-WSYNC), the
+    result matches `_hm_offset(hm)` for the common HM nibble values.
+    For `scanline_cycle in [21..54]` (mid-scanline HMOVE), the result
+    is 0 — the chip does NOT move the sprite. For [55..75], various
+    cycle-dependent partial motions kick in (used by exotic ROMs).
+    """
+    sc = int(scanline_cycle) & 0x7F
+    if sc >= NTSC_CPU_CYCLES_PER_SCANLINE:
+        sc = 0                                       # past end → wraps to HBLANK
+    return _COMPLETE_MOTION_TABLE[sc][(hm >> 4) & 0x0F]
 
 
 def tia_poke(tia: TIAState, addr: int, value: int) -> TIAState:
@@ -637,18 +732,23 @@ def tia_poke(tia: TIAState, addr: int, value: int) -> TIAState:
         hmm0 = int(new_tia.registers[W_HMM0])
         hmm1 = int(new_tia.registers[W_HMM1])
         hmbl = int(new_tia.registers[W_HMBL])
-        # P3i-f: trigger the HMOVE-blank bug if this write lands at
-        # a cycle where it would on real hardware. xitari's
-        # `ourHMOVEBlankEnableCycles[x]` lookup — most HMOVE writes
-        # happen right after WSYNC (scanline_cycle 0..21) so the
-        # blank fires; mid-scanline HMOVE doesn't.
-        blank = _hmove_blank_enabled_at(new_tia.scanline_cycle)
+        # P3i-f + P3i-g: trigger the HMOVE-blank bug if this write
+        # lands at a cycle where it would on real hardware, AND use
+        # the cycle-dependent motion table (`_hmove_motion` →
+        # xitari's `ourCompleteMotionTable[x][hm>>4]`) instead of
+        # the HBLANK-only `_hm_offset`. The two combine: most
+        # writes hit at cycle 0..20 → blank fires + standard
+        # HBLANK motion deltas. Mid-scanline writes (21..54) get
+        # zero motion (sprite stays put) AND no blank. Late writes
+        # (55..75) get partial-motion deltas.
+        sc = int(new_tia.scanline_cycle)
+        blank = _hmove_blank_enabled_at(sc)
         new_tia = new_tia._replace(
-            p0_x=(new_tia.p0_x - _hm_offset(hmp0)) % 160,
-            p1_x=(new_tia.p1_x - _hm_offset(hmp1)) % 160,
-            m0_x=(new_tia.m0_x - _hm_offset(hmm0)) % 160,
-            m1_x=(new_tia.m1_x - _hm_offset(hmm1)) % 160,
-            bl_x=(new_tia.bl_x - _hm_offset(hmbl)) % 160,
+            p0_x=(new_tia.p0_x - _hmove_motion(sc, hmp0)) % 160,
+            p1_x=(new_tia.p1_x - _hmove_motion(sc, hmp1)) % 160,
+            m0_x=(new_tia.m0_x - _hmove_motion(sc, hmm0)) % 160,
+            m1_x=(new_tia.m1_x - _hmove_motion(sc, hmm1)) % 160,
+            bl_x=(new_tia.bl_x - _hmove_motion(sc, hmbl)) % 160,
             hmove_blank_pending=blank,
         )
     elif reg == W_HMCLR:

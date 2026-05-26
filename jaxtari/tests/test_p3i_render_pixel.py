@@ -450,3 +450,76 @@ def test_hmove_blank_clears_after_scanline_renders():
     tia = tia_advance(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
     for x in range(160):
         assert int(tia.framebuffer[1, x]) == 0x42
+
+
+# --------------------------------------------------------------------------- #
+# P3i-g: full xitari ourCompleteMotionTable (mid-scanline-HMOVE quirks)
+# --------------------------------------------------------------------------- #
+
+from jaxtari.tia.system import _hmove_motion, _hm_offset, _COMPLETE_MOTION_TABLE
+
+
+def test_motion_table_dimensions():
+    """76 rows × 16 cols (covers scanline cycles 0..75, indexed by
+    HM high nibble 0..15)."""
+    assert len(_COMPLETE_MOTION_TABLE) == 76
+    for row in _COMPLETE_MOTION_TABLE:
+        assert len(row) == 16
+
+
+def test_motion_table_hblank_matches_hm_offset():
+    """At scanline_cycle 0..3 (HBLANK), the motion table value should
+    equal `_hm_offset(hm)` for every HM nibble — they're the same
+    HBLANK pattern."""
+    for sc in range(4):
+        for nibble in range(16):
+            hm = nibble << 4
+            assert _hmove_motion(sc, hm) == _hm_offset(hm), \
+                f"sc={sc}, nibble={nibble:#x}"
+
+
+def test_motion_table_mid_scanline_is_zero():
+    """Cycles 21..54 — HMOVE in the visible region does NOT move
+    sprites (xitari quirk: ourCompleteMotionTable rows 21..54 are
+    all zeros)."""
+    for sc in range(21, 55):
+        for nibble in range(16):
+            hm = nibble << 4
+            assert _hmove_motion(sc, hm) == 0, \
+                f"sc={sc}, nibble={nibble:#x} should be 0"
+
+
+def test_motion_table_late_scanline_partial():
+    """Cycles 55..74 produce cycle-dependent partial-motion deltas
+    (xitari rows 55..74). Spot-check a few known table values."""
+    # Cycle 64, all nibbles 0..7 → 1..8 (negated in our convention);
+    # nibbles 8..15 → 0. From xitari row 64:
+    # { 1, 2, 3, 4, 5, 6, 7, 8,  0, 0, 0, 0, 0, 0, 0, 0}
+    assert _hmove_motion(64, 0x00) == 1
+    assert _hmove_motion(64, 0x70) == 8
+    assert _hmove_motion(64, 0x80) == 0   # high half all zero at cycle 64
+
+
+def test_motion_table_hmove_at_mid_scanline_does_not_move_sprite():
+    """End-to-end via tia_poke: write HMP0=0x70 (would normally
+    move P0 by +7 in our sign convention), trigger HMOVE at
+    scanline_cycle=30 (mid-scanline). P0 X position should NOT
+    change."""
+    from jaxtari.tia.system import W_HMP0
+    tia = initial_tia_state()._replace(p0_x=80)
+    tia = tia_poke(tia, W_HMP0, 0x70)
+    # Advance to mid-scanline (scanline_cycle = 30).
+    tia = tia._replace(scanline_cycle=30, color_clock=30 * 3)
+    tia = tia_poke(tia, W_HMOVE, 0)
+    assert tia.p0_x == 80, f"P0 should not move mid-scanline, got {tia.p0_x}"
+
+
+def test_motion_table_hmove_at_hblank_moves_normally():
+    """For contrast: HMOVE at scanline_cycle=0 with HMP0=0x70 moves
+    P0 by 7 pixels left (our +sign), as before."""
+    from jaxtari.tia.system import W_HMP0
+    tia = initial_tia_state()._replace(p0_x=80)
+    tia = tia_poke(tia, W_HMP0, 0x70)
+    # scanline_cycle stays 0.
+    tia = tia_poke(tia, W_HMOVE, 0)
+    assert tia.p0_x == 73, f"P0 should move from 80 to 73, got {tia.p0_x}"

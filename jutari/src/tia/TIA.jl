@@ -152,6 +152,75 @@ const _HMOVE_BLANK_ENABLE_CYCLES = Bool[
     return _HMOVE_BLANK_ENABLE_CYCLES[sc + 1]        # Julia 1-indexed
 end
 
+# P3i-g: full HMOVE motion table, indexed by [scanline_cycle][hm_nibble].
+# Verbatim port of xitari's `ourCompleteMotionTable[128][16]` for cycles
+# 0..75. Our sign convention is the NEGATION of xitari's (we subtract,
+# xitari adds). Three structural regions: HBLANK (0..20, standard
+# offsets), mid-scanline (21..54, all zeros — HMOVE has no effect),
+# late-scanline (55..75, partial-motion deltas). Mirrors jaxtari
+# `_COMPLETE_MOTION_TABLE`.
+const _COMPLETE_MOTION_TABLE = let
+    rows = Vector{NTuple{16,Int}}(undef, 76)
+    # HBLANK pattern (cycles 0..20). The pattern subtly varies row-by-row
+    # (xitari rows show progressive clipping in entries 4..7 and 13..15
+    # as the scanline progresses). Spelled out below — see xitari
+    # `ourCompleteMotionTable` rows 0..20.
+    rows[1]  = ( 0,  1,  2,  3,  4,  5,  6,  7, -8, -7, -6, -5, -4, -3, -2, -1)  # 0
+    rows[2]  = ( 0,  1,  2,  3,  4,  5,  6,  7, -8, -7, -6, -5, -4, -3, -2, -1)  # 1
+    rows[3]  = ( 0,  1,  2,  3,  4,  5,  6,  7, -8, -7, -6, -5, -4, -3, -2, -1)  # 2
+    rows[4]  = ( 0,  1,  2,  3,  4,  5,  6,  7, -8, -7, -6, -5, -4, -3, -2, -1)  # 3
+    rows[5]  = ( 0,  1,  2,  3,  4,  5,  6,  6, -8, -7, -6, -5, -4, -3, -2, -1)  # 4
+    rows[6]  = ( 0,  1,  2,  3,  4,  5,  5,  5, -8, -7, -6, -5, -4, -3, -2, -1)  # 5
+    rows[7]  = ( 0,  1,  2,  3,  4,  5,  5,  5, -8, -7, -6, -5, -4, -3, -2, -1)  # 6
+    rows[8]  = ( 0,  1,  2,  3,  4,  4,  4,  4, -8, -7, -6, -5, -4, -3, -2, -1)  # 7
+    rows[9]  = ( 0,  1,  2,  3,  3,  3,  3,  3, -8, -7, -6, -5, -4, -3, -2, -1)  # 8
+    rows[10] = ( 0,  1,  2,  2,  2,  2,  2,  2, -8, -7, -6, -5, -4, -3, -2, -1)  # 9
+    rows[11] = ( 0,  1,  2,  2,  2,  2,  2,  2, -8, -7, -6, -5, -4, -3, -2, -1)  # 10
+    rows[12] = ( 0,  1,  1,  1,  1,  1,  1,  1, -8, -7, -6, -5, -4, -3, -2, -1)  # 11
+    rows[13] = ( 0,  0,  0,  0,  0,  0,  0,  0, -8, -7, -6, -5, -4, -3, -2, -1)  # 12
+    rows[14] = (-1, -1, -1, -1, -1, -1, -1, -1, -8, -7, -6, -5, -4, -3, -2, -1)  # 13
+    rows[15] = (-1, -1, -1, -1, -1, -1, -1, -1, -8, -7, -6, -5, -4, -3, -2, -1)  # 14
+    rows[16] = (-2, -2, -2, -2, -2, -2, -2, -2, -8, -7, -6, -5, -4, -3, -2, -2)  # 15
+    rows[17] = (-3, -3, -3, -3, -3, -3, -3, -3, -8, -7, -6, -5, -4, -3, -3, -3)  # 16
+    rows[18] = (-4, -4, -4, -4, -4, -4, -4, -4, -8, -7, -6, -5, -4, -4, -4, -4)  # 17
+    rows[19] = (-4, -4, -4, -4, -4, -4, -4, -4, -8, -7, -6, -5, -4, -4, -4, -4)  # 18
+    rows[20] = (-5, -5, -5, -5, -5, -5, -5, -5, -8, -7, -6, -5, -5, -5, -5, -5)  # 19
+    rows[21] = (-6, -6, -6, -6, -6, -6, -6, -6, -8, -7, -6, -6, -6, -6, -6, -6)  # 20
+    # Mid-scanline (cycles 21..54) — HMOVE has no effect.
+    for i in 22:55
+        rows[i] = ntuple(_ -> 0, 16)
+    end
+    # Late-scanline (cycles 55..75)
+    rows[56] = ( 0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0)  # 55
+    rows[57] = ( 0,  0,  0,  0,  0,  0,  1,  2,  0,  0,  0,  0,  0,  0,  0,  0)  # 56
+    rows[58] = ( 0,  0,  0,  0,  0,  1,  2,  3,  0,  0,  0,  0,  0,  0,  0,  0)  # 57
+    rows[59] = ( 0,  0,  0,  0,  0,  1,  2,  3,  0,  0,  0,  0,  0,  0,  0,  0)  # 58
+    rows[60] = ( 0,  0,  0,  0,  1,  2,  3,  4,  0,  0,  0,  0,  0,  0,  0,  0)  # 59
+    rows[61] = ( 0,  0,  0,  1,  2,  3,  4,  5,  0,  0,  0,  0,  0,  0,  0,  0)  # 60
+    rows[62] = ( 0,  0,  1,  2,  3,  4,  5,  6,  0,  0,  0,  0,  0,  0,  0,  0)  # 61
+    rows[63] = ( 0,  0,  1,  2,  3,  4,  5,  6,  0,  0,  0,  0,  0,  0,  0,  0)  # 62
+    rows[64] = ( 0,  1,  2,  3,  4,  5,  6,  7,  0,  0,  0,  0,  0,  0,  0,  0)  # 63
+    rows[65] = ( 1,  2,  3,  4,  5,  6,  7,  8,  0,  0,  0,  0,  0,  0,  0,  0)  # 64
+    rows[66] = ( 2,  3,  4,  5,  6,  7,  8,  9,  0,  0,  0,  0,  0,  0,  0,  1)  # 65
+    rows[67] = ( 2,  3,  4,  5,  6,  7,  8,  9,  0,  0,  0,  0,  0,  0,  0,  1)  # 66
+    rows[68] = ( 3,  4,  5,  6,  7,  8,  9, 10,  0,  0,  0,  0,  0,  0,  1,  2)  # 67
+    rows[69] = ( 4,  5,  6,  7,  8,  9, 10, 11,  0,  0,  0,  0,  0,  1,  2,  3)  # 68
+    rows[70] = ( 5,  6,  7,  8,  9, 10, 11, 12,  0,  0,  0,  0,  1,  2,  3,  4)  # 69
+    rows[71] = ( 5,  6,  7,  8,  9, 10, 11, 12,  0,  0,  0,  0,  1,  2,  3,  4)  # 70
+    rows[72] = ( 6,  7,  8,  9, 10, 11, 12, 13,  0,  0,  0,  1,  2,  3,  4,  5)  # 71
+    rows[73] = ( 7,  8,  9, 10, 11, 12, 13, 14,  0,  0,  1,  2,  3,  4,  5,  6)  # 72
+    rows[74] = ( 8,  9, 10, 11, 12, 13, 14, 15,  0,  1,  2,  3,  4,  5,  6,  7)  # 73
+    rows[75] = ( 8,  9, 10, 11, 12, 13, 14, 15,  0,  1,  2,  3,  4,  5,  6,  7)  # 74
+    rows[76] = ( 0,  1,  2,  3,  4,  5,  6,  7, -8, -7, -6, -5, -4, -3, -2, -1)  # 75 (HBLANK wrap)
+    rows
+end
+
+@inline function _hmove_motion(scanline_cycle::Integer, hm::Integer)
+    sc = Int(scanline_cycle) & 0x7F
+    sc >= NTSC_CPU_CYCLES_PER_SCANLINE && (sc = 0)   # past end → HBLANK
+    return _COMPLETE_MOTION_TABLE[sc + 1][((Int(hm) >> 4) & 0x0F) + 1]
+end
+
 """
     TIAState
 
@@ -407,16 +476,19 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer)
     elseif reg == W_RESBL
         tia.bl_x = _resp_missile_ball_position(tia.color_clock)
     elseif reg == W_HMOVE
-        tia.p0_x = mod(tia.p0_x - _hm_offset(tia.registers[W_HMP0 + 1]), 160)
-        tia.p1_x = mod(tia.p1_x - _hm_offset(tia.registers[W_HMP1 + 1]), 160)
-        tia.m0_x = mod(tia.m0_x - _hm_offset(tia.registers[W_HMM0 + 1]), 160)
-        tia.m1_x = mod(tia.m1_x - _hm_offset(tia.registers[W_HMM1 + 1]), 160)
-        tia.bl_x = mod(tia.bl_x - _hm_offset(tia.registers[W_HMBL + 1]), 160)
-        # P3i-f: trigger HMOVE-blank bug if this write lands at a
-        # cycle where it would on real hardware (xitari's
-        # `ourHMOVEBlankEnableCycles[x]` lookup). Most HMOVE writes
-        # happen right after WSYNC so the blank fires.
-        tia.hmove_blank_pending = _hmove_blank_enabled_at(tia.scanline_cycle)
+        # P3i-f + P3i-g: use cycle-aware motion table (xitari's
+        # ourCompleteMotionTable) instead of HBLANK-only _hm_offset.
+        # Mid-scanline HMOVE (cycles 21..54) produces zero motion;
+        # late-scanline (55..75) produces cycle-dependent partials.
+        sc = tia.scanline_cycle
+        tia.p0_x = mod(tia.p0_x - _hmove_motion(sc, tia.registers[W_HMP0 + 1]), 160)
+        tia.p1_x = mod(tia.p1_x - _hmove_motion(sc, tia.registers[W_HMP1 + 1]), 160)
+        tia.m0_x = mod(tia.m0_x - _hmove_motion(sc, tia.registers[W_HMM0 + 1]), 160)
+        tia.m1_x = mod(tia.m1_x - _hmove_motion(sc, tia.registers[W_HMM1 + 1]), 160)
+        tia.bl_x = mod(tia.bl_x - _hmove_motion(sc, tia.registers[W_HMBL + 1]), 160)
+        # HMOVE-blank fires alongside (the cycle ranges overlap with
+        # the motion table's HBLANK region).
+        tia.hmove_blank_pending = _hmove_blank_enabled_at(sc)
     elseif reg == W_HMCLR
         tia.registers[W_HMP0 + 1] = 0
         tia.registers[W_HMP1 + 1] = 0
