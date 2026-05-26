@@ -29,7 +29,9 @@ bus) and a flat `Vector{UInt8}` (used by the P1 unit tests). The same
 """
 module Bus
 
-using ..TIA: TIAState, initial_tia_state, tia_peek, tia_poke!
+using ..TIA: TIAState, initial_tia_state, tia_peek, tia_poke!,
+             _apply_pixel_collisions!, _object_pixel_sets,
+             HBLANK_COLOR_CLOCKS
 using ..RIOT: RIOTState, initial_riot_state, riot_peek!, riot_poke!
 using ..Cart: CartState, make_cart, cart_peek, cart_poke!
 
@@ -109,6 +111,20 @@ on every read. For TIA reads, the un-driven bits are taken from the
 @inline peek(memory::Vector{UInt8}, addr::Integer) =
     memory[(Int(addr) & 0xFFFF) + 1]
 
+# P3i-d2: mid-scanline collision catch-up. Mutates `tia.collisions` in
+# place, OR'ing per-pixel collision bits for color clocks
+# `[HBLANK_COLOR_CLOCKS, tia.color_clock]`. Idempotent — `tia_advance!`'s
+# end-of-scanline render can re-cover the prefix without double-count.
+# Mirrors `jaxtari/jaxtari/bus/system.py::_tia_catch_up_collisions`.
+@inline function _tia_catch_up_collisions!(tia::TIAState)
+    tia.color_clock <= HBLANK_COLOR_CLOCKS && return    # still in HBLANK
+    sets = _object_pixel_sets(tia)
+    for c in HBLANK_COLOR_CLOCKS:(Int(tia.color_clock) - 1)
+        _apply_pixel_collisions!(tia, c - HBLANK_COLOR_CLOCKS, sets)
+    end
+    return
+end
+
 @inline function peek(bus::BusState, addr::Integer)
     a = Int(addr) & 0x1FFF                       # 6507 13-bit mirror
     if (a & 0x1000) != 0
@@ -117,6 +133,16 @@ on every read. For TIA reads, the un-driven bits are taken from the
         return v
     end
     if (a & 0x80) == 0
+        # P3i-d2: for collision-register reads (regs $00-$07), run
+        # partial-scanline per-pixel collision evaluation up to
+        # current beam position before returning the latch. xitari
+        # `TIA::peek` calls `updateFrame(mySystem->cycles() * 3)`
+        # before reading any latched-bit register. Idempotent OR so
+        # the eventual end-of-scanline render in `tia_advance!` can
+        # re-cover the prefix without double-count.
+        if (a & 0x0F) < 8
+            _tia_catch_up_collisions!(bus.tia)
+        end
         raw = tia_peek(bus.tia, a)               # TIA register read
         mask = UInt8(_TIA_PEEK_DRIVEN_MASK[(a & 0x0F) + 1])
         noise = bus.data_bus_state & _TIA_NOISE_MASK

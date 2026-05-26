@@ -36,7 +36,15 @@ import jax.numpy as jnp
 
 from jaxtari.cart.system import Cart, cart_peek, cart_poke, make_cart
 from jaxtari.riot.system import RIOTState, initial_riot_state, riot_peek, riot_poke
-from jaxtari.tia.system import TIAState, initial_tia_state, tia_peek, tia_poke
+from jaxtari.tia.system import (
+    HBLANK_COLOR_CLOCKS,
+    TIAState,
+    _apply_pixel_collisions,
+    _object_pixel_sets,
+    initial_tia_state,
+    tia_peek,
+    tia_poke,
+)
 
 
 # --------------------------------------------------------------------------- #
@@ -182,6 +190,36 @@ _TIA_PEEK_DRIVEN_MASK = (
 _TIA_NOISE_MASK = 0x3F
 
 
+def _tia_catch_up_collisions(tia: TIAState) -> TIAState:
+    """P3i-d2: run per-pixel collision evaluation for visible color
+    clocks `[HBLANK_COLOR_CLOCKS, tia.color_clock]`, OR'ing the bits
+    into `tia.collisions`. Called from `_bus_peek` before returning
+    a TIA collision-register value, so games that read a CXxx
+    mid-scanline see the partial-scanline state instead of only what
+    accumulated through the previous full-scanline render.
+
+    Idempotent — collision OR is monotone. The eventual end-of-scanline
+    render in `tia_advance` re-applies for the whole scanline; the
+    `[HBLANK_COLOR_CLOCKS, tia.color_clock]` prefix may be visited
+    twice but produces the same final bits.
+
+    Mirrors xitari's `TIA::peek` which calls `updateFrame(mySystem
+    ->cycles() * 3)` before reading any latched-bit register. Our
+    `tia.color_clock` is at instruction-start so we're off by 0..18
+    color clocks from the actual peek moment, but partial coverage is
+    materially better than no coverage at all (especially for ROMs
+    that read collisions in tight loops where each instruction adds
+    only a few cycles).
+    """
+    if tia.color_clock <= HBLANK_COLOR_CLOCKS:
+        return tia                                  # still in HBLANK, no pixels
+    coll = list(int(b) for b in tia.collisions)
+    sets = _object_pixel_sets(tia)
+    for c in range(HBLANK_COLOR_CLOCKS, int(tia.color_clock)):
+        _apply_pixel_collisions(coll, c - HBLANK_COLOR_CLOCKS, sets)
+    return tia._replace(collisions=jnp.array(coll, dtype=jnp.uint8))
+
+
 def _bus_peek(bus: Bus, addr: int):
     """Internal bus read — returns `(value, new_bus)`.
 
@@ -208,11 +246,30 @@ def _bus_peek(bus: Bus, addr: int):
         # `noise = mySystem->getDataBusState() & 0x3F` unconditionally
         # before the per-register OR; we mirror that here. The final
         # returned value is stored back as the new data-bus state.
-        raw = tia_peek(bus.tia, addr_masked)
+        #
+        # P3i-d2: for collision-register reads (regs $00-$07), run a
+        # partial-scanline per-pixel collision evaluation up to the
+        # current beam position BEFORE returning the latch. xitari's
+        # `TIA::peek` calls `updateFrame(mySystem->cycles() * 3)`
+        # which forces collision detection up to the current cycle;
+        # our `tia.color_clock` is at instruction-start (off by 0..6
+        # CPU cycles = 0..18 color clocks from the actual peek
+        # moment), but the partial-scanline OR is still closer to
+        # xitari than the previous "use last-scanline-OR" semantic.
+        # OR'ing into `tia.collisions` is idempotent so the eventual
+        # full-scanline render in `tia_advance` can re-cover the same
+        # color-clock range without double-count.
+        new_tia = bus.tia
+        if (addr_masked & 0x0F) < 8:
+            new_tia = _tia_catch_up_collisions(bus.tia)
+        raw = tia_peek(new_tia, addr_masked)
         mask = _TIA_PEEK_DRIVEN_MASK[addr_masked & 0x0F]
         noise = bus.data_bus_state & _TIA_NOISE_MASK
         value = ((raw & mask) | noise) & 0xFF
-        return value, bus._replace(data_bus_state=value)
+        new_bus = bus._replace(data_bus_state=value)
+        if new_tia is not bus.tia:
+            new_bus = new_bus._replace(tia=new_tia)
+        return value, new_bus
     if addr_masked & 0x200:
         # RIOT I/O (A9=1). P4d: INTIM read clears timer_expired.
         value, new_riot = riot_peek(bus.riot, addr_masked)
