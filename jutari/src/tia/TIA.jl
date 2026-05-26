@@ -426,8 +426,10 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
         # old. After the first completed scanline, pending_writes
         # has been fully drained; any subsequent scanlines in this
         # advance render with the post-drain state.
+        # P3i-d: per-pixel collision detection runs inside the loop
+        # (via `_apply_pixel_collisions!`) so the bit OR sees the
+        # post-write object sets at each color clock.
         pending_sorted = sort(tia.pending_writes; by = w -> w[1])
-        _detect_collisions!(tia)
         if !tia.vblank_active
             row = Vector{UInt8}(undef, SCREEN_WIDTH)
             write_idx = 1
@@ -442,7 +444,9 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
                     cached_sets = _object_pixel_sets(tia)
                     write_idx += 1
                 end
-                row[c - HBLANK_COLOR_CLOCKS + 1] = render_pixel(tia, c, cached_sets)
+                x = c - HBLANK_COLOR_CLOCKS
+                row[x + 1] = render_pixel(tia, c, cached_sets)
+                _apply_pixel_collisions!(tia, x, cached_sets)
             end
             # Drain any pending writes that didn't activate within the
             # visible region (shouldn't happen — activation < 228 by
@@ -459,10 +463,15 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
                 end
             end
         else
-            # VBLANK render — still drain pending writes into the
-            # register file so subsequent scanlines see them.
+            # VBLANK render — output blanked, still apply pending
+            # writes + run collision detection (matching real
+            # hardware which keeps the collision pipeline active).
             for (_, reg, val) in pending_sorted
                 tia.registers[reg + 1] = val
+            end
+            scan_sets = _object_pixel_sets(tia)
+            for x in 0:(SCREEN_WIDTH - 1)
+                _apply_pixel_collisions!(tia, x, scan_sets)
             end
         end
         # All pending writes have been drained into tia.registers.
@@ -919,6 +928,39 @@ function _detect_collisions!(tia::TIAState)
     hit(bl, pf) && (tia.collisions[7] |= 0x80)   # CXBLPF D7 (D6 unused)
     hit(p0, p1) && (tia.collisions[8] |= 0x80)   # CXPPMM D7
     hit(m0, m1) && (tia.collisions[8] |= 0x40)   # CXPPMM D6
+    return nothing
+end
+
+# P3i-d: per-pixel collision evaluation. Mutates `tia.collisions` in
+# place, OR'ing the bits for objects that overlap at visible pixel x.
+# Mirrors `_detect_collisions!` bit layout exactly; the only difference
+# is the granularity (one pixel vs whole-scanline OR), which lets
+# mid-scanline register changes (PF stomping via P3i-c, future per-
+# pixel sprite-position adjustments) affect collision evaluation at
+# the exact color clock they apply.
+@inline function _apply_pixel_collisions!(tia::TIAState, x::Integer, sets)
+    p0_here = x in sets.p0
+    p1_here = x in sets.p1
+    m0_here = x in sets.m0
+    m1_here = x in sets.m1
+    bl_here = x in sets.bl
+    pf_here = x in sets.pf
+
+    m0_here && p1_here && (tia.collisions[1] |= 0x80)   # CXM0P D7 = M0-P1
+    m0_here && p0_here && (tia.collisions[1] |= 0x40)   # CXM0P D6 = M0-P0
+    m1_here && p0_here && (tia.collisions[2] |= 0x80)   # CXM1P D7 = M1-P0
+    m1_here && p1_here && (tia.collisions[2] |= 0x40)   # CXM1P D6 = M1-P1
+    p0_here && pf_here && (tia.collisions[3] |= 0x80)   # CXP0FB D7 = P0-PF
+    p0_here && bl_here && (tia.collisions[3] |= 0x40)   # CXP0FB D6 = P0-BL
+    p1_here && pf_here && (tia.collisions[4] |= 0x80)   # CXP1FB D7 = P1-PF
+    p1_here && bl_here && (tia.collisions[4] |= 0x40)   # CXP1FB D6 = P1-BL
+    m0_here && pf_here && (tia.collisions[5] |= 0x80)   # CXM0FB D7 = M0-PF
+    m0_here && bl_here && (tia.collisions[5] |= 0x40)   # CXM0FB D6 = M0-BL
+    m1_here && pf_here && (tia.collisions[6] |= 0x80)   # CXM1FB D7 = M1-PF
+    m1_here && bl_here && (tia.collisions[6] |= 0x40)   # CXM1FB D6 = M1-BL
+    bl_here && pf_here && (tia.collisions[7] |= 0x80)   # CXBLPF D7 = BL-PF
+    p0_here && p1_here && (tia.collisions[8] |= 0x80)   # CXPPMM D7 = P0-P1
+    m0_here && m1_here && (tia.collisions[8] |= 0x40)   # CXPPMM D6 = M0-M1
     return nothing
 end
 

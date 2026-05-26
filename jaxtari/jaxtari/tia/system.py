@@ -648,7 +648,13 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
         # First completed scanline: do the per-color-clock render with
         # pending-write activation interleaved. Subsequent scanlines
         # use the post-drain register state (no mid-scanline writes).
-        new_collisions = _detect_collisions(tia._replace(collisions=new_collisions))
+        # P3i-d: collision detection now happens per-pixel inside the
+        # render loop (via `_apply_pixel_collisions`) instead of via a
+        # whole-scanline `_detect_collisions` call up-front — so mid-
+        # scanline PF stomping (P3i-c) and future mid-scanline sprite
+        # changes correctly affect collision bits at the right beam
+        # position.
+        running_collisions = list(int(b) for b in new_collisions)
         if not tia.vblank_active:
             row_pixels = []
             write_idx = 0
@@ -667,7 +673,11 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
                     )
                     cached_sets = _object_pixel_sets(tia_for_render)
                     write_idx += 1
+                x = c - HBLANK_COLOR_CLOCKS
                 row_pixels.append(int(render_pixel(tia_for_render, c, cached_sets)))
+                # P3i-d: OR in per-pixel collision bits with the
+                # cached_sets that reflect post-write state at this c.
+                _apply_pixel_collisions(running_collisions, x, cached_sets)
             # Drain any pending writes that didn't activate in time
             # (shouldn't happen since activation < 228 by construction,
             # but defensive). Apply to the registers.
@@ -685,13 +695,21 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
                 if completed_line < SCREEN_HEIGHT:
                     fb = fb.at[completed_line].set(row)
         else:
-            # VBLANK-blanked render — still drain pending writes into
-            # the register file so subsequent scanlines see them.
+            # VBLANK-blanked render — output suppressed, but collision
+            # detection still runs (matching real hardware). Drain
+            # pending writes into the register file and detect
+            # collisions against the post-drain state (a P3i-d
+            # equivalent for blanked scanlines: per-pixel evaluation
+            # would yield the same scanline OR'd result).
             for _, reg, val in pending_sorted:
                 tia_for_render = tia_for_render._replace(
                     registers=tia_for_render.registers
                         .at[reg].set(jnp.uint8(val))
                 )
+            scan_sets = _object_pixel_sets(tia_for_render)
+            for x in range(SCREEN_WIDTH):
+                _apply_pixel_collisions(running_collisions, x, scan_sets)
+        new_collisions = jnp.array(running_collisions, dtype=jnp.uint8)
 
     new_line = tia.scanline + line_advance
     # PXC1-x: don't increment the frame counter on scanline-wrap. The
@@ -1119,6 +1137,13 @@ def _detect_collisions(tia: TIAState) -> jnp.ndarray:
       CXM1FB ($35): D7 = M1-PF, D6 = M1-BL
       CXBLPF ($36): D7 = BL-PF, D6 = unused (0)
       CXPPMM ($37): D7 = P0-P1, D6 = M0-M1
+
+    P3i-d note: this kept-around helper is still used by code paths
+    that do per-scanline collision detection in one shot (the
+    `_detect_collisions` semantic of "scan whole scanline, OR all
+    collisions in"). `tia_advance` now uses the per-pixel cousin
+    `_apply_pixel_collisions` so mid-scanline register changes affect
+    the collision evaluation correctly.
     """
     objs = _object_pixel_sets(tia)
     c = list(int(b) for b in tia.collisions)
@@ -1143,6 +1168,40 @@ def _detect_collisions(tia: TIAState) -> jnp.ndarray:
     if _hit(p0, p1): c[7] |= 0x80
     if _hit(m0, m1): c[7] |= 0x40
     return jnp.array(c, dtype=jnp.uint8)
+
+
+def _apply_pixel_collisions(coll: list[int], x: int, sets) -> None:
+    """P3i-d: OR per-pixel collision bits into `coll` (mutated in
+    place) for visible pixel `x`. Mirrors `_detect_collisions`'s
+    bit-layout exactly; the only difference is the granularity (one
+    pixel instead of a whole-scanline OR), which lets mid-scanline
+    register changes (PF stomping via P3i-c, future per-pixel
+    sprite-position adjustments) affect collision evaluation at the
+    exact color clock they apply. Called inside `tia_advance`'s
+    per-color-clock loop after pending writes have been drained.
+    """
+    p0_here = x in sets["p0"]
+    p1_here = x in sets["p1"]
+    m0_here = x in sets["m0"]
+    m1_here = x in sets["m1"]
+    bl_here = x in sets["bl"]
+    pf_here = x in sets["pf"]
+
+    if m0_here and p1_here: coll[0] |= 0x80          # CXM0P  D7 = M0-P1
+    if m0_here and p0_here: coll[0] |= 0x40          # CXM0P  D6 = M0-P0
+    if m1_here and p0_here: coll[1] |= 0x80          # CXM1P  D7 = M1-P0
+    if m1_here and p1_here: coll[1] |= 0x40          # CXM1P  D6 = M1-P1
+    if p0_here and pf_here: coll[2] |= 0x80          # CXP0FB D7 = P0-PF
+    if p0_here and bl_here: coll[2] |= 0x40          # CXP0FB D6 = P0-BL
+    if p1_here and pf_here: coll[3] |= 0x80          # CXP1FB D7 = P1-PF
+    if p1_here and bl_here: coll[3] |= 0x40          # CXP1FB D6 = P1-BL
+    if m0_here and pf_here: coll[4] |= 0x80          # CXM0FB D7 = M0-PF
+    if m0_here and bl_here: coll[4] |= 0x40          # CXM0FB D6 = M0-BL
+    if m1_here and pf_here: coll[5] |= 0x80          # CXM1FB D7 = M1-PF
+    if m1_here and bl_here: coll[5] |= 0x40          # CXM1FB D6 = M1-BL
+    if bl_here and pf_here: coll[6] |= 0x80          # CXBLPF D7 = BL-PF
+    if p0_here and p1_here: coll[7] |= 0x80          # CXPPMM D7 = P0-P1
+    if m0_here and m1_here: coll[7] |= 0x40          # CXPPMM D6 = M0-M1
 
 
 def tia_apply_wsync(tia: TIAState) -> tuple[int, TIAState]:
