@@ -29,7 +29,7 @@ bus) and a flat `Vector{UInt8}` (used by the P1 unit tests). The same
 """
 module Bus
 
-using ..TIA: TIAState, initial_tia_state, tia_peek, tia_poke!, tia_advance!,
+using ..TIA: TIAState, initial_tia_state, tia_peek, tia_poke!,
              _apply_pixel_collisions!, _object_pixel_sets,
              HBLANK_COLOR_CLOCKS
 using ..RIOT: RIOTState, initial_riot_state, riot_peek!, riot_poke!
@@ -57,11 +57,6 @@ mutable struct BusState
     tia::TIAState
     riot::RIOTState
     data_bus_state::UInt8
-    # P3i-g part 2 (mid-scanline TIA-read CPU↔TIA cycle threading).
-    # Mirrors jaxtari `pending_tia_cycles` + `tia_advanced_this_instruction`.
-    # See `peek` for the flush logic.
-    pending_tia_cycles::Int
-    tia_advanced_this_instruction::Int
 end
 
 """
@@ -73,7 +68,7 @@ Build a `BusState` with all-zero RAM, an auto-detected cart built from
 function initial_bus(rom=nothing)
     rom === nothing && (rom = zeros(UInt8, 4096))
     return BusState(zeros(UInt8, 128), make_cart(rom),
-                    initial_tia_state(), initial_riot_state(), 0x00, 0, 0)
+                    initial_tia_state(), initial_riot_state(), 0x00)
 end
 
 # --------------------------------------------------------------------------- #
@@ -132,27 +127,19 @@ end
 
 @inline function peek(bus::BusState, addr::Integer)
     a = Int(addr) & 0x1FFF                       # 6507 13-bit mirror
-    # P3i-g part 2: count this bus op as 1 CPU cycle.
-    bus.pending_tia_cycles += 1
     if (a & 0x1000) != 0
         v = cart_peek(bus.cart, a)               # cartridge (may switch bank)
         bus.data_bus_state = v
         return v
     end
     if (a & 0x80) == 0
-        # P3i-g part 2: flush accumulated cycles via tia_advance!
-        # BEFORE the read so collisions/inputs reflect the precise
-        # sub-instruction beam position. Mirrors xitari `TIA::peek`
-        # calling `updateFrame(mySystem->cycles() * 3)`.
-        flushed = bus.pending_tia_cycles
-        if flushed > 0
-            tia_advance!(bus.tia, flushed)
-            bus.pending_tia_cycles = 0
-            bus.tia_advanced_this_instruction += flushed
-        end
         # P3i-d2: for collision-register reads (regs $00-$07), run
         # partial-scanline per-pixel collision evaluation up to
-        # current beam position before returning the latch.
+        # current beam position before returning the latch. xitari
+        # `TIA::peek` calls `updateFrame(mySystem->cycles() * 3)`
+        # before reading any latched-bit register. Idempotent OR so
+        # the eventual end-of-scanline render in `tia_advance!` can
+        # re-cover the prefix without double-count.
         if (a & 0x0F) < 8
             _tia_catch_up_collisions!(bus.tia)
         end
@@ -191,21 +178,11 @@ end
     a = Int(addr) & 0x1FFF
     v8 = UInt8(Int(value) & 0xFF)
     bus.data_bus_state = v8
-    # P3i-g part 2: count this bus op as 1 CPU cycle.
-    bus.pending_tia_cycles += 1
     if (a & 0x1000) != 0
         cart_poke!(bus.cart, a, value)           # cart hotspot may switch bank
         return nothing
     end
     if (a & 0x80) == 0
-        # P3i-g part 2: flush pending cycles BEFORE writing so the
-        # write lands at the precise sub-instruction color clock.
-        flushed = bus.pending_tia_cycles
-        if flushed > 0
-            tia_advance!(bus.tia, flushed)
-            bus.pending_tia_cycles = 0
-            bus.tia_advanced_this_instruction += flushed
-        end
         tia_poke!(bus.tia, a, value)             # TIA write — records byte + WSYNC
         return nothing
     end

@@ -377,45 +377,18 @@ def step(state: CPUState, memory):
 
 def _tia_post_step(old_state: CPUState, new_state: CPUState, bus: Bus):
     """Advance the TIA and RIOT by the cycles consumed and resolve a
-    pending WSYNC.
-
-    P3i-g part 2: the TIA is partially advanced inside `_bus_peek` /
-    `_bus_poke` on every TIA-region access (those calls flush
-    `bus.pending_tia_cycles`). At end-of-instruction we drain whatever
-    remains — `bus.pending_tia_cycles` at this point is the count of
-    cycles that haven't yet been TIA-synced (the trailing bus ops
-    since the last TIA op + any non-TIA bus ops if no TIA op happened
-    in the instruction at all).
-
-    RIOT still uses the simpler "advance once per instruction" model
-    — it doesn't have the per-color-clock semantics that motivated
-    the TIA-side threading.
-    """
+    pending WSYNC. WSYNC's stall cycles also feed the RIOT timer (the
+    RIOT continues to tick while the CPU is held)."""
     delta = int(new_state.cycles - old_state.cycles)
+    new_tia = tia_advance(bus.tia, delta)
     new_riot = riot_advance(bus.riot, delta)
-    # Drain whatever TIA cycles weren't already advanced by inline
-    # mid-instruction TIA flushes. The instruction consumed `delta`
-    # CPU cycles total; mid-instruction flushes already advanced the
-    # TIA by `bus.tia_advanced_this_instruction`. The remainder
-    # (which can include cycles past the last flush + cycles for
-    # internal-no-bus-op work like a NOP's 2nd cycle) gets drained
-    # here. Mirrors xitari's end-of-act() implicit `updateFrame` to
-    # catch the TIA up to `mySystem->cycles()`.
-    drain = delta - int(bus.tia_advanced_this_instruction)
-    if drain < 0:
-        drain = 0                               # defensive — should never happen
-    new_tia = tia_advance(bus.tia, drain) if drain > 0 else bus.tia
-    stall, new_tia = tia_apply_wsync(new_tia)   # internally advances TIA
+    stall, new_tia = tia_apply_wsync(new_tia)
     if stall:
         new_state = new_state._replace(
             cycles=new_state.cycles + jnp.uint64(stall),
         )
         new_riot = riot_advance(new_riot, stall)
-    return new_state, bus._replace(
-        tia=new_tia, riot=new_riot,
-        pending_tia_cycles=0,
-        tia_advanced_this_instruction=0,
-    )
+    return new_state, bus._replace(tia=new_tia, riot=new_riot)
 
 
 def _step_inner(state: CPUState, memory):

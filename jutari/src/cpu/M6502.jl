@@ -269,25 +269,13 @@ end
 @inline _tia_post_step!(::CPUState, ::Vector{UInt8}, ::Integer) = nothing
 
 @inline function _tia_post_step!(state::CPUState, bus::BusState, cycles_consumed::Integer)
-    # P3i-g part 2: TIA is partially advanced inline by `peek` /
-    # `poke!` on every TIA-region access. Drain the remainder (cycles
-    # this instruction consumed minus what was already advanced) so
-    # the TIA stays exactly in sync with the CPU cycle count.
-    drain = Int(cycles_consumed) - bus.tia_advanced_this_instruction
-    if drain < 0
-        drain = 0                              # defensive
-    end
-    if drain > 0
-        tia_advance!(bus.tia, drain)
-    end
+    tia_advance!(bus.tia, cycles_consumed)
     riot_advance!(bus.riot, cycles_consumed)
     stall = tia_apply_wsync!(bus.tia)
     if stall != 0
         state.cycles += UInt64(stall)
         riot_advance!(bus.riot, stall)
     end
-    bus.pending_tia_cycles = 0
-    bus.tia_advanced_this_instruction = 0
     return nothing
 end
 
