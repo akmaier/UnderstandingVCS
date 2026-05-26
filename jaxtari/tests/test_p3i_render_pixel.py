@@ -210,3 +210,156 @@ def test_p3i_b_vblank_still_suppresses_framebuffer_write():
     tia = tia._replace(vblank_active=True)
     tia = tia_advance(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
     assert int(tia.framebuffer.sum()) == 0     # nothing written
+
+
+# --------------------------------------------------------------------------- #
+# P3i-c: per-poke write timing (mid-scanline PF0/PF1/PF2 deferred apply)
+# --------------------------------------------------------------------------- #
+
+from jaxtari.tia.system import (
+    _POKE_DELAY_TABLE,
+    _PF_DYNAMIC_DELAY,
+    _pf_dynamic_delay,
+    _poke_activation_delay,
+)
+
+
+def test_poke_delay_table_matches_xitari():
+    """`_POKE_DELAY_TABLE` is the verbatim port of xitari's
+    `ourPokeDelayTable[64]`. Spot-check a few well-known entries
+    against the reference."""
+    # VSYNC, WSYNC, COLU*, COLUBK, CTRLPF, RESP*, RESBL: delay 0
+    for reg in (0x00, 0x02, 0x06, 0x07, 0x08, 0x09, 0x0A,
+                0x10, 0x11, 0x14):
+        assert _POKE_DELAY_TABLE[reg] == 0, f"reg ${reg:02x} should be 0"
+    # VBLANK, REFP0, REFP1, GRP0, GRP1: delay 1
+    for reg in (0x01, 0x0B, 0x0C, 0x1B, 0x1C):
+        assert _POKE_DELAY_TABLE[reg] == 1, f"reg ${reg:02x} should be 1"
+    # NUSIZ0/1, RESM0/1: delay 8
+    for reg in (0x04, 0x05, 0x12, 0x13):
+        assert _POKE_DELAY_TABLE[reg] == 8, f"reg ${reg:02x} should be 8"
+    # PF0/PF1/PF2: dynamic (sentinel -1)
+    for reg in (0x0D, 0x0E, 0x0F):
+        assert _POKE_DELAY_TABLE[reg] == -1, f"reg ${reg:02x} should be -1"
+
+
+def test_pf_dynamic_delay_cycles_4_5_2_3():
+    """The PF dynamic delay cycles through {4, 5, 2, 3} as the
+    color clock advances through the 12-clock window. Match xitari's
+    `static const uInt32 d[4] = {4, 5, 2, 3}` with index `(x/3) & 3`."""
+    assert _PF_DYNAMIC_DELAY == (4, 5, 2, 3)
+    # Color clocks 0, 1, 2 → phase 0 → delay 4
+    for c in (0, 1, 2):
+        assert _pf_dynamic_delay(c) == 4
+    # Color clocks 3, 4, 5 → phase 1 → delay 5
+    for c in (3, 4, 5):
+        assert _pf_dynamic_delay(c) == 5
+    # Color clocks 6, 7, 8 → phase 2 → delay 2
+    for c in (6, 7, 8):
+        assert _pf_dynamic_delay(c) == 2
+    # Color clocks 9, 10, 11 → phase 3 → delay 3
+    for c in (9, 10, 11):
+        assert _pf_dynamic_delay(c) == 3
+    # Cycle repeats: 12, 13, 14 → phase 0 → delay 4
+    for c in (12, 13, 14):
+        assert _pf_dynamic_delay(c) == 4
+
+
+def test_poke_activation_delay_pf_uses_dynamic():
+    """`_poke_activation_delay` returns dynamic for PF0/PF1/PF2,
+    table value for everything else."""
+    assert _poke_activation_delay(W_PF0, 0) == 4
+    assert _poke_activation_delay(W_PF1, 3) == 5
+    assert _poke_activation_delay(W_PF2, 6) == 2
+    assert _poke_activation_delay(0x04, 100) == 8     # NUSIZ0 fixed 8
+    assert _poke_activation_delay(0x00, 100) == 0     # VSYNC fixed 0
+
+
+def test_pf_write_during_hblank_applies_immediately():
+    """Per the P3i-c implementation note: PF writes BEFORE the visible
+    region (color_clock < HBLANK_COLOR_CLOCKS = 68) take effect
+    immediately for the whole next scanline — same as pre-P3i. This
+    keeps the "scanline setup" pattern (write PFs, fall into scanline
+    render) producing identical output."""
+    tia = initial_tia_state()
+    tia = tia_poke(tia, W_COLUBK, 0x10)
+    tia = tia_poke(tia, W_COLUPF, 0x42)
+    tia = tia_poke(tia, W_PF0, 0xF0)              # color_clock=0 → no defer
+    assert tia.pending_writes == ()
+    assert int(tia.registers[W_PF0]) == 0xF0
+
+
+def test_pf_write_mid_scanline_is_deferred():
+    """PF write at color_clock >= 68 queues on `pending_writes` and
+    does NOT update `tia.registers` immediately."""
+    tia = initial_tia_state()
+    tia = tia_advance(tia, 38)                    # color_clock = 114
+    tia = tia_poke(tia, W_PF0, 0xCC)
+    assert tia.pending_writes == ((116, W_PF0, 0xCC),)   # 114 + delay 2
+    assert int(tia.registers[W_PF0]) == 0          # unchanged
+
+
+def test_pf_mid_scanline_change_affects_only_post_activation_pixels():
+    """The headline P3i-c property: writing PF0 mid-scanline changes
+    only the pixels rendered AFTER the activation color clock. The
+    PF0 contribution to pixels 0-15 (left side) is fixed by the
+    register value BEFORE the mid-scanline write."""
+    tia = initial_tia_state()
+    tia = tia_poke(tia, W_COLUBK, 0x10)
+    tia = tia_poke(tia, W_COLUPF, 0x42)
+    tia = tia_poke(tia, W_PF0, 0xF0)              # all 4 PF0 pixels lit
+    tia = tia_advance(tia, 38)                    # color_clock = 114
+    tia = tia_poke(tia, W_PF0, 0x00)              # mid-scanline: dark PF0
+    tia = tia_advance(tia, 38)                    # finish the scanline
+    # Pixels 0-15 (PF0 native region, rendered before c=114): still PF colour
+    for x in range(16):
+        assert int(tia.framebuffer[0, x]) == 0x42, (
+            f"left pixel {x} should still be PF colour (0x42), "
+            f"got {int(tia.framebuffer[0, x]):#04x}"
+        )
+    # Pixels 144-159 (PF0 mirror region, rendered after the mid-scanline
+    # write): now background (mid-scanline write applied at c=116, well
+    # before the mirror region renders).
+    for x in range(144, 160):
+        assert int(tia.framebuffer[0, x]) == 0x10, (
+            f"mirror pixel {x} should be background (0x10), "
+            f"got {int(tia.framebuffer[0, x]):#04x}"
+        )
+
+
+def test_pending_writes_cleared_after_advance():
+    """`pending_writes` resets to empty after a scanline-crossing
+    advance — the writes have been drained into the registers."""
+    tia = initial_tia_state()
+    tia = tia_advance(tia, 38)
+    tia = tia_poke(tia, W_PF0, 0xAA)
+    assert len(tia.pending_writes) == 1
+    tia = tia_advance(tia, 38)                    # cross scanline boundary
+    assert tia.pending_writes == ()
+    # And the drained value is in the registers now.
+    assert int(tia.registers[W_PF0]) == 0xAA
+
+
+def test_multiple_mid_scanline_pf_writes_apply_in_beam_order():
+    """A canonical 'brick stripe' pattern: write PF0, advance, write
+    PF1, advance, write PF2, advance. Each write applies at its own
+    activation clock. The resulting framebuffer should show pixels
+    drawn between writes using the value current at that beam
+    position."""
+    tia = initial_tia_state()
+    tia = tia_poke(tia, W_COLUBK, 0x10)
+    tia = tia_poke(tia, W_COLUPF, 0x42)
+    # Drive the scanline through three PF writes spaced apart.
+    tia = tia_advance(tia, 30)                    # color_clock = 90
+    tia = tia_poke(tia, W_PF0, 0xF0)
+    tia = tia_advance(tia, 10)                    # color_clock = 120
+    tia = tia_poke(tia, W_PF1, 0xFF)
+    tia = tia_advance(tia, 10)                    # color_clock = 150
+    tia = tia_poke(tia, W_PF2, 0xFF)
+    tia = tia_advance(tia, 26)                    # finish to 76 cycles → wrap
+    # Three pending writes queued, all activated mid-scanline.
+    assert tia.pending_writes == ()
+    # All three values should now be in the register file.
+    assert int(tia.registers[W_PF0]) == 0xF0
+    assert int(tia.registers[W_PF1]) == 0xFF
+    assert int(tia.registers[W_PF2]) == 0xFF

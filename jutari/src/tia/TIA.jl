@@ -105,6 +105,31 @@ const COLOR_CLOCKS_PER_CPU_CYCLE = 3
 const HBLANK_COLOR_CLOCKS = 68
 const COLOR_CLOCKS_PER_SCANLINE = 228
 
+# P3i-c: per-poke write delays, in color clocks. Verbatim port of
+# xitari `TIA::ourPokeDelayTable[64]` (xitari/emucore/TIA.cxx).
+# Index is `addr & 0x3F`. A non-zero entry means the write activates
+# that many color clocks LATER than the write itself. -1 means
+# "compute dynamically based on scanline phase" (only PF0/PF1/PF2
+# use this — see `_pf_dynamic_delay`). Matches jaxtari `_POKE_DELAY_TABLE`.
+const _POKE_DELAY_TABLE = Int16[
+    0,  1,  0,  0,  8,  8,  0,  0,  0,  0,  0,  1,  1, -1, -1, -1,
+    0,  0,  8,  8,  0,  0,  0,  0,  0,  0,  0,  1,  1,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+]
+const _PF_DYNAMIC_DELAY = (4, 5, 2, 3)
+
+@inline function _pf_dynamic_delay(color_clock::Integer)
+    return _PF_DYNAMIC_DELAY[((Int(color_clock) ÷ 3) & 3) + 1]   # 1-indexed
+end
+
+@inline function _poke_activation_delay(reg::Integer, color_clock::Integer)
+    r = Int(reg)
+    (r < 0 || r >= 64) && return 0
+    d = _POKE_DELAY_TABLE[r + 1]
+    return d == -1 ? _pf_dynamic_delay(color_clock) : Int(d)
+end
+
 """
     TIAState
 
@@ -157,6 +182,11 @@ mutable struct TIAState
     # so mid-scanline `tia_poke!` calls land at their real activation
     # color clock instead of taking effect immediately.
     color_clock::Int
+    # P3i-c: queue of deferred PF0/PF1/PF2 writes that activate
+    # mid-scanline at their `_POKE_DELAY_TABLE` color clock. Each entry
+    # is `(activation_color_clock, reg, value)`. Drained scanline-by-
+    # scanline by `tia_advance!`. Mirrors jaxtari `pending_writes`.
+    pending_writes::Vector{Tuple{Int,Int,UInt8}}
 end
 
 # INPT defaults: paddle pots ($80 = centred), triggers idle high (D7=1).
@@ -174,6 +204,7 @@ initial_tia_state() = TIAState(
     fill(false, 4),
     zeros(UInt32, 4),
     0,                                # P3i-a: color_clock = 0
+    Tuple{Int,Int,UInt8}[],            # P3i-c: empty pending_writes
 )
 
 """
@@ -267,7 +298,28 @@ Write a TIA register. Stores the byte and applies side-effects: WSYNC
 """
 function tia_poke!(tia::TIAState, addr::Integer, value::Integer)
     reg = Int(addr) & 0x3F                # TIA decodes A0–A5
-    tia.registers[reg + 1] = UInt8(Int(value) & 0xFF)
+    value8 = UInt8(Int(value) & 0xFF)
+
+    # P3i-c: defer PF0/PF1/PF2 mid-scanline writes to their
+    # `_POKE_DELAY_TABLE` activation color clock. Skip the defer if
+    # we're in HBLANK (color_clock < 68): the activation would land
+    # in the visible region but pre-HBLANK pokes are by convention
+    # "scanline setup" and applying them immediately for the whole
+    # scanline gives the same render. Same logic as jaxtari.
+    if (reg == W_PF0 || reg == W_PF1 || reg == W_PF2) &&
+       tia.color_clock >= HBLANK_COLOR_CLOCKS
+        delay = _poke_activation_delay(reg, tia.color_clock)
+        activation_clock = tia.color_clock + delay
+        if activation_clock < COLOR_CLOCKS_PER_SCANLINE
+            push!(tia.pending_writes, (activation_clock, reg, value8))
+            return nothing                  # do NOT update registers yet
+        end
+        # Activation crosses into next scanline — fall through to the
+        # immediate-apply path (next scanline uses the new value
+        # anyway).
+    end
+
+    tia.registers[reg + 1] = value8
 
     if reg == W_WSYNC
         tia.wsync_pending = true
@@ -366,21 +418,39 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
                       COLOR_CLOCKS_PER_SCANLINE
 
     if line_advance > 0
-        # P3i-b: per-color-clock framebuffer write. Object-set
-        # computation hoisted to once per scanline so the per-color-
-        # clock loop isn't O(n²) — same total work as the old
-        # `render_scanline` write. P3i-c will replace this with a
-        # genuine per-color-clock evaluation that re-applies pending
-        # `tia_poke!` events at their `ourPokeDelayTable` activation
-        # color clock.
-        cached_sets = _object_pixel_sets(tia)
+        # P3i-c: drain pending PF0/PF1/PF2 writes during the per-
+        # color-clock render. Each pending entry (activation_clock,
+        # reg, value) applies to the register file at its activation
+        # clock during the loop; pixels rendered AT or AFTER the
+        # activation clock see the new value, pixels BEFORE see the
+        # old. After the first completed scanline, pending_writes
+        # has been fully drained; any subsequent scanlines in this
+        # advance render with the post-drain state.
+        pending_sorted = sort(tia.pending_writes; by = w -> w[1])
         _detect_collisions!(tia)
         if !tia.vblank_active
-            # Build one row by calling render_pixel for each visible
-            # color clock 68..227 → framebuffer X 0..159.
             row = Vector{UInt8}(undef, SCREEN_WIDTH)
+            write_idx = 1
+            cached_sets = _object_pixel_sets(tia)
             for c in HBLANK_COLOR_CLOCKS:(COLOR_CLOCKS_PER_SCANLINE - 1)
+                # Apply any pending writes whose activation_clock <= c
+                # before rendering the pixel.
+                while write_idx <= length(pending_sorted) &&
+                      pending_sorted[write_idx][1] <= c
+                    _, reg, val = pending_sorted[write_idx]
+                    tia.registers[reg + 1] = val
+                    cached_sets = _object_pixel_sets(tia)
+                    write_idx += 1
+                end
                 row[c - HBLANK_COLOR_CLOCKS + 1] = render_pixel(tia, c, cached_sets)
+            end
+            # Drain any pending writes that didn't activate within the
+            # visible region (shouldn't happen — activation < 228 by
+            # construction — but defensive).
+            while write_idx <= length(pending_sorted)
+                _, reg, val = pending_sorted[write_idx]
+                tia.registers[reg + 1] = val
+                write_idx += 1
             end
             for i in 0:(line_advance - 1)
                 completed_line = (tia.scanline + i) % NTSC_SCANLINES_PER_FRAME
@@ -388,7 +458,15 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
                     tia.framebuffer[completed_line + 1, :] .= row
                 end
             end
+        else
+            # VBLANK render — still drain pending writes into the
+            # register file so subsequent scanlines see them.
+            for (_, reg, val) in pending_sorted
+                tia.registers[reg + 1] = val
+            end
         end
+        # All pending writes have been drained into tia.registers.
+        empty!(tia.pending_writes)
     end
 
     # PXC1-x: don't increment the frame counter on scanline-wrap. The
