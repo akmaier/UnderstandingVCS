@@ -131,6 +131,23 @@ class StellaEnvironment:
         self._console = console_reset(self._console)
         self._settings.reset()
         self._terminal = False
+        # PXC1-x round 5: for paddle games, push the default paddle
+        # resistance into the TIA BEFORE the boot-burn loop runs.
+        # xitari constructs `StellaEnvironment` with `resetPaddles` —
+        # which sets PaddleZeroResistance / PaddleOneResistance via
+        # the Event mechanism — BEFORE the 60-NOOP boot frames run, so
+        # any INPT0/INPT1 reads the ROM does during boot see the
+        # dump-pot capacitor timing path from the start. Without this
+        # pre-boot apply, jaxtari's boot frames see the static $80
+        # default for INPT0/INPT1 (the `inpt` array), which diverges
+        # from xitari's cycle-threshold dump-pot result by the time
+        # the 60-NOOP/4-RESET burn finishes. With the pre-boot apply,
+        # both paddles are at PADDLE_DEFAULT in dump-pot mode for the
+        # whole boot phase.
+        self._left_paddle  = _PADDLE_DEFAULT
+        self._right_paddle = _PADDLE_DEFAULT
+        if self._settings.uses_paddles():
+            self._apply_paddle_action(int(Action.NOOP))
 
         # --- Boot-burn: NOOP frames -------------------------------------- #
         for _ in range(boot_noop_steps):

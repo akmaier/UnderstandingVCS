@@ -84,14 +84,14 @@ _PXC2_CASES = (
         rom_filename="pong.bin",
         xitari_trace="pong_noop_10.jsonl",
         jutari_trace="pong_noop_10_jutari.jsonl",
-        expected_xitari_divergence=9,      # PXC1-x round 5: 10 → 9 with dump-pot
+        expected_xitari_divergence=6,      # PXC1-x round 5 (pre-boot paddle apply): 9 → 6
     ),
     _RomCase(
         name="breakout_noop_10",
         rom_filename="breakout.bin",
         xitari_trace="breakout_noop_10.jsonl",
         jutari_trace="breakout_noop_10_jutari.jsonl",
-        expected_xitari_divergence=3,      # PXC1-x round 5: 4 → 3 with dump-pot
+        expected_xitari_divergence=2,      # PXC1-x round 5 (pre-boot paddle apply): 3 → 2
     ),
     _RomCase(
         # Joystick-only game (no `Controller.Left/Right` props for this

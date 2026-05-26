@@ -87,6 +87,18 @@ function env_reset!(env::StellaEnvironment;
     console_reset!(env.console)
     romsettings_reset!(env.settings)
     env.terminal = false
+    # PXC1-x round 5: for paddle games, push the default paddle
+    # resistance into the TIA BEFORE the boot-burn loop. xitari does
+    # this at construction via `resetPaddles`; jaxtari does the same
+    # in `StellaEnvironment.reset()`. Without the pre-boot apply, the
+    # boot frames run with INPT0/INPT1 = $80 (the centred default),
+    # not the dump-pot cycle-threshold path — diverging from xitari
+    # by the time the boot phase finishes. Mirror of the jaxtari fix.
+    env.left_paddle  = _PADDLE_DEFAULT
+    env.right_paddle = _PADDLE_DEFAULT
+    if romsettings_uses_paddles(env.settings)
+        _apply_paddle_action!(env, Int(NOOP))
+    end
 
     # --- Boot-burn: NOOP frames -----------------------------------------
     for _ in 1:boot_noop_steps
