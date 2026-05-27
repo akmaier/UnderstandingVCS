@@ -149,8 +149,8 @@ function console_switches!(
     select_pressed::Bool = false,
     reset_pressed::Bool = false,
     color::Bool = true,
-    p0_difficulty_a::Bool = true,
-    p1_difficulty_a::Bool = true,
+    p0_difficulty_a::Bool = false,                # task #64
+    p1_difficulty_a::Bool = false,                # task #64
 )
     b = 0xFF
     select_pressed && (b &= ~_SWCHB_SELECT)

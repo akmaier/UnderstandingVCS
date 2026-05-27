@@ -52,7 +52,13 @@ end
 
 initial_riot_state() = RIOTState(
     UInt8(0), 0, 0, false,
-    UInt8(0xFF), UInt8(0xFF),    # inputs idle (active-low, no buttons pressed)
+    # SWCHA_in = 0xFF (no joystick directions / triggers pressed).
+    # SWCHB_in = 0x3F: matches xitari `Switches::Switches` initial state
+    # for an unmodified-properties cartridge — B/B difficulty (bits 7+6
+    # cleared), COLOR TV (bit 3 set), Select/Reset released (bits 1+0
+    # set). Bit 7 in particular controls Atari Breakout's paddle size:
+    # A (1) = 4-bit small paddle, B (0) = 8-bit large paddle. (Task #64.)
+    UInt8(0xFF), UInt8(0x3F),
     UInt8(0x00), UInt8(0x00),
     UInt8(0xFF), UInt8(0xFF),
 )

@@ -37,15 +37,22 @@ def test_initial_riot_state():
     assert r.cycles_since_tick == 0
     assert r.timer_expired is False
     assert r.swcha_in == 0xFF
-    assert r.swchb_in == 0xFF
+    # Task #64: SWCHB defaults to 0x3F to match xitari's
+    # `Switches::Switches` (B/B difficulty + COLOR + Select/Reset
+    # released). Atari Breakout uses bit 7 to toggle paddle size — A
+    # (1) = small 4-bit paddle, B (0) = large 8-bit paddle — so the
+    # old 0xFF default rendered the harder small-paddle variant.
+    assert r.swchb_in == 0x3F
     assert r.swacnt == 0x00 and r.swbcnt == 0x00
 
 
 def test_initial_port_reads_return_input_lines():
-    """Default DDR=0 → ports report the input lines (0xFF on power-on)."""
+    """Default DDR=0 → ports report the input lines (SWCHA=0xFF idle
+    joystick, SWCHB=0x3F = xitari console-switch default — see task #64
+    in the SWCHB docstring)."""
     r = initial_riot_state()
     assert riot_peek(r, 0x0280)[0] == 0xFF     # SWCHA  (peek now returns (value, riot))
-    assert riot_peek(r, 0x0282)[0] == 0xFF     # SWCHB
+    assert riot_peek(r, 0x0282)[0] == 0x3F     # SWCHB — task #64
 
 
 # --------------------------------------------------------------------------- #

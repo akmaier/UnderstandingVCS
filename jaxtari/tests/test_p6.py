@@ -202,18 +202,25 @@ def test_action_upfire_combines_direction_and_fire():
 # IO — console switches
 # --------------------------------------------------------------------------- #
 
-def test_default_swchb_is_all_high():
+def test_default_swchb_matches_xitari():
+    """Task #64: `console_switches()` defaults now match xitari's
+    `Switches::Switches` initial state — B/B difficulty (bits 6+7
+    cleared) + COLOR (bit 3 set) + SELECT/RESET released = 0x3F.
+    For Atari Breakout, bit 7 doubles as the paddle-size toggle:
+    A=1 draws a 4-bit small paddle, B=0 draws an 8-bit large
+    paddle. The old A/A default was the reason our Breakout
+    paddle rendered smaller than xitari's."""
     c = console_reset(initial_console(_frame_loop_rom()))
-    c = console_switches(c)                    # all defaults
-    # color=1, p0/p1 difficulty = A (1), select & reset not pressed (1).
-    assert int(c.bus.riot.swchb_in) == 0xFF
+    c = console_switches(c)                    # all defaults — now B/B
+    assert int(c.bus.riot.swchb_in) == 0x3F
 
 
 def test_console_switches_select_and_reset():
     c = console_reset(initial_console(_frame_loop_rom()))
     c = console_switches(c, select_pressed=True, reset_pressed=True)
-    # SELECT = bit 1, RESET = bit 0 both cleared.
-    assert int(c.bus.riot.swchb_in) == 0xFF & ~0x03
+    # B/B difficulty default (0x3F) with SELECT (bit 1) + RESET (bit 0)
+    # both cleared → 0x3C.
+    assert int(c.bus.riot.swchb_in) == 0x3F & ~0x03
 
 
 def test_console_switches_bw_mode():

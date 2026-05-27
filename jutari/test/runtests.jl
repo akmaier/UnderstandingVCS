@@ -2313,14 +2313,17 @@ end
         @test r.cycles_since_tick == 0
         @test r.timer_expired == false
         @test r.swcha_in == 0xFF
-        @test r.swchb_in == 0xFF
+        # Task #64: SWCHB defaults to 0x3F to match xitari's
+        # `Switches::Switches` (B/B difficulty + COLOR + Select/Reset
+        # released). Critical for Breakout — bit 7 toggles paddle size.
+        @test r.swchb_in == 0x3F
         @test r.swacnt == 0x00 && r.swbcnt == 0x00
     end
 
     @testset "initial port reads return inputs" begin
         r = initial_riot_state()
         @test riot_peek(r, 0x0280) == 0xFF
-        @test riot_peek(r, 0x0282) == 0xFF
+        @test riot_peek(r, 0x0282) == 0x3F                # task #64
     end
 
     @testset "TIM*T prescaler decode" begin
@@ -2781,10 +2784,12 @@ end
     end
 
     # Console switches
-    @testset "default SWCHB is all high" begin
+    @testset "default SWCHB matches xitari Switches::Switches defaults" begin
+        # Task #64: console_switches!() with no args = xitari-default
+        # B/B difficulty + COLOR + SELECT/RESET released = 0x3F.
         c = initial_console(_frame_loop_rom()); console_reset!(c)
         console_switches!(c)
-        @test c.bus.riot.swchb_in == 0xFF
+        @test c.bus.riot.swchb_in == 0x3F
     end
 
     @testset "SELECT + RESET press" begin

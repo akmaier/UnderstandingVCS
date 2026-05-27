@@ -186,14 +186,21 @@ def console_switches(
     select_pressed: bool = False,
     reset_pressed: bool = False,
     color: bool = True,
-    p0_difficulty_a: bool = True,
-    p1_difficulty_a: bool = True,
+    p0_difficulty_a: bool = False,
+    p1_difficulty_a: bool = False,
 ) -> Console:
     """Set all four console switches on SWCHB.
 
     SELECT and RESET are momentary buttons (active-low when pressed).
     Colour / B&W and the two difficulty switches are level signals that
     games sample once at boot (and occasionally re-read).
+
+    Defaults match xitari (and the standard Atari 2600 default for any
+    cartridge without explicit `Console.LeftDifficulty` / `…Right…`
+    overrides): **B/B difficulty** (amateur / kids mode), COLOR TV,
+    SELECT and RESET released. For Atari Breakout specifically, the
+    P1 difficulty bit doubles as the paddle-size toggle — A draws a
+    4-bit small paddle, B draws an 8-bit large paddle (task #64).
     """
     b = 0xFF
     if select_pressed:

@@ -78,15 +78,35 @@ class RIOTState(NamedTuple):
 
 def initial_riot_state() -> RIOTState:
     """Power-on state: timer at 0 with 1× prescaler, ports all-input, no
-    inputs asserted (all 1s — Atari joysticks are pull-up active-low so
-    "no buttons pressed" reads as 0xFF)."""
+    inputs asserted (joysticks pull-up active-low so "no buttons pressed"
+    on SWCHA reads as 0xFF).
+
+    SWCHB (console-switches port) defaults to **0x3F** — matches xitari's
+    `Switches::Switches` initialization for an unmodified-properties
+    cartridge:
+
+      * bit 7 (Right-Difficulty switch): 0 = **B (amateur)**. Properties
+        default `Console_RightDifficulty = "B"` → bit cleared. Atari
+        Breakout uses bit 7 as the "small paddle" toggle — A (=1) draws
+        a 4-bit paddle, B (=0) draws an 8-bit paddle. (Task #64.)
+      * bit 6 (Left-Difficulty switch): 0 = **B (amateur)**, same rule.
+      * bit 3 (TV-Type): 1 = **COLOR**. Properties default
+        `Console_TelevisionType = "COLOR"` → bit set.
+      * bits 1,0 (Select / Reset): 1 = **released** (active-low).
+      * bits 5,4,2: unused, idle high.
+
+    Per-game overrides (e.g. Q*Bert wants A/A, some prototypes flip TV
+    type) belong on the per-game RomSettings — same pattern as
+    `uses_paddles`.
+    """
     return RIOTState(
         intim=0,
         prescaler_shift=0,
         cycles_since_tick=0,
         timer_expired=False,
         swcha_in=0xFF,
-        swchb_in=0xFF,
+        # 0x3F = 0011_1111. See docstring above for the per-bit meaning.
+        swchb_in=0x3F,
         swacnt=0x00,
         swbcnt=0x00,
         swcha_out=0xFF,

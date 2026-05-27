@@ -58,36 +58,23 @@ def test_pong_noop_trace_fixture_exists():
 
 @pytest.mark.skipif(not _PONG_ROM.exists(),
                     reason="xitari pong.bin not present in this checkout")
-@pytest.mark.xfail(
-    raises=ConformanceError,
-    strict=True,
-    reason=(
-        "Bit-exact xitari↔jaxtari conformance is being closed in "
-        "PXC1-x rounds. Status as of round 5 (dump-pot model + "
-        "paddle-action handling auto-applied via "
-        "PongRomSettings.uses_paddles=True): "
-        "pong_noop_10 now diverges by 9 RAM bytes (was 10 — RAM[$04] "
-        "recovered when INPT0/INPT1 switched from static 0x80 to the "
-        "xitari cycle-threshold path). The remaining 9 are still "
-        "active investigation, and "
-        "the root cause is now well-characterized as "
-        "data_bus_state drift from missing 6502 internal-cycle bus "
-        "exposures (RMW dummy-writes, JSR pre-push discard, branch "
-        "extra-cycle, indirect dummy reads — task #50). The "
-        "manifestation is ROM-specific: Space Invaders shows **0** "
-        "bytes (joystick, minimal init reads), Breakout shows 4 "
-        "(paddle, narrow), Pong shows 10, Pitfall shows 19 "
-        "(joystick, but reads INPT5 + RIOT more aggressively). "
-        "Closing this conformance gap thus needs task #50 (per-cycle "
-        "bus accuracy) and the P4c dump-pot model on top. Run "
-        "`python tools/check_trace.py --rom xitari/roms/pong.bin "
-        "--trace tools/fixtures/traces/pong_noop_10.jsonl` for the "
-        "current per-byte diff. Remove this xfail marker the day "
-        "jaxtari matches xitari frame-for-frame on this fixture."
-    ),
-)
 def test_jaxtari_matches_xitari_pong_noop_10_frames():
-    """The headline bit-exact claim. Expected-fail today; expected-pass
-    once the emulation gap is closed."""
+    """The headline bit-exact claim — **NOW PASSING** as of task #64.
+
+    Conformance chronology:
+      * P3i + P4c + paddle support: 25 → 9 RAM bytes
+      * Task #64 (SWCHB B/B difficulty default): 9 → **0** bytes ✓
+
+    The last 8 bytes of the residual divergence turned out to be
+    propagation from the wrong SWCHB difficulty default. xitari's
+    `Switches::Switches` initializes SWCHB to 0x3F (B/B difficulty +
+    COLOR + Select/Reset released); we previously initialized to
+    0xFF (A/A difficulty). Pong's title-screen state branches on the
+    SWCHB difficulty bits at boot, so the wrong default cascaded
+    through several RAM cells. Same root cause as the visible
+    Breakout paddle-size regression — Breakout uses bit 7 of SWCHB
+    to toggle paddle size, so the wrong default also drew a smaller
+    paddle. Both fixed by the SWCHB default change.
+    """
     matched = check_trace(_PONG_ROM, _PONG_TRACE)
     assert matched == 10, f"only {matched}/10 frames matched"
