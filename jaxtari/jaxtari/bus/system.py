@@ -42,6 +42,7 @@ from jaxtari.tia.system import (
     _apply_pixel_collisions,
     _object_pixel_sets,
     initial_tia_state,
+    tia_advance,
     tia_peek,
     tia_poke,
 )
@@ -79,6 +80,22 @@ class Bus(NamedTuple):
     tia: TIAState
     riot: RIOTState
     data_bus_state: int = 0
+    # P3i-g (mid-instruction TIA-write CPU↔TIA cycle threading): CPU
+    # cycles consumed since the last TIA sync. Every bus op (peek or
+    # poke) bumps this by 1 — on a real 6507 every cycle IS exactly one
+    # bus op. When a TIA-region *write* happens, the accumulator is
+    # flushed via `tia_advance(tia, pending)` BEFORE the poke, so PF*/
+    # RESP*/HMOVE/COLU* land at the precise sub-instruction color clock
+    # (xitari increments its cycle counter *before* each access, then
+    # `TIA::poke` runs `updateFrame(cycles*3)`). Reads are NOT flushed —
+    # that keeps read-driven game logic (collisions / INPT / RIOT) on
+    # the existing per-instruction model, so this change is render-only.
+    # `tia_advanced_this_instruction` records how many cycles the inline
+    # write-flushes already advanced, so `_tia_post_step` drains exactly
+    # the remainder and the per-instruction TIA advance still equals the
+    # instruction's full cycle count.
+    pending_tia_cycles: int = 0
+    tia_advanced_this_instruction: int = 0
 
 
 def initial_bus(rom: Union[jnp.ndarray, None] = None,
@@ -98,6 +115,8 @@ def initial_bus(rom: Union[jnp.ndarray, None] = None,
         tia=initial_tia_state(),
         riot=initial_riot_state(),
         data_bus_state=0,
+        pending_tia_cycles=0,
+        tia_advanced_this_instruction=0,
     )
 
 
@@ -108,6 +127,20 @@ def initial_bus(rom: Union[jnp.ndarray, None] = None,
 # A "world" is whatever the CPU steps against. Either a real Bus or — for
 # the P1 unit tests — a flat 65,536-byte jnp.ndarray.
 World = Union[Bus, jnp.ndarray]
+
+
+def pending_tick(world: World) -> World:
+    """Account for one CPU cycle of internal bus activity that we don't
+    model as a real `peek`/`poke` — e.g. the cycle-3 "dummy read" of the
+    indexed zero-page addressing modes. The 6502 drives a bus access on
+    that cycle, but its data-bus value is always overwritten by the
+    instruction's final access, so reproducing the read has no observable
+    effect; what matters for P3i-g write-cycle threading is that the
+    cycle is *counted*, so a following TIA write flushes the right number
+    of color-clock cycles. No-op for flat-array test memory."""
+    if isinstance(world, Bus):
+        return world._replace(pending_tia_cycles=world.pending_tia_cycles + 1)
+    return world
 
 
 def peek(world: World, addr: int):
@@ -233,11 +266,16 @@ def _bus_peek(bus: Bus, addr: int):
     last 10-byte RAM divergence on `pong_noop_10`.
     """
     addr_masked = addr & 0x1FFF  # 6507 13-bit mirror
+    # P3i-g: every bus op is exactly one CPU cycle. Count it so a later
+    # TIA *write* flushes the right number of cycles into the TIA. Reads
+    # only increment the counter — they don't flush (render-only change).
+    new_pending = bus.pending_tia_cycles + 1
     if addr_masked & 0x1000:
         # Cartridge — delegate to the cart, which handles bank switching
         # for F8/F6/F4 on hotspot access. Cart mutates in place.
         value = cart_peek(bus.cart, addr_masked)
-        return value, bus._replace(data_bus_state=value & 0xFF)
+        return value, bus._replace(data_bus_state=value & 0xFF,
+                                   pending_tia_cycles=new_pending)
     if not (addr_masked & 0x80):
         # TIA region (A7=0). Floating-bus quirk applies — OR noise
         # (always low 6 bits of `data_bus_state`) into the bits the
@@ -259,6 +297,14 @@ def _bus_peek(bus: Bus, addr: int):
         # OR'ing into `tia.collisions` is idempotent so the eventual
         # full-scanline render in `tia_advance` can re-cover the same
         # color-clock range without double-count.
+        # P3i-g: TIA *reads* only count the cycle (no flush). Flushing the
+        # TIA before a read would be the fully-faithful xitari model
+        # (`updateFrame` per peek), but in the Python renderer it forces a
+        # scanline re-render on every INPT poll — Breakout's paddle loop
+        # reads INPT0 dozens of times per frame, making it ~6× slower —
+        # and it did NOT move the paddle (the paddle offset is a separate
+        # game-logic divergence, not INPT read timing). So reads stay on
+        # the per-instruction model; only writes are cycle-threaded.
         new_tia = bus.tia
         if (addr_masked & 0x0F) < 8:
             new_tia = _tia_catch_up_collisions(bus.tia)
@@ -266,7 +312,8 @@ def _bus_peek(bus: Bus, addr: int):
         mask = _TIA_PEEK_DRIVEN_MASK[addr_masked & 0x0F]
         noise = bus.data_bus_state & _TIA_NOISE_MASK
         value = ((raw & mask) | noise) & 0xFF
-        new_bus = bus._replace(data_bus_state=value)
+        new_bus = bus._replace(data_bus_state=value,
+                               pending_tia_cycles=new_pending)
         if new_tia is not bus.tia:
             new_bus = new_bus._replace(tia=new_tia)
         return value, new_bus
@@ -275,11 +322,14 @@ def _bus_peek(bus: Bus, addr: int):
         value, new_riot = riot_peek(bus.riot, addr_masked)
         value &= 0xFF
         if new_riot is bus.riot:
-            return value, bus._replace(data_bus_state=value)
-        return value, bus._replace(riot=new_riot, data_bus_state=value)
+            return value, bus._replace(data_bus_state=value,
+                                       pending_tia_cycles=new_pending)
+        return value, bus._replace(riot=new_riot, data_bus_state=value,
+                                   pending_tia_cycles=new_pending)
     # RIOT RAM (A7=1, A9=0). 128 bytes, mirrored at offset addr & 0x7F.
     value = int(bus.ram[addr_masked & 0x7F])
-    return value, bus._replace(data_bus_state=value)
+    return value, bus._replace(data_bus_state=value,
+                               pending_tia_cycles=new_pending)
 
 
 def _bus_poke(bus: Bus, addr: int, value: int) -> Bus:
@@ -287,23 +337,38 @@ def _bus_poke(bus: Bus, addr: int, value: int) -> Bus:
     (xitari: `myDataBusState = value` after every poke)."""
     value8 = value & 0xFF
     addr_masked = addr & 0x1FFF
+    # P3i-g: this bus op is one CPU cycle.
+    new_pending = bus.pending_tia_cycles + 1
     if addr_masked & 0x1000:
         # Cart writes don't store anything but may trigger bank switch.
         cart_poke(bus.cart, addr_masked, value8)
-        return bus._replace(data_bus_state=value8)
+        return bus._replace(data_bus_state=value8,
+                            pending_tia_cycles=new_pending)
     if not (addr_masked & 0x80):
-        # TIA write — record the byte and apply P3a side-effects (WSYNC).
+        # TIA write — flush the accumulated cycles into the TIA BEFORE
+        # the poke so PF*/RESP*/HMOVE/COLU* land at the precise sub-
+        # instruction color clock. xitari increments its cycle counter
+        # *before* each access (M6502High::poke) and `TIA::poke` then
+        # runs `updateFrame(cycles*3)`; flushing `new_pending` (which
+        # includes this cycle) reproduces that exactly. The remaining
+        # cycles of the instruction are drained in `_tia_post_step`.
+        new_tia = tia_advance(bus.tia, new_pending)
         return bus._replace(
-            tia=tia_poke(bus.tia, addr_masked, value8),
+            tia=tia_poke(new_tia, addr_masked, value8),
             data_bus_state=value8,
+            pending_tia_cycles=0,
+            tia_advanced_this_instruction=(
+                bus.tia_advanced_this_instruction + new_pending),
         )
     if addr_masked & 0x200:
         # RIOT I/O write (P4): SWCHA/SWACNT/SWCHB/SWBCNT or TIM*T.
         return bus._replace(
             riot=riot_poke(bus.riot, addr_masked, value8),
             data_bus_state=value8,
+            pending_tia_cycles=new_pending,
         )
     return bus._replace(
         ram=bus.ram.at[addr_masked & 0x7F].set(jnp.uint8(value8)),
         data_bus_state=value8,
+        pending_tia_cycles=new_pending,
     )

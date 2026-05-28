@@ -2795,7 +2795,10 @@ end
     @testset "SELECT + RESET press" begin
         c = initial_console(_frame_loop_rom()); console_reset!(c)
         console_switches!(c, select_pressed=true, reset_pressed=true)
-        @test c.bus.riot.swchb_in == (0xFF & ~0x03)
+        # Task #64: B/B difficulty default (0x3F) with SELECT (bit 1) +
+        # RESET (bit 0) both cleared → 0x3C. (Was 0xFF & ~0x03 before the
+        # SWCHB default changed; matches jaxtari test_p6.py.)
+        @test c.bus.riot.swchb_in == (0x3F & ~0x03)
     end
 
     @testset "B&W mode clears bit 3" begin
@@ -4905,7 +4908,11 @@ end
         grad, = Zygote.gradient(
             r -> soft_render_scanline(SoftBus(r, bus0.rom))[17], bus0.ram)
         @test grad[R_COLUPF + 1] == 1f0
-        @test grad[R_COLUP0 + 1] == 0f0
+        # COLUP0 must not drive this pixel: the PFP branch's (1 - pf)
+        # coefficient is 0 at col 16. Reverse-mode AD leaves a denormal
+        # (~4.5f-44) rather than a bitwise 0, so check against tolerance
+        # — matching the jaxtari reference's pytest.approx(0.0) convention.
+        @test isapprox(grad[R_COLUP0 + 1], 0f0; atol = 1f-6)
     end
 end
 

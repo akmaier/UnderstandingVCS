@@ -20,6 +20,7 @@ using ...Types: CPUState
 # Multiple-dispatch `peek` so resolvers accept either a `BusState` (proper
 # 6507 bus) or a flat `Vector{UInt8}` (P1-style scratch memory).
 using ...Bus: peek as _peek
+using ...Bus: pending_tick! as _tick
 
 export resolve, instruction_length
 
@@ -43,11 +44,13 @@ end
 
 function resolve_zero_x(state::CPUState, memory)
     op = _peek(memory, _operand_addr(state))
+    _tick(memory)                                       # cycle-3 dummy read
     return UInt16((Int(op) + Int(state.X)) & 0xFF), false
 end
 
 function resolve_zero_y(state::CPUState, memory)
     op = _peek(memory, _operand_addr(state))
+    _tick(memory)                                       # cycle-3 dummy read
     return UInt16((Int(op) + Int(state.Y)) & 0xFF), false
 end
 

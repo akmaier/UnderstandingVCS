@@ -11,18 +11,35 @@ deterministic random paddle-motion action sequence (seed 42):
 
 The "diff" panel highlights every pixel where the two emulators
 produce a different palette index in bright magenta; identical
-pixels stay black. The persistent magenta you see is the
-combination of two known **rendering** gaps (NOT vertical
-alignment — see task #53 for that fix):
+pixels stay black.
 
-  * the **PXC1 RAM-divergence chain** — paddle/RIOT data-path
-    differences propagate into stored sprite positions and tint
-    several pixels per frame;
-  * the **HARD-mode TIA NUSIZ / sprite-bracket rendering bug**
-    that splits Breakout's brick stripe into separated copies
-    instead of one continuous row.
+**P3i-g (write-cycle threading) fixed the big rendering gaps.**
+Earlier clips showed a thick magenta bar where the right grey
+wall was pulled ~12 px inward and a grey wall segment embedded in
+the middle of the brick rows. Root cause: Breakout draws its
+walls + bricks by writing PF0/PF1/PF2 *mid-scanline* (racing the
+beam), and our TIA was advanced once per CPU instruction, so those
+writes landed at the instruction-START color clock — ~12 px early.
+The fix threads sub-instruction CPU cycles into the TIA so a TIA
+*write* flushes the exact number of color-clock cycles before it
+applies (`Bus.pending_tia_cycles`), and the indexed zero-page
+addressing modes now count their cycle-3 dummy read so `STA zp,X`
+to PF*/COLU* flushes 4 cycles, not 3. The grey side walls now sit
+flush at columns 0-7 / 152-159 in every panel, matching xitari
+exactly, and the brick rows are continuous.
 
-Vertical alignment, formerly listed as a third gap, was the
+What residual magenta remains is the documented **PXC1 ~5-byte
+RAM divergence** surfacing as two small artifacts:
+
+  * a **1-PF-pixel center seam** (a 4 px gap at the x≈76-79
+    playfield half-boundary on the brick rows) — a sub-pixel
+    beam-racing detail that needs full per-cycle bus accuracy to
+    close; and
+  * a **~10 px paddle X offset** — the paddle position the ROM
+    computes from its INPT0 dump-pot poll differs by a few RAM
+    bytes (read-path timing), independent of sprite-render timing.
+
+Vertical alignment, formerly listed as a gap, was the
 `Display.YStart=34` / `Display.Height=210` crop that xitari
 applies but jaxtari/jutari were not — that's **fixed as of
 task #53**, so the scores, brick rainbow, and paddle all sit at
