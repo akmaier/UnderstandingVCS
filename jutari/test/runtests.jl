@@ -2795,7 +2795,10 @@ end
     @testset "SELECT + RESET press" begin
         c = initial_console(_frame_loop_rom()); console_reset!(c)
         console_switches!(c, select_pressed=true, reset_pressed=true)
-        @test c.bus.riot.swchb_in == (0xFF & ~0x03)
+        # Task #64: B/B difficulty default (0x3F) with SELECT (bit 1) +
+        # RESET (bit 0) both cleared → 0x3C. (Was 0xFF & ~0x03 before the
+        # SWCHB default changed; matches jaxtari test_p6.py.)
+        @test c.bus.riot.swchb_in == (0x3F & ~0x03)
     end
 
     @testset "B&W mode clears bit 3" begin
