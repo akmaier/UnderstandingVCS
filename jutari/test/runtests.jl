@@ -4908,7 +4908,11 @@ end
         grad, = Zygote.gradient(
             r -> soft_render_scanline(SoftBus(r, bus0.rom))[17], bus0.ram)
         @test grad[R_COLUPF + 1] == 1f0
-        @test grad[R_COLUP0 + 1] == 0f0
+        # COLUP0 must not drive this pixel: the PFP branch's (1 - pf)
+        # coefficient is 0 at col 16. Reverse-mode AD leaves a denormal
+        # (~4.5f-44) rather than a bitwise 0, so check against tolerance
+        # — matching the jaxtari reference's pytest.approx(0.0) convention.
+        @test isapprox(grad[R_COLUP0 + 1], 0f0; atol = 1f-6)
     end
 end
 
