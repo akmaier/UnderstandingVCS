@@ -27,6 +27,7 @@ from __future__ import annotations
 from typing import Callable, Tuple
 
 from jaxtari.bus.system import peek as _peek
+from jaxtari.bus.system import pending_tick as _tick
 from jaxtari.cpu.tables import (
     ADDR_ABSOLUTE,
     ADDR_ABSOLUTE_X,
@@ -63,12 +64,29 @@ def resolve_zero(state: CPUState, memory):
 
 
 def resolve_zero_x(state: CPUState, memory):
+    """`zp,X` is a 4-cycle mode: opcode, operand fetch, a cycle-3 internal
+    "dummy" read at the *un-indexed* zero-page address, then the access at
+    `(operand+X)&0xFF`. We account for that dummy cycle with `_tick` (it
+    bumps the P3i-g bus-cycle counter) rather than a real `_peek`: the
+    dummy read's data-bus value is always immediately overwritten by the
+    final access of the SAME instruction (the load value or the store
+    byte), so it has no observable effect — but performing the read for
+    real would route a low-zero-page operand (e.g. `STA $0D,X` to PF*)
+    through the TIA's collision/INPT catch-up path on every access,
+    which is ruinously slow in the Python renderer. The cycle bump is
+    what matters: it makes `STA zp,X` to PF*/COLU* flush 4 cycles (not 3)
+    so the write lands at the correct color clock — without it Breakout's
+    walls/bricks rendered one CPU cycle (3 px) early with a center seam."""
     operand, memory = _peek(memory, int(state.PC) + 1)
+    memory          = _tick(memory)                       # cycle-3 dummy read
     return (operand + int(state.X)) & 0xFF, False, memory
 
 
 def resolve_zero_y(state: CPUState, memory):
+    """`zp,Y` — same 4-cycle shape as `zp,X` (cycle-3 dummy read at the
+    un-indexed zero-page address; accounted via `_tick`, see `resolve_zero_x`)."""
     operand, memory = _peek(memory, int(state.PC) + 1)
+    memory          = _tick(memory)                       # cycle-3 dummy read
     return (operand + int(state.Y)) & 0xFF, False, memory
 
 

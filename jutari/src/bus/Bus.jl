@@ -29,13 +29,13 @@ bus) and a flat `Vector{UInt8}` (used by the P1 unit tests). The same
 """
 module Bus
 
-using ..TIA: TIAState, initial_tia_state, tia_peek, tia_poke!,
+using ..TIA: TIAState, initial_tia_state, tia_peek, tia_poke!, tia_advance!,
              _apply_pixel_collisions!, _object_pixel_sets,
              HBLANK_COLOR_CLOCKS
 using ..RIOT: RIOTState, initial_riot_state, riot_peek!, riot_poke!
 using ..Cart: CartState, make_cart, cart_peek, cart_poke!
 
-export BusState, initial_bus, peek, poke!
+export BusState, initial_bus, peek, poke!, pending_tick!
 
 """
     BusState
@@ -57,6 +57,20 @@ mutable struct BusState
     tia::TIAState
     riot::RIOTState
     data_bus_state::UInt8
+    # P3i-g (mid-instruction TIA-write CPU↔TIA cycle threading): CPU
+    # cycles consumed since the last TIA sync. Every bus op (peek/poke!)
+    # bumps this by 1 — on a real 6507 every cycle IS one bus op. When a
+    # TIA-region *write* happens, the accumulator is flushed via
+    # `tia_advance!(tia, pending)` BEFORE the poke, so PF*/RESP*/HMOVE/
+    # COLU* land at the precise sub-instruction color clock (xitari
+    # increments its cycle counter *before* each access, then `TIA::poke`
+    # runs `updateFrame(cycles*3)`). Reads are NOT flushed — that keeps
+    # read-driven game logic on the per-instruction model (render-only
+    # change). `tia_advanced_this_instruction` records how much the
+    # inline write-flushes already advanced so `_tia_post_step!` drains
+    # exactly the remainder. Mirrors jaxtari `bus/system.py`.
+    pending_tia_cycles::Int
+    tia_advanced_this_instruction::Int
 end
 
 """
@@ -68,7 +82,25 @@ Build a `BusState` with all-zero RAM, an auto-detected cart built from
 function initial_bus(rom=nothing)
     rom === nothing && (rom = zeros(UInt8, 4096))
     return BusState(zeros(UInt8, 128), make_cart(rom),
-                    initial_tia_state(), initial_riot_state(), 0x00)
+                    initial_tia_state(), initial_riot_state(), 0x00, 0, 0)
+end
+
+"""
+    pending_tick!(world)
+
+Account for one CPU cycle of internal bus activity not modelled as a real
+`peek`/`poke!` — e.g. the cycle-3 "dummy read" of the indexed zero-page
+addressing modes. The 6502 drives a bus access on that cycle, but its
+data-bus value is always overwritten by the instruction's final access,
+so reproducing the read has no observable effect; what matters for P3i-g
+write-cycle threading is that the cycle is *counted*, so a following TIA
+write flushes the right number of color-clock cycles. No-op for flat
+test memory. Mirrors jaxtari `bus/system.py::pending_tick`.
+"""
+@inline pending_tick!(::Vector{UInt8}) = nothing
+@inline function pending_tick!(bus::BusState)
+    bus.pending_tia_cycles += 1
+    return nothing
 end
 
 # --------------------------------------------------------------------------- #
@@ -127,6 +159,9 @@ end
 
 @inline function peek(bus::BusState, addr::Integer)
     a = Int(addr) & 0x1FFF                       # 6507 13-bit mirror
+    # P3i-g: every bus op is one CPU cycle. Reads only *count* the cycle
+    # (no TIA flush) so a later TIA write threads the right cycle count.
+    bus.pending_tia_cycles += 1
     if (a & 0x1000) != 0
         v = cart_peek(bus.cart, a)               # cartridge (may switch bank)
         bus.data_bus_state = v
@@ -178,19 +213,31 @@ end
     a = Int(addr) & 0x1FFF
     v8 = UInt8(Int(value) & 0xFF)
     bus.data_bus_state = v8
+    # P3i-g: this bus op is one CPU cycle.
+    new_pending = bus.pending_tia_cycles + 1
     if (a & 0x1000) != 0
         cart_poke!(bus.cart, a, value)           # cart hotspot may switch bank
+        bus.pending_tia_cycles = new_pending
         return nothing
     end
     if (a & 0x80) == 0
+        # TIA write — flush accumulated cycles into the TIA BEFORE the
+        # poke so PF*/RESP*/HMOVE/COLU* land at the precise sub-instruction
+        # color clock (see BusState docstring). Then reset the counter and
+        # record how many cycles the inline flush advanced.
+        tia_advance!(bus.tia, new_pending)
         tia_poke!(bus.tia, a, value)             # TIA write — records byte + WSYNC
+        bus.pending_tia_cycles = 0
+        bus.tia_advanced_this_instruction += new_pending
         return nothing
     end
     if (a & 0x200) != 0
         riot_poke!(bus.riot, a, value)           # RIOT timer / ports write
+        bus.pending_tia_cycles = new_pending
         return nothing
     end
     bus.ram[(a & 0x7F) + 1] = v8
+    bus.pending_tia_cycles = new_pending
     return nothing
 end
 

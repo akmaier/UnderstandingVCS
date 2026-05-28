@@ -411,20 +411,30 @@ end
 Write a TIA register. Stores the byte and applies side-effects: WSYNC
 (P3a), player position reset / horizontal motion / HMCLR (P3c).
 """
-function tia_poke!(tia::TIAState, addr::Integer, value::Integer)
+function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
+                   beam_cc::Integer = tia.color_clock,
+                   beam_sc::Integer = tia.scanline_cycle)
     reg = Int(addr) & 0x3F                # TIA decodes A0–A5
     value8 = UInt8(Int(value) & 0xFF)
+    # P3i-g part 2 (timing-only CPU↔TIA threading): `beam_cc` / `beam_sc`
+    # are the *effective* sub-instruction beam position at the moment
+    # this write hits the bus (instruction-start clock + cycles-so-far*3),
+    # supplied by `Bus.poke!`. Verified to match xitari's
+    # `mySystem->cycles()*3` write-cycle clock exactly. They default to
+    # the TIA's own counters so direct unit-test pokes keep the
+    # pre-threading behaviour. Only the beam-position-sensitive
+    # registers (PF0/1/2 defer, RES*, HMOVE) consult them.
 
     # P3i-c: defer PF0/PF1/PF2 mid-scanline writes to their
     # `_POKE_DELAY_TABLE` activation color clock. Skip the defer if
-    # we're in HBLANK (color_clock < 68): the activation would land
+    # we're in HBLANK (beam_cc < 68): the activation would land
     # in the visible region but pre-HBLANK pokes are by convention
     # "scanline setup" and applying them immediately for the whole
     # scanline gives the same render. Same logic as jaxtari.
     if (reg == W_PF0 || reg == W_PF1 || reg == W_PF2) &&
-       tia.color_clock >= HBLANK_COLOR_CLOCKS
-        delay = _poke_activation_delay(reg, tia.color_clock)
-        activation_clock = tia.color_clock + delay
+       beam_cc >= HBLANK_COLOR_CLOCKS
+        delay = _poke_activation_delay(reg, beam_cc)
+        activation_clock = Int(beam_cc) + delay
         if activation_clock < COLOR_CLOCKS_PER_SCANLINE
             push!(tia.pending_writes, (activation_clock, reg, value8))
             return nothing                  # do NOT update registers yet
