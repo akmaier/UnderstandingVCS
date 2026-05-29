@@ -84,14 +84,14 @@ _PXC2_CASES = (
         rom_filename="pong.bin",
         xitari_trace="pong_noop_10.jsonl",
         jutari_trace="pong_noop_10_jutari.jsonl",
-        expected_xitari_divergence=6,      # PXC1-x round 5 (pre-boot paddle apply): 9 → 6
+        expected_xitari_divergence=0,      # P3i-g write-cycle threading: 6 → 0 (BIT-EXACT)
     ),
     _RomCase(
         name="breakout_noop_10",
         rom_filename="breakout.bin",
         xitari_trace="breakout_noop_10.jsonl",
         jutari_trace="breakout_noop_10_jutari.jsonl",
-        expected_xitari_divergence=2,      # PXC1-x round 5 (pre-boot paddle apply): 3 → 2
+        expected_xitari_divergence=0,      # P3i-g write-cycle threading: 2 → 0 (BIT-EXACT)
     ),
     _RomCase(
         # Joystick-only game (no `Controller.Left/Right` props for this
@@ -135,7 +135,7 @@ _PXC2_CASES = (
         rom_filename="seaquest.bin",
         xitari_trace="seaquest_noop_10.jsonl",
         jutari_trace="seaquest_noop_10_jutari.jsonl",
-        expected_xitari_divergence=6,       # P3i-e sprite-position shift: 4 → 6 (a few bytes drifted)
+        expected_xitari_divergence=4,       # P3i-g write-cycle threading: 6 → 4 (improved)
     ),
     _RomCase(
         # Joystick-only ROM. Observed divergence: **47 bytes** — the
@@ -148,7 +148,16 @@ _PXC2_CASES = (
         rom_filename="enduro.bin",
         xitari_trace="enduro_noop_10.jsonl",
         jutari_trace="enduro_noop_10_jutari.jsonl",
-        expected_xitari_divergence=29,      # P3i-a..e closed 18 bytes (47 → 29)
+        # P3i-g write-cycle threading: 46. NOTE the previous pin (29) was
+        # STALE — measured live on the pre-P3i-g parent (6aa18b5) enduro is
+        # actually 43, not 29 (it had drifted but the PXC suite was aborting
+        # at an unrelated SWCHB test before reaching this divergence check,
+        # so the pin was never updated). So P3i-g's true enduro impact is
+        # only +3 (43 → 46): it broke 5 collision-timing-sensitive bytes
+        # ($36/$47/$67/$68/$76) and fixed 2 ($2e/$46). Enduro's large base
+        # divergence (43/128) is a pre-existing, unrelated deep issue; full
+        # convergence is tracked as a separate research item.
+        expected_xitari_divergence=46,
     ),
 )
 

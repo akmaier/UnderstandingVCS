@@ -26,6 +26,8 @@ Both ports run a full VCS — CPU + Bus + RAM + TIA + RIOT + cart (2K, 4K, F8, F
 
 For the per-phase commit ledger, what each port can do today, and the complete list of deferrals, see **[STATUS.md](STATUS.md)**. For the design rationale and the still-pending phase plan, see **[PORTING_PLAN.md](PORTING_PLAN.md)**.
 
+> **Agents working on emulation / conformance:** read **[bug_fix_log.md](bug_fix_log.md)** first — it's the running history of bugs hunted, patches landed, dead-ends ruled out (e.g. the `bisect.py` stdlib-shadow gotcha), and ideas still open (e.g. enduro collision-timing convergence). **Append to it** whenever you fix a bug or rule out a hypothesis, so the next agent inherits the context. It also carries the live jaxtari↔xitari conformance scoreboard.
+
 ---
 
 ## Repository Structure
@@ -35,6 +37,7 @@ UnderstandingVCS/
 ├── README.md              # This file
 ├── PORTING_PLAN.md        # Phase plan + design rationale
 ├── STATUS.md              # Per-phase commit/test/deferral ledger
+├── bug_fix_log.md         # Running bug/patch history + open debugging ideas (agents: read & update)
 ├── .gitignore             # Excludes papers/, dqn/, xitari/ (external deps) and .DS_Store
 ├── literature/            # AI-readable markdown versions of papers with BibTeX (13 papers)
 ├── jaxtari/               # JAX port — see jaxtari/README.md
