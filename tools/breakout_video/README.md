@@ -13,31 +13,31 @@ The "diff" panel highlights every pixel where the two emulators
 produce a different palette index in bright magenta; identical
 pixels stay black.
 
-**P3i-g (write-cycle threading) fixed the big rendering gaps.**
-Earlier clips showed a thick magenta bar where the right grey
-wall was pulled ~12 px inward and a grey wall segment embedded in
-the middle of the brick rows. Root cause: Breakout draws its
-walls + bricks by writing PF0/PF1/PF2 *mid-scanline* (racing the
-beam), and our TIA was advanced once per CPU instruction, so those
-writes landed at the instruction-START color clock — ~12 px early.
-The fix threads sub-instruction CPU cycles into the TIA so a TIA
-*write* flushes the exact number of color-clock cycles before it
-applies (`Bus.pending_tia_cycles`), and the indexed zero-page
-addressing modes now count their cycle-3 dummy read so `STA zp,X`
-to PF*/COLU* flushes 4 cycles, not 3. The grey side walls now sit
-flush at columns 0-7 / 152-159 in every panel, matching xitari
-exactly, and the brick rows are continuous.
+**P3i-g (sub-instruction TIA-write timing) fixed the rendering gaps.**
+Earlier clips showed (a) the right grey wall pulled ~12 px inward with
+a grey segment embedded in the brick rows, and (b) flickering red
+columns in the lower (below-bricks) screen from the very first frame.
+Root cause: Breakout draws its walls/bricks AND clears the lower screen
+(`PF2=$00`) by writing PF0/PF1/PF2 *mid-scanline* (racing the beam), and
+our TIA was advanced once per CPU instruction, so those writes landed at
+the instruction-START color clock — and a lower-screen clear that
+crossed a scanline boundary got clobbered by the still-pending brick
+pattern, leaking it downward. The fix (P3i-g pt2): the bus passes the
+*effective* sub-instruction beam position to `tia_poke` (`beam_cc`), the
+TIA is advanced exactly once per instruction (never mid-instruction),
+the `zp,X` dummy-read cycle is counted, and PF writes are *always
+deferred* so a cross-scanline clear lands last and isn't clobbered. The
+grey side walls now sit flush at columns 0-7 / 152-159, the brick rows
+are continuous, and the lower screen is black — matching xitari, with no
+flicker. Per-frame screen diff vs xitari dropped from ~8000 px to **16**.
 
-What residual magenta remains is the documented **PXC1 ~5-byte
-RAM divergence** surfacing as two small artifacts:
-
-  * a **1-PF-pixel center seam** (a 4 px gap at the x≈76-79
-    playfield half-boundary on the brick rows) — a sub-pixel
-    beam-racing detail that needs full per-cycle bus accuracy to
-    close; and
-  * a **~10 px paddle X offset** — the paddle position the ROM
-    computes from its INPT0 dump-pot poll differs by a few RAM
-    bytes (read-path timing), independent of sprite-render timing.
+The only residual magenta on Breakout is a **1-px paddle-X offset** (the
+paddle sits one column off, ~7 rows = 16 px). Note the *other* panels
+(pong/jutari etc., and deep-gameplay frames) still light up the diff: see
+the repo-root `bug_fix_log.md` for the per-ROM screen-conformance
+scoreboard — most ROMs have pre-existing rendering-accuracy gaps that are
+bit-exact in RAM but diverge on screen (now pinned by the PXC-S
+`test_screen_conformance.py` test).
 
 Vertical alignment, formerly listed as a gap, was the
 `Display.YStart=34` / `Display.Height=210` crop that xitari
