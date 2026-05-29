@@ -345,20 +345,23 @@ def _bus_poke(bus: Bus, addr: int, value: int) -> Bus:
         return bus._replace(data_bus_state=value8,
                             pending_tia_cycles=new_pending)
     if not (addr_masked & 0x80):
-        # TIA write — flush the accumulated cycles into the TIA BEFORE
-        # the poke so PF*/RESP*/HMOVE/COLU* land at the precise sub-
-        # instruction color clock. xitari increments its cycle counter
-        # *before* each access (M6502High::poke) and `TIA::poke` then
-        # runs `updateFrame(cycles*3)`; flushing `new_pending` (which
-        # includes this cycle) reproduces that exactly. The remaining
-        # cycles of the instruction are drained in `_tia_post_step`.
-        new_tia = tia_advance(bus.tia, new_pending)
+        # TIA write — P3i-g TIMING-ONLY threading: pass the *effective*
+        # sub-instruction beam position (instruction-start beam + cycles
+        # consumed so far) so PF*/RESP*/HMOVE land at the right color
+        # clock, but DO NOT advance/render the TIA here. Advancing inline
+        # rendered scanlines mid-instruction, capturing the pre-clear PF
+        # pattern and leaking it into later scanlines (the Breakout "red
+        # columns"). The TIA is advanced exactly once per instruction in
+        # `_tia_post_step`, draining the deferred writes at their
+        # (now-accurate) activation clocks. xitari increments its cycle
+        # counter *before* each access, so `new_pending` (this cycle
+        # included) is the right offset — matching `mySystem->cycles()`.
+        beam_cc = int(bus.tia.color_clock) + new_pending * 3
+        beam_sc = int(bus.tia.scanline_cycle) + new_pending
         return bus._replace(
-            tia=tia_poke(new_tia, addr_masked, value8),
+            tia=tia_poke(bus.tia, addr_masked, value8, beam_cc, beam_sc),
             data_bus_state=value8,
-            pending_tia_cycles=0,
-            tia_advanced_this_instruction=(
-                bus.tia_advanced_this_instruction + new_pending),
+            pending_tia_cycles=new_pending,
         )
     if addr_masked & 0x200:
         # RIOT I/O write (P4): SWCHA/SWACNT/SWCHB/SWBCNT or TIM*T.

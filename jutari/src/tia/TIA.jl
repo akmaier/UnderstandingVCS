@@ -435,13 +435,16 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
        beam_cc >= HBLANK_COLOR_CLOCKS
         delay = _poke_activation_delay(reg, beam_cc)
         activation_clock = Int(beam_cc) + delay
-        if activation_clock < COLOR_CLOCKS_PER_SCANLINE
-            push!(tia.pending_writes, (activation_clock, reg, value8))
-            return nothing                  # do NOT update registers yet
-        end
-        # Activation crosses into next scanline — fall through to the
-        # immediate-apply path (next scanline uses the new value
-        # anyway).
+        # ALWAYS queue — even when activation_clock >= 228 (effect crosses
+        # into the next scanline). `tia_advance!`'s drain-remaining step
+        # applies those AFTER the per-color-clock loop, in activation
+        # order, into the carried-forward registers — so they are NOT
+        # clobbered by an earlier same-register pending write. P3i-g
+        # bugfix: the old immediate-apply-for->=228 path let Breakout's
+        # PF2=$3f@156 clobber a PF2=$00 clear issued at the bottom of the
+        # brick band, leaking $3f into the lower screen (the "red columns").
+        push!(tia.pending_writes, (activation_clock, reg, value8))
+        return nothing                      # do NOT update registers yet
     end
 
     tia.registers[reg + 1] = value8
@@ -474,23 +477,28 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
             tia.dump_enabled = true
         end
     elseif reg == W_RESP0
-        # P3i-e: xitari-exact player position from current color clock.
-        tia.p0_x = _resp_player_position(tia.color_clock)
+        # P3i-e/g: xitari-exact player position from the *effective*
+        # sub-instruction beam color clock (beam_cc), not the stale
+        # instruction-start tia.color_clock — so a RESP0 issued mid-
+        # instruction latches the player to the right X (timing-only
+        # threading; the TIA itself is NOT advanced here).
+        tia.p0_x = _resp_player_position(beam_cc)
     elseif reg == W_RESP1
-        tia.p1_x = _resp_player_position(tia.color_clock)
+        tia.p1_x = _resp_player_position(beam_cc)
     elseif reg == W_RESM0
         # P3i-e: missile/ball use the +4 offset / HBLANK constant 2.
-        tia.m0_x = _resp_missile_ball_position(tia.color_clock)
+        tia.m0_x = _resp_missile_ball_position(beam_cc)
     elseif reg == W_RESM1
-        tia.m1_x = _resp_missile_ball_position(tia.color_clock)
+        tia.m1_x = _resp_missile_ball_position(beam_cc)
     elseif reg == W_RESBL
-        tia.bl_x = _resp_missile_ball_position(tia.color_clock)
+        tia.bl_x = _resp_missile_ball_position(beam_cc)
     elseif reg == W_HMOVE
         # P3i-f + P3i-g: use cycle-aware motion table (xitari's
-        # ourCompleteMotionTable) instead of HBLANK-only _hm_offset.
-        # Mid-scanline HMOVE (cycles 21..54) produces zero motion;
-        # late-scanline (55..75) produces cycle-dependent partials.
-        sc = tia.scanline_cycle
+        # ourCompleteMotionTable) indexed by the *effective* CPU cycle
+        # within the scanline (beam_sc), not the stale instruction-start
+        # scanline_cycle. Mid-scanline HMOVE (cycles 21..54) produces
+        # zero motion; late-scanline (55..75) cycle-dependent partials.
+        sc = beam_sc
         tia.p0_x = mod(tia.p0_x - _hmove_motion(sc, tia.registers[W_HMP0 + 1]), 160)
         tia.p1_x = mod(tia.p1_x - _hmove_motion(sc, tia.registers[W_HMP1 + 1]), 160)
         tia.m0_x = mod(tia.m0_x - _hmove_motion(sc, tia.registers[W_HMM0 + 1]), 160)

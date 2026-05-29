@@ -148,16 +148,15 @@ _PXC2_CASES = (
         rom_filename="enduro.bin",
         xitari_trace="enduro_noop_10.jsonl",
         jutari_trace="enduro_noop_10_jutari.jsonl",
-        # P3i-g write-cycle threading: 46. NOTE the previous pin (29) was
-        # STALE — measured live on the pre-P3i-g parent (6aa18b5) enduro is
-        # actually 43, not 29 (it had drifted but the PXC suite was aborting
-        # at an unrelated SWCHB test before reaching this divergence check,
-        # so the pin was never updated). So P3i-g's true enduro impact is
-        # only +3 (43 → 46): it broke 5 collision-timing-sensitive bytes
-        # ($36/$47/$67/$68/$76) and fixed 2 ($2e/$46). Enduro's large base
-        # divergence (43/128) is a pre-existing, unrelated deep issue; full
-        # convergence is tracked as a separate research item.
-        expected_xitari_divergence=46,
+        # 43. The pre-P3i-g parent (6aa18b5) was also 43 (the old "29" pin
+        # was STALE — the PXC suite had been aborting at an unrelated SWCHB
+        # test before reaching this check). P3i-g part 1 (inline-advance)
+        # briefly pushed it to 46, but P3i-g part 2 (beam_cc threading +
+        # always-defer PF writes) brought it back to 43 — i.e. NO net RAM
+        # regression vs the parent. Enduro's large base divergence (43/128)
+        # is a pre-existing, unrelated deep issue (collision-timing); full
+        # convergence is tracked in bug_fix_log.md.
+        expected_xitari_divergence=43,
     ),
 )
 

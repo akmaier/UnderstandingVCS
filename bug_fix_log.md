@@ -27,7 +27,7 @@ Numbers = RAM bytes differing from xitari on the last frame.
 | space_invaders | 0 | bit-exact |
 | seaquest | 4 | improved from 6 by P3i-g |
 | pitfall | 19 | joystick; unchanged |
-| enduro | 46 | regressed +3 by P3i-g (parent was **43**, not the stale pin's 29 — see below) |
+| enduro | 43 | = pre-P3i-g parent baseline (part 1 briefly hit 46; part 2 beam_cc+always-defer fixed it → NO net regression) |
 
 The pinned counts live in `jaxtari/tests/test_pxc2_jaxtari_vs_jutari.py`
 (`_PXC2_CASES`). **If you change emulation behaviour and a pin moves, update
@@ -37,6 +37,52 @@ move in lock-step (recipe in that file's header comment).
 ---
 
 ## Patches landed (newest first)
+
+### P3i-g part 2 — beam_cc threading + always-defer PF writes (Breakout "red columns" / flicker) (2026-05-29)
+**Symptom (user report):** Breakout's *first* frame already showed big red
+vertical columns in the lower (below-bricks) screen, and heavy frame-to-frame
+flicker. RAM was bit-exact (PXC green) — a pure **rendering** bug, invisible
+to the RAM-only tests.
+**Diagnosis tools:** `UV_TIA_POKES=1 ./tools/trace_dump …` (xitari's per-poke
+xpos/delay/activation log) + a monkeypatch logger of jaxtari's `tia_poke`
+PF2 writes. Found: xitari clears the playfield for the lower screen with
+`PF2=$00` at **scanline 127, xpos=0** (HBLANK), after which no more PF writes
+— so the lower screen stays black. My code issued the same `PF2=$00` but at
+**scanline 126, beam_cc=225** (1 CPU cycle / 3 color clocks earlier, a cumulative
+sub-cycle drift), where `activation = 225+3 = 228 ≥ 228` → it fell through to
+**immediate-apply**. Then the scanline-126 render **drained the still-pending
+`PF2=$ff@68` and `PF2=$3f@156`**, which clobbered the register back to `$3f`
+(bits 0-5 = pixels 12-17 = x48-71). That `$3f` then persisted into the lower
+screen — the red columns. Frame-to-frame the brick scroll changed which value
+won the clobber race → flicker.
+**Two-part fix (both ports):**
+  1. **beam_cc threading** (replaces the P3i-g-part-1 inline `tia_advance`
+     flush): `Bus._bus_poke` passes the *effective* sub-instruction beam
+     position (`beam_cc = color_clock + pending*3`, `beam_sc = scanline_cycle
+     + pending`) to `tia_poke`, which uses it for the PF defer + RES*/HMOVE.
+     The TIA is **not** advanced/rendered mid-instruction — it advances exactly
+     ONCE per instruction in `_tia_post_step`. (The part-1 inline flush rendered
+     scanlines mid-instruction, which is what let a pre-clear PF pattern leak.)
+  2. **Always-defer PF writes**: removed the "fall through to immediate-apply
+     when `activation ≥ 228`" path in `tia_poke`/`tia_poke!`. A PF write whose
+     effect crosses into the next scanline now stays in `pending_writes`;
+     `tia_advance`'s drain-remaining step applies it LAST (after the in-loop
+     drains), into `final_registers` — so it is NOT clobbered by an earlier
+     same-register pending write, and it correctly carries to the next
+     scanline. This is what fixes the `PF2=$00` clear.
+**Result:** Breakout screen-vs-xitari diff dropped **~8000 → 16 px/frame**
+(the only residual is a 1 px paddle-X offset, 7 rows). Lower screen black,
+no flicker. TIA/playfield/p3i/p3l unit tests green; jutari byte-identical to
+jaxtari. The paddle X also tightened from 13 px off → 1 px off.
+**Test gap closed (user's idea):** added `jaxtari/tests/test_screen_conformance.py`
+(PXC-S) — diffs the *rendered framebuffer* xitari↔jaxtari and xitari↔jutari
+per frame, with per-ROM `max_screen_diff` pins. This would have caught the
+red columns immediately (RAM tests never could). Screen fixtures live in
+`tools/fixtures/screens/*.screen.gz` (xitari + jutari, gzip — they compress to
+<7 KB). Generator: `tools/jutari_screen_dump.jl`. **Finding it surfaced:**
+most ROMs have large screen-vs-xitari divergence (pong ~4760, seaquest ~3946,
+…) despite bit-exact RAM — pre-existing rendering-accuracy gaps now visible
+and pinned.
 
 ### P3i-g — mid-instruction TIA-write cycle threading (2026-05-29)
 **Commit:** `2e44bab` (code) + follow-up (PXC pins + jutari fixtures).

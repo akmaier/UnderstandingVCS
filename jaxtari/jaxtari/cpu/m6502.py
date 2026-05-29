@@ -380,20 +380,16 @@ def _tia_post_step(old_state: CPUState, new_state: CPUState, bus: Bus):
     pending WSYNC. WSYNC's stall cycles also feed the RIOT timer (the
     RIOT continues to tick while the CPU is held).
 
-    P3i-g: TIA *writes* already advanced the TIA inline (in `_bus_poke`)
-    by `bus.tia_advanced_this_instruction` color-clock cycles so the
-    register changes landed at the right sub-instruction beam position.
-    Here we drain whatever's left (`delta - already_advanced`) — trailing
-    cycles after the last TIA write, plus any internal cycles that aren't
-    visible as bus ops. The per-instruction TIA advance therefore still
-    equals the instruction's full cycle count. RIOT keeps the simpler
-    "advance once per instruction" model (no per-color-clock semantics)."""
+    P3i-g (timing-only threading): the TIA is advanced exactly ONCE per
+    instruction here (it is NOT advanced inline in `_bus_poke` — that only
+    passes the effective beam position to `tia_poke`). This renders the
+    crossed scanline(s) and drains the deferred PF writes at their accurate
+    activation clocks, while never rendering mid-instruction (which
+    previously leaked the pre-clear PF pattern into later scanlines → the
+    Breakout "red columns")."""
     delta = int(new_state.cycles - old_state.cycles)
     new_riot = riot_advance(bus.riot, delta)
-    drain = delta - int(bus.tia_advanced_this_instruction)
-    if drain < 0:
-        drain = 0                                # defensive — should never happen
-    new_tia = tia_advance(bus.tia, drain) if drain > 0 else bus.tia
+    new_tia = tia_advance(bus.tia, delta)
     stall, new_tia = tia_apply_wsync(new_tia)
     if stall:
         new_state = new_state._replace(

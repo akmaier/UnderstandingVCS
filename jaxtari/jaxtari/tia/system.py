@@ -633,7 +633,8 @@ def _hmove_motion(scanline_cycle: int, hm: int) -> int:
     return _COMPLETE_MOTION_TABLE[sc][(hm >> 4) & 0x0F]
 
 
-def tia_poke(tia: TIAState, addr: int, value: int) -> TIAState:
+def tia_poke(tia: TIAState, addr: int, value: int,
+             beam_cc: int | None = None, beam_sc: int | None = None) -> TIAState:
     """Write a TIA register. Stores the byte and applies side-effects:
     WSYNC stall (P3a), player position reset / horizontal motion (P3c).
     Missile + ball, collisions, VSYNC, etc. land in later P3 sub-phases.
@@ -648,33 +649,51 @@ def tia_poke(tia: TIAState, addr: int, value: int) -> TIAState:
     `tia_advance`'s per-color-clock loop. All other registers continue
     to apply immediately (WSYNC, VSYNC, RESP*, HMOVE, CXCLR, …)
     because their side effects must fire at the write time.
+
+    **P3i-g (timing-only threading)**: `beam_cc`/`beam_sc` are the
+    *effective* sub-instruction beam position at the moment this write
+    hits the bus (instruction-start beam + cycles consumed so far),
+    supplied by `Bus._bus_poke`. The beam-position-sensitive registers
+    (PF0/1/2 defer, RES*, HMOVE) consult them so mid-instruction writes
+    land at the right color clock — but the TIA is NOT advanced/rendered
+    here (that happens once per instruction in `_tia_post_step`, so we
+    never render mid-instruction and leak a pre-clear PF pattern into
+    later scanlines). They default to the TIA's own counters so direct
+    unit-test pokes keep the pre-threading behaviour.
     """
     reg = addr & 0x3F                                    # TIA decodes A0–A5
     value8 = value & 0xFF
+    if beam_cc is None:
+        beam_cc = int(tia.color_clock)
+    if beam_sc is None:
+        beam_sc = int(tia.scanline_cycle)
 
     # P3i-c: defer PF0/PF1/PF2 to mid-scanline activation. Skip the
-    # defer if we're in HBLANK (color_clock < 68) — the activation
+    # defer if we're in HBLANK (beam_cc < 68) — the activation
     # would land in the visible region anyway but pre-HBLANK pokes are
     # by convention "scanline setup" and just take effect for the
     # whole next scanline; deferring them generates a no-op gap that
     # produces the same render as the immediate apply.
-    if reg in (W_PF0, W_PF1, W_PF2) and tia.color_clock >= HBLANK_COLOR_CLOCKS:
-        delay = _poke_activation_delay(reg, tia.color_clock)
-        activation_clock = tia.color_clock + delay
-        if activation_clock < COLOR_CLOCKS_PER_SCANLINE:
-            # Same-scanline activation: queue the write; the per-color-
-            # clock render loop in tia_advance will apply it at the
-            # right beam position. tia.registers stays at the OLD
-            # value so collision detection (still per-scanline) sees
-            # the pre-write state — same as it did before P3i-c.
-            return tia._replace(
-                pending_writes=tia.pending_writes
-                + ((activation_clock, reg, value8),),
-            )
-        # Activation crosses into the next scanline — fall through to
-        # the immediate-apply path (next scanline will use the new
-        # value anyway, which is the same answer the per-scanline
-        # renderer used pre-P3i-c).
+    if reg in (W_PF0, W_PF1, W_PF2) and beam_cc >= HBLANK_COLOR_CLOCKS:
+        delay = _poke_activation_delay(reg, beam_cc)
+        activation_clock = beam_cc + delay
+        # ALWAYS queue the write — even when `activation_clock >= 228`
+        # (the write's effect crosses into the next scanline). The
+        # per-color-clock render loop applies pending writes whose
+        # activation it reaches; any with `activation >= 228` are applied
+        # by `tia_advance`'s drain-remaining step AFTER the loop, in
+        # activation order — so they land in `final_registers` (carried
+        # to the next scanline) and are NOT clobbered. P3i-g bugfix: the
+        # old "fall through to immediate-apply for activation >= 228" path
+        # set the register NOW, but an earlier same-register pending write
+        # (e.g. Breakout's PF2=$3f@156) then drained during the render and
+        # overwrote it — so a PF2=$00 clear issued at the bottom of the
+        # brick band was lost, leaking $3f into the lower screen (the
+        # "red columns"). Deferring fixes that.
+        return tia._replace(
+            pending_writes=tia.pending_writes
+            + ((activation_clock, reg, value8),),
+        )
 
     new_registers = tia.registers.at[reg].set(jnp.uint8(value8))
     new_tia = tia._replace(registers=new_registers)
@@ -713,19 +732,19 @@ def tia_poke(tia: TIAState, addr: int, value: int) -> TIAState:
             # Rising edge — cap grounded.
             new_tia = new_tia._replace(dump_enabled=True)
     elif reg == W_RESP0:
-        # P3i-e: xitari-exact RESP0 — HBLANK constant 3, visible +5
-        # offset, computed from the current color_clock (not the old
-        # scanline_cycle*3 approximation).
-        new_tia = new_tia._replace(p0_x=_resp_player_position(new_tia.color_clock))
+        # P3i-e/g: xitari-exact RESP0 from the *effective* sub-instruction
+        # beam color clock (beam_cc), not the stale instruction-start
+        # tia.color_clock — HBLANK constant 3, visible +5 offset.
+        new_tia = new_tia._replace(p0_x=_resp_player_position(beam_cc))
     elif reg == W_RESP1:
-        new_tia = new_tia._replace(p1_x=_resp_player_position(new_tia.color_clock))
+        new_tia = new_tia._replace(p1_x=_resp_player_position(beam_cc))
     elif reg == W_RESM0:
         # P3i-e: missile/ball use the +4 offset / HBLANK constant 2.
-        new_tia = new_tia._replace(m0_x=_resp_missile_ball_position(new_tia.color_clock))
+        new_tia = new_tia._replace(m0_x=_resp_missile_ball_position(beam_cc))
     elif reg == W_RESM1:
-        new_tia = new_tia._replace(m1_x=_resp_missile_ball_position(new_tia.color_clock))
+        new_tia = new_tia._replace(m1_x=_resp_missile_ball_position(beam_cc))
     elif reg == W_RESBL:
-        new_tia = new_tia._replace(bl_x=_resp_missile_ball_position(new_tia.color_clock))
+        new_tia = new_tia._replace(bl_x=_resp_missile_ball_position(beam_cc))
     elif reg == W_HMOVE:
         hmp0 = int(new_tia.registers[W_HMP0])
         hmp1 = int(new_tia.registers[W_HMP1])
@@ -740,8 +759,10 @@ def tia_poke(tia: TIAState, addr: int, value: int) -> TIAState:
         # writes hit at cycle 0..20 → blank fires + standard
         # HBLANK motion deltas. Mid-scanline writes (21..54) get
         # zero motion (sprite stays put) AND no blank. Late writes
-        # (55..75) get partial-motion deltas.
-        sc = int(new_tia.scanline_cycle)
+        # (55..75) get partial-motion deltas. P3i-g: index by the
+        # *effective* sub-instruction CPU cycle within the scanline
+        # (beam_sc), not the stale instruction-start scanline_cycle.
+        sc = int(beam_sc)
         blank = _hmove_blank_enabled_at(sc)
         new_tia = new_tia._replace(
             p0_x=(new_tia.p0_x - _hmove_motion(sc, hmp0)) % 160,

@@ -213,31 +213,33 @@ end
     a = Int(addr) & 0x1FFF
     v8 = UInt8(Int(value) & 0xFF)
     bus.data_bus_state = v8
-    # P3i-g: this bus op is one CPU cycle.
-    new_pending = bus.pending_tia_cycles + 1
+    # P3i-g: this bus op is one CPU cycle. `pending_tia_cycles` counts
+    # cycles since instruction start (reset in `_tia_post_step!`).
+    bus.pending_tia_cycles += 1
     if (a & 0x1000) != 0
         cart_poke!(bus.cart, a, value)           # cart hotspot may switch bank
-        bus.pending_tia_cycles = new_pending
         return nothing
     end
     if (a & 0x80) == 0
-        # TIA write — flush accumulated cycles into the TIA BEFORE the
-        # poke so PF*/RESP*/HMOVE/COLU* land at the precise sub-instruction
-        # color clock (see BusState docstring). Then reset the counter and
-        # record how many cycles the inline flush advanced.
-        tia_advance!(bus.tia, new_pending)
-        tia_poke!(bus.tia, a, value)             # TIA write — records byte + WSYNC
-        bus.pending_tia_cycles = 0
-        bus.tia_advanced_this_instruction += new_pending
+        # TIA write — P3i-g TIMING-ONLY threading: pass the *effective*
+        # sub-instruction beam position (instruction-start beam + cycles
+        # consumed so far) so PF*/RESP*/HMOVE land at the right color
+        # clock, but DO NOT advance/render the TIA here. Advancing inline
+        # rendered scanlines prematurely (mid-instruction), capturing the
+        # pre-clear PF pattern and leaking it into later scanlines (the
+        # Breakout "red columns"). The TIA is advanced exactly once per
+        # instruction in `_tia_post_step!`, draining the deferred writes
+        # at their (now-accurate) activation clocks.
+        beam_cc = Int(bus.tia.color_clock) + bus.pending_tia_cycles * 3
+        beam_sc = Int(bus.tia.scanline_cycle) + bus.pending_tia_cycles
+        tia_poke!(bus.tia, a, value, beam_cc, beam_sc)
         return nothing
     end
     if (a & 0x200) != 0
         riot_poke!(bus.riot, a, value)           # RIOT timer / ports write
-        bus.pending_tia_cycles = new_pending
         return nothing
     end
     bus.ram[(a & 0x7F) + 1] = v8
-    bus.pending_tia_cycles = new_pending
     return nothing
 end
 

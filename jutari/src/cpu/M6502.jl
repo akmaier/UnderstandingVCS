@@ -269,21 +269,20 @@ end
 @inline _tia_post_step!(::CPUState, ::Vector{UInt8}, ::Integer) = nothing
 
 @inline function _tia_post_step!(state::CPUState, bus::BusState, cycles_consumed::Integer)
-    # P3i-g: TIA writes already advanced the TIA inline (in `poke!`) by
-    # `bus.tia_advanced_this_instruction` cycles so the register changes
-    # landed at the right sub-instruction beam position. Drain whatever
-    # remains (trailing cycles after the last TIA write + internal cycles
-    # that aren't visible bus ops), so per-instruction TIA advance still
-    # equals the full cycle count. RIOT keeps the per-instruction model.
-    drain = Int(cycles_consumed) - bus.tia_advanced_this_instruction
-    drain < 0 && (drain = 0)                      # defensive — should never happen
-    drain > 0 && tia_advance!(bus.tia, drain)
+    # P3i-g (timing-only threading): the TIA is advanced exactly ONCE per
+    # instruction here (it is NOT advanced inline in `poke!` — that only
+    # passes the effective beam position to `tia_poke!`). This renders the
+    # crossed scanline(s) and drains the deferred PF writes at their
+    # accurate activation clocks, while never rendering mid-instruction
+    # (which previously leaked the pre-clear PF pattern → red columns).
+    tia_advance!(bus.tia, cycles_consumed)
     riot_advance!(bus.riot, cycles_consumed)
     stall = tia_apply_wsync!(bus.tia)
     if stall != 0
         state.cycles += UInt64(stall)
         riot_advance!(bus.riot, stall)
     end
+    # Reset the per-instruction sub-cycle beam counter for the next op.
     bus.pending_tia_cycles = 0
     bus.tia_advanced_this_instruction = 0
     return nothing

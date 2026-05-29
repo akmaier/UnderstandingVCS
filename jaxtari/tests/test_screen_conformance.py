@@ -1,0 +1,142 @@
+"""PXC-S — screen (framebuffer) conformance: xitari ↔ jaxtari and
+xitari ↔ jutari, per rendered frame.
+
+The PXC1/PXC2 RAM tests compare the 128-byte RIOT RAM and so are blind to
+*rendering* bugs — the TIA register state (PF*, COLU*, sprite positions)
+and the resulting framebuffer can be wrong while RAM stays bit-exact. The
+Breakout "red columns" regression (a deferred PF2=$00 clear getting
+clobbered, leaking the brick pattern into the lower screen) was exactly
+that: RAM bit-exact, screen badly wrong. This test closes that gap.
+
+For each ROM it loads xitari's per-frame screen (`tools/fixtures/screens/
+<rom>_noop_10.screen.gz`, 210×160 palette indices, captured from
+`tools/trace_dump --screen`), then:
+
+  * runs jaxtari live and diffs each frame's `get_screen()` against xitari;
+  * loads the jutari screen fixture (`*_jutari.screen.gz`) and diffs it
+    against xitari.
+
+It asserts the per-frame differing-pixel count stays ≤ the pinned
+`max_screen_diff`. **Tighten the pin when you improve a ROM's rendering**
+(regenerate the jutari fixture in the same commit so both ports stay
+lock-step). The pins record the current state:
+
+  breakout  16   — near-perfect (only a 1 px paddle-X offset, 7 rows)
+  pong      —    — large rendering gap (sprite/net/score positioning)
+  others    —    — pre-existing rendering-accuracy gaps; RAM is much
+                   closer than the screen (see bug_fix_log.md)
+"""
+from __future__ import annotations
+
+import gzip
+from pathlib import Path
+from typing import NamedTuple
+
+import numpy as np
+import pytest
+
+from jaxtari.env.stella_environment import StellaEnvironment
+from jaxtari.games.breakout import BreakoutRomSettings as _BreakoutRomSettings
+from jaxtari.games.pong import PongRomSettings as _PongRomSettings
+
+_REPO = Path(__file__).resolve().parents[2]
+_ROMS = _REPO / "xitari" / "roms"
+_SCREENS = _REPO / "tools" / "fixtures" / "screens"
+_ACTIONS = _REPO / "tools" / "fixtures" / "actions"
+
+_SETTINGS = {"pong.bin": _PongRomSettings, "breakout.bin": _BreakoutRomSettings}
+
+_H, _W = 210, 160
+
+
+class _Case(NamedTuple):
+    name: str
+    rom: str
+    # Max per-frame differing-pixel count tolerated (jaxtari-live AND
+    # jutari-fixture, each vs the xitari screen). breakout is tight (the
+    # fix); the rest document pre-existing rendering gaps.
+    max_screen_diff: int
+
+
+_CASES = [
+    _Case("breakout_noop_10",       "breakout.bin",        16),
+    _Case("pong_noop_10",           "pong.bin",            29760),
+    _Case("space_invaders_noop_10", "space_invaders.bin",  2145),
+    _Case("pitfall_noop_10",        "pitfall.bin",         1786),
+    _Case("seaquest_noop_10",       "seaquest.bin",        3946),
+    _Case("enduro_noop_10",         "enduro.bin",          1988),
+]
+
+
+def _load_screens(path: Path) -> np.ndarray | None:
+    if not path.exists():
+        return None
+    raw = gzip.open(path, "rb").read()
+    n = len(raw) // (_H * _W)
+    return np.frombuffer(raw, dtype=np.uint8)[: n * _H * _W].reshape(n, _H, _W)
+
+
+def _load_actions(path: Path) -> list[int]:
+    out = []
+    for line in path.read_text().splitlines():
+        s = line.strip()
+        if s and not s.startswith("#"):
+            out.append(int(s))
+    return out
+
+
+def _xitari(case: _Case):
+    return _load_screens(_SCREENS / f"{case.name}.screen.gz")
+
+
+def _jutari(case: _Case):
+    return _load_screens(_SCREENS / f"{case.name}_jutari.screen.gz")
+
+
+def _jaxtari_screens(case: _Case, n: int) -> np.ndarray:
+    rom = np.frombuffer((_ROMS / case.rom).read_bytes(), dtype=np.uint8)
+    factory = _SETTINGS.get(case.rom)
+    env = StellaEnvironment(rom, factory()) if factory else StellaEnvironment(rom)
+    env.reset(boot_noop_steps=60, boot_reset_steps=4)
+    actions = _load_actions(_ACTIONS / f"{case.name}.txt")
+    frames = []
+    for a in actions[:n]:
+        env.step(int(a))
+        frames.append(np.asarray(env.get_screen(), dtype=np.uint8))
+    return np.stack(frames)
+
+
+def _per_frame_diffs(a: np.ndarray, b: np.ndarray) -> list[int]:
+    n = min(len(a), len(b))
+    return [int((a[i] != b[i]).sum()) for i in range(n)]
+
+
+@pytest.mark.parametrize("case", _CASES, ids=lambda c: c.name)
+def test_jutari_screen_matches_xitari(case: _Case):
+    """xitari ↔ jutari per-frame screen diff (fixture vs fixture)."""
+    xi, jt = _xitari(case), _jutari(case)
+    if xi is None or jt is None:
+        pytest.skip(f"[{case.name}] missing screen fixture(s) "
+                    f"(xitari/jutari) — regenerate with tools/jutari_screen_dump.jl")
+    diffs = _per_frame_diffs(xi, jt)
+    worst = max(diffs)
+    assert worst <= case.max_screen_diff, (
+        f"[{case.name}] jutari↔xitari screen diff regressed: worst frame "
+        f"{worst} px > pinned {case.max_screen_diff}. Per-frame: {diffs}. "
+        f"If this is a real rendering fix, tighten max_screen_diff (and "
+        f"regenerate the jutari screen fixture in the same commit).")
+
+
+@pytest.mark.parametrize("case", _CASES, ids=lambda c: c.name)
+def test_jaxtari_screen_matches_xitari(case: _Case):
+    """xitari ↔ jaxtari per-frame screen diff (jaxtari live vs fixture)."""
+    xi = _xitari(case)
+    if xi is None:
+        pytest.skip(f"[{case.name}] missing xitari screen fixture")
+    jx = _jaxtari_screens(case, len(xi))
+    diffs = _per_frame_diffs(xi, jx)
+    worst = max(diffs)
+    assert worst <= case.max_screen_diff, (
+        f"[{case.name}] jaxtari↔xitari screen diff regressed: worst frame "
+        f"{worst} px > pinned {case.max_screen_diff}. Per-frame: {diffs}. "
+        f"If this is a real rendering fix, tighten max_screen_diff.")
