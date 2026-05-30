@@ -700,19 +700,24 @@ function render_playfield_scanline(tia::TIAState)
     colupf = tia.registers[W_COLUPF + 1]
     colubk = tia.registers[W_COLUBK + 1]
     reflected = (ctrlpf & 0x01) != 0
+    # CTRLPF.D1 SCOREMODE: LEFT half PF pixels coloured COLUP0,
+    # RIGHT half COLUP1 (instead of COLUPF). Ball unaffected.
+    score = (ctrlpf & 0x02) != 0
+    pf_left  = score ? tia.registers[W_COLUP0 + 1] : colupf
+    pf_right = score ? tia.registers[W_COLUP1 + 1] : colupf
 
     left = playfield_bits(pf0, pf1, pf2)
     right = reflected ? reverse(left) : left
 
     pixels = Vector{UInt8}(undef, 160)
     @inbounds for i in 0:19
-        color = left[i + 1] != 0 ? colupf : colubk
+        color = left[i + 1] != 0 ? pf_left : colubk
         for k in 0:3
             pixels[i * 4 + k + 1] = color
         end
     end
     @inbounds for i in 0:19
-        color = right[i + 1] != 0 ? colupf : colubk
+        color = right[i + 1] != 0 ? pf_right : colubk
         for k in 0:3
             pixels[80 + i * 4 + k + 1] = color
         end
@@ -868,19 +873,22 @@ function _overlay_playfield!(pixels::Vector{UInt8}, tia::TIAState)
     ctrlpf = tia.registers[W_CTRLPF + 1]
     colupf = tia.registers[W_COLUPF + 1]
     reflected = (ctrlpf & 0x01) != 0
+    score    = (ctrlpf & 0x02) != 0
+    pf_left  = score ? tia.registers[W_COLUP0 + 1] : colupf
+    pf_right = score ? tia.registers[W_COLUP1 + 1] : colupf
     left  = playfield_bits(pf0, pf1, pf2)
     right = reflected ? reverse(left) : left
     @inbounds for i in 0:19
         if left[i + 1] != 0
             for k in 0:3
-                pixels[i * 4 + k + 1] = colupf
+                pixels[i * 4 + k + 1] = pf_left
             end
         end
     end
     @inbounds for i in 0:19
         if right[i + 1] != 0
             for k in 0:3
-                pixels[80 + i * 4 + k + 1] = colupf
+                pixels[80 + i * 4 + k + 1] = pf_right
             end
         end
     end
@@ -960,14 +968,18 @@ function render_pixel(tia::TIAState, color_clock::Integer, cached_sets=nothing)
     colup0 = tia.registers[W_COLUP0 + 1]
     colup1 = tia.registers[W_COLUP1 + 1]
     ctrlpf = tia.registers[W_CTRLPF + 1]
-    pfp = (ctrlpf & 0x04) != 0
+    pfp   = (ctrlpf & 0x04) != 0
+    # CTRLPF.D1 SCOREMODE: PF LEFT half coloured COLUP0, RIGHT COLUP1
+    # (ball stays COLUPF).
+    score = (ctrlpf & 0x02) != 0
+    pf_col = score ? (x < 80 ? colup0 : colup1) : colupf
 
     sets = cached_sets === nothing ? _object_pixel_sets(tia) : cached_sets
 
     pixel = colubk
     if !pfp
         # Default: bg ← pf ← bl ← M1 ← P1 ← M0 ← P0
-        if x in sets.pf; pixel = colupf; end
+        if x in sets.pf; pixel = pf_col; end
         if x in sets.bl; pixel = colupf; end
         if x in sets.m1; pixel = colup1; end
         if x in sets.p1; pixel = colup1; end
@@ -979,7 +991,7 @@ function render_pixel(tia::TIAState, color_clock::Integer, cached_sets=nothing)
         if x in sets.p1; pixel = colup1; end
         if x in sets.m0; pixel = colup0; end
         if x in sets.p0; pixel = colup0; end
-        if x in sets.pf; pixel = colupf; end
+        if x in sets.pf; pixel = pf_col; end
         if x in sets.bl; pixel = colupf; end
     end
     return pixel

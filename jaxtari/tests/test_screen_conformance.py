@@ -63,9 +63,12 @@ _CASES = [
     # enduro 1988->1972. pt4 COLU& 0xFE mask: pong 29760->920 (the LSB of
     # the colour-luminance registers is unused on real hardware; ROMs that
     # write odd values produce visually-identical frames but byte-level
-    # diffs against xitari's masked store).
+    # diffs against xitari's masked store). pt5 CTRLPF.D1 SCOREMODE:
+    # pong 920->568 — pong's score area uses score mode so the LEFT
+    # playfield half is coloured by COLUP0 and the RIGHT by COLUP1
+    # instead of COLUPF.
     _Case("breakout_noop_10",       "breakout.bin",          8),
-    _Case("pong_noop_10",           "pong.bin",            920),
+    _Case("pong_noop_10",           "pong.bin",            568),
     _Case("space_invaders_noop_10", "space_invaders.bin",  2145),
     _Case("pitfall_noop_10",        "pitfall.bin",         1786),
     _Case("seaquest_noop_10",       "seaquest.bin",        3940),

@@ -34,7 +34,7 @@ Numbers = RAM bytes differing from xitari on the last frame.
 | ROM | screen ndiff | notes |
 |---|---|---|
 | breakout | **8** | only 1 row residual (P1 corner block on row 195, likely VDELP1 shadow) |
-| pong | **920** | dropped 29760→920 by COLU `& 0xFE` mask (pt4); residual is real sprite/timing |
+| pong | **568** | 29760→920 (pt4 COLU mask)→568 (pt5 SCOREMODE: PF LEFT half→COLUP0, RIGHT→COLUP1) |
 | space_invaders | 2145 | rendering gap |
 | pitfall | 1786 | rendering gap |
 | seaquest | 3940 | rendering gap (improved 3946→3940 by pt3 NUSIZ +1) |
@@ -48,6 +48,31 @@ move in lock-step (recipe in that file's header comment).
 ---
 
 ## Patches landed (newest first)
+
+### P3i-g part 5 — CTRLPF.D1 SCOREMODE (pong screen 920 → 568) (2026-05-30)
+**Symptom:** PXC-S pong's 920-px residual concentrated in the score-area
+strip near the top of the screen. Pixel-byte probing showed xitari drew the
+LEFT digit (player 1's score) in palette index **250** (= COLUP0 in pong)
+and the RIGHT digit (player 2's score) in **138** (= COLUP1). My ports drew
+both halves in **210** (= COLUPF). The pixel *positions* matched — only the
+*colour* differed across the half-screen seam.
+**Diagnosis:** Looked up CTRLPF bit definitions. Bit 0 = REFLECT, bit 2 =
+PFP, bits 4-5 = ball size — all implemented. Bit 1 is **SCOREMODE**: in
+score mode the playfield-ON pixels in the LEFT half are coloured with
+**COLUP0** and in the RIGHT half with **COLUP1**, instead of COLUPF (ball
+stays on COLUPF). Pong sets `CTRLPF = 0x02` during the score band. My
+emulator ignored the bit entirely.
+**Fix (both ports):** `render_pixel` / `render_playfield_scanline` /
+`_overlay_playfield` now read `(ctrlpf & 0x02) != 0`; when set, the
+LEFT-half PF colour is `COLUP0` and the RIGHT-half PF colour is `COLUP1`.
+Ball, players, missiles, background are untouched. Mirrored to jutari's
+`render_pixel`, `render_playfield_scanline`, and `_overlay_playfield!`.
+**Result:** **pong screen 920 → 568 px/frame** (~38% reduction). Both ports
+still byte-identical to each other (jaxtari ≡ jutari at 568). Other ROMs
+unchanged (none of breakout / space_invaders / pitfall / seaquest / enduro
+use score mode in these noop fixtures). RAM unchanged everywhere.
+Regenerated `tools/fixtures/screens/pong_noop_10_jutari.screen.gz` and
+tightened the pin in `test_screen_conformance.py` from 920 → 568.
 
 ### P3i-g part 4 — mask `COLU* & 0xFE` (pong screen 29760 → 920) (2026-05-30)
 **Symptom:** PXC-S pong screen ndiff was 29760/frame — almost the entire
@@ -231,7 +256,7 @@ COLUP0 assert now uses `atol` for denormal AD noise.
 
 ## Open ideas / planned (not yet done)
 
-- **Pong screen 920 → lower (one-row-late cross-scanline transitions).** After the pt4 COLU mask dropped pong from 29760 → 920, the residual concentrates at three "full row diff" rows (24, 34, 194 — each 160 px = 480 px) plus a 16-21-row score-digit band at cols 36-127. Diagnosis: shifting jaxtari's pong DOWN by 1 row reduces the diff to 580 (177/209 rows match the shifted version), so the strip boundaries (top playfield 24-33, bottom playfield 194+) and the score-area transitions all activate **one scanline later in jaxtari than in xitari**. Hypothesis: the cross-scanline PF/COLU writes in pong (e.g. the PF=$ff that enables the top playfield strip) have their `beam_cc + delay` activation crossing into the next scanline in jaxtari but not in xitari, because jaxtari's cumulative `pending_tia_cycles` is one cycle ahead of `mySystem->cycles()` at the write — the same per-cycle bus-accuracy class that bounds PXC1 (and that the `zp,X` dummy-tick fixed for one case in pt1). The fix is the broader per-cycle accuracy work tracked above (store-mode `abs,X`/`abs,Y`/`(zp),Y` dummies, etc.), which would also tighten enduro and the others. Not a clean small fix.
+- **Pong screen 568 → lower (one-row-late cross-scanline transitions).** After pt4 (COLU mask 29760→920) and pt5 (SCOREMODE 920→568), the residual is no longer the score-area colours but the cross-scanline strip transitions: three "full row diff" rows (24, 34, 194 — each 160 px = 480 px) and the residual ~88 px elsewhere. Diagnosis: shifting jaxtari's pong DOWN by 1 row reduces the diff substantially, so the strip boundaries (top playfield 24-33, bottom playfield 194+) all activate **one scanline later in jaxtari than in xitari**. Hypothesis: the cross-scanline PF writes in pong (e.g. the `PF=$ff` that enables the top playfield strip) have their `beam_cc + delay` activation crossing into the next scanline in jaxtari but not in xitari, because jaxtari's cumulative `pending_tia_cycles` is one cycle ahead of `mySystem->cycles()` at the write — the same per-cycle bus-accuracy class that bounds PXC1 (and that the `zp,X` dummy-tick fixed for one case in pt1). The fix is the broader per-cycle accuracy work below (store-mode `abs,X`/`abs,Y`/`(zp),Y` dummies, etc.), which would also tighten enduro and the others. Not a clean small fix.
 - **Enduro convergence (43 → lower).** Enduro's large base divergence (43/128)
   is pre-existing and unrelated to P3i-g; P3i-g additionally broke 5
   collision-timing-sensitive cells (`$36 $47 $67 $68 $76`) while fixing 2

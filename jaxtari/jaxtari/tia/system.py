@@ -1003,7 +1003,14 @@ def _playfield_bits(pf0: int, pf1: int, pf2: int) -> list[int]:
 
 
 def _playfield_pixels(tia: TIAState) -> list[int]:
-    """Internal helper: 160-element Python list of playfield colours."""
+    """Internal helper: 160-element Python list of playfield colours.
+
+    Honours CTRLPF.D1 (SCORE mode): when set, the playfield-ON pixels in
+    the LEFT half are coloured with COLUP0 and in the RIGHT half with
+    COLUP1, instead of COLUPF. Games (Pong, Combat, …) use this to put
+    each player's score in their own player colour without burning a
+    sprite on it. xitari does the same selection in `TIA::updateFrame`.
+    """
     pf0    = int(tia.registers[W_PF0])
     pf1    = int(tia.registers[W_PF1])
     pf2    = int(tia.registers[W_PF2])
@@ -1011,15 +1018,18 @@ def _playfield_pixels(tia: TIAState) -> list[int]:
     colupf = int(tia.registers[W_COLUPF])
     colubk = int(tia.registers[W_COLUBK])
     reflected = (ctrlpf & 0x01) != 0
+    score_mode = (ctrlpf & 0x02) != 0
+    pf_left  = int(tia.registers[W_COLUP0]) if score_mode else colupf
+    pf_right = int(tia.registers[W_COLUP1]) if score_mode else colupf
 
     left_bits = _playfield_bits(pf0, pf1, pf2)
     right_bits = list(reversed(left_bits)) if reflected else left_bits
 
     pixels: list[int] = []
     for bit in left_bits:
-        pixels.extend([colupf if bit else colubk] * 4)
+        pixels.extend([pf_left if bit else colubk] * 4)
     for bit in right_bits:
-        pixels.extend([colupf if bit else colubk] * 4)
+        pixels.extend([pf_right if bit else colubk] * 4)
     return pixels
 
 
@@ -1177,16 +1187,19 @@ def _overlay_playfield(pixels: list[int], tia: TIAState) -> None:
     ctrlpf = int(tia.registers[W_CTRLPF])
     colupf = int(tia.registers[W_COLUPF])
     reflected = (ctrlpf & 0x01) != 0
+    score_mode = (ctrlpf & 0x02) != 0
+    pf_left  = int(tia.registers[W_COLUP0]) if score_mode else colupf
+    pf_right = int(tia.registers[W_COLUP1]) if score_mode else colupf
     left_bits = _playfield_bits(pf0, pf1, pf2)
     right_bits = list(reversed(left_bits)) if reflected else left_bits
     for i, bit in enumerate(left_bits):
         if bit:
             for k in range(4):
-                pixels[i * 4 + k] = colupf
+                pixels[i * 4 + k] = pf_left
     for i, bit in enumerate(right_bits):
         if bit:
             for k in range(4):
-                pixels[80 + i * 4 + k] = colupf
+                pixels[80 + i * 4 + k] = pf_right
 
 
 def render_scanline(tia: TIAState) -> jnp.ndarray:
@@ -1263,13 +1276,17 @@ def render_pixel(tia: TIAState, color_clock: int, cached_sets=None) -> int:
     colup1 = int(tia.registers[W_COLUP1])
     ctrlpf = int(tia.registers[W_CTRLPF])
     pfp    = (ctrlpf & 0x04) != 0                         # P3l priority bit
+    # CTRLPF.D1 SCOREMODE: playfield LEFT half uses COLUP0, RIGHT half
+    # uses COLUP1 (instead of COLUPF). Ball stays on COLUPF.
+    score  = (ctrlpf & 0x02) != 0
+    pf_col = (colup0 if x < 80 else colup1) if score else colupf
 
     sets = cached_sets if cached_sets is not None else _object_pixel_sets(tia)
 
     pixel = colubk
     if not pfp:
         # Default priority: bg ← pf ← bl ← M1 ← P1 ← M0 ← P0
-        if x in sets["pf"]: pixel = colupf
+        if x in sets["pf"]: pixel = pf_col
         if x in sets["bl"]: pixel = colupf
         if x in sets["m1"]: pixel = colup1
         if x in sets["p1"]: pixel = colup1
@@ -1281,7 +1298,7 @@ def render_pixel(tia: TIAState, color_clock: int, cached_sets=None) -> int:
         if x in sets["p1"]: pixel = colup1
         if x in sets["m0"]: pixel = colup0
         if x in sets["p0"]: pixel = colup0
-        if x in sets["pf"]: pixel = colupf
+        if x in sets["pf"]: pixel = pf_col
         if x in sets["bl"]: pixel = colupf
     return pixel
 
