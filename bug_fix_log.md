@@ -231,6 +231,7 @@ COLUP0 assert now uses `atol` for denormal AD noise.
 
 ## Open ideas / planned (not yet done)
 
+- **Pong screen 920 → lower (one-row-late cross-scanline transitions).** After the pt4 COLU mask dropped pong from 29760 → 920, the residual concentrates at three "full row diff" rows (24, 34, 194 — each 160 px = 480 px) plus a 16-21-row score-digit band at cols 36-127. Diagnosis: shifting jaxtari's pong DOWN by 1 row reduces the diff to 580 (177/209 rows match the shifted version), so the strip boundaries (top playfield 24-33, bottom playfield 194+) and the score-area transitions all activate **one scanline later in jaxtari than in xitari**. Hypothesis: the cross-scanline PF/COLU writes in pong (e.g. the PF=$ff that enables the top playfield strip) have their `beam_cc + delay` activation crossing into the next scanline in jaxtari but not in xitari, because jaxtari's cumulative `pending_tia_cycles` is one cycle ahead of `mySystem->cycles()` at the write — the same per-cycle bus-accuracy class that bounds PXC1 (and that the `zp,X` dummy-tick fixed for one case in pt1). The fix is the broader per-cycle accuracy work tracked above (store-mode `abs,X`/`abs,Y`/`(zp),Y` dummies, etc.), which would also tighten enduro and the others. Not a clean small fix.
 - **Enduro convergence (43 → lower).** Enduro's large base divergence (43/128)
   is pre-existing and unrelated to P3i-g; P3i-g additionally broke 5
   collision-timing-sensitive cells (`$36 $47 $67 $68 $76`) while fixing 2
