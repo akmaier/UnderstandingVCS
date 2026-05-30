@@ -29,6 +29,17 @@ Numbers = RAM bytes differing from xitari on the last frame.
 | pitfall | 19 | joystick; unchanged |
 | enduro | 43 | = pre-P3i-g parent baseline (part 1 briefly hit 46; part 2 beam_cc+always-defer fixed it → NO net regression) |
 
+**Screen scoreboard** (PXC-S, per-frame max screen ndiff vs xitari, `*_noop_10` fixtures, after P3i-g pt3):
+
+| ROM | screen ndiff | notes |
+|---|---|---|
+| breakout | **8** | only 1 row residual (P1 corner block on row 195, likely VDELP1 shadow) |
+| pong | 29760 | large pre-existing rendering gap (sprite/net/score) |
+| space_invaders | 2145 | rendering gap |
+| pitfall | 1786 | rendering gap |
+| seaquest | 3940 | rendering gap (improved 3946→3940 by pt3 NUSIZ +1) |
+| enduro | 1972 | rendering gap (improved 1988→1972 by pt3 NUSIZ +1) |
+
 The pinned counts live in `jaxtari/tests/test_pxc2_jaxtari_vs_jutari.py`
 (`_PXC2_CASES`). **If you change emulation behaviour and a pin moves, update
 the pin AND regenerate the jutari fixtures in the same commit** so both ports
@@ -37,6 +48,32 @@ move in lock-step (recipe in that file's header comment).
 ---
 
 ## Patches landed (newest first)
+
+### P3i-g part 3 — NUSIZ wide-mode +1 pixel offset (Breakout paddle 1 px off) (2026-05-30)
+**Symptom:** After P3i-g pt2 fixed Breakout's walls + bricks + red columns,
+the paddle was still 1 px off from xitari (jaxtari at x=98-113, xitari at
+99-114; same paddle width, just shifted left by one). The numerics agreed
+end-to-end — RESP0 → POSP0=96, HMOVE delta +2 → POSP0=98 — so the difference
+had to be on the render side, not the position side. (A 1-cycle RESP0 shift
+would be 3 px, so the residual couldn't be cycle-accuracy.)
+**Diagnosis:** Probed jaxtari's full RESP0/HMP0/HMOVE/HMCLR chain for the
+boot+1 frame, confirmed it matches xitari's `UV_TIA_POKES` log exactly.
+Then inspected xitari's `computePlayerMaskTable`: the mask init for player
+mode 7 (quad-size, NUSIZ=7, 4× scale) and mode 5 (double-size, NUSIZ=5,
+2× scale) both have the comment "for some reason in double/quad size mode
+the player's output is delayed by one pixel thus we use > instead of >=" —
+a documented NMOS-TIA quirk that shifts wide-mode players one pixel right.
+**Fix (both ports):** in `_overlay_player` / `_player_set`, add a +1 pixel
+offset to the rendered/collision base position when `scale > 1` (modes 5
+and 7). Mirrors xitari's mask offset exactly.
+**Result:** Breakout paddle now at x=99-114, byte-identical to xitari on
+rows 189-194; screen-vs-xitari ndiff dropped **16 → 8 per frame** (the
+only residual is an 8-px corner block xitari draws on row 195 that we
+miss — looks like a P1 VDELP-shadow scanline). The same fix improved
+**seaquest 3946→3940** and **enduro 1988→1972** (those games also use
+the wide player modes). pong/space_invaders/pitfall unchanged. RAM stays
+bit-exact for breakout (collision-set patch is correctness-faithful, not
+behaviour-changing).
 
 ### P3i-g part 2 — beam_cc threading + always-defer PF writes (Breakout "red columns" / flicker) (2026-05-29)
 **Symptom (user report):** Breakout's *first* frame already showed big red

@@ -782,9 +782,14 @@ function _overlay_player!(pixels::Vector{UInt8}, tia::TIAState, player::Int)
 
     # GRP bit 7 is leftmost by default; REFP.D3 reverses bit order.
     # Each of the 8 bits paints `scale` adjacent screen pixels, at
-    # every requested copy offset.
+    # every requested copy offset. NUSIZ wide modes (scale > 1, ie.
+    # double-size NUSIZ=5 and quad-size NUSIZ=7) get a +1 pixel offset
+    # (xitari `computePlayerMaskTable` bakes this in: "in double/quad
+    # size mode the player's output is delayed by one pixel" — a real
+    # NMOS-TIA quirk).
+    nusiz_offset = scale > 1 ? 1 : 0
     @inbounds for copy_off in copy_offsets
-        base = mod(x + copy_off, 160)
+        base = mod(x + copy_off + nusiz_offset, 160)
         for i in 0:7
             bit_idx = reflected ? i : (7 - i)
             if (Int(grp) >> bit_idx) & 1 != 0
@@ -1022,8 +1027,11 @@ function _object_pixel_sets(tia::TIAState)
         grp == 0 && return out
         reflected = (tia.registers[refp_reg + 1] & 0x08) != 0
         copy_offsets, scale = _nusiz_player_layout(tia.registers[nusiz_reg + 1])
+        # +1 pixel offset for wide modes (scale > 1) — matches xitari's
+        # quad/double-size mask quirk; see `_overlay_player!`.
+        nusiz_offset = scale > 1 ? 1 : 0
         for copy_off in copy_offsets
-            base = mod(x + copy_off, 160)
+            base = mod(x + copy_off + nusiz_offset, 160)
             for i in 0:7
                 bit_idx = reflected ? i : (7 - i)
                 if (Int(grp) >> bit_idx) & 1 != 0
