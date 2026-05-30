@@ -416,6 +416,12 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
                    beam_sc::Integer = tia.scanline_cycle)
     reg = Int(addr) & 0x3F                # TIA decodes A0–A5
     value8 = UInt8(Int(value) & 0xFF)
+    # COLU* (P0/P1/PF/BK): bit 0 of the color-luminance registers is
+    # unused on real NMOS hardware — xitari masks `value & 0xFE` on every
+    # poke (`case 0x06..0x09` in `TIA::poke`). Same fix in jaxtari.
+    if reg == W_COLUP0 || reg == W_COLUP1 || reg == W_COLUPF || reg == W_COLUBK
+        value8 &= 0xFE
+    end
     # P3i-g part 2 (timing-only CPU↔TIA threading): `beam_cc` / `beam_sc`
     # are the *effective* sub-instruction beam position at the moment
     # this write hits the bus (instruction-start clock + cycles-so-far*3),

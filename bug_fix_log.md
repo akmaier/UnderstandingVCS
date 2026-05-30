@@ -34,7 +34,7 @@ Numbers = RAM bytes differing from xitari on the last frame.
 | ROM | screen ndiff | notes |
 |---|---|---|
 | breakout | **8** | only 1 row residual (P1 corner block on row 195, likely VDELP1 shadow) |
-| pong | 29760 | large pre-existing rendering gap (sprite/net/score) |
+| pong | **920** | dropped 29760→920 by COLU `& 0xFE` mask (pt4); residual is real sprite/timing |
 | space_invaders | 2145 | rendering gap |
 | pitfall | 1786 | rendering gap |
 | seaquest | 3940 | rendering gap (improved 3946→3940 by pt3 NUSIZ +1) |
@@ -48,6 +48,27 @@ move in lock-step (recipe in that file's header comment).
 ---
 
 ## Patches landed (newest first)
+
+### P3i-g part 4 — mask `COLU* & 0xFE` (pong screen 29760 → 920) (2026-05-30)
+**Symptom:** PXC-S pong screen ndiff was 29760/frame — almost the entire
+160×210 framebuffer differing from xitari, despite RAM being bit-exact and
+the rendered frames *looking* identical to the eye in the side-by-side
+video.
+**Diagnosis:** Compared the per-pixel byte values: xitari produced even
+palette indices (228, 138, 250); jaxtari/jutari the odd siblings
+(229, 139, 251). The Stella NTSC palette has the same RGB at index N and
+N+1, so the rendered colour is identical — only the encoded byte differs.
+Checked xitari `TIA::poke` cases 0x06–0x09 (COLUP0/COLUP1/COLUPF/COLUBK):
+they each mask `value & 0xFE` ("bit 0 of the color-luminance registers is
+unused on real NMOS hardware"). My code stored the raw value, so any ROM
+that wrote an odd luminance produced odd palette indices.
+**Fix:** in both ports' `tia_poke`/`tia_poke!`, mask `value & 0xFE` when
+`reg` is COLUP0/COLUP1/COLUPF/COLUBK (`0x06..0x09`).
+**Result:** **pong screen 29760 → 920** (97% reduction; the remaining
+920 px is real sprite/timing divergence — paddles/ball/score positions).
+Other ROMs unchanged (they happened to only write even luminance values
+already). RAM unchanged everywhere (this is a TIA-register store, not
+game logic).
 
 ### P3i-g part 3 — NUSIZ wide-mode +1 pixel offset (Breakout paddle 1 px off) (2026-05-30)
 **Symptom:** After P3i-g pt2 fixed Breakout's walls + bricks + red columns,

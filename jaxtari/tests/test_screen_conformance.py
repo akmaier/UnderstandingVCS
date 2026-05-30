@@ -60,10 +60,12 @@ class _Case(NamedTuple):
 
 _CASES = [
     # P3i-g pt3 NUSIZ-wide +1 quirk fix: breakout 16->8, seaquest 3946->3940,
-    # enduro 1988->1972. pong/space_invaders/pitfall don't use the wide modes
-    # for their visible sprites so they're unchanged.
+    # enduro 1988->1972. pt4 COLU& 0xFE mask: pong 29760->920 (the LSB of
+    # the colour-luminance registers is unused on real hardware; ROMs that
+    # write odd values produce visually-identical frames but byte-level
+    # diffs against xitari's masked store).
     _Case("breakout_noop_10",       "breakout.bin",          8),
-    _Case("pong_noop_10",           "pong.bin",            29760),
+    _Case("pong_noop_10",           "pong.bin",            920),
     _Case("space_invaders_noop_10", "space_invaders.bin",  2145),
     _Case("pitfall_noop_10",        "pitfall.bin",         1786),
     _Case("seaquest_noop_10",       "seaquest.bin",        3940),

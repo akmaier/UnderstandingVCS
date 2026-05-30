@@ -663,6 +663,16 @@ def tia_poke(tia: TIAState, addr: int, value: int,
     """
     reg = addr & 0x3F                                    # TIA decodes A0–A5
     value8 = value & 0xFF
+    # COLU* (P0/P1/PF/BK): bit 0 of the color-luminance registers is
+    # unused on real NMOS hardware — xitari masks `value & 0xFE` on every
+    # poke (`case 0x06..0x09` in `TIA::poke`). Otherwise a ROM that writes
+    # an odd luminance produces palette indices off by 1 from xitari (the
+    # Stella NTSC palette has the same RGB at both N and N+1, so the
+    # pixel *looks* identical, but the screen-conformance test counts the
+    # byte-level diff — and pong/seaquest/etc. happen to write odd
+    # values, accounting for almost all of pong's apparent screen gap).
+    if reg in (W_COLUP0, W_COLUP1, W_COLUPF, W_COLUBK):
+        value8 &= 0xFE
     if beam_cc is None:
         beam_cc = int(tia.color_clock)
     if beam_sc is None:
