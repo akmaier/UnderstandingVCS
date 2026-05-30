@@ -684,7 +684,16 @@ def tia_poke(tia: TIAState, addr: int, value: int,
     # by convention "scanline setup" and just take effect for the
     # whole next scanline; deferring them generates a no-op gap that
     # produces the same render as the immediate apply.
-    if reg in (W_PF0, W_PF1, W_PF2) and beam_cc >= HBLANK_COLOR_CLOCKS:
+    # P3i-g pt6: also defer the missile/ball enable bits (ENAM0/ENAM1/
+    # ENABL). Their delay in `_POKE_DELAY_TABLE` is 0, so an immediate
+    # apply lands at the write cc, but a *whole-scanline* batched apply
+    # loses the mid-scanline transition: e.g. breakout disables ENAM1
+    # at cc=105 on the last paddle scanline, expecting cols 0..7 (cc
+    # 68..75) to still see M1 enabled. With this defer, the per-color-
+    # clock render loop applies the ENAM1=0 at cc=105 and M1 paints
+    # cols 0..7 as expected. (8 px residual on breakout row 195.)
+    if reg in (W_PF0, W_PF1, W_PF2, W_ENAM0, W_ENAM1, W_ENABL) \
+            and beam_cc >= HBLANK_COLOR_CLOCKS:
         delay = _poke_activation_delay(reg, beam_cc)
         activation_clock = beam_cc + delay
         # ALWAYS queue the write — even when `activation_clock >= 228`

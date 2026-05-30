@@ -33,7 +33,7 @@ Numbers = RAM bytes differing from xitari on the last frame.
 
 | ROM | screen ndiff | notes |
 |---|---|---|
-| breakout | **8** | only 1 row residual (P1 corner block on row 195, likely VDELP1 shadow) |
+| breakout | **0** | BIT-EXACT (8→0 by pt6 defer-ENAM/ENABL — closed the row-195 M1 leading-edge residual) |
 | pong | **568** | 29760→920 (pt4 COLU mask)→568 (pt5 SCOREMODE: PF LEFT half→COLUP0, RIGHT→COLUP1) |
 | space_invaders | 2145 | rendering gap |
 | pitfall | 1786 | rendering gap |
@@ -48,6 +48,45 @@ move in lock-step (recipe in that file's header comment).
 ---
 
 ## Patches landed (newest first)
+
+### P3i-g part 6 — defer ENAM0/ENAM1/ENABL to activation cc (breakout screen 8 → 0) (2026-05-30)
+**Symptom:** The pinned breakout PXC-S residual of 8 px/frame, *every* frame,
+at row 195 cols 0-7 — a single 8-px-wide block of palette index 182 that
+xitari paints but jaxtari/jutari leaves as background (0). All other rows
+matched bit-exactly.
+**Diagnosis:** Probed `xitari/tools/trace_dump --screen` poke log around
+TIA scanline 229 (= screen row 195 + Y_START 34). Found ENAM1 was set
+to `$ff` (enabled, bit 1 set) all the way back at sl 51 and then *not
+disabled until sl 229 xpos=105* — i.e. mid-scanline, in the visible
+region. M1 is at position 0 with NUSIZ1=$ff (width 8) so it covers cols
+0..7. **Xitari's per-color-clock renderer sees ENAM1 enabled at cc
+68..104 (= cols 0..37) and disabled at cc 105+**, so M1 paints cols
+0..7 before the disable. My port applied the ENAM1=0 write
+*immediately* on poke, before the scanline render loop ran — so M1 was
+already disabled when the renderer reached cc=68, and cols 0..7 stayed
+background.
+**Fix (both ports):** extend the existing PF0/PF1/PF2 deferred-write
+mechanism (`pending_writes` queue, drained per-color-clock inside
+`tia_advance`) to also cover **ENAM0/ENAM1/ENABL**. A write in the
+visible region (`beam_cc >= HBLANK_COLOR_CLOCKS`) is queued with
+`activation_clock = beam_cc + delay` (delay 0 per xitari's
+`ourPokeDelayTable`); the render loop applies it at the right cc, so
+sprites enabled at the start of visible can still paint their leading
+pixels before a mid-scanline disable. HBLANK writes (cc < 68) keep
+the immediate-apply path (xitari semantics give the same result for
+scanline-setup writes).
+**Result:** **breakout screen 8 → 0 px/frame** (full bit-exact screen
+in PXC-S). Other ROMs unchanged in the noop fixtures (most don't
+disable sprites mid-scanline at the leading edge). PXC2 still
+byte-identical (this is a render-only change; RAM is unaffected).
+**Test-pin maintenance:** the same regen-jutari-fixture + tighten-pin
+recipe — `tools/fixtures/screens/breakout_noop_10_jutari.screen.gz`
+regenerated, `_CASES["breakout_noop_10"].max_screen_diff` 8 → 0.
+**Stale jutari unit tests surfaced:** with the bigger PXC-S unit
+suite reaching tests it had been failing-out-of, four tests asserting
+on odd COLU* values (pt4 `& 0xFE` mask) and three NUSIZ-wide-mode
+position tests (pt3 `+1 px` offset) needed updating. Both classes were
+pre-existing test debt from pt3/pt4 commits — not new regressions.
 
 ### P3i-g part 5 — CTRLPF.D1 SCOREMODE (pong screen 920 → 568) (2026-05-30)
 **Symptom:** PXC-S pong's 920-px residual concentrated in the score-area

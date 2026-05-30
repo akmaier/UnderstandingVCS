@@ -1881,16 +1881,19 @@ end
     end
 
     @testset "player paints over playfield" begin
+        # COLU* values: bit 0 unused on real NMOS hardware, masked
+        # `& 0xFE` by `tia_poke!` (P3i-g pt4). Use even values so the
+        # rendered byte equals the written byte directly.
         tia = initial_tia_state(); tia.p0_x = 4
         tia_poke!(tia, W_GRP0, 0xFF); tia_poke!(tia, W_COLUP0, 0x42)
         tia_poke!(tia, W_PF0, 0xF0)
-        tia_poke!(tia, W_COLUBK, 0x11); tia_poke!(tia, W_COLUPF, 0x33)
+        tia_poke!(tia, W_COLUBK, 0x10); tia_poke!(tia, W_COLUPF, 0x32)
         scanline = render_scanline(tia)
-        @test scanline[1] == 0x33             # pixel 0 — playfield only
+        @test scanline[1] == 0x32             # pixel 0 — playfield only
         for i in 5:12                         # pixels 4..11 — player overrides
             @test scanline[i] == 0x42
         end
-        @test scanline[13] == 0x33            # pixel 12 — playfield only
+        @test scanline[13] == 0x32            # pixel 12 — playfield only
     end
 
     @testset "player wraps at right edge" begin
@@ -5327,16 +5330,16 @@ end
 
     @testset "VDELBL=0 renders current ENABL" begin
         tia = initial_tia_state(); tia.bl_x = 10
-        tia_poke!(tia, W_COLUBK, 0x00); tia_poke!(tia, W_COLUPF, 0x33)
+        tia_poke!(tia, W_COLUBK, 0x00); tia_poke!(tia, W_COLUPF, 0x32)  # COLU even (pt4 & 0xFE mask)
         tia_poke!(tia, W_ENABL, 0x02)
         scan = render_scanline(tia)
-        @test scan[11] == 0x33
+        @test scan[11] == 0x32
     end
 
     @testset "VDELBL=1 uses shadow ENABL — invisible when shadow off" begin
         tia = initial_tia_state(); tia.bl_x = 10
         tia.enabl_old = 0x00
-        tia_poke!(tia, W_COLUBK, 0x00); tia_poke!(tia, W_COLUPF, 0x33)
+        tia_poke!(tia, W_COLUBK, 0x00); tia_poke!(tia, W_COLUPF, 0x32)  # COLU even (pt4 & 0xFE mask)
         tia_poke!(tia, W_VDELBL, 0x01)
         tia_poke!(tia, W_ENABL, 0x02)    # current = on, shadow = off → off
         scan = render_scanline(tia)
@@ -5346,11 +5349,11 @@ end
     @testset "VDELBL=1 with enabled shadow paints even when current ENABL=0" begin
         tia = initial_tia_state(); tia.bl_x = 10
         tia.enabl_old = 0x02
-        tia_poke!(tia, W_COLUBK, 0x00); tia_poke!(tia, W_COLUPF, 0x33)
+        tia_poke!(tia, W_COLUBK, 0x00); tia_poke!(tia, W_COLUPF, 0x32)  # COLU even (pt4 & 0xFE mask)
         tia_poke!(tia, W_VDELBL, 0x01)
         tia_poke!(tia, W_ENABL, 0x00)
         scan = render_scanline(tia)
-        @test scan[11] == 0x33
+        @test scan[11] == 0x32
     end
 end
 
@@ -5407,40 +5410,51 @@ end
     end
 
     @testset "HARD NUSIZ 101 — double-size player" begin
+        # P3i-g pt3: wide-mode players (scale 2/4, NUSIZ 5 and 7) have
+        # a +1 pixel render offset — real-NMOS-TIA quirk baked into
+        # xitari's `computePlayerMaskTable`. So a NUSIZ-5 player at
+        # p0_x=0 paints x=1..16, not x=0..15.
         tia = _setup(0b101, 0)
         scan = render_scanline(tia)
-        @test all(scan[i + 1] == 0x42 for i in 0:15)
-        @test scan[17] == 0
+        @test all(scan[i + 1] == 0x42 for i in 1:16)
+        @test scan[1]  == 0
+        @test scan[18] == 0
     end
 
     @testset "HARD NUSIZ 111 — quadruple-size player" begin
+        # P3i-g pt3 wide-mode +1 offset: NUSIZ-7 at p0_x=0 paints x=1..32.
         tia = _setup(0b111, 0)
         scan = render_scanline(tia)
-        @test all(scan[i + 1] == 0x42 for i in 0:31)
-        @test scan[33] == 0
+        @test all(scan[i + 1] == 0x42 for i in 1:32)
+        @test scan[1]  == 0
+        @test scan[34] == 0
     end
 
     @testset "HARD double-size GRP=0x80 paints bit 7 across 2 px" begin
+        # P3i-g pt3 wide-mode +1 offset: a NUSIZ-5 player at p0_x=10
+        # with GRP=0x80 (bit 7 only) paints x=11..12 → scan[12..13].
         tia = initial_tia_state(); tia.p0_x = 10
         tia_poke!(tia, W_COLUBK, 0x00); tia_poke!(tia, W_COLUP0, 0x42)
         tia_poke!(tia, W_GRP0, 0x80)                  # bit 7 only
         tia_poke!(tia, W_NUSIZ0, 0b101)               # 2× scale
         scan = render_scanline(tia)
-        @test scan[11] == 0x42
         @test scan[12] == 0x42
-        @test scan[13] == 0
+        @test scan[13] == 0x42
+        @test scan[11] == 0
+        @test scan[14] == 0
     end
 
     @testset "HARD missile inherits NUSIZ multi-copy" begin
+        # COLU even (pt4 & 0xFE mask).
         tia = initial_tia_state(); tia.m0_x = 0
         tia_poke!(tia, W_COLUBK, 0x00)
-        tia_poke!(tia, W_COLUP0, 0x55)
+        tia_poke!(tia, W_COLUP0, 0x54)
         tia_poke!(tia, W_ENAM0,  0x02)
         tia_poke!(tia, W_NUSIZ0, 0b011)               # 3 close copies
         scan = render_scanline(tia)
-        @test scan[1]  == 0x55
-        @test scan[17] == 0x55
-        @test scan[33] == 0x55
+        @test scan[1]  == 0x54
+        @test scan[17] == 0x54
+        @test scan[33] == 0x54
         @test scan[2]  == 0
     end
 

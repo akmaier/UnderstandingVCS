@@ -66,8 +66,11 @@ _CASES = [
     # diffs against xitari's masked store). pt5 CTRLPF.D1 SCOREMODE:
     # pong 920->568 — pong's score area uses score mode so the LEFT
     # playfield half is coloured by COLUP0 and the RIGHT by COLUP1
-    # instead of COLUPF.
-    _Case("breakout_noop_10",       "breakout.bin",          8),
+    # instead of COLUPF. pt6 defer ENAM0/ENAM1/ENABL to activation cc:
+    # breakout 8->0 (mid-scanline ENAM1=0 on sl 229 cc=105 was blanking
+    # M1 for the whole scanline; deferring the write lets M1 paint
+    # cols 0..7 before the disable hits).
+    _Case("breakout_noop_10",       "breakout.bin",          0),
     _Case("pong_noop_10",           "pong.bin",            568),
     _Case("space_invaders_noop_10", "space_invaders.bin",  2145),
     _Case("pitfall_noop_10",        "pitfall.bin",         1786),

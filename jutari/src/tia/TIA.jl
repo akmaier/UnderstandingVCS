@@ -437,7 +437,12 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
     # in the visible region but pre-HBLANK pokes are by convention
     # "scanline setup" and applying them immediately for the whole
     # scanline gives the same render. Same logic as jaxtari.
-    if (reg == W_PF0 || reg == W_PF1 || reg == W_PF2) &&
+    # P3i-g pt6: also defer ENAM0/ENAM1/ENABL so a mid-scanline
+    # missile/ball disable (e.g. breakout sl 229 ENAM1=0 at cc=105)
+    # only blanks the missile from that color clock onwards, not for
+    # the whole scanline. Closes the 8 px residual on breakout row 195.
+    if (reg == W_PF0 || reg == W_PF1 || reg == W_PF2 ||
+        reg == W_ENAM0 || reg == W_ENAM1 || reg == W_ENABL) &&
        beam_cc >= HBLANK_COLOR_CLOCKS
         delay = _poke_activation_delay(reg, beam_cc)
         activation_clock = Int(beam_cc) + delay
