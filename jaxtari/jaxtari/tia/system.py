@@ -692,7 +692,26 @@ def tia_poke(tia: TIAState, addr: int, value: int,
     # 68..75) to still see M1 enabled. With this defer, the per-color-
     # clock render loop applies the ENAM1=0 at cc=105 and M1 paints
     # cols 0..7 as expected. (8 px residual on breakout row 195.)
-    if reg in (W_PF0, W_PF1, W_PF2, W_ENAM0, W_ENAM1, W_ENABL) \
+    # P3i-g pt7: extend the defer set to NUSIZ/REFP/COLU/CTRLPF — all
+    # "no-side-effect" render registers (the renderer just reads them).
+    # Xitari's `TIA::poke` does `updateFrame(clock + delay)` BEFORE
+    # applying any poke, so even a delay=0 write doesn't affect pixels
+    # rendered BEFORE the write's CPU cycle on the same scanline. My
+    # whole-scanline batched apply was lumping those pre-write pixels
+    # into the post-write state (visible in pong's score-digit fragment
+    # diffs + cross-scanline COLUBK rows). Deferring them through the
+    # same `pending_writes` machinery makes the per-color-clock renderer
+    # see the right value at every cc, matching xitari.
+    # NOT deferred (have non-trivial side effects beyond a register store):
+    #   GRP0/GRP1 (latch VDELP shadows on write — would need to defer the
+    #     latch too), WSYNC (stalls CPU), VSYNC (frame-boundary trigger),
+    #     RES* (sprite-position update), HMOVE (motion strobe),
+    #     CXCLR (collision reset), VBLANK (also has dump-pot side effects).
+    if reg in (W_PF0, W_PF1, W_PF2,
+               W_ENAM0, W_ENAM1, W_ENABL,
+               W_NUSIZ0, W_NUSIZ1,
+               W_COLUP0, W_COLUP1, W_COLUPF, W_COLUBK,
+               W_CTRLPF, W_REFP0, W_REFP1) \
             and beam_cc >= HBLANK_COLOR_CLOCKS:
         delay = _poke_activation_delay(reg, beam_cc)
         activation_clock = beam_cc + delay

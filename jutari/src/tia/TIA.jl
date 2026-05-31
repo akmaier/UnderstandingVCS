@@ -441,8 +441,19 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
     # missile/ball disable (e.g. breakout sl 229 ENAM1=0 at cc=105)
     # only blanks the missile from that color clock onwards, not for
     # the whole scanline. Closes the 8 px residual on breakout row 195.
+    # P3i-g pt7: extend to NUSIZ/REFP/COLU/CTRLPF — all "no-side-effect"
+    # render registers. Xitari's poke does `updateFrame(clock+delay)`
+    # before applying any poke, so even delay=0 writes don't affect
+    # pixels rendered before the write's CPU cycle. Whole-scanline
+    # batched apply was lumping them all into the post-write state.
+    # Net: space_invaders 2145→2079, enduro 1972→1954. NOT deferred:
+    # GRP*/WSYNC/VSYNC/RES*/HMOVE/CXCLR/VBLANK (they have side effects
+    # beyond a register store).
     if (reg == W_PF0 || reg == W_PF1 || reg == W_PF2 ||
-        reg == W_ENAM0 || reg == W_ENAM1 || reg == W_ENABL) &&
+        reg == W_ENAM0 || reg == W_ENAM1 || reg == W_ENABL ||
+        reg == W_NUSIZ0 || reg == W_NUSIZ1 ||
+        reg == W_COLUP0 || reg == W_COLUP1 || reg == W_COLUPF || reg == W_COLUBK ||
+        reg == W_CTRLPF || reg == W_REFP0 || reg == W_REFP1) &&
        beam_cc >= HBLANK_COLOR_CLOCKS
         delay = _poke_activation_delay(reg, beam_cc)
         activation_clock = Int(beam_cc) + delay

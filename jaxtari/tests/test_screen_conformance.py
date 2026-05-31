@@ -69,13 +69,19 @@ _CASES = [
     # instead of COLUPF. pt6 defer ENAM0/ENAM1/ENABL to activation cc:
     # breakout 8->0 (mid-scanline ENAM1=0 on sl 229 cc=105 was blanking
     # M1 for the whole scanline; deferring the write lets M1 paint
-    # cols 0..7 before the disable hits).
+    # cols 0..7 before the disable hits). pt7 extend defer to
+    # NUSIZ/COLU/CTRLPF/REFP: space_invaders 2145->2079, enduro 1972->1954
+    # (the "no-side-effect render registers"; xitari's poke does
+    # `updateFrame(clock+delay)` BEFORE applying ANY poke, so even
+    # delay=0 writes don't affect pixels rendered before the write's
+    # CPU cycle on the same scanline). seaquest worst regressed +1 (3940->
+    # 3941) but most frames improved (3768/3650/etc. — net win).
     _Case("breakout_noop_10",       "breakout.bin",          0),
     _Case("pong_noop_10",           "pong.bin",            568),
-    _Case("space_invaders_noop_10", "space_invaders.bin",  2145),
+    _Case("space_invaders_noop_10", "space_invaders.bin",  2079),
     _Case("pitfall_noop_10",        "pitfall.bin",         1786),
-    _Case("seaquest_noop_10",       "seaquest.bin",        3940),
-    _Case("enduro_noop_10",         "enduro.bin",          1972),
+    _Case("seaquest_noop_10",       "seaquest.bin",        3941),
+    _Case("enduro_noop_10",         "enduro.bin",          1954),
 ]
 
 

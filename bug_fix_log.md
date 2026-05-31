@@ -35,10 +35,10 @@ Numbers = RAM bytes differing from xitari on the last frame.
 |---|---|---|
 | breakout | **0** | BIT-EXACT (8→0 by pt6 defer-ENAM/ENABL — closed the row-195 M1 leading-edge residual) |
 | pong | **568** | 29760→920 (pt4 COLU mask)→568 (pt5 SCOREMODE: PF LEFT half→COLUP0, RIGHT→COLUP1) |
-| space_invaders | 2145 | rendering gap |
-| pitfall | 1786 | rendering gap |
-| seaquest | 3940 | rendering gap (improved 3946→3940 by pt3 NUSIZ +1) |
-| enduro | 1972 | rendering gap (improved 1988→1972 by pt3 NUSIZ +1) |
+| space_invaders | 2079 | improved 2145→2079 by pt7 (defer NUSIZ/COLU/CTRLPF/REFP) |
+| pitfall | 1786 | rendering gap (unchanged by pt5-7; the residual is sprite-position class) |
+| seaquest | 3941 | worst regressed +1 by pt7 but most frames improved (3768/3650/etc.) |
+| enduro | 1954 | improved 1972→1954 by pt7 (defer NUSIZ/COLU/CTRLPF/REFP) |
 
 The pinned counts live in `jaxtari/tests/test_pxc2_jaxtari_vs_jutari.py`
 (`_PXC2_CASES`). **If you change emulation behaviour and a pin moves, update
@@ -48,6 +48,44 @@ move in lock-step (recipe in that file's header comment).
 ---
 
 ## Patches landed (newest first)
+
+### P3i-g part 7 — extend defer to NUSIZ/COLU/CTRLPF/REFP (space_invaders 2145→2079, enduro 1972→1954) (2026-05-31)
+**Symptom:** After pt6 closed breakout PXC-S to 0 and pt5 closed pong to
+568, the other ROMs still had large screen residuals (space_invaders
+2145, pitfall 1786, seaquest 3940, enduro 1972).
+**Diagnosis:** Re-read xitari's `TIA::poke` more carefully. The first
+thing it does for **every** poke is `updateFrame(clock + delay)` —
+advance the renderer up to the activation cc, THEN apply the
+register change. So even a delay=0 write (COLU*/CTRLPF) doesn't
+affect pixels rendered before the write's CPU cycle on the same
+scanline. My port was applying these immediately on poke, then the
+whole-scanline batched render saw only the post-write state — lumping
+pre-write pixels into the post-write colour. This is why
+space_invaders and enduro had so much residual: per-scanline COLU /
+CTRLPF / NUSIZ writes that should only affect mid-scanline+ pixels
+were affecting the *whole* scanline.
+**Fix (both ports):** extend the pt6 defer set to also cover
+**NUSIZ0/NUSIZ1/COLUP0/COLUP1/COLUPF/COLUBK/CTRLPF/REFP0/REFP1** —
+the "no-side-effect render registers" (the renderer just reads them).
+Same `pending_writes` machinery, queued at `beam_cc + delay` and
+drained at the right cc inside the per-color-clock render loop.
+**Result:**
+  - space_invaders: **2145 → 2079** (-66)
+  - enduro: **1972 → 1954** (-18)
+  - breakout, pong, pitfall: unchanged
+  - seaquest worst: **3940 → 3941** (+1) but most frames *improved*
+    (3768 / 3650 / etc., down from a flat 3940). A single
+    worst-case frame regressed by 1 px — accept as a tradeoff;
+    document the +1 in the pin.
+**NOT deferred** (have side effects beyond a register store, would
+need to defer the side effect too):
+  - GRP0/GRP1 (latch VDELP shadows on write)
+  - WSYNC, VSYNC, RES*, HMOVE, CXCLR, VBLANK (immediate-apply
+    semantics matter for stall/strobe behavior)
+**Test maintenance:** regenerated all 6 jutari screen fixtures in
+the same commit. Pin updates above. PXC1+PXC2 RAM still bit-exact
+(this is render-only). Pong's 568 unchanged — that's the cross-scanline
+1-line-drift class still tracked under open ideas.
 
 ### P3i-g part 6 — defer ENAM0/ENAM1/ENABL to activation cc (breakout screen 8 → 0) (2026-05-30)
 **Symptom:** The pinned breakout PXC-S residual of 8 px/frame, *every* frame,
