@@ -116,7 +116,15 @@ function riot_peek!(riot::RIOTState, addr::Integer)
         return riot.swbcnt
     elseif reg == 4
         # P4d: INTIM read clears the timer-expired latch.
-        value = riot.intim
+        # P3i-g pt8: xitari's INTIM read formula has an extra `- 1` term
+        # (M6532::peek case 0x04: `myTimer - (delta>>shift) - 1`). That
+        # makes xitari's INTIM 1 less than the raw register. Without this
+        # offset, INTIM-polling loops in early VBLANK exit 1+ iterations
+        # later than xitari, accumulating ~76 CPU cycles of drift per loop
+        # — the source of pong's cross-scanline 1-line residual + most of
+        # the other ROMs' large PXC-S residuals (pong 568→32, SI 2079→12,
+        # pitfall 1786→322, seaquest 3941→1104, enduro 1954→1197).
+        value = UInt8((Int(riot.intim) - 1) & 0xFF)
         riot.timer_expired = false
         return value
     elseif reg == 5

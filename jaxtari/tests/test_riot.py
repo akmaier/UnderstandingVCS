@@ -174,8 +174,12 @@ def test_instat_d7_set_after_expiration():
 
 
 def test_intim_readable_via_peek():
+    # P3i-g pt8: xitari's INTIM read formula has an extra `- 1`
+    # (`myTimer - (delta>>shift) - 1`), so reading INTIM immediately
+    # after a TIM*T write of 42 returns 41 (not 42). Required to match
+    # xitari's per-cycle INTIM polling behaviour in pong/SI/etc.
     r = riot_poke(initial_riot_state(), 0x0294, 42)
-    assert riot_peek(r, 0x0284)[0] == 42
+    assert riot_peek(r, 0x0284)[0] == 41
 
 
 # --------------------------------------------------------------------------- #

@@ -2412,8 +2412,12 @@ end
     end
 
     @testset "INTIM readable via peek" begin
+        # P3i-g pt8: xitari's INTIM read formula has an extra `- 1`
+        # (`myTimer - (delta>>shift) - 1`), so reading INTIM immediately
+        # after a TIM*T write of 42 returns 41 (not 42). Required to
+        # match xitari's per-cycle INTIM polling behaviour in pong/SI/etc.
         r = initial_riot_state(); riot_poke!(r, 0x0294, 42)
-        @test riot_peek(r, 0x0284) == 42
+        @test riot_peek(r, 0x0284) == 41
     end
 
     # P4d — INTIM read clears the timer-expired latch (real MOS 6532

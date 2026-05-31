@@ -33,12 +33,12 @@ Numbers = RAM bytes differing from xitari on the last frame.
 
 | ROM | screen ndiff | notes |
 |---|---|---|
-| breakout | **0** | BIT-EXACT (8→0 by pt6 defer-ENAM/ENABL — closed the row-195 M1 leading-edge residual) |
-| pong | **568** | 29760→920 (pt4 COLU mask)→568 (pt5 SCOREMODE: PF LEFT half→COLUP0, RIGHT→COLUP1) |
-| space_invaders | 2079 | improved 2145→2079 by pt7 (defer NUSIZ/COLU/CTRLPF/REFP) |
-| pitfall | 1786 | rendering gap (unchanged by pt5-7; the residual is sprite-position class) |
-| seaquest | 3941 | worst regressed +1 by pt7 but most frames improved (3768/3650/etc.) |
-| enduro | 1954 | improved 1972→1954 by pt7 (defer NUSIZ/COLU/CTRLPF/REFP) |
+| breakout | **0** | BIT-EXACT (8→0 by pt6 defer-ENAM/ENABL) |
+| pong | **32** | 29760→920 (pt4 COLU mask)→568 (pt5 SCOREMODE)→32 (pt8 INTIM `-1`) |
+| space_invaders | **12** | 2145→2079 (pt7)→12 (pt8 INTIM `-1` — near bit-exact) |
+| pitfall | **322** | 1786 unchanged through pt7; 1786→322 by pt8 INTIM `-1` |
+| seaquest | **1104** | 3941 (pt7)→1104 by pt8 INTIM `-1` |
+| enduro | **1197** | 1972→1954 (pt7)→1197 by pt8 INTIM `-1` |
 
 The pinned counts live in `jaxtari/tests/test_pxc2_jaxtari_vs_jutari.py`
 (`_PXC2_CASES`). **If you change emulation behaviour and a pin moves, update
@@ -48,6 +48,53 @@ move in lock-step (recipe in that file's header comment).
 ---
 
 ## Patches landed (newest first)
+
+### P3i-g part 8 — RIOT INTIM `-1` offset (pong 568→32, SI 2079→12, pitfall 1786→322, seaquest 3941→1104, enduro 1954→1197) (2026-05-31)
+**Symptom:** Pong's PXC-S residual 568 px was *structurally* three full
+boundary rows (24/34/194) where xitari renders the strip-on PF colour but
+jaxtari renders the previous-row colour — a 1-scanline lag on the
+`PF=$ff` strip-activation writes. Same pattern in SI / pitfall /
+seaquest / enduro at varying scales.
+**Diagnosis path:**
+  1. Confirmed via row-fingerprint probe that rows 24/34/194 in pong
+     match xitari with a +1-row shift.
+  2. Instrumented `_bus_poke` — pong's `PF=$ff` writes land at sl 59 cc=39
+     in jaxtari vs sl 58 xpos=39 in xitari (same intra-scanline beam,
+     one scanline later).
+  3. Counted WSYNCs: xitari has 133 in pong frame 1, jaxtari only 131.
+     The 5th + 6th WSYNCs (xitari sl 14 + sl 22) are missing in jaxtari;
+     re-aligned WSYNCs then drift +1 scanline.
+  4. Frame-1 RAM is **identical** between ports — so it's not a RAM-state
+     branch divergence.
+  5. Instrumented all TIA/RIOT peeks: pong polls **INTIM** intensely
+     starting at sl 14 (returns 0x10, 0x0f, 0x0f, ... every 21 cc).
+  6. Read `xitari/emucore/M6532.cxx` case 0x04: xitari's INTIM formula is
+     `myTimer - (delta>>shift) - 1` — an **extra `- 1`** that makes
+     xitari's INTIM appear 1 less than the raw register value at all
+     times. My port returned the raw register value → my INTIM is always
+     1 higher than xitari's at the same CPU instruction → polling loops
+     exit 1+ iterations LATER → 76 CPU cycles drift per polling loop
+     (compounded across multiple loops to give the observed full-line
+     drift on PF writes).
+**Fix (both ports):** in `riot_peek` for reg=4 (INTIM), return
+`(intim - 1) & 0xFF` instead of `intim`. When `intim == 0` this returns
+`0xFF`, matching xitari's just-expired post-formula value. Pre-/post-
+expired state transitions are unchanged in the underlying state — only
+the read output is shifted.
+**Result (PXC-S, worst frame across 10 frames):**
+  - **pong: 568 → 32** (−536, **94%** reduction)
+  - **space_invaders: 2079 → 12** (−2067, **99.4%**)
+  - **pitfall: 1786 → 322** (−1464, **82%**)
+  - **seaquest: 3941 → 1104** (−2837, **72%**)
+  - **enduro: 1954 → 1197** (−757, **39%**)
+  - breakout: unchanged (still 0, BIT-EXACT)
+  - Total worst-frame screen diff: ~10,328 → 2,667 (a 74% drop)
+PXC1 RAM stays bit-exact for pong / breakout / space_invaders, and the
+other pre-existing PXC1 residuals (seaquest 4, pitfall 19, enduro 43)
+are unchanged. PXC2 (jaxtari ≡ jutari) byte-identical across all 12
+ROMs. **One unit-test update** (`tests/test_riot.py::test_intim_readable_via_peek`
++ jutari mirror): the test wrote 42 and expected to read back 42;
+now correctly expects 41 per xitari semantics.
 
 ### P3i-g part 7 — extend defer to NUSIZ/COLU/CTRLPF/REFP (space_invaders 2145→2079, enduro 1972→1954) (2026-05-31)
 **Symptom:** After pt6 closed breakout PXC-S to 0 and pt5 closed pong to

@@ -64,24 +64,26 @@ _CASES = [
     # the colour-luminance registers is unused on real hardware; ROMs that
     # write odd values produce visually-identical frames but byte-level
     # diffs against xitari's masked store). pt5 CTRLPF.D1 SCOREMODE:
-    # pong 920->568 — pong's score area uses score mode so the LEFT
-    # playfield half is coloured by COLUP0 and the RIGHT by COLUP1
-    # instead of COLUPF. pt6 defer ENAM0/ENAM1/ENABL to activation cc:
-    # breakout 8->0 (mid-scanline ENAM1=0 on sl 229 cc=105 was blanking
-    # M1 for the whole scanline; deferring the write lets M1 paint
-    # cols 0..7 before the disable hits). pt7 extend defer to
-    # NUSIZ/COLU/CTRLPF/REFP: space_invaders 2145->2079, enduro 1972->1954
-    # (the "no-side-effect render registers"; xitari's poke does
-    # `updateFrame(clock+delay)` BEFORE applying ANY poke, so even
-    # delay=0 writes don't affect pixels rendered before the write's
-    # CPU cycle on the same scanline). seaquest worst regressed +1 (3940->
-    # 3941) but most frames improved (3768/3650/etc. — net win).
+    # pong 920->568. pt6 defer ENAM0/ENAM1/ENABL to activation cc:
+    # breakout 8->0 BIT-EXACT. pt7 extend defer to NUSIZ/COLU/CTRLPF/REFP:
+    # space_invaders 2145->2079, enduro 1972->1954.
+    # pt8 RIOT INTIM `-1` offset (xitari `M6532::peek` case 0x04 has
+    # `myTimer - (delta>>shift) - 1` in its formula — the off-by-one
+    # was making every INTIM-polling loop in early VBLANK exit 1+
+    # iterations LATE in jaxtari, accumulating ~76 CPU cycles of TIA
+    # scanline drift per loop). MASSIVE cross-ROM win:
+    #   pong         568 -> 32  (-536, 94%)
+    #   space_inv    2079 -> 12  (-2067, 99.4%)
+    #   pitfall      1786 -> 322 (-1464, 82%)
+    #   seaquest     3941 -> 1104 (-2837, 72%)
+    #   enduro       1954 -> 1197 (-757, 39%)
+    # PXC1+PXC2 RAM stay bit-exact across all 21 cases.
     _Case("breakout_noop_10",       "breakout.bin",          0),
-    _Case("pong_noop_10",           "pong.bin",            568),
-    _Case("space_invaders_noop_10", "space_invaders.bin",  2079),
-    _Case("pitfall_noop_10",        "pitfall.bin",         1786),
-    _Case("seaquest_noop_10",       "seaquest.bin",        3941),
-    _Case("enduro_noop_10",         "enduro.bin",          1954),
+    _Case("pong_noop_10",           "pong.bin",             32),
+    _Case("space_invaders_noop_10", "space_invaders.bin",   12),
+    _Case("pitfall_noop_10",        "pitfall.bin",         322),
+    _Case("seaquest_noop_10",       "seaquest.bin",       1104),
+    _Case("enduro_noop_10",         "enduro.bin",         1197),
 ]
 
 
