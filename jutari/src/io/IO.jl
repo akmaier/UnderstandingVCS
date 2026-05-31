@@ -104,7 +104,7 @@ function _action_bits_for_player(action::Integer, player::Integer)
 end
 
 """
-    apply_action!(console, action; player=0)
+    apply_action!(console, action; player=0, paddle_mode=false)
 
 Drive one player's joystick + fire-button inputs from `action`. The
 *other* player's nibble of SWCHA is preserved across calls, so the
@@ -117,10 +117,26 @@ canonical two-player driving idiom is
 `player` defaults to 0 so single-player code continues to work
 unchanged. Does NOT advance the CPU — call `run_until_frame!` to
 consume the inputs over a game frame.
+
+**`paddle_mode`** (task #65/pong-paddles-don't-move fix): when true,
+SWCHA is left untouched — only the fire-button trigger is updated.
+Mirrors xitari's `applyActionPaddles` which only sets paddle
+resistance + fire event, leaving the joystick-direction events
+untouched. Without this flag, a LEFT action on a paddle game like
+pong would also clear the SWCHA P0_LEFT bit — which pong actually
+reads — and pong takes a different branch, leaving the paddle stuck
+at the default position while xitari moves it.
 """
-function apply_action!(console::Console, action::Integer; player::Integer = 0)
+function apply_action!(console::Console, action::Integer; player::Integer = 0,
+                        paddle_mode::Bool = false)
     (player == 0 || player == 1) || throw(ArgumentError("player must be 0 or 1, got $player"))
     pressed_bits, fire_pressed = _action_bits_for_player(action, player)
+
+    if paddle_mode
+        # Paddle game: only update fire-button trigger; SWCHA left as-is.
+        set_trigger!(console.bus.tia, Int(player), fire_pressed)
+        return console
+    end
 
     nibble_mask = player == 0 ? UInt8(_P0_ALL_RELEASED) : UInt8(_P1_ALL_RELEASED)
     prev = console.bus.riot.swcha_in

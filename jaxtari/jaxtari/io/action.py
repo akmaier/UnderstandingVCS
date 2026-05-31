@@ -139,7 +139,8 @@ def _action_bits_for_player(action: int, player: int) -> tuple[int, bool]:
     return bits, fire
 
 
-def apply_action(console: Console, action: int, *, player: int = 0) -> Console:
+def apply_action(console: Console, action: int, *, player: int = 0,
+                  paddle_mode: bool = False) -> Console:
     """Drive one player's joystick + fire-button inputs from `action`.
 
     Returns a new `Console` whose RIOT SWCHA and the addressed player's
@@ -153,10 +154,30 @@ def apply_action(console: Console, action: int, *, player: int = 0) -> Console:
         console = run_until_frame(console)
 
     `player` defaults to 0 so single-player code is unchanged.
+
+    **`paddle_mode`** (task #65/pong-paddles-don't-move fix): when True,
+    SWCHA is left untouched — only the fire-button trigger (INPT4/INPT5)
+    is updated from the action's fire bit. This mirrors xitari's
+    `applyActionPaddles` which only sets paddle resistance + fire event,
+    leaving the joystick-direction events untouched. Without this flag,
+    a LEFT action on a paddle game like pong would also clear the
+    SWCHA P0_LEFT bit — which pong actually reads — and pong takes a
+    different branch, leaving the paddle stuck at the default position
+    in jaxtari/jutari while xitari moves it.
     """
     if player not in (0, 1):
         raise ValueError(f"player must be 0 or 1, got {player}")
     pressed_bits, fire_pressed = _action_bits_for_player(action, player)
+
+    if paddle_mode:
+        # Paddle game: only update the fire-button trigger. SWCHA
+        # (joystick direction) is NOT driven from the action — paddle
+        # motion is handled separately by `_apply_paddle_action` on
+        # `StellaEnvironment`. Leaves SWCHA at whatever the prior frame
+        # set it to (default = all-released).
+        new_tia = set_trigger(console.bus.tia, player=player, pressed=fire_pressed)
+        new_bus = console.bus._replace(tia=new_tia)
+        return console._replace(bus=new_bus)
 
     # SWCHA active-low: start from the bus's current value (so the
     # untouched-nibble of the OTHER player is preserved across calls),

@@ -49,6 +49,32 @@ move in lock-step (recipe in that file's header comment).
 
 ## Patches landed (newest first)
 
+### Task #65 — paddle games skip SWCHA write (pong paddles move in jaxtari/jutari) (2026-05-31)
+**Symptom:** User report — in pong jaxtari/jutari video, both paddles
+do not move while xitari moves them just fine.
+**Diagnosis:** Compared frame-1 pong RAM jaxtari vs xitari for the LEFT
+action: 3 bytes diverged at offsets $04, $3c, $40 — pong's first frame
+already takes a different code path with LEFT input. Walked through
+xitari's `applyActionPaddles` (in `ale_state.cpp`): for paddle games it
+ONLY updates paddle resistance + sets the fire event, and crucially
+*does not* drive joystick direction events. My port's
+`StellaEnvironment.step()` was calling `apply_action()` AFTER
+`_apply_paddle_action()`; `apply_action()` always wrote LEFT/RIGHT
+to SWCHA, so pong saw a phantom joystick LEFT bit on the bus, branched
+differently from xitari, and never wrote the paddle-position byte
+that the rendering code reads — the paddle stayed stuck.
+**Fix (both ports):** added a `paddle_mode=False` keyword to
+`apply_action` / `apply_action!`. When True, only the fire-button
+trigger is updated and SWCHA is left untouched. `StellaEnvironment`
+passes `paddle_mode=uses_paddles()` so paddle ROMs (pong, breakout,
+warlords, …) skip the SWCHA write.
+**Result:** pong frame-1 LEFT RAM divergence: 3 bytes → 2 bytes
+(byte $40 fixed: was 0xc0 → 0x00 → now 0xc0). The remaining 2 bytes
+($04, $3c) differ by exactly 4 and 2 — the paddle-position state
+tracked from INPT0 polling — pointing to a sub-cycle INPT0 timing
+gap. PXC-S noop unchanged for all ROMs. PXC1+PXC2 RAM all 21 green.
+jaxtari unit tests 67 passed. jutari unit tests 820 passed.
+
 ### P3i-g part 8 — RIOT INTIM `-1` offset (pong 568→32, SI 2079→12, pitfall 1786→322, seaquest 3941→1104, enduro 1954→1197) (2026-05-31)
 **Symptom:** Pong's PXC-S residual 568 px was *structurally* three full
 boundary rows (24/34/194) where xitari renders the strip-on PF colour but

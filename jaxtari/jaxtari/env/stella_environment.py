@@ -184,9 +184,19 @@ class StellaEnvironment:
         """
         if self._terminal:
             return 0
-        if self._settings.uses_paddles():
+        uses_paddles = self._settings.uses_paddles()
+        if uses_paddles:
             self._apply_paddle_action(int(action))
-        self._console = apply_action(self._console, int(action))
+        # Task #65: when paddles are in play, xitari's `applyActionPaddles`
+        # only sets paddle resistance + fire event — NOT the joystick
+        # direction (SWCHA). Forwarding LEFT/RIGHT to SWCHA on a paddle
+        # game like pong made the game branch differently from xitari
+        # (paddle stuck at default position even though paddle_resistance
+        # was being updated correctly). `paddle_mode=True` skips the
+        # SWCHA write and just updates the trigger from the action's
+        # fire bit, matching xitari.
+        self._console = apply_action(self._console, int(action),
+                                      paddle_mode=uses_paddles)
         self._console = run_until_frame(self._console)
         reward = int(self._settings.get_reward(self._console))
         self._terminal = bool(self._settings.is_terminal(self._console))
