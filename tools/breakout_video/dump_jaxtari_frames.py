@@ -21,6 +21,15 @@ import numpy as np
 
 from jaxtari.env.stella_environment import StellaEnvironment
 from jaxtari.games.breakout import BreakoutRomSettings
+from jaxtari.games.pong import PongRomSettings
+
+# ROM basename → RomSettings constructor. Defaults to bare StellaEnvironment
+# (no per-game scoring/termination) for unrecognised ROMs — same convention
+# as `tools/jutari_screen_dump.jl::_SETTINGS_BY_BASENAME`.
+_SETTINGS_BY_BASENAME = {
+    "breakout.bin": BreakoutRomSettings,
+    "pong.bin":     PongRomSettings,
+}
 
 
 def _load_actions(path: Path) -> list[int]:
@@ -43,11 +52,12 @@ def main(argv=None) -> int:
     args = p.parse_args(argv)
 
     rom = np.fromfile(args.rom, dtype=np.uint8)
-    # BreakoutRomSettings advertises `uses_paddles=True`, so
-    # StellaEnvironment auto-translates LEFT/RIGHT actions into INPT0
-    # dump-pot paddle-position changes — same shape as xitari's
-    # `m_use_paddles` / `applyActionPaddles`.
-    env = StellaEnvironment(rom, BreakoutRomSettings())
+    # Per-ROM RomSettings auto-selection by basename. For paddle ROMs
+    # (breakout, pong) StellaEnvironment auto-translates LEFT/RIGHT
+    # actions into INPT0 dump-pot paddle-position changes — same shape
+    # as xitari's `m_use_paddles` / `applyActionPaddles`.
+    factory = _SETTINGS_BY_BASENAME.get(args.rom.name)
+    env = StellaEnvironment(rom, factory()) if factory else StellaEnvironment(rom)
     # Match the ALE / xitari boot burn so frame 1 alignment matches
     # `tools/trace_dump`'s output.
     env.reset(boot_noop_steps=60, boot_reset_steps=4)

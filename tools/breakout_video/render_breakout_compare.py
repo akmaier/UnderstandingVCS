@@ -53,6 +53,15 @@ JAXTARI_OUT      = 'jaxtari_frames.raw'
 JUTARI_OUT       = 'jutari_frames.raw'
 COMP_DIR         = 'composites'
 
+# ROM-name-keyed output suffixes — for a non-default ROM the dumps + mp4s
+# get a `<rom>_` prefix so multiple ROMs can share the same out-dir
+# without clobbering each other.
+def _rom_prefix(rom_path: Path) -> str:
+    """`pong.bin` → `pong_`, `breakout.bin` → `breakout_`, etc. Default
+    breakout uses an empty prefix to preserve the original file names."""
+    stem = rom_path.stem
+    return '' if stem == 'breakout' else f'{stem}_'
+
 # Task #53 (vertical-alignment fix): jaxtari / jutari `get_screen()`
 # now return the ALE-standard (210, 160) crop — `Display.YStart=34` +
 # `Display.Height=210` — same as xitari. All three engines render
@@ -80,34 +89,34 @@ def dump_actions(out: Path, n: int, seed: int) -> None:
     print(f"wrote {n} actions (seed={seed}) to {out}", file=sys.stderr)
 
 
-def dump_xitari(actions: Path, out: Path, n: int) -> None:
+def dump_xitari(rom: Path, actions: Path, out: Path, n: int) -> None:
     _run([
         sys.executable,
         str(REPO_ROOT / 'tools' / 'breakout_video' / 'dump_xitari_frames.py'),
-        '--rom', str(REPO_ROOT / 'xitari' / 'roms' / 'breakout.bin'),
+        '--rom', str(rom),
         '--actions', str(actions),
         '--out', str(out),
         '--max-frames', str(n),
     ])
 
 
-def dump_jaxtari(actions: Path, out: Path, n: int) -> None:
+def dump_jaxtari(rom: Path, actions: Path, out: Path, n: int) -> None:
     _run([
         str(REPO_ROOT / 'jaxtari' / '.venv' / 'bin' / 'python3'),
         str(REPO_ROOT / 'tools' / 'breakout_video' / 'dump_jaxtari_frames.py'),
-        '--rom', str(REPO_ROOT / 'xitari' / 'roms' / 'breakout.bin'),
+        '--rom', str(rom),
         '--actions', str(actions),
         '--out', str(out),
         '--max-frames', str(n),
     ])
 
 
-def dump_jutari(actions: Path, out: Path, n: int) -> None:
+def dump_jutari(rom: Path, actions: Path, out: Path, n: int) -> None:
     _run([
         'julia',
         '--project=' + str(REPO_ROOT / 'jutari'),
         str(REPO_ROOT / 'tools' / 'breakout_video' / 'dump_jutari_frames.jl'),
-        '--rom', str(REPO_ROOT / 'xitari' / 'roms' / 'breakout.bin'),
+        '--rom', str(rom),
         '--actions', str(actions),
         '--out', str(out),
         '--max-frames', str(n),
@@ -268,6 +277,11 @@ def encode_video(left: np.ndarray, right: np.ndarray,
 
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--rom', default=REPO_ROOT / 'xitari' / 'roms' / 'breakout.bin',
+                   type=Path,
+                   help='ROM to render. Defaults to breakout for backwards-compat. '
+                        'Pong, etc., supported as long as the dumpers know the '
+                        'RomSettings (see _SETTINGS_BY_BASENAME).')
     p.add_argument('--out-dir', default=REPO_ROOT / 'tools' / 'breakout_video' / 'output',
                    type=Path)
     p.add_argument('--n-frames', default=N_FRAMES, type=int)
@@ -279,10 +293,11 @@ def main(argv=None) -> int:
     args = p.parse_args(argv)
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    actions_path = args.out_dir / ACTION_FILE_NAME
-    xitari_path  = args.out_dir / XITARI_OUT
-    jaxtari_path = args.out_dir / JAXTARI_OUT
-    jutari_path  = args.out_dir / JUTARI_OUT
+    prefix = _rom_prefix(args.rom)
+    actions_path = args.out_dir / (prefix + ACTION_FILE_NAME if prefix else ACTION_FILE_NAME)
+    xitari_path  = args.out_dir / (prefix + XITARI_OUT)
+    jaxtari_path = args.out_dir / (prefix + JAXTARI_OUT)
+    jutari_path  = args.out_dir / (prefix + JUTARI_OUT)
 
     if not actions_path.exists():
         dump_actions(actions_path, args.n_frames, args.seed)
@@ -290,11 +305,11 @@ def main(argv=None) -> int:
         print(f"reusing actions file: {actions_path}", file=sys.stderr)
 
     if not args.skip_xitari:
-        dump_xitari(actions_path, xitari_path, args.n_frames)
+        dump_xitari(args.rom, actions_path, xitari_path, args.n_frames)
     if not args.skip_jaxtari:
-        dump_jaxtari(actions_path, jaxtari_path, args.n_frames)
+        dump_jaxtari(args.rom, actions_path, jaxtari_path, args.n_frames)
     if not args.skip_jutari:
-        dump_jutari(actions_path, jutari_path, args.n_frames)
+        dump_jutari(args.rom, actions_path, jutari_path, args.n_frames)
 
     if args.skip_encode:
         return 0
@@ -321,18 +336,19 @@ def main(argv=None) -> int:
             print(f"  aligning emulators to {n} common frames", file=sys.stderr)
         return tuple(a[:n] for a in arrays)
 
+    rom_stem = args.rom.stem  # 'breakout', 'pong', etc.
     if jaxtari is not None:
         xi, jx = _align(xitari, jaxtari)
         encode_video(
             xi, jx, palette,
-            args.out_dir / 'breakout_xitari_vs_jaxtari.mp4',
+            args.out_dir / f'{rom_stem}_xitari_vs_jaxtari.mp4',
             left_label='xitari', right_label='jaxtari',
         )
     if jutari is not None:
         xi, jt = _align(xitari, jutari)
         encode_video(
             xi, jt, palette,
-            args.out_dir / 'breakout_xitari_vs_jutari.mp4',
+            args.out_dir / f'{rom_stem}_xitari_vs_jutari.mp4',
             left_label='xitari', right_label='jutari',
         )
     return 0

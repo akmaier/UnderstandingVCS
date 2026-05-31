@@ -380,6 +380,26 @@ COLUP0 assert now uses `atol` for denormal AD noise.
 
 ## Open ideas / planned (not yet done)
 
+- **Breakout ball-death detection broken under random actions (NEW — 2026-05-31).**
+  Reproduction: `tools/breakout_video/output/breakout_random_actions.txt` (seed
+  42, 1800 frames). xitari decrements RAM byte 57 (lives) on a clean cadence:
+  5→4 at frame 116, 4→3 at 236, 3→2 at 356, 2→1 at 476, 1→0 at 596 (game over
+  at frame 597). jaxtari only loses ONE life (5→4 at frame 241) — then never
+  loses another and runs all 1800 frames without ending. So in the
+  random-action video the ball never dies cleanly: it bounces forever instead
+  of disappearing and triggering a new round. RAM divergence first appears at
+  **frame 20** (the first FIRE/serve in the action sequence), 5 bytes at
+  offsets [95, 99, 101, 103, 105], growing from there. PXC1 noop-10 RAM is
+  STILL bit-exact (the bug only manifests when FIRE is exercised), so the
+  divergence is downstream of FIRE-action handling. Suspect classes:
+  (a) `INPT4` (joystick fire button) read returns wrong value at the moment
+  the game polls it; (b) the StellaEnvironment translation of `A_FIRE` to a
+  button-press event differs subtly from xitari's `ALEState::act`; (c)
+  ball/paddle collision detection drops the "ball below paddle" event on the
+  first ball, leaving the ball-state machine stuck. Concrete next probe:
+  instrument `INPT4` peeks during frames 18-25 (the FIRE window) and compare
+  to xitari. The video is at `tools/breakout_video/output/breakout_xitari_vs_jaxtari.mp4`.
+
 - **Pong screen 568 → lower (one-row-late cross-scanline transitions).** After pt4 (COLU mask 29760→920) and pt5 (SCOREMODE 920→568), the residual is now structurally three "full row diff" rows (24, 34, 194 — each 160 px = 480 px) plus ~88 px scattered (score digit fragments + rows 36-38 + col 0-7 on row 0). Confirmed (2026-05-31) by row-fingerprint probe: rows 24/34/194 in xitari render the strip-on colour, jaxtari renders the previous BG colour — exact 1-scanline lag. Instrumented `_bus_poke` showed pong's PF=$ff "strip-on" writes land at sl 59 cc=39 in jaxtari vs sl 58 xpos=39 in xitari — same intra-scanline beam position, one scanline later. Deeper trace: xitari emits 133 WSYNCs (STA $02) in pong frame 1; jaxtari emits 131. Sl-by-sl alignment: WSYNCs 1-4 (sl 3/6/9/12) match in both ports; jaxtari is missing 2 of xitari's early-VBLANK WSYNCs (around xitari sl 14, 22). PXC1 RAM stays bit-exact because STA $02 doesn't write RAM. The likely root: pong polls INPT (paddle) and/or CXxx (collision) and branches on the value; jaxtari's TIA read returns slightly different values at those scanlines, causing pong to skip the WSYNC instructions xitari executes, which compresses jaxtari's CPU stream by ~76 cycles and shifts every subsequent PF/COLU write 1 scanline later. Same per-cycle bus-accuracy class as the bug log open ideas; not a clean small fix.
 - **Enduro convergence (43 → lower).** Enduro's large base divergence (43/128)
   is pre-existing and unrelated to P3i-g; P3i-g additionally broke 5

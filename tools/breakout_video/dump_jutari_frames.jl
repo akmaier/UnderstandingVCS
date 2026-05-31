@@ -14,7 +14,17 @@ Pkg.activate(joinpath(@__DIR__, "..", "..", "jutari"))
 
 using JuTari
 using JuTari.Env: StellaEnvironment, env_reset!, env_step!, get_screen
-using JuTari.PaddleGames: BreakoutRomSettings
+using JuTari.PaddleGames: BreakoutRomSettings, PongRomSettings
+using JuTari.RomSettingsModule: GenericRomSettings
+
+# ROM basename → RomSettings constructor (mirror of
+# tools/breakout_video/dump_jaxtari_frames.py's _SETTINGS_BY_BASENAME).
+const _SETTINGS_BY_BASENAME = Dict(
+    "breakout.bin" => () -> BreakoutRomSettings(),
+    "pong.bin"     => () -> PongRomSettings(),
+)
+_settings_for_rom(p) = haskey(_SETTINGS_BY_BASENAME, basename(p)) ?
+    _SETTINGS_BY_BASENAME[basename(p)]() : GenericRomSettings()
 
 function _load_actions(path::AbstractString)
     out = Int[]
@@ -50,11 +60,12 @@ function main(argv::Vector{String} = ARGS)
     rom_path, actions_path, out_path, max_frames = _parse_args(argv)
 
     rom = read(rom_path)
-    # `BreakoutRomSettings` overrides `romsettings_uses_paddles = true`,
-    # so `StellaEnvironment` auto-translates LEFT/RIGHT actions into
-    # INPT0 dump-pot paddle-position changes — same shape as xitari's
+    # Per-ROM settings auto-selection by basename. For paddle ROMs
+    # (breakout, pong) `romsettings_uses_paddles = true` makes
+    # `StellaEnvironment` auto-translate LEFT/RIGHT actions into INPT0
+    # dump-pot paddle-position changes — same shape as xitari's
     # `m_use_paddles` autodetection from stella.pro.
-    env = StellaEnvironment(rom, BreakoutRomSettings())
+    env = StellaEnvironment(rom, _settings_for_rom(rom_path))
     env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)
 
     actions = _load_actions(actions_path)
