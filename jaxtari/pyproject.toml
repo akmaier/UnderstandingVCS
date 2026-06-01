@@ -28,7 +28,16 @@ packages = ["jaxtari"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q"
+# `-n auto` (pytest-xdist) parallelises tests across CPU cores. On an
+# 8-core machine the long PXC1/PXC2 sweep (~10 min serial) drops to
+# ~2 min. Each worker gets its own JAX runtime so they don't share
+# the JIT cache — first-test overhead per worker is ~3 s but
+# amortises away for any non-trivial test count. Override with
+# `pytest -n 1` to debug deterministically.
+# `--dist loadgroup` keeps tests within a `@pytest.mark.xdist_group`
+# co-scheduled on one worker (used for PXC2 fixtures that share a
+# common setup file).
+addopts = "-q -n auto --dist worksteal"
 
 [tool.ruff]
 line-length = 100
