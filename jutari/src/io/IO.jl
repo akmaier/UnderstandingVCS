@@ -133,8 +133,21 @@ function apply_action!(console::Console, action::Integer; player::Integer = 0,
     pressed_bits, fire_pressed = _action_bits_for_player(action, player)
 
     if paddle_mode
-        # Paddle game: only update fire-button trigger; SWCHA left as-is.
-        set_trigger!(console.bus.tia, Int(player), fire_pressed)
+        # Paddle game: joystick directions are NOT driven (paddle motion
+        # handled separately by `_apply_paddle_action!`). The FIRE button
+        # on a paddle controller is NOT INPT4 — xitari wires paddle 0's
+        # fire to SWCHA bit 7 (= P0_RIGHT) and paddle 1's fire to SWCHA
+        # bit 6 (= P0_LEFT) via the Paddles controller (see xitari
+        # `M6532.cxx` SWCHA construction + `Paddles::read(DigitalPin)`).
+        # Clear the corresponding SWCHA bit on FIRE instead of touching
+        # INPT4. Active-low: pressed = 0, released = 1.
+        paddle_fire_bit = player == 0 ? UInt8(0x80) : UInt8(0x40)  # P0_RIGHT / P0_LEFT
+        prev = console.bus.riot.swcha_in
+        p_byte = (prev | paddle_fire_bit) & UInt8(0xFF)
+        if fire_pressed
+            p_byte = (p_byte & ~paddle_fire_bit) & UInt8(0xFF)
+        end
+        set_swcha_input!(console.bus.riot, p_byte)
         return console
     end
 

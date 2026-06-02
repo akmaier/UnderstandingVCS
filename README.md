@@ -39,7 +39,8 @@ For the per-phase commit ledger, what each port can do today, and the complete l
 
 ### Big new finding (2026-06-02): jutari is much closer to xitari than jaxtari is
 
-A 3-way per-frame RAM diff on pong + the seed-42 random action stream:
+A 3-way per-frame RAM diff on pong + the seed-42 random action stream
+(`tools/pong_3way_ram_diff.py`):
 
 | Comparison       | Bytes diff / frame (typical, late frames) |
 |------------------|---|
@@ -49,11 +50,25 @@ A 3-way per-frame RAM diff on pong + the seed-42 random action stream:
 
 **jutari (Julia port) tracks xitari almost exactly. jaxtari (JAX port) does not.** PXC2 misses this because PXC2 only tests NOOP fixtures (where both ports happen to agree with xitari and each other). Under random actions, the two ports diverge — and the bug is in **jaxtari**, not jutari.
 
-This is the single highest-leverage next clue. The next agent should:
+**Confirmed via a parallel pong-progresses test** (`/tmp/pong_jutari_progress.jl` runtime + `/tmp/pong_screen_random.py` runtime): jutari pong's screen progresses cleanly across frames (72–344 px diff between sample frames), while jaxtari's screen **freezes** within ~100 frames.
 
-1. **Run the 3-way RAM diff harness for early frames** to find the exact frame and RAM bytes where jaxtari first diverges from jutari under the random action stream. Probe lives at `/tmp/pong_3way_ram_diff.py` (regenerate from this commit's diff if `/tmp` was cleared). Pre-requisite: `/tmp/pong_actions_trace.jsonl` (200 random-action frames in trace format) and `/tmp/pong_jutari_rams.jsonl` (jutari RAM trace, generated via `julia --project=jutari tools/jutari_trace_dump.jl --rom xitari/roms/pong.bin --trace /tmp/pong_actions_trace.jsonl --out /tmp/pong_jutari_rams.jsonl`).
-2. **Trace the jaxtari instruction that wrote the divergent byte**, compare to the equivalent jutari code path. Since both ports came from the same porting plan, line-by-line comparison of the relevant `jaxtari/jaxtari/*.py` vs `jutari/src/*.jl` file should surface the algorithmic mismatch quickly.
-3. Apply the fix to jaxtari, mirror to jutari only if needed, run the full test gates.
+#### Concrete frame-by-frame data
+
+  - **Frames 0–58**: jaxtari ≡ jutari, byte-identical. **Both** ports diverge from xitari at frame 20 (FIRE) by 2 bytes (`$3f`, `$40` — values 0xc0/0x00 are swapped between the ports and xitari). This is a shared bug to fix later.
+  - **Frame 59** (action=4=LEFT): **jaxtari first diverges from jutari** at 6 bytes (`$04`, `$08`, `$0c`, `$31`, `$36`, `$3b`). At this single frame:
+    - byte `$04`: jx=0x6e, ju=0x72, xi=0x6e (jaxtari happens to match xitari).
+    - other 5 bytes: jaxtari differs from BOTH ju and xi (mostly off-by-1).
+  - From frame 59 onwards jaxtari drifts further while jutari stays within 4 bytes of xitari.
+
+#### The single highest-leverage next move
+
+Find the **specific emulator-core difference** between `jaxtari/jaxtari/*` and `jutari/src/*` that activates at frame 59. Both ports share the same high-level `apply_action` / `_apply_paddle_action` / SWCHA paddle wiring (just verified by reading both files). So the divergence is at a lower level — CPU instruction cycle accounting, TIA peek timing, RIOT timer ticking, or bus state propagation. Concrete recipe:
+
+  1. Re-run the probe: `cd jaxtari && .venv/bin/python ../tools/pong_3way_ram_diff.py`. Refresh the jutari RAM trace with the command in the probe's docstring if needed.
+  2. Instrument both ports to dump the CPU+TIA+RIOT state at frame 58 (last identical frame). Diff the snapshots — RAM matches, but `total_cycles`, `dump_disabled_cycle`, `paddle_resistance`, etc. may not. Whichever non-RAM field differs is the entry point.
+  3. Trace forward through the frame-59 step's bus-poke sequence; the first poke that writes a different RAM byte in jaxtari vs jutari pinpoints the responsible instruction stream.
+  4. Fix jaxtari to match jutari's behavior at that point. Mirror to jutari only if jutari turns out to be the wrong one (unlikely given the 4-byte vs 15-18-byte gap).
+  5. Then continue on the jutari path: find the remaining 4-byte/frame jutari↔xitari residual (the frame-20 FIRE swap of `$3f`/`$40` is the lead).
 
 ### Test gates (parallel by default after commit `dd317b6`)
 

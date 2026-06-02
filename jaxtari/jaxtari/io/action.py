@@ -170,13 +170,24 @@ def apply_action(console: Console, action: int, *, player: int = 0,
     pressed_bits, fire_pressed = _action_bits_for_player(action, player)
 
     if paddle_mode:
-        # Paddle game: only update the fire-button trigger. SWCHA
-        # (joystick direction) is NOT driven from the action — paddle
-        # motion is handled separately by `_apply_paddle_action` on
-        # `StellaEnvironment`. Leaves SWCHA at whatever the prior frame
-        # set it to (default = all-released).
-        new_tia = set_trigger(console.bus.tia, player=player, pressed=fire_pressed)
-        new_bus = console.bus._replace(tia=new_tia)
+        # Paddle game: joystick directions are NOT driven (paddle motion
+        # is handled separately by `_apply_paddle_action`). The fire
+        # button on a paddle controller is NOT INPT4 — xitari wires
+        # paddle 0's fire to SWCHA bit 7 (= P0_RIGHT) and paddle 1's
+        # fire to SWCHA bit 6 (= P0_LEFT) via the Paddles controller
+        # (see xitari `M6532.cxx` SWCHA construction +
+        # `Paddles::read(DigitalPin)`). So for paddle games we clear the
+        # corresponding SWCHA bit on FIRE instead of touching INPT4.
+        # Active-low: pressed = 0, released = 1.
+        paddle_fire_bit = 0x80 if player == 0 else 0x40   # P0_RIGHT / P0_LEFT
+        # Start from the bus's current SWCHA (preserve any other state),
+        # SET the paddle's fire bit (= released), then CLEAR it iff fire.
+        prev = int(console.bus.riot.swcha_in)
+        p_byte = (prev | paddle_fire_bit) & 0xFF
+        if fire_pressed:
+            p_byte &= (~paddle_fire_bit) & 0xFF
+        new_riot = set_swcha_input(console.bus.riot, p_byte)
+        new_bus = console.bus._replace(riot=new_riot)
         return console._replace(bus=new_bus)
 
     # SWCHA active-low: start from the bus's current value (so the
