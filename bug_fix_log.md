@@ -14,6 +14,103 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+## Where we left off — pick up here (2026-06-01)
+
+This section is what the **next agent** should read first to know what
+to chase. Skip down to "Conformance scoreboard" and "Patches landed"
+for the full history. Test infrastructure note: `pyproject.toml`'s
+pytest `addopts` is now `-q -n auto --dist worksteal`, so `pytest`
+parallelises across all cores by default. Override with `pytest -n 1`
+to debug a single test deterministically.
+
+### Active user-reported bugs
+
+**A. Pong paddles don't move on screen** (user, 2026-05-31). Reported
+in the freshly-rendered `tools/breakout_video/output/pong_xitari_vs_jaxtari.mp4`
++ `pong_xitari_vs_jutari.mp4`: both paddles are static in jaxtari/jutari
+while xitari moves them in response to the random paddle action stream.
+Diagnosis so far:
+  - jaxtari `paddle_resistance[0]` IS updated by LEFT/RIGHT actions
+    (probed via `/tmp/pong_paddle_test.py`: NOOP → 408823, LEFT-100 →
+    790196). `paddle_use_dump_pot[0]` is True. So the input plumbing
+    works.
+  - But the rendered screen at frame 100 with NOOP vs LEFT vs RIGHT
+    shows **0 px diff** — the paddle stays at the same pixel position.
+  - Pong RAM with NOOP vs LEFT-100 changes byte `$3b` in jaxtari
+    (0x6d→0xcb). xitari changes bytes `$33` AND `$3c` for the same
+    action. So pong's CPU takes a different code path on LEFT in
+    jaxtari — writes the paddle-Y value into a RAM byte the renderer
+    doesn't read.
+  - Frame-1 LEFT RAM divergence (jaxtari vs xitari) was 3 bytes before
+    Task #65's SWCHA-skip-for-paddle-games fix, now down to 2 bytes
+    (`$04`, `$3c`; byte `$40` closed). PXC1 noop-10 RAM is still
+    bit-exact — divergence is only on action-driven runs.
+  - **Concrete next step**: instrument `bus.peek` for the INPT0 address
+    in pong's frame-1 polling loop (`/tmp/pong_peek_log.py` is the template
+    we used for pt8 — pong polls INPT0 in a tight loop similar to its
+    INTIM polling). Find the cycle where my port's INPT0 returns 0x80
+    vs xitari's. Most likely there's a `cycles - 1` style off-by-one in
+    the `cycles > dump_disabled_cycle + needed` formula — the same
+    class of bug as pt8 INTIM. Apply the analogous `(intim - 1) & 0xFF`
+    fix to `riot_peek` for reg=4. **High-leverage**: would likely also
+    cascade to (B).
+
+**B. Breakout ball doesn't die under random actions** (user, earlier).
+Reported in `breakout_xitari_vs_jaxtari.mp4`: ball reaches the bottom
+of the screen and continues to bounce, instead of disappearing and
+triggering a new round. Diagnosis:
+  - RAM byte 57 = breakout lives counter (per `xitari/games/supported/Breakout.cpp`).
+  - xitari (random-actions, 600 frames): lives 5→4 at frame 116,
+    then 4→3, 3→2, 2→1, 1→0 every ~120 frames; game ends at frame 597.
+  - jaxtari: lives 5→4 at frame **241** (very late), then NEVER changes
+    again; runs all 600 frames without ending.
+  - First RAM divergence: frame 20 — the first `FIRE` in the action
+    stream — at offsets [95, 99, 101, 103, 105].
+  - Same class as (A): action-driven CPU divergence. Likely the same
+    INPT0/INPT4 polling timing residual. Fixing (A) should also fix (B).
+
+**C. Uncommitted experimental edits in working tree** (Task #3):
+`jaxtari/jaxtari/io/action.py` + `jutari/src/io/IO.jl` have a pending
+change that routes paddle FIRE to SWCHA bits 6/7 (xitari Paddles
+controller wiring per `xitari/emucore/Paddles.cxx`) instead of INPT4.
+67/67 PXC tests pass with the change in place, but it does NOT fix
+(A) — the visible paddle still doesn't move. Decide whether to commit,
+revert, or leave as a stash.
+
+### Per-cycle-accuracy class (lower priority)
+
+The remaining PXC-S residuals on `*_noop_10` are concentrated in
+score-digit areas and are all the per-cycle bus accuracy class:
+  - pong **32** (8 px row-0 cols-0-7 HMOVE/VBLANK quirk + 24 px PF1
+    bit-0 timing at rows 35-37/95/111).
+  - space_invaders **12** (near bit-exact).
+  - pitfall **322**, seaquest **1104**, enduro **1197** (all score-area
+    digit-shape differences).
+These are unlikely to yield to a single-fix lever like pt5/pt6/pt7/pt8
+did; they need broader per-cycle bus accuracy work (store-mode
+`abs,X`/`abs,Y`/`(zp),Y` always-dummy-on-store, RES* defer, etc.).
+
+### Quickstart for the next agent
+
+```bash
+# Make sure tests run parallel (already configured in pyproject.toml):
+cd jaxtari && .venv/bin/python -m pytest -q                # all tests, ~20 min
+.venv/bin/python -m pytest tests/test_pxc1_conformance.py tests/test_pxc2_jaxtari_vs_jutari.py -q  # 22 min
+.venv/bin/python -m pytest tests/test_screen_conformance.py -q   # ~5 min
+
+# Measure all 6 ROMs' PXC-S worst frames at once (no pin):
+.venv/bin/python /tmp/all_pxc_s.py   # if /tmp probes are gone, regenerate from the pt7/pt8 commit messages
+
+# Reproduce the pong-paddle-doesn't-move bug:
+.venv/bin/python /tmp/pong_screen_compare.py     # NOOP vs LEFT vs RIGHT at frame 100; should differ but shows 0 px
+
+# Side-by-side comparison videos:
+.venv/bin/python tools/breakout_video/render_breakout_compare.py --rom xitari/roms/pong.bin --n-frames 1800
+# (breakout default; pass --rom for any ROM in tools/breakout_video/dump_jaxtari_frames.py::_SETTINGS_BY_BASENAME)
+```
+
+---
+
 ## Conformance scoreboard (jaxtari↔xitari, `*_noop_10` fixtures, last frame)
 
 Ground truth is **xitari** (`tools/trace_dump`). `jaxtari ≡ jutari` is the
