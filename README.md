@@ -24,15 +24,15 @@ Both ports run a full VCS — CPU + Bus + RAM + TIA + RIOT + cart (2K, 4K, F8, F
 
 **~1950 tests green** across the two ports (jaxtari ~780 + jutari ~1170). **PXC2** (jaxtari ≡ jutari cross-check) covers 6 ROMs — pong, breakout, space invaders, pitfall, seaquest, enduro — with byte-identical RAM between the two ports at every frame. **PXC1** (jaxtari↔xitari RAM, `*_noop_10` last frame): **pong, breakout, space_invaders bit-exact (0 bytes)**, seaquest 4, pitfall 19, enduro 43 (= the pre-P3i-g parent baseline; the original "29" pin was stale). **PXC-S** (a new test the P3i-g pt4 work added — per-frame *screen* diff vs xitari): breakout **0 px (BIT-EXACT)**, pong **32**, space_invaders **12** (near bit-exact), pitfall 322, seaquest 1104, enduro 1197 (down from 29760/2145/1786/3941/1972 respectively across pt5–pt8 — pt8's RIOT INTIM `-1` fix dropped the total by ~74% in one shot; see [bug_fix_log.md](bug_fix_log.md)). See [bug_fix_log.md](bug_fix_log.md) for the scoreboards and the running history of fixes.
 
-For the per-phase commit ledger, what each port can do today, and the complete list of deferrals, see **[STATUS.md](STATUS.md)**. For the design rationale and the still-pending phase plan, see **[PORTING_PLAN.md](PORTING_PLAN.md)**.
+For the per-phase commit ledger, what each port can do today, and the complete list of deferrals, see **[STATUS.md](STATUS.md)**. For the design rationale and the still-pending phase plan, see **[PORTING_PLAN.md](PORTING_PLAN.md)**. For the **active 5-phase deep-dive** that closes the remaining open bugs (pong residuals, breakout ball-doesn't-die, jaxtari pong freeze) via precise CPU↔TIA cycle threading, see **[P3I_G_THREADING_PLAN.md](P3I_G_THREADING_PLAN.md)** — that doc names the failure modes of the two prior reverted attempts and the discipline that keeps the third one from breaking again.
 
-> **Agents working on emulation / conformance:** read **[bug_fix_log.md](bug_fix_log.md)** first — it's the running history of bugs hunted, patches landed, dead-ends ruled out (e.g. the `bisect.py` stdlib-shadow gotcha), and ideas still open (e.g. enduro collision-timing convergence). **Append to it** whenever you fix a bug or rule out a hypothesis, so the next agent inherits the context. It also carries the live jaxtari↔xitari conformance scoreboard.
+> **Agents working on emulation / conformance:** read **[bug_fix_log.md](bug_fix_log.md)** first — it's the running history of bugs hunted, patches landed, dead-ends ruled out (e.g. the `bisect.py` stdlib-shadow gotcha), and ideas still open (e.g. enduro collision-timing convergence). **Append to it** whenever you fix a bug or rule out a hypothesis, so the next agent inherits the context. It also carries the live jaxtari↔xitari conformance scoreboard. For the active CPU↔TIA cycle-threading work-arc, **[P3I_G_THREADING_PLAN.md](P3I_G_THREADING_PLAN.md)** is the technical plan; bug_fix_log is its running journal.
 
 ---
 
 ## Hand-off — pick up here
 
-**Two user-visible bugs are open** (both action-driven; PXC1 noop-10 RAM bit-exact still holds for pong/breakout/SI, so the divergence is only triggered by `FIRE`/`LEFT`/`RIGHT` actions):
+**Two user-visible bugs are open** (both action-driven; PXC1 noop-10 RAM bit-exact still holds for pong/breakout/SI, so the divergence is only triggered by `FIRE`/`LEFT`/`RIGHT` actions). The full 5-phase plan for closing them lives in **[P3I_G_THREADING_PLAN.md](P3I_G_THREADING_PLAN.md)** — both bugs trace to the same 1-cycle CPU↔TIA drift, and the plan covers diagnostic harness → per-opcode CYCLE_TABLE validation → jutari threading → verification → jaxtari mirror. Two prior P3i-g part 2 attempts were reverted; the plan calls out exactly what went wrong and the discipline to avoid a third revert.
 
 1. **Pong freezes within ~100 frames** of random play. Visible in `tools/breakout_video/output/pong_xitari_vs_jaxtari.mp4` — both paddles + ball + score lock into a fixed image while xitari progresses cleanly (88-472 px / frame-pair).
 2. **Breakout ball doesn't die** under random actions. xitari decrements RAM byte 57 (lives) every ~120 frames; jaxtari decrements once at frame 241 and never again. RAM diverges at frame 20 (first FIRE).
@@ -122,10 +122,11 @@ cd jaxtari && .venv/bin/python -m pytest tests/test_pxc1_conformance.py tests/te
 
 ```
 UnderstandingVCS/
-├── README.md              # This file
-├── PORTING_PLAN.md        # Phase plan + design rationale
-├── STATUS.md              # Per-phase commit/test/deferral ledger
-├── bug_fix_log.md         # Running bug/patch history + open debugging ideas (agents: read & update)
+├── README.md                  # This file
+├── PORTING_PLAN.md            # Phase plan + design rationale
+├── STATUS.md                  # Per-phase commit/test/deferral ledger
+├── bug_fix_log.md             # Running bug/patch history + open debugging ideas (agents: read & update)
+├── P3I_G_THREADING_PLAN.md    # Active 5-phase plan for CPU↔TIA cycle threading (closes pong/breakout residuals)
 ├── .gitignore             # Excludes papers/, dqn/, xitari/ (external deps) and .DS_Store
 ├── literature/            # AI-readable markdown versions of papers with BibTeX (13 papers)
 ├── jaxtari/               # JAX port — see jaxtari/README.md
