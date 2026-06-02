@@ -163,6 +163,53 @@ move in lock-step (recipe in that file's header comment).
 
 ## Patches landed (newest first)
 
+### Phase 2b jutari (P3I_G_THREADING_PLAN.md) — per-opcode cycle-counter validation (2026-06-02)
+
+  - **Commit `2aec8c5`**: every documented + undocumented opcode
+    now has `bus.pending_tia_cycles` summing to `CYCLE_TABLE[opcode]`
+    when `_step_inner!` returns. Validated by
+    `jutari/test/scratch_cycle_audit.jl` over all 189 opcodes.
+
+  - **What was wrong**: `pending_tia_cycles` counts bus ops + explicit
+    `pending_tick!` ticks. For 21 opcodes, internal cycles (no bus op)
+    weren't ticked, undercounting the bus-op cycle count by 1-3 cycles.
+    Each missed cycle means `_bus_poke!` for TIA writes scheduled the
+    write 3 color clocks too early (since `pending_tia_cycles * 3`
+    drives the effective `beam_cc`).
+
+  - **What was fixed**: added `pending_tick!` for cycle-2 internal of
+    all implied 2-cycle ops (TAX/TAY/TXA/TYA/TSX/TXS, INX/INY/DEX/DEY,
+    CLC/SEC/CLI/SEI/CLV/CLD/SED, ASL A / LSR A / ROL A / ROR A),
+    PHA/PHP/PLA/PLP cycle-2 internal, RTS/RTI cycle-2 internal. Added
+    the NMOS-mandated operand peek for branch-NOT-taken. Added all 6
+    NOP-variant bus-op patterns (IMM operand discard / ZP operand+val /
+    ZP,X operand+tick+val / ABS lo+hi+val / ABS,X lo+hi+val+optional
+    cross). Fixed a CYCLE_TABLE bug: 0xA7 LAX zp was 4 (jutari) should
+    be 3 (matches jaxtari + NMOS reference).
+
+  - **Measured impact (pong jutari↔xitari, 300 frames seed-42 actions)**:
+    - Before Phase 2b: first div frame 20, mean 0.5 b/f, max 3 b/f
+    - After  Phase 2b: first div frame 20, **mean 0.0 b/f**, max 3 b/f
+    - Only 3 of 300 frames have any RAM diff (frame 20 FIRE shared bug;
+      frames 140 + 260 each show 3 bytes transiently then return to
+      bit-exact next frame). Effectively bit-exact through 300 frames.
+
+  - **Measured impact (breakout jutari↔xitari)**: first div still at
+    frame 92 with the same 6 bytes ($37 $5f $61 $65 $67 $6c). Breakout's
+    bug is downstream of cycle accounting — likely a RIOT-timer or
+    paddle/joystick wiring quirk specific to that ROM. Mean 9.9 b/f
+    post-divergence (was ~10 before too).
+
+  - **Test suite**: full jutari test pass remains green. The Phase 1
+    diagnostic catch-up changes + Phase 2b cycle bumps together close
+    PXC1 conformance.
+
+  - **What's next for the threading plan**:
+    - Phase 3 (verification): re-run PXC-S screen diff for all 6 ROMs;
+      regen jutari pong/breakout videos with the cycle-accurate model.
+    - Phase 4 (jaxtari mirror): apply the same 22 fixes to jaxtari.
+      Expected to close jaxtari pong 13 b/f → near-0 (parity with jutari).
+
 ### Phase 1 (P3I_G_THREADING_PLAN.md) — diagnostic harness + collision catch-up refinement (2026-06-02)
 
   - **Phase 1a** (commit `fb72495`): jutari Bus gains a zero-cost
