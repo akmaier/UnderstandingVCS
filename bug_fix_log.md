@@ -240,6 +240,20 @@ move in lock-step (recipe in that file's header comment).
     `render_scanline` / HMOVE-blank state machine — orthogonal to
     Phases 1-5 of P3I_G_THREADING_PLAN.md.
 
+  - **jaxtari pong measurement (Phase 1c mirror was already in
+    `adcacc2`)**: vs xitari over 300 frames of random actions:
+    first divergence at frame 20 (FIRE), mean 13 bytes/frame, max
+    22, 277/300 frames diverge. **The refinement didn't close
+    jaxtari nearly as much as jutari** — jutari went 4 →  <1, but
+    jaxtari stayed 15-18 → 13. That's because the catch-up only
+    helps the specific code paths that read collision registers
+    (regs $00-$07) — jutari's residual happened to be in those
+    paths, jaxtari's isn't. To close jaxtari's gap, need Phase 2
+    (explicit per-cycle counter on `_step_inner` with `CYCLE_TABLE`
+    validation) or a different deeper investigation. The bug_fix_log
+    "where we left off" recipe (instrument frame 58→59 transition,
+    find first divergent poke) remains the right path for jaxtari.
+
   - **Investigation finding for the breakout ball-doesn't-die bug**:
     using `tools/cycle_trace_inspect.py` on a 280-frame breakout
     trace, the collision register reads CONTINUE every frame past
