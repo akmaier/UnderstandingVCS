@@ -200,6 +200,16 @@ move in lock-step (recipe in that file's header comment).
     to frame 23→24 transition would localize it. Phase 5 optional
     TIA-READ threading might also help.
 
+  - **Pre-existing test failures discovered (NOT caused by Phase 2b)**:
+    Reproducing on commit `8b5fc34` then again on a checked-out copy
+    of `main~10` (i.e. before Phase 2b landed) shows 6 jaxtari tests
+    were ALREADY failing — `test_p3g_nusiz.py`'s 4 `test_hard_*` cases
+    and `test_p3h_vdel.py`'s 2 `test_vdelbl_*` cases. The failures
+    are in `render_scanline` output (asserted pixel-by-pixel against
+    expected NUSIZ patterns). Likely orphaned by a subsequent TIA
+    renderer refactor that wasn't paired with a test update. NOT a
+    regression — separate cleanup item.
+
   - **What's next**: Phase 3 verification (re-run PXC-S screen diff,
     regen pong/breakout videos). Phase 5 optional TIA-READ threading
     not started.
