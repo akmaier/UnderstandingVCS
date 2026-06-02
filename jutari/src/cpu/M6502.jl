@@ -32,9 +32,11 @@ include("Addressing.jl")
 include("ALU.jl")
 
 using .CPUTables: ADDRESSING_MODE_TABLE, CYCLE_TABLE,
+                  ADDR_IMMEDIATE, ADDR_ZERO, ADDR_ZERO_X, ADDR_ZERO_Y, ADDR_ABSOLUTE,
                   ADDR_ABSOLUTE_X, ADDR_ABSOLUTE_Y, ADDR_IMPLIED, ADDR_INDIRECT, ADDR_INDIRECT_Y,
                   FLAG_C, FLAG_N, FLAG_V, FLAG_Z, FLAG_I, FLAG_D, FLAG_B, FLAG_U
 using .Addressing: resolve, instruction_length
+using ..Bus: pending_tick! as _tick
 using .ALU: set_zn!, compare_flags!, bit_flags!, adc!, sbc!,
             asl_op!, lsr_op!, rol_op!, ror_op!
 using ..Types: CPUState
@@ -303,19 +305,23 @@ function _step_inner!(state::CPUState, memory)
     extra_cycles = 0
 
     # --- Transfers (implied) ----------------------------------------------
+    # Phase 2b: all implied 2-cycle ops have an internal-cycle bump so
+    # `pending_tia_cycles` matches CYCLE_TABLE — required for accurate
+    # mid-instruction TIA write-timing in `_bus_poke!`. The internal
+    # cycle has no bus op on a real NMOS 6502; we just count it.
     if mnemonic === :TAX
-        state.X = state.A; set_zn!(state, state.X); _advance_pc!(state, mode)
+        state.X = state.A; set_zn!(state, state.X); _advance_pc!(state, mode); _tick(memory)
     elseif mnemonic === :TAY
-        state.Y = state.A; set_zn!(state, state.Y); _advance_pc!(state, mode)
+        state.Y = state.A; set_zn!(state, state.Y); _advance_pc!(state, mode); _tick(memory)
     elseif mnemonic === :TXA
-        state.A = state.X; set_zn!(state, state.A); _advance_pc!(state, mode)
+        state.A = state.X; set_zn!(state, state.A); _advance_pc!(state, mode); _tick(memory)
     elseif mnemonic === :TYA
-        state.A = state.Y; set_zn!(state, state.A); _advance_pc!(state, mode)
+        state.A = state.Y; set_zn!(state, state.A); _advance_pc!(state, mode); _tick(memory)
     elseif mnemonic === :TSX
-        state.X = state.SP; set_zn!(state, state.X); _advance_pc!(state, mode)
+        state.X = state.SP; set_zn!(state, state.X); _advance_pc!(state, mode); _tick(memory)
     elseif mnemonic === :TXS
         # TXS is the only transfer that does NOT touch flags.
-        state.SP = state.X; _advance_pc!(state, mode)
+        state.SP = state.X; _advance_pc!(state, mode); _tick(memory)
 
     # --- Loads ------------------------------------------------------------
     elseif mnemonic === :LDA
@@ -399,9 +405,11 @@ function _step_inner!(state::CPUState, memory)
              mnemonic === :LSR ? lsr_op! :
              mnemonic === :ROL ? rol_op! : ror_op!
         if mode == ADDR_IMPLIED
-            # Accumulator-mode: operand and destination are A.
+            # Accumulator-mode: operand and destination are A. Phase 2b:
+            # +1 internal cycle for the ALU op (no bus op).
             state.A = op(state, state.A)
             state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
+            _tick(memory)
         else
             # Memory-mode RMW. Task #50: NMOS 6502 emits the
             # double-write — old value first (dummy/internal cycle),
@@ -420,6 +428,10 @@ function _step_inner!(state::CPUState, memory)
            mnemonic === :BVC || mnemonic === :BVS ||
            mnemonic === :BCC || mnemonic === :BCS ||
            mnemonic === :BNE || mnemonic === :BEQ
+        # Phase 2b: NMOS branches ALWAYS peek the offset operand at cycle 2,
+        # taken or not. The previous code only called `resolve` (= peek
+        # operand) on the take path; the not-taken path skipped it, so
+        # `pending_tia_cycles` reported 1 instead of CYCLE_TABLE's 2.
         flag, take_when_set = _BRANCH_INFO[opcode]
         flag_set = (state.P & flag) != 0
         take = take_when_set ? flag_set : !flag_set
@@ -439,6 +451,7 @@ function _step_inner!(state::CPUState, memory)
             state.PC = target
             extra_cycles += 1 + (page ? 1 : 0)
         else
+            _peek(memory, UInt16((Int(state.PC) + 1) & 0xFFFF))   # cycle-2 operand discard
             state.PC = UInt16((Int(state.PC) + 2) & 0xFFFF)
         end
 
@@ -462,9 +475,11 @@ function _step_inner!(state::CPUState, memory)
 
     # --- RTS --------------------------------------------------------------
     elseif mnemonic === :RTS
-        # Task #50: NMOS RTS dummy peeks at cycle 3 (discard $0100+SP
-        # pre-pop) and cycle 6 (discard the just-popped PCL before the
-        # next instruction). Mirrors jaxtari.
+        # NMOS RTS = 6 cycles: opcode fetch, internal, pre-pop discard read
+        # of $0100+SP, pop PCL, pop PCH, cycle-6 discard of PCL (now in PC).
+        # Task #50 added the discard reads; Phase 2b adds the cycle-2
+        # internal tick that was missing.
+        _tick(memory)                                          # cycle-2 internal
         _peek(memory, 0x0100 + Int(state.SP))              # cycle-3 discard
         return_addr = pop16!(state, memory)
         new_pc = UInt16((Int(return_addr) + 1) & 0xFFFF)
@@ -472,21 +487,28 @@ function _step_inner!(state::CPUState, memory)
         state.PC = new_pc
 
     # --- Stack push / pull (P1e) -------------------------------------------
+    # Phase 2b: NMOS PHA/PHP are 3 cycles = opcode + internal + push; PLA/PLP
+    # are 4 cycles = opcode + internal + pre-pop-discard + pop. The extra
+    # internal cycle (between opcode fetch and stack op) had no `_tick`.
     elseif mnemonic === :PHA
+        _tick(memory)                                          # cycle-2 internal
         push8!(state, memory, state.A)
         state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
     elseif mnemonic === :PHP
         # PHP always pushes with bit 4 (B) set, matching xitari's "B always
         # true on 6507" convention. Bit 5 (U) is already set as an invariant.
+        _tick(memory)                                          # cycle-2 internal
         push8!(state, memory, state.P | FLAG_B | FLAG_U)
         state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
     elseif mnemonic === :PLA
         # Task #50: NMOS PLA cycle-3 discard read of $0100+SP (pre-pop).
+        _tick(memory)                                          # cycle-2 internal
         _peek(memory, 0x0100 + Int(state.SP))              # cycle-3 discard
         state.A = pop8!(state, memory)
         set_zn!(state, state.A)
         state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
     elseif mnemonic === :PLP
+        _tick(memory)                                          # cycle-2 internal
         _peek(memory, 0x0100 + Int(state.SP))              # cycle-3 discard
         popped = pop8!(state, memory)
         state.P = (popped | FLAG_U | FLAG_B) & UInt8(0xFF)
@@ -501,14 +523,39 @@ function _step_inner!(state::CPUState, memory)
         p = set_it ? (state.P | flag) : (state.P & ~flag)
         state.P = (p | FLAG_U) & UInt8(0xFF)
         state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
+        _tick(memory)                                        # Phase 2b: +1 internal cycle
     elseif mnemonic === :NOP
         # Documented $EA NOP + all P1h undocumented NOPs share this
         # path. INSTRUCTION_LENGTH[mode] advances PC by the right
         # amount (1 for implied, 2 for imm/zp/zp,X, 3 for abs/abs,X).
         # Abs,X NOPs take +1 cycle when the read crosses a page,
         # matching the documented abs,X read penalty.
-        if mode == ADDR_ABSOLUTE_X
-            _, page = resolve(mode, state, memory)
+        #
+        # Phase 2b — make the bus-op + tick count match CYCLE_TABLE so
+        # downstream TIA write-timing in `_bus_poke!` is accurate.
+        # NMOS bus behaviour for each NOP flavour:
+        #   - implied   ($EA + 1A/3A/5A/7A/DA/FA): opcode+internal     = 2 cy
+        #   - immediate ($80/82/89/C2/E2)         : opcode+operand     = 2 cy
+        #   - zp        ($04/44/64)               : opcode+operand+val = 3 cy
+        #   - zp,X      ($14/34/54/74/D4/F4)      : opc+opnd+tick+val  = 4 cy
+        #   - abs       ($0C)                     : opcode+lo+hi+val   = 4 cy
+        #   - abs,X     ($1C/3C/5C/7C/DC/FC)      : as ABS_X load      = 4 cy(+1 cross)
+        # All explicit reads update the floating-bus latch, matching
+        # NMOS bus behaviour and what xitari traces.
+        operand_addr = UInt16((Int(state.PC) + 1) & 0xFFFF)
+        if mode == ADDR_IMPLIED
+            _tick(memory)                                    # internal cycle
+        elseif mode == ADDR_IMMEDIATE
+            _peek(memory, operand_addr)                      # operand discard
+        elseif mode == ADDR_ZERO
+            addr = UInt16(_peek(memory, operand_addr))
+            _peek(memory, addr)                              # value discard
+        elseif mode == ADDR_ZERO_X || mode == ADDR_ABSOLUTE
+            addr, _ = resolve(mode, state, memory)
+            _peek(memory, addr)                              # value discard
+        elseif mode == ADDR_ABSOLUTE_X
+            addr, page = resolve(mode, state, memory)
+            _peek(memory, addr)                              # value discard
             page && (extra_cycles += 1)
         end
         _advance_pc!(state, mode)
@@ -546,18 +593,19 @@ function _step_inner!(state::CPUState, memory)
         _advance_pc!(state, mode)
 
     # --- Register inc/dec (P1f) -------------------------------------------
+    # Phase 2b: +1 internal cycle each (2-cycle implied, 1 bus op + 1 ALU).
     elseif mnemonic === :INX
         state.X = UInt8((Int(state.X) + 1) & 0xFF); set_zn!(state, state.X)
-        state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
+        state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF); _tick(memory)
     elseif mnemonic === :INY
         state.Y = UInt8((Int(state.Y) + 1) & 0xFF); set_zn!(state, state.Y)
-        state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
+        state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF); _tick(memory)
     elseif mnemonic === :DEX
         state.X = UInt8((Int(state.X) - 1) & 0xFF); set_zn!(state, state.X)
-        state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
+        state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF); _tick(memory)
     elseif mnemonic === :DEY
         state.Y = UInt8((Int(state.Y) - 1) & 0xFF); set_zn!(state, state.Y)
-        state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF)
+        state.PC = UInt16((Int(state.PC) + 1) & 0xFFFF); _tick(memory)
 
     # --- BRK / RTI (P1f) --------------------------------------------------
     elseif mnemonic === :BRK
@@ -576,7 +624,10 @@ function _step_inner!(state::CPUState, memory)
         hi = UInt16(_peek(memory, 0xFFFF))
         state.PC = (hi << 8) | lo
     elseif mnemonic === :RTI
-        # Task #50: NMOS RTI cycle-3 discard read of $0100+SP (pre-pop).
+        # NMOS RTI = 6 cycles: opcode fetch, internal, pre-pop discard,
+        # pop P, pop PCL, pop PCH. Task #50 added the discard read;
+        # Phase 2b adds the cycle-2 internal tick.
+        _tick(memory)                                          # cycle-2 internal
         _peek(memory, 0x0100 + Int(state.SP))              # cycle-3 discard
         popped_p = pop8!(state, memory)
         popped_pc = pop16!(state, memory)
