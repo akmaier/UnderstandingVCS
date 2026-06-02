@@ -37,6 +37,7 @@ import jax.numpy as jnp
 from jaxtari.cart.system import Cart, cart_peek, cart_poke, make_cart
 from jaxtari.riot.system import RIOTState, initial_riot_state, riot_peek, riot_poke
 from jaxtari.tia.system import (
+    COLOR_CLOCKS_PER_SCANLINE,
     HBLANK_COLOR_CLOCKS,
     TIAState,
     _apply_pixel_collisions,
@@ -223,9 +224,9 @@ _TIA_PEEK_DRIVEN_MASK = (
 _TIA_NOISE_MASK = 0x3F
 
 
-def _tia_catch_up_collisions(tia: TIAState) -> TIAState:
+def _tia_catch_up_collisions(tia: TIAState, effective_cc: int | None = None) -> TIAState:
     """P3i-d2: run per-pixel collision evaluation for visible color
-    clocks `[HBLANK_COLOR_CLOCKS, tia.color_clock]`, OR'ing the bits
+    clocks `[HBLANK_COLOR_CLOCKS, effective_cc)`, OR'ing the bits
     into `tia.collisions`. Called from `_bus_peek` before returning
     a TIA collision-register value, so games that read a CXxx
     mid-scanline see the partial-scanline state instead of only what
@@ -233,22 +234,25 @@ def _tia_catch_up_collisions(tia: TIAState) -> TIAState:
 
     Idempotent — collision OR is monotone. The eventual end-of-scanline
     render in `tia_advance` re-applies for the whole scanline; the
-    `[HBLANK_COLOR_CLOCKS, tia.color_clock]` prefix may be visited
-    twice but produces the same final bits.
+    `[HBLANK_COLOR_CLOCKS, effective_cc)` prefix may be visited twice
+    but produces the same final bits.
 
     Mirrors xitari's `TIA::peek` which calls `updateFrame(mySystem
-    ->cycles() * 3)` before reading any latched-bit register. Our
-    `tia.color_clock` is at instruction-start so we're off by 0..18
-    color clocks from the actual peek moment, but partial coverage is
-    materially better than no coverage at all (especially for ROMs
-    that read collisions in tight loops where each instruction adds
-    only a few cycles).
+    ->cycles() * 3)` before reading any latched-bit register, where
+    `mySystem->cycles()` is incremented BEFORE the bus op (xitari
+    M6502High::peek does `incrementCycles(1)` then `mySystem->peek`).
+    Task #67: `effective_cc` defaults to `tia.color_clock` (the
+    instruction-start beam, conservative); callers from `_bus_peek`
+    pass `tia.color_clock + pending_tia_cycles * 3` to get the exact
+    sub-instruction beam without actually flushing the TIA.
     """
-    if tia.color_clock <= HBLANK_COLOR_CLOCKS:
+    end = int(tia.color_clock) if effective_cc is None else int(effective_cc)
+    if end <= HBLANK_COLOR_CLOCKS:
         return tia                                  # still in HBLANK, no pixels
+    end = min(end, COLOR_CLOCKS_PER_SCANLINE)       # clamp to scanline end
     coll = list(int(b) for b in tia.collisions)
     sets = _object_pixel_sets(tia)
-    for c in range(HBLANK_COLOR_CLOCKS, int(tia.color_clock)):
+    for c in range(HBLANK_COLOR_CLOCKS, end):
         _apply_pixel_collisions(coll, c - HBLANK_COLOR_CLOCKS, sets)
     return tia._replace(collisions=jnp.array(coll, dtype=jnp.uint8))
 
@@ -307,7 +311,12 @@ def _bus_peek(bus: Bus, addr: int):
         # the per-instruction model; only writes are cycle-threaded.
         new_tia = bus.tia
         if (addr_masked & 0x0F) < 8:
-            new_tia = _tia_catch_up_collisions(bus.tia)
+            # Task #67: pass sub-instruction beam position so the
+            # collision OR covers the cycles between instruction
+            # start and this peek (matches xitari `M6502High::peek`
+            # incrementing cycles BEFORE the bus op).
+            effective_cc = int(bus.tia.color_clock) + new_pending * 3
+            new_tia = _tia_catch_up_collisions(bus.tia, effective_cc)
         raw = tia_peek(new_tia, addr_masked)
         mask = _TIA_PEEK_DRIVEN_MASK[addr_masked & 0x0F]
         noise = bus.data_bus_state & _TIA_NOISE_MASK
