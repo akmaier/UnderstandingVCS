@@ -31,7 +31,7 @@ module Bus
 
 using ..TIA: TIAState, initial_tia_state, tia_peek, tia_poke!, tia_advance!,
              _apply_pixel_collisions!, _object_pixel_sets,
-             HBLANK_COLOR_CLOCKS
+             HBLANK_COLOR_CLOCKS, COLOR_CLOCKS_PER_SCANLINE
 using ..RIOT: RIOTState, initial_riot_state, riot_peek!, riot_poke!
 using ..Cart: CartState, make_cart, cart_peek, cart_poke!
 
@@ -222,13 +222,25 @@ on every read. For TIA reads, the un-driven bits are taken from the
 
 # P3i-d2: mid-scanline collision catch-up. Mutates `tia.collisions` in
 # place, OR'ing per-pixel collision bits for color clocks
-# `[HBLANK_COLOR_CLOCKS, tia.color_clock]`. Idempotent — `tia_advance!`'s
+# `[HBLANK_COLOR_CLOCKS, effective_beam_cc]`. Idempotent — `tia_advance!`'s
 # end-of-scanline render can re-cover the prefix without double-count.
 # Mirrors `jaxtari/jaxtari/bus/system.py::_tia_catch_up_collisions`.
-@inline function _tia_catch_up_collisions!(tia::TIAState)
-    tia.color_clock <= HBLANK_COLOR_CLOCKS && return    # still in HBLANK
+#
+# Task #67 (Phase 1 follow-on): `effective_beam_cc` now includes the
+# sub-instruction cycle drift (`pending_tia_cycles * 3`). Before this
+# patch we caught up to `tia.color_clock` (= the LAST tia_advance!
+# point, typically instruction start), missing 0..18 color clocks of
+# progress. That under-counts collisions for any read in the middle
+# or end of a multi-cycle instruction — which is exactly the breakout
+# ball-doesn't-die failure mode (CXBLPF is read late in an instruction
+# but our catch-up didn't include the cycles between instruction-start
+# and the actual peek).
+@inline function _tia_catch_up_collisions!(tia::TIAState, effective_cc::Int = Int(tia.color_clock))
+    effective_cc <= HBLANK_COLOR_CLOCKS && return       # still in HBLANK
+    # Clamp to scanline end — render-loop also stops at COLOR_CLOCKS_PER_SCANLINE.
+    end_cc = min(effective_cc, COLOR_CLOCKS_PER_SCANLINE - 1)
     sets = _object_pixel_sets(tia)
-    for c in HBLANK_COLOR_CLOCKS:(Int(tia.color_clock) - 1)
+    for c in HBLANK_COLOR_CLOCKS:end_cc
         _apply_pixel_collisions!(tia, c - HBLANK_COLOR_CLOCKS, sets)
     end
     return
@@ -254,8 +266,15 @@ end
         # before reading any latched-bit register. Idempotent OR so
         # the eventual end-of-scanline render in `tia_advance!` can
         # re-cover the prefix without double-count.
+        #
+        # Task #67: effective_cc includes the sub-instruction cycle
+        # drift (`pending_tia_cycles * 3`). This is the cycle the
+        # peek would resolve to under full read-side TIA flushing,
+        # WITHOUT actually advancing the TIA (which has the 6×
+        # slowdown problem documented in bug_fix_log P3i-d2).
         if (a & 0x0F) < 8
-            _tia_catch_up_collisions!(bus.tia)
+            effective_cc = Int(bus.tia.color_clock) + bus.pending_tia_cycles * 3
+            _tia_catch_up_collisions!(bus.tia, effective_cc)
         end
         raw = tia_peek(bus.tia, a)               # TIA register read
         mask = UInt8(_TIA_PEEK_DRIVEN_MASK[(a & 0x0F) + 1])
