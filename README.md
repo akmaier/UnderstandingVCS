@@ -108,6 +108,19 @@ cd jaxtari && .venv/bin/python -m pytest tests/test_pxc1_conformance.py tests/te
 
 ### Recent commits worth knowing about
 
+  - **Phase 2b of [P3I_G_THREADING_PLAN.md](P3I_G_THREADING_PLAN.md)
+    landed (2026-06-02, both ports — major progress)**:
+    - `2aec8c5` jutari + `a8f2bd7` jaxtari: per-opcode cycle-counter
+      validation. `bus.pending_tia_cycles` now sums to
+      `CYCLE_TABLE[opcode]` for ALL 189 opcodes on both ports.
+      Validated by new `scratch_cycle_audit.{jl,py}` test runners.
+    - **Measured pong RAM bit-exactness**:
+      - jutari↔xitari: 4 → **0.0 b/f** (frames 0-300 bit-exact except
+        well-known frame-20 FIRE shared bug).
+      - jaxtari↔xitari: 13 → **4 b/f** (frames 0-23 bit-exact, frame
+        24+ has residual 4 b/f at $04/$3c — Phase 5 candidate).
+    - **CYCLE_TABLE bug fix**: 0xA7 LAX zp was 4 on both ports, fixed
+      to 3 (matches xitari + NMOS reference).
   - **Phase 1 of [P3I_G_THREADING_PLAN.md](P3I_G_THREADING_PLAN.md)
     landed (2026-06-02, this session)**:
     - `fb72495` — jutari Bus trace tap + `tools/cpu_tia_cycle_trace.jl`
@@ -134,21 +147,26 @@ cd jaxtari && .venv/bin/python -m pytest tests/test_pxc1_conformance.py tests/te
 
 ### Open work — pick up here on the next session
 
-  1. **Pong renderer-only bugs** (32 px/frame screen residual, RAM
-     already matches). The 3 reproducible bug sites — HMOVE-blank
-     misfire on scanline 34, sprite Y off-by-1 on rows 35-37/149 —
-     live in `render_pixel` / `render_scanline` / the HMOVE-blank
-     state machine. Orthogonal to P3I_G_THREADING_PLAN.md.
+  1. **Pong renderer-only bugs** (32 px/frame screen residual on
+     jutari, RAM now bit-exact post-Phase-2b). The 3 reproducible
+     bug sites — HMOVE-blank misfire on scanline 34, sprite Y
+     off-by-1 on rows 35-37/149 — live in `render_pixel` /
+     `render_scanline` / the HMOVE-blank state machine. Orthogonal
+     to P3I_G_THREADING_PLAN.md cycle threading.
   2. **Breakout ball-doesn't-die**: RAM diverges starting at frame
      92 (6 specific bytes — see bug_fix_log "Phase 1 findings"
-     entry for the list). Diagnostic next step: extend
-     `cpu_tia_cycle_trace.jl` to also dump RAM bytes per frame,
-     then walk the trace at frame 91→92 to find which TIA read
-     produced a different value than xitari would.
-  3. **jaxtari pong 13 bytes/frame** (Phase 1c didn't help —
-     different bug path). Phase 2 of P3I_G_THREADING_PLAN.md
-     (explicit per-cycle counter on `_step_inner` with
-     CYCLE_TABLE validation) is the next high-leverage move.
+     entry for the list). Phase 2b did NOT fix this. Diagnostic
+     next step: extend `cpu_tia_cycle_trace.jl` to also dump RAM
+     bytes per frame, then walk the trace at frame 91→92 to find
+     which TIA read produced a different value than xitari would.
+     Likely a RIOT-timer or game-specific paddle wiring bug.
+  3. **jaxtari pong 4 b/f residual at $04/$3c (frame 24+)** — same
+     bytes flagged in bug_fix_log's "frame-1 with LEFT" finding,
+     now suppressed to frame 24 thanks to the cycle counter fix.
+     A specific INPT/floating-bus issue jaxtari has and jutari does
+     not. **Phase 5** of P3I_G_THREADING_PLAN.md or further
+     investigation of `bus.system.peek`'s noise-OR semantics in
+     jaxtari would close this.
 
 ### Uncommitted experimental edits left in the working tree
 
