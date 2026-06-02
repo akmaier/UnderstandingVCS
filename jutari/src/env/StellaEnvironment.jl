@@ -17,7 +17,7 @@ using ..IO: apply_action!, console_switches!, NOOP, LEFT, RIGHT,
 using ..RomSettingsModule: RomSettings, GenericRomSettings,
                            romsettings_reset!, romsettings_is_terminal,
                            romsettings_get_reward, romsettings_lives,
-                           romsettings_uses_paddles
+                           romsettings_uses_paddles, romsettings_swap_paddles
 using ..TIA: Y_START, VISIBLE_HEIGHT, set_paddle_resistance!
 
 export StellaEnvironment, env_reset!, env_step!,
@@ -159,8 +159,22 @@ function _apply_paddle_action!(env::StellaEnvironment, action::Int)
     elseif env.left_paddle > _PADDLE_MAX
         env.left_paddle = _PADDLE_MAX
     end
-    set_paddle_resistance!(env.console.bus.tia, 0, env.left_paddle)
-    set_paddle_resistance!(env.console.bus.tia, 1, env.right_paddle)
+    # Task #66: route paddle resistance per xitari Paddles wiring. With
+    # SwapPaddles=NO (Breakout convention) the user paddle reaches INPT0
+    # (Pin Nine on the left controller); with SwapPaddles=YES (Pong /
+    # Video Olympics) it reaches INPT1 (Pin Five). xitari handles this
+    # inside `Paddles::Paddles(jack, event, swap)` via the
+    # `myPinEvents[2/3][0/1]` wiring table — see
+    # `xitari/emucore/Paddles.cxx`. Without this routing fix, jutari's
+    # pong paddle update lands on INPT0 which the game never reads, so
+    # the on-screen paddle stays frozen at the centred default.
+    if romsettings_swap_paddles(env.settings)
+        set_paddle_resistance!(env.console.bus.tia, 1, env.left_paddle)
+        set_paddle_resistance!(env.console.bus.tia, 0, env.right_paddle)
+    else
+        set_paddle_resistance!(env.console.bus.tia, 0, env.left_paddle)
+        set_paddle_resistance!(env.console.bus.tia, 1, env.right_paddle)
+    end
     return nothing
 end
 

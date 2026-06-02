@@ -15,7 +15,7 @@ Mirror of jaxtari's `BreakoutRomSettings.uses_paddles() = True` /
 module PaddleGames
 
 using ..RomSettingsModule: RomSettings
-import ..RomSettingsModule: romsettings_uses_paddles
+import ..RomSettingsModule: romsettings_uses_paddles, romsettings_swap_paddles
 
 export BreakoutRomSettings, PongRomSettings
 
@@ -42,5 +42,11 @@ mutable struct PongRomSettings <: RomSettings
 end
 
 romsettings_uses_paddles(::PongRomSettings) = true
+# Pong / Video Olympics has `Controller.SwapPaddles "YES"` in xitari's
+# stella.pro. With swap, the Paddles controller routes
+# PaddleZeroResistance (the user paddle from `applyActionPaddles`) to
+# Pin Five, which the TIA reads as INPT1 — so `_apply_paddle_action!`
+# must update `paddle_resistance[1]` instead of `paddle_resistance[0]`.
+romsettings_swap_paddles(::PongRomSettings) = true
 
 end # module
