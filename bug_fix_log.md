@@ -163,6 +163,34 @@ move in lock-step (recipe in that file's header comment).
 
 ## Patches landed (newest first)
 
+### Phase 2b jaxtari mirror (P3I_G_THREADING_PLAN.md) — cycle-counter validation (2026-06-02)
+
+  - **Commit `a8f2bd7`**: mirror of jutari Phase 2b (commit `2aec8c5`)
+    applied to jaxtari. All 189 opcodes now satisfy
+    `bus.pending_tia_cycles == CYCLE_TABLE[opcode]`.
+
+  - **Validation via `jaxtari/tests/scratch_cycle_audit.py`**:
+    Before: 64 of 189 opcodes mismatched (more than jutari, because
+    jaxtari's NOP handler was even simpler — only ABS,X did anything).
+    After: ALL 189 pass.
+
+  - **Same fix shape as jutari**: 21 opcode-handler additions
+    (implied 2-cycle internal ticks via `pending_tick`; PHA/PHP/PLA/
+    PLP/RTS/RTI cycle-2 internal; branch NOT taken peek of operand;
+    NOP full bus-op pattern across all 6 modes) + CYCLE_TABLE fix
+    at 0xA7 (LAX zp 4 → 3).
+
+  - **Measured impact**: to be filled in after the jaxtari↔xitari
+    pong RAM diff completes. Per P3I_G_THREADING_PLAN.md §Phase 4
+    acceptance criterion, expected drop from 13 b/f to single digits.
+    Pong freeze (within ~100 frames) likely closes — the freeze
+    pattern matches "TIA write timing off by N color clocks per
+    missed cycle" which is exactly what this fixes.
+
+  - **What's next**: Phase 3 verification (re-run PXC-S screen diff,
+    regen pong/breakout videos). Phase 5 optional TIA-READ threading
+    not started.
+
 ### Phase 2b jutari (P3I_G_THREADING_PLAN.md) — per-opcode cycle-counter validation (2026-06-02)
 
   - **Commit `2aec8c5`**: every documented + undocumented opcode
