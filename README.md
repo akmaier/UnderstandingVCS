@@ -30,6 +30,60 @@ For the per-phase commit ledger, what each port can do today, and the complete l
 
 ---
 
+## Hand-off — pick up here
+
+**Two user-visible bugs are open** (both action-driven; PXC1 noop-10 RAM bit-exact still holds for pong/breakout/SI, so the divergence is only triggered by `FIRE`/`LEFT`/`RIGHT` actions):
+
+1. **Pong freezes within ~100 frames** of random play. Visible in `tools/breakout_video/output/pong_xitari_vs_jaxtari.mp4` — both paddles + ball + score lock into a fixed image while xitari progresses cleanly (88-472 px / frame-pair).
+2. **Breakout ball doesn't die** under random actions. xitari decrements RAM byte 57 (lives) every ~120 frames; jaxtari decrements once at frame 241 and never again. RAM diverges at frame 20 (first FIRE).
+
+### Big new finding (2026-06-02): jutari is much closer to xitari than jaxtari is
+
+A 3-way per-frame RAM diff on pong + the seed-42 random action stream:
+
+| Comparison       | Bytes diff / frame (typical, late frames) |
+|------------------|---|
+| **jutari ↔ xitari**  | **4**           |
+| jaxtari ↔ xitari | 15–18           |
+| jaxtari ↔ jutari | 12–16           |
+
+**jutari (Julia port) tracks xitari almost exactly. jaxtari (JAX port) does not.** PXC2 misses this because PXC2 only tests NOOP fixtures (where both ports happen to agree with xitari and each other). Under random actions, the two ports diverge — and the bug is in **jaxtari**, not jutari.
+
+This is the single highest-leverage next clue. The next agent should:
+
+1. **Run the 3-way RAM diff harness for early frames** to find the exact frame and RAM bytes where jaxtari first diverges from jutari under the random action stream. Probe lives at `/tmp/pong_3way_ram_diff.py` (regenerate from this commit's diff if `/tmp` was cleared). Pre-requisite: `/tmp/pong_actions_trace.jsonl` (200 random-action frames in trace format) and `/tmp/pong_jutari_rams.jsonl` (jutari RAM trace, generated via `julia --project=jutari tools/jutari_trace_dump.jl --rom xitari/roms/pong.bin --trace /tmp/pong_actions_trace.jsonl --out /tmp/pong_jutari_rams.jsonl`).
+2. **Trace the jaxtari instruction that wrote the divergent byte**, compare to the equivalent jutari code path. Since both ports came from the same porting plan, line-by-line comparison of the relevant `jaxtari/jaxtari/*.py` vs `jutari/src/*.jl` file should surface the algorithmic mismatch quickly.
+3. Apply the fix to jaxtari, mirror to jutari only if needed, run the full test gates.
+
+### Test gates (parallel by default after commit `dd317b6`)
+
+```bash
+# jaxtari (~22 min in parallel; -n auto picks all cores)
+cd jaxtari && .venv/bin/python -m pytest -q
+
+# jutari (~20 s)
+cd jutari && julia --project=. -e 'using Pkg; Pkg.test()'
+
+# Quick smoke: PXC1+PXC2 only (~22 min parallel)
+cd jaxtari && .venv/bin/python -m pytest tests/test_pxc1_conformance.py tests/test_pxc2_jaxtari_vs_jutari.py -q
+
+# Override default parallelism with -n 1 for serial debugging.
+```
+
+### Recent commits worth knowing about
+
+  - `1c96314` — refined handoff in `bug_fix_log.md` with the freeze diagnosis (pong stops within ~100 frames, not just static paddles).
+  - `dd317b6` — pytest-xdist `-n auto` default: 1 h 41 m → 22 m on the PXC sweep.
+  - `c016087` — Task #65 paddle games skip SWCHA in `apply_action`.
+  - `15cff40` — pt8 RIOT INTIM `-1` fix (74 % screen-residual drop across 5 ROMs).
+  - Earlier pt5–pt7: SCOREMODE, ENAM/NUSIZ/COLU/CTRLPF defer.
+
+### Uncommitted experimental edits left in the working tree
+
+`jaxtari/jaxtari/io/action.py` + `jutari/src/io/IO.jl` have a pending diff (paddle FIRE routed to SWCHA bits 6/7 instead of INPT4 — xitari Paddles controller wiring per `xitari/emucore/Paddles.cxx`). 67/67 PXC + RIOT + bus tests still pass with the diff applied; pong screen still freezes (so the diff doesn't fix the visible bug). Next agent to decide whether to commit, revert, or leave as a stash. See `bug_fix_log.md` "Where we left off" section for the full context.
+
+---
+
 ## Repository Structure
 
 ```
