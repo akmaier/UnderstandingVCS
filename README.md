@@ -108,15 +108,51 @@ cd jaxtari && .venv/bin/python -m pytest tests/test_pxc1_conformance.py tests/te
 
 ### Recent commits worth knowing about
 
+  - **Phase 1 of [P3I_G_THREADING_PLAN.md](P3I_G_THREADING_PLAN.md)
+    landed (2026-06-02, this session)**:
+    - `fb72495` — jutari Bus trace tap + `tools/cpu_tia_cycle_trace.jl`
+      (per-bus-op CSV diagnostic, zero-cost when disabled).
+    - `6cdc99a` — `tools/cycle_trace_inspect.py` query language
+      (scanline / poke-trace / hmove / diff / summary subcommands).
+    - `408c516`+`adcacc2` — collision catch-up endpoint now uses
+      sub-instruction `effective_cc` (xitari `M6502High::peek`
+      semantic). Closes jutari↔xitari pong RAM gap **4 → <1
+      bytes/frame** (max 3, mean ~0 across 600 frames). jaxtari
+      partial (13/frame, refinement is in the wrong code path
+      for its residual).
+    - `0769a5e` — `tools/jutari_xitari_ram_diff.py` general per-frame
+      RAM diff tool. Used to measure the Phase 1c impact + identify
+      breakout's first-divergence frame (frame 92, 6 bytes at $37
+      $5f $61 $65 $67 $6c).
+  - **Task #66 (`8531bb8`)** — jutari pong paddles MOVE (SwapPaddles
+    routes user paddle to INPT1).
   - `1c96314` — refined handoff in `bug_fix_log.md` with the freeze diagnosis (pong stops within ~100 frames, not just static paddles).
   - `dd317b6` — pytest-xdist `-n auto` default: 1 h 41 m → 22 m on the PXC sweep.
   - `c016087` — Task #65 paddle games skip SWCHA in `apply_action`.
   - `15cff40` — pt8 RIOT INTIM `-1` fix (74 % screen-residual drop across 5 ROMs).
   - Earlier pt5–pt7: SCOREMODE, ENAM/NUSIZ/COLU/CTRLPF defer.
 
+### Open work — pick up here on the next session
+
+  1. **Pong renderer-only bugs** (32 px/frame screen residual, RAM
+     already matches). The 3 reproducible bug sites — HMOVE-blank
+     misfire on scanline 34, sprite Y off-by-1 on rows 35-37/149 —
+     live in `render_pixel` / `render_scanline` / the HMOVE-blank
+     state machine. Orthogonal to P3I_G_THREADING_PLAN.md.
+  2. **Breakout ball-doesn't-die**: RAM diverges starting at frame
+     92 (6 specific bytes — see bug_fix_log "Phase 1 findings"
+     entry for the list). Diagnostic next step: extend
+     `cpu_tia_cycle_trace.jl` to also dump RAM bytes per frame,
+     then walk the trace at frame 91→92 to find which TIA read
+     produced a different value than xitari would.
+  3. **jaxtari pong 13 bytes/frame** (Phase 1c didn't help —
+     different bug path). Phase 2 of P3I_G_THREADING_PLAN.md
+     (explicit per-cycle counter on `_step_inner` with
+     CYCLE_TABLE validation) is the next high-leverage move.
+
 ### Uncommitted experimental edits left in the working tree
 
-`jaxtari/jaxtari/io/action.py` + `jutari/src/io/IO.jl` have a pending diff (paddle FIRE routed to SWCHA bits 6/7 instead of INPT4 — xitari Paddles controller wiring per `xitari/emucore/Paddles.cxx`). 67/67 PXC + RIOT + bus tests still pass with the diff applied; pong screen still freezes (so the diff doesn't fix the visible bug). Next agent to decide whether to commit, revert, or leave as a stash. See `bug_fix_log.md` "Where we left off" section for the full context.
+`jaxtari/jaxtari/io/action.py` + `jutari/src/io/IO.jl` have a pending diff (paddle FIRE routed to SWCHA bits 6/7 instead of INPT4 — xitari Paddles controller wiring per `xitari/emucore/Paddles.cxx`). 67/67 PXC + RIOT + bus tests still pass with the diff applied; pong screen still freezes (so the diff doesn't fix the visible bug). Next agent to decide whether to commit, revert, or leave as a stash. See `bug_fix_log.md` "Where we left off" section for the full context. **NB**: those edits are on a separate machine — current main is clean.
 
 ---
 
