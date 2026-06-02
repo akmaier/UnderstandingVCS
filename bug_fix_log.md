@@ -218,6 +218,28 @@ move in lock-step (recipe in that file's header comment).
     place using `tia.color_clock` directly (= the conservative
     instruction-start value); that's now fixed.
 
+  - **Measured impact of Phase 1c collision catch-up refinement (pong)**:
+    `tools/jutari_xitari_ram_diff.py --rom xitari/roms/pong.bin
+    --rom-settings pong --max-frames 600` shows **max 3 bytes/frame**
+    and **mean ~0 bytes/frame** post-divergence — down from the
+    pre-refinement "4 bytes/frame typical" figure in the earlier
+    handoff. The only persistent divergence is the documented
+    frame-20 FIRE shared bug (`$3f`/`$40` swap, 2 bytes) which
+    matches the bug_fix_log "where we left off" entry. Effectively
+    closes the jutari↔xitari pong RAM gap that was the original
+    deep-dive target.
+
+  - **BUT**: pong screen residual is UNCHANGED (~30 px/frame avg
+    across 1800 frames, matching the user's "32 px at frame 200"
+    visual report). RAM matches → renderer is producing different
+    pixels from the same TIA register state. So the pong visual
+    bugs (HMOVE-blank misfire on scanline 34, sprite Y off-by-1
+    on rows 35-37/149) are **renderer-only**, not CPU-cycle. The
+    cycle-threading work is in the wrong layer for them. Their
+    fix requires investigating our `render_pixel` /
+    `render_scanline` / HMOVE-blank state machine — orthogonal to
+    Phases 1-5 of P3I_G_THREADING_PLAN.md.
+
   - **Investigation finding for the breakout ball-doesn't-die bug**:
     using `tools/cycle_trace_inspect.py` on a 280-frame breakout
     trace, the collision register reads CONTINUE every frame past
