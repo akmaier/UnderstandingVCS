@@ -25,35 +25,52 @@ to debug a single test deterministically.
 
 ### Active user-reported bugs
 
-**A. Pong paddles don't move on screen** (user, 2026-05-31). Reported
-in the freshly-rendered `tools/breakout_video/output/pong_xitari_vs_jaxtari.mp4`
-+ `pong_xitari_vs_jutari.mp4`: both paddles are static in jaxtari/jutari
-while xitari moves them in response to the random paddle action stream.
-Diagnosis so far:
-  - jaxtari `paddle_resistance[0]` IS updated by LEFT/RIGHT actions
-    (probed via `/tmp/pong_paddle_test.py`: NOOP → 408823, LEFT-100 →
-    790196). `paddle_use_dump_pot[0]` is True. So the input plumbing
-    works.
-  - But the rendered screen at frame 100 with NOOP vs LEFT vs RIGHT
-    shows **0 px diff** — the paddle stays at the same pixel position.
-  - Pong RAM with NOOP vs LEFT-100 changes byte `$3b` in jaxtari
-    (0x6d→0xcb). xitari changes bytes `$33` AND `$3c` for the same
-    action. So pong's CPU takes a different code path on LEFT in
-    jaxtari — writes the paddle-Y value into a RAM byte the renderer
-    doesn't read.
-  - Frame-1 LEFT RAM divergence (jaxtari vs xitari) was 3 bytes before
-    Task #65's SWCHA-skip-for-paddle-games fix, now down to 2 bytes
-    (`$04`, `$3c`; byte `$40` closed). PXC1 noop-10 RAM is still
-    bit-exact — divergence is only on action-driven runs.
-  - **Concrete next step**: instrument `bus.peek` for the INPT0 address
-    in pong's frame-1 polling loop (`/tmp/pong_peek_log.py` is the template
-    we used for pt8 — pong polls INPT0 in a tight loop similar to its
-    INTIM polling). Find the cycle where my port's INPT0 returns 0x80
-    vs xitari's. Most likely there's a `cycles - 1` style off-by-one in
-    the `cycles > dump_disabled_cycle + needed` formula — the same
-    class of bug as pt8 INTIM. Apply the analogous `(intim - 1) & 0xFF`
-    fix to `riot_peek` for reg=4. **High-leverage**: would likely also
-    cascade to (B).
+**A. Pong FREEZES under random actions** (user, 2026-05-31, refined 2026-06-02).
+Reported as "paddles don't move" in `tools/breakout_video/output/pong_xitari_vs_jaxtari.mp4`,
+but it's worse than that — the **entire game state freezes** within
+~100 frames. Diagnosis:
+  - `/tmp/pong_screen_random.py` against the seed-42 random-action
+    stream from the video: frames 100, 200, 300, 500, 700, 1000 are
+    **byte-identical** in jaxtari. The CPU has fallen into a
+    steady-state loop that produces the same screen every frame.
+  - xitari on the same action stream: every pair of those frames
+    differs by 88-472 px. Game is alive and progressing.
+  - PXC1 noop-10 RAM is still bit-exact, so the freeze is **action-
+    triggered**. The first FIRE in the random stream is at frame 20.
+  - Pong's TIA reads are **INPT1 (paddle 1) and INPT3 (paddle 3)**,
+    91 polls each per frame — NOT INPT0/INPT2 (per `/tmp/pong_all_peeks.py`).
+    Pong (md5 60e0ea3c…) has `Controller.SwapPaddles = "YES"` in xitari's
+    `stella.pro`, so paddle wiring inside the Paddles controller is
+    swapped. INPT1 = `m_right_paddle` (= default `408823`, NOT updated
+    by single-player ALE.act since `player_b_action = PLAYER_B_NOOP`),
+    INPT3 = paddle 3 (= unset event = minimumResistance → returns 0x80
+    immediately after VBLANK D7 clear).
+  - jaxtari's paddle_resistance plumbing IS wired up correctly:
+    `_apply_paddle_action` writes `paddle_resistance[0] = _left_paddle`
+    (action-driven) and `paddle_resistance[1] = _right_paddle`
+    (default). Same as xitari.
+  - With identical INPT1/INPT3 timing inputs and the same ROM, xitari
+    progresses and jaxtari freezes. **The divergence is therefore in
+    CPU branching driven by some other read** — RIOT timer
+    (INTIM/INSTAT), SWCHA (joystick after FIRE), CXxx (collision
+    latches), or floating-bus noise on INPT* reads (xitari ORs
+    `mySystem->getDataBusState() & 0x3F` into INPT reads; my port
+    returns clean `0x80`/`0x00`).
+  - Frame-1 RAM with LEFT-only diverges in 2 bytes (`$04`, `$3c`)
+    after Task #65's SWCHA-skip fix. After 100 LEFT actions, jaxtari
+    changes byte `$3b` but xitari changes `$33` AND `$3c` (the bytes
+    the renderer reads). The CPU takes a different STA path.
+  - **Concrete next step**: floating-bus noise. xitari's TIA peek for
+    every INPT/CX register returns `data | noise` where
+    `noise = mySystem->getDataBusState() & 0x3F` (the lower 6 bits of
+    whatever the bus was last set to). My port returns the clean bit
+    only. If pong reads INPT or a CX register and uses any of the
+    lower 6 bits (e.g., stored to RAM, used as table index, branched
+    on), my port and xitari differ. Add a `data_bus_state` field to
+    `BusState` that tracks the last value written/read on the bus,
+    then OR `(data_bus_state & 0x3F)` into every TIA peek that returns
+    a sub-8-bit semantic value (CX*, INPT*). High-leverage like pt8 —
+    likely also unsticks (B).
 
 **B. Breakout ball doesn't die under random actions** (user, earlier).
 Reported in `breakout_xitari_vs_jaxtari.mp4`: ball reaches the bottom
