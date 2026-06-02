@@ -42,13 +42,15 @@ For the per-phase commit ledger, what each port can do today, and the complete l
 A 3-way per-frame RAM diff on pong + the seed-42 random action stream
 (`tools/pong_3way_ram_diff.py`):
 
-| Comparison       | Bytes diff / frame (typical, late frames) |
-|------------------|---|
-| **jutari ↔ xitari**  | **4**           |
-| jaxtari ↔ xitari | 15–18           |
-| jaxtari ↔ jutari | 12–16           |
+| Comparison       | Bytes diff / frame (typical) | After Phase 1c (jutari) |
+|------------------|---|---|
+| **jutari ↔ xitari**  | **4**           | **<1** (only frame-20 $3f/$40 swap remains) |
+| jaxtari ↔ xitari | 15–18           | unchanged (jaxtari side not yet refined) |
+| jaxtari ↔ jutari | 12–16           | unchanged (same reason) |
 
 **jutari (Julia port) tracks xitari almost exactly. jaxtari (JAX port) does not.** PXC2 misses this because PXC2 only tests NOOP fixtures (where both ports happen to agree with xitari and each other). Under random actions, the two ports diverge — and the bug is in **jaxtari**, not jutari.
+
+**Update 2026-06-02 (later)**: Phase 1c of [P3I_G_THREADING_PLAN.md](P3I_G_THREADING_PLAN.md) refined the collision catch-up endpoint to include `pending_tia_cycles * 3` (matching xitari's `mySystem->cycles()` POST-increment semantic from `M6502High::peek`). Measured via `tools/jutari_xitari_ram_diff.py`: the jutari↔xitari pong RAM gap dropped from **~4 bytes/frame typical** to **<1 byte/frame** (mean ~0, max 3 across 600 frames), with the only persistent residual being the documented frame-20 `$3f`/`$40` swap. **The pong RAM deep-dive target is effectively closed.** However, the pong SCREEN residual is unchanged at ~30 px/frame — the visual bugs are renderer-only (HMOVE-blank misfire on scanline 34, sprite Y off-by-1 on rows 35-37/149), orthogonal to CPU-cycle threading.
 
 **Confirmed via a parallel pong-progresses test** (`/tmp/pong_jutari_progress.jl` runtime + `/tmp/pong_screen_random.py` runtime): jutari pong's screen progresses cleanly across frames (72–344 px diff between sample frames), while jaxtari's screen **freezes** within ~100 frames.
 
