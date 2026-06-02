@@ -70,6 +70,25 @@ Find the **specific emulator-core difference** between `jaxtari/jaxtari/*` and `
   4. Fix jaxtari to match jutari's behavior at that point. Mirror to jutari only if jutari turns out to be the wrong one (unlikely given the 4-byte vs 15-18-byte gap).
   5. Then continue on the jutari path: find the remaining 4-byte/frame jutari↔xitari residual (the frame-20 FIRE swap of `$3f`/`$40` is the lead).
 
+#### Deeper look at the frame-20 FIRE divergence (both ports vs xitari)
+
+The shared bug at frame 20 — both jaxtari and jutari diverge from xitari at exactly 2 bytes (`$3f`/`$40`, values swapped) — was investigated this session via `tools/jutari_pong_fire_probe.jl` + `tools/pong_fire_full_compare.py` (just persisted). Findings:
+
+  - **Pong stores to BOTH `$3f` AND `$40` every frame** (steady-state value 0xc0; pokes are ~40 cycles apart per frame). At the FIRE frame, exactly ONE of them flips 0xc0→0x00.
+  - **xitari clears `$40`** (keeps `$3f`=0xc0). **My ports clear `$3f`** (keep `$40`=0xc0). Adjacent addresses, off by 1.
+  - The instruction is a `STA <addr>` with value 0x00 — data_bus_state at the moment of poke = 0x00, so A = 0x00 was loaded then stored.
+  - Pong's CPU writes the same VALUE (0x00) to a different ADDRESS — strongly suggests **indexed addressing** (`STA $XX,X` or `STA $YY,Y`) where the index register holds a different value in my ports vs xitari at the STA moment.
+  - Both ports' SWCHA at frame 20 = 0x7F (bit 7 cleared = P0 FIRE pressed). This matches xitari's expected value with `SwapPaddles=YES` wiring per `xitari/emucore/Paddles.cxx`. So SWCHA is NOT the divergence source.
+  - INPT0/INPT1 dump-pot timing: both ports compute the same threshold (`needed = 7779` cycles for paddle_resistance = 408823). Both reach D7-flip at the same cycle. So INPT polling result is the same.
+  - INSTAT: my port returns 0x80 if `timer_expired` else 0x00. xitari has a more nuanced formula involving `myTimerReadAfterInterrupt`, but my port's INTIM-read-clears-timer_expired gives an equivalent end-state. Not the smoking gun (yet).
+  - Likely culprits still on the suspect list: **CXxx (collision register) read at the FIRE moment** (collision detection cycle precision could differ between ports), or some other floating-bus / data-bus state difference at the specific instruction that loads the index register.
+
+  **Concrete next probe** (next agent or session):
+  1. Add PC tracking to the bus poke trace in `tools/jutari_pong_fire_probe.jl` (modify the temporary debug line in `jutari/src/bus/Bus.jl::poke!` to capture `bus.tia.total_cycles` + an externally-passed CPU PC). Find the exact CPU PC of the STA that writes to `$3f` at frame 20.
+  2. Disassemble pong.bin around that PC (e.g., `tools/trace_dump --decode` if available, or use a 6502 disassembler on the ROM). Identify the addressing mode and what register the index comes from.
+  3. Trace backwards from that LDA/LDX/LDY to find which TIA/RIOT register read produces the divergent index value.
+  4. Fix that read in jutari (it's likely a peek formula off-by-one similar to pt8 INTIM). Mirror to jaxtari.
+
 ### Test gates (parallel by default after commit `dd317b6`)
 
 ```bash
