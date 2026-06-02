@@ -31,7 +31,7 @@ from typing import Tuple
 
 import jax.numpy as jnp
 
-from jaxtari.bus.system import Bus, peek, poke
+from jaxtari.bus.system import Bus, peek, poke, pending_tick
 from jaxtari.cpu.addressing import INSTRUCTION_LENGTH, RESOLVERS
 from jaxtari.cpu.alu import (
     adc,
@@ -45,11 +45,15 @@ from jaxtari.cpu.alu import (
     set_zn,
 )
 from jaxtari.cpu.tables import (
+    ADDR_ABSOLUTE,
     ADDR_ABSOLUTE_X,
     ADDR_ABSOLUTE_Y,
+    ADDR_IMMEDIATE,
     ADDR_IMPLIED,
     ADDR_INDIRECT,
     ADDR_INDIRECT_Y,
+    ADDR_ZERO,
+    ADDR_ZERO_X,
     ADDRESSING_MODE_TABLE,
     CYCLE_TABLE,
     FLAG_B,
@@ -424,20 +428,24 @@ def _step_inner(state: CPUState, memory):
         return _stub_advance(state, base_cycles), memory
 
     # --- Transfers (implied) -----------------------------------------------
+    # Phase 2b: all implied 2-cycle ops have a cycle-2 internal cycle on NMOS
+    # — no bus op, just ALU/register work. The `pending_tick` bumps
+    # `bus.pending_tia_cycles` so the count matches CYCLE_TABLE; downstream
+    # TIA-write timing in `poke` reads that counter.
     if mnemonic == "TAX":
-        return _commit_load(state, "X", int(state.A), mode, base_cycles, 0), memory
+        return _commit_load(state, "X", int(state.A), mode, base_cycles, 0), pending_tick(memory)
     if mnemonic == "TAY":
-        return _commit_load(state, "Y", int(state.A), mode, base_cycles, 0), memory
+        return _commit_load(state, "Y", int(state.A), mode, base_cycles, 0), pending_tick(memory)
     if mnemonic == "TXA":
-        return _commit_load(state, "A", int(state.X), mode, base_cycles, 0), memory
+        return _commit_load(state, "A", int(state.X), mode, base_cycles, 0), pending_tick(memory)
     if mnemonic == "TYA":
-        return _commit_load(state, "A", int(state.Y), mode, base_cycles, 0), memory
+        return _commit_load(state, "A", int(state.Y), mode, base_cycles, 0), pending_tick(memory)
     if mnemonic == "TSX":
-        return _commit_load(state, "X", int(state.SP), mode, base_cycles, 0), memory
+        return _commit_load(state, "X", int(state.SP), mode, base_cycles, 0), pending_tick(memory)
     if mnemonic == "TXS":
         return _commit_load(
             state, "SP", int(state.X), mode, base_cycles, 0, update_flags=False
-        ), memory
+        ), pending_tick(memory)
 
     # --- Loads -------------------------------------------------------------
     if mnemonic in ("LDA", "LDX", "LDY"):
@@ -514,13 +522,14 @@ def _step_inner(state: CPUState, memory):
         op = {"ASL": asl_op, "LSR": lsr_op, "ROL": rol_op, "ROR": ror_op}[mnemonic]
         if mode == ADDR_IMPLIED:
             # Accumulator-mode shift / rotate: operand and destination are A.
+            # Phase 2b: +1 internal cycle (ALU op, no bus op).
             new_a, new_p = op(int(state.P), int(state.A))
             return state._replace(
                 A=jnp.uint8(new_a & 0xFF),
                 P=jnp.uint8(new_p & 0xFF),
                 PC=jnp.uint16((int(state.PC) + 1) & 0xFFFF),
                 cycles=state.cycles + jnp.uint64(base_cycles),
-            ), memory
+            ), pending_tick(memory)
         # Memory-mode RMW. Task #50: NMOS 6502 emits the famous
         # double-write — the cell is written *twice*: first with the
         # OLD value (dummy/internal cycle), then with the NEW value.
@@ -566,6 +575,10 @@ def _step_inner(state: CPUState, memory):
             extra = 1 + (1 if page_crossed else 0)
             new_pc = target
         else:
+            # Phase 2b: branch NOT taken still peeks the operand byte at
+            # cycle 2 on NMOS. Without this, pending_tia_cycles undercounts
+            # by 1 (= 1 bus op vs CYCLE_TABLE's 2).
+            _, memory = peek(memory, (int(state.PC) + 1) & 0xFFFF)
             new_pc = (int(state.PC) + 2) & 0xFFFF
             extra = 0
         return state._replace(
@@ -601,11 +614,10 @@ def _step_inner(state: CPUState, memory):
 
     # --- RTS ---------------------------------------------------------------
     if mnemonic == "RTS":
-        # Task #50: NMOS 6502 RTS emits two dummy peeks beyond the
-        # two real pops: (1) discard read of $0100+SP (pre-increment)
-        # at cycle 3, before the first pop; and (2) discard read of
-        # the return address itself at cycle 6, after PC = popped+1.
-        # Both update the floating-bus latch.
+        # NMOS RTS = 6 cycles. Task #50 added the cycle-3 + cycle-6 discard
+        # reads; Phase 2b adds the cycle-2 internal tick that completes the
+        # count (5 bus ops + 1 internal = 6 cycles).
+        memory = pending_tick(memory)                       # cycle-2 internal
         _, memory = peek(memory, 0x0100 + int(state.SP))   # cycle-3 discard
         return_addr, new_sp, memory = pop16(memory, int(state.SP))
         new_pc = (return_addr + 1) & 0xFFFF
@@ -617,7 +629,11 @@ def _step_inner(state: CPUState, memory):
         ), memory
 
     # --- Stack push / pull (P1e) ------------------------------------------
+    # Phase 2b: PHA/PHP = 3 cycles = opcode + internal + push; PLA/PLP =
+    # 4 cycles = opcode + internal + pre-pop discard + pop. Add the
+    # cycle-2 internal tick missing before this patch.
     if mnemonic == "PHA":
+        memory = pending_tick(memory)                       # cycle-2 internal
         memory, new_sp = push8(memory, int(state.SP), int(state.A))
         return state._replace(
             SP=jnp.uint8(new_sp),
@@ -625,6 +641,7 @@ def _step_inner(state: CPUState, memory):
             cycles=state.cycles + jnp.uint64(base_cycles),
         ), memory
     if mnemonic == "PHP":
+        memory = pending_tick(memory)                       # cycle-2 internal
         memory, new_sp = push8(
             memory, int(state.SP), int(state.P) | FLAG_B | FLAG_U
         )
@@ -636,7 +653,8 @@ def _step_inner(state: CPUState, memory):
     if mnemonic == "PLA":
         # Task #50: NMOS PLA cycle 3 is a discard read of $0100+SP
         # (pre-increment), before the cycle-4 real pop. Updates the
-        # floating-bus latch.
+        # floating-bus latch. Phase 2b adds the cycle-2 internal tick.
+        memory = pending_tick(memory)                       # cycle-2 internal
         _, memory = peek(memory, 0x0100 + int(state.SP))   # cycle-3 discard
         value, new_sp, memory = pop8(memory, int(state.SP))
         return state._replace(
@@ -647,6 +665,7 @@ def _step_inner(state: CPUState, memory):
             cycles=state.cycles + jnp.uint64(base_cycles),
         ), memory
     if mnemonic == "PLP":
+        memory = pending_tick(memory)                       # cycle-2 internal
         _, memory = peek(memory, 0x0100 + int(state.SP))   # cycle-3 discard
         popped, new_sp, memory = pop8(memory, int(state.SP))
         return state._replace(
@@ -658,6 +677,7 @@ def _step_inner(state: CPUState, memory):
 
     # --- Status-flag setters / clearers + NOP -----------------------------
     if mnemonic in ("CLC", "SEC", "CLI", "SEI", "CLV", "CLD", "SED"):
+        # Phase 2b: +1 cycle-2 internal (2-cycle implied — opcode fetch + ALU).
         flag = _STATUS_FLAG[opcode]
         p = int(state.P)
         p = (p | flag) if opcode in _STATUS_SET_OPCODES else (p & ~flag)
@@ -665,11 +685,26 @@ def _step_inner(state: CPUState, memory):
             P=jnp.uint8((p | FLAG_U) & 0xFF),
             PC=jnp.uint16((int(state.PC) + 1) & 0xFFFF),
             cycles=state.cycles + jnp.uint64(base_cycles),
-        ), memory
+        ), pending_tick(memory)
     if mnemonic == "NOP":
+        # Phase 2b — full NMOS bus behaviour by addressing mode:
+        #   - implied  ($EA + 1A/3A/5A/7A/DA/FA): opcode+internal     = 2 cy
+        #   - imm      ($80/82/89/C2/E2)        : opcode+operand      = 2 cy
+        #   - zp       ($04/44/64)              : opcode+operand+val  = 3 cy
+        #   - zp,X     ($14/34/54/74/D4/F4)     : op+opnd+tick+val    = 4 cy
+        #   - abs      ($0C)                    : opcode+lo+hi+val    = 4 cy
+        #   - abs,X    ($1C/3C/5C/7C/DC/FC)     : as ABS_X load       = 4 cy(+1 cross)
         extra = 0
-        if mode == ADDR_ABSOLUTE_X:
-            _, page_crossed, memory = RESOLVERS[mode](state, memory)
+        if mode == ADDR_IMPLIED:
+            memory = pending_tick(memory)                    # internal cycle
+        elif mode == ADDR_IMMEDIATE:
+            _, memory = peek(memory, (int(state.PC) + 1) & 0xFFFF)
+        elif mode in (ADDR_ZERO, ADDR_ZERO_X, ADDR_ABSOLUTE):
+            addr, _, memory = RESOLVERS[mode](state, memory)
+            _, memory = peek(memory, addr)                   # value discard
+        elif mode == ADDR_ABSOLUTE_X:
+            addr, page_crossed, memory = RESOLVERS[mode](state, memory)
+            _, memory = peek(memory, addr)                   # value discard
             extra = 1 if page_crossed else 0
         return state._replace(
             PC=jnp.uint16((int(state.PC) + INSTRUCTION_LENGTH[mode]) & 0xFFFF),
@@ -721,6 +756,7 @@ def _step_inner(state: CPUState, memory):
         ), memory
 
     # --- Register inc/dec (P1f) -------------------------------------------
+    # Phase 2b: +1 cycle-2 internal (2-cycle implied — opcode fetch + ALU).
     if mnemonic in ("INX", "INY", "DEX", "DEY"):
         reg = mnemonic[-1]                       # 'X' or 'Y'
         cur = int(state.X if reg == "X" else state.Y)
@@ -733,7 +769,7 @@ def _step_inner(state: CPUState, memory):
             "cycles": state.cycles + jnp.uint64(base_cycles),
         }
         fields[reg] = jnp.uint8(new_val)
-        return state._replace(**fields), memory
+        return state._replace(**fields), pending_tick(memory)
 
     # --- BRK (P1f) --------------------------------------------------------
     if mnemonic == "BRK":
@@ -758,9 +794,10 @@ def _step_inner(state: CPUState, memory):
 
     # --- RTI (P1f) --------------------------------------------------------
     if mnemonic == "RTI":
-        # Task #50: NMOS RTI cycle 3 is a discard read of $0100+SP
-        # (pre-increment), before the three real pops at cycles 4-6.
-        # Updates the floating-bus latch.
+        # NMOS RTI = 6 cycles: opcode fetch, cycle-2 internal, cycle-3
+        # pre-pop discard, pop P, pop PCL, pop PCH. Task #50 added the
+        # cycle-3 discard; Phase 2b adds the cycle-2 internal tick.
+        memory = pending_tick(memory)                       # cycle-2 internal
         _, memory = peek(memory, 0x0100 + int(state.SP))   # cycle-3 discard
         popped_p, sp, memory = pop8(memory, int(state.SP))
         popped_pc, sp, memory = pop16(memory, sp)
