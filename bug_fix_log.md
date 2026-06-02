@@ -163,6 +163,87 @@ move in lock-step (recipe in that file's header comment).
 
 ## Patches landed (newest first)
 
+### Phase 1 (P3I_G_THREADING_PLAN.md) — diagnostic harness + collision catch-up refinement (2026-06-02)
+
+  - **Phase 1a** (commit `fb72495`): jutari Bus gains a zero-cost
+    trace tap. `trace_enable!()` / `trace_disable!()` /
+    `trace_take!()` toggle a module-level buffer that records
+    `(kind, scanline, scanline_cycle, color_clock, addr, value)`
+    for every peek + poke + internal-cycle tick. Fast path when
+    disabled is a single Ref nil-check per bus op. Tap lives on
+    a module-level Ref (not on `BusState`) so the BusState layout
+    is unperturbed — no test fixture churn.
+
+  - **Phase 1a** also (commit `fb72495`):
+    `tools/cpu_tia_cycle_trace.jl`: runs jutari for N frames with
+    tracing on across boot-burn too, dumps a CSV with one row per
+    event + synthetic `frame_boundary` markers. For pong 25
+    frames → 1.37 M events, 44 MB CSV.
+
+  - **Phase 1b** (commit `6cdc99a`):
+    `tools/cycle_trace_inspect.py`: query language for the trace
+    CSVs (scanline / poke-trace / hmove / diff / summary
+    subcommands). Surfaces TIA register names. Used to refute the
+    earlier "HMOVE blank misfires on scanline 34" hypothesis —
+    pong frame 1 only writes HMOVE at scanline=27,sc=0 (in the
+    blank-trigger window). The "row 0 = scanline 34" pixel
+    divergence in the comparison video has a different cause.
+
+  - **Phase 1c** (commits `408c516` jutari + `adcacc2` jaxtari):
+    `_tia_catch_up_collisions` now accepts an `effective_cc`
+    argument and `_bus_peek` passes
+    `tia.color_clock + pending_tia_cycles * 3`. xitari's
+    `M6502High::peek` increments cycles BEFORE the bus op, so
+    `mySystem->cycles() * 3` (= the value `TIA::peek`'s
+    `updateFrame` sees) is the POST-increment cycle. Our peek
+    now matches that.
+
+  - **Effect**: jutari + jaxtari focused tests stay green. The
+    breakout ball-doesn't-die bug is UNCHANGED by this refinement
+    (probe: still 1 death at frame 242 across 600 frames). So
+    collision register read timing was NOT the proximate cause
+    of that bug — investigation continues in a different
+    direction (likely RAM-tracked ball Y vs paddle Y, or a
+    different TIA read whose timing differs).
+
+  - **Discovery from cross-reading xitari M6502High.cxx**:
+    `M6502High::peek` does `mySystem->incrementCycles(1)` BEFORE
+    `mySystem->peek(address)`, so the `cycles()` value during the
+    bus op is the POST-increment value (= cycle this bus op
+    completes at). Our `pending_tia_cycles += 1` at the top of
+    `peek/poke!` produces the same value, so the existing
+    `beam_cc = color_clock + pending_tia_cycles * 3` is **off by
+    zero**, not off by one as the earlier session speculation
+    suggested. The collision catch-up endpoint was the only
+    place using `tia.color_clock` directly (= the conservative
+    instruction-start value); that's now fixed.
+
+  - **Investigation finding for the breakout ball-doesn't-die bug**:
+    using `tools/cycle_trace_inspect.py` on a 280-frame breakout
+    trace, the collision register reads CONTINUE every frame past
+    the only death at frame 242 (CXP0FB / CXP1FB / CXM0FB /
+    CXM1FB / CXBLPF each read once per frame for ALL 280 frames).
+    So the game IS still polling collisions post-death — it's
+    just that what we return doesn't trigger the death condition
+    again. Two remaining hypotheses:
+      a. CXBLPF returns 0 every frame post-death; xitari would
+         return non-zero on the cycle ball Y crosses the playfield
+         floor. Need an xitari trace to confirm.
+      b. The death trigger isn't CXBLPF at all but a RAM-tracked
+         ball Y > paddle Y check; our ball physics computation
+         differs from xitari's so ball Y never crosses the death
+         threshold post-respawn.
+    Hypothesis (b) is consistent with the "RAM diverges at frame
+    20 (first FIRE)" note in the earlier handoff section — the
+    physics state is wrong from frame 20 onward. The first death
+    at frame 242 happens because that's when the wrong ball Y
+    HAPPENS to be at-or-past the death threshold; post-death,
+    the wrong-Y'd ball never crosses again.
+    **Diagnostic next step**: extend `cpu_tia_cycle_trace.jl`
+    to also dump RAM[$XX] for a configurable set of addresses
+    per frame. Identify which 4 bytes diverge first at frame 20
+    in jutari, then walk back to the causing read/write.
+
 ### Task #66 — jutari pong paddles move (SwapPaddles routes user paddle to INPT1) (2026-06-02)
 
   - **Symptom**: jutari pong paddles stayed completely frozen at the
