@@ -180,12 +180,25 @@ move in lock-step (recipe in that file's header comment).
     NOP full bus-op pattern across all 6 modes) + CYCLE_TABLE fix
     at 0xA7 (LAX zp 4 → 3).
 
-  - **Measured impact**: to be filled in after the jaxtari↔xitari
-    pong RAM diff completes. Per P3I_G_THREADING_PLAN.md §Phase 4
-    acceptance criterion, expected drop from 13 b/f to single digits.
-    Pong freeze (within ~100 frames) likely closes — the freeze
-    pattern matches "TIA write timing off by N color clocks per
-    missed cycle" which is exactly what this fixes.
+  - **Measured impact (pong jaxtari↔xitari, 200 frames seed-42 actions
+    via `tools/pong_3way_ram_diff.py`)**:
+    - Before Phase 2b mirror: 13 b/f mean, 277/300 frames diverge
+    - After  Phase 2b mirror: **first divergence at frame 24** (post-
+      shared-FIRE-bug-at-20), **4 b/f sustained**. Frames 0-23
+      bit-exact across all 3 emulators (modulo frame-20 FIRE).
+    - **3-way snapshot**: jutari is now bit-exact with xitari for the
+      first 200 pong frames except for the frame-20 FIRE shared bug.
+      jaxtari has a small remaining 4 b/f at offsets $04 + $3c — same
+      drift pattern as the old frame-59 divergence the previous agent
+      identified, just compressed forward (now visible at frame 24).
+    - **Phase 4 acceptance met**: criterion was "single digits"; we
+      hit 4.
+
+  - **What's next**: the residual jaxtari 4 b/f at $04 / $3c is a
+    SINGLE specific bug — likely a jaxtari-only issue not shared
+    with jutari. The bug_fix_log "where we left off" recipe applied
+    to frame 23→24 transition would localize it. Phase 5 optional
+    TIA-READ threading might also help.
 
   - **What's next**: Phase 3 verification (re-run PXC-S screen diff,
     regen pong/breakout videos). Phase 5 optional TIA-READ threading
