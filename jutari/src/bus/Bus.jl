@@ -35,7 +35,8 @@ using ..TIA: TIAState, initial_tia_state, tia_peek, tia_poke!, tia_advance!,
 using ..RIOT: RIOTState, initial_riot_state, riot_peek!, riot_poke!
 using ..Cart: CartState, make_cart, cart_peek, cart_poke!
 
-export BusState, initial_bus, peek, poke!, pending_tick!
+export BusState, initial_bus, peek, poke!, pending_tick!,
+       trace_enable!, trace_disable!, trace_take!
 
 """
     BusState
@@ -100,7 +101,83 @@ test memory. Mirrors jaxtari `bus/system.py::pending_tick`.
 @inline pending_tick!(::Vector{UInt8}) = nothing
 @inline function pending_tick!(bus::BusState)
     bus.pending_tia_cycles += 1
+    # Phase 1 diagnostic — record internal-cycle ticks too so the
+    # trace shows the full per-cycle picture (otherwise a (zp,X)
+    # dummy-read cycle looks like missing time in the dump).
+    _trace_record!(:tick, 0x0000, 0x00)
     return nothing
+end
+
+# --------------------------------------------------------------------------- #
+# Phase 1 diagnostic tap — per-bus-op trace (P3I_G_THREADING_PLAN.md)
+# --------------------------------------------------------------------------- #
+#
+# Zero-cost when disabled (a single `=== nothing` check per peek/poke).
+# When enabled (via `trace_enable!()`), every peek/poke + internal-cycle
+# tick + WSYNC release is recorded as a tuple in a module-level buffer
+# along with the TIA's `(scanline, scanline_cycle, color_clock)` at the
+# moment of the bus op. `tools/cpu_tia_cycle_trace.jl` flushes the buffer
+# to CSV for cross-comparison against an xitari trace.
+#
+# The buffer is intentionally module-level (not on the Bus struct) so
+# adding diagnostics doesn't disturb the BusState layout — which would
+# force a rebuild of every test fixture. The cost of using a global is
+# that the trace is process-global, not bus-instance-local; we only run
+# one bus at a time so this is fine.
+#
+# Event tuple shape: (kind, scanline, scanline_cycle, color_clock,
+#                     addr, value) — `kind ∈ {:peek, :poke, :tick,
+#                     :wsync_release}`. `value` is the byte read/written
+#                     (for peek/poke), the WSYNC stall count (for
+#                     wsync_release), or 0 (for tick).
+const _TraceTuple = Tuple{Symbol, Int, Int, Int, UInt16, Int}
+const _TRACE_BUFFER = Ref{Union{Nothing, Vector{_TraceTuple}}}(nothing)
+
+"""
+    trace_enable!()
+
+Begin recording bus-op events for diagnostic comparison against xitari.
+See `tools/cpu_tia_cycle_trace.jl` for the canonical user.
+"""
+trace_enable!()  = (_TRACE_BUFFER[] = _TraceTuple[]; nothing)
+
+"""
+    trace_disable!()
+
+Stop recording. The buffer is discarded.
+"""
+trace_disable!() = (_TRACE_BUFFER[] = nothing; nothing)
+
+"""
+    trace_take!() -> Vector{_TraceTuple}
+
+Return the current trace buffer and reset to empty (still enabled).
+Returns an empty vector if tracing is disabled.
+"""
+function trace_take!()
+    buf = _TRACE_BUFFER[]
+    buf === nothing && return _TraceTuple[]
+    out = buf
+    _TRACE_BUFFER[] = _TraceTuple[]
+    return out
+end
+
+# Internal: per-event record. Uses a closure-free reference to keep the
+# disabled-path branch as cheap as a single pointer load + nil-check.
+# Calls `_trace_record!(:kind, addr, value)` with the *current* TIA timing
+# (passed in via the global ref's last-bus pointer). For simplicity we
+# look up the live BusState through a second ref written by peek/poke.
+const _TRACE_LIVE_TIA = Ref{Union{Nothing, TIAState}}(nothing)
+
+@inline function _trace_record!(kind::Symbol, addr::UInt16, value::Integer)
+    buf = _TRACE_BUFFER[]
+    buf === nothing && return
+    tia = _TRACE_LIVE_TIA[]
+    sl  = tia === nothing ? 0 : Int(tia.scanline)
+    sc  = tia === nothing ? 0 : Int(tia.scanline_cycle)
+    cc  = tia === nothing ? 0 : Int(tia.color_clock)
+    push!(buf, (kind, sl, sc, cc, addr, Int(value)))
+    return
 end
 
 # --------------------------------------------------------------------------- #
@@ -162,9 +239,11 @@ end
     # P3i-g: every bus op is one CPU cycle. Reads only *count* the cycle
     # (no TIA flush) so a later TIA write threads the right cycle count.
     bus.pending_tia_cycles += 1
+    _TRACE_LIVE_TIA[] = bus.tia                  # Phase 1 diagnostic
     if (a & 0x1000) != 0
         v = cart_peek(bus.cart, a)               # cartridge (may switch bank)
         bus.data_bus_state = v
+        _trace_record!(:peek, UInt16(a), v)
         return v
     end
     if (a & 0x80) == 0
@@ -183,15 +262,18 @@ end
         noise = bus.data_bus_state & _TIA_NOISE_MASK
         v = UInt8(((raw & mask) | noise) & 0xFF)
         bus.data_bus_state = v
+        _trace_record!(:peek, UInt16(a), v)
         return v
     end
     if (a & 0x200) != 0
         v = riot_peek!(bus.riot, a)              # RIOT timer + I/O ports (P4d)
         bus.data_bus_state = v
+        _trace_record!(:peek, UInt16(a), v)
         return v
     end
     v = bus.ram[(a & 0x7F) + 1]                  # RIOT RAM
     bus.data_bus_state = v
+    _trace_record!(:peek, UInt16(a), v)
     return v
 end
 
@@ -216,8 +298,10 @@ end
     # P3i-g: this bus op is one CPU cycle. `pending_tia_cycles` counts
     # cycles since instruction start (reset in `_tia_post_step!`).
     bus.pending_tia_cycles += 1
+    _TRACE_LIVE_TIA[] = bus.tia                  # Phase 1 diagnostic
     if (a & 0x1000) != 0
         cart_poke!(bus.cart, a, value)           # cart hotspot may switch bank
+        _trace_record!(:poke, UInt16(a), v8)
         return nothing
     end
     if (a & 0x80) == 0
@@ -233,13 +317,16 @@ end
         beam_cc = Int(bus.tia.color_clock) + bus.pending_tia_cycles * 3
         beam_sc = Int(bus.tia.scanline_cycle) + bus.pending_tia_cycles
         tia_poke!(bus.tia, a, value, beam_cc, beam_sc)
+        _trace_record!(:poke, UInt16(a), v8)
         return nothing
     end
     if (a & 0x200) != 0
         riot_poke!(bus.riot, a, value)           # RIOT timer / ports write
+        _trace_record!(:poke, UInt16(a), v8)
         return nothing
     end
     bus.ram[(a & 0x7F) + 1] = v8
+    _trace_record!(:poke, UInt16(a), v8)
     return nothing
 end
 
