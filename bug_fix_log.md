@@ -163,6 +163,89 @@ move in lock-step (recipe in that file's header comment).
 
 ## Patches landed (newest first)
 
+### Task #66 — jutari pong paddles move (SwapPaddles routes user paddle to INPT1) (2026-06-02)
+
+  - **Symptom**: jutari pong paddles stayed completely frozen at the
+    centred default — pressing LEFT/RIGHT had no visible effect on
+    the on-screen paddle, despite `_apply_paddle_action!` running
+    each frame and the paddle_resistance array updating.
+  - **Root cause**: Pong's `stella.pro` entry has `Controller.SwapPaddles
+    "YES"`. xitari's `Paddles::Paddles(jack=Left, event, swap=true)`
+    swaps which pin reads which paddle resistance:
+      * Pin Five (Left) ← `PaddleZeroResistance`  (user-driven)
+      * Pin Nine (Left) ← `PaddleOneResistance`  (default, never updated)
+    The TIA wires `INPT0 ← Pin Nine`, `INPT1 ← Pin Five`, so with
+    swap the user paddle lands at **INPT1**, not INPT0. Our
+    `_apply_paddle_action!` was unconditionally writing the user
+    paddle to `paddle_resistance[0]` — meaning Pong was reading
+    INPT1 (the default 408823) instead of the user's actual paddle
+    position.
+  - **Fix**: added `romsettings_swap_paddles(::RomSettings)`
+    interface method (default `false`); `PongRomSettings` overrides
+    to `true`. `_apply_paddle_action!` now branches on the flag and
+    writes `paddle_resistance[1] = left_paddle` (user),
+    `paddle_resistance[0] = right_paddle` (default) for swap games.
+    Files: `jutari/src/games/RomSettings.jl`,
+    `jutari/src/games/PaddleGames.jl`,
+    `jutari/src/env/StellaEnvironment.jl`.
+  - **Verification**: 8 LEFT presses now flip `paddle_resistance[1]`
+    `0x63cf7 → 0x90bb7` (was flipping `[0]` before the fix);
+    screen-motion probe: 30 NOOP + 50 LEFT + 50 RIGHT → 156 px
+    changed after LEFT, 180 px after RIGHT (was 0/0 — completely
+    frozen).
+  - **Remaining cosmetic gaps in pong jutari** (visible in
+    `tools/breakout_video/output/pong_xitari_vs_jutari.mp4`, frame
+    ~200): 32 px / frame still differ. Three reproducible bug
+    sites:
+      1. **Row 0 (= scanline 34) leftmost 8 px**: xitari blanks
+         them (HMOVE blank quirk firing on this scanline);
+         jutari renders the full gray wall. Probably the HMOVE
+         write timing on the visible/VBLANK boundary scanline.
+      2. **Rows 35–37**: spurious COLUP1 green pixels at x=16-19
+         AND spurious COLUP0 orange pixels at x=140-143. Looks
+         like sprite Y-edge bleeding 1 scanline beyond xitari's
+         range (P0/P1 GRP write timing off by 1 scanline on the
+         top edge).
+      3. **Row 149**: xitari draws orange P0 at x=140-143, jutari
+         doesn't (sprite Y-edge bleeding 1 scanline beyond on the
+         bottom edge — mirror of bug #2).
+    These three are all CPU↔TIA cycle-accuracy bugs of the same
+    family as the deferred jaxtari work — a 1-scanline timing
+    drift in either the WSYNC release or the GRP* write delay.
+    Likely closed together once jutari's CPU cycle accounting
+    matches xitari's at the scanline boundary. Same root cause
+    family as the jutari breakout ball-doesn't-die bug below.
+
+### jutari breakout ball doesn't die after first death (open) (2026-06-02)
+
+  - **Symptom**: under the seed-42 random action stream,
+    `RAM[$39]` (lives) decrements **once at frame 242** then
+    never again — even though the ball appears to keep going
+    off the bottom of the screen. xitari decrements every
+    ~120 frames. The on-screen ball doesn't disappear when it
+    reaches the bottom.
+  - **Same as the documented jaxtari bug** (search "Breakout
+    ball doesn't die" higher in this log). Same shape: lives
+    decrements once, then `RAM[$39]` stays stable while the
+    ball visibly continues to move. RAM divergence from xitari
+    likely starts at frame 20 (first FIRE) — confirmed jaxtari
+    pattern, plausible same for jutari.
+  - **Deferred cause family**: this is the same CPU↔TIA cycle
+    accuracy issue that breaks the jutari pong sprite Y bugs
+    above. The ball-death trigger relies on the
+    `CXBLPF`-style collision register or a RAM Y-comparison
+    that misses by 1-2 cycles per frame. Fix requires the same
+    deep CPU-cycle threading work that has been attempted and
+    deferred multiple times (the P3i-g part 2 revert, the
+    write-side-only bus-op counting attempt). **Not addressable
+    in a quick patch**; needs its own session.
+  - **Diagnostic next step**: dump CPU PC + `RAM[$3F]`/`$40` at
+    every frame from 18 to 25. Find the first frame where
+    jutari's PC/RAM diverges from xitari's. xitari has already
+    been demonstrated to read INPT0/INPT1 with very specific
+    cycle timing at frame 20's FIRE; the bug is downstream of
+    that read.
+
 ### Task #65 — paddle games skip SWCHA write (pong paddles move in jaxtari/jutari) (2026-05-31)
 **Symptom:** User report — in pong jaxtari/jutari video, both paddles
 do not move while xitari moves them just fine.
