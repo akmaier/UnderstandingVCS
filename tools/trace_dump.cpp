@@ -102,6 +102,33 @@ static void usage(const char *argv0) {
         argv0);
 }
 
+// --bus-trace state — written by the System callback (one global).
+static FILE *g_bus_trace_fp = nullptr;
+static int g_bus_trace_frame = 0;
+static long long g_bus_trace_idx = 0;
+static int g_bus_trace_min_frame = 0;
+static int g_bus_trace_max_frame = INT32_MAX;
+
+static void bus_trace_callback(uInt16 addr, uInt8 value, bool is_write,
+                                uInt32 cpu_cycles) {
+    if (!g_bus_trace_fp) return;
+    if (g_bus_trace_frame < g_bus_trace_min_frame) return;
+    if (g_bus_trace_frame > g_bus_trace_max_frame) return;
+    // Derive (scanline, scanline_cycle, color_clock) from cpu_cycles assuming
+    // xitari resets cycles() per frame. 228 cc/scanline, 76 cy/scanline, 3 cc/cy.
+    uInt32 cc_in_frame = cpu_cycles * 3;
+    int scanline       = cc_in_frame / 228;
+    int sc             = (cc_in_frame % 228) / 3;
+    int cc             = cc_in_frame % 228;
+    g_bus_trace_idx++;
+    std::fprintf(g_bus_trace_fp,
+                 "%lld,%d,%s,%d,%d,%d,%x,%u\n",
+                 g_bus_trace_idx, g_bus_trace_frame,
+                 is_write ? "poke" : "peek",
+                 scanline, sc, cc,
+                 (unsigned)addr, (unsigned)value);
+}
+
 int main(int argc, char **argv) {
     std::string rom, actions_file;
     int max_frames = 0;
@@ -109,6 +136,8 @@ int main(int argc, char **argv) {
     bool dump_cpu    = false;
     bool repeat_last = false;
     bool auto_reset  = false;
+    std::string bus_trace_path;
+    int bus_trace_min = 0, bus_trace_max = INT32_MAX;
 
     for (int i = 1; i < argc; ++i) {
         std::string a = argv[i];
@@ -123,6 +152,23 @@ int main(int argc, char **argv) {
         // captures of games that end quickly under random play
         // (e.g. Breakout's 5-life-then-dead default).
         else if (a == "--auto-reset") { auto_reset = true; }
+        // --bus-trace PATH: emit per-bus-op CSV alongside the per-frame
+        // stdout JSONL. Format matches jutari's tools/cpu_tia_cycle_trace.jl
+        // output so the two can be diffed event-by-event.
+        // --bus-trace-frames LO,HI: limit which frames get traced (1-based,
+        //   inclusive). Useful to avoid 64+ MB traces when only interested
+        //   in a specific divergence frame.
+        else if (a == "--bus-trace" && i + 1 < argc) { bus_trace_path = argv[++i]; }
+        else if (a == "--bus-trace-frames" && i + 1 < argc) {
+            std::string arg = argv[++i];
+            auto comma = arg.find(',');
+            if (comma != std::string::npos) {
+                bus_trace_min = std::atoi(arg.substr(0, comma).c_str());
+                bus_trace_max = std::atoi(arg.substr(comma + 1).c_str());
+            } else {
+                bus_trace_min = bus_trace_max = std::atoi(arg.c_str());
+            }
+        }
         else if (a == "-h" || a == "--help") { usage(argv[0]); return 0; }
         else { std::fprintf(stderr, "trace_dump: unknown arg %s\n", a.c_str()); usage(argv[0]); return 2; }
     }
@@ -137,6 +183,23 @@ int main(int argc, char **argv) {
 
     ALEInterface ale(rom);
     ale.resetGame();
+
+    // Set up bus trace BEFORE the action loop (post-reset, so the boot
+    // burn isn't traced — matches jutari's `cpu_tia_cycle_trace.jl`
+    // which discards trace events before frame 1).
+    if (!bus_trace_path.empty()) {
+        g_bus_trace_fp = std::fopen(bus_trace_path.c_str(), "w");
+        if (!g_bus_trace_fp) {
+            std::fprintf(stderr, "trace_dump: cannot open --bus-trace %s\n",
+                         bus_trace_path.c_str());
+            return 2;
+        }
+        g_bus_trace_min_frame = bus_trace_min;
+        g_bus_trace_max_frame = bus_trace_max;
+        std::fprintf(g_bus_trace_fp,
+                     "global_idx,frame,kind,scanline,scanline_cycle,color_clock,addr,value\n");
+        system_bus_trace_callback = bus_trace_callback;
+    }
 
     long cum_reward = 0;
     size_t a_idx = 0;
@@ -162,6 +225,7 @@ int main(int argc, char **argv) {
             break;
         }
 
+        g_bus_trace_frame = frame_count + 1;
         reward_t r = ale.act(static_cast<Action>(act_id));
         cum_reward += r;
 
@@ -202,6 +266,14 @@ int main(int argc, char **argv) {
 
         std::fprintf(stdout, "}\n");
         frame_count++;
+    }
+
+    if (g_bus_trace_fp) {
+        std::fclose(g_bus_trace_fp);
+        system_bus_trace_callback = nullptr;
+        std::fprintf(stderr,
+                     "trace_dump: wrote %lld bus-op events to %s\n",
+                     g_bus_trace_idx, bus_trace_path.c_str());
     }
 
     return 0;

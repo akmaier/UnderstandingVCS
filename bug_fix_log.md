@@ -163,6 +163,58 @@ move in lock-step (recipe in that file's header comment).
 
 ## Patches landed (newest first)
 
+### Phase 1+ — per-bus-op xitari trace extension + breakout bug ID (2026-06-03)
+
+**Phase 1 follow-up**: extended `tools/trace_dump.cpp` (xitari) +
+`xitari/emucore/m6502/src/System.{hxx,cxx}` to emit per-bus-op
+CSV via a global `BusTraceCallback` hook. CSV format matches
+jutari's `tools/cpu_tia_cycle_trace.jl` output one-for-one:
+`global_idx,frame,kind,scanline,scanline_cycle,color_clock,addr,value`.
+
+Usage:
+
+    tools/trace_dump --rom ... --actions ... --max-frames N \
+        --bus-trace OUT.csv [--bus-trace-frames LO,HI]
+
+**Immediately used this to bisect breakout-frame-92**:
+
+  - Diffed jutari trace vs xitari trace at trace frame 93.
+  - All 4 emulator bus ops in the first ~10 events match modulo
+    NMOS RMW dummy writes (xitari is M6502Low — no NMOS quirks).
+  - **First semantic divergence** at scanline 1 sc 15:
+
+    ```
+    xitari  peek CXBLPF ($0036) = $36   (bit 7 = 0, no BL-PF collision)
+    jutari  peek CXBLPF ($0036) = $b6   (bit 7 = 1, BL-PF COLLISION SET)
+    ```
+
+  - **The bug is in jutari's BL-PF collision detection.**
+    `CXBLPF` is latched whenever the BALL overlaps with the
+    PLAYFIELD on any pixel since the last CXCLR. The latch
+    persists across scanlines until cleared by a CXCLR write.
+
+  - **When does the spurious latch get set?** CXCLR poke happens
+    at scn 27 sc ~73 of each frame, so the collision latch state
+    at scn 1 sc 15 of frame 93 reflects events between scn 27 of
+    frame 92 and end of frame 92 (scanlines 28..261). Jutari
+    decides BL overlaps PF at SOME pixel in that range; xitari
+    decides not.
+
+  - **Confirmed reproducible**: frames 90, 91, 92 return
+    CXBLPF = $36 in BOTH ports. Frame 93 returns $36 in xitari
+    but $b6 in jutari — the FIRST frame jutari over-reports.
+
+  - **Concrete next step**: extend jutari's per-pixel collision
+    evaluation (`_apply_pixel_collisions!` in
+    `jutari/src/bus/Bus.jl`) with logging of WHICH (scanline,
+    color_clock) sets BL-PF in frame 92, and compare against
+    xitari's render. Possible causes: (a) jutari renders BL at a
+    slightly different X due to HMBL/HMOVE drift, (b) jutari's
+    PF mask differs from xitari's at the BL location, (c) jutari
+    evaluates the collision on a pixel where the BALL is
+    *disabled* (ENABL = 0). The fix once identified will
+    likely close the breakout RAM gap entirely.
+
 ### Phase 5 jutari + jaxtari — RIOT-read threading (2026-06-03)
 
   - **Commit `a505300`** (jutari first attempt) + **`7bd08a3`** (jutari
