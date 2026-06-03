@@ -153,19 +153,26 @@ cd jaxtari && .venv/bin/python -m pytest tests/test_pxc1_conformance.py tests/te
      off-by-1 on rows 35-37/149 — live in `render_pixel` /
      `render_scanline` / the HMOVE-blank state machine. Orthogonal
      to P3I_G_THREADING_PLAN.md cycle threading.
-  2. **Breakout ball-doesn't-die**: RAM diverges starting at frame
-     92 (6 specific bytes — `$37 $5f $61 $65 $67 $6c`). Phase 2b
-     did NOT fix this. **Deep dive findings (2026-06-03, commit
-     `770afa8`)**: jutari and xitari change different bytes at
-     frame 91→92 transition, with `$65` going OPPOSITE directions
-     (xi +1, ju -1) — a counter is incrementing in xitari and
-     decrementing in jutari, suggesting a TIA-flag-driven branch
-     diverged. NO collision register peeks at frame 92, NO INPT
-     peeks — the most-likely culprit is **INTIM (RIOT timer, 382
-     reads/frame at frame 92)**. Next-step recipe: extend
-     `tools/trace_dump.cpp` (xitari) to emit per-bus-op CSV, then
-     diff event-by-event against jutari's existing trace. First
-     differing tuple is the bug entry point.
+  2. **Breakout ball-doesn't-die — NARROWED to spurious BL-PF
+     collision** (2026-06-03, commits `d66b290` + `a8cdcc9`):
+     - Per-bus-op xitari trace extension (commit `d66b290`) lets
+       us diff jutari's trace against xitari's at the bus-op level.
+     - **First semantic divergence at frame 93 scn 1 sc 15**:
+       jutari reads CXBLPF=$b6 (bit 7 = BL-PF collision SET),
+       xitari reads $36 (bit 7 = 0).
+     - VBLANK collision-skip fix (commit `a8cdcc9`) — semantically
+       correct vs xitari but didn't close the gap. So the
+       spurious BL-PF latch is set during VISIBLE scanlines
+       (28-261 of frame 92), not VBLANK.
+     - **Next step**: instrument `_apply_pixel_collisions!` in
+       jutari/src/{bus,tia}/*.jl to log every (scanline,
+       color_clock) where BL-PF gets set in frames 89-92. Then
+       extend the xitari per-bus-op trace to also emit
+       `myCollision` writes from `updateFrameScanline`'s
+       collision switch. First (scanline, cc) where they
+       disagree IS the bug entry. Likely cause: jutari's `bl_x`
+       drifts from xitari's at some HMOVE, or jutari's PF set
+       differs at a pixel where the ball happens to be.
   3. **jaxtari pong 4 b/f residual at $04/$3c (frame 24+)** — same
      bytes flagged in bug_fix_log's "frame-1 with LEFT" finding,
      now suppressed to frame 24 thanks to the cycle counter fix.

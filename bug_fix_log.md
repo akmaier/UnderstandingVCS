@@ -163,6 +163,40 @@ move in lock-step (recipe in that file's header comment).
 
 ## Patches landed (newest first)
 
+### Breakout deeper — BL-PF set during VISIBLE scanlines (2026-06-03)
+
+Continuation of the per-bus-op trace investigation below. Applied
+two safe correctness fixes:
+
+  - `jutari` (commit `a8cdcc9`): skip collision evaluation during
+    VBLANK in both the render branch (`tia_advance!`) and the bus
+    peek catch-up (`_tia_catch_up_collisions!`). Matches xitari's
+    `TIA::updateFrameScanline` (TIA.cxx:1121) early-exit.
+  - `jaxtari` (commit `fa2a371`): symmetric port.
+
+**Neither fix moved the breakout RAM gap** (still 9.9 b/f from
+frame 92). So the spurious BL-PF latch in jutari is set during
+VISIBLE scanlines (28-261 of frame 92), not during VBLANK.
+
+ENABL pokes diff at frame 93:
+  - jutari scn 97 sc 0: ENABL = $f4
+  - xitari scn 97 sc 0: ENABL = $34  (xitari catches up at scn 99)
+  - jutari scn 226 sc 9: ENABL = $37 (ball ENABLED bit set)
+  - xitari scn 226 sc 9: ENABL = $b4 (ball disabled)
+
+The ENABL divergence is DOWNSTREAM of the BPL branch divergence
+at scn 1 sc 26 (caused by the spurious CXBLPF=$b6 latch read).
+The root cause is upstream: WHY does jutari set the BL-PF latch
+at some visible scanline in frame 92 where xitari does not?
+
+Next-step recipe: instrument `_apply_pixel_collisions!` in
+`Bus.jl` / `TIA.jl` to log every (scanline, color_clock) where
+BL-PF is set in frames 89-92. Compare against an equivalent
+trace from xitari (requires extending xitari's TIA.cxx with
+similar logging, OR walking the per-bus-op trace to identify
+when myCollision bit 0x8000 = BL-PF gets set in xitari's
+`updateFrameScanline` switch).
+
 ### Phase 1+ — per-bus-op xitari trace extension + breakout bug ID (2026-06-03)
 
 **Phase 1 follow-up**: extended `tools/trace_dump.cpp` (xitari) +
