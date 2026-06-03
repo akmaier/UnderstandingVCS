@@ -154,12 +154,18 @@ cd jaxtari && .venv/bin/python -m pytest tests/test_pxc1_conformance.py tests/te
      `render_scanline` / the HMOVE-blank state machine. Orthogonal
      to P3I_G_THREADING_PLAN.md cycle threading.
   2. **Breakout ball-doesn't-die**: RAM diverges starting at frame
-     92 (6 specific bytes — see bug_fix_log "Phase 1 findings"
-     entry for the list). Phase 2b did NOT fix this. Diagnostic
-     next step: extend `cpu_tia_cycle_trace.jl` to also dump RAM
-     bytes per frame, then walk the trace at frame 91→92 to find
-     which TIA read produced a different value than xitari would.
-     Likely a RIOT-timer or game-specific paddle wiring bug.
+     92 (6 specific bytes — `$37 $5f $61 $65 $67 $6c`). Phase 2b
+     did NOT fix this. **Deep dive findings (2026-06-03, commit
+     `770afa8`)**: jutari and xitari change different bytes at
+     frame 91→92 transition, with `$65` going OPPOSITE directions
+     (xi +1, ju -1) — a counter is incrementing in xitari and
+     decrementing in jutari, suggesting a TIA-flag-driven branch
+     diverged. NO collision register peeks at frame 92, NO INPT
+     peeks — the most-likely culprit is **INTIM (RIOT timer, 382
+     reads/frame at frame 92)**. Next-step recipe: extend
+     `tools/trace_dump.cpp` (xitari) to emit per-bus-op CSV, then
+     diff event-by-event against jutari's existing trace. First
+     differing tuple is the bug entry point.
   3. **jaxtari pong 4 b/f residual at $04/$3c (frame 24+)** — same
      bytes flagged in bug_fix_log's "frame-1 with LEFT" finding,
      now suppressed to frame 24 thanks to the cycle counter fix.
