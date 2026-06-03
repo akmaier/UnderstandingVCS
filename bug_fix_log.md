@@ -163,6 +163,54 @@ move in lock-step (recipe in that file's header comment).
 
 ## Patches landed (newest first)
 
+### Breakout frame-92 RAM divergence — deep dive (2026-06-03)
+
+  - **Confirmed unchanged after Phase 2b**: same 6 bytes diverge at
+    frame 92 ($37, $5f, $61, $65, $67, $6c). Mean 5.5 b/f. Phase 2b
+    cycle counter fix moved the needle elsewhere but NOT here.
+
+  - **Per-frame delta diagnostic** (`/tmp/breakout_frame_diff.py`):
+    Reading frame 91 → 92 (action=NOOP, not action-triggered):
+    ```
+    xitari changes: $5a $5f $63 $65 $69    (5 bytes)
+    jutari changes: $5a $5f $61 $63 $65 $67 $69  (+ $37 $6c at exit
+                                                   from frame 91)
+    ```
+    Where jutari and xitari changes overlap:
+      $5f: xi +5 (0x40 → 0x45)    ju +71  (0x40 → 0x87) — different!
+      $65: xi +1 (0xb8 → 0xb9)    ju -1   (0xb8 → 0xb7) — OPPOSITE!
+      $69: xi -1 (0x01 → 0xff)    ju -1   (0x01 → 0xff) — same
+      $5a, $63: same +1 in both
+
+    So jutari takes a SUBSTANTIALLY different code path at frame 92.
+    The $65 going -1 (jutari) vs +1 (xitari) is the smoking gun — a
+    counter is decrementing where it should increment, suggesting a
+    branch driven by a TIA flag returned a different value.
+
+  - **TIA register read traffic at frame 92** (jutari trace):
+    - `$0284` INTIM (RIOT timer): 382 reads (most-read register)
+    - Cartridge data lookup tables in `$133a-$133f`, `$1611-$1616`,
+      `$10b1-$10ba`
+    - RIOT RAM `$00bb $00e5 $00b6 $011e $011f $0038`
+    - **NO collision register reads (`$00-$07`) in frame 92** —
+      collision peeks are only ~78 across 93 frames (~0.84/frame).
+    - **NO INPT reads at frame 92**.
+    - So the divergent read is NOT a collision OR a paddle peek.
+
+  - **Most-likely culprit**: INTIM. 382 reads/frame means the game
+    polls the RIOT timer constantly. Previous fix `15cff40` (pt8)
+    addressed an INTIM `-1` quirk that closed several big screen
+    residuals — but maybe not all the edge cases. Specifically, with
+    382 reads/frame, even a 1-tick mismatch at the wrong moment can
+    trip a branch.
+
+  - **Next-step diagnostic**: extend `tools/trace_dump.cpp` (xitari)
+    to also dump per-bus-op events (same CSV format as Phase 1's
+    jutari trace) so they can be diffed event-by-event. The first
+    `(scanline, scanline_cycle, color_clock, addr, value)` tuple
+    where jutari and xitari disagree IS the bug entry point. ~30
+    min of C++ work; described in P3I_G_THREADING_PLAN.md §Phase 1.
+
 ### Phase 2b jaxtari mirror (P3I_G_THREADING_PLAN.md) — cycle-counter validation (2026-06-02)
 
   - **Commit `a8f2bd7`**: mirror of jutari Phase 2b (commit `2aec8c5`)
