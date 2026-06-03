@@ -285,7 +285,12 @@ end
         return v
     end
     if (a & 0x200) != 0
-        v = riot_peek!(bus.riot, a)              # RIOT timer + I/O ports (P4d)
+        # Phase 5 RIOT-read threading: pass pending_tia_cycles so INTIM
+        # reads return the value as-if the cycles consumed inside the
+        # current instruction have already advanced the timer. Matches
+        # xitari's `M6532::peek` which uses `mySystem->cycles()` directly
+        # (= cycle count INCLUDING the current bus op).
+        v = riot_peek!(bus.riot, a, bus.pending_tia_cycles)
         bus.data_bus_state = v
         _trace_record!(:peek, UInt16(a), v)
         return v

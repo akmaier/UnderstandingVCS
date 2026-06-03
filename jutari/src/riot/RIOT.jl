@@ -102,7 +102,8 @@ INSTAT have side-effects on the latches:
     semantic). PA7 isn't modelled yet (deferred as P4b), so for the
     moment this is a no-op beyond returning D7.
 """
-function riot_peek!(riot::RIOTState, addr::Integer)
+function riot_peek!(riot::RIOTState, addr::Integer,
+                     pending_extra_cycles::Integer = 0)
     reg = Int(addr) & 0x07
     if reg == 0
         return UInt8(((riot.swcha_out & riot.swacnt) |
@@ -118,13 +119,31 @@ function riot_peek!(riot::RIOTState, addr::Integer)
         # P4d: INTIM read clears the timer-expired latch.
         # P3i-g pt8: xitari's INTIM read formula has an extra `- 1` term
         # (M6532::peek case 0x04: `myTimer - (delta>>shift) - 1`). That
-        # makes xitari's INTIM 1 less than the raw register. Without this
-        # offset, INTIM-polling loops in early VBLANK exit 1+ iterations
-        # later than xitari, accumulating ~76 CPU cycles of drift per loop
-        # — the source of pong's cross-scanline 1-line residual + most of
-        # the other ROMs' large PXC-S residuals (pong 568→32, SI 2079→12,
-        # pitfall 1786→322, seaquest 3941→1104, enduro 1954→1197).
-        value = UInt8((Int(riot.intim) - 1) & 0xFF)
+        # makes xitari's INTIM 1 less than the raw register.
+        # Phase 5 (2026-06-03): xitari's `delta = cycles - myCyclesWhenTimerSet`
+        # uses the CURRENT cpu cycle counter, which in `M6502High::peek` is
+        # INCREMENTED before the peek bus op — so xitari's INTIM reflects
+        # cycles elapsed up to AND INCLUDING the current cycle. jutari was
+        # returning `riot.intim - 1` based on the value from the END of the
+        # PREVIOUS instruction, ignoring any cycles consumed inside the
+        # current instruction. That mismatch was the breakout-frame-92
+        # ball-doesn't-die smoking gun: 382 INTIM reads/frame, any one of
+        # them returning a 1-step-old value across a prescaler boundary
+        # flips a branch.
+        #
+        # Compute the effective INTIM as-if `pending_tia_cycles` more
+        # cycles have elapsed since the last `riot_advance!`, then apply
+        # the `-1` quirk. Read-only — does NOT mutate riot.intim (the real
+        # advance happens in `_tia_post_step!`).
+        intim_int = Int(riot.intim)
+        if !riot.timer_expired
+            shift = riot.prescaler_shift
+            extra = (Int(riot.cycles_since_tick) + Int(pending_extra_cycles)) >> shift
+            intim_int -= extra
+        else
+            intim_int -= Int(pending_extra_cycles)
+        end
+        value = UInt8((intim_int - 1) & 0xFF)
         riot.timer_expired = false
         return value
     elseif reg == 5
