@@ -950,20 +950,20 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
                 if completed_line < SCREEN_HEIGHT:
                     fb = fb.at[completed_line].set(row)
         else:
-            # VBLANK-blanked render — output suppressed, but collision
-            # detection still runs (matching real hardware). Drain
-            # pending writes into the register file and detect
-            # collisions against the post-drain state (a P3i-d
-            # equivalent for blanked scanlines: per-pixel evaluation
-            # would yield the same scanline OR'd result).
+            # VBLANK-blanked render — output suppressed. Drain pending
+            # writes into the register file. Do NOT run collision
+            # detection: xitari's `TIA::updateFrameScanline`
+            # (TIA.cxx:1121) memsets the framebuffer and RETURNS when
+            # `myVBLANK & 0x02` is set, entirely skipping the per-pixel
+            # collision switch. Real hardware DOES keep the collision
+            # pipeline live in VBLANK, but xitari does not — and our
+            # reference is xitari. (Discovered via per-bus-op trace
+            # diff on breakout, commit d66b290 / a8cdcc9, 2026-06-03.)
             for _, reg, val in pending_sorted:
                 tia_for_render = tia_for_render._replace(
                     registers=tia_for_render.registers
                         .at[reg].set(jnp.uint8(val))
                 )
-            scan_sets = _object_pixel_sets(tia_for_render)
-            for x in range(SCREEN_WIDTH):
-                _apply_pixel_collisions(running_collisions, x, scan_sets)
         new_collisions = jnp.array(running_collisions, dtype=jnp.uint8)
 
     new_line = tia.scanline + line_advance

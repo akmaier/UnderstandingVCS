@@ -249,6 +249,13 @@ def _tia_catch_up_collisions(tia: TIAState, effective_cc: int | None = None) -> 
     end = int(tia.color_clock) if effective_cc is None else int(effective_cc)
     if end <= HBLANK_COLOR_CLOCKS:
         return tia                                  # still in HBLANK, no pixels
+    # 2026-06-03: skip collision evaluation during VBLANK to match xitari's
+    # `TIA::updateFrameScanline` (TIA.cxx:1121) which memsets the
+    # framebuffer and RETURNS when `myVBLANK & 0x02` is set, entirely
+    # skipping the per-pixel collision switch statement. See jutari
+    # commit a8cdcc9 for the symmetric fix in `Bus.jl`.
+    if bool(tia.vblank_active):
+        return tia
     end = min(end, COLOR_CLOCKS_PER_SCANLINE)       # clamp to scanline end
     coll = list(int(b) for b in tia.collisions)
     sets = _object_pixel_sets(tia)
