@@ -163,6 +163,40 @@ move in lock-step (recipe in that file's header comment).
 
 ## Patches landed (newest first)
 
+### Phase 5 jutari + jaxtari — RIOT-read threading (2026-06-03)
+
+  - **Commit `a505300`** (jutari first attempt) + **`7bd08a3`** (jutari
+    `cycles - 1` refinement) + **`dbd3e06`** (jaxtari mirror).
+
+  - **What it does**: `riot_peek` now takes a `pending_extra_cycles`
+    argument; the bus wires `pending_tia_cycles` (post-increment, i.e.
+    cycles consumed in current instruction including this bus op).
+    INTIM read computes an effective sub-instruction extra using
+    `max(0, pending_extra_cycles - 1)` (the `- 1` matches xitari's
+    `cycles = mySystem->cycles() - 1` at M6532.cxx:161 — the current
+    bus op's own incrementCycles(1) does NOT count toward the timer
+    delta). Read-only — does NOT mutate riot.intim (real advance
+    happens in `_tia_post_step` / per-step).
+
+  - **Why M6532-specific**: xitari's `M6532::peek` uses `cycles() - 1`
+    but `TIA::peek` uses `cycles() * 3` directly (no `- 1`). So
+    Phase 5 for RIOT needs the `- 1` adjustment that Phase 5 for TIA
+    does not.
+
+  - **Measured impact**:
+    - jutari↔xitari pong RAM: 0.0 b/f mean (unchanged — was already
+      bit-exact, no regression).
+    - jutari↔xitari breakout RAM: 9.9 b/f from frame 92 (unchanged —
+      so breakout's bug is NOT in INTIM read timing).
+    - jaxtari pong & jutari full test suite remain green.
+
+  - **Conclusion**: the breakout-frame-92 bug is NOT INTIM-driven.
+    Phase 5 is semantically correct vs xitari and preserved; the
+    real breakout bug requires a per-bus-op xitari trace to
+    pinpoint (extend `tools/trace_dump.cpp` to emit per-bus-op CSV
+    matching jutari's existing trace format, then diff event-by-
+    event — the first differing tuple is the entry point).
+
 ### Breakout frame-92 RAM divergence — deep dive (2026-06-03)
 
   - **Confirmed unchanged after Phase 2b**: same 6 bytes diverge at
