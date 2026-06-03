@@ -197,6 +197,53 @@ move in lock-step (recipe in that file's header comment).
     matching jutari's existing trace format, then diff event-by-
     event — the first differing tuple is the entry point).
 
+### Breakout frame-92 — narrowed to a collision-register BPL branch (2026-06-03)
+
+Continuation of the deep dive below. Walked the jutari cycle trace
+to localize the EXACT divergent instruction sequence:
+
+  - **Trace coords**: trace frame 93 (= RAM-diff step 92), scanline 1.
+  - **The smoking-gun instruction**: `BPL +$13` at cart byte $14af.
+    - The LDA $e5 at $14ab reads `$b8` in jutari (RAM is bit-exact at
+      end of trace frame 92, so xitari also reads $b8 at the same PC).
+    - CMP #$28 on A=$b8 → result $90 → N=1 → BPL NOT taken in jutari.
+    - Falls through to LDA #$80; STA $e1 — this is the FIRST
+      divergent write to RAM[$61] (mirror of $e1 with bit 7 clear).
+  - **What ran before the BPL**: 3 collision-register reads:
+    ```
+    scn 1 sc 1: peek CXP0FB ($0032) = $32   (bits 6+7 = 00, no col)
+    scn 1 sc 9: peek CXP1FB ($0033) = $33   (bits 6+7 = 00)
+    scn 1 sc 15: peek CXBLPF ($0036) = $b6  (bit 7 = 1, BL-PF collision!)
+    ```
+  - **Hypothesis**: one of these collision values DIFFERS in xitari.
+    If xitari reports a different collision bit (e.g. CXBLPF returns
+    no collision because the BALL hasn't actually hit the playfield
+    yet in xitari's tracking), the CPU takes a different branch
+    EARLIER in trace frame 93 — and by the time we reach the LDA $e5
+    at $14ab, the PC is at a different address entirely (the LDA $e5
+    we see in jutari may not even execute in xitari).
+
+  - **Confirmation needed (next-step recipe)**: extend
+    `tools/trace_dump.cpp` to emit per-bus-op CSV. The FIRST tuple
+    `(scanline, scanline_cycle, addr, value)` that differs between
+    jutari and xitari traces inside trace frame 93 IS the bug entry
+    point. Most likely candidate: one of the 3 collision reads at
+    scanline 1 sc 1/9/15.
+
+  - **Why Phase 1c catch-up wasn't enough**: Phase 1c's
+    `_tia_catch_up_collisions!` extends collision bits to the current
+    beam color clock. For a peek at scanline 1 sc 1 (color_clock 3),
+    the catch-up only covers a tiny prefix. If the BALL collided with
+    PF earlier in scanline 0 (before VBLANK), that bit should ALREADY
+    be latched. So either: (a) the collision latch from scanline 0
+    differs between jutari/xitari, or (b) jutari is mis-evaluating
+    when a collision occurs in scanline 0.
+
+  - **Cycle count matches**: confirmed jutari's per-frame CPU cycle
+    count for breakout is exactly **19912** — matches xitari's
+    19912 to the cycle. So no cycle drift; the divergence is purely
+    in the BYTES returned by some TIA read.
+
 ### Breakout frame-92 RAM divergence — deep dive (2026-06-03)
 
   - **Confirmed unchanged after Phase 2b**: same 6 bytes diverge at
