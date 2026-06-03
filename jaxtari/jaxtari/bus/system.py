@@ -328,7 +328,10 @@ def _bus_peek(bus: Bus, addr: int):
         return value, new_bus
     if addr_masked & 0x200:
         # RIOT I/O (A9=1). P4d: INTIM read clears timer_expired.
-        value, new_riot = riot_peek(bus.riot, addr_masked)
+        # Phase 5: pass `new_pending` so INTIM reflects intra-instruction
+        # cycle progress (matches xitari's `M6532::peek case 0x04` using
+        # `mySystem->cycles() - 1` — see jaxtari/riot/system.py).
+        value, new_riot = riot_peek(bus.riot, addr_masked, new_pending)
         value &= 0xFF
         if new_riot is bus.riot:
             return value, bus._replace(data_bus_state=value,

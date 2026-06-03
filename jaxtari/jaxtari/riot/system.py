@@ -133,13 +133,19 @@ def set_swchb_input(riot: RIOTState, value: int) -> RIOTState:
 # Register access
 # --------------------------------------------------------------------------- #
 
-def riot_peek(riot: RIOTState, addr: int):
+def riot_peek(riot: RIOTState, addr: int, pending_extra_cycles: int = 0):
     """Read a RIOT register. Returns `(value, new_riot)`.
 
     `addr` is the CPU bus address (anywhere in the RIOT mirror band).
     Most reads return the SAME `riot` object — only INTIM (reg=4) has
     a side effect: it clears the timer-expired latch, matching the
     real MOS 6532's read-clears-flag semantic (**P4d**).
+
+    `pending_extra_cycles` = the CPU cycles consumed inside the current
+    instruction up to and including this bus op. Used by Phase 5
+    RIOT-read threading: xitari's `M6532::peek` case 0x04 uses
+    `cycles = mySystem->cycles() - 1` so the effective extra is
+    `max(0, pending_extra_cycles - 1)`.
 
     INSTAT (reg=5) returns D7 = timer_expired but does NOT clear it
     on read — that's an INTIM-only side effect. INSTAT clears the
@@ -160,16 +166,24 @@ def riot_peek(riot: RIOTState, addr: int):
     if reg == 4:
         # P4d: INTIM read clears the timer-expired latch.
         # P3i-g pt8: xitari's INTIM read formula has an extra `- 1` term
-        # (see `M6532::peek` case 0x04: `myTimer - (delta>>shift) - 1`).
-        # That makes xitari's INTIM appear 1 less than the raw register
-        # value. Without this offset, pong's INTIM-polling loops in
-        # early VBLANK exit 1+ iteration LATER than xitari, accumulating
-        # ~76 CPU cycles of drift per polling loop — the source of
-        # pong's PXC-S 568 px cross-scanline residual (rows 24/34/194).
-        # Subtracting 1 on the read brings our INTIM in line with xitari.
-        # When intim = 0, return 0xFF (the just-expired value xitari
-        # would compute via its post-expired branch).
-        return (riot.intim - 1) & 0xFF, riot._replace(timer_expired=False)
+        # (`M6532::peek` case 0x04: `myTimer - (delta>>shift) - 1`).
+        # Phase 5 (2026-06-03): xitari ALSO uses `cycles - 1` for the
+        # delta numerator (line 161 of M6532.cxx), so the effective
+        # mid-instruction extra is `max(0, pending_extra_cycles - 1)`.
+        # The Phase 5 fix computes the intra-instruction timer
+        # advancement so cross-prescaler-boundary INTIM reads return
+        # the value xitari would. Read-only — does NOT mutate
+        # riot.intim (the real advance happens in
+        # `_step_inner`/post-step via `riot_advance`).
+        intim_int = int(riot.intim)
+        eff = max(0, int(pending_extra_cycles) - 1)
+        if not riot.timer_expired:
+            shift = int(riot.prescaler_shift)
+            extra = (int(riot.cycles_since_tick) + eff) >> shift
+            intim_int -= extra
+        else:
+            intim_int -= eff
+        return (intim_int - 1) & 0xFF, riot._replace(timer_expired=False)
     if reg == 5:
         return (0x80 if riot.timer_expired else 0x00), riot
     return 0, riot
