@@ -644,15 +644,21 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
                 end
             end
         else
-            # VBLANK render — output blanked, still apply pending
-            # writes + run collision detection (matching real
-            # hardware which keeps the collision pipeline active).
+            # VBLANK render — output blanked. Drain pending writes but
+            # do NOT run collision detection: xitari's
+            # `TIA::updateFrameScanline` (TIA.cxx:1121) memsets the
+            # framebuffer and RETURNS when `myVBLANK & 0x02` is set,
+            # entirely skipping the per-pixel collision switch
+            # statement (`myCollision |= ourCollisionTable[...]`).
+            # Real hardware DOES keep the collision pipeline live in
+            # VBLANK, but xitari does not — and our reference is
+            # xitari. Running collisions here was the source of the
+            # breakout-frame-92 spurious CXBLPF=$b6 (bit 7 = BL-PF set)
+            # — jutari was over-reporting BL-PF collisions during the
+            # VBLANK between frames, while xitari did not. (Discovered
+            # via per-bus-op trace diff, commit d66b290, 2026-06-03.)
             for (_, reg, val) in pending_sorted
                 tia.registers[reg + 1] = val
-            end
-            scan_sets = _object_pixel_sets(tia)
-            for x in 0:(SCREEN_WIDTH - 1)
-                _apply_pixel_collisions!(tia, x, scan_sets)
             end
         end
         # All pending writes have been drained into tia.registers.

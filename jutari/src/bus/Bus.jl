@@ -237,6 +237,17 @@ on every read. For TIA reads, the un-driven bits are taken from the
 # and the actual peek).
 @inline function _tia_catch_up_collisions!(tia::TIAState, effective_cc::Int = Int(tia.color_clock))
     effective_cc <= HBLANK_COLOR_CLOCKS && return       # still in HBLANK
+    # **Important** (2026-06-03): xitari skips collision evaluation
+    # entirely when VBLANK output-disable (D1 of VBLANK reg = $02) is
+    # active — `TIA::updateFrameScanline` (TIA.cxx:1121) memsets the
+    # framebuffer and RETURNS without entering the per-pixel collision
+    # switch. To match xitari (which is our reference), the catch-up
+    # must do the same: NO collision OR'ing during VBLANK. This was
+    # the breakout-frame-92 BL-PF spurious-latch bug — jutari was
+    # over-reporting BL-PF collisions during the VBLANK period at the
+    # end of frame 92, which xitari did not. See commit d66b290 for
+    # the per-bus-op trace diff that pinpointed this.
+    tia.vblank_active && return
     # Clamp to scanline end — render-loop also stops at COLOR_CLOCKS_PER_SCANLINE.
     end_cc = min(effective_cc, COLOR_CLOCKS_PER_SCANLINE - 1)
     sets = _object_pixel_sets(tia)
