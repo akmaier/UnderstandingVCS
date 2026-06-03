@@ -133,15 +133,24 @@ function riot_peek!(riot::RIOTState, addr::Integer,
         #
         # Compute the effective INTIM as-if `pending_tia_cycles` more
         # cycles have elapsed since the last `riot_advance!`, then apply
-        # the `-1` quirk. Read-only — does NOT mutate riot.intim (the real
-        # advance happens in `_tia_post_step!`).
+        # the `-1` quirk. Read-only — does NOT mutate riot.intim (the
+        # real advance happens in `_tia_post_step!`).
+        #
+        # CRITICAL: xitari uses `cycles = mySystem->cycles() - 1` (line 161
+        # of M6532.cxx case 0x04) — i.e. the cycle count from BEFORE the
+        # current bus op's incrementCycles(1). So the effective extra is
+        # `pending_extra_cycles - 1` (the current bus op's own cycle does
+        # NOT count toward the timer delta). Hence the `- 1` below.
+        # Guarded with `max(0, ...)` for safety when called outside a
+        # bus-op context with pending_extra_cycles == 0.
         intim_int = Int(riot.intim)
+        eff = max(0, Int(pending_extra_cycles) - 1)
         if !riot.timer_expired
             shift = riot.prescaler_shift
-            extra = (Int(riot.cycles_since_tick) + Int(pending_extra_cycles)) >> shift
+            extra = (Int(riot.cycles_since_tick) + eff) >> shift
             intim_int -= extra
         else
-            intim_int -= Int(pending_extra_cycles)
+            intim_int -= eff
         end
         value = UInt8((intim_int - 1) & 0xFF)
         riot.timer_expired = false
