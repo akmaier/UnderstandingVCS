@@ -163,6 +163,58 @@ move in lock-step (recipe in that file's header comment).
 
 ## Patches landed (newest first)
 
+### Breakout — root cause identified at scanline 51-52, VDELBL shadow path (2026-06-03)
+
+Used a temporary `_BLPF_LOG` debug hook in `_apply_pixel_collisions!`
+to capture EVERY (scanline, color_clock) where BL-PF latch gets
+set in jutari's frame 92 (= breakout step 92 in the diff). Output:
+
+```
+scn=51 x=7 bl_x=7 ENABL=0x00 enabl_old=0x37 VDELBL=0xb9
+scn=51 x=8 bl_x=7 ENABL=0x00 enabl_old=0x37 VDELBL=0xb9
+scn=52 x=7 bl_x=7 ENABL=0x34 enabl_old=0x37 VDELBL=0xb9
+scn=52 x=8 bl_x=7 ENABL=0x34 enabl_old=0x37 VDELBL=0xb9
+```
+
+Decoded:
+  - `ENABL = $00` / `$34` — both have bit 1 = 0 → ball "disabled" by
+    current ENABL.
+  - `enabl_old = $37` — shadow value, bit 1 = 1 → ball "enabled"
+    by shadow.
+  - `VDELBL = $b9` — bit 0 = 1 → use shadow (`enabl_old`).
+  - Result: jutari's `_vdel_enabl` returns $37 → bit 1 set → ball
+    is in the BL pixel set. Overlaps with PF at x=7, x=8 → BL-PF
+    latch set.
+
+**The bug is in the VDELBL shadow path interaction.** Either:
+
+  1. xitari's `myDENABL` is FALSE at scn 51-52 (so it doesn't
+     enable BL there), even though jutari's `enabl_old` is $37.
+     xitari's `myDENABL = myENABL` at GRP1-write time, where
+     `myENABL = value & 0x02` (just bit 1). So myDENABL is
+     boolean. Jutari's `enabl_old` is the FULL byte, masked at
+     read time. These should yield the same result, BUT...
+  2. ...or the LAST GRP1 write happened at a different ENABL
+     state in jutari vs xitari, so the shadow latched a
+     different value.
+  3. ...or xitari simply doesn't evaluate collisions at this
+     position because `myCurrentBLMask[hpos]` is 0 (its ball
+     position is different from jutari's bl_x=7).
+
+**Concrete next steps for next session**:
+
+  - Extend `xitari/emucore/TIA.cxx` to log when `myDENABL` /
+    `myENABL` / `myVDELBL` change AND when `myEnabledObjects &
+    myBLBit` is set. Compare against jutari's `enabl_old` /
+    ENABL / VDELBL trace at scn 51-52 of frame 92.
+  - Most-likely culprit: jutari's `enabl_old` retains an ENABL
+    value with bit 1 set somewhere xitari's `myDENABL` got
+    overwritten to false. Or xitari's `myDENABL` doesn't track
+    when the ball goes "off" via ENABL=0 + GRP1 write.
+
+The `_BLPF_LOG` debug hook is REMOVED in the final commit — only
+used for this single diagnostic pass.
+
 ### Breakout deeper — BL-PF set during VISIBLE scanlines (2026-06-03)
 
 Continuation of the per-bus-op trace investigation below. Applied
