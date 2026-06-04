@@ -88,6 +88,27 @@ would likely close the breakout jumping bug AND improve pong's
 remaining 2-byte residual (`$3f`/`$40`) and other cycle-sensitive
 games. Tracked as task #75.
 
+**Confirmed (2026-06-04)** by counting total CPU cycles per frame:
+
+```
+frame  xi cycles  ju cycles   delta
+  19     19912      19912        0
+  20     19912      19912        0
+  21     19912      19912        0   ← last aligned frame (FIRE)
+  22     19912      19836      -76   ← first misaligned frame
+```
+
+Frame 22 is jutari's frame after FIRE. xitari uses 262 scanlines × 76
+= 19912 CPU cycles. jutari uses 261 scanlines × 76 = 19836 — exactly
+**76 cycles less = 1 scanline less of CPU work**. Same game code,
+same boot sequence (frames 1-21 agree byte-for-byte). One or more
+instructions in jutari's frame-22 execution undercounts cycles by a
+total of 76. Suspect opcodes (by occurrence count in breakout ROM):
+LDY abs,X (16), LDA abs,X (11), LDA abs,Y (9), DEC abs,X (8), LDX
+abs,Y (3), LDA (zp),Y (6) — each a page-cross-sensitive +1-cycle
+addressing mode. If even one of these has wrong page-cross handling
+and is hit ~76 times per frame in the FIRE path, the drift matches.
+
 ### NEW investigation — jumping is FIRE-action triggered (2026-06-04)
 
 Per-frame analysis of the post-fix 3600-frame breakout video:
