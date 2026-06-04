@@ -16,6 +16,69 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ## Where we left off — pick up here (2026-06-04 afternoon)
 
+### Investigation note — jumping scanlines deep dive (2026-06-04)
+
+Used per-bus-op trace bisection (per `BUG_BISECTION_METHODOLOGY.md`)
+to narrow down the scanline drift. Findings:
+
+**Quantified per-bus-op cycle drift** (frame 21, breakout):
+
+```
+idx  op                              xi_sc  ju_sc  diff
+0    poke $0296=34 (TIM1T)             6      5    +1
+1    peek $00da=19                    11      9    +2
+2    poke $00da=20 (INC RAM[$5a])     11      9    +2
+3    peek $0282=63 (SWCHB)            18     17    +1
+4    poke $00dc=255                   32     32     0   ← converges
+13   peek $01ff=242 (cart)            87     84    +3
+16   peek $00de=209                   90     90     0
+```
+
+**Key observation**: jutari is consistently 1 CPU cycle BEHIND
+xitari at every frame's FIRST bus op (`poke $0296=34`). Across
+frames 18-22, xitari first event always at sc=6, jutari at sc=5.
+
+**Root cause hypothesis**: xitari's `Console::run()` calls
+`TIA::frameReset()` AFTER the VSYNC=0 instruction completes — and
+the reset preserves the partial-scanline beam progress via
+`clocks = (cycles*3 - frame_start_clocks) % 228`. M6502High
+increments cycles per bus op, but M6502Low (the default in ALE)
+increments at instruction end. xitari's first new-frame instruction
+starts with cycles=0 (post-resetCycles), but the FIRST BUS OP
+records the post-increment cycles=1 → sc=0. Subsequent bus ops:
+sc=2, sc=4, etc. (each ++ by some amount).
+
+jutari's VSYNC handler resets `tia.scanline_cycle = 0`
+immediately on the VSYNC=0 poke (mid-instruction). The next
+instruction starts with `scanline_cycle = 3` (residual from the
+3-cycle STA $0=0). xitari starts with scanline_cycle = ~4 due
+to the resetCycles+stop()+frameReset timing.
+
+The 1-cycle difference makes ~30% of frames render with a +1
+scanline drift visible in the breakout side-by-side video.
+
+**Why fixes tried so far didn't work**:
+
+  1. Preserve scanline_cycle at VSYNC=0 (don't reset): no-op
+     since scanline_cycle was already 0 at the VSYNC=0 poke
+     (frame ends at scanline boundary).
+  2. Clear framebuffer at VSYNC=0: made things worse (now NO
+     frames aligned because previous-frame data is needed for
+     scanlines jutari doesn't write).
+
+**Next-step recipe for next session**:
+
+  - Add a `tia.vsync_reset_pending::Bool` field. VSYNC handler
+    sets it to true. In `_tia_post_step!`, after `tia_advance`
+    has run with the full instruction cycles, check the flag
+    and do the actual reset there (+ optional "phantom fetch"
+    cycle to match xitari's stop+resetCycles+next-fetch timing).
+  - Validate by re-running the per-bus-op trace diff — frame
+    21 first event should land at sc=6 in jutari, matching
+    xitari.
+
+Severity: video polish only — gameplay/RAM/scoring is bit-exact.
+
 ### NEW open bug — jutari "jumping scanlines" in breakout video
 
 **Visible symptom**: in the 60s breakout comparison video
