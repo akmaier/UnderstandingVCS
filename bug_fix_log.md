@@ -38,6 +38,56 @@ reset) at the deferred drain**: also resetting `scanline_cycle=0`
 (`color_clock=0`) at the drain point dropped breakout match rate from
 11.6% → 1.7% — preserving is the right call.
 
+### Deeper finding — cycle accumulation drift (2026-06-04 evening)
+
+Tracked the jutari-vs-xitari elapsed-CPU-cycle gap across the first VBLANK
+clear poke in breakout frame 22 (the first frame after FIRE):
+
+| anchor event                  | xi cyc | ju cyc | gap |
+|-------------------------------|-------:|-------:|----:|
+| first poke `$0296` (TIM1T)    |      6 |      2 |   4 |
+| first peek `$0282` (SWCHB)    |     18 |     14 |   4 |
+| first VBLANK clear `$01=0`    |   2207 |   2128 |  79 |
+
+The gap STARTS at 4 cycles (= xitari records POST-instr cycles for poke
+events vs jutari's PRE-instr recording — the 4 comes from STA absolute
+= 4 cycles) and GROWS to 79 cycles at the VBLANK clear. **Excess gap
+= 79 - 3 (STA zp post-vs-pre offset) = 76 cycles = exactly 1 scanline.**
+
+That 76-cycle drift IS the 1-row vertical shift. jutari's beam is 1
+scanline BEHIND xitari's at the point game code clears VBLANK, so
+jutari's "scanline 34" rendering picks up game state that xitari has
+at "scanline 35". `framebuffer[35,:]` in jutari = `framebuffer[36,:]`
+in xitari → entire frame shifted up by 1 row.
+
+**Where the 76 cycles disappear**: still narrowing down. Each INC/DEC
+zp/abs RMW adds 1 extra BUS OP (jutari's NMOS-correct dummy write
+that xitari's M6502Low skips), but CYCLE counts match. Each taken-BNE
+adds 1 extra BUS OP (jutari's phantom fetch xitari omits) — but again
+cycles match. Suspect classes for the cycle drift:
+
+  - STA abs,X / STA (zp),Y unconditional-dummy-read: bug_fix_log
+    already lists this as the open remainder; jaxtari "only
+    dummy-reads on a page cross". jutari likely has the same shape.
+    Each STA abs,X is supposed to take 5 cycles unconditionally;
+    if jutari counts 4, that explains accumulating cycle loss.
+  - Page-cross detection differs between jutari and M6502Low.
+  - Some other addressing mode's cycle count is off by 1 in jutari.
+
+**Next probe** (highest signal):
+  1. Add a per-instruction cycle-count differ tool: capture both
+     traces, for each "matching" instruction (same low-12 PC), record
+     cycle delta (=cycles_after - cycles_before in each engine), diff.
+  2. The first instructions where ju delta != xi delta are the
+     culprits. Cluster by opcode to find the broken addressing mode.
+  3. Fix the addressing-mode cycle count in jutari's `CYCLE_TABLE` or
+     in `_step_inner` page-cross logic.
+
+This is a separate, deep bug from the deferred-reset fix. Closing it
+would likely close the breakout jumping bug AND improve pong's
+remaining 2-byte residual (`$3f`/`$40`) and other cycle-sensitive
+games. Tracked as task #75.
+
 ### NEW investigation — jumping is FIRE-action triggered (2026-06-04)
 
 Per-frame analysis of the post-fix 3600-frame breakout video:
