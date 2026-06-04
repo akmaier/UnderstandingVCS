@@ -106,6 +106,20 @@ cd jaxtari && .venv/bin/python -m pytest tests/test_pxc1_conformance.py tests/te
 # Override default parallelism with -n 1 for serial debugging.
 ```
 
+### jutari↔xitari RAM conformance scoreboard (2026-06-03, post-fix)
+
+100 frames of NOOP (`jutari_xitari_ram_diff.py`):
+
+| ROM            | Mean b/f | Max b/f | Status   |
+|----------------|----------|---------|----------|
+| pong           | 0.0      | 0       | ✅ bit-exact |
+| breakout       | 0.0      | 0       | ✅ bit-exact (was 9.9 before this session) |
+| space_invaders | 0.0      | 0       | ✅ bit-exact |
+| asteroids      | 0.0      | 0       | ✅ bit-exact |
+| seaquest       | 2.6      | 6       | next target |
+| pitfall        | 19.8     | 21      | next target |
+| enduro         | 45.0     | 50      | next target |
+
 ### Recent commits worth knowing about
 
   - **🏆 Breakout ball-doesn't-die FIXED (2026-06-03, commit
