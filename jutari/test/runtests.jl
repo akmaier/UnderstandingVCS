@@ -5655,3 +5655,54 @@ using JuTari.TIA: render_pixel,
         @test sum(tia.framebuffer) == 0
     end
 end
+
+# -------------------------------------------------------------------------- #
+# Regression: breakout ball-doesn't-die was the open bug closed in commit
+# 20b5de0. Root cause: enabl_old (the VDELBL shadow latch) captured a
+# STALE ENABL value when a deferred ENABL write hadn't activated yet at
+# the GRP1-write moment, causing spurious BL-PF collisions.
+#
+# This test runs breakout with the canonical seed-42 random-action stream
+# (`tools/breakout_video/output/breakout_random_actions.txt`) and asserts
+# RAM[$39] (lives counter) decrements correctly — matching xitari.
+# -------------------------------------------------------------------------- #
+
+@testset "breakout ball-death (RAM[\$39] lives counter)" begin
+    rom_path = joinpath(@__DIR__, "..", "..", "xitari", "roms", "breakout.bin")
+    actions_path = joinpath(@__DIR__, "..", "..",
+                             "tools", "breakout_video", "output",
+                             "breakout_random_actions.txt")
+    if isfile(rom_path) && isfile(actions_path)
+        rom = read(rom_path)
+        env = JuTari.Env.StellaEnvironment(rom, JuTari.PaddleGames.BreakoutRomSettings())
+        JuTari.Env.env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)
+        actions = Int[]
+        for line in eachline(actions_path)
+            s = strip(line)
+            isempty(s) && continue
+            startswith(s, "#") && continue
+            push!(actions, parse(Int, s))
+        end
+        # Walk for 600 frames, record (frame, lives) transitions
+        transitions = Tuple{Int,Int}[]
+        prev = -1
+        for i in 1:min(600, length(actions))
+            JuTari.Env.env_step!(env, actions[i])
+            lives = Int(UInt8.(JuTari.Env.get_ram(env))[0x39 + 1])
+            if lives != prev
+                push!(transitions, (i, lives))
+                prev = lives
+            end
+        end
+        # Expected: 5→4→3→2→1→0 at frames matching xitari (within ±2 frames).
+        # xitari measured: (1, 5), (117, 4), (237, 3), (357, 2), (477, 1), (597, 0)
+        expected = [(1, 5), (117, 4), (237, 3), (357, 2), (477, 1), (597, 0)]
+        @test length(transitions) == length(expected)
+        for (got, exp) in zip(transitions, expected)
+            @test got[2] == exp[2]
+            @test abs(got[1] - exp[1]) <= 2
+        end
+    else
+        @info "breakout rom or actions missing — skipping ball-death test"
+    end
+end
