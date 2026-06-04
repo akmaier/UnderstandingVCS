@@ -14,7 +14,67 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
-## Where we left off — pick up here (2026-06-01)
+## Where we left off — pick up here (2026-06-03 evening)
+
+**Big wins this 2026-06-02/03 sprint** (skim "Patches landed" for
+details + commits):
+
+  - jutari pong RAM 4 b/f → **bit-exact** (Phase 2b cycle counter +
+    Phase 5 RIOT-read threading).
+  - jaxtari pong RAM 13 b/f → **4 b/f** at $04/$3c (Phase 2b +
+    Phase 5 mirror — residual is a single jaxtari-only INPT/
+    floating-bus issue).
+  - **jutari breakout RAM 9.9 b/f → bit-exact** (this morning's
+    VDELBL/deferred-ENABL shadow latch fix, commit `20b5de0`).
+    Lives counter `RAM[$39]` now decrements 5→4→3→2→1→0 every
+    ~120 frames matching xitari. Regression test landed:
+    `jutari/test/runtests.jl` `breakout ball-death` testset.
+  - Per-bus-op xitari trace + diff infrastructure (commit
+    `d66b290`) — the unblocker that let us bisect the BL-PF bug
+    to a single instruction.
+
+**jutari↔xitari RAM scoreboard, 100-frame NOOP** (post-fix):
+
+  | ROM            | Mean b/f | Status |
+  |----------------|----------|--------|
+  | pong           | 0.0      | ✅ |
+  | breakout       | 0.0      | ✅ (was 9.9 before today) |
+  | space_invaders | 0.0      | ✅ |
+  | asteroids      | 0.0      | ✅ |
+  | seaquest       | 2.6      | 6 bytes diverge at FRAME 0 (boot) |
+  | pitfall        | 19.8     | next target |
+  | enduro         | 45.0     | next target |
+
+### Active user-reported bugs (DOWN from 3 to 1)
+
+  - ~~Breakout ball-doesn't-die~~ — **CLOSED** by commit
+    `20b5de0`.
+  - ~~jutari pong paddles frozen~~ — closed by Task #66 SwapPaddles fix.
+  - jaxtari pong remaining 4 b/f at $04/$3c — the original
+    "where we left off" recipe (instrument frame 23→24
+    transition, find first divergent INPT poll) still applies.
+
+### Recipe for next agent — pick a target
+
+  - **jaxtari pong $04/$3c** (4 b/f at frame 24+): per-bus-op
+    trace technique that worked for breakout. Diff jaxtari trace
+    vs xitari at frame 24, find first byte mismatch on a TIA
+    read (likely INPT4/5 or floating-bus noise).
+  - **seaquest frame-0 boot divergence** (6 bytes): something in
+    the boot sequence (random NOOP reset? RAM seeding?). Compare
+    initial RAM state at boot end.
+  - **pitfall / enduro**: bigger divergences from frame 0.
+    Likely similar root cause but separate investigation.
+
+### Test infrastructure note
+
+`pyproject.toml`'s pytest `addopts` is `-q -n auto --dist
+worksteal`, so `pytest` parallelises across all cores by default.
+Override with `pytest -n 1` to debug a single test deterministically.
+
+---
+
+## Earlier "where we left off" — kept for archive purposes (2026-06-01)
 
 This section is what the **next agent** should read first to know what
 to chase. Skip down to "Conformance scoreboard" and "Patches landed"
