@@ -16,6 +16,74 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ## Where we left off — pick up here (2026-06-04 afternoon)
 
+### Update — vsync_reset_pending fix landed (2026-06-04 evening, commit `b7cd741`)
+
+Implemented the "next-step recipe" below (`tia.vsync_reset_pending::Bool`
+flag, drained at end of `tia_advance!`). All tests pass; the P3f frame-
+ending testset was updated; breakout `ball-death` RAM regression still
+bit-exact. **However**, the fix turns out to be a no-op for breakout's
+visible jumping: the per-bus-op trace and the per-frame screen diff
+both show identical content pre- vs. post-fix (11.6% exact-match
+unchanged). Reason: for breakout the VSYNC=0 instruction consistently
+fires at `scanline_cycle=0` (frame ends right on a scanline boundary),
+so the OLD mid-instruction reset and the NEW deferred reset converge
+to the same end-of-instruction state.
+
+The fix is still worth keeping — it now matches xitari's startFrame()
+semantics for games where VSYNC fires mid-scanline (the more general
+case). Just doesn't move breakout.
+
+**Empirical confirmation that scanline_cycle MUST be preserved (not
+reset) at the deferred drain**: also resetting `scanline_cycle=0`
+(`color_clock=0`) at the drain point dropped breakout match rate from
+11.6% → 1.7% — preserving is the right call.
+
+### NEW investigation — jumping is FIRE-action triggered (2026-06-04)
+
+Per-frame analysis of the post-fix 3600-frame breakout video:
+
+  - Frames 1-20: 100% pixel-aligned with xitari (no shift).
+  - Frame 21: **first FIRE action** (action_id=1) in the action stream
+    — instantaneous 1-row vertical shift up.
+  - Frames 22-25: aligned again.
+  - Frames 26-35: shifted (10 consecutive frames).
+  - Frames 36-55: aligned (20 consecutive).
+  - Frames 56-onwards: alternating windows of shifted/aligned.
+
+Total: 416/3600 frames (11.6%) pixel-exact; 3137/3600 frames (87.1%)
+have top-most-row index off by exactly -1 (jutari shifted UP by 1
+scanline).
+
+**Concrete observation** for frame 21:
+
+  - jutari's first non-zero pixel row = row 4 (= internal scanline 38)
+  - xitari's first non-zero pixel row = row 5 (= internal scanline 39)
+  - jutari row 1 == xitari row 2 (exact match — pure 1-row shift)
+
+So jutari's "scanline 38" contains what xitari renders at "scanline 39"
+— jutari is **one scanline ahead in beam-position-vs-game-state**
+during the visible region.
+
+**Two-state pattern** suggests: at certain game-logic moments (after
+FIRE press, brick-break events?) jutari's TIA renders the leading edge
+of the visible region one scanline earlier than xitari. Likely path:
+a TIA state read (CXxx / INPT4) returns slightly different value at
+the VBLANK-clear instruction, causing jutari's game code to branch
+through a path 1-3 cycles shorter than xitari's, so VBLANK=0 fires
+1 scanline earlier in jutari for that frame.
+
+**Concrete next probe**:
+  1. Capture jutari & xitari per-bus-op traces frames 19-22, find the
+     first event where jutari's "VBLANK clear" poke (`STA $01` with
+     bit 1 = 0) happens at a different scanline than xitari.
+  2. Walk backward to the most recent TIA-read peek diverging in
+     value (likely CXBLPF / CXP0FB / INPT4 in the fire-handling
+     region).
+  3. Fix that read's value to match xitari at the divergent cycle.
+
+The deferred VSYNC reset is in place — the jumping is a SEPARATE bug
+with the same per-bus-op-trace methodology pointing the way.
+
 ### Investigation note — jumping scanlines deep dive (2026-06-04)
 
 Used per-bus-op trace bisection (per `BUG_BISECTION_METHODOLOGY.md`)
