@@ -106,6 +106,13 @@ cd jaxtari && .venv/bin/python -m pytest tests/test_pxc1_conformance.py tests/te
 # Override default parallelism with -n 1 for serial debugging.
 ```
 
+### Bug-bisection methodology — read this before chasing divergences
+
+[BUG_BISECTION_METHODOLOGY.md](BUG_BISECTION_METHODOLOGY.md) — the
+per-bus-op trace technique that closed breakout (commit `20b5de0`).
+Decision tree, tooling pointers, fix patterns, anti-patterns. Use
+it for any new RAM-divergence investigation.
+
 ### jutari↔xitari RAM conformance scoreboard (2026-06-03, post-fix)
 
 100 frames of NOOP (`jutari_xitari_ram_diff.py`):
