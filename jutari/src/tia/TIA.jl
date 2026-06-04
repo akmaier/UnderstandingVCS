@@ -547,8 +547,24 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
         # Writing GRP1 latches both GRP0 (for VDELP0) and ENABL
         # (for VDELBL — Stella's TIA-circuit convention ties the
         # ball-delay strobe into the GRP1 latch).
+        # 2026-06-03: when a previous ENABL write is still PENDING
+        # (queued for deferred activation, P3i-g pt6) and its
+        # activation_clock is ≤ the current GRP1 beam, the live
+        # tia.registers[W_ENABL+1] is STALE — we need the new value
+        # for the shadow capture. xitari does the ENABL write
+        # immediately and then GRP1's shadow captures the new value.
+        # Without this lookback, jutari's `enabl_old` retains a
+        # bit-1-set value across what should have been a clear,
+        # causing spurious BL-PF collisions during VDELBL=1 (the
+        # breakout-frame-92 scn 51-52 bug).
         tia.grp0_old  = tia.registers[W_GRP0 + 1]
-        tia.enabl_old = tia.registers[W_ENABL + 1]
+        effective_enabl = tia.registers[W_ENABL + 1]
+        for (act_cc, w_reg, w_val) in tia.pending_writes
+            if w_reg == W_ENABL && act_cc <= Int(beam_cc)
+                effective_enabl = w_val   # latest pending overrides
+            end
+        end
+        tia.enabl_old = effective_enabl
     end
 
     return nothing
