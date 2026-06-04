@@ -109,6 +109,38 @@ abs,Y (3), LDA (zp),Y (6) — each a page-cross-sensitive +1-cycle
 addressing mode. If even one of these has wrong page-cross handling
 and is hit ~76 times per frame in the FIRE path, the drift matches.
 
+**Localized (2026-06-04)** — first observable divergence in frame 22:
+
+Compared TIA/RIOT-only peek sequences (both engines, same code path).
+First difference: the 32nd INTIM (`$0284`) read returns 10 in jutari
+vs 11 in xitari. Both read the same address on the same instruction;
+the timer counts down by 1 ONE READ EARLIER in jutari. xitari catches
+up on the very next iteration (read 33 = 10 in both). The 1-cycle
+drift in INTIM is the entry point: whichever Pong loop branches on
+this value picks a different path in jutari → game executes different
+total cycles → frame ends 76 cycles short.
+
+The INTIM formula difference candidate:
+
+  - xitari `M6532::peek` case 0x04: `uInt32 cycles = mySystem->cycles() - 1;`
+    Then `delta = cycles - myCyclesWhenTimerSet`. For M6502Low the
+    `mySystem->cycles()` value INCLUDES the current instruction's
+    full incrementCycles bump.
+  - jutari `riot_peek!` INTIM: `eff = max(0, pending_extra_cycles - 1)`.
+    Then `extra = (cycles_since_tick + eff) >> shift`.
+
+The `-1` in jutari subtracts from `pending_extra_cycles` (= bus ops
+processed THIS instruction including current). xitari subtracts from
+`mySystem->cycles()` (= cumulative system cycles MINUS 1). Whether
+these are exactly equivalent depends on a per-bus-op vs per-instruction
+cycle delta that doesn't always match — likely a 1-cycle off-by-one.
+
+Concrete next probe: capture the EXACT cycles value at the divergent
+INTIM read in both engines via an extra trace field, compute what each
+engine's formula returns, and align them. Likely fix: tweak jutari's
+`eff` formula (perhaps drop the `- 1` or change the cycle reference
+point) to match xitari's M6502Low INTIM semantics.
+
 ### NEW investigation — jumping is FIRE-action triggered (2026-06-04)
 
 Per-frame analysis of the post-fix 3600-frame breakout video:
