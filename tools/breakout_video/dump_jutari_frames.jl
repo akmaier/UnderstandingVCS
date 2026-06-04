@@ -76,8 +76,19 @@ function main(argv::Vector{String} = ARGS)
     # (n, 210, 160) so we just need to dump in the (n, 210, 160)
     # row-major order — explicit per-cell write below sidesteps the
     # layout question entirely.
+    # Auto-reset matches xitari's trace_dump --auto-reset default: when
+    # the game declares `gameOver=true` (e.g. breakout after losing all
+    # 5 lives), call env_reset! so the next step starts a fresh episode.
+    # Mirrors xitari/ale's resetGame() behavior — needed so the
+    # comparison video doesn't freeze at game-over while xitari keeps
+    # rendering a fresh game.
     open(out_path, "w") do io
         for i in 1:n
+            if env.terminal
+                # Re-do the boot burn to match xitari resetGame() —
+                # see env_reset! signature in StellaEnvironment.jl.
+                env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)
+            end
             env_step!(env, actions[i])
             screen = get_screen(env)            # (210, 160) UInt8
             # Explicit row-major byte write. `screen` in jutari is a

@@ -65,8 +65,16 @@ def main(argv=None) -> int:
     actions = _load_actions(args.actions)
     n = min(args.max_frames, len(actions))
 
+    # Auto-reset matches xitari's trace_dump --auto-reset default: when
+    # the game declares `gameOver=true` (e.g. breakout after losing all
+    # 5 lives), re-call env.reset so the next step starts a fresh
+    # episode. Mirrors xitari/ale's resetGame() — needed so the
+    # comparison video doesn't freeze at game-over while xitari keeps
+    # rendering a fresh game.
     frames = np.empty((n, 210, 160), dtype=np.uint8)
     for i in range(n):
+        if env.game_over():
+            env.reset(boot_noop_steps=60, boot_reset_steps=4)
         env.step(int(actions[i]))
         frames[i] = np.asarray(env.get_screen(), dtype=np.uint8)
         if (i + 1) % 300 == 0:
