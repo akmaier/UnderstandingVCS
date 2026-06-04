@@ -14,7 +14,59 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
-## Where we left off — pick up here (2026-06-03 evening)
+## Where we left off — pick up here (2026-06-04 afternoon)
+
+### NEW open bug — jutari "jumping scanlines" in breakout video
+
+**Visible symptom**: in the 60s breakout comparison video
+(`tools/breakout_video/output/breakout_xitari_vs_jutari.mp4`,
+commit `5ccab08`), the jutari panel occasionally shows its render
+shifted UP by 1 scanline compared to xitari, then snaps back.
+Makes the bricks and paddle "jump" intermittently.
+
+**Quantified**: per-frame screen diff over 500 frames of breakout
+random actions:
+
+  - 347/500 frames: jutari and xitari pixel-bit-exact
+  - 145/500 frames: jutari is EXACTLY +1 scanline ahead
+    (`jutari[r] == xitari[r+1]` for every diverging row, d=0)
+  - 8/500 frames: neither (1-frame transitions)
+
+The S-state (shift +1) lasts 1-15 frames at a time, then snaps
+back. Frames where it triggers seem game-event-driven (start of
+brick-break? collision?).
+
+**Key constraint**: jutari↔xitari RAM is BIT-EXACT for all 300
+frames (commit `20b5de0`). Same CPU cycles per frame (19912). Same
+`tia.scanline` and `tia.scanline_cycle` at every frame end
+(verified by instrumentation: scanline=0, scanline_cycle=3, cc=9
+on every frame from 1..60). So the divergence is in TIA's
+*intra-frame* beam tracking — the renderer writes to different
+framebuffer rows in some frames despite identical CPU state.
+
+**Next-step recipe**:
+
+  1. Find the first frame where drift appears (frame 21 in the
+     dump). Instrument `tia_advance!` to log
+     `(line_advance, completed_line, tia.scanline_before,
+      cpu_cycles, scanline_cycle_before)` per call.
+  2. Find one TIA write inside frame 21 where jutari's
+     `tia.scanline` differs from what xitari would compute. The
+     answer is likely either in `line_advance = total ÷ 76`
+     integer-truncation behavior, or in the WSYNC stall
+     calculation (`(76 - scanline_cycle) mod 76`), or in
+     `tia_advance!`'s `new_line = tia.scanline + line_advance`.
+  3. Build a 2nd xitari hook (similar to commit `d66b290`'s bus
+     trace) that emits TIA's `myFramePointer` row index per
+     scanline render, so you can diff against jutari's
+     `completed_line + 1`. First differing tuple is the entry
+     point.
+
+The bug is NOT user-blocking now (game plays correctly, RAM is
+bit-exact, scoring matches xitari). It's a polish item for the
+side-by-side video.
+
+### Earlier (2026-06-03 evening) — Breakout BIT-EXACT
 
 **Big wins this 2026-06-02/03 sprint** (skim "Patches landed" for
 details + commits):
