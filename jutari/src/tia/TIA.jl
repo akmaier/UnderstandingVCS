@@ -284,6 +284,16 @@ mutable struct TIAState
     # until those 8 pixels finish rendering; auto-cleared by the
     # per-color-clock render loop. Mirrors jaxtari `hmove_blank_pending`.
     hmove_blank_pending::Bool
+    # 2026-06-04: deferred VSYNC 1→0 reset. xitari's `TIA::startFrame`
+    # runs AFTER the CPU completes its update() call — i.e. AFTER the
+    # full STA $W_VSYNC instruction completes. Resetting scanline /
+    # frame counters MID-instruction (the old jutari behavior) made
+    # the new frame's first bus op land one CPU cycle earlier than
+    # xitari (sc=5 vs sc=6 at breakout frame 21). Setting this flag
+    # in the VSYNC handler and draining it at the END of `tia_advance!`
+    # matches xitari's "frameStart records WHERE we were, scanline
+    # counter resets to 0 but scanline_cycle keeps going" semantics.
+    vsync_reset_pending::Bool
 end
 
 # INPT defaults: paddle pots ($80 = centred), triggers idle high (D7=1).
@@ -303,6 +313,7 @@ initial_tia_state() = TIAState(
     0,                                # P3i-a: color_clock = 0
     Tuple{Int,Int,UInt8}[],            # P3i-c: empty pending_writes
     false,                             # P3i-f: hmove_blank_pending = false
+    false,                             # 2026-06-04: vsync_reset_pending = false
 )
 
 """
@@ -476,11 +487,15 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
     elseif reg == W_VSYNC
         new_vsync = (Int(value) & 0x02) != 0
         if tia.vsync_active && !new_vsync
-            # 1→0 edge: software frame boundary.
+            # 1→0 edge: software frame boundary. 2026-06-04 — DEFER the
+            # actual reset until the end of `tia_advance!`. Resetting
+            # mid-instruction makes the new frame's first bus op land
+            # one CPU cycle earlier than xitari (see TIAState field
+            # comment). We do mark vsync_active=false here so the
+            # collision-pipeline / VBLANK gating sees the new VSYNC
+            # state for the rest of this instruction.
             tia.vsync_active = false
-            tia.frame += UInt64(1)
-            tia.scanline = 0
-            tia.scanline_cycle = 0
+            tia.vsync_reset_pending = true
         else
             tia.vsync_active = new_vsync
         end
@@ -691,6 +706,25 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
     # and both incremented `frame` for the same frame boundary.
     new_line = tia.scanline + line_advance
     tia.scanline = new_line % NTSC_SCANLINES_PER_FRAME
+
+    # 2026-06-04: deferred VSYNC 1→0 reset. If `tia_poke!` saw the
+    # falling VSYNC edge during this instruction, the actual frame /
+    # scanline counter reset is performed HERE — after the full
+    # instruction's cycles have advanced scanline_cycle/color_clock.
+    # This matches xitari's startFrame() semantics: scanline counter
+    # resets to 0 while the IN-SCANLINE beam position is preserved
+    # (xitari does this via the negative `myClockWhenFrameStarted`
+    # offset; here we just leave scanline_cycle/color_clock untouched
+    # so the new frame begins mid-scanline at the same beam position
+    # the previous frame's last instruction ended at).
+    # Empirically: also resetting scanline_cycle/color_clock here
+    # makes the per-frame screen visibly WORSE (breakout match rate
+    # drops from 11.6% to 1.7% — preserving is the right call).
+    if tia.vsync_reset_pending
+        tia.frame += UInt64(1)
+        tia.scanline = 0
+        tia.vsync_reset_pending = false
+    end
     return nothing
 end
 

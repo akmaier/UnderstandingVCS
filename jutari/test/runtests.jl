@@ -2232,16 +2232,33 @@ end
     end
 
     @testset "VSYNC falling edge increments frame and resets scanline" begin
+        # 2026-06-04: VSYNC 1→0 now DEFERS the frame/scanline reset until
+        # the next `tia_advance!` so the new frame's first bus op lands
+        # at xitari's expected sub-cycle (sc=6 vs the old jutari sc=5).
+        # The test now exercises both halves of the lifecycle.
         tia = initial_tia_state()
         tia.scanline = 100; tia.scanline_cycle = 42
         tia_poke!(tia, W_VSYNC, 0x02)
         @test tia.frame == 0
         @test tia.scanline == 100
+        @test tia.vsync_active == true
         tia_poke!(tia, W_VSYNC, 0x00)
+        # Reset is now deferred — still no frame/scanline change here.
+        @test tia.frame == 0
+        @test tia.scanline == 100
+        @test tia.scanline_cycle == 42
+        @test tia.vsync_active == false
+        @test tia.vsync_reset_pending == true
+        # The next tia_advance! drains the pending reset.
+        tia_advance!(tia, 4)
         @test tia.frame == 1
         @test tia.scanline == 0
-        @test tia.scanline_cycle == 0
-        @test tia.vsync_active == false
+        # scanline_cycle is preserved across the frame boundary —
+        # mirrors xitari's `startFrame` semantics (cycles reset, but
+        # in-scanline beam position retained via the negative
+        # `myClockWhenFrameStarted` offset).
+        @test tia.scanline_cycle == 46     # 42 + 4 cycles advance
+        @test tia.vsync_reset_pending == false
     end
 
     @testset "VSYNC clear with no rising edge is no-op for frame" begin
@@ -2284,6 +2301,10 @@ end
     end
 
     @testset "full frame cycle via VSYNC" begin
+        # 2026-06-04: VSYNC 1→0 reset now drains at the next
+        # `tia_advance!` rather than the poke. The post-VSYNC
+        # `tia_advance!` (added below) takes the role of the
+        # "first instruction after VSYNC" in the real CPU loop.
         tia = initial_tia_state()
         tia_poke!(tia, W_PF0, 0xF0); tia_poke!(tia, W_COLUPF, 0x42)
         # 1. VSYNC: 3 lines blanked
@@ -2291,6 +2312,9 @@ end
         tia_poke!(tia, W_VBLANK, 0x02)
         tia_advance!(tia, 3 * NTSC_CPU_CYCLES_PER_SCANLINE)
         tia_poke!(tia, W_VSYNC, 0x00)
+        # The reset is pending — drain it via a no-op advance so the
+        # rest of the test sees frame=1, scanline=0.
+        tia_advance!(tia, 0)
         @test tia.frame == 1
         @test tia.scanline == 0
         # 2. VBLANK: 37 lines blanked
