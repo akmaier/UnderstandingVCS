@@ -108,6 +108,24 @@ cd jaxtari && .venv/bin/python -m pytest tests/test_pxc1_conformance.py tests/te
 
 ### Recent commits worth knowing about
 
+  - **🏆 Breakout ball-doesn't-die FIXED (2026-06-03, commit
+    `20b5de0` jutari + `a418e4c` jaxtari)**:
+    - **jutari↔xitari breakout RAM: 9.9 b/f → 0.0 b/f
+      (BIT-EXACT, 300 frames)**.
+    - **Ball lives counter (`RAM[$39]`) now decrements every
+      ~120 frames** matching xitari (5→4→3→2→1→0 at frames
+      117/237/357/477/597). Was decrementing only ONCE before.
+    - Root cause: ENABL writes are deferred (P3i-g pt6), but the
+      VDELBL shadow latch fires synchronously at GRP1 writes —
+      so the live ENABL register was stale at shadow-capture
+      time, retaining "ball enabled" across what should have been
+      a clear. Fix drains pending ENABL writes whose
+      activation_clock ≤ current beam_cc at GRP1 poke time, so
+      the shadow captures the correct effective value.
+    - Discovery via per-bus-op xitari trace (commit `d66b290`)
+      + temporary `_BLPF_LOG`/`_ENABL_OLD_DEBUG` instrumentation
+      — bisected to scn 51-52 of frame 92 then to the GRP1
+      shadow-capture path. Full story in bug_fix_log.md.
   - **Phase 2b of [P3I_G_THREADING_PLAN.md](P3I_G_THREADING_PLAN.md)
     landed (2026-06-02, both ports — major progress)**:
     - `2aec8c5` jutari + `a8f2bd7` jaxtari: per-opcode cycle-counter
@@ -153,26 +171,9 @@ cd jaxtari && .venv/bin/python -m pytest tests/test_pxc1_conformance.py tests/te
      off-by-1 on rows 35-37/149 — live in `render_pixel` /
      `render_scanline` / the HMOVE-blank state machine. Orthogonal
      to P3I_G_THREADING_PLAN.md cycle threading.
-  2. **Breakout ball-doesn't-die — NARROWED to spurious BL-PF
-     collision** (2026-06-03, commits `d66b290` + `a8cdcc9`):
-     - Per-bus-op xitari trace extension (commit `d66b290`) lets
-       us diff jutari's trace against xitari's at the bus-op level.
-     - **First semantic divergence at frame 93 scn 1 sc 15**:
-       jutari reads CXBLPF=$b6 (bit 7 = BL-PF collision SET),
-       xitari reads $36 (bit 7 = 0).
-     - VBLANK collision-skip fix (commit `a8cdcc9`) — semantically
-       correct vs xitari but didn't close the gap. So the
-       spurious BL-PF latch is set during VISIBLE scanlines
-       (28-261 of frame 92), not VBLANK.
-     - **Next step**: instrument `_apply_pixel_collisions!` in
-       jutari/src/{bus,tia}/*.jl to log every (scanline,
-       color_clock) where BL-PF gets set in frames 89-92. Then
-       extend the xitari per-bus-op trace to also emit
-       `myCollision` writes from `updateFrameScanline`'s
-       collision switch. First (scanline, cc) where they
-       disagree IS the bug entry. Likely cause: jutari's `bl_x`
-       drifts from xitari's at some HMOVE, or jutari's PF set
-       differs at a pixel where the ball happens to be.
+  2. **Breakout ball-doesn't-die — FIXED** (2026-06-03,
+     commit `20b5de0`). jutari↔xitari RAM bit-exact, ball lives
+     counter decrements every ~120 frames. Closed. ✅
   3. **jaxtari pong 4 b/f residual at $04/$3c (frame 24+)** — same
      bytes flagged in bug_fix_log's "frame-1 with LEFT" finding,
      now suppressed to frame 24 thanks to the cycle counter fix.

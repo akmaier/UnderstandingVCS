@@ -163,6 +163,74 @@ move in lock-step (recipe in that file's header comment).
 
 ## Patches landed (newest first)
 
+### 🏆 Breakout FIXED — ENABL pending-write into GRP1 shadow (2026-06-03)
+
+**Commit `20b5de0` (jutari) + `a418e4c` (jaxtari mirror) — the
+breakout-frame-92 ball-doesn't-die bug is CLOSED.**
+
+Measured: jutari↔xitari breakout RAM **9.9 b/f → 0.0 b/f**
+(BIT-EXACT across all 300 frames of seed-42 random actions).
+Lives counter `RAM[$39]` now decrements **every ~120 frames**
+matching xitari (5→4→3→2→1→0 at frames 117, 237, 357, 477, 597).
+
+**Root cause** (final): xitari's M6502Low applies ENABL writes
+IMMEDIATELY; when GRP1 fires the shadow latch (`myDENABL =
+myENABL`, TIA.cxx:2492), the latest ENABL value is captured.
+Jutari/jaxtari defer ENABL writes (P3i-g pt6, needed for the
+mid-scanline-stomp brick-rendering fix) — so when GRP1 captures
+`tia.registers[W_ENABL+1]` into `enabl_old`, the live register
+file holds a STALE value (the deferred ENABL write hasn't
+activated yet). The shadow then retains a bit-1-SET value across
+what should have been a clear, and `_vdel_enabl()` keeps
+returning "ball enabled" when xitari has cleared it. The
+collision evaluator then sets BL-PF where it shouldn't, which
+the game uses to take the wrong CPU branch.
+
+**Concrete sequence** (frame 91 scanline 229 of breakout):
+
+  ```
+  sc 35: ENABL = $00     ← clear ball
+  sc 38: GRP1  = $00     ← triggers shadow latch
+  
+  xitari (immediate writes):
+    sc 35: myENABL = ($02 & $00) = 0
+    sc 38: myDENABL = myENABL = 0     ← shadow captures cleared
+  
+  jutari/jaxtari (before fix):
+    sc 35: queue ENABL=$00 in pending_writes (activates sc 35+delay)
+    sc 38: enabl_old = tia.registers[W_ENABL+1] = $37 ← STALE
+    later: deferred ENABL=$00 activates — too late, shadow already wrong
+  ```
+
+**Fix**: at GRP1 poke, scan pending_writes for the LATEST ENABL
+write whose `activation_clock ≤ current beam_cc`. Use that as
+the effective ENABL value for the shadow capture, rather than
+the stale live register.
+
+**Discovery path** (so future agents can apply the technique):
+
+  1. Built per-bus-op xitari trace (`d66b290` — extends
+     `tools/trace_dump.cpp` + `xitari/.../System.{hxx,cxx}`).
+  2. Diff'd jutari's existing per-bus-op trace vs xitari's at
+     frame 93 — found CXBLPF reads $b6 in jutari vs $36 in
+     xitari (= spurious BL-PF collision bit 7).
+  3. Tried VBLANK collision-skip fix — semantically correct
+     vs xitari but didn't close the gap.
+  4. Added temporary `_BLPF_LOG` instrumentation to
+     `_apply_pixel_collisions!` — found BL-PF gets set at scn
+     51-52 of frame 92 with `bl_x=7`, `enabl_old=$37`,
+     `VDELBL=$b9`.
+  5. Recognized the VDELBL shadow path; traced ENABL state at
+     each GRP1 write (the shadow-latch trigger); found last
+     GRP1 of frame 91 captured `enabl_old=$37` in jutari but
+     the corresponding ENABL state in xitari was $00 (cleared).
+  6. The difference: jutari's deferred ENABL hadn't activated
+     yet at the GRP1 moment, xitari's had (immediate writes).
+  7. Fix: GRP1 shadow capture now drains pending ENABL writes.
+
+The temporary `_BLPF_LOG` + `_ENABL_OLD_DEBUG` instrumentation
+hooks have all been REMOVED in the final commit.
+
 ### Breakout — root cause identified at scanline 51-52, VDELBL shadow path (2026-06-03)
 
 Used a temporary `_BLPF_LOG` debug hook in `_apply_pixel_collisions!`
