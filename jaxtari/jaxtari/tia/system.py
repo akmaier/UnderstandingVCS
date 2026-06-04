@@ -833,9 +833,23 @@ def tia_poke(tia: TIAState, addr: int, value: int,
         # — xitari/Stella convention: any GRP1 write moves the ball's
         # delayed-enable shadow forward (mirroring the original TIA
         # circuit that ties the ball's delayed-enable to a GRP1 strobe).
+        # 2026-06-03 (jutari commit 20b5de0): when a previous ENABL
+        # write is still PENDING (queued for deferred activation) and
+        # its activation_clock is ≤ the current GRP1 beam, the live
+        # tia.registers[W_ENABL] is STALE — we need the new value
+        # for the shadow capture. xitari does the ENABL write
+        # immediately and then GRP1's shadow captures the new value.
+        # Without this lookback, jaxtari's enabl_old retains a
+        # bit-1-set value across what should have been a clear,
+        # causing spurious BL-PF collisions during VDELBL=1 (the
+        # breakout-frame-92 scn 51-52 bug, which jutari hits too).
+        effective_enabl = int(tia.registers[W_ENABL])
+        for act_cc, w_reg, w_val in tia.pending_writes:
+            if w_reg == W_ENABL and act_cc <= beam_cc:
+                effective_enabl = int(w_val)
         new_tia = new_tia._replace(
             grp0_old=int(tia.registers[W_GRP0]),
-            enabl_old=int(tia.registers[W_ENABL]),
+            enabl_old=effective_enabl,
         )
 
     return new_tia
