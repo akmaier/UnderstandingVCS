@@ -14,7 +14,32 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
-## Where we left off — pick up here (2026-06-07 afternoon)
+## Where we left off — pick up here (2026-06-07 evening)
+
+### 🏆 Task #76 closed (2026-06-07, commit `037526c`) — jutari auto-reset
+
+jutari's `BreakoutRomSettings` was using `RomSettingsModule`'s no-op
+defaults for `is_terminal` / `get_reward` / `lives` — so `env.terminal`
+never flipped True even after lives hit 0. `dump_jutari_frames.jl`'s
+auto-reset loop never fired; post-game-over frames showed a "stuck"
+breakout while xitari did a full ale.resetGame() and started a new
+episode. Result: 3000+ frames of the comparison video diverged after
+frame 597 (game-over).
+
+Fix: implement xitari-faithful `is_terminal` / `lives` / `get_reward`
+in `BreakoutRomSettings` (started+terminal sticky flag, score from
+RAM[\$4C]/[\$4D] BCD nibbles). Also fixed the `_ram(addr)` helper to
+index the bus's RAM array directly (don't go through `bus.peek` —
+addresses \$39/\$4C/\$4D are TIA read-side registers, not RAM mirrors).
+
+Also added equivalent PongRomSettings (score from \$14/\$15, terminal
+at 21, ΔP0−ΔP1 reward) to mirror jaxtari/jaxtari/games/pong.py.
+
+Empirical: breakout video (jutari vs xitari, 3600 frames):
+  pre-fix:  587/3600  = 16.3% pixel-exact (only frames 0-596 lived)
+  post-fix: **3590/3600 = 99.7% pixel-exact** (all 3600 frames live)
+
+Only 10 sub-pixel ball-paddle-bounce divergences remain.
 
 ### 🏆 Task #75 closed (2026-06-07, commit `4ddb0b7`) — TIM*T-load timing bug
 
