@@ -32,10 +32,32 @@ For the per-phase commit ledger, what each port can do today, and the complete l
 
 ## Hand-off — pick up here
 
-**Two user-visible bugs are open** (both action-driven; PXC1 noop-10 RAM bit-exact still holds for pong/breakout/SI, so the divergence is only triggered by `FIRE`/`LEFT`/`RIGHT` actions). The full 5-phase plan for closing them lives in **[P3I_G_THREADING_PLAN.md](P3I_G_THREADING_PLAN.md)** — both bugs trace to the same 1-cycle CPU↔TIA drift, and the plan covers diagnostic harness → per-opcode CYCLE_TABLE validation → jutari threading → verification → jaxtari mirror. Two prior P3i-g part 2 attempts were reverted; the plan calls out exactly what went wrong and the discipline to avoid a third revert.
+**Big session 2026-06-07**: closed task #75 (jutari TIM*T-load timing
+drift / "jumping scanlines"), task #73 (jaxtari pong $04/$3c residual /
+SwapPaddles=YES paddle resistance routing), and task #77 (pong
+$3f/$40 swap / SwapPaddles=YES FIRE button routing — both ports).
 
-1. **Pong freezes within ~100 frames** of random play. Visible in `tools/breakout_video/output/pong_xitari_vs_jaxtari.mp4` — both paddles + ball + score lock into a fixed image while xitari progresses cleanly (88-472 px / frame-pair).
-2. **Breakout ball doesn't die** under random actions. xitari decrements RAM byte 57 (lives) every ~120 frames; jaxtari decrements once at frame 241 and never again. RAM diverges at frame 20 (first FIRE).
+Concrete wins:
+  - **jutari↔xitari NOOP-300 RAM**: pong / breakout / space_invaders
+    bit-exact across 300 frames (was just 10).
+  - **PXC1 jutari pong + breakout** noop-10 now bit-exact (was
+    @test_broken; harness wasn't passing the right per-ROM RomSettings).
+  - **PXC1 jaxtari pong + breakout** noop-10 now bit-exact too (same
+    TIM*T-load + SwapPaddles=YES fixes mirrored to jaxtari).
+  - **Breakout video alignment** (jutari vs xitari, full 3600 frames):
+    11.6% → 16.3% pixel-exact; gating to actual gameplay (frames 0-596
+    before lives → 0), 98.3% pixel-exact.
+
+**Earlier-known user-visible bugs were action-driven** (mostly closed
+by the SwapPaddles=YES FIRE routing + the TIM*T-load timing fix):
+
+1. ~~Pong freezes within ~100 frames~~ — jaxtari's paddle resistance
+   was wired to INPT0 instead of INPT1, freezing the user paddle.
+   **Closed by task #73 (commit `de00af8` + `c3d6d42`)**.
+2. ~~Breakout ball doesn't die~~ — closed by the breakout VDELBL fix
+   (commit `20b5de0` + `a418e4c`). Subsequent TIM*T-load timing fix
+   (commit `4ddb0b7`) brought breakout pixel-accuracy from 11.6%
+   to 16.3% (98.3% on live gameplay).
 
 ### Big new finding (2026-06-02): jutari is much closer to xitari than jaxtari is
 
