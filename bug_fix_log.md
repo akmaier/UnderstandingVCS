@@ -91,10 +91,27 @@ Verified: jaxtari pong RAM at frame 24+ now matches jutari/xitari
     pass with the new TIM*T-load semantics + the pong SwapPaddles
     routing.
 
+### 🏆 Task #77 closed (2026-06-07, commit `c3d6d42`) — Pong $3f/$40 swap
+
+The previous SwapPaddles=YES fix only swapped the paddle RESISTANCE
+routing (INPT0/INPT1). xitari ALSO swaps the FIRE button wiring under
+the `swap` branch — Pin Three → PaddleZeroFire (= USER's fire) lands
+on a different TIA pin than without swap.
+
+In jutari/jaxtari, paddle-mode FIRE was always landing on SWCHA bit 7
+(= paddle 0's wiring). For Pong (SwapPaddles=YES) the USER's fire
+needs SWCHA bit 6 (= paddle 1's wiring) instead.
+
+Fix: `apply_action` gains a `swap_paddles` kwarg that flips
+`paddle_fire_bit` (0x80 ↔ 0x40) for paddle-mode. `StellaEnvironment`
+threads `settings.swap_paddles()` through alongside `paddle_mode`.
+
+Verified: jutari + jaxtari pong frame 20 (action=FIRE) now both read
+$3f=0xc0 $40=0x00 — matching xitari. All paddle tests (jutari + 22
+jaxtari) still pass.
+
 ### Open work
 
-  - **Pong $3f/$40 swap** (both ports vs xitari): 2-byte shared
-    residual. Different bug class — investigate next.
   - **Enduro / pitfall / seaquest** RAM residuals (52 / 18 / 5 b/f over
     300 NOOPs vs xitari): cycle-accuracy work remaining.
   - **Jutari auto-reset divergence**: post-game-over breakout frames
