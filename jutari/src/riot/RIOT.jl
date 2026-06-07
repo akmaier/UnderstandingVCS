@@ -147,7 +147,14 @@ function riot_peek!(riot::RIOTState, addr::Integer,
         eff = max(0, Int(pending_extra_cycles) - 1)
         if !riot.timer_expired
             shift = riot.prescaler_shift
-            extra = (Int(riot.cycles_since_tick) + eff) >> shift
+            # `cycles_since_tick` may be NEGATIVE immediately after a
+            # TIM*T load (see `riot_poke!` — pre-subtracting the load
+            # instruction's pending cycles so the trailing
+            # `riot_advance!(instr_cycles)` cancels them out). Clamp
+            # the combined delta to ≥ 0 before the prescaler shift so
+            # arithmetic right-shift of a negative number doesn't fold
+            # a sign bit into the tick count.
+            extra = max(0, Int(riot.cycles_since_tick) + eff) >> shift
             intim_int -= extra
         else
             intim_int -= eff
@@ -177,11 +184,32 @@ Write a RIOT register. Timer-load addresses (\$0294–\$0297) reset the
 prescaler counter and clear the expired flag; the prescaler is selected
 by the low two bits of `addr` (0=1×, 1=8×, 2=64×, 3=1024×).
 """
-function riot_poke!(riot::RIOTState, addr::Integer, value::Integer)
+function riot_poke!(riot::RIOTState, addr::Integer, value::Integer,
+                     pending_extra_cycles::Integer = 0)
     if (Int(addr) & 0x14) == 0x14
         riot.intim = UInt8(Int(value) & 0xFF)
         riot.prescaler_shift = _PRESCALER_SHIFT[(Int(addr) & 0x03) + 1]
-        riot.cycles_since_tick = 0
+        # 2026-06-07 (task #75): the TIM*T load in xitari's M6502Low
+        # records `myCyclesWhenTimerSet = mySystem->cycles()` AT the
+        # poke moment. M6502Low's `incrementCycles` runs at the START
+        # of an instruction, so `mySystem->cycles()` at the body
+        # poke = cycles AT END of the load instruction. Effectively,
+        # NONE of the load instruction's cycles count toward the new
+        # timer; the timer starts at the FIRST cycle of the NEXT
+        # instruction.
+        #
+        # jutari accumulates cycles via `riot_advance!(cycles_consumed)`
+        # called at end of EACH instruction, including the load
+        # instruction itself. To match xitari, we PRE-SUBTRACT the
+        # load instruction's "pending cycles at the poke" so the
+        # subsequent `riot_advance!(instr_cycles)` lands at 0 — i.e.
+        # the load instruction's cycles cancel out and the timer
+        # really starts counting from the next instruction. Without
+        # this, jutari counts an extra `instr_cycles` worth (typically
+        # 3-5 cycles), which accumulates across hundreds of INTIM
+        # polls into a 76-cycle (= 1 scanline) drift per frame for
+        # breakout after FIRE — the "jumping scanlines" bug.
+        riot.cycles_since_tick = -Int(pending_extra_cycles)
         riot.timer_expired = false
         return nothing
     end

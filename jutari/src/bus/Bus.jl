@@ -356,7 +356,15 @@ end
         return nothing
     end
     if (a & 0x200) != 0
-        riot_poke!(bus.riot, a, value)           # RIOT timer / ports write
+        # 2026-06-07 (task #75): pass `pending_tia_cycles` so the RIOT
+        # TIM*T-load handler can rewind `cycles_since_tick` by the
+        # instruction's "cycles consumed so far at the poke" — see
+        # `riot_poke!` for the full reason. Without this, jutari's
+        # timer counts the load instruction's own cycles toward the
+        # new timer (xitari does not, because xitari's
+        # `myCyclesWhenTimerSet = mySystem->cycles()` records the
+        # END of the load instruction in M6502Low).
+        riot_poke!(bus.riot, a, value, bus.pending_tia_cycles)
         _trace_record!(:poke, UInt16(a), v8)
         return nothing
     end
