@@ -73,12 +73,32 @@ paddle action handler. Mirror of jutari task #66.
 Verified: jaxtari pong RAM at frame 24+ now matches jutari/xitari
 ($04 = 0x68 etc.) under the standard random action sequence.
 
+### 🏆 More wins (2026-06-07)
+
+  - **PXC1 jutari pong + breakout now bit-exact** (commits `4ddb0b7`
+    + `75e5312`): the TIM*T-load timing fix + repairing the test
+    harness to auto-detect per-ROM `RomSettings` (pong needs
+    `PongRomSettings` for paddles + SwapPaddles=YES) closed the
+    long-standing pong_noop_10 4-byte divergence. Jutari PXC1 testset
+    promoted from `@test_broken` to `@test`.
+
+  - **Scoreboard refresh** (commit `c0fb21a`): 300-frame NOOP RAM diff
+    jutari↔xitari → pong/breakout/space_invaders are **bit-exact across
+    300 frames** (was just 10). enduro/pitfall/seaquest residuals
+    captured for the next round.
+
+  - **Jaxtari INTIM mirror** (commit `5736f57`): all 25 jaxtari tests
+    pass with the new TIM*T-load semantics + the pong SwapPaddles
+    routing.
+
 ### Open work
 
-  - **Jaxtari INTIM mirror**: applied jutari's TIM*T fix to jaxtari
-    (commit `<pending>`). Needs PXC1 conformance verification.
-  - **Pong $3f/$40 swap** (both ports vs xitari): different bug class,
-    investigate next.
+  - **Pong $3f/$40 swap** (both ports vs xitari): 2-byte shared
+    residual. Different bug class — investigate next.
+  - **Enduro / pitfall / seaquest** RAM residuals (52 / 18 / 5 b/f over
+    300 NOOPs vs xitari): cycle-accuracy work remaining.
+  - **Jutari auto-reset divergence**: post-game-over breakout frames
+    don't match xitari (tracked as task #76).
 
 ### Update — vsync_reset_pending fix landed (2026-06-04 evening, commit `b7cd741`)
 
