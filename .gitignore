@@ -28,3 +28,10 @@ tests/golden/roms/
 # PXC1 — built C++ binary (built locally from tools/trace_dump.cpp)
 tools/trace_dump
 tools/*.o
+
+# Diagnostic per-bus-op CSV traces — large (100s of MB), regenerated on demand
+# by `tools/cpu_tia_cycle_trace.jl` etc. Not part of the source tree.
+tools/fixtures/cycle_traces/
+
+# Per-worktree agent state (claude code agent harness)
+.claude/
