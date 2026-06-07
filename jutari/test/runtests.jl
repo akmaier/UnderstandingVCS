@@ -5730,3 +5730,45 @@ end
         @info "breakout rom or actions missing — skipping ball-death test"
     end
 end
+
+# -------------------------------------------------------------------------- #
+# Task #76 regression: BreakoutRomSettings.is_terminal must flip True at
+# lives→0 so the dump-tool auto-reset path fires. Previously the no-op
+# stub returned False forever and the 3000-frame post-game-over portion
+# of the breakout video diverged from xitari because env_reset! never
+# ran. Without the fix this test fails on the `env.terminal == true`
+# assertion at frame 597.
+# -------------------------------------------------------------------------- #
+@testset "breakout auto-reset terminal latch (task #76)" begin
+    rom_path = joinpath(@__DIR__, "..", "..", "xitari", "roms", "breakout.bin")
+    actions_path = joinpath(@__DIR__, "..", "..",
+                             "tools", "breakout_video", "output",
+                             "breakout_random_actions.txt")
+    if isfile(rom_path) && isfile(actions_path)
+        rom = read(rom_path)
+        env = JuTari.Env.StellaEnvironment(rom, JuTari.PaddleGames.BreakoutRomSettings())
+        JuTari.Env.env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)
+        actions = Int[]
+        for line in eachline(actions_path)
+            s = strip(line)
+            isempty(s) && continue
+            startswith(s, "#") && continue
+            push!(actions, parse(Int, s))
+        end
+        # After reset, terminal must be false (we have 5 lives).
+        @test env.terminal == false
+        # Walk for 600 frames; terminal must flip True at frame ~597
+        # (xitari measured: lives → 0 at frame 597).
+        flipped_at = -1
+        for i in 1:min(600, length(actions))
+            JuTari.Env.env_step!(env, actions[i])
+            if env.terminal && flipped_at < 0
+                flipped_at = i
+            end
+        end
+        @test flipped_at >= 0           # must have flipped at least once
+        @test abs(flipped_at - 597) <= 2  # within xitari's ±2 frame tolerance
+    else
+        @info "breakout rom or actions missing — skipping auto-reset terminal test"
+    end
+end
