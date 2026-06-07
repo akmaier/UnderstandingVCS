@@ -48,6 +48,18 @@ class RomSettings(Protocol):
         Default `False` matches the majority of ROMs (joystick-only).
         """
 
+    def swap_paddles(self) -> bool:
+        """Return True when the game's stella.pro entry has
+        `Controller.SwapPaddles "YES"` (Pong / Video Olympics).
+        With SwapPaddles=YES, the user's (left-controller) paddle is
+        wired to INPT1 instead of INPT0. xitari handles this inside
+        `Paddles::Paddles(jack, event, swap)` via the
+        `myPinEvents[2/3][0/1]` wiring table. Default `False`
+        matches Breakout / Warlords / Casino — only Pong (Video
+        Olympics) flips this. Mirrors jutari's
+        `romsettings_swap_paddles`.
+        """
+
 
 class GenericRomSettings:
     """No-op stub: reward = 0, never terminal, no lives, joystick-only.
@@ -71,4 +83,10 @@ class GenericRomSettings:
     def uses_paddles(self) -> bool:
         # Default: assume joystick. Override in per-game subclasses
         # whose stella.pro entry has Controller.Left/Right "PADDLES".
+        return False
+
+    def swap_paddles(self) -> bool:
+        # Default: assume no swap. Override in per-game subclasses
+        # whose stella.pro entry has Controller.SwapPaddles "YES"
+        # (currently only Pong / Video Olympics).
         return False

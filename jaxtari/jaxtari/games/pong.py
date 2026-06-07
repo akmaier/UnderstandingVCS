@@ -75,7 +75,19 @@ class PongRomSettings(RomSettings):
         # (Atari 1978, md5 60e0ea3c…) — a paddle game (xitari stella.pro:
         # `Controller.Left/Right "PADDLES"`, `Controller.SwapPaddles "YES"`).
         # Setting this True makes StellaEnvironment translate LEFT/RIGHT
-        # actions into INPT0 dump-pot paddle-position changes.
+        # actions into INPT0/INPT1 dump-pot paddle-position changes
+        # (which one depends on `swap_paddles()`).
+        return True
+
+    def swap_paddles(self) -> bool:
+        # xitari/roms/pong.bin (Video Olympics) has
+        # `Controller.SwapPaddles "YES"` in stella.pro — the user's
+        # (left-controller) paddle is wired to INPT1 instead of
+        # INPT0. Without this, jaxtari pushes the action onto INPT0
+        # which the game never reads as the user's paddle, so the
+        # on-screen paddle stays frozen at the centred default
+        # (RAM $04 / $3c never decrement past the initial value).
+        # Mirror of jutari task #66 / commit 8531bb8.
         return True
 
 

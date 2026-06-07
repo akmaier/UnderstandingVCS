@@ -218,11 +218,24 @@ class StellaEnvironment:
             self._left_paddle = _PADDLE_MIN
         elif self._left_paddle > _PADDLE_MAX:
             self._left_paddle = _PADDLE_MAX
-        # Write to the TIA's INPT0 path. INPT1 takes the right
-        # paddle; we keep it at default since the action enum doesn't
-        # encode a separate right-player action.
-        new_tia = set_paddle_resistance(self._console.bus.tia, 0, self._left_paddle)
-        new_tia = set_paddle_resistance(new_tia,                1, self._right_paddle)
+        # Task #73 (2026-06-07): route paddle resistance per xitari Paddles
+        # wiring. With SwapPaddles=NO (Breakout convention) the user paddle
+        # reaches INPT0 (Pin Nine on the left controller); with
+        # SwapPaddles=YES (Pong / Video Olympics) it reaches INPT1
+        # (Pin Five). xitari handles this inside
+        # `Paddles::Paddles(jack, event, swap)` via the
+        # `myPinEvents[2/3][0/1]` wiring table — see
+        # `xitari/emucore/Paddles.cxx`. Without this routing fix, jaxtari's
+        # pong paddle update lands on INPT0 which the game never reads, so
+        # the on-screen paddle stays frozen at the centred default
+        # (RAM $04 / $3c never decrement past the initial 0x6e / 0x6d).
+        # Mirror of jutari task #66 / commit 8531bb8.
+        if self._settings.swap_paddles():
+            new_tia = set_paddle_resistance(self._console.bus.tia, 1, self._left_paddle)
+            new_tia = set_paddle_resistance(new_tia,                0, self._right_paddle)
+        else:
+            new_tia = set_paddle_resistance(self._console.bus.tia, 0, self._left_paddle)
+            new_tia = set_paddle_resistance(new_tia,                1, self._right_paddle)
         new_bus = self._console.bus._replace(tia=new_tia)
         self._console = self._console._replace(bus=new_bus)
 
