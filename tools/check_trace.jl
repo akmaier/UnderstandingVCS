@@ -24,8 +24,24 @@
 
 using JuTari
 using JuTari.Env: env_reset!, env_step!, get_ram
+using JuTari.RomSettingsModule: GenericRomSettings
+using JuTari.PaddleGames: BreakoutRomSettings, PongRomSettings
 
 const _LINE_RE = r"\"action\":(\d+).*\"ram\":\"([0-9a-fA-F]+)\""
+
+# 2026-06-07 (task #75 follow-up): xitari autodetects per-game
+# controller wiring from `stella.pro` — pong gets PADDLES with
+# SwapPaddles=YES, breakout gets PADDLES too. jutari encodes this
+# directly on each RomSettings subclass; check_trace was using the
+# generic settings which doesn't trigger the dump-pot model during
+# boot, so jutari's pong boot diverged in 4 RAM bytes that depend
+# on INPT0/INPT1 dump-pot timing. This map fixes the test setup.
+const _SETTINGS_BY_BASENAME = Dict(
+    "breakout.bin" => () -> BreakoutRomSettings(),
+    "pong.bin"     => () -> PongRomSettings(),
+)
+_settings_for_rom(p) = haskey(_SETTINGS_BY_BASENAME, basename(p)) ?
+    _SETTINGS_BY_BASENAME[basename(p)]() : GenericRomSettings()
 
 """
     parse_trace_line(line) -> (action::Int, ram_hex::String)
@@ -44,7 +60,7 @@ matched the reference. Throws when a divergence is hit.
 """
 function check_trace(rom_path::AbstractString, trace_path::AbstractString)
     rom = read(rom_path)              # Vector{UInt8}
-    env = StellaEnvironment(rom)
+    env = StellaEnvironment(rom, _settings_for_rom(rom_path))
     # Match xitari's ALEInterface::resetGame — see tools/check_trace.py.
     env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)
 

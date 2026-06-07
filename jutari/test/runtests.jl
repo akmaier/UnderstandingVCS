@@ -4843,13 +4843,13 @@ end
     end
 
     if isfile(_rom_path) && isfile(_trace_path)
-        # @test_broken is Julia's xfail: passes when the inner test FAILS;
-        # reports when it starts passing — exactly the right primitive for
-        # tracking the not-yet-closed bit-exact gap between jutari and
-        # xitari. The harness landing is the PXC1 deliverable; closing the
-        # divergence is a separate downstream effort the harness enables.
-        @testset "jutari matches xitari on pong_noop_10 (currently broken)" begin
-            @test_broken try
+        # 2026-06-07 (task #75 follow-up): with the INTIM TIM*T-load
+        # timing fix (commit 4ddb0b7) AND the check_trace harness
+        # using the right per-ROM RomSettings (pong = PongRomSettings
+        # for paddles + SwapPaddles=YES), pong_noop_10 is now bit-
+        # exact. Promoted from @test_broken to @test.
+        @testset "jutari matches xitari on pong_noop_10" begin
+            @test try
                 check_trace(_rom_path, _trace_path) == 10
             catch
                 false
