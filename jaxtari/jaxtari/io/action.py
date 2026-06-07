@@ -140,7 +140,7 @@ def _action_bits_for_player(action: int, player: int) -> tuple[int, bool]:
 
 
 def apply_action(console: Console, action: int, *, player: int = 0,
-                  paddle_mode: bool = False) -> Console:
+                  paddle_mode: bool = False, swap_paddles: bool = False) -> Console:
     """Drive one player's joystick + fire-button inputs from `action`.
 
     Returns a new `Console` whose RIOT SWCHA and the addressed player's
@@ -179,7 +179,19 @@ def apply_action(console: Console, action: int, *, player: int = 0,
         # `Paddles::read(DigitalPin)`). So for paddle games we clear the
         # corresponding SWCHA bit on FIRE instead of touching INPT4.
         # Active-low: pressed = 0, released = 1.
-        paddle_fire_bit = 0x80 if player == 0 else 0x40   # P0_RIGHT / P0_LEFT
+        #
+        # 2026-06-07 (task #77): with SwapPaddles=YES (Pong / Video
+        # Olympics), the USER's paddle is wired to paddle 1 (Pin
+        # Five → INPT1) — and so is their FIRE button (Pin Three →
+        # PaddleZeroFire on the Pong port, which is the USER role
+        # here). Without this swap, the user's fire would land on
+        # paddle 0's fire wiring (SWCHA bit 7) and pong's FIRE
+        # handler would never see it, leaving the $3f/$40 RAM cells
+        # flipped vs xitari at frame 20. Mirror of jutari fix.
+        if swap_paddles:
+            paddle_fire_bit = 0x40 if player == 0 else 0x80   # swapped
+        else:
+            paddle_fire_bit = 0x80 if player == 0 else 0x40   # P0_RIGHT / P0_LEFT
         # Start from the bus's current SWCHA (preserve any other state),
         # SET the paddle's fire bit (= released), then CLEAR it iff fire.
         prev = int(console.bus.riot.swcha_in)

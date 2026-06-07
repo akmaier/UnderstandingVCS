@@ -122,6 +122,7 @@ end
 function env_step!(env::StellaEnvironment, action::Integer)
     env.terminal && return 0
     uses_paddles = romsettings_uses_paddles(env.settings)
+    swap_paddles = romsettings_swap_paddles(env.settings)
     if uses_paddles
         _apply_paddle_action!(env, Int(action))
     end
@@ -130,7 +131,11 @@ function env_step!(env::StellaEnvironment, action::Integer)
     # + fire event, NOT joystick direction. Without this, pong reads
     # SWCHA and sees a phantom LEFT/RIGHT bit, branches differently, and
     # the paddle stays stuck despite the resistance update.
-    apply_action!(env.console, action; paddle_mode = uses_paddles)
+    # Task #77: also thread `swap_paddles` so the FIRE button routes to
+    # the same paddle as the resistance (Pong's SwapPaddles=YES wires
+    # the USER's fire to paddle 1's SWCHA bit, not paddle 0's).
+    apply_action!(env.console, action; paddle_mode = uses_paddles,
+                  swap_paddles = swap_paddles)
     run_until_frame!(env.console)
     reward = Int(romsettings_get_reward(env.settings, env.console))
     env.terminal = romsettings_is_terminal(env.settings, env.console)

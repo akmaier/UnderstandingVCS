@@ -195,8 +195,14 @@ class StellaEnvironment:
         # was being updated correctly). `paddle_mode=True` skips the
         # SWCHA write and just updates the trigger from the action's
         # fire bit, matching xitari.
+        # Task #77 (2026-06-07): with SwapPaddles=YES (Pong) the USER's
+        # FIRE button needs to route to paddle 1's SWCHA bit (= bit 6,
+        # P0_LEFT) instead of paddle 0's (= bit 7, P0_RIGHT). Thread
+        # the swap flag through so apply_action can swap accordingly.
+        swap = self._settings.swap_paddles() if uses_paddles else False
         self._console = apply_action(self._console, int(action),
-                                      paddle_mode=uses_paddles)
+                                      paddle_mode=uses_paddles,
+                                      swap_paddles=swap)
         self._console = run_until_frame(self._console)
         reward = int(self._settings.get_reward(self._console))
         self._terminal = bool(self._settings.is_terminal(self._console))

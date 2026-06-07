@@ -128,7 +128,7 @@ reads — and pong takes a different branch, leaving the paddle stuck
 at the default position while xitari moves it.
 """
 function apply_action!(console::Console, action::Integer; player::Integer = 0,
-                        paddle_mode::Bool = false)
+                        paddle_mode::Bool = false, swap_paddles::Bool = false)
     (player == 0 || player == 1) || throw(ArgumentError("player must be 0 or 1, got $player"))
     pressed_bits, fire_pressed = _action_bits_for_player(action, player)
 
@@ -141,7 +141,21 @@ function apply_action!(console::Console, action::Integer; player::Integer = 0,
         # `M6532.cxx` SWCHA construction + `Paddles::read(DigitalPin)`).
         # Clear the corresponding SWCHA bit on FIRE instead of touching
         # INPT4. Active-low: pressed = 0, released = 1.
-        paddle_fire_bit = player == 0 ? UInt8(0x80) : UInt8(0x40)  # P0_RIGHT / P0_LEFT
+        #
+        # 2026-06-07 (task #77): with SwapPaddles=YES (Pong / Video
+        # Olympics), the USER's paddle is wired to paddle 1 (Pin
+        # Five → INPT1 — see jutari task #66 / commit 8531bb8 for
+        # the resistance side) — and so is their FIRE button (Pin
+        # Three → PaddleZeroFire on the Pong port, which is the
+        # USER role here). Without this swap, the user's fire would
+        # land on paddle 0's fire wiring (SWCHA bit 7) and pong's
+        # FIRE handler would never see it, leaving the $3f/$40 RAM
+        # cells flipped vs xitari at frame 20.
+        if swap_paddles
+            paddle_fire_bit = player == 0 ? UInt8(0x40) : UInt8(0x80)  # swapped
+        else
+            paddle_fire_bit = player == 0 ? UInt8(0x80) : UInt8(0x40)  # P0_RIGHT / P0_LEFT
+        end
         prev = console.bus.riot.swcha_in
         p_byte = (prev | paddle_fire_bit) & UInt8(0xFF)
         if fire_pressed
