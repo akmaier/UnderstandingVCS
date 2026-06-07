@@ -34,8 +34,13 @@ For the per-phase commit ledger, what each port can do today, and the complete l
 
 **Big session 2026-06-07**: closed task #75 (jutari TIM*T-load timing
 drift / "jumping scanlines"), task #73 (jaxtari pong $04/$3c residual /
-SwapPaddles=YES paddle resistance routing), and task #77 (pong
-$3f/$40 swap / SwapPaddles=YES FIRE button routing — both ports).
+SwapPaddles=YES paddle resistance routing), task #77 (pong
+$3f/$40 swap / SwapPaddles=YES FIRE button routing — both ports),
+task #76 (jutari breakout auto-reset / RomSettings terminal latch),
+and task #78 (pong score addresses **wrong in both ports** —
+PongRomSettings was reading RAM[$14]/[$15] but xitari uses RAM[$0D]/[$0E];
+sprite-pattern bytes at $15 hit 0x82=130 within 60 frames of FIRE,
+falsely triggering env.terminal and freezing the paddle).
 
 Concrete wins:
   - **jutari↔xitari NOOP-300 RAM**: pong / breakout / space_invaders
@@ -46,7 +51,13 @@ Concrete wins:
     TIM*T-load + SwapPaddles=YES fixes mirrored to jaxtari).
   - **Breakout video alignment** (jutari vs xitari, full 3600 frames):
     11.6% → 16.3% pixel-exact; gating to actual gameplay (frames 0-596
-    before lives → 0), 98.3% pixel-exact.
+    before lives → 0), 99.7% pixel-exact post-#76.
+  - **Pong env.terminal** (post-#78): no longer false-triggers on
+    RAM[$15]=130 sprite-pattern reads; jutari pong paddle responds to
+    LEFT/RIGHT across the full 200-frame smoke test (was frozen after
+    ~60 frames). jutari pong screen diff vs xitari = ~32 px/frame
+    (mean), 0.1% of pixels — paddle moves, residual is row-0 HMOVE-comb
+    + score-digit color (filed as background tasks).
 
 **Earlier-known user-visible bugs were action-driven** (mostly closed
 by the SwapPaddles=YES FIRE routing + the TIM*T-load timing fix):
