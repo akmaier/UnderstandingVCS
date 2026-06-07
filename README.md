@@ -149,12 +149,17 @@ it for any new RAM-divergence investigation.
 | pitfall        | 18.5     | 21      | next target (was 19.8 over 100f) |
 | enduro         | 52.7     | 67      | next target (was 45.0 over 100f) |
 
-Plus, post-INTIM-fix (commit `4ddb0b7`), **breakout video alignment**
-under random actions improved from 11.6% → 16.3% pixel-exact over
-3600 frames; restricting to actual gameplay (frames 0-596, before
-the lives counter reaches 0), match goes from variable → **98.3%
-pixel-exact match with xitari** (587/597). The remaining post-game-
-over divergence is a separate `auto-reset` bug.
+Plus, post-INTIM-fix (commit `4ddb0b7`) + auto-reset fix
+(commit `037526c`), **breakout video alignment** under random actions:
+
+| measurement              | pre-fix     | post-fix         |
+|--------------------------|-------------|------------------|
+| 3600-frame pixel-exact   | 11.6%       | **99.7%** (3590/3600) |
+| first-life (0..596)      | variable    | **98.3%** (587/597) |
+
+The remaining 10 mismatched frames are 1-2-pixel ball-paddle bounce
+sub-cycle artifacts (pairs every 120 frames = once per ball-death
+cycle).
 
 ### Recent commits worth knowing about
 
