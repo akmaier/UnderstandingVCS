@@ -16,6 +16,23 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ## Where we left off — pick up here (2026-06-07 evening)
 
+### Session 2026-06-07 — session-wide rundown
+
+| Task           | Status   | Commits                       | Result                              |
+|----------------|----------|-------------------------------|-------------------------------------|
+| #73 jaxtari pong $04/$3c       | ✅ closed | `de00af8` + `c3d6d42`         | bit-exact RAM at frame 24+ |
+| #75 jutari breakout jumping    | ✅ closed | `b7cd741` + `4ddb0b7`         | 99.7% breakout pixel-exact         |
+| #76 jutari auto-reset          | ✅ closed | `037526c`                    | env.terminal flips correctly       |
+| #77 pong $3f/$40 swap          | ✅ closed | `c3d6d42`                    | both ports bit-exact at frame 20   |
+
+Plus per-ROM RomSettings now mirror xitari semantics (jutari Pong +
+Breakout, jaxtari Breakout) — both ports use the started+terminal
+sticky-latch idiom to avoid boot-time false terminal. Regression
+tests added on both ports for the auto-reset terminal latch (jutari
+`@testset "breakout auto-reset terminal latch (task #76)"`; jaxtari
+`tests/test_breakout_auto_reset_terminal.py`). PXC2 cross-port
+conformance still passes 18/18 after all changes.
+
 ### 🏆 Task #76 closed (2026-06-07, commit `037526c`) — jutari auto-reset
 
 jutari's `BreakoutRomSettings` was using `RomSettingsModule`'s no-op
