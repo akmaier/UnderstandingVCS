@@ -100,9 +100,17 @@ end
 The shipped `xitari/roms/pong.bin` is actually Video Olympics (Atari
 1978, md5 60e0ea3c…). xitari stella.pro lists it as
 `Controller.Left/Right "PADDLES"` with `Controller.SwapPaddles "YES"`.
+
+Scoring + termination mirror `jaxtari/jaxtari/games/pong.py` (which
+matches xitari's Pong settings shape):
+  - P0 score at RAM[\$14], P1 score at RAM[\$15] (both 0..21).
+  - reward = ΔP0 − ΔP1 (positive when the user / P0 scores).
+  - terminal once either side reaches 21 (the standard Pong target).
 """
 mutable struct PongRomSettings <: RomSettings
-    PongRomSettings() = new()
+    p0_prev::Int
+    p1_prev::Int
+    PongRomSettings() = new(0, 0)
 end
 
 romsettings_uses_paddles(::PongRomSettings) = true
@@ -112,5 +120,33 @@ romsettings_uses_paddles(::PongRomSettings) = true
 # Pin Five, which the TIA reads as INPT1 — so `_apply_paddle_action!`
 # must update `paddle_resistance[1]` instead of `paddle_resistance[0]`.
 romsettings_swap_paddles(::PongRomSettings) = true
+
+function romsettings_reset!(s::PongRomSettings)
+    s.p0_prev = 0
+    s.p1_prev = 0
+    return nothing
+end
+
+@inline _pong_scores(console::Console) = (
+    Int(_ram(console, 0x14)),    # P0 (right paddle) score
+    Int(_ram(console, 0x15)),    # P1 (left  paddle) score
+)
+
+function romsettings_is_terminal(::PongRomSettings, console::Console)
+    p0, p1 = _pong_scores(console)
+    return max(p0, p1) >= 21
+end
+
+function romsettings_get_reward(s::PongRomSettings, console::Console)
+    p0, p1 = _pong_scores(console)
+    r = (p0 - s.p0_prev) - (p1 - s.p1_prev)
+    s.p0_prev = p0
+    s.p1_prev = p1
+    return r
+end
+
+# Pong has no explicit life counter — the score is the only progress
+# signal; return 0 (= "no lives indicator" — matches jaxtari).
+romsettings_lives(::PongRomSettings, ::Console) = 0
 
 end # module
