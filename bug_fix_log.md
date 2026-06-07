@@ -34,15 +34,28 @@ Fix: pass `bus.pending_tia_cycles` to `riot_poke!`, set
 `cycles_since_tick = -pending_extra_cycles` on TIM*T loads so the
 trailing `riot_advance!` cancels them out.
 
-Empirical result on breakout (jutari vs xitari, 1500-frame random run):
-  pre-fix:  416/3600 frames pixel-exact (11.6%)
-  post-fix: 587/3600 frames pixel-exact (16.3%)
-  (first 100 frames: 72% → 98%)
+Empirical result on breakout (jutari vs xitari):
+
+| run                      | pre-fix    | post-fix     |
+|--------------------------|-----------:|-------------:|
+| first 100 frames         |  72/100    | **98/100**   |
+| full 3600 (game ends 597)| 416/3600   |  587/3600    |
+| **frames 0-596 (live)**  | varies     | **587/597 = 98.3%** |
 
 All jutari tests still pass; the breakout `ball-death` regression is
-still bit-exact RAM. The "jumping scanlines" bug — closed at the entry
-point. Remaining 84% mismatch on full-3600 run comes from deeper
-bugs (collision-timing, sprite RES* sub-cycle, etc.).
+still bit-exact RAM. The "jumping scanlines" bug is **closed for
+actual gameplay** — the 1-row vertical shift no longer occurs.
+
+The remaining 10 misaligned frames (91, 93, 211, 213, 331, 333, 451,
+453, 571, 573) each differ by only 1-2 pixels at row 195 — likely
+sprite sub-pixel ball-paddle bounce position. Pairs appear every 120
+frames = once per ball-death cycle. Not a fundamental drift — a
+residual sub-cycle sprite rendering artifact.
+
+The much-larger 3000-frame post-frame-597 divergence is a SEPARATE
+bug: jutari's auto-reset (env_reset! with 60 NOOPs + 4 RESET) does
+not match xitari's `ale.resetGame()` semantic. Tracked as a separate
+follow-up.
 
 ### 🏆 Task #73 closed (2026-06-07, commit `de00af8`) — pong SwapPaddles
 

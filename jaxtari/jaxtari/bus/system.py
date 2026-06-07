@@ -384,8 +384,13 @@ def _bus_poke(bus: Bus, addr: int, value: int) -> Bus:
         )
     if addr_masked & 0x200:
         # RIOT I/O write (P4): SWCHA/SWACNT/SWCHB/SWBCNT or TIM*T.
+        # 2026-06-07 (task #75 mirror): pass `new_pending` so the
+        # TIM*T-load handler can rewind `cycles_since_tick` by the
+        # load instruction's cycles consumed so far — without this,
+        # jaxtari counts the load instruction's own cycles toward the
+        # new timer (xitari does not). See riot_poke docstring.
         return bus._replace(
-            riot=riot_poke(bus.riot, addr_masked, value8),
+            riot=riot_poke(bus.riot, addr_masked, value8, new_pending),
             data_bus_state=value8,
             pending_tia_cycles=new_pending,
         )

@@ -179,7 +179,15 @@ def riot_peek(riot: RIOTState, addr: int, pending_extra_cycles: int = 0):
         eff = max(0, int(pending_extra_cycles) - 1)
         if not riot.timer_expired:
             shift = int(riot.prescaler_shift)
-            extra = (int(riot.cycles_since_tick) + eff) >> shift
+            # `cycles_since_tick` may be NEGATIVE immediately after a
+            # TIM*T load (see `riot_poke` — pre-subtracting the load
+            # instruction's pending cycles so the trailing
+            # `riot_advance(instr_cycles)` cancels them out). Clamp
+            # the combined delta to >= 0 before the prescaler shift so
+            # arithmetic right-shift of the briefly-negative value
+            # doesn't fold a sign bit into the tick count. Mirror of
+            # jutari commit 4ddb0b7.
+            extra = max(0, int(riot.cycles_since_tick) + eff) >> shift
             intim_int -= extra
         else:
             intim_int -= eff
@@ -189,16 +197,34 @@ def riot_peek(riot: RIOTState, addr: int, pending_extra_cycles: int = 0):
     return 0, riot
 
 
-def riot_poke(riot: RIOTState, addr: int, value: int) -> RIOTState:
+def riot_poke(riot: RIOTState, addr: int, value: int,
+               pending_extra_cycles: int = 0) -> RIOTState:
     """Write a RIOT register. Timer-load addresses (TIM*T at \$0294–\$0297,
     detected by (addr & 0x14) == 0x14) reset the prescaler and clear the
     expired flag; the prescaler is selected by the low two bits of the
-    address (0=1×, 1=8×, 2=64×, 3=1024×)."""
+    address (0=1×, 1=8×, 2=64×, 3=1024×).
+
+    2026-06-07 (task #75 mirror): the TIM*T load in xitari's M6502Low
+    records `myCyclesWhenTimerSet = mySystem->cycles()` AT the poke
+    moment. M6502Low's `incrementCycles` runs at the START of an
+    instruction, so `mySystem->cycles()` at the body poke = cycles AT
+    END of the load instruction. Effectively, NONE of the load
+    instruction's cycles count toward the new timer; the timer starts
+    at the FIRST cycle of the NEXT instruction.
+
+    jaxtari accumulates cycles via `riot_advance(cycles_consumed)`
+    called at end of EACH instruction, including the load instruction.
+    To match xitari, we PRE-SUBTRACT the load instruction's "pending
+    cycles at the poke" so the subsequent
+    `riot_advance(instr_cycles)` lands at 0 — i.e. the load
+    instruction's cycles cancel out and the timer really starts
+    counting from the next instruction. Mirrors jutari commit 4ddb0b7.
+    """
     if (addr & 0x14) == 0x14:
         return riot._replace(
             intim=value & 0xFF,
             prescaler_shift=_PRESCALER_SHIFT[addr & 0x03],
-            cycles_since_tick=0,
+            cycles_since_tick=-int(pending_extra_cycles),
             timer_expired=False,
         )
     reg = addr & 0x07
