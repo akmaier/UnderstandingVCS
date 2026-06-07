@@ -5772,3 +5772,45 @@ end
         @info "breakout rom or actions missing — skipping auto-reset terminal test"
     end
 end
+
+# -------------------------------------------------------------------------- #
+# Pong score-address regression (task #78)
+# -------------------------------------------------------------------------- #
+# Pre-fix: PongRomSettings._pong_scores read RAM[\$14]/[\$15] (a guess
+# inherited from jaxtari's docstring). Those cells hold sprite-pattern
+# bytes that briefly hit 0x82=130 within ~60 frames of FIRE, making
+# `max(0, 130) >= 21` return True. env_step then returned early on
+# `env.terminal && return 0` and the paddle FROZE.
+#
+# Post-fix: addresses are \$0D/\$0E, matching xitari/games/supported/
+# Pong.cpp:55-56 (`readRam(&system, 13)` / `readRam(&system, 14)`).
+# This testset pins the addresses so the regression can't slip back.
+# -------------------------------------------------------------------------- #
+@testset "pong score-address fix + no false terminal (task #78)" begin
+    rom_path = joinpath(@__DIR__, "..", "..", "xitari", "roms", "pong.bin")
+    if isfile(rom_path)
+        rom = read(rom_path)
+        env = JuTari.Env.StellaEnvironment(rom, JuTari.PaddleGames.PongRomSettings())
+        JuTari.Env.env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)
+        @test env.terminal == false
+        # FIRE then 100 frames of LEFTFIRE — terminal must stay false the
+        # whole way (pre-fix it flipped True around frame ~60).
+        JuTari.Env.env_step!(env, 1)   # FIRE
+        flipped_at = -1
+        for i in 1:100
+            JuTari.Env.env_step!(env, 4)
+            if env.terminal && flipped_at < 0
+                flipped_at = i
+            end
+        end
+        @test flipped_at == -1            # terminal must NOT fire during play
+        # And the score addresses must directly read 0 (no points scored yet).
+        p0, p1 = JuTari.PaddleGames._pong_scores(env.console)
+        @test p0 == 0
+        @test p1 == 0
+        @test env.console.bus.ram[0x0D + 1] == 0    # canonical xitari addr
+        @test env.console.bus.ram[0x0E + 1] == 0
+    else
+        @info "pong rom missing — skipping score-address regression test"
+    end
+end

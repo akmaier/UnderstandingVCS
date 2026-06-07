@@ -24,6 +24,39 @@ measured before/after, and any conformance (PXC) numbers that moved.
 | #75 jutari breakout jumping    | ✅ closed | `b7cd741` + `4ddb0b7`         | 99.7% breakout pixel-exact         |
 | #76 jutari auto-reset          | ✅ closed | `037526c`                    | env.terminal flips correctly       |
 | #77 pong $3f/$40 swap          | ✅ closed | `c3d6d42`                    | both ports bit-exact at frame 20   |
+| #78 pong score addrs $0D/$0E   | ✅ closed | (this commit)                 | pong paddle no longer freezes      |
+
+### 🏆 Task #78 closed (2026-06-07) — pong score addresses wrong in both ports
+
+`PongRomSettings._scores()` (jaxtari) and `_pong_scores()` (jutari)
+were reading RAM[\$14] and RAM[\$15] as P0/P1 scores. Those addresses
+are a leftover from an early-stage guess that was never cross-checked
+against xitari. They actually hold sprite-pattern bytes that briefly
+hit `0x82 = 130` within ~60 frames of FIRE+LEFT. Then
+`max(0, 130) >= 21` returned True, `env_step!` returned early on
+`env.terminal && return 0`, and the user paddle FROZE without any
+visible game-over indication.
+
+xitari/games/supported/Pong.cpp:55-56:
+```cpp
+int x = readRam(&system, 13); // cpu score      → $0D
+int y = readRam(&system, 14); // player score   → $0E
+```
+
+Fix: change both ports' constants and the live-RAM read path to
+\$0D/\$0E, update docstrings to point at the xitari ground truth,
+and add regression tests pinning the addresses + a "no false terminal
+across 100 frames of FIRE+LEFT" assertion in both ports.
+
+Empirical: jutari smoke (200 frames of FIRE+LEFT after boot burn):
+  pre-fix:  env.terminal flips True at frame ~60, paddle frozen
+  post-fix: **env.terminal stays False all 200 frames**, RAM[\$0D]=RAM[\$0E]=0
+
+jutari runtests.jl now has `pong score-address fix + no false terminal
+(task #78)` testset (6/6 asserts pass). jaxtari now has
+`tests/test_pong_score_addresses.py` with the same shape (constants +
+no-false-terminal check).
+
 
 Plus per-ROM RomSettings now mirror xitari semantics (jutari Pong +
 Breakout, jaxtari Breakout) — both ports use the started+terminal

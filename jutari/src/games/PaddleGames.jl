@@ -101,11 +101,15 @@ The shipped `xitari/roms/pong.bin` is actually Video Olympics (Atari
 1978, md5 60e0ea3c…). xitari stella.pro lists it as
 `Controller.Left/Right "PADDLES"` with `Controller.SwapPaddles "YES"`.
 
-Scoring + termination mirror `jaxtari/jaxtari/games/pong.py` (which
-matches xitari's Pong settings shape):
-  - P0 score at RAM[\$14], P1 score at RAM[\$15] (both 0..21).
+Scoring + termination per `xitari/games/supported/Pong.cpp::step()`:
+  - P0 ("x" / cpu) score at RAM[\$0D]   (= xitari `readRam(&system, 13)`)
+  - P1 ("y" / human) score at RAM[\$0E] (= xitari `readRam(&system, 14)`)
   - reward = ΔP0 − ΔP1 (positive when the user / P0 scores).
   - terminal once either side reaches 21 (the standard Pong target).
+
+(Earlier comments here used \$14/\$15 — those bytes hold sprite-pattern
+data that briefly hits 0x82 = 130 within ~60 frames of FIRE, falsely
+triggering terminal and freezing the paddle. Fixed against xitari.)
 """
 mutable struct PongRomSettings <: RomSettings
     p0_prev::Int
@@ -128,8 +132,8 @@ function romsettings_reset!(s::PongRomSettings)
 end
 
 @inline _pong_scores(console::Console) = (
-    Int(_ram(console, 0x14)),    # P0 (right paddle) score
-    Int(_ram(console, 0x15)),    # P1 (left  paddle) score
+    Int(_ram(console, 0x0D)),    # P0 ("x" cpu) score, per xitari Pong.cpp:55
+    Int(_ram(console, 0x0E)),    # P1 ("y" human) score, per xitari Pong.cpp:56
 )
 
 function romsettings_is_terminal(::PongRomSettings, console::Console)

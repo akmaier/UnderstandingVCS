@@ -1,10 +1,16 @@
 """Pong-specific `RomSettings` — score detection + termination.
 
 Pong's two scores live at fixed RAM cells the cart writes into every
-frame:
+frame. Per `xitari/games/supported/Pong.cpp` step():
 
-    RAM[$14]  player-0 (right paddle) score  — single byte, 0..21
-    RAM[$15]  player-1 (left  paddle) score  — single byte, 0..21
+    RAM[$0D]  cpu / player-0 score (= "x" in xitari)  — 0..21
+    RAM[$0E]  human / player-1 score (= "y" in xitari) — 0..21
+
+(The earlier $14/$15 values commented here were WRONG — those cells
+hold sprite-pattern bytes that briefly hit 0x82 = 130 within ~60
+frames of FIRE, falsely triggering terminal and freezing the paddle.
+Cross-checked against xitari/games/supported/Pong.cpp:55-56 which
+explicitly reads ram bytes 13 and 14.)
 
 The settings track the previous frame's score so `get_reward` can
 return the per-step delta:
@@ -26,8 +32,8 @@ from jaxtari.console import Console
 from jaxtari.games.rom_settings import RomSettings
 
 
-PONG_P0_SCORE_ADDR = 0x14
-PONG_P1_SCORE_ADDR = 0x15
+PONG_P0_SCORE_ADDR = 0x0D     # cpu / "x" score, per xitari Pong.cpp:55
+PONG_P1_SCORE_ADDR = 0x0E     # human / "y" score, per xitari Pong.cpp:56
 PONG_TARGET_SCORE  = 21
 
 
@@ -93,10 +99,10 @@ class PongRomSettings(RomSettings):
 
 def _scores(console: Console) -> tuple[int, int]:
     """Pull the (P0, P1) score bytes from the console's RAM. RAM is a
-    `(128,)` uint8 array indexed by `addr & 0x7F`, so the canonical
-    `$0014` / `$0015` map to indices 0x14 / 0x15 — both already inside
-    the 128-byte window, but we mask for consistency with the games
-    whose score addresses live in the $80-$FF mirror."""
+    `(128,)` uint8 array indexed by `addr & 0x7F`. xitari's
+    `Pong.cpp::step()` reads bytes 13 and 14 (= $0D and $0E) — both
+    already inside the 128-byte window, but we mask for consistency
+    with the games whose score addresses live in the $80-$FF mirror."""
     ram = console.bus.ram
     return (int(ram[PONG_P0_SCORE_ADDR & 0x7F]),
             int(ram[PONG_P1_SCORE_ADDR & 0x7F]))
