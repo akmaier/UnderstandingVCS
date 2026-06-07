@@ -113,19 +113,26 @@ per-bus-op trace technique that closed breakout (commit `20b5de0`).
 Decision tree, tooling pointers, fix patterns, anti-patterns. Use
 it for any new RAM-divergence investigation.
 
-### jutari↔xitari RAM conformance scoreboard (2026-06-03, post-fix)
+### jutari↔xitari RAM conformance scoreboard (2026-06-07, post-INTIM-fix)
 
-100 frames of NOOP (`jutari_xitari_ram_diff.py`):
+300 frames of NOOP (`jutari_xitari_ram_diff.py`):
 
 | ROM            | Mean b/f | Max b/f | Status   |
 |----------------|----------|---------|----------|
-| pong           | 0.0      | 0       | ✅ bit-exact |
-| breakout       | 0.0      | 0       | ✅ bit-exact (was 9.9 before this session) |
-| space_invaders | 0.0      | 0       | ✅ bit-exact |
+| pong           | 0.0      | 0       | ✅ bit-exact (300 frames) |
+| breakout       | 0.0      | 0       | ✅ bit-exact (300 frames, was 9.9 b/f before 20b5de0) |
+| space_invaders | 0.0      | 0       | ✅ bit-exact (300 frames) |
 | asteroids      | 0.0      | 0       | ✅ bit-exact |
-| seaquest       | 2.6      | 6       | next target |
-| pitfall        | 19.8     | 21      | next target |
-| enduro         | 45.0     | 50      | next target |
+| seaquest       | 5.5      | 18      | next target (was 2.6 over 100f) |
+| pitfall        | 18.5     | 21      | next target (was 19.8 over 100f) |
+| enduro         | 52.7     | 67      | next target (was 45.0 over 100f) |
+
+Plus, post-INTIM-fix (commit `4ddb0b7`), **breakout video alignment**
+under random actions improved from 11.6% → 16.3% pixel-exact over
+3600 frames; restricting to actual gameplay (frames 0-596, before
+the lives counter reaches 0), match goes from variable → **98.3%
+pixel-exact match with xitari** (587/597). The remaining post-game-
+over divergence is a separate `auto-reset` bug.
 
 ### Recent commits worth knowing about
 
