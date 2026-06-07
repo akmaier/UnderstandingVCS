@@ -14,7 +14,58 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
-## Where we left off — pick up here (2026-06-04 afternoon)
+## Where we left off — pick up here (2026-06-07 afternoon)
+
+### 🏆 Task #75 closed (2026-06-07, commit `4ddb0b7`) — TIM*T-load timing bug
+
+The 76-cycle / 1-scanline drift was the **timer-load instruction's own
+cycles being counted toward the new timer**. xitari's M6502Low records
+`myCyclesWhenTimerSet = mySystem->cycles()` at the poke moment, but
+`incrementCycles` ran at the START of the load instruction so cycles
+== END of the load instruction. Effectively **none of the load
+instruction's cycles count toward the new timer**.
+
+jutari was setting `cycles_since_tick = 0` at riot_poke, then
+`riot_advance!(instr_cycles)` at end of instruction added all 3-5 of
+the load instruction's cycles to the timer — overcounting by exactly
+the load instruction's cycle count.
+
+Fix: pass `bus.pending_tia_cycles` to `riot_poke!`, set
+`cycles_since_tick = -pending_extra_cycles` on TIM*T loads so the
+trailing `riot_advance!` cancels them out.
+
+Empirical result on breakout (jutari vs xitari, 1500-frame random run):
+  pre-fix:  416/3600 frames pixel-exact (11.6%)
+  post-fix: 587/3600 frames pixel-exact (16.3%)
+  (first 100 frames: 72% → 98%)
+
+All jutari tests still pass; the breakout `ball-death` regression is
+still bit-exact RAM. The "jumping scanlines" bug — closed at the entry
+point. Remaining 84% mismatch on full-3600 run comes from deeper
+bugs (collision-timing, sprite RES* sub-cycle, etc.).
+
+### 🏆 Task #73 closed (2026-06-07, commit `de00af8`) — pong SwapPaddles
+
+jaxtari was always sending paddle resistance to INPT0 regardless of
+stella.pro's `Controller.SwapPaddles` setting. For Pong (Video
+Olympics, which has SwapPaddles=YES) the user's paddle is wired to
+INPT1 — without the swap, jaxtari's paddle resistance went to a
+register pong never read as the user paddle, freezing it at the
+centred default.
+
+Fix: add `swap_paddles()` method to RomSettings base, override in
+PongRomSettings → True, conditional swap in StellaEnvironment's
+paddle action handler. Mirror of jutari task #66.
+
+Verified: jaxtari pong RAM at frame 24+ now matches jutari/xitari
+($04 = 0x68 etc.) under the standard random action sequence.
+
+### Open work
+
+  - **Jaxtari INTIM mirror**: applied jutari's TIM*T fix to jaxtari
+    (commit `<pending>`). Needs PXC1 conformance verification.
+  - **Pong $3f/$40 swap** (both ports vs xitari): different bug class,
+    investigate next.
 
 ### Update — vsync_reset_pending fix landed (2026-06-04 evening, commit `b7cd741`)
 
