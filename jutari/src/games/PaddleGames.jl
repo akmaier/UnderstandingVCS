@@ -15,7 +15,10 @@ Mirror of jaxtari's `BreakoutRomSettings.uses_paddles() = True` /
 module PaddleGames
 
 using ..RomSettingsModule: RomSettings
-import ..RomSettingsModule: romsettings_uses_paddles, romsettings_swap_paddles
+using ..ConsoleModule: Console
+import ..RomSettingsModule: romsettings_uses_paddles, romsettings_swap_paddles,
+                            romsettings_is_terminal, romsettings_get_reward,
+                            romsettings_lives, romsettings_reset!
 
 export BreakoutRomSettings, PongRomSettings
 
@@ -23,12 +26,73 @@ export BreakoutRomSettings, PongRomSettings
     BreakoutRomSettings
 
 xitari stella.pro: `Cartridge.MD5 f34f08e5…`, `Controller.Left "PADDLES"`.
+
+Mirrors `xitari/games/supported/Breakout.cpp`:
+  - score    = (RAM[77] & 0x0F)*1 + ((RAM[77] >> 4) & 0x0F)*10 + (RAM[76] & 0x0F)*100
+  - lives    = RAM[57]
+  - started  = first frame where lives observed == 5 (sticky)
+  - terminal = started && lives == 0
+
+The reset() resets the started/terminal/score flags; lives counter is
+read fresh from RAM each call to step.
 """
 mutable struct BreakoutRomSettings <: RomSettings
-    BreakoutRomSettings() = new()
+    score::Int
+    lives::Int
+    started::Bool
+    terminal::Bool
+    BreakoutRomSettings() = new(0, 0, false, false)
 end
 
 romsettings_uses_paddles(::BreakoutRomSettings) = true
+
+function romsettings_reset!(s::BreakoutRomSettings)
+    s.score    = 0
+    s.lives    = 0
+    s.started  = false
+    s.terminal = false
+    return nothing
+end
+
+# Read RAM by 7-bit index. The console's bus has 128 bytes of physical
+# RAM in `bus.ram` (1-indexed in Julia). Don't go through `bus.peek` —
+# `$39` / `$4C` / `$4D` directly are TIA read-side addresses (INPT/CXxx),
+# not RAM. xitari's `readRam(addr)` ANDs with 0x7F then indexes the
+# RAM array; we do the same here.
+@inline _ram(console::Console, addr::Integer) =
+    @inbounds console.bus.ram[(Int(addr) & 0x7F) + 1]
+
+function _update!(s::BreakoutRomSettings, console::Console)
+    # score: tens+ones at $4D, hundreds at $4C
+    x = Int(_ram(console, 77))                       # $4D
+    y = Int(_ram(console, 76))                       # $4C
+    s.score = 1 * (x & 0x0F) + 10 * ((x & 0xF0) >> 4) + 100 * (y & 0x0F)
+    # lives + terminal latch
+    byte_val = Int(_ram(console, 57))                # $39
+    if !s.started && byte_val == 5
+        s.started = true
+    end
+    s.terminal = s.started && byte_val == 0
+    s.lives    = byte_val
+    return nothing
+end
+
+function romsettings_is_terminal(s::BreakoutRomSettings, console::Console)
+    _update!(s, console)
+    return s.terminal
+end
+
+function romsettings_get_reward(s::BreakoutRomSettings, console::Console)
+    prev = s.score
+    _update!(s, console)
+    return s.score - prev
+end
+
+# xitari: `int lives() const { return isTerminal() ? 0 : m_lives; }`
+function romsettings_lives(s::BreakoutRomSettings, console::Console)
+    _update!(s, console)
+    return s.terminal ? 0 : s.lives
+end
 
 """
     PongRomSettings
