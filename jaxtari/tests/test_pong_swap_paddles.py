@@ -25,13 +25,18 @@ def test_pong_paddle_moves_under_right_action():
     for a in actions:
         env.step(int(a))
         rams.append(np.asarray(env.get_ram(), dtype=np.uint8).copy())
-    # After ~24 frames jutari/xitari have $04=0x68 (paddle moved off centre).
-    # Pre-fix jaxtari stayed at 0x6e. Assert paddle has moved.
-    ram24 = rams[23]   # index 23 = frame 24 (1-indexed) since the loop ran 24
-    print(f'After 24 frames: $04 = 0x{int(ram24[0x04]):02x} (expected 0x68 = paddle moved)')
-    print(f'After 24 frames: $3c = 0x{int(ram24[0x3c]):02x} (expected 0x6a)')
-    assert int(ram24[0x04]) == 0x68, f"$04 stuck at 0x{int(ram24[0x04]):02x} — SwapPaddles broken?"
-    assert int(ram24[0x3c]) == 0x6a, f"$3c stuck at 0x{int(ram24[0x3c]):02x} — SwapPaddles broken?"
+    # The first RIGHT action is actions[24]. After env.step on this action,
+    # rams[24] reflects the post-step state. Pre-fix jaxtari stayed at
+    # the initial 0x6e / 0x6d (paddle didn't move). Post-fix it transitions
+    # to xitari/jutari's 0x68 / 0x6a — the paddle moved off centre by
+    # one tick.
+    ram_after_first_right = rams[24]
+    print(f'After first RIGHT: $04 = 0x{int(ram_after_first_right[0x04]):02x} (expected 0x68)')
+    print(f'After first RIGHT: $3c = 0x{int(ram_after_first_right[0x3c]):02x} (expected 0x6a)')
+    assert int(ram_after_first_right[0x04]) == 0x68, \
+        f"$04 stuck at 0x{int(ram_after_first_right[0x04]):02x} — SwapPaddles broken?"
+    assert int(ram_after_first_right[0x3c]) == 0x6a, \
+        f"$3c stuck at 0x{int(ram_after_first_right[0x3c]):02x} — SwapPaddles broken?"
     print('PASS — jaxtari pong SwapPaddles=YES routing works.')
 
 
