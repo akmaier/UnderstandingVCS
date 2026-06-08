@@ -24,7 +24,45 @@ measured before/after, and any conformance (PXC) numbers that moved.
 | #75 jutari breakout jumping    | ✅ closed | `b7cd741` + `4ddb0b7`         | 99.7% breakout pixel-exact         |
 | #76 jutari auto-reset          | ✅ closed | `037526c`                    | env.terminal flips correctly       |
 | #77 pong $3f/$40 swap          | ✅ closed | `c3d6d42`                    | both ports bit-exact at frame 20   |
-| #78 pong score addrs $0D/$0E   | ✅ closed | (this commit)                 | pong paddle no longer freezes      |
+| #78 pong score addrs $0D/$0E   | ✅ closed | `7fee15f` + `b10321a`         | pong paddle no longer freezes      |
+| #81 pitfall starting actions   | ✅ closed | (this commit)                 | 19.8 → **0** b/f BIT-EXACT       |
+| #82 enduro starting actions    | ✅ partial | (this commit)                 | 45 → **17** b/f (3 b/f @ frame 0) |
+
+### 🏆 Tasks #81 + #82 (2026-06-08) — getStartingActions for pitfall + enduro
+
+xitari's `StellaEnvironment::reset()` doesn't just do the 60-NOOP +
+4-RESET boot burn — it ALSO emulates `m_settings->getStartingActions()`
+afterwards (gated on the default-true `use_starting_actions` setting).
+Pitfall returns `[PLAYER_A_UP]` and Enduro returns `[PLAYER_A_FIRE]` —
+both put the agent into a known starting pose that real human players
+would take after the cart's title screen.
+
+jutari + jaxtari were doing the boot burn + `m_settings->reset()`
+but skipping the starting-actions step. That left both ports 1 frame
+behind xitari at frame 0 for Pitfall + Enduro, which compounded into
+the 19.8 b/f (pitfall) / 45 b/f (enduro) RAM divergence over 300 NOOPs.
+
+Fix:
+  - Both ports: add `starting_actions()` to RomSettings (default `[]`).
+  - Both ports: `env.reset()` / `env_reset!` emulates each starting
+    action after the boot burn + settings reset.
+  - Jutari: new `JoystickGames` module with `PitfallRomSettings`
+    (returns `[2]`) and `EnduroRomSettings` (returns `[1]`); ports'
+    `_SETTINGS_BY_BASENAME` registries updated.
+  - Jaxtari: add `starting_actions()` to `PitfallRomSettings` and
+    `EnduroRomSettings`. Defaults stay empty for the other 4 ROMs.
+
+Measured jutari↔xitari RAM diff (300 NOOPs):
+  | ROM      | Before | After | Status |
+  |----------|--------|-------|--------|
+  | pitfall  | 19.8 b/f | **0.0** b/f | ✅ BIT-EXACT |
+  | enduro   | 45.0 b/f | **~17** b/f | residual 3 b/f @ frame 0 |
+  | seaquest | 2.6 b/f  | 2.6 b/f    | no starting actions — separate fix needed |
+
+Enduro's residual 3 b/f at frame 0 (RAM[\$00] off-by-1, RAM[\$23] big
+diff, RAM[\$2e] off-by-1) is a smaller boot-state mismatch left for
+future work (task #82 stays open as a partial). Seaquest's 5 b/f
+boot mismatch is task #80 (also distinct from starting actions).
 
 ### 🏆 Task #78 closed (2026-06-07) — pong score addresses wrong in both ports
 

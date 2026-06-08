@@ -60,6 +60,22 @@ class RomSettings(Protocol):
         `romsettings_swap_paddles`.
         """
 
+    def starting_actions(self) -> list[int]:
+        """Return the list of per-game actions xitari emulates
+        AFTER the boot burn + settings.reset(). Pitfall: `[2]`
+        (PLAYER_A_UP). Enduro: `[1]` (PLAYER_A_FIRE). All others:
+        empty. xitari calls
+        `m_settings->getStartingActions()` from
+        `StellaEnvironment::reset` when
+        `settings.getBool("use_starting_actions")` is true (default
+        true in xitari/common/Defaults.cpp). Without this, jaxtari
+        is 1 frame behind xitari at frame 0 for Pitfall/Enduro,
+        producing the documented 19/45 b/f RAM divergence over 300
+        NOOP frames. Mirrors jutari's
+        `romsettings_starting_actions`. Default `[]` matches the
+        majority of ROMs.
+        """
+
 
 class GenericRomSettings:
     """No-op stub: reward = 0, never terminal, no lives, joystick-only.
@@ -90,3 +106,10 @@ class GenericRomSettings:
         # whose stella.pro entry has Controller.SwapPaddles "YES"
         # (currently only Pong / Video Olympics).
         return False
+
+    def starting_actions(self) -> list[int]:
+        # Default: no startup pose — joystick games start with the
+        # agent at the cart's reset-vector state. Override in
+        # per-game subclasses whose xitari `getStartingActions`
+        # returns a non-empty vector (Pitfall, Enduro, ...).
+        return []

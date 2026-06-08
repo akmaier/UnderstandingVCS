@@ -162,6 +162,31 @@ class StellaEnvironment:
                 self._console = run_until_frame(self._console)
             self._console = console_switches(self._console, reset_pressed=False)
 
+        # --- Per-game starting actions ----------------------------------- #
+        # xitari's `StellaEnvironment::reset` emulates
+        # `m_settings->getStartingActions()` AFTER the boot burn (and
+        # AFTER `m_settings->reset()`, which we did above on line 132).
+        # Pitfall: 1× PLAYER_A_UP. Enduro: 1× PLAYER_A_FIRE.
+        # Default `use_starting_actions = true` in
+        # xitari/common/Defaults.cpp. Without this we're 1 frame behind
+        # xitari for those ROMs — the documented 19/45 b/f RAM
+        # divergence at frame 0 (tasks #81/#82).
+        try:
+            starting = list(self._settings.starting_actions())
+        except AttributeError:
+            # Older RomSettings subclasses (pre-task-#81 ports) may not
+            # implement starting_actions yet. Treat as empty.
+            starting = []
+        uses_paddles_sa = self._settings.uses_paddles()
+        swap_paddles_sa = self._settings.swap_paddles() if uses_paddles_sa else False
+        for action in starting:
+            if uses_paddles_sa:
+                self._apply_paddle_action(int(action))
+            self._console = apply_action(
+                self._console, int(action),
+                paddle_mode=uses_paddles_sa, swap_paddles=swap_paddles_sa)
+            self._console = run_until_frame(self._console)
+
         # --- P6d: random-NOOP episode randomization ---------------------- #
         if random_noop_max > 0:
             rng = _random.Random(seed) if seed is not None else _random

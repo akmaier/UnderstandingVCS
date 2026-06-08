@@ -39,6 +39,9 @@ from jaxtari.env.stella_environment import StellaEnvironment
 from jaxtari.games.rom_settings import GenericRomSettings, RomSettings
 from jaxtari.games.breakout import BreakoutRomSettings
 from jaxtari.games.pong import PongRomSettings
+from jaxtari.games.atari_classics import (
+    PitfallRomSettings, EnduroRomSettings, SeaquestRomSettings,
+)
 
 
 def _load_rom(path: Path) -> np.ndarray:
@@ -54,6 +57,9 @@ def _load_rom(path: Path) -> np.ndarray:
 _SETTINGS_BY_BASENAME: dict[str, type[RomSettings]] = {
     "breakout.bin": BreakoutRomSettings,
     "pong.bin":     PongRomSettings,
+    "pitfall.bin":  PitfallRomSettings,
+    "enduro.bin":   EnduroRomSettings,
+    "seaquest.bin": SeaquestRomSettings,
 }
 
 

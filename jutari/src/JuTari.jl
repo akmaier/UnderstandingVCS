@@ -20,6 +20,7 @@ include("Console.jl")
 include("io/IO.jl")
 include("games/RomSettings.jl")
 include("games/PaddleGames.jl")
+include("games/JoystickGames.jl")
 include("env/StellaEnvironment.jl")
 include("diff/Modes.jl")
 
@@ -31,6 +32,7 @@ using .Bus: BusState, initial_bus
 using .ConsoleModule: Console, initial_console
 using .RomSettingsModule: RomSettings, GenericRomSettings
 using .PaddleGames: BreakoutRomSettings, PongRomSettings
+using .JoystickGames: PitfallRomSettings, EnduroRomSettings
 using .Env: StellaEnvironment
 using .CPU.CPUTables: FLAG_N, FLAG_V, FLAG_U, FLAG_B, FLAG_D, FLAG_I, FLAG_Z, FLAG_C
 using .Diff: Mode, HARD, SOFT, current_mode, set_mode!, using_mode,
@@ -52,6 +54,7 @@ export CPUState, initial_cpu_state,
        Console, initial_console,
        RomSettings, GenericRomSettings,
        BreakoutRomSettings, PongRomSettings,
+       PitfallRomSettings, EnduroRomSettings,
        StellaEnvironment,
        FLAG_N, FLAG_V, FLAG_U, FLAG_B, FLAG_D, FLAG_I, FLAG_Z, FLAG_C,
        Mode, HARD, SOFT, current_mode, set_mode!, using_mode,

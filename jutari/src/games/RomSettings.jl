@@ -16,7 +16,8 @@ using ..ConsoleModule: Console
 export RomSettings, GenericRomSettings,
        romsettings_reset!, romsettings_is_terminal,
        romsettings_get_reward, romsettings_lives,
-       romsettings_uses_paddles, romsettings_swap_paddles
+       romsettings_uses_paddles, romsettings_swap_paddles,
+       romsettings_starting_actions
 
 abstract type RomSettings end
 
@@ -26,6 +27,15 @@ romsettings_reset!(::RomSettings)             = nothing
 romsettings_is_terminal(::RomSettings, ::Console) = false
 romsettings_get_reward(::RomSettings, ::Console) = 0
 romsettings_lives(::RomSettings, ::Console)      = 0
+# Per-game starting actions emulated by xitari's `StellaEnvironment::reset`
+# AFTER the 60-NOOP + 4-RESET boot burn and the settings.reset() call
+# (only when settings.getBool("use_starting_actions") is true — default
+# in xitari is `true`). Pitfall + Enduro use this to put the agent into
+# a known initial pose (PLAYER_A_UP / PLAYER_A_FIRE respectively); without
+# emulating those frames we diverge from xitari by 1 frame of state.
+# Default empty — joystick games without a startup pose return `Int[]`.
+# See `xitari/games/supported/Pitfall.cpp::getStartingActions` etc.
+romsettings_starting_actions(::RomSettings)      = Int[]
 # Default: joystick. Override `romsettings_uses_paddles(::MyType) =
 # true` in per-game subtypes whose stella.pro entry has
 # Controller.Left/Right "PADDLES" — `StellaEnvironment` reads this

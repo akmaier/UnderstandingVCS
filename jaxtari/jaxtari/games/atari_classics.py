@@ -63,6 +63,14 @@ class PitfallRomSettings(RomSettings):
             return 2
         return 1
 
+    def starting_actions(self) -> list[int]:
+        # xitari/games/supported/Pitfall.cpp::getStartingActions returns
+        # [PLAYER_A_UP] (= action 2). Without emulating this frame
+        # after the boot burn, jaxtari diverges from xitari by 1 frame
+        # of state — the documented 19.8 b/f RAM gap at frame 0
+        # (task #81).
+        return [2]
+
 
 # --------------------------------------------------------------------------- #
 # BeamRider
@@ -147,6 +155,14 @@ class EnduroRomSettings(RomSettings):
 
     def lives(self, console: Console) -> int:
         return 0
+
+    def starting_actions(self) -> list[int]:
+        # xitari/games/supported/Enduro.cpp::getStartingActions returns
+        # [PLAYER_A_FIRE] (= action 1) — needed to launch into the race.
+        # Without emulating this frame after the boot burn, jaxtari
+        # diverges from xitari by 1 frame of state — the documented
+        # ~45 b/f RAM gap at frame 0 (task #82).
+        return [1]
 
 
 # --------------------------------------------------------------------------- #

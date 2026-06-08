@@ -26,13 +26,19 @@ using JuTari
 using JuTari.Env: StellaEnvironment, env_reset!, env_step!, get_ram, frame_number
 using JuTari.RomSettingsModule: GenericRomSettings, RomSettings
 using JuTari.PaddleGames: BreakoutRomSettings, PongRomSettings
+using JuTari.JoystickGames: PitfallRomSettings, EnduroRomSettings
 
 # Per-ROM RomSettings autodetection — mirror of jaxtari `tools/check_trace.py`.
 # Activates the dump-pot model + paddle-action handling for paddle
 # games so jutari matches xitari's INPT0/INPT1 cycle-dependent reads.
+# Pitfall + Enduro override `romsettings_starting_actions` so
+# `env_reset!` emulates the xitari startup pose (UP / FIRE
+# respectively) and frame-0 RAM matches xitari (tasks #81/#82).
 const _SETTINGS_BY_BASENAME = Dict{String,Function}(
     "breakout.bin" => () -> BreakoutRomSettings(),
     "pong.bin"     => () -> PongRomSettings(),
+    "pitfall.bin"  => () -> PitfallRomSettings(),
+    "enduro.bin"   => () -> EnduroRomSettings(),
 )
 _settings_for_rom(rom_path::AbstractString) =
     haskey(_SETTINGS_BY_BASENAME, basename(rom_path)) ?

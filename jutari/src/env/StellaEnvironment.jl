@@ -17,7 +17,8 @@ using ..IO: apply_action!, console_switches!, NOOP, LEFT, RIGHT,
 using ..RomSettingsModule: RomSettings, GenericRomSettings,
                            romsettings_reset!, romsettings_is_terminal,
                            romsettings_get_reward, romsettings_lives,
-                           romsettings_uses_paddles, romsettings_swap_paddles
+                           romsettings_uses_paddles, romsettings_swap_paddles,
+                           romsettings_starting_actions
 using ..TIA: Y_START, VISIBLE_HEIGHT, set_paddle_resistance!
 
 export StellaEnvironment, env_reset!, env_step!,
@@ -114,6 +115,28 @@ function env_reset!(env::StellaEnvironment;
             run_until_frame!(env.console)
         end
         console_switches!(env.console; reset_pressed = false)
+    end
+
+    # --- Per-game starting actions ---------------------------------------
+    # xitari's `StellaEnvironment::reset` emulates
+    # `settings->getStartingActions()` AFTER the boot burn + settings
+    # reset (only when `settings.getBool("use_starting_actions")` is
+    # true — default in xitari is `true`). Pitfall: 1× PLAYER_A_UP.
+    # Enduro: 1× PLAYER_A_FIRE. See
+    # `xitari/environment/stella_environment.cpp::reset()` and each
+    # ROM's `getStartingActions`. Without this, our env is 1 frame
+    # behind xitari for those ROMs, producing the documented 19/45
+    # b/f divergence over 300 NOOP frames (task #81/#82).
+    uses_paddles_sa = romsettings_uses_paddles(env.settings)
+    swap_paddles_sa = romsettings_swap_paddles(env.settings)
+    for action in romsettings_starting_actions(env.settings)
+        if uses_paddles_sa
+            _apply_paddle_action!(env, Int(action))
+        end
+        apply_action!(env.console, Int(action);
+                      paddle_mode = uses_paddles_sa,
+                      swap_paddles = swap_paddles_sa)
+        run_until_frame!(env.console)
     end
 
     return env

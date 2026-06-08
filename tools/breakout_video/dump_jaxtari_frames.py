@@ -22,13 +22,22 @@ import numpy as np
 from jaxtari.env.stella_environment import StellaEnvironment
 from jaxtari.games.breakout import BreakoutRomSettings
 from jaxtari.games.pong import PongRomSettings
+from jaxtari.games.atari_classics import (
+    PitfallRomSettings, EnduroRomSettings, SeaquestRomSettings,
+)
 
 # ROM basename → RomSettings constructor. Defaults to bare StellaEnvironment
 # (no per-game scoring/termination) for unrecognised ROMs — same convention
 # as `tools/jutari_screen_dump.jl::_SETTINGS_BY_BASENAME`.
+# Pitfall + Enduro override starting_actions() to emulate xitari's
+# `getStartingActions()` (UP / FIRE) so frame 0 RAM matches xitari
+# (tasks #81/#82).
 _SETTINGS_BY_BASENAME = {
     "breakout.bin": BreakoutRomSettings,
     "pong.bin":     PongRomSettings,
+    "pitfall.bin":  PitfallRomSettings,
+    "enduro.bin":   EnduroRomSettings,
+    "seaquest.bin": SeaquestRomSettings,
 }
 
 
