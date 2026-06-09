@@ -28,6 +28,36 @@ measured before/after, and any conformance (PXC) numbers that moved.
 | #81 pitfall starting actions   | ✅ closed | (this commit)                 | 19.8 → **0** b/f BIT-EXACT       |
 | #82 enduro starting actions    | ✅ partial | (this commit)                 | 45 → **17** b/f (3 b/f @ frame 0) |
 
+### Phase C pong screen residual: localized to 2 distinct TIA bugs (2026-06-09)
+
+Detailed per-row jutari↔xitari pong screen comparison (frame 0):
+
+| Issue | Rows | Cols | Pixels | Description |
+|-------|------|------|--------|-------------|
+| Missing HMOVE comb | 0 | 0-7 | 8 | xitari renders 8 black px at row 0; jutari renders background |
+| Phantom sprites | 35 | 140-143 | 4 | jutari has color-138 sprite; xitari has background |
+| Phantom sprites | 36 | 16-19, 140-143 | 8 | jutari has color-250 + 138 sprites |
+| Phantom sprites | 37 | 16-19 | 4 | jutari has color-250 sprite |
+| Paddle 1-row early | 95 | 78-81 | 4 | jutari paddle starts at row 95; xitari at row 96 |
+| Paddle 1-row early | 111 | similar | 4 | symmetric for right paddle |
+
+Both bugs are 1-row-related vertical-timing issues:
+  - The HMOVE comb requires `myHMOVEBlankEnabled` to be true at the
+    START of scanline 34's render (= row 0 of get_screen). Pong cart
+    strobes HMOVE during VBLANK; jutari's per-scanline clear (line
+    715 of TIA.jl) clobbers it before reaching scanline 34. A naive
+    "only clear if !vblank_active" fix didn't work (reverted) because
+    cart turns VBLANK off mid-scanline, defeating the gate. xitari's
+    semantic (TIA.cxx:1776-1786) is: clear ONLY when a render call
+    completed past HBLANK+8. Needs a deeper refactor.
+  - The paddle/sprite 1-row-early bug suggests jutari's VDELP or
+    framebuffer y-tracking is off by 1 for specific sprite-rendering
+    paths. xitari rows 96..N+13 = jutari rows 95..N+12. Same width.
+    Tied to GRP1 latch timing or sprite-Y bounds checking.
+
+Total: pong 32 px screen residual = 8 (HMOVE comb) + 24 (1-row-early
+sprite renderings). Both deferred.
+
 ### Phase C row-0 HMOVE-comb investigation (2026-06-09) — REVERTED
 
 Attempted to fix the row-0 HMOVE comb missing on pong (8 px of the
