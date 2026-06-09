@@ -184,6 +184,25 @@ int main(int argc, char **argv) {
     ALEInterface ale(rom);
     ale.resetGame();
 
+    // Phase B / task #80: emit a synthetic "frame 0" record with the
+    // boot-end RAM (immediately after the 60-NOOP + 4-RESET burn,
+    // BEFORE any user action). Lets us localize boot-vs-step
+    // divergences: if frame 0 RAM matches jutari, the bug is in the
+    // first user-step; if frame 0 RAM already diverges, the bug is in
+    // the boot burn. Marked as frame=0, action=-1 so downstream tools
+    // can filter.
+    {
+        const ALERAM &boot_ram = ale.getRAM();
+        std::string boot_hex;
+        hex_encode(boot_ram.array(), boot_ram.size(), boot_hex);
+        std::fprintf(stdout,
+            "{\"frame\":0,\"ep_frame\":0,\"action\":-1,\"reward\":0,"
+            "\"cum_reward\":0,\"lives\":%d,\"done\":false,\"ram\":\"%s\","
+            "\"boot_end\":true}\n",
+            ale.lives(), boot_hex.c_str());
+    }
+
+
     // Set up bus trace BEFORE the action loop (post-reset, so the boot
     // burn isn't traced — matches jutari's `cpu_tia_cycle_trace.jl`
     // which discards trace events before frame 1).

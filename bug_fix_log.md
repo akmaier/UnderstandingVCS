@@ -28,6 +28,49 @@ measured before/after, and any conformance (PXC) numbers that moved.
 | #81 pitfall starting actions   | ✅ closed | (this commit)                 | 19.8 → **0** b/f BIT-EXACT       |
 | #82 enduro starting actions    | ✅ partial | (this commit)                 | 45 → **17** b/f (3 b/f @ frame 0) |
 
+### Phase B / Task #80 partial (2026-06-09) — seaquest boot-end localized to 1 byte
+
+Localized seaquest's 6-byte frame-0 RAM divergence to a SINGLE byte at
+boot-end (before any user action): RAM[\$01].
+
+  | Source | RAM[\$01] | Other bytes |
+  |--------|----------|-------------|
+  | xitari (60+4 boot)   | \$3e    | identical |
+  | jutari (60+4 boot)   | \$3f    | identical |
+  | jutari (60+3 boot)   | \$3e    | matches xitari |
+  | jutari (59+4 boot)   | \$3e    | matches xitari |
+
+The other 5 bytes that diverge at frame 0 in the noop-300 diff are
+DOWNSTREAM propagation of this 1-byte boot mismatch — once the cart's
+loop iteration drifts by 1, accumulated state cascades.
+
+Diagnosis: seaquest's cart code increments RAM[\$01] every frame (a
+plain frame counter). jutari ends at $3f (64 increments), xitari at
+$3e (63 increments). Despite both engines running the same 60-NOOP +
+4-RESET boot burn, ONE FRAME's worth of cart code executes differently.
+
+The 8 other shipped ROMs (pong, breakout, space_invaders, pitfall,
+enduro, asteroids, qbert) are bit-exact at boot-end. Beamrider +
+mspacman trace_dump appears to fail (separate issue).
+
+Suspected root cause: seaquest specifically reads INTIM (RIOT timer)
+or INPT4 (joystick trigger) inside its frame-counter increment path,
+and the first-frame-of-burn timing for those reads differs subtly
+between engines. Same class of issue as the per-cycle bus accuracy
+documented as the cause of the PXC-S screen residuals.
+
+Decision: leave the 1-byte boot residual to be swept up by Phase C
+(per-cycle bus accuracy work) rather than chase it independently.
+Task #80 stays open with this localized diagnosis recorded.
+
+Tooling added:
+  - `tools/boot_state_diff.jl` — dumps jutari's post-boot RAM hex for
+    any ROM (matched by `tools/trace_dump`'s new `"boot_end":true`
+    frame-0 emission).
+  - `tools/trace_dump.cpp` — now emits a synthetic frame-0 record with
+    boot-end RAM BEFORE any user action, so the two ports can be
+    compared at the boot/burn boundary directly.
+
 ### 🏆 Tasks #81 + #82 (2026-06-08) — getStartingActions for pitfall + enduro
 
 xitari's `StellaEnvironment::reset()` doesn't just do the 60-NOOP +
