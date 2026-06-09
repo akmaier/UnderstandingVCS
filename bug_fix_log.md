@@ -28,6 +28,36 @@ measured before/after, and any conformance (PXC) numbers that moved.
 | #81 pitfall starting actions   | ✅ closed | (this commit)                 | 19.8 → **0** b/f BIT-EXACT       |
 | #82 enduro starting actions    | ✅ partial | (this commit)                 | 45 → **17** b/f (3 b/f @ frame 0) |
 
+### Phase C row-0 HMOVE-comb investigation (2026-06-09) — REVERTED
+
+Attempted to fix the row-0 HMOVE comb missing on pong (8 px of the
+32 px pong screen residual). Two candidate fixes both reverted after
+empirical traces showed they didn't address the actual semantic gap.
+
+Diagnostic findings:
+  - Pong cart strobes HMOVE at scanline 27 cycle ~0-20 (cart's own
+    "scanline 27" in TIA counter — corresponds roughly to xitari's
+    HBLANK of one of the early VBLANK scanlines).
+  - jutari's `_hmove_blank_enabled_at` returns true for this cycle,
+    so `hmove_blank_pending = true` correctly.
+  - At end of scanline 27's render path, `vblank_active` has been
+    flipped to false by the cart writing VBLANK off mid-scanline.
+  - With my candidate fix "only clear flag if !vblank_active", the
+    flag still got cleared because vblank was already off by end of
+    render.
+  - xitari's actual semantic (TIA.cxx:1776-1786): clear `myHMOVEBlankEnabled`
+    only when an updateFrameScanline call rendered past HBLANK+8.
+    This is a per-render-chunk decision, not per-scanline-end.
+    Replicating it requires a more invasive refactor: track whether
+    THIS scanline's render entered the "blank-applied" path AND
+    completed past HBLANK+8, not just whether vblank was active.
+
+For now: the row-0 comb is left as-is. The 8 px row-0 contribution
+remains part of pong's 32 px screen residual. Documented for future
+Phase C work — needs a refactor where the flag clear is gated on
+"the blank was actually consumed by THIS scanline's render", not
+the timing approximation tried here.
+
 ### Phase B / Task #80 partial (2026-06-09) — seaquest boot-end localized to 1 byte
 
 Localized seaquest's 6-byte frame-0 RAM divergence to a SINGLE byte at

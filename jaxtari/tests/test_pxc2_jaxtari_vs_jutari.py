@@ -49,9 +49,21 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 # and jutari `tools/jutari_trace_dump.jl`.
 from jaxtari.games.breakout import BreakoutRomSettings as _BreakoutRomSettings
 from jaxtari.games.pong import PongRomSettings as _PongRomSettings
+from jaxtari.games.atari_classics import (
+    PitfallRomSettings as _PitfallRomSettings,
+    EnduroRomSettings as _EnduroRomSettings,
+    SeaquestRomSettings as _SeaquestRomSettings,
+)
 _SETTINGS_FACTORY_BY_ROM = {
     "pong.bin":     _PongRomSettings,
     "breakout.bin": _BreakoutRomSettings,
+    # Joystick games where RomSettings.starting_actions() matters
+    # (Pitfall, Enduro) need the per-game class so env.reset() emulates
+    # xitari's `getStartingActions()`. Seaquest registered for parity
+    # (no starting actions, scoring-only).
+    "pitfall.bin":  _PitfallRomSettings,
+    "enduro.bin":   _EnduroRomSettings,
+    "seaquest.bin": _SeaquestRomSettings,
 }
 
 
@@ -124,7 +136,11 @@ _PXC2_CASES = (
         rom_filename="pitfall.bin",
         xitari_trace="pitfall_noop_10.jsonl",
         jutari_trace="pitfall_noop_10_jutari.jsonl",
-        expected_xitari_divergence=19,      # joystick game, unaffected by P3i-c/d/e
+        # Task #81 (2026-06-08): jaxtari + jutari now both emulate
+        # `getStartingActions()` (PLAYER_A_UP for pitfall) after the
+        # boot burn, matching xitari's StellaEnvironment::reset(). With
+        # this in place, pitfall is BIT-EXACT across all 10 frames.
+        expected_xitari_divergence=0,
     ),
     _RomCase(
         # Joystick-only ROM. Observed divergence: 4 bytes — same as
@@ -156,7 +172,12 @@ _PXC2_CASES = (
         # regression vs the parent. Enduro's large base divergence (43/128)
         # is a pre-existing, unrelated deep issue (collision-timing); full
         # convergence is tracked in bug_fix_log.md.
-        expected_xitari_divergence=43,
+        # Task #82 (2026-06-08): with the starting-actions fix
+        # (PLAYER_A_FIRE after boot burn), enduro drops to 8 bytes — the
+        # remaining 3 b/f frame-0 boot residual + downstream drift over
+        # 10 frames. Same root-cause class as the seaquest 1-byte boot
+        # residual (task #80, deferred to Phase C bus accuracy).
+        expected_xitari_divergence=8,
     ),
 )
 
