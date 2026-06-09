@@ -197,3 +197,9 @@ class SeaquestRomSettings(RomSettings):
         # Seaquest's lives counter isn't reliably exposed in the
         # xitari source; consumers should rely on `is_terminal`.
         return 0
+
+    def starting_actions(self) -> list[int]:
+        # Seaquest has no per-game startup pose in xitari's
+        # `getStartingActions`. Explicit override needed because
+        # RomSettings is a Protocol — see task #81/#82.
+        return []

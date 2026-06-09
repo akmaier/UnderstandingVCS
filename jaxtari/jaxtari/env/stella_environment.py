@@ -172,7 +172,12 @@ class StellaEnvironment:
         # xitari for those ROMs — the documented 19/45 b/f RAM
         # divergence at frame 0 (tasks #81/#82).
         try:
-            starting = list(self._settings.starting_actions())
+            sa = self._settings.starting_actions()
+            # RomSettings is a Protocol — subclasses that don't override
+            # `starting_actions` inherit the abstract version which
+            # returns `None`. Treat that as "no starting actions" rather
+            # than crashing on `list(None)`.
+            starting = list(sa) if sa is not None else []
         except AttributeError:
             # Older RomSettings subclasses (pre-task-#81 ports) may not
             # implement starting_actions yet. Treat as empty.

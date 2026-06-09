@@ -96,6 +96,14 @@ class PongRomSettings(RomSettings):
         # Mirror of jutari task #66 / commit 8531bb8.
         return True
 
+    def starting_actions(self) -> list[int]:
+        # Pong (Video Olympics) has no per-game startup pose in
+        # xitari's `getStartingActions`. Explicit override needed
+        # because RomSettings is a Protocol — without it, the
+        # Protocol's abstract method returns None and
+        # `list(None)` crashes in env.reset.
+        return []
+
 
 def _scores(console: Console) -> tuple[int, int]:
     """Pull the (P0, P1) score bytes from the console's RAM. RAM is a

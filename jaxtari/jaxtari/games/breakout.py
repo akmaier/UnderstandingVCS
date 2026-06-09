@@ -107,3 +107,9 @@ class BreakoutRomSettings(RomSettings):
         # "PADDLES"`). Setting this True makes StellaEnvironment translate
         # LEFT/RIGHT actions into INPT0 dump-pot paddle-position changes.
         return True
+
+    def starting_actions(self) -> list[int]:
+        # Breakout has no per-game startup pose in xitari's
+        # `getStartingActions`. Explicit override needed because
+        # RomSettings is a Protocol — see task #81/#82.
+        return []
