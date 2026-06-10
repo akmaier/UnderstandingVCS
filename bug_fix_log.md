@@ -14,9 +14,25 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
-## Where we left off — pick up here (2026-06-07 evening)
+## Where we left off — pick up here (2026-06-09/10)
 
-### Session 2026-06-07 — session-wide rundown
+### Session 2026-06-09 / 2026-06-10 rundown (jutari-focused)
+
+PXC2 confirms 18/18 jaxtari ≡ jutari cross-port tests still pass with
+the new pinned divergences after today's per-ROM RomSettings +
+starting-actions work.
+
+| Task           | Status   | Commits                       | Result                              |
+|----------------|----------|-------------------------------|-------------------------------------|
+| #78 pong score addrs $0D/$0E   | ✅ closed | `7fee15f` + `b10321a`         | pong paddle no longer freezes      |
+| #79 re-render pong videos      | ✅ closed | `c9ed0c5`                    | all 4 new game videos on disk      |
+| #80 seaquest boot residual     | 🔬 partial | `533f706`                    | 6 b/f frame 0 → 1 byte at boot end |
+| #81 pitfall starting actions   | ✅ closed | `08b98d4`                    | 19.8 → **0** b/f BIT-EXACT       |
+| #82 enduro starting actions    | ✅ partial | `08b98d4`                    | 45 → **17** b/f (3 b/f @ frame 0) |
+| #83 jutari row-0 HMOVE comb   | 🔬 deferred | (this entry)                 | needs xitari-faithful "clear only after render past HBLANK+8" refactor |
+| #84 jutari sprite Y 1-row off  | 🔬 deferred | (this entry)                 | needs per-cycle scanline/PF write timing alignment |
+
+### Earlier session 2026-06-07 rundown
 
 | Task           | Status   | Commits                       | Result                              |
 |----------------|----------|-------------------------------|-------------------------------------|
@@ -24,9 +40,6 @@ measured before/after, and any conformance (PXC) numbers that moved.
 | #75 jutari breakout jumping    | ✅ closed | `b7cd741` + `4ddb0b7`         | 99.7% breakout pixel-exact         |
 | #76 jutari auto-reset          | ✅ closed | `037526c`                    | env.terminal flips correctly       |
 | #77 pong $3f/$40 swap          | ✅ closed | `c3d6d42`                    | both ports bit-exact at frame 20   |
-| #78 pong score addrs $0D/$0E   | ✅ closed | `7fee15f` + `b10321a`         | pong paddle no longer freezes      |
-| #81 pitfall starting actions   | ✅ closed | (this commit)                 | 19.8 → **0** b/f BIT-EXACT       |
-| #82 enduro starting actions    | ✅ partial | (this commit)                 | 45 → **17** b/f (3 b/f @ frame 0) |
 
 ### Phase C pong screen residual: localized to 2 distinct TIA bugs (2026-06-09)
 
