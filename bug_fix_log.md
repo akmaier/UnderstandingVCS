@@ -41,6 +41,30 @@ starting-actions work.
 | #76 jutari auto-reset          | ✅ closed | `037526c`                    | env.terminal flips correctly       |
 | #77 pong $3f/$40 swap          | ✅ closed | `c3d6d42`                    | both ports bit-exact at frame 20   |
 
+### 🔬 Phase C remaining pong 24 px residual (after #84 closed)
+
+Per-row pong jutari↔xitari diff (frame 0, post-#84):
+
+| Row(s) | Cols | Px | Source | Task |
+|--------|------|-----|--------|------|
+| 0 | 0-7 | 8 | HMOVE comb missing | #83 |
+| 35 | 140-143 | 4 | Phantom 4-px sprite color 138 (COLUP1) | #85 |
+| 36 | 16-19, 140-143 | 8 | Phantom 4-px sprites color 250+138 | #85 |
+| 37 | 16-19 | 4 | Phantom 4-px sprite color 250 (COLUP0) | #85 |
+
+Investigation summary for the rows 35-37 phantoms (task #85, new):
+  - Inspected jutari TIA state at scanlines 65-72 (= rows 31-38 of
+    get_screen). ENAM0/ENAM1 toggle correctly per xitari trace
+    (bit-1 on/off alternating across consecutive scanlines).
+  - Confirmed pong cart accesses ENAM0 via $011D / ENAM1 via $011E
+    (the address mirrors that decode to TIA via A7=0 path) — both
+    engines decode these identically.
+  - The 4-px width + COLUP0/COLUP1 colors strongly suggest M0/M1
+    missile rendering at unexpected positions, OR NUSIZ multi-copy
+    of P0/P1 score sprites rendering an extra copy in jutari.
+  - Deferred — needs targeted trace of m0_x/m1_x positions + NUSIZ
+    register state at scanlines 69-71 vs xitari's render math.
+
 ### 🏆 Task #84 CLOSED (2026-06-10) — GRP* defer fix
 
 **Fix:** Added W_GRP0/W_GRP1 to the deferred-writes block in
