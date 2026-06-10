@@ -41,6 +41,49 @@ starting-actions work.
 | #76 jutari auto-reset          | ✅ closed | `037526c`                    | env.terminal flips correctly       |
 | #77 pong $3f/$40 swap          | ✅ closed | `c3d6d42`                    | both ports bit-exact at frame 20   |
 
+### Phase C HMOVE comb DEEP investigation (2026-06-10) — REVERTED again
+
+Tried (3rd attempt) to make jutari render the row-0 HMOVE comb that
+xitari produces. Used the diagnostic infrastructure to trace HMOVE
+writes in both engines via the bus trace tool.
+
+Findings:
+  - Both engines have ONLY ONE HMOVE strobe per frame in pong: at
+    scanline 27 cycle 0. Same instruction in the cart.
+  - Both engines write VBLANK off at scanline 27 cycle 3 (= color
+    clock 9, still in HBLANK).
+  - xitari produces an 8-px HMOVE comb at row 0 of get_screen (=
+    scanline 34 in TIA timing). 7 scanlines AFTER the HMOVE strobe.
+  - Jutari produces the comb at scanline 27 (= framebuffer row 27,
+    BELOW Y_START=34, not in get_screen output) → no comb visible.
+
+Root cause analysis: xitari's rendering is INCREMENTAL per CPU-cycle
+chunk (`mySystem->m6502().execute(25000)` runs until stop, intermediate
+state writes call `updateFrame` which renders the chunk-of-clocks
+that just elapsed). The `myHMOVEBlankEnabled` flag is checked +
+cleared per chunk based on whether the chunk covered past HBLANK+8.
+
+Jutari's rendering is PER-SCANLINE (whole row rendered in one shot
+at the end of any instruction that advances past a scanline boundary).
+Cannot easily decide whether comb was "actually painted" without
+breaking the per-scanline render model.
+
+Attempts that didn't work:
+  - "Only clear hmove_blank_pending if !vblank_active" — pong cart
+    flips VBLANK off mid-scanline-27, so scanline 27 ends as visible
+    and the flag clears anyway.
+  - "Only set, never clear in HMOVE handler" — pong only strobes
+    HMOVE once per frame, no clobber to prevent.
+  - Combination of both — same outcome, comb still missing.
+
+The fundamental issue: jutari's per-scanline render model cannot
+replicate xitari's per-chunk decision about whether the comb was
+painted. Needs a refactor to render incrementally per CPU-cycle chunk
+(matching xitari's TIA.cxx:1776 condition exactly) — a much larger
+piece of work than naive flag-clear-condition tweaks.
+
+Task #83 stays open. Deferred until per-cycle rendering refactor.
+
 ### Phase C pong screen residual: localized to 2 distinct TIA bugs (2026-06-09)
 
 Detailed per-row jutari↔xitari pong screen comparison (frame 0):
