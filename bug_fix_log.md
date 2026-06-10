@@ -41,6 +41,32 @@ starting-actions work.
 | #76 jutari auto-reset          | ✅ closed | `037526c`                    | env.terminal flips correctly       |
 | #77 pong $3f/$40 swap          | ✅ closed | `c3d6d42`                    | both ports bit-exact at frame 20   |
 
+### Phase C WSYNC scanline-boundary "76 stall" investigation (2026-06-10) — REVERTED
+
+Attempted fix for the 1-row-early sprite/PF bug (task #84). Hypothesis:
+jutari's WSYNC stall semantics at `scanline_cycle = 0` returns 0 cycles
+while xitari's `(228 - cycleOfScanline) / 3` returns 76 cycles (one
+full scanline advance).
+
+Change: removed the `mod()` in `tia_apply_wsync!` so stall = 76 when
+scanline_cycle = 0 (xitari-faithful). Updated the existing unit test
+to expect 76 stall + advance to scanline 1.
+
+Result:
+  - boot-end RAM: pong/breakout/space_invaders/pitfall STAY bit-exact,
+    enduro IMPROVES from 3 → 0 bytes ✓
+  - noop_300 frame-by-frame RAM: enduro REGRESSED from ~17 b/f →
+    ~30 b/f mean. **pitfall REGRESSED from BIT-EXACT (0 b/f) to ~6 b/f.**
+  - pong screen residual: UNCHANGED at 32 px (this WSYNC edge case
+    isn't what's driving the paddle 1-row offset).
+
+Net: regression. Reverted both TIA.jl + test changes.
+
+Lesson: jutari's existing "0 stall at boundary" behavior is silently
+compensating for some other timing bug elsewhere. Naive xitari-faithful
+WSYNC breaks that compensation. The 1-row-early paddle bug (task #84)
+needs a different angle of attack.
+
 ### Phase C HMOVE comb DEEP investigation (2026-06-10) — REVERTED again
 
 Tried (3rd attempt) to make jutari render the row-0 HMOVE comb that
