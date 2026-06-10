@@ -464,22 +464,32 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
         reg == W_ENAM0 || reg == W_ENAM1 || reg == W_ENABL ||
         reg == W_NUSIZ0 || reg == W_NUSIZ1 ||
         reg == W_COLUP0 || reg == W_COLUP1 || reg == W_COLUPF || reg == W_COLUBK ||
-        reg == W_CTRLPF || reg == W_REFP0 || reg == W_REFP1) &&
+        reg == W_CTRLPF || reg == W_REFP0 || reg == W_REFP1 ||
+        # Task #84 (2026-06-10): also defer GRP0/GRP1 (render value).
+        # VDELP latch side effects still fire immediately below.
+        reg == W_GRP0 || reg == W_GRP1) &&
        beam_cc >= HBLANK_COLOR_CLOCKS
         delay = _poke_activation_delay(reg, beam_cc)
         activation_clock = Int(beam_cc) + delay
-        # ALWAYS queue — even when activation_clock >= 228 (effect crosses
-        # into the next scanline). `tia_advance!`'s drain-remaining step
-        # applies those AFTER the per-color-clock loop, in activation
-        # order, into the carried-forward registers — so they are NOT
-        # clobbered by an earlier same-register pending write. P3i-g
-        # bugfix: the old immediate-apply-for->=228 path let Breakout's
-        # PF2=$3f@156 clobber a PF2=$00 clear issued at the bottom of the
-        # brick band, leaking $3f into the lower screen (the "red columns").
         push!(tia.pending_writes, (activation_clock, reg, value8))
-        return nothing                      # do NOT update registers yet
+        # GRP*-specific: run immediate VDELP / VDELBL latch side
+        # effects using the OLD register value (which is still in
+        # tia.registers[]). The latch must capture state at the cart's
+        # write moment, not at activation_clock.
+        if reg == W_GRP0
+            tia.grp1_old = tia.registers[W_GRP1 + 1]
+        elseif reg == W_GRP1
+            tia.grp0_old  = tia.registers[W_GRP0 + 1]
+            effective_enabl = tia.registers[W_ENABL + 1]
+            for (act_cc, w_reg, w_val) in tia.pending_writes
+                if w_reg == W_ENABL && act_cc <= Int(beam_cc)
+                    effective_enabl = w_val
+                end
+            end
+            tia.enabl_old = effective_enabl
+        end
+        return nothing                      # register update deferred
     end
-
 
     tia.registers[reg + 1] = value8
 

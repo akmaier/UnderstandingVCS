@@ -71,6 +71,14 @@ def _run_xitari(rom: Path, actions: list[int], n: int) -> list[np.ndarray]:
     rams = []
     for line in r.stdout.strip().splitlines():
         obj = json.loads(line)
+        # Task #80 / 2026-06-09: trace_dump emits a synthetic "frame 0"
+        # record with `boot_end=true` BEFORE any user-action frame, to
+        # let `boot_state_diff.jl` compare post-boot RAM directly. Skip
+        # it here so this tool's frame-N comparison stays aligned with
+        # jutari's user-action frames (jutari only emits user-action
+        # frames, no boot_end record).
+        if obj.get("boot_end"):
+            continue
         rams.append(np.frombuffer(bytes.fromhex(obj["ram"]), dtype=np.uint8))
     return rams
 

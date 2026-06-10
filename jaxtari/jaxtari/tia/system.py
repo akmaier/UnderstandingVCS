@@ -715,22 +715,38 @@ def tia_poke(tia: TIAState, addr: int, value: int,
             and beam_cc >= HBLANK_COLOR_CLOCKS:
         delay = _poke_activation_delay(reg, beam_cc)
         activation_clock = beam_cc + delay
-        # ALWAYS queue the write — even when `activation_clock >= 228`
-        # (the write's effect crosses into the next scanline). The
-        # per-color-clock render loop applies pending writes whose
-        # activation it reaches; any with `activation >= 228` are applied
-        # by `tia_advance`'s drain-remaining step AFTER the loop, in
-        # activation order — so they land in `final_registers` (carried
-        # to the next scanline) and are NOT clobbered. P3i-g bugfix: the
-        # old "fall through to immediate-apply for activation >= 228" path
-        # set the register NOW, but an earlier same-register pending write
-        # (e.g. Breakout's PF2=$3f@156) then drained during the render and
-        # overwrote it — so a PF2=$00 clear issued at the bottom of the
-        # brick band was lost, leaking $3f into the lower screen (the
-        # "red columns"). Deferring fixes that.
         return tia._replace(
             pending_writes=tia.pending_writes
             + ((activation_clock, reg, value8),),
+        )
+
+    # Task #84 (2026-06-10): also defer GRP0/GRP1 (render value).
+    # VDELP* / VDELBL latch SIDE EFFECTS must fire IMMEDIATELY at the
+    # cart's write moment (matching xitari) — they latch the CURRENT
+    # GRP0/GRP1/ENABL into grp0_old/grp1_old/enabl_old. But the
+    # RENDERED register value is deferred to its activation_clock so
+    # pre-write pixels use the OLD GRP value (matching xitari's
+    # incremental render). Without this defer, jaxtari applies GRP1=240
+    # to the WHOLE scanline including pre-write pixels — painting
+    # pong's right paddle 1 row early (row 95 vs xitari's 96).
+    if reg in (W_GRP0, W_GRP1) and beam_cc >= HBLANK_COLOR_CLOCKS:
+        delay = _poke_activation_delay(reg, beam_cc)
+        activation_clock = beam_cc + delay
+        new_pending = tia.pending_writes + ((activation_clock, reg, value8),)
+        if reg == W_GRP0:
+            return tia._replace(
+                pending_writes=new_pending,
+                grp1_old=int(tia.registers[W_GRP1]),
+            )
+        # reg == W_GRP1
+        effective_enabl = int(tia.registers[W_ENABL])
+        for act_cc, w_reg, w_val in tia.pending_writes:
+            if w_reg == W_ENABL and act_cc <= beam_cc:
+                effective_enabl = int(w_val)
+        return tia._replace(
+            pending_writes=new_pending,
+            grp0_old=int(tia.registers[W_GRP0]),
+            enabl_old=effective_enabl,
         )
 
     new_registers = tia.registers.at[reg].set(jnp.uint8(value8))

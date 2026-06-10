@@ -41,7 +41,34 @@ starting-actions work.
 | #76 jutari auto-reset          | ✅ closed | `037526c`                    | env.terminal flips correctly       |
 | #77 pong $3f/$40 swap          | ✅ closed | `c3d6d42`                    | both ports bit-exact at frame 20   |
 
-### 🔬 ROOT CAUSE FOUND for #84 (2026-06-10) — GRP* defer needed, but breakout-compensating
+### 🏆 Task #84 CLOSED (2026-06-10) — GRP* defer fix
+
+**Fix:** Added W_GRP0/W_GRP1 to the deferred-writes block in
+`tia_poke!`. VDELP* / VDELBL latch SIDE EFFECTS still run immediately
+at the cart's write moment (matching xitari), but the RENDERED
+register value is deferred to its activation_clock so pre-write pixels
+use the OLD GRP value.
+
+**Result:**
+  - pong PXC-S screen residual: **32 → 24 px** (paddle 1-row-early
+    fully GONE; rows 95/111 cleared from diff list)
+  - All 5 PXC1 ROMs stay bit-exact (pong, breakout, space_invaders,
+    pitfall, **enduro now bit-exact too!**) — seaquest unchanged at
+    6 b/f boot
+  - All ~1170 jutari runtests pass
+
+**Initial false-alarm:** First measurement of "breakout RAM regressed
+to 4.3 b/f" was caused by my Phase B boot_end emit in `trace_dump`
+(commit `533f706`) shifting the diff-tool comparison by one frame.
+xitari emits an extra `boot_end:true` record before user-action
+frames; jutari does not. The diff tool was index-comparing
+xitari[0]=boot_end vs jutari[0]=first_user_frame.
+
+**Fix applied to diff tool** (`tools/jutari_xitari_ram_diff.py`):
+skip records with `"boot_end":true` when parsing xitari output. With
+this, all comparisons are aligned and the GRP defer fix is clean.
+
+### 🔬 EARLIER (REVERTED then SUPERSEDED): Task #84 dead-end notes
 
 **The actual bug:** GRP0/GRP1 writes are NOT in jutari's deferred-writes
 list. They apply immediately to `tia.registers[]` and the whole
