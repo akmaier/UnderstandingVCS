@@ -41,6 +41,54 @@ starting-actions work.
 | #76 jutari auto-reset          | ✅ closed | `037526c`                    | env.terminal flips correctly       |
 | #77 pong $3f/$40 swap          | ✅ closed | `c3d6d42`                    | both ports bit-exact at frame 20   |
 
+### 🔬 ROOT CAUSE FOUND for #84 (2026-06-10) — GRP* defer needed, but breakout-compensating
+
+**The actual bug:** GRP0/GRP1 writes are NOT in jutari's deferred-writes
+list. They apply immediately to `tia.registers[]` and the whole
+scanline renders with the new value. xitari renders incrementally so
+pre-write pixels use OLD GRP value and post-write pixels use NEW value.
+
+Pong's right paddle: cart writes GRP1=240 at scanline 129 cycle 71
+(cc 213). Paddle position cols 140-143 = cc 208-211 (BEFORE the write).
+xitari: pre-write cycles use OLD GRP1=0 → no paddle on scanline 129;
+paddle starts at scanline 130. Jutari: whole scanline uses NEW
+GRP1=240 → paddle visible at scanline 129 (= row 95 vs xitari's 96).
+
+Confirmed via per-bus-op trace diff (jutari vs xitari pong frame 1):
+both engines write GRP1=240 at identical (scanline, scanline_cycle)
+positions. The cart code execution is byte-identical. The divergence
+is purely render-side.
+
+**The fix (REVERTED):** Add GRP0/GRP1 to the deferred-writes block,
+with VDELP* / VDELBL latch SIDE EFFECTS still running immediately at
+the cart's write moment.
+
+  - ✅ pong screen residual: 32 → 24 px (paddle 1-row-early bug fully
+    GONE — rows 95/111 cleared, remaining 24 px = row-0 HMOVE comb +
+    rows 35-37 PF score-mode phantoms)
+  - ✅ jutari runtests all pass (EXIT=0)
+  - ❌ breakout PXC1 RAM (jutari↔xitari noop_10) regressed from
+    BIT-EXACT to 4.3 b/f mean
+  - ❌ enduro/pitfall PXC1 RAM also worse
+
+**Why breakout regresses:** breakout's cart code relies on the
+SPURIOUS-IMMEDIATE-GRP behavior in jutari to maintain its RAM
+sequence. The cart probably reads collision latches that pick up
+phantom sprites caused by the whole-scanline-GRP application; removing
+those phantoms changes the collision pipeline output, which changes
+the cart's branch decisions, which changes RAM.
+
+**Lesson:** Multiple jutari TIA "bugs" silently compensate for each
+other. Fixing one in isolation exposes another. To ship the GRP defer
+without breakout regression, the related compensating bug(s) must be
+identified and fixed first. Likely candidates: collision detection
+during VBLANK boundary, mid-instruction TIA-read catch-up, or floating-bus
+value when reading TIA write-only registers.
+
+Task #84 root cause is now KNOWN. The fix is a 30-line patch that
+shipping requires a parallel investigation into what breakout depends
+on. Deferred until that investigation is done.
+
 ### Phase C WSYNC scanline-boundary "76 stall" investigation (2026-06-10) — REVERTED
 
 Attempted fix for the 1-row-early sprite/PF bug (task #84). Hypothesis:

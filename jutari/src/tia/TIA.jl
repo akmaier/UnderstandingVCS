@@ -480,6 +480,7 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
         return nothing                      # do NOT update registers yet
     end
 
+
     tia.registers[reg + 1] = value8
 
     if reg == W_WSYNC
