@@ -169,6 +169,30 @@ In both regions: **xitari pixel = $0c (brown), jutari pixel = $00
      — somewhere xitari's COLUBK becomes `$0c` while jutari's stays
      `$d6`.
 
+**Additional finding (user follow-up):** The DIGIT SHAPES themselves
+are wrong, not just the BG color. xitari row 22 cols 28-66 has a
+COMPLEX pattern with `$d2 / $0c` alternation in non-uniform segment
+widths (the actual digit topology). jutari row 22 cols 28-66 is a
+CLEAN 4-on / 4-off `$d2 / $00` alternation — a uniform block
+pattern.
+
+Pitfall draws the score+timer digits with PLAYER multi-copy
+(NUSIZ0=$13 / NUSIZ1=$13 = three close copies, no scaling) and
+writes new GRP0/GRP1 values BETWEEN each copy's rendered cc range
+(the classic "draw three digits with one sprite" technique). For
+each scanline of the digit, the cart issues 7 GRP writes at
+cc 9 / 33 / 57 / 90 / 99 / 108 / 117 with DIFFERENT values per
+copy. xitari's per-cycle render picks up each value at its
+correct sub-scanline cc — three different digit shapes per row.
+jutari's deferred-write block queues all 7 GRP writes; the per-cc
+loop in `tia_advance!` should also pick up each at its
+activation_clock — but the rendered output shows only ONE pattern
+applied to all three copies, suggesting the deferred GRP writes
+aren't being interleaved with copy positions correctly. This is
+the same class of bug as the original pre-#84 GRP defer issue;
+it may be a residual that #84 closed for single-copy sprites but
+not for NUSIZ multi-copy.
+
 **Root cause: NOT YET LOCALIZED.** Possible directions:
 
   - xitari may treat some address differently as a TIA mirror that
