@@ -14,6 +14,37 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🔬 Task #80 SWEEP RESULTS (2026-06-11)
+
+Ran `tools/seaquest_boot_probe.jl` + a reset-timing sweep on jutari's
+seaquest boot to rule out hypotheses:
+
+  - **Reset switch state is irrelevant**: pressing reset for all 4
+    boot reset frames vs leaving it unpressed yields the same
+    `RAM[$01]=$3f`. Seaquest's cart code does NOT branch on SWCHB
+    bit 0 — its frame-counter increment runs every frame regardless.
+  - **Reset switch press timing is irrelevant**: pressing reset at
+    any frame offset (60..63) leaves `RAM[$01]=$3f` unchanged.
+  - **Hold count IS the lever**: reset_hold = 3 gives `$3e` (matches
+    xitari); reset_hold = 4 gives `$3f` (the off-by-1 jutari shows).
+    So jutari's 64-frame boot does 63 cart-increments while xitari's
+    does 62.
+
+Conclusion: the divergence is NOT a SWCHB/event-bus latency bug at
+the reset transition (the earlier round 2 hypothesis). xitari must be
+silently skipping ONE additional frame's cart code somewhere — most
+likely related to either an interrupt-cycle / RIOT timer tick or a
+partial-frame `m6502.stop()` interaction that doesn't reach the cart's
+increment instruction.
+
+Closing #80 properly needs a per-bus-op diff of the last few boot
+frames between jutari and xitari (the cycle-trace tooling at
+`tools/cpu_tia_cycle_trace.jl` + `tools/trace_dump --bus-trace` can
+do this, but requires patching trace_dump to emit boot-burn bus
+ops too — currently it only traces user-action frames). PXC1 RAM
+divergence stays at 4 bytes for seaquest (1 byte at boot end +
+3 downstream propagation).
+
 ### 🏆 Task #83 CLOSED (2026-06-11) — Y_START framebuffer-write gate (pong BIT-EXACT)
 
 **Root cause** (the actual, narrow one — not the "needs per-cycle render refactor"
