@@ -139,6 +139,57 @@ Per-row pong jutari↔xitari diff (frame 0, post-#84):
 | 36 | 16-19, 140-143 | 8 | Phantom 4-px sprites color 250+138 | #85 |
 | 37 | 16-19 | 4 | Phantom 4-px sprite color 250 (COLUP0) | #85 |
 
+### 🔬 Task #86 NEW (2026-06-11) — pitfall HUD render diverges from xitari
+
+**Symptom** (user-visible): pitfall's top score/timer overlay renders
+with a BLACK background in jutari where xitari renders a brown ($0c)
+background. Cross-ROM PXC-S shows 553 px residual (worst frame),
+concentrated at:
+
+  - Rows 9-29 cols 28-66 (top score + timer)
+  - Rows 190-196 cols 29-60 (bottom HUD strip)
+
+In both regions: **xitari pixel = $0c (brown), jutari pixel = $00
+(black)**.
+
+**Investigation done:**
+
+  1. The cart writes COLUBK only 3 times per pitfall frame:
+     `sl 13 → $d6`, `sl 151 → $00`, `sl 167 → $00` (real TIA addresses
+     with A7=0 — the trace's $0089 / $00c9 events are RAM mirrors,
+     NOT TIA, and decode to RAM[$09] / RAM[$49] respectively in both
+     jutari and xitari).
+  2. Between sl 13 and sl 151, jutari's COLUBK register stays at
+     `$d6` — confirmed via per-scanline debug print in `tia_advance!`.
+  3. The HUD scanlines (~ sl 43-63 = display rows 9-29) thus render
+     PF-clear pixels as `$d6` (brown-purple).
+  4. xitari's fixture shows `$0c` (brown) at those PF-clear pixels.
+  5. PXC1 RAM is bit-exact for pitfall at end-of-frame, so the carts'
+     RAM is identical. But mid-frame TIA register state must differ
+     — somewhere xitari's COLUBK becomes `$0c` while jutari's stays
+     `$d6`.
+
+**Root cause: NOT YET LOCALIZED.** Possible directions:
+
+  - xitari may treat some address differently as a TIA mirror that
+    jutari treats as RAM (need direct A0-A12 decoding comparison
+    against `xitari/emucore/System.cxx`).
+  - Pitfall may use a mid-scanline COLUBK strobe via WSYNC + sub-
+    instruction timing that jutari deferred-writes doesn't capture.
+  - Pitfall may use the CTRLPF SCOREMODE bit (D1) in a way jutari
+    doesn't honor — currently `CTRLPF = $01` (just D0 reflect), but
+    that should still render BG = COLUBK for PF-clear.
+
+**Player sprite misalignment** (also user-reported): on the noop_10
+fixture, all mid-screen pixels match between engines — the misalignment
+likely shows up only during motion in the 60s random-action video.
+The HUD divergence likely also affects how the player sprite renders
+(e.g. brown background bleed into the player's torso outline). Same
+investigation will likely localise both.
+
+Task #86 created to track. PXC1 RAM stays bit-exact; PXC2 cross-port
+unaffected (both jutari and jaxtari render the same wrong HUD).
+
 ### 🔬 Task #80 + #83 INVESTIGATION round 2 (2026-06-11)
 
 **#80 — seaquest boot off-by-1, per-frame probe:**
