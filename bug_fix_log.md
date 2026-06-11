@@ -52,6 +52,52 @@ Per-row pong jutari↔xitari diff (frame 0, post-#84):
 | 36 | 16-19, 140-143 | 8 | Phantom 4-px sprites color 250+138 | #85 |
 | 37 | 16-19 | 4 | Phantom 4-px sprite color 250 (COLUP0) | #85 |
 
+### 🔬 Task #80 + #83 INVESTIGATION round 2 (2026-06-11)
+
+**#80 — seaquest boot off-by-1, per-frame probe:**
+
+`tools/seaquest_boot_probe.jl` runs the 60 NOOP + 4 RESET boot burn
+step by step and prints `tia.frame` / `RAM[$01]` after each frame. Key
+observations:
+
+  - After 60 NOOPs jutari is at `tia.frame=60, RAM[$01]=$3b` (= 59).
+    So 60 frames produce 59 increments — the FIRST NOOP frame after
+    `console_reset!` does NOT increment RAM[$01].
+  - The 4 RESET frames each increment RAM[$01], ending at $3f (= 63).
+
+So jutari does **63 cart-increments in 64 boot frames** (skips 1).
+xitari does **62 cart-increments in 64 boot frames** (skips 2).
+xitari skips ONE EXTRA frame that jutari doesn't. Most likely the
+**first RESET-pressed frame** — xitari's `Event::ConsoleReset → SWCHB`
+propagation might lag jutari's immediate `set_swchb_input!`, so xitari's
+first reset frame still sees `reset_not_pressed` on cart's
+SWCHB read while jutari already sees `reset_pressed`. Seaquest's
+cart-frame loop probably branches on the SWCHB read to choose
+"increment counter" vs "enter reset routine".
+
+**Plausible quick fix (untested):** in `env_reset!`, set
+`console_switches!(reset_pressed=true)` AFTER the first reset-frame
+runs. That makes jutari's first reset frame run with
+reset_not_pressed, matching xitari. Worth trying; risk = other ROMs
+that rely on the current timing may regress.
+
+**#83 — VBLANK transition timing:**
+
+Jutari's `vblank_active` flips to false 7 scanlines earlier than
+xitari's. xitari renders incrementally so VBLANK status is consulted
+per-pixel; jutari renders whole-scanline so once vblank_active is
+false, the WHOLE scanline renders in the visible branch. With the
+per-cycle render refactor (the architectural work the original task
+#83 plan calls for), the HMOVE-blank flag would persist through the
+xitari-equivalent VBLANK scanlines and land on display row 0 like
+xitari.
+
+Without that refactor, every targeted patch lands on a scanline that
+gets cropped out by Y_START=34, leaving the visible row-0 still
+missing its comb. Both #80 and #83 share this "jutari renders per
+scanline, xitari per cycle" root-cause class — closing them properly
+needs the same refactor, not piecemeal patches.
+
 ### 🔬 Task #80 INVESTIGATION (2026-06-11) — xitari VSYNC pulse-width gate
 
 While auditing the VSYNC handler for seaquest's `RAM[$01] = $3f` (jutari)
