@@ -52,6 +52,39 @@ Per-row pong jutari↔xitari diff (frame 0, post-#84):
 | 36 | 16-19, 140-143 | 8 | Phantom 4-px sprites color 250+138 | #85 |
 | 37 | 16-19 | 4 | Phantom 4-px sprite color 250 (COLUP0) | #85 |
 
+### 🔬 Task #80 INVESTIGATION (2026-06-11) — xitari VSYNC pulse-width gate
+
+While auditing the VSYNC handler for seaquest's `RAM[$01] = $3f` (jutari)
+vs `$3e` (xitari) boot-end off-by-1, I looked at xitari `case 0x00`
+(TIA.cxx:2010-2031):
+
+  - On 0→1 rising edge: `myVSYNCFinishClock = clock + 228` (= 1 scanline
+    threshold).
+  - On 1→0 falling edge: ONLY count as frame end if
+    `clock >= myVSYNCFinishClock`. Sub-scanline VSYNC pulses are
+    SILENTLY IGNORED.
+
+jutari currently ends a frame on ANY 1→0 falling edge regardless of
+pulse width — which on the surface looks like the cause of the off-by-1.
+
+**Result of the attempt:** I added a `vsync_finish_cycles` field +
+threshold gate. After regen, seaquest's `RAM[$01]` was STILL `$3f`
+— the pulse-width gate didn't move it. So the boot-end off-by-1 is
+NOT a transient sub-scanline VSYNC pulse; it's a different drift
+(maybe a 1-CPU-cycle alignment of the first frame, or first-instruction
+RIOT INTIM read timing).
+
+The patch ALSO broke 3 jutari unit tests in `runtests.jl` (lines
+2240-2280) — those tests call `tia_poke!(W_VSYNC, 0x02)` then
+`tia_poke!(W_VSYNC, 0x00)` back-to-back without advancing cycles, so
+the unit-test VSYNC pulse has 0-cycle duration and the threshold blocks
+it. Reverted the change so the threshold isn't in tree. If a future
+attempt brings it back, update the tests to advance `tia.total_cycles`
+between the rise and fall (e.g. via `tia_advance!(tia, 80)`).
+
+The boot-end off-by-1 is still open; needs different investigation
+(per-bus-op diff vs xitari trace_dump in the boot-burn region).
+
 ### 🔬 Task #83 INVESTIGATION (2026-06-11) — HMOVE row-0 comb localized but NOT closed
 
 **Symptom:** pong row 0 cols 0-7 paint as $34 (BG) in jutari but $00
