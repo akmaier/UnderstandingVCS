@@ -592,6 +592,8 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
         end
         tia.enabl_old = effective_enabl
     end
+    # Task #85 (2026-06-11) note: RESMP* 1→0 transition reposition is
+    # intentionally omitted (see deferred-block comment above for why).
 
     return nothing
 end
@@ -907,6 +909,16 @@ associated player (COLUP*).
 function _overlay_missile!(pixels::Vector{UInt8}, tia::TIAState, missile::Int)
     enam_reg = missile == 0 ? W_ENAM0 : W_ENAM1
     (tia.registers[enam_reg + 1] & 0x02) == 0 && return nothing
+    # Task #85 (2026-06-11): RESMP*=1 means "reset missile to player AND
+    # hide" — the missile is locked to its player's center and INVISIBLE.
+    # Xitari `case 0x1D/0x1E` gates `myEnabledObjects` on `ENAM* && !RESMP*`
+    # (TIA.cxx:2525, 2536), and so does case 0x28/0x29. Without this gate,
+    # pong's "color-stripe-below-score" routine — which enables ENAM*=$02
+    # while RESMP*=$02 to keep the missile latched but invisible — paints
+    # 4 px phantoms at rows 35-37 cols 16-19 (M0) and 140-143 (M1) using
+    # COLUP0=$38 / COLUP1=$c8. That's the entire 16 px pong residual.
+    resmp_reg = missile == 0 ? W_RESMP0 : W_RESMP1
+    (tia.registers[resmp_reg + 1] & 0x02) != 0 && return nothing
     color_reg = missile == 0 ? W_COLUP0 : W_COLUP1
     nusiz_reg = missile == 0 ? W_NUSIZ0 : W_NUSIZ1
     color = tia.registers[color_reg + 1]
@@ -1145,8 +1157,19 @@ function _object_pixel_sets(tia::TIAState)
         return out
     end
 
-    function _missile_set(enam_reg, nusiz_reg, x)
+    function _missile_set(enam_reg, nusiz_reg, resmp_reg, x)
         (tia.registers[enam_reg + 1] & 0x02) == 0 && return Set{Int}()
+        # Task #85 (2026-06-11): RESMP*=1 → missile invisible (locked to
+        # player center, no pixels rendered). Without this gate, pong's
+        # "color-stripe-below-score" code path — which keeps ENAM0=ENAM1
+        # = $02 enabled but uses RESMP*=$02 to hide the missiles — paints
+        # 16 px phantoms (rows 35-37, cols 16-19 + 140-143) using
+        # COLUP0=$38 / COLUP1=$c8 (the score colors). Mirrors xitari
+        # `case 0x1D/0x1E` which gates `myEnabledObjects` on
+        # `ENAM* && !RESMP*` (TIA.cxx:2525, 2536). Same gate is also
+        # applied in `_overlay_missile!` for the (unused) legacy
+        # whole-scanline path.
+        (tia.registers[resmp_reg + 1] & 0x02) != 0 && return Set{Int}()
         nusiz = tia.registers[nusiz_reg + 1]
         width = 1 << ((Int(nusiz) >> 4) & 0x03)
         copy_offsets, _ = _nusiz_player_layout(nusiz)
@@ -1165,8 +1188,8 @@ function _object_pixel_sets(tia::TIAState)
         bl = bl,
         p0 = _player_set(W_GRP0, W_REFP0, W_NUSIZ0, tia.p0_x),
         p1 = _player_set(W_GRP1, W_REFP1, W_NUSIZ1, tia.p1_x),
-        m0 = _missile_set(W_ENAM0, W_NUSIZ0, tia.m0_x),
-        m1 = _missile_set(W_ENAM1, W_NUSIZ1, tia.m1_x),
+        m0 = _missile_set(W_ENAM0, W_NUSIZ0, W_RESMP0, tia.m0_x),
+        m1 = _missile_set(W_ENAM1, W_NUSIZ1, W_RESMP1, tia.m1_x),
     )
 end
 

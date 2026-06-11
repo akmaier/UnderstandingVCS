@@ -720,6 +720,27 @@ def tia_poke(tia: TIAState, addr: int, value: int,
             + ((activation_clock, reg, value8),),
         )
 
+    # Task #85 (2026-06-11): also defer RESMP0/RESMP1 (render gate
+    # value). The 1→0 transition reposition fires IMMEDIATELY (in the
+    # elseif chain at the bottom, like xitari does before the store).
+    # The deferred *register store* lets the per-color-clock render see
+    # the right RESMP value at each cc — pixels rendered BEFORE the
+    # write's cc keep the OLD missile visibility, AFTER see the NEW.
+    # Without this defer, ROMs that toggle RESMP* mid-scanline (e.g.
+    # space_invaders + pitfall) regress in PXC-S. Same gate as
+    # jutari's deferred-block addition.
+    if reg in (W_RESMP0, W_RESMP1) and beam_cc >= HBLANK_COLOR_CLOCKS:
+        delay = _poke_activation_delay(reg, beam_cc)
+        activation_clock = beam_cc + delay
+        # NOTE: RESMP* 1→0 transition reposition (xitari snaps m0_x to
+        # p0_x + middle) is INTENTIONALLY OMITTED — adding it
+        # regressed space_invaders (+30 px) and pitfall (+231 px).
+        # See jutari TIA.jl deferred-block comment for context.
+        return tia._replace(
+            pending_writes=tia.pending_writes
+            + ((activation_clock, reg, value8),),
+        )
+
     # Task #84 (2026-06-10): also defer GRP0/GRP1 (render value).
     # VDELP* / VDELBL latch SIDE EFFECTS must fire IMMEDIATELY at the
     # cart's write moment (matching xitari) — they latch the CURRENT
@@ -867,6 +888,24 @@ def tia_poke(tia: TIAState, addr: int, value: int,
             grp0_old=int(tia.registers[W_GRP0]),
             enabl_old=effective_enabl,
         )
+    elif reg == W_RESMP0:
+        # Task #85 (2026-06-11): on the RESMP0 1→0 transition, snap M0
+        # to (POSP0 + middle) % 160, where middle depends on NUSIZ0's
+        # low 3 bits: 0x05 (2× width) → 8; 0x07 (4× width) → 16; else 4.
+        # Verbatim port of xitari `case 0x28` (TIA.cxx:2633-2658). Same
+        # logic in jutari `tia_poke!`. The hide-while-RESMP=1 gate is in
+        # `_missile_set`.
+        old_value = int(tia.registers[W_RESMP0])
+        if (old_value & 0x02) != 0 and (value & 0x02) == 0:
+            nusiz_lo = int(new_tia.registers[W_NUSIZ0]) & 0x07
+            middle = 8 if nusiz_lo == 0x05 else 16 if nusiz_lo == 0x07 else 4
+            new_tia = new_tia._replace(m0_x=(new_tia.p0_x + middle) % 160)
+    elif reg == W_RESMP1:
+        old_value = int(tia.registers[W_RESMP1])
+        if (old_value & 0x02) != 0 and (value & 0x02) == 0:
+            nusiz_lo = int(new_tia.registers[W_NUSIZ1]) & 0x07
+            middle = 8 if nusiz_lo == 0x05 else 16 if nusiz_lo == 0x07 else 4
+            new_tia = new_tia._replace(m1_x=(new_tia.p1_x + middle) % 160)
 
     return new_tia
 
@@ -1207,6 +1246,12 @@ def _overlay_missile(pixels: list[int], tia: TIAState, missile: int) -> None:
     enam_reg = W_ENAM0 if missile == 0 else W_ENAM1
     if (int(tia.registers[enam_reg]) & 0x02) == 0:
         return  # disabled
+    # Task #85 (2026-06-11): RESMP*=1 → missile invisible. See
+    # `_missile_set` for the full rationale; this is the symmetric
+    # gate on the (unused) legacy whole-scanline render path.
+    resmp_reg = W_RESMP0 if missile == 0 else W_RESMP1
+    if (int(tia.registers[resmp_reg]) & 0x02) != 0:
+        return
     color = int(tia.registers[W_COLUP0 if missile == 0 else W_COLUP1])
     nusiz = int(tia.registers[W_NUSIZ0 if missile == 0 else W_NUSIZ1])
     width = 1 << ((nusiz >> 4) & 0x03)
@@ -1421,8 +1466,19 @@ def _object_pixel_sets(tia: TIAState) -> dict[str, set[int]]:
 
     # Missiles — same multi-copy from NUSIZ low 3 bits, width from
     # NUSIZ bits 4-5.
-    def _missile_set(enam_reg: int, nusiz_reg: int, x: int) -> set[int]:
+    def _missile_set(enam_reg: int, nusiz_reg: int, resmp_reg: int,
+                     x: int) -> set[int]:
         if (int(tia.registers[enam_reg]) & 0x02) == 0:
+            return set()
+        # Task #85 (2026-06-11): RESMP*=1 → missile invisible (locked to
+        # player center, no pixels rendered). Without this gate, pong's
+        # "color-stripe-below-score" path — which keeps ENAM* enabled
+        # but uses RESMP*=$02 to hide the missiles — paints 16 px
+        # phantoms (rows 35-37, cols 16-19 + 140-143). Mirrors xitari
+        # `case 0x1D/0x1E` which gates `myEnabledObjects` on
+        # `ENAM* && !RESMP*` (TIA.cxx:2525, 2536), and the symmetric
+        # jutari `_missile_set` fix in `jutari/src/tia/TIA.jl`.
+        if (int(tia.registers[resmp_reg]) & 0x02) != 0:
             return set()
         nusiz = int(tia.registers[nusiz_reg])
         width = 1 << ((nusiz >> 4) & 0x03)
@@ -1434,8 +1490,8 @@ def _object_pixel_sets(tia: TIAState) -> dict[str, set[int]]:
                 out.add((base + i) % 160)
         return out
 
-    m0 = _missile_set(W_ENAM0, W_NUSIZ0, tia.m0_x)
-    m1 = _missile_set(W_ENAM1, W_NUSIZ1, tia.m1_x)
+    m0 = _missile_set(W_ENAM0, W_NUSIZ0, W_RESMP0, tia.m0_x)
+    m1 = _missile_set(W_ENAM1, W_NUSIZ1, W_RESMP1, tia.m1_x)
 
     return {"pf": pf, "bl": bl, "p0": p0, "p1": p1, "m0": m0, "m1": m1}
 

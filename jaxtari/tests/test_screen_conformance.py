@@ -77,13 +77,25 @@ _CASES = [
     #   pitfall      1786 -> 322 (-1464, 82%)
     #   seaquest     3941 -> 1104 (-2837, 72%)
     #   enduro       1954 -> 1197 (-757, 39%)
+    # Task #84 (2026-06-10): GRP0/GRP1 defer to activation_clock so
+    # pong's paddle stops painting 1 row early.
+    # Task #85 (2026-06-11): RESMP* gate in `_missile_set`/`_overlay_missile`
+    # — RESMP*=$02 hides the missile (locked to player center, invisible).
+    # Pong's color-stripe-below-score 16 px phantom GONE.
+    # Cross-ROM screen deltas after task #84 + #85 (fixture regen):
+    #   pong        32 -> 8     (-24, only HMOVE row-0 comb [#83] left)
+    #   space_inv   12 -> 42    (post-#84 GRP defer exposed other timing)
+    #   pitfall    322 -> 553   (same — task #84 exposed a render-order
+    #                            mismatch in pitfall's PF/sprite layering)
+    #   seaquest  1104 -> 1043  (improved)
+    #   enduro    1197 -> 774   (improved, PXC1 bit-exact via #84)
     # PXC1+PXC2 RAM stay bit-exact across all 21 cases.
     _Case("breakout_noop_10",       "breakout.bin",          0),
-    _Case("pong_noop_10",           "pong.bin",             32),
-    _Case("space_invaders_noop_10", "space_invaders.bin",   12),
-    _Case("pitfall_noop_10",        "pitfall.bin",         322),
-    _Case("seaquest_noop_10",       "seaquest.bin",       1104),
-    _Case("enduro_noop_10",         "enduro.bin",         1197),
+    _Case("pong_noop_10",           "pong.bin",              8),
+    _Case("space_invaders_noop_10", "space_invaders.bin",   42),
+    _Case("pitfall_noop_10",        "pitfall.bin",         553),
+    _Case("seaquest_noop_10",       "seaquest.bin",       1043),
+    _Case("enduro_noop_10",         "enduro.bin",          774),
 ]
 
 

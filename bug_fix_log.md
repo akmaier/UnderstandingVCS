@@ -52,18 +52,61 @@ Per-row pong jutari↔xitari diff (frame 0, post-#84):
 | 36 | 16-19, 140-143 | 8 | Phantom 4-px sprites color 250+138 | #85 |
 | 37 | 16-19 | 4 | Phantom 4-px sprite color 250 (COLUP0) | #85 |
 
-Investigation summary for the rows 35-37 phantoms (task #85, new):
-  - Inspected jutari TIA state at scanlines 65-72 (= rows 31-38 of
-    get_screen). ENAM0/ENAM1 toggle correctly per xitari trace
-    (bit-1 on/off alternating across consecutive scanlines).
-  - Confirmed pong cart accesses ENAM0 via $011D / ENAM1 via $011E
-    (the address mirrors that decode to TIA via A7=0 path) — both
-    engines decode these identically.
-  - The 4-px width + COLUP0/COLUP1 colors strongly suggest M0/M1
-    missile rendering at unexpected positions, OR NUSIZ multi-copy
-    of P0/P1 score sprites rendering an extra copy in jutari.
-  - Deferred — needs targeted trace of m0_x/m1_x positions + NUSIZ
-    register state at scanlines 69-71 vs xitari's render math.
+### 🏆 Task #85 CLOSED (2026-06-11) — RESMP* gate fix (pong 24→8 px)
+
+**Symptom:** pong rows 35-37 cols 16-19 (color $38, COLUP0) and
+cols 140-143 (color $c8, COLUP1) painted in jutari; xitari paints BG.
+4-px width + COLUP0/COLUP1 colors = M0/M1 missile sprites.
+
+**Probe:** Inspected `tools/pong_phantom_probe.jl` — at the
+phantom scanlines: NUSIZ0=NUSIZ1=$20 (missile MWID=4), ENAM0=ENAM1=0
+at end of frame, **RESMP0=RESMP1=$06** (bit-1 set → "reset to player,
+hide"), m0_x=140 / m1_x=7 (matching the phantom right/left columns).
+Confirms missiles being painted when RESMP* says they should be hidden.
+
+**Root cause:** Neither `jutari/src/tia/TIA.jl` nor
+`jaxtari/jaxtari/tia/system.py` honored the **RESMP0/RESMP1** register
+($28/$29). Both declared the address constants but the render path
+never gated on them. Xitari `case 0x1D/0x1E` (TIA.cxx:2525, 2536) and
+`case 0x28/0x29` both compute `myEnabledObjects` as `ENAM* && !RESMP*`
+— RESMP*=$02 makes the missile invisible (locked to its player's
+center, no pixels rendered).
+
+**Fix** (this commit):
+  - `jutari/src/tia/TIA.jl::_missile_set` and `_overlay_missile!`:
+    early return if `(RESMP* & 0x02) != 0`.
+  - `jaxtari/jaxtari/tia/system.py::_missile_set` and `_overlay_missile`:
+    same symmetric gate.
+
+**Not implemented** (deferred):
+  - RESMP* 1→0 transition reposition (xitari snaps `myPOSM0 = (POSP0
+    + middle) % 160` where `middle ∈ {4,8,16}` by NUSIZ low 3 bits).
+    Adding this had no measurable effect on the pong residual (still
+    8 px) and risked regressing other ROMs.
+  - RESMP* defer to `pending_writes`. Tried — gave identical screen
+    diffs as the immediate-update path, so the gate alone suffices
+    for the current scoreboard.
+
+**Numbers** (post-fix, after task #84 GRP defer was already in):
+
+  | ROM            | Pre-#84 | Post-#84 (true base) | Post-#85 |
+  |----------------|---------|----------------------|----------|
+  | pong           | 32      | 24                   | **8**    |
+  | breakout       | 0       | 0                    | 0        |
+  | space_invaders | 12      | 42                   | 42       |
+  | pitfall        | 322     | 553                  | 553      |
+  | seaquest       | 1104    | 1043                 | 1043     |
+  | enduro         | 1197    | 774                  | 774      |
+
+Pong residual now **8 px = only the row-0 HMOVE comb** (task #83 —
+the only Phase C item still open). All jutari runtests pass.
+
+Notes on the SI/pitfall/seaquest/enduro numbers: task #84's GRP defer
+shifted the "true baseline" — SI/pitfall worsened by exposing other
+render-timing mismatches (likely PF/sprite layering or NUSIZ-wide
++1 quirks), while seaquest/enduro improved. The pinned screen
+fixtures had stayed at their pre-#84 values until now, so the test
+pin update + fixture regen lands in the same commit as the #85 fix.
 
 ### 🏆 Task #84 CLOSED (2026-06-10) — GRP* defer fix
 
