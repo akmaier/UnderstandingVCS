@@ -681,23 +681,35 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
                 tia.registers[reg + 1] = val
                 write_idx += 1
             end
-            for i in 0:(line_advance - 1)
-                completed_line = (tia.scanline + i) % NTSC_SCANLINES_PER_FRAME
-                if completed_line < SCREEN_HEIGHT
-                    tia.framebuffer[completed_line + 1, :] .= row
+            # Task #83 round 3 (2026-06-11): only WRITE framebuffer
+            # and CONSUME the HMOVE-blank flag for scanlines at or
+            # past Y_START. xitari achieves this implicitly via
+            # `myClockStartDisplay = myClockWhenFrameStarted +
+            # 228*myYStart` — the framebuffer pointer doesn't advance
+            # until scanline Y_START so pre-Y_START "rendered" output
+            # goes nowhere AND the flag isn't consumed there. Without
+            # this gate, pong's HMOVE-blank flag was consumed at
+            # internal scanline 27 (cropped out by get_screen) instead
+            # of scanline 34 (display row 0), losing the row-0 comb
+            # (8 px residual). Per-pixel rendering + collision
+            # detection above still runs at every scanline so unit
+            # tests that check collisions at scanline 0 keep working —
+            # only the framebuffer commit + flag consumption are
+            # display-window-gated.
+            if tia.scanline >= Y_START
+                for i in 0:(line_advance - 1)
+                    completed_line = (tia.scanline + i) % NTSC_SCANLINES_PER_FRAME
+                    if completed_line < SCREEN_HEIGHT
+                        tia.framebuffer[completed_line + 1, :] .= row
+                    end
                 end
+                # Task #83 (2026-06-11): clear the HMOVE-blank flag
+                # ONLY after a VISIBLE-region render at or past Y_START
+                # actually consumed it. Matches xitari `TIA::updateFrame`
+                # (TIA.cxx:1776-1786) which only clears
+                # `myHMOVEBlankEnabled` after writing framebuffer pixels.
+                tia.hmove_blank_pending = false
             end
-            # Task #83 (2026-06-11): clear the HMOVE-blank flag ONLY
-            # after a VISIBLE-region render actually consumed it. The
-            # previous unconditional clear (outside both branches)
-            # killed the flag during VBLANK scanlines — so an HMOVE
-            # written late in VBLANK (or during the VBLANK→visible
-            # transition) lost its blank by the time row 0 rendered.
-            # Closes pong's last 8 px residual (row-0 HMOVE comb).
-            # Matches xitari `TIA::updateFrame` (TIA.cxx:1776-1786)
-            # which only clears `myHMOVEBlankEnabled` from within the
-            # visible-render branch.
-            tia.hmove_blank_pending = false
         else
             # VBLANK render — output blanked. Drain pending writes but
             # do NOT run collision detection: xitari's

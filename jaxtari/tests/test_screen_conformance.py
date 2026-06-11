@@ -90,8 +90,10 @@ _CASES = [
     #   seaquest  1104 -> 1043  (improved)
     #   enduro    1197 -> 774   (improved, PXC1 bit-exact via #84)
     # PXC1+PXC2 RAM stay bit-exact across all 21 cases.
+    # Task #83 round 3 (2026-06-11): Y_START gate closes pong's last 8 px
+    # row-0 HMOVE comb residual — **pong BIT-EXACT**.
     _Case("breakout_noop_10",       "breakout.bin",          0),
-    _Case("pong_noop_10",           "pong.bin",              8),
+    _Case("pong_noop_10",           "pong.bin",              0),
     _Case("space_invaders_noop_10", "space_invaders.bin",   42),
     _Case("pitfall_noop_10",        "pitfall.bin",         553),
     _Case("seaquest_noop_10",       "seaquest.bin",       1043),

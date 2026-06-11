@@ -946,6 +946,10 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
     # contained subsequent scanlines until the next poke."
     pending = tia.pending_writes
     tia_for_render = tia                                  # local copy we mutate
+    # Task #83 round 3: see comment around the assignment inside the
+    # visible-render branch. Initialised here so the post-render
+    # `new_hmove_blank` decision can read it even when line_advance == 0.
+    wrote_framebuffer_this_advance = False
     if line_advance > 0:
         # Sort pending writes by activation_clock (so we apply them in
         # beam-order during the per-color-clock loop).
@@ -1014,10 +1018,22 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
                 write_idx += 1
 
             row = jnp.array(row_pixels, dtype=jnp.uint8)
-            for i in range(line_advance):
-                completed_line = (tia.scanline + i) % NTSC_SCANLINES_PER_FRAME
-                if completed_line < SCREEN_HEIGHT:
-                    fb = fb.at[completed_line].set(row)
+            # Task #83 round 3 (2026-06-11): only WRITE framebuffer for
+            # scanlines at or past Y_START. xitari achieves this
+            # implicitly via `myClockStartDisplay = myClockWhenFrameStarted
+            # + 228*myYStart`. Pre-Y_START "rendered" pixels go nowhere
+            # in xitari AND the HMOVE-blank flag isn't consumed there;
+            # this gate matches that behavior so pong's row-0 HMOVE comb
+            # lands at display row 0 (= internal scanline 34) instead of
+            # the cropped-out internal scanline 27. Per-pixel rendering +
+            # collision detection above still runs at every scanline so
+            # unit tests that check collisions at scanline 0 keep working.
+            if tia.scanline >= Y_START:
+                for i in range(line_advance):
+                    completed_line = (tia.scanline + i) % NTSC_SCANLINES_PER_FRAME
+                    if completed_line < SCREEN_HEIGHT:
+                        fb = fb.at[completed_line].set(row)
+                wrote_framebuffer_this_advance = True
         else:
             # VBLANK-blanked render — output suppressed. Drain pending
             # writes into the register file. Do NOT run collision
@@ -1059,7 +1075,18 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
     # only blanks the leftmost 8 pixels of the IMMEDIATELY-following
     # scanline. If line_advance was 0 (no scanline crossed), keep the
     # pending flag so the next tia_advance call still applies it.
-    new_hmove_blank = (False if line_advance > 0 else tia.hmove_blank_pending)
+    # Task #83 round 3 (2026-06-11): also keep the flag if no
+    # framebuffer write happened (scanline < Y_START or vblank_active).
+    # xitari only clears `myHMOVEBlankEnabled` from inside the
+    # visible-region framebuffer-writing branch (TIA.cxx:1776-1786).
+    # The `wrote_framebuffer_this_advance` flag is False when:
+    #   - line_advance == 0 (no scanline crossed)
+    #   - tia.vblank_active (VBLANK-blanked render)
+    #   - tia.scanline < Y_START (pre-display-window)
+    if line_advance > 0 and wrote_framebuffer_this_advance:
+        new_hmove_blank = False
+    else:
+        new_hmove_blank = tia.hmove_blank_pending
     return tia._replace(
         scanline_cycle=new_sc,
         scanline=new_line,

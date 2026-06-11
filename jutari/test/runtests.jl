@@ -1684,25 +1684,37 @@ end
     end
 
     # Framebuffer integration
+    # Task #83 round 3 (2026-06-11): `tia_advance!` now gates the
+    # visible-render branch on `tia.scanline >= Y_START` (= 34) to
+    # match xitari's `myClockStartDisplay` offset — pre-Y_START
+    # scanlines are treated as VBLANK-equivalent (no framebuffer
+    # write, no collision, HMOVE-blank flag preserved). These tests
+    # historically set tia.scanline = 0 and checked framebuffer[1, :]
+    # gets written. Updated to set tia.scanline = Y_START so the
+    # tests still exercise the framebuffer write at the *first
+    # visible scanline*. The fix closes pong's row-0 HMOVE comb
+    # residual (8 px) — see bug_fix_log.
     @testset "tia_advance! writes scanline on boundary" begin
         tia = initial_tia_state()
         _set_regs!(tia, :pf0=>0xF0, :colupf=>0x42, :colubk=>0x00)
+        tia.scanline = Y_START
         tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
-        @test tia.framebuffer[1, 1] == 0x42
-        @test tia.framebuffer[1, 16] == 0x42
-        @test tia.framebuffer[1, 17] == 0x00
-        @test tia.framebuffer[2, 1] == 0x00
+        @test tia.framebuffer[Y_START + 1, 1] == 0x42
+        @test tia.framebuffer[Y_START + 1, 16] == 0x42
+        @test tia.framebuffer[Y_START + 1, 17] == 0x00
+        @test tia.framebuffer[Y_START + 2, 1] == 0x00
     end
 
     @testset "tia_advance! writes multiple scanlines" begin
         tia = initial_tia_state()
         _set_regs!(tia, :pf0=>0xF0, :colupf=>0x42, :colubk=>0x00)
+        tia.scanline = Y_START
         tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE * 5)
-        for line in 1:5
+        for line in (Y_START + 1):(Y_START + 5)
             @test tia.framebuffer[line, 1] == 0x42
             @test tia.framebuffer[line, 16] == 0x42
         end
-        @test tia.framebuffer[6, 1] == 0x00
+        @test tia.framebuffer[Y_START + 6, 1] == 0x00
     end
 
     @testset "tia_advance! does not write off-screen lines" begin
@@ -1731,14 +1743,23 @@ end
             rom[i] = UInt8(b)
         end
         bus = initial_bus(rom)
+        # Task #83 round 3: nudge tia.scanline to Y_START so the
+        # `tia.scanline >= Y_START` visible-render gate fires. The
+        # program-driven render is otherwise identical (LDA/STA
+        # opcodes + a WSYNC strobe push the beam to the next
+        # scanline boundary). Without the nudge, the program would
+        # render its scanline into framebuffer[1] which is now
+        # cropped-region; the test still exercises the same code
+        # path (PF/COLUPF/WSYNC) at the first VISIBLE scanline.
+        bus.tia.scanline = Y_START
         s = _state(PC=0xF000)
         for _ in 1:5
             step(s, bus)
         end
-        @test bus.tia.framebuffer[1, 1] == 0x42
-        @test bus.tia.framebuffer[1, 16] == 0x42
-        @test bus.tia.framebuffer[1, 17] == 0x00
-        @test bus.tia.scanline == 1
+        @test bus.tia.framebuffer[Y_START + 1, 1] == 0x42
+        @test bus.tia.framebuffer[Y_START + 1, 16] == 0x42
+        @test bus.tia.framebuffer[Y_START + 1, 17] == 0x00
+        @test bus.tia.scanline == Y_START + 1
     end
 
 end
@@ -2289,15 +2310,19 @@ end
     end
 
     @testset "VBLANK clear resumes framebuffer writes" begin
+        # Task #83 round 3: nudge to Y_START so the framebuffer-write
+        # gate fires (pre-Y_START scanlines are display-window-cropped
+        # and do not commit to the framebuffer).
         tia = initial_tia_state()
+        tia.scanline = Y_START
         tia_poke!(tia, W_PF0, 0xF0); tia_poke!(tia, W_COLUPF, 0x42)
         tia_poke!(tia, W_VBLANK, 0x02)
         tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
-        @test sum(tia.framebuffer[1, :]) == 0
+        @test sum(tia.framebuffer[Y_START + 1, :]) == 0
         tia_poke!(tia, W_VBLANK, 0x00)
         tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
-        @test tia.framebuffer[2, 1] == 0x42
-        @test tia.framebuffer[2, 16] == 0x42
+        @test tia.framebuffer[Y_START + 2, 1] == 0x42
+        @test tia.framebuffer[Y_START + 2, 16] == 0x42
     end
 
     @testset "full frame cycle via VSYNC" begin
@@ -5657,7 +5682,10 @@ using JuTari.TIA: render_pixel,
     end
 
     @testset "P3i-b framebuffer matches pre-P3i render" begin
+        # Task #83 round 3: nudge to Y_START so the framebuffer-write
+        # gate fires.
         tia = initial_tia_state()
+        tia.scanline = Y_START
         tia_poke!(tia, W_PF0, 0xF0)
         tia_poke!(tia, W_PF1, 0xAA)
         tia_poke!(tia, W_COLUPF, 0x42)
@@ -5667,7 +5695,7 @@ using JuTari.TIA: render_pixel,
         tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
         # The completed scanline's row in the framebuffer should equal
         # the standalone `render_scanline` output.
-        @test all(tia.framebuffer[1, :] .== expected)
+        @test all(tia.framebuffer[Y_START + 1, :] .== expected)
     end
 
     @testset "P3i-b VBLANK still suppresses framebuffer writes" begin

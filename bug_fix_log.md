@@ -14,6 +14,62 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🏆 Task #83 CLOSED (2026-06-11) — Y_START framebuffer-write gate (pong BIT-EXACT)
+
+**Root cause** (the actual, narrow one — not the "needs per-cycle render refactor"
+I'd written off it as in the round 2 notes):
+
+xitari's `myClockStartDisplay = myClockWhenFrameStarted + 228*myYStart`
+makes the framebuffer pointer skip the first `myYStart` (= 34 for pong)
+scanlines of each frame — pixels "rendered" in that pre-display region
+go nowhere, AND xitari's `myHMOVEBlankEnabled` flag only gets cleared
+from inside the framebuffer-writing branch (TIA.cxx:1776-1786). Result:
+xitari preserves the HMOVE-blank flag across all pre-Y_START scanlines
+and consumes it at the FIRST visible scanline (= display row 0).
+
+jutari's framebuffer was indexed by absolute scanline (0..243); the
+visible-render branch wrote to `framebuffer[27, :]` for pong's HMOVE-
+strobe scanline and CONSUMED `hmove_blank_pending` there. By the time
+display row 0 (= absolute scanline 34) rendered, the flag was already
+false — no comb, 8 px residual.
+
+**Fix** (commit pending — `jutari/src/tia/TIA.jl::tia_advance!`):
+
+  - Per-pixel rendering + collision detection still runs at every
+    scanline (so unit tests that check collisions at scanline 0 keep
+    working).
+  - Framebuffer write is now gated on `tia.scanline >= Y_START`.
+  - `tia.hmove_blank_pending = false` only happens inside the framebuffer-
+    writing branch (matching xitari `TIA::updateFrame` exactly).
+
+Mirror edit in `jaxtari/jaxtari/tia/system.py::tia_advance` with the
+same gate + a `wrote_framebuffer_this_advance` flag threading through
+the post-render `new_hmove_blank` decision (jaxtari is functional, no
+in-place mutation, so the gate has to flow through the return-tuple).
+
+3 jutari unit tests had to nudge `tia.scanline = Y_START` to keep
+exercising the framebuffer-write path (`tia_advance! writes scanline
+on boundary`, `tia_advance! writes multiple scanlines`, `program
+writes playfield then WSYNC renders scanline`, `VBLANK clear resumes
+framebuffer writes`, `P3i-b framebuffer matches pre-P3i render`).
+Collision tests didn't need any changes — collisions still run at
+every scanline.
+
+**Numbers (worst-frame screen diff, after fixture regen):**
+
+  | ROM            | Post-#85 | Post-#83 |
+  |----------------|----------|----------|
+  | **pong**       | 8        | **0 BIT-EXACT** |
+  | breakout       | 0        | 0        |
+  | space_invaders | 42       | 42       |
+  | pitfall        | 553      | 553      |
+  | seaquest       | 1043     | 1043     |
+  | enduro         | 774      | 774      |
+
+All 1170+ jutari runtests pass.
+
+---
+
 ## Where we left off — pick up here (2026-06-09/10)
 
 ### Session 2026-06-09 / 2026-06-10 rundown (jutari-focused)
