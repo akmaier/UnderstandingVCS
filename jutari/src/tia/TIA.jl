@@ -687,6 +687,17 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
                     tia.framebuffer[completed_line + 1, :] .= row
                 end
             end
+            # Task #83 (2026-06-11): clear the HMOVE-blank flag ONLY
+            # after a VISIBLE-region render actually consumed it. The
+            # previous unconditional clear (outside both branches)
+            # killed the flag during VBLANK scanlines — so an HMOVE
+            # written late in VBLANK (or during the VBLANK→visible
+            # transition) lost its blank by the time row 0 rendered.
+            # Closes pong's last 8 px residual (row-0 HMOVE comb).
+            # Matches xitari `TIA::updateFrame` (TIA.cxx:1776-1786)
+            # which only clears `myHMOVEBlankEnabled` from within the
+            # visible-render branch.
+            tia.hmove_blank_pending = false
         else
             # VBLANK render — output blanked. Drain pending writes but
             # do NOT run collision detection: xitari's
@@ -704,11 +715,12 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
             for (_, reg, val) in pending_sorted
                 tia.registers[reg + 1] = val
             end
+            # Task #83 (2026-06-11): do NOT clear hmove_blank_pending
+            # here. VBLANK scanlines should preserve the flag so it
+            # reaches the first visible scanline that follows.
         end
         # All pending writes have been drained into tia.registers.
         empty!(tia.pending_writes)
-        # P3i-f: clear blank after the scanline that consumed it.
-        tia.hmove_blank_pending = false
     end
 
     # PXC1-x: don't increment the frame counter on scanline-wrap. The

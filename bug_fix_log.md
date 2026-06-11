@@ -52,6 +52,51 @@ Per-row pong jutari↔xitari diff (frame 0, post-#84):
 | 36 | 16-19, 140-143 | 8 | Phantom 4-px sprites color 250+138 | #85 |
 | 37 | 16-19 | 4 | Phantom 4-px sprite color 250 (COLUP0) | #85 |
 
+### 🔬 Task #83 INVESTIGATION (2026-06-11) — HMOVE row-0 comb localized but NOT closed
+
+**Symptom:** pong row 0 cols 0-7 paint as $34 (BG) in jutari but $00
+(BLACK / HMOVE-blank) in xitari. 8 px residual, deterministic across
+all frames.
+
+**What was tried + what we learned:**
+
+  1. **VBLANK clear bug fix (landed):** previously
+     `tia.hmove_blank_pending = false` ran after EVERY scanline
+     (VBLANK and visible). xitari's `TIA::updateFrame` only clears
+     `myHMOVEBlankEnabled` from within the visible-render branch. The
+     jutari unconditional clear meant an HMOVE written during the
+     VBLANK phase lost its blank by the time the first visible
+     scanline rendered. Fix: moved the clear inside the
+     `if !tia.vblank_active` branch. xitari-faithful and correct, but
+     **does not close pong's 8 px residual** (the underlying bug is
+     elsewhere — see #2).
+  2. **HMOVE comb fires at the wrong scanline:** `tools/pong_hmove_probe.jl`
+     scans the post-frame framebuffer for scanlines with `cols 0-7 == 0`.
+     In jutari, the comb lands on **internal scanline 27** — which is
+     cropped out by `Y_START = 34` so the user never sees it. xitari's
+     comb lands on **internal scanline 34** (= display row 0), the
+     pixel pattern the conformance test compares.
+  3. **PXC1 RAM is bit-exact** for pong, so the CPU is in lockstep. The
+     cart writes HMOVE + VBLANK transitions at identical CPU cycles in
+     both engines. The 7-scanline drift must therefore come from how
+     each engine maps `(CPU cycle) → (current scanline + beam_cc)` at
+     the moment of the relevant write — specifically, jutari's
+     `vblank_active` toggles to false earlier (relative to absolute
+     scanline number within the frame) than xitari's "first visible
+     scanline" boundary in `updateFrame`. The HMOVE-blank flag then
+     fires on jutari's earlier-but-cropped-out scanline 27.
+
+**Why a small patch doesn't close it:** the actual fix requires
+  the per-cycle render refactor described under the original task
+  #83 plan — render scanlines as they happen rather than batching at
+  end-of-frame, so VBLANK transitions and the HMOVE-blank flag stay
+  in lock-step with xitari's `myClockWhenFrameStarted` / scanline
+  numbering.
+
+**Numbers:** pong screen residual stays at **8 px** (unchanged from
+post-#85). VBLANK-clear fix landed alongside the #85 RESMP fix in
+the same commit. Task #83 remains OPEN.
+
 ### 🏆 Task #85 CLOSED (2026-06-11) — RESMP* gate fix (pong 24→8 px)
 
 **Symptom:** pong rows 35-37 cols 16-19 (color $38, COLUP0) and
