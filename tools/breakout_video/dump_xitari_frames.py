@@ -52,6 +52,12 @@ def main(argv=None) -> int:
         if not line:
             continue
         rec = json.loads(line)
+        # Task #80 / 2026-06-09 (commit 533f706): trace_dump emits a
+        # synthetic "frame 0" record with `boot_end=true` BEFORE any
+        # user-action frame, with no h/w/screen fields. Skip it so the
+        # video output stays aligned with the action stream's frames.
+        if rec.get('boot_end'):
+            continue
         h, w = rec['h'], rec['w']
         screen = np.frombuffer(bytes.fromhex(rec['screen']),
                                dtype=np.uint8).reshape(h, w)
