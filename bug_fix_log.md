@@ -176,6 +176,50 @@ widths (the actual digit topology). jutari row 22 cols 28-66 is a
 CLEAN 4-on / 4-off `$d2 / $00` alternation — a uniform block
 pattern.
 
+**Pixel-level analysis (sl 43 = display row 9):**
+
+Bus trace shows at sl 41/42 the cart sets up the HUD render:
+  `NUSIZ0 = NUSIZ1 = $13` (three copies close, 16-cc spacing)
+  `COLUP0 = COLUP1 = $00` (reset from earlier $0c)
+  `COLUPF = $d2`  `COLUBK = $d6` (from sl 13)  `CTRLPF = $01`
+  `PF0 = $00, PF1 = $10, PF2 = $14`
+  `RESP0 → p0_x = 21`,  `RESP1 → p1_x = 30`
+
+For sl 43, cart writes GRP0/GRP1 = `$00, $00, $3c, $3c, $3c, $3c, $3c`
+at cc 9/33/57/90/99/108/117.
+
+**Expected jutari render at sl 43 col 23 (=  P0 copy 0 bit 5 set):**
+  - sets.p0 includes col 23 with GRP0=$3c (after cc 57's deferred
+    write activates at cc ≈ 70)
+  - render_pixel returns COLUP0=$00 (black)
+
+**xitari row 9 col 23 = $d2** — xitari does NOT render the player at
+col 23, even though our state model says it should.
+
+**Three plausible causes:**
+
+  1. **xitari's `computePlayerMaskTable` semantics differ from
+     jutari's `_object_pixel_sets`** for NUSIZ multi-copy. xitari may
+     use a SINGLE mask precomputed at the most recent `RESP0/GRP0/
+     NUSIZ0` change; jutari rebuilds the full multi-copy set per
+     mid-scanline GRP swap. The defer-list activation order differs.
+  2. **xitari's GRP0 latch has a per-pixel delay** that jutari skips.
+     The xitari mask table indexes by `(POSP0 & 0x03, NUSIZ & 0x07,
+     scale, 160 - (POSP0 & 0xFC))` — there may be a "from-the-last-
+     latched-position-only" rendering that jutari doesn't honour.
+  3. **`COLUP0 / COLUP1` apply IMMEDIATELY in jutari** but go through
+     xitari's per-pixel sub-cycle latch differently — at sl 43 cc 23
+     xitari's `myCOLUP0` might still be $0c (set at sl 14), letting
+     the player render as $0c which blends with the $0c BG segments
+     in the digit.
+
+Next-agent direction: read `xitari/emucore/TIA.cxx` (~line 2400 area
+where `myCurrentP0Mask` is built per RESP/NUSIZ/GRP change) and
+compare against `jutari/src/tia/TIA.jl::_object_pixel_sets`. The
+deferred-write block in `tia_poke!` queues per-register writes but
+the rendering uses a SINGLE post-write `sets.p0` covering ALL three
+copies — xitari's per-copy mask may not work that way.
+
 Pitfall draws the score+timer digits with PLAYER multi-copy
 (NUSIZ0=$13 / NUSIZ1=$13 = three close copies, no scaling) and
 writes new GRP0/GRP1 values BETWEEN each copy's rendered cc range
