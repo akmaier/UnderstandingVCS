@@ -86,6 +86,68 @@ All 1170+ jutari runtests pass.
 
 ---
 
+### 🔬 Task #93 ATTEMPTED & REVERTED (2026-06-12) — xitari skip-first-copy semantic
+
+After task #91 closed pitfall's HUD top/bottom (TIME row top + SCORE row
+top now match xitari), the remaining 166 px residual is concentrated at
+rows 9-29 cols 19-48 — jutari draws EXTRA digit copies to the LEFT of
+where xitari's "0:00:00" time digits start. xitari skips the first NUSIZ
+multi-copy via `myCurrentPMask = ourPlayerMaskTable[align][1][mode][...]`
+when RESP fires OUTSIDE the "delay section" of a copy (case=0 or +1).
+
+**Attempted implementation** in `jutari/src/tia/TIA.jl`:
+  - Added `skip_first_p0/p1::Bool` fields to TIAState (defaults false).
+  - Added `_resp_when_case(mode, oldx, newx)` helper returning -1/0/+1
+    per `ourPlayerPositionResetWhenTable` (TIA.cxx:928-1042).
+  - In W_RESP0/W_RESP1 handlers: compute case using OLD `tia.pX_x` as
+    `oldx` and the new `_resp_player_position(beam_cc)` as `newx`, look
+    at pending NUSIZ* writes via lookback for the latest CPU-written
+    NUSIZ. Set `skip_first_pX = (when != -1)`.
+  - In `_overlay_player!` and `_player_set`: when skip_first is set,
+    iterate `copy_offsets[2:end]` to drop the leftmost copy.
+
+**Result**: REGRESSED most ROMs:
+
+  | ROM            | Pre #93 | Post #93 | Δ      |
+  |----------------|---------|----------|--------|
+  | pong           | 0       | 0        | =      |
+  | breakout       | 0       | 64       | +64    |
+  | space_invaders | 0       | 634      | +634   |
+  | pitfall        | 166     | 485      | +319   |
+  | seaquest       | 1087    | 1179     | +92    |
+  | enduro         | 1133    | 1101     | -32    |
+
+Reverted (`git checkout jutari/src/tia/TIA.jl`). Only pong stayed
+bit-exact because its paddle RESP fires at `newx == oldx` every frame,
+keeping case=-1 (delay section).
+
+**Diagnosis hypotheses for the next attempt:**
+
+1. **Case-table coverage** — xitari iterates `newx` in [0, 160+72+5) when
+   building the table; the modulo-160 fold causes MULTIPLE assignments
+   per `(mode, oldx, newx_mod)` cell. My impl only checked `nx` and
+   `nx+160`. May need the full 237-step walk per cell.
+2. **`updateFrame(clock + 11)` semantic** for case=1 — xitari renders
+   the partial first-copy display BEFORE moving the player. Without
+   this, the first copy's bit-pattern bleeds into the wrong row.
+3. **Mode 5 / mode 7 offset-by-1 quirk** — the double/quad-size mask
+   uses `>` not `>=` at x==0, delaying the leftmost pixel. My case-skip
+   doesn't honor this — may incorrectly suppress visible pixels.
+4. **Shadow / skip-first interaction** — task #91's GRP shadow lookback
+   changed which GRP byte is rendered between RESP and the next render.
+   If skip-first applies to the OLD shadow but the NEW shadow renders
+   ALL copies (because skip-first only updates at the NEXT RESP), this
+   is a temporal mismatch.
+5. **Direct trace diff** — instrument BOTH xitari and jutari to dump
+   `(scanline, cycle, RESP target, NUSIZ, oldx, newx, computed when,
+   resulting enable axis)` at every RESP write and diff. That nails the
+   exact divergence cell.
+
+Open as task #93 (pending). Filed task #92 covers the related
+seaquest/enduro regression which is downstream of the same bug.
+
+---
+
 ### 🔬 Task #80 SWEEP RESULTS (2026-06-11)
 
 Ran `tools/seaquest_boot_probe.jl` + a reset-timing sweep on jutari's
