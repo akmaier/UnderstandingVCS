@@ -220,6 +220,61 @@ deferred-write block in `tia_poke!` queues per-register writes but
 the rendering uses a SINGLE post-write `sets.p0` covering ALL three
 copies — xitari's per-copy mask may not work that way.
 
+### 🔥 Task #86 ROOT CAUSE LOCATED (2026-06-11) — xitari RESP* skip-first-copy semantic
+
+Read `xitari/emucore/TIA.cxx` line 2238 (`case 0x10: // Reset Player 0`):
+xitari's RESP0 handler does NOT just set `myPOSP0 = newx`. It also
+consults `ourPlayerPositionResetWhenTable[NUSIZ_lo][oldx][newx]`:
+
+  - **case +1** ("RESP fires during display of a copy"): `myPOSP0 =
+    newx`, AND `myCurrentP0Mask` set to the **`enable=1` mask variant
+    that skips copy 0 of the multi-copy player**.
+  - **case 0** ("RESP fires between copies"): same skip-first-copy
+    mask.
+  - **case -1** ("RESP fires during the 4-pixel `delay` slot in front
+    of any copy"): `myPOSP0 = newx`, mask covers ALL copies
+    (`enable=0`).
+
+The table `ourPlayerPositionResetWhenTable` (built in `TIA::compute*`
+~L920) is a 3D lookup `[mode 0..7][oldx 0..159][newx 0..159]`. For
+NUSIZ low3 = 3 (three copies close — pitfall's HUD setup), each of
+the three copies has a 4-pixel delay slot directly before its 8-pixel
+display window; RESP newx anywhere outside those three delay windows
+triggers skip-first-copy.
+
+**Why jutari mis-renders the HUD digits:** `_object_pixel_sets` /
+`_player_set` always emit ALL three copies for NUSIZ=$13 — there is
+no "enable" parameter. Pitfall's RESP0 at sl 41 cc 72 (newx=18, oldx
+likely far from any delay slot) puts xitari in skip-first-copy mode
+for the rest of the frame; jutari renders copy 0 (cols 18-25) too,
+which is what darkens cols 20-23 with COLUP0=$00 and breaks the
+digit topology.
+
+**Fix outline** (next agent — implement carefully so pong stays
+bit-exact):
+
+  1. Add `skip_first_copy_p0::Bool` + `skip_first_copy_p1::Bool` to
+     `TIAState` (default `false`).
+  2. Add a `_resp_when_case(nusiz_lo, oldx, newx) -> Int` helper that
+     mirrors xitari's table build (TIA.cxx lines 938-1010). Returns
+     -1 / 0 / 1.
+  3. In `tia_poke!` for W_RESP0 / W_RESP1, compute
+     `newx = _resp_player_position(beam_cc)`, read
+     `oldx = tia.p0_x` (or p1_x), call the helper. Set
+     `skip_first_copy_p0 = (case != -1)`.
+  4. In `_player_set` (line 1176), if `skip_first_copy_p*` is true,
+     drop the first entry of `copy_offsets` before iterating.
+  5. Same in `_overlay_player!` (legacy whole-scanline path).
+  6. Same for missile if xitari has a similar rule for missiles
+     (check `case 0x14`/`0x15` in xitari).
+
+**Risk:** pong is currently BIT-EXACT and uses NUSIZ multi-copy for
+its score digits. If pong's RESP0/RESP1 land in delay slots → case
+-1 → no skip → no change → pong stays bit-exact. If they land in
+display/between → skip-first-copy → pong's score visual would change.
+Verify by regenerating pong screen fixture AFTER applying the fix
+and diffing against the existing 0-px-residual pin.
+
 Pitfall draws the score+timer digits with PLAYER multi-copy
 (NUSIZ0=$13 / NUSIZ1=$13 = three close copies, no scaling) and
 writes new GRP0/GRP1 values BETWEEN each copy's rendered cc range
