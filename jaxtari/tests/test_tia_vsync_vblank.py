@@ -4,6 +4,7 @@ import jax.numpy as jnp
 
 from jaxtari.tia.system import (
     NTSC_CPU_CYCLES_PER_SCANLINE,
+    Y_START,
     initial_tia_state,
     tia_advance,
     tia_poke,
@@ -94,18 +95,22 @@ def test_vblank_suppresses_framebuffer_writes():
 
 
 def test_vblank_clear_resumes_framebuffer_writes():
-    tia = initial_tia_state()
+    # Task #83 round 3 (2026-06-11) / test nudge (2026-06-12): the
+    # framebuffer write is gated on `tia.scanline >= Y_START`, so the
+    # test starts at Y_START to exercise the resume at the first
+    # VISIBLE scanline (same nudge the jutari runtests got in #83).
+    tia = initial_tia_state()._replace(scanline=Y_START)
     tia = tia_poke(tia, W_PF0, 0xF0)
     tia = tia_poke(tia, W_COLUPF, 0x42)
     tia = tia_poke(tia, W_VBLANK, 0x02)
     tia = tia_advance(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
-    assert int(tia.framebuffer[0].sum()) == 0
+    assert int(tia.framebuffer.sum()) == 0
     # Clear VBLANK and run another scanline.
     tia = tia_poke(tia, W_VBLANK, 0x00)
     tia = tia_advance(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
-    # Row 1 should now have the playfield rendered.
-    assert int(tia.framebuffer[1, 0]) == 0x42
-    assert int(tia.framebuffer[1, 15]) == 0x42
+    # Row Y_START+1 should now have the playfield rendered.
+    assert int(tia.framebuffer[Y_START + 1, 0]) == 0x42
+    assert int(tia.framebuffer[Y_START + 1, 15]) == 0x42
 
 
 # --------------------------------------------------------------------------- #

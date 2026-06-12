@@ -128,12 +128,14 @@ def test_vdelp0_doesnt_affect_p1():
 # --------------------------------------------------------------------------- #
 
 def test_vdelbl_clear_renders_current_enabl():
+    # NB (test nudge 2026-06-12): COLU* writes store `value & 0xFE`
+    # (xitari color-loss LSB mask) — COLUPF=$33 reads back as $32.
     tia = initial_tia_state()._replace(bl_x=10)
     tia = tia_poke(tia, W_COLUBK, 0x00)
     tia = tia_poke(tia, W_COLUPF, 0x33)
     tia = tia_poke(tia, W_ENABL, 0x02)        # enabled
     scan = render_scanline(tia)
-    assert int(scan[10]) == 0x33
+    assert int(scan[10]) == 0x32
 
 
 def test_vdelbl_set_uses_shadow_enabl():
@@ -150,14 +152,14 @@ def test_vdelbl_set_uses_shadow_enabl():
 
 def test_vdelbl_set_with_enabled_shadow_paints_ball():
     """VDELBL=1, shadow ENABL=0x02, current ENABL=0 → ball still
-    visible (shadow wins)."""
+    visible (shadow wins). COLUPF=$33 stores $32 (COLU LSB mask)."""
     tia = initial_tia_state()._replace(bl_x=10, enabl_old=0x02)
     tia = tia_poke(tia, W_COLUBK, 0x00)
     tia = tia_poke(tia, W_COLUPF, 0x33)
     tia = tia_poke(tia, W_VDELBL, 0x01)
     tia = tia_poke(tia, W_ENABL, 0x00)
     scan = render_scanline(tia)
-    assert int(scan[10]) == 0x33
+    assert int(scan[10]) == 0x32
 
 
 # --------------------------------------------------------------------------- #

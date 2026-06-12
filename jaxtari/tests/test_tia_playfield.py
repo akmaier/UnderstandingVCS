@@ -12,6 +12,7 @@ from jaxtari.tia.system import (
     W_PF0,
     W_PF1,
     W_PF2,
+    Y_START,
     _playfield_bits,
     initial_tia_state,
     render_playfield_scanline,
@@ -159,31 +160,40 @@ def test_render_full_known_pattern():
 # Framebuffer integration — tia_advance writes scanlines
 # --------------------------------------------------------------------------- #
 
+# Task #83 round 3 (2026-06-11) / test nudge (2026-06-12): `tia_advance`
+# gates the framebuffer write on `tia.scanline >= Y_START` (= 34) to
+# match xitari's `myClockStartDisplay` offset — pre-Y_START scanlines
+# render nowhere. These tests historically started at scanline 0; they
+# now start at Y_START so they exercise the framebuffer write at the
+# first VISIBLE scanline (same nudge the jutari runtests got in #83).
+
 def test_tia_advance_writes_scanline_on_boundary_cross():
     tia = initial_tia_state()
     tia = _set_regs(tia, pf0=0xF0, colupf=0x42, colubk=0x00)
+    tia = tia._replace(scanline=Y_START)
     # Advance exactly one full scanline.
     tia = tia_advance(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
-    # Framebuffer row 0 should now hold the playfield pattern.
-    assert int(tia.framebuffer[0, 0]) == 0x42
-    assert int(tia.framebuffer[0, 15]) == 0x42
-    assert int(tia.framebuffer[0, 16]) == 0x00
-    # Row 1 hasn't been rendered yet.
-    assert int(tia.framebuffer[1, 0]) == 0x00
+    # Framebuffer row Y_START should now hold the playfield pattern.
+    assert int(tia.framebuffer[Y_START, 0]) == 0x42
+    assert int(tia.framebuffer[Y_START, 15]) == 0x42
+    assert int(tia.framebuffer[Y_START, 16]) == 0x00
+    # The next row hasn't been rendered yet.
+    assert int(tia.framebuffer[Y_START + 1, 0]) == 0x00
 
 
 def test_tia_advance_writes_multiple_scanlines():
     tia = initial_tia_state()
     tia = _set_regs(tia, pf0=0xF0, colupf=0x42, colubk=0x00)
+    tia = tia._replace(scanline=Y_START)
     # Advance 5 scanlines.
     tia = tia_advance(tia, NTSC_CPU_CYCLES_PER_SCANLINE * 5)
     # All 5 rows should have the same pattern (registers didn't change).
-    for line in range(5):
+    for line in range(Y_START, Y_START + 5):
         assert int(tia.framebuffer[line, 0]) == 0x42, f"row {line}"
         assert int(tia.framebuffer[line, 15]) == 0x42
         assert int(tia.framebuffer[line, 16]) == 0x00
-    # Row 5 untouched.
-    assert int(tia.framebuffer[5, 0]) == 0x00
+    # The row after the advance is untouched.
+    assert int(tia.framebuffer[Y_START + 5, 0]) == 0x00
 
 
 def test_tia_advance_does_not_write_offscreen_lines():
@@ -219,11 +229,15 @@ def test_program_writes_playfield_then_wsync_renders_scanline():
     for i, b in enumerate(program):
         rom = rom.at[i].set(jnp.uint8(b))
     bus = initial_bus(rom)
+    # Task #83 round 3: nudge tia.scanline to Y_START so the visible-
+    # render gate fires (same nudge as the jutari runtests). The
+    # program-driven render is otherwise identical.
+    bus = bus._replace(tia=bus.tia._replace(scanline=Y_START))
     s = _state(PC=0xF000)
     for _ in range(5):
         s, bus = step(s, bus)
-    # WSYNC stalls to next scanline → tia rendered the just-finished line 0.
-    assert int(bus.tia.framebuffer[0, 0]) == 0x42
-    assert int(bus.tia.framebuffer[0, 15]) == 0x42
-    assert int(bus.tia.framebuffer[0, 16]) == 0x00
-    assert bus.tia.scanline == 1
+    # WSYNC stalls to next scanline → tia rendered the just-finished line.
+    assert int(bus.tia.framebuffer[Y_START, 0]) == 0x42
+    assert int(bus.tia.framebuffer[Y_START, 15]) == 0x42
+    assert int(bus.tia.framebuffer[Y_START, 16]) == 0x00
+    assert bus.tia.scanline == Y_START + 1

@@ -188,21 +188,27 @@ def test_player1_independent_of_player0():
 
 
 def test_player_paints_over_playfield():
-    """A player pixel overrides the playfield pixel underneath."""
+    """A player pixel overrides the playfield pixel underneath.
+
+    NB (test nudge 2026-06-12): COLU* writes store `value & 0xFE` —
+    xitari masks the LSB (the color-loss bit; see the "COLU& 0xFE
+    mask" note in test_screen_conformance.py). COLUPF=$33 therefore
+    reads back as $32, which is what the playfield pixels assert.
+    """
     tia = _setup(p0_x=4, grp0=0xFF, colup0=0x42)
     # Light up the playfield with PF0 bit 4 → playfield pixels 0..3 → screen 0..15
     tia = tia_poke(tia, 0x0D, 0xF0)         # PF0 = $F0 (all 4 bits)
     tia = tia_poke(tia, W_COLUBK, 0x11)
-    tia = tia_poke(tia, 0x08, 0x33)         # COLUPF = 0x33
+    tia = tia_poke(tia, 0x08, 0x33)         # COLUPF = $33 → stored $32
     scanline = render_scanline(tia)
     # Pixels 0..3 are still playfield (player not over them).
-    assert int(scanline[0]) == 0x33
-    # Pixels 4..11 are part playfield (4..15 = pf pixels 1..3), so 4..11 was 0x33
+    assert int(scanline[0]) == 0x32
+    # Pixels 4..11 are part playfield (4..15 = pf pixels 1..3), so 4..11 was 0x32
     # but player overrides 4..11 → 0x42.
     for i in range(4, 12):
         assert int(scanline[i]) == 0x42, f"pixel {i}"
     # Pixel 12..15: playfield (pf pixel 3 = bits 12..15)
-    assert int(scanline[12]) == 0x33
+    assert int(scanline[12]) == 0x32
 
 
 def test_player_wraps_at_right_edge():
