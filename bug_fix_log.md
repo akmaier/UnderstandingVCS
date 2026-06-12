@@ -14,6 +14,24 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🔭 Task #95 OPENED (2026-06-12) — pitfall random-action FIRE divergence (post-#94 video check)
+
+While re-rendering the pitfall comparison videos after #94 (with the
+reordered jutari-first pipeline), measured the 600-frame RANDOM-action
+run (tools/breakout_video action stream, FIRE at i%120==20):
+
+  - jutari↔xitari diverges at EXACTLY frame 20 — the FIRST FIRE — in
+    the gameplay region (rows 103-119, 31 px; Harry's jump).
+  - Drift accumulates: 569/600 frames differ in rows 32+, mean
+    145 px/f, worst 1015 px (f=319). HUD diffs (mean 9 px/f) are
+    downstream of drifted game STATE (different time displayed), not
+    a render regression — the noop-10 screen stays BIT-EXACT.
+  - Same class as pong's frame-20 FIRE bug (task #77): input-read
+    timing at the FIRE edge, NOT TIA rendering. Recipe: per-frame RAM
+    diff with this action stream → first diverging byte at f=20 →
+    bus-trace INPT4/SWCHA reads around the edge
+    (BUG_BISECTION_METHODOLOGY.md).
+
 ### 🏆🏆 Task #94 CLOSED (2026-06-12) — activation-time VDELP shadow latch (PITFALL BIT-EXACT, 4 of 6 ROMs now 0 px)
 
 **The final root cause of the pitfall "time renders in wrong format" bug**
