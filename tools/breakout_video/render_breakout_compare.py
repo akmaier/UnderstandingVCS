@@ -306,29 +306,9 @@ def main(argv=None) -> int:
 
     if not args.skip_xitari:
         dump_xitari(args.rom, actions_path, xitari_path, args.n_frames)
-    if not args.skip_jaxtari:
-        dump_jaxtari(args.rom, actions_path, jaxtari_path, args.n_frames)
-    if not args.skip_jutari:
-        dump_jutari(args.rom, actions_path, jutari_path, args.n_frames)
-
-    if args.skip_encode:
-        return 0
 
     palette = load_ntsc_palette()
-    # Load whichever dumps are present; encode pairs only when both
-    # emulator inputs are available. Lets the caller run jutari at
-    # full 60 s while jaxtari (much slower per frame) only renders a
-    # shorter clip.
-    if not xitari_path.exists():
-        print(f"xitari frames missing ({xitari_path}); skipping encode.",
-              file=sys.stderr)
-        return 0
-    xitari_full = _load_raw(xitari_path, args.n_frames, 210, COLS)
-    xitari      = xitari_full[:, XITARI_TOP_CROP:XITARI_TOP_CROP + XITARI_ROWS, :]
-    jaxtari     = (_load_raw(jaxtari_path, args.n_frames, XITARI_ROWS, COLS)
-                   if jaxtari_path.exists() else None)
-    jutari      = (_load_raw(jutari_path, args.n_frames, XITARI_ROWS, COLS)
-                   if jutari_path.exists() else None)
+    rom_stem = args.rom.stem  # 'breakout', 'pong', etc.
 
     def _align(*arrays):
         n = min(a.shape[0] for a in arrays)
@@ -336,21 +316,40 @@ def main(argv=None) -> int:
             print(f"  aligning emulators to {n} common frames", file=sys.stderr)
         return tuple(a[:n] for a in arrays)
 
-    rom_stem = args.rom.stem  # 'breakout', 'pong', etc.
-    if jaxtari is not None:
-        xi, jx = _align(xitari, jaxtari)
+    def _encode_against_xitari(other_path: Path, label: str) -> None:
+        """Encode one xitari-vs-<label> video if both dumps exist."""
+        if args.skip_encode:
+            return
+        if not xitari_path.exists():
+            print(f"xitari frames missing ({xitari_path}); skipping "
+                  f"{label} encode.", file=sys.stderr)
+            return
+        if not other_path.exists():
+            print(f"{label} frames missing ({other_path}); skipping encode.",
+                  file=sys.stderr)
+            return
+        xitari_full = _load_raw(xitari_path, args.n_frames, 210, COLS)
+        xitari = xitari_full[:, XITARI_TOP_CROP:XITARI_TOP_CROP + XITARI_ROWS, :]
+        other = _load_raw(other_path, args.n_frames, XITARI_ROWS, COLS)
+        xi, ot = _align(xitari, other)
         encode_video(
-            xi, jx, palette,
-            args.out_dir / f'{rom_stem}_xitari_vs_jaxtari.mp4',
-            left_label='xitari', right_label='jaxtari',
+            xi, ot, palette,
+            args.out_dir / f'{rom_stem}_xitari_vs_{label}.mp4',
+            left_label='xitari', right_label=label,
         )
-    if jutari is not None:
-        xi, jt = _align(xitari, jutari)
-        encode_video(
-            xi, jt, palette,
-            args.out_dir / f'{rom_stem}_xitari_vs_jutari.mp4',
-            left_label='xitari', right_label='jutari',
-        )
+
+    # jutari FIRST — it is ~205× faster than jaxtari per frame, so its
+    # dump AND its finished video land before the slow jaxtari stage
+    # even starts (user feedback 2026-06-12: "jaxtari should always run
+    # in background and after jutari"). Previously jaxtari dumped
+    # second-in-line and blocked the jutari video by tens of minutes.
+    if not args.skip_jutari:
+        dump_jutari(args.rom, actions_path, jutari_path, args.n_frames)
+    _encode_against_xitari(jutari_path, 'jutari')
+
+    if not args.skip_jaxtari:
+        dump_jaxtari(args.rom, actions_path, jaxtari_path, args.n_frames)
+    _encode_against_xitari(jaxtari_path, 'jaxtari')
     return 0
 
 
