@@ -143,8 +143,43 @@ keeping case=-1 (delay section).
    resulting enable axis)` at every RESP write and diff. That nails the
    exact divergence cell.
 
-Open as task #93 (pending). Filed task #92 covers the related
-seaquest/enduro regression which is downstream of the same bug.
+**ROUND 2 ATTEMPT (2026-06-12 same session)** — added the missing NUSIZ-
+write and HMOVE-write resets (xitari case 0x04/0x05 hardcode
+`ourPlayerMaskTable[align][0][...]`, i.e. `enable=0` — they RESET skip-
+first). Also added end-of-scanline reset per TIA.cxx:1796-1802 TODO
+comment ("reset at end of scanline since the other way would be too
+slow"). RESULT: NO REGRESSIONS but also NO IMPROVEMENTS — all 6 ROMs
+identical to baseline (pong/breakout/space_invaders BIT-EXACT, pitfall
+166, seaquest 1087, enduro 1133). Skip_first never visibly fires.
+
+**ROOT CAUSE OF ROUND 2 NULL RESULT** — jutari renders ONE FULL SCANLINE
+per `tia_advance` call (per-pixel within the call, but the skip_first
+state is captured at the START and the scanline render is monolithic
+from the renderer's perspective). xitari, by contrast, mutates
+myCurrentPMask MID-SCANLINE at RESP time, and the subsequent pixels
+within the same scanline use the new mask. For pitfall's TIME row, the
+RESP fires AT the leftmost-copy position; xitari's pixels AFTER that
+position render with enable=1 (the leftmost copy is suppressed because
+its display region was just passed). jutari's scanline render fires
+AFTER the CPU instruction containing RESP, so by then the whole scanline
+gets rendered with the post-RESP skip_first — either ALL pixels see
+skip_first=true (over-suppressing leftmost-copy across whole row) or
+NONE do (if the next NUSIZ/HMOVE clears it before render fires).
+
+**ROUND 3 / 4** — tried removing the HMOVE reset (kept only NUSIZ +
+scanline-end reset) per the actual xitari source layout. Same nulled
+result.
+
+**FIX REQUIRES** a per-color-clock skip_first tracker (analogous to the
+pending_writes mechanism for register stores). The render loop already
+iterates color clocks 68..227 with mid-scanline writes; it would need to
+ALSO honor a "skip_first changes at color clock X" event from the RESP.
+Round 2's TIAState fields were architecturally sound but the render
+loop wasn't extended.
+
+Reverted round 2 changes (`git checkout jutari/src/tia/TIA.jl`). Task
+#93 stays open; the right next attempt is the per-color-clock skip_first
+tracker, not a one-bit-per-scanline approximation.
 
 ---
 
