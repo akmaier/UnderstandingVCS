@@ -14,6 +14,78 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🏆 Task #91 CLOSED (2026-06-12) — fresh xitari fixtures + GRP shadow lookback (space_invaders BIT-EXACT, pitfall HUD digits render)
+
+**Two compounded bugs:**
+
+1. **STALE xitari fixtures** — `tools/fixtures/screens/pitfall_noop_10.screen.gz`
+   was off from a fresh `tools/trace_dump --screen` run by **5570 px** for
+   pitfall and **1140 px** for enduro (almost certainly committed before
+   tasks #81/#82 landed their pitfall/enduro starting-action fixes). The
+   entire previous task #86 root-cause analysis ("xitari RESP* skip-first-
+   copy semantic") was diagnosing against outdated ground truth and was
+   WRONG. Reverted those exploratory changes; regenerated the two fixtures
+   from fresh trace_dump output. pong/breakout/space_invaders/seaquest
+   fixtures verified still bit-exact.
+
+2. **GRP0/GRP1 shadow-latch missed pending writes** — in
+   `jutari/src/tia/TIA.jl::tia_poke!`'s deferred path (line ~479), the
+   GRP0 / GRP1 VDELP shadow capture read `tia.registers[W_GRP*+1]` for
+   the OTHER player's grp*_old — but if that GRP* was itself pending
+   (in `pending_writes`, not yet drained), the live register is STALE.
+   xitari has no deferral, so `myDGRP0 = myGRP0` / `myDGRP1 = myGRP1`
+   sees the just-written byte. Without lookback, jutari's
+   `STA GRP0; STA GRP1` two-digit kernel captures the PRE-GRP0-write
+   byte into grp0_old → with VDELP0=1 the second digit row renders
+   the wrong sprite shape, and the first digit row renders solid
+   (no sprite at all).
+
+**Fix** (`jutari/src/tia/TIA.jl::tia_poke!` deferred GRP* branch):
+
+  - When W_GRP0 is poked, scan pending_writes for the LATEST pending
+    GRP1 byte (regardless of activation_clock — the latch fires at
+    cart-write time per xitari) and use that as `grp1_old`.
+  - When W_GRP1 is poked, scan pending_writes for the LATEST pending
+    GRP0 byte → `grp0_old`. Same lookback already existed for ENABL.
+
+**Numbers (worst-frame screen diff, after fixture regen + fix):**
+
+  | ROM            | Pre-#91 (stale)  | Post-regen          | Post-fix       |
+  |----------------|------------------|---------------------|----------------|
+  | pong           | 0                | 0                   | **0**          |
+  | breakout       | 0                | 0                   | **0**          |
+  | space_invaders | 42               | 42                  | **0 BIT-EXACT**|
+  | pitfall        | 553              | 184                 | **166** (HUD digits render correctly) |
+  | seaquest       | 1043             | 1043                | 1087 (+44, exposed downstream) |
+  | enduro         | 774              | 660                 | 1133 (+473, exposed downstream) |
+
+The seaquest/enduro regression is from a different latent bug whose
+wrong-but-consistent output was canceling the wrong-but-consistent
+shadow-latch staleness. Now that the shadow latch matches xitari
+exactly, this other bug is exposed. Filed as task #92; not addressed
+in this commit.
+
+**Pitfall HUD visualization** (rows 9-29, cols 60-67, color $D2 lit):
+
+  Before fix (stale fixture diagnosed → wrong target):
+  ```
+  r 9: ████████████████████████████████  (TIME digit MISSING — solid)
+  ...
+  r22: ····████████████████████████████  (SCORE digit present but WRONG shape)
+  r23: ███··███████████████████████████  (3-wide bar instead of 2)
+  ```
+
+  After fix:
+  ```
+  r 9: ····████████████████████████████  (TIME digit row TOP — matches xitari)
+  r10: ·██··███████████████████████████  (TIME digit "0" left bar — matches xitari)
+  r22: ····████████████████████████████  (SCORE digit row TOP — matches xitari)
+  ```
+
+All 1170+ jutari runtests pass.
+
+---
+
 ### 🔬 Task #80 SWEEP RESULTS (2026-06-11)
 
 Ran `tools/seaquest_boot_probe.jl` + a reset-timing sweep on jutari's

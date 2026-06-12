@@ -476,13 +476,37 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
         # effects using the OLD register value (which is still in
         # tia.registers[]). The latch must capture state at the cart's
         # write moment, not at activation_clock.
+        # Task #91 (2026-06-12): a previous GRP0 or GRP1 write may
+        # still be pending (not yet applied to tia.registers[]) — if
+        # so the live register is STALE and the shadow latch must
+        # use the LATEST PENDING value of that register regardless
+        # of its activation_clock. This is what xitari does: it has
+        # no deferral, so `myGRP0`/`myGRP1` are always the latest
+        # CPU-written values at the time of shadow capture (see
+        # xitari/emucore/TIA.cxx case 0x1B/0x1C: `myDGRP1 = myGRP1`
+        # / `myDGRP0 = myGRP0`). Without the lookback, jutari's
+        # two-digit kernels (pitfall TIME row) render solid because
+        # the second-digit shadow captures the STALE pre-GRP0-write
+        # byte instead of the just-written one.
         if reg == W_GRP0
-            tia.grp1_old = tia.registers[W_GRP1 + 1]
+            effective_grp1 = tia.registers[W_GRP1 + 1]
+            for (_, w_reg, w_val) in tia.pending_writes
+                if w_reg == W_GRP1
+                    effective_grp1 = w_val   # latest pending wins
+                end
+            end
+            tia.grp1_old = effective_grp1
         elseif reg == W_GRP1
-            tia.grp0_old  = tia.registers[W_GRP0 + 1]
+            effective_grp0 = tia.registers[W_GRP0 + 1]
+            for (_, w_reg, w_val) in tia.pending_writes
+                if w_reg == W_GRP0
+                    effective_grp0 = w_val   # latest pending wins
+                end
+            end
+            tia.grp0_old = effective_grp0
             effective_enabl = tia.registers[W_ENABL + 1]
-            for (act_cc, w_reg, w_val) in tia.pending_writes
-                if w_reg == W_ENABL && act_cc <= Int(beam_cc)
+            for (_, w_reg, w_val) in tia.pending_writes
+                if w_reg == W_ENABL
                     effective_enabl = w_val
                 end
             end

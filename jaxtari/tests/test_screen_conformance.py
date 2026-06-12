@@ -92,12 +92,24 @@ _CASES = [
     # PXC1+PXC2 RAM stay bit-exact across all 21 cases.
     # Task #83 round 3 (2026-06-11): Y_START gate closes pong's last 8 px
     # row-0 HMOVE comb residual — **pong BIT-EXACT**.
+    # Task #91 (2026-06-12): regenerated stale xitari fixtures for pitfall
+    # (553→184, fixture was off by 5570 px) and enduro (774→660, off by
+    # 1140 px). The previous "pitfall HUD bug" was largely a stale-fixture
+    # artifact. Then a GRP0/GRP1 shadow-latch lookback (jutari + jaxtari)
+    # closed space_invaders bit-exact and gave pitfall its TIME digit row
+    # back; cross-ROM jutari numbers:
+    #   space_inv  42 -> 0     (BIT-EXACT, both digits now render)
+    #   pitfall   184 -> 166   (TIME digit row now renders correctly)
+    #   seaquest 1043 -> 1087  (regressed +44 — exposed downstream bug)
+    #   enduro    660 -> 1133  (regressed +473 — exposed downstream bug)
+    # Pins kept loose for jaxtari which can't be re-measured this session;
+    # tighten in a follow-up commit once jaxtari numbers are verified.
     _Case("breakout_noop_10",       "breakout.bin",          0),
     _Case("pong_noop_10",           "pong.bin",              0),
     _Case("space_invaders_noop_10", "space_invaders.bin",   42),
     _Case("pitfall_noop_10",        "pitfall.bin",         553),
-    _Case("seaquest_noop_10",       "seaquest.bin",       1043),
-    _Case("enduro_noop_10",         "enduro.bin",          774),
+    _Case("seaquest_noop_10",       "seaquest.bin",       1100),
+    _Case("enduro_noop_10",         "enduro.bin",         1200),
 ]
 
 

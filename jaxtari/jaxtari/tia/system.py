@@ -754,19 +754,35 @@ def tia_poke(tia: TIAState, addr: int, value: int,
         delay = _poke_activation_delay(reg, beam_cc)
         activation_clock = beam_cc + delay
         new_pending = tia.pending_writes + ((activation_clock, reg, value8),)
+        # Task #91 (2026-06-12): a previous GRP* (or ENABL) write may
+        # still be pending — if so the live register is STALE and the
+        # shadow latch must use the LATEST PENDING value. xitari has no
+        # deferral, so `myDGRP1 = myGRP1` / `myDGRP0 = myGRP0` in cases
+        # 0x1B/0x1C always see the just-written byte. Without this
+        # lookback, a `STA GRP0; STA GRP1` two-digit kernel (pitfall
+        # TIME row) captures the pre-GRP0-write byte into grp0_old,
+        # losing the first digit and rendering the second wrong.
         if reg == W_GRP0:
+            effective_grp1 = int(tia.registers[W_GRP1])
+            for _, w_reg, w_val in tia.pending_writes:
+                if w_reg == W_GRP1:
+                    effective_grp1 = int(w_val)   # latest pending wins
             return tia._replace(
                 pending_writes=new_pending,
-                grp1_old=int(tia.registers[W_GRP1]),
+                grp1_old=effective_grp1,
             )
         # reg == W_GRP1
+        effective_grp0 = int(tia.registers[W_GRP0])
+        for _, w_reg, w_val in tia.pending_writes:
+            if w_reg == W_GRP0:
+                effective_grp0 = int(w_val)
         effective_enabl = int(tia.registers[W_ENABL])
-        for act_cc, w_reg, w_val in tia.pending_writes:
-            if w_reg == W_ENABL and act_cc <= beam_cc:
+        for _, w_reg, w_val in tia.pending_writes:
+            if w_reg == W_ENABL:
                 effective_enabl = int(w_val)
         return tia._replace(
             pending_writes=new_pending,
-            grp0_old=int(tia.registers[W_GRP0]),
+            grp0_old=effective_grp0,
             enabl_old=effective_enabl,
         )
 
