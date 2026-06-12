@@ -14,6 +14,90 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🏆🏆 Task #94 CLOSED (2026-06-12) — activation-time VDELP shadow latch (PITFALL BIT-EXACT, 4 of 6 ROMs now 0 px)
+
+**The final root cause of the pitfall "time renders in wrong format" bug**
+— and the #92 seaquest/enduro regression, in one mechanism.
+
+**Verification-first this time**: before writing code, traced pitfall's
+HUD scanlines via `JuTari.Bus.trace_enable!` (script pattern in
+`/tmp/_pitfall_hud_trace.jl`). Found the classic Activision 6-digit
+kernel: per HUD scanline (sl 43-50), GRP0/GRP1 are written SEVEN times —
+3 in HBLANK (immediate) + 4 mid-visible-region (deferred, activation
+x = 23 / 32 / 41 / 50):
+
+```
+sl=44 cc=  9 x_act=-58: GRP0=$00   (HBLANK — immediate)
+sl=44 cc= 33 x_act=-34: GRP1=$00   (HBLANK — latches DGRP0=$00)
+sl=44 cc= 57 x_act=-10: GRP0=$46   (HBLANK — first digit "2"!)
+sl=44 cc= 90 x_act= 23: GRP1=$66   (deferred — latches DGRP0=$46)
+sl=44 cc= 99 x_act= 32: GRP0=$66   (deferred — latches DGRP1=$66)
+sl=44 cc=108 x_act= 41: GRP1=$66   (deferred — latches DGRP0=$66)
+sl=44 cc=117 x_act= 50: GRP0=$66   (deferred — latches DGRP1=$66)
+```
+
+With VDELP0=VDELP1=1, the players render from the SHADOWS, and the
+shadow value evolves mid-scanline: DGRP0 = $00 until x=23, $46 ("2")
+for x in 23..40, $66 ("0") after. Each digit value lives in the shadow
+for ~2 copy slots. jutari/jaxtari captured the shadow ONCE per write at
+POKE time into a single field — the render then used the FINAL value
+($66) for the whole row: wrong digit values (the user's literal
+"renders numbers in wrong format") plus phantom copies left of x=23
+where xitari's shadows were still $00.
+
+Task #91's "latest pending value" lookback was a half-fix: it changed
+WHICH single snapshot the whole row used (final instead of stale) —
+right for 2 of pitfall's digit slots, wrong for others, and net-WORSE
+for enduro/seaquest (the #92 regression).
+
+**Fix** (both ports):
+
+  - `jutari/src/tia/TIA.jl`: new `_apply_pending_write!(tia, reg, val)`
+    — stores the register AND runs the GRP0/GRP1 VDELP/VDELBL shadow
+    latch (`grp1_old = GRP1` on GRP0 writes; `grp0_old = GRP0`,
+    `enabl_old = ENABL` on GRP1 writes). Used at all three drain sites
+    (visible per-color-clock loop, defensive post-loop drain, VBLANK
+    drain). The deferred branch of `tia_poke!` now ONLY queues — no
+    poke-time shadow capture, no lookbacks. This is exactly xitari's
+    ordering: `updateFrame(clock + delay)` then mutate (TIA.cxx case
+    0x1B/0x1C) — store + latch effective at the activation clock,
+    against the register file as of that moment.
+  - The 2026-06-03 ENABL lookback (breakout frame-92 fix) is subsumed:
+    a same-scanline ENABL write with an earlier activation clock is
+    already stored when GRP1's latch reads it.
+  - `jaxtari/jaxtari/tia/system.py`: functional mirror
+    `_apply_pending_write(tia, reg, val) -> TIAState` at the same three
+    drain sites + threading `grp0_old/grp1_old/enabl_old` from
+    `tia_for_render` into `tia_advance`'s final `_replace` (previously
+    the shadows were dropped on the floor there — only `registers` was
+    threaded).
+
+**Numbers (worst-frame screen diff vs fresh xitari fixtures, jutari):**
+
+  | ROM            | post-#91 | post-#94            |
+  |----------------|----------|---------------------|
+  | pong           | 0        | **0**               |
+  | breakout       | 0        | **0**               |
+  | space_invaders | 0        | **0**               |
+  | pitfall        | 166      | **0 BIT-EXACT** 🎉  |
+  | seaquest       | 1087     | **904** (best ever; pre-#91 was 1043) |
+  | enduro         | 1133     | **516** (best ever; pre-#91 was 660)  |
+
+All 1170+ jutari runtests pass. Task #92 (the regression) is RESOLVED —
+both ROMs now beat their pre-#91 numbers. Task #93 (skip-first-copy) was
+the WRONG TREE for pitfall: the measured RESP case there is when=-1
+(no skip; oldx==newx). Skip-first remains a real xitari semantic that
+may matter inside the remaining seaquest/enduro residuals, but nothing
+currently attributes to it — downgraded to low priority.
+
+**Method lesson** (for the next agent): two blind implementation rounds
+of #93 cost a session; ONE 40-line trace probe pinpointed the real
+mechanism in minutes. For render divergences, dump the per-scanline
+write timeline FIRST and check whether the divergence region's pixels
+depend on state that EVOLVES mid-row.
+
+---
+
 ### 🏆 Task #91 CLOSED (2026-06-12) — fresh xitari fixtures + GRP shadow lookback (space_invaders BIT-EXACT, pitfall HUD digits render)
 
 **Two compounded bugs:**

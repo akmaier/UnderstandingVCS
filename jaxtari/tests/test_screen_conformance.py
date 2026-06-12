@@ -95,21 +95,24 @@ _CASES = [
     # Task #91 (2026-06-12): regenerated stale xitari fixtures for pitfall
     # (553→184, fixture was off by 5570 px) and enduro (774→660, off by
     # 1140 px). The previous "pitfall HUD bug" was largely a stale-fixture
-    # artifact. Then a GRP0/GRP1 shadow-latch lookback (jutari + jaxtari)
-    # closed space_invaders bit-exact and gave pitfall its TIME digit row
-    # back; cross-ROM jutari + jaxtari numbers (verified exactly match):
-    #   space_inv  42 -> 0     (BIT-EXACT, both digits now render)
-    #   pitfall   184 -> 166   (TIME digit row now renders correctly)
-    #   seaquest 1043 -> 1087  (regressed +44 — exposed downstream bug #92)
-    #   enduro    660 -> 1133  (regressed +473 — exposed downstream bug #92)
-    # PXC2 still bit-exact (jaxtari ≡ jutari for all 6 ROMs at exact
-    # numbers above).
+    # artifact.
+    # Task #91 round 2 / #94 (2026-06-12): VDELP/VDELBL shadow latches now
+    # fire at ACTIVATION time inside the pending-writes drain (xitari's
+    # `updateFrame(clock+delay)`-then-mutate ordering) instead of a single
+    # poke-time snapshot per scanline. Pitfall's 6-digit kernel rewrites
+    # GRP0/GRP1 4× per HUD row — each digit value lives in the shadow for
+    # ~2 copy slots, so whole-row snapshots rendered wrong digit values
+    # ("wrong format") + phantom copies. Cross-ROM (jutari == jaxtari):
+    #   pitfall   166 -> 0     (BIT-EXACT — HUD time/score fully correct)
+    #   seaquest 1087 -> 904   (best ever; was 1043 pre-#91)
+    #   enduro   1133 -> 516   (best ever; was 660 pre-#91)
+    #   pong / breakout / space_invaders stay BIT-EXACT.
     _Case("breakout_noop_10",       "breakout.bin",          0),
     _Case("pong_noop_10",           "pong.bin",              0),
     _Case("space_invaders_noop_10", "space_invaders.bin",    0),
-    _Case("pitfall_noop_10",        "pitfall.bin",         166),
-    _Case("seaquest_noop_10",       "seaquest.bin",       1087),
-    _Case("enduro_noop_10",         "enduro.bin",         1133),
+    _Case("pitfall_noop_10",        "pitfall.bin",           0),
+    _Case("seaquest_noop_10",       "seaquest.bin",        904),
+    _Case("enduro_noop_10",         "enduro.bin",          516),
 ]
 
 

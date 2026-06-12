@@ -754,37 +754,18 @@ def tia_poke(tia: TIAState, addr: int, value: int,
         delay = _poke_activation_delay(reg, beam_cc)
         activation_clock = beam_cc + delay
         new_pending = tia.pending_writes + ((activation_clock, reg, value8),)
-        # Task #91 (2026-06-12): a previous GRP* (or ENABL) write may
-        # still be pending — if so the live register is STALE and the
-        # shadow latch must use the LATEST PENDING value. xitari has no
-        # deferral, so `myDGRP1 = myGRP1` / `myDGRP0 = myGRP0` in cases
-        # 0x1B/0x1C always see the just-written byte. Without this
-        # lookback, a `STA GRP0; STA GRP1` two-digit kernel (pitfall
-        # TIME row) captures the pre-GRP0-write byte into grp0_old,
-        # losing the first digit and rendering the second wrong.
-        if reg == W_GRP0:
-            effective_grp1 = int(tia.registers[W_GRP1])
-            for _, w_reg, w_val in tia.pending_writes:
-                if w_reg == W_GRP1:
-                    effective_grp1 = int(w_val)   # latest pending wins
-            return tia._replace(
-                pending_writes=new_pending,
-                grp1_old=effective_grp1,
-            )
-        # reg == W_GRP1
-        effective_grp0 = int(tia.registers[W_GRP0])
-        for _, w_reg, w_val in tia.pending_writes:
-            if w_reg == W_GRP0:
-                effective_grp0 = int(w_val)
-        effective_enabl = int(tia.registers[W_ENABL])
-        for _, w_reg, w_val in tia.pending_writes:
-            if w_reg == W_ENABL:
-                effective_enabl = int(w_val)
-        return tia._replace(
-            pending_writes=new_pending,
-            grp0_old=effective_grp0,
-            enabl_old=effective_enabl,
-        )
+        # Task #91 round 2 (2026-06-12): for deferred GRP0/GRP1, the
+        # VDELP / VDELBL shadow latch fires at ACTIVATION time inside
+        # `_apply_pending_write` (the render-loop drain) — NOT here at
+        # poke time. xitari's case 0x1B/0x1C runs `updateFrame(clock +
+        # delay)` first and THEN mutates myGRP* + myDGRP*, so both the
+        # register store and the shadow capture are effective at the
+        # activation clock, against the register file as of that
+        # moment. A poke-time snapshot collapses the shadow to ONE
+        # value for the whole scanline — but pitfall's 6-digit kernel
+        # rewrites GRP0/GRP1 four times mid-row, and each digit only
+        # exists in the shadow for ~2 copy slots.
+        return tia._replace(pending_writes=new_pending)
 
     new_registers = tia.registers.at[reg].set(jnp.uint8(value8))
     new_tia = tia._replace(registers=new_registers)
@@ -930,6 +911,34 @@ def tia_poke(tia: TIAState, addr: int, value: int,
 # Timing
 # --------------------------------------------------------------------------- #
 
+def _apply_pending_write(tia: "TIAState", reg: int, val) -> "TIAState":
+    """Apply ONE pending register write at its activation clock,
+    INCLUDING the VDELP / VDELBL shadow latch for GRP0 / GRP1.
+
+    Task #91 round 2 (2026-06-12): drain-side counterpart of xitari's
+    poke handler — xitari runs `updateFrame(clock + delay)` and THEN
+    mutates myGRP* + myDGRP*, i.e. both the store and the shadow
+    capture are effective at the activation clock, against the
+    register file as of that moment (earlier-activating writes already
+    applied). Pitfall's 6-digit kernel depends on this: GRP0/GRP1 are
+    rewritten 4× per HUD scanline and each digit value lives in the
+    shadow for only ~2 copy slots. A same-scanline ENABL write with an
+    earlier activation clock has already been stored by the drain, so
+    GRP1's ENABL latch sees the new value — subsuming the 2026-06-03
+    ENABL-lookback fix (breakout frame-92) with exact xitari ordering.
+    Mirrors jutari `_apply_pending_write!`.
+    """
+    new_tia = tia._replace(registers=tia.registers.at[reg].set(jnp.uint8(val)))
+    if reg == W_GRP0:
+        return new_tia._replace(grp1_old=int(new_tia.registers[W_GRP1]))
+    if reg == W_GRP1:
+        return new_tia._replace(
+            grp0_old=int(new_tia.registers[W_GRP0]),
+            enabl_old=int(new_tia.registers[W_ENABL]),
+        )
+    return new_tia
+
+
 def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
     """Advance the TIA by `cpu_cycles` CPU cycles, rendering each
     completed scanline into the framebuffer.
@@ -1000,10 +1009,9 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
                 while (write_idx < len(pending_sorted)
                        and pending_sorted[write_idx][0] <= c):
                     _, reg, val = pending_sorted[write_idx]
-                    tia_for_render = tia_for_render._replace(
-                        registers=tia_for_render.registers
-                            .at[reg].set(jnp.uint8(val))
-                    )
+                    # Task #91 round 2: store + GRP shadow latch at the
+                    # activation clock (xitari poke ordering).
+                    tia_for_render = _apply_pending_write(tia_for_render, reg, val)
                     cached_sets = _object_pixel_sets(tia_for_render)
                     write_idx += 1
                 x = c - HBLANK_COLOR_CLOCKS
@@ -1027,10 +1035,7 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
             # but defensive). Apply to the registers.
             while write_idx < len(pending_sorted):
                 _, reg, val = pending_sorted[write_idx]
-                tia_for_render = tia_for_render._replace(
-                    registers=tia_for_render.registers
-                        .at[reg].set(jnp.uint8(val))
-                )
+                tia_for_render = _apply_pending_write(tia_for_render, reg, val)
                 write_idx += 1
 
             row = jnp.array(row_pixels, dtype=jnp.uint8)
@@ -1061,10 +1066,7 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
             # reference is xitari. (Discovered via per-bus-op trace
             # diff on breakout, commit d66b290 / a8cdcc9, 2026-06-03.)
             for _, reg, val in pending_sorted:
-                tia_for_render = tia_for_render._replace(
-                    registers=tia_for_render.registers
-                        .at[reg].set(jnp.uint8(val))
-                )
+                tia_for_render = _apply_pending_write(tia_for_render, reg, val)
         new_collisions = jnp.array(running_collisions, dtype=jnp.uint8)
 
     new_line = tia.scanline + line_advance
@@ -1112,6 +1114,14 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
         registers=final_registers,
         pending_writes=() if line_advance > 0 else tia.pending_writes,
         hmove_blank_pending=new_hmove_blank,
+        # Task #91 round 2 (2026-06-12): the drain now latches the
+        # VDELP / VDELBL shadows at activation time, so the post-drain
+        # shadow values must flow into the new state alongside the
+        # register file (they live on `tia_for_render`, which equals
+        # `tia` when line_advance == 0).
+        grp0_old=tia_for_render.grp0_old if line_advance > 0 else tia.grp0_old,
+        grp1_old=tia_for_render.grp1_old if line_advance > 0 else tia.grp1_old,
+        enabl_old=tia_for_render.enabl_old if line_advance > 0 else tia.enabl_old,
         # P4c (dump-pot): keep a monotonic CPU-cycle counter so
         # `tia_peek` can decide whether the paddle cap has charged
         # past its xitari-formula threshold yet.

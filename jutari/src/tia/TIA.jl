@@ -466,52 +466,28 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
         reg == W_COLUP0 || reg == W_COLUP1 || reg == W_COLUPF || reg == W_COLUBK ||
         reg == W_CTRLPF || reg == W_REFP0 || reg == W_REFP1 ||
         # Task #84 (2026-06-10): also defer GRP0/GRP1 (render value).
-        # VDELP latch side effects still fire immediately below.
+        # Task #91 round 2 (2026-06-12): the VDELP latch side effects
+        # fire at ACTIVATION time in `_apply_pending_write!`, not here.
         reg == W_GRP0 || reg == W_GRP1) &&
        beam_cc >= HBLANK_COLOR_CLOCKS
         delay = _poke_activation_delay(reg, beam_cc)
         activation_clock = Int(beam_cc) + delay
         push!(tia.pending_writes, (activation_clock, reg, value8))
-        # GRP*-specific: run immediate VDELP / VDELBL latch side
-        # effects using the OLD register value (which is still in
-        # tia.registers[]). The latch must capture state at the cart's
-        # write moment, not at activation_clock.
-        # Task #91 (2026-06-12): a previous GRP0 or GRP1 write may
-        # still be pending (not yet applied to tia.registers[]) — if
-        # so the live register is STALE and the shadow latch must
-        # use the LATEST PENDING value of that register regardless
-        # of its activation_clock. This is what xitari does: it has
-        # no deferral, so `myGRP0`/`myGRP1` are always the latest
-        # CPU-written values at the time of shadow capture (see
-        # xitari/emucore/TIA.cxx case 0x1B/0x1C: `myDGRP1 = myGRP1`
-        # / `myDGRP0 = myGRP0`). Without the lookback, jutari's
-        # two-digit kernels (pitfall TIME row) render solid because
-        # the second-digit shadow captures the STALE pre-GRP0-write
-        # byte instead of the just-written one.
-        if reg == W_GRP0
-            effective_grp1 = tia.registers[W_GRP1 + 1]
-            for (_, w_reg, w_val) in tia.pending_writes
-                if w_reg == W_GRP1
-                    effective_grp1 = w_val   # latest pending wins
-                end
-            end
-            tia.grp1_old = effective_grp1
-        elseif reg == W_GRP1
-            effective_grp0 = tia.registers[W_GRP0 + 1]
-            for (_, w_reg, w_val) in tia.pending_writes
-                if w_reg == W_GRP0
-                    effective_grp0 = w_val   # latest pending wins
-                end
-            end
-            tia.grp0_old = effective_grp0
-            effective_enabl = tia.registers[W_ENABL + 1]
-            for (_, w_reg, w_val) in tia.pending_writes
-                if w_reg == W_ENABL
-                    effective_enabl = w_val
-                end
-            end
-            tia.enabl_old = effective_enabl
-        end
+        # Task #91 round 2 (2026-06-12): for deferred GRP0/GRP1, the
+        # VDELP / VDELBL shadow latch fires at ACTIVATION time inside
+        # `_apply_pending_write!` (the render-loop drain) — NOT here at
+        # poke time. xitari's case 0x1B/0x1C runs `updateFrame(clock +
+        # delay)` first and THEN mutates myGRP* + myDGRP*, so both the
+        # register store and the shadow capture are effective at the
+        # activation clock, against the register file as of that moment.
+        # A poke-time snapshot (even with the round-1 "latest pending
+        # value" lookback) collapses the shadow to ONE value for the
+        # whole scanline — but pitfall's 6-digit kernel rewrites GRP0/
+        # GRP1 four times mid-row (activation x = 23/32/41/50), and each
+        # digit only exists in the shadow for ~2 copy slots. Whole-row
+        # snapshots render the wrong digit values ("wrong format") and
+        # paint phantom copies left of x=23 where xitari's shadows were
+        # still $00.
         return nothing                      # register update deferred
     end
 
@@ -622,6 +598,32 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
     return nothing
 end
 
+# Task #91 round 2 (2026-06-12): apply ONE pending register write at its
+# activation clock, INCLUDING the VDELP / VDELBL shadow latch for GRP0 /
+# GRP1. This is the drain-side counterpart of xitari's poke handler:
+# xitari runs `updateFrame(clock + delay)` and THEN mutates myGRP* +
+# myDGRP* — i.e. both the store and the shadow capture are effective at
+# the activation clock, against the register file as of that moment
+# (earlier-activating writes already applied). Pitfall's 6-digit kernel
+# depends on this: GRP0/GRP1 are rewritten 4× per HUD scanline and each
+# digit value lives in the shadow for only ~2 copy slots.
+@inline function _apply_pending_write!(tia::TIAState, reg::Int, val::UInt8)
+    tia.registers[reg + 1] = val
+    if reg == W_GRP0
+        # Writing GRP0 latches the (current) GRP1 into grp1_old.
+        tia.grp1_old = tia.registers[W_GRP1 + 1]
+    elseif reg == W_GRP1
+        # Writing GRP1 latches GRP0 (for VDELP0) and ENABL (for VDELBL).
+        # A same-scanline ENABL write with an earlier activation clock
+        # has already been stored by this drain, so the latch sees the
+        # new value — this subsumes the 2026-06-03 ENABL-lookback fix
+        # (breakout frame-92) with exact xitari ordering.
+        tia.grp0_old  = tia.registers[W_GRP0 + 1]
+        tia.enabl_old = tia.registers[W_ENABL + 1]
+    end
+    return nothing
+end
+
 """
     tia_advance!(tia, cpu_cycles)
 
@@ -678,7 +680,9 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
                 while write_idx <= length(pending_sorted) &&
                       pending_sorted[write_idx][1] <= c
                     _, reg, val = pending_sorted[write_idx]
-                    tia.registers[reg + 1] = val
+                    # Task #91 round 2: store + GRP shadow latch at the
+                    # activation clock (xitari poke ordering).
+                    _apply_pending_write!(tia, reg, val)
                     cached_sets = _object_pixel_sets(tia)
                     write_idx += 1
                 end
@@ -702,7 +706,7 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
             # construction — but defensive).
             while write_idx <= length(pending_sorted)
                 _, reg, val = pending_sorted[write_idx]
-                tia.registers[reg + 1] = val
+                _apply_pending_write!(tia, reg, val)
                 write_idx += 1
             end
             # Task #83 round 3 (2026-06-11): only WRITE framebuffer
@@ -749,7 +753,7 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
             # VBLANK between frames, while xitari did not. (Discovered
             # via per-bus-op trace diff, commit d66b290, 2026-06-03.)
             for (_, reg, val) in pending_sorted
-                tia.registers[reg + 1] = val
+                _apply_pending_write!(tia, reg, val)
             end
             # Task #83 (2026-06-11): do NOT clear hmove_blank_pending
             # here. VBLANK scanlines should preserve the flag so it
