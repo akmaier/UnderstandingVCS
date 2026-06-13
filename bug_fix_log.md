@@ -38,14 +38,29 @@ worst-frame (249px) diff:
     scanline attribution. pong/breakout/SI don't strobe on the boundary,
     so they stay bit-exact.
 
-**Fix is in the P3i-g beam threading** (`Bus.poke!` `beam_sc`/`beam_cc`
-computation and/or the WSYNC-stall landing position): make the
-post-WSYNC HMOVE land at the new line's cyc 0, matching xitari. HIGH RISK
-— this is the cycle-threading core that all 4 bit-exact ROMs depend on.
-Next step: instrument the jittered scanline (WSYNC → HMOVE) to see
-`scanline_cycle` after the WSYNC stall and the `beam_sc` the HMOVE
-receives; compare to xitari's cyc 0. Gate ANY change on all 6 PXC-S pins
-+ PXC1/PXC2 RAM. Do NOT rush (same discipline as #93/#95).
+**Refinement — it's the FREE-RUNNING (non-WSYNC) lines.** xitari's enduro
+kernel is a MIX: some lines end with `STA WSYNC` (sl84,85 WSYNC@cyc73),
+but others free-run with no WSYNC (sl86,87,88 — HMOVE@cyc0 each, reached
+by cycle-exact code = exactly 76 CPU cycles between HMOVEs). On the
+WSYNC'd lines jutari lands HMOVE@cyc0 fine (the stall snaps to the
+boundary). On the FREE-RUNNING lines jutari's beam drifts: two HMOVEs 76
+CPU cycles apart should be line N cyc0 → line N+1 cyc0, but jutari places
+the second at line N **cyc75** — i.e. over a 76-CPU-cycle gap jutari's
+beam advanced only 75 color-clock-lines-worth at the poke point. So
+`beam_sc = tia.scanline_cycle + pending_tia_cycles` (Bus.poke! :352-353)
+undercounts by 1 at the poke on free-running lines, OR the per-
+instruction TIA advance in `_tia_post_step!` leaves scanline_cycle 1
+short. That 1-cycle slip flips the HMOVE onto the previous line → that
+line misses its comb (27 lines, 240 of the 249 px).
+
+**Fix is in the P3i-g cycle-accounting core** — HIGH RISK; all 4
+bit-exact ROMs depend on it. Next step: trace PC + scanline_cycle across
+a free-running line pair, find where jutari's beam is 1 short of xitari's
+`(clock - frameStart)` at the HMOVE write, and correct the beam_sc /
+per-instruction advance WITHOUT moving the WSYNC'd-line behaviour. Gate
+on all 6 PXC-S pins + PXC1/PXC2. Do NOT rush (discipline from #93/#95):
+a wrong nudge here desyncs every ROM. Likely shares a root with pitfall's
+INTIM ~1-cycle read offset — fixing one may fix both.
 
 ---
 
