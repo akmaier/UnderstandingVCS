@@ -14,23 +14,74 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
-### 🔭 Task #95 OPENED (2026-06-12) — pitfall random-action FIRE divergence (post-#94 video check)
+### 🔬 Task #95 DIAGNOSED (2026-06-13) — pitfall Harry-kernel renders 1 scanline late (render phase, NOT input timing)
 
-While re-rendering the pitfall comparison videos after #94 (with the
-reordered jutari-first pipeline), measured the 600-frame RANDOM-action
-run (tools/breakout_video action stream, FIRE at i%120==20):
+Investigated the post-#94 pitfall random-action divergence. **The initial
+"FIRE input-timing, pong #77 class" hypothesis (below) was WRONG** —
+disproved by the very first measurement, exactly the kind of mis-framing
+the method lesson warns about. Verify-first paid off again.
 
-  - jutari↔xitari diverges at EXACTLY frame 20 — the FIRST FIRE — in
-    the gameplay region (rows 103-119, 31 px; Harry's jump).
-  - Drift accumulates: 569/600 frames differ in rows 32+, mean
-    145 px/f, worst 1015 px (f=319). HUD diffs (mean 9 px/f) are
-    downstream of drifted game STATE (different time displayed), not
-    a render regression — the noop-10 screen stays BIT-EXACT.
-  - Same class as pong's frame-20 FIRE bug (task #77): input-read
-    timing at the FIRE edge, NOT TIA rendering. Recipe: per-frame RAM
-    diff with this action stream → first diverging byte at f=20 →
-    bus-trace INPT4/SWCHA reads around the edge
-    (BUG_BISECTION_METHODOLOGY.md).
+**Step 1 — RAM diff (`tools/jutari_xitari_ram_diff.py`, pitfall, the
+random action stream): jutari↔xitari RAM is BIT-EXACT for all 120 frames
+checked**, including the FIRE frame (20) and well past it. So the game
+state is in perfect lockstep — this is a PURE TIA-RENDER divergence, not
+input/CPU. (Input-timing diagnosis killed.)
+
+**Step 2 — screen diff at frame 20**: 31 px in a narrow vertical band,
+cols 18-22, rows 103-124 — Harry's multi-colour player sprite. Rows
+32-102 and the HUD (0-31) are bit-exact, so it is NOT global scanline
+drift; it is a localized, self-correcting 1-line shift confined to the
+player kernel's band.
+
+**Step 3 — the player band renders ONE SCANLINE LATE.** Harry's kernel
+is a per-scanline colour kernel: every line (WSYNC-aligned, HMOVE at
+cc0) it writes `COLUP0` at cc≈18 (early HBLANK) for that line's colour
+and `GRP0` late (cc≈120-168) for the NEXT line's graphics; VDELP0 is
+toggled on so the player also rides the GRP0 shadow (task #94 path).
+Both the colour AND the graphics land one display row low in jutari
+(row 103: xitari shows the bar in colour $12, jutari still shows
+background $d6).
+
+**Step 4 — instrumented the poke + render directly (frame 20):**
+  - render of internal scanline 148 uses `COLUP0=$c8`; xitari colours
+    it `$d2`. jutari's COLUP0 only becomes `$d2` at internal sl 149.
+  - the `COLUP0=$d2` poke fires at `tia.scanline = 149`, `scanline_cycle
+    = 3` (beam_cc 18) — i.e. when the kernel writes the setup for the
+    line it intends to colour, **jutari's scanline counter is already
+    +1** relative to the display row that write must affect. The render
+    of line 148 has already happened by then, so line 148 keeps the
+    previous colour and the new value bleeds onto 149.
+
+**Root cause (narrowed):** the HBLANK "scanline-setup" writes
+(`COLUP0`/`GRP0`) in Pitfall's Harry kernel are applied immediately
+(beam_cc < 68 → not deferred; see the deferred-block comment "applying
+them immediately for the whole scanline gives the same render"). That
+assumption holds when the line they set up is rendered AFTER the write —
+true for pong/breakout/SI — but Pitfall's WSYNC phase puts jutari's
+`tia.scanline` one ahead at the moment of the write, so the line they
+mean to colour was already committed.
+
+**Why not fixed this session:** the fix lives in the WSYNC ↔ scanline-
+render PHASE (which beam line a post-WSYNC HBLANK write belongs to), the
+highest-risk part of the core. pong / breakout / space_invaders / pitfall
+are all BIT-EXACT under noop and must stay so; PXC-S gates on noop
+fixtures, and this residual is gameplay-only (random-action video). A
+rushed phase change here is exactly how #93 regressed 5 ROMs. Handing off
+with the precise evidence instead.
+
+**Next attempt (concrete):** compare jutari's `tia.scanline` at a known
+post-WSYNC HBLANK write against xitari's `(clock-myClockWhenFrameStarted)
+/228` scanline at the same write, on this kernel, to confirm the +1 and
+locate where the phase diverges (likely `tia_apply_wsync!` advancing the
+counter, or the render committing line N at entry rather than exit). Then
+make post-WSYNC HBLANK writes land on the line that follows, WITHOUT
+moving the boundary for the bit-exact ROMs — validate all 6 PXC-S ROMs
+stay at their pinned numbers before/after.
+
+---
+*Original (incorrect) hypothesis, kept for the record:* "Same class as
+pong's frame-20 FIRE bug (task #77): input-read timing at the FIRE edge."
+Disproved by the RAM diff (bit-exact through the FIRE frame).
 
 ### 🏆🏆 Task #94 CLOSED (2026-06-12) — activation-time VDELP shadow latch (PITFALL BIT-EXACT, 4 of 6 ROMs now 0 px)
 
