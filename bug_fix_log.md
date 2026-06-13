@@ -14,6 +14,65 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🧪 Task #80 — FAITHFUL-PORT ATTEMPT (ultracode) did NOT converge; reverted (2026-06-13)
+
+Attempted the principled fix: replace jutari's eager RIOT timer with a faithful
+lazy port of xitari `M6532` (reset 25/shift-6; store my_timer/interval_shift/
+cycles_when_set; compute INTIM/INSTAT on read via xitari's exact formulas incl.
+the `myTimerReadAfterInterrupt` post-expiry branch; thread the monotonic cycle
+`tia.total_cycles + pending_tia_cycles` into `riot_peek!`/`riot_poke!`;
+`riot_advance!` → no-op). Code: `jutari/src/riot/RIOT.jl` rewrite + 2 `Bus.jl`
+call sites. **Reverted** — `main` is clean (jutari tests pass, breakout
+bit-exact, seaquest baseline 6 bytes @ frame 0).
+
+**Why it didn't work (measured):**
+  - The lazy port took effect (seaquest boot frame-1 changed 21435 → **34583**
+    cyc) but went the WRONG way — LONGER than xitari's ~22116 (291 sl) — and the
+    INC still landed in frame 2 (→ $3f, not $3e). So my port returns INTIM
+    values that diverge from xitari (cart's boot-delay loop iterates MORE). It's
+    a port BUG, not a refutation of the approach.
+  - Re-confirmed dead-ends: reset-state-only (25/6 alone overshoots to 24703 +
+    still $3f); double-boot + RAM-residue + lazy timer (`/tmp/jutari_doubleboot.jl`)
+    → still $3f.
+
+**The blocker — clean alignment is impossible with the current probes.** xitari
+is DOUBLE-booted by trace_dump (`ALEInterface(rom)` ctor→loadROM→reset_game [boot
+1, RAM zeroed] then explicit `resetGame` [boot 2, RAM=boot-1 residue]); the
+REFERENCE fixture is **boot 2**. jutari single-boots. My INTIM probes mixed the
+two xitari boots, so I could never align jutari's single-boot read sequence to
+xitari's boot-2 read sequence to find the FIRST divergent read.
+
+**Confirmed sub-facts (keep):**
+  - seaquest boot delay polls INTIM heavily (2969 reads / 6 frames).
+  - xitari boot-delay timer is TIM64T-loaded (addr $0296, val 31, shift 6); the
+    RESET-default timer (25/shift-6) is read post-expiry before that load.
+  - jutari (eager, reset 0/0) loads val=192/presc-0; with reset 25/6 it loads
+    val=31/presc-6 (matches xitari) — so the reset fix DOES correct the load
+    divergence, but the post-expiry read values still diverge.
+
+**PRECISE NEXT STEP (fully-online, focused session):**
+  1. Instrument xitari to log ONLY **boot 2** (count `reset_game` calls; emit on
+     the 2nd) — its per-read INTIM sequence (value + my_timer/shift/delta) for
+     the whole boot. Env-guarded probe in `M6532::peek` case 0x04 + a call
+     counter.
+  2. Apply the lazy port to jutari again; log its per-read INTIM sequence.
+  3. Diff read-by-read → the FIRST divergent read pins the port bug (suspects:
+     `cur_cycles` base vs xitari per-frame `cycles()` with `systemCyclesReset`
+     adjustment; the read_after_int `cycles_when_int_reset` timing; UInt32/Int32
+     edge cases).
+  4. Fix the port; then rewrite the ~30 eager-model RIOT unit tests
+     (`jutari/test/runtests.jl` ~L2390-2520 assert `intim`/`prescaler_shift`/
+     `cycles_since_tick`/`timer_expired` internals → must test via `riot_peek!`
+     return values instead); mirror to jaxtari `riot/system.py`.
+  5. GATE: `jutari_xitari_ram_diff.py` ALL 6 ROMs (seaquest→0, 4 bit-exact stay
+     0) + jutari tests + jaxtari unit + PXC2 + PXC-S. Commit only if fully green.
+
+Cost/benefit note: this is a P4-scale RIOT-timer rewrite (subsystem + ~30 tests +
+both ports) for a 1-ROM HUD-flicker ($3e/$3f phase). Worth doing for fidelity,
+but it is NOT a turn-sized fix — budget a dedicated session.
+
+---
+
 ### 🎯 Task #80 — ROOT AREA FOUND: RIOT timer RESET-STATE mismatch (both ports 0/0 vs xitari 25/shift-6) (2026-06-13)
 
 Best #80 lead yet — the boot off-by-1 lives in the **RIOT (M6532) timer**, not
