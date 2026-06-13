@@ -14,6 +14,49 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🗺️ ACTIVE PLAN (2026-06-13) — remaining PXC-S screen differences
+
+Post-#95 state (all rendered with correct RomSettings; full PXC-S suite
+**12 passed**). 600-frame random-action video accuracy, jutari↔xitari:
+
+  | ROM            | RAM (same action stream) | screen worst | nature |
+  |----------------|--------------------------|--------------|--------|
+  | breakout       | bit-exact                | **0 px**     | done   |
+  | space_invaders | bit-exact                | **0 px**     | done   |
+  | pitfall        | bit-exact                | **0 px**     | done (#95) |
+  | pong           | bit-exact                | 2 px @ f459+ | #98 ball sub-cycle |
+  | enduro         | **bit-exact (40 f)**     | 257 px       | #97 PURE RENDER |
+  | seaquest       | **diverges f0** (6 bytes)| 1449 px      | #80 STATE-first |
+
+**Decisive recon** (`jutari_xitari_ram_diff.py` on the video streams):
+  - enduro RAM bit-exact ⇒ its 257 px is a pure RENDER bug (state
+    identical). Broad: 92 rows differ, hottest 53-54, 66-71, 154.
+  - seaquest RAM diverges at frame 0 (`$01 $02 $60 $66 $7e $7f` — the
+    task #80 boot off-by-1) ⇒ its 1449 px (hot band rows 45-53 = score/
+    oxygen HUD) is largely DOWNSTREAM of state. Fix #80 first.
+  - pong RAM bit-exact ⇒ 2 px at ball rows 160/161/176/177 is a pure
+    ball-bounce sub-cycle render artifact.
+
+**Order: enduro (#97) → seaquest state (#80) → pong (#98).**
+  1. **#97 enduro** — pure render, can't break RAM, fully PXC-S-gated.
+     (a) per-pixel dump of the first diverging frame at the hot rows →
+     name the objects (53-71 horizon/road, 154 car/dashboard) + driving
+     registers; (b) bus-trace align (expect identical writes → render-
+     timing: road playfield / HMOVE comb / per-scanline COLU sky); (c)
+     fix one mechanism, re-measure all 6 PXC-S pins + PXC1/PXC2, regen
+     fixture + video.
+  2. **#80 seaquest** — close the 6-byte frame-0 RAM divergence FIRST
+     (per-bus-op diff of the last boot frames; lead = RIOT-timer /
+     partial-frame `m6502.stop()` per the #80 notes), THEN re-measure the
+     screen; much of the 1449 px should evaporate.
+  3. **#98 pong** — bus-trace the bounce frame, compare `bl_x` + RESBL/
+     HMBL at the exact cycle. 2 px polish, last.
+
+Guardrails: see CLAUDE.md "Hard-won methodology" (RAM-first, harness
+parity, never gate on tia.frame, bus-trace alignment, ~3cc offset).
+
+---
+
 ### ✅ Task #95 CLOSED (2026-06-13) — it was a TOOLING bug, not the emulator: screen tools missing pitfall/enduro RomSettings
 
 **Resolution of the whole saga.** After three rounds of (wrong) emulator
