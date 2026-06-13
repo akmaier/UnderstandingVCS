@@ -14,6 +14,66 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🗺️ SHARED-ROOT INVESTIGATION PLAN (2026-06-13) — is one ~1-cycle CPU↔TIA beam offset behind #80 + #97-residual + #98 + pitfall-INTIM?
+
+**Hypothesis (to TEST, not assume).** The 4 remaining divergences may share one
+root — jutari's sub-instruction beam position lands ~1 CPU cycle (~3 color clocks)
+before xitari's at bus ops (noted "expected" in CLAUDE.md). They surface on
+different paths:
+  - #80 seaquest boot: jutari's cart hits `INC RAM[$01]` a frame early (frame 2 vs
+    xitari frame 3) — a FRAME-BOUNDARY question (jutari counts frames on the
+    software VSYNC falling edge; the 262-line scanline-wrap net was removed in
+    PXC1-x).
+  - #97 residual (enduro): road-border player X off by 1 color clock (RESP+HMOVE).
+  - #98 (pong): ball 2 scanlines low for 2 frames (ENABL/Y scanline).
+  - pitfall: INTIM read ~1 cycle early.
+They might be ONE root or several. The plan tests #80 first (cleanest: RAM-level,
+deterministic boot, no rendering involved) and then checks whether the same
+mechanism explains the render cases.
+
+**Phase 1 — #80 boot, pin the frame-boundary mechanism (diagnostic, SAFE).**
+  1. jutari per-frame (have it, `/tmp/jutari_cycle_probe.jl`): frame 1 = 21435 cyc
+     (282 scanlines), boundary PC=f69c (cart's 1st VSYNC), first INC frame 2.
+  2. Get xitari's per-frame **PC + scanline** at boot frames 1–4. `CpuDebug`
+     (trace_dump.cpp) exposes A/X/Y/SP/P but not PC — add
+     `static uInt16 pc(const M6502& c){return c.PC;}`. For a per-frame dump during
+     the boot burn (which happens inside `ALEInterface::resetGame`, before
+     trace_dump regains control), use an env-guarded probe in
+     `StellaEnvironment::emulate`'s joystick loop (the recipe used for the RAM
+     probe — `std::getenv("XITARI_BOOTPROBE")`), dumping PC and the TIA scanline.
+     Read PC via `mySystem->m6502().PC`? PC is protected — simplest is to dump
+     `mySystem->cycles()` (per-frame, resets each frame) + a self-maintained
+     cumulative counter, OR add a `friend`/accessor. Pick the least-invasive that
+     compiles; REVERT + rebuild clean after (xitari ref must stay pristine).
+  3. Compare: does xitari cut frame 1 at a different cart PC than jutari's f69c?
+     Expected if xitari's 1st frame ends at a scanline-render boundary (≈262
+     lines, mid-init) while jutari runs to the cart's 1st VSYNC (282 lines).
+
+**Phase 2 — decision tree.**
+  - If #80 is a FRAME-DEFINITION difference (xitari = scanline-rendered frame,
+    jutari = VSYNC-edge frame) ⇒ fix is in jutari's `run_until_frame!` /
+    frame-counter, NOT the P3i-g beam core. Risk localized to boot; the 4
+    bit-exact ROMs are insensitive (proven) so likely safe — but re-introducing a
+    scanline-wrap boundary risks the double-count bug PXC1-x removed, so it must
+    be done so the VSYNC edge and the wrap can't BOTH fire for one frame.
+  - If #80 is a sub-instruction beam-position error (jutari's beam_sc/beam_cc off
+    by ~1 cycle at the VSYNC write) ⇒ it IS the P3i-g core, shared with #97/#98.
+    Highest risk.
+
+**Gating for ANY fix (all OFFLINE-capable except the last):**
+  - `cd jutari && julia --project=. -e 'using Pkg; Pkg.test()'` (fast).
+  - `tools/jutari_xitari_ram_diff.py` for ALL 6 ROMs: seaquest must reach 0;
+    breakout/pong/space_invaders/pitfall/enduro must STAY bit-exact. (This is the
+    decisive correctness gate and is fast + offline.)
+  - jaxtari TIA unit suite + PXC2 cross-check (fast-ish, offline).
+  - Full PXC-S all-6 (jaxtari env ~2 h) — the final gate before claiming done.
+  REVERT immediately on any bit-exact regression (discipline from #93/#95).
+
+**Status:** Phase 1 executing now (xitari per-frame PC/scanline probe). NO fix
+applied until Phase 1 pins the mechanism and the offline gates are green.
+
+---
+
 ### 🔬 Task #98 CHARACTERIZED (2026-06-13) — pong ball is 2 SCANLINES low for 2 frames (not "2 px"); likely the shared ~1-cycle beam offset
 
 Pixel diff of the cached 600-frame pong dumps (`output/pong_{xitari,jutari}_frames.raw`):
