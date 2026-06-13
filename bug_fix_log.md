@@ -90,7 +90,7 @@ RIOT tick skipping one cart increment).
 
 ---
 
-### 🏆 Task #97 LANDED — jutari (jaxtari mirror pending env-confirm) (2026-06-13) — enduro HMOVE-blank comb 249 → 33 px
+### 🏆 Task #97 LANDED — both ports CONFIRMED (2026-06-13) — enduro HMOVE-blank comb 249 → 33 px
 
 enduro strobes HMOVE on free-running (non-WSYNC) kernel lines, where jutari's
 beam lands ~1 CPU cycle early — a line-N+1 `cyc 0` strobe gets recorded as
@@ -117,13 +117,11 @@ was missing 27/210 rows (249 px). Two fixes:
     HMOVE-blank tests), and it is a line-by-line mirror of the verified jutari
     logic. (Also fixed 4 stale jaxtari TIA unit tests broken since #83's
     Y_START gate — separate commit 484bc07.)
-  - jaxtari ENV screen confirmation is IN-FLIGHT but pathologically slow (the
-    jaxtari env re-traces per frame → ~25 min/ROM just for the 64-frame boot,
-    ~2 h for the full PXC-S set). Per the jutari-first rule (never let a jaxtari
-    stage block a verified jutari deliverable), the shared PXC-S enduro pin is
-    **HELD at 137** — the last value measured on BOTH ports — so jutari arm
-    passes at 33≤137 and jaxtari arm at 137≤137. A follow-up tightens the pin
-    137 → 33 once jaxtari env enduro=33 is measured.
+  - jaxtari ENV screen now CONFIRMED: live-env worst = **33 px**
+    (per-frame `[21,23,27,27,29,33,25,33,31,31]`, identical to jutari) and
+    pong/breakout/pitfall/space_invaders all **0 px** — PXC2 parity holds, no
+    regression. The shared PXC-S enduro pin was held at 137 during the ~40-min
+    jaxtari env run (jutari-first rule) and is now **tightened 137 → 33**.
 
 **Residual 33 px = road-border 1-cc positioning** (NOT the comb). Worst frame
 (f5): 9 rows (53,68,76,78,102,104,144,146,154), each a symmetric 1-px edge swap
@@ -196,8 +194,13 @@ Post-#95 state (all rendered with correct RomSettings; full PXC-S suite
   | space_invaders | bit-exact                | **0 px**     | done   |
   | pitfall        | bit-exact                | **0 px**     | done (#95) |
   | pong           | bit-exact                | 2 px @ f459+ | #98 ball sub-cycle |
-  | enduro         | **bit-exact (40 f)**     | 257 px       | #97 PURE RENDER |
-  | seaquest       | **diverges f0** (6 bytes)| 1449 px      | #80 STATE-first |
+  | enduro         | **bit-exact (40 f)**     | 257 px*      | #97 LANDED (noop-10 249→33) |
+  | seaquest       | **diverges f0** (6 bytes)| 1449 px      | #80 LOCALIZED → frame-2 partial boot |
+
+\* enduro 257 px is the pre-#97 600-frame VIDEO worst; #97 (HMOVE-blank `_next`)
+took the noop-10 PXC-S 249→33 on both ports. The 600-frame video isn't
+re-measured yet but should drop similarly (same comb mechanism); the residual is
+the road-border 1-cc positioning.
 
 **Decisive recon** (`jutari_xitari_ram_diff.py` on the video streams):
   - enduro RAM bit-exact ⇒ its 257 px is a pure RENDER bug (state
@@ -208,18 +211,16 @@ Post-#95 state (all rendered with correct RomSettings; full PXC-S suite
   - pong RAM bit-exact ⇒ 2 px at ball rows 160/161/176/177 is a pure
     ball-bounce sub-cycle render artifact.
 
-**Order: enduro (#97) → seaquest state (#80) → pong (#98).**
-  1. **#97 enduro** — pure render, can't break RAM, fully PXC-S-gated.
-     (a) per-pixel dump of the first diverging frame at the hot rows →
-     name the objects (53-71 horizon/road, 154 car/dashboard) + driving
-     registers; (b) bus-trace align (expect identical writes → render-
-     timing: road playfield / HMOVE comb / per-scanline COLU sky); (c)
-     fix one mechanism, re-measure all 6 PXC-S pins + PXC1/PXC2, regen
-     fixture + video.
-  2. **#80 seaquest** — close the 6-byte frame-0 RAM divergence FIRST
-     (per-bus-op diff of the last boot frames; lead = RIOT-timer /
-     partial-frame `m6502.stop()` per the #80 notes), THEN re-measure the
-     screen; much of the 1449 px should evaporate.
+**Order: ~~enduro (#97)~~ ✅ → seaquest state (#80, LOCALIZED) → pong (#98).**
+  1. ✅ **#97 enduro DONE** — HMOVE-blank `_next` deferral landed both ports
+     (noop-10 249→33, jaxtari env confirmed 33, bit-exact ROMs 0, pin tightened
+     to 33). Residual 33 px = road-border 1-cc positioning (deferred, P3i-g
+     core, high-risk). See "Task #97 LANDED" above.
+  2. **#80 seaquest** — NOW LOCALIZED to the FRAME-2 partial-boot divergence
+     (xitari's first post-reset frame is partial; jutari's is full → jutari's
+     cart counter runs 1 frame ahead). Fix: reproduce xitari's partial first
+     frame in jutari; gate on full PXC1+PXC2+all-6 PXC-S (high-risk boot
+     timing). See "Task #80 LOCALIZED" above.
   3. **#98 pong** — bus-trace the bounce frame, compare `bl_x` + RESBL/
      HMBL at the exact cycle. 2 px polish, last.
 
