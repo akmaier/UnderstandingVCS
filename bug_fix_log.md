@@ -14,6 +14,56 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🎯 Task #80 LOCALIZED (2026-06-13) — seaquest boot off-by-1 is at FRAME 2: xitari's first post-reset frame is PARTIAL
+
+Instrumented xitari's per-boot-frame RAM[$01] (the seaquest frame counter) with a
+temporary, env-var-guarded probe in `StellaEnvironment::emulate` (printed
+`system().peek(0x81)` after each `mediaSource().update()` when `XITARI_BOOTPROBE`
+is set; reverted + rebuilt clean afterwards — the xitari reference is pristine).
+Ran it on seaquest and compared to jutari's `tools/seaquest_boot_probe.jl`:
+
+```
+frame:     1   2   3   4   5  ... 60(noop) 61  62  63  64(reset)  end
+xitari:   00  00  01  02  03  ...   3a     3b  3c  3d   3e        $3e (62)
+jutari:   00  01  02  03  04  ...   3b     3c  3d  3e   3f        $3f (63)
+```
+
+**The divergence is exactly at FRAME 2.** Both ports start at 00 (frame 1), but
+xitari stays at 00 for frame 2 while jutari increments to 01 — and the +1 offset
+then rides along for the entire run. Root: **xitari's first post-reset frame is
+PARTIAL.** `system().reset()` leaves the beam mid-frame; the first
+`mediaSource().update()` completes only the short remainder of that frame, so the
+seaquest cart reaches its RAM[$01]-increment instruction one frame LATER (first
+increment at frame 3). jutari's `run_until_frame!` runs a FULL first frame after
+`console_reset!`, so its cart hits the increment a frame earlier (frame 2).
+
+**Ruled out:** harness frame-count mismatch (#95-style). xitari `reset()` =
+frame-less `system().reset()` + 60 NOOP + `system_reset_steps`(=4, Defaults.cpp:47)
+RESET + (no startingActions for seaquest); jutari `env_reset!` = frame-less
+`console_reset!` + 60 NOOP + 4 RESET. Counts + structure match (60+4=64). The
+bug is purely the partial-vs-full FIRST frame.
+
+**Why only seaquest:** the 4 bit-exact ROMs (PXC1) already match xitari using
+jutari's CURRENT full-first-frame boot ⇒ they are INSENSITIVE to this 1-frame
+boot-init offset (their state stabilizes regardless). seaquest's free-running
+RAM[$01] counter (drives the HUD luminance toggle, see RECON below) is the only
+thing that exposes it — hence the 6-byte frame-0 RAM diff (`$01 $02 $60 $66 $7e
+$7f`, the counter + its derivatives) and the 904 px HUD band.
+
+**Fix direction (deliberate, NOT yet applied — high-risk boot timing per #93/#95):**
+make jutari's FIRST post-reset frame partial like xitari (so the cart's first
+increment slips from frame 2 → frame 3). Because the bit-exact ROMs are
+insensitive to this offset, the change *should* fix seaquest without breaking
+them — but a fresh-reset partial-frame change touches every ROM's boot, so it
+MUST be gated on the full PXC1 + PXC2 + all-6 PXC-S suites before landing. The
+mechanism likely lives near jutari's reset→first-`run_until_frame!` handoff
+(cf. task #72 `vsync_reset_pending`): xitari's `system().reset()` leaves a
+partial frame that the first `update()` flushes; jutari's `console_reset!` zeroes
+the TIA beam so the first `run_until_frame!` is a full frame. Reproduce xitari's
+"partial first frame after reset" to close the gap.
+
+---
+
 ### 🔬 Task #80/#96 RECON (2026-06-13) — seaquest 904px is the boot off-by-1 (#80), NOT a render bug
 
 Pixel-level diff of the seaquest noop-10 worst frame (jutari↔xitari fixtures):
