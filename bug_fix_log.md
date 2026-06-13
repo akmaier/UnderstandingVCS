@@ -14,6 +14,59 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🎯 Task #80 — ROOT AREA FOUND: RIOT timer RESET-STATE mismatch (both ports 0/0 vs xitari 25/shift-6) (2026-06-13)
+
+Best #80 lead yet — the boot off-by-1 lives in the **RIOT (M6532) timer**, not
+frame-counting/render. Chain of evidence this session:
+
+1. The seaquest boot delay **polls INTIM heavily** (jutari probe: 2969 reads /
+   6 boot frames; first reads count down 192,185,178,… −7/read). So the cart's
+   "wait N" boot delay is timer-driven.
+2. xitari issues its **first VSYNC ~9000 CPU cycles (~118 scanlines, ≈1 frame)
+   EARLIER** than jutari (xitari first VSYNC-on at cpucyc 12236/sl 161; jutari at
+   tc 21204/sl 279). Same cart, same zeroed RAM → the boot-delay LOOP runs longer
+   in jutari ⇒ its frame counter ends 1 ahead.
+3. **The mismatch:** `M6532::reset()` (xitari, M6532.cxx:60-61) resets the timer
+   to `myTimer=25, myIntervalShift=6` (TIM64T-equivalent, prescaler 64). BOTH
+   ports reset to `intim=0, prescaler_shift=0` (jutari RIOT.jl:53-54; jaxtari
+   riot/system.py:103-104). So before the cart loads its own timer, xitari's INTIM
+   counts down from 25 @ presc-64 while the ports sit at 0 @ presc-1.
+
+**Tested (jutari):** set the reset state to `intim=25, prescaler_shift=6`.
+Result: seaquest boot frame 1 went 21435→24703 cyc (the reset state DOES drive
+the boot delay) — but it OVERSHOT xitari's ~22116-cyc (291-sl) frame 1 and the
+INC still landed in frame 2 (→ still $3f, not $3e). So the reset-state mismatch
+is real and load-bearing, but **not sufficient alone**: jutari's timer-EXPIRY
+semantics also diverge from xitari's. xitari's expired-timer read (M6532.cxx
+case 0x04, the `timer<0` branch with `myTimerReadAfterInterrupt` /
+`myCyclesWhenInterruptReset` lazy formula) differs from jutari's eager
+`timer_expired` model — and the seaquest boot reads the timer while it's expired
+(xitari trace: myTimer=25, shift=6, delta~3907, timer=-37). Reverted the 25/6
+experiment (overshoots + unrendered risk to the 4 bit-exact ROMs).
+
+**FIX PLAN (deferred to fully-online session — high-risk RIOT change, gate
+hard):**
+  (a) Match xitari's RIOT reset state exactly: `intim=25, prescaler_shift=6`
+      (and confirm `cycles_since_tick`/`timer_expired` analogues == xitari's
+      `myCyclesWhenTimerSet=0`, not-yet-read-after-interrupt).
+  (b) Reconcile jutari/jaxtari timer-EXPIRY semantics with xitari's
+      `myTimerReadAfterInterrupt` lazy formula so an expired-timer read during
+      boot returns the SAME value as xitari (this is what the 25/6 overshoot
+      exposed).
+  (c) Decisive diagnostic to drive (b): an ALIGNED INTIM trace — same single
+      boot, read-by-read — jutari vs xitari (add the env-guarded probes used this
+      session: jutari `riot_peek!` reg-4 log; xitari M6532.cxx case 0x04 log).
+  (d) GATE: `jutari_xitari_ram_diff.py` ALL 6 ROMs — seaquest must reach 0, the
+      4 bit-exact ROMs (breakout/pong/space_invaders/pitfall/enduro) MUST stay
+      bit-exact (they pass today with 0/0, so they presumably overwrite the timer
+      before reading — but a reset-state change touches every boot, so confirm) —
+      then jutari tests + jaxtari unit + PXC2, then full PXC-S. Revert on any
+      regression (#93/#95 discipline).
+
+This supersedes the frame-counting / VSYNC-duration / RAM-residue dead-ends below.
+
+---
+
 ### ⚠️ Task #80 — CORRECTION: VSYNC-duration root was WRONG; RAM-residue also ruled out (2026-06-13)
 
 Two #80 hypotheses tested and DISPROVEN this session (logging dead-ends per the
