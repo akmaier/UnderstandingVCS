@@ -14,6 +14,52 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### ⚠️ Task #80 — CORRECTION: VSYNC-duration root was WRONG; RAM-residue also ruled out (2026-06-13)
+
+Two #80 hypotheses tested and DISPROVEN this session (logging dead-ends per the
+project rule). The earlier "🎯 task #80 ROOT FOUND" commit (VSYNC-on-≥1-scanline)
+is **retracted** — do not implement that fix.
+
+1. **VSYNC-on-duration — RULED OUT.** Traced jutari's seaquest-boot VSYNC writes
+   (temp env-guarded probe in `tia_poke!`, reverted): the VSYNC pulse that ends
+   jutari's frame 1 is `tc 21204(on)→21432(off)` = **228 CPU cycles = 3 scanlines**
+   — a NORMAL pulse, well over xitari's ≥1-scanline (76-cyc) threshold, so xitari
+   counts it too. (The two earlier writes at tc=18, tc=754 are VSYNC-*off* with no
+   prior on — both ports ignore them.) The frame-1 boundary is NOT a short-VSYNC
+   miscount.
+
+2. **Double-boot / RAM-residue — RULED OUT.** xitari's `M6532::reset()` does NOT
+   clear the 128-byte RAM (only the M6532 *constructor* zeroes it,
+   M6532.cxx:37-39 vs :58), and trace_dump double-boots (`ALEInterface(rom)` ctor
+   → loadROM → `reset_game` [boot 1, zeroed RAM], then explicit `resetGame()` →
+   `reset_game` [boot 2, from boot-1 RAM residue]). Hypothesis: the reference
+   ($3e) came from booting on residue. TESTED in jutari
+   (`/tmp/jutari_doubleboot.jl`): boot 1 = $3f, boot 2 with boot-1 RAM residue
+   kept = **still $3f**. So RAM residue does NOT change the result, and xitari's
+   boot 1 (from ctor-zeroed RAM, == jutari's start) already shows the INC-frame-3
+   / $3e pattern. The divergence is in the **single clean boot from zeroed RAM**,
+   not the double-boot.
+
+**What IS established (hard facts):** from an identical zeroed-RAM clean reset
+running the same seaquest ROM, **jutari's `INC RAM[$01]` first fires in boot frame
+2 (→ ends $3f); xitari's first fires in frame 3 (→ ends $3e)** — jutari is exactly
+one boot-frame ahead. Per-frame (jutari): frame1=282 sl, INC frame 2. xitari:
+frame1≈291 sl + an extra ≈164-sl frame 2, INC frame 3. Both see the SAME first
+VSYNC pulse (228 cyc @ ~scanline 282) yet xitari reports a ~9-line-longer frame 1
+plus an extra short settle frame — UNEXPLAINED by the VSYNC model above.
+
+**Remaining unknown + exact next probe.** Need xitari's per-frame **PC** and the
+VSYNC on/off **color-clock** (in xitari's `clock = cycles*3 - myClockWhenFrameStarted`
+space, incl. the `startFrame` `myClockWhenFrameStarted = -clocks` carry and the
+`updateFrame(clock+delay)` `delay`) for boot frames 1-3, to see exactly where
+xitari cuts frame 1/2 vs jutari's PC=f69c. Add `pc()` to trace_dump's CpuDebug +
+extend the env-guarded `emulate` probe (scanlines + PC + a per-VSYNC color-clock
+log). This is a deeper multi-hour dive into xitari's frame-clock bookkeeping;
+DEFERRED to a fully-online session (internet dropping). No fix until the framing
+mechanism is actually pinned — the discipline cost of guessing here is high (#93/#95).
+
+---
+
 ### 🗺️ SHARED-ROOT INVESTIGATION PLAN (2026-06-13) — is one ~1-cycle CPU↔TIA beam offset behind #80 + #97-residual + #98 + pitfall-INTIM?
 
 **Hypothesis (to TEST, not assume).** The 4 remaining divergences may share one
