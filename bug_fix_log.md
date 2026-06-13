@@ -14,7 +14,77 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
-### 🔬 Task #95 DIAGNOSED (2026-06-13) — pitfall Harry-kernel renders 1 scanline late (render phase, NOT input timing)
+### 🎯 Task #95 RE-DIAGNOSED (2026-06-13, round 2) — jutari doesn't apply Harry's VERTICAL JUMP position (sprite Y pinned to ground)
+
+**User caught what noop-only testing missed:** "at the beginning of the
+pitfall video the player jumps on xitari while jutari stays on the
+ground; later jutari also jumps. Is something mixed up with jump vs.
+jump+fire in jutari?" This is a REAL, significant gameplay bug — and
+both my earlier #95 diagnoses below (round 1 "render phase 1-scanline
+late", and the original "FIRE input timing") were WRONG.
+
+**Evidence chain (all verified this session):**
+
+1. **RAM is byte-identical, jutari↔xitari, for 330 frames** of the
+   random-action stream — including the FIRE frame (20) and the entire
+   jump. `tools/jutari_xitari_ram_diff.py`, position-aligned.
+2. **jutari's INPT4 reads FIRE correctly**: NOOP→$80 (released),
+   FIRE→$00 (pressed). The button reaches the chip. (Input-mixup
+   hypothesis killed.)
+3. **The jump IS in RAM and jutari HAS it**: byte `$69` is Harry's
+   vertical jump position. Over frames 18-40 xitari's `$69` runs
+   `20 20 20 1f 1e 1d 1c 1b 1a 19 18 18 17 …15… 16` (rises then
+   falls — the parabola). jutari's `$69` is **identical** at every
+   position.
+4. **Yet jutari renders Harry at a FIXED ground row** while xitari moves
+   him per `$69`:
+
+   | frame | xitari Harry top | jutari Harry top | `$69` |
+   |-------|------------------|------------------|-------|
+   | 19    | 104 (ground)     | 104              | 0x20  |
+   | 20    | 103 (rising)     | 104              | 0x1f  |
+   | 24    | 99               | 104              | 0x1b  |
+   | 30    | 95 (apex)        | 104              | 0x16  |
+   | 40    | 94               | 104              | 0x15  |
+   | 58    | 104 (landed)     | 104              | 0x20  |
+
+   The xitari→jutari gap equals the jump height (1 px at f20, 5 px at
+   f24), so it is NOT a constant render offset — jutari is rendering
+   Harry as if `$69` were always its ground value 0x20.
+
+**Conclusion:** the game logic (CPU + RAM + INPT4 fire) is in perfect
+lockstep — the fire correctly triggers the jump and `$69` animates
+identically. The bug is purely in **how jutari converts `$69` →
+on-screen sprite Y**. In a 2600, a sprite's vertical position is set by
+a cycle/scanline-timed "coarse position" loop in the display kernel
+(skip N WSYNC'd scanlines, where N derives from `$69`, then draw GRP0).
+jutari's render produces a fixed top row regardless of N, so the
+scanline-skip count is not translating into screen position the way
+xitari's beam does. This is adjacent to the WSYNC↔scanline-phase area
+flagged in round 1, but the EFFECT is "vertical position doesn't track
+RAM," a behavioral render bug — far more than the cosmetic 1-row colour
+shift I claimed in round 1.
+
+**Why noop missed it:** under NOOP, `$69` stays at its ground value
+0x20 every frame, so Harry never moves vertically and jutari's fixed-Y
+render coincides with xitari. PXC-S (noop fixtures) is therefore blind
+to it — pitfall noop is genuinely bit-exact; this only appears once
+gameplay drives `$69`.
+
+**Next step (concrete):** trace the kernel's reads of `$69` and the
+scanline at which GRP0 first goes non-zero for Harry, in BOTH engines,
+for frames 20-30. Find why jutari's "first GRP0 scanline" is fixed
+while xitari's tracks `$69`. Likely the coarse-vertical-position loop
+(WSYNC + DEC + BNE) interacts with jutari's WSYNC stall / scanline
+counter so each iteration doesn't advance the beam the way xitari's
+does. This is the same render-phase core as #94's neighbourhood — high
+risk to the 4 bit-exact ROMs — so reproduce with a minimal trace and
+gate every change on all 6 PXC-S pins.
+
+---
+*Round-1 (also incorrect) diagnosis kept for the record below.*
+
+### 🔬 Task #95 round 1 (2026-06-13) — "renders 1 scanline late (render phase)" — SUPERSEDED
 
 Investigated the post-#94 pitfall random-action divergence. **The initial
 "FIRE input-timing, pong #77 class" hypothesis (below) was WRONG** —
