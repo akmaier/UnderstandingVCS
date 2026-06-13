@@ -14,7 +14,64 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
-### 🔬 Task #95 ROUND 3 (2026-06-13) — PROVEN render-only: all 1252 TIA writes identical, player renders 5 scanlines low (VDELP0 / deferred-GRP0 render phase)
+### ✅ Task #95 CLOSED (2026-06-13) — it was a TOOLING bug, not the emulator: screen tools missing pitfall/enduro RomSettings
+
+**Resolution of the whole saga.** After three rounds of (wrong) emulator
+hypotheses, the round-3 proof — *all 1252 TIA writes identical, RAM
+identical, INTIM identical* — was the tell: the EMULATOR was correct.
+The bug was that the screen-comparison TOOLING rendered the jutari/jaxtari
+side with the WRONG game settings.
+
+**The bug.** Three files had a settings map listing only breakout + pong:
+  - `tools/breakout_video/dump_jutari_frames.jl`  (video panel)
+  - `tools/jutari_screen_dump.jl`                  (PXC-S jutari fixtures)
+  - `jaxtari/tests/test_screen_conformance.py`     (PXC-S jaxtari live arm)
+pitfall + enduro fell through to `GenericRomSettings`, which omits each
+game's `getStartingActions` (Pitfall = 1× UP, Enduro = 1× FIRE). xitari
+(`trace_dump`) always applies the real settings, so the jutari/jaxtari
+panel was literally running a different game (no UP-start → Harry's
+trajectory desyncs → "doesn't jump").
+
+**How it was found.** A clean mimic of `dump_jutari` rendered Harry's
+jump at the correct scanline (display 99 = xitari), but the committed
+`.raw` (and a fresh `dump_jutari` run) showed display 104. Same ROM,
+actions, boot — so the difference had to be the env construction.
+Diffing the two: the mimic used `PitfallRomSettings()`; `dump_jutari`'s
+`_settings_for_rom` returned `GenericRomSettings()` because pitfall
+wasn't in its map. The RAM tool (`jutari_trace_dump.jl`) *did* map
+pitfall → that's why RAM was bit-exact all along while the screen wasn't.
+
+**Fix + verification (zero emulator change → zero PXC1/PXC2 risk):**
+add pitfall + enduro to all three maps.
+  - pitfall VIDEO: Harry jumps identically — **BIT-EXACT vs xitari for
+    60 frames of random-action gameplay including the jump** (0 px;
+    frame 20 both rise to row 103, apex row 95, land row 104).
+  - enduro PXC-S: **516 → 249 px** on BOTH ports (settings-mismatch
+    artifact removed). pitfall noop-10 stays 0 (UP-start doesn't change
+    the first 10 noop frames). PXC2 jaxtari==jutari preserved (both 0 /
+    249). jutari PXC-S arm 6/6 pass.
+
+**Method lessons (the dead ends, for the next agent):**
+  1. Two earlier #95 diagnoses were wrong (FIRE-input timing; "1-scanline
+     render-phase lag"). Both came from instrumenting with a frame gate
+     (`tia.frame == 24`) that was the WRONG frame — `tia.frame` is the
+     VSYNC counter (~+65 from boot), NOT the env-step / video-frame
+     index. Every render-side measurement gated on it captured a boot
+     frame. **Gate debug on a flag set around the exact env_step, or on
+     the env-step index — never assume tia.frame == video-frame.**
+  2. "All writes identical + screen differs" does NOT always mean a
+     render bug — it can mean the two SIDES were fed different inputs
+     (here: different RomSettings via different tools). Check the harness
+     parity (settings, boot, actions) before blaming the renderer.
+  3. seaquest is still generic on both ports (jutari has no
+     SeaquestRomSettings yet; jaxtari does). Its 904-px PXC-S residual is
+     therefore partly a settings mismatch too — adding a jutari
+     SeaquestRomSettings (emulator code, not just tooling) is the
+     follow-up that would make seaquest apples-to-apples vs xitari.
+
+---
+
+### 🔬 Task #95 ROUND 3 (2026-06-13) — PROVEN render-only: all 1252 TIA writes identical, player renders 5 scanlines low (VDELP0 / deferred-GRP0 render phase) [SUPERSEDED — see CLOSED entry above; "render-only" was right that the emulator was fine, but the cause was tooling settings, not the render phase]
 
 Used xitari's `trace_dump --bus-trace` (per-bus-op CSV) to compare the
 jump frame (random-action frame 24) event-for-event against jutari's
