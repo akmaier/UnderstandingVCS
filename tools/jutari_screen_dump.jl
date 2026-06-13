@@ -16,10 +16,20 @@ using JuTari
 using JuTari.Env: StellaEnvironment, env_reset!, env_step!, get_screen
 using JuTari.RomSettingsModule: GenericRomSettings
 using JuTari.PaddleGames: BreakoutRomSettings, PongRomSettings
+using JuTari.JoystickGames: PitfallRomSettings, EnduroRomSettings
 
+# Task #95 (2026-06-13): pitfall + enduro were MISSING here, so the
+# PXC-S jutari fixtures for those ROMs were generated with
+# GenericRomSettings — omitting Pitfall's `getStartingActions`
+# (1× PLAYER_A_UP) and Enduro's. The xitari fixtures use the real
+# per-game settings, so the screen comparison was measuring a settings
+# mismatch on top of any render delta. MUST stay in sync with
+# tools/jutari_trace_dump.jl + tools/breakout_video/dump_jutari_frames.jl.
 const _SETTINGS_BY_BASENAME = Dict(
     "breakout.bin" => () -> BreakoutRomSettings(),
     "pong.bin"     => () -> PongRomSettings(),
+    "pitfall.bin"  => () -> PitfallRomSettings(),
+    "enduro.bin"   => () -> EnduroRomSettings(),
 )
 _settings_for_rom(p) = haskey(_SETTINGS_BY_BASENAME, basename(p)) ?
     _SETTINGS_BY_BASENAME[basename(p)]() : GenericRomSettings()

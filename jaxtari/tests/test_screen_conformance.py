@@ -38,13 +38,30 @@ import pytest
 from jaxtari.env.stella_environment import StellaEnvironment
 from jaxtari.games.breakout import BreakoutRomSettings as _BreakoutRomSettings
 from jaxtari.games.pong import PongRomSettings as _PongRomSettings
+from jaxtari.games.atari_classics import (
+    PitfallRomSettings as _PitfallRomSettings,
+    EnduroRomSettings as _EnduroRomSettings,
+)
 
 _REPO = Path(__file__).resolve().parents[2]
 _ROMS = _REPO / "xitari" / "roms"
 _SCREENS = _REPO / "tools" / "fixtures" / "screens"
 _ACTIONS = _REPO / "tools" / "fixtures" / "actions"
 
-_SETTINGS = {"pong.bin": _PongRomSettings, "breakout.bin": _BreakoutRomSettings}
+# Task #95 (2026-06-13): pitfall + enduro were MISSING here, so the
+# jaxtari live arm rendered them with bare StellaEnvironment (generic
+# settings) — omitting their getStartingActions — while the xitari
+# fixtures used the real per-game settings. That settings mismatch
+# inflated the enduro screen diff (516→249 px once corrected). The
+# jutari fixture tools had the identical gap; all now carry pitfall +
+# enduro. (Seaquest has a jaxtari RomSettings but no jutari one yet, so
+# it stays generic on both sides for now — still apples-to-apples.)
+_SETTINGS = {
+    "pong.bin": _PongRomSettings,
+    "breakout.bin": _BreakoutRomSettings,
+    "pitfall.bin": _PitfallRomSettings,
+    "enduro.bin": _EnduroRomSettings,
+}
 
 _H, _W = 210, 160
 
@@ -107,12 +124,23 @@ _CASES = [
     #   seaquest 1087 -> 904   (best ever; was 1043 pre-#91)
     #   enduro   1133 -> 516   (best ever; was 660 pre-#91)
     #   pong / breakout / space_invaders stay BIT-EXACT.
+    # Task #95 (2026-06-13): the screen tooling (this test's _SETTINGS,
+    # jutari_screen_dump.jl, dump_jutari_frames.jl) was missing pitfall +
+    # enduro RomSettings, so the jutari fixture and jaxtari live arm
+    # rendered them with GENERIC settings (no getStartingActions) while
+    # the xitari fixtures used real settings. Correcting the settings:
+    #   enduro    516 -> 249  (settings-mismatch artifact removed; both ports)
+    #   pitfall     0 ->   0  (noop-10 unaffected by the UP-start)
+    # This also fixed the user-reported pitfall VIDEO bug (Harry not
+    # jumping) — pitfall is now BIT-EXACT vs xitari across 60 frames of
+    # random-action gameplay incl. the jump. The emulator was always
+    # correct; only the screen tooling's settings map was wrong.
     _Case("breakout_noop_10",       "breakout.bin",          0),
     _Case("pong_noop_10",           "pong.bin",              0),
     _Case("space_invaders_noop_10", "space_invaders.bin",    0),
     _Case("pitfall_noop_10",        "pitfall.bin",           0),
     _Case("seaquest_noop_10",       "seaquest.bin",        904),
-    _Case("enduro_noop_10",         "enduro.bin",          516),
+    _Case("enduro_noop_10",         "enduro.bin",          249),
 ]
 
 

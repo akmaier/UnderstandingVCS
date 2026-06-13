@@ -15,13 +15,25 @@ Pkg.activate(joinpath(@__DIR__, "..", "..", "jutari"))
 using JuTari
 using JuTari.Env: StellaEnvironment, env_reset!, env_step!, get_screen
 using JuTari.PaddleGames: BreakoutRomSettings, PongRomSettings
+using JuTari.JoystickGames: PitfallRomSettings, EnduroRomSettings
 using JuTari.RomSettingsModule: GenericRomSettings
 
 # ROM basename → RomSettings constructor (mirror of
-# tools/breakout_video/dump_jaxtari_frames.py's _SETTINGS_BY_BASENAME).
+# tools/jutari_trace_dump.jl's `_settings_for_rom` — they MUST agree, or
+# the video panel and the RAM/conformance trace render different games).
+# Task #95 (2026-06-13): pitfall + enduro were MISSING here, so the
+# pitfall video panel fell through to GenericRomSettings — which omits
+# Pitfall's `getStartingActions` (1× PLAYER_A_UP). That single missing
+# boot action desynced Harry's whole trajectory from xitari, producing
+# the "jutari doesn't jump / jumps late" artifact the user saw in the
+# video. The EMULATOR was correct (the RAM tool, which DOES map
+# pitfall→PitfallRomSettings, is bit-exact with xitari for 330 frames);
+# only this video-tool settings map was wrong. See bug_fix_log #95.
 const _SETTINGS_BY_BASENAME = Dict(
     "breakout.bin" => () -> BreakoutRomSettings(),
     "pong.bin"     => () -> PongRomSettings(),
+    "pitfall.bin"  => () -> PitfallRomSettings(),
+    "enduro.bin"   => () -> EnduroRomSettings(),
 )
 _settings_for_rom(p) = haskey(_SETTINGS_BY_BASENAME, basename(p)) ?
     _SETTINGS_BY_BASENAME[basename(p)]() : GenericRomSettings()
