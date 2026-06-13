@@ -14,6 +14,41 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🔬 Task #97 DIAGNOSED (2026-06-13) — enduro 249px = HMOVE-blank comb mis-placed by jutari's 1-cycle beam offset at scanline boundaries
+
+enduro RAM is bit-exact (40 frames) → pure render. Localized the noop-10
+worst-frame (249px) diff:
+  - The diff is the **leftmost 8 px (cols 0-7)**: xitari = `$00` (black),
+    jutari = `$c0`. Enduro strobes HMOVE on EVERY scanline at cycle 0, so
+    the HMOVE-blank "comb" blacks cols 0-7 of every line in xitari (210/210
+    rows blanked). jutari blanks only 183/210 — **missing 27 rows**
+    (display 53,54,66-69,76-79,87-90,102-105,121-124,144-147,154). The
+    remaining ~9 px of the 249 are the car sprites (cols 36/37/88/138/139).
+  - **Root cause** (bus-trace, RAM bit-exact so writes are "the same"
+    instructions): xitari records one HMOVE per line at `cycle 0`
+    (internal sl 84-93 all cyc 0). jutari records the SAME number but
+    occasionally **1 cycle early** — e.g. sl88's cyc-0 strobe lands as
+    sl87 **cyc 75** (end of the previous line). So that line (88) gets no
+    HMOVE → no comb → its left 8 px aren't blanked. The strobe COUNT is
+    right; the boundary PLACEMENT is off by 1 CPU cycle.
+  - This is the **same ~1-cycle CPU↔TIA beam-position offset** measured in
+    pitfall's INTIM reads (jutari bus ops land ~3 cc / 1 cycle before
+    xitari). It only bites enduro because enduro strobes HMOVE exactly at
+    cycle 0 (right on the boundary), where a 1-cycle slip flips the
+    scanline attribution. pong/breakout/SI don't strobe on the boundary,
+    so they stay bit-exact.
+
+**Fix is in the P3i-g beam threading** (`Bus.poke!` `beam_sc`/`beam_cc`
+computation and/or the WSYNC-stall landing position): make the
+post-WSYNC HMOVE land at the new line's cyc 0, matching xitari. HIGH RISK
+— this is the cycle-threading core that all 4 bit-exact ROMs depend on.
+Next step: instrument the jittered scanline (WSYNC → HMOVE) to see
+`scanline_cycle` after the WSYNC stall and the `beam_sc` the HMOVE
+receives; compare to xitari's cyc 0. Gate ANY change on all 6 PXC-S pins
++ PXC1/PXC2 RAM. Do NOT rush (same discipline as #93/#95).
+
+---
+
 ### 🗺️ ACTIVE PLAN (2026-06-13) — remaining PXC-S screen differences
 
 Post-#95 state (all rendered with correct RomSettings; full PXC-S suite
