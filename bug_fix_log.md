@@ -3036,3 +3036,18 @@ julia --project=jutari tools/jutari_trace_dump.jl --rom xitari/roms/<rom>.bin \
 jaxtari/.venv/bin/python3 tools/breakout_video/render_breakout_compare.py \
     --out-dir tools/breakout_video/output --n-frames 600 --seed 42
 ```
+
+### 🔬 Task #96 dead-end logged (2026-06-13) — seaquest 904 is NOT a settings mismatch
+
+After #95 (enduro 516→249 by adding the missing RomSettings), hypothesized
+seaquest's 904-px PXC-S residual was the same class of bug. DISPROVED:
+jaxtari seaquest renders **904 px with both GenericRomSettings AND
+SeaquestRomSettings** (measured identical). Reason: seaquest's
+`getStartingActions` is empty (`[]`), so the settings choice doesn't
+change its boot or screen — unlike pitfall (UP) / enduro (FIRE). So
+seaquest's 904 is a GENUINE render/timing divergence, to be chased on its
+own with the bus-trace method (and, per #95's lesson, only after
+confirming action-stream + boot parity between the two sides). Adding a
+jutari `SeaquestRomSettings` would help scoring/terminal parity (jutari
+lacks the type) but would NOT move the screen number. Downgraded to low
+priority.
