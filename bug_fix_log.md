@@ -43,6 +43,27 @@ RESET + (no startingActions for seaquest); jutari `env_reset!` = frame-less
 `console_reset!` + 60 NOOP + 4 RESET. Counts + structure match (60+4=64). The
 bug is purely the partial-vs-full FIRST frame.
 
+**Mechanism deepening (2026-06-13, `/tmp/jutari_cycle_probe.jl`):** jutari's
+per-frame cycle/PC trace —
+```
+post-reset: PC=f000 (reset vector)          RAM01=00
+frame 1: Δ=21435 cyc (=282 scanlines) PC=f69c RAM01=00   <- init completes here
+frame 2: Δ=19912 cyc (=262, normal)   PC=f69c RAM01=01   <- first INC
+frame 3..: Δ=19912 each               PC=f69c RAM01=02..
+```
+jutari counts a frame at the software VSYNC falling edge (the 262-line scanline-
+wrap "safety net" was REMOVED in PXC1-x to stop double-counting). So jutari's
+frame-1 boundary is the cart's FIRST VSYNC at PC=f69c — 282 scanlines in, i.e.
+init runs to completion inside frame 1 and the first `INC RAM01` lands in frame
+2. xitari reaches the first INC in frame 3, so its boot "settle" spans an extra
+frame. Exact xitari frame-1 boundary PC still TBD — needs a per-frame PC probe
+on the xitari side (CpuDebug exposes A/X/Y/SP/P but not PC; add
+`static uInt16 pc(const M6502&){return cpu.PC;}` to trace_dump's CpuDebug, or an
+env-guarded PC dump in `StellaEnvironment::emulate`). That datum pins WHERE
+xitari cuts frame 1 → tells exactly how to delay jutari's first INC by one
+frame. FIX STILL DEFERRED (high-risk boot timing; needs full PXC1+PXC2+all-6
+PXC-S gating, ~2 h for the jaxtari env — do it in a fully-online session).
+
 **Why only seaquest:** the 4 bit-exact ROMs (PXC1) already match xitari using
 jutari's CURRENT full-first-frame boot ⇒ they are INSENSITIVE to this 1-frame
 boot-init offset (their state stabilizes regardless). seaquest's free-running
