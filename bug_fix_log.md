@@ -14,6 +14,32 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🔬 Task #80/#96 RECON (2026-06-13) — seaquest 904px is the boot off-by-1 (#80), NOT a render bug
+
+Pixel-level diff of the seaquest noop-10 worst frame (jutari↔xitari fixtures):
+  - Per-frame diff: `[10, 894, 5, 0, 5, 4, 5, 0, 5, 904]` — only frames 1 and 9
+    diverge; frames 3 and 7 are BIT-IDENTICAL. The big diff is confined to
+    rows 45-54 (the score/oxygen HUD band), nearly full width (cols 8-159).
+  - The band is a flat color that toggles luminance `$90`↔`$92` on an 8-frame
+    period. At frame 9: xitari row45 = `144` ($90), jutari = `146` ($92).
+    Decisive: `xitari[f9] == jutari[f8]` (True) and `xitari[f9] == xitari[f8]`
+    (True) but `jutari[f9] != jutari[f8]`. So **jutari is exactly 1 frame AHEAD
+    of xitari** on the HUD toggle.
+  - That 1-frame phase lead IS the **#80 boot off-by-1** (jutari does 63
+    cart-increments during the 64-frame boot, xitari 62) made visible: the HUD
+    color is driven by the frame counter, so a 1-frame state offset puts the
+    toggle out of phase exactly on the period-8 toggle frames (1, 9).
+
+**Implication:** seaquest's 904 px is DOWNSTREAM of state (#80), not a
+rendering-logic bug. #96 ("genuine render divergence, not settings") was right
+that it's not settings, but it isn't a renderer bug either — fixing the #80
+boot cart-increment off-by-1 should collapse BOTH the RAM divergence AND the
+904 px HUD band together. Confirms the plan's "seaquest STATE-first" ordering.
+Next: close #80 (per-bus-op boot trace; lead = partial-frame `m6502.stop()` /
+RIOT tick skipping one cart increment).
+
+---
+
 ### 🔬 Task #97 DIAGNOSED (2026-06-13) — enduro 249px = HMOVE-blank comb mis-placed by jutari's 1-cycle beam offset at scanline boundaries
 
 enduro RAM is bit-exact (40 frames) → pure render. Localized the noop-10
