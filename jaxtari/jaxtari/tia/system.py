@@ -326,6 +326,12 @@ class TIAState(NamedTuple):
     # per-color-clock render loop. xitari tracks this via
     # `myHMOVEBlankEnabled` + `ourHMOVEBlankEnableCycles[x]`.
     hmove_blank_pending: bool = False
+    # Task #97 (2026-06-13): HMOVE-blank comb destined for the NEXT
+    # scanline (set when an HMOVE write's beam_sc >= 76 crosses the
+    # scanline boundary mid-instruction — e.g. enduro free-running lines).
+    # Parked here so it doesn't clobber line N's comb; promoted to
+    # `hmove_blank_pending` once the beam advances. Mirror of jutari.
+    hmove_blank_pending_next: bool = False
 
 
 def initial_tia_state() -> TIAState:
@@ -368,6 +374,7 @@ def initial_tia_state() -> TIAState:
         color_clock=0,
         pending_writes=(),
         hmove_blank_pending=False,
+        hmove_blank_pending_next=False,
     )
 
 
@@ -850,8 +857,16 @@ def tia_poke(tia: TIAState, addr: int, value: int,
             m0_x=(new_tia.m0_x - _hmove_motion(sc, hmm0)) % 160,
             m1_x=(new_tia.m1_x - _hmove_motion(sc, hmm1)) % 160,
             bl_x=(new_tia.bl_x - _hmove_motion(sc, hmbl)) % 160,
-            hmove_blank_pending=blank,
         )
+        # Task #97: beam_sc >= 76 means the write crossed into the NEXT
+        # scanline — park its comb in `_next` (promoted after the beam
+        # advances) instead of clobbering line N's own comb. Mirror of
+        # jutari. (Motion above already applied to the persistent
+        # positions, matching `_hmove_motion`'s >=76 clamp.)
+        if sc >= NTSC_CPU_CYCLES_PER_SCANLINE:
+            new_tia = new_tia._replace(hmove_blank_pending_next=blank)
+        else:
+            new_tia = new_tia._replace(hmove_blank_pending=blank)
     elif reg == W_HMCLR:
         # HMCLR zeros all five horizontal-motion registers (HMP0/HMP1/HMM0/HMM1/HMBL).
         new_registers = (
@@ -1113,6 +1128,16 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
         new_hmove_blank = False
     else:
         new_hmove_blank = tia.hmove_blank_pending
+    # Task #97: once the beam crosses a scanline, promote a parked
+    # next-line comb (from a beam_sc>=76 HMOVE) into the current flag
+    # (OR-semantics, never lose a carried-forward flag), and consume it.
+    # If no line crossed, keep it parked for a later advance. Mirror of
+    # jutari's promotion in `tia_advance!`.
+    if line_advance > 0 and tia.hmove_blank_pending_next:
+        new_hmove_blank = True
+    new_hmove_blank_next = (
+        False if line_advance > 0 else tia.hmove_blank_pending_next
+    )
     return tia._replace(
         scanline_cycle=new_sc,
         scanline=new_line,
@@ -1122,6 +1147,7 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
         registers=final_registers,
         pending_writes=() if line_advance > 0 else tia.pending_writes,
         hmove_blank_pending=new_hmove_blank,
+        hmove_blank_pending_next=new_hmove_blank_next,
         # Task #91 round 2 (2026-06-12): the drain now latches the
         # VDELP / VDELBL shadows at activation time, so the post-drain
         # shadow values must flow into the new state alongside the

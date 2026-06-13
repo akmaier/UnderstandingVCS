@@ -147,6 +147,14 @@ _CASES = [
     # Remaining 137 = the NEXT-line comb attribution (the line whose HMOVE
     # was recorded early on the previous line) — needs a deferred/next
     # hmove-blank flag (task #97 follow-up). 4 bit-exact ROMs unaffected.
+    # Task #97 _next deferral (2026-06-13): the hmove_blank_pending_next flag
+    # (both ports) parks a beam_sc>=76 comb for the next line. jutari enduro
+    # 137 -> 33 MEASURED (fixture regenerated to 33 in this commit); jaxtari
+    # mirror is unit-test-green (127 TIA tests) but its full-env screen number
+    # is still being measured (the jaxtari env re-traces per frame → ~25 min/
+    # ROM). The pin is HELD at 137 (last value measured on BOTH ports) so the
+    # jutari arm passes at 33<=137 and the jaxtari arm at 137<=137; a follow-up
+    # tightens it to 33 once jaxtari env enduro=33 is confirmed.
     _Case("seaquest_noop_10",       "seaquest.bin",        904),
     _Case("enduro_noop_10",         "enduro.bin",          137),
 ]

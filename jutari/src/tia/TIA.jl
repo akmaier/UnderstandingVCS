@@ -291,6 +291,14 @@ mutable struct TIAState
     # until those 8 pixels finish rendering; auto-cleared by the
     # per-color-clock render loop. Mirrors jaxtari `hmove_blank_pending`.
     hmove_blank_pending::Bool
+    # Task #97 (2026-06-13): HMOVE-blank comb destined for the NEXT
+    # scanline. Set when an HMOVE write's effective beam position crosses
+    # the scanline boundary (`beam_sc >= 76`, e.g. enduro free-running
+    # lines strobe HMOVE at the next line's cyc ~3). Such a write belongs
+    # to line N+1, so its comb must NOT touch line N's
+    # `hmove_blank_pending`; it is parked here and promoted to
+    # `hmove_blank_pending` once the beam advances to N+1.
+    hmove_blank_pending_next::Bool
     # 2026-06-04: deferred VSYNC 1→0 reset. xitari's `TIA::startFrame`
     # runs AFTER the CPU completes its update() call — i.e. AFTER the
     # full STA $W_VSYNC instruction completes. Resetting scanline /
@@ -320,6 +328,7 @@ initial_tia_state() = TIAState(
     0,                                # P3i-a: color_clock = 0
     Tuple{Int,Int,UInt8}[],            # P3i-c: empty pending_writes
     false,                             # P3i-f: hmove_blank_pending = false
+    false,                             # task #97: hmove_blank_pending_next = false
     false,                             # 2026-06-04: vsync_reset_pending = false
 )
 
@@ -561,7 +570,17 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
         tia.bl_x = mod(tia.bl_x - _hmove_motion(sc, tia.registers[W_HMBL + 1]), 160)
         # HMOVE-blank fires alongside (the cycle ranges overlap with
         # the motion table's HBLANK region).
-        tia.hmove_blank_pending = _hmove_blank_enabled_at(sc)
+        # Task #97: when beam_sc >= 76 the write crossed into the NEXT
+        # scanline mid-instruction, so its comb belongs to line N+1 — park
+        # it in `hmove_blank_pending_next` (promoted after the beam
+        # advances) instead of clobbering line N's own comb. (The motion
+        # above already applies to the live positions, which persist into
+        # N+1, matching `_hmove_motion`'s ≥76 clamp.)
+        if sc >= NTSC_CPU_CYCLES_PER_SCANLINE
+            tia.hmove_blank_pending_next = _hmove_blank_enabled_at(sc)
+        else
+            tia.hmove_blank_pending = _hmove_blank_enabled_at(sc)
+        end
     elseif reg == W_HMCLR
         tia.registers[W_HMP0 + 1] = 0
         tia.registers[W_HMP1 + 1] = 0
@@ -768,6 +787,16 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
         end
         # All pending writes have been drained into tia.registers.
         empty!(tia.pending_writes)
+        # Task #97: the beam has advanced past the scanline that just
+        # rendered (which consumed its own `hmove_blank_pending`). If an
+        # HMOVE wrote with beam_sc >= 76 during it, that comb belongs to
+        # THIS upcoming line — promote it now. OR-semantics so a
+        # carried-forward flag (pre-Y_START / VBLANK, where pending is
+        # intentionally NOT cleared) is never lost.
+        if tia.hmove_blank_pending_next
+            tia.hmove_blank_pending = true
+            tia.hmove_blank_pending_next = false
+        end
     end
 
     # PXC1-x: don't increment the frame counter on scanline-wrap. The

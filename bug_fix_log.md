@@ -40,6 +40,51 @@ RIOT tick skipping one cart increment).
 
 ---
 
+### 🏆 Task #97 LANDED — jutari (jaxtari mirror pending env-confirm) (2026-06-13) — enduro HMOVE-blank comb 249 → 33 px
+
+enduro strobes HMOVE on free-running (non-WSYNC) kernel lines, where jutari's
+beam lands ~1 CPU cycle early — a line-N+1 `cyc 0` strobe gets recorded as
+line-N `cyc 75`. xitari blanks the leftmost-8px comb on every such line; jutari
+was missing 27/210 rows (249 px). Two fixes:
+
+1. **Wrap fix** (commit 2ac7344): `_hmove_blank_enabled_at` wraps `beam_sc>=76`
+   to the next line's cycle instead of returning false. enduro 249 → 137 (both
+   ports, MEASURED).
+2. **`_next` deferral** (this commit): an HMOVE write with `beam_sc>=76` crossed
+   into line N+1 mid-instruction, so its comb is parked in a new
+   `hmove_blank_pending_next` flag (not line N's `hmove_blank_pending`) and
+   promoted once the beam advances. enduro 137 → 33.
+   - jutari `TIA.jl`: field + W_HMOVE routing + promotion after the drain in
+     `tia_advance!`.
+   - jaxtari `system.py`: functional mirror (field + tia_poke routing +
+     promotion in `tia_advance`'s return-tuple).
+
+**Verification status (honest — see CLAUDE.md "verify, don't claim"):**
+  - jutari enduro = **33 MEASURED** (fixture regenerated + committed); jutari
+    bit-exact ROMs (pong/breakout/pitfall/SI) stay **0**; all jutari runtests
+    pass.
+  - jaxtari `_next`: full jaxtari **TIA unit suite 127 passed** (incl. the
+    HMOVE-blank tests), and it is a line-by-line mirror of the verified jutari
+    logic. (Also fixed 4 stale jaxtari TIA unit tests broken since #83's
+    Y_START gate — separate commit 484bc07.)
+  - jaxtari ENV screen confirmation is IN-FLIGHT but pathologically slow (the
+    jaxtari env re-traces per frame → ~25 min/ROM just for the 64-frame boot,
+    ~2 h for the full PXC-S set). Per the jutari-first rule (never let a jaxtari
+    stage block a verified jutari deliverable), the shared PXC-S enduro pin is
+    **HELD at 137** — the last value measured on BOTH ports — so jutari arm
+    passes at 33≤137 and jaxtari arm at 137≤137. A follow-up tightens the pin
+    137 → 33 once jaxtari env enduro=33 is measured.
+
+**Residual 33 px = road-border 1-cc positioning** (NOT the comb). Worst frame
+(f5): 9 rows (53,68,76,78,102,104,144,146,154), each a symmetric 1-px edge swap
+about x≈87.5 — the road borders (color $C0) converging to the horizon (narrow
+rows 53-78, widening to 144-154); jutari pulls both borders 1 px toward center
+vs xitari. Same ~1-cycle CPU↔TIA beam offset, now in RESP/HMOVE object
+positioning; lives in the P3i-g cycle core — HIGH RISK to the 4 bit-exact ROMs,
+deferred. (Original diagnosis detail below.)
+
+---
+
 ### 🔬 Task #97 DIAGNOSED (2026-06-13) — enduro 249px = HMOVE-blank comb mis-placed by jutari's 1-cycle beam offset at scanline boundaries
 
 enduro RAM is bit-exact (40 frames) → pure render. Localized the noop-10
