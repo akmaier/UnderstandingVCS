@@ -14,6 +14,66 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🔬 Task #95 ROUND 3 (2026-06-13) — PROVEN render-only: all 1252 TIA writes identical, player renders 5 scanlines low (VDELP0 / deferred-GRP0 render phase)
+
+Used xitari's `trace_dump --bus-trace` (per-bus-op CSV) to compare the
+jump frame (random-action frame 24) event-for-event against jutari's
+`Bus.trace_enable!` trace. Definitive results:
+
+  - **All 1252 TIA writes are IDENTICAL** between xitari and jutari —
+    same register, same value, AND same beam-scanline (only the final
+    frame-wrap write at sl262/sl0 differs). `reg/value` sequence: 0
+    mismatches. So the CPU issues Harry's GRP0 bytes identically.
+  - **GRP0 writes identical**: 244 writes, first non-zero at the same
+    `(sl43,cc57,$60)`; Harry's bitmap `$18,$18,$10,$18,$1a,$3e,$7c…$33`
+    on the same beam-scanlines 132-147 in BOTH.
+  - **INTIM reads identical** read-for-read (433 reads, 0 value diffs);
+    Pitfall busy-polls INTIM (TIM64T) but the values match — only the
+    bus-op *color-clock* is 3cc (1 CPU cycle) earlier in jutari, which
+    shifts 6 reads across a scanline boundary but never changes a value.
+  - **RAM identical** (confirmed again, 330 frames).
+
+  → The CPU, kernel, RIOT timer, and every TIA write are exonerated.
+    **The bug is purely in jutari's RENDERER.** A fix here CANNOT break
+    PXC1/PXC2 RAM conformance (render-only) — only PXC-S screen.
+
+**What the renderer does wrong** (instrumented the render of frame 24):
+Harry uses VDELP0=1, so he's drawn from the `grp0_old` shadow. Pixel
+comparison shows jutari draws the *identical* sprite (colours
+`12/4a/c8/d2`) exactly 5 scanlines BELOW xitari (jutari row 104 =
+xitari row 99), while the ground band (`$14`, row 133+) matches. The
+render-side `grp0_old` (and even the live `GRP0`) only reflects the
+sl132 write at render-row ~137-138 — a ~5-scanline lag between the
+(identical) GRP0 write's beam-scanline and the row where the renderer
+actually paints it. The GRP0 writes are LATE (cc156-168) and DEFERRED;
+combined with the VDELP0 shadow latch (now at activation-clock per
+task #94) the player's first-non-zero row lands ~5 scanlines late.
+
+**Status: NOT fixed.** The fault is in the deferred-GRP0-write drain +
+VDELP0-shadow render phase — the exact machinery task #94 tuned to make
+the pitfall HUD bit-exact. Changing it risks the HUD and the 4 bit-exact
+ROMs. After two prior wrong #95 diagnoses, the discipline is: do NOT
+ship a render-core guess. The precise next experiment: instrument, per
+render-row in frame 24, the color-clock at which the player's
+`grp0_old`/`GRP0` is sampled vs the color-clock of the deferred GRP0
+write's activation, and compare to xitari's beam draw of the player at
+cc≈84 (p0_x=16). The 5-row lag must come from the deferred write
+activating after the player's cc each row, cascading through the
+shadow. Fix candidate: when a deferred GRP0/GRP1 write's activation
+clock is AFTER the player's draw clock, its shadow effect should still
+apply to the NEXT row's player exactly as xitari's beam does — verify
+jutari's per-color-clock player draw samples grp0_old at the right cc.
+Gate ANY change on all 6 PXC-S pins + the pitfall jump (frames 20-40).
+
+**Tooling note for next session:** `tools/trace_dump --bus-trace PATH
+--bus-trace-frames LO,HI` emits xitari's per-bus-op CSV
+(global_idx,frame,kind,scanline,scanline_cycle,color_clock,addr,value);
+jutari's `Bus.trace_enable!()/trace_take!()` gives the matching stream.
+Aligning the two write-sequences by index is the fastest way to prove
+register-vs-render divergence (that's how round 3 nailed render-only).
+
+---
+
 ### 🎯 Task #95 RE-DIAGNOSED (2026-06-13, round 2) — jutari doesn't apply Harry's VERTICAL JUMP position (sprite Y pinned to ground)
 
 **User caught what noop-only testing missed:** "at the beginning of the
