@@ -14,6 +14,36 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🔬 Task #98 CHARACTERIZED (2026-06-13) — pong ball is 2 SCANLINES low for 2 frames (not "2 px"); likely the shared ~1-cycle beam offset
+
+Pixel diff of the cached 600-frame pong dumps (`output/pong_{xitari,jutari}_frames.raw`):
+only **f459 + f460** differ, 16 px each (everything else bit-identical). Tracking
+the ball (color $C8=200, cols 140-143) across the bounce:
+```
+f457/458: both rows 150-165
+f459/460: xitari rows 160-175   jutari rows 162-177   <- jutari 2 scanlines LOW
+f461/462: both rows 172-187     (re-synced)
+```
+So jutari renders the 16px-tall ball **2 scanlines lower** for exactly 2 frames
+around a vertical step, then re-syncs — the 16 px diff is 2 rows × 4 cols at each
+ball edge. RAM is bit-exact (the ball's logical Y is identical), so this is a pure
+RENDER-timing artifact: the ball's ENABL/vertical-position scanline is evaluated
+~2 scanlines off at this transient. The plan's "2 px" was really "2-scanline
+offset".
+
+**Unifying hypothesis (the remaining residuals share a root).** #98 (ball 2 sl),
+#97's residual (enduro road-border 1-cc), #80 (seaquest boot frame-2), and
+pitfall's INTIM ~1-cycle read offset all look like the **same ~1-cycle CPU↔TIA
+beam-position offset** in the P3i-g cycle-accounting core, surfacing on different
+register/timing paths (ENABL scanline / RESP+HMOVE x / VSYNC-frame boundary /
+INTIM poll). A correct fix to that one offset would likely close several at once —
+but it is the HIGHEST-risk change (touches every ROM's per-instruction timing),
+so it must be done in a fully-online session gated on full PXC1+PXC2+all-6 PXC-S.
+Until then these are all correctly deferred (each is ≤16 px / transient / a 1-frame
+state phase).
+
+---
+
 ### 🎯 Task #80 LOCALIZED (2026-06-13) — seaquest boot off-by-1 is at FRAME 2: xitari's first post-reset frame is PARTIAL
 
 Instrumented xitari's per-boot-frame RAM[$01] (the seaquest frame counter) with a
@@ -214,7 +244,7 @@ Post-#95 state (all rendered with correct RomSettings; full PXC-S suite
   | breakout       | bit-exact                | **0 px**     | done   |
   | space_invaders | bit-exact                | **0 px**     | done   |
   | pitfall        | bit-exact                | **0 px**     | done (#95) |
-  | pong           | bit-exact                | 2 px @ f459+ | #98 ball sub-cycle |
+  | pong           | bit-exact                | 16 px @ f459-460 | #98 CHARACTERIZED (ball 2 sl low, 2 frames) |
   | enduro         | **bit-exact (40 f)**     | 257 px*      | #97 LANDED (noop-10 249→33) |
   | seaquest       | **diverges f0** (6 bytes)| 1449 px      | #80 LOCALIZED → frame-2 partial boot |
 
@@ -242,8 +272,11 @@ the road-border 1-cc positioning.
      cart counter runs 1 frame ahead). Fix: reproduce xitari's partial first
      frame in jutari; gate on full PXC1+PXC2+all-6 PXC-S (high-risk boot
      timing). See "Task #80 LOCALIZED" above.
-  3. **#98 pong** — bus-trace the bounce frame, compare `bl_x` + RESBL/
-     HMBL at the exact cycle. 2 px polish, last.
+  3. **#98 pong** — CHARACTERIZED: ball renders 2 scanlines low at f459-460
+     only (16 px, RAM bit-exact, transient at a vertical step). Pure render-
+     timing; likely the same ~1-cycle beam offset as #97-residual/#80/pitfall
+     (see "Task #98 CHARACTERIZED" above). Lowest priority — fix it via the
+     shared-root fix, not a pong-specific hack.
 
 Guardrails: see CLAUDE.md "Hard-won methodology" (RAM-first, harness
 parity, never gate on tia.frame, bus-trace alignment, ~3cc offset).
