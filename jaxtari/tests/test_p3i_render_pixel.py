@@ -460,6 +460,39 @@ def test_hmove_blank_clears_after_scanline_renders():
         assert int(tia.framebuffer[Y_START + 1, x]) == 0x42
 
 
+def test_hmove_blank_next_defers_comb_to_following_line():
+    """Task #97: an HMOVE write whose *effective* beam already crossed
+    into the next scanline (`beam_sc >= 76`, e.g. enduro's free-running
+    kernel lines) must NOT blank the CURRENT line's leftmost-8px comb —
+    it parks in `hmove_blank_pending_next` and is promoted to
+    `hmove_blank_pending` once the beam advances, so the comb lands on
+    the FOLLOWING line. This is the bug the wrap fix + `_next` flag
+    close (enduro 137 -> 33). The existing hmove-blank tests only
+    exercise the beam_sc < 76 path."""
+    tia = initial_tia_state()
+    tia = tia._replace(scanline=Y_START)
+    tia = tia_poke(tia, W_COLUBK, 0x42)
+    # HMOVE with beam_sc = 76 → write belongs to line N+1: parked, not live.
+    tia = tia_poke(tia, W_HMOVE, 0, beam_sc=76)
+    assert tia.hmove_blank_pending is False
+    assert tia.hmove_blank_pending_next is True
+    # Render line Y_START: NO comb (flag was parked), and the parked flag
+    # promotes to hmove_blank_pending for the next line.
+    tia = tia_advance(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+    for x in range(8):
+        assert int(tia.framebuffer[Y_START, x]) == 0x42, \
+            f"line N x={x} must NOT be blanked (comb deferred)"
+    assert tia.hmove_blank_pending is True
+    assert tia.hmove_blank_pending_next is False
+    # Render line Y_START+1: NOW the comb fires (leftmost 8 px blanked).
+    tia = tia_advance(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+    for x in range(8):
+        assert int(tia.framebuffer[Y_START + 1, x]) == 0, \
+            f"line N+1 x={x} should be blanked by the promoted comb"
+    for x in (8, 50, 159):
+        assert int(tia.framebuffer[Y_START + 1, x]) == 0x42
+
+
 # --------------------------------------------------------------------------- #
 # P3i-g: full xitari ourCompleteMotionTable (mid-scanline-HMOVE quirks)
 # --------------------------------------------------------------------------- #

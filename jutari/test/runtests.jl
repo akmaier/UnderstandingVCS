@@ -1844,6 +1844,33 @@ end
         end
     end
 
+    @testset "HMOVE-blank comb defers to next line when beam_sc>=76 (task #97)" begin
+        # enduro's free-running kernel lines strobe HMOVE with the effective
+        # beam already across the boundary (beam_sc >= 76). That comb belongs
+        # to line N+1, not line N: it parks in hmove_blank_pending_next and is
+        # promoted once the beam advances. (beam_sc is the 5th positional arg;
+        # scanline_cycle stays 0 so the advance crosses exactly one line.)
+        tia = initial_tia_state()
+        tia.scanline = Y_START
+        tia_poke!(tia, W_COLUBK, 0x42)
+        tia_poke!(tia, W_HMOVE, 0x00, tia.color_clock, 76)
+        @test tia.hmove_blank_pending == false
+        @test tia.hmove_blank_pending_next == true
+        # Render line Y_START: NO comb, and the parked flag promotes.
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        for x in 1:8
+            @test tia.framebuffer[Y_START + 1, x] == 0x42   # NOT blanked
+        end
+        @test tia.hmove_blank_pending == true
+        @test tia.hmove_blank_pending_next == false
+        # Render line Y_START+1: NOW the comb fires (leftmost 8 px blanked).
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
+        for x in 1:8
+            @test tia.framebuffer[Y_START + 2, x] == 0x00   # blanked
+        end
+        @test tia.framebuffer[Y_START + 2, 9] == 0x42
+    end
+
     # Rendering
     @testset "player0 invisible when GRP0 = 0" begin
         tia = initial_tia_state(); tia.p0_x = 50
