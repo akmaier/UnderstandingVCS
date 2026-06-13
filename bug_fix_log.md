@@ -71,6 +71,25 @@ render coincides with xitari. PXC-S (noop fixtures) is therefore blind
 to it — pitfall noop is genuinely bit-exact; this only appears once
 gameplay drives `$69`.
 
+**REFINEMENT (same session, full 600-frame trajectory):** it is a
+DESYNC, not a permanent pin. jutari's Harry DOES reach the full vertical
+range (top rows 93-104 occur) — it just jumps at the WRONG frames:
+  - jump window 1: xitari rises f20-57; jutari stays grounded the whole
+    window (the jump the user saw missing).
+  - window ~f145-160: jutari jumps ~13 frames EARLIER than xitari
+    (jutari leaves row 133 at f145; xitari not until f158).
+So jutari is neither always-grounded nor a fixed phase offset — the
+vertical render is inconsistently early/late/missing vs xitari. Since
+`$69` (and all RAM) is byte-identical at every frame, the vertical-
+positioning kernel must consume a NON-RAM input that differs between
+ports — most likely the RIOT timer (`INTIM`; we have prior INTIM
+off-by-one history, task #15 pt8) used as a coarse-position countdown,
+or a collision/INPT read mid-kernel. That is the thing to trace next,
+NOT the GRP0/COLUP0 register paths. (Heuristic caveat: the row-133
+frames are likely Pitfall's underground level region, so the per-frame
+"Harry top" numbers conflate level + jump; the DESYNC conclusion holds
+regardless.)
+
 **Next step (concrete):** trace the kernel's reads of `$69` and the
 scanline at which GRP0 first goes non-zero for Harry, in BOTH engines,
 for frames 20-30. Find why jutari's "first GRP0 scanline" is fixed
