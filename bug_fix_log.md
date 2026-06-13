@@ -69,8 +69,45 @@ mechanism explains the render cases.
   - Full PXC-S all-6 (jaxtari env ~2 h) — the final gate before claiming done.
   REVERT immediately on any bit-exact regression (discipline from #93/#95).
 
-**Status:** Phase 1 executing now (xitari per-frame PC/scanline probe). NO fix
-applied until Phase 1 pins the mechanism and the offline gates are green.
+**Status:** Phase 1 DONE — ROOT FOUND (see below). Fix designed; gating next.
+
+**Phase 1 RESULT (2026-06-13) — xitari per-boot-frame scanline counts** (probe:
+env-guarded `scanlines()`+RAM[$01] dump in `StellaEnvironment::emulate`, reverted
++ rebuilt clean after):
+```
+            frame1  frame2  frame3  frame4   RAM[$01] per frame
+xitari:      291     164     262     262     00, 00, 01, 02   (extra SHORT settle)
+jutari:      282     262     262     262     00, 01, 02, 03   (no extra frame)
+```
+xitari takes TWO settle frames (291 + 164 scanlines) before the steady 262-line
+loop and its first `INC RAM[$01]` is in frame 3; jutari takes ONE (282) and INCs
+in frame 2 → jutari's counter is 1 ahead for the whole run (ends $3f vs $3e).
+
+**ROOT CAUSE (frame-DEFINITION difference, NOT the P3i-g beam core):** jutari's
+VSYNC handler (`TIA.jl:514-528`) treats ANY VSYNC 1→0 falling edge (while
+`vsync_active`) as a frame boundary. xitari (`TIA.cxx:2009-2030`) ends a frame on
+a VSYNC-off ONLY when `clock >= myVSYNCFinishClock`, where
+`myVSYNCFinishClock = (clock at VSYNC-on) + 228` — i.e. VSYNC must have been ON
+for ≥1 scanline (228 color clocks). It also inits `myVSYNCFinishClock` to
+`0x7FFFFFFF` (reset, TIA.cxx:240), so a VSYNC-off BEFORE any VSYNC-on is ignored.
+seaquest's boot kernel emits a short VSYNC (on <1 scanline, or an off with no
+prior on) near line 282 that jutari counts as a frame but xitari does not — so
+jutari skips xitari's extra 164-line settle frame and runs 1 frame ahead.
+
+This is GOOD news for risk: the fix is in jutari's frame-counter, NOT the shared
+P3i-g beam core (so it does NOT touch the enduro/pong render residuals — those
+remain the separate ~1-cycle beam offset). The 4 bit-exact ROMs use standard
+3-scanline VSYNC pulses (≫1 scanline) so the condition won't change their
+counting — but this MUST be confirmed by the RAM-diff-all-6 gate (could regress a
+ROM that relies on a short-VSYNC count). NOTE: this also means #80 and the
+render residuals (#97/#98/pitfall) are likely TWO different roots, not one — the
+"unifying hypothesis" only holds for the render cases.
+
+**FIX (jutari `TIA.jl` VSYNC handler):** track the clock when VSYNC goes on
+(monotonic, e.g. via total_cycles or an explicit `vsync_on_clock`), and at the
+1→0 edge only set `vsync_reset_pending` if VSYNC was on ≥76 CPU cycles
+(=228 color clocks). Mirror in jaxtari. Gate: jutari tests + RAM-diff ALL 6 ROMs
+(seaquest→0, others stay 0) + jaxtari unit + PXC2, then full PXC-S.
 
 ---
 
