@@ -197,8 +197,16 @@ def _hmove_blank_enabled_at(scanline_cycle: int) -> bool:
     """Return True if an HMOVE write at CPU cycle `scanline_cycle`
     within the scanline triggers the HMOVE-blank bug."""
     sc = int(scanline_cycle) & 0x7F                  # mod 128
+    # Task #97 (2026-06-13): beam_sc >= 76 means the write crossed into
+    # the NEXT scanline mid-instruction (enduro free-running lines strobe
+    # HMOVE at the next line's cyc ~3 → beam_sc 79). Wrap to the next-line
+    # cycle so the comb is still recognized — matching `_hmove_motion`
+    # which already clamps >=76. Without this the >=76 write returned
+    # False and CLOBBERED the current line's real comb. Mirror of jutari.
     if sc >= NTSC_CPU_CYCLES_PER_SCANLINE:
-        return False                                  # past scanline
+        sc -= NTSC_CPU_CYCLES_PER_SCANLINE
+    if sc >= NTSC_CPU_CYCLES_PER_SCANLINE:
+        return False                                  # still out of range
     return _HMOVE_BLANK_ENABLE_CYCLES[sc]
 
 # Internal framebuffer height — covers scanlines 0..243 (everything xitari

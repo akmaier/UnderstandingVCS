@@ -148,7 +148,14 @@ const _HMOVE_BLANK_ENABLE_CYCLES = Bool[
 
 @inline function _hmove_blank_enabled_at(scanline_cycle::Integer)
     sc = Int(scanline_cycle) & 0x7F                  # mod 128
-    sc >= NTSC_CPU_CYCLES_PER_SCANLINE && return false
+    # Task #97 (2026-06-13): a `beam_sc` ≥ 76 means the bus write crossed
+    # into the NEXT scanline mid-instruction (e.g. enduro free-running
+    # lines strobe HMOVE at the next line's cyc ~3 → beam_sc 79). Wrap to
+    # the next-line cycle so the comb is still recognized — matching
+    # `_hmove_motion` which already clamps ≥76. Without this the >=76
+    # write returned `false` and CLOBBERED the current line's real comb.
+    sc >= NTSC_CPU_CYCLES_PER_SCANLINE && (sc -= NTSC_CPU_CYCLES_PER_SCANLINE)
+    sc >= NTSC_CPU_CYCLES_PER_SCANLINE && return false   # still out of range
     return _HMOVE_BLANK_ENABLE_CYCLES[sc + 1]        # Julia 1-indexed
 end
 

@@ -139,8 +139,16 @@ _CASES = [
     _Case("pong_noop_10",           "pong.bin",              0),
     _Case("space_invaders_noop_10", "space_invaders.bin",    0),
     _Case("pitfall_noop_10",        "pitfall.bin",           0),
+    # Task #97 (2026-06-13): HMOVE-blank wrap fix (beam_sc>=76 wraps to the
+    # next-line cycle instead of returning false + clobbering the current
+    # line's comb). enduro free-running lines strobe HMOVE at the next
+    # line's cyc~3 (beam_sc 79); the fix recovers ~half the missed combs:
+    #   enduro  249 -> 137  (both ports; PXC2 preserved)
+    # Remaining 137 = the NEXT-line comb attribution (the line whose HMOVE
+    # was recorded early on the previous line) — needs a deferred/next
+    # hmove-blank flag (task #97 follow-up). 4 bit-exact ROMs unaffected.
     _Case("seaquest_noop_10",       "seaquest.bin",        904),
-    _Case("enduro_noop_10",         "enduro.bin",          249),
+    _Case("enduro_noop_10",         "enduro.bin",          137),
 ]
 
 
