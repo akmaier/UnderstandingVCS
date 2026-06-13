@@ -38,6 +38,7 @@ from jaxtari.tia.system import (
     W_PF1,
     W_PF2,
     W_RESP0,
+    Y_START,
 )
 
 
@@ -189,6 +190,10 @@ def test_p3i_b_framebuffer_matches_pre_p3i_render():
     is the same at every color clock today (mid-scanline timing lands
     in P3i-c). This pins the no-behavioural-change invariant."""
     tia = initial_tia_state()
+    # Task #83 (Y_START gate): the framebuffer is only written for
+    # scanlines >= Y_START, so render at a visible line (the completed
+    # line lands at framebuffer[Y_START]).
+    tia = tia._replace(scanline=Y_START)
     tia = tia_poke(tia, W_PF0, 0xF0)
     tia = tia_poke(tia, W_PF1, 0xAA)
     tia = tia_poke(tia, W_COLUPF, 0x42)
@@ -198,7 +203,7 @@ def test_p3i_b_framebuffer_matches_pre_p3i_render():
     tia2 = tia_advance(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
     # The completed scanline's row in the framebuffer should equal
     # the standalone `render_scanline` output.
-    assert jnp.array_equal(tia2.framebuffer[0], expected)
+    assert jnp.array_equal(tia2.framebuffer[Y_START], expected)
 
 
 def test_p3i_b_vblank_still_suppresses_framebuffer_write():
@@ -305,6 +310,7 @@ def test_pf_mid_scanline_change_affects_only_post_activation_pixels():
     PF0 contribution to pixels 0-15 (left side) is fixed by the
     register value BEFORE the mid-scanline write."""
     tia = initial_tia_state()
+    tia = tia._replace(scanline=Y_START)          # render at a visible line (#83 gate)
     tia = tia_poke(tia, W_COLUBK, 0x10)
     tia = tia_poke(tia, W_COLUPF, 0x42)
     tia = tia_poke(tia, W_PF0, 0xF0)              # all 4 PF0 pixels lit
@@ -313,17 +319,17 @@ def test_pf_mid_scanline_change_affects_only_post_activation_pixels():
     tia = tia_advance(tia, 38)                    # finish the scanline
     # Pixels 0-15 (PF0 native region, rendered before c=114): still PF colour
     for x in range(16):
-        assert int(tia.framebuffer[0, x]) == 0x42, (
+        assert int(tia.framebuffer[Y_START, x]) == 0x42, (
             f"left pixel {x} should still be PF colour (0x42), "
-            f"got {int(tia.framebuffer[0, x]):#04x}"
+            f"got {int(tia.framebuffer[Y_START, x]):#04x}"
         )
     # Pixels 144-159 (PF0 mirror region, rendered after the mid-scanline
     # write): now background (mid-scanline write applied at c=116, well
     # before the mirror region renders).
     for x in range(144, 160):
-        assert int(tia.framebuffer[0, x]) == 0x10, (
+        assert int(tia.framebuffer[Y_START, x]) == 0x10, (
             f"mirror pixel {x} should be background (0x10), "
-            f"got {int(tia.framebuffer[0, x]):#04x}"
+            f"got {int(tia.framebuffer[Y_START, x]):#04x}"
         )
 
 
@@ -426,22 +432,24 @@ def test_hmove_blank_blacks_first_8_visible_pixels():
     (framebuffer pixels 0..7) render as 0 regardless of background.
     Pixel 8 and beyond render normally."""
     tia = initial_tia_state()
+    tia = tia._replace(scanline=Y_START)        # render at a visible line (#83 gate)
     tia = tia_poke(tia, W_COLUBK, 0x42)         # solid background
     tia = tia_poke(tia, W_HMOVE, 0)
     assert tia.hmove_blank_pending is True
     tia = tia_advance(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
     # First 8 pixels blank (0).
     for x in range(8):
-        assert int(tia.framebuffer[0, x]) == 0, f"x={x} should be blanked"
+        assert int(tia.framebuffer[Y_START, x]) == 0, f"x={x} should be blanked"
     # Pixel 8 and beyond use COLUBK = 0x42.
     for x in (8, 15, 50, 159):
-        assert int(tia.framebuffer[0, x]) == 0x42, f"x={x} should be COLUBK"
+        assert int(tia.framebuffer[Y_START, x]) == 0x42, f"x={x} should be COLUBK"
 
 
 def test_hmove_blank_clears_after_scanline_renders():
     """After the scanline with the blank renders, the flag clears so
     subsequent scanlines render normally."""
     tia = initial_tia_state()
+    tia = tia._replace(scanline=Y_START)        # render at a visible line (#83 gate)
     tia = tia_poke(tia, W_COLUBK, 0x42)
     tia = tia_poke(tia, W_HMOVE, 0)
     tia = tia_advance(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
@@ -449,7 +457,7 @@ def test_hmove_blank_clears_after_scanline_renders():
     # Run another scanline — all pixels should be COLUBK.
     tia = tia_advance(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
     for x in range(160):
-        assert int(tia.framebuffer[1, x]) == 0x42
+        assert int(tia.framebuffer[Y_START + 1, x]) == 0x42
 
 
 # --------------------------------------------------------------------------- #
