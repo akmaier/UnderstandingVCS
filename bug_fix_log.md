@@ -14,6 +14,41 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🔬 Task #103 — TRIAGE of the 6 genuine ROM residuals (per-game causes characterized) (2026-06-14)
+
+After #100 (E0 detect) + the 12 getStartingActions + canonical NTSC dumps, 6 of the 64
+games still diverge on the jutari RAM sweep with correct cart + starting action. First-
+divergent-frame byte analysis (all diverge at frame 0) gives distinct, per-game causes —
+NOT one common bug, so each is its own focused deep-dive (seaquest #80 / enduro #99 mold).
+Fixes live in the shared collision/timing/boot core → HIGH risk to the 55 bit-exact games;
+gate every attempt on the full sweep.
+
+  - **frostbite — 2 b/f (smallest, start here).** RAM[$34]/[$36] = jutari $47 vs xitari
+    $07: a constant **bit-6** difference → a **collision-register** (CXxx, D6=object-
+    overlap) read where jutari's collision latch sets a bit xitari doesn't. Same class as
+    the pong sub-cycle collision items (#83-85). Trace: which CXxx the game reads into
+    $34/$36, why jutari's D6 differs at that beam position.
+  - **amidar — 11 b/f.** $47/$48 and $4e/$4f are VALUE-SWAPPED (jutari has them in the
+    other order) → a write-**ordering/timing** divergence, not a wrong value.
+  - **surround — 16 b/f.** 6 scattered bytes ($71/$75/$79/$7d-$7f), varied values →
+    timing/logic.
+  - **qbert — 56 b/f.** xitari RAM mostly $00 where jutari is populated → a **boot-phase**
+    divergence (jutari has run FURTHER by frame 0). Relates to the old #52 qbert
+    RESET-boot issue.
+  - **skiing — 85 b/f.** 80 bytes differ → major boot-phase divergence.
+  - **gravitar — 93 b/f.** xitari RAM populated ($01/$03/$04/$0a nonzero) where jutari is
+    $00 → boot-phase divergence (jutari has run LESS far by frame 0 — opposite of qbert).
+
+**Two families:** (1) localized — frostbite (collision bit), amidar/surround (write
+ordering/timing); (2) boot-phase / frame-count — qbert/skiing/gravitar (one emulator is
+further along by frame 0; same family as seaquest's VSYNC-less-boot #80 — suspect a
+console-switch-driven boot branch [we hard-code SWCHB=0x3F] or a boot-timing difference).
+NOTE (#101): the ports are NOT bit-identical across all 64 — asterix is 0 on jutari but
+9 b/f on jaxtari — so some residuals must be triaged per-port. A jaxtari 64-ROM sweep
+harness (mirror sweep_jutari_ram.py + --jobs) would give the jaxtari column.
+
+---
+
 ### 🎯 Task #100 — SOLVED: E0 cart auto-detect + 12 getStartingActions → 64-ROM sweep 44→55 bit-exact; remaining triaged (2026-06-14)
 
 User: "Fix #100, port the 12 getStartingActions and triage the 4 small ones." Closed the
