@@ -47,6 +47,27 @@ NOTE (#101): the ports are NOT bit-identical across all 64 — asterix is 0 on j
 9 b/f on jaxtari — so some residuals must be triaged per-port. A jaxtari 64-ROM sweep
 harness (mirror sweep_jutari_ram.py + --jobs) would give the jaxtari column.
 
+**Investigation update (2026-06-14, "work on them" pass) — safe hypotheses RULED OUT;
+these are genuine deep-dives:**
+  - **Console-switch (difficulty) ruled out for amidar.** stella.pro gives amidar
+    Console.Left/RightDifficulty=A, but forcing jutari SWCHB=0xFF (A/A) left amidar at
+    **11 b/f** (unchanged) — the difficulty doesn't affect its first 30 NOOP frames. So
+    amidar is a genuine write-ordering/timing residual, not a settings gap.
+  - **ROM-provenance ruled out for frostbite.** frostbite = **2 b/f with BOTH** the
+    canonical Activision (Iceman, AX-031) dump AND the Digitel/PAL dump — dump-robust →
+    a genuine collision-D6 residual, not a PAL/clone artifact.
+  - **Resolver provenance (cosmetic, not conformance).** resolve_roms.py picks some
+    PAL/Brazilian dumps (Frostbite Digitel, Surround PAL) because filename-based PAL
+    detection misses dumps whose name lacks "(PAL)" but whose MD5 is PAL, and a penalty
+    tie favors the shorter (clone) name. Hardened the penalty (digitel/digivision/quelle/
+    "4 game in one"/"rad action" + an original-publisher bonus). Doesn't change the
+    bit-exact count (residuals are dump-robust) — only cleans up provenance for the paper.
+  - **Bottom line:** all 6 are genuine shared-core deep-dives (collision-timing
+    [frostbite], write-ordering [amidar/surround], boot-phase/frame-count
+    [qbert/skiing/gravitar]). Each risks the 55 bit-exact games and needs its own focused
+    session with the full sweep as the gate — not safely batchable. #104 (the one safe
+    win in this pass) is fixed + committed.
+
 ---
 
 ### 🎯 Task #100 — SOLVED: E0 cart auto-detect + 12 getStartingActions → 64-ROM sweep 44→55 bit-exact; remaining triaged (2026-06-14)

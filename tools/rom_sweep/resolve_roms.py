@@ -44,14 +44,24 @@ def penalty(fn: str) -> int:
     # Brazilian-clone / multicart dumps that the fuzzy match otherwise picks.
     for clone, w in (("dactari", 9), ("milmar", 9), ("fotomania", 9),
                      ("bit corp", 9), ("bitcorp", 9), ("32 in 1", 9),
-                     ("4 in 1", 9), ("zellers", 7), ("panda", 7),
-                     ("puzzy", 9), ("rentacom", 9), ("digivision", 9),
-                     ("gamegear", 9), ("cce", 7), ("vdi", 7),
-                     ("home vision", 7), ("hitech", 7), ("quelle", 7),
-                     ("zirok", 9), ("supergame", 9), ("dynacom", 9)):
+                     ("4 in 1", 9), ("4 game in one", 9), ("zellers", 7),
+                     ("panda", 7), ("puzzy", 9), ("rentacom", 9),
+                     ("digivision", 9), ("digitel", 9), ("gamegear", 9),
+                     ("cce", 7), ("vdi", 7), ("home vision", 7),
+                     ("hitech", 7), ("quelle", 7), ("zirok", 9),
+                     ("supergame", 9), ("dynacom", 9), ("rad action", 9),
+                     ("eskimo jump", 9), ("ariola", 6)):
         if clone in low:
             p += w
-    # Prefer dumps that look canonical (have a 4-digit year).
+    # Bonus (negative penalty) for a recognized original publisher — breaks
+    # penalty ties in favour of the canonical NTSC release rather than the
+    # shortest (often clone) filename.
+    for pub in ("activision", "(atari", "parker bros", "imagic", "sega",
+                "coleco", "mattel", "cbs", "20th century fox", "konami"):
+        if pub in low:
+            p -= 1
+            break
+    # Prefer dumps that look canonical (have a 4-digit 197x/198x year).
     import re as _re
     if not _re.search(r"\((19[78]\d)\)", fn):
         p += 1
