@@ -334,11 +334,15 @@ def _bus_peek(bus: Bus, addr: int):
             new_bus = new_bus._replace(tia=new_tia)
         return value, new_bus
     if addr_masked & 0x200:
-        # RIOT I/O (A9=1). P4d: INTIM read clears timer_expired.
-        # Phase 5: pass `new_pending` so INTIM reflects intra-instruction
-        # cycle progress (matches xitari's `M6532::peek case 0x04` using
-        # `mySystem->cycles() - 1` — see jaxtari/riot/system.py).
-        value, new_riot = riot_peek(bus.riot, addr_masked, new_pending)
+        # RIOT I/O (A9=1). Task #80 (lazy timer): pass the *monotonic*
+        # system cycle count INCLUDING this bus op — xitari's
+        # `mySystem->cycles()` (`M6532::peek` then uses `cycles - 1`).
+        # `tia.total_cycles` is cycles through the previous instruction;
+        # `new_pending` adds the cycles consumed in the current
+        # instruction up to and including this op. Matches jutari's
+        # `bus.tia.total_cycles + bus.pending_tia_cycles`.
+        cur_cycles = int(bus.tia.total_cycles) + new_pending
+        value, new_riot = riot_peek(bus.riot, addr_masked, cur_cycles)
         value &= 0xFF
         if new_riot is bus.riot:
             return value, bus._replace(data_bus_state=value,
@@ -384,13 +388,14 @@ def _bus_poke(bus: Bus, addr: int, value: int) -> Bus:
         )
     if addr_masked & 0x200:
         # RIOT I/O write (P4): SWCHA/SWACNT/SWCHB/SWBCNT or TIM*T.
-        # 2026-06-07 (task #75 mirror): pass `new_pending` so the
-        # TIM*T-load handler can rewind `cycles_since_tick` by the
-        # load instruction's cycles consumed so far — without this,
-        # jaxtari counts the load instruction's own cycles toward the
-        # new timer (xitari does not). See riot_poke docstring.
+        # Task #80 (lazy timer): the TIM*T handler stamps
+        # `cycles_when_set` with the monotonic cycle count INCLUDING this
+        # bus op — xitari records `myCyclesWhenTimerSet = mySystem->cycles()`
+        # at the poke. Same `tia.total_cycles + new_pending` as the read
+        # side; mirrors jutari `riot_poke!`.
+        cur_cycles = int(bus.tia.total_cycles) + new_pending
         return bus._replace(
-            riot=riot_poke(bus.riot, addr_masked, value8, new_pending),
+            riot=riot_poke(bus.riot, addr_masked, value8, cur_cycles),
             data_bus_state=value8,
             pending_tia_cycles=new_pending,
         )

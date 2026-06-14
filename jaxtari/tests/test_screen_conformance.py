@@ -155,7 +155,15 @@ _CASES = [
     # 33 px is the road-border 1-cc positioning (NOT the comb) — same ~1-cycle
     # CPU<->TIA beam offset in RESP/HMOVE object positioning, deferred (HIGH
     # RISK to the bit-exact ROMs; lives in the P3i-g cycle core).
-    _Case("seaquest_noop_10",       "seaquest.bin",        904),
+    # Task #80 (2026-06-14): the faithful lazy-RIOT-timer port + 290
+    # max-scanlines frame cutoff align seaquest's boot frames with xitari,
+    # so the rendered screen is now BIT-EXACT (904 -> 0) on BOTH ports
+    # (jutari fixture worst=0; jaxtari live worst=0). The old 904 px was
+    # the boot off-by-1 shifting every frame, not a true render bug.
+    _Case("seaquest_noop_10",       "seaquest.bin",          0),
+    # enduro: jutari/jaxtari screen unchanged by #80 (33 px road-border
+    # 1-cc residual remains — see task #97). Fixture regenerated for the
+    # timer change but worst-frame vs xitari stays 33.
     _Case("enduro_noop_10",         "enduro.bin",           33),
 ]
 

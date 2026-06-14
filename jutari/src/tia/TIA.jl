@@ -309,6 +309,16 @@ mutable struct TIAState
     # matches xitari's "frameStart records WHERE we were, scanline
     # counter resets to 0 but scanline_cycle keeps going" semantics.
     vsync_reset_pending::Bool
+    # Task #80: scanlines since the last frame boundary (does NOT wrap at
+    # 262, unlike `scanline`). Drives xitari's max-scanlines frame cutoff:
+    # xitari force-ends a frame after `myMaximumNumberOfScanlines` (=290
+    # NTSC) lines if no software VSYNC came (TIA.cxx:2003). Needed so a
+    # VSYNC-less boot-init burst (seaquest: ~455 lines before its first
+    # VSYNC) is split into the SAME number of frames as xitari — without
+    # it, jutari's 64-frame boot runs one extra cart-loop iteration (one
+    # extra RAM[$01] increment → $3f vs xitari's $3e). Dormant for normal
+    # frames (VSYNC fires at ~262 < 290).
+    lines_since_frame::Int
 end
 
 # INPT defaults: paddle pots ($80 = centred), triggers idle high (D7=1).
@@ -330,6 +340,7 @@ initial_tia_state() = TIAState(
     false,                             # P3i-f: hmove_blank_pending = false
     false,                             # task #97: hmove_blank_pending_next = false
     false,                             # 2026-06-04: vsync_reset_pending = false
+    0,                                 # task #80: lines_since_frame = 0
 )
 
 """
@@ -807,6 +818,7 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
     # and both incremented `frame` for the same frame boundary.
     new_line = tia.scanline + line_advance
     tia.scanline = new_line % NTSC_SCANLINES_PER_FRAME
+    tia.lines_since_frame += Int(line_advance)
 
     # 2026-06-04: deferred VSYNC 1→0 reset. If `tia_poke!` saw the
     # falling VSYNC edge during this instruction, the actual frame /
@@ -825,6 +837,18 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
         tia.frame += UInt64(1)
         tia.scanline = 0
         tia.vsync_reset_pending = false
+        tia.lines_since_frame = 0
+    elseif tia.lines_since_frame > 290
+        # Task #80: xitari's max-scanlines frame cutoff (NTSC=290,
+        # TIA.cxx:2003-2007) — force a frame boundary when no software
+        # VSYNC has come within 290 scanlines. Dormant for normal frames
+        # (VSYNC at ~262). Splits seaquest's VSYNC-less boot-init burst
+        # into the same frame count as xitari → fixes the boot off-by-1.
+        # Beam position (scanline_cycle/color_clock) is preserved, as in
+        # the VSYNC reset above.
+        tia.frame += UInt64(1)
+        tia.scanline = 0
+        tia.lines_since_frame = 0
     end
     return nothing
 end

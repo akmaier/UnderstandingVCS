@@ -2,6 +2,14 @@
 
 The 128 B RAM is in P2 (bus); this file covers the timer (INTIM/INSTAT/
 TIM*T) and the two I/O ports (SWCHA/SWCHB + their DDRs).
+
+Task #80: the timer is now a **faithful lazy port of xitari's `M6532`** —
+INTIM/INSTAT are computed on read from a monotonic cycle counter rather
+than decremented eagerly. `riot_advance` is a no-op. The read formula is
+`myTimer - (delta >> shift) - 1` where `delta = (cur_cycles - 1) -
+cycles_when_set`, so every read here passes an explicit `cur_cycles`
+(the monotonic system cycle count INCLUDING the read's bus op — xitari
+`mySystem->cycles()`).
 """
 
 import jax.numpy as jnp
@@ -32,10 +40,12 @@ def _state(**fields) -> CPUState:
 
 def test_initial_riot_state():
     r = initial_riot_state()
-    assert r.intim == 0
-    assert r.prescaler_shift == 0
-    assert r.cycles_since_tick == 0
-    assert r.timer_expired is False
+    # xitari M6532::reset: myTimer=25, myIntervalShift=6 (64-cycle prescaler).
+    assert r.my_timer == 25
+    assert r.interval_shift == 6
+    assert r.cycles_when_set == 0
+    assert r.read_after_int is False
+    assert r.cycles_when_int_reset == 0
     assert r.swcha_in == 0xFF
     # Task #64: SWCHB defaults to 0x3F to match xitari's
     # `Switches::Switches` (B/B difficulty + COLOR + Select/Reset
@@ -51,7 +61,7 @@ def test_initial_port_reads_return_input_lines():
     joystick, SWCHB=0x3F = xitari console-switch default — see task #64
     in the SWCHB docstring)."""
     r = initial_riot_state()
-    assert riot_peek(r, 0x0280)[0] == 0xFF     # SWCHA  (peek now returns (value, riot))
+    assert riot_peek(r, 0x0280)[0] == 0xFF     # SWCHA  (peek returns (value, riot))
     assert riot_peek(r, 0x0282)[0] == 0x3F     # SWCHB — task #64
 
 
@@ -61,150 +71,123 @@ def test_initial_port_reads_return_input_lines():
 
 def test_tim1t_load():
     r = riot_poke(initial_riot_state(), 0x0294, 100)
-    assert r.intim == 100
-    assert r.prescaler_shift == 0
+    assert r.my_timer == 100
+    assert r.interval_shift == 0
 
 
 def test_tim8t_load():
     r = riot_poke(initial_riot_state(), 0x0295, 50)
-    assert r.intim == 50
-    assert r.prescaler_shift == 3            # 2**3 = 8
+    assert r.my_timer == 50
+    assert r.interval_shift == 3             # 2**3 = 8
 
 
 def test_tim64t_load():
     r = riot_poke(initial_riot_state(), 0x0296, 20)
-    assert r.prescaler_shift == 6            # 2**6 = 64
+    assert r.interval_shift == 6             # 2**6 = 64
 
 
 def test_t1024t_load():
     r = riot_poke(initial_riot_state(), 0x0297, 5)
-    assert r.prescaler_shift == 10           # 2**10 = 1024
+    assert r.interval_shift == 10            # 2**10 = 1024
 
 
-def test_timer_load_clears_expired_flag():
-    r = initial_riot_state()._replace(timer_expired=True)
-    r = riot_poke(r, 0x0294, 1)
-    assert r.timer_expired is False
+def test_timer_load_stamps_cycles_when_set():
+    """The TIM*T write records the monotonic cycle count and clears the
+    read-after-interrupt latch (xitari `myCyclesWhenTimerSet` +
+    `myTimerReadAfterInterrupt = false`)."""
+    r = initial_riot_state()._replace(read_after_int=True)
+    r = riot_poke(r, 0x0294, 1, cur_cycles=500)
+    assert r.read_after_int is False
+    assert r.cycles_when_set == 500
 
 
 # --------------------------------------------------------------------------- #
-# riot_advance — pre-expiration
+# riot_advance is a no-op in the lazy model
 # --------------------------------------------------------------------------- #
 
-def test_advance_under_one_tick_does_not_change_intim():
-    r = riot_poke(initial_riot_state(), 0x0295, 50)        # TIM8T 50
-    r = riot_advance(r, 5)                                  # 5 < 8
-    assert r.intim == 50
-    assert r.cycles_since_tick == 5
+def test_riot_advance_is_noop():
+    r = riot_poke(initial_riot_state(), 0x0294, 50)
+    assert riot_advance(r, 100) == r         # nothing accumulates
 
 
-def test_advance_one_tick_decrements_intim():
-    r = riot_poke(initial_riot_state(), 0x0295, 50)
-    r = riot_advance(r, 8)
-    assert r.intim == 49
-    assert r.cycles_since_tick == 0
+# --------------------------------------------------------------------------- #
+# INTIM lazy read formula — pre-expiration countdown
+# --------------------------------------------------------------------------- #
+
+def test_intim_readable_via_peek():
+    # xitari's INTIM read formula has an extra `- 1`
+    # (`myTimer - (delta>>shift) - 1`), so reading INTIM one cycle after a
+    # TIM1T write of 42 returns 41. `delta = (cur-1) - set = (1-1) - 0 = 0`.
+    r = riot_poke(initial_riot_state(), 0x0294, 42)   # set=0
+    assert riot_peek(r, 0x0284, 1)[0] == 41
 
 
-def test_advance_partial_then_full_tick():
-    r = riot_poke(initial_riot_state(), 0x0295, 50)
-    r = riot_advance(r, 5)
-    r = riot_advance(r, 3)
-    assert r.intim == 49
-
-
-def test_advance_multiple_ticks_tim1t():
+def test_intim_tim1t_countdown():
+    """TIM1T (shift 0): INTIM decrements once per cycle. set=0."""
     r = riot_poke(initial_riot_state(), 0x0294, 100)
-    r = riot_advance(r, 30)
-    assert r.intim == 70
+    assert riot_peek(r, 0x0284, 1)[0]  == 99      # delta = 0
+    assert riot_peek(r, 0x0284, 11)[0] == 89      # delta = 10
+    assert riot_peek(r, 0x0284, 31)[0] == 69      # delta = 30
+
+
+def test_intim_tim8t_countdown():
+    """TIM8T (shift 3): INTIM decrements once per 8 cycles. set=0."""
+    r = riot_poke(initial_riot_state(), 0x0295, 50)
+    assert riot_peek(r, 0x0284, 1)[0]  == 49      # delta = 0  → 0>>3 = 0
+    assert riot_peek(r, 0x0284, 9)[0]  == 48      # delta = 8  → 8>>3 = 1
+    assert riot_peek(r, 0x0284, 17)[0] == 47      # delta = 16 → 16>>3 = 2
 
 
 # --------------------------------------------------------------------------- #
-# riot_advance — expiration boundary + post-expiration behaviour
-# --------------------------------------------------------------------------- #
-
-def test_advance_to_exact_expiration():
-    """TIM1T value 10: 11 cycles → INTIM wraps to 0xFF and expired set."""
-    r = riot_poke(initial_riot_state(), 0x0294, 10)
-    r = riot_advance(r, 11)
-    assert r.intim == 0xFF
-    assert r.timer_expired is True
-
-
-def test_post_expiration_ticks_once_per_cycle():
-    r = riot_poke(initial_riot_state(), 0x0294, 10)
-    r = riot_advance(r, 11)                       # → expired, intim=0xFF
-    r = riot_advance(r, 5)                        # 5 cycles, 5 ticks
-    assert r.intim == 0xFA
-    assert r.timer_expired is True
-
-
-def test_expiration_during_tim8t_advance():
-    """TIM8T value 5 (cycles_to_expire = 6×8 = 48). Advance 50 cycles →
-    expired at cycle 48; 2 extra cycles at post-expiration rate (1/cycle).
-    Result: INTIM = (0xFF - 2) & 0xFF = 0xFD."""
-    r = riot_poke(initial_riot_state(), 0x0295, 5)
-    r = riot_advance(r, 50)
-    assert r.timer_expired is True
-    assert r.intim == 0xFD
-
-
-def test_writing_timer_clears_expired_and_resets_prescaler():
-    r = riot_poke(initial_riot_state(), 0x0294, 5)
-    r = riot_advance(r, 100)
-    assert r.timer_expired is True
-    r = riot_poke(r, 0x0295, 100)
-    assert r.timer_expired is False
-    assert r.intim == 100
-    assert r.cycles_since_tick == 0
-
-
-# --------------------------------------------------------------------------- #
-# INSTAT
+# INSTAT (D7 = "timer not yet expired-and-read")
 # --------------------------------------------------------------------------- #
 
 def test_instat_zero_before_expiration():
     r = riot_poke(initial_riot_state(), 0x0294, 5)
-    assert riot_peek(r, 0x0285)[0] == 0x00
+    # cur=1 → delta=0 → timer = 5-0-1 = 4 >= 0 → D7 clear.
+    assert riot_peek(r, 0x0285, 1)[0] == 0x00
 
 
 def test_instat_d7_set_after_expiration():
     r = riot_poke(initial_riot_state(), 0x0294, 5)
-    r = riot_advance(r, 6)
-    assert riot_peek(r, 0x0285)[0] & 0x80 != 0
+    # cur=7 → delta=6 → timer = 5-6-1 = -2 < 0, not yet read → D7 set.
+    assert riot_peek(r, 0x0285, 7)[0] & 0x80 != 0
 
 
-def test_intim_readable_via_peek():
-    # P3i-g pt8: xitari's INTIM read formula has an extra `- 1`
-    # (`myTimer - (delta>>shift) - 1`), so reading INTIM immediately
-    # after a TIM*T write of 42 returns 41 (not 42). Required to match
-    # xitari's per-cycle INTIM polling behaviour in pong/SI/etc.
-    r = riot_poke(initial_riot_state(), 0x0294, 42)
-    assert riot_peek(r, 0x0284)[0] == 41
+def test_instat_read_does_not_latch_read_after_int():
+    """INSTAT (xitari case 0x05) is a pure read — it never sets
+    `myTimerReadAfterInterrupt` (only the timer-output read does)."""
+    r = riot_poke(initial_riot_state(), 0x0294, 1)
+    _, r_after = riot_peek(r, 0x0285, 7)
+    assert r_after.read_after_int is False
 
 
 # --------------------------------------------------------------------------- #
-# P4d — INTIM read clears the timer-expired latch (real MOS 6532 semantic).
+# Post-expiry: INTIM read latches read_after_int (xitari slow-count branch)
 # --------------------------------------------------------------------------- #
 
-def test_p4d_intim_read_clears_timer_expired():
-    r = riot_poke(initial_riot_state(), 0x0294, 1)
-    r = riot_advance(r, 2)                          # expire
-    assert r.timer_expired is True
-    # INTIM read returns the value AND clears the latch.
-    value, r_after = riot_peek(r, 0x0284)
-    assert r_after.timer_expired is False
-    # Sanity: subsequent INSTAT read sees the cleared latch.
-    assert riot_peek(r_after, 0x0285)[0] & 0x80 == 0
+def test_post_expiry_intim_read_latches_read_after_int():
+    r = riot_poke(initial_riot_state(), 0x0294, 1)   # my_timer=1, shift=0, set=0
+    assert r.read_after_int is False
+    # cur=3 → delta=2: pre-timer = 1-2-1 = -2 < 0 → expired branch.
+    #   timer = (1<<0) - 2 - 1 = -2 ≤ -2 → latch read_after_int, int_reset=3.
+    #   offset = 3 - (0 + (1<<0)) = 2 → timer = 1 - (2>>0) - 2 = -3 → 0xFD.
+    value, r2 = riot_peek(r, 0x0284, 3)
+    assert value == 0xFD
+    assert r2.read_after_int is True
+    assert r2.cycles_when_int_reset == 3
+    # Once latched, INSTAT reads D7=0 (xitari: timer>=0 || rai → 0x00).
+    assert riot_peek(r2, 0x0285, 4)[0] & 0x80 == 0
 
 
-def test_p4d_instat_read_does_NOT_clear_timer_expired():
+def test_writing_timer_clears_read_after_int():
     r = riot_poke(initial_riot_state(), 0x0294, 1)
-    r = riot_advance(r, 2)
-    assert r.timer_expired is True
-    # INSTAT read returns value AND leaves the latch alone (PA7 clear
-    # only — not modelled yet).
-    _, r_after = riot_peek(r, 0x0285)
-    assert r_after.timer_expired is True
+    _, r = riot_peek(r, 0x0284, 5)          # post-expiry read latches it
+    assert r.read_after_int is True
+    r = riot_poke(r, 0x0295, 100)           # new TIM8T load clears it
+    assert r.read_after_int is False
+    assert r.my_timer == 100
+    assert r.interval_shift == 3
 
 
 # --------------------------------------------------------------------------- #
@@ -256,7 +239,7 @@ def test_ddr_registers_readable():
 # --------------------------------------------------------------------------- #
 
 def test_bus_riot_timer_load_and_read_via_cpu():
-    """LDA #$50 / STA $295 / LDA $284 (INTIM) → after the STA + load, A=$50."""
+    """LDA #$50 / STA $295 (TIM8T) / LDA $284 (INTIM)."""
     rom = jnp.zeros((4096,), dtype=jnp.uint8)
     program = [
         0xA9, 0x50,        # LDA #$50            (2 cyc)
@@ -270,33 +253,36 @@ def test_bus_riot_timer_load_and_read_via_cpu():
     s, bus = step(s, bus)                # LDA #$50
     assert int(s.A) == 0x50
     s, bus = step(s, bus)                # STA TIM8T
-    assert bus.riot.intim == 0x50
+    assert bus.riot.my_timer == 0x50
     s, bus = step(s, bus)                # LDA INTIM
-    # By the time LDA INTIM completes the timer has been ticked by ~10 cycles
-    # (LDA + STA + LDA), but TIM8T's prescaler is 8 → just 1 tick so far.
+    # Lazy read: by the LDA INTIM read the timer has barely moved under
+    # the 8-cycle prescaler, so A is $50 or one tick below.
     assert int(s.A) in (0x4F, 0x50)
 
 
 def test_step_advances_riot_timer():
-    """Run a few NOPs through the bus and check INTIM decreases under TIM1T."""
+    """Run a few NOPs through the bus and check INTIM (read lazily)
+    decreases under TIM1T."""
     rom = jnp.full((4096,), 0xEA, dtype=jnp.uint8)   # all NOPs (2 cycles each)
     bus = initial_bus(rom)
-    bus = bus._replace(riot=riot_poke(bus.riot, 0x0294, 50))  # TIM1T = 50
+    bus = bus._replace(riot=riot_poke(bus.riot, 0x0294, 50))  # TIM1T = 50, set=0
     s = _state(PC=0xF000)
-    for _ in range(10):                  # 20 cycles
+    for _ in range(10):                  # 20 cycles → total_cycles = 20
         s, bus = step(s, bus)
-    assert bus.riot.intim == 30          # 50 - 20
-    assert not bus.riot.timer_expired
+    # peek's own bus op makes cur = 20 + 1 = 21 → delta = 20 → 50-20-1 = 29.
+    assert peek(bus, 0x0284)[0] == 29
 
 
 def test_step_wsync_stall_also_advances_riot():
-    """STA WSYNC's stall cycles should also tick the RIOT timer."""
+    """STA WSYNC's stall cycles tick the monotonic counter too, so a
+    lazy INTIM read after a WSYNC reflects the full scanline of cycles."""
     rom = jnp.zeros((4096,), dtype=jnp.uint8)
     rom = rom.at[0].set(jnp.uint8(0x85))             # STA $02 = WSYNC
     rom = rom.at[1].set(jnp.uint8(0x02))
     bus = initial_bus(rom)
-    bus = bus._replace(riot=riot_poke(bus.riot, 0x0294, 200))  # TIM1T = 200
+    bus = bus._replace(riot=riot_poke(bus.riot, 0x0294, 200))  # TIM1T = 200, set=0
     s = _state(PC=0xF000)
     s, bus = step(s, bus)
-    # STA WSYNC takes 3 cyc + stall 73 = 76 cycles total. INTIM = 200 - 76 = 124.
-    assert bus.riot.intim == 124
+    # STA WSYNC = 3 cyc + 73 stall = 76 cycles → total_cycles = 76.
+    # peek: cur = 76 + 1 = 77 → delta = 76 → 200-76-1 = 123.
+    assert peek(bus, 0x0284)[0] == 123

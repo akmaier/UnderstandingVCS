@@ -14,6 +14,60 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🎯 Task #80 — SOLVED: seaquest boot off-by-1 fixed, all 6 ROMs bit-exact both ports (2026-06-14)
+
+**Supersedes the "did NOT converge" entry below.** The dedicated #80 session
+found the port bug and landed the faithful fix. seaquest is now **bit-exact
+(0 bytes) vs xitari** in both ports; the 5 previously-bit-exact ROMs stay 0; and
+enduro's leftover **jaxtari** gap (8 b/f) closed to 0 as a bonus.
+
+**Root cause — two independent pieces, BOTH required:**
+  1. **RIOT (M6532) timer was the wrong model.** Both ports used an *eager*
+     decrement model with power-on `intim=0 / prescaler_shift=0`. xitari uses a
+     *lazy* model: `M6532::reset` sets `myTimer=25 / myIntervalShift=6` and INTIM/
+     INSTAT are **computed on read** from the monotonic system cycle counter via
+     `myTimer - (delta>>shift) - 1` (with `delta = (cycles-1) - myCyclesWhenTimerSet`)
+     plus the `myTimerReadAfterInterrupt` post-expiry slow-count branch. seaquest's
+     boot polls INTIM heavily (2969 reads / 6 frames) while the timer is expired, so
+     the post-expiry read values must match xitari exactly.
+  2. **Missing max-scanlines frame cutoff.** xitari force-ends a frame after
+     `myMaximumNumberOfScanlines` (=290 NTSC, TIA.cxx:2003) even with no software
+     VSYNC. seaquest's boot-init runs ~455 VSYNC-less scanlines; without the cutoff
+     the burst was counted as ONE frame instead of TWO, so the cart ran one extra
+     boot-loop iteration → one extra `INC RAM[$01]` → `$3f` vs xitari's `$3e`.
+
+**Why the earlier attempt failed (see below):** the lazy port had a messy
+`_timer_output!` (duplicate `timer=` lines, wrong signed cast) → boot got LONGER
+(34583 cyc) not shorter. The clean port uses `reinterpret(Int32, ...)` (jutari) /
+explicit `_u32`/`_i32` helpers (jaxtari) to mirror xitari's uInt32/Int32 wrap
+exactly. The port bug — NOT the approach — was the blocker.
+
+**Files (both ports + tests, one commit):**
+  - jutari: `src/riot/RIOT.jl` (lazy rewrite), `src/bus/Bus.jl` (×2: thread
+    `tia.total_cycles + pending_tia_cycles` into `riot_peek!`/`riot_poke!`),
+    `src/tia/TIA.jl` (`lines_since_frame` field + 290 cutoff), `test/runtests.jl`
+    (RIOT testsets rewritten for the lazy model).
+  - jaxtari: `jaxtari/riot/system.py` (lazy rewrite, `(value, riot)` returns),
+    `jaxtari/bus/system.py` (×2: thread `total_cycles + new_pending`),
+    `jaxtari/tia/system.py` (`lines_since_frame` field + 290 cutoff + reset on
+    VSYNC 1→0 edge), `tests/test_riot.py` (rewritten), `tests/test_pxc2_*` (seaquest
+    4→0, enduro 8→0 pins).
+
+**Measured / gates (all green):**
+  - `jutari_xitari_ram_diff.py` ALL 6 ROMs (NOOP, 80 frames) vs PRISTINE rebuilt
+    xitari: **0 bytes** each (seaquest, breakout, pong, space_invaders, pitfall,
+    enduro).
+  - jutari PXC2 fixtures regenerated → **0 bytes vs xitari** for all 6 (only
+    `seaquest_noop_10_jutari.jsonl` actually changed — confirms #80 is seaquest-
+    specific; enduro's jutari side was already 0).
+  - jaxtari PXC2 jaxtari-vs-xitari last-frame divergence: seaquest 4→**0**, enduro
+    8→**0**, other 4 unchanged at 0.
+  - jutari `Pkg.test()` exit 0; jaxtari `test_riot.py` 24/24 + 172 core TIA/bus/
+    CPU/P3/P4 tests pass.
+  - xitari reference reverted to pristine + rebuilt clean; trace_dump rebuilt.
+
+---
+
 ### 🧪 Task #80 — FAITHFUL-PORT ATTEMPT (ultracode) did NOT converge; reverted (2026-06-13)
 
 Attempted the principled fix: replace jutari's eager RIOT timer with a faithful

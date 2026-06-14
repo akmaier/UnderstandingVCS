@@ -301,7 +301,7 @@ end
         # current instruction have already advanced the timer. Matches
         # xitari's `M6532::peek` which uses `mySystem->cycles()` directly
         # (= cycle count INCLUDING the current bus op).
-        v = riot_peek!(bus.riot, a, bus.pending_tia_cycles)
+        v = riot_peek!(bus.riot, a, bus.tia.total_cycles + bus.pending_tia_cycles)
         bus.data_bus_state = v
         _trace_record!(:peek, UInt16(a), v)
         return v
@@ -364,7 +364,7 @@ end
         # new timer (xitari does not, because xitari's
         # `myCyclesWhenTimerSet = mySystem->cycles()` records the
         # END of the load instruction in M6502Low).
-        riot_poke!(bus.riot, a, value, bus.pending_tia_cycles)
+        riot_poke!(bus.riot, a, value, bus.tia.total_cycles + bus.pending_tia_cycles)
         _trace_record!(:poke, UInt16(a), v8)
         return nothing
     end

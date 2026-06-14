@@ -332,6 +332,17 @@ class TIAState(NamedTuple):
     # Parked here so it doesn't clobber line N's comb; promoted to
     # `hmove_blank_pending` once the beam advances. Mirror of jutari.
     hmove_blank_pending_next: bool = False
+    # Task #80: scanlines since the last frame boundary (does NOT wrap at
+    # 262, unlike `scanline`). Drives xitari's max-scanlines frame cutoff:
+    # xitari force-ends a frame after `myMaximumNumberOfScanlines` (=290
+    # NTSC) lines if no software VSYNC came (TIA.cxx:2003). Needed so a
+    # VSYNC-less boot-init burst (seaquest: ~455 lines before its first
+    # VSYNC) is split into the SAME number of frames as xitari — without
+    # it, the 64-frame boot runs one extra cart-loop iteration (one extra
+    # RAM[$01] increment → $3f vs xitari's $3e). Reset to 0 on a software
+    # VSYNC 1→0 edge (see `tia_poke`) and on the cutoff itself. Dormant
+    # for normal frames (VSYNC fires at ~262 < 290). Mirror of jutari.
+    lines_since_frame: int = 0
 
 
 def initial_tia_state() -> TIAState:
@@ -375,6 +386,7 @@ def initial_tia_state() -> TIAState:
         pending_writes=(),
         hmove_blank_pending=False,
         hmove_blank_pending_next=False,
+        lines_since_frame=0,
     )
 
 
@@ -793,11 +805,15 @@ def tia_poke(tia: TIAState, addr: int, value: int,
             # 1→0 edge: frame boundary. Increment frame counter, reset
             # scanline. Beam-accurate emulators reset scanline_cycle too;
             # we follow that convention.
+            # Task #80: also reset `lines_since_frame` so the max-scanlines
+            # cutoff in `tia_advance` only fires for genuinely VSYNC-less
+            # stretches (>290 lines), never for a normal ~262-line frame.
             new_tia = new_tia._replace(
                 vsync_active=False,
                 frame=tia.frame + 1,
                 scanline=0,
                 scanline_cycle=0,
+                lines_since_frame=0,
             )
         else:
             new_tia = new_tia._replace(vsync_active=new_vsync)
@@ -1106,6 +1122,22 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
     # sequence) needs `run_until_frame`'s instruction limit to be
     # generous enough — see `console._FRAME_INSTRUCTION_LIMIT`.
     new_line = new_line % NTSC_SCANLINES_PER_FRAME
+    # Task #80: xitari's max-scanlines frame cutoff (NTSC=290,
+    # TIA.cxx:2003-2007) — force a frame boundary when no software VSYNC
+    # has come within 290 scanlines. `lines_since_frame` does NOT wrap at
+    # 262 (unlike `scanline`), so this counts genuine elapsed lines since
+    # the last frame boundary. Dormant for normal frames (VSYNC at ~262,
+    # which also resets `lines_since_frame` — see `tia_poke`). Splits
+    # seaquest's VSYNC-less boot-init burst into the same frame count as
+    # xitari → fixes the boot off-by-1. Beam position
+    # (scanline_cycle/color_clock) is preserved, matching the VSYNC reset.
+    # Mirror of jutari's cutoff in `tia_advance!`.
+    new_lines_since_frame = tia.lines_since_frame + line_advance
+    new_frame = tia.frame
+    if new_lines_since_frame > 290:
+        new_frame = tia.frame + 1
+        new_line = 0
+        new_lines_since_frame = 0
     # P3i-c: thread the post-drain register file through to the new
     # state, and clear pending_writes (they've all been applied above
     # OR carried forward in the registers field). `tia_for_render`
@@ -1141,6 +1173,12 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
     return tia._replace(
         scanline_cycle=new_sc,
         scanline=new_line,
+        # Task #80: frame counter is normally bumped only on the VSYNC
+        # 1→0 edge (in `tia_poke`); the max-scanlines cutoff above is the
+        # second path and writes `new_frame` here. `lines_since_frame`
+        # carries the running line count across advances.
+        frame=new_frame,
+        lines_since_frame=new_lines_since_frame,
         color_clock=new_color_clock,
         framebuffer=fb,
         collisions=new_collisions,

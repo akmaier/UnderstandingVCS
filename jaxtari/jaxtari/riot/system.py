@@ -21,23 +21,33 @@ I/O bank; the chip decodes only A0–A4):
     \$0296  TIM64T          64-cycle prescaler
     \$0297  T1024T        1024-cycle prescaler
 
-Timer semantics:
+Timer model — **faithful lazy port of xitari `M6532` (task #80).**
 
-  * Writing TIM*T loads INTIM with the value and resets the prescaler
-    counter. The "expired" flag is cleared by the same write.
-  * INTIM decrements by 1 every `prescaler` CPU cycles.
-  * When INTIM decrements past zero it wraps to \$FF and the expired
-    flag becomes set.
-  * After expiration the timer continues to decrement once per CPU
-    cycle, regardless of the originally-selected prescaler.
+Rather than decrementing INTIM eagerly each CPU cycle, xitari stores
+`myTimer` / `myIntervalShift` / `myCyclesWhenTimerSet` at the TIM*T
+write and *computes* INTIM / INSTAT on read from the monotonic system
+cycle counter. We mirror that here bit-for-bit, including the
+`myTimerReadAfterInterrupt` post-expiry slow-count branch.
+
+The caller passes `cur_cycles = tia.total_cycles + pending_tia_cycles`
+(jaxtari's equivalent of xitari `mySystem->cycles()`, incremented
+*before* each bus access). The read formula subtracts 1 (`cycles - 1`)
+exactly as xitari's `M6532::peek`. `riot_advance` is a no-op (lazy).
+
+Power-on state mirrors `M6532::reset`: `myTimer = 25`,
+`myIntervalShift = 6` (i.e. INTIM counts down from 25 at the 64-cycle
+prescaler). This default — together with the lazy post-expiry formula
+and the TIA's max-scanlines frame cutoff — is what makes seaquest's
+INTIM-polling boot land bit-exact (the eager model + 262-only frame
+counting ran one extra cart-loop iteration → RAM[$01] = $3f vs the
+reference $3e).
 
 Port semantics:
 
   * SWCHA / SWCHB return `(out & ddr) | (input & ~ddr)`, i.e. each bit
     is either the latched output (when configured as output) or the
     external input (when configured as input). On power-up DDR is
-    all-zero so the ports are pure inputs; on the Atari, SWCHA carries
-    the two joysticks and SWCHB the console switches.
+    all-zero so the ports are pure inputs.
   * `set_swcha_input` / `set_swchb_input` are helpers for tests and
     front-ends — they set the input lines the chip "sees" at the bus.
 """
@@ -59,15 +69,39 @@ _PRESCALER_SHIFT = (0, 3, 6, 10)
 
 
 # --------------------------------------------------------------------------- #
+# 32-bit reinterpret helpers (match xitari's uInt32 / Int32 arithmetic)
+# --------------------------------------------------------------------------- #
+
+def _u32(x: int) -> int:
+    """Truncate to unsigned 32-bit (xitari `uInt32`)."""
+    return x & 0xFFFFFFFF
+
+
+def _i32(x: int) -> int:
+    """Reinterpret the low 32 bits as signed (xitari `(Int32)` cast)."""
+    x &= 0xFFFFFFFF
+    return x - 0x100000000 if x >= 0x80000000 else x
+
+
+# --------------------------------------------------------------------------- #
 # State
 # --------------------------------------------------------------------------- #
 
 class RIOTState(NamedTuple):
-    """Snapshot of the RIOT's timer + I/O state. RAM is handled by the Bus."""
-    intim: int
-    prescaler_shift: int
-    cycles_since_tick: int
-    timer_expired: bool
+    """Snapshot of the RIOT's timer + I/O state. RAM is handled by the Bus.
+
+    Timer fields mirror xitari `M6532`'s members exactly:
+      * my_timer              — the value last written to TIM*T (`myTimer`)
+      * interval_shift        — prescaler shift 0/3/6/10 (`myIntervalShift`)
+      * cycles_when_set       — `mySystem->cycles()` at the TIM*T write
+      * read_after_int        — `myTimerReadAfterInterrupt` latch
+      * cycles_when_int_reset — `myCyclesWhenInterruptReset`
+    """
+    my_timer: int
+    interval_shift: int
+    cycles_when_set: int
+    read_after_int: bool
+    cycles_when_int_reset: int
     swcha_in: int
     swchb_in: int
     swacnt: int
@@ -77,33 +111,33 @@ class RIOTState(NamedTuple):
 
 
 def initial_riot_state() -> RIOTState:
-    """Power-on state: timer at 0 with 1× prescaler, ports all-input, no
-    inputs asserted (joysticks pull-up active-low so "no buttons pressed"
-    on SWCHA reads as 0xFF).
+    """Power-on state — mirrors xitari `M6532::reset`: `myTimer = 25`,
+    `myIntervalShift = 6`, the cycle stamps zeroed and the
+    read-after-interrupt latch cleared.
+
+    Ports default to all-input (DDR = 0). No inputs asserted: joysticks
+    pull-up active-low so "no buttons pressed" on SWCHA reads as 0xFF.
 
     SWCHB (console-switches port) defaults to **0x3F** — matches xitari's
     `Switches::Switches` initialization for an unmodified-properties
     cartridge:
 
-      * bit 7 (Right-Difficulty switch): 0 = **B (amateur)**. Properties
-        default `Console_RightDifficulty = "B"` → bit cleared. Atari
-        Breakout uses bit 7 as the "small paddle" toggle — A (=1) draws
-        a 4-bit paddle, B (=0) draws an 8-bit paddle. (Task #64.)
-      * bit 6 (Left-Difficulty switch): 0 = **B (amateur)**, same rule.
-      * bit 3 (TV-Type): 1 = **COLOR**. Properties default
-        `Console_TelevisionType = "COLOR"` → bit set.
-      * bits 1,0 (Select / Reset): 1 = **released** (active-low).
+      * bit 7 (Right-Difficulty): 0 = **B (amateur)**.
+      * bit 6 (Left-Difficulty):  0 = **B (amateur)**.
+      * bit 3 (TV-Type):          1 = **COLOR**.
+      * bits 1,0 (Select/Reset):  1 = **released** (active-low).
       * bits 5,4,2: unused, idle high.
 
-    Per-game overrides (e.g. Q*Bert wants A/A, some prototypes flip TV
-    type) belong on the per-game RomSettings — same pattern as
-    `uses_paddles`.
+    Per-game overrides (Q*Bert wants A/A, etc.) belong on the per-game
+    RomSettings — same pattern as `uses_paddles`.
     """
     return RIOTState(
-        intim=0,
-        prescaler_shift=0,
-        cycles_since_tick=0,
-        timer_expired=False,
+        # xitari M6532::reset: myTimer=25, myIntervalShift=6.
+        my_timer=25,
+        interval_shift=6,
+        cycles_when_set=0,
+        read_after_int=False,
+        cycles_when_int_reset=0,
         swcha_in=0xFF,
         # 0x3F = 0011_1111. See docstring above for the per-bit meaning.
         swchb_in=0x3F,
@@ -130,102 +164,99 @@ def set_swchb_input(riot: RIOTState, value: int) -> RIOTState:
 
 
 # --------------------------------------------------------------------------- #
+# Timer "output" — xitari M6532::peek case 0x04 (value before & 0xFF)
+# --------------------------------------------------------------------------- #
+
+def _timer_output(riot: RIOTState, cur_cycles: int):
+    """Compute the timer-output byte exactly as xitari `M6532::peek`
+    case 0x04. Returns `(timer_full_int, new_riot)` — the post-expiry
+    branch latches `read_after_int` / `cycles_when_int_reset`, so a read
+    can mutate the (immutable) RIOT state.
+    """
+    cycles = _u32(int(cur_cycles) - 1)
+    delta = _u32(cycles - _u32(riot.cycles_when_set))
+    shift = riot.interval_shift
+    timer = _i32(riot.my_timer - _i32(delta >> shift) - 1)
+    if timer >= 0:
+        return timer, riot
+
+    # Expired branch (xitari M6532.cxx:172-189).
+    timer = _i32((riot.my_timer << shift) - _i32(delta) - 1)
+    new_riot = riot
+    read_after_int = riot.read_after_int
+    cycles_when_int_reset = riot.cycles_when_int_reset
+    if timer <= -2 and not read_after_int:
+        # Indicate that the timer has been read after the interrupt occurred.
+        read_after_int = True
+        cycles_when_int_reset = int(cur_cycles)
+        new_riot = riot._replace(read_after_int=True,
+                                 cycles_when_int_reset=int(cur_cycles))
+    if read_after_int:
+        offset = _i32(cycles_when_int_reset -
+                      (riot.cycles_when_set + (riot.my_timer << shift)))
+        timer = _i32(riot.my_timer - _i32(delta >> shift) - offset)
+    return timer, new_riot
+
+
+# --------------------------------------------------------------------------- #
 # Register access
 # --------------------------------------------------------------------------- #
 
-def riot_peek(riot: RIOTState, addr: int, pending_extra_cycles: int = 0):
+def riot_peek(riot: RIOTState, addr: int, cur_cycles: int = 0):
     """Read a RIOT register. Returns `(value, new_riot)`.
 
     `addr` is the CPU bus address (anywhere in the RIOT mirror band).
-    Most reads return the SAME `riot` object — only INTIM (reg=4) has
-    a side effect: it clears the timer-expired latch, matching the
-    real MOS 6532's read-clears-flag semantic (**P4d**).
-
-    `pending_extra_cycles` = the CPU cycles consumed inside the current
-    instruction up to and including this bus op. Used by Phase 5
-    RIOT-read threading: xitari's `M6532::peek` case 0x04 uses
-    `cycles = mySystem->cycles() - 1` so the effective extra is
-    `max(0, pending_extra_cycles - 1)`.
-
-    INSTAT (reg=5) returns D7 = timer_expired but does NOT clear it
-    on read — that's an INTIM-only side effect. INSTAT clears the
-    PA7 latch on real hardware, but PA7 isn't modelled yet (deferred
-    as **P4b**), so for the moment INSTAT reads are pure.
+    `cur_cycles` is the monotonic system cycle count *including* the
+    current bus op — xitari `mySystem->cycles()` (the read formula then
+    uses `cycles - 1`). Most reads return the SAME `riot`; only the
+    timer-output read (reg 4/6) can mutate it (latching the
+    post-interrupt slow-count state — xitari `myTimerReadAfterInterrupt`).
     """
     reg = addr & 0x07
     if reg == 0:
         return (((riot.swcha_out & riot.swacnt) |
-                 (riot.swcha_in  & (~riot.swacnt & 0xFF))) & 0xFF, riot)
+                 (riot.swcha_in & (~riot.swacnt & 0xFF))) & 0xFF, riot)
     if reg == 1:
         return riot.swacnt, riot
     if reg == 2:
         return (((riot.swchb_out & riot.swbcnt) |
-                 (riot.swchb_in  & (~riot.swbcnt & 0xFF))) & 0xFF, riot)
+                 (riot.swchb_in & (~riot.swbcnt & 0xFF))) & 0xFF, riot)
     if reg == 3:
         return riot.swbcnt, riot
-    if reg == 4:
-        # P4d: INTIM read clears the timer-expired latch.
-        # P3i-g pt8: xitari's INTIM read formula has an extra `- 1` term
-        # (`M6532::peek` case 0x04: `myTimer - (delta>>shift) - 1`).
-        # Phase 5 (2026-06-03): xitari ALSO uses `cycles - 1` for the
-        # delta numerator (line 161 of M6532.cxx), so the effective
-        # mid-instruction extra is `max(0, pending_extra_cycles - 1)`.
-        # The Phase 5 fix computes the intra-instruction timer
-        # advancement so cross-prescaler-boundary INTIM reads return
-        # the value xitari would. Read-only — does NOT mutate
-        # riot.intim (the real advance happens in
-        # `_step_inner`/post-step via `riot_advance`).
-        intim_int = int(riot.intim)
-        eff = max(0, int(pending_extra_cycles) - 1)
-        if not riot.timer_expired:
-            shift = int(riot.prescaler_shift)
-            # `cycles_since_tick` may be NEGATIVE immediately after a
-            # TIM*T load (see `riot_poke` — pre-subtracting the load
-            # instruction's pending cycles so the trailing
-            # `riot_advance(instr_cycles)` cancels them out). Clamp
-            # the combined delta to >= 0 before the prescaler shift so
-            # arithmetic right-shift of the briefly-negative value
-            # doesn't fold a sign bit into the tick count. Mirror of
-            # jutari commit 4ddb0b7.
-            extra = max(0, int(riot.cycles_since_tick) + eff) >> shift
-            intim_int -= extra
-        else:
-            intim_int -= eff
-        return (intim_int - 1) & 0xFF, riot._replace(timer_expired=False)
-    if reg == 5:
-        return (0x80 if riot.timer_expired else 0x00), riot
+    if reg == 4 or reg == 6:
+        timer, new_riot = _timer_output(riot, cur_cycles)
+        return timer & 0xFF, new_riot
+    if reg == 5 or reg == 7:
+        # INSTAT (xitari case 0x05): D7 = "not expired and not yet read
+        # after interrupt". Pure read — does NOT latch read_after_int.
+        cycles = _u32(int(cur_cycles) - 1)
+        delta = _u32(cycles - _u32(riot.cycles_when_set))
+        timer = _i32(riot.my_timer - _i32(delta >> riot.interval_shift) - 1)
+        value = 0x00 if (timer >= 0 or riot.read_after_int) else 0x80
+        return value, riot
     return 0, riot
 
 
 def riot_poke(riot: RIOTState, addr: int, value: int,
-               pending_extra_cycles: int = 0) -> RIOTState:
+              cur_cycles: int = 0) -> RIOTState:
     """Write a RIOT register. Timer-load addresses (TIM*T at \$0294–\$0297,
-    detected by (addr & 0x14) == 0x14) reset the prescaler and clear the
-    expired flag; the prescaler is selected by the low two bits of the
-    address (0=1×, 1=8×, 2=64×, 3=1024×).
+    detected by `(addr & 0x14) == 0x14`) store the value + prescaler shift
+    and stamp `cycles_when_set` with the current monotonic cycle count,
+    clearing the read-after-interrupt latch — exactly as xitari
+    `M6532::poke` case TIM*T.
 
-    2026-06-07 (task #75 mirror): the TIM*T load in xitari's M6502Low
-    records `myCyclesWhenTimerSet = mySystem->cycles()` AT the poke
-    moment. M6502Low's `incrementCycles` runs at the START of an
-    instruction, so `mySystem->cycles()` at the body poke = cycles AT
-    END of the load instruction. Effectively, NONE of the load
-    instruction's cycles count toward the new timer; the timer starts
-    at the FIRST cycle of the NEXT instruction.
-
-    jaxtari accumulates cycles via `riot_advance(cycles_consumed)`
-    called at end of EACH instruction, including the load instruction.
-    To match xitari, we PRE-SUBTRACT the load instruction's "pending
-    cycles at the poke" so the subsequent
-    `riot_advance(instr_cycles)` lands at 0 — i.e. the load
-    instruction's cycles cancel out and the timer really starts
-    counting from the next instruction. Mirrors jutari commit 4ddb0b7.
+    Mirrors jutari `riot_poke!`. Unlike the previous eager model there is
+    no `cycles_since_tick` pre-subtraction: xitari records
+    `myCyclesWhenTimerSet = mySystem->cycles()` at the poke moment and the
+    lazy read uses `cycles - 1`, so passing the monotonic
+    `tia.total_cycles + pending_tia_cycles` here is sufficient and exact.
     """
     if (addr & 0x14) == 0x14:
         return riot._replace(
-            intim=value & 0xFF,
-            prescaler_shift=_PRESCALER_SHIFT[addr & 0x03],
-            cycles_since_tick=-int(pending_extra_cycles),
-            timer_expired=False,
+            my_timer=value & 0xFF,
+            interval_shift=_PRESCALER_SHIFT[addr & 0x03],
+            cycles_when_set=int(cur_cycles),
+            read_after_int=False,
         )
     reg = addr & 0x07
     if reg == 0:
@@ -244,43 +275,8 @@ def riot_poke(riot: RIOTState, addr: int, value: int,
 # --------------------------------------------------------------------------- #
 
 def riot_advance(riot: RIOTState, cpu_cycles: int) -> RIOTState:
-    """Advance the timer by `cpu_cycles` CPU cycles.
-
-    Two regimes:
-      - Pre-expiration: INTIM ticks every `prescaler` cycles. Expiration
-        happens when INTIM would decrement past 0; INTIM wraps to \$FF
-        and `timer_expired` becomes True.
-      - Post-expiration: INTIM ticks once per CPU cycle (regardless of
-        the originally-selected prescaler).
-
-    The branch handles a transition during this advance by computing the
-    cycle count needed to expire, then applying the leftover cycles at
-    the post-expiration rate.
-    """
-    intim = riot.intim
-    cycles = riot.cycles_since_tick + cpu_cycles
-    expired = riot.timer_expired
-
-    if not expired:
-        prescaler = 1 << riot.prescaler_shift
-        cycles_to_expire = (intim + 1) * prescaler
-        if cycles >= cycles_to_expire:
-            # Cross the expiration boundary during this advance.
-            cycles_post = cycles - cycles_to_expire
-            intim = (0xFF - cycles_post) & 0xFF
-            expired = True
-            cycles_left = 0
-        else:
-            ticks = cycles // prescaler
-            intim -= ticks
-            cycles_left = cycles % prescaler
-    else:
-        # Already expired: one tick per cycle.
-        intim = (intim - cycles) & 0xFF
-        cycles_left = 0
-
-    return riot._replace(
-        intim=intim,
-        cycles_since_tick=cycles_left,
-        timer_expired=expired,
-    )
+    """No-op in the lazy timer model — INTIM / INSTAT are computed on read
+    from the monotonic cycle counter, so nothing accumulates here. Kept
+    for call-site compatibility (the CPU step still calls it). Mirrors
+    jutari `riot_advance!`."""
+    return riot

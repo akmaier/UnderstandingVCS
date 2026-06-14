@@ -151,7 +151,11 @@ _PXC2_CASES = (
         rom_filename="seaquest.bin",
         xitari_trace="seaquest_noop_10.jsonl",
         jutari_trace="seaquest_noop_10_jutari.jsonl",
-        expected_xitari_divergence=4,       # P3i-g write-cycle threading: 6 → 4 (improved)
+        # Task #80 (2026-06-14): the faithful lazy-RIOT-timer port + the
+        # 290 max-scanlines frame cutoff close the seaquest boot off-by-1
+        # entirely. jaxtari (and jutari) are now BIT-EXACT vs xitari:
+        # 6 → 4 (P3i-g write-cycle threading) → **0** (lazy RIOT timer).
+        expected_xitari_divergence=0,
     ),
     _RomCase(
         # Joystick-only ROM. Observed divergence: **47 bytes** — the
@@ -177,7 +181,10 @@ _PXC2_CASES = (
         # remaining 3 b/f frame-0 boot residual + downstream drift over
         # 10 frames. Same root-cause class as the seaquest 1-byte boot
         # residual (task #80, deferred to Phase C bus accuracy).
-        expected_xitari_divergence=8,
+        # Task #80 (2026-06-14): the faithful lazy-RIOT-timer port closes
+        # this residual too — enduro is now BIT-EXACT vs xitari (8 → 0),
+        # in lock-step with jutari (whose fixture is also 0 vs xitari).
+        expected_xitari_divergence=0,
     ),
 )
 

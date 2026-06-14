@@ -20,9 +20,13 @@ Register map within \$0280–\$029F (mirrored throughout the RIOT bank):
     \$0296 TIM64T              (×64)
     \$0297 T1024T              (×1024)
 
-Timer semantics: pre-expiration ticks every `prescaler` cycles; once
-INTIM wraps past 0 to \$FF, expired=true and subsequent ticks happen
-every CPU cycle.
+Timer model — **faithful lazy port of xitari `M6532` (task #80).** Store
+my_timer/interval_shift/cycles_when_set and compute INTIM/INSTAT on read
+from the monotonic cycle counter, mirroring xitari's exact formulas incl.
+the `myTimerReadAfterInterrupt` post-expiry slow-count. The caller passes
+`cur_cycles = tia.total_cycles + pending_tia_cycles` (xitari
+`mySystem->cycles()`); the read uses `cycles()-1`. `riot_advance!` is a
+no-op (lazy).
 """
 module RIOT
 
@@ -32,16 +36,12 @@ export RIOTState, initial_riot_state,
 
 const _PRESCALER_SHIFT = (0, 3, 6, 10)
 
-"""
-    RIOTState
-
-Mutable timer + I/O state. RAM is handled by the Bus.
-"""
 mutable struct RIOTState
-    intim::UInt8
-    prescaler_shift::Int
-    cycles_since_tick::Int
-    timer_expired::Bool
+    my_timer::Int
+    interval_shift::Int
+    cycles_when_set::Int
+    read_after_int::Bool
+    cycles_when_int_reset::Int
     swcha_in::UInt8
     swchb_in::UInt8
     swacnt::UInt8
@@ -51,24 +51,13 @@ mutable struct RIOTState
 end
 
 initial_riot_state() = RIOTState(
-    UInt8(0), 0, 0, false,
-    # SWCHA_in = 0xFF (no joystick directions / triggers pressed).
-    # SWCHB_in = 0x3F: matches xitari `Switches::Switches` initial state
-    # for an unmodified-properties cartridge — B/B difficulty (bits 7+6
-    # cleared), COLOR TV (bit 3 set), Select/Reset released (bits 1+0
-    # set). Bit 7 in particular controls Atari Breakout's paddle size:
-    # A (1) = 4-bit small paddle, B (0) = 8-bit large paddle. (Task #64.)
+    # xitari M6532::reset: myTimer=25, myIntervalShift=6, etc.
+    25, 6, 0, false, 0,
     UInt8(0xFF), UInt8(0x3F),
     UInt8(0x00), UInt8(0x00),
     UInt8(0xFF), UInt8(0xFF),
 )
 
-"""
-    set_swcha_input!(riot, value)
-
-Set the external input lines at port A. Each cleared bit is an
-"active" input (button held / joystick direction pressed).
-"""
 @inline function set_swcha_input!(riot::RIOTState, value::Integer)
     riot.swcha_in = UInt8(Int(value) & 0xFF)
     return nothing
@@ -79,31 +68,33 @@ end
     return nothing
 end
 
-# --------------------------------------------------------------------------- #
-# Register access
-# --------------------------------------------------------------------------- #
+# Timer "output" exactly as xitari M6532::peek case 0x04 (value before &0xFF).
+# xitari uses uInt32 for cycles/delta and Int32 for timer; `(Int32)delta`
+# is a bit-reinterpret, so we use `reinterpret(Int32, ...)` to match.
+@inline function _timer_output!(riot::RIOTState, cur_cycles::Integer)
+    cycles = UInt32((Int(cur_cycles) - 1) & 0xFFFFFFFF)
+    delta  = cycles - UInt32(riot.cycles_when_set & 0xFFFFFFFF)
+    shift  = riot.interval_shift
+    timer  = Int32(riot.my_timer) - reinterpret(Int32, delta >> shift) - Int32(1)
+    if timer >= 0
+        return timer
+    end
+    # Expired branch (xitari M6532.cxx:172-189).
+    timer = Int32(Int(riot.my_timer) << shift) - reinterpret(Int32, delta) - Int32(1)
+    if timer <= -2 && !riot.read_after_int
+        riot.read_after_int = true
+        riot.cycles_when_int_reset = Int(cur_cycles)
+    end
+    if riot.read_after_int
+        offset = Int32(riot.cycles_when_int_reset -
+                       (riot.cycles_when_set + (Int(riot.my_timer) << shift)))
+        timer = Int32(riot.my_timer) - reinterpret(Int32, delta >> shift) - offset
+    end
+    return timer
+end
 
-"""
-    riot_peek!(riot, addr) -> UInt8
-
-Read a RIOT register. `addr` is the CPU bus address (anywhere in the
-RIOT mirror band). **Mutating** because real-hardware reads of INTIM /
-INSTAT have side-effects on the latches:
-
-  * INTIM (reg=4, addresses `\$0284` / `\$0286`): returns the timer
-    count, then **clears the timer-expired latch**. Pre-P4d the latch
-    was only cleared by writing a fresh value to TIM*T; the canonical
-    MOS 6532 datasheet says reading INTIM also clears it, which a few
-    Atari games (and the cycle-accurate parts of xitari) depend on.
-
-  * INSTAT (reg=5, addresses `\$0285` / `\$0287`): returns D7 = the
-    timer-expired latch AND D6 = the PA7 latch. **Reading INSTAT
-    clears ONLY the PA7 latch** (not the timer latch — that's an INTIM
-    semantic). PA7 isn't modelled yet (deferred as P4b), so for the
-    moment this is a no-op beyond returning D7.
-"""
 function riot_peek!(riot::RIOTState, addr::Integer,
-                     pending_extra_cycles::Integer = 0)
+                     cur_cycles::Integer = 0)
     reg = Int(addr) & 0x07
     if reg == 0
         return UInt8(((riot.swcha_out & riot.swacnt) |
@@ -115,102 +106,26 @@ function riot_peek!(riot::RIOTState, addr::Integer,
                       (riot.swchb_in  & (~riot.swbcnt & 0xFF))) & 0xFF)
     elseif reg == 3
         return riot.swbcnt
-    elseif reg == 4
-        # P4d: INTIM read clears the timer-expired latch.
-        # P3i-g pt8: xitari's INTIM read formula has an extra `- 1` term
-        # (M6532::peek case 0x04: `myTimer - (delta>>shift) - 1`). That
-        # makes xitari's INTIM 1 less than the raw register.
-        # Phase 5 (2026-06-03): xitari's `delta = cycles - myCyclesWhenTimerSet`
-        # uses the CURRENT cpu cycle counter, which in `M6502High::peek` is
-        # INCREMENTED before the peek bus op — so xitari's INTIM reflects
-        # cycles elapsed up to AND INCLUDING the current cycle. jutari was
-        # returning `riot.intim - 1` based on the value from the END of the
-        # PREVIOUS instruction, ignoring any cycles consumed inside the
-        # current instruction. That mismatch was the breakout-frame-92
-        # ball-doesn't-die smoking gun: 382 INTIM reads/frame, any one of
-        # them returning a 1-step-old value across a prescaler boundary
-        # flips a branch.
-        #
-        # Compute the effective INTIM as-if `pending_tia_cycles` more
-        # cycles have elapsed since the last `riot_advance!`, then apply
-        # the `-1` quirk. Read-only — does NOT mutate riot.intim (the
-        # real advance happens in `_tia_post_step!`).
-        #
-        # CRITICAL: xitari uses `cycles = mySystem->cycles() - 1` (line 161
-        # of M6532.cxx case 0x04) — i.e. the cycle count from BEFORE the
-        # current bus op's incrementCycles(1). So the effective extra is
-        # `pending_extra_cycles - 1` (the current bus op's own cycle does
-        # NOT count toward the timer delta). Hence the `- 1` below.
-        # Guarded with `max(0, ...)` for safety when called outside a
-        # bus-op context with pending_extra_cycles == 0.
-        intim_int = Int(riot.intim)
-        eff = max(0, Int(pending_extra_cycles) - 1)
-        if !riot.timer_expired
-            shift = riot.prescaler_shift
-            # `cycles_since_tick` may be NEGATIVE immediately after a
-            # TIM*T load (see `riot_poke!` — pre-subtracting the load
-            # instruction's pending cycles so the trailing
-            # `riot_advance!(instr_cycles)` cancels them out). Clamp
-            # the combined delta to ≥ 0 before the prescaler shift so
-            # arithmetic right-shift of a negative number doesn't fold
-            # a sign bit into the tick count.
-            extra = max(0, Int(riot.cycles_since_tick) + eff) >> shift
-            intim_int -= extra
-        else
-            intim_int -= eff
-        end
-        value = UInt8((intim_int - 1) & 0xFF)
-        riot.timer_expired = false
-        return value
-    elseif reg == 5
-        # INSTAT — D7 = timer latch (unchanged by this read), D6 =
-        # PA7 latch (cleared by this read in real hardware; PA7
-        # isn't modelled yet so this is a no-op).
-        return riot.timer_expired ? UInt8(0x80) : UInt8(0x00)
+    elseif reg == 4 || reg == 6
+        return UInt8(_timer_output!(riot, cur_cycles) & 0xFF)
+    elseif reg == 5 || reg == 7
+        cycles = UInt32((Int(cur_cycles) - 1) & 0xFFFFFFFF)
+        delta  = cycles - UInt32(riot.cycles_when_set & 0xFFFFFFFF)
+        timer  = Int32(riot.my_timer) - Int32((delta >> riot.interval_shift) & 0xFFFFFFFF) - Int32(1)
+        return (timer >= 0 || riot.read_after_int) ? UInt8(0x00) : UInt8(0x80)
     end
     return UInt8(0)
 end
 
-# Backwards-compatibility alias — existing callers that don't need
-# the new mutating semantics (or that read the bus from a const
-# reference) can still use the old name. New code should prefer
-# the `!` variant since reads ARE state-changing on real hardware.
 const riot_peek = riot_peek!
 
-"""
-    riot_poke!(riot, addr, value)
-
-Write a RIOT register. Timer-load addresses (\$0294–\$0297) reset the
-prescaler counter and clear the expired flag; the prescaler is selected
-by the low two bits of `addr` (0=1×, 1=8×, 2=64×, 3=1024×).
-"""
 function riot_poke!(riot::RIOTState, addr::Integer, value::Integer,
-                     pending_extra_cycles::Integer = 0)
+                     cur_cycles::Integer = 0)
     if (Int(addr) & 0x14) == 0x14
-        riot.intim = UInt8(Int(value) & 0xFF)
-        riot.prescaler_shift = _PRESCALER_SHIFT[(Int(addr) & 0x03) + 1]
-        # 2026-06-07 (task #75): the TIM*T load in xitari's M6502Low
-        # records `myCyclesWhenTimerSet = mySystem->cycles()` AT the
-        # poke moment. M6502Low's `incrementCycles` runs at the START
-        # of an instruction, so `mySystem->cycles()` at the body
-        # poke = cycles AT END of the load instruction. Effectively,
-        # NONE of the load instruction's cycles count toward the new
-        # timer; the timer starts at the FIRST cycle of the NEXT
-        # instruction.
-        #
-        # jutari accumulates cycles via `riot_advance!(cycles_consumed)`
-        # called at end of EACH instruction, including the load
-        # instruction itself. To match xitari, we PRE-SUBTRACT the
-        # load instruction's "pending cycles at the poke" so the
-        # subsequent `riot_advance!(instr_cycles)` lands at 0 — i.e.
-        # the load instruction's cycles cancel out and the timer
-        # really starts counting from the next instruction. Without
-        # this, jutari counts an extra `instr_cycles` worth (typically
-        # 3-5 cycles), which accumulates across hundreds of INTIM
-        # polls into a 76-cycle (= 1 scanline) drift per frame for
-        # breakout after FIRE — the "jumping scanlines" bug.
-        riot.cycles_since_tick = -Int(pending_extra_cycles)
-        riot.timer_expired = false
+        riot.my_timer        = Int(value) & 0xFF
+        riot.interval_shift  = _PRESCALER_SHIFT[(Int(addr) & 0x03) + 1]
+        riot.cycles_when_set = Int(cur_cycles)
+        riot.read_after_int  = false
         return nothing
     end
     reg = Int(addr) & 0x07
@@ -226,45 +141,6 @@ function riot_poke!(riot::RIOTState, addr::Integer, value::Integer,
     return nothing
 end
 
-# --------------------------------------------------------------------------- #
-# Timer
-# --------------------------------------------------------------------------- #
-
-"""
-    riot_advance!(riot, cpu_cycles)
-
-Advance the timer by `cpu_cycles` CPU cycles. Two regimes:
-  - Pre-expiration: tick every `prescaler` cycles.
-  - Post-expiration: tick once per CPU cycle.
-The branch handles a transition during this advance.
-"""
-function riot_advance!(riot::RIOTState, cpu_cycles::Integer)
-    intim = Int(riot.intim)
-    cycles = riot.cycles_since_tick + Int(cpu_cycles)
-    expired = riot.timer_expired
-
-    if !expired
-        prescaler = 1 << riot.prescaler_shift
-        cycles_to_expire = (intim + 1) * prescaler
-        if cycles >= cycles_to_expire
-            cycles_post = cycles - cycles_to_expire
-            intim = (0xFF - cycles_post) & 0xFF
-            expired = true
-            cycles_left = 0
-        else
-            ticks = cycles ÷ prescaler
-            intim -= ticks
-            cycles_left = cycles % prescaler
-        end
-    else
-        intim = (intim - cycles) & 0xFF
-        cycles_left = 0
-    end
-
-    riot.intim = UInt8(intim & 0xFF)
-    riot.cycles_since_tick = cycles_left
-    riot.timer_expired = expired
-    return nothing
-end
+@inline riot_advance!(riot::RIOTState, cpu_cycles::Integer) = nothing
 
 end # module

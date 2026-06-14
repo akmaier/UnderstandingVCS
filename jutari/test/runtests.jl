@@ -2385,12 +2385,21 @@ end
 
 @testset "JuTari P4 RIOT timer + I/O ports" begin
 
-    @testset "initial state" begin
+    # Task #80 (2026-06-13): the RIOT timer is now a FAITHFUL LAZY PORT of
+    # xitari M6532 (was an eager decrement model). State fields changed
+    # (my_timer/interval_shift/cycles_when_set/read_after_int) and the
+    # count is computed ON READ from the monotonic cycle the caller passes
+    # (`cur_cycles` = tia.total_cycles + pending; xitari's
+    # `mySystem->cycles()`). `riot_advance!` is a no-op. INTIM read =
+    # `my_timer - ((cur-1 - cycles_when_set) >> shift) - 1` (case 0x04).
+    # The comprehensive validator is PXC1 (all 6 ROMs incl. seaquest now
+    # bit-exact); these unit tests pin the read contract.
+    @testset "initial state (xitari M6532::reset = 25 / shift-6)" begin
         r = initial_riot_state()
-        @test r.intim == 0
-        @test r.prescaler_shift == 0
-        @test r.cycles_since_tick == 0
-        @test r.timer_expired == false
+        @test r.my_timer == 25
+        @test r.interval_shift == 6
+        @test r.cycles_when_set == 0
+        @test r.read_after_int == false
         @test r.swcha_in == 0xFF
         # Task #64: SWCHB defaults to 0x3F to match xitari's
         # `Switches::Switches` (B/B difficulty + COLOR + Select/Reset
@@ -2406,115 +2415,61 @@ end
     end
 
     @testset "TIM*T prescaler decode" begin
-        r = initial_riot_state(); riot_poke!(r, 0x0294, 100)
-        @test r.intim == 100 && r.prescaler_shift == 0
-        r = initial_riot_state(); riot_poke!(r, 0x0295, 50)
-        @test r.intim == 50  && r.prescaler_shift == 3
-        r = initial_riot_state(); riot_poke!(r, 0x0296, 20)
-        @test r.prescaler_shift == 6
-        r = initial_riot_state(); riot_poke!(r, 0x0297, 5)
-        @test r.prescaler_shift == 10
+        r = initial_riot_state(); riot_poke!(r, 0x0294, 100, 0)
+        @test r.my_timer == 100 && r.interval_shift == 0
+        r = initial_riot_state(); riot_poke!(r, 0x0295, 50, 0)
+        @test r.my_timer == 50  && r.interval_shift == 3
+        r = initial_riot_state(); riot_poke!(r, 0x0296, 20, 0)
+        @test r.interval_shift == 6
+        r = initial_riot_state(); riot_poke!(r, 0x0297, 5, 0)
+        @test r.interval_shift == 10
     end
 
-    @testset "timer load clears expired flag" begin
-        r = initial_riot_state(); r.timer_expired = true
-        riot_poke!(r, 0x0294, 1)
-        @test r.timer_expired == false
+    @testset "timer load stamps cycles_when_set + clears read_after_int" begin
+        r = initial_riot_state(); r.read_after_int = true
+        riot_poke!(r, 0x0294, 1, 1234)
+        @test r.read_after_int == false
+        @test r.cycles_when_set == 1234
+        @test r.my_timer == 1
     end
 
-    @testset "advance under one tick does not change INTIM" begin
-        r = initial_riot_state(); riot_poke!(r, 0x0295, 50)
-        riot_advance!(r, 5)
-        @test r.intim == 50
-        @test r.cycles_since_tick == 5
+    @testset "INTIM read returns my_timer-1 one cycle after load" begin
+        # P3i-g pt8 / xitari case 0x04: INTIM = my_timer-(delta>>shift)-1,
+        # delta = (cur-1)-cycles_when_set. One cycle after a load (cur=1,
+        # set=0): delta=0 → 42-0-1 = 41.
+        r = initial_riot_state(); riot_poke!(r, 0x0294, 42, 0)
+        @test riot_peek!(r, 0x0284, 1) == 41
     end
 
-    @testset "advance one full tick decrements INTIM" begin
-        r = initial_riot_state(); riot_poke!(r, 0x0295, 50)
-        riot_advance!(r, 8)
-        @test r.intim == 49
-        @test r.cycles_since_tick == 0
+    @testset "INTIM counts down (TIM1T, shift 0)" begin
+        r = initial_riot_state(); riot_poke!(r, 0x0294, 100, 0)
+        @test riot_peek!(r, 0x0284, 1)  == 99    # delta 0
+        @test riot_peek!(r, 0x0284, 11) == 89    # delta 10
+        @test riot_peek!(r, 0x0284, 31) == 69    # delta 30
     end
 
-    @testset "partial then full tick" begin
-        r = initial_riot_state(); riot_poke!(r, 0x0295, 50)
-        riot_advance!(r, 5); riot_advance!(r, 3)
-        @test r.intim == 49
+    @testset "INTIM counts at prescaler rate (TIM8T, shift 3)" begin
+        r = initial_riot_state(); riot_poke!(r, 0x0295, 50, 0)
+        @test riot_peek!(r, 0x0284, 1)  == 49    # delta 0  -> 0>>3=0
+        @test riot_peek!(r, 0x0284, 9)  == 48    # delta 8  -> 1
+        @test riot_peek!(r, 0x0284, 17) == 47    # delta 16 -> 2
     end
 
-    @testset "multiple ticks (TIM1T)" begin
-        r = initial_riot_state(); riot_poke!(r, 0x0294, 100)
-        riot_advance!(r, 30)
-        @test r.intim == 70
+    @testset "INSTAT D7 reflects expiry" begin
+        r = initial_riot_state(); riot_poke!(r, 0x0294, 5, 0)
+        @test riot_peek!(r, 0x0285, 1) == 0x00            # not expired
+        @test (riot_peek!(r, 0x0285, 100) & 0x80) != 0    # expired
     end
 
-    @testset "exact expiration on TIM1T" begin
-        r = initial_riot_state(); riot_poke!(r, 0x0294, 10)
-        riot_advance!(r, 11)
-        @test r.intim == 0xFF
-        @test r.timer_expired == true
-    end
-
-    @testset "post-expiration ticks once per cycle" begin
-        r = initial_riot_state(); riot_poke!(r, 0x0294, 10)
-        riot_advance!(r, 11)
-        riot_advance!(r, 5)
-        @test r.intim == 0xFA
-        @test r.timer_expired == true
-    end
-
-    @testset "expiration during TIM8T advance" begin
-        r = initial_riot_state(); riot_poke!(r, 0x0295, 5)
-        riot_advance!(r, 50)                     # 6*8 = 48 to expire, 2 over
-        @test r.timer_expired == true
-        @test r.intim == 0xFD
-    end
-
-    @testset "writing timer resets state" begin
-        r = initial_riot_state(); riot_poke!(r, 0x0294, 5)
-        riot_advance!(r, 100)
-        @test r.timer_expired == true
-        riot_poke!(r, 0x0295, 100)
-        @test r.timer_expired == false
-        @test r.intim == 100
-        @test r.cycles_since_tick == 0
-    end
-
-    @testset "INSTAT D7 reflects expired flag" begin
-        r = initial_riot_state(); riot_poke!(r, 0x0294, 5)
-        @test riot_peek(r, 0x0285) == 0x00
-        riot_advance!(r, 6)
-        @test (riot_peek(r, 0x0285) & 0x80) != 0
-    end
-
-    @testset "INTIM readable via peek" begin
-        # P3i-g pt8: xitari's INTIM read formula has an extra `- 1`
-        # (`myTimer - (delta>>shift) - 1`), so reading INTIM immediately
-        # after a TIM*T write of 42 returns 41 (not 42). Required to
-        # match xitari's per-cycle INTIM polling behaviour in pong/SI/etc.
-        r = initial_riot_state(); riot_poke!(r, 0x0294, 42)
-        @test riot_peek(r, 0x0284) == 41
-    end
-
-    # P4d — INTIM read clears the timer-expired latch (real MOS 6532
-    # semantic; pre-P4d the latch was only cleared by writing TIM*T).
-    @testset "P4d — INTIM read clears timer_expired latch" begin
-        r = initial_riot_state(); riot_poke!(r, 0x0294, 1)
-        riot_advance!(r, 2)                       # expire (1 + 1 tick)
-        @test r.timer_expired == true
-        @test (riot_peek(r, 0x0285) & 0x80) != 0  # INSTAT sees expired
-        # Read INTIM → clears the latch.
-        riot_peek!(r, 0x0284)
-        @test r.timer_expired == false
-        @test (riot_peek(r, 0x0285) & 0x80) == 0  # INSTAT sees cleared
-    end
-
-    @testset "P4d — INSTAT read does NOT clear timer_expired" begin
-        r = initial_riot_state(); riot_poke!(r, 0x0294, 1)
-        riot_advance!(r, 2)
-        @test r.timer_expired == true
-        riot_peek!(r, 0x0285)                     # INSTAT read
-        @test r.timer_expired == true             # still set (INSTAT only clears PA7)
+    @testset "post-expiry INTIM latches read-after-interrupt" begin
+        # xitari myTimerReadAfterInterrupt: the first INTIM read after the
+        # timer goes negative latches `read_after_int`; thereafter the
+        # count proceeds at the prescaler rate (slow), not 1/cycle. (Exact
+        # values validated by PXC1 seaquest bit-exactness.)
+        r = initial_riot_state(); riot_poke!(r, 0x0294, 5, 0)
+        v = riot_peek!(r, 0x0284, 100)                    # deep post-expiry
+        @test r.read_after_int == true
+        @test 0 <= Int(v) <= 255
     end
 
     @testset "SWCHA input reflected when DDR=0" begin
@@ -2551,25 +2506,32 @@ end
         @test riot_peek(r, 0x0283) == 0x3C
     end
 
-    @testset "step advances RIOT timer" begin
+    @testset "step advances the (lazy) RIOT timer" begin
+        # Lazy model: the timer counts down as the CPU runs, observed when
+        # INTIM is READ via the bus (cur = total_cycles). Load TIM1T=50 at
+        # cycle 0, run 10 NOPs (20 cyc), read INTIM: 50-(20-1)-1 = 30
+        # (same value the old eager model produced; the -1/delta cancel).
         rom = fill(UInt8(0xEA), 4096)             # NOPs (2 cyc each)
         bus = initial_bus(rom)
-        riot_poke!(bus.riot, 0x0294, 50)          # TIM1T = 50
+        riot_poke!(bus.riot, 0x0294, 50)          # TIM1T = 50 @ cycle 0
         s = _state(PC=0xF000)
         for _ in 1:10
             step(s, bus)
         end
-        @test bus.riot.intim == 30
-        @test !bus.riot.timer_expired
+        # 20 cycles run; the INTIM read is itself a bus cycle (cur=21):
+        # 50 - ((21-1)>>0) - 1 = 29.
+        @test peek(bus, 0x0284) == 29
     end
 
-    @testset "WSYNC stall advances RIOT too" begin
+    @testset "WSYNC stall advances the (lazy) RIOT timer too" begin
         rom = zeros(UInt8, 4096); rom[1] = 0x85; rom[2] = 0x02   # STA WSYNC
         bus = initial_bus(rom)
-        riot_poke!(bus.riot, 0x0294, 200)          # TIM1T = 200
+        riot_poke!(bus.riot, 0x0294, 200)          # TIM1T = 200 @ cycle 0
         s = _state(PC=0xF000)
         step(s, bus)
-        @test bus.riot.intim == 124               # 200 - 76
+        # WSYNC stalls to the scanline boundary (76 cyc); INTIM read adds
+        # its own cycle (cur=77): 200 - ((77-1)>>0) - 1 = 123.
+        @test peek(bus, 0x0284) == 123
     end
 
 end
@@ -2804,17 +2766,20 @@ end
         @test c.bus.tia.frame == 2
     end
 
-    @testset "run_until_frame! errors on runaway JMP-to-self ROM (PXC1-x)" begin
-        # PXC1-x: the frame counter is now driven only by software
-        # VSYNC. A ROM that never writes VSYNC genuinely can't end a
-        # frame, so run_until_frame! hits its instruction limit and
-        # throws. The previous scanline-wrap fallback was removed
-        # because it double-counted real frames.
+    @testset "run_until_frame! ends a VSYNC-less ROM at the max-scanlines cutoff (task #80)" begin
+        # Task #80: the frame counter is driven by the software VSYNC edge
+        # OR — mirroring xitari's `myMaximumNumberOfScanlines` (NTSC=290,
+        # TIA.cxx:2003) — a forced cutoff after 290 VSYNC-less scanlines.
+        # So a JMP-to-self ROM that never writes VSYNC no longer hangs;
+        # its frame ends at the 290-line cutoff. (Pre-#80 this threw at the
+        # instruction limit; the cutoff is the xitari-faithful behaviour.)
         rom = zeros(UInt8, 4096)
         rom[1] = 0x4C; rom[2] = 0x00; rom[3] = 0xF0  # JMP $F000
         rom[0x0FFD] = 0x00; rom[0x0FFE] = 0xF0
         c = initial_console(rom); console_reset!(c)
-        @test_throws Exception run_until_frame!(c)
+        f0 = c.bus.tia.frame
+        run_until_frame!(c)
+        @test c.bus.tia.frame == f0 + 1              # cutoff forced a frame
     end
 
     # IO actions — joystick decoding
