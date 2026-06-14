@@ -332,6 +332,15 @@ class TIAState(NamedTuple):
     # Parked here so it doesn't clobber line N's comb; promoted to
     # `hmove_blank_pending` once the beam advances. Mirror of jutari.
     hmove_blank_pending_next: bool = False
+    # Task #99: deferred HMOVE object motion for a strobe that crossed into
+    # the NEXT scanline (beam_sc >= 76). xitari applies such a late strobe's
+    # motion to line N+1, but jaxtari renders whole scanlines in `tia_advance`
+    # AFTER the poke, so applying immediately would move M0/BL on the
+    # already-completed line N (1 line early — the enduro road-marker offset).
+    # Park the per-object motion deltas (p0,p1,m0,m1,bl) here; `tia_advance`
+    # applies them after line N commits so N+1 onward use the moved positions.
+    # Mirror of `hmove_blank_pending_next` + jutari. (0,0,0,0,0) = none.
+    hmove_motion_next: tuple = (0, 0, 0, 0, 0)
     # Task #80: scanlines since the last frame boundary (does NOT wrap at
     # 262, unlike `scanline`). Drives xitari's max-scanlines frame cutoff:
     # xitari force-ends a frame after `myMaximumNumberOfScanlines` (=290
@@ -386,6 +395,7 @@ def initial_tia_state() -> TIAState:
         pending_writes=(),
         hmove_blank_pending=False,
         hmove_blank_pending_next=False,
+        hmove_motion_next=(0, 0, 0, 0, 0),
         lines_since_frame=0,
     )
 
@@ -867,22 +877,31 @@ def tia_poke(tia: TIAState, addr: int, value: int,
         # (beam_sc), not the stale instruction-start scanline_cycle.
         sc = int(beam_sc)
         blank = _hmove_blank_enabled_at(sc)
-        new_tia = new_tia._replace(
-            p0_x=(new_tia.p0_x - _hmove_motion(sc, hmp0)) % 160,
-            p1_x=(new_tia.p1_x - _hmove_motion(sc, hmp1)) % 160,
-            m0_x=(new_tia.m0_x - _hmove_motion(sc, hmm0)) % 160,
-            m1_x=(new_tia.m1_x - _hmove_motion(sc, hmm1)) % 160,
-            bl_x=(new_tia.bl_x - _hmove_motion(sc, hmbl)) % 160,
-        )
-        # Task #97: beam_sc >= 76 means the write crossed into the NEXT
-        # scanline — park its comb in `_next` (promoted after the beam
-        # advances) instead of clobbering line N's own comb. Mirror of
-        # jutari. (Motion above already applied to the persistent
-        # positions, matching `_hmove_motion`'s >=76 clamp.)
+        # Task #97/#99: beam_sc >= 76 means the write crossed into the NEXT
+        # scanline — BOTH its blank comb AND its object motion belong to line
+        # N+1, not the about-to-be-committed line N. #97 deferred the comb;
+        # #99 also defers the motion (`hmove_motion_next`, applied in
+        # `tia_advance` after line N commits) — applying it immediately moved
+        # M0/BL on line N (1 line early, the enduro road-marker offset).
+        # Below 76 the strobe is within the current line: apply immediately.
         if sc >= NTSC_CPU_CYCLES_PER_SCANLINE:
-            new_tia = new_tia._replace(hmove_blank_pending_next=blank)
+            new_tia = new_tia._replace(
+                hmove_blank_pending_next=blank,
+                hmove_motion_next=(
+                    _hmove_motion(sc, hmp0), _hmove_motion(sc, hmp1),
+                    _hmove_motion(sc, hmm0), _hmove_motion(sc, hmm1),
+                    _hmove_motion(sc, hmbl),
+                ),
+            )
         else:
-            new_tia = new_tia._replace(hmove_blank_pending=blank)
+            new_tia = new_tia._replace(
+                p0_x=(new_tia.p0_x - _hmove_motion(sc, hmp0)) % 160,
+                p1_x=(new_tia.p1_x - _hmove_motion(sc, hmp1)) % 160,
+                m0_x=(new_tia.m0_x - _hmove_motion(sc, hmm0)) % 160,
+                m1_x=(new_tia.m1_x - _hmove_motion(sc, hmm1)) % 160,
+                bl_x=(new_tia.bl_x - _hmove_motion(sc, hmbl)) % 160,
+                hmove_blank_pending=blank,
+            )
     elif reg == W_HMCLR:
         # HMCLR zeros all five horizontal-motion registers (HMP0/HMP1/HMM0/HMM1/HMBL).
         new_registers = (
@@ -1170,9 +1189,31 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
     new_hmove_blank_next = (
         False if line_advance > 0 else tia.hmove_blank_pending_next
     )
+    # Task #99: line N rendered + committed with PRE-motion object positions
+    # (the beam_sc>=76 strobe deferred its motion); now apply the deferred
+    # motion so line N+1 onward use the moved positions. (0,0,0,0,0) → no-op.
+    # If no line crossed, keep it parked for a later advance. Mirror of jutari.
+    if line_advance > 0:
+        _dp0, _dp1, _dm0, _dm1, _dbl = tia.hmove_motion_next
+        new_p0_x = (int(tia.p0_x) - _dp0) % 160
+        new_p1_x = (int(tia.p1_x) - _dp1) % 160
+        new_m0_x = (int(tia.m0_x) - _dm0) % 160
+        new_m1_x = (int(tia.m1_x) - _dm1) % 160
+        new_bl_x = (int(tia.bl_x) - _dbl) % 160
+        new_hmove_motion_next = (0, 0, 0, 0, 0)
+    else:
+        new_p0_x, new_p1_x = tia.p0_x, tia.p1_x
+        new_m0_x, new_m1_x, new_bl_x = tia.m0_x, tia.m1_x, tia.bl_x
+        new_hmove_motion_next = tia.hmove_motion_next
     return tia._replace(
         scanline_cycle=new_sc,
         scanline=new_line,
+        p0_x=new_p0_x,
+        p1_x=new_p1_x,
+        m0_x=new_m0_x,
+        m1_x=new_m1_x,
+        bl_x=new_bl_x,
+        hmove_motion_next=new_hmove_motion_next,
         # Task #80: frame counter is normally bumped only on the VSYNC
         # 1→0 edge (in `tia_poke`); the max-scanlines cutoff above is the
         # second path and writes `new_frame` here. `lines_since_frame`

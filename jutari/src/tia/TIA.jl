@@ -319,6 +319,16 @@ mutable struct TIAState
     # extra RAM[$01] increment → $3f vs xitari's $3e). Dormant for normal
     # frames (VSYNC fires at ~262 < 290).
     lines_since_frame::Int
+    # Task #99: deferred HMOVE object motion for a strobe that crossed into
+    # the NEXT scanline (beam_sc >= 76). xitari applies such a late strobe's
+    # motion to line N+1, but jutari renders whole scanlines in `tia_advance!`
+    # AFTER the poke, so applying immediately would move objects on the
+    # already-completed line N (1 line early — the enduro road-marker offset).
+    # We park the per-object motion deltas (p0,p1,m0,m1,bl) here and apply
+    # them right after line N commits, so N+1 onward use the moved positions.
+    # Mirror of the #97 `hmove_blank_pending_next` comb deferral. (0,0,0,0,0)
+    # = nothing pending (applying it is a no-op).
+    hmove_motion_next::NTuple{5,Int}
 end
 
 # INPT defaults: paddle pots ($80 = centred), triggers idle high (D7=1).
@@ -341,6 +351,7 @@ initial_tia_state() = TIAState(
     false,                             # task #97: hmove_blank_pending_next = false
     false,                             # 2026-06-04: vsync_reset_pending = false
     0,                                 # task #80: lines_since_frame = 0
+    (0, 0, 0, 0, 0),                   # task #99: hmove_motion_next = none
 )
 
 """
@@ -574,22 +585,28 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
         # scanline_cycle. Mid-scanline HMOVE (cycles 21..54) produces
         # zero motion; late-scanline (55..75) cycle-dependent partials.
         sc = beam_sc
-        tia.p0_x = mod(tia.p0_x - _hmove_motion(sc, tia.registers[W_HMP0 + 1]), 160)
-        tia.p1_x = mod(tia.p1_x - _hmove_motion(sc, tia.registers[W_HMP1 + 1]), 160)
-        tia.m0_x = mod(tia.m0_x - _hmove_motion(sc, tia.registers[W_HMM0 + 1]), 160)
-        tia.m1_x = mod(tia.m1_x - _hmove_motion(sc, tia.registers[W_HMM1 + 1]), 160)
-        tia.bl_x = mod(tia.bl_x - _hmove_motion(sc, tia.registers[W_HMBL + 1]), 160)
-        # HMOVE-blank fires alongside (the cycle ranges overlap with
-        # the motion table's HBLANK region).
-        # Task #97: when beam_sc >= 76 the write crossed into the NEXT
-        # scanline mid-instruction, so its comb belongs to line N+1 — park
-        # it in `hmove_blank_pending_next` (promoted after the beam
-        # advances) instead of clobbering line N's own comb. (The motion
-        # above already applies to the live positions, which persist into
-        # N+1, matching `_hmove_motion`'s ≥76 clamp.)
+        # Task #97/#99: when beam_sc >= 76 the write crossed into the NEXT
+        # scanline mid-instruction, so BOTH its blank comb AND its object
+        # motion belong to line N+1, not the about-to-be-committed line N.
+        # #97 deferred the comb (`hmove_blank_pending_next`); #99 also defers
+        # the motion (`hmove_motion_next`) — applying it immediately moved
+        # M0/BL on line N (1 line early), the enduro road-marker offset.
+        # Below 76 the strobe is within the current line: apply immediately.
         if sc >= NTSC_CPU_CYCLES_PER_SCANLINE
+            tia.hmove_motion_next = (
+                _hmove_motion(sc, tia.registers[W_HMP0 + 1]),
+                _hmove_motion(sc, tia.registers[W_HMP1 + 1]),
+                _hmove_motion(sc, tia.registers[W_HMM0 + 1]),
+                _hmove_motion(sc, tia.registers[W_HMM1 + 1]),
+                _hmove_motion(sc, tia.registers[W_HMBL + 1]),
+            )
             tia.hmove_blank_pending_next = _hmove_blank_enabled_at(sc)
         else
+            tia.p0_x = mod(tia.p0_x - _hmove_motion(sc, tia.registers[W_HMP0 + 1]), 160)
+            tia.p1_x = mod(tia.p1_x - _hmove_motion(sc, tia.registers[W_HMP1 + 1]), 160)
+            tia.m0_x = mod(tia.m0_x - _hmove_motion(sc, tia.registers[W_HMM0 + 1]), 160)
+            tia.m1_x = mod(tia.m1_x - _hmove_motion(sc, tia.registers[W_HMM1 + 1]), 160)
+            tia.bl_x = mod(tia.bl_x - _hmove_motion(sc, tia.registers[W_HMBL + 1]), 160)
             tia.hmove_blank_pending = _hmove_blank_enabled_at(sc)
         end
     elseif reg == W_HMCLR
@@ -807,6 +824,18 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
         if tia.hmove_blank_pending_next
             tia.hmove_blank_pending = true
             tia.hmove_blank_pending_next = false
+        end
+        # Task #99: line N has rendered + committed with PRE-motion object
+        # positions; now apply the deferred HMOVE motion from a beam_sc>=76
+        # strobe so line N+1 onward use the moved positions (xitari applies a
+        # late strobe's motion to the next line). (0,0,0,0,0) → no-op.
+        let (dp0, dp1, dm0, dm1, dbl) = tia.hmove_motion_next
+            tia.p0_x = mod(tia.p0_x - dp0, 160)
+            tia.p1_x = mod(tia.p1_x - dp1, 160)
+            tia.m0_x = mod(tia.m0_x - dm0, 160)
+            tia.m1_x = mod(tia.m1_x - dm1, 160)
+            tia.bl_x = mod(tia.bl_x - dbl, 160)
+            tia.hmove_motion_next = (0, 0, 0, 0, 0)
         end
     end
 

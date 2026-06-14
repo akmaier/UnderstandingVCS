@@ -14,6 +14,43 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🎯 Task #99 — SOLVED: enduro road-marker offset closed; ALL 6 ROMs bit-exact RAM + 0 px screen, both ports (2026-06-14)
+
+**Supersedes the "DEFERRED" entry below.** After the audit pinned the object (Missile 0
+left + Ball right) and the mechanism (a `beam_sc >= 76` HMOVE strobe whose object motion
+was applied 1 scanline early), the guarded fix landed and verified clean. **enduro screen
+33 → 0** on BOTH ports; this makes **all 6 conformance ROMs simultaneously RAM-bit-exact
+AND 0 px screen** vs xitari.
+
+**Root cause (confirmed by per-cycle trace):** enduro free-running road lines strobe HMOVE
+at `beam_sc ≈ 79` (≥ 76 → the beam has crossed into line N+1) on ~636 scanlines/run.
+xitari applies that late strobe's motion to line N+1, but jutari/jaxtari render whole
+scanlines in `tia_advance` AFTER the poke, so applying the motion immediately moved
+M0/BL on the already-completed line N — a 1-color-clock outward offset that the road's
+perspective magnified into the visible "~2 scanlines early" look. The base RES/HMOVE
+arithmetic was already exact (4-agent audit); this was purely the *timing* of when the
+motion takes visible effect.
+
+**Fix:** defer the object motion of a `beam_sc ≥ 76` HMOVE — mirror of #97's
+`hmove_blank_pending_next` comb deferral, but for the object positions. New field
+`hmove_motion_next` (the 5 per-object deltas) is parked in `tia_poke!`/`tia_poke` when
+`sc ≥ 76` and applied in `tia_advance!`/`tia_advance` right after line N commits, so N+1
+onward use the moved positions. Below 76 the motion still applies immediately. The
+`sc ≥ 76` path is enduro-specific (established by #97), so the 5 bit-exact ROMs are
+untouched.
+  - jutari: `src/tia/TIA.jl` (struct field + W_HMOVE defer + tia_advance! apply).
+  - jaxtari: `jaxtari/tia/system.py` (field + W_HMOVE defer + tia_advance return apply).
+  - `tests/test_screen_conformance.py` enduro pin 33 → 0; enduro jutari screen fixture
+    regenerated (now 0 vs xitari).
+
+**Gates (all green):** jutari RAM-diff all 6 ROMs (NOOP, 80f) = 0; jutari screen all 6 = 0
+(enduro 33→0); jutari `Pkg.test()` exit 0; jaxtari core TIA/bus/players/missiles/
+collisions tests pass; jaxtari-live screen enduro=0 + seaquest=0; full PXC2 (RAM, both
+engines) + screen conformance (both engines) re-run clean. RAM stayed bit-exact for all 6
+(the deferral did not perturb collision-driven RAM).
+
+---
+
 ### 🔬 Task #99 — enduro road-marker 1px offset: deep audit, NO clean fix, keep DEFERRED (2026-06-14)
 
 User noticed a "very slight offset in enduro (jutari), one or two pixels per scanline"

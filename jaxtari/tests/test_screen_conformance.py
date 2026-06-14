@@ -161,10 +161,14 @@ _CASES = [
     # (jutari fixture worst=0; jaxtari live worst=0). The old 904 px was
     # the boot off-by-1 shifting every frame, not a true render bug.
     _Case("seaquest_noop_10",       "seaquest.bin",          0),
-    # enduro: jutari/jaxtari screen unchanged by #80 (33 px road-border
-    # 1-cc residual remains — see task #97). Fixture regenerated for the
-    # timer change but worst-frame vs xitari stays 33.
-    _Case("enduro_noop_10",         "enduro.bin",           33),
+    # Task #99 (2026-06-14): enduro's 33 px road-border residual is CLOSED —
+    # the two color-4 road markers are Missile 0 (left) + Ball (right), and
+    # jutari/jaxtari were applying a beam_sc>=76 HMOVE strobe's object motion
+    # to the already-completed line N (1 line early). Deferring the motion to
+    # N+1 (mirror of #97's blank-comb deferral) makes enduro BIT-EXACT vs
+    # xitari (33 -> 0) on BOTH ports. ALL 6 conformance ROMs now 0 px screen
+    # + bit-exact RAM.
+    _Case("enduro_noop_10",         "enduro.bin",            0),
 ]
 
 
