@@ -284,7 +284,10 @@ def _bus_peek(bus: Bus, addr: int):
     if addr_masked & 0x1000:
         # Cartridge — delegate to the cart, which handles bank switching
         # for F8/F6/F4 on hotspot access. Cart mutates in place.
-        value = cart_peek(bus.cart, addr_masked)
+        # Pass the FULL (un-masked) address: the FE mapper (task #102) needs
+        # A13 of the 16-bit CPU address; all other carts re-mask to 13 bits
+        # internally, so this is a no-op for them.
+        value = cart_peek(bus.cart, addr)
         return value, bus._replace(data_bus_state=value & 0xFF,
                                    pending_tia_cycles=new_pending)
     if not (addr_masked & 0x80):

@@ -29,7 +29,7 @@ DPC also deferred.
 module Cart
 
 export CartState, make_cart, cart_peek, cart_poke!,
-       KIND_2K, KIND_4K, KIND_F8, KIND_F6, KIND_F4, KIND_E0
+       KIND_2K, KIND_4K, KIND_F8, KIND_F6, KIND_F4, KIND_E0, KIND_FE
 
 const KIND_2K = 0
 const KIND_4K = 1
@@ -37,6 +37,7 @@ const KIND_F8 = 2
 const KIND_F6 = 3
 const KIND_F4 = 4
 const KIND_E0 = 5    # task #100 — Parker Bros 8K, 4 × 1K slice slots
+const KIND_FE = 6    # task #102 — Activision 8K (Robot Tank / Decathlon)
 
 const _SIZE_TO_KIND = Dict{Int, Int}(
     2048  => KIND_2K,
@@ -50,6 +51,7 @@ const _DEFAULT_BANK = Dict{Int, Int}(
     KIND_2K => 0, KIND_4K => 0,
     KIND_F8 => 1, KIND_F6 => 3, KIND_F4 => 7,
     KIND_E0 => 0,                  # placeholder; E0 uses `slice_slots`
+    KIND_FE => 0,                  # FE has no dynamic bank (static upper 4K)
 )
 
 # Hotspot address → target bank for each switched format.
@@ -119,14 +121,27 @@ const _E0_SIGNATURES = (
 _is_probably_e0(rom::Vector{UInt8}) =
     any(sig -> _search_for_bytes(rom, sig), _E0_SIGNATURES)
 
+# xitari `Cartridge::isProbablyFE` — FE always includes a 'JSR $xxxx' (MESS).
+const _FE_SIGNATURES = (
+    (UInt8(0x20), UInt8(0x00), UInt8(0xD0), UInt8(0xC6), UInt8(0xC5)),  # JSR $D000;DEC $C5
+    (UInt8(0x20), UInt8(0xC3), UInt8(0xF8), UInt8(0xA5), UInt8(0x82)),  # JSR $F8C3;LDA $82
+    (UInt8(0xD0), UInt8(0xFB), UInt8(0x20), UInt8(0x73), UInt8(0xFE)),  # BNE;JSR $FE73
+    (UInt8(0x20), UInt8(0x00), UInt8(0xF0), UInt8(0x84), UInt8(0xD6)),  # JSR $F000;STY $D6
+)
+
+_is_probably_fe(rom::Vector{UInt8}) =
+    any(sig -> _search_for_bytes(rom, sig), _FE_SIGNATURES)
+
 function _autodetect_kind(rom::Vector{UInt8})
     n = length(rom)
     haskey(_SIZE_TO_KIND, n) || throw(ArgumentError(
         "unrecognised ROM size $n bytes. Supported " *
         "$(sort(collect(keys(_SIZE_TO_KIND))))."))
-    # 8 KB is ambiguous (F8 vs E0 vs FE) — distinguish by content like xitari.
-    if n == 8192 && _is_probably_e0(rom)
-        return KIND_E0
+    # 8 KB is ambiguous (F8 vs E0 vs FE) — distinguish by content like xitari
+    # (autodetectType order: E0 before FE before F8).
+    if n == 8192
+        _is_probably_e0(rom) && return KIND_E0
+        _is_probably_fe(rom) && return KIND_FE
     end
     return _SIZE_TO_KIND[n]
 end
@@ -163,6 +178,14 @@ function cart_peek(cart::CartState, addr::Integer)
         value = cart.rom[_e0_offset(cart, a) + 1]
         _maybe_switch_e0!(cart, a)
         return value
+    elseif cart.kind == KIND_FE
+        # Task #102: xitari CartFE returns myImage[(addr&0x0FFF) +
+        # ((addr&0x2000)==0 ? 4096 : 0)] — the bank is A13 of the FULL CPU
+        # address (Stella uses the emulator's 16-bit PC: $Fxxx→A13=1→lower
+        # bank, $Dxxx→A13=0→upper bank). The bus passes the un-masked
+        # `addr` here so A13 survives. Robot Tank / Decathlon.
+        return cart.rom[(Int(addr) & 0x0FFF) +
+                        ((Int(addr) & 0x2000) == 0 ? 0x1000 : 0) + 1]
     end
     bank_offset = cart.current_bank * 0x1000
     value = cart.rom[bank_offset + (Int(a) & 0x0FFF) + 1]

@@ -54,6 +54,7 @@ KIND_F8SC = 5     # P5b — F8 + 128 B on-cart RAM
 KIND_F6SC = 6     # P5b — F6 + 128 B on-cart RAM
 KIND_F4SC = 7     # P5b — F4 + 128 B on-cart RAM
 KIND_E0   = 8     # P5c — Parker Bros 8K, 4 × 1K slice slots
+KIND_FE   = 9     # task #102 — Activision 8K (Robot Tank / Decathlon), A13 banking
 
 _SIZE_TO_KIND = {
     2048:  KIND_2K,
@@ -74,6 +75,7 @@ _SC_EXPECTED_SIZE = {
     KIND_F6SC: 16384,
     KIND_F4SC: 32768,
     KIND_E0:   8192,         # P5c
+    KIND_FE:   8192,         # task #102
 }
 
 # Bank-switch hotspot addresses within the 13-bit-masked cart window.
@@ -98,6 +100,7 @@ _DEFAULT_BANK = {
     KIND_F4:   7,
     KIND_F4SC: 7,
     KIND_E0:   0,                   # placeholder; E0 uses `slice_slots` instead
+    KIND_FE:   0,                   # FE has no dynamic bank field (uses addr A13)
 }
 
 # E0 cart: 8K split into 8 × 1K slices. Three slots at $1000-$13FF /
@@ -179,23 +182,40 @@ _E0_SIGNATURES = (
 )
 
 
+# xitari `Cartridge::isProbablyFE` — FE always includes a 'JSR $xxxx' (MESS).
+_FE_SIGNATURES = (
+    b"\x20\x00\xd0\xc6\xc5",   # JSR $D000; DEC $C5
+    b"\x20\xc3\xf8\xa5\x82",   # JSR $F8C3; LDA $82
+    b"\xd0\xfb\x20\x73\xfe",   # BNE; JSR $FE73
+    b"\x20\x00\xf0\x84\xd6",   # JSR $F000; STY $D6
+)
+
+
 def _is_probably_e0(rom) -> bool:
     img = bytes(int(b) & 0xFF for b in rom)
     return any(img.find(sig) >= 0 for sig in _E0_SIGNATURES)
 
 
+def _is_probably_fe(rom) -> bool:
+    img = bytes(int(b) & 0xFF for b in rom)
+    return any(img.find(sig) >= 0 for sig in _FE_SIGNATURES)
+
+
 def _autodetect_kind(rom) -> int:
-    """Content-aware mapper detection (task #100). 8K is ambiguous (F8 vs E0
-    vs FE); distinguish E0 by signature like xitari `autodetectType`. F8SC
-    and FE remain explicit-`kind=` overrides (FE = Robot Tank, deferred)."""
+    """Content-aware mapper detection (tasks #100/#102). 8K is ambiguous
+    (F8 vs E0 vs FE); distinguish by signature like xitari `autodetectType`
+    (order: E0 before FE before F8). F8SC remains an explicit-`kind=` override."""
     n = len(rom)
     if n not in _SIZE_TO_KIND:
         raise ValueError(
             f"unrecognised ROM size {n} bytes. "
             f"P5 supports sizes {sorted(_SIZE_TO_KIND.keys())}."
         )
-    if n == 8192 and _is_probably_e0(rom):
-        return KIND_E0
+    if n == 8192:
+        if _is_probably_e0(rom):
+            return KIND_E0
+        if _is_probably_fe(rom):
+            return KIND_FE
     return _SIZE_TO_KIND[n]
 
 
@@ -234,6 +254,13 @@ def cart_peek(cart: Cart, addr: int) -> int:
         return int(cart.rom[a & 0x07FF])
     if cart.kind == KIND_4K:
         return int(cart.rom[a & 0x0FFF])
+
+    # Task #102 — FE: bank = A13 of the FULL CPU address (xitari CartFE:
+    # myImage[(addr&0x0FFF) + ((addr&0x2000)==0 ? 4096 : 0)]). $Fxxx→A13=1→
+    # lower bank, $Dxxx→A13=0→upper. The bus passes the un-masked addr so
+    # A13 survives. No hotspots (FE poke is a no-op in xitari).
+    if cart.kind == KIND_FE:
+        return int(cart.rom[(addr & 0x0FFF) + (0x1000 if (addr & 0x2000) == 0 else 0)])
 
     # P5c — E0: four 1K slots, three mutable + one fixed at slice 7.
     # Reads compute (slice, in-slice-offset) from the cart-window

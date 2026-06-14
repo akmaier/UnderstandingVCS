@@ -14,6 +14,38 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🎯 Task #102 — SOLVED: FE cart mapper (Activision JSR-banking) → robotank 81→0 b/f, both ports (2026-06-14)
+
+User: "Make sure to also work on #102, and #103." The last exotic 8K mapper. After
+#100 added FE *detection* (isProbablyFE 5-byte signatures), robotank was correctly
+classified as FE but still diverged **81 b/f** because the banking was wrong.
+
+**Root cause — FE banks on A13 of the *full 16-bit CPU address*, not a hotspot.**
+Activision's FE ("Front/Back E") has no bank-switch hotspot. Stella exploits the fact
+that the JSR/RTS that crosses banks leaves a tell-tale high address bit on the bus:
+the selected 4K half is chosen by **A13 of the un-masked address** —
+`$Fxxx → A13=1 → lower bank (rom offset 0)`, `$Dxxx → A13=0 → upper bank (offset 4096)`.
+xitari: `myImage[(addr&0x0FFF) + ((addr&0x2000)==0 ? 4096 : 0)]`. The poke side is a no-op.
+
+The trap: our bus masked the address to the 4K cart window (`a = addr & 0x0FFF`) **before**
+calling `cart_peek`, so A13 was already gone. A static "always upper 4K" guess failed
+(robotank stayed 81). Fix = thread the **un-masked** `addr` through to `cart_peek` so the
+FE branch can read A13; every other mapper ignores the extra bits (`addr & 0x0FFF`).
+
+**Changes (both ports):**
+- jutari `Cart.jl`: `KIND_FE=6`, `_FE_SIGNATURES` + `_is_probably_fe`, FE in `_autodetect_kind`
+  (8K order E0→FE→F8), cart_peek FE branch uses full addr `(addr&0x0FFF)+((addr&0x2000)==0 ? 0x1000 : 0)+1`.
+- jutari `Bus.jl`: `cart_peek(bus.cart, a)` → `cart_peek(bus.cart, addr)` (un-masked). poke unchanged.
+- jaxtari `cart/system.py`: `KIND_FE=9`, `_FE_SIGNATURES`/`_is_probably_fe`, FE in `_autodetect_kind`,
+  `_DEFAULT_BANK[FE]=0`, `_SC_EXPECTED_SIZE[FE]=8192`, cart_peek FE branch (same A13 formula).
+- jaxtari `bus/system.py`: `cart_peek(bus.cart, addr_masked)` → `cart_peek(bus.cart, addr)`.
+
+**Result:** robotank **81 → 0 b/f** on both ports. No regression — ms_pacman/jamesbond/breakout/
+pong all stay 0 b/f; jutari `Pkg.test()` green; jaxtari cart/bus/F8SC/E0 suites (75 tests) green.
+64-ROM sweep now **56/64** bit-exact. All four 8K mappers (F8, F8SC/F6SC/F4SC, E0, FE) covered.
+
+---
+
 ### 🔬 Task #103 — TRIAGE of the 6 genuine ROM residuals (per-game causes characterized) (2026-06-14)
 
 After #100 (E0 detect) + the 12 getStartingActions + canonical NTSC dumps, 6 of the 64

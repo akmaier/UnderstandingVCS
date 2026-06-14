@@ -264,7 +264,10 @@ end
     bus.pending_tia_cycles += 1
     _TRACE_LIVE_TIA[] = bus.tia                  # Phase 1 diagnostic
     if (a & 0x1000) != 0
-        v = cart_peek(bus.cart, a)               # cartridge (may switch bank)
+        # Pass the FULL (un-masked) address: the FE mapper (task #102) needs
+        # A13 of the 16-bit CPU address; all other carts re-mask to 13 bits
+        # internally, so this is a no-op for them.
+        v = cart_peek(bus.cart, addr)            # cartridge (may switch bank)
         bus.data_bus_state = v
         _trace_record!(:peek, UInt16(a), v)
         return v
