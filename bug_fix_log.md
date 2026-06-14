@@ -14,6 +14,76 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🔬 Task #99 — enduro road-marker 1px offset: deep audit, NO clean fix, keep DEFERRED (2026-06-14)
+
+User noticed a "very slight offset in enduro (jutari), one or two pixels per scanline"
+in the freshly-rendered #80 video. This is the **#97-deferred render residual** (33 px
+worst-frame, RAM bit-exact), now precisely characterized + audited.
+
+**Precise signature (frame 5, jutari vs xitari screen fixture):**
+  - Two **single-pixel (1 color clock) color-index-4 markers** per affected row at the
+    road EDGES (perspective-widening). NOT playfield (PF draws 4-clock blocks) → ball
+    or missiles.
+  - **1-color-clock OUTWARD split**: jutari's LEFT marker is 1px farther left, the RIGHT
+    1px farther right (2px wider apart). Because the road widens per scanline, this looks
+    like a ~2-scanline vertical shift: jutari marker cols @row N == xitari @row N+2
+    (e.g. xitari row102=[63,112] row104=[62,113]; jutari row102=[62,113] row104=[61,114]).
+  - Only ~9 rows differ; rows 102/104 carry the markers, the rest differ elsewhere.
+
+**4-agent code audit (xitari ref + jutari + jaxtari, ultracode workflow):** the ports
+FAITHFULLY match xitari on every position path —
+  - RES* formula `((cc-68)+4)%160` for ball/missiles (jutari TIA.jl:430-431, jaxtari
+    system.py:553-554) == xitari TIA.cxx:2325/2343/2361.
+  - HMOVE motion: `_COMPLETE_MOTION_TABLE` is the exact negation of xitari
+    `ourCompleteMotionTable` (TIA.cxx:2807-2884); pos−motion == xitari pos+motion.
+  - beam derivation: `beam_cc == beam_sc*3` exactly (color_clock advances 3× scanline_
+    cycle), mirroring xitari's single clock feeding hpos(%228) and x=hpos/3.
+  - render mapping: ports draw `pos..pos+size-1` rightward == xitari mask
+    `160-(pos&0xFC)` left-edge. NOT the `160-pos` mask bug an early hypothesis guessed.
+  → **No single file:line deviation explains the symmetric 1-clock outward offset.**
+
+**Only real deviation found (latent, NOT #99's cause):** ports compute
+`(beam_cc-68+4)%160` without first doing `beam_cc%228`, so a RES poke with beam_cc≥228
+(instruction straddling the scanline boundary) gets a wrong position. This is a
+boundary-only glitch and cannot produce a constant offset on 9 consecutive rows.
+
+**Object PINNED via live jutari trace (env-gated instrument in tia_advance!, reverted):**
+the two markers are **Missile 0 (left edge) + Ball (right edge)**, both color index 4,
+1px wide (`ENAM0=2, ENABL=2, ENAM1=0, NUSIZ0=5`→missile width 1; col4 == [m0_x, bl_x]
+exactly on every traced row). They march apart down the perspective ramp (m0_x decrements,
+bl_x increments ~1 per 2 scanlines).
+
+**Refined mechanism:** at display row 102 xitari paints M0@63 + BL@112; jutari paints
+M0@**62** + BL@**113** — jutari is **one perspective-step AHEAD**, i.e. it applies the
+per-scanline M0/BL HMOVE reposition ~1 scanline EARLIER than xitari. The base RES/HMOVE
+position arithmetic is exact (audited); this is a sub-cycle HMOVE-strobe-near-scanline-
+boundary PHASE issue (enduro strobes HMOVE at beam_sc~79, same class as task #97's
+`hmove_blank_pending_next` comb-deferral and #98) — but for the OBJECT MOTION, not just
+the blank comb. The xitari game-specific RES hacks (Dolphin/Pitfall II/Mindmaster,
+TIA.cxx:2330-2333/2348-2351/2367-2397) are RULED OUT — they require exact clock-distance
++ hpos matches enduro never hits.
+
+**DECISION: keep DEFERRED.** Rationale: (1) 33 px **render-only** cosmetic residual
+(RAM bit-exact, PXC2 18/18); (2) no clean bug to fix — every audited path already matches
+xitari; (3) **HIGH regression risk** — pong/breakout/space_invaders/pitfall/seaquest are
+bit-exact (0 px) BECAUSE the RES*/HMOVE core matches xitari; a ±1 guess there would
+move THEIR objects too and break 0 px screen conformance (render-only, so RAM gates
+wouldn't even catch it).
+
+**PRECISE NEXT STEP (dedicated session, if pursued):** object is PINNED (M0+BL), so:
+  1. Per-cycle trace of enduro's HMOVE strobe + HMM0/HMBL writes around the marker
+     scanlines, jutari vs an xitari per-cycle trace, to find WHICH scanline the M0/BL
+     motion takes visible effect (xitari) vs jutari (~1 line early). Confirm it's the
+     beam_sc~79 boundary-straddle HMOVE (the #97/#98 class) applied to object position.
+  2. If so, defer the OBJECT-POSITION HMOVE motion by one scanline when the strobe lands
+     past the boundary — mirror of #97's `hmove_blank_pending_next` but for m*_x/bl_x,
+     not just the blank comb. This is a P3i-g cycle-core change.
+  3. GATE on RAM-diff + screen all 6 ROMs both ports (5 stay 0 px / bit-exact, enduro
+     markers match xitari at rows 102/104) before landing; revert on ANY of the 5
+     regressing (render-only, so RAM gates alone won't catch a screen regression).
+
+---
+
 ### 🎯 Task #80 — SOLVED: seaquest boot off-by-1 fixed, all 6 ROMs bit-exact both ports (2026-06-14)
 
 **Supersedes the "did NOT converge" entry below.** The dedicated #80 session
