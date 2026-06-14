@@ -14,6 +14,83 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🎯 Task #103 — SOLVED (gravitar) + improved (skiing/elevator_action): getStartingActions COUNT was 1, xitari repeats 16× (2026-06-14)
+
+Found by a 7-ROM read-only characterization workflow (one agent per residual). Three
+"boot-phase" residuals share ONE bug: xitari's `getStartingActions()` for these games
+repeats the action **16 times** (`for(i=0;i<16;i++) push_back(...)`), but jutari/jaxtari
+returned a **single** action (the #100/#101 port transcribed the action value but not the
+count). So jutari ran 15 fewer boot frames → the title/selection-screen init never
+finished → RAM tables left at $00.
+
+Verified in xitari sources:
+- `Gravitar.cpp`: 16× PLAYER_A_FIRE   |  `Skiing.cpp`: 16× PLAYER_A_DOWN
+- `ElevatorAction.cpp`: 16× PLAYER_A_FIRE
+(audited ALL 15 getStartingActions: only these three loop; AirRaid/Asterix/BeamRider/
+DoubleDunk/Enduro/Gopher/JourneyEscape/Pitfall/PrivateEye/UpNDown/YarsRevenge are all 1×
+and already correct. Surround is `[SELECT, RESET]` — console-switch actions, a separate
+fix, deferred.)
+
+**Fix (both ports):**
+- jutari `JoystickGames.jl`: ElevatorAction/Gravitar → `fill(1, 16)`, Skiing → `fill(5, 16)`.
+- jaxtari `joystick_starts.py`: same three → `[1]*16` / `[5]*16`.
+
+**Result:** **gravitar 93 → 0 b/f** (fully bit-exact). skiing 85 → first divergence
+moved frame 0 → frame 20 (frames 0-19 now bit-exact; a *separate* residual surfaces at
+frame 20). elevator_action 98 → 54 (improved; a separate title-vs-demo residual remains).
+The 16× count is unambiguously xitari-correct, so it stays regardless of the leftover
+residuals. No other game touched (only these three RomSettings changed). Sweep now 58/64.
+
+---
+
+### 🎯 Task #103 — SOLVED (frostbite): RESMP* lock→unlock missile reposition → frostbite 2→0 b/f, both ports (2026-06-14)
+
+User: "Make sure to also work on #102, and #103." First of the 6 #103 residuals closed.
+
+**Symptom.** frostbite RAM[$34]/[$36] = jutari $47 vs xitari $07 — a constant **D6**
+(0x40) difference, stable every frame. The triage called it "collision-D6".
+
+**Root-cause hunt (instrumented BOTH emulators).** Logged every CXM1P read:
+- reg 1 = **CXM1P**, val 0x40 = **D6 = M1-P1 collision** (missile-1 vs player-1).
+- xitari frame: 4 CXM1P reads, **0 with D6=1**; jutari frame: 4 reads, **2 with D6=1**.
+  (All 9 of xitari's D6=1 reads are during its ~191-frame `ale.resetGame()` boot
+  animation, NOT steady state.) The low 0x07 is identical in both — it's the data-bus
+  noise xitari ORs into every collision read (`getDataBusState()&0x3F`) + game logic;
+  only D6 genuinely differs. So **jutari over-detects M1-P1 every steady-state frame.**
+- frostbite's title kernel multiplexes missile-1: it toggles **RESMP1 between 0x03
+  (lock+hide) and 0xc0 (unlock+show)** and repositions via RESP1/HMOVE, mid-scanline.
+
+**The bug.** xitari `case 0x29` (TIA.cxx:2666): on the RESMP1 **D1 1→0 (unlock)** edge
+it **snaps the missile to its player centre** — `POSM1 = (POSP1 + middle) % 160`,
+middle = 8/16/4 for NUSIZ size 5/7/else. jutari (and jaxtari for visible-region writes)
+**omitted this reposition** (a #85 note explicitly skipped it). So a released missile
+kept its stale RESM1/HMOVE position and spuriously overlapped its player → CXM1P D6.
+
+**Fix (both ports).** Implement the xitari-faithful RESMP* 1→0 reposition, applied
+**immediately at poke time** (like a RES* position write) — NOT in the deferred apply
+(putting it there had regressed space_invaders +30 px / pitfall +231 px in #85):
+- jutari `TIA.jl`: capture pre-store RESMP D1; new `_resmp_reposition!(tia, player,
+  old_d1, val)` called from the W_RESMP0/W_RESMP1 immediate handlers.
+- jaxtari `tia/system.py`: do the reposition in the RESMP defer block BEFORE returning
+  the deferred store (so it fires for visible-region writes too, not just HBLANK); the
+  register STORE stays deferred for per-color-clock gate timing.
+
+**Result.** frostbite **2 → 0 b/f** on both ports. jutari 64-ROM RAM sweep **55→57**
+bit-exact (frostbite + robotank/#102), with **every other game byte-identical to the
+prior sweep** (air_raid 43, amidar 11, elevator_action 98, gravitar 93, qbert 56,
+skiing 85, surround 16 all unchanged — zero regressions). jutari `Pkg.test()` green.
+
+**Tooling bug found + fixed (sweep parallelism).** `jutari_xitari_ram_diff.py` used
+fixed `/tmp/_xitari_actions.txt` / `_jutari_rams.jsonl` paths, so `sweep_jutari_ram.py
+--jobs N>1` workers clobbered each other → garbage diffs (breakout "109", ms_pacman
+ERROR, etc. — all artifacts, not real). Keyed the temp files by ROM stem + PID; the
+`--jobs` speedup now actually works (the multi-threading the user asked for).
+
+Remaining #103: amidar 11, surround 16, elevator_action 98 (NEW vs old triage list),
+gravitar 93, qbert 56, skiing 85, air_raid 43 — each its own deep-dive.
+
+---
+
 ### 🎯 Task #102 — SOLVED: FE cart mapper (Activision JSR-banking) → robotank 81→0 b/f, both ports (2026-06-14)
 
 User: "Make sure to also work on #102, and #103." The last exotic 8K mapper. After

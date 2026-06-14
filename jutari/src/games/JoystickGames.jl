@@ -53,12 +53,12 @@ romsettings_starting_actions(::AirRaidRomSettings)        = Int[1]   # FIRE
 romsettings_starting_actions(::AsterixRomSettings)        = Int[1]   # FIRE
 romsettings_starting_actions(::BeamRiderRomSettings)      = Int[3]   # RIGHT
 romsettings_starting_actions(::DoubleDunkRomSettings)     = Int[10]  # UPFIRE
-romsettings_starting_actions(::ElevatorActionRomSettings) = Int[1]   # FIRE
+romsettings_starting_actions(::ElevatorActionRomSettings) = fill(1, 16)  # 16× FIRE (xitari ElevatorAction.cpp loop)
 romsettings_starting_actions(::GopherRomSettings)         = Int[1]   # FIRE
-romsettings_starting_actions(::GravitarRomSettings)       = Int[1]   # FIRE
+romsettings_starting_actions(::GravitarRomSettings)       = fill(1, 16)  # 16× FIRE (xitari Gravitar.cpp loop)
 romsettings_starting_actions(::JourneyEscapeRomSettings)  = Int[1]   # FIRE
 romsettings_starting_actions(::PrivateEyeRomSettings)     = Int[2]   # UP
-romsettings_starting_actions(::SkiingRomSettings)         = Int[5]   # DOWN
+romsettings_starting_actions(::SkiingRomSettings)         = fill(5, 16)  # 16× DOWN (xitari Skiing.cpp loop)
 romsettings_starting_actions(::UpNDownRomSettings)        = Int[1]   # FIRE
 romsettings_starting_actions(::YarsRevengeRomSettings)    = Int[1]   # FIRE
 

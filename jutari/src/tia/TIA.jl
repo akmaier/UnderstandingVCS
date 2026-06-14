@@ -442,6 +442,30 @@ end
     return ((c - HBLANK_COLOR_CLOCKS) + 4) % SCREEN_WIDTH
 end
 
+# Task #103 (frostbite): RESMP* (reset-missile-to-player) lock→unlock edge.
+# xitari case 0x28/0x29: when RESMP D1 goes 1→0 (the missile is *released*
+# from being locked to its player) the chip snaps the missile's position to
+# its player's centre — `POSM* = (POSP* + middle) % 160`, where `middle` is
+# 8/16/4 for NUSIZ size codes 5/7/else (double/quad/normal player). jutari
+# previously stored RESMP* without this reposition (note in #85), so a
+# released missile kept a stale RESM*/HMOVE position and could overlap its
+# player at the wrong X — the frostbite spurious CXM1P-D6 (M1-P1) collision.
+# `player` is 0 or 1.
+@inline function _resmp_reposition!(tia::TIAState, player::Int,
+                                    old_d1::UInt8, new_val::UInt8)
+    (old_d1 != 0 && (new_val & 0x02) == 0) || return nothing
+    if player == 0
+        n = tia.registers[W_NUSIZ0 + 1] & 0x07
+        middle = n == 0x05 ? 8 : n == 0x07 ? 16 : 4
+        tia.m0_x = mod(tia.p0_x + middle, SCREEN_WIDTH)
+    else
+        n = tia.registers[W_NUSIZ1 + 1] & 0x07
+        middle = n == 0x05 ? 8 : n == 0x07 ? 16 : 4
+        tia.m1_x = mod(tia.p1_x + middle, SCREEN_WIDTH)
+    end
+    return nothing
+end
+
 """
     _hm_offset(hm) -> Int
 
@@ -529,6 +553,12 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
         return nothing                      # register update deferred
     end
 
+    # Task #103 (frostbite): capture the pre-store RESMP D1 so the
+    # immediate (HBLANK) path can detect the lock→unlock (1→0) edge that
+    # snaps the missile to its player center (xitari case 0x28/0x29).
+    resmp_old_d1 = (reg == W_RESMP0 || reg == W_RESMP1) ?
+        (tia.registers[reg + 1] & 0x02) : UInt8(0)
+
     tia.registers[reg + 1] = value8
 
     if reg == W_WSYNC
@@ -578,6 +608,10 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
         tia.m1_x = _resp_missile_ball_position(beam_cc)
     elseif reg == W_RESBL
         tia.bl_x = _resp_missile_ball_position(beam_cc)
+    elseif reg == W_RESMP0
+        _resmp_reposition!(tia, 0, resmp_old_d1, value8)
+    elseif reg == W_RESMP1
+        _resmp_reposition!(tia, 1, resmp_old_d1, value8)
     elseif reg == W_HMOVE
         # P3i-f + P3i-g: use cycle-aware motion table (xitari's
         # ourCompleteMotionTable) indexed by the *effective* CPU cycle

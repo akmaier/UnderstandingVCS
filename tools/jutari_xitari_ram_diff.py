@@ -48,6 +48,15 @@ REPO = Path(__file__).resolve().parents[1]
 DEFAULT_ACTIONS = REPO / "tools/breakout_video/output/breakout_random_actions.txt"
 
 
+def _tmp(name: str, rom: Path) -> Path:
+    """Per-(process, ROM) unique temp path. The sweep runs ROMs in parallel
+    threads (`sweep_jutari_ram.py --jobs N`); fixed `/tmp/_foo` names made the
+    workers clobber each other's action/RAM files → garbage diffs + ERRORs.
+    Key the temp file by ROM stem + PID so concurrent workers never collide."""
+    import os
+    return Path(f"/tmp/_{name}_{rom.stem}_{os.getpid()}")
+
+
 def _load_actions(path: Path) -> list[int]:
     out = []
     with open(path) as f:
@@ -60,7 +69,7 @@ def _load_actions(path: Path) -> list[int]:
 
 def _run_xitari(rom: Path, actions: list[int], n: int) -> list[np.ndarray]:
     """Invoke tools/trace_dump and parse per-frame RAM."""
-    acts_path = Path("/tmp/_xitari_actions.txt")
+    acts_path = _tmp("xitari_actions", rom)
     acts_path.write_text("\n".join(str(a) for a in actions[:n]))
     r = subprocess.run(
         [str(REPO / "tools/trace_dump"),
@@ -86,11 +95,11 @@ def _run_xitari(rom: Path, actions: list[int], n: int) -> list[np.ndarray]:
 def _run_jutari(rom: Path, actions: list[int], n: int) -> list[np.ndarray]:
     """Invoke tools/jutari_trace_dump.jl via the synthetic trace
     fixture pattern that `pong_3way_ram_diff.py` uses."""
-    fixture_path = Path("/tmp/_jutari_actions_trace.jsonl")
+    fixture_path = _tmp("jutari_actions_trace", rom)
     with open(fixture_path, "w") as f:
         for i, a in enumerate(actions[:n]):
             f.write(f'{{"frame": {i+1}, "action": {a}, "ram": ""}}\n')
-    out_path = Path("/tmp/_jutari_rams.jsonl")
+    out_path = _tmp("jutari_rams", rom)
     subprocess.run(
         ["julia", "--project=" + str(REPO / "jutari"),
          str(REPO / "tools/jutari_trace_dump.jl"),

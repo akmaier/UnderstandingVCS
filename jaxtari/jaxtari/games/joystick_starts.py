@@ -34,7 +34,7 @@ class DoubleDunkRomSettings(GenericRomSettings):
 
 class ElevatorActionRomSettings(GenericRomSettings):
     def starting_actions(self) -> list[int]:
-        return [1]   # FIRE
+        return [1] * 16   # 16× FIRE (xitari ElevatorAction.cpp loop)
 
 
 class GopherRomSettings(GenericRomSettings):
@@ -44,7 +44,7 @@ class GopherRomSettings(GenericRomSettings):
 
 class GravitarRomSettings(GenericRomSettings):
     def starting_actions(self) -> list[int]:
-        return [1]   # FIRE
+        return [1] * 16   # 16× FIRE (xitari Gravitar.cpp loop)
 
 
 class JourneyEscapeRomSettings(GenericRomSettings):
@@ -59,7 +59,7 @@ class PrivateEyeRomSettings(GenericRomSettings):
 
 class SkiingRomSettings(GenericRomSettings):
     def starting_actions(self) -> list[int]:
-        return [5]   # DOWN
+        return [5] * 16   # 16× DOWN (xitari Skiing.cpp loop)
 
 
 class UpNDownRomSettings(GenericRomSettings):

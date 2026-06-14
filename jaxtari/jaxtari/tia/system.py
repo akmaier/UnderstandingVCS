@@ -769,13 +769,34 @@ def tia_poke(tia: TIAState, addr: int, value: int,
     if reg in (W_RESMP0, W_RESMP1) and beam_cc >= HBLANK_COLOR_CLOCKS:
         delay = _poke_activation_delay(reg, beam_cc)
         activation_clock = beam_cc + delay
-        # NOTE: RESMP* 1→0 transition reposition (xitari snaps m0_x to
-        # p0_x + middle) is INTENTIONALLY OMITTED — adding it
-        # regressed space_invaders (+30 px) and pitfall (+231 px).
-        # See jutari TIA.jl deferred-block comment for context.
+        # Task #103 (frostbite): the RESMP* 1→0 (unlock) reposition — snap the
+        # missile to its player centre — fires IMMEDIATELY here at poke time
+        # (like jutari, and like a RES* position write). This is DISTINCT from
+        # putting the reposition in the DEFERRED apply (at the activation clock),
+        # which regressed space_invaders (+30 px) / pitfall (+231 px); only the
+        # register STORE (the missile-visibility gate) is deferred so the
+        # per-color-clock render still sees the right RESMP value at each cc.
+        # Before this, a visible-region RESMP write returned here WITHOUT
+        # repositioning (the reposition lived only in the immediate elseif
+        # chain, reached solely by HBLANK writes), so a missile released
+        # mid-scanline kept a stale position and spuriously collided with its
+        # player → frostbite CXM1P-D6 (RAM[$34]/[$36] = $47 vs xitari $07),
+        # which also broke jaxtari≡jutari (PXC2).
+        repl = {}
+        old_value = int(tia.registers[reg])
+        if (old_value & 0x02) != 0 and (value8 & 0x02) == 0:
+            if reg == W_RESMP0:
+                nusiz_lo = int(tia.registers[W_NUSIZ0]) & 0x07
+                middle = 8 if nusiz_lo == 0x05 else 16 if nusiz_lo == 0x07 else 4
+                repl["m0_x"] = (int(tia.p0_x) + middle) % 160
+            else:
+                nusiz_lo = int(tia.registers[W_NUSIZ1]) & 0x07
+                middle = 8 if nusiz_lo == 0x05 else 16 if nusiz_lo == 0x07 else 4
+                repl["m1_x"] = (int(tia.p1_x) + middle) % 160
         return tia._replace(
             pending_writes=tia.pending_writes
             + ((activation_clock, reg, value8),),
+            **repl,
         )
 
     # Task #84 (2026-06-10): also defer GRP0/GRP1 (render value).
