@@ -24,6 +24,13 @@ from jaxtari.games.breakout import BreakoutRomSettings
 from jaxtari.games.pong import PongRomSettings
 from jaxtari.games.atari_classics import (
     PitfallRomSettings, EnduroRomSettings, SeaquestRomSettings,
+    BeamriderRomSettings,
+)
+from jaxtari.games.joystick_starts import (
+    AirRaidRomSettings, AsterixRomSettings, DoubleDunkRomSettings,
+    ElevatorActionRomSettings, GopherRomSettings, GravitarRomSettings,
+    JourneyEscapeRomSettings, PrivateEyeRomSettings, SkiingRomSettings,
+    UpNDownRomSettings, YarsRevengeRomSettings,
 )
 
 # ROM basename → RomSettings constructor. Defaults to bare StellaEnvironment
@@ -38,6 +45,19 @@ _SETTINGS_BY_BASENAME = {
     "pitfall.bin":  PitfallRomSettings,
     "enduro.bin":   EnduroRomSettings,
     "seaquest.bin": SeaquestRomSettings,
+    # Task #101 — getStartingActions-only joystick games (mirror of jutari).
+    "air_raid.bin":        AirRaidRomSettings,
+    "asterix.bin":         AsterixRomSettings,
+    "beam_rider.bin":      BeamriderRomSettings,
+    "double_dunk.bin":     DoubleDunkRomSettings,
+    "elevator_action.bin": ElevatorActionRomSettings,
+    "gopher.bin":          GopherRomSettings,
+    "gravitar.bin":        GravitarRomSettings,
+    "journey_escape.bin":  JourneyEscapeRomSettings,
+    "private_eye.bin":     PrivateEyeRomSettings,
+    "skiing.bin":          SkiingRomSettings,
+    "up_n_down.bin":       UpNDownRomSettings,
+    "yars_revenge.bin":    YarsRevengeRomSettings,
 }
 
 

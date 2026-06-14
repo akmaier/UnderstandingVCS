@@ -106,6 +106,11 @@ class BeamriderRomSettings(RomSettings):
     def lives(self, console: Console) -> int:
         return int(console.bus.ram[BEAMRIDER_LIVES_ADDR & 0x7F]) + 1
 
+    def starting_actions(self) -> list[int]:
+        # Task #101: xitari BeamRider.cpp::getStartingActions = [PLAYER_A_RIGHT]
+        # (= action 3). Mirror of jutari BeamRiderRomSettings.
+        return [3]
+
 
 # --------------------------------------------------------------------------- #
 # Enduro

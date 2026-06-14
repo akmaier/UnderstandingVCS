@@ -61,6 +61,19 @@ from jaxtari.games.pong import (
     PONG_TARGET_SCORE,
     PongRomSettings,
 )
+from jaxtari.games.joystick_starts import (
+    AirRaidRomSettings,
+    AsterixRomSettings,
+    DoubleDunkRomSettings,
+    ElevatorActionRomSettings,
+    GopherRomSettings,
+    GravitarRomSettings,
+    JourneyEscapeRomSettings,
+    PrivateEyeRomSettings,
+    SkiingRomSettings,
+    UpNDownRomSettings,
+    YarsRevengeRomSettings,
+)
 from jaxtari.games.rom_settings import GenericRomSettings, RomSettings
 from jaxtari.games.space_invaders import (
     SI_LIVES_ADDR,
@@ -119,4 +132,16 @@ __all__ = [
     "SeaquestRomSettings",
     "SEAQUEST_SCORE_ADDRS",
     "SEAQUEST_TERM_ADDR",
+    # Task #101 — starting-action-only joystick games (mirror of jutari).
+    "AirRaidRomSettings",
+    "AsterixRomSettings",
+    "DoubleDunkRomSettings",
+    "ElevatorActionRomSettings",
+    "GopherRomSettings",
+    "GravitarRomSettings",
+    "JourneyEscapeRomSettings",
+    "PrivateEyeRomSettings",
+    "SkiingRomSettings",
+    "UpNDownRomSettings",
+    "YarsRevengeRomSettings",
 ]

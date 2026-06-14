@@ -76,13 +76,38 @@ def write_table(rows: list[dict], done: int):
                     f"| {r['status']} | {r.get('secs', 0):.0f} |\n")
 
 def main():
-    rows = []
-    for i, g in enumerate(NAMES):
-        res = run_one(g)
-        rows.append(res)
-        write_table(rows, i + 1)
-        print(f"[{i+1}/{len(NAMES)}] {g}: {res['status']} "
-              f"maxdiff={res.get('maxdiff')} ({res.get('secs',0):.0f}s)", flush=True)
+    import argparse, os, threading
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    p = argparse.ArgumentParser(description="64-ROM jutari RAM-conformance sweep.")
+    # Across-ROM parallelism: each ROM is an independent xitari+jutari subprocess
+    # pipeline, so worker threads run truly concurrently (GIL released during
+    # subprocess.run). Default to a load-friendly half-cores; raise with --jobs
+    # on an idle machine. 1 = the old sequential behavior.
+    default_jobs = max(1, (os.cpu_count() or 4) // 2)
+    p.add_argument("--jobs", type=int, default=default_jobs,
+                   help=f"parallel ROMs (default {default_jobs} = half cores)")
+    p.add_argument("--games", nargs="*", default=NAMES,
+                   help="subset of games to run (default: all 64)")
+    args = p.parse_args()
+    games = args.games
+
+    results: dict[str, dict] = {}
+    lock = threading.Lock()
+    done = 0
+    print(f"sweep: {len(games)} ROMs, {args.jobs} parallel workers", flush=True)
+    with ThreadPoolExecutor(max_workers=args.jobs) as ex:
+        futs = {ex.submit(run_one, g): g for g in games}
+        for fut in as_completed(futs):
+            res = fut.result()
+            with lock:
+                results[res["game"]] = res
+                done += 1
+                # Stable game-order rows for the table; only completed so far.
+                rows = [results[g] for g in NAMES if g in results]
+                write_table(rows, done)
+                print(f"[{done}/{len(games)}] {res['game']}: {res['status']} "
+                      f"maxdiff={res.get('maxdiff')} ({res.get('secs',0):.0f}s)",
+                      flush=True)
     print("DONE. Results -> %s" % OUT)
 
 if __name__ == "__main__":
