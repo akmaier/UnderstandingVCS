@@ -53,19 +53,23 @@ def test_breakout_score_zero_at_start():
     assert s.get_reward(c) == 0
 
 
-def test_breakout_terminal_when_ram_lives_is_zero():
-    """Fresh RAM has lives=0, which is "terminal" by the strict
-    contract — in real Pong runs the cart boots into lives=N during
-    env.reset's burn-in, so this matches the documented "fresh-RAM
-    is already game-over" detector behaviour."""
+def test_breakout_not_terminal_before_started():
+    """Fresh RAM has lives=0 but the game hasn't STARTED yet (lives never
+    observed at 5). The sticky `_started` latch (BreakoutRomSettings
+    docstring) deliberately suppresses the boot-time false-terminal, so
+    a fresh console must report NOT terminal — that's the latch's whole
+    purpose. (Previously this test asserted the pre-latch behaviour.)"""
     s = BreakoutRomSettings()
-    assert s.is_terminal(_console_with({}))
+    assert not s.is_terminal(_console_with({}))
+    assert not s.is_terminal(_console_with({BREAKOUT_LIVES_ADDR: 0}))
 
 
-def test_breakout_terminal_when_lives_zero():
+def test_breakout_terminal_after_started_then_lives_zero():
+    """Terminal = started && lives == 0. Observe lives==5 first (latches
+    `_started`), then lives==0 → game over."""
     s = BreakoutRomSettings()
-    c = _console_with({BREAKOUT_LIVES_ADDR: 0})
-    assert s.is_terminal(c)
+    assert not s.is_terminal(_console_with({BREAKOUT_LIVES_ADDR: 5}))  # start
+    assert s.is_terminal(_console_with({BREAKOUT_LIVES_ADDR: 0}))      # then 0
 
 
 def test_breakout_not_terminal_with_lives_remaining():
