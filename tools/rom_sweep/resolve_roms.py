@@ -33,11 +33,28 @@ def norm(s: str) -> str:
 def penalty(fn: str) -> int:
     low = fn.lower()
     p = 0
+    # Region / dump-quality penalties.
     for bad, w in (("pal", 5), ("prototype", 4), ("beta", 3), ("hack", 6),
                    ("secam", 5), ("(e)", 2), ("(g)", 2), ("(f)", 2),
                    ("genesis", 8), ("unknown", 1)):
         if bad in low:
             p += w
+    # Clone / pirate / multicart distributor penalties — prefer the canonical
+    # NTSC release (Atari/Activision/Parker Bros/Sega/Imagic/...) over these
+    # Brazilian-clone / multicart dumps that the fuzzy match otherwise picks.
+    for clone, w in (("dactari", 9), ("milmar", 9), ("fotomania", 9),
+                     ("bit corp", 9), ("bitcorp", 9), ("32 in 1", 9),
+                     ("4 in 1", 9), ("zellers", 7), ("panda", 7),
+                     ("puzzy", 9), ("rentacom", 9), ("digivision", 9),
+                     ("gamegear", 9), ("cce", 7), ("vdi", 7),
+                     ("home vision", 7), ("hitech", 7), ("quelle", 7),
+                     ("zirok", 9), ("supergame", 9), ("dynacom", 9)):
+        if clone in low:
+            p += w
+    # Prefer dumps that look canonical (have a 4-digit year).
+    import re as _re
+    if not _re.search(r"\((19[78]\d)\)", fn):
+        p += 1
     return p
 
 # Index the collection by normalized title.

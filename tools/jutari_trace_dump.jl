@@ -26,7 +26,11 @@ using JuTari
 using JuTari.Env: StellaEnvironment, env_reset!, env_step!, get_ram, frame_number
 using JuTari.RomSettingsModule: GenericRomSettings, RomSettings
 using JuTari.PaddleGames: BreakoutRomSettings, PongRomSettings
-using JuTari.JoystickGames: PitfallRomSettings, EnduroRomSettings
+using JuTari.JoystickGames: PitfallRomSettings, EnduroRomSettings,
+    AirRaidRomSettings, AsterixRomSettings, BeamRiderRomSettings,
+    DoubleDunkRomSettings, ElevatorActionRomSettings, GopherRomSettings,
+    GravitarRomSettings, JourneyEscapeRomSettings, PrivateEyeRomSettings,
+    SkiingRomSettings, UpNDownRomSettings, YarsRevengeRomSettings
 
 # Per-ROM RomSettings autodetection — mirror of jaxtari `tools/check_trace.py`.
 # Activates the dump-pot model + paddle-action handling for paddle
@@ -34,11 +38,25 @@ using JuTari.JoystickGames: PitfallRomSettings, EnduroRomSettings
 # Pitfall + Enduro override `romsettings_starting_actions` so
 # `env_reset!` emulates the xitari startup pose (UP / FIRE
 # respectively) and frame-0 RAM matches xitari (tasks #81/#82).
+# Task #100 follow-up: 12 more games whose xitari getStartingActions our
+# generic boot was missing (the frame-0 divergences in the 64-ROM sweep).
 const _SETTINGS_BY_BASENAME = Dict{String,Function}(
-    "breakout.bin" => () -> BreakoutRomSettings(),
-    "pong.bin"     => () -> PongRomSettings(),
-    "pitfall.bin"  => () -> PitfallRomSettings(),
-    "enduro.bin"   => () -> EnduroRomSettings(),
+    "breakout.bin"        => () -> BreakoutRomSettings(),
+    "pong.bin"            => () -> PongRomSettings(),
+    "pitfall.bin"         => () -> PitfallRomSettings(),
+    "enduro.bin"          => () -> EnduroRomSettings(),
+    "air_raid.bin"        => () -> AirRaidRomSettings(),
+    "asterix.bin"         => () -> AsterixRomSettings(),
+    "beam_rider.bin"      => () -> BeamRiderRomSettings(),
+    "double_dunk.bin"     => () -> DoubleDunkRomSettings(),
+    "elevator_action.bin" => () -> ElevatorActionRomSettings(),
+    "gopher.bin"          => () -> GopherRomSettings(),
+    "gravitar.bin"        => () -> GravitarRomSettings(),
+    "journey_escape.bin"  => () -> JourneyEscapeRomSettings(),
+    "private_eye.bin"     => () -> PrivateEyeRomSettings(),
+    "skiing.bin"          => () -> SkiingRomSettings(),
+    "up_n_down.bin"       => () -> UpNDownRomSettings(),
+    "yars_revenge.bin"    => () -> YarsRevengeRomSettings(),
 )
 _settings_for_rom(rom_path::AbstractString) =
     haskey(_SETTINGS_BY_BASENAME, basename(rom_path)) ?

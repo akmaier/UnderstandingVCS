@@ -166,23 +166,50 @@ class Cart:
                 f"rom_size={len(self.rom)}, bank={self.current_bank})")
 
 
-def make_cart(rom: jnp.ndarray, *, kind: int | None = None) -> Cart:
-    """Build a `Cart`, auto-detecting the kind from ROM size by default.
+# xitari `Cartridge::isProbablyE0` — known E0 bankswitch signatures (MESS).
+# An 8K image is E0 (Parker Bros) rather than F8 if any of these byte
+# sequences appears. Mirrors jutari `Cart.jl::_is_probably_e0`.
+_E0_SIGNATURES = (
+    b"\x8d\xe0\x1f",   # STA $1FE0
+    b"\x8d\xe0\x5f",   # STA $5FE0
+    b"\x8d\xe9\xff",   # STA $FFE9
+    b"\xad\xe9\xff",   # LDA $FFE9
+    b"\xad\xed\xff",   # LDA $FFED
+    b"\xad\xf3\xbf",   # LDA $BFF3
+)
 
-    Pass `kind=KIND_F8SC` to override the auto-detection for an 8K cart
-    you know to be F8SC (size alone can't distinguish F8 from F8SC).
-    Signature-based detection for the ambiguous formats is a deferred
-    follow-up; for now we assume the canonical mapping in `_SIZE_TO_KIND`
-    and trust the caller for overrides.
+
+def _is_probably_e0(rom) -> bool:
+    img = bytes(int(b) & 0xFF for b in rom)
+    return any(img.find(sig) >= 0 for sig in _E0_SIGNATURES)
+
+
+def _autodetect_kind(rom) -> int:
+    """Content-aware mapper detection (task #100). 8K is ambiguous (F8 vs E0
+    vs FE); distinguish E0 by signature like xitari `autodetectType`. F8SC
+    and FE remain explicit-`kind=` overrides (FE = Robot Tank, deferred)."""
+    n = len(rom)
+    if n not in _SIZE_TO_KIND:
+        raise ValueError(
+            f"unrecognised ROM size {n} bytes. "
+            f"P5 supports sizes {sorted(_SIZE_TO_KIND.keys())}."
+        )
+    if n == 8192 and _is_probably_e0(rom):
+        return KIND_E0
+    return _SIZE_TO_KIND[n]
+
+
+def make_cart(rom: jnp.ndarray, *, kind: int | None = None) -> Cart:
+    """Build a `Cart`, auto-detecting the kind by size + content by default.
+
+    Task #100: 8K carts are scanned for E0 bankswitch signatures (Parker
+    Bros titles — Tutankham, Montezuma's Revenge, James Bond) and routed to
+    E0 instead of F8. Pass `kind=KIND_F8SC` to override for an SC cart;
+    FE (Robot Tank) is deferred.
     """
     n = len(rom)
     if kind is None:
-        if n not in _SIZE_TO_KIND:
-            raise ValueError(
-                f"unrecognised ROM size {n} bytes. "
-                f"P5 supports sizes {sorted(_SIZE_TO_KIND.keys())}."
-            )
-        kind = _SIZE_TO_KIND[n]
+        kind = _autodetect_kind(rom)
     else:
         expected = _SC_EXPECTED_SIZE.get(kind)
         if expected is not None and n != expected:

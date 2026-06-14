@@ -14,6 +14,50 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🎯 Task #100 — SOLVED: E0 cart auto-detect + 12 getStartingActions → 64-ROM sweep 44→55 bit-exact; remaining triaged (2026-06-14)
+
+User: "Fix #100, port the 12 getStartingActions and triage the 4 small ones." Closed the
+20 divergent games from the 64-ROM jutari RAM-conformance sweep into three groups.
+
+**(A) #100 — cart auto-detect was size-only.** jutari `make_cart`/jaxtari `make_cart`
+mapped 8 KB → F8 unconditionally, but Parker Bros 8 KB titles use the **E0** mapper
+(4×1 KB slice slots), so Tutankham / Montezuma's Revenge / James Bond were banked as F8
+→ wrong code → large frame-0 divergence. Fix: content-based detection mirroring xitari
+`Cartridge::autodetectType` — scan the image for the 6 MESS E0 bankswitch signatures
+(`isProbablyE0`) and route 8 KB matches to E0, else F8.
+  - jaxtari already had E0 *banking* (P5c) but size-only detection — added `_autodetect_kind`
+    + `_is_probably_e0` (`jaxtari/cart/system.py`).
+  - jutari had neither — **ported E0 banking** (slice slots, `$1FE0..$1FF7` hotspots,
+    fixed slice 7) **+ detection** into `src/cart/Cart.jl`.
+  - Result: jamesbond/montezuma/tutankham **0 b/f**; ms_pacman (real F8 8 KB) stays 0
+    (no regression); jutari `Pkg.test` + jaxtari `test_cart`/`test_p5c_e0` pass.
+
+**(B) 12 getStartingActions ported (jutari).** Added 12 minimal RomSettings
+(`src/games/JoystickGames.jl`) overriding only `romsettings_starting_actions`, registered
+in `tools/jutari_trace_dump.jl`. Action codes (xitari ale_interface.hpp): FIRE=1, UP=2,
+RIGHT=3, DOWN=5, UPFIRE=10. **8 of 12 → bit-exact**: asterix, beam_rider, double_dunk,
+gopher, journey_escape, private_eye, up_n_down, yars_revenge. (jaxtari mirror of the 12 is
+a mechanical follow-up — the jutari sweep is the headline.)
+
+**(C) triage of the rest (canonical NTSC dumps + correct cart + starting action, RAM-diff
+30 frames):**
+  - **robotank 81 b/f** — **FE** mapper (Activision JSR-driven banking, the most exotic
+    8 KB mapper; 1 ALE game). Deferred — needs the FE data-bus-watch banking in both ports.
+  - **air_raid 43** — only a **(PAL)** dump exists in the collection; xitari format-detect
+    vs our NTSC-only timing. Not an emulation bug on the NTSC path.
+  - **elevator_action 98** — only a **(Prototype)** dump exists (game was never released).
+  - **Genuine small residuals** (canonical Atari/Activision NTSC dump, correct cart +
+    starting action, STILL diverge — confirmed by swapping in canonical dumps): frostbite
+    **2**, amidar **11**, surround **15**, qbert **56**, skiing **85**, gravitar **93**.
+    These are real per-game emulation residuals (likely console-switch/difficulty reads or
+    sub-cycle boot timing), each a focused deep-dive in the seaquest(#80)/enduro(#99) mold.
+    Resolver hardened to prefer canonical dumps over Brazilian-clone/multicart matches.
+
+**Net: 64-ROM jutari RAM-conformance 44 → 55 bit-exact.** Remaining 9 = 1 FE + 1 PAL-only
++ 1 prototype-only + 6 genuine residuals (own tasks).
+
+---
+
 ### 🎯 Task #99 — SOLVED: enduro road-marker offset closed; ALL 6 ROMs bit-exact RAM + 0 px screen, both ports (2026-06-14)
 
 **Supersedes the "DEFERRED" entry below.** After the audit pinned the object (Missile 0

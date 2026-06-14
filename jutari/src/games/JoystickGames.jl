@@ -20,7 +20,47 @@ using ..RomSettingsModule: RomSettings
 using ..ConsoleModule: Console
 import ..RomSettingsModule: romsettings_starting_actions
 
-export PitfallRomSettings, EnduroRomSettings
+export PitfallRomSettings, EnduroRomSettings,
+       AirRaidRomSettings, AsterixRomSettings, BeamRiderRomSettings,
+       DoubleDunkRomSettings, ElevatorActionRomSettings, GopherRomSettings,
+       GravitarRomSettings, JourneyEscapeRomSettings, PrivateEyeRomSettings,
+       SkiingRomSettings, UpNDownRomSettings, YarsRevengeRomSettings
+
+# --------------------------------------------------------------------------- #
+# Task #100 follow-up: 12 joystick games whose only conformance-relevant
+# per-game behavior is xitari's `getStartingActions()` (a single action the
+# ALE harness applies AFTER the boot burn). Without it our generic NOOP boot
+# is 1 starting-action behind xitari → frame-0 RAM divergence in the 64-ROM
+# sweep. Action codes per xitari/ale_interface.hpp: FIRE=1, UP=2, RIGHT=3,
+# DOWN=5, UPFIRE=10. Source: each game's
+# `xitari/games/supported/<Game>.cpp::getStartingActions`.
+# Scoring is left to GenericRomSettings (irrelevant for conformance).
+# --------------------------------------------------------------------------- #
+struct AirRaidRomSettings        <: RomSettings end
+struct AsterixRomSettings        <: RomSettings end
+struct BeamRiderRomSettings      <: RomSettings end
+struct DoubleDunkRomSettings     <: RomSettings end
+struct ElevatorActionRomSettings <: RomSettings end
+struct GopherRomSettings         <: RomSettings end
+struct GravitarRomSettings       <: RomSettings end
+struct JourneyEscapeRomSettings  <: RomSettings end
+struct PrivateEyeRomSettings     <: RomSettings end
+struct SkiingRomSettings         <: RomSettings end
+struct UpNDownRomSettings        <: RomSettings end
+struct YarsRevengeRomSettings    <: RomSettings end
+
+romsettings_starting_actions(::AirRaidRomSettings)        = Int[1]   # FIRE
+romsettings_starting_actions(::AsterixRomSettings)        = Int[1]   # FIRE
+romsettings_starting_actions(::BeamRiderRomSettings)      = Int[3]   # RIGHT
+romsettings_starting_actions(::DoubleDunkRomSettings)     = Int[10]  # UPFIRE
+romsettings_starting_actions(::ElevatorActionRomSettings) = Int[1]   # FIRE
+romsettings_starting_actions(::GopherRomSettings)         = Int[1]   # FIRE
+romsettings_starting_actions(::GravitarRomSettings)       = Int[1]   # FIRE
+romsettings_starting_actions(::JourneyEscapeRomSettings)  = Int[1]   # FIRE
+romsettings_starting_actions(::PrivateEyeRomSettings)     = Int[2]   # UP
+romsettings_starting_actions(::SkiingRomSettings)         = Int[5]   # DOWN
+romsettings_starting_actions(::UpNDownRomSettings)        = Int[1]   # FIRE
+romsettings_starting_actions(::YarsRevengeRomSettings)    = Int[1]   # FIRE
 
 """
     PitfallRomSettings
