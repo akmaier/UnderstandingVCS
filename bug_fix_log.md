@@ -4956,3 +4956,27 @@ sl137 (the cols-96-111 band = right-half reflected PF2 bits 0-3, rendered at
 cc164-179, BEFORE PF0@176) — i.e. a cross-scanline racing-the-beam PF-register
 carry difference, to be chased with the harness across consecutive scanlines.
 Net: do NOT touch the (correct) beam_cc / deferred-write timing.
+
+### 🔬 tutankham root-cause via completed harness (XI_POKE_DUMP) — WSYNC/boundary beam phase (2026-06-16)
+
+Completed the render harness: added an env-gated `XI_POKE_DUMP` to xitari
+TIA::poke (local diagnostic in the git-excluded xitari, like the existing
+System bus-trace hook) that prints every poke's TRUE frame-relative activation
+(`(clock - myClockWhenFrameStarted)` + delay, wrapped) — the reliable PF/sprite
+timing reference the `--bus-trace` cc could NOT give (it's cpu_cycles-derived,
+offset by the startFrame carry). tools/render_diff.py now prints xitari's true
+activations beside jutari's pending activations. (Harness degrades gracefully if
+the xitari dump isn't built.)
+
+This pinned tutankham's 80px band DEFINITIVELY. On sl137 the deferred-write
+DELAYS match (CTRLPF→150, PF0→176, PF1→204 identical in both). The divergence is
+the PF2=0 write: **xitari activates it at frame-relative x=3 — the START of sl137
+(post-WSYNC) — so the whole visible scanline has PF2=0 → cols 96-111 (reflected
+PF2 bits 0-3) render background. jutari activates the SAME write at cc236 (END of
+sl137), so cols 96-111 keep the carried PF2=0x0f → playfield.** A ~one-scanline
+(228cc) phase gap (jutari beam_cc 231 vs xitari x=3=231%228) for a TIA write that
+lands right at a WSYNC/scanline boundary. So it is NOT the (verified-correct)
+deferred-write delay — it's how jutari's `beam_cc` maps a post-WSYNC / boundary
+write to the new scanline's start. Shared WSYNC/beam logic (breakout/pong are
+pixel-exact through WSYNC), so any fix must be gated on the full screen+RAM sweep.
+Harness is now the verifier for it.

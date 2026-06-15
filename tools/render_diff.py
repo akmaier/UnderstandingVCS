@@ -77,6 +77,32 @@ def xitari_pokes(rom, acts, frame, scanline):
     return pokes
 
 
+def xitari_pf_activations(rom, acts, frame, scanline):
+    """xitari's TRUE frame-relative PF poke activations (XI_POKE_DUMP, env-gated
+    dump in xitari TIA::poke's PF-delay branch). Unlike --bus-trace cc, this is
+    the real rendered beam position (clock - myClockWhenFrameStarted), so PF
+    timing lines up with jutari's pending activations."""
+    env = dict(os.environ, XI_POKE_DUMP="1")
+    r = subprocess.run([str(TRACE_DUMP), "--rom", str(rom), "--actions", str(acts),
+                        "--max-frames", str(frame + 2)],
+                       capture_output=True, text=True, timeout=600, env=env)
+    out = []
+    seen = set()
+    for ln in r.stderr.splitlines():
+        if not ln.startswith("XIPOKE "):
+            continue
+        kv = dict(p.split("=") for p in ln.split()[1:])
+        if int(kv["sl"]) != scanline:
+            continue
+        key = (kv["addr"], kv["x"], kv["val"])
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append((int(kv["addr"], 16), int(kv["x"]), int(kv["delay"]),
+                    int(kv["act"]), int(kv["val"])))
+    return out
+
+
 def jutari_state(rom, acts, frame, row):
     r = subprocess.run(["julia", "--project=" + str(REPO / "jutari"), str(RENDER_JL),
                         "--rom", str(rom), "--actions", str(acts),
@@ -159,6 +185,16 @@ def main():
         print(f"\njutari pending-write activations on scanline {sl} ({len(pend)}):")
         for act, reg, val in pend:
             print(f"    activates cc={act:3d}  {REGNAME.get(reg, hex(reg)):7s} = {val:#04x}({val})")
+
+    # xitari's TRUE frame-relative PF activations (XI_POKE_DUMP; needs the
+    # env-gated dump in xitari TIA::poke). The reliable PF-timing reference —
+    # the --bus-trace cc above is CPU-cycle-derived and offset by the startFrame
+    # carry, so compare jutari's pending against THESE, not the bus-trace cc.
+    xipf = xitari_pf_activations(a.rom, a.actions, a.frame, sl)
+    if xipf:
+        print(f"\nxitari TRUE PF activations on scanline {sl} (frame-relative; XI_POKE_DUMP):")
+        for addr, x, delay, act, val in xipf:
+            print(f"    x={x:3d} delay={delay} -> activate cc={act:3d}  {REGNAME.get(addr, hex(addr)):4s} = {val:#04x}({val})")
 
 
 if __name__ == "__main__":
