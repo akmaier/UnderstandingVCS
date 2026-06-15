@@ -251,13 +251,15 @@ found up_n_down(30)/pacman(33)/qbert(40) defaulting to 34. Adding the overrides:
 Screen 41→**42/64**. **LESSON: check per-game `Display.YStart` BEFORE treating a
 pervasive "shifted/structural" divergence as a sub-cycle render bug.**
 
-**qbert (7664 @ frame 2) — DIAGNOSED, deferred (#114).** RAM bit-exact + screen-
-exact on every frame EXCEPT counted frame 2: a boot→game frame-slice artifact.
-jutari's #106 grey-frame budget makes counted-frame-2 a 235-instr sliver (renders
-black) where xitari's frame 2 spans the full board; same RAM, boundary lands one
-frame off. Fixing means touching the #106 partial-frame slicing (what makes qbert
-RAM bit-exact) — deferred for a focused future pass, not worth the risk for one
-cosmetic boot frame.
+**qbert (7664 @ frame 2) — ✅ SOLVED (#114).** Root cause was NOT frame-slicing:
+jutari and xitari have IDENTICAL TIA frames at the transition; xitari's
+counted-frame-2 IS an 11-scanline short frame but shows the board via its DOUBLE
+FRAMEBUFFER (swap-not-clear) — the short frame renders ~12 rows into the swapped-in
+buffer whose other rows still hold the boot attract board from 2 frames earlier.
+jutari was SINGLE-buffered (spin overwrote the board to black). FIX (render-only):
+added `framebuffer_prev` + a swap armed at frame completion, performed at the next
+`run_until_frame!` start (mirror xitari startFrame). qbert 7664→0; screen 42→43/64;
+RAM 62/64 BYTE-IDENTICAL (no regression); Pkg.test green.
 
 Remaining render long-tail (22 non-exact): journey_escape 325 (object X-position,
 structural), robotank 241, surround 224 (construction-counter NON-BUG), up_n_down

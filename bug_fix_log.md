@@ -4730,3 +4730,42 @@ DECISION: **deferred again** (per the plan's Phase-A gate + fallback). One
 cosmetic boot frame is not worth touching the pristine xitari build or risking the
 RAM-exact 62/64 backbone. Diagnosis substantially deepened for a future session
 that can instrument xitari's screen emission in an out-of-tree scratch build.
+
+### ✅ Task #114 SOLVED (2026-06-15) — jutari was SINGLE-buffered; xitari is DOUBLE-buffered. qbert 7664→0, RAM unchanged.
+
+The user pushed to fix the bit-exactness flaw even at the cost of RAM regression —
+and it turned out there was NO cost: the root cause is render-only.
+
+Instrumented xitari's per-act frame structure via a `TIADebug` friend tap in
+`tools/trace_dump.cpp` (a TOOL — xitari core stays pristine; fast relink, no lib
+rebuild). DECISIVE finding: jutari and xitari have IDENTICAL TIA frame structure
+at qbert's boot transition (frame 1 = spin 3948 sl cutoff, frame 2 = SHORT 11-12
+sl VSYNC, frame 3+ = board), AND xitari's counted frame 2 IS that 11-scanline
+short frame — yet it shows the full board (screen_nz=7664). The board can't be
+rendered in 11 scanlines: it comes from xitari's DOUBLE FRAMEBUFFER
+(`myCurrentFrameBuffer`/`myPreviousFrameBuffer`, swapped in `startFrame`,
+TIA.cxx:537-539, never cleared). The short frame renders ~12 rows into the
+swapped-in buffer whose other ~250 rows still hold the boot attract board from
+TWO frames earlier → board shows. **jutari had a SINGLE framebuffer**, so the
+3948-scanline spin overwrote the board to black → its identical short frame
+rendered black. This is a genuine port flaw, NOT a frame-slicing/timing issue (the
+two earlier hypotheses were both wrong — see the follow-up above).
+
+FIX (render-only): give jutari a double framebuffer. `TIAState` gains
+`framebuffer_prev::Matrix{UInt8}` + `buffer_swap_pending::Bool`. The
+`vsync_reset_pending` drain (frame COMPLETION) arms `buffer_swap_pending` (mirror
+xitari's startFrame-only-on-completion; grey/partial frames don't arm it).
+`run_until_frame!` (Console.jl) swaps `framebuffer ↔ framebuffer_prev` at its
+START when armed — AFTER get_screen has read the just-completed frame, BEFORE
+rendering the next — so a short/partial frame shows the 2-frames-ago buffer for
+un-rendered rows, exactly like xitari. Normal full frames overwrite the whole
+display window, so they're unchanged → no regression.
+
+VERIFIED: **qbert 7664→0 ✅**. Screen scoreboard **42→43/64** pixel-exact, ZERO
+regressions (every other game holds its exact px; pong/breakout/battle_zone/pacman
+/up_n_down unchanged). RAM **62/64 BYTE-IDENTICAL** (render-only — the authorized
+RAM regression was not needed). jutari Pkg.test green. LESSON: xitari/Stella is
+double-buffered with swap-not-clear; a single-buffer port silently diverges on any
+partial/short frame that relies on preserved content. The "keep xitari pristine /
+don't regress RAM" caution was right in spirit but the user was right that
+bit-exactness comes first — and here the faithful fix cost nothing.

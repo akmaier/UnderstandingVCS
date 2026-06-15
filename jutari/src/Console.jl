@@ -93,7 +93,22 @@ scanlines, so the frame can only be sliced by this budget — exactly as in
 xitari — instead of the per-step cutoff that used to live in `tia_advance!`.
 """
 function run_until_frame!(console::Console)
-    start_frame = console.bus.tia.frame
+    # Task #114: xitari's `TIA::update` calls `startFrame()` — which SWAPS the
+    # double framebuffer (TIA.cxx:537-539) — at the START of an update IFF the
+    # previous frame completed (`if(!myPartialFrameFlag)`). jutari's equivalent:
+    # if the previous frame completed (buffer_swap_pending armed at the
+    # vsync_reset_pending drain), swap now, BEFORE rendering the new frame. The
+    # just-completed frame's pixels move to `framebuffer_prev`; the new frame
+    # renders into the swapped-in buffer, whose un-rendered rows still hold the
+    # content from two frames ago — exactly like xitari (qbert's boot→game
+    # short frame shows the preserved board). A grey/partial frame does NOT set
+    # the flag, so it continues the same buffer (no swap) like xitari.
+    tia = console.bus.tia
+    if tia.buffer_swap_pending
+        tia.framebuffer, tia.framebuffer_prev = tia.framebuffer_prev, tia.framebuffer
+        tia.buffer_swap_pending = false
+    end
+    start_frame = tia.frame
     for _ in 1:_UPDATE_INSTRUCTION_BUDGET
         step(console.cpu, console.bus)
         if console.bus.tia.frame != start_frame

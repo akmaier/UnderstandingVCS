@@ -367,6 +367,17 @@ mutable struct TIAState
     # When false, an HMOVE strobe NEVER arms the 8px left-edge blank, regardless
     # of strobe cycle. Default true (62 games); battle_zone/ms_pacman = false.
     allow_hmove_blanks::Bool
+    # Task #114: DOUBLE-BUFFER (mirror xitari's myCurrentFrameBuffer /
+    # myPreviousFrameBuffer, swapped in startFrame, TIA.cxx:537-539). `framebuffer`
+    # is the buffer rendered into THIS frame; `framebuffer_prev` is the other.
+    # On frame COMPLETION (the vsync_reset_pending drain) we set
+    # `buffer_swap_pending`; the NEXT `run_until_frame!` swaps them before
+    # rendering the new frame. So a SHORT/partial frame that renders only a few
+    # scanlines shows the content from TWO frames ago (the swapped-in buffer) for
+    # the un-rendered rows — exactly like xitari. Render-only (no RAM effect);
+    # normal full frames overwrite the whole display window so they are unchanged.
+    framebuffer_prev::Matrix{UInt8}
+    buffer_swap_pending::Bool
 end
 
 # INPT defaults: paddle pots ($80 = centred), triggers idle high (D7=1).
@@ -398,6 +409,8 @@ initial_tia_state() = TIAState(
     false,                             # task #110: color_loss_active = false
     Y_START,                           # task #110: y_start_row = 34 (default YStart)
     true,                              # HmoveBlanks: allow_hmove_blanks = true (default YES)
+    zeros(UInt8, SCREEN_HEIGHT, SCREEN_WIDTH),  # task #114: framebuffer_prev (double-buffer)
+    false,                             # task #114: buffer_swap_pending = false
 )
 
 """
@@ -1058,6 +1071,12 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
         tia.scanline = 0
         tia.vsync_reset_pending = false
         tia.lines_since_frame = 0
+        # Task #114: this frame COMPLETED — arm the double-buffer swap so the
+        # NEXT frame renders into the other buffer (mirror xitari: startFrame
+        # swaps only on completion, never for grey/partial frames). The swap
+        # itself happens at the start of the next `run_until_frame!`, AFTER
+        # get_screen has read this completed frame.
+        tia.buffer_swap_pending = true
     end
     return nothing
 end
