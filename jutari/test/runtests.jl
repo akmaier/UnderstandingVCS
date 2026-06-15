@@ -5891,3 +5891,31 @@ end
         @info "pong rom missing — skipping score-address regression test"
     end
 end
+
+# skiing RAM bit-exactness regression (VSYNC hold-gate rebase, 2026-06-15).
+# skiing's RAM[$00] is a free-running per-frame counter; before the fix jutari
+# double-incremented it on boot frame 2 (one run_until_frame! call swallowed two
+# game-frames because the VSYNC hold-gate clock `vsync_finish_clock` was left in
+# the OLD frame's clock domain when `lines_since_frame` reset at the boot
+# max-scanlines-cutoff transition). The drain now rebases an armed gate by
+# `lines_since_frame*228` (xitari's absolute-clock semantics). xitari's
+# boot_end RAM[$00] = 79 (0x4F) and then +1/frame; assert jutari matches.
+@testset "skiing boot \$00 counter == xitari (VSYNC rebase)" begin
+    _cands = [joinpath(@__DIR__, "..", "..", "tools", "rom_sweep", "roms", "skiing.bin"),
+              joinpath(@__DIR__, "..", "..", "xitari", "roms_all", "skiing.bin"),
+              joinpath(@__DIR__, "..", "..", "xitari", "roms", "skiing.bin")]
+    _idx = findfirst(isfile, _cands)
+    rom_path = _idx === nothing ? _cands[end] : _cands[_idx]
+    if isfile(rom_path)
+        rom = read(rom_path)
+        env = JuTari.Env.StellaEnvironment(rom, JuTari.JoystickGames.SkiingRomSettings())
+        JuTari.Env.env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)
+        @test JuTari.Env.get_ram(env)[0x00 + 1] == 0x4F   # xitari boot_end = 79
+        for i in 1:3
+            JuTari.Env.env_step!(env, 0)                   # NOOP
+            @test JuTari.Env.get_ram(env)[0x00 + 1] == UInt8(0x4F + i)
+        end
+    else
+        @info "skiing rom missing — skipping boot-counter regression test"
+    end
+end

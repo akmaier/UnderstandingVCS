@@ -4769,3 +4769,54 @@ double-buffered with swap-not-clear; a single-buffer port silently diverges on a
 partial/short frame that relies on preserved content. The "keep xitari pristine /
 don't regress RAM" caution was right in spirit but the user was right that
 bit-exactness comes first — and here the faithful fix cost nothing.
+
+### ✅ skiing RAM bit-exact — VSYNC hold-gate not rebased across frame reset (2026-06-15)
+
+User: "Let's work on the remaining RAM problems." Re-opened the two RAM residuals
+(skiing 1 b/f, surround 7 b/f) that #103 had deferred as "construction-counter
+non-bugs." skiing turned out to be a GENUINE jutari frame-slicing bug, NOT a
+construction counter (the #103 triage conflated it with surround).
+
+SYMPTOM: skiing `RAM[$00]` (a free-running per-frame counter, the game re-inits it
+to 0 at boot so the construction probe is irrelevant) was constant **+1** vs
+xitari at every frame (xitari=$50, jutari=$51 over 30 frames). xitari boot_end
+$00=79, jutari=80.
+
+ROOT CAUSE (per-frame trace of $00 + VSYNC events through the boot): jutari
+double-increments $00 on boot frame 2 (0→2 instead of 0→1) — one
+`run_until_frame!` call swallowed TWO game-frames. Mechanism:
+1. The long boot frame ends via the max-scanlines cutoff at lsf=291. In the SAME
+   instruction the game STROBES VSYNC, arming `vsync_finish_clock` (vfc) =
+   frame_clock+228 = 66585 with lsf still 291.
+2. The `vsync_reset_pending` drain resets `lines_since_frame` → 0 (beam color_clock
+   preserved) but LEFT vfc=66585 — now stale: jutari's `frame_clock =
+   lines_since_frame*228 + beam_cc` is FRAME-RELATIVE, so resetting lsf shifted the
+   whole frame_clock domain DOWN by 291*228 while vfc stayed in the old domain.
+3. Next frame: the game's legitimate VSYNC-clear at lsf=3 (frame_clock=693) is
+   tested `693 >= vfc=66585` → REJECTED (gate thinks VSYNC wasn't held ≥1 line),
+   so the frame doesn't end. The game runs a 2nd full frame (INC $00 again),
+   re-arms vfc=59973, clears at lsf=265 → ends. Two frames → one call → +1 $00.
+
+xitari never hits this: `myVSYNCFinishClock` and the frame clock are BOTH in the
+ABSOLUTE `mySystem->cycles()*3` domain — `systemCyclesReset` decrements them
+together (TIA.cxx:274-278) and `startFrame` never invalidates an armed gate.
+
+FIX (TIA.jl `tia_advance!` drain): when the frame resets, rebase an armed gate
+into the new domain — `vfc -= lines_since_frame * 228` (only if vfc != typemax).
+This mirrors xitari's absolute-clock semantics in jutari's frame-relative scheme.
+NO-OP for normal frames: both end paths (VSYNC-clear, max-scanlines cutoff) disarm
+vfc to typemax BEFORE the drain, so this only ever rebases a gate re-armed during
+the very instruction that ended a frame (the boot cutoff→VSYNC transition).
+
+VERIFIED: skiing $00 now 79→80→81→… exactly matching xitari; skiing RAM
+**1 b/f → 0 (BIT-EXACT, 30 frames)**. Full 64-ROM RAM sweep **62→63/64**, ZERO
+regressions (every previously-bit-exact game holds). jutari Pkg.test green.
+
+surround (7 b/f) was UNCHANGED by this fix — confirmed it is a DIFFERENT mechanism:
+`RAM[$7d]` is a TRUE free-running counter from power-on (the game never re-inits
+it), so it carries xitari's construction-probe seed (Console.cxx:199, 60 frames +
+PAL boot). xitari $7d=$a1=161; jutari (no probe)=$42=66. The #103 N-sweep proved
+surround's emulation is otherwise bit-exact (N=190 jutari probe frames → maxdiff
+0). A principled fix needs jutari to replicate xitari's construction probe +
+keep-RAM reset — bigger and riskier (touches every game's boot); left as the one
+remaining RAM residual at 63/64.

@@ -1067,6 +1067,26 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
         # 0x01). Only active when colour-loss is enabled (PAL/SECAM); NTSC
         # leaves it false so render output is unchanged.
         tia.color_loss_active = tia.color_loss_enabled && isodd(tia.lines_since_frame)
+        # Rebase an ARMED VSYNC hold-gate into the new frame's clock domain.
+        # `frame_clock = lines_since_frame*228 + beam_cc`; resetting
+        # lines_since_frame to 0 below (the beam color_clock is preserved)
+        # shifts every future frame_clock DOWN by lines_since_frame*228, so
+        # vfc — which lives in that same domain — must shift by the same
+        # amount. This is xitari's absolute-clock semantics: myVSYNCFinishClock
+        # and myClockWhenFrameStarted are decremented together on a clock
+        # reset (TIA::systemCyclesReset, TIA.cxx:274-278) and startFrame never
+        # invalidates an armed gate. Without this, a VSYNC SET in the SAME
+        # instruction that ended a frame (the boot max-scanlines-cutoff
+        # transition) leaves vfc in the OLD, far-larger domain, so the next
+        # frame's legitimate VSYNC-clear is wrongly rejected and two
+        # game-frames merge into one run_until_frame! call — skiing's $00
+        # boot double-increment (the 1-byte RAM residual). A no-op for normal
+        # frames: both end paths (VSYNC-clear line 683, cutoff line 593)
+        # disarm vfc to typemax before the drain, so this only ever rebases a
+        # gate re-armed during the frame-ending instruction.
+        if tia.vsync_finish_clock != typemax(Int)
+            tia.vsync_finish_clock -= tia.lines_since_frame * COLOR_CLOCKS_PER_SCANLINE
+        end
         tia.frame += UInt64(1)
         tia.scanline = 0
         tia.vsync_reset_pending = false
