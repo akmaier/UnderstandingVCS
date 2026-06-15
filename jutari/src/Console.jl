@@ -44,9 +44,13 @@ initial_console(rom=nothing) = Console(initial_cpu_state(), initial_bus(rom))
 Reset the console: fresh CPU + TIA + RIOT + RAM (cart state preserved),
 and load PC from the cart's reset vector at \$FFFC/\$FFFD.
 """
-function console_reset!(console::Console)
+function console_reset!(console::Console; keep_ram::Bool = false)
     fresh = initial_bus()
-    console.bus.ram  .= fresh.ram
+    # xitari's `mySystem->reset()` resets CPU + TIA + RIOT but does NOT zero
+    # the 128 B RIOT RAM (M6532 zeroes RAM only in its CONSTRUCTOR). keep_ram=true
+    # mirrors that (used between the construction probe and the boots, so a
+    # free-running counter the game never re-inits carries its seed).
+    keep_ram || (console.bus.ram .= fresh.ram)
     console.bus.tia   = fresh.tia
     console.bus.riot  = fresh.riot
     # Reset CPU registers.

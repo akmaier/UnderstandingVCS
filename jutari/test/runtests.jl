@@ -5919,3 +5919,29 @@ end
         @info "skiing rom missing — skipping boot-counter regression test"
     end
 end
+
+# surround RAM bit-exactness regression (construction probe + double-boot,
+# 2026-06-15). surround's RAM[$7d] is a free-running counter the game NEVER
+# re-inits, so it carries xitari's full pre-episode-1 seed: 60-frame format
+# probe (+30) + the ALEInterface ctor's reset_game boot (+65) + the explicit
+# resetGame boot (+65) = 160. env_reset! now mirrors that sequence (probe +
+# keep-RAM double-boot) when construction_probe=true. Assert the seeded value.
+@testset "surround boot \$7d seed == xitari (probe + double-boot)" begin
+    _cands = [joinpath(@__DIR__, "..", "..", "tools", "rom_sweep", "roms", "surround.bin"),
+              joinpath(@__DIR__, "..", "..", "xitari", "roms_all", "surround.bin"),
+              joinpath(@__DIR__, "..", "..", "xitari", "roms", "surround.bin")]
+    _idx = findfirst(isfile, _cands)
+    rom_path = _idx === nothing ? _cands[end] : _cands[_idx]
+    if isfile(rom_path)
+        rom = read(rom_path)
+        env = JuTari.Env.StellaEnvironment(rom, JuTari.JoystickGames.SurroundRomSettings())
+        JuTari.Env.env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)
+        @test JuTari.Env.get_ram(env)[0x7d + 1] == 0xA0   # xitari boot_end = 160
+        # construction_probe=false reverts to the old single-boot seed (no probe)
+        JuTari.Env.env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4,
+                              construction_probe = false)
+        @test JuTari.Env.get_ram(env)[0x7d + 1] != 0xA0
+    else
+        @info "surround rom missing — skipping boot-seed regression test"
+    end
+end

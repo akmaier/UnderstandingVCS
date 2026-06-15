@@ -4857,3 +4857,44 @@ the 63 bit-exact games for nothing). surround stays the SOLE RAM residual at
 fix needs jutari's PAL attract-loop probe-frame slicing/instruction-budget to
 match xitari's update() exactly — deep, PAL-specific, high regression risk; not
 worth it for 7 non-growing bytes. Left precisely characterized for a future pass.
+
+### ✅✅ surround RAM BIT-EXACT — xitari's probe + DOUBLE-boot, the seed was a red herring (2026-06-15)
+
+CORRECTS the "fix not viable" entry above. User: "investigate the game-loop
+difference and make a plan how to fix this difference. Taking a risk is ok,
+because we have version control." The investigation overturned the earlier
+conclusion entirely — surround is now BIT-EXACT (64/64 RAM).
+
+The "game-loop difference" (jutari probe $7d=30 vs xitari 95) was a RED HERRING.
+Friend-tap instrumentation of the construction probe loop (temporary fprintf in
+xitari Console.cxx:201, reverted after; libxitari rebuilt) showed xitari's 60-frame
+probe loop ends at $7d=**30 — IDENTICAL to jutari**. jutari's probe was never wrong.
+
+The real cause is STRUCTURAL: xitari runs the boot (`StellaEnvironment::reset`)
+TWICE before episode 1's first action:
+  1. Console ctor: 60-frame format probe @ 262 cutoff + keep-RAM `mySystem->reset()`  → $7d 0→30
+  2. `loadROM` → `reset_game`  (boot #1)                                              → $7d 30→95
+  3. explicit `ALEInterface::resetGame`  (boot #2)                                    → $7d 95→160
+(measured via getRAM()[$7d] at each checkpoint: 30 / 95 / 160.) jutari ran only
+boot #2 from a cold, RAM-zeroed start → $7d=66, a 94-short seed for the one byte
+surround never re-inits. Every other game re-inits its RAM at boot, so the missing
+probe + boot washed out — which is exactly why 62→63/64 were already bit-exact and
+the divergence hid in surround alone.
+
+FIX (StellaEnvironment.jl): factor the boot body into `_boot_burn!`; `env_reset!`
+now mirrors xitari's full construction sequence when `construction_probe=true`
+(default): cold reset → 60-frame probe @ 262 → keep-RAM reset → `_boot_burn!`
+(boot #1) → keep-RAM reset → `_boot_burn!` (boot #2). `console_reset!` gained a
+`keep_ram` flag (xitari's M6532 zeroes RAM only in its ctor, not on reset). Each
+keep-RAM reset still resets the TIA to fresh (zeroed framebuffer + counters), so
+boot #2 renders from the same clean state as the old single boot — no render change.
+
+VERIFIED bit-exact at every stage (jutari $7d: 30 → 95 → 160, == xitari). Full
+64-ROM RAM sweep **63→64/64 BIT-EXACT** (surround 7→0, skiing still 0, all 62
+others hold). jutari Pkg.test green. Screen sweep **43→44/64 pixel-exact** —
+surround's 224px screen residual ALSO collapsed to 0 (its render divergence was
+the same boot-seed all along; once RAM is bit-exact the screen is too), the ONLY
+row that changed (zero render regressions). The earlier "deep, PAL-specific, not
+worth it" assessment was WRONG — the bit-exactness-over-caution lesson again: a
+"deferred" residual was a real, fully-fixable structural flaw once the friend-tap
+pinned the true mechanism. **jutari RAM is now 64/64 BIT-EXACT vs xitari.**

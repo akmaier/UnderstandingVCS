@@ -76,22 +76,18 @@ StellaEnvironment(rom, settings::RomSettings = GenericRomSettings()) =
                       _PADDLE_DEFAULT, _PADDLE_DEFAULT)
 
 """
-    env_reset!(env; boot_noop_steps=0, boot_reset_steps=0)
+    _boot_burn!(env, boot_noop_steps, boot_reset_steps)
 
-Reset the console (PC ← cart reset vector). For ALE / xitari parity
-(matching `ALEInterface::resetGame`), pass `boot_noop_steps=60,
-boot_reset_steps=4` — xitari's reset burns 60 deterministic NOOP
-frames so the cart's startup routine settles, then 4 frames with the
-RESET switch held. The PXC1 conformance harness uses these values;
-the default of 0 preserves the historical jutari behaviour where the
-caller decides the startup convention.
+One xitari `StellaEnvironment::reset` boot: set the per-game PAL/NTSC TV-format
+fields, push default paddle resistance, assert difficulty, then burn
+`boot_noop_steps` NOOP frames + `boot_reset_steps` RESET-held frames + the
+per-game starting actions (joystick + console-switch). Does NOT touch RAM or the
+settings object — `env_reset!` owns the `console_reset!`/`romsettings_reset!`.
+Factored out so `env_reset!` can run it twice (xitari boots once in the
+ALEInterface ctor's `reset_game`, then again on the explicit `resetGame`).
 """
-function env_reset!(env::StellaEnvironment;
-                    boot_noop_steps::Integer = 0,
-                    boot_reset_steps::Integer = 0)
-    console_reset!(env.console)
-    romsettings_reset!(env.settings)
-    env.terminal = false
+function _boot_burn!(env::StellaEnvironment, boot_noop_steps::Integer,
+                     boot_reset_steps::Integer)
     # --- TV format (#103, surround) -------------------------------------
     # xitari auto-detects PAL vs NTSC and sets the max-scanlines frame
     # cutoff to 342 (PAL) vs 290 (NTSC) (TIA.cxx:206-211). Surround is a
@@ -205,7 +201,45 @@ function env_reset!(env::StellaEnvironment;
         console_switches!(env.console; p0_difficulty_a = diff0,
                           p1_difficulty_a = diff1)
     end
+    return nothing
+end
 
+function env_reset!(env::StellaEnvironment;
+                    boot_noop_steps::Integer = 0,
+                    boot_reset_steps::Integer = 0,
+                    construction_probe::Bool = true)
+    console_reset!(env.console)               # cold power-on: zero RAM
+    romsettings_reset!(env.settings)
+    env.terminal = false
+    # --- xitari construction sequence (Console.cxx:197-218 + ALEInterface ctor) -
+    # xitari, BEFORE episode 1's first action, runs MORE than one boot:
+    #   1. Console ctor: 60-frame format-autodetect probe at the TIA-ctor 262
+    #      cutoff, then a keep-RAM `mySystem->reset()`.
+    #   2. loadROM → reset_game  (boot #1 — the StellaEnvironment::reset boot).
+    #   3. the explicit ALEInterface::resetGame  (boot #2 — same boot).
+    # A free-running RAM counter the game NEVER re-inits (surround's $7d) is
+    # seeded by all three; jutari previously ran only boot #2 (and zeroed RAM),
+    # so $7d started 95 short. Mirror the full sequence with keep-RAM resets so
+    # the seed accumulates. VERIFIED bit-exact on surround ($7d: 30 → 95 → 160,
+    # matching xitari at every stage). For a game that re-inits its RAM at boot
+    # the probe + extra boot wash out → the 63 already-bit-exact games are
+    # unchanged (gated on the full sweep). `construction_probe=false` keeps the
+    # old single-boot, RAM-zeroing behaviour for callers that want a bare reset.
+    if construction_probe && boot_noop_steps > 0
+        # (1) probe at the 262 NTSC-default cutoff (format not yet detected)
+        env.console.bus.tia.max_scanlines       = 262
+        env.console.bus.tia.scanlines_per_frame = 262
+        for _ in 1:60
+            apply_action!(env.console, Int(NOOP))
+            run_until_frame!(env.console)
+        end
+        console_reset!(env.console; keep_ram = true)   # post-probe keep-RAM reset
+        # (2) boot #1 — the ctor's reset_game
+        _boot_burn!(env, boot_noop_steps, boot_reset_steps)
+        console_reset!(env.console; keep_ram = true)   # resetGame's keep-RAM reset
+    end
+    # boot (#2 when probing; the only boot otherwise) — the explicit resetGame
+    _boot_burn!(env, boot_noop_steps, boot_reset_steps)
     return env
 end
 
