@@ -4383,3 +4383,31 @@ Both are correct, xitari-faithful improvements (full 64-ROM sweep clean, 62/64
 bit-exact). Residuals are construction-time free-running frame counters ($80/$fd)
 + surround's downstream frame-16 ball seed; all other gameplay state is bit-exact
 (surround proven via the N-sweep). Closing #103 at 62/64.
+
+### ✅ Task #103 (jaxtari mirror) (2026-06-15) — skiing + surround fixes ported
+
+Mirrored the jutari skiing illegal-action filter + surround PAL/SELECT-RESET
+fixes to jaxtari (parity / PXC2):
+- rom_settings.py GenericRomSettings: added is_legal_action (default True),
+  console_switch_starts (default []), pal (default False).
+- joystick_starts.py: SkiingRomSettings.is_legal_action rejects the FIRE family;
+  new SurroundRomSettings (console_switch_starts={SELECT,RESET}, pal=True);
+  AirRaidRomSettings.pal=True. Exported SurroundRomSettings.
+- tia/system.py: TIAState gained `max_scanlines` (default 290); poke-time cutoff
+  compares against it (PAL→342).
+- env/stella_environment.py: PAL max_scanlines set from settings.pal() after
+  console_reset; illegal-action→NOOP filter in step(); console-switch starting
+  actions (SELECT/RESET via console_switches) after the joystick starts.
+- check_trace.py: surround → SurroundRomSettings.
+- test_tia_vsync_vblank.py: fixed the stale `test_vsync_falling_edge` (it cleared
+  VSYNC without holding ≥1 scanline; now holds 1 scanline — the #103/#108
+  hold-gate. This test had been failing since the air_raid hold-gate landed,
+  surfaced now that the suite runs serially with -n0).
+
+VERIFICATION (direct jaxtari-vs-xitari RAM diff, breakout stream, 30 frames;
+pytest still xdist-wedged so verified via the diff like #106):
+- skiing  maxdiff=0  (jaxtari's boot matches xitari's $80 counter exactly — even
+  better than jutari's residual 1; the $80 +1 is a jutari-specific boot artifact).
+- surround maxdiff=7  (exact parity with jutari: per-frame 1×15, 7×9, 6×6 — same
+  construction-counter residual, emulation otherwise bit-exact).
+- test_tia_vsync_vblank.py: 10/10 pass.

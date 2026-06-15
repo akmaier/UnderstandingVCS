@@ -30,6 +30,12 @@ class AirRaidRomSettings(GenericRomSettings):
     def starting_actions(self) -> list[int]:
         return [1]   # FIRE
 
+    def pal(self) -> bool:
+        # air_raid is a PAL dump (its real VSYNC at scanline 286 ends the
+        # frame before either 290 or 342, so the threshold doesn't change its
+        # result — flagged for correctness / xitari parity). See task #103.
+        return True
+
 
 class AsterixRomSettings(GenericRomSettings):
     def starting_actions(self) -> list[int]:
@@ -69,6 +75,27 @@ class PrivateEyeRomSettings(GenericRomSettings):
 class SkiingRomSettings(GenericRomSettings):
     def starting_actions(self) -> list[int]:
         return [5] * 16   # 16× DOWN (xitari Skiing.cpp loop)
+
+    def is_legal_action(self, action: int) -> bool:
+        # xitari SkiingSettings::isLegal (Skiing.cpp:96-111) rejects the whole
+        # FIRE family; noopIllegalActions maps them to NOOP before a user step.
+        # Skiing is the only supported game overriding isLegal. Without this,
+        # the sweep's shared breakout stream injects FIRE at frame 20 and
+        # skiing diverges 84 b/f. FIRE-family ALE codes. See task #103.
+        return action not in (1, 10, 11, 12, 13, 14, 15, 16, 17)
+
+
+class SurroundRomSettings(GenericRomSettings):
+    # Task #103: surround is a PAL game; xitari getStartingActions =
+    # {SELECT, RESET} (Surround.cpp:135) selects game variation 1 then starts
+    # it. SELECT/RESET are console switches (not joystick), routed via
+    # console_switches in env.reset(). PAL → 342 max-scanlines cutoff (its
+    # 312-line frame would otherwise be split by the NTSC 290 cutoff).
+    def console_switch_starts(self) -> list[int]:
+        return [46, 40]   # SELECT, RESET
+
+    def pal(self) -> bool:
+        return True
 
 
 class UpNDownRomSettings(GenericRomSettings):

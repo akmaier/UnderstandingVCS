@@ -111,24 +111,45 @@ def test_run_until_frame_advances_two_frames_back_to_back():
     assert int(c.bus.tia.frame) == 2
 
 
-def test_run_until_frame_raises_on_runaway_rom():
-    """After PXC1-x the frame counter is driven *only* by the software
-    VSYNC 1→0 edge — the scanline-wrap fallback was removed because it
-    was double-counting frames for ROMs that drove VSYNC normally. A
-    ROM that never writes VSYNC therefore now genuinely *can't* end a
-    frame, and `run_until_frame` hits its instruction limit and
-    raises. This test pins that contract: a JMP-to-self program
-    raises rather than silently wrapping."""
-    import pytest
+def test_run_until_frame_greys_poke_less_rom():
+    """Task #106 (partial-frame model): xitari's max-scanlines cutoff
+    (TIA.cxx:2003) is evaluated at POKE time only, NOT every CPU step. So a
+    poke-LESS, VSYNC-less ROM never ends a frame — it runs "grey" and
+    `run_until_frame` returns at the 25000-instruction `execute(25000)`
+    budget WITHOUT advancing the frame counter (xitari leaves
+    myPartialFrameFlag true / getFrameNumber unchanged). It must not hang
+    or raise."""
     rom = jnp.zeros((4096,), dtype=jnp.uint8)
-    rom = rom.at[0].set(jnp.uint8(0x4C))      # JMP $F000
+    rom = rom.at[0].set(jnp.uint8(0x4C))      # JMP $F000 (no pokes)
     rom = rom.at[1].set(jnp.uint8(0x00))
     rom = rom.at[2].set(jnp.uint8(0xF0))
     rom = rom.at[0x0FFC].set(jnp.uint8(0x00))
     rom = rom.at[0x0FFD].set(jnp.uint8(0xF0))
     c = console_reset(initial_console(rom))
-    with pytest.raises(RuntimeError, match="run_until_frame"):
-        run_until_frame(c)
+    f0 = int(c.bus.tia.frame)
+    c = run_until_frame(c)
+    assert int(c.bus.tia.frame) == f0                 # grey frame: NO advance
+    assert int(c.bus.tia.lines_since_frame) > 290     # beam ran past the cutoff
+
+
+def test_run_until_frame_poke_time_cutoff_ends_vsyncless_rom():
+    """...but a VSYNC-less ROM that DOES poke a TIA register every loop ends
+    its frame at the next poke past 290 scanlines (the real seaquest/air_raid
+    boot-burst mechanism, tasks #80/#108; xitari TIA.cxx:2003-2007)."""
+    rom = jnp.zeros((4096,), dtype=jnp.uint8)
+    rom = rom.at[0].set(jnp.uint8(0x8D))      # STA $0009 (COLUBK)
+    rom = rom.at[1].set(jnp.uint8(0x09))
+    rom = rom.at[2].set(jnp.uint8(0x00))
+    rom = rom.at[3].set(jnp.uint8(0x4C))      # JMP $F000
+    rom = rom.at[4].set(jnp.uint8(0x00))
+    rom = rom.at[5].set(jnp.uint8(0xF0))
+    rom = rom.at[0x0FFC].set(jnp.uint8(0x00))
+    rom = rom.at[0x0FFD].set(jnp.uint8(0xF0))
+    c = console_reset(initial_console(rom))
+    g0 = int(c.bus.tia.frame)
+    c = run_until_frame(c)
+    assert int(c.bus.tia.frame) == g0 + 1             # poke-time cutoff fired
+    assert int(c.bus.tia.lines_since_frame) < 290      # new frame started fresh
 
 
 # --------------------------------------------------------------------------- #

@@ -121,3 +121,26 @@ class GenericRomSettings:
         # stella.pro entry sets Console.Left/RightDifficulty to "A"
         # (e.g. Amidar = A/A → SWCHB 0xFF). See task #103.
         return (False, False)
+
+    def is_legal_action(self, action: int) -> bool:
+        # Mirror of xitari RomSettings::isLegal (base returns true for ALL
+        # actions). xitari's StellaEnvironment::act calls noopIllegalActions
+        # BEFORE a USER step, mapping illegal actions to NOOP. Only Skiing
+        # overrides this (rejects the FIRE family). Default true → no-op
+        # filter for every other game. Starting actions bypass the filter.
+        # See task #103.
+        return True
+
+    def console_switch_starts(self) -> list[int]:
+        # Per-game CONSOLE-SWITCH starting actions (SELECT=46, RESET=40),
+        # emulated AFTER the joystick `starting_actions` via console_switches
+        # (apply_action can't encode 46/40). Surround = {SELECT, RESET}
+        # selects game variation 1 then starts it. Default empty. See #103.
+        return []
+
+    def pal(self) -> bool:
+        # PAL vs NTSC. xitari auto-detects and sets the max-scanlines frame
+        # cutoff to 342 (PAL) vs 290 (NTSC). For RAM conformance only that
+        # cutoff matters (PAL palette is render-only). Default NTSC. Surround
+        # is PAL (312-line frame needs 342 or it gets split). See task #103.
+        return False

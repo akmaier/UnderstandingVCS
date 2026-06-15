@@ -48,7 +48,7 @@ from jaxtari.games.joystick_starts import (
     DoubleDunkRomSettings,
     ElevatorActionRomSettings, GopherRomSettings, GravitarRomSettings,
     JourneyEscapeRomSettings, PrivateEyeRomSettings, SkiingRomSettings,
-    UpNDownRomSettings, YarsRevengeRomSettings,
+    SurroundRomSettings, UpNDownRomSettings, YarsRevengeRomSettings,
 )
 
 
@@ -80,6 +80,7 @@ _SETTINGS_BY_BASENAME: dict[str, type[RomSettings]] = {
     "journey_escape.bin":  JourneyEscapeRomSettings,
     "private_eye.bin":     PrivateEyeRomSettings,
     "skiing.bin":          SkiingRomSettings,
+    "surround.bin":        SurroundRomSettings,
     "up_n_down.bin":       UpNDownRomSettings,
     "yars_revenge.bin":    YarsRevengeRomSettings,
 }

@@ -72,6 +72,7 @@ from jaxtari.games.joystick_starts import (
     JourneyEscapeRomSettings,
     PrivateEyeRomSettings,
     SkiingRomSettings,
+    SurroundRomSettings,
     UpNDownRomSettings,
     YarsRevengeRomSettings,
 )
@@ -144,6 +145,7 @@ __all__ = [
     "JourneyEscapeRomSettings",
     "PrivateEyeRomSettings",
     "SkiingRomSettings",
+    "SurroundRomSettings",
     "UpNDownRomSettings",
     "YarsRevengeRomSettings",
 ]

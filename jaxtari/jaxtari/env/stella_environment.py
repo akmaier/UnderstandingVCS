@@ -131,6 +131,20 @@ class StellaEnvironment:
         self._console = console_reset(self._console)
         self._settings.reset()
         self._terminal = False
+        # --- TV format (#103, surround) ---------------------------------- #
+        # xitari auto-detects PAL/NTSC and sets the max-scanlines frame cutoff
+        # to 342 (PAL) vs 290 (NTSC) (TIA.cxx:206-211). Surround is a 312-line
+        # PAL frame; under the NTSC 290 cutoff it is force-split into 291+21 =
+        # two frames/TV-frame (half-rate counters). Set the cutoff BEFORE the
+        # boot burn so every boot frame uses it. PAL is per-game; default NTSC
+        # keeps all NTSC games untouched. Mirror of jutari env_reset!.
+        try:
+            _msl = 342 if self._settings.pal() else 290
+        except AttributeError:
+            _msl = 290
+        self._console = self._console._replace(
+            bus=self._console.bus._replace(
+                tia=self._console.bus.tia._replace(max_scanlines=_msl)))
         # PXC1-x round 5: for paddle games, push the default paddle
         # resistance into the TIA BEFORE the boot-burn loop runs.
         # xitari constructs `StellaEnvironment` with `resetPaddles` —
@@ -214,6 +228,30 @@ class StellaEnvironment:
                 paddle_mode=uses_paddles_sa, swap_paddles=swap_paddles_sa)
             self._console = run_until_frame(self._console)
 
+        # --- Console-switch starting actions (#103, surround) ------------ #
+        # SELECT(46)/RESET(40) are console switches, not joystick actions, so
+        # they go through console_switches (apply_action can't encode them).
+        # xitari emulates getStartingActions = {SELECT, RESET} (one frame each)
+        # to pick + start the game variation; each is held one frame then
+        # released, with difficulty re-asserted in every SWCHB rebuild. Mirror
+        # of jutari env_reset!.
+        try:
+            cs_starts = list(self._settings.console_switch_starts())
+        except AttributeError:
+            cs_starts = []
+        for sw in cs_starts:
+            self._console = console_switches(
+                self._console,
+                select_pressed=(int(sw) == 46),
+                reset_pressed=(int(sw) == 40),
+                p0_difficulty_a=diff0, p1_difficulty_a=diff1)
+            self._console = run_until_frame(self._console)
+        if cs_starts:
+            # Release the console switches (keep difficulty) so subsequent
+            # step() frames run with them up, as in xitari.
+            self._console = console_switches(
+                self._console, p0_difficulty_a=diff0, p1_difficulty_a=diff1)
+
         # --- P6d: random-NOOP episode randomization ---------------------- #
         if random_noop_max > 0:
             rng = _random.Random(seed) if seed is not None else _random
@@ -236,6 +274,15 @@ class StellaEnvironment:
         """
         if self._terminal:
             return 0
+        # Task #103 (skiing): xitari noopIllegalActions maps illegal actions to
+        # NOOP before a USER step (stella_environment.cpp:189); starting actions
+        # bypass this. Only Skiing overrides is_legal_action (rejects the FIRE
+        # family). Defensive getattr for older RomSettings.
+        try:
+            if not self._settings.is_legal_action(int(action)):
+                action = int(Action.NOOP)
+        except AttributeError:
+            pass
         uses_paddles = self._settings.uses_paddles()
         if uses_paddles:
             self._apply_paddle_action(int(action))

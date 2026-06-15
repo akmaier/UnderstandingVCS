@@ -43,15 +43,17 @@ def test_vsync_d1_only_bit_1_matters():
 
 
 def test_vsync_falling_edge_increments_frame_and_resets_scanline():
-    """The 1→0 transition is the software-defined frame boundary."""
+    """The 1→0 transition ends the frame — but only after VSYNC has been HELD
+    for >= 1 scanline (xitari's myVSYNCFinishClock hold-gate, tasks #103/#108).
+    A sub-scanline VSYNC pulse does NOT end the frame."""
     tia = initial_tia_state()._replace(scanline=100, scanline_cycle=42)
-    tia = tia_poke(tia, W_VSYNC, 0x02)       # set
+    tia = tia_poke(tia, W_VSYNC, 0x02)       # set → arm finish clock
     assert tia.frame == 0
     assert tia.scanline == 100              # not yet reset
-    tia = tia_poke(tia, W_VSYNC, 0x00)       # clear → falling edge
+    tia = tia_advance(tia, NTSC_CPU_CYCLES_PER_SCANLINE)   # hold >= 1 scanline
+    tia = tia_poke(tia, W_VSYNC, 0x00)       # clear → falling edge ends frame
     assert tia.frame == 1
     assert tia.scanline == 0
-    assert tia.scanline_cycle == 0
     assert tia.vsync_active is False
 
 

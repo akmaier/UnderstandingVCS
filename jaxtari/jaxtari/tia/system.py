@@ -357,6 +357,12 @@ class TIAState(NamedTuple):
     # only ends the frame once the beam reaches it — VSYNC must be HELD >= 1
     # scanline. 0x7FFFFFFF = disarmed (xitari's default). Mirror of jutari.
     vsync_finish_clock: int = 0x7FFFFFFF
+    # Task #103 (surround): xitari myMaximumNumberOfScanlines — the
+    # max-scanlines frame-cutoff threshold (TIA.cxx:206-211): 290 NTSC, 342
+    # PAL. StellaEnvironment.reset() sets 342 for PAL ROMs (settings.pal()).
+    # A PAL 312-line frame must not be split by the NTSC 290 cutoff. Mirror
+    # of jutari.
+    max_scanlines: int = 290
 
 
 def initial_tia_state() -> TIAState:
@@ -735,8 +741,10 @@ def tia_poke(tia: TIAState, addr: int, value: int,
     # Beam position (scanline_cycle/color_clock) is preserved, matching the
     # old per-step cutoff that this replaces. Mirror of jutari's poke-time
     # cutoff in tia_poke!.
+    # Task #103 (surround): threshold is per-TIA `max_scanlines` (290 NTSC /
+    # 342 PAL), not a hardcoded 290 — a PAL 312-line frame must not be split.
     _frame_clock_pk = int(tia.lines_since_frame) * COLOR_CLOCKS_PER_SCANLINE + int(beam_cc)
-    if _frame_clock_pk // COLOR_CLOCKS_PER_SCANLINE > 290:
+    if _frame_clock_pk // COLOR_CLOCKS_PER_SCANLINE > tia.max_scanlines:
         tia = tia._replace(
             frame=tia.frame + 1,
             scanline=0,
