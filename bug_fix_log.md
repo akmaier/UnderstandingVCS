@@ -76,6 +76,24 @@ diverge under NOOP — genuine boot-phase residuals (qbert = xitari sub-instruct
 "sliver" frame at the boot→step transition; elevator = title-vs-demo state machine),
 both needing the xitari TIA partial-frame model — deferred.
 
+**UPDATE 2026-06-15 — boot-end-RAM compare localizes the last two (after elevator F8SC
+landed; sweep 61/64):**
+  - **qbert: boot-end RAM is BIT-EXACT** (0 diff bytes). Its 56 b/f is ENTIRELY in
+    frame-1+ — confirming the sub-instruction "sliver" frame at the boot→step transition
+    (xitari emits a ~9-cycle partial frame that jutari folds into the next). Pure
+    shared-core frame-boundary / partial-frame (`myClockWhenFrameStarted`) issue —
+    highest-risk change; deferred to a supervised session.
+  - **surround: 7 boot-end diff bytes** ($64/$6c/$71/$79/$7d-$7f). These are the missing
+    `getStartingActions = {SELECT, RESET}` (xitari presses them during resetGame to pick
+    the game variation; jutari-generic doesn't). The console-switch-starting-action
+    machinery (implemented + reverted above) fixes boot-end but unmasks a deeper per-frame
+    timing bug (max-diff 16→18) — same frame-model family. Two-part fix (SELECT/RESET +
+    partial-frame), deferred together.
+  - **Bottom line:** the last two residuals both hinge on the xitari TIA partial-frame /
+    frame-boundary-cycle model. That single shared-core change (highest regression risk to
+    the 61 bit-exact games) is the next big lever; it likely closes both. The
+    cpu_tia_cycle_trace + boot-end-RAM-compare tooling is in place to drive it.
+
 **elevator_action (53 b/f under NOOP) — deeper characterization + RIOT-timer-base
 hypothesis RULED OUT.** With the 16× FIRE getStartingActions fix it's 98→53. The
 divergence is a DETERMINISTIC init-branch: at boot-end jutari has CONSTANTS where
