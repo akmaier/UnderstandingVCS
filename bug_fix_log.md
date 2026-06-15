@@ -4248,3 +4248,27 @@ Implemented the plan above. Three changes in jutari:
 
 Mirror to jaxtari pending (immediate-increment model; verify via direct RAM
 diff since jaxtari pytest is wedged).
+
+### ✅ Task #106 SOLVED (jaxtari mirror) (2026-06-15) — partial-frame model ported
+
+Mirrored the jutari fix to jaxtari (faithful structural copy; jaxtari uses the
+*immediate* frame-increment model in `tia_poke` rather than jutari's deferred
+`vsync_reset_pending`, so the cutoff increments `frame` directly there):
+1. `console.py run_until_frame`: bounded to **25000 instructions**
+   (`_UPDATE_INSTRUCTION_BUDGET`); grey-frame return on budget exhaustion (no
+   `RuntimeError`), preserving beam state.
+2. `tia/system.py tia_poke`: max-scanlines cutoff at POKE time
+   (`frame_clock ÷ 228 > 290` → `frame+1, scanline=0, lines_since_frame=0`,
+   disarm hold-gate), before the register switch — mirrors TIA.cxx:2003-2007.
+3. `tia/system.py tia_advance`: REMOVED the per-step `lines_since_frame > 290`
+   cutoff (task #80 block).
+
+**Verification (direct jaxtari-vs-xitari RAM diff; pytest still wedged):**
+- Standalone smoke test: poke-less VSYNC-less ROM GREYS (frame counter does not
+  advance, beam runs to lines_since_frame=986); a TIA-poking VSYNC-less ROM ends
+  at the poke-time cutoff.
+- qbert **0 ✅** (fix works — was the +1 offset), seaquest **0 ✅**, air_raid
+  **0 ✅** (with AirRaidRomSettings — an initial 54 was a harness bug from
+  passing GenericRomSettings, not a regression). All 8-frame NOOP aligned diffs.
+- This keeps the jaxtari ≡ jutari (PXC2) invariant: both now match xitari's
+  partial-frame slicing.

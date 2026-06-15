@@ -721,6 +721,29 @@ def tia_poke(tia: TIAState, addr: int, value: int,
     if beam_sc is None:
         beam_sc = int(tia.scanline_cycle)
 
+    # Task #106 (partial-frame model): xitari's max-scanlines frame cutoff
+    # (TIA.cxx:2003-2007) is evaluated at POKE time only — at the top of
+    # TIA::poke, before the register switch — NOT every CPU step. If the beam
+    # is already past 290 scanlines when a TIA register is written, the frame
+    # ends here (immediate increment, like the VSYNC-clear path below). With a
+    # poke-LESS stretch > 290 scanlines (qbert's RESET-boot wait loop, task
+    # #52) the frame instead runs "grey" until the next poke — producing
+    # xitari's boot→step sliver frame. `frame_clock` is the beam's
+    # frame-relative color clock = xitari's (clock - myClockWhenFrameStarted);
+    # `÷228 > 290` is exactly xitari's
+    # `(clock - myClockWhenFrameStarted)/228 > myMaximumNumberOfScanlines`.
+    # Beam position (scanline_cycle/color_clock) is preserved, matching the
+    # old per-step cutoff that this replaces. Mirror of jutari's poke-time
+    # cutoff in tia_poke!.
+    _frame_clock_pk = int(tia.lines_since_frame) * COLOR_CLOCKS_PER_SCANLINE + int(beam_cc)
+    if _frame_clock_pk // COLOR_CLOCKS_PER_SCANLINE > 290:
+        tia = tia._replace(
+            frame=tia.frame + 1,
+            scanline=0,
+            lines_since_frame=0,
+            vsync_finish_clock=0x7FFFFFFF,
+        )
+
     # P3i-c: defer PF0/PF1/PF2 to mid-scanline activation. Skip the
     # defer if we're in HBLANK (beam_cc < 68) — the activation
     # would land in the visible region anyway but pre-HBLANK pokes are
@@ -1181,27 +1204,19 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
     # sequence) needs `run_until_frame`'s instruction limit to be
     # generous enough — see `console._FRAME_INSTRUCTION_LIMIT`.
     new_line = new_line % NTSC_SCANLINES_PER_FRAME
-    # Task #80: xitari's max-scanlines frame cutoff (NTSC=290,
-    # TIA.cxx:2003-2007) — force a frame boundary when no software VSYNC
-    # has come within 290 scanlines. `lines_since_frame` does NOT wrap at
-    # 262 (unlike `scanline`), so this counts genuine elapsed lines since
-    # the last frame boundary. Dormant for normal frames (VSYNC at ~262,
-    # which also resets `lines_since_frame` — see `tia_poke`). Splits
-    # seaquest's VSYNC-less boot-init burst into the same frame count as
-    # xitari → fixes the boot off-by-1. Beam position
-    # (scanline_cycle/color_clock) is preserved, matching the VSYNC reset.
-    # Mirror of jutari's cutoff in `tia_advance!`.
+    # Task #106 (partial-frame model): the frame boundary is now decided
+    # ONLY in `tia_poke` (the VSYNC-clear hold-gate OR the max-scanlines
+    # cutoff) — exactly like xitari, where both live in TIA::poke. The
+    # every-CPU-step `lines_since_frame > 290` cutoff that used to live here
+    # (task #80) has been REMOVED: it force-ended qbert's poke-less
+    # RESET-boot wait loop at ~291 scanlines, slicing it differently from
+    # xitari's 25000-instruction grey-frame budget and producing a
+    # persistent +1 frame offset. A truly poke-less runaway frame is now
+    # bounded by that budget in `run_until_frame` (a grey frame), as in
+    # xitari. Mirror of jutari's `tia_advance!`.
     new_lines_since_frame = tia.lines_since_frame + line_advance
     new_frame = tia.frame
     new_vsync_finish_clock = tia.vsync_finish_clock
-    if new_lines_since_frame > 290:
-        new_frame = tia.frame + 1
-        new_line = 0
-        new_lines_since_frame = 0
-        # Task #103: disarm the VSYNC hold-gate at a non-VSYNC frame
-        # boundary so a stale finish clock can't spuriously end the next
-        # frame (the VSYNC-clear path already disarmed it in tia_poke).
-        new_vsync_finish_clock = 0x7FFFFFFF
     # P3i-c: thread the post-drain register file through to the new
     # state, and clear pending_writes (they've all been applied above
     # OR carried forward in the registers field). `tia_for_render`

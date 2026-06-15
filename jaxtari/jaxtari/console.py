@@ -20,16 +20,17 @@ from jaxtari.cpu.m6502 import step as cpu_step
 from jaxtari.types import CPUState, initial_cpu_state
 
 
-# Hard ceiling on the number of CPU instructions allowed inside one
-# `run_until_frame`. ~30k is well above the natural 19,912 CPU cycles per
-# NTSC frame; a ROM that exceeds it has either crashed or is in a tight
-# loop ignoring VSYNC. (Tried bumping to 1M during the Q*Bert
-# investigation — task #52 — but Q*Bert's RESET-pressed self-test
-# doesn't toggle VSYNC for arbitrarily long, so a higher limit just
-# delays the same failure. The real fix is in env_reset's RESET
-# handling for games that treat console RESET as "enter test mode",
-# not the per-frame budget.)
-_FRAME_INSTRUCTION_LIMIT = 100_000
+# Task #106 (partial-frame model): xitari runs at most this many
+# INSTRUCTIONS per mediaSource().update() — `m6502().execute(25000)` in
+# TIA::update (M6502Low.cxx:65 decrements once per instruction, NOT per
+# cycle). When the budget is exhausted WITHOUT a frame end, xitari returns
+# a "grey" (incomplete) frame: the frame counter is NOT advanced and the
+# beam/cycle state is preserved, so the next update() continues the same
+# frame. `run_until_frame` mirrors this exactly — which is what reproduces
+# Q*Bert's boot→step "sliver" frame (its RESET-boot self-test, task #52,
+# has no TIA pokes for thousands of scanlines, so the frame can only be
+# sliced by this budget, exactly as in xitari).
+_UPDATE_INSTRUCTION_BUDGET = 25_000
 
 
 class Console(NamedTuple):
@@ -76,19 +77,23 @@ def console_step(console: Console) -> Console:
 
 
 def run_until_frame(console: Console) -> Console:
-    """Step the CPU until the TIA's frame counter advances by one.
+    """Run one xitari `mediaSource().update()`: step the CPU until the TIA's
+    frame counter advances by one (a VSYNC-clear hold-gate or the poke-time
+    max-scanlines cutoff — see `tia_poke`), OR until the 25000-instruction
+    budget is exhausted.
 
-    The frame counter increments either on a software VSYNC falling edge
-    (the standard Atari pattern — see P3f) or, as a safety fallback,
-    when the scanline counter wraps past 262.
+    Task #106 (partial-frame model): the budget is xitari's
+    `m6502().execute(25000)`. When it runs out WITHOUT a frame boundary, this
+    returns a *grey* frame — the frame counter has NOT advanced and the TIA's
+    beam/scanline/cycle state is preserved, so the next `run_until_frame`
+    continues the same TIA frame (xitari leaves `myPartialFrameFlag` true and
+    skips `startFrame()`). This reproduces qbert's boot→step "sliver" frame.
+    Mirror of jutari `run_until_frame!`.
     """
     start_frame = int(console.bus.tia.frame)
     cpu, bus = console.cpu, console.bus
-    for _ in range(_FRAME_INSTRUCTION_LIMIT):
+    for _ in range(_UPDATE_INSTRUCTION_BUDGET):
         cpu, bus = cpu_step(cpu, bus)
         if int(bus.tia.frame) != start_frame:
-            return Console(cpu=cpu, bus=bus)
-    raise RuntimeError(
-        f"run_until_frame exceeded {_FRAME_INSTRUCTION_LIMIT} instructions "
-        f"without a frame boundary (start_frame={start_frame})."
-    )
+            return Console(cpu=cpu, bus=bus)   # frame completed (endFrame)
+    return Console(cpu=cpu, bus=bus)           # grey frame: execute(25000) budget
