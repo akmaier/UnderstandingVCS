@@ -4930,3 +4930,29 @@ cycle-threading (the #58/#63 class) — shared logic that breakout/pong's
 pixel-exact RESP*/HMOVE/PF depend on, so it MUST be gated on the full screen+RAM
 sweep (those are the canaries). Not attempted blind; left precisely targeted with
 the harness as the tool to verify any fix.
+
+### ⚠️ CORRECTION (2026-06-16): jutari's PF/deferred-write activation timing is CORRECT — there is NO CPU↔TIA phase bug
+
+Direct xitari instrumentation (temporary fprintf in TIA::poke's PF-delay branch,
+TIA.cxx:1994, printing the TRUE frame-relative `x = (clock - myClockWhenFrameStarted)
+%228`, delay, and activation; reverted + libxitari rebuilt) overturns the prior
+"jutari activates PF +12cc late" diagnosis. On tutankham sl137 xitari's REAL
+activations are PF0→**176**, PF1→**204** — **identical to jutari's** (176/204).
+
+The earlier "+12" was a measurement ARTIFACT: the `--bus-trace` color_clock is
+`cpu_cycles*3 % 228`, which is offset from xitari's true frame-relative beam
+position `(clock - myClockWhenFrameStarted) % 228` by the per-frame `startFrame`
+carry (~+9 on this frame; xitari's bus-trace cc=162 ⇒ true x=171 ⇒ activate 176).
+**Lesson for the harness: the `--bus-trace` cc/scanline are CPU-cycle-derived and
+are offset from xitari's TRUE rendered beam position by the startFrame carry — do
+NOT use bus-trace cc for precise PF/sprite render-timing; use xitari's frame-
+relative `x` (XI_PF_DBG-style instrumentation) or jutari's own pending activations
+(which ARE correct).** jutari's pending activations matched xitari exactly here.
+
+So tutankham's 80px band is NOT a per-poke timing bug. With PF0@176/PF1@204
+matching and PF2's write wrapping past the scanline end in BOTH (activate 236 →
+applies to the next scanline), the real divergence is the OLD PF2 carried into
+sl137 (the cols-96-111 band = right-half reflected PF2 bits 0-3, rendered at
+cc164-179, BEFORE PF0@176) — i.e. a cross-scanline racing-the-beam PF-register
+carry difference, to be chased with the harness across consecutive scanlines.
+Net: do NOT touch the (correct) beam_cc / deferred-write timing.
