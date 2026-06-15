@@ -329,6 +329,13 @@ mutable struct TIAState
     # Mirror of the #97 `hmove_blank_pending_next` comb deferral. (0,0,0,0,0)
     # = nothing pending (applying it is a no-op).
     hmove_motion_next::NTuple{5,Int}
+    # Task #103 (surround): xitari `myVSYNCFinishClock` (TIA.cxx:2020).
+    # When VSYNC D1 is SET, this is armed to (frame-relative clock + 228);
+    # a later VSYNC CLEAR only ends the frame if the beam has reached this
+    # clock — i.e. VSYNC must be HELD >= 1 scanline. Sub-scanline VSYNC
+    # pulses do NOT end the frame (they did in the old edge-only logic,
+    # which split surround's frames in half). `typemax(Int)` = disarmed.
+    vsync_finish_clock::Int
 end
 
 # INPT defaults: paddle pots ($80 = centred), triggers idle high (D7=1).
@@ -352,6 +359,7 @@ initial_tia_state() = TIAState(
     false,                             # 2026-06-04: vsync_reset_pending = false
     0,                                 # task #80: lines_since_frame = 0
     (0, 0, 0, 0, 0),                   # task #99: hmove_motion_next = none
+    typemax(Int),                      # task #103: vsync_finish_clock disarmed
 )
 
 """
@@ -564,20 +572,30 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
     if reg == W_WSYNC
         tia.wsync_pending = true
     elseif reg == W_VSYNC
+        # Task #103 (surround): xitari-faithful VSYNC frame-end with the
+        # myVSYNCFinishClock hold-gate (TIA.cxx:2011-2031). A VSYNC CLEAR
+        # only ends the frame if VSYNC was HELD for >= 1 scanline (228
+        # color clocks); sub-scanline pulses are ignored. The old logic
+        # ended the frame on ANY 1→0 edge, splitting surround's frames in
+        # half (it pulses VSYNC briefly). `frame_clock` is the beam's
+        # frame-relative color clock at this poke = xitari's
+        # (clock - myClockWhenFrameStarted). The actual scanline/frame
+        # counter reset stays DEFERRED to the end of tia_advance!
+        # (2026-06-04 vsync_reset_pending); we only DECIDE here.
         new_vsync = (Int(value) & 0x02) != 0
-        if tia.vsync_active && !new_vsync
-            # 1→0 edge: software frame boundary. 2026-06-04 — DEFER the
-            # actual reset until the end of `tia_advance!`. Resetting
-            # mid-instruction makes the new frame's first bus op land
-            # one CPU cycle earlier than xitari (see TIAState field
-            # comment). We do mark vsync_active=false here so the
-            # collision-pipeline / VBLANK gating sees the new VSYNC
-            # state for the rest of this instruction.
-            tia.vsync_active = false
+        frame_clock = tia.lines_since_frame * COLOR_CLOCKS_PER_SCANLINE + Int(beam_cc)
+        if new_vsync
+            # SET — arm (xitari myVSYNCFinishClock = clock + 228). Each
+            # set re-arms; only one scanline of hold is required to "count".
+            tia.vsync_finish_clock = frame_clock + COLOR_CLOCKS_PER_SCANLINE
+        elseif frame_clock >= tia.vsync_finish_clock
+            # CLEAR and VSYNC held >= 1 scanline → end the frame.
+            tia.vsync_finish_clock = typemax(Int)
             tia.vsync_reset_pending = true
-        else
-            tia.vsync_active = new_vsync
         end
+        # Keep vsync_active reflecting current D1 for collision/VBLANK
+        # gating that reads it during the rest of this instruction.
+        tia.vsync_active = new_vsync
     elseif reg == W_VBLANK
         tia.vblank_active = (Int(value) & 0x02) != 0
         # P4c (dump-pot) — VBLANK D7 grounds the paddle-pot cap. On
@@ -912,6 +930,11 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
         tia.frame += UInt64(1)
         tia.scanline = 0
         tia.lines_since_frame = 0
+        # Task #103: disarm the VSYNC hold-gate at a non-VSYNC frame
+        # boundary so a stale finish clock from the previous frame can't
+        # spuriously end the next one (the VSYNC-reset path already
+        # disarmed it in the poke handler).
+        tia.vsync_finish_clock = typemax(Int)
     end
     return nothing
 end

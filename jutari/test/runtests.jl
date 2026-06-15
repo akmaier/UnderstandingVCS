@@ -2284,17 +2284,21 @@ end
         # the next `tia_advance!` so the new frame's first bus op lands
         # at xitari's expected sub-cycle (sc=6 vs the old jutari sc=5).
         # The test now exercises both halves of the lifecycle.
+        # Task #103 (air_raid): VSYNC must be HELD >= 1 scanline (228 color
+        # clocks) for the clear to end the frame — xitari's myVSYNCFinishClock
+        # hold-gate (TIA.cxx:2022). So set VSYNC, advance past one scanline,
+        # THEN clear.
         tia = initial_tia_state()
         tia.scanline = 100; tia.scanline_cycle = 42
         tia_poke!(tia, W_VSYNC, 0x02)
         @test tia.frame == 0
         @test tia.scanline == 100
         @test tia.vsync_active == true
+        # Hold VSYNC for >= 1 scanline (76 CPU cycles = 228 color clocks).
+        tia_advance!(tia, 76)
         tia_poke!(tia, W_VSYNC, 0x00)
         # Reset is now deferred — still no frame/scanline change here.
         @test tia.frame == 0
-        @test tia.scanline == 100
-        @test tia.scanline_cycle == 42
         @test tia.vsync_active == false
         @test tia.vsync_reset_pending == true
         # The next tia_advance! drains the pending reset.
@@ -2307,6 +2311,23 @@ end
         # `myClockWhenFrameStarted` offset).
         @test tia.scanline_cycle == 46     # 42 + 4 cycles advance
         @test tia.vsync_reset_pending == false
+    end
+
+    @testset "VSYNC short pulse (<1 scanline) does NOT end the frame" begin
+        # Task #103 (air_raid): xitari's myVSYNCFinishClock hold-gate
+        # (TIA.cxx:2022) requires VSYNC be HELD >= 1 scanline before a clear
+        # ends the frame. A sub-scanline pulse (set then clear a few cycles
+        # later, < 228 color clocks) must be IGNORED — the old edge-only
+        # logic wrongly ended the frame on any pulse, splitting air_raid's
+        # 291-line frame one scanline early.
+        tia = initial_tia_state()
+        tia.scanline = 100; tia.scanline_cycle = 0
+        tia_poke!(tia, W_VSYNC, 0x02)      # set (arms finish = +228 cc)
+        tia_advance!(tia, 10)              # hold only 10 CPU cy = 30 cc (< 228)
+        tia_poke!(tia, W_VSYNC, 0x00)      # clear — too soon, must NOT end
+        @test tia.vsync_reset_pending == false
+        tia_advance!(tia, 4)
+        @test tia.frame == 0               # no frame boundary from the pulse
     end
 
     @testset "VSYNC clear with no rising edge is no-op for frame" begin

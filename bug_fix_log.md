@@ -14,6 +14,39 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🎯 Task #103 — SOLVED (air_raid): VSYNC frame-end myVSYNCFinishClock hold-gate → air_raid 43→0 b/f (2026-06-14)
+
+The characterization workflow flagged a frame-boundary cause for air_raid (1-frame
+offset: jutari frame N == xitari frame N-1). The actual fix is xitari's **VSYNC
+hold-gate**, which jutari lacked.
+
+**xitari (TIA.cxx:2011-2031).** On a VSYNC write: if D1 SET, arm
+`myVSYNCFinishClock = clock + 228`. A later VSYNC CLEAR only ends the frame when
+`clock >= myVSYNCFinishClock` — i.e. **VSYNC must be HELD >= 1 scanline (228 color
+clocks)**. jutari's old logic ended the frame on ANY VSYNC D1 1→0 edge (no hold
+requirement).
+
+**Why this fixed air_raid.** air_raid runs a 291-scanline frame and drives VSYNC
+(set ~scanline 286, clear ~291). The old edge-only end interacted with the #80
+max-scanline cutoff (`lines_since_frame > 290`) such that jutari's boundary landed
+one scanline early → every per-frame state write in the line-290→291 overscan never
+ran before the RAM snapshot → 43 cells stuck at prior-frame values. With the faithful
+hold-gate, air_raid's frame ends at its real VSYNC boundary (held 5 scanlines >> 1),
+matching xitari.
+
+**Implementation (jutari `TIA.jl`).** New `vsync_finish_clock` field (default
+`typemax` = disarmed). W_VSYNC handler: `frame_clock = lines_since_frame*228 +
+beam_cc` (xitari's `clock - myClockWhenFrameStarted`); SET arms `frame_clock + 228`;
+CLEAR sets `vsync_reset_pending` (the existing 2026-06-04 deferred reset) only if
+`frame_clock >= vsync_finish_clock`. Disarmed at the max-scanline cutoff boundary too.
+
+**Result.** air_raid **43→0 b/f**. seaquest (#80 boot, VSYNC-less → uses max-scanline
+cutoff, unaffected) + breakout + the rest stay bit-exact. surround/qbert/elevator_action
+are NOT this mechanism (unchanged — separate causes). jaxtari mirror pending (the
+jaxtari W_VSYNC handler has the same edge-only logic). Sweep target: 60/64.
+
+---
+
 ### 🎯 Task #103 — SOLVED (amidar): per-game console difficulty (SWCHB) — amidar is A/A, not B/B → 11→0 b/f, both ports (2026-06-14)
 
 The 7-ROM characterization workflow flagged amidar as a SETTINGS issue (an agent
