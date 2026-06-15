@@ -4589,7 +4589,7 @@ pong/breakout still 0). RAM **62/64** unchanged (render-only); jutari Pkg.test
 green. NOTE: this is a SHARED structural-diverger fix (2 games at once) — unlike
 the heterogeneous up_n_down/pacman/qbert which remain distinct per-game bugs.
 
-### 🔬 Task #112 (render) (2026-06-15) — beam_sc lead = battle_zone-only; HMOVE-comb-carry is poke-driven (DEAD END, reverted)
+### ✅ Task #112 (render) (2026-06-15) — beam_sc lead (no-op); HMOVE comb consumed on first DISPLAY scanline → bowling/kangaroo 0
 
 Two HMOVE-comb findings from chasing the "beam_sc lead" surfaced in #111.
 
@@ -4605,24 +4605,33 @@ is no remaining conformance impact — and the underlying WSYNC/beam alignment i
 foundational (the 39 px-exact + 62 RAM-exact games depend on it), so it is NOT
 worth touching. Logged, not fixed.
 
-**(2) HMOVE-comb VBLANK-carry (bowling 8, kangaroo 8, pacman-top) — REVERTED.**
-ROOT CAUSE understood: jutari carries `hmove_blank_pending` through ALL VBLANK /
-pre-Y_START scanlines to the first visible row (#83 deliberately never clears it
-there), so an early VBLANK HMOVE strobe wrongly combs the first visible row's
-left 8px. xitari's comb-clear (TIA.cxx:1776-1784) is **POKE-DRIVEN**: the lazy
-`updateFrame` only clears `myHMOVEBlankEnabled` when a poke triggers a render
-chunk crossing the first 8 visible px. So whether the comb survives to the first
-visible row depends on whether intermediate VBLANK POKES occurred:
-- **pong**: NO pokes between its sl-27 strobe and row 0 → comb carries → row-0
-  comb (the #83 case, correct).
-- **bowling**: intermediate VBLANK pokes (re-strobes + COLU writes) → cleared
-  before the first visible row → NO comb there.
-ATTEMPTED FIX: consume the comb per scanline (plain `pending = _next`). Cleared
-bowling 8→0 + kangaroo 8→0, but REGRESSED **pong row-0 → 8px** and pacman
-(+8), because it clears pong's legitimately-carried comb too. jutari's
-per-scanline render cannot replicate xitari's poke-driven (lazy-updateFrame)
-clear without a poke-chunk render model — a larger architectural change.
-**REVERTED** (per the revert-on-regression discipline). bowling/kangaroo/
-pacman-top combs deferred until/unless a poke-driven comb-clear is built.
-Verified post-revert: pong 0, pacman 3362, battle_zone 0, bowling/kangaroo 8
-(prior state); only an in-code comment documents the attempt.
+**(2) HMOVE-comb "VBLANK-carry" (bowling 8, kangaroo 8) — SOLVED.**
+jutari carried `hmove_blank_pending` to the first VISIBLE scanline (the VBLANK
+branch never cleared it, #83), wrongly combing its left 8px. The REAL xitari
+mechanism (read in full, not the earlier poke-driven guess): `updateFrame`
+RETURNS EARLY for `clock < myClockStartDisplay` (TIA.cxx:1708) — it never renders
+NOR clears the comb in the PRE-display region (scanline < YStart) — then applies
++ clears `myHMOVEBlankEnabled` on the FIRST DISPLAY scanline (>= YStart), EVEN
+IF that scanline is VBLANK (the blank lands on already-black pixels, invisibly,
+and the flag clears). So the comb is visible ONLY when the first display scanline
+is itself visible:
+- **pong**: VBLANK off at sl 27 (< YStart 34) → first display row (sl 34) is
+  VISIBLE → row-0 comb shows (correct, #83 preserved).
+- **bowling**: VBLANK off at sl 38 (> YStart 34) → first display rows 34-37 are
+  VBLANK → comb consumed invisibly at sl 34 → sl 38 shows NO comb.
+
+ROUND 1 (reverted): consumed the comb on EVERY scanline incl. pre-display →
+killed pong's legitimate carry (pong row-0 → 8px) + pacman (+8).
+ROUND 2 (LANDED): consume the comb in the VBLANK branch too, but GATED on
+`scanline >= y_start_row` (the SAME gate the visible branch already uses for its
+clear). Pre-display scanlines (< YStart) still skip the clear → the carry to the
+first display scanline is preserved; display-region VBLANK scanlines now consume
+it like xitari. One line added to `tia_advance!` (TIA.jl VBLANK branch).
+
+VERIFIED: **bowling 8→0 ✅, kangaroo 8→0 ✅**; pong row-0 PRESERVED (0). Bonus:
+**berzerk 25→21, elevator_action 24→16** (they had comb px too). Screen
+scoreboard **39→41/64** pixel-exact, ZERO regressions (every other game holds
+its exact px). RAM **62/64** unchanged (the change only writes the framebuffer
+black-row branch + a flag); jutari Pkg.test green. pacman top rows 0-1 are a
+SEPARATE "draws-where-blanked" bug (jutari draws 132 where xitari blanks), not
+this comb — unchanged (3362).

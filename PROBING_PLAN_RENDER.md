@@ -220,11 +220,17 @@ pong-risk) → battle_zone (missing-object) → pacman bottom-HUD → up_n_down
   xitari x=74→no comb). Already moot (fixed by #111's property gate); other
   sl_cyc-73/74 strobers (kangaroo/centipede/asterix) are NOT post-WSYNC so
   jutari handles them right. Foundational WSYNC threading → NOT touched.
-- ⛔ **bowling/kangaroo (8 px) + pacman top rows 0-1** = the HMOVE-comb VBLANK-
-  carry. xitari's comb-clear is **POKE-DRIVEN** (lazy `updateFrame` clears
-  `myHMOVEBlankEnabled` only when a poke triggers a render chunk past the first
-  8 visible px — TIA.cxx:1776-1784). pong (no VBLANK pokes pre-row-0) carries
-  its comb to row 0 (correct, #83); bowling (intermediate VBLANK pokes) clears
-  it. A per-scanline "consume" fix (#112) cleared bowling/kangaroo but REGRESSED
-  pong row-0 + pacman → **reverted**. Needs a poke-driven comb-clear (model
-  `updateFrame` chunking) — a larger architectural change. DEFERRED.
+- ✅ **bowling/kangaroo (8 px) — SOLVED (#112 round 2).** The real xitari
+  mechanism: `updateFrame` returns early for `clock < myClockStartDisplay`
+  (TIA.cxx:1708) — it never clears the comb PRE-display (scanline < YStart) — then
+  consumes `myHMOVEBlankEnabled` on the FIRST DISPLAY scanline (>= YStart), even
+  if VBLANK (invisible). So the comb shows only if the first display scanline is
+  visible: pong (VBLANK off < YStart) → row-0 comb; bowling (VBLANK off > YStart)
+  → comb consumed invisibly, no comb. FIX: consume the comb in jutari's VBLANK
+  branch too, GATED on `scanline >= y_start_row` (the carry from pre-display is
+  preserved). bowling 8→0, kangaroo 8→0, berzerk 25→21, elevator_action 24→16;
+  pong/pacman unaffected. Screen 39→41/64. (#112 round 1 cleared unconditionally
+  incl. pre-display → killed pong's carry → reverted; the gate is the fix.)
+- **pacman top rows 0-1** = a SEPARATE "draws-where-blanked" bug (jutari draws
+  132 where xitari shows black), NOT the HMOVE comb — still open (part of the
+  3362).

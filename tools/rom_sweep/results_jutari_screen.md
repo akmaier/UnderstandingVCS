@@ -2,7 +2,7 @@
 
 Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `trace_dump --screen`, breakout_random_actions stream, first **60** frames after the standard 60-NOOP+4-RESET boot. Same per-game RomSettings as the RAM sweep (so a divergence is a genuine render delta, not a settings/boot mismatch).
 
-**Pixel-exact (0 px) over 60 frames: 39/64.**
+**Pixel-exact (0 px) over 60 frames: 41/64.**
 
 | game | max px/frame | total px | first div frame | worst-frame rows |
 |---|---|---|---|---|
@@ -16,8 +16,8 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | bank_heist | **0 ✅** | 0 | — | — |
 | battle_zone | **0 ✅** | 0 | — | — |
 | beam_rider | **0 ✅** | 0 | — | — |
-| berzerk | 25 | 97 | 42 | 4-181 |
-| bowling | 8 | 480 | 1 | 4-4 |
+| berzerk | 21 | 21 | 42 | 180-181 |
+| bowling | **0 ✅** | 0 | — | — |
 | boxing | **0 ✅** | 0 | — | — |
 | breakout | **0 ✅** | 0 | — | — |
 | carnival | 4 | 240 | 1 | 27-27 |
@@ -27,7 +27,7 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | defender | 9 | 540 | 1 | 183-183 |
 | demon_attack | 3 | 180 | 1 | 15-15 |
 | double_dunk | **0 ✅** | 0 | — | — |
-| elevator_action | 24 | 320 | 41 | 5-74 |
+| elevator_action | 16 | 160 | 41 | 73-74 |
 | enduro | **0 ✅** | 0 | — | — |
 | fishing_derby | **0 ✅** | 0 | — | — |
 | freeway | **0 ✅** | 0 | — | — |
@@ -38,7 +38,7 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | ice_hockey | 5 | 300 | 1 | 87-103 |
 | jamesbond | 1 | 60 | 1 | 21-21 |
 | journey_escape | 325 | 19191 | 1 | 13-196 |
-| kangaroo | 8 | 480 | 1 | 3-3 |
+| kangaroo | **0 ✅** | 0 | — | — |
 | krull | **0 ✅** | 0 | — | — |
 | kung_fu_master | **0 ✅** | 0 | — | — |
 | montezuma_revenge | **0 ✅** | 0 | — | — |

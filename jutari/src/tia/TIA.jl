@@ -966,20 +966,27 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
                         tia.framebuffer[completed_line + 1, :] .= UInt8(0)
                     end
                 end
+                # Task #112 (2026-06-15): CONSUME the HMOVE comb on this DISPLAY
+                # scanline, exactly like the visible branch (line ~923). xitari's
+                # `updateFrame` returns early for clock < myClockStartDisplay
+                # (TIA.cxx:1708) — it never renders or clears the comb in the
+                # PRE-display region (scanline < YStart) — then applies + CLEARS
+                # `myHMOVEBlankEnabled` on the FIRST display scanline (>= YStart),
+                # EVEN if that scanline is VBLANK (the blank lands on already-black
+                # pixels, invisibly, and the flag clears). So the comb only ever
+                # shows on the first display scanline if that scanline is VISIBLE:
+                #   - pong: VBLANK off at sl 27 (< YStart 34) → first display row
+                #     34 is visible → row-0 comb (correct, #83).
+                #   - bowling: VBLANK off at sl 38 (> YStart 34) → first display
+                #     rows 34-37 are VBLANK → comb consumed invisibly at sl 34 →
+                #     sl 38 shows NO comb (jutari previously combed sl 38 wrongly).
+                # The pre-display carry is PRESERVED: scanlines < y_start_row skip
+                # this clear (the gate), so a strobe below YStart still reaches the
+                # first display scanline. (#112 round 1 cleared unconditionally —
+                # even pre-display — which killed pong's carry; this gate is the
+                # fix.)
+                tia.hmove_blank_pending = false
             end
-            # Task #83 (2026-06-11): do NOT clear hmove_blank_pending
-            # here. VBLANK scanlines should preserve the flag so it
-            # reaches the first visible scanline that follows.
-            #
-            # Task #112 (2026-06-15) — attempted "consume per scanline" to fix
-            # the battle_zone/bowling spurious comb, but it REGRESSED pong row-0
-            # (-> 8px) + pacman (+8). xitari's comb-clear is POKE-DRIVEN (the
-            # lazy `updateFrame` only clears `myHMOVEBlankEnabled` when a poke
-            # triggers a render chunk crossing the first 8 visible px —
-            # TIA.cxx:1776-1784): pong has NO VBLANK pokes between its sl-27
-            # strobe and row 0, so the comb carries; bowling's intermediate
-            # VBLANK pokes clear it. jutari's per-scanline render can't replicate
-            # that without a poke-driven render model. Reverted; see bug_fix_log.
         end
         # All pending writes have been drained into tia.registers.
         empty!(tia.pending_writes)
