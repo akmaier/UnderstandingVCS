@@ -15,7 +15,12 @@ Pkg.activate(joinpath(@__DIR__, "..", "..", "jutari"))
 using JuTari
 using JuTari.Env: StellaEnvironment, env_reset!, env_step!, get_screen
 using JuTari.PaddleGames: BreakoutRomSettings, PongRomSettings
-using JuTari.JoystickGames: PitfallRomSettings, EnduroRomSettings
+using JuTari.JoystickGames: PitfallRomSettings, EnduroRomSettings,
+    AirRaidRomSettings, AsterixRomSettings, BeamRiderRomSettings,
+    DoubleDunkRomSettings, ElevatorActionRomSettings, GopherRomSettings,
+    GravitarRomSettings, JourneyEscapeRomSettings, PrivateEyeRomSettings,
+    SkiingRomSettings, UpNDownRomSettings, YarsRevengeRomSettings,
+    AmidarRomSettings, SurroundRomSettings
 using JuTari.RomSettingsModule: GenericRomSettings
 
 # ROM basename → RomSettings constructor (mirror of
@@ -29,11 +34,25 @@ using JuTari.RomSettingsModule: GenericRomSettings
 # video. The EMULATOR was correct (the RAM tool, which DOES map
 # pitfall→PitfallRomSettings, is bit-exact with xitari for 330 frames);
 # only this video-tool settings map was wrong. See bug_fix_log #95.
-const _SETTINGS_BY_BASENAME = Dict(
-    "breakout.bin" => () -> BreakoutRomSettings(),
-    "pong.bin"     => () -> PongRomSettings(),
-    "pitfall.bin"  => () -> PitfallRomSettings(),
-    "enduro.bin"   => () -> EnduroRomSettings(),
+const _SETTINGS_BY_BASENAME = Dict{String,Function}(
+    "breakout.bin"        => () -> BreakoutRomSettings(),
+    "pong.bin"            => () -> PongRomSettings(),
+    "pitfall.bin"         => () -> PitfallRomSettings(),
+    "enduro.bin"          => () -> EnduroRomSettings(),
+    "air_raid.bin"        => () -> AirRaidRomSettings(),
+    "asterix.bin"         => () -> AsterixRomSettings(),
+    "beam_rider.bin"      => () -> BeamRiderRomSettings(),
+    "double_dunk.bin"     => () -> DoubleDunkRomSettings(),
+    "elevator_action.bin" => () -> ElevatorActionRomSettings(),
+    "gopher.bin"          => () -> GopherRomSettings(),
+    "gravitar.bin"        => () -> GravitarRomSettings(),
+    "journey_escape.bin"  => () -> JourneyEscapeRomSettings(),
+    "private_eye.bin"     => () -> PrivateEyeRomSettings(),
+    "skiing.bin"          => () -> SkiingRomSettings(),
+    "up_n_down.bin"       => () -> UpNDownRomSettings(),
+    "yars_revenge.bin"    => () -> YarsRevengeRomSettings(),
+    "amidar.bin"          => () -> AmidarRomSettings(),
+    "surround.bin"        => () -> SurroundRomSettings(),
 )
 _settings_for_rom(p) = haskey(_SETTINGS_BY_BASENAME, basename(p)) ?
     _SETTINGS_BY_BASENAME[basename(p)]() : GenericRomSettings()

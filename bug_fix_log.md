@@ -4450,3 +4450,20 @@ surround 7 unchanged construction-counter residuals). jutari Pkg.test green.
 This was the last known jutari render/RAM residual on the conformance ROM set.
 jaxtari parity: jaxtari's dump-pot read uses bare int(total_cycles) too — it
 likely needs the same both-sides threading (follow-up for PXC2).
+
+### 🗺️ Render scoreboard + probing plan (2026-06-15) — 29/64 screen-exact
+
+Built `tools/rom_sweep/sweep_jutari_screen.py` (the render companion to the RAM
+sweep): per-frame 210x160 framebuffer diff, jutari vs xitari, 60 frames,
+correct per-game RomSettings. Result: **29/64 pixel-exact**
+(`results_jutari_screen.md`) — RAM is 62/64 bit-exact but the *renderer*
+diverges on 35 games. Per-pixel probes show one dominant signature: **jutari
+emits a colour where xitari emits black**, confined to scanline bands (rows
+outside the band match → not a global shift) — i.e. a TIA output-blanking /
+display-window family of bugs. Buckets + a probing methodology are written up in
+**PROBING_PLAN_RENDER.md**: (A) PAL screen height (5 games, jutari NTSC-only),
+(B) the VBLANK/window "draws-where-blanked" family (top band, bottom band,
+full-width structural fills — likely one shared root cause), (C) qbert (RAM-exact
+but 7664 px — a partial-frame/grey-frame framebuffer side-effect of #106).
+Verification mp4s (xitari|jutari|diff) rendered for pong/seaquest/enduro/qbert/
+breakout under tools/breakout_video/output/ (gitignored — local artifacts).
