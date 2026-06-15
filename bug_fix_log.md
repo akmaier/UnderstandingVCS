@@ -92,6 +92,25 @@ surround. Deferred to a focused, supervised session with the full 64-ROM sweep a
 gate. Tooling (`cpu_tia_cycle_trace.jl` + the normalize/dummy-collapse diff recipe) is
 in place to pinpoint the exact miscounting instruction next time.
 
+**UPDATE 2026-06-15 — pinpoint narrowed from 53 b/f to 2 ROOT BOOT-END BYTES.** The
+earlier "frame-timing drift" read was a measurement artifact (xitari's bus-trace derives
+sl/cc from frame-relative `mySystem->cycles()` reset each frame; jutari logs the real
+preserved beam — so the beam columns aren't comparable, and jutari's cycle-accurate 6502
+dummy reads/writes further offset the streams). Comparing the actual **boot-end RAM**:
+jutari ≡ xitari at boot-end EXCEPT **2 bytes — RAM[$20]=$00/$21=$00 (jutari) vs $22/$30
+(xitari)**. Everything else (the $2c-$3e table — ALL ZERO at boot-end in BOTH; the
+frame-1 BMI at $1874 on RAM[$3C+X]; the INTIM 14-vs-9 poll) CASCADES from these 2 bytes
+during frame 1. So elevator is NOT a frame-timing/partial-frame bug after all — it's a
+single conditional write to $20/$21 during the 80-frame boot (60 NOOP + 4 RESET + 16
+FIRE) that xitari performs ($22/$30) and jutari skips/zeroes. jutari pokes $A0/$A1 (=RAM
+$20/$21) =0 repeatedly through the boot; xitari's last boot write is $22/$30. NEXT STEP:
+trace xitari's BOOT (modify trace_dump to enable the bus-trace before `resetGame`, or do
+an explicit-boot mode) to find the exact boot frame/instruction + the condition (a
+register/INTIM read or computed value) under which xitari writes $22/$30 and jutari
+doesn't. This is now a narrow 2-byte boot divergence, far more tractable than a frame
+rewrite — and likely the same class as qbert (also boot-phase). Diagnostic recipe +
+boot-end-RAM compare are the tools; the fix scope is one conditional write.
+
 ---
 
 ### 🎯 Task #103 — SOLVED (air_raid): VSYNC frame-end myVSYNCFinishClock hold-gate → air_raid 43→0 b/f (2026-06-14)
