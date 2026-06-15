@@ -352,6 +352,11 @@ class TIAState(NamedTuple):
     # VSYNC 1→0 edge (see `tia_poke`) and on the cutoff itself. Dormant
     # for normal frames (VSYNC fires at ~262 < 290). Mirror of jutari.
     lines_since_frame: int = 0
+    # Task #103 (air_raid): xitari myVSYNCFinishClock (TIA.cxx:2020). Armed
+    # to (frame-relative clock + 228) when VSYNC D1 is SET; a later CLEAR
+    # only ends the frame once the beam reaches it — VSYNC must be HELD >= 1
+    # scanline. 0x7FFFFFFF = disarmed (xitari's default). Mirror of jutari.
+    vsync_finish_clock: int = 0x7FFFFFFF
 
 
 def initial_tia_state() -> TIAState:
@@ -397,6 +402,7 @@ def initial_tia_state() -> TIAState:
         hmove_blank_pending_next=False,
         hmove_motion_next=(0, 0, 0, 0, 0),
         lines_since_frame=0,
+        vsync_finish_clock=0x7FFFFFFF,
     )
 
 
@@ -831,20 +837,33 @@ def tia_poke(tia: TIAState, addr: int, value: int,
     if reg == W_WSYNC:
         new_tia = new_tia._replace(wsync_pending=True)
     elif reg == W_VSYNC:
+        # Task #103 (air_raid): xitari-faithful VSYNC frame-end with the
+        # myVSYNCFinishClock hold-gate (TIA.cxx:2011-2031). A VSYNC CLEAR
+        # only ends the frame if VSYNC was HELD >= 1 scanline (228 color
+        # clocks). The old logic ended the frame on ANY 1→0 edge, which
+        # landed air_raid's 291-line frame one scanline early. frame_clock
+        # = beam's frame-relative color clock = xitari's
+        # (clock - myClockWhenFrameStarted). Mirror of jutari TIA.jl.
         new_vsync = (value & 0x02) != 0
-        if tia.vsync_active and not new_vsync:
-            # 1→0 edge: frame boundary. Increment frame counter, reset
-            # scanline. Beam-accurate emulators reset scanline_cycle too;
-            # we follow that convention.
-            # Task #80: also reset `lines_since_frame` so the max-scanlines
-            # cutoff in `tia_advance` only fires for genuinely VSYNC-less
-            # stretches (>290 lines), never for a normal ~262-line frame.
+        bc = int(beam_cc) if beam_cc is not None else int(tia.color_clock)
+        frame_clock = int(tia.lines_since_frame) * COLOR_CLOCKS_PER_SCANLINE + bc
+        if new_vsync:
+            # SET — arm the finish clock 1 scanline out (each set re-arms).
+            new_tia = new_tia._replace(
+                vsync_active=True,
+                vsync_finish_clock=frame_clock + COLOR_CLOCKS_PER_SCANLINE,
+            )
+        elif frame_clock >= int(tia.vsync_finish_clock):
+            # CLEAR and VSYNC held >= 1 scanline → end the frame.
+            # Task #80: reset lines_since_frame so the max-scanlines cutoff
+            # only fires for genuinely VSYNC-less stretches.
             new_tia = new_tia._replace(
                 vsync_active=False,
                 frame=tia.frame + 1,
                 scanline=0,
                 scanline_cycle=0,
                 lines_since_frame=0,
+                vsync_finish_clock=0x7FFFFFFF,
             )
         else:
             new_tia = new_tia._replace(vsync_active=new_vsync)
@@ -1174,10 +1193,15 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
     # Mirror of jutari's cutoff in `tia_advance!`.
     new_lines_since_frame = tia.lines_since_frame + line_advance
     new_frame = tia.frame
+    new_vsync_finish_clock = tia.vsync_finish_clock
     if new_lines_since_frame > 290:
         new_frame = tia.frame + 1
         new_line = 0
         new_lines_since_frame = 0
+        # Task #103: disarm the VSYNC hold-gate at a non-VSYNC frame
+        # boundary so a stale finish clock can't spuriously end the next
+        # frame (the VSYNC-clear path already disarmed it in tia_poke).
+        new_vsync_finish_clock = 0x7FFFFFFF
     # P3i-c: thread the post-drain register file through to the new
     # state, and clear pending_writes (they've all been applied above
     # OR carried forward in the registers field). `tia_for_render`
@@ -1241,6 +1265,7 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
         # carries the running line count across advances.
         frame=new_frame,
         lines_since_frame=new_lines_since_frame,
+        vsync_finish_clock=new_vsync_finish_clock,
         color_clock=new_color_clock,
         framebuffer=fb,
         collisions=new_collisions,

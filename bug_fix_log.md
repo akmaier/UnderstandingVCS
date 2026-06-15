@@ -92,10 +92,16 @@ beam_cc` (xitari's `clock - myClockWhenFrameStarted`); SET arms `frame_clock + 2
 CLEAR sets `vsync_reset_pending` (the existing 2026-06-04 deferred reset) only if
 `frame_clock >= vsync_finish_clock`. Disarmed at the max-scanline cutoff boundary too.
 
-**Result.** air_raid **43→0 b/f**. seaquest (#80 boot, VSYNC-less → uses max-scanline
+**Result.** air_raid **43→0 b/f** on BOTH ports — jutari sweep 59→60 bit-exact;
+jaxtari air_raid verified 0 via direct RAM diff (the jaxtari W_VSYNC handler got the
+same `vsync_finish_clock` hold-gate + the new `vsync_finish_clock` NamedTuple field +
+the max-scanline-cutoff disarm). seaquest (#80 boot, VSYNC-less → uses max-scanline
 cutoff, unaffected) + breakout + the rest stay bit-exact. surround/qbert/elevator_action
-are NOT this mechanism (unchanged — separate causes). jaxtari mirror pending (the
-jaxtari W_VSYNC handler has the same edge-only logic). Sweep target: 60/64.
+are NOT this mechanism (unchanged — separate causes). jutari `Pkg.test` green (P3f
+VSYNC 36/36 — the lifecycle test now holds VSYNC >= 1 scanline + a new short-pulse
+regression test). NOTE: jaxtari pytest is wedged this session (xdist/JAX env), so the
+jaxtari mirror was verified via the direct RAM diff, not the suite — re-run the jaxtari
+suite in a clean shell to confirm.
 
 ---
 
