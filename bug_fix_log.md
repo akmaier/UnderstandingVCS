@@ -64,6 +64,34 @@ xitari trace_dump CpuDebug) to find the first divergent branch. Likely fix is a
 shared-core cycle-threading change → HIGH risk to the 60 bit-exact games; left for a
 supervised session (the diagnostic trace is safe; the fix is not).
 
+**elevator_action — CONCLUSIVE root cause via per-bus-op trace (2026-06-15).** Built a
+jutari↔xitari frame-1 bus-op diff (jutari `cpu_tia_cycle_trace.jl` — added
+`elevator_action` settings — vs xitari `trace_dump --bus-trace`), normalizing the
+mirror-address representation ($DDC6≡$1DC6) and collapsing jutari's cycle-accurate
+6502 dummy reads/writes (RMW write-old, branch-taken dummy read) that xitari's trace
+doesn't log. Findings:
+  1. CONTROL FLOW is identical until the first INTIM poll — the divergence is a
+     VALUE, not a branch-target, difference.
+  2. First divergent register read: **INTIM ($0284) = 14 (jutari) vs 9 (xitari)** at
+     the title loop's first timer poll. That 5-tick gap flips elevator's timer-gated
+     branch, so the demo/table-fill routine (which populates RAM $20-$74) never runs.
+  3. WHY INTIM differs: the timer is loaded (TIM64T $296=44) at scanline 0 in BOTH,
+     but jutari reaches the INTIM read at **scanline 24** vs xitari's **28** — jutari's
+     beam runs ~2-4 scanlines (~320 CPU cycles) BEHIND through scanlines 3-25, then
+     RE-SYNCS at scanline 36. The WSYNC ($02) progression confirms it: WSYNC #0 xi
+     sl=5 / ju sl=3; #1 xi 9 / ju 5; #2 xi 22 / ju 18; #3 xi 24 / ju 20; #4 xi 25 /
+     ju 21; #5 BOTH 36. So it's a transient per-scanline cycle/beam drift in the early
+     frame (identical instructions, different elapsed cycles → WSYNC-stall-dependent),
+     i.e. a frame-boundary / CPU↔TIA cycle-accounting timing difference — the SAME
+     family as qbert's sub-instruction "sliver" frame.
+**Status:** root cause is a shared-core frame-timing drift (beam ~2-4 scanlines behind
+in early frame-1), not a settings/feature gap. The fix is in the frame-boundary /
+cycle-accounting core (xitari's partial-frame `myClockWhenFrameStarted` model) → the
+single highest-risk change (touches every game's timing); likely also closes qbert +
+surround. Deferred to a focused, supervised session with the full 64-ROM sweep as the
+gate. Tooling (`cpu_tia_cycle_trace.jl` + the normalize/dummy-collapse diff recipe) is
+in place to pinpoint the exact miscounting instruction next time.
+
 ---
 
 ### 🎯 Task #103 — SOLVED (air_raid): VSYNC frame-end myVSYNCFinishClock hold-gate → air_raid 43→0 b/f (2026-06-14)

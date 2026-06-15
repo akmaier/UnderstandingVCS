@@ -34,6 +34,7 @@ Pkg.activate(joinpath(@__DIR__, "..", "jutari"))
 using JuTari
 using JuTari.Bus: trace_enable!, trace_disable!, trace_take!
 using JuTari.Env: StellaEnvironment, env_reset!, env_step!, frame_number
+using JuTari.JoystickGames: ElevatorActionRomSettings
 
 
 function _load_actions(path::AbstractString)
@@ -76,7 +77,8 @@ function _make_settings(name::AbstractString)
     nm == "pong"     && return PongRomSettings()
     nm == "breakout" && return BreakoutRomSettings()
     nm == "generic"  && return JuTari.RomSettingsModule.GenericRomSettings()
-    error("unknown rom-settings $name — known: pong, breakout, generic")
+    nm == "elevator_action" && return ElevatorActionRomSettings()
+    error("unknown rom-settings $name — known: pong, breakout, elevator_action, generic")
 end
 
 
