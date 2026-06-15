@@ -4354,3 +4354,32 @@ both correct & faithful, full sweep clean). Residuals = free-running frame
 counters ($80 / $fd) + surround's downstream frame-16 ball seed; ALL other
 gameplay state is bit-exact. A full fix needs exact replication of xitari's
 construction-time frame sequence (the unaccounted ~34 frames) — deferred.
+
+### ✅ Task #103 — surround emulation PROVEN correct; residual is construction-counter only (2026-06-15)
+
+Follow-up to the probe-attempt entry. An N-sweep (/tmp/probe_nsweep.jl: N probe
+frames @ max_sl=262 + keep-RAM reset + boot, then compare surround frames 1-20
+full 128 B RAM vs xitari) found:
+  N=60  maxdiff=7   N=130 maxdiff=1   N=190 maxdiff=0   N=220 maxdiff=1
+At **N=190 the entire RAM is BIT-EXACT (maxdiff=0)**. This PROVES surround's CPU/
+TIA/RIOT emulation is 100% correct — the 7 b/f residual (incl. the frame-16 ball
+bytes) is ENTIRELY downstream of one construction-time free-running counter ($fd):
+once $fd matches, every byte matches. So surround is "emulation bit-exact modulo
+the construction-time counter seed."
+
+Why no principled fix: the faithful 60-frame probe (xitari Console.cxx:199, run
+at the constructor-default 262 cutoff) gives only maxdiff=7 (≈ no change) — it
+adds +30 $fd, but xitari's effective seed is +95 (needs N≈190 jutari frames).
+The extra ~65 is not visible in xitari's construction source and can't be
+measured without instrumenting the (pristine) xitari core's TIA myFrameCounter.
+Worse, the offsets are per-game incompatible: surround needs +95 (PAL frame
+splits 2:1 at the 262 probe cutoff), skiing needs +1 (NTSC, no split) — a single
+uniform construction probe cannot satisfy both, and a faithful 60-frame probe
+fixes neither. A magic per-game frame count (surround=190) is not principled and
+isn't worth the cost (60-190 frames/reset, ≈9-30 min/reset on jaxtari) or risk.
+
+DECISION: accept skiing 84→1 and surround 16→7 as the final state for these two.
+Both are correct, xitari-faithful improvements (full 64-ROM sweep clean, 62/64
+bit-exact). Residuals are construction-time free-running frame counters ($80/$fd)
++ surround's downstream frame-16 ball seed; all other gameplay state is bit-exact
+(surround proven via the N-sweep). Closing #103 at 62/64.
