@@ -4588,3 +4588,41 @@ flag for the 62 "YES" games; every other nonzero game holds its exact prior px,
 pong/breakout still 0). RAM **62/64** unchanged (render-only); jutari Pkg.test
 green. NOTE: this is a SHARED structural-diverger fix (2 games at once) — unlike
 the heterogeneous up_n_down/pacman/qbert which remain distinct per-game bugs.
+
+### 🔬 Task #112 (render) (2026-06-15) — beam_sc lead = battle_zone-only; HMOVE-comb-carry is poke-driven (DEAD END, reverted)
+
+Two HMOVE-comb findings from chasing the "beam_sc lead" surfaced in #111.
+
+**(1) beam_sc lead — characterized, NO fix (battle_zone-only, already fixed).**
+jutari sees battle_zone's `WSYNC;STA HMOVE` strobe at line N+1 cc 0 (`x=0`,
+table TRUE) while xitari sees it at line N cc 222 (`sl_cyc 74`, `x=74`, table
+FALSE) — a ~6 cc / 2-cycle beam-position lead SPECIFIC to the WSYNC→HMOVE-line-
+tail idiom (jutari's beam has wrapped into the next line by the post-WSYNC write).
+This is the ONLY victim: kangaroo/centipede/asterix also strobe at sl_cyc 73/74
+but NOT post-WSYNC, so jutari attributes them correctly (no spurious comb).
+battle_zone is already fixed by #111's `HmoveBlanks=NO` property gate, so there
+is no remaining conformance impact — and the underlying WSYNC/beam alignment is
+foundational (the 39 px-exact + 62 RAM-exact games depend on it), so it is NOT
+worth touching. Logged, not fixed.
+
+**(2) HMOVE-comb VBLANK-carry (bowling 8, kangaroo 8, pacman-top) — REVERTED.**
+ROOT CAUSE understood: jutari carries `hmove_blank_pending` through ALL VBLANK /
+pre-Y_START scanlines to the first visible row (#83 deliberately never clears it
+there), so an early VBLANK HMOVE strobe wrongly combs the first visible row's
+left 8px. xitari's comb-clear (TIA.cxx:1776-1784) is **POKE-DRIVEN**: the lazy
+`updateFrame` only clears `myHMOVEBlankEnabled` when a poke triggers a render
+chunk crossing the first 8 visible px. So whether the comb survives to the first
+visible row depends on whether intermediate VBLANK POKES occurred:
+- **pong**: NO pokes between its sl-27 strobe and row 0 → comb carries → row-0
+  comb (the #83 case, correct).
+- **bowling**: intermediate VBLANK pokes (re-strobes + COLU writes) → cleared
+  before the first visible row → NO comb there.
+ATTEMPTED FIX: consume the comb per scanline (plain `pending = _next`). Cleared
+bowling 8→0 + kangaroo 8→0, but REGRESSED **pong row-0 → 8px** and pacman
+(+8), because it clears pong's legitimately-carried comb too. jutari's
+per-scanline render cannot replicate xitari's poke-driven (lazy-updateFrame)
+clear without a poke-chunk render model — a larger architectural change.
+**REVERTED** (per the revert-on-regression discipline). bowling/kangaroo/
+pacman-top combs deferred until/unless a poke-driven comb-clear is built.
+Verified post-revert: pong 0, pacman 3362, battle_zone 0, bowling/kangaroo 8
+(prior state); only an in-code comment documents the attempt.

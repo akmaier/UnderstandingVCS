@@ -208,3 +208,23 @@ RAM-exact games. Tackle ONE per focused session, gating on the full sweep:
 bowling/kangaroo (HMOVE-comb-carry, smallest + most precisely understood, but
 pong-risk) → battle_zone (missing-object) → pacman bottom-HUD → up_n_down
 (rainbow-kernel COLU timing, hardest). NOT a single shared fix.
+
+---
+
+## STATUS UPDATE after #111/#112 — battle_zone DONE; HMOVE-comb-carry BLOCKED
+
+- ✅ **#111** battle_zone 1112→0 + ms_pacman 232→0 via the `HmoveBlanks=NO`
+  property gate (`myAllowHMOVEBlanks`). NOT a missing-object bug. Screen 37→39/64.
+- 🔬 **#112** the **beam_sc lead** is battle_zone-only (the `WSYNC;STA HMOVE`
+  line-tail idiom: jutari's beam wraps to the next line's cc 0, x=0→comb;
+  xitari x=74→no comb). Already moot (fixed by #111's property gate); other
+  sl_cyc-73/74 strobers (kangaroo/centipede/asterix) are NOT post-WSYNC so
+  jutari handles them right. Foundational WSYNC threading → NOT touched.
+- ⛔ **bowling/kangaroo (8 px) + pacman top rows 0-1** = the HMOVE-comb VBLANK-
+  carry. xitari's comb-clear is **POKE-DRIVEN** (lazy `updateFrame` clears
+  `myHMOVEBlankEnabled` only when a poke triggers a render chunk past the first
+  8 visible px — TIA.cxx:1776-1784). pong (no VBLANK pokes pre-row-0) carries
+  its comb to row 0 (correct, #83); bowling (intermediate VBLANK pokes) clears
+  it. A per-scanline "consume" fix (#112) cleared bowling/kangaroo but REGRESSED
+  pong row-0 + pacman → **reverted**. Needs a poke-driven comb-clear (model
+  `updateFrame` chunking) — a larger architectural change. DEFERRED.

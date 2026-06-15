@@ -970,6 +970,16 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
             # Task #83 (2026-06-11): do NOT clear hmove_blank_pending
             # here. VBLANK scanlines should preserve the flag so it
             # reaches the first visible scanline that follows.
+            #
+            # Task #112 (2026-06-15) — attempted "consume per scanline" to fix
+            # the battle_zone/bowling spurious comb, but it REGRESSED pong row-0
+            # (-> 8px) + pacman (+8). xitari's comb-clear is POKE-DRIVEN (the
+            # lazy `updateFrame` only clears `myHMOVEBlankEnabled` when a poke
+            # triggers a render chunk crossing the first 8 visible px —
+            # TIA.cxx:1776-1784): pong has NO VBLANK pokes between its sl-27
+            # strobe and row 0, so the comb carries; bowling's intermediate
+            # VBLANK pokes clear it. jutari's per-scanline render can't replicate
+            # that without a poke-driven render model. Reverted; see bug_fix_log.
         end
         # All pending writes have been drained into tia.registers.
         empty!(tia.pending_writes)
