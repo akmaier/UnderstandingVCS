@@ -4272,3 +4272,50 @@ Mirrored the jutari fix to jaxtari (faithful structural copy; jaxtari uses the
   passing GenericRomSettings, not a regression). All 8-frame NOOP aligned diffs.
 - This keeps the jaxtari ≡ jutari (PXC2) invariant: both now match xitari's
   partial-frame slicing.
+
+### ✅ Task #103 PROGRESS (jutari) (2026-06-15) — skiing 84→1, surround 16→7 (illegal-action filter + PAL/SELECT-RESET)
+
+Two parallel investigation agents pinpointed both residuals (read-only,
+evidence-based). Implemented the jutari fixes; gated on the full 64-ROM sweep
+(62/64 stay bit-exact, ZERO regressions incl. seaquest/air_raid/qbert).
+
+**SKIING 84 → 1 (illegal-action injection).** xitari's `StellaEnvironment::act`
+calls `noopIllegalActions` (stella_environment.cpp:189) BEFORE a user step,
+converting actions for which `isLegal` is false to NOOP. Skiing is the ONLY
+supported game overriding `isLegal` (Skiing.cpp:96-111: rejects the whole FIRE
+family {1,10,11,12,13,14,15,16,17}). The sweep's shared breakout stream injects
+FIRE at frame 20; jutari applied it verbatim (no legal-action filter) → skiing's
+game state diverged 84 b/f. Fix: added `romsettings_is_legal_action` (default
+true; RomSettings.jl), overrode SkiingRomSettings (JoystickGames.jl), and
+filter illegal→NOOP in `env_step!` (StellaEnvironment.jl). Starting actions
+bypass the filter (xitari emulate() bypasses noopIllegalActions). Residual 1 b/f
+= a SEPARATE pre-existing $00 frame-counter off-by-one (present under pure NOOP).
+
+**SURROUND 16 → 7 (PAL frame cutoff + console-switch starting actions).** Two
+coupled causes: (1) missing SurroundRomSettings — xitari getStartingActions =
+{SELECT,RESET} (Surround.cpp:135) selects game variation 1; jutari booted
+generic (variation 0). Added a console-switch starting-actions path
+(`romsettings_console_switch_starts` → routed via `console_switches!` in
+env_reset!, since apply_action! can't encode codes 46/40). (2) surround is PAL
+(312-line frame); jutari's hardcoded 290 max-scanlines cutoff force-split it
+into 291+21 = two frames/TV-frame (half-rate counters). Added a PAL-gated
+max-scanlines threshold: `max_scanlines` field on TIAState (default 290, set to
+342 for `romsettings_pal` ROMs in env_reset!), and the poke-time cutoff now
+compares against it. PAL-GATED, not global — seaquest (NTSC, 455-line boot burst
+sliced at 290) stays 0; air_raid (PAL, VSYNC@286) is cutoff-insensitive and
+stays 0. Result: frame-0 6→1 byte, per-frame rate corrected ($fd now +1/frame
+matching xitari). Residual 7 b/f: (a) $fd has the right RATE but a constant +95
+offset — xitari runs 60 PAL-autodetect probe frames at console construction
+(Console.cxx:199) that increment surround's free-running $fd; jutari uses a
+static PAL flag (no probe). (b) a frame-16 ball-movement divergence
+($e6/$ea/$ed/$ef/$f2/$fc) — game state matches frames 1-15, diverges when the
+ball starts moving. Both are deeper than the settings/PAL fixes; documented for
+follow-up (full fix would need replicating xitari's construction-time probe +
+the ball-timing bug).
+
+Files: jutari/src/games/RomSettings.jl (3 new interfaces),
+jutari/src/games/JoystickGames.jl (Skiing legal-action override +
+SurroundRomSettings + PAL flags), jutari/src/env/StellaEnvironment.jl
+(illegal-action filter + console-switch starts + PAL max_scanlines),
+jutari/src/tia/TIA.jl (max_scanlines field + PAL-aware cutoff),
+tools/jutari_trace_dump.jl (surround → SurroundRomSettings).

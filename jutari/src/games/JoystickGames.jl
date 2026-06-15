@@ -18,14 +18,15 @@ module JoystickGames
 
 using ..RomSettingsModule: RomSettings
 using ..ConsoleModule: Console
-import ..RomSettingsModule: romsettings_starting_actions, romsettings_difficulty
+import ..RomSettingsModule: romsettings_starting_actions, romsettings_difficulty,
+    romsettings_is_legal_action, romsettings_console_switch_starts, romsettings_pal
 
 export PitfallRomSettings, EnduroRomSettings,
        AirRaidRomSettings, AsterixRomSettings, BeamRiderRomSettings,
        DoubleDunkRomSettings, ElevatorActionRomSettings, GopherRomSettings,
        GravitarRomSettings, JourneyEscapeRomSettings, PrivateEyeRomSettings,
        SkiingRomSettings, UpNDownRomSettings, YarsRevengeRomSettings,
-       AmidarRomSettings
+       AmidarRomSettings, SurroundRomSettings
 
 # --------------------------------------------------------------------------- #
 # Task #100 follow-up: 12 joystick games whose only conformance-relevant
@@ -62,6 +63,32 @@ romsettings_starting_actions(::PrivateEyeRomSettings)     = Int[2]   # UP
 romsettings_starting_actions(::SkiingRomSettings)         = fill(5, 16)  # 16× DOWN (xitari Skiing.cpp loop)
 romsettings_starting_actions(::UpNDownRomSettings)        = Int[1]   # FIRE
 romsettings_starting_actions(::YarsRevengeRomSettings)    = Int[1]   # FIRE
+
+# Task #103 (skiing): xitari's SkiingSettings::isLegal (Skiing.cpp:96-111)
+# disallows the entire FIRE family; `StellaEnvironment::act`'s
+# `noopIllegalActions` converts those to NOOP before emulating a user step.
+# Skiing is the ONLY supported game that overrides isLegal (base = all legal),
+# so this is the only override needed. Without it, the 64-ROM sweep's shared
+# breakout action stream injects FIRE at frame 20 and skiing diverges 84 b/f.
+# ALE FIRE-family codes: FIRE=1, UP/RIGHT/LEFT/DOWN-FIRE=10/11/12/13,
+# diagonal-FIRE=14/15/16/17.
+const _SKIING_ILLEGAL = (1, 10, 11, 12, 13, 14, 15, 16, 17)
+romsettings_is_legal_action(::SkiingRomSettings, a::Integer) = !(Int(a) in _SKIING_ILLEGAL)
+
+# Task #103 (surround): surround is a PAL game whose xitari getStartingActions
+# = {SELECT, RESET} (Surround.cpp:135) selects game variation 1 then starts
+# it. SELECT/RESET are console switches (not joystick), so they go through
+# `romsettings_console_switch_starts` (routed via `console_switches!` in
+# env_reset!). PAL → 342-scanline max-frame cutoff (its 312-line frame would
+# otherwise be split by the NTSC 290 cutoff → half-rate counters, the
+# #103/#106 partial-frame family). SELECT=46, RESET=40.
+struct SurroundRomSettings <: RomSettings end
+romsettings_console_switch_starts(::SurroundRomSettings) = Int[46, 40]  # SELECT, RESET
+romsettings_pal(::SurroundRomSettings) = true
+# air_raid is also a PAL dump (its real VSYNC at scanline 286 ends the frame
+# before either 290 or 342, so the threshold doesn't change its result — but
+# flag it for correctness / xitari parity).
+romsettings_pal(::AirRaidRomSettings) = true
 
 # Task #103 (amidar): amidar's stella.pro entry overrides BOTH console
 # difficulty switches to "A" (Console.LeftDifficulty/RightDifficulty = "A"),

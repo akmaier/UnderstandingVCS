@@ -17,7 +17,9 @@ export RomSettings, GenericRomSettings,
        romsettings_reset!, romsettings_is_terminal,
        romsettings_get_reward, romsettings_lives,
        romsettings_uses_paddles, romsettings_swap_paddles,
-       romsettings_starting_actions, romsettings_difficulty
+       romsettings_starting_actions, romsettings_difficulty,
+       romsettings_is_legal_action,
+       romsettings_console_switch_starts, romsettings_pal
 
 abstract type RomSettings end
 
@@ -63,6 +65,35 @@ romsettings_swap_paddles(::RomSettings)          = false
 # `true` for that switch (e.g. Amidar = A/A → SWCHB 0xFF). xitari
 # Switches.cxx: a "B" property clears the bit, otherwise the bit stays set.
 romsettings_difficulty(::RomSettings)            = (false, false)
+# Per-game action legality — mirror of xitari's `RomSettings::isLegal`
+# (RomSettings.cpp: base returns true for ALL actions). xitari's
+# `StellaEnvironment::act` calls `noopIllegalActions` BEFORE emulating a
+# USER step (stella_environment.cpp:189), converting any action for which
+# `isLegal` is false into PLAYER_A_NOOP. Only ONE supported game overrides
+# this: Skiing (Skiing.cpp:96-111) disallows the whole FIRE family. The
+# default here returns `true` for every action so the filter is a no-op for
+# all other games. NOTE: starting actions are emulated via xitari's
+# `emulate()` which BYPASSES `noopIllegalActions`, so this filter is applied
+# in `env_step!` only, NOT to `romsettings_starting_actions`.
+romsettings_is_legal_action(::RomSettings, ::Integer) = true
+# Per-game CONSOLE-SWITCH starting actions (SELECT=46, RESET=40), emulated
+# AFTER the joystick `romsettings_starting_actions`. xitari's
+# `getStartingActions` returns these as ordinary ALE actions, but they map to
+# Event::ConsoleSelect/Reset (SWCHB bit1/bit0) rather than the joystick port,
+# and jutari's `apply_action!` can't encode codes 46/40 — so `env_reset!`
+# routes them through `console_switches!` instead. Surround is the headline
+# case: getStartingActions = {SELECT, RESET} selects game variation 1 then
+# starts it (Surround.cpp:135). Default empty.
+romsettings_console_switch_starts(::RomSettings) = Int[]
+# PAL vs NTSC. xitari auto-detects the TV format with a 60-frame probe
+# (Console.cxx:199-206: PAL if ≥15 of frames 30-60 exceed 285 scanlines) and
+# sets `myMaximumNumberOfScanlines` to 342 (PAL) vs 290 (NTSC) (TIA.cxx:206-211),
+# which gates the max-scanlines frame cutoff (TIA.cxx:2003). For RAM
+# conformance only that cutoff threshold matters (the PAL colour palette is
+# render-only). Default NTSC (false). Surround + Air-Raid are PAL dumps; only
+# surround's 312-line frame actually needs 342 (it would otherwise be split by
+# the 290 cutoff — the #103/#106 partial-frame family).
+romsettings_pal(::RomSettings) = false
 
 """No-op RomSettings — never terminal, zero reward, joystick-only."""
 mutable struct GenericRomSettings <: RomSettings

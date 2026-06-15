@@ -336,6 +336,12 @@ mutable struct TIAState
     # pulses do NOT end the frame (they did in the old edge-only logic,
     # which split surround's frames in half). `typemax(Int)` = disarmed.
     vsync_finish_clock::Int
+    # Task #103 (surround): xitari's `myMaximumNumberOfScanlines` — the
+    # max-scanlines frame cutoff threshold (TIA.cxx:206-211): 290 for NTSC,
+    # 342 for PAL. Defaults to 290; `StellaEnvironment.env_reset!` sets 342
+    # for PAL ROMs (romsettings_pal). A PAL 312-line frame must NOT be split
+    # by the NTSC 290 cutoff (that halved surround's per-frame counters).
+    max_scanlines::Int
 end
 
 # INPT defaults: paddle pots ($80 = centred), triggers idle high (D7=1).
@@ -360,6 +366,7 @@ initial_tia_state() = TIAState(
     0,                                 # task #80: lines_since_frame = 0
     (0, 0, 0, 0, 0),                   # task #99: hmove_motion_next = none
     typemax(Int),                      # task #103: vsync_finish_clock disarmed
+    290,                               # task #103: max_scanlines = 290 (NTSC)
 )
 
 """
@@ -516,7 +523,7 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
     # Scanlines`. We only set the deferred reset flag (the actual scanline/
     # frame counter reset happens at the end of tia_advance!, 2026-06-04).
     let frame_clock = tia.lines_since_frame * COLOR_CLOCKS_PER_SCANLINE + Int(beam_cc)
-        if frame_clock ÷ COLOR_CLOCKS_PER_SCANLINE > 290 && !tia.vsync_reset_pending
+        if frame_clock ÷ COLOR_CLOCKS_PER_SCANLINE > tia.max_scanlines && !tia.vsync_reset_pending
             tia.vsync_reset_pending = true
             # Disarm a stale VSYNC hold-gate so it can't end the next frame.
             tia.vsync_finish_clock = typemax(Int)

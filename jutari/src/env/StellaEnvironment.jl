@@ -18,7 +18,9 @@ using ..RomSettingsModule: RomSettings, GenericRomSettings,
                            romsettings_reset!, romsettings_is_terminal,
                            romsettings_get_reward, romsettings_lives,
                            romsettings_uses_paddles, romsettings_swap_paddles,
-                           romsettings_starting_actions, romsettings_difficulty
+                           romsettings_starting_actions, romsettings_difficulty,
+                           romsettings_is_legal_action,
+                           romsettings_console_switch_starts, romsettings_pal
 using ..TIA: Y_START, VISIBLE_HEIGHT, set_paddle_resistance!
 
 export StellaEnvironment, env_reset!, env_step!,
@@ -88,6 +90,15 @@ function env_reset!(env::StellaEnvironment;
     console_reset!(env.console)
     romsettings_reset!(env.settings)
     env.terminal = false
+    # --- TV format (#103, surround) -------------------------------------
+    # xitari auto-detects PAL vs NTSC and sets the max-scanlines frame
+    # cutoff to 342 (PAL) vs 290 (NTSC) (TIA.cxx:206-211). Surround is a
+    # 312-line PAL frame; under the NTSC 290 cutoff its frame is force-split
+    # into 291+21 = two jutari frames per TV-frame (half-rate counters).
+    # Set the cutoff BEFORE the boot burn so every boot frame uses it. PAL
+    # is per-game (romsettings_pal); default NTSC keeps all 62 NTSC games
+    # untouched (their frames end at VSYNC well under 290).
+    env.console.bus.tia.max_scanlines = romsettings_pal(env.settings) ? 342 : 290
     # PXC1-x round 5: for paddle games, push the default paddle
     # resistance into the TIA BEFORE the boot-burn loop. xitari does
     # this at construction via `resetPaddles`; jaxtari does the same
@@ -154,11 +165,42 @@ function env_reset!(env::StellaEnvironment;
         run_until_frame!(env.console)
     end
 
+    # --- Console-switch starting actions (#103, surround) ----------------
+    # SELECT(46) / RESET(40) are console switches, not joystick actions, so
+    # they go through `console_switches!` (apply_action! can't encode them).
+    # xitari emulates getStartingActions = {SELECT, RESET} via emulate()
+    # (one frame each) to pick + start the game variation. Each switch is
+    # held for one frame then released; the difficulty bits are re-asserted
+    # in every SWCHB rebuild. Mirror of stella_environment.cpp emulate().
+    cs_starts = romsettings_console_switch_starts(env.settings)
+    for sw in cs_starts
+        console_switches!(env.console;
+                          select_pressed = (Int(sw) == 46),
+                          reset_pressed  = (Int(sw) == 40),
+                          p0_difficulty_a = diff0, p1_difficulty_a = diff1)
+        run_until_frame!(env.console)
+    end
+    if !isempty(cs_starts)
+        # Release the console switches (keep difficulty) so subsequent
+        # env_step! frames run with them up, as in xitari (each act() sets
+        # joystick events only → ConsoleSelect/Reset events fall back to 0).
+        console_switches!(env.console; p0_difficulty_a = diff0,
+                          p1_difficulty_a = diff1)
+    end
+
     return env
 end
 
 function env_step!(env::StellaEnvironment, action::Integer)
     env.terminal && return 0
+    # Task #103 (skiing): xitari's StellaEnvironment::act converts illegal
+    # actions to NOOP via noopIllegalActions (stella_environment.cpp:189)
+    # BEFORE emulating a USER step (starting actions bypass this). Only
+    # Skiing overrides isLegal (rejects the FIRE family); for every other
+    # game romsettings_is_legal_action is true so this is a no-op.
+    if !romsettings_is_legal_action(env.settings, Int(action))
+        action = Int(NOOP)
+    end
     uses_paddles = romsettings_uses_paddles(env.settings)
     swap_paddles = romsettings_swap_paddles(env.settings)
     if uses_paddles

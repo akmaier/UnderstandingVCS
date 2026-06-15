@@ -31,7 +31,7 @@ using JuTari.JoystickGames: PitfallRomSettings, EnduroRomSettings,
     DoubleDunkRomSettings, ElevatorActionRomSettings, GopherRomSettings,
     GravitarRomSettings, JourneyEscapeRomSettings, PrivateEyeRomSettings,
     SkiingRomSettings, UpNDownRomSettings, YarsRevengeRomSettings,
-    AmidarRomSettings
+    AmidarRomSettings, SurroundRomSettings
 
 # Per-ROM RomSettings autodetection — mirror of jaxtari `tools/check_trace.py`.
 # Activates the dump-pot model + paddle-action handling for paddle
@@ -59,6 +59,7 @@ const _SETTINGS_BY_BASENAME = Dict{String,Function}(
     "up_n_down.bin"       => () -> UpNDownRomSettings(),
     "yars_revenge.bin"    => () -> YarsRevengeRomSettings(),
     "amidar.bin"          => () -> AmidarRomSettings(),
+    "surround.bin"        => () -> SurroundRomSettings(),
 )
 _settings_for_rom(rom_path::AbstractString) =
     haskey(_SETTINGS_BY_BASENAME, basename(rom_path)) ?
