@@ -261,9 +261,40 @@ added `framebuffer_prev` + a swap armed at frame completion, performed at the ne
 `run_until_frame!` start (mirror xitari startFrame). qbert 7664→0; screen 42→43/64;
 RAM 62/64 BYTE-IDENTICAL (no regression); Pkg.test green.
 
-Remaining render long-tail (22 non-exact): journey_escape 325 (object X-position,
-structural), robotank 241, surround 224 (construction-counter NON-BUG), up_n_down
-221 (sprite/PF racing), qbert 7664 @ frame 2 (#106 grey frame), tutankham 80,
-air_raid 24 / atlantis 24 / elevator_action 16 (PAL-region / bottom-band), berzerk
-21, defender 9, ice_hockey 5, carnival 4, amidar 3 / centipede 3 / demon_attack 3
-/ wizard_of_wor 3, solaris 2, asterix 1 / jamesbond 1 / pooyan 1.
+## Render triage (2026-06-15) — screen 44/64, RAM 64/64 BIT-EXACT
+
+qbert (#114 double-buffer) and surround (probe + double-boot) are now BOTH
+pixel-exact. Per-pixel triage of the remaining **20** divergences (all render-only —
+RAM is 64/64 — via `/tmp/pixel_detail.py` over `sweep_jutari_screen`):
+
+**A. Structural (multi-row, per-game), 4 games**
+- journey_escape 325 — object X-position drift across rows 13-196.
+- robotank 241 — ROOT-CAUSED: the BALL (CTRLPF=0x30 → size 8, COLUPF=0=black)
+  renders at jutari bl_x=156 → black pixels at cols 156-159 over the colubk=136
+  background; xitari's ball lands ~4px further and wraps into the black left edge
+  (invisible). It's a **ball RESBL-in-HBLANK (jutari uses pos 2) + per-scanline
+  HMOVE accumulation** ~4px position divergence (ENABL set once @ sl83 cc66; HMOVE
+  fires every scanline; HMBL=0x60). FIX TARGET: ball X. RISK: shared ball logic —
+  breakout's ball is pixel-exact, so gate the full sweep.
+- up_n_down 221 — phantom sprite/PF blocks (jutari draws colour 54 where xitari is
+  black), rows 5-203.
+- tutankham 80 — horizontal colour band wrong (xi=50 vs ju=96), cols 96-135.
+
+**B. Centred score-digit / HUD cluster (single-scanline sub-cycle GRP), 13 games**
+Dominant pattern: a few px at the top (rows 11-27) or bottom (rows 183-193) HUD
+band, near screen centre (x≈83-92 = the score-digit region), where jutari draws an
+extra/shifted player-sprite (GRP) pixel or a digit colour-swap. The score-kernel
+sub-cycle GRP-shadow class (cf. #85 pong digits, #94 VDELP latch). asterix+jamesbond
+show the IDENTICAL signature (jutari=24 phantom px where xitari=0) → a shared
+GRP-extent/timing off-by-one is the likely common cause; one fix may close several.
+  defender 9, name_this_game 6, ice_hockey 5, carnival 4, wizard_of_wor 3,
+  demon_attack 3, centipede 3, amidar 3, solaris 2, asterix 1, jamesbond 1, pooyan 1.
+RISK: GRP shadow timing is load-bearing for the 44 pixel-exact games.
+
+**C. PAL / later-frame (≤24px), 3 games:** air_raid 24, atlantis 24, berzerk 21
+(first @ f42), elevator_action 16 (first @ f41) — bottom-band / gameplay-event deltas.
+
+Next targets by ROI: (1) the score-digit GRP cluster B (~13 games, likely a shared
+sub-cycle cause); (2) robotank's ball position A (root-caused, 1 game). BOTH touch
+shared render timing → a full screen + RAM sweep gate is mandatory after any change
+(the 44 exact games AND 64/64 RAM must both hold).
