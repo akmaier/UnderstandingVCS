@@ -4465,5 +4465,5 @@ display-window family of bugs. Buckets + a probing methodology are written up in
 (B) the VBLANK/window "draws-where-blanked" family (top band, bottom band,
 full-width structural fills — likely one shared root cause), (C) qbert (RAM-exact
 but 7664 px — a partial-frame/grey-frame framebuffer side-effect of #106).
-Verification mp4s (xitari|jutari|diff) rendered for pong/seaquest/enduro/qbert/
-breakout under tools/breakout_video/output/ (gitignored — local artifacts).
+Verification mp4s (xitari|jutari|diff) rendered + committed for pong/seaquest/
+enduro/qbert/breakout under tools/breakout_video/output/ (the repo tracks these).
