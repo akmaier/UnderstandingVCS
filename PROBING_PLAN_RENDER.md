@@ -321,3 +321,35 @@ framebuffer), the render long-tail is low-priority polish. Recommend: leave 44/6
 as the documented state unless a specific game's screen is needed, OR grind games
 one-by-one accepting low yield. The structural ones (journey_escape, up_n_down,
 tutankham) are better per-fix value than the ≤3px missile/GRP micro-bugs.
+
+### Per-game root-causes (2026-06-15, cont.) — all sub-cycle SHARED-render-timing
+
+Instrumented jutari's render (per-scanline object/colour/register dump) + xitari
+bus-traces for the worst bands. Every remaining divergence is the hardest class —
+sub-cycle / sub-scanline timing in SHARED render code (so a fix risks the 44
+pixel-exact games; gate the full sweep, breakout/pong are the canaries):
+
+- **robotank 241** — BALL. RESBL base (HBLANK→2 / visible→(c-68)+4) MATCHES xitari
+  (TIA.cxx:2361); HMCLR is implemented + correct. The divergence is HMOVE-motion
+  ACCUMULATION under per-scanline HMOVE (robotank strobes HMOVE every line @ cc0):
+  jutari's ball drifts to bl_x=156 (renders black cols 156-159 over colubk=136);
+  xitari's lands ~4px further (wraps into the black left edge, invisible). Needs
+  xitari render-internal instrumentation (myPOSBL + HMOVE clock at render — NOT a
+  simple field) to pin the per-HMOVE off-by-N. NB xitari also has RESBL-after-HMOVE
+  special-position hacks (TIA.cxx:2369-2389) jutari lacks — but robotank's RESBL
+  (hpos=21) doesn't hit them, so accumulation is the cause.
+- **tutankham 80** — PLAYFIELD mid-scanline write timing. At sl137 jutari draws PF
+  (COLUPF=96) at cols 96-108 where xitari shows bg (COLUBK=50). The end-of-line PF
+  (01,f0,00 reflected → cols 16-31 + 128-143) does NOT cover 96-108 → a mid-scanline
+  PF write activates ~12+ cols TOO EARLY in jutari (per-poke PF activation-clock,
+  #58 class).
+- **asterix/jamesbond/pooyan 1px** — MISSILE timing: an isolated m0/m1 pixel drawn
+  at one scanline where xitari shows nothing (enable/HMOVE-position micro-offset).
+- **defender/centipede/demon_attack/… (the ≤9px cluster)** — GRP score-kernel
+  shadow timing (#85/#94 class) — fragmented/shifted player-digit pixels.
+
+Common thread: per-poke ACTIVATION-CLOCK precision (PF/GRP/ENAM) + HMOVE-motion
+ACCUMULATION. No single shared fix; each needs xitari-vs-jutari per-poke timing
+instrumentation then a sweep-gated change. Tractability order (cleanest first):
+tutankham (one PF write, concrete cols) > robotank (ball HMOVE, needs xitari render
+internals) > the ≤3px missile/GRP micro-bugs.
