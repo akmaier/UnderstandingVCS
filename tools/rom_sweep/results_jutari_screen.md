@@ -6,7 +6,7 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 
 | game | max px/frame | total px | first div frame | worst-frame rows |
 |---|---|---|---|---|
-| air_raid | n/a | — | — | PAL? xitari 250h vs jutari 210h |
+| air_raid | 24 | 1440 | 1 | 219-223 |
 | alien | **0 ✅** | 0 | — | — |
 | amidar | 3 | 177 | 2 | 182-182 |
 | assault | **0 ✅** | 0 | — | — |
@@ -20,7 +20,7 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | bowling | 8 | 480 | 1 | 4-4 |
 | boxing | **0 ✅** | 0 | — | — |
 | breakout | **0 ✅** | 0 | — | — |
-| carnival | n/a | — | — | PAL? xitari 214h vs jutari 210h |
+| carnival | n/a | — | — | height: xitari 214h vs jutari (PAL not matched) |
 | centipede | 3 | 180 | 1 | 193-193 |
 | chopper_command | **0 ✅** | 0 | — | — |
 | crazy_climber | **0 ✅** | 0 | — | — |
@@ -37,7 +37,7 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | hero | **0 ✅** | 0 | — | — |
 | ice_hockey | 5 | 300 | 1 | 87-103 |
 | jamesbond | 1 | 60 | 1 | 21-21 |
-| journey_escape | n/a | — | — | PAL? xitari 230h vs jutari 210h |
+| journey_escape | n/a | — | — | height: xitari 230h vs jutari (PAL not matched) |
 | kangaroo | 8 | 480 | 1 | 3-3 |
 | krull | **0 ✅** | 0 | — | — |
 | kung_fu_master | **0 ✅** | 0 | — | — |
@@ -48,7 +48,7 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | phoenix | **0 ✅** | 0 | — | — |
 | pitfall | **0 ✅** | 0 | — | — |
 | pong | **0 ✅** | 0 | — | — |
-| pooyan | n/a | — | — | PAL? xitari 220h vs jutari 210h |
+| pooyan | n/a | — | — | height: xitari 220h vs jutari (PAL not matched) |
 | private_eye | **0 ✅** | 0 | — | — |
 | qbert | 7664 | 345224 | 2 | 34-205 |
 | riverraid | **0 ✅** | 0 | — | — |
@@ -59,7 +59,7 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | solaris | 2 | 120 | 1 | 11-11 |
 | space_invaders | **0 ✅** | 0 | — | — |
 | star_gunner | **0 ✅** | 0 | — | — |
-| surround | n/a | — | — | PAL? xitari 250h vs jutari 210h |
+| surround | 224 | 6840 | 16 | 106-145 |
 | tennis | **0 ✅** | 0 | — | — |
 | time_pilot | **0 ✅** | 0 | — | — |
 | tutankham | 80 | 4800 | 1 | 103-167 |

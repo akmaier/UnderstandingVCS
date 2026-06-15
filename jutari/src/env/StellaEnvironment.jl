@@ -20,7 +20,8 @@ using ..RomSettingsModule: RomSettings, GenericRomSettings,
                            romsettings_uses_paddles, romsettings_swap_paddles,
                            romsettings_starting_actions, romsettings_difficulty,
                            romsettings_is_legal_action,
-                           romsettings_console_switch_starts, romsettings_pal
+                           romsettings_console_switch_starts, romsettings_pal,
+                           romsettings_screen_height
 using ..TIA: Y_START, VISIBLE_HEIGHT, set_paddle_resistance!
 
 export StellaEnvironment, env_reset!, env_step!,
@@ -98,7 +99,15 @@ function env_reset!(env::StellaEnvironment;
     # Set the cutoff BEFORE the boot burn so every boot frame uses it. PAL
     # is per-game (romsettings_pal); default NTSC keeps all 62 NTSC games
     # untouched (their frames end at VSYNC well under 290).
-    env.console.bus.tia.max_scanlines = romsettings_pal(env.settings) ? 342 : 290
+    let pal = romsettings_pal(env.settings)
+        env.console.bus.tia.max_scanlines      = pal ? 342 : 290
+        # Task #110 (PAL render): taller display height (per-game), PAL-frame
+        # scanline wrap (312 vs 262), and colour-loss enable. NTSC defaults
+        # leave the render path identical.
+        env.console.bus.tia.screen_height_rows  = romsettings_screen_height(env.settings)
+        env.console.bus.tia.scanlines_per_frame = pal ? 312 : 262
+        env.console.bus.tia.color_loss_enabled  = pal
+    end
     # PXC1-x round 5: for paddle games, push the default paddle
     # resistance into the TIA BEFORE the boot-burn loop. xitari does
     # this at construction via `resetPaddles`; jaxtari does the same
@@ -278,7 +287,8 @@ on `env.console.bus.tia.framebuffer` for tests / debugging that want
 the uncropped view.
 """
 get_screen(env::StellaEnvironment) =
-    @view env.console.bus.tia.framebuffer[Y_START + 1 : Y_START + VISIBLE_HEIGHT, :]
+    @view env.console.bus.tia.framebuffer[
+        Y_START + 1 : Y_START + env.console.bus.tia.screen_height_rows, :]
 get_ram(env::StellaEnvironment)    = env.console.bus.ram
 game_over(env::StellaEnvironment)  = env.terminal
 lives(env::StellaEnvironment)      = Int(romsettings_lives(env.settings, env.console))

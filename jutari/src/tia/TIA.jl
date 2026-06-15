@@ -79,13 +79,15 @@ const NUM_REGISTERS = 64
 const NTSC_CPU_CYCLES_PER_SCANLINE = 76
 const NTSC_SCANLINES_PER_FRAME = 262
 const SCREEN_WIDTH = 160
-# Internal framebuffer height — covers scanlines 0..243 (everything
-# xitari would ever show with its default `Display.Height=210` starting
-# at `Display.YStart=34`). The unused 0..33 + 244..261 regions stay
-# empty (VSYNC + post-overscan) but keeping the buffer indexed by
-# absolute scanline number preserves the unit-tests' `framebuffer[N+1,:]
-# == scanline-N render` invariant.
-const SCREEN_HEIGHT = 244
+# Internal framebuffer height. NTSC needs only scanlines 0..243 (xitari's
+# default `Display.Height=210` from `Display.YStart=34`), but task #110 (PAL)
+# renders the taller PAL display window — surround/air_raid show 250 rows from
+# YStart=34 (= internal scanlines 34..283). 312 covers the full PAL frame so a
+# PAL-aware scanline wrap (`tia.scanlines_per_frame`) never folds sl 262..311
+# back onto the top. NTSC games still only touch rows 0..243; the buffer is
+# indexed by absolute scanline so the unit-tests' `framebuffer[N+1,:] ==
+# scanline-N render` invariant holds.
+const SCREEN_HEIGHT = 312
 # ALE / xitari visible-region crop. Matches xitari's `Display.YStart=34` +
 # `Display.Height=210` (see xitari/emucore/Props.cxx:300-301).
 # `StellaEnvironment.get_screen()` returns `framebuffer[Y_START+1 :
@@ -342,6 +344,19 @@ mutable struct TIAState
     # for PAL ROMs (romsettings_pal). A PAL 312-line frame must NOT be split
     # by the NTSC 290 cutoff (that halved surround's per-frame counters).
     max_scanlines::Int
+    # Task #110 (PAL render). NTSC defaults; `env_reset!` overrides for PAL.
+    # screen_height_rows: number of display rows get_screen returns from
+    #   Y_START (210 NTSC, 250 surround/air_raid — xitari Display.Height).
+    # scanlines_per_frame: the framebuffer-row wrap (262 NTSC, 312 PAL) so a
+    #   PAL frame's sl 262..311 don't fold onto the top of the buffer.
+    # color_loss_enabled: PAL/SECAM colour-loss (xitari TIA.cxx:562-577) — on
+    #   odd-scanline-count frames the COLU output has D0 set. color_loss_active
+    #   is the per-frame state (recomputed at each frame boundary from the
+    #   just-ended frame's scanline parity).
+    screen_height_rows::Int
+    scanlines_per_frame::Int
+    color_loss_enabled::Bool
+    color_loss_active::Bool
 end
 
 # INPT defaults: paddle pots ($80 = centred), triggers idle high (D7=1).
@@ -367,6 +382,10 @@ initial_tia_state() = TIAState(
     (0, 0, 0, 0, 0),                   # task #99: hmove_motion_next = none
     typemax(Int),                      # task #103: vsync_finish_clock disarmed
     290,                               # task #103: max_scanlines = 290 (NTSC)
+    VISIBLE_HEIGHT,                    # task #110: screen_height_rows = 210 (NTSC)
+    NTSC_SCANLINES_PER_FRAME,          # task #110: scanlines_per_frame = 262 (NTSC)
+    false,                             # task #110: color_loss_enabled = false (NTSC)
+    false,                             # task #110: color_loss_active = false
 )
 
 """
@@ -854,7 +873,13 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
                 if hmove_blank_active
                     row[x + 1] = UInt8(0)
                 else
-                    row[x + 1] = render_pixel(tia, c, cached_sets)
+                    # Task #110 (PAL colour-loss): on odd-frame PAL frames xitari
+                    # ORs D0 into every COLU register (TIA.cxx:562-577), so each
+                    # rendered pixel (always a COLU value) gets bit 0 set. HMOVE-
+                    # blank + VBLANK pixels stay black (not COLU). NTSC:
+                    # color_loss_active is always false → no change.
+                    px = render_pixel(tia, c, cached_sets)
+                    row[x + 1] = tia.color_loss_active ? (px | UInt8(0x01)) : px
                 end
                 # Collision still accumulates during blank (output
                 # blanking doesn't disable the collision pipeline).
@@ -885,7 +910,7 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
             # display-window-gated.
             if tia.scanline >= Y_START
                 for i in 0:(line_advance - 1)
-                    completed_line = (tia.scanline + i) % NTSC_SCANLINES_PER_FRAME
+                    completed_line = (tia.scanline + i) % tia.scanlines_per_frame
                     if completed_line < SCREEN_HEIGHT
                         tia.framebuffer[completed_line + 1, :] .= row
                     end
@@ -924,7 +949,7 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
             # the visible-branch framebuffer commit above.
             if tia.scanline >= Y_START
                 for i in 0:(line_advance - 1)
-                    completed_line = (tia.scanline + i) % NTSC_SCANLINES_PER_FRAME
+                    completed_line = (tia.scanline + i) % tia.scanlines_per_frame
                     if completed_line < SCREEN_HEIGHT
                         tia.framebuffer[completed_line + 1, :] .= UInt8(0)
                     end
@@ -967,7 +992,7 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
     # the wrap fired one or two scanlines before the VSYNC handler did,
     # and both incremented `frame` for the same frame boundary.
     new_line = tia.scanline + line_advance
-    tia.scanline = new_line % NTSC_SCANLINES_PER_FRAME
+    tia.scanline = new_line % tia.scanlines_per_frame
     tia.lines_since_frame += Int(line_advance)
 
     # 2026-06-04: deferred VSYNC 1→0 reset. If `tia_poke!` saw the
@@ -994,6 +1019,12 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
     # frame offset. A truly poke-less runaway frame is now bounded by that
     # budget in `run_until_frame!` (a grey frame), as in xitari.
     if tia.vsync_reset_pending
+        # Task #110 (PAL colour-loss): recompute for the NEW frame from the
+        # JUST-ENDED frame's scanline count parity, mirroring xitari's
+        # startFrame (TIA.cxx:562-577, keyed on myScanlineCountForLastFrame &
+        # 0x01). Only active when colour-loss is enabled (PAL/SECAM); NTSC
+        # leaves it false so render output is unchanged.
+        tia.color_loss_active = tia.color_loss_enabled && isodd(tia.lines_since_frame)
         tia.frame += UInt64(1)
         tia.scanline = 0
         tia.vsync_reset_pending = false

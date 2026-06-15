@@ -60,7 +60,9 @@ def _xitari_screens(rom: Path, acts: Path, n: int):
     return out
 
 
-def _jutari_screens(rom: Path, acts: Path, n: int):
+def _jutari_screens(rom: Path, acts: Path, n: int, h: int = H):
+    # h = jutari's display height for this ROM (210 NTSC, PAL height for PAL
+    # games — task #110). jutari_screen_dump.jl writes h*W bytes per frame.
     outp = _tmp("ju.bin", rom)
     subprocess.run(
         ["julia", "--project=" + str(REPO / "jutari"), str(SCREEN_DUMP),
@@ -69,14 +71,24 @@ def _jutari_screens(rom: Path, acts: Path, n: int):
         check=True, capture_output=True, timeout=900)
     b = np.fromfile(outp, dtype=np.uint8)
     outp.unlink(missing_ok=True)
-    nf = len(b) // (H * W)
-    return [b[i * H * W:(i + 1) * H * W].reshape(H, W) for i in range(nf)]
+    if len(b) == 0 or len(b) % (h * W) != 0:
+        # jutari's per-frame height != xitari's h (e.g. a PAL game whose
+        # height jutari doesn't yet render) → not comparable at this height.
+        return None
+    nf = len(b) // (h * W)
+    return [b[i * h * W:(i + 1) * h * W].reshape(h, W) for i in range(nf)]
 
 
 def _diff_one(rom: Path, n: int):
     """Return (max_px, total_px, first_div_frame_or_-1, worst_rows_str)."""
     xi = _xitari_screens(rom, ACTIONS, n)
-    ju = _jutari_screens(rom, ACTIONS, n)
+    # Reshape jutari at xitari's display height (jutari renders the PAL height
+    # for PAL games — task #110). If jutari's per-frame byte count doesn't match
+    # h*W, the shapes differ and the per-frame compare flags it.
+    xi_h = xi[0].shape[0] if xi else H
+    ju = _jutari_screens(rom, ACTIONS, n, xi_h)
+    if ju is None:
+        return (-2, -2, -1, f"height: xitari {xi_h}h vs jutari (PAL not matched)")
     m = min(len(xi), len(ju))
     if m == 0:
         return (-1, -1, -1, "NO FRAMES")

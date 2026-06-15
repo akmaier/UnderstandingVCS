@@ -36,12 +36,20 @@ renders. Candidate mechanisms, in priority order:
 
 ## Buckets (35 non-exact games)
 
-**A. PAL screen height (5) — a missing FEATURE, not a bug.**
+**A. PAL screen height (5) — a missing FEATURE, not a bug. [PARTIALLY DONE — #110]**
 air_raid (250h), carnival (214h), journey_escape (230h), pooyan (220h),
-surround (250h). xitari renders the PAL display height; jutari is NTSC-only
-(210h) so the frames aren't even the same shape (flagged `n/a` in the
-scoreboard). Fix = add PAL screen-height rendering, gated on the existing
-`romsettings_pal` flag. Independent of bucket B.
+surround (250h). xitari renders the PAL display height; jutari was NTSC-only
+(210h) so the frames weren't even the same shape (flagged `n/a` in the
+scoreboard). Fix = PAL screen-height rendering, gated on `romsettings_pal`.
+✅ **Task #110** added this (per-TIA `screen_height_rows`/`scanlines_per_frame`
++ PAL colour-loss + framebuffer 244→312): **air_raid (→24px @ rows 219-223,
+genuine PAL-region render residual) and surround (→224px construction-counter
+non-bug) are now comparable.** REMAINING: carnival(214)/journey_escape(230)/
+pooyan(220) still flag "PAL not matched" — they need their own `RomSettings`
+subtypes (`romsettings_pal=true` + `romsettings_screen_height`) AND likely a
+**per-game YStart** (currently `Y_START` is a fixed const 34; carnival/pooyan
+use YStart=26), so they're a small follow-up, not covered by #110.
+Independent of bucket B.
 
 **B. "Draws where xitari blanks" — the VBLANK/window family (largest, shared).**
 - B1 top band (rows ~0-11): star_gunner (45), hero (320), solaris (482),

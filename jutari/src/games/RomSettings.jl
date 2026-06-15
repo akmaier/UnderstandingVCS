@@ -19,7 +19,8 @@ export RomSettings, GenericRomSettings,
        romsettings_uses_paddles, romsettings_swap_paddles,
        romsettings_starting_actions, romsettings_difficulty,
        romsettings_is_legal_action,
-       romsettings_console_switch_starts, romsettings_pal
+       romsettings_console_switch_starts, romsettings_pal,
+       romsettings_screen_height
 
 abstract type RomSettings end
 
@@ -94,6 +95,11 @@ romsettings_console_switch_starts(::RomSettings) = Int[]
 # surround's 312-line frame actually needs 342 (it would otherwise be split by
 # the 290 cutoff — the #103/#106 partial-frame family).
 romsettings_pal(::RomSettings) = false
+# Task #110: the display HEIGHT (rows `get_screen` returns from Y_START),
+# matching xitari's per-ROM `Display.Height` (Props.cxx default 210; PAL games
+# that kept the default get auto-bumped to 250, e.g. surround/air_raid). NTSC
+# default 210. Per-game PAL overrides return their stella.pro height.
+romsettings_screen_height(::RomSettings) = 210
 
 """No-op RomSettings — never terminal, zero reward, joystick-only."""
 mutable struct GenericRomSettings <: RomSettings

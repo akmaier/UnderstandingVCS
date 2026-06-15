@@ -19,7 +19,8 @@ module JoystickGames
 using ..RomSettingsModule: RomSettings
 using ..ConsoleModule: Console
 import ..RomSettingsModule: romsettings_starting_actions, romsettings_difficulty,
-    romsettings_is_legal_action, romsettings_console_switch_starts, romsettings_pal
+    romsettings_is_legal_action, romsettings_console_switch_starts, romsettings_pal,
+    romsettings_screen_height
 
 export PitfallRomSettings, EnduroRomSettings,
        AirRaidRomSettings, AsterixRomSettings, BeamRiderRomSettings,
@@ -85,10 +86,12 @@ romsettings_is_legal_action(::SkiingRomSettings, a::Integer) = !(Int(a) in _SKII
 struct SurroundRomSettings <: RomSettings end
 romsettings_console_switch_starts(::SurroundRomSettings) = Int[46, 40]  # SELECT, RESET
 romsettings_pal(::SurroundRomSettings) = true
+romsettings_screen_height(::SurroundRomSettings) = 250   # task #110 (PAL bump 210→250)
 # air_raid is also a PAL dump (its real VSYNC at scanline 286 ends the frame
 # before either 290 or 342, so the threshold doesn't change its result — but
 # flag it for correctness / xitari parity).
 romsettings_pal(::AirRaidRomSettings) = true
+romsettings_screen_height(::AirRaidRomSettings) = 250   # task #110 (PAL bump 210→250)
 
 # Task #103 (amidar): amidar's stella.pro entry overrides BOTH console
 # difficulty switches to "A" (Console.LeftDifficulty/RightDifficulty = "A"),

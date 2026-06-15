@@ -4485,3 +4485,44 @@ and slashed robotank 1353→241, solaris 482→2. ZERO regressions (the change o
 writes tia.framebuffer; RAM/registers/collisions untouched — RAM sweep + Pkg.test
 unaffected). Remaining divergers have OTHER causes (structural up_n_down/pacman,
 qbert partial-frame, sub-scanline VBLANK edges) — next.
+
+### ✅ Task #110 (render) (2026-06-15) — PAL display height + colour-loss (unblocks PAL screen comparison)
+
+PROBING_PLAN_RENDER.md bucket A (PAL screen height). jutari rendered a fixed
+NTSC display (210 rows from `Y_START=34`, framebuffer 244 tall, NTSC-only
+262-line scanline wrap), so PAL games whose `Display.Height` is taller than 210
+were **not even screen-comparable** with xitari (`sweep_jutari_screen.py` flagged
+them "PAL not matched / shape mismatch"). xitari renders each ROM's
+`Props Display.Height` (Props.cxx default 210; Console.cxx:213-215 bumps a PAL
+game that kept the default to 250), wraps scanlines at the PAL 312-line frame,
+and applies PAL/SECAM **colour-loss** (TIA.cxx:562-577: on a frame whose
+predecessor had an *odd* scanline count it ORs D0 into every COLU output).
+
+FIX (jutari, all PAL-gated so NTSC is byte-identical):
+- `SCREEN_HEIGHT` 244→**312** (covers the full PAL frame so a PAL frame's
+  sl 262..311 never fold onto the top of the buffer).
+- 4 new per-TIA fields (`TIAState`, defaulted NTSC in `initial_tia_state`,
+  overridden in `env_reset!` from `romsettings_pal`/`romsettings_screen_height`):
+  `screen_height_rows` (rows `get_screen` returns from Y_START — 210 NTSC, 250
+  surround/air_raid), `scanlines_per_frame` (row-wrap: 262 NTSC / 312 PAL),
+  `color_loss_enabled` (PAL/SECAM), `color_loss_active` (per-frame state,
+  recomputed at the VSYNC boundary from the just-ended frame's `lines_since_frame`
+  parity — mirror of xitari keying on `myScanlineCountForLastFrame & 0x01`).
+- render commit ORs `0x01` into each rendered pixel when `color_loss_active`
+  (HMOVE-blank + VBLANK pixels stay black — they're not COLU values).
+- `romsettings_screen_height` interface (default 210); surround/air_raid → 250.
+- `get_screen` crops `screen_height_rows` instead of the fixed `VISIBLE_HEIGHT`.
+
+VERIFIED: full screen scoreboard **37/64** pixel-exact (unchanged vs #109 — no
+NTSC regression; every previously-exact game stays 0 px). air_raid and surround
+are now **comparable** where they were "PAL not matched": air_raid → 24 px @
+rows 219-223 (a genuine render residual in the PAL-extended region, deferred),
+surround → 224 px (the same construction-counter free-running offset as its 7 b/f
+RAM residual, a proven non-bug — task #103). RAM sweep **62/64 unchanged**
+(PAL-gated, no RAM path touched); jutari Pkg.test green (the "off-screen lines"
+unit test updated: with framebuffer 312 ≥ NTSC wrap 262 no NTSC scanline is
+off-screen via the buffer bound, so it now asserts the *top* display gate —
+scanlines < Y_START aren't committed). Remaining PAL-height games
+carnival(214)/journey_escape(230)/pooyan(220) still need their own RomSettings
+(distinct heights + likely a per-game YStart, since Y_START is still a fixed
+const) — follow-up. jaxtari parity (PAL render + #98 dump-pot) deferred to PXC2.

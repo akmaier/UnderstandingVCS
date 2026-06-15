@@ -1718,14 +1718,17 @@ end
         @test tia.framebuffer[Y_START + 6, 1] == 0x00
     end
 
-    @testset "tia_advance! does not write off-screen lines" begin
-        # Task #53 vertical-align: framebuffer height bumped from 192 to
-        # 244 (covers full visible NTSC region). Scanline 200 is now
-        # ON-screen (lands in framebuffer[201, :] — Julia 1-based);
-        # 250 is the new "off-screen" sentinel.
+    @testset "tia_advance! does not write pre-display (< Y_START) lines" begin
+        # Task #110: framebuffer height bumped 244→312 to cover the PAL
+        # display window, and the row-wrap is now PAL-aware
+        # (tia.scanlines_per_frame). With 312 rows ≥ the NTSC wrap (262),
+        # no NTSC scanline is "off-screen" via the buffer bound anymore —
+        # the meaningful display-window gate is Y_START at the TOP: scanlines
+        # < Y_START (VSYNC/VBLANK header) are still rendered + collision-
+        # checked but NOT committed to the framebuffer.
         tia = initial_tia_state()
         _set_regs!(tia, :pf0=>0xF0, :colupf=>0x42, :colubk=>0x00)
-        tia.scanline = 250
+        tia.scanline = 10      # below Y_START=34 → pre-display, not committed
         tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
         @test sum(tia.framebuffer) == 0
     end
