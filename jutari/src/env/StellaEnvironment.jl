@@ -21,7 +21,8 @@ using ..RomSettingsModule: RomSettings, GenericRomSettings,
                            romsettings_starting_actions, romsettings_difficulty,
                            romsettings_is_legal_action,
                            romsettings_console_switch_starts, romsettings_pal,
-                           romsettings_screen_height, romsettings_y_start
+                           romsettings_screen_height, romsettings_y_start,
+                           romsettings_hmove_blanks
 using ..TIA: Y_START, VISIBLE_HEIGHT, set_paddle_resistance!
 
 export StellaEnvironment, env_reset!, env_step!,
@@ -111,6 +112,10 @@ function env_reset!(env::StellaEnvironment;
         # the framebuffer commit + crop base. NTSC default 34 (62 games);
         # carnival/pooyan use 26. Independent of PAL.
         env.console.bus.tia.y_start_row         = romsettings_y_start(env.settings)
+        # xitari Emulation.HmoveBlanks (myAllowHMOVEBlanks). Render-only — when
+        # false, HMOVE never arms the 8px left-edge comb. Default true;
+        # battle_zone/ms_pacman = false.
+        env.console.bus.tia.allow_hmove_blanks  = romsettings_hmove_blanks(env.settings)
     end
     # PXC1-x round 5: for paddle games, push the default paddle
     # resistance into the TIA BEFORE the boot-burn loop. xitari does

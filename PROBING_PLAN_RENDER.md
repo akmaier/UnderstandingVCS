@@ -193,10 +193,12 @@ identically, frame 1, so none is an action-driven state desync). Per-game:
   rainbow kernel writes COLU every few cycles; a small activation-delay error
   smears the colours). Hardest of the set — a per-color-clock COLU activation
   audit.
-- **battle_zone (1112)** — EVERY diff pixel is `ju=0 / xi=colour`: jutari renders
-  black where xitari draws content (scattered, not full rows). A first-person
-  vector game — likely a missing/under-rendered object (player/missile/PF) class,
-  not a blanking or colour bug.
+- **battle_zone (1112) [FIXED — #111]** — EVERY diff was cols 0-7 (the 8px HMOVE
+  comb window) on EVERY visible scanline: jutari armed the comb on every HMOVE
+  strobe (battle_zone strobes every line at cc 222), but battle_zone's
+  `Emulation.HmoveBlanks` property is "NO" so xitari NEVER arms it. jutari was
+  missing the `myAllowHMOVEBlanks` property gate. Added it → **battle_zone 1112→0,
+  ms_pacman 232→0** (the only two "NO" games in the set). NOT a missing-object bug.
 - **qbert (7664)** — unchanged: RAM bit-exact (#106), the partial-frame/grey-frame
   framebuffer side-effect (bucket C).
 

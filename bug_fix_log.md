@@ -4555,3 +4555,36 @@ the render long-tail. Screen scoreboard **37/64** pixel-exact (unchanged — no
 NTSC regression); RAM sweep **62/64** (carnival/pooyan/journey_escape all
 0 b/f — the YStart/height overrides are render-only, RAM untouched); jutari
 Pkg.test green. Bucket A (PAL screen height) is now CLOSED.
+
+### ✅ Task #111 (render) (2026-06-15) — HmoveBlanks property: battle_zone 1112→0, ms_pacman 232→0
+
+First structural-diverger fix (user picked battle_zone). battle_zone's diff was
+EVERY visible scanline (38-176) blanked black in jutari at cols 0-7 (the 8px
+HMOVE-blank "comb" window) while xitari draws content there. ROOT CAUSE: xitari
+gates the comb on TWO conditions (TIA.cxx:2694): `myAllowHMOVEBlanks &&
+ourHMOVEBlankEnableCycles[x]`. `myAllowHMOVEBlanks` is the per-ROM
+`Emulation.HmoveBlanks` property (Props.cxx default "YES"; 43 games set "NO").
+**battle_zone + ms_pacman are the only two "NO" games in the 64-ROM set** — so
+xitari NEVER arms their comb. jutari had the cycle-table gate
+(`_HMOVE_BLANK_ENABLE_CYCLES`, correct) but was MISSING the property gate, so it
+armed the comb on every strobe. battle_zone strobes HMOVE every scanline (at
+cc 222) → jutari combed every row.
+
+(Probe aside: jutari sees battle_zone's cc=222 / sl_cyc=74 strobe at `beam_sc=3`
+of the NEXT line — a ~5-cycle beam-position lead — so even the cycle gate would
+mis-fire (x=3→enabled vs xitari x=74→disabled). The property gate makes this moot
+for battle_zone/ms_pacman; the beam_sc lead is noted as a separate latent issue
+for any "YES" game that strobes near the 74/75 boundary.)
+
+FIX (jutari, render-only): new `romsettings_hmove_blanks` interface (default
+true) + per-TIA `allow_hmove_blanks` field (set in `env_reset!`); both HMOVE
+comb-arm sites now AND it: `tia.allow_hmove_blanks && _hmove_blank_enabled_at(sc)`.
+New `BattleZoneRomSettings` / `MsPacmanRomSettings` (hmove_blanks=false; no
+starting actions — both RAM bit-exact). All 4 jutari tool settings-maps synced.
+
+VERIFIED: **battle_zone 1112→0 ✅, ms_pacman 232→0 ✅**. Screen scoreboard
+**37→39/64** pixel-exact, ZERO regressions (the gate only ANDs a default-true
+flag for the 62 "YES" games; every other nonzero game holds its exact prior px,
+pong/breakout still 0). RAM **62/64** unchanged (render-only); jutari Pkg.test
+green. NOTE: this is a SHARED structural-diverger fix (2 games at once) — unlike
+the heterogeneous up_n_down/pacman/qbert which remain distinct per-game bugs.

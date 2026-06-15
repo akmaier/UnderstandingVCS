@@ -362,6 +362,11 @@ mutable struct TIAState
     # commit + HMOVE-blank flag consumption AND is the get_screen crop base.
     # NTSC default 34; carnival/pooyan use 26. `env_reset!` overrides per ROM.
     y_start_row::Int
+    # HMOVE-blank "comb" enable — xitari's `myAllowHMOVEBlanks` (set from the
+    # per-ROM `Emulation.HmoveBlanks` property, default "YES"; TIA.cxx:200,2694).
+    # When false, an HMOVE strobe NEVER arms the 8px left-edge blank, regardless
+    # of strobe cycle. Default true (62 games); battle_zone/ms_pacman = false.
+    allow_hmove_blanks::Bool
 end
 
 # INPT defaults: paddle pots ($80 = centred), triggers idle high (D7=1).
@@ -392,6 +397,7 @@ initial_tia_state() = TIAState(
     false,                             # task #110: color_loss_enabled = false (NTSC)
     false,                             # task #110: color_loss_active = false
     Y_START,                           # task #110: y_start_row = 34 (default YStart)
+    true,                              # HmoveBlanks: allow_hmove_blanks = true (default YES)
 )
 
 """
@@ -730,14 +736,14 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
                 _hmove_motion(sc, tia.registers[W_HMM1 + 1]),
                 _hmove_motion(sc, tia.registers[W_HMBL + 1]),
             )
-            tia.hmove_blank_pending_next = _hmove_blank_enabled_at(sc)
+            tia.hmove_blank_pending_next = tia.allow_hmove_blanks && _hmove_blank_enabled_at(sc)
         else
             tia.p0_x = mod(tia.p0_x - _hmove_motion(sc, tia.registers[W_HMP0 + 1]), 160)
             tia.p1_x = mod(tia.p1_x - _hmove_motion(sc, tia.registers[W_HMP1 + 1]), 160)
             tia.m0_x = mod(tia.m0_x - _hmove_motion(sc, tia.registers[W_HMM0 + 1]), 160)
             tia.m1_x = mod(tia.m1_x - _hmove_motion(sc, tia.registers[W_HMM1 + 1]), 160)
             tia.bl_x = mod(tia.bl_x - _hmove_motion(sc, tia.registers[W_HMBL + 1]), 160)
-            tia.hmove_blank_pending = _hmove_blank_enabled_at(sc)
+            tia.hmove_blank_pending = tia.allow_hmove_blanks && _hmove_blank_enabled_at(sc)
         end
     elseif reg == W_HMCLR
         tia.registers[W_HMP0 + 1] = 0

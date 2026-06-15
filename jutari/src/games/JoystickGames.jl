@@ -20,7 +20,7 @@ using ..RomSettingsModule: RomSettings
 using ..ConsoleModule: Console
 import ..RomSettingsModule: romsettings_starting_actions, romsettings_difficulty,
     romsettings_is_legal_action, romsettings_console_switch_starts, romsettings_pal,
-    romsettings_screen_height, romsettings_y_start
+    romsettings_screen_height, romsettings_y_start, romsettings_hmove_blanks
 
 export PitfallRomSettings, EnduroRomSettings,
        AirRaidRomSettings, AsterixRomSettings, BeamRiderRomSettings,
@@ -28,7 +28,8 @@ export PitfallRomSettings, EnduroRomSettings,
        GravitarRomSettings, JourneyEscapeRomSettings, PrivateEyeRomSettings,
        SkiingRomSettings, UpNDownRomSettings, YarsRevengeRomSettings,
        AmidarRomSettings, SurroundRomSettings,
-       CarnivalRomSettings, PooyanRomSettings
+       CarnivalRomSettings, PooyanRomSettings,
+       BattleZoneRomSettings, MsPacmanRomSettings
 
 # --------------------------------------------------------------------------- #
 # Task #100 follow-up: 12 joystick games whose only conformance-relevant
@@ -108,6 +109,17 @@ romsettings_y_start(::CarnivalRomSettings)       = 26        # stella.pro Displa
 struct PooyanRomSettings <: RomSettings end
 romsettings_screen_height(::PooyanRomSettings)   = 220       # stella.pro Display.Height
 romsettings_y_start(::PooyanRomSettings)         = 26        # stella.pro Display.YStart
+
+# battle_zone + ms_pacman are the only two ROMs in the 64-game set whose
+# stella.pro entry sets `Emulation.HmoveBlanks "NO"` (default is "YES"). With
+# the comb disabled, xitari never blanks the 8px left edge on an HMOVE strobe —
+# battle_zone strobes HMOVE every visible scanline (at cc 222), so jutari's
+# default-on comb wrongly blanked cols 0-7 on EVERY row (1112 px). Render-only
+# (no RAM effect); both are RAM bit-exact and have no getStartingActions.
+struct BattleZoneRomSettings <: RomSettings end
+romsettings_hmove_blanks(::BattleZoneRomSettings) = false
+struct MsPacmanRomSettings <: RomSettings end
+romsettings_hmove_blanks(::MsPacmanRomSettings)   = false
 
 # Task #103 (amidar): amidar's stella.pro entry overrides BOTH console
 # difficulty switches to "A" (Console.LeftDifficulty/RightDifficulty = "A"),

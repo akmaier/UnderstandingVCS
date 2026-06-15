@@ -20,7 +20,8 @@ export RomSettings, GenericRomSettings,
        romsettings_starting_actions, romsettings_difficulty,
        romsettings_is_legal_action,
        romsettings_console_switch_starts, romsettings_pal,
-       romsettings_screen_height, romsettings_y_start
+       romsettings_screen_height, romsettings_y_start,
+       romsettings_hmove_blanks
 
 abstract type RomSettings end
 
@@ -107,6 +108,11 @@ romsettings_screen_height(::RomSettings) = 210
 # crop — a per-game YStart faithfully mirrors that gate. Default 34 (the 62
 # default-YStart games); carnival/pooyan override to 26 (their stella.pro entry).
 romsettings_y_start(::RomSettings) = 34
+# xitari's `Emulation.HmoveBlanks` property (Props.cxx default "YES"; 43 games in
+# stella.pro set "NO"). Drives `myAllowHMOVEBlanks` (TIA.cxx:200,2694) — when NO,
+# an HMOVE strobe NEVER arms the 8px left-edge "comb" blank, regardless of strobe
+# cycle. Default true; in the 64-ROM set only battle_zone + ms_pacman are "NO".
+romsettings_hmove_blanks(::RomSettings) = true
 
 """No-op RomSettings — never terminal, zero reward, joystick-only."""
 mutable struct GenericRomSettings <: RomSettings

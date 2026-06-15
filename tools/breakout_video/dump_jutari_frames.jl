@@ -21,7 +21,8 @@ using JuTari.JoystickGames: PitfallRomSettings, EnduroRomSettings,
     GravitarRomSettings, JourneyEscapeRomSettings, PrivateEyeRomSettings,
     SkiingRomSettings, UpNDownRomSettings, YarsRevengeRomSettings,
     AmidarRomSettings, SurroundRomSettings,
-    CarnivalRomSettings, PooyanRomSettings
+    CarnivalRomSettings, PooyanRomSettings,
+    BattleZoneRomSettings, MsPacmanRomSettings
 using JuTari.RomSettingsModule: GenericRomSettings
 
 # ROM basename → RomSettings constructor (mirror of
@@ -56,6 +57,8 @@ const _SETTINGS_BY_BASENAME = Dict{String,Function}(
     "surround.bin"        => () -> SurroundRomSettings(),
     "carnival.bin"        => () -> CarnivalRomSettings(),
     "pooyan.bin"          => () -> PooyanRomSettings(),
+    "battle_zone.bin"     => () -> BattleZoneRomSettings(),
+    "ms_pacman.bin"       => () -> MsPacmanRomSettings(),
 )
 _settings_for_rom(p) = haskey(_SETTINGS_BY_BASENAME, basename(p)) ?
     _SETTINGS_BY_BASENAME[basename(p)]() : GenericRomSettings()

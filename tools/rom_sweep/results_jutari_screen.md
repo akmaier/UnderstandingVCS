@@ -2,7 +2,7 @@
 
 Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `trace_dump --screen`, breakout_random_actions stream, first **60** frames after the standard 60-NOOP+4-RESET boot. Same per-game RomSettings as the RAM sweep (so a divergence is a genuine render delta, not a settings/boot mismatch).
 
-**Pixel-exact (0 px) over 60 frames: 37/64.**
+**Pixel-exact (0 px) over 60 frames: 39/64.**
 
 | game | max px/frame | total px | first div frame | worst-frame rows |
 |---|---|---|---|---|
@@ -14,7 +14,7 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | asteroids | **0 ✅** | 0 | — | — |
 | atlantis | 24 | 1440 | 1 | 186-186 |
 | bank_heist | **0 ✅** | 0 | — | — |
-| battle_zone | 1112 | 66720 | 1 | 38-176 |
+| battle_zone | **0 ✅** | 0 | — | — |
 | beam_rider | **0 ✅** | 0 | — | — |
 | berzerk | 25 | 97 | 42 | 4-181 |
 | bowling | 8 | 480 | 1 | 4-4 |
@@ -42,7 +42,7 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | krull | **0 ✅** | 0 | — | — |
 | kung_fu_master | **0 ✅** | 0 | — | — |
 | montezuma_revenge | **0 ✅** | 0 | — | — |
-| ms_pacman | 232 | 13920 | 1 | 1-169 |
+| ms_pacman | **0 ✅** | 0 | — | — |
 | name_this_game | 6 | 360 | 1 | 188-188 |
 | pacman | 3362 | 201720 | 1 | 0-189 |
 | phoenix | **0 ✅** | 0 | — | — |
