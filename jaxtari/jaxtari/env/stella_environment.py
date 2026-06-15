@@ -149,6 +149,24 @@ class StellaEnvironment:
         if self._settings.uses_paddles():
             self._apply_paddle_action(int(Action.NOOP))
 
+        # --- Console difficulty switches (#103, amidar) ------------------ #
+        # xitari's default properties are B/B (SWCHB 0x3F); a ROM's
+        # stella.pro entry can override a difficulty to "A" (sets the SWCHB
+        # bit → 0xFF for A/A). amidar = A/A and reads the P0/Left bit in its
+        # frame-1 object sort, so the difficulty must be correct from the
+        # FIRST boot frame — apply here (before the NOOP boot) and re-assert
+        # in every console_switches call below (each rebuilds the whole
+        # SWCHB byte). Default (False, False) = B/B, unchanged for the
+        # bit-exact games. Defensive getattr: older RomSettings lack it.
+        try:
+            diff = self._settings.difficulty()
+            diff0, diff1 = ((bool(diff[0]), bool(diff[1]))
+                            if diff is not None else (False, False))
+        except AttributeError:
+            diff0, diff1 = False, False
+        self._console = console_switches(
+            self._console, p0_difficulty_a=diff0, p1_difficulty_a=diff1)
+
         # --- Boot-burn: NOOP frames -------------------------------------- #
         for _ in range(boot_noop_steps):
             self._console = apply_action(self._console, int(Action.NOOP))
@@ -156,11 +174,15 @@ class StellaEnvironment:
 
         # --- Boot-burn: RESET-switch frames ------------------------------ #
         if boot_reset_steps > 0:
-            self._console = console_switches(self._console, reset_pressed=True)
+            self._console = console_switches(
+                self._console, reset_pressed=True,
+                p0_difficulty_a=diff0, p1_difficulty_a=diff1)
             for _ in range(boot_reset_steps):
                 self._console = apply_action(self._console, int(Action.NOOP))
                 self._console = run_until_frame(self._console)
-            self._console = console_switches(self._console, reset_pressed=False)
+            self._console = console_switches(
+                self._console, reset_pressed=False,
+                p0_difficulty_a=diff0, p1_difficulty_a=diff1)
 
         # --- Per-game starting actions ----------------------------------- #
         # xitari's `StellaEnvironment::reset` emulates

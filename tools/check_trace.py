@@ -44,7 +44,8 @@ from jaxtari.games.atari_classics import (
     BeamriderRomSettings,
 )
 from jaxtari.games.joystick_starts import (
-    AirRaidRomSettings, AsterixRomSettings, DoubleDunkRomSettings,
+    AirRaidRomSettings, AmidarRomSettings, AsterixRomSettings,
+    DoubleDunkRomSettings,
     ElevatorActionRomSettings, GopherRomSettings, GravitarRomSettings,
     JourneyEscapeRomSettings, PrivateEyeRomSettings, SkiingRomSettings,
     UpNDownRomSettings, YarsRevengeRomSettings,
@@ -69,6 +70,7 @@ _SETTINGS_BY_BASENAME: dict[str, type[RomSettings]] = {
     "seaquest.bin": SeaquestRomSettings,
     # Task #101 — getStartingActions-only joystick games (mirror of jutari).
     "air_raid.bin":        AirRaidRomSettings,
+    "amidar.bin":          AmidarRomSettings,
     "asterix.bin":         AsterixRomSettings,
     "beam_rider.bin":      BeamriderRomSettings,
     "double_dunk.bin":     DoubleDunkRomSettings,

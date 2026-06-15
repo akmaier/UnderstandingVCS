@@ -17,7 +17,7 @@ export RomSettings, GenericRomSettings,
        romsettings_reset!, romsettings_is_terminal,
        romsettings_get_reward, romsettings_lives,
        romsettings_uses_paddles, romsettings_swap_paddles,
-       romsettings_starting_actions
+       romsettings_starting_actions, romsettings_difficulty
 
 abstract type RomSettings end
 
@@ -55,6 +55,14 @@ romsettings_uses_paddles(::RomSettings)          = false
 # `paddle_resistance[1]` (INPT1) instead of `paddle_resistance[0]`
 # (INPT0).
 romsettings_swap_paddles(::RomSettings)          = false
+# Console difficulty switches (SWCHB bits 0x40 = P0/Left, 0x80 = P1/Right).
+# Returns `(p0_difficulty_a, p1_difficulty_a)`. xitari's default properties
+# (Props.cxx) set BOTH difficulties to "B" → SWCHB 0x3F, so the default here
+# is `(false, false)` (B/B), matching the 58 bit-exact games. Per-game
+# subtypes whose stella.pro entry overrides a difficulty to "A" return
+# `true` for that switch (e.g. Amidar = A/A → SWCHB 0xFF). xitari
+# Switches.cxx: a "B" property clears the bit, otherwise the bit stays set.
+romsettings_difficulty(::RomSettings)            = (false, false)
 
 """No-op RomSettings — never terminal, zero reward, joystick-only."""
 mutable struct GenericRomSettings <: RomSettings

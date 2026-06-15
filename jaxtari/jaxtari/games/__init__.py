@@ -63,6 +63,7 @@ from jaxtari.games.pong import (
 )
 from jaxtari.games.joystick_starts import (
     AirRaidRomSettings,
+    AmidarRomSettings,
     AsterixRomSettings,
     DoubleDunkRomSettings,
     ElevatorActionRomSettings,
@@ -134,6 +135,7 @@ __all__ = [
     "SEAQUEST_TERM_ADDR",
     # Task #101 — starting-action-only joystick games (mirror of jutari).
     "AirRaidRomSettings",
+    "AmidarRomSettings",
     "AsterixRomSettings",
     "DoubleDunkRomSettings",
     "ElevatorActionRomSettings",

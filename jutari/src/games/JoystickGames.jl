@@ -18,13 +18,14 @@ module JoystickGames
 
 using ..RomSettingsModule: RomSettings
 using ..ConsoleModule: Console
-import ..RomSettingsModule: romsettings_starting_actions
+import ..RomSettingsModule: romsettings_starting_actions, romsettings_difficulty
 
 export PitfallRomSettings, EnduroRomSettings,
        AirRaidRomSettings, AsterixRomSettings, BeamRiderRomSettings,
        DoubleDunkRomSettings, ElevatorActionRomSettings, GopherRomSettings,
        GravitarRomSettings, JourneyEscapeRomSettings, PrivateEyeRomSettings,
-       SkiingRomSettings, UpNDownRomSettings, YarsRevengeRomSettings
+       SkiingRomSettings, UpNDownRomSettings, YarsRevengeRomSettings,
+       AmidarRomSettings
 
 # --------------------------------------------------------------------------- #
 # Task #100 follow-up: 12 joystick games whose only conformance-relevant
@@ -61,6 +62,15 @@ romsettings_starting_actions(::PrivateEyeRomSettings)     = Int[2]   # UP
 romsettings_starting_actions(::SkiingRomSettings)         = fill(5, 16)  # 16× DOWN (xitari Skiing.cpp loop)
 romsettings_starting_actions(::UpNDownRomSettings)        = Int[1]   # FIRE
 romsettings_starting_actions(::YarsRevengeRomSettings)    = Int[1]   # FIRE
+
+# Task #103 (amidar): amidar's stella.pro entry overrides BOTH console
+# difficulty switches to "A" (Console.LeftDifficulty/RightDifficulty = "A"),
+# unlike xitari's B/B default. So SWCHB reads 0xFF, not 0x3F. amidar's frame-1
+# object-sort kernel branches on the P0/Left difficulty bit (LDA SWCHB; AND
+# #$40), so with jutari's default B/B it sorts the wrong way → 11 b/f. amidar
+# has no getStartingActions (so default Int[]); only the difficulty differs.
+struct AmidarRomSettings <: RomSettings end
+romsettings_difficulty(::AmidarRomSettings) = (true, true)   # A/A → SWCHB 0xFF
 
 """
     PitfallRomSettings

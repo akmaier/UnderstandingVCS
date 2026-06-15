@@ -14,6 +14,44 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🎯 Task #103 — SOLVED (amidar): per-game console difficulty (SWCHB) — amidar is A/A, not B/B → 11→0 b/f, both ports (2026-06-14)
+
+The 7-ROM characterization workflow flagged amidar as a SETTINGS issue (an agent
+captured an xitari bus trace showing amidar reads **SWCHB=$ff**, with ZERO TIA reads
+in the divergent frame). This contradicted an earlier triage note ("forcing jutari
+SWCHB=0xFF left amidar at 11 b/f unchanged") — resolved here.
+
+**Root cause.** xitari `Props.cxx:292-293` defaults BOTH `Console.LeftDifficulty` and
+`Console.RightDifficulty` to **"B"** → `Switches.cxx` clears SWCHB bits 0x40/0x80 →
+default SWCHB = **0x3F (B/B)**, which jutari/jaxtari hardcode and which is correct for
+the 59 bit-exact games. BUT amidar's `stella.pro` entry **overrides** both to "A"
+(`Console.LeftDifficulty "A"` / `RightDifficulty "A"`) → SWCHB = **0xFF (A/A)**.
+amidar's frame-1 object-sort kernel branches on the P0/Left difficulty bit
+(`LDA SWCHB; AND #$40`), so with jutari's B/B it sorted the wrong way → the value-
+SWAPPED pairs at $47/$48, $4e/$4f plus $41/$56 (11 b/f).
+
+**Why "forcing 0xFF earlier didn't help":** jutari's `env_reset!` calls
+`console_switches!(reset_pressed=false)` AFTER the RESET-burn frames, which REBUILDS
+the whole SWCHB byte (b=0xFF then clear difficulty bits → 0x3F), overwriting any
+pre-set swchb_in. The earlier attempt set the value once and it got clobbered.
+
+**Fix (both ports) — per-game difficulty, sourced like xitari's per-ROM properties:**
+- New RomSettings hook `romsettings_difficulty(settings) -> (p0_a, p1_a)`, default
+  `(false, false)` = B/B (jutari `RomSettings.jl`; jaxtari `rom_settings.py`
+  `difficulty()`). `AmidarRomSettings` returns `(true, true)` = A/A.
+- `env_reset!` / `StellaEnvironment.reset` now apply the difficulty BEFORE the boot
+  burn AND re-assert it in every `console_switches!` call (so the RESET-burn rebuilds
+  don't clobber it). Default B/B keeps the 59 bit-exact games unchanged.
+- Registered `amidar.bin` in jutari_trace_dump.jl + check_trace.py settings maps;
+  exported AmidarRomSettings from jaxtari `games/__init__.py`.
+
+**Result:** amidar **11 → 0 b/f** on both ports (jutari sweep + jaxtari↔xitari diff
+both bit-exact). jutari sweep **58→59** bit-exact, every other game byte-identical
+(zero regressions); jutari `Pkg.test` green. This is the model for any future
+per-game difficulty/TV-type/controller property divergence.
+
+---
+
 ### 🎯 Task #103 — SOLVED (gravitar) + improved (skiing/elevator_action): getStartingActions COUNT was 1, xitari repeats 16× (2026-06-14)
 
 Found by a 7-ROM read-only characterization workflow (one agent per residual). Three

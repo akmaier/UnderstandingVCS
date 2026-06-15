@@ -17,6 +17,15 @@ from __future__ import annotations
 from jaxtari.games.rom_settings import GenericRomSettings
 
 
+class AmidarRomSettings(GenericRomSettings):
+    # Task #103: amidar's stella.pro overrides BOTH console difficulty
+    # switches to "A" → SWCHB 0xFF (xitari default is B/B = 0x3F). amidar
+    # reads the P0/Left difficulty bit during its frame-1 object sort, so
+    # without A/A it sorts the wrong way (11 b/f). No starting actions.
+    def difficulty(self) -> tuple[bool, bool]:
+        return (True, True)   # A/A
+
+
 class AirRaidRomSettings(GenericRomSettings):
     def starting_actions(self) -> list[int]:
         return [1]   # FIRE

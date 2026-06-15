@@ -113,3 +113,11 @@ class GenericRomSettings:
         # per-game subclasses whose xitari `getStartingActions`
         # returns a non-empty vector (Pitfall, Enduro, ...).
         return []
+
+    def difficulty(self) -> tuple[bool, bool]:
+        # Console difficulty switches (p0_difficulty_a, p1_difficulty_a).
+        # xitari's default properties are B/B (SWCHB 0x3F), so the default
+        # here is (False, False). Override in per-game subclasses whose
+        # stella.pro entry sets Console.Left/RightDifficulty to "A"
+        # (e.g. Amidar = A/A → SWCHB 0xFF). See task #103.
+        return (False, False)

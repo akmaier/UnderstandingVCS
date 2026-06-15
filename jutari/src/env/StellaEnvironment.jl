@@ -18,7 +18,7 @@ using ..RomSettingsModule: RomSettings, GenericRomSettings,
                            romsettings_reset!, romsettings_is_terminal,
                            romsettings_get_reward, romsettings_lives,
                            romsettings_uses_paddles, romsettings_swap_paddles,
-                           romsettings_starting_actions
+                           romsettings_starting_actions, romsettings_difficulty
 using ..TIA: Y_START, VISIBLE_HEIGHT, set_paddle_resistance!
 
 export StellaEnvironment, env_reset!, env_step!,
@@ -101,6 +101,19 @@ function env_reset!(env::StellaEnvironment;
         _apply_paddle_action!(env, Int(NOOP))
     end
 
+    # --- Console difficulty switches (#103, amidar) ---------------------
+    # xitari's default properties are B/B (SWCHB 0x3F), but a ROM's
+    # stella.pro entry can override either difficulty to "A" (sets the
+    # SWCHB bit → 0xFF for A/A). amidar reads the P0/Left difficulty bit
+    # during its frame-1 object sort, so the difficulty must be correct
+    # from the FIRST boot frame. Apply it here (before the NOOP boot) and
+    # re-assert it in every console_switches! call below (which rebuild
+    # the whole SWCHB byte). Default (false,false) = B/B, unchanged for
+    # the bit-exact games.
+    diff0, diff1 = romsettings_difficulty(env.settings)
+    console_switches!(env.console; p0_difficulty_a = diff0,
+                      p1_difficulty_a = diff1)
+
     # --- Boot-burn: NOOP frames -----------------------------------------
     for _ in 1:boot_noop_steps
         apply_action!(env.console, Int(NOOP))
@@ -109,12 +122,14 @@ function env_reset!(env::StellaEnvironment;
 
     # --- Boot-burn: RESET-switch frames ---------------------------------
     if boot_reset_steps > 0
-        console_switches!(env.console; reset_pressed = true)
+        console_switches!(env.console; reset_pressed = true,
+                          p0_difficulty_a = diff0, p1_difficulty_a = diff1)
         for _ in 1:boot_reset_steps
             apply_action!(env.console, Int(NOOP))
             run_until_frame!(env.console)
         end
-        console_switches!(env.console; reset_pressed = false)
+        console_switches!(env.console; reset_pressed = false,
+                          p0_difficulty_a = diff0, p1_difficulty_a = diff1)
     end
 
     # --- Per-game starting actions ---------------------------------------
