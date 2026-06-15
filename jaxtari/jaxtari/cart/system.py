@@ -201,10 +201,24 @@ def _is_probably_fe(rom) -> bool:
     return any(img.find(sig) >= 0 for sig in _FE_SIGNATURES)
 
 
+def _is_probably_sc(rom) -> bool:
+    """xitari Cartridge::isProbablySC — a Superchip cart fills its 128 B RAM
+    region (the first 256 bytes of EACH 4 KB bank) with a single constant byte
+    in the ROM image. Checked BEFORE F8/F6/F4 (task #103, elevator_action)."""
+    n = len(rom)
+    if n < 4096 or n % 4096 != 0:
+        return False
+    for i in range(n // 4096):
+        first = int(rom[i * 4096])
+        if any(int(rom[i * 4096 + j]) != first for j in range(256)):
+            return False
+    return True
+
+
 def _autodetect_kind(rom) -> int:
-    """Content-aware mapper detection (tasks #100/#102). 8K is ambiguous
-    (F8 vs E0 vs FE); distinguish by signature like xitari `autodetectType`
-    (order: E0 before FE before F8). F8SC remains an explicit-`kind=` override."""
+    """Content-aware mapper detection (tasks #100/#102/#103). Matches xitari
+    `autodetectType` order: SC (Superchip on-cart RAM) FIRST at each banked
+    size, then the 8K E0/FE special mappers, else plain F8/F6/F4."""
     n = len(rom)
     if n not in _SIZE_TO_KIND:
         raise ValueError(
@@ -212,10 +226,18 @@ def _autodetect_kind(rom) -> int:
             f"P5 supports sizes {sorted(_SIZE_TO_KIND.keys())}."
         )
     if n == 8192:
+        if _is_probably_sc(rom):
+            return KIND_F8SC
         if _is_probably_e0(rom):
             return KIND_E0
         if _is_probably_fe(rom):
             return KIND_FE
+    elif n == 16384:
+        if _is_probably_sc(rom):
+            return KIND_F6SC
+    elif n == 32768:
+        if _is_probably_sc(rom):
+            return KIND_F4SC
     return _SIZE_TO_KIND[n]
 
 

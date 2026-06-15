@@ -14,6 +14,40 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🎯 Task #103 — SOLVED (elevator_action): cart was F8SC (Superchip), mis-detected as F8 → 53→0 b/f under NOOP (2026-06-15)
+
+The deepest residual, cracked by a per-bus-op trace that bottomed out at the cart layer.
+
+**Pinpoint chain (each step halved the search):** elevator 53 b/f under NOOP → boot-end
+RAM is bit-exact EXCEPT **2 bytes RAM[$20]/[$21]** ($00/$00 jutari vs $22/$30 xitari) →
+those are loaded `LDA $F0DC,X; STA $A0` / `LDA $F0DA,X; STA $A1` → **$F0DC/$F0DA are
+Superchip RAM read ports** (write $F000-$F07F, read $F080-$F0FF) → elevator is an **F8SC**
+cart. jutari read ROM (zeros) there instead of SC-RAM → $20/$21 wrong → cascaded to 53
+b/f (the $2c-$3e table, the frame-1 BMI at $1874, the INTIM 14-vs-9 poll were all
+downstream).
+
+**Root cause.** (1) The #100 Cart.jl rewrite DROPPED jutari's earlier F8SC support
+(left only a "Deferred: SC variants" comment). (2) NEITHER port AUTO-DETECTED Superchip
+carts — both default 8K→F8 (jaxtari kept the F8SC *impl* but required an explicit
+`kind=`). xitari's `autodetectType` checks `isProbablySC`→F8SC FIRST for 8K/16K/32K.
+
+**Fix.**
+- jutari `Cart.jl`: re-implemented F8SC/F6SC/F4SC — KIND_F8SC/F6SC/F4SC, a 128 B
+  `sc_ram` CartState field, read window $1080-$10FF / write window $1000-$107F (alias
+  `& 0x7F`), SC banking via the F8/F6/F4 hotspots, and `_is_probably_sc` +
+  SC-first autodetect (8K→F8SC, 16K→F6SC, 32K→F4SC). cart_poke! now takes the value.
+- jaxtari `cart/system.py`: added `_is_probably_sc` + SC-first autodetect (impl already
+  existed).
+
+**Result.** elevator **53→0 b/f under NOOP-30 (BIT-EXACT)**; 1 b/f under the sweep's
+breakout_random stream (a frame-0 action edge case, same class as skiing). Verified ONLY
+elevator matches isProbablySC among all 64 ROMs (scanned) → zero false positives, zero
+regression risk to the other 63. The earlier "frame-timing drift / partial-frame model"
+hypothesis was WRONG (a trace-measurement artifact) — the real cause was a missing cart
+mapper, far simpler. Sweep target: 61/64 (elevator's sweep cell drops 54→1).
+
+---
+
 ### 🔬 Task #103 — skiing is NOOP-bit-exact (boot fixed); surround SELECT/RESET dead-end (2026-06-14)
 
 **skiing — boot SOLVED, sweep residual is an action-stream artifact.** After the 16×

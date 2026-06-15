@@ -21,7 +21,8 @@ using JuTari.TIA: tia_peek, tia_poke!, tia_advance!, tia_apply_wsync!,
 using JuTari.RIOT: riot_peek, riot_peek!, riot_poke!, riot_advance!,
                    set_swcha_input!, set_swchb_input!
 using JuTari.Cart: cart_peek, cart_poke!,
-                   KIND_2K, KIND_4K, KIND_F8, KIND_F6, KIND_F4
+                   KIND_2K, KIND_4K, KIND_F8, KIND_F6, KIND_F4,
+                   KIND_F8SC, KIND_F6SC, KIND_F4SC
 using JuTari.ConsoleModule: console_reset!, console_step!, run_until_frame!
 using JuTari.IO: Action, apply_action!, console_switches!,
                  NOOP, FIRE, UP, RIGHT, LEFT, DOWN,
@@ -2579,17 +2580,34 @@ end
         c = make_cart(zeros(UInt8, 4096))
         @test c.kind == KIND_4K && c.current_bank == 0
     end
+    # Task #103: a non-constant first 256 B avoids the isProbablySC heuristic
+    # (an all-zero ROM now correctly auto-detects as F8SC, like xitari). Use an
+    # incrementing byte pattern so the banked F8/F6/F4 paths are exercised.
+    _nonsc(n) = UInt8.((0:(n - 1)) .% 256)
     @testset "make_cart F8 boots in bank 1" begin
-        c = make_cart(zeros(UInt8, 8192))
+        c = make_cart(_nonsc(8192))
         @test c.kind == KIND_F8 && c.current_bank == 1
     end
     @testset "make_cart F6 boots in bank 3" begin
-        c = make_cart(zeros(UInt8, 16384))
+        c = make_cart(_nonsc(16384))
         @test c.kind == KIND_F6 && c.current_bank == 3
     end
     @testset "make_cart F4 boots in bank 7" begin
-        c = make_cart(zeros(UInt8, 32768))
+        c = make_cart(_nonsc(32768))
         @test c.kind == KIND_F4 && c.current_bank == 7
+    end
+    @testset "make_cart auto-detects Superchip (isProbablySC) — task #103" begin
+        # Constant first-256-bytes-per-bank ⇒ Superchip on-cart RAM (elevator_action).
+        c8 = make_cart(zeros(UInt8, 8192))
+        @test c8.kind == KIND_F8SC && c8.current_bank == 1
+        @test length(c8.sc_ram) == 128
+        c16 = make_cart(zeros(UInt8, 16384))
+        @test c16.kind == KIND_F6SC && c16.current_bank == 3
+        c32 = make_cart(zeros(UInt8, 32768))
+        @test c32.kind == KIND_F4SC && c32.current_bank == 7
+        # Superchip RAM round-trips: write $1000-$107F, read $1080-$10FF (alias &0x7F).
+        cart_poke!(c8, 0x1005, 0xAB)
+        @test cart_peek(c8, 0x1085) == 0xAB
     end
     @testset "make_cart rejects unknown size" begin
         @test_throws ArgumentError make_cart(zeros(UInt8, 1234))

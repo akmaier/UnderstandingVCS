@@ -29,7 +29,8 @@ DPC also deferred.
 module Cart
 
 export CartState, make_cart, cart_peek, cart_poke!,
-       KIND_2K, KIND_4K, KIND_F8, KIND_F6, KIND_F4, KIND_E0, KIND_FE
+       KIND_2K, KIND_4K, KIND_F8, KIND_F6, KIND_F4, KIND_E0, KIND_FE,
+       KIND_F8SC, KIND_F6SC, KIND_F4SC
 
 const KIND_2K = 0
 const KIND_4K = 1
@@ -38,6 +39,19 @@ const KIND_F6 = 3
 const KIND_F4 = 4
 const KIND_E0 = 5    # task #100 — Parker Bros 8K, 4 × 1K slice slots
 const KIND_FE = 6    # task #102 — Activision 8K (Robot Tank / Decathlon)
+const KIND_F8SC = 7  # task #103 — F8 + 128 B on-cart RAM (Superchip); e.g. elevator_action
+const KIND_F6SC = 8  # task #103 — F6 + 128 B Superchip RAM
+const KIND_F4SC = 9  # task #103 — F4 + 128 B Superchip RAM
+
+# F8SC/F6SC/F4SC carry a 128 B on-cart Superchip RAM: write at $1000-$107F,
+# read at $1080-$10FF (both alias the same buffer via addr & 0x7F). xitari's
+# autodetect picks these (isProbablySC) BEFORE F8/F6/F4. Mirror of jaxtari.
+const _SC_KINDS = (KIND_F8SC, KIND_F6SC, KIND_F4SC)
+const _SC_RAM_BYTES   = 128
+const _SC_READ_BASE   = 0x1080
+const _SC_WRITE_BASE  = 0x1000
+const _SC_AREA_MASK    = 0x1F80
+const _SC_OFFSET_MASK  = 0x007F
 
 const _SIZE_TO_KIND = Dict{Int, Int}(
     2048  => KIND_2K,
@@ -52,6 +66,7 @@ const _DEFAULT_BANK = Dict{Int, Int}(
     KIND_F8 => 1, KIND_F6 => 3, KIND_F4 => 7,
     KIND_E0 => 0,                  # placeholder; E0 uses `slice_slots`
     KIND_FE => 0,                  # FE has no dynamic bank (static upper 4K)
+    KIND_F8SC => 1, KIND_F6SC => 3, KIND_F4SC => 7,   # task #103 — same as F8/F6/F4
 )
 
 # Hotspot address → target bank for each switched format.
@@ -83,8 +98,11 @@ mutable struct CartState
     rom::Vector{UInt8}
     current_bank::Int
     slice_slots::Vector{Int}
+    sc_ram::Vector{UInt8}          # task #103 — 128 B Superchip RAM (SC kinds only)
     CartState(kind::Int, rom::Vector{UInt8}, bank::Int) =
-        new(kind, rom, bank, kind == KIND_E0 ? Int[0, 0, 0] : Int[])
+        new(kind, rom, bank,
+            kind == KIND_E0 ? Int[0, 0, 0] : Int[],
+            kind in _SC_KINDS ? zeros(UInt8, _SC_RAM_BYTES) : UInt8[])
 end
 
 # --------------------------------------------------------------------------- #
@@ -132,16 +150,38 @@ const _FE_SIGNATURES = (
 _is_probably_fe(rom::Vector{UInt8}) =
     any(sig -> _search_for_bytes(rom, sig), _FE_SIGNATURES)
 
+# xitari `Cartridge::isProbablySC` — a Superchip cart fills its 128 B RAM area
+# (the first 256 bytes of EACH 4 KB bank) with a single constant byte in the
+# ROM image. xitari checks this BEFORE F8/F6/F4 (task #103, elevator_action).
+function _is_probably_sc(rom::Vector{UInt8})
+    n = length(rom)
+    (n >= 4096 && n % 4096 == 0) || return false
+    banks = n ÷ 4096
+    @inbounds for i in 0:(banks - 1)
+        first = rom[i * 4096 + 1]
+        for j in 0:255
+            rom[i * 4096 + j + 1] == first || return false
+        end
+    end
+    return true
+end
+
 function _autodetect_kind(rom::Vector{UInt8})
     n = length(rom)
     haskey(_SIZE_TO_KIND, n) || throw(ArgumentError(
         "unrecognised ROM size $n bytes. Supported " *
         "$(sort(collect(keys(_SIZE_TO_KIND))))."))
-    # 8 KB is ambiguous (F8 vs E0 vs FE) — distinguish by content like xitari
-    # (autodetectType order: E0 before FE before F8).
+    # Content-based disambiguation, matching xitari's autodetectType order.
+    # SC (Superchip on-cart RAM) is checked FIRST at each banked size, then the
+    # 8 KB E0/FE special mappers, else the plain F8/F6/F4.
     if n == 8192
+        _is_probably_sc(rom) && return KIND_F8SC
         _is_probably_e0(rom) && return KIND_E0
         _is_probably_fe(rom) && return KIND_FE
+    elseif n == 16384
+        _is_probably_sc(rom) && return KIND_F6SC
+    elseif n == 32768
+        _is_probably_sc(rom) && return KIND_F4SC
     end
     return _SIZE_TO_KIND[n]
 end
@@ -187,6 +227,12 @@ function cart_peek(cart::CartState, addr::Integer)
         return cart.rom[(Int(addr) & 0x0FFF) +
                         ((Int(addr) & 0x2000) == 0 ? 0x1000 : 0) + 1]
     end
+    # task #103: F8SC/F6SC/F4SC Superchip RAM read window $1080-$10FF.
+    # The write window $1000-$107F falls through to ROM/open-bus on reads
+    # (mirror of jaxtari / xitari). Hotspots fire only outside the RAM area.
+    if cart.kind in _SC_KINDS && (Int(a) & _SC_AREA_MASK) == _SC_READ_BASE
+        return cart.sc_ram[(Int(a) & _SC_OFFSET_MASK) + 1]
+    end
     bank_offset = cart.current_bank * 0x1000
     value = cart.rom[bank_offset + (Int(a) & 0x0FFF) + 1]
     _maybe_switch_bank!(cart, a)
@@ -198,8 +244,13 @@ end
 
 Writes to ROM are dropped, but hotspot accesses still fire.
 """
-function cart_poke!(cart::CartState, addr::Integer, ::Integer)
+function cart_poke!(cart::CartState, addr::Integer, value::Integer)
     a = UInt16(Int(addr) & 0x1FFF)
+    # task #103: F8SC/F6SC/F4SC Superchip RAM write window $1000-$107F.
+    if cart.kind in _SC_KINDS && (Int(a) & _SC_AREA_MASK) == _SC_WRITE_BASE
+        cart.sc_ram[(Int(a) & _SC_OFFSET_MASK) + 1] = UInt8(Int(value) & 0xFF)
+        return nothing
+    end
     if cart.kind == KIND_E0
         _maybe_switch_e0!(cart, a)
     else
@@ -209,13 +260,14 @@ function cart_poke!(cart::CartState, addr::Integer, ::Integer)
 end
 
 @inline function _maybe_switch_bank!(cart::CartState, masked_addr::UInt16)
-    if cart.kind == KIND_F8
+    # task #103: SC variants share the F8/F6/F4 hotspot banking.
+    if cart.kind == KIND_F8 || cart.kind == KIND_F8SC
         haskey(F8_HOTSPOTS, masked_addr) &&
             (cart.current_bank = F8_HOTSPOTS[masked_addr])
-    elseif cart.kind == KIND_F6
+    elseif cart.kind == KIND_F6 || cart.kind == KIND_F6SC
         haskey(F6_HOTSPOTS, masked_addr) &&
             (cart.current_bank = F6_HOTSPOTS[masked_addr])
-    elseif cart.kind == KIND_F4
+    elseif cart.kind == KIND_F4 || cart.kind == KIND_F4SC
         haskey(F4_HOTSPOTS, masked_addr) &&
             (cart.current_bank = F4_HOTSPOTS[masked_addr])
     end

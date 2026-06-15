@@ -2,7 +2,7 @@
 
 Same paradigm as PXC1/PXC2: per-frame 128 B RIOT-RAM diff, jutari vs xitari trace_dump, NOOP from the standard ALE boot (60 NOOP + 4 RESET). `generic` = jutari ran with GenericRomSettings (no game-specific starting actions; divergence may be settings- not emulation-driven).
 
-**Progress: 64/64 ROMs. Bit-exact (0 b/f): 60/64 completed.**
+**Progress: 64/64 ROMs. Bit-exact (0 b/f): 61/64 completed.**
 
 | game | settings | max RAM diff (b/f) | first div frame | status | secs |
 |---|---|---|---|---|---|
@@ -11,33 +11,33 @@ Same paradigm as PXC1/PXC2: per-frame 128 B RIOT-RAM diff, jutari vs xitari trac
 | amidar | generic | **0 ✅** | — | OK | 10 |
 | assault | generic | **0 ✅** | — | OK | 10 |
 | asterix | generic | **0 ✅** | — | OK | 10 |
-| asteroids | generic | **0 ✅** | — | OK | 10 |
+| asteroids | generic | **0 ✅** | — | OK | 9 |
 | atlantis | generic | **0 ✅** | — | OK | 10 |
 | bank_heist | generic | **0 ✅** | — | OK | 10 |
 | battle_zone | generic | **0 ✅** | — | OK | 10 |
 | beam_rider | generic | **0 ✅** | — | OK | 10 |
-| berzerk | generic | **0 ✅** | — | OK | 10 |
-| bowling | generic | **0 ✅** | — | OK | 10 |
+| berzerk | generic | **0 ✅** | — | OK | 9 |
+| bowling | generic | **0 ✅** | — | OK | 9 |
 | boxing | generic | **0 ✅** | — | OK | 10 |
 | breakout | real | **0 ✅** | — | OK | 10 |
 | carnival | generic | **0 ✅** | — | OK | 10 |
 | centipede | generic | **0 ✅** | — | OK | 10 |
-| chopper_command | generic | **0 ✅** | — | OK | 10 |
-| crazy_climber | generic | **0 ✅** | — | OK | 10 |
-| defender | generic | **0 ✅** | — | OK | 10 |
-| demon_attack | generic | **0 ✅** | — | OK | 10 |
+| chopper_command | generic | **0 ✅** | — | OK | 9 |
+| crazy_climber | generic | **0 ✅** | — | OK | 9 |
+| defender | generic | **0 ✅** | — | OK | 9 |
+| demon_attack | generic | **0 ✅** | — | OK | 9 |
 | double_dunk | generic | **0 ✅** | — | OK | 10 |
-| elevator_action | generic | 54 | 0 | OK | 10 |
+| elevator_action | generic | **0 ✅** | — | OK | 9 |
 | enduro | real | **0 ✅** | — | OK | 10 |
-| fishing_derby | generic | **0 ✅** | — | OK | 10 |
-| freeway | generic | **0 ✅** | — | OK | 11 |
-| frostbite | generic | **0 ✅** | — | OK | 11 |
+| fishing_derby | generic | **0 ✅** | — | OK | 9 |
+| freeway | generic | **0 ✅** | — | OK | 10 |
+| frostbite | generic | **0 ✅** | — | OK | 10 |
 | gopher | generic | **0 ✅** | — | OK | 10 |
-| gravitar | generic | **0 ✅** | — | OK | 11 |
-| hero | generic | **0 ✅** | — | OK | 10 |
+| gravitar | generic | **0 ✅** | — | OK | 10 |
+| hero | generic | **0 ✅** | — | OK | 9 |
 | ice_hockey | generic | **0 ✅** | — | OK | 10 |
-| jamesbond | generic | **0 ✅** | — | OK | 10 |
-| journey_escape | generic | **0 ✅** | — | OK | 10 |
+| jamesbond | generic | **0 ✅** | — | OK | 9 |
+| journey_escape | generic | **0 ✅** | — | OK | 9 |
 | kangaroo | generic | **0 ✅** | — | OK | 10 |
 | krull | generic | **0 ✅** | — | OK | 10 |
 | kung_fu_master | generic | **0 ✅** | — | OK | 10 |
@@ -52,7 +52,7 @@ Same paradigm as PXC1/PXC2: per-frame 128 B RIOT-RAM diff, jutari vs xitari trac
 | private_eye | generic | **0 ✅** | — | OK | 10 |
 | qbert | generic | 56 | 0 | OK | 10 |
 | riverraid | generic | **0 ✅** | — | OK | 10 |
-| road_runner | generic | **0 ✅** | — | OK | 10 |
+| road_runner | generic | **0 ✅** | — | OK | 9 |
 | robotank | generic | **0 ✅** | — | OK | 10 |
 | seaquest | generic | **0 ✅** | — | OK | 10 |
 | skiing | generic | 83 | 20 | OK | 10 |
