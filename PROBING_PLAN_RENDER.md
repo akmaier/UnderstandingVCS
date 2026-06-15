@@ -155,3 +155,54 @@ The rest is a per-game long tail (object positioning, boot-bg, partial-frame,
 PAL) — each needs its own probe + a narrowly-scoped, sweep-gated fix. Recommended
 to take them one at a time (renderzoom → classify → fix → re-run
 `sweep_jutari_screen.py`), banking each, since they don't share a root cause.
+
+---
+
+## STATUS UPDATE after #110 (PAL + per-game YStart) — deep-dive of the structural divergers
+
+Bucket A (display window) CLOSED — all 64 games screen-comparable, 37/64 px-exact.
+Then deep-dived the biggest remaining "structural" divergers (the B3 set). KEY
+META-FINDING: **they do NOT share a root cause** — the "structural" label was
+misleading. Each was confirmed a GENUINE render bug (re-ran each under an
+all-NOOP stream, where RAM is *proven* bit-exact — every divergence persisted
+identically, frame 1, so none is an action-driven state desync). Per-game:
+
+- **bowling (8) + kangaroo (8) [CONFIRMED, precise]** — NOT a VBLANK/colour bug.
+  The 8px are the LEFT EDGE (cols 0-7 = the HMOVE-blank window) of the FIRST
+  VISIBLE scanline. Instrumented render dump: jutari renders that scanline with
+  `vblank_active=false` (correct, visible) and the right COLUBK, but
+  `hmove_blank_pending=true` → it blanks cols 0-7. xitari does not. ROOT CAUSE:
+  jutari's VBLANK render branch deliberately does NOT consume/clear
+  `hmove_blank_pending` (TIA.jl ~958, added in #83 so pong's row-0 comb survives
+  the last VBLANK line), so an HMOVE strobe several scanlines earlier is carried
+  through ALL VBLANK scanlines into the first visible row. xitari clears the comb
+  after exactly ONE scanline render (VBLANK lines included). FIX (delicate, in
+  tension with #83/pong): clear the comb per VBLANK scanline so it lives exactly
+  one line — but verify pong's row-0 comb (frame-top) still renders. Must gate on
+  the full screen+RAM sweep; pong/breakout are the regression risk.
+- **pacman (3362)** — TWO bands: (a) top rows 0-1 (`xi=0/ju=132`, jutari draws
+  where xitari blanks — likely the same first-visible-scanline family) and (b)
+  bottom rows 165-182 (the score/HUD region, a colour/PF/object delta). The maze
+  (rows 60-120) is PIXEL-EXACT. So pacman is NOT a global shift; it's top-edge +
+  bottom-HUD, two separate localized deltas.
+- **up_n_down (10838 — worst)** — full-width colour BANDS at rows 23-26 & 190-193
+  where xitari shows a HUE GRADIENT (`0x14,0x24,0x34,0x44,0x54` — high-nibble
+  ramp = a rainbow done with rapid mid-scanline COLUBK/COLUP writes) and jutari
+  shows flat `0x12/0xD4`. COLU* ARE deferred per-color-clock (TIA.jl:607), so the
+  bug is in the activation-clock TIMING of those mid-scanline colour writes (the
+  rainbow kernel writes COLU every few cycles; a small activation-delay error
+  smears the colours). Hardest of the set — a per-color-clock COLU activation
+  audit.
+- **battle_zone (1112)** — EVERY diff pixel is `ju=0 / xi=colour`: jutari renders
+  black where xitari draws content (scattered, not full rows). A first-person
+  vector game — likely a missing/under-rendered object (player/missile/PF) class,
+  not a blanking or colour bug.
+- **qbert (7664)** — unchanged: RAM bit-exact (#106), the partial-frame/grey-frame
+  framebuffer side-effect (bucket C).
+
+RECOMMENDATION: these are 4–5 INDEPENDENT, intricate per-color-clock fixes, each
+touching the hot render path with real regression risk to the 37 px-exact + 62
+RAM-exact games. Tackle ONE per focused session, gating on the full sweep:
+bowling/kangaroo (HMOVE-comb-carry, smallest + most precisely understood, but
+pong-risk) → battle_zone (missing-object) → pacman bottom-HUD → up_n_down
+(rainbow-kernel COLU timing, hardest). NOT a single shared fix.
