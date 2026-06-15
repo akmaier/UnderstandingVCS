@@ -357,6 +357,11 @@ mutable struct TIAState
     scanlines_per_frame::Int
     color_loss_enabled::Bool
     color_loss_active::Bool
+    # Task #110 follow-up: per-game display START scanline (xitari Display.YStart;
+    # mirror of myClockStartDisplay = ... + 228*myYStart). Gates the framebuffer
+    # commit + HMOVE-blank flag consumption AND is the get_screen crop base.
+    # NTSC default 34; carnival/pooyan use 26. `env_reset!` overrides per ROM.
+    y_start_row::Int
 end
 
 # INPT defaults: paddle pots ($80 = centred), triggers idle high (D7=1).
@@ -386,6 +391,7 @@ initial_tia_state() = TIAState(
     NTSC_SCANLINES_PER_FRAME,          # task #110: scanlines_per_frame = 262 (NTSC)
     false,                             # task #110: color_loss_enabled = false (NTSC)
     false,                             # task #110: color_loss_active = false
+    Y_START,                           # task #110: y_start_row = 34 (default YStart)
 )
 
 """
@@ -908,7 +914,7 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
             # tests that check collisions at scanline 0 keep working —
             # only the framebuffer commit + flag consumption are
             # display-window-gated.
-            if tia.scanline >= Y_START
+            if tia.scanline >= tia.y_start_row
                 for i in 0:(line_advance - 1)
                     completed_line = (tia.scanline + i) % tia.scanlines_per_frame
                     if completed_line < SCREEN_HEIGHT
@@ -947,7 +953,7 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
             # rows 34-43 showed last frame's pixels instead of black). Write a
             # black row for the completed visible-window scanlines, mirroring
             # the visible-branch framebuffer commit above.
-            if tia.scanline >= Y_START
+            if tia.scanline >= tia.y_start_row
                 for i in 0:(line_advance - 1)
                     completed_line = (tia.scanline + i) % tia.scanlines_per_frame
                     if completed_line < SCREEN_HEIGHT

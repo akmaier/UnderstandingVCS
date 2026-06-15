@@ -4526,3 +4526,32 @@ scanlines < Y_START aren't committed). Remaining PAL-height games
 carnival(214)/journey_escape(230)/pooyan(220) still need their own RomSettings
 (distinct heights + likely a per-game YStart, since Y_START is still a fixed
 const) — follow-up. jaxtari parity (PAL render + #98 dump-pot) deferred to PXC2.
+
+### ✅ Task #110 follow-up (render) (2026-06-15) — per-game YStart closes bucket A (all 64 screen-comparable)
+
+The 3 remaining bucket-A games (carnival/journey_escape/pooyan) have an EXPLICIT
+`Display.Height` (and carnival/pooyan an explicit `Display.YStart=26`) in
+stella.pro — and they are **NTSC, not PAL** (verified: each game's rendered
+content stays within scanline 262 via xitari `--screen` dump, so no 312-wrap /
+colour-loss needed; only the crop window differs). The blocker was that jutari's
+display-start was a fixed `Y_START=34` const — and it's not merely a crop: it
+also gates HMOVE-blank flag consumption to mirror xitari's `myClockStartDisplay =
+myClockWhenFrameStarted + 228*myYStart` (TIA.cxx), which IS keyed on the
+per-game YStart. So the faithful fix is a per-game YStart.
+
+FIX (jutari, render-only): new `romsettings_y_start` interface (default 34) +
+per-TIA `y_start_row` field (set in `env_reset!`); the two framebuffer-commit
+gates (`tia.scanline >= Y_START`) and the `get_screen` crop base now use
+`tia.y_start_row`. New `CarnivalRomSettings`(YStart=26,H=214) /
+`PooyanRomSettings`(YStart=26,H=220); `JourneyEscapeRomSettings` gains H=230
+(it already existed for its FIRE start). All 4 jutari tool settings-maps synced.
+
+VERIFIED: all 64 games now **screen-comparable** (zero "PAL not matched" in the
+scoreboard). carnival → **4 px** (@ row 27, the YStart edge) and pooyan → **1 px**
+(@ row 11) are near-exact. journey_escape → 325 px, but a **structural** delta
+(pixel XORs are not bit-0 → not colour-loss; horizontal object-position shifts
+e.g. col 65↔115) — a genuine render divergence unrelated to height, filed under
+the render long-tail. Screen scoreboard **37/64** pixel-exact (unchanged — no
+NTSC regression); RAM sweep **62/64** (carnival/pooyan/journey_escape all
+0 b/f — the YStart/height overrides are render-only, RAM untouched); jutari
+Pkg.test green. Bucket A (PAL screen height) is now CLOSED.

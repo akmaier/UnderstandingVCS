@@ -20,7 +20,7 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | bowling | 8 | 480 | 1 | 4-4 |
 | boxing | **0 ✅** | 0 | — | — |
 | breakout | **0 ✅** | 0 | — | — |
-| carnival | n/a | — | — | height: xitari 214h vs jutari (PAL not matched) |
+| carnival | 4 | 240 | 1 | 27-27 |
 | centipede | 3 | 180 | 1 | 193-193 |
 | chopper_command | **0 ✅** | 0 | — | — |
 | crazy_climber | **0 ✅** | 0 | — | — |
@@ -37,7 +37,7 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | hero | **0 ✅** | 0 | — | — |
 | ice_hockey | 5 | 300 | 1 | 87-103 |
 | jamesbond | 1 | 60 | 1 | 21-21 |
-| journey_escape | n/a | — | — | height: xitari 230h vs jutari (PAL not matched) |
+| journey_escape | 325 | 19191 | 1 | 13-196 |
 | kangaroo | 8 | 480 | 1 | 3-3 |
 | krull | **0 ✅** | 0 | — | — |
 | kung_fu_master | **0 ✅** | 0 | — | — |
@@ -48,7 +48,7 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | phoenix | **0 ✅** | 0 | — | — |
 | pitfall | **0 ✅** | 0 | — | — |
 | pong | **0 ✅** | 0 | — | — |
-| pooyan | n/a | — | — | height: xitari 220h vs jutari (PAL not matched) |
+| pooyan | 1 | 60 | 1 | 11-11 |
 | private_eye | **0 ✅** | 0 | — | — |
 | qbert | 7664 | 345224 | 2 | 34-205 |
 | riverraid | **0 ✅** | 0 | — | — |

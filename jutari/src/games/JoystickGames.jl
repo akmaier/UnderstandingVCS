@@ -20,14 +20,15 @@ using ..RomSettingsModule: RomSettings
 using ..ConsoleModule: Console
 import ..RomSettingsModule: romsettings_starting_actions, romsettings_difficulty,
     romsettings_is_legal_action, romsettings_console_switch_starts, romsettings_pal,
-    romsettings_screen_height
+    romsettings_screen_height, romsettings_y_start
 
 export PitfallRomSettings, EnduroRomSettings,
        AirRaidRomSettings, AsterixRomSettings, BeamRiderRomSettings,
        DoubleDunkRomSettings, ElevatorActionRomSettings, GopherRomSettings,
        GravitarRomSettings, JourneyEscapeRomSettings, PrivateEyeRomSettings,
        SkiingRomSettings, UpNDownRomSettings, YarsRevengeRomSettings,
-       AmidarRomSettings, SurroundRomSettings
+       AmidarRomSettings, SurroundRomSettings,
+       CarnivalRomSettings, PooyanRomSettings
 
 # --------------------------------------------------------------------------- #
 # Task #100 follow-up: 12 joystick games whose only conformance-relevant
@@ -92,6 +93,21 @@ romsettings_screen_height(::SurroundRomSettings) = 250   # task #110 (PAL bump 2
 # flag it for correctness / xitari parity).
 romsettings_pal(::AirRaidRomSettings) = true
 romsettings_screen_height(::AirRaidRomSettings) = 250   # task #110 (PAL bump 210→250)
+
+# Task #110 follow-up: three games whose stella.pro entry sets an EXPLICIT
+# Display.Height (and, for carnival/pooyan, an explicit Display.YStart) — these
+# are NTSC (their rendered content stays within scanline 262, verified by xitari
+# screen dump), so NO PAL flag / colour-loss / 312-wrap; only the display crop
+# window differs. journey_escape already exists above (FIRE start) — just add its
+# height. carnival/pooyan are new render-only subtypes (no starting actions,
+# confirmed: neither defines getStartingActions in xitari).
+romsettings_screen_height(::JourneyEscapeRomSettings) = 230  # stella.pro Display.Height
+struct CarnivalRomSettings <: RomSettings end
+romsettings_screen_height(::CarnivalRomSettings) = 214       # stella.pro Display.Height
+romsettings_y_start(::CarnivalRomSettings)       = 26        # stella.pro Display.YStart
+struct PooyanRomSettings <: RomSettings end
+romsettings_screen_height(::PooyanRomSettings)   = 220       # stella.pro Display.Height
+romsettings_y_start(::PooyanRomSettings)         = 26        # stella.pro Display.YStart
 
 # Task #103 (amidar): amidar's stella.pro entry overrides BOTH console
 # difficulty switches to "A" (Console.LeftDifficulty/RightDifficulty = "A"),

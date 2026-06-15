@@ -21,7 +21,8 @@ using JuTari.JoystickGames: PitfallRomSettings, EnduroRomSettings,
     DoubleDunkRomSettings, ElevatorActionRomSettings, GopherRomSettings,
     GravitarRomSettings, JourneyEscapeRomSettings, PrivateEyeRomSettings,
     SkiingRomSettings, UpNDownRomSettings, YarsRevengeRomSettings,
-    AmidarRomSettings, SurroundRomSettings
+    AmidarRomSettings, SurroundRomSettings,
+    CarnivalRomSettings, PooyanRomSettings
 
 # Task #95/#98 (2026-06-15): full per-ROM RomSettings map — MUST stay in sync
 # with tools/jutari_trace_dump.jl. A game booted with the wrong settings (e.g.
@@ -47,6 +48,8 @@ const _SETTINGS_BY_BASENAME = Dict{String,Function}(
     "yars_revenge.bin"    => () -> YarsRevengeRomSettings(),
     "amidar.bin"          => () -> AmidarRomSettings(),
     "surround.bin"        => () -> SurroundRomSettings(),
+    "carnival.bin"        => () -> CarnivalRomSettings(),
+    "pooyan.bin"          => () -> PooyanRomSettings(),
 )
 _settings_for_rom(p) = haskey(_SETTINGS_BY_BASENAME, basename(p)) ?
     _SETTINGS_BY_BASENAME[basename(p)]() : GenericRomSettings()

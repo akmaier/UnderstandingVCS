@@ -21,7 +21,7 @@ using ..RomSettingsModule: RomSettings, GenericRomSettings,
                            romsettings_starting_actions, romsettings_difficulty,
                            romsettings_is_legal_action,
                            romsettings_console_switch_starts, romsettings_pal,
-                           romsettings_screen_height
+                           romsettings_screen_height, romsettings_y_start
 using ..TIA: Y_START, VISIBLE_HEIGHT, set_paddle_resistance!
 
 export StellaEnvironment, env_reset!, env_step!,
@@ -107,6 +107,10 @@ function env_reset!(env::StellaEnvironment;
         env.console.bus.tia.screen_height_rows  = romsettings_screen_height(env.settings)
         env.console.bus.tia.scanlines_per_frame = pal ? 312 : 262
         env.console.bus.tia.color_loss_enabled  = pal
+        # Per-game display start row (xitari Display.YStart). Render-only — gates
+        # the framebuffer commit + crop base. NTSC default 34 (62 games);
+        # carnival/pooyan use 26. Independent of PAL.
+        env.console.bus.tia.y_start_row         = romsettings_y_start(env.settings)
     end
     # PXC1-x round 5: for paddle games, push the default paddle
     # resistance into the TIA BEFORE the boot-burn loop. xitari does
@@ -287,8 +291,9 @@ on `env.console.bus.tia.framebuffer` for tests / debugging that want
 the uncropped view.
 """
 get_screen(env::StellaEnvironment) =
-    @view env.console.bus.tia.framebuffer[
-        Y_START + 1 : Y_START + env.console.bus.tia.screen_height_rows, :]
+    let tia = env.console.bus.tia
+        @view tia.framebuffer[tia.y_start_row + 1 : tia.y_start_row + tia.screen_height_rows, :]
+    end
 get_ram(env::StellaEnvironment)    = env.console.bus.ram
 game_over(env::StellaEnvironment)  = env.terminal
 lives(env::StellaEnvironment)      = Int(romsettings_lives(env.settings, env.console))

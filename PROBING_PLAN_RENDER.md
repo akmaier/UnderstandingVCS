@@ -36,19 +36,22 @@ renders. Candidate mechanisms, in priority order:
 
 ## Buckets (35 non-exact games)
 
-**A. PAL screen height (5) — a missing FEATURE, not a bug. [PARTIALLY DONE — #110]**
+**A. Per-game display window (height + YStart) — a missing FEATURE, not a bug. [CLOSED — #110 + follow-up]**
 air_raid (250h), carnival (214h), journey_escape (230h), pooyan (220h),
-surround (250h). xitari renders the PAL display height; jutari was NTSC-only
-(210h) so the frames weren't even the same shape (flagged `n/a` in the
-scoreboard). Fix = PAL screen-height rendering, gated on `romsettings_pal`.
-✅ **Task #110** added this (per-TIA `screen_height_rows`/`scanlines_per_frame`
-+ PAL colour-loss + framebuffer 244→312): **air_raid (→24px @ rows 219-223,
-genuine PAL-region render residual) and surround (→224px construction-counter
-non-bug) are now comparable.** REMAINING: carnival(214)/journey_escape(230)/
-pooyan(220) still flag "PAL not matched" — they need their own `RomSettings`
-subtypes (`romsettings_pal=true` + `romsettings_screen_height`) AND likely a
-**per-game YStart** (currently `Y_START` is a fixed const 34; carnival/pooyan
-use YStart=26), so they're a small follow-up, not covered by #110.
+surround (250h). xitari renders each ROM's `Display.Height`/`Display.YStart`;
+jutari was fixed at 210h/YStart=34 so the frames weren't even the same shape
+(flagged `n/a`). ✅ **Task #110** added the PAL path (per-TIA
+`screen_height_rows`/`scanlines_per_frame` + colour-loss + framebuffer 244→312):
+air_raid (→24px @ rows 219-223, PAL-region render residual) + surround (→224px
+construction-counter non-bug). ✅ **#110 follow-up** added a per-game **YStart**
+(`romsettings_y_start` + per-TIA `y_start_row`, mirror of
+`myClockStartDisplay=…+228*myYStart`) and the explicit-height NTSC subtypes
+carnival(YStart26/H214)/pooyan(YStart26/H220) + journey_escape(H230). **All 64
+games are now screen-comparable** (zero "PAL not matched"). carnival 4px / pooyan
+1px are near-exact; journey_escape 325px is a STRUCTURAL render delta (object
+X-position, not height/colour-loss → moved to the render long-tail, NOT bucket A).
+air_raid 24px likewise a residual render delta. Bucket A (the display-window
+feature) is CLOSED; its leftover px are ordinary per-game render deltas.
 Independent of bucket B.
 
 **B. "Draws where xitari blanks" — the VBLANK/window family (largest, shared).**
