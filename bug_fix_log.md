@@ -4467,3 +4467,21 @@ full-width structural fills — likely one shared root cause), (C) qbert (RAM-ex
 but 7664 px — a partial-frame/grey-frame framebuffer side-effect of #106).
 Verification mp4s (xitari|jutari|diff) rendered + committed for pong/seaquest/
 enduro/qbert/breakout under tools/breakout_video/output/ (the repo tracks these).
+
+### ✅ Task #109 (render) (2026-06-15) — VBLANK output-blanking writes BLACK (29→37/64 screen)
+
+First render-conformance fix from PROBING_PLAN_RENDER.md bucket B. xitari's
+`updateFrameScanline` MEMSETS the framebuffer to 0 when `myVBLANK & 0x02`
+(TIA.cxx:1121-1124) — VBLANK output-blanking actively paints black. jutari's
+`tia_advance!` only SKIPPED the row in its VBLANK branch, so VBLANK-blanked
+scanlines retained STALE framebuffer content from prior frames. Probe: star_gunner
+clears VBLANK at sl=44 (confirmed identical in both ports via bus-trace), so its
+display rows 0-9 (internal sl 34-43) are VBLANK; xitari shows black, jutari showed
+last frame's pixels (ju=184 vs xi=0). Fix: in the VBLANK branch of `tia_advance!`,
+write a black row to the framebuffer for completed scanlines ≥ Y_START (mirror of
+the visible-branch commit). Screen scoreboard 29→**37/64** pixel-exact; cleared
+star_gunner/hero/crazy_climber/frostbite/beam_rider/chopper_command/video_pinball
+and slashed robotank 1353→241, solaris 482→2. ZERO regressions (the change only
+writes tia.framebuffer; RAM/registers/collisions untouched — RAM sweep + Pkg.test
+unaffected). Remaining divergers have OTHER causes (structural up_n_down/pacman,
+qbert partial-frame, sub-scanline VBLANK edges) — next.

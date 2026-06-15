@@ -914,6 +914,22 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
             for (_, reg, val) in pending_sorted
                 _apply_pending_write!(tia, reg, val)
             end
+            # Task #109 (render): xitari's `updateFrameScanline` MEMSETS the
+            # framebuffer to 0 (black) when `myVBLANK & 0x02` (TIA.cxx:1121-
+            # 1124) — VBLANK output-blanking actively writes black. jutari was
+            # only SKIPPING the row, so VBLANK-blanked scanlines retained STALE
+            # framebuffer content from prior frames (e.g. star_gunner's top
+            # rows 34-43 showed last frame's pixels instead of black). Write a
+            # black row for the completed visible-window scanlines, mirroring
+            # the visible-branch framebuffer commit above.
+            if tia.scanline >= Y_START
+                for i in 0:(line_advance - 1)
+                    completed_line = (tia.scanline + i) % NTSC_SCANLINES_PER_FRAME
+                    if completed_line < SCREEN_HEIGHT
+                        tia.framebuffer[completed_line + 1, :] .= UInt8(0)
+                    end
+                end
+            end
             # Task #83 (2026-06-11): do NOT clear hmove_blank_pending
             # here. VBLANK scanlines should preserve the flag so it
             # reaches the first visible scanline that follows.
