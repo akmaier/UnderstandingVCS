@@ -4173,3 +4173,47 @@ confirming action-stream + boot parity between the two sides). Adding a
 jutari `SeaquestRomSettings` would help scoring/terminal parity (jutari
 lacks the type) but would NOT move the screen number. Downgraded to low
 priority.
+
+### 📐 Task #106 PLAN (2026-06-15) — xitari TIA partial-frame / grey-frame model (qbert 56, surround)
+
+**Confirmed root cause (qbert).** jutari user-frame[i] ≡ xitari frame[i+1]
+BYTE-FOR-BYTE (`/tmp/qbert_offset.py`: offset+1 diff = all zeros). qbert's
+entire 56 b/f is a pure frame-count offset: jutari skips xitari's first
+"sliver" frame. Measured xitari per-frame bus-op counts: frame 1 = **141 ops**
+(sliver), frame 2 = 710, frames 3+ = ~15700 (full). The sliver's first bus op
+is at **sl=3948** → `mySystem->cycles()` was NOT reset → the previous frame
+never ended (xitari `myPartialFrameFlag` stayed true through the boot's tail).
+
+**Mechanism.** qbert's RESET-boot wait loop (task #52) is a tight poll loop
+with NO TIA pokes for thousands of scanlines. xitari ends a frame ONLY at
+poke time (`TIA::poke` line 2003 max-scanline cutoff; line 2022 VSYNC-clear
+hold-gate) OR never within one `update()` — `m6502().execute(25000)` runs at
+most **25000 INSTRUCTIONS** (M6502Low.cxx:65 `for(;number!=0;--number)`, NOT
+cycles), then returns a *grey* frame (greyOutFrame, frame counter NOT
+incremented, partialFrameFlag stays true, no startFrame → cycles keep
+accumulating). So xitari slices the poke-less wait loop into 25000-instruction
+grey `update()`s. jutari instead force-ends the frame EVERY CPU step in
+`tia_advance!` (`lines_since_frame > 290`), slicing the loop into ~291-scanline
+REAL frames → different slice count → +1 frame offset that persists.
+
+**Fix (jutari, then mirror jaxtari):**
+1. `Console.jl run_until_frame!`: bound to **25000 instructions** (xitari
+   `execute(25000)`); on budget exhaustion return a GREY frame (no error, frame
+   counter not advanced — the next `run_until_frame!` continues the same frame
+   because the beam/scanline state is never reset).
+2. `TIA.jl tia_poke!`: add xitari's max-scanline cutoff at POKE time
+   (`lines_since_frame > 290` → set `vsync_reset_pending`, disarm
+   `vsync_finish_clock`), mirroring TIA.cxx:2003-2007 (before the register
+   switch). This is the ONLY place a non-VSYNC frame end may now happen.
+3. `TIA.jl tia_advance!`: REMOVE the every-step `lines_since_frame > 290`
+   cutoff (task #80's block). The grey-frame budget (1) prevents an infinite
+   poke-less loop; the poke-time cutoff (2) ends real frames.
+
+**Why safe for the 61 bit-exact games:** normal frames end via VSYNC within
+~5-8k instructions (< 25000) and reset `lines_since_frame` every ~262 lines, so
+neither the budget nor the cutoff fires — behavior unchanged. The every-step
+vs poke-time cutoff differs ONLY for poke-less stretches > 290 scanlines, which
+only qbert's wait loop has. RISK: #80 (seaquest) / #108 (air_raid) ended frames
+via the cutoff during a VSYNC-less burst — if those bursts have an inter-poke
+gap, the boundary may shift. GATE: full 64-ROM sweep must keep all 61 at 0 and
+close qbert; revert if any regress.
