@@ -42,6 +42,28 @@ diverge under NOOP — genuine boot-phase residuals (qbert = xitari sub-instruct
 "sliver" frame at the boot→step transition; elevator = title-vs-demo state machine),
 both needing the xitari TIA partial-frame model — deferred.
 
+**elevator_action (53 b/f under NOOP) — deeper characterization + RIOT-timer-base
+hypothesis RULED OUT.** With the 16× FIRE getStartingActions fix it's 98→53. The
+divergence is a DETERMINISTIC init-branch: at boot-end jutari has CONSTANTS where
+xitari has computed tables — e.g. RAM[$2c..$3e] = xitari `c3 99 6f 45 1b 91 67 3d 13
+e9` (a descending ramp, step -0x2A) vs jutari constant `e7`/`b5`; the attract-demo
+object table $20-$21 is `22 30` in xitari, `00 00` in jutari. So jutari never runs
+elevator's table-fill / demo-init routine — its CPU takes a different branch during
+boot. The title loop reads ONLY INTIM + RAM (no TIA/collision/INPT), and RAM is
+bit-exact except the table OUTPUT, so the branch input is INTIM.
+**RIOT-timer-base ruled out:** the agent suspected jutari's free-running cycle base
+(vs xitari's per-frame `resetCycles`) skews INTIM. But jutari's RIOT timer
+(`_timer_output!`) is xitari's exact delta-based formula — INTIM = `my_timer -
+(delta>>shift) - 1`, `delta = cur_cycles - cycles_when_set`. Both terms share the
+same base, so the base CANCELS in the delta; free-running vs frame-reset is
+immaterial to the timer value (and 60 INTIM-polling games are bit-exact). The
+residual is therefore a subtle CPU↔RIOT *cycle-threading* edge case (the exact
+`cur_cycles` at the mid-instruction INTIM read) OR a register read not yet
+identified — needs the per-CPU-instruction boot trace (jutari console_step! vs
+xitari trace_dump CpuDebug) to find the first divergent branch. Likely fix is a
+shared-core cycle-threading change → HIGH risk to the 60 bit-exact games; left for a
+supervised session (the diagnostic trace is safe; the fix is not).
+
 ---
 
 ### 🎯 Task #103 — SOLVED (air_raid): VSYNC frame-end myVSYNCFinishClock hold-gate → air_raid 43→0 b/f (2026-06-14)
