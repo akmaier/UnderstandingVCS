@@ -4820,3 +4820,40 @@ surround's emulation is otherwise bit-exact (N=190 jutari probe frames → maxdi
 0). A principled fix needs jutari to replicate xitari's construction probe +
 keep-RAM reset — bigger and riskier (touches every game's boot); left as the one
 remaining RAM residual at 63/64.
+
+### 🔬 surround RAM residual — construction-probe seed CHARACTERIZED, fix not viable (2026-06-15)
+
+Follow-up to the skiing fix. surround's 7 b/f all reduce to ONE byte: RAM[$7d], a
+free-running counter the game NEVER re-inits, so it carries xitari's
+construction-time format-autodetect probe seed (Console.cxx:197-218: 60
+`mediaSource().update()` at the TIA-ctor-default 262 cutoff, then a keep-RAM
+`mySystem->reset()`). jutari skipped the probe AND zeroes RAM every reset → $7d
+starts 0.
+
+DECISIVE measurement (TRACE_PROBE_DEBUG friend-tap in tools/trace_dump.cpp — a
+TOOL; xitari core stays pristine — reading getRAM()[$7d] at construction
+checkpoints):
+- xitari POST-CONSTRUCT (after the 60-frame probe): $7d = **95**
+- xitari POST-RESETGAME (after the 60+4+SELECT/RESET boot): $7d = **160** (→161 f0)
+So probe contributes 95, boot +65. (This also corrects the #103 entry, which
+compared jutari's probe-ONLY $7d=96 against xitari's boot-END 161 and wrongly
+concluded "65 short" — the 65 is just the boot jutari ALSO runs after the probe.)
+
+ATTEMPT (reverted): added a `construction_probe` to env_reset! (probe 60 frames
+@ 262 + keep-RAM reset via a new `console_reset!(keep_ram=true)`). Result: jutari
+post-probe $7d = **30**, not 95 — and surround boot-end only moved 66→96 (still
+7 b/f). The gap is ENTIRELY in the probe: jutari's `run_until_frame!` advances
+$7d by 30 over 60 probe calls; xitari's `update()` advances it by 95 — ~3× more
+game-loops per probe frame. surround is a 312-line PAL game running the probe at
+the 262 cutoff (format not yet detected); jutari slices/runs its PAL attract loop
+very differently from xitari's `m6502().execute(25000)`-per-update() there. A
+probe-config sweep (maxsl ∈ {262,290,342}, spf ∈ {262,312,524}) peaks at 59
+(@342), never 95. (The skiing vfc-rebase fix did not help — different mechanism.)
+
+DECISION: REVERTED the construction-probe (it does NOT reach 95 and adds risk to
+the 63 bit-exact games for nothing). surround stays the SOLE RAM residual at
+63/64. It is a known-benign, non-growing, 1-counter divergence on emulation the
+#103 N-sweep PROVED otherwise bit-exact (N=190 probe frames → maxdiff 0). A real
+fix needs jutari's PAL attract-loop probe-frame slicing/instruction-budget to
+match xitari's update() exactly — deep, PAL-specific, high regression risk; not
+worth it for 7 non-growing bytes. Left precisely characterized for a future pass.
