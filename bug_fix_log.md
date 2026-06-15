@@ -4319,3 +4319,38 @@ SurroundRomSettings + PAL flags), jutari/src/env/StellaEnvironment.jl
 (illegal-action filter + console-switch starts + PAL max_scanlines),
 jutari/src/tia/TIA.jl (max_scanlines field + PAL-aware cutoff),
 tools/jutari_trace_dump.jl (surround → SurroundRomSettings).
+
+### 🔬 Task #103 — construction-probe replication ATTEMPTED, not viable (2026-06-15)
+
+Per user request, attempted to drive surround/skiing to 0 by replicating
+xitari's construction-time format-autodetect probe. Mechanism (xitari):
+M6532 zeroes RAM only in its CONSTRUCTOR (M6532.cxx:35-39); `reset()` does NOT
+zero RAM. Console.cxx:197-218 runs `mySystem->reset()` → 60 `mediaSource.update()`
+probe frames (at the constructor default `myMaximumNumberOfScanlines = 262`,
+TIA.cxx:46) → `mySystem->reset()` AGAIN (keeps RAM) → ALE resetGame boot. So a
+free-running RAM counter the game only INCREMENTS (never reads-to-init) — e.g.
+surround $fd, skiing $80 — carries the probe-frame residue in xitari but starts
+at 0 in jutari (which zeroes RAM on console_reset!).
+
+EMPIRICAL TEST (/tmp/probe_experiment.jl — power-on → N probe frames @ cutoff →
+keep-RAM reset → boot → measure surround frame-1 $fd vs xitari's 0xa1=161):
+- no probe:                       $fd = 0x42 (66)  [current]
+- 60 probe @ max_sl=262, keep RAM: $fd = 0x60 (96)  [xitari's actual probe cutoff]
+- 60 probe @ max_sl=342, keep RAM: $fd = 0x7d (125)
+- 60 probe @ max_sl=290, keep RAM: $fd = 0x60 (96)
+
+NONE reach xitari's 161 — the faithful config (262) gives only 96 (65 short).
+So xitari runs ~34-65 more game-VSYNCs to user-frame-1 than 60-probe + 66-boot +
+1 accounts for; the extra component is NOT visible in Console.cxx and I can't
+pin it down without instrumenting xitari (which must stay pristine). For skiing
+(+1) the probe would OVERSHOOT by ~30-60. So the construction probe is not the
+(full) mechanism for either counter.
+
+CONCLUSION: not implementing it. It would (a) NOT reach 0 (model incomplete),
+(b) run 60+ extra frames per env_reset! (≈9 min/reset on jaxtari at ~9 s/frame),
+(c) carry regression risk for the 62 bit-exact games (keep-RAM reset + cart-bank
+edge cases). Keeping the committed improvements (skiing 84→1, surround 16→7;
+both correct & faithful, full sweep clean). Residuals = free-running frame
+counters ($80 / $fd) + surround's downstream frame-16 ball seed; ALL other
+gameplay state is bit-exact. A full fix needs exact replication of xitari's
+construction-time frame sequence (the unaccounted ~34 frames) — deferred.
