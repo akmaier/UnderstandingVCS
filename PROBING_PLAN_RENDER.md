@@ -353,3 +353,42 @@ ACCUMULATION. No single shared fix; each needs xitari-vs-jutari per-poke timing
 instrumentation then a sweep-gated change. Tractability order (cleanest first):
 tutankham (one PF write, concrete cols) > robotank (ball HMOVE, needs xitari render
 internals) > the ≤3px missile/GRP micro-bugs.
+
+## Harness usage + render-fix state (2026-06-16, autonomous session)
+
+**The harness** (`tools/render_diff.py`) is the tool for all render divergences:
+```
+jaxtari/.venv/bin/python tools/render_diff.py --rom tools/rom_sweep/roms/<game>.bin --frame F --row R
+```
+Prints, for screen-row R of frame F (row→TIA-scanline mapping done automatically
+from the env's y_start_row): both ports' rendered rows + diverging cols; jutari's
+full per-scanline render state (decoded regs, object x, per-object pixel-set
+membership); jutari's deferred-write pending ACTIVATIONS; and **xitari's TRUE
+frame-relative activations** (XI_POKE_DUMP, env-gated dump in xitari TIA::poke).
+
+**Verified-correct (do NOT touch):** jutari's deferred-write DELAY timing
+(`_pf_dynamic_delay` etc.) matches xitari exactly (PF0→176/PF1→204 identical on
+tutankham sl137). The `--bus-trace` cc is offset from the true beam by the
+startFrame carry — use the XI_POKE_DUMP activations, not bus-trace cc.
+
+**Remaining divergences are NOT timing-delay bugs — they are (per the harness):**
+1. **Cross-scanline PF carry / late-write wrap** (tutankham 80px). On sl137 a
+   PF2=0 write at bus-trace cc222 has xitari TRUE frame-relative x=3 (= 231%228,
+   wrapped) → activates early; jutari's beam_cc=231 (unwrapped) → activates at 236
+   (late). DEAD END: simply wrapping `activation_clock -= 228` makes it activate
+   at the CURRENT scanline's start, which is WRONG — it over-clears (tutankham
+   24px@96-135 → 24px@48-135). The correct handling of a write whose beam wraps
+   the scanline boundary (which scanline it belongs to, and the reflected-PF
+   interaction) is subtler and resisted hand-analysis; needs a careful per-pixel
+   walk of xitari's updateFrame across the boundary. Do NOT re-try the naive wrap.
+2. **Object positioning** (robotank 241px = ball HMOVE-accumulation under
+   per-scanline HMOVE; asterix/jamesbond/pooyan 1px = missile enable/position).
+   The harness shows jutari's object x; add xitari object-x to XI_POKE_DUMP
+   (myPOSBL/myPOSM*/myPOSP*) to diff positions directly.
+3. **GRP score-kernel** (defender, centipede, …).
+
+Each is shared render/timing logic (breakout/pong pixel-exact depend on it), so
+every fix MUST pass the full screen+RAM sweep (RAM 64/64, screen ≥44/64). Status:
+RAM 64/64 bit-exact, screen 44/64. No render pixel fixed this session — the value
+delivered is the completed harness + the correction that jutari's timing is right
+(which prevented a harmful "phase fix" to shared logic).
