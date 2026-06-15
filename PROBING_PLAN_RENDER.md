@@ -298,3 +298,26 @@ Next targets by ROI: (1) the score-digit GRP cluster B (~13 games, likely a shar
 sub-cycle cause); (2) robotank's ball position A (root-caused, 1 game). BOTH touch
 shared render timing → a full screen + RAM sweep gate is mandatory after any change
 (the 44 exact games AND 64/64 RAM must both hold).
+
+### Deep-dive (2026-06-15) — bucket B is NOT one shared cause
+
+Drilled into the cluster's cleanest case (asterix, 1px). Instrumented jutari's
+render at the diverging scanline + bus-traced xitari. Finding: the asterix phantom
+is the **MISSILE 0** (m0_x=92, COLUP0=24), not a GRP score digit. Column-92
+vertical profile: xitari is BLACK on every row; jutari draws m0 at EXACTLY ONE
+scanline (screen row 190 / sl 224). No ENAM0/RESM0 pokes anywhere near sl 224 in
+the action frame (HMOVE fires only ~every 16 lines; last @ sl216) — so it's an
+isolated missile enable/position timing micro-divergence (the held m0 state +
+HMOVE-accumulated position lands 1px where xitari's doesn't), the SAME *class* as
+robotank's ball, NOT the GRP score-kernel.
+
+CONCLUSION: bucket B is heterogeneous — asterix/jamesbond/pooyan are missile-timing
+micro-bugs, defender's fragmented pattern is GRP, others vary. There is **no single
+shared fix**; each is a separate deep sub-cycle (poke-activation-clock / HMOVE-
+accumulation) investigation, each touching shared render timing (regression risk to
+the 44 pixel-exact games) for a cosmetic ≤9px gain. Given RAM is 64/64 BIT-EXACT
+(the XAI-critical metric — the differentiable study runs on RAM/ROM, not the
+framebuffer), the render long-tail is low-priority polish. Recommend: leave 44/64
+as the documented state unless a specific game's screen is needed, OR grind games
+one-by-one accepting low yield. The structural ones (journey_escape, up_n_down,
+tutankham) are better per-fix value than the ≤3px missile/GRP micro-bugs.
