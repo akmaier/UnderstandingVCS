@@ -392,3 +392,41 @@ every fix MUST pass the full screen+RAM sweep (RAM 64/64, screen ≥44/64). Stat
 RAM 64/64 bit-exact, screen 44/64. No render pixel fixed this session — the value
 delivered is the completed harness + the correction that jutari's timing is right
 (which prevented a harmful "phase fix" to shared logic).
+
+## Per-game object catalog (2026-06-16, harness batch over all 20)
+
+Ran the harness on each divergent game at its worst-band row; `objs` = which TIA
+object jutari draws differently (from the end-of-scanline pixel-set membership).
+The divergences span EVERY object class — confirming there is NO single shared
+render fix; each object's sub-cycle path needs its own work (all shared logic →
+sweep-gated). Frame/row are the harness args used.
+
+| game | px | objs (jutari) | class |
+|---|---|---|---|
+| robotank | 241 | **ball** | ball HMOVE-accumulation (per-scanline HMOVE) |
+| up_n_down | 221 | **player** | GRP/NUSIZ multi-copy + VDELP + PFP |
+| tutankham | 80 | **playfield** | racing-the-beam PF + cross-scanline carry/wrap |
+| defender | 9 | **playfield** | racing-the-beam PF (digit kernel) |
+| atlantis | 24 | player+pf | player + PF |
+| name_this_game | 6 | player+pf | player + PF (HUD) |
+| carnival | 4 | player | player position/GRP |
+| centipede | 3 | player | player position/GRP |
+| ice_hockey | 5 | **missile** | missile enable/position |
+| asterix / jamesbond | 1 | (transient) | missile m0 enabled at 1 scanline (disabled by end) |
+| air_raid | 24(@r219) | (transient/color) | per-cc probe needed |
+| demon_attack / pooyan / solaris / wizard_of_wor | 1-3 | (transient/color) | per-cc probe needed |
+| journey_escape | 325 | (transient) | object X-position drift (xi/ju same colors, shifted) |
+| amidar / berzerk / elevator_action | 3/21/16 | — | first-div frame ≠ 0 (f2 / f42 / f41) — re-probe at the right frame |
+
+`objs={}` / "(transient)" = the diverging object is gone from the END-of-scanline
+set (a mid-scanline enable/disable) — use `render_diff.py --cols A,B` + the
+per-cc XI_POKE_DUMP to catch it. amidar/berzerk/elevator_action need their
+first-divergence FRAME (not frame 0).
+
+**Conclusion of the autonomous render pass:** the harness reliably localizes every
+divergence to a specific object + scanline, but the fixes are uniformly deep
+shared sub-cycle (PF racing-the-beam/wrap, player GRP/NUSIZ/VDELP, missile/ball
+HMOVE) — no quick or single fix. jutari's deferred-write DELAY timing is verified
+correct (not the cause). RAM stays 64/64 bit-exact; screen 44/64. Next sessions:
+pick ONE object class, use the harness (+ extend XI_POKE_DUMP with object x for
+ball/missile), fix, gate on the full sweep.
