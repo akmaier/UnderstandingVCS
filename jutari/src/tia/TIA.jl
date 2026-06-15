@@ -105,6 +105,20 @@ const VISIBLE_HEIGHT = 210
 # `render_scanline` with.
 const COLOR_CLOCKS_PER_CPU_CYCLE = 3
 const HBLANK_COLOR_CLOCKS = 68
+
+# --------------------------------------------------------------------------- #
+# Render probe (diagnostic harness — tools/render_diff.jl)
+# --------------------------------------------------------------------------- #
+# Zero-cost when off (one Int compare per rendered scanline). The harness sets
+# `_RENDER_PROBE[]` to the target ABSOLUTE scanline; the per-color-clock render
+# loop then snapshots that scanline's full render state (register file + object
+# x-positions + per-object pixel sets + the rendered row) into `_RENDER_PROBE_OUT`.
+# Last write wins, so after running a frame `_RENDER_PROBE_OUT[]` holds that
+# frame's render of the target scanline. This is the jutari side of the
+# xitari-vs-jutari per-scanline render diff (the row→scanline mapping is done by
+# the caller from the env's `y_start_row`, fixing the by-hand mapping errors).
+const _RENDER_PROBE = Ref{Int}(-1)
+const _RENDER_PROBE_OUT = Ref{Any}(nothing)
 const COLOR_CLOCKS_PER_SCANLINE = 228
 
 # P3i-c: per-poke write delays, in color clocks. Verbatim port of
@@ -917,6 +931,19 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
                 _, reg, val = pending_sorted[write_idx]
                 _apply_pending_write!(tia, reg, val)
                 write_idx += 1
+            end
+            if _RENDER_PROBE[] == tia.scanline
+                cs = cached_sets === nothing ? _object_pixel_sets(tia) : cached_sets
+                _RENDER_PROBE_OUT[] = (
+                    scanline = Int(tia.scanline),
+                    regs     = copy(tia.registers),
+                    p0_x = Int(tia.p0_x), p1_x = Int(tia.p1_x),
+                    m0_x = Int(tia.m0_x), m1_x = Int(tia.m1_x), bl_x = Int(tia.bl_x),
+                    pf = sort(collect(cs.pf)), p0 = sort(collect(cs.p0)),
+                    p1 = sort(collect(cs.p1)), m0 = sort(collect(cs.m0)),
+                    m1 = sort(collect(cs.m1)), bl = sort(collect(cs.bl)),
+                    row = copy(row),
+                )
             end
             # Task #83 round 3 (2026-06-11): only WRITE framebuffer
             # and CONSUME the HMOVE-blank flag for scanlines at or
