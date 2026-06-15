@@ -430,3 +430,18 @@ HMOVE) — no quick or single fix. jutari's deferred-write DELAY timing is verif
 correct (not the cause). RAM stays 64/64 bit-exact; screen 44/64. Next sessions:
 pick ONE object class, use the harness (+ extend XI_POKE_DUMP with object x for
 ball/missile), fix, gate on the full sweep.
+
+### Object-position dump caveat (2026-06-16)
+
+Extended XI_POKE_DUMP (xitari, git-excluded) to print myPOSP0/P1/M0/M1/BL per
+poke. CAVEAT: these are the RESET positions, NOT the HMOVE-adjusted RENDERED
+positions (xitari applies HMOVE via the render mask, not by mutating myPOS*).
+Example: robotank sl83 xitari myPOSBL=6 but jutari's RENDERED bl_x=156 — not
+directly comparable. So for the ball/missile/player POSITIONING bugs, the harness
+still needs xitari's render-time object x (myPOS* + the HMOVE-mask offset), not
+just myPOS*. The XIPOKE positions are useful as a sanity check on RESBL/RESM*
+reset values, not for diffing rendered sprite positions. Robotank's ball: jutari
+renders it at x=156 (visible, black over the 136 bar @ cols 156-159); xitari's
+ball reset pos is 6 (left-edge, black region) → the rendered positions differ
+substantially (ball HMOVE-accumulation under per-scanline HMOVE + HMCLR), the
+deepest of the positioning cases.
