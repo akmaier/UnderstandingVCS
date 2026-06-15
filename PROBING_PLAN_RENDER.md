@@ -101,3 +101,46 @@ differently from xitari's `greyOutFrame`. Probe the framebuffer of the first
 sweep. NOTE: this is a FIRST-PASS depth (60 frames); some render bugs (e.g. the
 #98 pong ball blip at f460) only appear later — run the diverging games deeper
 (`--frames 500`, single game) once their band is closed.
+
+---
+
+## STATUS UPDATE after #109 (VBLANK black-fill) — screen 29 → 37/64
+
+**Landed:** #109 — `tia_advance!` now writes a BLACK row during VBLANK (was
+skipping → stale content). This was the dominant shared cause of bucket B's
+"draws-where-blanked": cleared star_gunner, hero, crazy_climber, frostbite,
+beam_rider, chopper_command, video_pinball; slashed robotank 1353→241, solaris
+482→2. **No regressions** (framebuffer-only change; RAM sweep + Pkg.test green).
+
+**Refined remaining (22 non-PAL) — these are DIVERSE per-game issues, NOT one
+shared cause** (post-#109 probes):
+
+- **Boot-set background bands** — up_n_down (10838): rows 23-26 & 190-193 are
+  full-width `ju=212 / xi=0`, but frame 1 writes NO VBLANK/COLUBK — the bg is set
+  during BOOT and persists. So jutari's boot-end background/PF state differs from
+  xitari's at those scanlines (a TIA-register, not RAM, so invisible to the RAM
+  sweep). Probe the boot COLUBK/PF/CTRLPF writes and the last value per scanline.
+- **Mid-visible COLUBK/PF band** — pacman (3362): rows 165-182 `ju=0 / xi=132` —
+  mid-visible (VBLANK is off there in both; jutari VBLANK toggles at sl 33/258
+  ≈ xitari's, modulo the trace's per-frame-reset attribution). So this is a
+  background/playfield colour or priority divergence at the bottom-middle, not
+  VBLANK. battle_zone (1112, cols 0-7) similar (a left-edge object/PF band).
+- **Mid-screen HUD-object bottom band** — asterix (1 @190), centipede (3 @193),
+  amidar (3 @182), defender (9 @183), name_this_game (6 @188), atlantis (24 @186),
+  demon_attack (3 @15), jamesbond (1 @21), wizard_of_wor (3 @164), kangaroo (8 @3),
+  bowling (8 @4), solaris (2 @11), ice_hockey (5 @87-103), tutankham (80),
+  berzerk (25, action-driven f42), elevator_action (24), ms_pacman (232): small,
+  localized, mid-visible — per-game sprite/missile/ball/PF positioning or
+  colour edges (object-level, not a blanking issue). Probe each with renderzoom
+  + an object-positioning bus-trace (which object set is enabled at that x).
+- **qbert (7664)** — RAM bit-exact (#106) but screen-divergent: the partial-frame
+  / grey-frame framebuffer. Probe the first 2-3 user frames' framebuffer vs
+  xitari greyOutFrame.
+- **PAL height (5)** — air_raid/carnival/journey_escape/pooyan/surround: add PAL
+  display-height rendering (jutari is NTSC 210h).
+
+**Conclusion:** the single high-leverage render fix (VBLANK black-fill) is done.
+The rest is a per-game long tail (object positioning, boot-bg, partial-frame,
+PAL) — each needs its own probe + a narrowly-scoped, sweep-gated fix. Recommended
+to take them one at a time (renderzoom → classify → fix → re-run
+`sweep_jutari_screen.py`), banking each, since they don't share a root cause.
