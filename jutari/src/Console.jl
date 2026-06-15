@@ -16,7 +16,14 @@ using ..CPU: step
 
 export Console, initial_console, console_reset!, console_step!, run_until_frame!
 
-const _FRAME_INSTRUCTION_LIMIT = 100_000
+# Task #106 (partial-frame model): xitari runs at most this many
+# INSTRUCTIONS per mediaSource().update() — `m6502().execute(25000)`
+# in TIA::update (M6502Low.cxx:65 decrements once per instruction, NOT
+# per cycle). When the budget is exhausted WITHOUT a frame end, xitari
+# returns a "grey" (incomplete) frame: the frame counter is NOT advanced
+# and the beam/cycle state is preserved, so the next update() continues
+# the same frame. `run_until_frame!` mirrors this exactly.
+const _UPDATE_INSTRUCTION_BUDGET = 25_000
 
 mutable struct Console
     cpu::CPUState
@@ -70,20 +77,30 @@ end
 """
     run_until_frame!(console)
 
-Step the CPU until the TIA's frame counter advances by one. Either a
-software VSYNC falling edge or the 262-line scanline wrap (safety net)
-counts as a frame.
+Run one xitari `mediaSource().update()`: step the CPU until the TIA's
+frame counter advances by one (a VSYNC-clear hold-gate or the poke-time
+max-scanline cutoff — see `tia_poke!`), OR until the 25000-instruction
+budget is exhausted.
+
+Task #106 (partial-frame model): the budget is xitari's
+`m6502().execute(25000)`. When it runs out WITHOUT a frame boundary, this
+returns a *grey* frame — the frame counter has NOT advanced and the TIA's
+beam/scanline/cycle state is preserved, so the next `run_until_frame!`
+continues the same TIA frame (xitari leaves `myPartialFrameFlag` true and
+skips `startFrame()`). This reproduces qbert's boot→step "sliver" frame:
+its RESET-boot wait loop (task #52) has no TIA pokes for thousands of
+scanlines, so the frame can only be sliced by this budget — exactly as in
+xitari — instead of the per-step cutoff that used to live in `tia_advance!`.
 """
 function run_until_frame!(console::Console)
     start_frame = console.bus.tia.frame
-    for _ in 1:_FRAME_INSTRUCTION_LIMIT
+    for _ in 1:_UPDATE_INSTRUCTION_BUDGET
         step(console.cpu, console.bus)
         if console.bus.tia.frame != start_frame
-            return console
+            return console            # frame completed (xitari endFrame)
         end
     end
-    error("run_until_frame! exceeded $_FRAME_INSTRUCTION_LIMIT instructions " *
-          "without a frame boundary (start_frame=$start_frame).")
+    return console                    # grey frame: execute(25000) budget hit
 end
 
 end # module

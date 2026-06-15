@@ -4217,3 +4217,34 @@ only qbert's wait loop has. RISK: #80 (seaquest) / #108 (air_raid) ended frames
 via the cutoff during a VSYNC-less burst — if those bursts have an inter-poke
 gap, the boundary may shift. GATE: full 64-ROM sweep must keep all 61 at 0 and
 close qbert; revert if any regress.
+
+### ✅ Task #106 SOLVED (jutari) (2026-06-15) — qbert 56→0 via the partial-frame / grey-frame model
+
+Implemented the plan above. Three changes in jutari:
+1. `Console.jl run_until_frame!`: bounded to **25000 instructions**
+   (`_UPDATE_INSTRUCTION_BUDGET`, = xitari `m6502().execute(25000)`); on budget
+   exhaustion it returns a GREY frame (no error, frame counter NOT advanced,
+   beam/scanline/cycle state preserved) so the next call continues the same
+   TIA frame — exactly xitari's `myPartialFrameFlag`-true path.
+2. `TIA.jl tia_poke!`: added the max-scanlines cutoff at POKE time
+   (`frame_clock ÷ 228 > 290` → set `vsync_reset_pending`, disarm the VSYNC
+   hold-gate), mirroring TIA.cxx:2003-2007.
+3. `TIA.jl tia_advance!`: REMOVED the per-CPU-step `lines_since_frame > 290`
+   cutoff (the task #80 block). Frame ends are now decided ONLY in the poke
+   handler (VSYNC hold-gate OR max-scanlines), like xitari.
+
+**Verification (FULL 64-ROM RAM sweep, the gate):**
+- qbert **56 → 0 ✅** (now byte-for-byte aligned; previously jutari[i]≡xitari[i+1]).
+- **ZERO regressions**: all 61 previously-bit-exact games stay at 0, including
+  the two at-risk games whose frames end via the cutoff during a VSYNC-less
+  boot burst — **seaquest 0, air_raid 0** (their bursts poke every scanline, so
+  poke-time ≡ every-step there). 62/64 bit-exact.
+- skiing 85→84 (unchanged class — the sweep's frame-20 FIRE edge case; NOOP-
+  bit-exact). surround still 16 (needs the {SELECT,RESET} starting actions —
+  separate, next).
+- jutari `Pkg.test` green (the task #80 test rewritten: a poke-less VSYNC-less
+  ROM now correctly GREYS — frame counter does not advance — and a TIA-poking
+  VSYNC-less ROM ends at the poke-time cutoff).
+
+Mirror to jaxtari pending (immediate-increment model; verify via direct RAM
+diff since jaxtari pytest is wedged).

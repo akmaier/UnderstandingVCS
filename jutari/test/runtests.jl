@@ -2805,20 +2805,35 @@ end
         @test c.bus.tia.frame == 2
     end
 
-    @testset "run_until_frame! ends a VSYNC-less ROM at the max-scanlines cutoff (task #80)" begin
-        # Task #80: the frame counter is driven by the software VSYNC edge
-        # OR — mirroring xitari's `myMaximumNumberOfScanlines` (NTSC=290,
-        # TIA.cxx:2003) — a forced cutoff after 290 VSYNC-less scanlines.
-        # So a JMP-to-self ROM that never writes VSYNC no longer hangs;
-        # its frame ends at the 290-line cutoff. (Pre-#80 this threw at the
-        # instruction limit; the cutoff is the xitari-faithful behaviour.)
+    @testset "max-scanlines cutoff is poke-gated; poke-less ROM greys (task #106)" begin
+        # Task #106 (partial-frame model): xitari's max-scanlines cutoff
+        # (NTSC=290, TIA.cxx:2003) is evaluated at POKE time only, NOT every
+        # CPU step. So a poke-LESS, VSYNC-less ROM never ends a frame — it
+        # runs "grey" and `run_until_frame!` returns at the 25000-instruction
+        # `execute(25000)` budget WITHOUT advancing the frame counter (xitari
+        # leaves myPartialFrameFlag true / getFrameNumber unchanged). It must
+        # not hang or throw.
         rom = zeros(UInt8, 4096)
-        rom[1] = 0x4C; rom[2] = 0x00; rom[3] = 0xF0  # JMP $F000
+        rom[1] = 0x4C; rom[2] = 0x00; rom[3] = 0xF0  # JMP $F000 (no pokes)
         rom[0x0FFD] = 0x00; rom[0x0FFE] = 0xF0
         c = initial_console(rom); console_reset!(c)
         f0 = c.bus.tia.frame
         run_until_frame!(c)
-        @test c.bus.tia.frame == f0 + 1              # cutoff forced a frame
+        @test c.bus.tia.frame == f0                  # grey frame: NO advance
+        @test c.bus.tia.lines_since_frame > 290      # beam ran past the cutoff
+
+        # ...but a VSYNC-less ROM that DOES poke a TIA register every loop
+        # ends its frame at the next poke past 290 scanlines (the real
+        # seaquest/air_raid boot-burst mechanism, tasks #80/#108).
+        rom2 = zeros(UInt8, 4096)
+        rom2[1] = 0x8D; rom2[2] = 0x09; rom2[3] = 0x00  # STA $0009 (COLUBK)
+        rom2[4] = 0x4C; rom2[5] = 0x00; rom2[6] = 0xF0  # JMP $F000
+        rom2[0x0FFD] = 0x00; rom2[0x0FFE] = 0xF0
+        c2 = initial_console(rom2); console_reset!(c2)
+        g0 = c2.bus.tia.frame
+        run_until_frame!(c2)
+        @test c2.bus.tia.frame == g0 + 1             # poke-time cutoff fired
+        @test c2.bus.tia.lines_since_frame == 0      # counter reset on boundary
     end
 
     # IO actions — joystick decoding
