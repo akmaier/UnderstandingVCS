@@ -4696,3 +4696,37 @@ makes qbert RAM bit-exact (62/64) and powers the partial-frame family
 (#103/#106). Not worth that risk for a single cosmetic boot frame. qbert's STEADY
 STATE is screen-exact (screen scoreboard counts it as 7664 because the sweep diffs
 the boot-transition frame). Logged for a future focused #106 frame-slicing pass.
+
+### 🔬 Task #114 follow-up (2026-06-15) — deep Phase-A diagnosis: TIA frame structures MATCH; it's an agent-step↔screen emission alignment (still deferred)
+
+Pursued the #106 frame-slicing fix under an approved diagnostic-first plan. Two
+approaches tried and REVERTED; root cause refined; no code shipped (still 42/64
+screen / 62/64 RAM, tree clean).
+
+(1) Render-only framebuffer-accumulation (window-clamp commits by
+`lines_since_frame` + grey-out) — implemented, **zero effect on qbert**, reverted.
+Confirmed qbert counted frame 2 is a COMPLETE short frame (235 instrs), not a
+grey/partial frame, so accumulation doesn't apply.
+
+(2) #106 frame-boundary approach — instrumented jutari's `run_until_frame!` +
+`tia_poke!` cutoff/VSYNC and read xitari's bus-trace. KEY FINDING: jutari and
+xitari have **IDENTICAL TIA frame structure** at the transition —
+  frame 1 = spin (3948 scanlines, no VSYNC, ended by the max-scanline CUTOFF at
+    the first game poke; `lines_since_frame` accumulates across the boot grey
+    frames in both),
+  frame 2 = SHORT (~11-12 scanlines, ended by a real held-≥1-scanline VSYNC),
+  frame 3+ = full 262-scanline board frames.
+So it is NOT a frame-slicing divergence (the earlier "extra short frame"
+hypothesis was wrong — both have it). The divergence is purely in the
+**agent-step ↔ TIA-frame ↔ screen emission alignment**: the same board-render
+lands in xitari's emitted screen 2 but jutari's emitted screen 3, with RAM
+bit-exact per counted frame. The bus-trace frame counter (TIA frames) and the
+`--screen` frame counter (post-boot agent-steps) are offset, so pinning the exact
+emission-mapping difference needs instrumenting xitari's OWN per-update screen
+emission — a build that would modify the pristine reference — and any fix still
+risks the RAM-exact #106 model.
+
+DECISION: **deferred again** (per the plan's Phase-A gate + fallback). One
+cosmetic boot frame is not worth touching the pristine xitari build or risking the
+RAM-exact 62/64 backbone. Diagnosis substantially deepened for a future session
+that can instrument xitari's screen emission in an out-of-tree scratch build.
