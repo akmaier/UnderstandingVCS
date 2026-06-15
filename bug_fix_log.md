@@ -4669,3 +4669,30 @@ other game holds its exact px; breakout/pong/battle_zone 0). RAM **62/64**
 unchanged (YStart is render-only); jutari Pkg.test green. LESSON: before chasing a
 pervasive "shifted/structural" render divergence as a sub-cycle bug, CHECK the
 per-game `Display.YStart` first.
+
+### 🔬 Task #114 (render) (2026-06-15) — qbert frame-2 = boot-transition frame-slice artifact (DIAGNOSED, deferred — no code change)
+
+After #113 (YStart=40), qbert is screen-exact on EVERY frame EXCEPT counted frame
+2 (7664 px). Diagnosed precisely; NOT fixed (the fix would destabilize the
+RAM-exact #106 partial-frame model for one cosmetic boot frame).
+
+Findings (jutari `run_until_frame!` instrumentation + direct RAM compare):
+- jutari counted frame 2 RAM == xitari counted frame 2 RAM **bit-exact**
+  (`0094b894…`, 56 nonzero) — perfectly aligned, same frame, same state.
+- xitari frame 2 framebuffer = the qbert board (7664 px); jutari = all black.
+- jutari's counted frame 2 is a **235-instruction sliver** (~3 scanlines):
+  qbert's RESET-boot wait loop (#52) is sliced into 4 grey frames by the #106
+  25000-instr budget (beam free-running 201→140→79→18), then frame 60→61
+  completes in 3 instrs and 61→62 in 235 — so the board (drawn the same RAM-cycle
+  in both) lands in jutari's NEXT frame (63, 5370 instrs, full) while xitari's
+  frame 2 already spans the full board render.
+- Net: cumulative CPU execution converges (RAM bit-exact every frame), but the
+  per-frame VSYNC/grey-frame BOUNDARY lands one boot-transition frame differently,
+  so the frame-2 FRAMEBUFFER differs by one frame. Frames 1 and 3-60 are exact.
+
+DECISION: deferred. Matching xitari's exact boot-transition slicing means changing
+the #106 grey-frame budget / VSYNC-boundary placement — the very mechanism that
+makes qbert RAM bit-exact (62/64) and powers the partial-frame family
+(#103/#106). Not worth that risk for a single cosmetic boot frame. qbert's STEADY
+STATE is screen-exact (screen scoreboard counts it as 7664 because the sweep diffs
+the boot-transition frame). Logged for a future focused #106 frame-slicing pass.
