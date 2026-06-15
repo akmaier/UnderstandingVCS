@@ -4635,3 +4635,37 @@ its exact px). RAM **62/64** unchanged (the change only writes the framebuffer
 black-row branch + a flag); jutari Pkg.test green. pacman top rows 0-1 are a
 SEPARATE "draws-where-blanked" bug (jutari draws 132 where xitari blanks), not
 this comb — unchanged (3362).
+
+### ✅ Task #113 (render) (2026-06-15) — per-game YStart for up_n_down/pacman/qbert (the "structural" divergers were a vertical OFFSET)
+
+User asked to tackle up_n_down (10838 px, the worst diverger — hypothesised as a
+"rainbow-kernel COLU/sprite-racing" bug). Deep-traced it: the 210/18 blocks are a
+playfield (COLUPF=18 on COLUBK=210), the PF registers MATCHED xitari (RAM-exact),
+yet jutari's rendered scanline showed the PF pattern of a DIFFERENT scanline —
+xitari's display row 50 = the sl-78 PF (block @ x36-51), jutari's = the sl-82 PF
+(blocks @ x16-27,x40-55), a ~4-scanline VERTICAL OFFSET. CAUSE: up_n_down's
+stella.pro sets `Display.YStart "30"` but jutari rendered from the default 34, so
+the whole frame was shifted 4 scanlines and every row compared against the wrong
+scanline (the pervasive 203-row "shifted pattern" divergence). NOT a sprite/COLU
+bug at all.
+
+A full scan of all 64 sweep ROMs' `Display.YStart` found THREE uncovered games:
+up_n_down (30), **pacman (33)**, **qbert (40)** — all defaulting to 34.
+
+FIX (render-only, reuses the #110 `romsettings_y_start` + per-TIA `y_start_row`):
+`romsettings_y_start(::UpNDownRomSettings)=30`; new render-only `PacmanRomSettings`
+(33) / `QbertRomSettings` (40) (no starting actions — all RAM bit-exact; pacman ≠
+ms_pacman; qbert keeps GenericRomSettings' #106 partial-frame behavior). All 4
+jutari tool settings-maps synced.
+
+VERIFIED: **pacman 3362→0 ✅** (fully fixed — its maze looked exact because a
+vertically-uniform maze hides a 1-row shift; only the top/bottom edges diverged).
+**up_n_down 10838→221** (the offset was 98%; the 221 px/frame residual is a
+genuine render delta now visible — sprite/PF racing detail, deferred).
+**qbert: total 345224→7664** — steady state now EXACT; only frame 2 diverges (the
+#106 grey/partial boot frame vs xitari's `greyOutFrame`, a known single-frame boot
+artifact). Screen scoreboard **41→42/64** pixel-exact, ZERO regressions (every
+other game holds its exact px; breakout/pong/battle_zone 0). RAM **62/64**
+unchanged (YStart is render-only); jutari Pkg.test green. LESSON: before chasing a
+pervasive "shifted/structural" render divergence as a sub-cycle bug, CHECK the
+per-game `Display.YStart` first.

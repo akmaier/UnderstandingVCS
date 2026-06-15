@@ -234,3 +234,26 @@ pong-risk) → battle_zone (missing-object) → pacman bottom-HUD → up_n_down
 - **pacman top rows 0-1** = a SEPARATE "draws-where-blanked" bug (jutari draws
   132 where xitari shows black), NOT the HMOVE comb — still open (part of the
   3362).
+
+---
+
+## STATUS UPDATE after #113 — per-game YStart fixed the "structural" divergers
+
+The big "structural" divergers were a missing per-game `Display.YStart` (vertical
+offset vs xitari), NOT sub-cycle render bugs. A full scan of all 64 ROMs' YStart
+found up_n_down(30)/pacman(33)/qbert(40) defaulting to 34. Adding the overrides:
+- ✅ **pacman 3362→0** (fully fixed — incl. the "top rows 0-1 draws-where-blanked"
+  above, which was just the 1-row offset).
+- ✅ **up_n_down 10838→221** (98% was the 4-row offset; 221 px/frame genuine
+  render residual remains — sprite/PF racing detail, deferred).
+- ✅ **qbert total 345224→7664** (steady state EXACT; only frame 2 left = the #106
+  grey/partial boot frame vs xitari `greyOutFrame` — a known single-frame artifact).
+Screen 41→**42/64**. **LESSON: check per-game `Display.YStart` BEFORE treating a
+pervasive "shifted/structural" divergence as a sub-cycle render bug.**
+
+Remaining render long-tail (22 non-exact): journey_escape 325 (object X-position,
+structural), robotank 241, surround 224 (construction-counter NON-BUG), up_n_down
+221 (sprite/PF racing), qbert 7664 @ frame 2 (#106 grey frame), tutankham 80,
+air_raid 24 / atlantis 24 / elevator_action 16 (PAL-region / bottom-band), berzerk
+21, defender 9, ice_hockey 5, carnival 4, amidar 3 / centipede 3 / demon_attack 3
+/ wizard_of_wor 3, solaris 2, asterix 1 / jamesbond 1 / pooyan 1.

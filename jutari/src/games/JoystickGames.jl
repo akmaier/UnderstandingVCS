@@ -29,7 +29,8 @@ export PitfallRomSettings, EnduroRomSettings,
        SkiingRomSettings, UpNDownRomSettings, YarsRevengeRomSettings,
        AmidarRomSettings, SurroundRomSettings,
        CarnivalRomSettings, PooyanRomSettings,
-       BattleZoneRomSettings, MsPacmanRomSettings
+       BattleZoneRomSettings, MsPacmanRomSettings,
+       PacmanRomSettings, QbertRomSettings
 
 # --------------------------------------------------------------------------- #
 # Task #100 follow-up: 12 joystick games whose only conformance-relevant
@@ -120,6 +121,21 @@ struct BattleZoneRomSettings <: RomSettings end
 romsettings_hmove_blanks(::BattleZoneRomSettings) = false
 struct MsPacmanRomSettings <: RomSettings end
 romsettings_hmove_blanks(::MsPacmanRomSettings)   = false
+
+# Task #113: three more games with an EXPLICIT non-default `Display.YStart` in
+# stella.pro (default 34). jutari rendered from YStart=34, vertically OFFSETTING
+# the whole frame vs xitari → every row compared against the wrong scanline (the
+# screen sweep's pervasive "shifted pattern" divergence). Render-only (no RAM
+# effect); all three are RAM bit-exact and NTSC (Height 210 default). up_n_down
+# already has a struct (FIRE start); add its YStart. pacman/qbert are new
+# render-only subtypes (no starting actions). NOTE: pacman = "Pac-Man" (distinct
+# from ms_pacman). qbert keeps GenericRomSettings' partial-frame behavior (#106)
+# — the YStart is render-crop only.
+romsettings_y_start(::UpNDownRomSettings) = 30   # stella.pro Display.YStart
+struct PacmanRomSettings <: RomSettings end
+romsettings_y_start(::PacmanRomSettings)  = 33   # stella.pro Display.YStart
+struct QbertRomSettings <: RomSettings end
+romsettings_y_start(::QbertRomSettings)   = 40   # stella.pro Display.YStart
 
 # Task #103 (amidar): amidar's stella.pro entry overrides BOTH console
 # difficulty switches to "A" (Console.LeftDifficulty/RightDifficulty = "A"),

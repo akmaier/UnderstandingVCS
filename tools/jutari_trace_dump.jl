@@ -33,7 +33,8 @@ using JuTari.JoystickGames: PitfallRomSettings, EnduroRomSettings,
     SkiingRomSettings, UpNDownRomSettings, YarsRevengeRomSettings,
     AmidarRomSettings, SurroundRomSettings,
     CarnivalRomSettings, PooyanRomSettings,
-    BattleZoneRomSettings, MsPacmanRomSettings
+    BattleZoneRomSettings, MsPacmanRomSettings,
+    PacmanRomSettings, QbertRomSettings
 
 # Per-ROM RomSettings autodetection — mirror of jaxtari `tools/check_trace.py`.
 # Activates the dump-pot model + paddle-action handling for paddle
@@ -66,6 +67,8 @@ const _SETTINGS_BY_BASENAME = Dict{String,Function}(
     "pooyan.bin"          => () -> PooyanRomSettings(),
     "battle_zone.bin"     => () -> BattleZoneRomSettings(),
     "ms_pacman.bin"       => () -> MsPacmanRomSettings(),
+    "pacman.bin"          => () -> PacmanRomSettings(),
+    "qbert.bin"           => () -> QbertRomSettings(),
 )
 _settings_for_rom(rom_path::AbstractString) =
     haskey(_SETTINGS_BY_BASENAME, basename(rom_path)) ?

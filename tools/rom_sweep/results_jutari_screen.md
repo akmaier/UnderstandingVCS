@@ -2,7 +2,7 @@
 
 Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `trace_dump --screen`, breakout_random_actions stream, first **60** frames after the standard 60-NOOP+4-RESET boot. Same per-game RomSettings as the RAM sweep (so a divergence is a genuine render delta, not a settings/boot mismatch).
 
-**Pixel-exact (0 px) over 60 frames: 41/64.**
+**Pixel-exact (0 px) over 60 frames: 42/64.**
 
 | game | max px/frame | total px | first div frame | worst-frame rows |
 |---|---|---|---|---|
@@ -44,13 +44,13 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | montezuma_revenge | **0 ✅** | 0 | — | — |
 | ms_pacman | **0 ✅** | 0 | — | — |
 | name_this_game | 6 | 360 | 1 | 188-188 |
-| pacman | 3362 | 201720 | 1 | 0-189 |
+| pacman | **0 ✅** | 0 | — | — |
 | phoenix | **0 ✅** | 0 | — | — |
 | pitfall | **0 ✅** | 0 | — | — |
 | pong | **0 ✅** | 0 | — | — |
 | pooyan | 1 | 60 | 1 | 11-11 |
 | private_eye | **0 ✅** | 0 | — | — |
-| qbert | 7664 | 345224 | 2 | 34-205 |
+| qbert | 7664 | 7664 | 2 | 34-205 |
 | riverraid | **0 ✅** | 0 | — | — |
 | road_runner | **0 ✅** | 0 | — | — |
 | robotank | 241 | 14448 | 1 | 49-182 |
@@ -63,7 +63,7 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | tennis | **0 ✅** | 0 | — | — |
 | time_pilot | **0 ✅** | 0 | — | — |
 | tutankham | 80 | 4800 | 1 | 103-167 |
-| up_n_down | 10838 | 639483 | 1 | 1-203 |
+| up_n_down | 221 | 12257 | 1 | 5-203 |
 | venture | **0 ✅** | 0 | — | — |
 | video_pinball | **0 ✅** | 0 | — | — |
 | videochess | **0 ✅** | 0 | — | — |
