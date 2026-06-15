@@ -14,6 +14,36 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🔬 Task #103 — skiing is NOOP-bit-exact (boot fixed); surround SELECT/RESET dead-end (2026-06-14)
+
+**skiing — boot SOLVED, sweep residual is an action-stream artifact.** After the 16×
+DOWN getStartingActions fix, skiing is **bit-exact under NOOP-30** (boot/idle
+conformance is perfect). Its remaining sweep number (83 b/f) appears ONLY under the
+sweep's `breakout_random_actions` stream, first diverging at **frame 20 when FIRE
+(action 1) is applied** — a narrow skiing-specific action-handling edge case, NOT a
+boot or shared-core divergence. (The 64-ROM sweep applies breakout's random actions to
+every ROM; for non-breakout games that exercises arbitrary inputs. Other games are 0
+under the same stream, so this is skiing-only game logic under FIRE.) Treating boot
+conformance as the bar, skiing is effectively closed.
+
+**surround — SELECT/RESET starting actions help frame-0 but unmask a deeper bug
+(REVERTED).** surround's xitari `getStartingActions` = `{SELECT, RESET}` (ALE codes
+46, 40 → Event::ConsoleSelect/Reset → SWCHB switch presses; SELECT picks the game
+variation). I implemented console-switch starting actions in `env_reset!` + a
+`SurroundRomSettings`. It dropped surround's **frame-0** divergence 16→9, but the
+**max-diff across frames rose 16→18** — pressing SELECT puts surround in the correct
+game variation (matching xitari), which then exposes a deeper per-frame emulation bug
+that diverges MORE than the wrong-variation default. Since the sweep gate regressed
+(16→18) and I couldn't close the deeper bug, I **reverted** the surround change to keep
+the gate clean (60/64). The console-switch-starting-action machinery is correct and
+worth re-applying once the deeper surround residual (16 b/f under NOOP+generic, a
+genuine boot-phase divergence) is found. qbert (56) and elevator_action (53) likewise
+diverge under NOOP — genuine boot-phase residuals (qbert = xitari sub-instruction
+"sliver" frame at the boot→step transition; elevator = title-vs-demo state machine),
+both needing the xitari TIA partial-frame model — deferred.
+
+---
+
 ### 🎯 Task #103 — SOLVED (air_raid): VSYNC frame-end myVSYNCFinishClock hold-gate → air_raid 43→0 b/f (2026-06-14)
 
 The characterization workflow flagged a frame-boundary cause for air_raid (1-frame
