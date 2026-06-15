@@ -377,7 +377,7 @@ Read a TIA register. \$30..\$37 → collision latches; \$38..\$3B → INPT0..3
 xitari-style cycle-threshold dump-pot model applies); \$3C/\$3D → INPT4/5
 (triggers idle high; `set_trigger!` flips them); \$3E/\$3F → unused.
 """
-@inline function tia_peek(tia::TIAState, addr::Integer)
+@inline function tia_peek(tia::TIAState, addr::Integer, extra_cpu_cycles::Integer = 0)
     reg = Int(addr) & 0x0F
     if reg < 8
         return tia.collisions[reg + 1]
@@ -387,8 +387,27 @@ xitari-style cycle-threshold dump-pot model applies); \$3C/\$3D → INPT4/5
         if tia.paddle_use_dump_pot[i]
             tia.dump_enabled && return UInt8(0)
             r       = Int(tia.paddle_resistance[i])
-            needed  = Int(round(1.6 * r * 0.01e-6 * 1.19e6))
-            charged = tia.total_cycles > (tia.dump_disabled_cycle + needed)
+            # Task #98: TRUNCATE toward zero, matching xitari's `(uInt32)` cast
+            # (TIA.cxx:1890) and jaxtari's `int()` (system.py:455) — NOT round.
+            # With `round`, a resistance whose cycle count has a fractional part
+            # ≥ 0.5 makes `needed` 1 cycle too large; since the ROM polls INPT
+            # only every ~2 scanlines, that 1-cycle-late threshold crossing
+            # lands past a read boundary → the paddle reads 2 units off (pong
+            # frame 457 INPT1 flip at sl=197 vs xitari/jaxtari's sl=195 → the
+            # $04/$3c residual + the f460 ball-render blip).
+            needed  = trunc(Int, 1.6 * r * 0.01e-6 * 1.19e6)
+            # Task #98: compare against the EXACT cycle at the read — the
+            # instruction-start total_cycles PLUS the sub-instruction cycles
+            # consumed up to this bus op (`extra_cpu_cycles` = bus
+            # pending_tia_cycles). xitari uses `mySystem->cycles()` (TIA.cxx:
+            # 1891), which already includes the current bus op's cycles. The
+            # RIOT/INTIM read is threaded the same way (Bus.jl:307). Without
+            # this, the cap-charge check ran a few cycles early, so when the
+            # threshold crossing landed near an INPT poll (pong f457 INPT1)
+            # jutari saw the flip one ~2-scanline poll late → the $04/$3c
+            # residual + the f460 ball-render blip.
+            now     = tia.total_cycles + Int(extra_cpu_cycles)
+            charged = now > (tia.dump_disabled_cycle + needed)
             return charged ? UInt8(0x80) : UInt8(0)
         end
         return tia.inpt[i]
@@ -501,7 +520,8 @@ Write a TIA register. Stores the byte and applies side-effects: WSYNC
 """
 function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
                    beam_cc::Integer = tia.color_clock,
-                   beam_sc::Integer = tia.scanline_cycle)
+                   beam_sc::Integer = tia.scanline_cycle,
+                   extra_cpu_cycles::Integer = 0)
     reg = Int(addr) & 0x3F                # TIA decodes A0–A5
     value8 = UInt8(Int(value) & 0xFF)
     # COLU* (P0/P1/PF/BK): bit 0 of the color-luminance registers is
@@ -632,7 +652,14 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
         new_dump = (Int(value) & 0x80) != 0
         if tia.dump_enabled && !new_dump
             tia.dump_enabled = false
-            tia.dump_disabled_cycle = tia.total_cycles
+            # Task #98: record the cap-release cycle at the EXACT cycle of this
+            # poke (total_cycles + sub-instruction cycles consumed so far),
+            # matching xitari's `mySystem->cycles()` (TIA.cxx:268-area). The
+            # INPT read comparison uses the same threading; both sides MUST be
+            # in the same cycle domain or the (read-release) gap is off by the
+            # poke's intra-instruction offset (broke pong f182 when only the
+            # read side was threaded).
+            tia.dump_disabled_cycle = tia.total_cycles + Int(extra_cpu_cycles)
         elseif new_dump && !tia.dump_enabled
             tia.dump_enabled = true
         end

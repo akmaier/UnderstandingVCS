@@ -290,7 +290,11 @@ end
             effective_cc = Int(bus.tia.color_clock) + bus.pending_tia_cycles * 3
             _tia_catch_up_collisions!(bus.tia, effective_cc)
         end
-        raw = tia_peek(bus.tia, a)               # TIA register read
+        # Task #98: thread the sub-instruction cycle offset so the dump-pot
+        # (INPT0-3 paddle-pot) charge check sees the EXACT cycle at the read
+        # — total_cycles + cycles consumed so far this instruction — matching
+        # xitari's `mySystem->cycles()` and the RIOT read below.
+        raw = tia_peek(bus.tia, a, bus.pending_tia_cycles)   # TIA register read
         mask = UInt8(_TIA_PEEK_DRIVEN_MASK[(a & 0x0F) + 1])
         noise = bus.data_bus_state & _TIA_NOISE_MASK
         v = UInt8(((raw & mask) | noise) & 0xFF)
@@ -354,7 +358,10 @@ end
         # at their (now-accurate) activation clocks.
         beam_cc = Int(bus.tia.color_clock) + bus.pending_tia_cycles * 3
         beam_sc = Int(bus.tia.scanline_cycle) + bus.pending_tia_cycles
-        tia_poke!(bus.tia, a, value, beam_cc, beam_sc)
+        # Task #98: also pass the CPU-cycle offset so the dump-pot
+        # cap-release cycle (VBLANK D7→0) is recorded in the same cycle
+        # domain as the INPT read comparison (both = mySystem->cycles()).
+        tia_poke!(bus.tia, a, value, beam_cc, beam_sc, bus.pending_tia_cycles)
         _trace_record!(:poke, UInt16(a), v8)
         return nothing
     end

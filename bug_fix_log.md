@@ -4411,3 +4411,42 @@ pytest still xdist-wedged so verified via the diff like #106):
 - surround maxdiff=7  (exact parity with jutari: per-frame 1×15, 7×9, 6×6 — same
   construction-counter residual, emulation otherwise bit-exact).
 - test_tia_vsync_vblank.py: 10/10 pass.
+
+### ✅ Task #98 SOLVED (jutari) (2026-06-15) — pong dump-pot read/write cycle-threading
+
+Traced the pong "ball-bounce render blip" (frames 460-461, 16px) to its true
+root cause: a CPU-cycle-domain bug in the paddle dump-pot (INPT0-3) model.
+
+TRACE: pong is bit-exact (RAM+screen) for 455 frames, then RAM diverges at f457
+(2 bytes $04/$3c) on a LEFT paddle move, surfacing as a 16px ball offset at
+f460 then re-converging. Per-bus-op trace (xitari trace_dump --bus-trace vs
+jutari cpu_tia_cycle_trace): the game polls the paddles on alternating frames;
+at f457 it reads INPT1 (user paddle) and the dump-pot cap crosses threshold
+(0→0x80) at scanline **195 in xitari but 197 in jutari** — 2 scanlines late.
+INPT0 (f456, fixed centre resistance) matched, so it was boundary-sensitive.
+
+ROOT CAUSE: xitari's INPT0_3 dump-pot (TIA.cxx:1877-1900) compares
+`mySystem->cycles() > myDumpDisabledCycle + needed`, where BOTH cycle values
+are the exact `mySystem->cycles()` at their bus access (incl. the cycles
+consumed so far inside the current instruction). jutari used the bare
+instruction-start `tia.total_cycles` for BOTH the INPT read AND the VBLANK-D7→0
+cap-release write — missing the sub-instruction offset (`pending_tia_cycles`)
+that the RIOT/INTIM read already threads (Bus.jl:307). When the threshold
+crossing fell within that ~few-cycle window of an INPT poll, jutari saw the
+flip one ~2-scanline poll late.
+
+FIX (jutari): thread `pending_tia_cycles` into BOTH sides so they share xitari's
+cycle domain — `tia_peek` gains `extra_cpu_cycles` (dump-pot read), `tia_poke!`
+gains `extra_cpu_cycles` (records `dump_disabled_cycle = total_cycles + offset`
+at the VBLANK release), both fed `bus.pending_tia_cycles` from Bus.jl. Threading
+only the read side first MOVED the bug (f456→f182, same $04/$3c) — both sides
+MUST be consistent. Also changed `round`→`trunc` to match xitari's `(uInt32)`
+cast + jaxtari's `int()` (TIA.cxx:1890; latent, not the trigger here).
+
+VERIFIED: pong RAM bit-exact through **465 frames** (was first-div f456) and
+screen bit-exact through **500 frames** (the f460 blip gone). Full 64-ROM sweep
+**62/64, zero regressions** (breakout/pong/seaquest/enduro all 0; skiing 1 /
+surround 7 unchanged construction-counter residuals). jutari Pkg.test green.
+This was the last known jutari render/RAM residual on the conformance ROM set.
+jaxtari parity: jaxtari's dump-pot read uses bare int(total_cycles) too — it
+likely needs the same both-sides threading (follow-up for PXC2).
