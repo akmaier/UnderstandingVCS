@@ -943,6 +943,10 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
                     p1 = sort(collect(cs.p1)), m0 = sort(collect(cs.m0)),
                     m1 = sort(collect(cs.m1)), bl = sort(collect(cs.bl)),
                     row = copy(row),
+                    # (activation_clock, reg, value) for every deferred write that
+                    # applied during THIS scanline's render — jutari's per-poke
+                    # activation timing, to diff against xitari's `clock + delay`.
+                    pending = [(Int(w[1]), Int(w[2]), Int(w[3])) for w in pending_sorted],
                 )
             end
             # Task #83 round 3 (2026-06-11): only WRITE framebuffer

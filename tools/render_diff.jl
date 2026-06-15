@@ -111,7 +111,9 @@ function main()
                   ",\"pf\":", _ints(p.pf), ",\"p0\":", _ints(p.p0),
                   ",\"p1\":", _ints(p.p1), ",\"m0\":", _ints(p.m0),
                   ",\"m1\":", _ints(p.m1), ",\"bl\":", _ints(p.bl),
-                  ",\"render_row\":", _ints(p.row), "}")
+                  ",\"render_row\":", _ints(p.row),
+                  ",\"pending\":[",
+                  join(["[$(a),$(r),$(v)]" for (a, r, v) in p.pending], ","), "]}")
     end
     println(String(take!(io)))
     return 0

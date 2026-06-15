@@ -4898,3 +4898,35 @@ row that changed (zero render regressions). The earlier "deep, PAL-specific, not
 worth it" assessment was WRONG — the bit-exactness-over-caution lesson again: a
 "deferred" residual was a real, fully-fixable structural flaw once the friend-tap
 pinned the true mechanism. **jutari RAM is now 64/64 BIT-EXACT vs xitari.**
+
+### 🔬 render harness (tools/render_diff) + tutankham root-cause: CPU↔TIA sub-instruction phase (2026-06-16)
+
+Built the per-scanline xitari-vs-jutari render diff harness (tools/render_diff.jl
++ .py, + a zero-cost `_RENDER_PROBE` hook in TIA.jl) to replace error-prone inline
+probes. It does the screen-row→TIA-scanline mapping from the env's real
+`y_start_row` (the by-hand version is what derailed earlier attempts) and prints
+both rendered rows, jutari's full per-scanline render state (decoded regs + object
+sets + per-poke pending-write ACTIVATION clocks), and xitari's bus-trace pokes
+(with the PF `cc+delay` activation), side by side.
+
+FIRST USE pinned tutankham's 80px band precisely. Row 103 (TIA sl 137) is
+racing-the-beam PLAYFIELD: mid-scanline pokes CTRLPF@cc141, PF0@cc162, PF1@cc192,
+PF2@cc222. xitari's PF delay (d={4,5,2,3}[(x/3)&3], TIA.cxx:1994) activates them at
+164/196/224; jutari activates at 176/204/236 — **+8..12 color clocks late** → the
+PF changes land ~3 columns right of xitari and cascade across scanlines.
+
+ROOT CAUSE (poke-probe breakdown): the delay FORMULA is correct (jutari's
+`_pf_dynamic_delay` == xitari's d). The error is the write's `beam_cc`: jutari's
+instruction-start `color_clock` = 162 already EQUALS xitari's write cc (162), and
+jutari then adds `extra_cpu_cycles*3` (=9) → beam_cc=171, so the activation is
+computed from 171 not 162. i.e. jutari's TIA beam is ~2-3 CPU cycles AHEAD of the
+CPU vs xitari for this instruction stream — a CPU↔TIA sub-instruction PHASE error.
+
+KEY: this phase error is INVISIBLE to the RAM sweep (RAM is CPU-only; the beam
+phase only manifests in racing-the-beam render), which is exactly why all 64 RAM
+games are bit-exact while the render long-tail (tutankham, and likely the other
+mid-scanline PF/sprite divergences) persists. The fix is deep per-cycle CPU↔TIA
+cycle-threading (the #58/#63 class) — shared logic that breakout/pong's
+pixel-exact RESP*/HMOVE/PF depend on, so it MUST be gated on the full screen+RAM
+sweep (those are the canaries). Not attempted blind; left precisely targeted with
+the harness as the tool to verify any fix.

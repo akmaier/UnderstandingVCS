@@ -142,11 +142,23 @@ def main():
             print(f"    col {int(c):3d}: xi={int(xi_row[c]):3d}  ju={int(ju_row[c]):3d}  ju-obj={who(int(c))}")
 
     pk = xitari_pokes(a.rom, a.actions, a.frame, sl)
-    print(f"\nxitari pokes on TIA scanline {sl} ({len(pk)}):")
+    # xitari PF-register poke delay (TIA.cxx:1992-1997): activates at clock+delay,
+    # delay = {4,5,2,3}[(x/3)&3] where x is the in-scanline color clock.
+    _PFD = (4, 5, 2, 3)
+    def xi_activate(cc, addr):
+        return cc + (_PFD[(cc // 3) & 3] if addr in (0x0D, 0x0E, 0x0F) else 0)
+    print(f"\nxitari pokes on TIA scanline {sl} ({len(pk)})   [PF activate = cc+delay]:")
     for cc, addr, val in pk:
-        print(f"    cc={cc:3d}  {REGNAME.get(addr, hex(addr)):7s} = {val:#04x}({val})")
+        extra = f"  -> activates cc={xi_activate(cc, addr)}" if addr in (0x0D, 0x0E, 0x0F) else ""
+        print(f"    cc={cc:3d}  {REGNAME.get(addr, hex(addr)):7s} = {val:#04x}({val}){extra}")
     if not pk:
         print("    (none — registers held from an earlier scanline/boot)")
+
+    pend = ju.get("pending", [])
+    if pend:
+        print(f"\njutari pending-write activations on scanline {sl} ({len(pend)}):")
+        for act, reg, val in pend:
+            print(f"    activates cc={act:3d}  {REGNAME.get(reg, hex(reg)):7s} = {val:#04x}({val})")
 
 
 if __name__ == "__main__":
