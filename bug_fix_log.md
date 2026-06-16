@@ -5296,3 +5296,44 @@ HBLANK jump, which is exactly xitari's behavior.
 **Gated:** RAM 64/64 bit-exact, Pkg.test green, NO regression (no currently-exact
 game dropped). up_n_down → 0px. **Screen 62→63/64.** Only elevator_action (16px,
 VBLANK missile HMOVE/RESM accumulation) remains.
+
+---
+
+## #120 (2026-06-16) — elevator_action DIAGNOSIS: RAM-invisible scanline_cycle beam drift (NOT fixed; high-risk, deferred)
+
+elevator_action is the LAST non-pixel-exact game (16px @ frame 40, row 73). Full
+mechanistic diagnosis (jutari env-gated poke trace vs xitari XI_POKE_DUMP, both
+frame-isolated via XIFRAME):
+
+**Symptom chain.** Frame 40, the missile (m0) renders 16px wrong at TIA scanline 73.
+m0 is carried wrong from frame-40 start: jutari m0=2 (HBLANK-reset value) vs xitari
+m0=159 for sl 0-4, because the missile is *enabled* (ENAM0) only at frame 40, so a
+long-latent position error first becomes visible there.
+
+**Root poke.** Frame 40 sl 5 write sequence (xitari): `WSYNC sl4 x=204` →
+`HMM0 sl5 x=30` → `RESM0 sl5 x=102`. xitari RESM0 → m0 = f(x=102) = (102-68)+4 = 38.
+jutari's SAME RESM0 lands at **beam_cc=147** → m0 = f(147) = 83 (a +45 color-clock /
++15 CPU-cycle error). That 83 then HMOVEs (sl23, hmm0=0x20) to m0=81 vs xitari's 45 —
+the visible 16px.
+
+**Mechanism = scanline_cycle drift, RAM-invisible.** The WSYNC stall is CORRECT
+(`mod(76 - scanline_cycle, 76)` = 8 for x=204; RAM bit-exactness confirms the TOTAL
+CPU cycle count matches xitari). So the CPU resumes sl5 at cycle 0 in both. But by
+the RESM0, jutari's `scanline_cycle` (beam-within-scanline) reads 49 where the true
+post-resume cycle is 34 — a +15 drift that does NOT change the total cycle count
+(hence RAM stays 64/64) but shifts the RESM0's beam_cc by +45. The drift is LOCAL:
+it self-corrects by sl 23, where jutari's HMOVE lands at beam_cc=9 == xitari's x=9.
+
+**Why deferred.** The fix lives in the CPU↔TIA beam thread (`scanline_cycle` /
+per-instruction beam_cc accounting around a late-scanline WSYNC → next-scanline
+strobe). This is the single highest-risk layer: it is the RAM-bit-exact backbone of
+ALL 64 games. A blind edit could silently regress RAM-64/64. The remaining work is
+NOT a per-scanline render mechanism (those are all closed). **Next step:** add a
+per-instruction (PC, scanline_cycle, total_cycles) trace in the M6502 step loop,
+run elevator frame 40 sl4→sl5, diff against xitari's per-instruction beam to pin the
+exact instruction where scanline_cycle over-advances by 15; fix in the beam thread;
+gate hard on RAM 64/64 (revert on ANY byte change) + screen sweep.
+
+**Status: jutari screen 63/64 pixel-exact, RAM 64/64 bit-exact.** up_n_down (#119)
+closed this session; elevator_action is the sole remaining game and is a deferred
+deep CPU↔TIA beam-phase issue.

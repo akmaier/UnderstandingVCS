@@ -30,15 +30,19 @@ ALE-supported games** via the per-frame diff sweeps in `tools/rom_sweep/`:
 | sweep | metric | result |
 |---|---|---|
 | **RAM** (`sweep_jutari_ram.py`) | 128 B RIOT RAM, per frame, NOOP from the standard 60-NOOP + 4-RESET boot | **64 / 64 BYTE-IDENTICAL to xitari** ✅ |
-| **Screen** (`sweep_jutari_screen.py`) | 210×160 framebuffer, per frame, 60 frames | **61 / 64 pixel-exact** |
+| **Screen** (`sweep_jutari_screen.py`) | 210×160 framebuffer, per frame, 60 frames | **63 / 64 pixel-exact** |
 
-**jutari RAM is bit-exact with xitari on every documented game.** Only **3**
-screen deltas remain (render-only, on RAM-bit-exact emulation), all
-object-HMOVE/shadow accumulation: robotank (148 px) — ball HMOVE accumulation;
-up_n_down (63) — VDELP shadow-VALUE staleness + mid-scanline COLU; elevator_action
-(16) — missile HMOVE/RESM accumulation. The render arc that took screen 44→61/64
+**jutari RAM is bit-exact with xitari on every documented game.** Only **1**
+screen delta remains (render-only, on RAM-bit-exact emulation): elevator_action
+(16 px) — a RAM-invisible `scanline_cycle` beam-phase drift (+45 color-clocks /
++15 CPU-cycles) on a frame-40 sl4-WSYNC → sl5-RESM0 sequence, which mispositions the
+missile (m0=81 vs xitari 45) only when ENAM0 enables it at frame 40; the drift
+self-corrects by sl 23. It is a deep CPU↔TIA beam-thread issue, deferred because
+that thread is the RAM-bit-exact backbone of all 64 games (see
+[bug_fix_log.md](bug_fix_log.md) #120). The render arc that took screen 44→63/64
 ported xitari's actual per-color-clock object model (deferred RESP + reset-when +
-skip-first-copy, the Cosmic Ark M0 bug, deferring the VDELP0/VDELP1/VDELBL
+skip-first-copy — including the HBLANK-RESP skip-first that closed up_n_down (#119),
+the Cosmic Ark M0 bug, deferring the VDELP0/VDELP1/VDELBL
 render-select flags — the master key that closed the whole VDELP/GRP-shadow family
 at once — and latching the PF reflect bit at the left-half gate). Getting RAM to 64/64
 required, among many fixes: per-game PAL display height + colour-loss, per-game
@@ -81,8 +85,15 @@ For the per-phase commit ledger and the complete list of deferrals see
 
 ## Hand-off — pick up here
 
-**Latest (2026-06-16): jutari RAM is 64/64 BIT-EXACT vs xitari; screen 61/64
-pixel-exact.** Following the "match the deep runtime logic, not the scoreboard"
+**Latest (2026-06-16): jutari RAM is 64/64 BIT-EXACT vs xitari; screen 63/64
+pixel-exact — only elevator_action remains.** **#119** closed up_n_down: an HBLANK
+RESP strobe must still compute xitari's reset-when skip-first-copy (a far jump
+75→3 → skip the first copy), and the skip-first scanline reset was moved from
+scanline-start to scanline-end so the HBLANK RESP's value survives into the visible
+region. **#120** is the full diagnosis of the sole remaining game (elevator_action):
+a RAM-invisible `scanline_cycle` beam-phase drift (+45 cc) on a frame-40
+WSYNC→RESM0 sequence — deferred as the highest-risk CPU↔TIA-thread change (see
+below + bug_fix_log #120). Following the "match the deep runtime logic, not the scoreboard"
 philosophy, the player object renderer was ported to xitari's actual per-color-clock
 model — **#115c**: deferred mid-scanline RESP + reset-when + skip-first-copy
 (`PORT_OBJECT_RENDER_PLAN.md`). That closed **carnival** and slashed the
@@ -120,18 +131,16 @@ the core; a temporary `fprintf` in an xitari core loop is acceptable for a
 
 ### Open work — pick up here
 
-**Pixel exactness** is the active front (screen **61/64**, RAM 64/64). Only **3**
-deltas remain (render-only) — all object-position accumulation / shadow staleness,
-which need per-scanline obj-x tracing (not a single clear poke). The harness is
+**Pixel exactness** is essentially done (screen **63/64**, RAM 64/64). Only **1**
+delta remains — **elevator_action (16 px)** — and it is a deep CPU↔TIA beam-thread
+issue, not a render mechanism. The harness is
 `tools/render_diff.py --rom <r> --frame <f> --auto` (color-attributes each diverging
 pixel to a TIA object via the COLU registers, prints ENAM/RESMP/cosmic state, infers
 per-frame height; needs xitari's `XI_POKE_DUMP` for true activations).
 
-| game | px | mechanism (diagnosed) |
+| game | px | mechanism (diagnosed) — see bug_fix_log #120 |
 |---|---|---|
-| robotank | 148 | BALL HMOVE accumulation — `bl_x=156` (=−4) vs xitari 0, fixed offset; players now correct, so it's the ball-specific HMBL/RESBL accumulation over the per-scanline HMOVE strobes |
-| up_n_down | 63 | VDELP shadow-VALUE staleness — VDELP0=1 player displays a non-zero `grp0_old` where xitari's `myDGRP0`=0 (cross-scanline shadow capture timing) + mid-scanline COLU |
-| elevator_action | 16 | MISSILE HMOVE/RESM accumulation — `m0=81` vs xitari 45 (frame 40, row 73), same class as robotank's ball but for M0 |
+| elevator_action | 16 | RAM-invisible `scanline_cycle` beam-phase drift: frame-40 sequence `WSYNC sl4 x=204 → HMM0 sl5 x=30 → RESM0 sl5 x=102`. WSYNC stall is correct (RAM 64/64), but by the RESM0 jutari's beam_cc reads 147 vs xitari 102 (+45 cc / +15 cyc), so m0=83 not 38 → HMOVEs to m0=81 vs 45 → 16 px when ENAM0 enables at frame 40. Drift self-corrects by sl 23 (HMOVE bcc=9 matches). **Next step:** per-instruction (PC, scanline_cycle, total_cycles) trace in the M6502 step loop over frame-40 sl4→sl5 vs xitari's per-instruction beam to pin the over-advancing instruction; fix in the beam thread; gate hard on RAM 64/64 (revert on ANY byte change). Deferred because the CPU↔TIA thread is the RAM-bit-exact backbone of all 64 games. |
 
 The player object render is now faithful (per-color-clock RESP reset-when +
 skip-first-copy, #115c; Cosmic Ark #115d/e), the VDELP/GRP-shadow FLAGS are deferred
