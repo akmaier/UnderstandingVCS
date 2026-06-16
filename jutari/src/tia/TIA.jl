@@ -1258,6 +1258,15 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
             for (_, reg, val) in pending_sorted
                 _apply_pending_write!(tia, reg, val)
             end
+            # Task #115 (obj-trace): also log VBLANK scanlines (negative grp_old
+            # fields unused here) so a VBLANK object setup (e.g. elevator_action's
+            # missile) is visible across the whole frame.
+            if _OBJ_TRACE[]
+                push!(_OBJ_TRACE_LOG, (Int(tia.scanline),
+                    Int(tia.p0_x), Int(tia.p1_x), Int(tia.m0_x), Int(tia.m1_x),
+                    Int(tia.bl_x), Int(tia.grp0_old), Int(tia.grp1_old),
+                    Int(tia.m0_cosmic_line)))
+            end
             # Task #109 (render): xitari's `updateFrameScanline` MEMSETS the
             # framebuffer to 0 (black) when `myVBLANK & 0x02` (TIA.cxx:1121-
             # 1124) — VBLANK output-blanking actively writes black. jutari was

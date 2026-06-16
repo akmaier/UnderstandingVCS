@@ -5187,3 +5187,37 @@ the cycle gap. **Gated:** RAM 64/64 bit-exact, Pkg.test green. robotank ball now
 6→0 matching xitari → frame 1 exact. Screen **61→62/64**. Remaining 2:
 elevator_action (missile HMOVE/RESM accumulation, 16px @ frame 40), up_n_down
 (VDELP shadow-VALUE staleness + mid-scanline COLU, 63px).
+
+---
+
+## #116 (2026-06-16, loop iter) — diagnosis: elevator_action missile + up_n_down VDELP-multiplex (no fix yet)
+
+Tooling this iter: `TIA._OBJ_TRACE` now also logs VBLANK scanlines; xitari
+XI_POKE_DUMP (git-excluded) extended with grp0/grp1/dgrp0/dgrp1/vd0/vd1 (the GRP
+shadows) for cross-ref. Both built/verified.
+
+**elevator_action (16px, frame 40 row 73 — NOT a quick fix).** obj_trace: jutari m0
+evolves 2 → 83 (sl 5) → 81 (sl 23) and is CARRIED through the visible region; xitari
+renders the missile at 45 (36px off). The setup is entirely in VBLANK (RESM0/HMM0/
+HMOVE every VBLANK scanline) — a VBLANK HMOVE/RESM-accumulation, not a single poke.
+Noted: RESM0/RESM1 have poke-delay **8** (ourPokeDelayTable[0x12/0x13]=8) but jutari
+applies RESM0/RESM1 IMMEDIATELY (not deferred) — a real faithfulness gap, but NOT
+elevator's cause (its RESM0 is in VBLANK, where the 8-clock render delay is moot;
+the carried POSITION value f(x) is delay-independent). Deferring RESM* was NOT
+applied (would risk regressing currently-exact missile games with no target benefit).
+
+**up_n_down (63px, frame 1 row 5 / sl 35).** Full VDELP-multiplex kernel: GRP0/GRP1
+AND COLUP0 rewritten between the NUSIZ=3 copies, VDELP0=0x33 (D0=1, stable). jutari
+draws p0 (color 0x36, NOT the end-of-line COLUP0=0x54) where xitari shows bg.
+obj_trace grp0_old at sl 35 is 0 at END of scanline, but the framebuffer drew p0 →
+the divergence is a MID-scanline shadow value (grp0_old non-zero between copies then
+cleared), i.e. the per-copy GRP-shadow latch VALUE, not the VDELP flag (#115f fixed
+the flag). Same family as journey_escape but the residual is the shadow-capture
+timing.
+
+**Blocker for both:** need a FRAME-ISOLATED xitari per-scanline myPOS*/myDGRP*
+trace to align with the sweep's frame N (XI_POKE_DUMP dumps all frames incl. boot,
+sl resets per frame). Next step: add an XI_POKE_FRAME=N env filter (needs a TIA
+frame counter hooked at startFrame), OR a trace_dump per-scanline myPOSM0/myDGRP0
+dump for one target frame — then pin the exact divergent VBLANK HMOVE (elevator) /
+mid-copy GRP1-write (up_n_down).
