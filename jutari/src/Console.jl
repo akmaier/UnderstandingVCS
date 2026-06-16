@@ -12,6 +12,7 @@ module ConsoleModule
 
 using ..Types: CPUState, initial_cpu_state
 using ..Bus: BusState, initial_bus, peek
+using ..Cart: cart_reset!
 using ..CPU: step
 
 export Console, initial_console, console_reset!, console_step!, run_until_frame!
@@ -61,6 +62,12 @@ function console_reset!(console::Console; keep_ram::Bool = false)
     console.cpu.SP     = fresh_cpu.SP
     console.cpu.P      = fresh_cpu.P
     console.cpu.cycles = fresh_cpu.cycles
+    # xitari's System::reset() resets EVERY device, including the Cartridge
+    # (Cartridge::reset() → power-on bank). jutari previously reset only
+    # CPU/TIA/RIOT, so a bank the game switched into during the construction
+    # probe leaked across this reset and the reset vector / init code below were
+    # read from the wrong bank (elevator_action F8SC: probe ends in bank 0).
+    cart_reset!(console.bus.cart)
     # Load PC from cart's reset vector.
     lo = UInt16(peek(console.bus, 0xFFFC))
     hi = UInt16(peek(console.bus, 0xFFFD))

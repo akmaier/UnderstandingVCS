@@ -5489,3 +5489,55 @@ deferral), **#115b** (joystick INPT0-3 idle LOW), **#115c** (faithful player
 render), **#115d/e** (Cosmic Ark M0), **#115f** (defer VDELP0/1/BL), **#115g**
 (PF reflect left-half latch), **#115h** (RESBL/RESM HMOVE-relative hacks),
 **#118** (per-pixel VBLANK D1), **#119** (HBLANK RESP skip-first-copy).
+
+---
+
+## #121 (2026-06-16) — cart bank not reset on console reset (jutari bug, FIXED)
+
+While hunting elevator_action (the sole non-pixel-exact game), a full
+per-instruction register trace (jutari `full_instr_trace.jl` vs xitari
+`M6502Low::execute` XICPU dump, aligned label-free) pinned the FIRST divergence:
+after 191,902 matching boot instructions, both take a RESET vector to `f100`, but
+jutari executed **bank 0**'s code (`a9 00 85 fb…` = ROM $0100) while xitari ran
+**bank 1**'s real init (`d8 78 a2 ff 9a` = CLD;SEI;LDX #$FF;TXS = ROM $1100).
+
+Root: `console_reset!` (Console.jl) reset CPU/TIA/RIOT but NOT the cartridge.
+xitari's `System::reset()` resets EVERY device incl. `Cartridge::reset()` (→
+power-on bank). So a bank the game switched into during the 60-frame construction
+probe leaked across the post-probe reset, and jutari read the reset vector + init
+code from the wrong bank. **Fix:** added `cart_reset!(cart)` (Cart.jl — sets
+`current_bank = _DEFAULT_BANK[kind]`, resets E0 slices) and called it in
+`console_reset!` before the $FFFC read.
+
+**Gated:** RAM 64/64 bit-exact, Pkg.test green, screen 63/64 (no regression). The
+fix moved elevator's boot divergence from instruction 191,902 → 704,449 (boot now
+runs the correct bank). It does NOT change the 63 exact games (their probe ends in
+the power-on bank, so cart_reset! is a no-op for them). A genuine
+correctness/boot-fidelity fix even though the scoreboard count is unchanged.
+
+## #122 (2026-06-16) — elevator_action residual = xitari NON-DETERMINISTIC Superchip RAM (not a jutari bug)
+
+After #121, the next first-divergence (boot instr 704,449) is `LDA $F0D2` =
+Superchip-RAM read window byte 0x52: jutari reads 0, xitari reads 0x32. The byte
+is never written before this read (matched prefix), so it is the cart's *power-on
+init*. xitari (`CartF8SC` ctor, CartF8SC.cxx:38-42) fills the 128 B Superchip RAM
+with `Random::next()` (LCG `v=(v*2416+374441)%1771875`); jutari zero-inits.
+
+**xitari's Superchip RAM init is NON-DETERMINISTIC.** ALE's default
+`random_seed="time"` (Defaults.cpp:39) → `Random::seed(time(NULL))`, and
+`CartF8SC::reset()` only does `bank(1)` (never re-inits RAM). Verified: two
+same-second `XISCINIT` dumps match; a different-second run differs. elevator's
+attract-mode demo reads this uninitialised Superchip RAM as an RNG (cheap
+attract-mode randomness), so xitari's own elevator render varies run-to-run.
+jutari (deterministic 0-init) cannot match a time-seeded target. This is invisible
+to the RAM sweep (it checks the 128 B RIOT RAM, not cart Superchip RAM; and only
+elevator reads its SC RAM uninitialised — the other SC games init theirs).
+
+**To CLOSE elevator deterministically requires a conformance-methodology change:**
+seed xitari's RNG to a fixed value (e.g. `random_seed=0` — an xitari-core change,
+and xitari is git-excluded) AND mirror xitari's exact LCG in jutari's SC-RAM init.
+That would also make the whole suite reproducible. Left as a USER decision (keep
+xitari pristine/upstream vs deterministic-seed the reference). Screen stays
+**63/64**; this residual is xitari non-determinism, NOT a jutari emulation bug.
+New diagnostics committed: tools/full_instr_trace.jl, instr_diff.py,
+elevator_read_diff.py.

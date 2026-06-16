@@ -28,7 +28,7 @@ DPC also deferred.
 """
 module Cart
 
-export CartState, make_cart, cart_peek, cart_poke!,
+export CartState, make_cart, cart_peek, cart_poke!, cart_reset!,
        KIND_2K, KIND_4K, KIND_F8, KIND_F6, KIND_F4, KIND_E0, KIND_FE,
        KIND_F8SC, KIND_F6SC, KIND_F4SC
 
@@ -244,6 +244,21 @@ end
 
 Writes to ROM are dropped, but hotspot accesses still fire.
 """
+# Reset the cart's bank-switch mapping to its power-on default — xitari's
+# Cartridge::reset(), which System::reset() invokes on every system reset
+# (jutari's console_reset! mirrors System::reset). The cart is a device on the
+# bus, so a bank the game switched into during the 60-frame construction probe
+# must NOT leak across the post-probe reset. elevator_action (F8SC) ends the
+# probe in bank 0, so without resetting here console_reset! read the reset vector
+# + init code (CLD;SEI;LDX #FF;TXS) from the wrong bank, giving a divergent boot
+# register state (Y) that only surfaced as a 16 px missile mis-position. RAM
+# (RIOT + Superchip) is preserved; only the bank / E0 slice mapping resets.
+function cart_reset!(cart::CartState)
+    cart.current_bank = _DEFAULT_BANK[cart.kind]
+    cart.kind == KIND_E0 && fill!(cart.slice_slots, 0)
+    return cart
+end
+
 function cart_poke!(cart::CartState, addr::Integer, value::Integer)
     a = UInt16(Int(addr) & 0x1FFF)
     # task #103: F8SC/F6SC/F4SC Superchip RAM write window $1000-$107F.
