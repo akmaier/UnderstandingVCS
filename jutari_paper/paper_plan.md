@@ -59,6 +59,7 @@ Status legend: ✅ ready · ✍️ draft after results land · 🔍 needs citati
 ### 5. Discussion  ✍️
 - Immense coding speed-up enables **entirely new paradigms** in AI research (build-the-instrument-then-study-it).
 - Lessons learned from the logs (`bug_fix_log.md`, task ledger): the conformance-gated method, the hardest bugs (RIOT timer model, TIA sub-cycle timing), jutari↔jaxtari cross-checking.
+- **A bit-exact re-implementation is itself a verification tool for the reference.** Driving jutari to 64/64 pixel-exact surfaced a latent **non-determinism bug in xitari itself** (the de-facto ALE/DQN reference): Superchip on-cart RAM is initialised from `time(NULL)` and ignores `random_seed`, so titles that read uninitialised on-cart RAM (e.g. Elevator Action's attract demo, which uses it as a cheap RNG) render differently every run despite a pinned seed — invisible to RAM-state checks, visible only on screen (bug_fix_log #122/#123). We pin the seed deterministically in both emulators to reach 64/64 and make the suite reproducible, and we **report + propose a fix upstream** (drafts in `xitari_upstream/`, to be filed after this paper is on arXiv). Framing: independent re-implementation as a method for auditing reference implementations / reproducibility.
 - **Model anecdotes:** a paragraph on the single use of **Fable** before it was shut down (🔍 cite Anthropic's statement on Fable); and that **Kimi 1T** (🔧 confirm exact model name from the early commits) declined the task as too large.
 
 ### 6. Summary / Conclusion  ✍️
@@ -77,6 +78,13 @@ Status legend: ✅ ready · ✍️ draft after results land · 🔍 needs citati
 5. 🔍 **Figure 1** VCS architecture; **Figure 2** soft/hard pipeline; **Figure 3** conformance heatmap; **Figure 4** effort/timeline.
 6. 🔍 **Citation gathering** for every 🔍 above; confirm Fable shutdown statement + Kimi model name from early commits.
 7. 📐 Re-read the three style exemplars; write a 1-paragraph style guide; draft intro to match.
+8. 🛠️ **xitari upstream contribution — AFTER arXiv only.** Drafts ready in
+   `xitari_upstream/` (`ISSUE.md` + `PULL_REQUEST.md`): the non-deterministic
+   Superchip-RAM init bug + deterministic fix for
+   [google-deepmind/xitari](https://github.com/google-deepmind/xitari). Gate:
+   filed **only once the paper is on arXiv** (so the issue/PR can cite it). When
+   filing, drop the arXiv ID into the drafts + the paper's Discussion §5, and
+   re-verify the repro against a fresh upstream checkout.
 
 ---
 ---
