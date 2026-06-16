@@ -245,6 +245,11 @@ int main(int argc, char **argv) {
         }
 
         g_bus_trace_frame = frame_count + 1;
+        // Frame marker for XI_POKE_DUMP: lets the harness isolate one post-boot
+        // frame's pokes (XI_POKE_DUMP has no frame markers; sl resets per frame).
+        // `frame_count` is 0-based and aligns with the sweep's frame index.
+        if (std::getenv("XI_POKE_DUMP"))
+            std::fprintf(stderr, "XIFRAME %d\n", frame_count);
         reward_t r = ale.act(static_cast<Action>(act_id));
         cum_reward += r;
 

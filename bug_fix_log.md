@@ -5221,3 +5221,29 @@ sl resets per frame). Next step: add an XI_POKE_FRAME=N env filter (needs a TIA
 frame counter hooked at startFrame), OR a trace_dump per-scanline myPOSM0/myDGRP0
 dump for one target frame — then pin the exact divergent VBLANK HMOVE (elevator) /
 mid-copy GRP1-write (up_n_down).
+
+---
+
+## #117 (2026-06-16, loop iter) — frame-isolated xitari trace; up_n_down dgrp0 pinned to a jutari over-capture
+
+Enabler: `trace_dump.cpp` now prints `XIFRAME <n>` to stderr before each post-boot
+frame's act() (gated by XI_POKE_DUMP), so XI_POKE_DUMP lines can be isolated to the
+sweep's frame N (awk between XIFRAME N and N+1). Verified on up_n_down frame 1.
+
+**up_n_down (frame 1, player kernel sl 35-39).** Both VDELP0=VDELP1=1. xitari's
+per-poke shadow dump shows **dgrp0 stays 00 throughout** sl 36-39 — xitari's P0
+(VDELP0=1 → uses dgrp0=0) draws NOTHING; only P1 (via dgrp1, which cycles
+00→1c→22) draws. jutari draws an EXTRA P0 → jutari's `grp0_old` over-captures a
+non-zero GRP0 at some GRP1 write. The multiplex writes GRP0 then GRP1 between the
+NUSIZ=3 copies; on paper jutari's latch (grp0_old = registers[GRP0] at the GRP1
+activation, delay 1) and xitari's (myDGRP0 = myGRP0 at the GRP1 poke) should agree —
+the GRP0=28 write (x=120) is never followed by a GRP1 write before GRP0 clears
+(x=177), so dgrp0 should stay 0 in both. The divergence is a subtle mid-copy timing
+the per-SCANLINE obj_trace (end-of-line grp0_old) can't resolve.
+
+**Next step (not yet a dead-end):** add a per-POKE jutari grp0_old/grp1_old trace
+(instrument `_apply_pending_write!` GRP1 branch to log activation cc + the captured
+GRP0) for up_n_down frame 1 sl 36, and diff against xitari's per-poke dgrp0 (now
+frame-isolable via XIFRAME). That pins which GRP1 activation captures the wrong
+GRP0 (a ±1-clock GRP0/GRP1 activation-ordering issue is the leading hypothesis).
+elevator_action still blocked on the same per-frame trace for its VBLANK missile.
