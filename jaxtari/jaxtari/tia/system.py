@@ -927,11 +927,21 @@ def tia_poke(tia: TIAState, addr: int, value: int,
     #     latch too), WSYNC (stalls CPU), VSYNC (frame-boundary trigger),
     #     RES* (sprite-position update), HMOVE (motion strobe),
     #     CXCLR (collision reset), VBLANK (also has dump-pot side effects).
+    # Task #115f (faithful render): VDELP0/VDELP1/VDELBL are pure render-select
+    # flags (live vs delayed GRP/ENABL in `_vdel_grp`/`_vdel_enabl`) with no
+    # side effect — but were previously applied IMMEDIATELY at poke, so a
+    # mid-scanline VDELP write flipped live↔shadow for the WHOLE scanline.
+    # journey_escape's multiplex kernel clears VDELP0/1 at cc=189/198 — cols
+    # LEFT of the write must still show the SHADOW GRP. xitari's poke-delay
+    # is 0, so activate at the write's beam_cc (= per-color-clock threading).
+    # Closed atlantis/amidar/demon_attack/name_this_game/solaris/centipede/
+    # defender/jamesbond/pooyan/asterix/air_raid in jutari's sweep (46→59/64).
     if reg in (W_PF0, W_PF1, W_PF2,
                W_ENAM0, W_ENAM1, W_ENABL,
                W_NUSIZ0, W_NUSIZ1,
                W_COLUP0, W_COLUP1, W_COLUPF, W_COLUBK,
-               W_CTRLPF, W_REFP0, W_REFP1) \
+               W_CTRLPF, W_REFP0, W_REFP1,
+               W_VDELP0, W_VDELP1, W_VDELBL) \
             and beam_cc >= HBLANK_COLOR_CLOCKS:
         delay = _poke_activation_delay(reg, beam_cc)
         activation_clock = beam_cc + delay
