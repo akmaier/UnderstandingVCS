@@ -30,7 +30,7 @@ ALE-supported games** via the per-frame diff sweeps in `tools/rom_sweep/`:
 | sweep | metric | result |
 |---|---|---|
 | **RAM** (`sweep_jutari_ram.py`) | 128 B RIOT RAM, per frame, NOOP from the standard 60-NOOP + 4-RESET boot | **64 / 64 BYTE-IDENTICAL to xitari** ✅ |
-| **Screen** (`sweep_jutari_screen.py`) | 210×160 framebuffer, per frame, 60 frames | **45 / 64 pixel-exact** |
+| **Screen** (`sweep_jutari_screen.py`) | 210×160 framebuffer, per frame, 60 frames | **46 / 64 pixel-exact** |
 
 **jutari RAM is bit-exact with xitari on every documented game.** The 20 remaining
 screen deltas are small, render-only divergences on RAM-bit-exact emulation — the
@@ -76,13 +76,18 @@ For the per-phase commit ledger and the complete list of deferrals see
 
 ## Hand-off — pick up here
 
-**Latest (2026-06-16): jutari RAM is 64/64 BIT-EXACT vs xitari; screen 45/64
-pixel-exact.** A 20-agent color-attribution workflow diagnosed every remaining
-render delta (see [RENDER_DIVERGENCE_SYNTHESIS.md](RENDER_DIVERGENCE_SYNTHESIS.md)),
-then #115 (RESMP per-color-clock deferral → ice_hockey exact) and #115b (joystick
-INPT0-3 idle-low → air_raid 24→2px) landed. The earlier arc closed the last RAM
-divergences and several render ones (full diagnoses in
-[bug_fix_log.md](bug_fix_log.md)):
+**Latest (2026-06-16): jutari RAM is 64/64 BIT-EXACT vs xitari; screen 46/64
+pixel-exact.** Following the "match the deep runtime logic, not the scoreboard"
+philosophy, the player object renderer was ported to xitari's actual per-color-clock
+model — **#115c**: deferred mid-scanline RESP + reset-when + skip-first-copy
+(`PORT_OBJECT_RENDER_PLAN.md`). That closed **carnival** and slashed the
+multiplexed-sprite games (robotank 241→148, up_n_down 221→86, berzerk 21→5) with
+RAM still 64/64 and no exact-game regression. Earlier this session a 20-agent
+color-attribution workflow diagnosed every render delta
+([RENDER_DIVERGENCE_SYNTHESIS.md](RENDER_DIVERGENCE_SYNTHESIS.md)); #115 (RESMP
+deferral → ice_hockey exact) and #115b (joystick INPT0-3 idle-low → air_raid
+24→2px) also landed. The earlier arc closed the last RAM divergences and several
+render ones (full diagnoses in [bug_fix_log.md](bug_fix_log.md)):
 
 - **qbert** — jutari was single-buffered; xitari/Stella double-buffers
   (swap-not-clear). Added `framebuffer_prev` + a completion-armed swap →
