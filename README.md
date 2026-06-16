@@ -181,6 +181,40 @@ jaxtari/.venv/bin/python tools/rom_sweep/sweep_jutari_screen.py --jobs 6 --frame
 cd jaxtari && .venv/bin/python -m pytest -q
 ```
 
+### Comparison videos (xitari vs jutari / jaxtari)
+
+[`tools/comparison_videos.py`](tools/comparison_videos.py) batch-renders an MP4 per
+ALE game showing three panels side by side — **`xitari | <port> | DIFFERENCE`** —
+both engines driven by the same actions, RomSettings and boot. The DIFFERENCE panel
+(magenta = differing pixels) is **solid black** for a correct port, so the videos
+visualise the 64/64 pixel-exactness directly. It wraps the per-ROM renderer
+`tools/breakout_video/render_breakout_compare.py` over all 64 ROMs in
+`tools/rom_sweep/roms/`. Needs `ffmpeg` on `PATH` and the built `tools/trace_dump`
+(`cd tools && make`). Outputs land in `tools/comparison_videos/output/`
+(git-ignored) as `<game>_xitari_vs_<port>.mp4`.
+
+```bash
+# all 64 games, xitari vs jutari, 10-second (600-frame @ 60 fps) clips:
+jaxtari/.venv/bin/python tools/comparison_videos.py
+
+# longer 30 s clips, 4 games rendered in parallel:
+jaxtari/.venv/bin/python tools/comparison_videos.py --frames 1800 --jobs 4
+
+# only specific games:
+jaxtari/.venv/bin/python tools/comparison_videos.py --games elevator_action pong qbert
+
+# also (or only) jaxtari — SLOW (~200x slower per frame; run later/in background):
+jaxtari/.venv/bin/python tools/comparison_videos.py --port jaxtari   # xitari vs jaxtari
+jaxtari/.venv/bin/python tools/comparison_videos.py --port both      # both ports
+```
+
+Key options: `--port {jutari,jaxtari,both}` (default `jutari`), `--frames N`
+(default 600), `--games <stems…>` (default all 64), `--jobs N` (parallel games,
+default 1), `--out-dir <dir>`, `--seed N`, `--keep-raw` (keep the large
+intermediate frame dumps; they are deleted per-game by default). `python3` works in
+place of the venv python for `--port jutari`; the jaxtari venv is only required for
+`--port jaxtari`/`both`.
+
 ### Bug-bisection methodology
 
 [BUG_BISECTION_METHODOLOGY.md](BUG_BISECTION_METHODOLOGY.md) — the per-bus-op trace
