@@ -2,7 +2,7 @@
 
 Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `trace_dump --screen`, breakout_random_actions stream, first **60** frames after the standard 60-NOOP+4-RESET boot. Same per-game RomSettings as the RAM sweep (so a divergence is a genuine render delta, not a settings/boot mismatch).
 
-**Pixel-exact (0 px) over 60 frames: 62/64.**
+**Pixel-exact (0 px) over 60 frames: 63/64.**
 
 | game | max px/frame | total px | first div frame | worst-frame rows |
 |---|---|---|---|---|
@@ -63,7 +63,7 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | tennis | **0 ✅** | 0 | — | — |
 | time_pilot | **0 ✅** | 0 | — | — |
 | tutankham | **0 ✅** | 0 | — | — |
-| up_n_down | 27 | 1620 | 1 | 15-25 |
+| up_n_down | **0 ✅** | 0 | — | — |
 | venture | **0 ✅** | 0 | — | — |
 | video_pinball | **0 ✅** | 0 | — | — |
 | videochess | **0 ✅** | 0 | — | — |

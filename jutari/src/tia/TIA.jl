@@ -892,11 +892,21 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
         # instruction-start tia.color_clock — so a RESP0 issued mid-
         # instruction latches the player to the right X (timing-only
         # threading; the TIA itself is NOT advanced here).
-        tia.p0_x = _resp_player_position(beam_cc)
-        tia.p0_skip_first = false   # task #115: HBLANK strobe → draw all copies
+        # Task #118: even an HBLANK RESP gets xitari's reset-when skip-first
+        # (case 0x10). Normal games RESP to ~3 with oldx≈3 → reset-when=-1 (no
+        # skip); a FAR jump (up_n_down RESPs 75→3 every line) → reset-when=0 →
+        # skip the first copy. (Was force-false, which drew an extra left-edge copy.)
+        let newx = _resp_player_position(beam_cc),
+            mode = Int(tia.registers[W_NUSIZ0 + 1]) & 0x07
+            tia.p0_skip_first = _player_reset_when(mode, tia.p0_x, newx) != -1
+            tia.p0_x = newx
+        end
     elseif reg == W_RESP1
-        tia.p1_x = _resp_player_position(beam_cc)
-        tia.p1_skip_first = false
+        let newx = _resp_player_position(beam_cc),
+            mode = Int(tia.registers[W_NUSIZ1 + 1]) & 0x07
+            tia.p1_skip_first = _player_reset_when(mode, tia.p1_x, newx) != -1
+            tia.p1_x = newx
+        end
     elseif reg == W_RESM0
         # P3i-e: missile/ball use the +4 offset / HBLANK constant 2.
         tia.m0_x = _resp_missile_ball_position(beam_cc)
@@ -1148,12 +1158,11 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
         if !vblank_fully
             row = Vector{UInt8}(undef, SCREEN_WIDTH)
             write_idx = 1
-            # Task #115: xitari resets the player mask to draw-all (skip-first=0)
-            # at the end of every scanline (TIA.cxx:1799). So each rendered
-            # scanline STARTS drawing all copies; a mid-line RESP in the drain
-            # below sets skip-first for the remainder of THIS scanline only.
-            tia.p0_skip_first = false
-            tia.p1_skip_first = false
+            # Task #115/#118: xitari resets the player mask to draw-all
+            # (skip-first=0) at the END of every scanline (TIA.cxx:1799) — done in
+            # the line_advance block below, NOT here, so an HBLANK RESP (which runs
+            # in tia_poke! BEFORE this render) keeps its skip-first into the visible
+            # region instead of being clobbered by a scanline-START reset.
             # Task #115: latch the PF reflect bit at scanline start from the
             # current CTRLPF.D0 (= xitari's scanline-end re-latch). Left-half
             # CTRLPF writes update it mid-line in the drain below; right-half ones
@@ -1382,6 +1391,12 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
         # it again before its render). registers[VBLANK] holds the last applied
         # value (immediate + drained deferred writes).
         tia.vblank_d1_carry = (tia.registers[W_VBLANK + 1] & 0x02) != 0
+        # Task #118: reset player skip-first-copy at scanline END (xitari
+        # TIA.cxx:1799). Moved here from scanline-start so an HBLANK RESP's
+        # skip-first survives into the visible region; the next line starts
+        # draw-all unless its own RESP sets it again.
+        tia.p0_skip_first = false
+        tia.p1_skip_first = false
     end
 
     # PXC1-x: don't increment the frame counter on scanline-wrap. The

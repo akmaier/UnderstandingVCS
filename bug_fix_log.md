@@ -5274,3 +5274,25 @@ elevator_action + up_n_down still fail). up_n_down 63→27px (rows 5 top + 203 b
 fixed). Residual: 5px @ row 19 (sl 49) — an EXTRA player copy at cols 3-7 (left
 edge), a SEPARATE HMOVE-comb/edge-wrap issue, not VBLANK. Screen stays 62/64
 (up_n_down not yet fully closed).
+
+---
+
+## #119 (2026-06-16) — HBLANK RESP skip-first-copy → up_n_down CLOSED (62→63/64)
+
+up_n_down's last residual (row 19, extra player copy at cols 3-7): the kernel RESP0s
+the player 75→3 (HBLANK, x=66) every scanline; xitari's reset-when(mode=3, old=75,
+new=3)=0 → SKIP the first copy (at col 3). #115c wrongly forced skip_first=FALSE for
+all HBLANK strobes (assuming they never carry skip-first). xitari actually computes
+reset-when for ALL RESP — normal games RESP to ~3 with oldx≈3 → reset-when=-1 (no
+skip, unaffected); a FAR jump (up_n_down 75→3) → 0 → skip.
+
+Fix: (1) HBLANK RESP0/RESP1 now compute `_player_reset_when(mode, p_x, newx)` and
+set skip_first = (when != -1), like the visible deferred path. (2) Moved the
+scanline skip-first RESET from scanline-START to scanline-END (the line_advance
+block) — else the START reset clobbered the HBLANK RESP's skip-first (set in
+tia_poke! before the render). A single-copy player only skips (vanishes) on a far
+HBLANK jump, which is exactly xitari's behavior.
+
+**Gated:** RAM 64/64 bit-exact, Pkg.test green, NO regression (no currently-exact
+game dropped). up_n_down → 0px. **Screen 62→63/64.** Only elevator_action (16px,
+VBLANK missile HMOVE/RESM accumulation) remains.
