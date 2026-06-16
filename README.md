@@ -30,7 +30,7 @@ ALE-supported games** via the per-frame diff sweeps in `tools/rom_sweep/`:
 | sweep | metric | result |
 |---|---|---|
 | **RAM** (`sweep_jutari_ram.py`) | 128 B RIOT RAM, per frame, NOOP from the standard 60-NOOP + 4-RESET boot | **64 / 64 BYTE-IDENTICAL to xitari** ✅ |
-| **Screen** (`sweep_jutari_screen.py`) | 210×160 framebuffer, per frame, 60 frames | **44 / 64 pixel-exact** |
+| **Screen** (`sweep_jutari_screen.py`) | 210×160 framebuffer, per frame, 60 frames | **45 / 64 pixel-exact** |
 
 **jutari RAM is bit-exact with xitari on every documented game.** The 20 remaining
 screen deltas are small, render-only divergences on RAM-bit-exact emulation — the
@@ -62,9 +62,13 @@ For the per-phase commit ledger and the complete list of deferrals see
 
 ## Hand-off — pick up here
 
-**Latest (2026-06-15): jutari RAM is 64/64 BIT-EXACT vs xitari; screen 44/64
-pixel-exact.** The recent arc closed the last RAM divergences and several render
-ones (full diagnoses in [bug_fix_log.md](bug_fix_log.md)):
+**Latest (2026-06-16): jutari RAM is 64/64 BIT-EXACT vs xitari; screen 45/64
+pixel-exact.** A 20-agent color-attribution workflow diagnosed every remaining
+render delta (see [RENDER_DIVERGENCE_SYNTHESIS.md](RENDER_DIVERGENCE_SYNTHESIS.md)),
+then #115 (RESMP per-color-clock deferral → ice_hockey exact) and #115b (joystick
+INPT0-3 idle-low → air_raid 24→2px) landed. The earlier arc closed the last RAM
+divergences and several render ones (full diagnoses in
+[bug_fix_log.md](bug_fix_log.md)):
 
 - **qbert** — jutari was single-buffered; xitari/Stella double-buffers
   (swap-not-clear). Added `framebuffer_prev` + a completion-armed swap →
@@ -85,21 +89,29 @@ the core; a temporary `fprintf` in an xitari core loop is acceptable for a
 
 ### Open work — pick up here
 
-**Pixel exactness** is the active front (screen 44/64). The 20 remaining render
-deltas are all render-only (RAM is bit-exact), from
-`tools/rom_sweep/results_jutari_screen.md`:
+**Pixel exactness** is the active front (screen **45/64**, RAM 64/64). All 19
+remaining deltas are render-only (RAM bit-exact) and were diagnosed game-by-game by
+a 20-agent color-attribution workflow — full per-game findings + ranked synthesis
+in **[RENDER_DIVERGENCE_SYNTHESIS.md](RENDER_DIVERGENCE_SYNTHESIS.md)**. The harness
+is `tools/render_diff.py --rom <r> --frame <f> --auto` (color-attributes each
+diverging pixel to a TIA object via the COLU registers; needs xitari's
+`XI_POKE_DUMP` for true activations).
 
-| size | games (max px/frame) |
-|---|---|
-| large | journey_escape 325, robotank 241, up_n_down 221, tutankham 80 |
-| medium | atlantis 24, air_raid 24, berzerk 21 (first @ f42), elevator_action 16 (first @ f41), defender 9 |
-| small (≤ 6 px) | name_this_game 6, ice_hockey 5, carnival 4, wizard_of_wor / demon_attack / centipede / amidar 3, solaris 2, asterix / jamesbond / pooyan 1 |
+Recently landed (this front): **#115** RESMP per-color-clock deferral → ice_hockey
+exact (44→45); **#115b** joystick INPT0-3 idle-low → air_raid 24→2px.
 
-The ≤ 3 px cluster is likely a shared sprite / HMOVE / PF sub-cycle artifact — one
-fix may close several at once; the large ones are structural per-game render bugs.
-Localize with `jutari_screen_dump.jl` + `trace_dump --screen` (the worst-frame
-rows column points at the scanline band), then the per-pixel diff pins the
-register/timing.
+Remaining grouped by root cause (ranked by value / (risk+effort)):
+
+| group | games | mechanism | risk |
+|---|---|---|---|
+| **G2** mid-scanline RESP/RESM/RESBL position strobes | berzerk, robotank, up_n_down, carnival, defender | RES* mutate obj-X in place for the whole line; xitari `updateFrame(clock+11)` segments at the strobe + needs `ourPlayerPositionResetWhenTable` + skip-first-copy mask (task #93) | MED–HIGH |
+| **G1** GRP/VDELP shadow latch | amidar, atlantis, demon_attack, name_this_game, solaris (+centipede/jamesbond/pooyan edge variants) | cross-scanline stale delayed-GRP shadow (`grp0_old`/`grp1_old` vs xitari `myDGRP*`) on VDELP-transition lines; latch logic matches Stella, so the divergent value is captured earlier — needs shadow-register instrumentation | HIGH (shared serializer) |
+| **G3** per-pixel control gates | wizard_of_wor (CTRLPF.D0 reflect), tutankham (PF2 scanline-boundary wrap — naive wrap already reverted), air_raid (residual 2px @ row 223) | a control bit read scanline-globally / a write straddling the 228 boundary | LOW–MED, independent |
+| **G5** missile/ball HMOVE accumulation | journey_escape (319px), elevator_action | obj-X not free-running per scanline between HMOVE strobes; reset-base vs HMOVE-shifted | MED |
+
+Localize with `render_diff.py --auto`; gate every change on the full screen + RAM
+sweep (run alone). NOTE: `render_diff.py` hardcodes 210 rows — PAL games
+(air_raid, 230 rows) need a harness height fix before `--auto` works on them.
 
 **jaxtari catch-up**: mirror the recent jutari boot/render fixes (PAL height,
 HmoveBlanks, YStart, double-buffer, VSYNC-rebase, construction-probe) for PXC2
