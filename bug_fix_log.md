@@ -5039,3 +5039,37 @@ PXC1 + the INPT-defaults testset). Screen: air_raid 24→2px (rows 219-222 now
 exact); the residual **2px at row 223** is a separate bottom-band sub-issue (color
 0x19 vs 0xe1, not a D7 bit) — air_raid still counts as non-exact (screen stays
 45/64), TODO. No other game changed.
+
+---
+
+## #115c (2026-06-16) — FAITHFUL player object render: RESP reset-when + skip-first-copy (deep fix)
+
+**The deep fix the "match runtime logic, not the scoreboard" directive asked for.**
+Ported xitari's actual per-color-clock player model (not a set-based replica):
+
+- **Mid-scanline RESP deferral.** RESP0/RESP1 in the visible region now DEFER the
+  player reposition to the strobe's activation color clock (pending_writes pseudo-
+  regs `_PEND_RESP0/1`), so the player renders at the OLD x LEFT of the strobe and
+  the NEW x RIGHT of it — the multiplexed-sprite trick. HBLANK strobes stay
+  immediate (xitari resets skip-first every scanline end).
+- **skip-first-copy** (resolves task #93). `ourPlayerMaskTable`'s [enable] index:
+  a RESP whose `ourPlayerPositionResetWhenTable` value is 0/1 (newx in neither / in
+  the DISPLAY of an old copy) omits the FIRST copy for the rest of the scanline;
+  -1 (in the 4-clock DELAY) draws all. Ported `_player_reset_when(mode,oldx,newx)`
+  (computed, not table-allocated). when==1 also renders 11 more clocks at the old
+  position first (xitari `updateFrame(clock+11)`) → activate at beam_cc+11.
+- **skip-first is PER-SCANLINE TRANSIENT**: reset to draw-all at each rendered
+  scanline's start (xitari resets at every scanline end, TIA.cxx:1799) and on
+  NUSIZ0/1 + HMOVE completeMotion.
+
+`_player_set` gained a `skip_first` arg (omits copy 1); new TIAState fields
+`p0_skip_first`/`p1_skip_first`.
+
+**Gated:** RAM **64/64 bit-exact** (the reposition deferral did NOT ripple to
+collisions→RAM), jutari Pkg.test green (RESP-timing tests updated for the deferral).
+Screen **45→46/64**: carnival CLOSED (4→0); robotank 241→148 (band 49-182→49-85),
+up_n_down 221→86, berzerk 21→5 — the multiplexed-RESP cluster. atlantis 24→40 is
+the ACCEPTED tradeoff: it's a VDELP-shadow game (player should not draw at all, G1
+unfixed) so faithful player POSITIONING just changes how the erroneously-drawn
+player looks; it closes once VDELP is fixed. No currently-exact game regressed.
+Spec + remaining steps in PORT_OBJECT_RENDER_PLAN.md.

@@ -1805,10 +1805,14 @@ end
         # P3i-e: RESP0 uses xitari-exact `(color_clock - HBLANK + 5) % 160`
         # at visible color clocks. With color_clock = 30*3 = 90:
         # (90-68+5) % 160 = 27.
+        # #115: a VISIBLE RESP is DEFERRED to its activation color clock (so the
+        # player renders at the old position left of the strobe), applied when the
+        # scanline renders — advance one scanline to drain the pending reposition.
         tia = initial_tia_state()
         tia.scanline_cycle = 30
         tia.color_clock = 90
         tia_poke!(tia, W_RESP0, 0x00)
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
         @test tia.p0_x == 27
     end
 
@@ -1816,8 +1820,9 @@ end
         tia = initial_tia_state()
         tia.scanline_cycle = 30; tia.color_clock = 90; tia.p0_x = 50
         tia_poke!(tia, W_RESP1, 0x00)
+        tia_advance!(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
         @test tia.p0_x == 50
-        @test tia.p1_x == 27          # same P3i-e formula as RESP0
+        @test tia.p1_x == 27          # same P3i-e formula as RESP0 (deferred)
     end
 
     @testset "HMOVE applies HMP offsets" begin

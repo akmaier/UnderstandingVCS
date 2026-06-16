@@ -2,7 +2,7 @@
 
 Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `trace_dump --screen`, breakout_random_actions stream, first **60** frames after the standard 60-NOOP+4-RESET boot. Same per-game RomSettings as the RAM sweep (so a divergence is a genuine render delta, not a settings/boot mismatch).
 
-**Pixel-exact (0 px) over 60 frames: 45/64.**
+**Pixel-exact (0 px) over 60 frames: 46/64.**
 
 | game | max px/frame | total px | first div frame | worst-frame rows |
 |---|---|---|---|---|
@@ -12,15 +12,15 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | assault | **0 ✅** | 0 | — | — |
 | asterix | 1 | 60 | 1 | 190-190 |
 | asteroids | **0 ✅** | 0 | — | — |
-| atlantis | 24 | 1440 | 1 | 186-186 |
+| atlantis | 40 | 2400 | 1 | 186-186 |
 | bank_heist | **0 ✅** | 0 | — | — |
 | battle_zone | **0 ✅** | 0 | — | — |
 | beam_rider | **0 ✅** | 0 | — | — |
-| berzerk | 21 | 21 | 42 | 180-181 |
+| berzerk | 5 | 5 | 42 | 180-180 |
 | bowling | **0 ✅** | 0 | — | — |
 | boxing | **0 ✅** | 0 | — | — |
 | breakout | **0 ✅** | 0 | — | — |
-| carnival | 4 | 240 | 1 | 27-27 |
+| carnival | **0 ✅** | 0 | — | — |
 | centipede | 3 | 180 | 1 | 193-193 |
 | chopper_command | **0 ✅** | 0 | — | — |
 | crazy_climber | **0 ✅** | 0 | — | — |
@@ -53,7 +53,7 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | qbert | **0 ✅** | 0 | — | — |
 | riverraid | **0 ✅** | 0 | — | — |
 | road_runner | **0 ✅** | 0 | — | — |
-| robotank | 241 | 14448 | 1 | 49-182 |
+| robotank | 148 | 8868 | 1 | 49-85 |
 | seaquest | **0 ✅** | 0 | — | — |
 | skiing | **0 ✅** | 0 | — | — |
 | solaris | 2 | 120 | 1 | 11-11 |
@@ -63,7 +63,7 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | tennis | **0 ✅** | 0 | — | — |
 | time_pilot | **0 ✅** | 0 | — | — |
 | tutankham | 80 | 4800 | 1 | 103-167 |
-| up_n_down | 221 | 12257 | 1 | 5-203 |
+| up_n_down | 86 | 4275 | 1 | 5-203 |
 | venture | **0 ✅** | 0 | — | — |
 | video_pinball | **0 ✅** | 0 | — | — |
 | videochess | **0 ✅** | 0 | — | — |
