@@ -405,6 +405,21 @@ class TIAState(NamedTuple):
     # See jutari `76f101e` / PORT_OBJECT_RENDER_PLAN.md.
     p0_skip_first: bool = False
     p1_skip_first: bool = False
+    # Task #115d (faithful missile render): "Cosmic Ark" TIA missile-0 motion
+    # bug (xitari `myM0CosmicArkMotionEnabled`, TIA.cxx:1805/2585/2763).
+    # Enabled when HMM0 goes 7→6 exactly 21 CPU cycles (63 color clocks) after
+    # the last HMOVE; disabled by any HMOVE. While enabled, M0 drifts every
+    # scanline by {18,33,0,17}[counter] (counter cycling 0..3) — the diagonal
+    # star field in journey_escape — stretched ≥2px at counter 1, blanked at
+    # counter 2.
+    # `last_hmove_clock` is the frame-relative beam clock of the last HMOVE
+    # (for the 63-clock enable gap). `m0_cosmic_line` is this scanline's
+    # counter value (0..3) so `_missile_set` can apply the stretch/blank;
+    # -1 = bug off (no per-line override).
+    last_hmove_clock: int = 0
+    m0_cosmic_ark: bool = False
+    m0_cosmic_counter: int = 0
+    m0_cosmic_line: int = -1
 
 
 def initial_tia_state() -> TIAState:
@@ -455,6 +470,10 @@ def initial_tia_state() -> TIAState:
         buffer_swap_pending=False,
         p0_skip_first=False,
         p1_skip_first=False,
+        last_hmove_clock=0,
+        m0_cosmic_ark=False,
+        m0_cosmic_counter=0,
+        m0_cosmic_line=-1,
     )
 
 
@@ -661,6 +680,23 @@ def _player_reset_when(mode: int, oldx: int, newx: int) -> int:
         elif in_delay:
             result = -1
     return result
+
+
+# Task #115d (Cosmic Ark): per-scanline M0 motion-bug step (xitari TIA.cxx:
+# 1805-1834). Advances the 2-bit counter and shifts M0 by
+# {18,33,0,17}[counter]; `m0_cosmic_line` then drives `_missile_set` (counter
+# 1 stretches M0 ≥2px, counter 2 blanks it this line).
+_COSMIC_ARK_MOTION = (18, 33, 0, 17)
+
+
+def _cosmic_ark_advance(tia: "TIAState") -> "TIAState":
+    counter = (int(tia.m0_cosmic_counter) + 1) & 0x03
+    new_m0_x = (int(tia.m0_x) - _COSMIC_ARK_MOTION[counter]) % SCREEN_WIDTH
+    return tia._replace(
+        m0_cosmic_counter=counter,
+        m0_x=new_m0_x,
+        m0_cosmic_line=counter,
+    )
 
 
 def _resp_missile_ball_position(color_clock: int) -> int:
@@ -1084,6 +1120,22 @@ def tia_poke(tia: TIAState, addr: int, value: int,
         new_tia = new_tia._replace(m1_x=_resp_missile_ball_position(beam_cc))
     elif reg == W_RESBL:
         new_tia = new_tia._replace(bl_x=_resp_missile_ball_position(beam_cc))
+    elif reg == W_HMM0:
+        # Task #115d (Cosmic Ark): arm the M0 motion bug when HMM0 goes
+        # 7→6 exactly 21 CPU cycles (63 color clocks) after the last HMOVE
+        # (xitari case 0x22, TIA.cxx:2585). `tia.registers[W_HMM0]` holds
+        # the OLD value (we haven't yet entered this branch's store — store
+        # happened above into `new_registers`); compare its high nibble.
+        old_hi = (int(tia.registers[W_HMM0]) >> 4) & 0x0F
+        new_hi = (int(value8) >> 4) & 0x0F
+        if old_hi == 7 and new_hi == 6:
+            frame_clock = (int(tia.lines_since_frame) * COLOR_CLOCKS_PER_SCANLINE
+                           + int(beam_cc))
+            if frame_clock == int(tia.last_hmove_clock) + 21 * COLOR_CLOCKS_PER_CPU_CYCLE:
+                new_tia = new_tia._replace(
+                    m0_cosmic_ark=True,
+                    m0_cosmic_counter=0,
+                )
     elif reg == W_HMOVE:
         hmp0 = int(new_tia.registers[W_HMP0])
         hmp1 = int(new_tia.registers[W_HMP1])
@@ -1115,6 +1167,12 @@ def tia_poke(tia: TIAState, addr: int, value: int,
         # `tia_advance` after line N commits) — applying it immediately moved
         # M0/BL on line N (1 line early, the enduro road-marker offset).
         # Below 76 the strobe is within the current line: apply immediately.
+        # Task #115d (Cosmic Ark): every HMOVE records its clock (for the
+        # 21-cycle enable gap on the next HMM0) and DISABLES the M0 motion
+        # bug (xitari TIA.cxx:2761-2763). Frame-relative beam clock =
+        # lines · 228 + beam_cc.
+        _hmove_clock = (int(tia.lines_since_frame) * COLOR_CLOCKS_PER_SCANLINE
+                        + int(beam_cc))
         if sc >= NTSC_CPU_CYCLES_PER_SCANLINE:
             new_tia = new_tia._replace(
                 hmove_blank_pending_next=blank,
@@ -1123,6 +1181,9 @@ def tia_poke(tia: TIAState, addr: int, value: int,
                     _hmove_motion(sc, hmm0), _hmove_motion(sc, hmm1),
                     _hmove_motion(sc, hmbl),
                 ),
+                last_hmove_clock=_hmove_clock,
+                m0_cosmic_ark=False,
+                m0_cosmic_line=-1,
             )
         else:
             # Task #115c: HMOVE completeMotion recomputes player masks at
@@ -1136,6 +1197,9 @@ def tia_poke(tia: TIAState, addr: int, value: int,
                 hmove_blank_pending=blank,
                 p0_skip_first=False,
                 p1_skip_first=False,
+                last_hmove_clock=_hmove_clock,
+                m0_cosmic_ark=False,
+                m0_cosmic_line=-1,
             )
     elif reg == W_HMCLR:
         # HMCLR zeros all five horizontal-motion registers (HMP0/HMP1/HMM0/HMM1/HMBL).
@@ -1287,6 +1351,13 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
     # contained subsequent scanlines until the next poke."
     pending = tia.pending_writes
     tia_for_render = tia                                  # local copy we mutate
+    # Task #115d (Cosmic Ark): step the M0 motion bug once per completed
+    # scanline — BEFORE the render below and outside the VBLANK gate, so the
+    # counter phase advances every line (incl. VBLANK) exactly like xitari's
+    # scanline-end block, and the rendered row uses the stepped position/mask.
+    # (line_advance > 1 is rare for cosmic games — they WSYNC every line.)
+    if line_advance > 0 and tia_for_render.m0_cosmic_ark:
+        tia_for_render = _cosmic_ark_advance(tia_for_render)
     # Task #83 round 3: see comment around the assignment inside the
     # visible-render branch. Initialised here so the post-render
     # `new_hmove_blank` decision can read it even when line_advance == 0.
@@ -1535,6 +1606,12 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
         # transient state, which is correct.
         p0_skip_first=tia_for_render.p0_skip_first if line_advance > 0 else tia.p0_skip_first,
         p1_skip_first=tia_for_render.p1_skip_first if line_advance > 0 else tia.p1_skip_first,
+        # Task #115d: Cosmic Ark counter / line. _cosmic_ark_advance was
+        # called above on tia_for_render; thread the stepped fields out.
+        m0_cosmic_ark=tia_for_render.m0_cosmic_ark if line_advance > 0 else tia.m0_cosmic_ark,
+        m0_cosmic_counter=tia_for_render.m0_cosmic_counter if line_advance > 0 else tia.m0_cosmic_counter,
+        m0_cosmic_line=tia_for_render.m0_cosmic_line if line_advance > 0 else tia.m0_cosmic_line,
+        last_hmove_clock=int(tia.last_hmove_clock),
         # P4c (dump-pot): keep a monotonic CPU-cycle counter so
         # `tia_peek` can decide whether the paddle cap has charged
         # past its xitari-formula threshold yet.
@@ -1941,6 +2018,13 @@ def _object_pixel_sets(tia: TIAState) -> dict[str, set[int]]:
     # NUSIZ bits 4-5.
     def _missile_set(enam_reg: int, nusiz_reg: int, resmp_reg: int,
                      x: int) -> set[int]:
+        # Task #115d (Cosmic Ark): M0 per-line override. counter 2 blanks
+        # the missile this scanline (xitari ourDisabledMaskTable);
+        # counter 1 stretches it to >=2px (size code |= 1). Only M0;
+        # m0_cosmic_line is -1 when the bug is off.
+        cosmic = int(tia.m0_cosmic_line) if enam_reg == W_ENAM0 else -1
+        if cosmic == 2:
+            return set()
         if (int(tia.registers[enam_reg]) & 0x02) == 0:
             return set()
         # Task #85 (2026-06-11): RESMP*=1 → missile invisible (locked to
@@ -1954,7 +2038,10 @@ def _object_pixel_sets(tia: TIAState) -> dict[str, set[int]]:
         if (int(tia.registers[resmp_reg]) & 0x02) != 0:
             return set()
         nusiz = int(tia.registers[nusiz_reg])
-        width = 1 << ((nusiz >> 4) & 0x03)
+        size_code = (nusiz >> 4) & 0x03
+        if cosmic == 1:                   # Cosmic Ark counter 1: stretch ≥2px
+            size_code |= 0x01
+        width = 1 << size_code
         copy_offsets, _ = _nusiz_player_layout(nusiz)
         out: set[int] = set()
         for copy_off in copy_offsets:
