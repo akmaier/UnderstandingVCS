@@ -65,10 +65,9 @@ differentiable (soft) execution is bit-exact equal to the original (hard)
 execution in the forward pass at any finite temperature, while exposing
 gradients where bit logic has none. The system was built in roughly 137 hours
 of active work over 29 calendar days, with large parts written autonomously
-by coding agents; driving the re-implementation to pixel exactness even
-surfaced a latent non-determinism bug in the reference itself. This paper
-builds and validates the foundation; turning the XAI toolkit on it is the
-program it opens.
+by coding agents. This paper builds and validates the foundation, and shows---
+theoretically and in a qualitative gradient study---that gradient-based XAI on
+it is feasible.
 \end{abstract}
 
 \section{Introduction}
@@ -96,8 +95,8 @@ confident, and wrong, and we have no way to tell
 complex-but-unknown: there is no study object that is at once complex enough
 to be a real test and known well enough to grade the answer.
 
-The closest anyone has come to escaping this dichotomy reached outside machine
-learning. In a now-famous study, \citet{jonas2017could} asked whether the
+One escape from this dichotomy comes from outside machine learning.
+\citet{jonas2017could} asked whether the
 standard toolkit of systems neuroscience---connectomics, tuning curves,
 lesioning, dimensionality reduction---could recover how a MOS\,6502
 microprocessor computes, using the chip as a model organism precisely because
@@ -110,7 +109,7 @@ study short of a substrate for modern XAI: the microprocessor was not
 \emph{differentiable}, so the gradient-based methods at the centre of today's
 toolkit could not be applied to it; and the analyses run on it were classical
 statistics, not XAI. The MOS\,6502 is no accident here---it is the CPU at the
-heart of the Atari 2600 Video Computer System (VCS), the very platform on
+heart of the Atari 2600 Video Computer System (VCS), the platform on
 which modern deep reinforcement learning was demonstrated
 \citep{mnih2013playing,mnih2015human,bellemare2013arcade}.
 
@@ -128,43 +127,36 @@ mode, and each is validated against \textsc{xitari} \citep{xitari}, the
 Stella-derived C\texttt{++} emulator \citep{stella} that served as the
 reference for the original deep-Q-network (DQN) work.
 
-This paper \emph{builds and validates that foundation}. We deliberately do not
-yet run an XAI study on it; constructing a complex, fully known, differentiable
-substrate---and proving it faithful---is itself the contribution, and the XAI
-experiments it enables are the program it opens. Our contributions are:
+This paper builds and validates that foundation, and shows---both
+theoretically and in a qualitative gradient study---that XAI on this system is
+feasible. We expect the substrate to be useful to the XAI community. Our
+contributions are:
 \begin{itemize}
   \item \textbf{Two differentiable VCS ports.} Independent Julia and JAX
   implementations of the full VCS (CPU, TIA, RIOT, cartridge
   bank-switching, console, controllers), each with a bit-exact hard path
-  and a differentiable soft path. The Julia port is bit-for-bit identical
-  to \textsc{xitari} on all 64 supported games---64/64 byte-identical RAM
-  and 64/64 pixel-identical screens.
-  \item \textbf{A soft/hard formulation with a proof.} We treat the ROM as a
-  weight tensor, the RAM as a soft tape, and control flow as gates, and we
-  show that the soft forward pass is bit-exact equal to the hard forward
-  pass at any finite temperature (Theorem~\ref{thm:exact}), while gradients
-  flow where bit logic provides none; we give the temperature-limit error
-  bound for the fully relaxed variant (Theorem~\ref{thm:limit}).
+  and a differentiable soft path. The Julia port (\textsc{jutari}) is
+  bit-for-bit identical to \textsc{xitari} on all 64 supported games---64/64
+  byte-identical RAM and 64/64 pixel-identical screens. The JAX port
+  (\textsc{jaxtari}) runs and is being brought to the same standard by the
+  submission deadline.
+  \item \textbf{A soft/hard formulation with theoretical analysis thereof.}
+  We treat the ROM as a weight tensor, the RAM as a soft tape, and control
+  flow as gates, and show that the soft forward pass is bit-exact equal to the
+  hard forward pass at any finite temperature (Theorem~\ref{thm:exact}), while
+  gradients flow where bit logic provides none; we give the temperature-limit
+  error bound for the fully relaxed variant (Theorem~\ref{thm:limit}).
   \item \textbf{An AI-assisted engineering account.} A quantified report of
   how an emulator port that would classically cost many person-months was
   built in roughly 137 hours of active work, measured from the version-control
   log, with large parts written autonomously by coding agents.
   \item \textbf{A conformance evaluation} across the 64-game ALE set, with
-  formally defined bit- and pixel-exactness metrics, and the finding that a
-  bit-exact re-implementation is itself an audit tool for its reference: it
-  exposed a non-determinism bug in \textsc{xitari}.
-  \item \textbf{A proof-of-concept gradient readout} showing that the
-  foundation works as intended: exact register- and ROM-byte gradients that
-  localise to the correct hardware element when checked against the known
-  mechanism---a demonstration that the substrate is ready for XAI, not an XAI
-  study in itself.
+  formally defined bit- and pixel-exactness metrics, and the observation that
+  a bit-exact re-implementation is itself an audit tool for its reference.
+  \item \textbf{A qualitative gradient study} showing that the foundation works
+  as intended: exact register- and ROM-byte gradients that localise to the
+  correct hardware element when checked against the known mechanism.
 \end{itemize}
-
-We are careful throughout to separate what we have \emph{proven}, what we
-have \emph{measured}, and what we \emph{conjecture}. The differentiable VCS is
-the instrument; building it, and proving it faithful, is the work of this
-paper, and turning the full XAI toolkit on it---scoring each method against
-the known mechanism---is the program it opens rather than closes.
 
 \section{Background and Related Work}
 
@@ -195,14 +187,14 @@ responsible for the network's decision''
 proxies---bounding-box overlap, or human-trust studies.
 
 The problem sharpens when the object of explanation is a reinforcement
-learning (RL) agent rather than an image classifier. The canonical such
+learning (RL) agent rather than an image classifier. A widely studied such
 agent is the DQN, which learns to play Atari games from raw pixels
-\citep{mnih2013playing,mnih2015human} and became the field's standard
-testbed. \citet{greydanus2018visualizing} introduced a perturbation-based
-saliency for Atari agents and narrated strategies such as Breakout
-``tunneling''; tellingly, the one case in which they can claim the saliency
-is correct is an artificial experiment where they themselves planted the
-ground-truth feature. \citet{nikulin2019freelunch} built saliency directly
+\citep{mnih2013playing,mnih2015human} and became a standard testbed.
+\citet{greydanus2018visualizing} introduced a perturbation-based
+saliency for Atari agents and described strategies such as Breakout
+``tunneling''; the one case in which they verify the saliency is an
+experiment where they inserted the ground-truth feature themselves.
+\citet{nikulin2019freelunch} built saliency directly
 into the agent and validated it against human eye-tracking---a behavioural
 surrogate, not the machine's own computation. \citet{atrey2020exploratory}
 then made the consequence explicit: using counterfactual interventions (for
@@ -222,21 +214,21 @@ among the field's open needs. Even methods designed for interpretability
 inherit the problem: XDQN makes a DQN interpretable by training a transparent
 surrogate to mimic it, but its strongest correctness measure is fidelity
 \emph{to the DQN}---agreement with another black box, not with a known
-mechanism \citep{kontogiannis2023xdqn}. The recurring obstacle is exactly
-the one \citet{jonas2017could} identified: without a study object whose true
-mechanism is available, an explanation cannot be graded as right or wrong.
-We build such an object---complex, fully known, and differentiable---and prove
-it faithful; using it to grade XAI methods is the program it enables.
+mechanism \citep{kontogiannis2023xdqn}. The recurring obstacle is the one
+\citet{jonas2017could} identified: without a study object whose true mechanism
+is available, an explanation cannot be checked. We build such an
+object---complex, fully known, and differentiable---and validate it; checking
+XAI methods against it is left to future work.
 
 \subsection{Known Operators and Differentiable Programming}
 
-Our approach is a relative of \emph{known-operator learning}. Where a
-purely learned pipeline must relearn everything from data,
-\citet{maier2019known} showed that embedding analytically known,
-differentiable operators directly into a network provably reduces its
-maximum error bound: if a layer is known, its error term vanishes and the
-corresponding part of the bound cancels, even for networks of arbitrary
-depth. The guiding principle is general---``any operation that allows
+Our approach is related to \emph{known-operator learning}. The idea began with
+deep-learning computed tomography \citep{wuerfl2016deep}, where a known
+reconstruction operator is built into the network rather than learned from
+data. \citet{maier2019known} later showed that embedding known, differentiable
+operators directly into a network reduces its maximum error bound: if a layer
+is known, its error term vanishes and the corresponding part of the bound
+cancels, even for networks of arbitrary depth. The principle is general---``any operation that allows
 computation of a gradient or sub-gradient towards its inputs'' can be
 embedded \citep{maier2019known}---and the same spirit underlies
 physics-informed neural networks, which embed known governing equations
@@ -281,16 +273,17 @@ Because the address space is only 13 bits wide, larger cartridges
 visible. The RIOT chip (M6532) holds the 128 bytes of system RAM, an
 interval timer, and the input ports for the joystick, paddles, and console
 switches. The heart of the machine is the TIA: it has no frame buffer, so
-the CPU must race the electron beam, writing colour, sprite, and playfield
-registers in time with each scanline. The screen and audio are the TIA's
-outputs. This is the system the Arcade Learning Environment
-\citep{bellemare2013arcade} exposes to RL agents, and that \textsc{xitari}
-\citep{xitari}, a fork of the Stella emulator \citep{stella}, simulates as
-the reference for DQN. Because \textsc{xitari} is deterministic given a ROM,
-an action stream, and a seed, it is an ideal oracle: every register, RAM
-byte, and pixel our ports produce can be compared against it, and any
-disagreement is unambiguously a port bug---or, as we found, a bug in the
-reference.
+the CPU must race the electron beam, writing its registers in time with each
+scanline. These include the colour registers we use later---\texttt{COLUP0}
+and \texttt{COLUP1} for the two player sprites, \texttt{COLUPF} for the
+playfield, and \texttt{COLUBK} for the background---together with sprite-shape
+and position registers. The screen and audio are the TIA's outputs. This is
+the system the Arcade Learning Environment \citep{bellemare2013arcade} exposes
+to RL agents, and that \textsc{xitari} \citep{xitari}, a fork of the Stella
+emulator \citep{stella}, uses as the reference for DQN. Because \textsc{xitari}
+is deterministic given a ROM, an action stream, and a seed, every register,
+RAM byte, and pixel our ports produce can be compared against it, and any
+disagreement is unambiguously a port bug.
 
 \section{Building Two Differentiable VCS Ports}
 
@@ -298,12 +291,14 @@ reference.
 
 We ported \textsc{xitari} subsystem by subsystem---CPU, bus, TIA, RIOT,
 cartridge mappers, console, controllers, and the ALE-style environment
-wrapper---under a strict conformance gate. Three harnesses define
-``correct.'' \textbf{PXC1} compares each port against a per-instruction
-\textsc{xitari} trace (registers, RAM, and TIA state). \textbf{PXC2}
-cross-checks the two ports against each other, so a bug present in both
-the reference and one port can still be caught by the second, independent
-implementation. \textbf{PXC-S} compares the full $210\times160$ frame
+wrapper---under a strict conformance gate. We define ``correct'' by three
+automated test harnesses: programs that drive a port and the reference on
+identical inputs and compare their internal state byte for byte, failing on
+any mismatch. The first (PXC1) compares each port against a per-instruction
+\textsc{xitari} trace of the CPU registers, RAM, and TIA state. The second
+(PXC2) cross-checks the two ports against each other, so that a bug shared by
+the reference and one port is still caught by the second, independent
+implementation. The third (PXC-S) compares the full $210\times160$ frame
 buffer. Each port implements all 151 documented NMOS\,6502 instructions
 plus the undocumented \texttt{USBC} alias and 37 common ``illegal''
 opcodes (NOP/LAX/SAX families)---189 opcode bytes in total---in both
@@ -456,25 +451,19 @@ $\partial\Phi_{\mathrm{S}}/\partial x$, which is defined and generically
 nonzero where $\partial\Phi_{\mathrm{H}}/\partial x$ is zero or undefined.
 \end{theorem}
 
-\begin{proof}[Proof sketch]
-Each handler's forward output is a composition of (i) one-hot ROM/RAM reads,
-which equal ordinary indexing by~\eqref{eq:peek}; (ii) integer/round
-arithmetic for registers, flags, and timers; (iii) a hard dispatch on the
-decoded opcode; and (iv) the branch, whose forward value is
-$\mathrm{STE}(\mathrm{pc}_{\mathrm{soft}},\mathrm{pc}_{\mathrm{hard}})=\mathrm{pc}_{\mathrm{hard}}$
-by~\eqref{eq:ste}. Each component is forward-identical to its hard
-counterpart, and the hard counterpart is validated bit-for-bit against the
-reference (the PXC harnesses). The stop-gradient in~\eqref{eq:ste} alters
-only the backward rule, not the value. Since small integers up to $2^{24}$
-are represented exactly in float32, the equality is bit-exact.
+\begin{proof}
+Each handler's forward output composes one-hot ROM/RAM reads~\eqref{eq:peek},
+integer/round arithmetic, a hard opcode dispatch, and the straight-through
+branch~\eqref{eq:ste}, each forward-identical to the hard handler; the
+stop-gradient alters only the backward rule. The full proof is in
+Appendix~\ref{app:proofs}.
 \end{proof}
 
-Theorem~\ref{thm:exact} is the strong, honest claim: attribution computed in
-soft mode is computed on the \emph{true} hard trajectory, not on an
-approximation of it. It also makes a temperature sweep of forward error
-vacuous---the error is identically zero---so the interesting question is the
-behaviour of a \emph{fully} relaxed variant that does not apply the
-straight-through correction. For that we need a mild non-degeneracy
+By Theorem~\ref{thm:exact}, attribution in soft mode is computed on the exact
+hard trajectory rather than an approximation, and a temperature sweep of the
+forward error is vacuous---the error is identically zero. The remaining
+question is the behaviour of a \emph{fully} relaxed variant that does not apply
+the straight-through correction. For that we need a mild non-degeneracy
 assumption.
 
 \begin{assumption}[Decision margins]
@@ -511,14 +500,10 @@ $\frac{L^{H}-1}{L-1}\,C[(K-1)e^{-\Delta_{\min}/T}+e^{-\alpha m_{\min}}]
 = \mathcal{O}(e^{-c/T})$ with $c=\Delta_{\min}$.
 \end{theorem}
 
-\begin{proof}[Proof sketch]
-The non-winning softmax mass is
-$1-\softmax(\ell/T)_{k^\star} \le (K-1)e^{-\Delta_{\min}/T}$, so the convex
-combination~\eqref{eq:select} deviates from the winning row by at most
-$(K-1)e^{-\Delta_{\min}/T}\cdot C$. For the gate,
-$|\sigma(\alpha z)-[\![z>0]\!]| = \sigma(-\alpha|z|)\le e^{-\alpha m_{\min}}$,
-so the blended program counter deviates by at most $C\,e^{-\alpha m_{\min}}$.
-Composing $H$ steps gives the geometric accumulation.
+\begin{proof}
+Bound the non-winning softmax mass by $(K-1)e^{-\Delta_{\min}/T}$ and the
+sigmoid error by $e^{-\alpha m_{\min}}$, then propagate over $H$ steps with the
+Lipschitz constant $L$. The full proof is in Appendix~\ref{app:proofs}.
 \end{proof}
 
 \begin{corollary}
@@ -609,17 +594,17 @@ two independent emulators totalling ${\sim}17{,}900$ lines of source and a
 comparable volume of tests (${\sim}1{,}990$ test cases across the two ports),
 and chased 67 distinct numbered bug investigations to a bit-exact result.
 
-We state plainly that an estimate of the counterfactual---how long this would
-have taken without coding agents---is a \emph{conjecture}, not a measurement.
-A faithful, cycle-accurate emulator of a system as quirky as the VCS, written
-and validated bit-for-bit against a reference, is conventionally a
-multi-person-month undertaking; comparable open-source emulators represent
-years of cumulative community effort. Producing two such ports, in two
-languages, plus a differentiable layer and a 64-game conformance suite, in
-under six working days of active effort represents a compression of one to two
-orders of magnitude in calendar-normalised labour. We offer this as an honest
-order-of-magnitude claim, anchored to the measured 137 hours, not as a
-controlled comparison.
+For a baseline we look at the reference itself. \textsc{xitari} is a C\texttt{++}
+emulator core of about 46{,}000 lines, derived from Stella, a project whose
+sources carry copyright dates back to the 1990s and whose xitari fork on
+GitHub spans 2014--2017 \citep{xitari,stella}. It is the product of many
+person-years of cumulative work. Our two ports reproduce its
+behaviour---bit-exact RAM and pixel-exact screens---in about 17{,}900 lines
+written in 137 active hours. We do not claim a controlled comparison; the
+reference is larger in scope (audio, every cartridge type, tooling) than what
+we ported. But the contrast between a multi-year reference codebase and a
+six-working-day reimplementation is, we think, the right order of magnitude
+for what agentic tools change.
 
 \subsection{Throughput}
 
@@ -694,7 +679,6 @@ mechanism---is the program this paper enables.
 
 \section{Discussion}
 
-\paragraph{A new paradigm: build the instrument, then study it.}
 The effort result points beyond this paper. When a faithful, differentiable
 re-implementation of a complex system can be produced in days rather than
 months, ``build a known-ground-truth substrate and then study it with XAI''
@@ -704,7 +688,6 @@ wherever a reference implementation exists and can serve as a conformance
 oracle: other consoles, instruction-set simulators, or hand-written numerical
 kernels.
 
-\paragraph{A re-implementation audits its reference.}
 Driving \textsc{jutari} to 64/64 pixel exactness surfaced a latent
 non-determinism bug in \textsc{xitari} itself, the de-facto reference. One
 title's attract-mode demo reads \emph{uninitialised} on-cartridge Superchip
@@ -718,8 +701,7 @@ bit-exact re-implementation is not only validated \emph{by} its reference, it
 is a tool for \emph{auditing} that reference's reproducibility. We have
 prepared a fix to report upstream.
 
-\paragraph{Notes from the build log.}
-The hardest divergences were, unsurprisingly, in timing: the RIOT timer's
+The hardest divergences were in timing: the RIOT timer's
 reset state, the TIA's sub-cycle object rendering, and the boot-time format
 probe that seeds free-running counters games never re-initialise. Two model
 anecdotes are worth recording for the history. The bulk of the work
@@ -731,12 +713,11 @@ only to document that autonomous capability on a task of this size is real but
 uneven across systems, and that the conformance gate---not the model---was
 what made the autonomy safe.
 
-\paragraph{Limitations.}
-\textsc{jaxtari} is not yet at 64/64 on the most recent fixes; the full
-ROM-byte integrated-gradient study is incomplete; and the effort comparison is
-an order-of-magnitude estimate, not a controlled trial. None of these affects
-the core claims: the proven forward equivalence, and the measured 64/64
-conformance of \textsc{jutari}.
+Some limitations remain. The full ROM-byte integrated-gradient study is
+incomplete, and the effort comparison is an order-of-magnitude estimate rather
+than a controlled trial. Neither affects the core claims: the forward
+equivalence of Theorem~\ref{thm:exact} and the measured 64/64 conformance of
+\textsc{jutari}.
 
 \section{Conclusion}
 
@@ -765,5 +746,52 @@ tools. Our intended use, validating XAI methods against known ground truth,
 is a contribution to the transparency and accountability of AI systems.
 
 \bibliography{references}
+
+\appendix
+\section{Proofs}
+\label{app:proofs}
+
+\noindent\textbf{Theorem~\ref{thm:exact} (exact forward equivalence).}
+\begin{proof}
+The soft one-step map $\Phi_{\mathrm{S}}$ is the per-opcode handler selected by
+the decoded opcode, and each handler is built from four primitives. (i) ROM and
+RAM reads use the one-hot dot product $\mathrm{peek}(r,a)=\mathbf{1}_a^{\top}r$,
+which for an integer address equals $r_a$ exactly~\eqref{eq:peek}. (ii)
+Register, flag, BCD and RIOT-timer updates use the same integer/$\mathrm{round}$
+arithmetic as the hard handlers. (iii) Dispatch selects the handler from the
+decoded opcode byte with a hard switch, as in hard mode. (iv) A conditional
+branch forms $\mathrm{pc}_{\mathrm{soft}}$ from the gate~\eqref{eq:branch} but
+returns $\mathrm{STE}(\mathrm{pc}_{\mathrm{soft}},\mathrm{pc}_{\mathrm{hard}})
+=\mathrm{pc}_{\mathrm{soft}}+\sg(\mathrm{pc}_{\mathrm{hard}}-\mathrm{pc}_{\mathrm{soft}})$,
+whose forward value is $\mathrm{pc}_{\mathrm{hard}}$ for all $\alpha,T$ because
+$\sg$ is the forward identity. Each primitive's forward output thus equals the
+hard handler's, so $\Phi_{\mathrm{S}}(x)=\Phi_{\mathrm{H}}(x)$; by induction
+over the $H$ steps, $x^{\mathrm{S}}_t=x^{\mathrm{H}}_t$ for all $t\le H$. Every
+VCS quantity (bytes, $13$-bit addresses, per-frame cycle counts) lies in
+$[0,2^{24}]$ and is represented exactly in float32, so the equality is
+bit-exact. The stop-gradient changes only the reverse-mode rule, setting
+$\partial\,\mathrm{STE}=\partial\,\mathrm{pc}_{\mathrm{soft}}$, which is
+generically nonzero where the hard branch has zero or undefined derivative.
+\end{proof}
+
+\noindent\textbf{Theorem~\ref{thm:limit} (temperature-limit bound).}
+\begin{proof}
+At a dispatch step with logits $\ell$, winner $k^\star$ and gap
+$\Delta\ge\Delta_{\min}$, each loser $k\ne k^\star$ has weight
+$w_k=e^{\ell_k/T}/\sum_j e^{\ell_j/T}\le e^{(\ell_k-\ell_{k^\star})/T}\le
+e^{-\Delta_{\min}/T}$, so the non-winning mass is
+$1-w_{k^\star}\le(K-1)e^{-\Delta_{\min}/T}$ and the dispatch output
+$\sum_k w_k V_k$ differs from $V_{k^\star}$ by at most
+$(1-w_{k^\star})\max_k\|V_k-V_{k^\star}\|_\infty\le(K-1)e^{-\Delta_{\min}/T}C$.
+For a branch with margin $m=|z|\ge m_{\min}$,
+$|\sigma(\alpha z)-[\![z>0]\!]|=\sigma(-\alpha m)\le e^{-\alpha m_{\min}}$, so
+the blended program counter differs from the hard branch by at most
+$C\,e^{-\alpha m_{\min}}$. Adding the two contributions gives the per-step
+bound $\delta$ of~\eqref{eq:bound}. With $L\ge1$ a Lipschitz constant of
+$\Phi_{\mathrm{H}}$ in $\|\cdot\|_\infty$ and $e_t=\|x^{T,\mathrm{S}}_t-x^{\mathrm{H}}_t\|_\infty$,
+each step gives $e_{t+1}\le L e_t+\delta$, hence
+$e_H\le\delta\,(L^H-1)/(L-1)$. As $T\to0$ and $\alpha\to\infty$,
+$\delta=\mathcal{O}(e^{-\Delta_{\min}/T})\to0$, so $\Phi^{T}_{\mathrm{S}}\to\Phi_{\mathrm{H}}$.
+\end{proof}
 
 \end{document}

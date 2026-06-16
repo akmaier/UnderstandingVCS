@@ -56,29 +56,28 @@ def arrow(ax, p1, p2, style="-|>", lw=1.0, ls="-", color=INK, rad=0.0):
 
 # --------------------------------------------------------------------------
 def fig_architecture():
-    fig, ax = plt.subplots(figsize=(3.4, 2.9))
-    ax.set_xlim(0, 12); ax.set_ylim(0, 9.6); ax.axis("off")
+    fig, ax = plt.subplots(figsize=(3.4, 2.7))
+    ax.set_xlim(0, 14); ax.set_ylim(0, 10); ax.axis("off")
 
-    # top row: CPU | TIA | RIOT
-    cpu = box(ax, 0.3, 6.7, 3.2, 1.5, "6507 CPU\n(6502 core)", fs=7.6)
-    tia = box(ax, 4.4, 6.7, 3.2, 1.5, "TIA\nvideo + audio", fs=7.6)
-    riot = box(ax, 8.5, 6.7, 3.2, 1.5, "RIOT / M6532\nRAM · timer · I/O", fs=7.2)
-    # central bus
-    box(ax, 3.0, 3.9, 6.0, 0.8, "address + data bus", fc=LIGHT, fs=7.8)
-    # bottom row: controllers | cartridge | screen
-    ctrl = box(ax, 0.3, 0.5, 3.2, 1.4, "joystick · paddles\n· switches", fs=7.0)
-    cart = box(ax, 4.4, 0.5, 3.2, 1.4, "cartridge ROM\n(bank-switched)", fs=7.2)
-    screen = box(ax, 8.5, 0.5, 3.2, 1.4, "TV picture\n+ audio", fs=7.4)
+    # The address/data bus runs across the top, spanning the full device row.
+    box(ax, 0.5, 8.0, 13.0, 0.85, "address + data bus", fc=LIGHT, fs=8)
 
-    for blk in (cpu, tia, riot):
-        arrow(ax, (blk[0], 6.7), (blk[0], 4.7), style="<|-|>", lw=1.0)
-    arrow(ax, (cart[0], 1.9), (cart[0], 3.9), style="-|>", lw=1.0)
-    arrow(ax, (ctrl[0] + 1.0, 1.9), (riot[0], 6.7), style="-|>",
-          ls=(0, (4, 2)), color=STEEL, rad=-0.32)
-    arrow(ax, (tia[0] + 0.6, 6.7), (screen[0], 1.9), style="-|>",
-          lw=1.4, color=ORANGE, rad=-0.22)
+    # Bus devices, left to right: RIOT, CPU, cartridge, TIA.
+    riot = box(ax, 0.4, 5.5, 3.3, 1.8, "RIOT / M6532\nRAM, timer, I/O", fs=6.7)
+    cpu  = box(ax, 4.2, 5.5, 2.8, 1.8, "6507 CPU\n(6502 core)", fs=7.2)
+    cart = box(ax, 7.5, 5.5, 2.8, 1.8, "cartridge\nROM", fs=7.4)
+    tia  = box(ax, 10.8, 5.5, 2.8, 1.8, "TIA\nvideo+audio", fs=6.9)
 
-    ax.text(6.0, 9.2, "Atari 2600 VCS", ha="center", fontsize=9.5,
+    # Peripherals below: input under RIOT (left), TV under TIA (right).
+    inp = box(ax, 0.4, 2.4, 3.3, 1.6, "joystick,\nswitches", fs=7.2)
+    tv  = box(ax, 10.8, 2.4, 2.8, 1.6, "TV picture\n+ audio", fs=7.2)
+
+    for b in (riot, cpu, cart, tia):
+        arrow(ax, (b[0], 7.3), (b[0], 8.0), style="<|-|>", lw=1.0)
+    arrow(ax, (inp[0], 4.0), (riot[0], 5.5), style="-|>", lw=1.1, color=STEEL)
+    arrow(ax, (tia[0], 5.5), (tv[0], 4.0), style="-|>", lw=1.3, color=ORANGE)
+
+    ax.text(7.0, 9.55, "Atari 2600 VCS", ha="center", fontsize=9.5,
             fontweight="bold", color=INK)
     fig.tight_layout(pad=0.2)
     fig.savefig(os.path.join(OUT, "fig_architecture.pdf"), bbox_inches="tight")
@@ -87,55 +86,50 @@ def fig_architecture():
 
 # --------------------------------------------------------------------------
 def fig_pipeline():
-    fig, ax = plt.subplots(figsize=(7.0, 2.5))
-    ax.set_xlim(0, 20); ax.set_ylim(0, 7); ax.axis("off")
+    fig, ax = plt.subplots(figsize=(7.0, 3.0))
+    ax.set_xlim(0, 21); ax.set_ylim(0, 8.4); ax.axis("off")
 
-    # Shared state inputs
-    box(ax, 0.3, 4.7, 3.1, 1.6,
-        "ROM  →  weight tensor\nRAM  →  soft tape\nflags/branch → gates",
-        fc=LIGHT, fs=7.6)
-    box(ax, 0.3, 0.5, 3.1, 1.4, "VCS state\n(regs, RAM, TIA)", fc=LIGHT, fs=7.8)
+    # Shared inputs (left).
+    box(ax, 0.3, 5.5, 4.0, 2.2,
+        "ROM = weights\nRAM = soft tape\nbranches = gates", fc=LIGHT, fs=8.5)
+    box(ax, 0.3, 0.6, 4.0, 1.9, "VCS state\n(regs, RAM, TIA)", fc=LIGHT, fs=8.5)
 
-    # HARD path
-    hard = box(ax, 4.7, 4.8, 4.6, 1.5,
-               "HARD step\nuint8 dispatch, integer ALU,\nexact bit logic",
-               fc="white", fs=7.6)
-    # SOFT path
-    soft = box(ax, 4.7, 0.5, 4.6, 1.7,
-               "SOFT step (float32)\none-hot ROM/RAM reads,\nsigmoid branch gate $g{=}\\sigma(\\alpha z)$",
-               fc="white", ec=STEEL, fs=7.4)
+    # The two execution paths.
+    hard = box(ax, 5.3, 5.5, 5.4, 2.2,
+               "HARD step\nuint8 dispatch\ninteger ALU", fs=8.5)
+    soft = box(ax, 5.3, 0.6, 5.4, 2.2,
+               "SOFT step (float32)\none-hot reads\nsigmoid gate",
+               ec=STEEL, fs=8.5)
 
-    # STE join
-    ste = box(ax, 10.6, 2.6, 5.2, 1.7,
-              "Straight-through estimator\n"
-              r"$\mathrm{STE}=\mathrm{soft}+\mathrm{sg}(\mathrm{hard}-\mathrm{soft})$"
-              "\nforward = hard · backward = soft",
-              fc="#fbeede", ec=ORANGE, fs=7.2)
+    # Straight-through join.
+    ste = box(ax, 12.0, 3.0, 5.6, 2.3,
+              "straight-through\nforward = hard\nbackward = soft",
+              fc="#fbeede", ec=ORANGE, fs=8.5)
 
-    out_fwd = box(ax, 16.9, 4.5, 2.8, 1.4,
-                  "bit-exact\nframe / RAM", fc="white", fs=7.4)
-    out_bwd = box(ax, 16.9, 0.7, 2.8, 1.4,
-                  r"gradients $\partial$pixel$/\partial$ROM",
-                  fc="white", ec=STEEL, fs=7.0)
+    box(ax, 18.2, 5.4, 2.6, 1.9, "bit-exact\nframe / RAM", fs=8)
+    box(ax, 18.2, 0.7, 2.6, 1.9, "gradients\n" r"$\partial$pixel$/\partial$ROM",
+        ec=STEEL, fs=8)
 
-    arrow(ax, (3.4, 5.5), (4.7, 5.55), style="-|>")
-    arrow(ax, (3.4, 1.2), (4.7, 1.35), style="-|>", color=STEEL)
-    arrow(ax, (hard[0] + 2.3, hard[1]), (10.6, 3.7), style="-|>", rad=-0.15)
-    arrow(ax, (soft[0] + 2.3, soft[1]), (10.6, 3.2), style="-|>",
-          color=STEEL, rad=0.15)
-    arrow(ax, (ste[0] + 2.6, 3.7), (16.9, 5.1), style="-|>", lw=1.3,
-          color=INK, rad=-0.1)
-    arrow(ax, (ste[0] + 2.6, 3.1), (16.9, 1.4), style="-|>", lw=1.3,
+    arrow(ax, (4.3, 6.6), (5.3, 6.6), style="-|>")
+    arrow(ax, (4.3, 1.55), (5.3, 1.55), style="-|>", color=STEEL)
+    arrow(ax, (10.7, 6.4), (12.0, 4.6), style="-|>", rad=-0.12)
+    arrow(ax, (10.7, 1.8), (12.0, 3.6), style="-|>", color=STEEL, rad=0.12)
+    arrow(ax, (17.6, 4.6), (18.2, 6.0), style="-|>", lw=1.3, rad=-0.1)
+    arrow(ax, (17.6, 3.6), (18.2, 1.7), style="-|>", lw=1.3,
           ls=(0, (4, 2)), color=STEEL, rad=0.1)
 
-    ax.text(2.0, 6.7, "known mechanism", ha="center", fontsize=8,
-            style="italic", color=GREY)
     fig.tight_layout(pad=0.2)
     fig.savefig(os.path.join(OUT, "fig_pipeline.pdf"), bbox_inches="tight")
     plt.close(fig)
 
 
 # --------------------------------------------------------------------------
+# Freeze the effort analysis at the implementation cutoff: paper-writing
+# commits (which begin here) are not implementation effort, and excluding them
+# keeps the figure stable as the paper repo keeps moving.
+IMPL_CUTOFF = dt.datetime.fromisoformat("2026-06-16T17:00:00+02:00")
+
+
 def git_commit_times():
     repo = subprocess.run(
         ["git", "rev-parse", "--show-toplevel"],
@@ -143,7 +137,7 @@ def git_commit_times():
     out = subprocess.run(["git", "-C", repo, "log", "--format=%cI"],
                          capture_output=True, text=True).stdout.strip().splitlines()
     times = sorted(dt.datetime.fromisoformat(t) for t in out)
-    return times
+    return [t for t in times if t <= IMPL_CUTOFF]
 
 
 def fig_timeline():

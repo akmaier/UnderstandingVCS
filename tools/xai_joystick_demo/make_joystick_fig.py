@@ -50,15 +50,21 @@ def main():
     # Row 1 — genuine gradients in jutari's unmodified soft renderer.
     imshow(ax[0, 0], m["p1_frame"], "gray", "rendered scene")
     imshow(ax[0, 1], m["p1_sal_colup0"], "magma",
-           r"$\partial$screen$/\partial$COLUP0")
+           r"$\partial$screen$/\partial$COLUP0 (cannon)")
     imshow(ax[0, 2], m["p1_sal_colup1"], "magma",
-           r"$\partial$screen$/\partial$COLUP1")
+           r"$\partial$screen$/\partial$COLUP1 (invaders)")
     imshow(ax[0, 3], m["p1_sal_colubk"], "magma",
-           r"$\partial$screen$/\partial$COLUBK")
+           r"$\partial$screen$/\partial$COLUBK (bg)")
 
     # Row 2 — stored switches (graphics) + soft sampler (joystick).
-    imshow(ax[1, 0], m["p2_sal_bit"], "magma",
-           r"$\partial$screen$/\partial$(one graphics bit)")
+    # One graphics bit (bright) shown within the faint cannon outline.
+    can = m["p2_cannon"]; can = can / (can.max() + 1e-6) * 0.35
+    rgb2 = np.stack([can, can, can], axis=-1)
+    rgb2[m["p2_sal_bit"] > 0] = [1.0, 0.85, 0.2]
+    ax[1, 0].imshow(rgb2, aspect="auto", interpolation="nearest")
+    ax[1, 0].set_title(r"$\partial$screen$/\partial$(one graphics bit)",
+                       fontsize=8)
+    ax[1, 0].set_xticks([]); ax[1, 0].set_yticks([])
     ax[1, 0].set_xlabel("flows via stored switch\n(0 for a packed byte)",
                         fontsize=6.5)
 
@@ -69,7 +75,7 @@ def main():
     goal = m["p3_goal"] > 0
     rgb[goal] = [0.78, 0.39, 0.10]                    # orange goal marker
     ax[1, 1].imshow(rgb, aspect="auto", interpolation="nearest")
-    ax[1, 1].set_title("sprite + goal", fontsize=8)
+    ax[1, 1].set_title("cannon + target invader", fontsize=8)
     ax[1, 1].set_xticks([]); ax[1, 1].set_yticks([])
 
     # joystick saliency: signed directional derivative (right + up combined)
