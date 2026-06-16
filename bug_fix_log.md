@@ -5541,3 +5541,28 @@ xitari pristine/upstream vs deterministic-seed the reference). Screen stays
 **63/64**; this residual is xitari non-determinism, NOT a jutari emulation bug.
 New diagnostics committed: tools/full_instr_trace.jl, instr_diff.py,
 elevator_read_diff.py.
+
+---
+
+## #123 (2026-06-16) — elevator_action CLOSED → jutari 64/64 SCREEN + 64/64 RAM 🎉
+
+Per the user's decision (deterministic conformance), closed elevator by making the
+Superchip-RAM init deterministic + identical in both emulators (the #122 root):
+
+- **jutari** (`Cart.jl`): `_sc_ram_lcg_init()` mirrors xitari's exact seed-0 LCG
+  (`v=(v*2416+374441)%1771875`, byte=`v&0xFF`), replacing the zero-fill in the
+  `CartState` ctor for F8SC/F6SC/F4SC. `cart_reset!` does not touch SC RAM (xitari's
+  `CartF8SC::reset` only does `bank(1)`), so it runs once at construction.
+- **xitari** (git-excluded reference — patch committed at
+  `tools/xitari_conformance_seed.patch`): `Random::ourSeeded` defaults to `true`
+  (so the cart RAM init, which runs BEFORE `Console::Console` seeds Random, uses
+  `ourSeed=0` instead of the `time(NULL)` fallback) + `Defaults.cpp` `random_seed`
+  default `"time"→"0"`. Verified xitari SC RAM init is now stable across runs and
+  byte-identical to jutari's LCG(0) (`a9 5f fe ea 06 a1 f9 73 …`).
+
+**Result: full 64-ROM sweep is 64/64 SCREEN pixel-exact AND 64/64 RAM bit-exact**,
+Pkg.test green. elevator frames 30/40/50 → 0 px. No regression (the deterministic
+seed only affects games that read uninitialised SC RAM — i.e. only elevator; the
+other SC games overwrite it, and RIOT RAM is seed-independent). The conformance
+suite is now fully reproducible (no more time-seeded non-determinism). This was the
+last non-exact game — **jutari ≡ xitari, bit-for-bit, on all 64 ALE games.**

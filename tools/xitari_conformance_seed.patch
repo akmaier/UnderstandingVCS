@@ -1,0 +1,50 @@
+# Deterministic-conformance patch for the xitari reference (git-excluded).
+#
+# Purpose: ALE's default `random_seed="time"` seeds the cart Superchip-RAM init
+# (CartF8SC/F6SC/F4SC ctor → ale::Random LCG) from time(NULL), so xitari's SC RAM
+# is NON-DETERMINISTIC. elevator_action's attract demo reads that uninitialised SC
+# RAM as an RNG, so xitari's render varies run-to-run and jutari (deterministic)
+# cannot match it (bug_fix_log #122). This patch pins the seed to 0 so the whole
+# conformance suite is reproducible; jutari mirrors the SAME seed-0 LCG in
+# `jutari/src/cart/Cart.jl::_sc_ram_lcg_init`.
+#
+# The cart RAM is initialised BEFORE Console::Console calls Random::seed(config),
+# so the Defaults change alone is not enough — Random::ourSeeded must also default
+# to true so the pre-Console init uses ourSeed=0 (not the time(NULL) fallback).
+#
+# Apply from the xitari working copy root:  git apply tools/xitari_conformance_seed.patch
+# (or apply the two one-line edits by hand), then rebuild: `make` in xitari/ +
+# `make clean && make` in tools/. Re-apply after any fresh xitari checkout.
+
+diff --git a/common/Defaults.cpp b/common/Defaults.cpp
+index f20f8c2..cca822a 100644
+--- a/common/Defaults.cpp
++++ b/common/Defaults.cpp
+@@ -36,7 +36,7 @@ namespace ale {
+
+ void setDefaultSettings(Settings &settings) {
+     // General settings
+-    settings.setString("random_seed", "time");
++    settings.setString("random_seed", "0");  // deterministic conformance (Superchip RAM init, bug_fix_log #122)
+
+     // Controller settings
+     settings.setString("game_controller", "internal");
+@@ -54,7 +54,7 @@ void setDefaultSettings(Settings &settings) {
+     settings.setBool("restricted_action_set", false);
+     settings.setBool("use_starting_actions", true);
+     settings.setBool("use_environment_distribution", false);
+-    settings.setString("random_seed", "time");
++    settings.setString("random_seed", "0");  // deterministic conformance (Superchip RAM init, bug_fix_log #122)
+     settings.setBool("disable_color_averaging", false);
+
+     // Display Settings
+diff --git a/emucore/Random.cxx b/emucore/Random.cxx
+index 8edb0a4..bfd2af2 100644
+--- a/emucore/Random.cxx
++++ b/emucore/Random.cxx
+@@ -52,5 +52,5 @@ uInt32 Random::next()
+ uInt32 Random::ourSeed = 0;
+
+ // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+-bool Random::ourSeeded = false;
++bool Random::ourSeeded = true;  // deterministic conformance: pre-Console Random (Superchip RAM init) uses ourSeed=0, not time(NULL). bug_fix_log #122

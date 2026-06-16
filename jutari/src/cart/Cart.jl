@@ -53,6 +53,25 @@ const _SC_WRITE_BASE  = 0x1000
 const _SC_AREA_MASK    = 0x1F80
 const _SC_OFFSET_MASK  = 0x007F
 
+# xitari's CartF8SC/F6SC/F4SC ctor fills the 128 B Superchip RAM with
+# `Random::next()` — the ale Random LCG `v = (v*2416+374441) % 1771875`, returning
+# `v & 0xFF`, seeded from `ourSeed` (ALE `random_seed`). For DETERMINISTIC
+# conformance the suite pins `random_seed=0` (xitari Defaults.cpp), so jutari
+# mirrors xitari's exact seed-0 sequence here instead of zero-filling. Games that
+# initialise their SC RAM overwrite this; elevator_action's attract demo reads it
+# UNINITIALISED as a cheap RNG, so matching the init makes elevator deterministic +
+# pixel-exact (bug_fix_log #122). `reset()` does NOT re-init (xitari CartF8SC::reset
+# only does bank(1)), so this runs once at construction.
+function _sc_ram_lcg_init()
+    ram = Vector{UInt8}(undef, _SC_RAM_BYTES)
+    v = 0
+    for i in 1:_SC_RAM_BYTES
+        v = (v * 2416 + 374441) % 1771875
+        ram[i] = UInt8(v & 0xFF)
+    end
+    return ram
+end
+
 const _SIZE_TO_KIND = Dict{Int, Int}(
     2048  => KIND_2K,
     4096  => KIND_4K,
@@ -102,7 +121,7 @@ mutable struct CartState
     CartState(kind::Int, rom::Vector{UInt8}, bank::Int) =
         new(kind, rom, bank,
             kind == KIND_E0 ? Int[0, 0, 0] : Int[],
-            kind in _SC_KINDS ? zeros(UInt8, _SC_RAM_BYTES) : UInt8[])
+            kind in _SC_KINDS ? _sc_ram_lcg_init() : UInt8[])
 end
 
 # --------------------------------------------------------------------------- #

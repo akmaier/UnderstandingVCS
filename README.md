@@ -30,20 +30,19 @@ ALE-supported games** via the per-frame diff sweeps in `tools/rom_sweep/`:
 | sweep | metric | result |
 |---|---|---|
 | **RAM** (`sweep_jutari_ram.py`) | 128 B RIOT RAM, per frame, NOOP from the standard 60-NOOP + 4-RESET boot | **64 / 64 BYTE-IDENTICAL to xitari** ✅ |
-| **Screen** (`sweep_jutari_screen.py`) | 210×160 framebuffer, per frame, 60 frames | **63 / 64 pixel-exact** |
+| **Screen** (`sweep_jutari_screen.py`) | 210×160 framebuffer, per frame, 60 frames | **64 / 64 pixel-exact** ✅ |
 
-**jutari RAM is bit-exact with xitari on every documented game.** Only **1**
-screen delta remains: elevator_action (16 px) — and it is **xitari's own
-non-determinism, not a jutari bug**. xitari initialises the cart's 128 B Superchip
-RAM with a `time(NULL)`-seeded LCG (ALE `random_seed="time"`); elevator's
-attract-mode demo reads that *uninitialised* Superchip RAM as a cheap RNG, so
-xitari's elevator render varies run-to-run. jutari (deterministic 0-init) cannot
-match a time-seeded target. Closing it deterministically requires a
-conformance-methodology change — seed xitari's RNG to a fixed value and mirror its
-LCG in jutari's SC-RAM init (see [bug_fix_log.md](bug_fix_log.md) #122). Along the
-way #121 fixed a genuine jutari bug: `console_reset!` did not reset the cart bank
-(xitari's `System::reset` resets all devices), so jutari ran the wrong bank's reset
-code after the construction probe. The render arc that took screen 44→63/64
+**jutari ≡ xitari, bit-for-bit, on all 64 ALE games — 64/64 RAM AND 64/64
+screen.** The last game (elevator_action) closed via #121–#123: #121 fixed a genuine
+jutari bug (`console_reset!` never reset the cart bank, so after the construction
+probe jutari ran the wrong bank's reset/init code — xitari's `System::reset` resets
+all devices); #122/#123 made the cart's Superchip-RAM init deterministic in both
+emulators. xitari seeds that RAM from `time(NULL)` by default (ALE
+`random_seed="time"`), and elevator's attract demo reads the *uninitialised* SC RAM
+as a cheap RNG, so xitari was non-deterministic; pinning the seed to 0 in both
+(jutari's `_sc_ram_lcg_init` mirrors xitari's exact LCG; xitari patch at
+[tools/xitari_conformance_seed.patch](tools/xitari_conformance_seed.patch)) makes
+the whole suite reproducible AND elevator pixel-exact. The render arc that took screen 44→64/64
 ported xitari's actual per-color-clock object model (deferred RESP + reset-when +
 skip-first-copy — including the HBLANK-RESP skip-first that closed up_n_down (#119),
 the Cosmic Ark M0 bug, deferring the VDELP0/VDELP1/VDELBL
@@ -89,8 +88,11 @@ For the per-phase commit ledger and the complete list of deferrals see
 
 ## Hand-off — pick up here
 
-**Latest (2026-06-16): jutari RAM is 64/64 BIT-EXACT vs xitari; screen 63/64
-pixel-exact — only elevator_action remains.** **#119** closed up_n_down: an HBLANK
+**Latest (2026-06-16): jutari is 64/64 SCREEN pixel-exact AND 64/64 RAM bit-exact
+vs xitari — all 64 ALE games match bit-for-bit. 🎉** The last game closed via
+#121–#123 (cart-bank reset bug + deterministic Superchip-RAM seed; see the
+conformance section above + bug_fix_log #121–#123). Earlier in the push: **#119**
+closed up_n_down: an HBLANK
 RESP strobe must still compute xitari's reset-when skip-first-copy (a far jump
 75→3 → skip the first copy), and the skip-first scanline reset was moved from
 scanline-start to scanline-end so the HBLANK RESP's value survives into the visible
@@ -139,17 +141,19 @@ the core; a temporary `fprintf` in an xitari core loop is acceptable for a
 
 ### Open work — pick up here
 
-**Pixel exactness** is essentially done (screen **63/64**, RAM 64/64). The **1**
-remaining delta — **elevator_action (16 px)** — is xitari's own non-determinism
-(time-seeded uninitialised Superchip RAM read by the attract demo), not a jutari
-bug; see the table below + bug_fix_log #122. The harness is
+**Pixel exactness is COMPLETE — screen 64/64, RAM 64/64.** All 64 ALE games are
+both pixel-exact and byte-exact vs xitari. The last delta (elevator_action) closed
+via #121–#123 (cart-bank reset bug + deterministic Superchip-RAM seed). The
+diagnosis harness, if a future divergence appears, is
 `tools/render_diff.py --rom <r> --frame <f> --auto` (color-attributes each diverging
 pixel to a TIA object via the COLU registers, prints ENAM/RESMP/cosmic state, infers
-per-frame height; needs xitari's `XI_POKE_DUMP` for true activations).
+per-frame height; needs xitari's `XI_POKE_DUMP` for true activations); plus the
+per-instruction tracers `tools/full_instr_trace.jl` + `tools/instr_diff.py`.
 
-| game | px | mechanism (diagnosed) — see bug_fix_log #121/#122 |
-|---|---|---|
-| elevator_action | 16 | **xitari non-determinism, NOT a jutari bug.** xitari fills the cart's 128 B Superchip RAM with a `time(NULL)`-seeded LCG (ALE `random_seed="time"`, `CartF8SC` ctor; `reset()` never re-inits it). elevator's attract demo reads that *uninitialised* SC RAM as a cheap RNG (e.g. `LDA $F0D2` = SC byte 0x52), so xitari's render varies run-to-run; jutari (deterministic 0-init) can't match a time-seeded target. Pinned via a full per-instruction register trace: after #121, the first divergence is exactly this SC-RAM read. **To close deterministically:** seed xitari's RNG to a fixed value (xitari-core change; xitari is git-excluded) + mirror its LCG (`v=(v*2416+374441)%1771875`) in jutari's SC-RAM init — a conformance-methodology change, left as a user decision. See bug_fix_log #122. |
+Conformance now requires the deterministic-seed patch on the (git-excluded) xitari
+reference: **[tools/xitari_conformance_seed.patch](tools/xitari_conformance_seed.patch)**
+(pins `random_seed=0` + `Random::ourSeeded=true` so the Superchip-RAM init is
+reproducible). Re-apply + rebuild xitari after any fresh xitari checkout.
 
 The player object render is now faithful (per-color-clock RESP reset-when +
 skip-first-copy, #115c; Cosmic Ark #115d/e), the VDELP/GRP-shadow FLAGS are deferred
