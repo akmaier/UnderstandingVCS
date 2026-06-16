@@ -4980,3 +4980,39 @@ deferred-write delay — it's how jutari's `beam_cc` maps a post-WSYNC / boundar
 write to the new scanline's start. Shared WSYNC/beam logic (breakout/pong are
 pixel-exact through WSYNC), so any fix must be gated on the full screen+RAM sweep.
 Harness is now the verifier for it.
+
+---
+
+## #115 (2026-06-16) — RESMP per-color-clock deferral → ice_hockey SCREEN exact (44→45/64)
+
+**SOLVED.** ice_hockey rendered 5px/frame wrong (first @ frame 1, rows 87-103):
+xitari draws a 4px missile-0 (NUSIZ0=0x20 → 4-clock width, COLUP0=0x02) at
+cols 72-75; jutari showed background there. The harness color-attribution +
+XI_POKE_DUMP pinned it: xitari's `RESMP0=0x02` store activates at frame-relative
+**cc=210** (poke-delay table entry 0x28 = 0), but the missile is painted at
+**cc=140** (col 72). xitari's `TIA::poke` runs `updateFrame(clock+0)` (renders up
+to the beam) THEN re-gates `myEnabledObjects` on `myENAM0 && !myRESMP0` — so the
+missile painted left of the RESMP write stays visible; only pixels right of cc210
+are suppressed. jutari applied RESMP **immediately at poke time**, so
+`_missile_set`'s `(RESMP & 0x02)` gate suppressed the missile for the WHOLE
+scanline.
+
+**Fix:** defer RESMP0/RESMP1 to their activation color clock exactly like
+ENAM/GRP (TIA.jl `tia_poke!` deferred-write set + `_apply_pending_write!`). The
+render-loop drain recomputes `cached_sets` after each pending write, so the
+suppress re-gate now threads per-color-clock. The 1→0 (lock→release) reposition
+(`_resmp_reposition!`, #103 frostbite) moves into the activation-time apply; the
+HBLANK path (`beam_cc < 68`) still applies immediately, preserving frostbite.
+
+RESMP touches only TIA render state (missile enable + position), never RAM
+directly — so the risk was the narrow collision-read-to-RAM path. **Gated:** RAM
+**64/64 bit-exact** (zero change), screen **44→45/64** (ice_hockey 5→0; all 44
+prior exacts unchanged), jutari Pkg.test green (frostbite/pong-score-stripe RESMP
+cases included). asterix's 1px missile is NOT this — it's a carried-over ENAM0
+state with no RESMP/ENAM poke on the divergent scanline (separate bug).
+
+Found via the render-divergence diagnosis workflow (20 parallel color-attribution
+agents). The same run surfaced the next high-confidence target: **air_raid** is an
+INPT0 default-bit bug (jutari defaults analog pots INPT0-3 to D7=1; xitari joystick
+controllers drive them D7=0 — air_raid's kernel reads INPT0 via `LDA $58` into
+COLUP0/P1, so jutari paints player pixels 0x98 vs xitari 0x18, 24px/frame).

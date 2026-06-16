@@ -2,7 +2,7 @@
 
 Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `trace_dump --screen`, breakout_random_actions stream, first **60** frames after the standard 60-NOOP+4-RESET boot. Same per-game RomSettings as the RAM sweep (so a divergence is a genuine render delta, not a settings/boot mismatch).
 
-**Pixel-exact (0 px) over 60 frames: 44/64.**
+**Pixel-exact (0 px) over 60 frames: 45/64.**
 
 | game | max px/frame | total px | first div frame | worst-frame rows |
 |---|---|---|---|---|
@@ -35,7 +35,7 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | gopher | **0 ✅** | 0 | — | — |
 | gravitar | **0 ✅** | 0 | — | — |
 | hero | **0 ✅** | 0 | — | — |
-| ice_hockey | 5 | 300 | 1 | 87-103 |
+| ice_hockey | **0 ✅** | 0 | — | — |
 | jamesbond | 1 | 60 | 1 | 21-21 |
 | journey_escape | 325 | 19191 | 1 | 13-196 |
 | kangaroo | **0 ✅** | 0 | — | — |

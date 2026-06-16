@@ -639,6 +639,16 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
         reg == W_NUSIZ0 || reg == W_NUSIZ1 ||
         reg == W_COLUP0 || reg == W_COLUP1 || reg == W_COLUPF || reg == W_COLUBK ||
         reg == W_CTRLPF || reg == W_REFP0 || reg == W_REFP1 ||
+        # Task #115 (2026-06-16): also defer RESMP0/RESMP1 so the missile
+        # enable/suppress re-gate (and the 1→0 reposition) thread per-color-
+        # clock instead of applying for the whole scanline. xitari's case
+        # 0x28/0x29 runs `updateFrame(clock + 0)` (RESMP poke-delay = 0) then
+        # re-gates `myEnabledObjects` on `ENAM* && !RESMP*` — so a missile
+        # already painted left of the RESMP write stays visible. Closes
+        # ice_hockey (RESMP0 sets at cc210 but the 4px missile is at cc140).
+        # The HBLANK path below still applies immediately (preserves the
+        # frostbite #103 reposition for VBLANK/HBLANK RESMP writes).
+        reg == W_RESMP0 || reg == W_RESMP1 ||
         # Task #84 (2026-06-10): also defer GRP0/GRP1 (render value).
         # Task #91 round 2 (2026-06-12): the VDELP latch side effects
         # fire at ACTIVATION time in `_apply_pending_write!`, not here.
@@ -825,6 +835,22 @@ end
 # depends on this: GRP0/GRP1 are rewritten 4× per HUD scanline and each
 # digit value lives in the shadow for only ~2 copy slots.
 @inline function _apply_pending_write!(tia::TIAState, reg::Int, val::UInt8)
+    # Task #115 (2026-06-16): RESMP0/RESMP1 deferred to their activation clock.
+    # Capture the pre-store D1 so the 1→0 (lock→release) edge still snaps the
+    # missile to its player centre (xitari case 0x28/0x29 / `_resmp_reposition!`),
+    # but now at the activation color clock so the suppress re-gate threads
+    # per-color-clock through the render drain's `cached_sets` recompute.
+    if reg == W_RESMP0
+        old_d1 = tia.registers[W_RESMP0 + 1] & 0x02
+        tia.registers[W_RESMP0 + 1] = val
+        _resmp_reposition!(tia, 0, old_d1, val)
+        return nothing
+    elseif reg == W_RESMP1
+        old_d1 = tia.registers[W_RESMP1 + 1] & 0x02
+        tia.registers[W_RESMP1 + 1] = val
+        _resmp_reposition!(tia, 1, old_d1, val)
+        return nothing
+    end
     tia.registers[reg + 1] = val
     if reg == W_GRP0
         # Writing GRP0 latches the (current) GRP1 into grp1_old.
