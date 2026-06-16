@@ -420,6 +420,15 @@ class TIAState(NamedTuple):
     m0_cosmic_ark: bool = False
     m0_cosmic_counter: int = 0
     m0_cosmic_line: int = -1
+    # Task #115g (faithful PF reflect): xitari only updates the playfield
+    # REFLECT mask (CTRLPF.D0 → ourPlayfieldTable) on a CTRLPF poke if the
+    # beam is still in the LEFT half ((clock-frameStart)%228 < 68+79 = 147,
+    # TIA.cxx:2181); a right-half reflect change is deferred to the next
+    # scanline (re-latched at scanline end / HMOVE). The other CTRLPF bits
+    # (PFP/score D1-2, ball size D4-5) apply immediately. `pf_reflect` is
+    # that latched reflect bit; `_object_pixel_sets` uses it instead of the
+    # live CTRLPF.D0 (wizard_of_wor writes reflect at cc=213).
+    pf_reflect: bool = False
 
 
 def initial_tia_state() -> TIAState:
@@ -474,6 +483,7 @@ def initial_tia_state() -> TIAState:
         m0_cosmic_ark=False,
         m0_cosmic_counter=0,
         m0_cosmic_line=-1,
+        pf_reflect=False,
     )
 
 
@@ -1397,8 +1407,13 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
             # each rendered scanline STARTS drawing all copies; a mid-line
             # RESP in the drain below sets skip-first for the remainder of
             # THIS scanline only. Mirror of jutari `tia_advance!`.
+            # Task #115g: also latch pf_reflect at scanline start from the
+            # current CTRLPF.D0 — left-half CTRLPF writes update it mid-line
+            # below; right-half ones don't (deferred to next line).
             tia_for_render = tia_for_render._replace(
-                p0_skip_first=False, p1_skip_first=False)
+                p0_skip_first=False, p1_skip_first=False,
+                pf_reflect=bool(int(tia_for_render.registers[W_CTRLPF]) & 0x01),
+            )
             cached_sets = _object_pixel_sets(tia_for_render)
             # P3i-f: track the HMOVE-blank window. When
             # `hmove_blank_pending` is true at scanline start, the
@@ -1418,6 +1433,15 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
                     # Task #91 round 2: store + GRP shadow latch at the
                     # activation clock (xitari poke ordering).
                     tia_for_render = _apply_pending_write(tia_for_render, reg, val)
+                    # Task #115g: a CTRLPF reflect (D0) change takes effect
+                    # THIS scanline only if the write lands in the left half
+                    # (c < 68 + 79 = 147; xitari TIA.cxx:2181). Right-half
+                    # reflect changes wait for the next scanline (the
+                    # scanline-start latch above re-reads CTRLPF then).
+                    # PFP/score/ball-size already applied via _apply_pending_write.
+                    if reg == W_CTRLPF and c < HBLANK_COLOR_CLOCKS + 79:
+                        tia_for_render = tia_for_render._replace(
+                            pf_reflect=bool(int(val) & 0x01))
                     cached_sets = _object_pixel_sets(tia_for_render)
                     write_idx += 1
                 x = c - HBLANK_COLOR_CLOCKS
@@ -1643,6 +1667,11 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
         m0_cosmic_counter=tia_for_render.m0_cosmic_counter if line_advance > 0 else tia.m0_cosmic_counter,
         m0_cosmic_line=tia_for_render.m0_cosmic_line if line_advance > 0 else tia.m0_cosmic_line,
         last_hmove_clock=int(tia.last_hmove_clock),
+        # Task #115g: latched PF reflect bit. Re-latched at scanline start
+        # from CTRLPF.D0; updated mid-line only if a CTRLPF write lands in
+        # the left half (c < 147). Thread out of tia_for_render so the next
+        # advance starts from the correct latched value.
+        pf_reflect=tia_for_render.pf_reflect if line_advance > 0 else tia.pf_reflect,
         # P4c (dump-pot): keep a monotonic CPU-cycle counter so
         # `tia_peek` can decide whether the paddle cap has charged
         # past its xitari-formula threshold yet.
@@ -1994,7 +2023,12 @@ def _object_pixel_sets(tia: TIAState) -> dict[str, set[int]]:
     pf2    = int(tia.registers[W_PF2])
     ctrlpf = int(tia.registers[W_CTRLPF])
     left_bits = _playfield_bits(pf0, pf1, pf2)
-    right_bits = list(reversed(left_bits)) if (ctrlpf & 0x01) else left_bits
+    # Task #115g: use the LATCHED reflect (tia.pf_reflect), NOT the live
+    # CTRLPF.D0 — a right-half CTRLPF reflect change only takes effect next
+    # scanline (xitari TIA.cxx:2181). The tia_advance render-loop maintains
+    # pf_reflect: re-latched at scanline start; updated mid-line ONLY when
+    # the CTRLPF write lands in the left half (c < 147).
+    right_bits = list(reversed(left_bits)) if bool(tia.pf_reflect) else left_bits
     pf: set[int] = set()
     for i, bit in enumerate(left_bits):
         if bit:
