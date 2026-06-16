@@ -4,7 +4,9 @@
 **Key dates (UTC-12):** abstracts **2026-07-21**, full papers **2026-07-28**, supplementary + code **2026-07-31**, camera-ready 2026-12-14.
 **Format:** two-column AAAI style (`aaai2027.sty`/`.bst`), **8 content pages** + unlimited references, **double-blind** (anonymous submission — use `AnonymousSubmission2027.tex`), Reproducibility Checklist required (`ReproducibilityChecklist.tex`, can be `\input` before `\end{document}`). See `document_check.md` for the full compliance checklist.
 
-> Working title (placeholder, anonymize for submission): **"Can an XAI Method Understand a Game Console? A Differentiable Atari VCS as Ground Truth for Explainable AI."**
+> Working title (anonymize for submission): **"A Differentiable Atari VCS: A Complex, Fully Known Ground Truth for Explainable AI."**
+>
+> **Framing (revised 2026-06-16 per author):** the paper *builds and validates the foundation* — it does NOT run the XAI study. Spine: explanation needs ground truth (the inner functioning); today's study objects are either *known-but-trivial* (trees, rules, linear/interpretable-by-design) or *complex-but-unknown* (deep nets, real-world, no ground truth). We build the missing quadrant — a genuinely complex, fully known, differentiable system. The XAI experiments are the program it opens (future work), not this paper's content.
 
 ## Writing style
 

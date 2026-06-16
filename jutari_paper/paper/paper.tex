@@ -26,8 +26,8 @@
 \newcommand{\sg}{\mathrm{sg}}
 \newcommand{\softmax}{\mathrm{softmax}}
 
-\title{Can an XAI Method Understand a Game Console?\\
-A Differentiable Atari VCS as Ground Truth for Explainable AI}
+\title{A Differentiable Atari VCS: A Complex, Fully Known\\
+Ground Truth for Explainable AI}
 
 \author{
     Anonymous Submission
@@ -41,82 +41,97 @@ A Differentiable Atari VCS as Ground Truth for Explainable AI}
 \maketitle
 
 \begin{abstract}
-Explainable AI (XAI) is built to reveal why a model decides as it does,
-yet it is almost always applied to black boxes for which the true
-computation is unknown---so an explanation can be plausible, confident,
-and wrong, with no way to tell. This mirrors a famous result in
-neuroscience: standard analysis methods, applied to a microprocessor
-whose mechanism is fully known, failed to recover how it works. We turn
-that provocation into a constructive program. We build two independent,
-end-to-end \emph{differentiable} ports of the Atari 2600 Video Computer
-System (VCS)---the platform on which deep reinforcement learning was
-born---one in Julia (\textsc{jutari}) and one in JAX (\textsc{jaxtari}),
-each validated bit-for-bit against the \textsc{xitari} reference. The
-Julia port reproduces \textsc{xitari} exactly on all 64 supported
-Arcade-Learning-Environment games: 64/64 byte-identical RAM and 64/64
-pixel-identical screens. We treat the cartridge ROM as a weight tensor,
-the RAM as a soft tape, and control flow as gates, and we prove that the
-soft (differentiable) execution is bit-exact equal to the hard execution
-in the forward pass at any finite temperature, with gradients flowing
-where hard logic has none. The entire system was built in roughly 137
-hours of active work, compressed into 29 calendar days, with large parts
-written autonomously by coding agents. Driving a bit-exact
-re-implementation to pixel exactness even surfaced a latent
-non-determinism bug in the reference itself. This is, to our knowledge,
-the first XAI study object that is at once a real, complex
-information-processing system, fully differentiable, and accompanied by
-complete mechanistic ground truth.
+Explanation requires ground truth: to verify that an account of a system is
+correct, we must know the system's inner functioning. This is precisely what
+is missing wherever explainable AI (XAI) is most needed. The systems we can
+study today fall into two camps. Either they are simple and procedural---
+decision trees, rule lists, sparse linear models---where the mechanism is
+known but trivial, so explaining it tests nothing; or they are genuinely
+complex---deep networks, real-world tasks---where XAI is needed but no ground
+truth of the inner functioning exists, so an explanation can be plausible,
+confident, and wrong with no way to tell. We set out to remove this
+dichotomy by building the foundation for a study object that is at once
+genuinely complex and fully known---and, so that gradient-based methods can
+apply, fully differentiable. We re-implement the Atari 2600 Video Computer
+System (VCS)---a real computer architecture, and the platform on which deep
+reinforcement learning was born---as two independent, end-to-end
+\emph{differentiable} emulators, one in Julia (\textsc{jutari}) and one in
+JAX (\textsc{jaxtari}), each validated bit-for-bit against the \textsc{xitari}
+reference. The Julia port reproduces \textsc{xitari} exactly on all 64
+supported Arcade-Learning-Environment games: 64/64 byte-identical RAM and
+64/64 pixel-identical screens. Treating the cartridge ROM as a weight tensor,
+the RAM as a soft tape, and control flow as gates, we prove that the
+differentiable (soft) execution is bit-exact equal to the original (hard)
+execution in the forward pass at any finite temperature, while exposing
+gradients where bit logic has none. The system was built in roughly 137 hours
+of active work over 29 calendar days, with large parts written autonomously
+by coding agents; driving the re-implementation to pixel exactness even
+surfaced a latent non-determinism bug in the reference itself. This paper
+builds and validates the foundation; turning the XAI toolkit on it is the
+program it opens.
 \end{abstract}
 
 \section{Introduction}
 
-When we look inside a deep neural network and ask \emph{why} it produced a
-particular output, we are doing explainable AI (XAI). Over the past decade
-the field has produced a rich toolkit---saliency maps, gradient-based
-attribution, concept probes, counterfactuals---and these tools have become
-standard instruments for inspecting models we otherwise cannot read. There
-is, however, a quiet problem at the heart of the enterprise. Almost every
-XAI method is applied to a \emph{black box}: a trained network whose true
-internal computation is unknown to us. When the method then reports that
-``these pixels mattered,'' we have no independent answer key against which
-to check whether the explanation is correct. We can measure whether an
-explanation is plausible, or whether humans find it convincing, but not
-whether it is \emph{true}.
+When we explain a system---in explainable AI (XAI) as anywhere else---we are
+making a claim about its inner functioning: \emph{this} part is responsible
+for \emph{that} behaviour. To check whether such a claim is correct, we need
+to know the inner functioning independently, as ground truth. Without it we
+can ask whether an explanation is plausible, or whether humans find it
+convincing, but not whether it is \emph{true}. Ground truth is the
+prerequisite for verification, and it is exactly what is missing where
+explanation matters most.
 
-This situation has a striking precedent outside machine learning. In a
-now-famous study, \citet{jonas2017could} asked whether the standard
-toolkit of systems neuroscience---connectomics, tuning curves, lesioning,
-dimensionality reduction---could recover how a MOS\,6502 microprocessor
-computes, using the chip as a model organism precisely because its
-mechanism is \emph{completely known}. With perfect and unlimited data,
-the methods produced structure that looked meaningful but did not recover
-the processor's actual organisation. Their conclusion was not that the
-chip is mysterious, but that the \emph{methods} were lacking---and that the
-way to find out is to test analysis methods on a system whose ground truth
-we already possess. The MOS\,6502 is no accident here: it is the CPU at
-the heart of the Atari 2600 Video Computer System (VCS), the very platform
-on which modern deep reinforcement learning was demonstrated
+The systems available to study fall into two unsatisfying camps. On one side
+are simple, procedural models---decision trees, rule lists, sparse linear
+models---whose inner functioning is fully known. But here the explanation is
+essentially the model itself; explaining such a model tests an XAI method on
+nothing it could get wrong, and these are not the systems for which XAI was
+created. On the other side are the systems XAI actually targets---deep neural
+networks, learned agents, real-world pipelines---which are genuinely complex,
+and precisely for that reason have no available ground truth of their inner
+functioning. There, an attribution or saliency map can be plausible,
+confident, and wrong, and we have no way to tell
+\citep{atrey2020exploratory,nikulin2019freelunch}. Known-but-trivial, or
+complex-but-unknown: there is no study object that is at once complex enough
+to be a real test and known well enough to grade the answer.
+
+The closest anyone has come to escaping this dichotomy reached outside machine
+learning. In a now-famous study, \citet{jonas2017could} asked whether the
+standard toolkit of systems neuroscience---connectomics, tuning curves,
+lesioning, dimensionality reduction---could recover how a MOS\,6502
+microprocessor computes, using the chip as a model organism precisely because
+its mechanism is complex \emph{and} completely known. With perfect and
+unlimited data, the methods produced structure that looked meaningful but did
+not recover the processor's actual organisation; the conclusion was that the
+\emph{methods} were lacking, and that the way to find out is to test them on a
+system whose ground truth we already possess. Two things, however, stop that
+study short of a substrate for modern XAI: the microprocessor was not
+\emph{differentiable}, so the gradient-based methods at the centre of today's
+toolkit could not be applied to it; and the analyses run on it were classical
+statistics, not XAI. The MOS\,6502 is no accident here---it is the CPU at the
+heart of the Atari 2600 Video Computer System (VCS), the very platform on
+which modern deep reinforcement learning was demonstrated
 \citep{mnih2013playing,mnih2015human,bellemare2013arcade}.
 
-We take this provocation literally, and we invert the usual XAI
-experiment. Instead of explaining a black-box agent whose computation is
-unknowable, we make the \emph{Atari VCS simulator itself} the subject of
-explanation. The simulator is an excellent subject because we know its
-true hierarchy bit-for-bit: a 6507 CPU fetches and executes instructions
-from a cartridge ROM, a Television Interface Adapter (TIA) turns register
-writes into pixels cycle by cycle, and a RIOT chip provides RAM, a timer,
-and the joystick and switch I/O. To turn the modern XAI toolkit---which
-speaks the language of gradients---onto this hand-written C\texttt{++}
-emulator, we make it \emph{differentiable}. We build two independent
-ports: \textsc{jutari} in Julia \citep{bezanson2017julia} and
-\textsc{jaxtari} in JAX \citep{bradbury2018jax}. Each runs in a
-bit-exact \emph{hard} mode and a differentiable \emph{soft} mode, and each
-is validated against \textsc{xitari} \citep{xitari}, the Stella-derived
-C\texttt{++} emulator \citep{stella} that served as the reference for the
-original deep-Q-network (DQN) work.
+We therefore set out to build the missing quadrant: a study object that is
+simultaneously \emph{complex} (a real computer architecture), \emph{fully
+known} to us bit-for-bit, and \emph{differentiable}, so that the gradient-based
+XAI toolkit can in principle be turned on it. We re-implement the VCS---a 6507
+CPU that fetches and executes code from a cartridge ROM, a Television Interface
+Adapter (TIA) that turns register writes into pixels cycle by cycle, and a
+RIOT chip providing RAM, a timer, and joystick and switch I/O---as two
+independent, end-to-end differentiable emulators: \textsc{jutari} in Julia
+\citep{bezanson2017julia} and \textsc{jaxtari} in JAX \citep{bradbury2018jax}.
+Each runs in a bit-exact \emph{hard} mode and a differentiable \emph{soft}
+mode, and each is validated against \textsc{xitari} \citep{xitari}, the
+Stella-derived C\texttt{++} emulator \citep{stella} that served as the
+reference for the original deep-Q-network (DQN) work.
 
-This paper reports the construction and validation of that substrate, and
-a first look at the gradients it exposes. Our contributions are:
+This paper \emph{builds and validates that foundation}. We deliberately do not
+yet run an XAI study on it; constructing a complex, fully known, differentiable
+substrate---and proving it faithful---is itself the contribution, and the XAI
+experiments it enables are the program it opens. Our contributions are:
 \begin{itemize}
   \item \textbf{Two differentiable VCS ports.} Independent Julia and JAX
   implementations of the full VCS (CPU, TIA, RIOT, cartridge
@@ -138,20 +153,31 @@ a first look at the gradients it exposes. Our contributions are:
   formally defined bit- and pixel-exactness metrics, and the finding that a
   bit-exact re-implementation is itself an audit tool for its reference: it
   exposed a non-determinism bug in \textsc{xitari}.
-  \item \textbf{A first gradient analysis} on the differentiable substrate,
-  establishing that exact ROM-byte and register gradients can be computed
-  and localised against known ground truth.
+  \item \textbf{A proof-of-concept gradient readout} showing that the
+  foundation works as intended: exact register- and ROM-byte gradients that
+  localise to the correct hardware element when checked against the known
+  mechanism---a demonstration that the substrate is ready for XAI, not an XAI
+  study in itself.
 \end{itemize}
 
 We are careful throughout to separate what we have \emph{proven}, what we
-have \emph{measured}, and what we \emph{conjecture}. The differentiable
-substrate is the instrument; turning the full XAI toolkit on it, and
-scoring each method against the known mechanism, is the program this paper
-opens rather than closes.
+have \emph{measured}, and what we \emph{conjecture}. The differentiable VCS is
+the instrument; building it, and proving it faithful, is the work of this
+paper, and turning the full XAI toolkit on it---scoring each method against
+the known mechanism---is the program it opens rather than closes.
 
 \section{Background and Related Work}
 
-\subsection{XAI Has No Answer Key}
+\subsection{Explanation Needs Ground Truth}
+
+One response to the absence of ground truth is to give up generality and study
+only models that are transparent by construction: decision trees, rule lists,
+sparse linear models, or interpretable-by-design surrogates. For these the
+inner functioning is known---but it is known because it is trivial, and the
+explanation is little more than the model written out. Such models are not the
+ones XAI was built for, and reproducing their structure tests an XAI method on
+a problem it cannot fail. The interesting regime is the opposite one, and it is
+where ground truth disappears.
 
 The dominant XAI tools are \emph{attribution} or \emph{saliency} methods,
 which assign each input element a number reflecting how much it mattered to
@@ -199,7 +225,8 @@ surrogate to mimic it, but its strongest correctness measure is fidelity
 mechanism \citep{kontogiannis2023xdqn}. The recurring obstacle is exactly
 the one \citet{jonas2017could} identified: without a study object whose true
 mechanism is available, an explanation cannot be graded as right or wrong.
-We supply such an object.
+We build such an object---complex, fully known, and differentiable---and prove
+it faithful; using it to grade XAI methods is the program it enables.
 
 \subsection{Known Operators and Differentiable Programming}
 
@@ -592,11 +619,13 @@ comfortably interactive and amortises over many attributions; for
 batched, training-scale rollouts the JAX path would instead want
 vectorised parallel environments.
 
-\subsection{A First Gradient Analysis}
+\subsection{Proof of Concept: Ground-Truth Gradients}
 
-Because soft mode is forward-exact (Theorem~\ref{thm:exact}), it yields exact
-gradients of any scalar read-out with respect to the state and the ROM. As a
-sanity check against known ground truth, we differentiate individual rendered
+The point of the foundation is that gradients computed on it can be
+\emph{checked}. Because soft mode is forward-exact (Theorem~\ref{thm:exact}),
+it yields exact gradients of any scalar read-out with respect to the state and
+the ROM. As a first check against known ground truth, we differentiate
+individual rendered
 pixels with respect to the TIA colour registers: the gradient of a player-sprite
 pixel localises to the player-colour register \texttt{COLUP0}, a background
 pixel to \texttt{COLUBK}, and a wall pixel to the playfield-colour register
@@ -660,18 +689,18 @@ conformance of \textsc{jutari}.
 \section{Conclusion}
 
 We set out to give explainable AI something it has never had: a study object
-that is a genuine, complex information-processing system, fully
-differentiable, and accompanied by complete mechanistic ground truth. We built
-it twice, in Julia and JAX, validated one port bit-for-bit against the
-reference on all 64 supported Atari games, and proved that the differentiable
-forward pass is bit-exact equal to the original machine while exposing
-gradients where bit logic has none. Where \citet{jonas2017could} asked whether
-the methods of one field could understand a microprocessor and found they
-could not, we have turned the question into a measurable program for XAI: with
-the mechanism fully known and differentiable, every attribution a method
-produces can now be scored as right or wrong. The instrument is built; turning
-it on the full XAI toolkit, game by game and method by method, is the work
-this paper begins.
+that escapes the known-but-trivial / complex-but-unknown dichotomy by being a
+genuine, complex information-processing system that is at the same time fully
+known and fully differentiable. We built it twice, in Julia and JAX, validated
+one port bit-for-bit against the reference on all 64 supported Atari games, and
+proved that the differentiable forward pass is bit-exact equal to the original
+machine while exposing gradients where bit logic has none. This is the
+foundation, not the experiment. With the mechanism fully known and
+differentiable, an attribution a method produces can now---for the first time
+on a system of this complexity---be scored as right or wrong against the truth.
+Turning the full XAI toolkit on this foundation, game by game and method by
+method, and so testing the methods themselves the way \citet{jonas2017could}
+argued one should, is the program this paper makes possible.
 
 \section*{Ethical Statement}
 This work involves no human subjects, personal data, or sensitive
