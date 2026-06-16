@@ -33,13 +33,17 @@ ALE-supported games** via the per-frame diff sweeps in `tools/rom_sweep/`:
 | **Screen** (`sweep_jutari_screen.py`) | 210×160 framebuffer, per frame, 60 frames | **63 / 64 pixel-exact** |
 
 **jutari RAM is bit-exact with xitari on every documented game.** Only **1**
-screen delta remains (render-only, on RAM-bit-exact emulation): elevator_action
-(16 px) — a RAM-invisible `scanline_cycle` beam-phase drift (+45 color-clocks /
-+15 CPU-cycles) on a frame-40 sl4-WSYNC → sl5-RESM0 sequence, which mispositions the
-missile (m0=81 vs xitari 45) only when ENAM0 enables it at frame 40; the drift
-self-corrects by sl 23. It is a deep CPU↔TIA beam-thread issue, deferred because
-that thread is the RAM-bit-exact backbone of all 64 games (see
-[bug_fix_log.md](bug_fix_log.md) #120). The render arc that took screen 44→63/64
+screen delta remains: elevator_action (16 px) — and it is **xitari's own
+non-determinism, not a jutari bug**. xitari initialises the cart's 128 B Superchip
+RAM with a `time(NULL)`-seeded LCG (ALE `random_seed="time"`); elevator's
+attract-mode demo reads that *uninitialised* Superchip RAM as a cheap RNG, so
+xitari's elevator render varies run-to-run. jutari (deterministic 0-init) cannot
+match a time-seeded target. Closing it deterministically requires a
+conformance-methodology change — seed xitari's RNG to a fixed value and mirror its
+LCG in jutari's SC-RAM init (see [bug_fix_log.md](bug_fix_log.md) #122). Along the
+way #121 fixed a genuine jutari bug: `console_reset!` did not reset the cart bank
+(xitari's `System::reset` resets all devices), so jutari ran the wrong bank's reset
+code after the construction probe. The render arc that took screen 44→63/64
 ported xitari's actual per-color-clock object model (deferred RESP + reset-when +
 skip-first-copy — including the HBLANK-RESP skip-first that closed up_n_down (#119),
 the Cosmic Ark M0 bug, deferring the VDELP0/VDELP1/VDELBL
@@ -90,10 +94,14 @@ pixel-exact — only elevator_action remains.** **#119** closed up_n_down: an HB
 RESP strobe must still compute xitari's reset-when skip-first-copy (a far jump
 75→3 → skip the first copy), and the skip-first scanline reset was moved from
 scanline-start to scanline-end so the HBLANK RESP's value survives into the visible
-region. **#120** is the full diagnosis of the sole remaining game (elevator_action):
-a RAM-invisible `scanline_cycle` beam-phase drift (+45 cc) on a frame-40
-WSYNC→RESM0 sequence — deferred as the highest-risk CPU↔TIA-thread change (see
-below + bug_fix_log #120). Following the "match the deep runtime logic, not the scoreboard"
+region. **#121** fixed a genuine jutari bug — `console_reset!` never reset the cart
+bank (xitari's `System::reset` resets all devices incl. `Cartridge::reset`), so
+after the construction probe jutari ran the WRONG bank's reset/init code; a full
+per-instruction register trace (jutari vs xitari) pinned it. **#122** then showed
+the *sole* remaining game (elevator_action) is xitari's own non-determinism: the
+attract demo reads `time(NULL)`-seeded uninitialised Superchip RAM as an RNG, so
+xitari varies run-to-run and jutari (deterministic) can't match it — closing it
+needs a methodology change (seed xitari + mirror its LCG). Following the "match the deep runtime logic, not the scoreboard"
 philosophy, the player object renderer was ported to xitari's actual per-color-clock
 model — **#115c**: deferred mid-scanline RESP + reset-when + skip-first-copy
 (`PORT_OBJECT_RENDER_PLAN.md`). That closed **carnival** and slashed the
@@ -131,16 +139,17 @@ the core; a temporary `fprintf` in an xitari core loop is acceptable for a
 
 ### Open work — pick up here
 
-**Pixel exactness** is essentially done (screen **63/64**, RAM 64/64). Only **1**
-delta remains — **elevator_action (16 px)** — and it is a deep CPU↔TIA beam-thread
-issue, not a render mechanism. The harness is
+**Pixel exactness** is essentially done (screen **63/64**, RAM 64/64). The **1**
+remaining delta — **elevator_action (16 px)** — is xitari's own non-determinism
+(time-seeded uninitialised Superchip RAM read by the attract demo), not a jutari
+bug; see the table below + bug_fix_log #122. The harness is
 `tools/render_diff.py --rom <r> --frame <f> --auto` (color-attributes each diverging
 pixel to a TIA object via the COLU registers, prints ENAM/RESMP/cosmic state, infers
 per-frame height; needs xitari's `XI_POKE_DUMP` for true activations).
 
-| game | px | mechanism (diagnosed) — see bug_fix_log #120 |
+| game | px | mechanism (diagnosed) — see bug_fix_log #121/#122 |
 |---|---|---|
-| elevator_action | 16 | RAM-invisible `scanline_cycle` beam-phase drift: frame-40 sequence `WSYNC sl4 x=204 → HMM0 sl5 x=30 → RESM0 sl5 x=102`. WSYNC stall is correct (RAM 64/64), but by the RESM0 jutari's beam_cc reads 147 vs xitari 102 (+45 cc / +15 cyc), so m0=83 not 38 → HMOVEs to m0=81 vs 45 → 16 px when ENAM0 enables at frame 40. Drift self-corrects by sl 23 (HMOVE bcc=9 matches). **Next step:** per-instruction (PC, scanline_cycle, total_cycles) trace in the M6502 step loop over frame-40 sl4→sl5 vs xitari's per-instruction beam to pin the over-advancing instruction; fix in the beam thread; gate hard on RAM 64/64 (revert on ANY byte change). Deferred because the CPU↔TIA thread is the RAM-bit-exact backbone of all 64 games. |
+| elevator_action | 16 | **xitari non-determinism, NOT a jutari bug.** xitari fills the cart's 128 B Superchip RAM with a `time(NULL)`-seeded LCG (ALE `random_seed="time"`, `CartF8SC` ctor; `reset()` never re-inits it). elevator's attract demo reads that *uninitialised* SC RAM as a cheap RNG (e.g. `LDA $F0D2` = SC byte 0x52), so xitari's render varies run-to-run; jutari (deterministic 0-init) can't match a time-seeded target. Pinned via a full per-instruction register trace: after #121, the first divergence is exactly this SC-RAM read. **To close deterministically:** seed xitari's RNG to a fixed value (xitari-core change; xitari is git-excluded) + mirror its LCG (`v=(v*2416+374441)%1771875`) in jutari's SC-RAM init — a conformance-methodology change, left as a user decision. See bug_fix_log #122. |
 
 The player object render is now faithful (per-color-clock RESP reset-when +
 skip-first-copy, #115c; Cosmic Ark #115d/e), the VDELP/GRP-shadow FLAGS are deferred
