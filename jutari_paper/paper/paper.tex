@@ -560,11 +560,7 @@ Both ports are bit-for-bit identical to \textsc{xitari} on \emph{all} 64 ALE
 games: 64/64 games are RAM-exact (zero differing bytes across every frame) and
 64/64 are pixel-exact (zero differing pixels across every frame). Reaching full
 pixel exactness required porting \textsc{xitari}'s actual per-colour-clock TIA
-object model rather than approximating its output---deferred sprite
-repositioning, the reset-then-skip-first-copy rule, the vertical-delay shadow
-latch, and the playfield-reflect gate---following the principle that the
-mechanism, not the scoreboard, is what must match, because the eventual XAI
-attribution projects gradients onto this very frame buffer.
+object model rather than approximating its output.
 
 \subsection{Effort: Person-Months into Days}
 
@@ -581,12 +577,19 @@ calendar window.}
 \end{figure*}
 
 The project comprises 373 commits over a 29-day calendar span
-(Figure~\ref{fig:timeline}). Removing idle gaps longer than three hours leaves
-52 active sessions totalling \textbf{136.8 hours}, or about \textbf{5.7
-working days} of active implementation; the estimate is stable under the
-threshold choice (106 hours at a two-hour cutoff, 162 hours at four hours),
-and the median in-session cadence is one commit every ${\sim}13$ minutes.
-Roughly 80\% of the calendar span was idle and excluded. Against this we built
+(Figure~\ref{fig:timeline}). To estimate active implementation time we split
+the commit stream into work sessions. We use a three-hour gap between
+consecutive commits as the session boundary: within a session commits are
+minutes apart (the median is one every ${\sim}13$ minutes), whereas idle
+periods last many hours, so three hours sits well above normal working pauses
+and below the idle stretches. The split is therefore insensitive to the exact
+value---106 active hours at a two-hour cutoff, 162 at four hours. With the
+three-hour boundary, the 373 commits form 52 active sessions totalling
+\textbf{136.8 hours}, or about \textbf{5.7 working days}. The remaining
+${\sim}80\%$ of the calendar span was idle and excluded: it consists mostly of
+stretches when the lead programmer was travelling and without reliable internet
+access. The work used Anthropic's Claude Opus~4.7 and Opus~4.8 as the primary
+coding models, with a brief autonomous stint by Fable~5. Against this we built
 two independent emulators totalling ${\sim}17{,}900$ lines of source and a
 comparable volume of tests (${\sim}1{,}990$ test cases across the two ports),
 and chased 67 distinct numbered bug investigations to a bit-exact result.
@@ -610,13 +613,14 @@ per second and \textsc{jaxtari} ${\sim}1{,}666$, a ${\sim}218\times$ gap
 (Table~\ref{tab:ports}). The difference is dominated by per-operation
 kernel-launch overhead in JAX: each soft step decodes one opcode and
 dispatches through a 256-way switch, and at single-instruction granularity the
-launch overhead dwarfs the work, whereas Julia inlines the small handlers.
-This is a property of the execution granularity, not of the AD systems: for a
-gradient-based XAI workflow, which takes one forward-plus-backward pass per
-attribution, \textsc{jaxtari}'s ${\sim}30$\,s per 50{,}000-step trace is
-comfortably interactive and amortises over many attributions; for
-batched, training-scale rollouts the JAX path would instead want
-vectorised parallel environments.
+per-launch overhead far exceeds the computation of the instruction itself,
+whereas Julia inlines the small handlers. This is a property of the execution
+granularity, not of the AD systems: for a gradient-based XAI workflow, which
+takes one forward-plus-backward pass per attribution, \textsc{jaxtari}'s
+${\sim}30$\,s per 50{,}000-step trace is comfortably interactive and amortises
+over many attributions; for batched, training-scale rollouts the JAX
+implementation is far more efficient when many environments are vectorised and
+run in parallel, which amortises the per-launch overhead.
 
 \subsection{Proof of Concept: Ground-Truth Gradients}
 
@@ -705,14 +709,13 @@ prepared a fix to report upstream.
 The hardest divergences were in timing: the RIOT timer's
 reset state, the TIA's sub-cycle object rendering, and the boot-time format
 probe that seeds free-running counters games never re-initialise. Two model
-anecdotes are worth recording for the history. The bulk of the work
-(366 commits) was carried out by one frontier coding model; a single
-autonomous session was driven by a second model during an author absence; and
-the very first scaffolding was attempted by a third model that then declined
-the full port, unable to decompose it into modules and tests. We mention these
-only to document that autonomous capability on a task of this size is real but
-uneven across systems, and that the conformance gate---not the model---was
-what made the autonomy safe.
+anecdotes are worth recording. The bulk of the work was carried out by Claude
+Opus~4.7 and 4.8; a single autonomous session, during an author absence, was
+driven by Fable~5; and the very first scaffolding was attempted by a different
+model (Kimi) that then declined the full port, unable to decompose it into
+modules and tests. We mention these only to document that autonomous capability
+on a task of this size is real but uneven across systems, and that the
+conformance gate---not the model---was what made the autonomy safe.
 
 Some limitations remain. The full ROM-byte integrated-gradient study is
 incomplete, and the effort comparison is an order-of-magnitude estimate rather
