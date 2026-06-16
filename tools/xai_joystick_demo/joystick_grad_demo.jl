@@ -101,11 +101,11 @@ println("PART 1: d/dCOLUP0=", g[COLUP0], "  d/dRESP0=", g[RESP0],
 # ============================================================================
 # PART 2 — stored-switch content: per-bit cannon graphics become differentiable.
 # ============================================================================
-const SCALE = 2
-const CX0, CY0 = 72, CAN_TOP
+const SCALE = 2                # vertical only; horizontal stays 1x like Part 1
+const CX0, CY0 = CAN_X0, CAN_TOP
 const FOOT = let f = [zeros(Float32, H, W) for _ in 1:8, _ in 1:8]
-    for i in 1:8, j in 1:8, sy in 0:SCALE-1, sx in 0:SCALE-1
-        r = CY0 + (i-1)*SCALE + sy; c = CX0 + (j-1)*SCALE + sx
+    for i in 1:8, j in 1:8, sy in 0:SCALE-1
+        r = CY0 + (i-1)*SCALE + sy; c = CX0 + (j-1)
         (0 <= r < H && 0 <= c < W) && (f[i, j][r+1, c+1] = 1f0)
     end
     f
@@ -129,8 +129,8 @@ tri(t) = max(0f0, 1f0 - abs(t))
 const CAN_ONPIX = let acc = Tuple{Int,Int}[]
     for (rr, byte) in enumerate(CANNON), b in 0:7
         if (byte >> (7 - b)) & 1 == 1
-            for sy in 0:VS-1, sx in 0:VS-1
-                push!(acc, ((rr-1)*VS + sy, b*VS + sx))
+            for sy in 0:VS-1               # vertical 2x; horizontal 1x (8 wide)
+                push!(acc, ((rr-1)*VS + sy, b))
             end
         end
     end
@@ -140,8 +140,8 @@ end
 const INV_FOOT = let m = zeros(Float32, H, W)
     for cx in INV_COLS, (rr, byte) in enumerate(INVADER), b in 0:7
         if (byte >> (7 - b)) & 1 == 1
-            for sy in 0:VS-1, sx in 0:VS-1
-                r = INV_TOP + (rr-1)*VS + sy; c = cx + b*VS + sx
+            for sy in 0:VS-1
+                r = INV_TOP + (rr-1)*VS + sy; c = cx + b
                 (0 <= r < H && 0 <= c < W) && (m[r+1, c+1] = 1f0)
             end
         end
@@ -189,8 +189,8 @@ end
 goal = zeros(Float32, H, W)
 for (rr, byte) in enumerate(INVADER), b in 0:7
     if (byte >> (7 - b)) & 1 == 1
-        for sy in 0:VS-1, sx in 0:VS-1
-            r = INV_TOP + (rr-1)*VS + sy; c = INV_COLS[3] + b*VS + sx
+        for sy in 0:VS-1
+            r = INV_TOP + (rr-1)*VS + sy; c = INV_COLS[3] + b
             (0 <= r < H && 0 <= c < W) && (goal[r+1, c+1] = 1f0)
         end
     end
