@@ -63,7 +63,7 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | tennis | **0 ✅** | 0 | — | — |
 | time_pilot | **0 ✅** | 0 | — | — |
 | tutankham | **0 ✅** | 0 | — | — |
-| up_n_down | 63 | 3780 | 1 | 5-203 |
+| up_n_down | 27 | 1620 | 1 | 15-25 |
 | venture | **0 ✅** | 0 | — | — |
 | video_pinball | **0 ✅** | 0 | — | — |
 | videochess | **0 ✅** | 0 | — | — |

@@ -5247,3 +5247,30 @@ GRP0) for up_n_down frame 1 sl 36, and diff against xitari's per-poke dgrp0 (now
 frame-isolable via XIFRAME). That pins which GRP1 activation captures the wrong
 GRP0 (a ±1-clock GRP0/GRP1 activation-ordering issue is the leading hypothesis).
 elevator_action still blocked on the same per-frame trace for its VBLANK missile.
+
+---
+
+## #118 (2026-06-16) — per-pixel VBLANK D1 output-blanking → up_n_down 63→27px
+
+up_n_down was MISDIAGNOSED (#116/#117) as a GRP-shadow over-capture. The real bug:
+**VBLANK D1 (output-blanking) was applied whole-scanline**, but xitari threads it
+per-color-clock. up_n_down toggles VBLANK mid-VISIBLE-scanline — clears it at cc 130
+on row 5 (sl 35) and sets it at cc 193 on row 203 (sl 233) — so xitari blanks only
+the pixels on the VBLANK-on side; jutari blanked/rendered the whole row (using the
+end-of-line VBLANK value for the branch).
+
+Fix (TIA.jl): `vblank_d1_carry` = the VBLANK D1 at the visible start, carried across
+scanlines (HBLANK writes set it immediately; the end-of-line value carries forward).
+Visible VBLANK writes are deferred (poke-delay 1) to pending_writes; the render loop
+threads a per-pixel `vblank_px` (flips at the deferred write's cc) and blanks those
+pixels (collisions still run — output-blanking ≠ collision-disable). The branch
+decision changed from `!vblank_active` (end value) to `!vblank_fully` (VBLANK on at
+visible-start AND no clear this line) so partially-blanked lines take the per-pixel
+visible branch instead of blanking/rendering the whole row.
+
+**Gated:** RAM 64/64 bit-exact (the visible branch now runs collisions on partial-
+VBLANK lines — no RAM change), Pkg.test green, NO other game regressed (only
+elevator_action + up_n_down still fail). up_n_down 63→27px (rows 5 top + 203 bottom
+fixed). Residual: 5px @ row 19 (sl 49) — an EXTRA player copy at cols 3-7 (left
+edge), a SEPARATE HMOVE-comb/edge-wrap issue, not VBLANK. Screen stays 62/64
+(up_n_down not yet fully closed).

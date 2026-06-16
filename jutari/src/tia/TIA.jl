@@ -430,6 +430,13 @@ mutable struct TIAState
     # immediately. `pf_reflect` is that latched reflect bit; the renderer uses it
     # instead of the live CTRLPF.D0 (wizard_of_wor writes reflect at cc=213).
     pf_reflect::Bool
+    # Task #118 (per-pixel VBLANK): the VBLANK D1 (output-blanking) state at the
+    # START of the visible region, carried across scanlines. A VBLANK write in the
+    # VISIBLE region (e.g. up_n_down clears it at cc 130 on row 5) must blank only
+    # the pixels LEFT of its activation, not the whole scanline — xitari renders
+    # per-color-clock. Updated immediately by HBLANK VBLANK writes and threaded by
+    # deferred visible VBLANK writes; collisions still run during the blanked part.
+    vblank_d1_carry::Bool
 end
 
 # INPT defaults: paddle pots ($80 = centred), triggers idle high (D7=1). Task
@@ -470,6 +477,7 @@ initial_tia_state() = TIAState(
     false, false,                      # task #115: p0_skip_first / p1_skip_first
     0, false, 0, -1,                   # task #115: cosmic-ark (clock/enabled/counter/line)
     false,                             # task #115: pf_reflect (latched CTRLPF.D0)
+    false,                             # task #118: vblank_d1_carry
 )
 
 """
@@ -848,6 +856,17 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
         tia.vsync_active = new_vsync
     elseif reg == W_VBLANK
         tia.vblank_active = (Int(value) & 0x02) != 0
+        # Task #118: per-pixel VBLANK D1 (output-blanking) threading. An HBLANK
+        # write sets the visible-start carry immediately (whole visible region);
+        # a VISIBLE write defers to its activation color clock (poke-delay 1) so
+        # only pixels right of the write flip — up_n_down clears VBLANK at cc 130
+        # on row 5 and xitari blanks cols < 130 (the player copies). vblank_active
+        # above still drives the visible-vs-blank branch choice (end-of-line value).
+        if Int(beam_cc) < HBLANK_COLOR_CLOCKS
+            tia.vblank_d1_carry = (Int(value) & 0x02) != 0
+        else
+            push!(tia.pending_writes, (Int(beam_cc) + 1, W_VBLANK, value8))
+        end
         # P4c (dump-pot) — VBLANK D7 grounds the paddle-pot cap. On
         # the 1→0 transition we capture the cycle so subsequent
         # INPT0-3 reads can ask "has the cap charged past the
@@ -1117,7 +1136,16 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
         # (via `_apply_pixel_collisions!`) so the bit OR sees the
         # post-write object sets at each color clock.
         pending_sorted = sort(tia.pending_writes; by = w -> w[1])
-        if !tia.vblank_active
+        # Task #118: a scanline is FULLY output-blanked only if VBLANK D1 is on at
+        # the visible start AND no VBLANK write clears it this line. Otherwise it
+        # has at least one rendered pixel → take the per-pixel visible branch (which
+        # blanks the VBLANK-on segments itself). The old `!tia.vblank_active` used
+        # the END value, wrongly blanking the whole line when VBLANK toggles
+        # mid-scanline (up_n_down clears at cc 130 on row 5, sets at cc 193 on the
+        # bottom row 203).
+        vblank_fully = tia.vblank_d1_carry &&
+            !any(w -> w[2] == W_VBLANK && (w[3] & 0x02) == 0, pending_sorted)
+        if !vblank_fully
             row = Vector{UInt8}(undef, SCREEN_WIDTH)
             write_idx = 1
             # Task #115: xitari resets the player mask to draw-all (skip-first=0)
@@ -1137,6 +1165,9 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
             # (c=68..75 → x=0..7) render as 0 (black bar); collision
             # detection still runs. After c >= 76 the flag clears.
             hmove_blank_active = tia.hmove_blank_pending
+            # Task #118: per-pixel VBLANK output-blanking. Starts at the carried
+            # visible-start D1; a deferred visible VBLANK write flips it mid-line.
+            vblank_px = tia.vblank_d1_carry
             for c in HBLANK_COLOR_CLOCKS:(COLOR_CLOCKS_PER_SCANLINE - 1)
                 # Apply any pending writes whose activation_clock <= c
                 # before rendering the pixel.
@@ -1153,6 +1184,11 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
                     if reg == W_CTRLPF && c < HBLANK_COLOR_CLOCKS + 79
                         tia.pf_reflect = (val & 0x01) != 0
                     end
+                    # Task #118: a deferred VISIBLE VBLANK write flips output-
+                    # blanking from this color clock onward.
+                    if reg == W_VBLANK
+                        vblank_px = (val & 0x02) != 0
+                    end
                     cached_sets = _object_pixel_sets(tia)
                     write_idx += 1
                 end
@@ -1162,7 +1198,9 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
                 if hmove_blank_active && c >= HBLANK_COLOR_CLOCKS + 8
                     hmove_blank_active = false
                 end
-                if hmove_blank_active
+                if hmove_blank_active || vblank_px
+                    # Task #118: VBLANK output-blanking is per-pixel — blank cols
+                    # left of a mid-scanline VBLANK clear (collision still runs below).
                     row[x + 1] = UInt8(0)
                 else
                     # Task #110 (PAL colour-loss): on odd-frame PAL frames xitari
@@ -1339,6 +1377,11 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
                 _cosmic_ark_advance!(tia)
             end
         end
+        # Task #118: carry the end-of-scanline VBLANK D1 to the next scanline's
+        # visible-start blanking state (the next line's HBLANK VBLANK writes update
+        # it again before its render). registers[VBLANK] holds the last applied
+        # value (immediate + drained deferred writes).
+        tia.vblank_d1_carry = (tia.registers[W_VBLANK + 1] & 0x02) != 0
     end
 
     # PXC1-x: don't increment the frame counter on scanline-wrap. The
