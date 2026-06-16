@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+"""Render the qualitative joystick/gradient XAI figure from the maps written
+by joystick_grad_demo.jl. Outputs a vector PDF into the paper's figures dir.
+
+  python3 make_joystick_fig.py
+"""
+import os
+import numpy as np
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+HERE = os.path.dirname(__file__)
+OUT = os.path.join(HERE, "out")
+FIG = os.path.abspath(os.path.join(HERE, "..", "..", "jutari_paper", "paper",
+                                   "figures", "fig_xai_joystick.pdf"))
+
+plt.rcParams.update({"font.family": "serif", "font.size": 8,
+                     "pdf.fonttype": 42, "ps.fonttype": 42})
+
+INK = "#1a1a1a"; STEEL = "#35618f"; ORANGE = "#c8641a"
+
+
+def load():
+    maps = {}
+    with open(os.path.join(OUT, "manifest.txt")) as f:
+        for line in f:
+            name, r, c = line.split()
+            arr = np.fromfile(os.path.join(OUT, name + ".bin"), dtype="<f4")
+            maps[name] = arr.reshape(int(r), int(c))
+    grad = {}
+    with open(os.path.join(OUT, "p3_grad.txt")) as f:
+        for line in f:
+            k, v = line.split()
+            grad[k] = float(v)
+    return maps, grad
+
+
+def imshow(ax, A, cmap, title, vmin=None, vmax=None):
+    ax.imshow(A, cmap=cmap, vmin=vmin, vmax=vmax, aspect="auto",
+              interpolation="nearest")
+    ax.set_title(title, fontsize=8)
+    ax.set_xticks([]); ax.set_yticks([])
+
+
+def main():
+    m, grad = load()
+    fig, ax = plt.subplots(2, 4, figsize=(7.0, 3.7))
+
+    # Row 1 — genuine gradients in jutari's unmodified soft renderer.
+    imshow(ax[0, 0], m["p1_frame"], "gray", "rendered scene")
+    imshow(ax[0, 1], m["p1_sal_colup0"], "magma",
+           r"$\partial$screen$/\partial$COLUP0")
+    imshow(ax[0, 2], m["p1_sal_colup1"], "magma",
+           r"$\partial$screen$/\partial$COLUP1")
+    imshow(ax[0, 3], m["p1_sal_colubk"], "magma",
+           r"$\partial$screen$/\partial$COLUBK")
+
+    # Row 2 — stored switches (graphics) + soft sampler (joystick).
+    imshow(ax[1, 0], m["p2_sal_bit"], "magma",
+           r"$\partial$screen$/\partial$(one graphics bit)")
+    ax[1, 0].set_xlabel("flows via stored switch\n(0 for a packed byte)",
+                        fontsize=6.5)
+
+    # neutral frame with the goal marker outlined
+    fr = m["p3_frame_neutral"].copy()
+    base = fr / (fr.max() + 1e-6)
+    rgb = np.stack([base, base, base], axis=-1)
+    goal = m["p3_goal"] > 0
+    rgb[goal] = [0.78, 0.39, 0.10]                    # orange goal marker
+    ax[1, 1].imshow(rgb, aspect="auto", interpolation="nearest")
+    ax[1, 1].set_title("sprite + goal", fontsize=8)
+    ax[1, 1].set_xticks([]); ax[1, 1].set_yticks([])
+
+    # joystick saliency: signed directional derivative (right + up combined)
+    sal = m["p3_sal_right"] - m["p3_sal_left"] + 0  # right-sense map
+    v = np.abs(sal).max() + 1e-6
+    imshow(ax[1, 2], sal, "RdBu_r",
+           r"$\partial$screen$/\partial$joystick$_{\rightarrow}$",
+           vmin=-v, vmax=v)
+
+    # joystick gradient bar chart + inferred direction
+    a = ax[1, 3]
+    order = ["up", "down", "left", "right"]
+    vals = [grad[k] for k in order]
+    cols = [ORANGE if v > 0 else STEEL for v in vals]
+    a.bar(range(4), vals, color=cols, width=0.7)
+    a.axhline(0, color=INK, lw=0.6)
+    a.set_xticks(range(4)); a.set_xticklabels(["U", "D", "L", "R"], fontsize=7)
+    a.set_title(r"$\partial$objective$/\partial$joystick", fontsize=8)
+    a.tick_params(labelsize=6)
+    pos = [order[i].upper() for i in range(4) if vals[i] > 0]
+    a.set_xlabel("push: " + "+".join(pos), fontsize=6.5, color=ORANGE)
+    for s in ("top", "right"):
+        a.spines[s].set_visible(False)
+
+    fig.tight_layout(pad=0.4, h_pad=0.9, w_pad=0.5)
+    fig.savefig(FIG, bbox_inches="tight")
+    print("wrote", FIG)
+
+
+if __name__ == "__main__":
+    main()

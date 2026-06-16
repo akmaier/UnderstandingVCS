@@ -421,6 +421,23 @@ identity inside the valid range). The consequence, made precise next, is that
 soft mode reproduces the hard machine \emph{exactly} in the forward pass and
 differs only in the gradient it exposes.
 
+This is the same device that makes \emph{max-pooling} differentiable, and it
+applies far beyond branches. Every hard decision in the machine is a discrete
+\emph{selection}: which opcode handler runs, whether a branch is taken, which
+object owns a pixel under TIA priority, which sprite bit lights it. Each is a
+switch whose winner we record in the forward pass; the backward pass then
+routes the gradient to the selected value, exactly as max-pooling routes its
+gradient to the argmax input. With the switch stored, the entire \emph{content}
+path---register values, sprite colours and graphics bits, priority
+compositing---is differentiable with no approximation and a bit-exact forward
+pass. The one quantity a stored switch cannot differentiate is a discrete
+\emph{index}: the column at which a sprite is placed by strobe timing, for the
+same reason max-pooling gives no gradient with respect to the pooling location.
+There, and only there, a differentiable sampler---a sub-pixel triangular
+(bilinear) kernel, as in spatial transformer networks
+\citep{jaderberg2015spatial}---restores the position gradient. We use this
+distinction in the qualitative study below.
+
 \section{Soft Equals Hard: Equivalence and Gradients}
 
 We now state what the construction guarantees. Let $\Phi_{\mathrm{H}}$ and
@@ -621,24 +638,59 @@ vectorised parallel environments.
 
 \subsection{Proof of Concept: Ground-Truth Gradients}
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.96\textwidth]{figures/fig_xai_joystick.pdf}
+\caption{Qualitative XAI on the differentiable VCS, all computed by
+reverse-mode AD through \textsc{jutari}. \textbf{Top:} from the unmodified soft
+renderer, a Grad-CAM analogue---$\partial$screen$/\partial$register localises
+each object to exactly the pixels its register controls (player~0, the
+distractor player~1, and the background), a localisation that can be
+\emph{checked} against ground truth. \textbf{Bottom, left to right:} a single
+sprite graphics bit attributes to its own pixels once represented as a value
+behind a stored switch (it is zero when read as a packed byte); the scene with
+a goal marker; the signed $\partial$screen$/\partial$joystick saliency (a soft
+sampler makes the position differentiable), highlighting the sprite edges that
+move; and the gradient of the on-screen sprite position w.r.t. the four
+joystick directions, which correctly infers that pushing \textsc{up}+\textsc{right}
+moves the sprite toward the goal.}
+\label{fig:xai}
+\end{figure*}
+
 The point of the foundation is that gradients computed on it can be
 \emph{checked}. Because soft mode is forward-exact (Theorem~\ref{thm:exact}),
-it yields exact gradients of any scalar read-out with respect to the state and
-the ROM. As a first check against known ground truth, we differentiate
-individual rendered
-pixels with respect to the TIA colour registers: the gradient of a player-sprite
-pixel localises to the player-colour register \texttt{COLUP0}, a background
-pixel to \texttt{COLUBK}, and a wall pixel to the playfield-colour register
-\texttt{COLUPF}---each pixel attributing to the exactly correct register, which
-is the kind of statement that can be \emph{checked} here and cannot be checked
-on a black box. Integrated gradients \citep{sundararajan2017axiomatic} over ROM
-bytes is the natural next step; our current harness computes it on
-short traces, and a full game-length ROM-attribution study is in progress
-(some long traces still hit an initialisation busy-loop in the soft RIOT timer,
-which we flag as a known limitation rather than a solved result). We present
-the register-level localisation as a \emph{proof of concept} that the
-substrate exposes correct, ground-truth-checkable gradients; systematic XAI
-evaluation is the program this paper enables.
+it yields exact gradients of any read-out with respect to the state and the
+ROM. We give a small qualitative study (Figure~\ref{fig:xai}); it is a proof
+of concept that the substrate behaves as intended, not an XAI evaluation.
+
+First, a Grad-CAM analogue. We differentiate the rendered frame with respect
+to the TIA colour registers: $\partial$screen$/\partial$\texttt{COLUP0}
+localises exactly to the player-0 sprite, $\partial$screen$/\partial$\texttt{COLUP1}
+to a second (distractor) sprite, and $\partial$screen$/\partial$\texttt{COLUBK}
+to the background---each pixel attributing to the exactly correct register, a
+statement that can be \emph{checked} here and cannot be on a black box. The
+stored-switch view extends this: a single sprite \emph{graphics} bit, once
+represented as a value behind its switch, has a non-zero gradient to precisely
+the pixels it lights.
+
+Second, the joystick. A naive gradient from the joystick to the screen is zero,
+because the path runs through a discrete sprite \emph{position} index; this is
+not a failure of differentiation but the ground truth telling us that a naive
+gradient saliency would wrongly report ``the joystick does not affect the
+screen.'' Applying the differentiable sampler to the position makes the
+relationship visible: the gradient of the on-screen sprite position with
+respect to the four joystick directions correctly recovers the control mapping
+(push \textsc{up}+\textsc{right} to move the sprite toward a goal in the
+upper-right), and the per-direction $\partial$screen$/\partial$joystick map
+highlights the sprite edges that move. We can \emph{verify} this against the
+known wiring---which is the whole point.
+
+Integrated gradients \citep{sundararajan2017axiomatic} over ROM bytes is the
+natural next step; our harness computes it on short traces, and a full
+game-length ROM-attribution study is in progress (some long traces still hit an
+initialisation busy-loop in the soft RIOT timer, which we flag as a known
+limitation). Systematic XAI evaluation---scoring each method against the known
+mechanism---is the program this paper enables.
 
 \section{Discussion}
 
