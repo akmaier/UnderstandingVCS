@@ -185,6 +185,22 @@ class StellaEnvironment:
         self._right_paddle = _PADDLE_DEFAULT
         if self._settings.uses_paddles():
             self._apply_paddle_action(int(Action.NOOP))
+        else:
+            # Task #115b: joystick games drive the analog pot pins INPT0-3 to
+            # idle LOW (D7=0). xitari's `Joystick::read(AnalogPin)` returns
+            # maximumResistance, so `TIA::INPT0_3` yields D7=0
+            # (TIA.cxx:1877-1885) — NOT the $80 paddle-idle default. air_raid
+            # reads INPT0 (`LDA $58`) into COLUP0/P1, so a wrong D7 painted
+            # player pixels 0x98 vs xitari 0x18 (24px/frame). Set here (each
+            # boot, before the NOOP burn) so the boot frames already see the
+            # correct pins. Paddle games keep the $80 default + dump-pot
+            # model (the `if` branch); this only touches joystick games.
+            tia = self._console.bus.tia
+            new_inpt = tia.inpt.at[0].set(0x00).at[1].set(0x00) \
+                                    .at[2].set(0x00).at[3].set(0x00)
+            self._console = self._console._replace(
+                bus=self._console.bus._replace(
+                    tia=tia._replace(inpt=new_inpt)))
 
         # --- Console difficulty switches (#103, amidar) ------------------ #
         # xitari's default properties are B/B (SWCHB 0x3F); a ROM's

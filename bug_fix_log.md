@@ -5492,6 +5492,45 @@ render), **#115d/e** (Cosmic Ark M0), **#115f** (defer VDELP0/1/BL), **#115g**
 
 ---
 
+## jaxtari catch-up sprint 3 (2026-06-16) — #115 (implicit) + #115b ported
+
+**#115 (RESMP per-color-clock deferral) already in place** (no code change).
+The mechanism jutari added in #115 was: defer the RESMP register STORE via
+the pending-write queue so a mid-scanline RESMP=1 doesn't suppress the
+missile retroactively for the early pixels of the scanline. jaxtari already
+had this (landed earlier as task #85, line ~851 in `tia/system.py`): the
+visible-region RESMP branch puts the new value into `pending_writes` and
+defers the register update. The remaining question — whether jutari's
+"reposition at activation" matters — has a trivial answer here:
+`_POKE_DELAY_TABLE[0x28] = _POKE_DELAY_TABLE[0x29] = 0`, so
+`activation_clock == beam_cc` for RESMP*. jaxtari's "reposition at poke
+time + store deferred" and jutari's "reposition at activation + store
+deferred" are semantically identical when delay is 0. Verified by direct
+test: RESMP0 poked mid-visible at cc=140 lands in `pending_writes`
+(`((140, 40, 2),)`) with the register file still holding the old value
+until the render-drain activates it. No commit for #115.
+
+**#115b ported** (`83cbb94`): joystick INPT0-3 idle LOW (D7=0). xitari's
+`Joystick::read(AnalogPin)` returns `maximumResistance` so `TIA::INPT0_3`
+yields D7=0 (TIA.cxx:1877-1885) — NOT the $80 paddle-idle default. air_raid
+reads INPT0 (`LDA $58`) into COLUP0/P1, so a wrong D7 painted player pixels
+0x98 vs xitari 0x18 (24px/frame, rows 219-223).
+
+The fix is controller-aware: paddle games (`uses_paddles()`) keep the $80
+default + dump-pot model (the existing `if` branch in
+`env.stella_environment::reset()`). For joystick games (the `else` branch),
+override `tia.inpt[0..3] = 0x00` BEFORE the boot NOOP burn so boot frames
+already see the correct pins. Pure render-side effect via COLUP* — no RAM
+impact.
+
+**Next sprint pick** (cron `be725309`): **#115c** (faithful player render:
+RESP reset-when + skip-first-copy), **#115d/e** (Cosmic Ark M0), **#115f**
+(defer VDELP0/1/BL), **#115g** (PF reflect left-half latch), **#115h**
+(RESBL/RESM HMOVE-relative hacks), **#118** (per-pixel VBLANK D1), **#119**
+(HBLANK RESP skip-first-copy).
+
+---
+
 ## #121 (2026-06-16) — cart bank not reset on console reset (jutari bug, FIXED)
 
 While hunting elevator_action (the sole non-pixel-exact game), a full
