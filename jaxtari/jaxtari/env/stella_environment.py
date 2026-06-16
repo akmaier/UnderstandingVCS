@@ -139,12 +139,35 @@ class StellaEnvironment:
         # boot burn so every boot frame uses it. PAL is per-game; default NTSC
         # keeps all NTSC games untouched. Mirror of jutari env_reset!.
         try:
-            _msl = 342 if self._settings.pal() else 290
+            _pal = bool(self._settings.pal())
         except AttributeError:
-            _msl = 290
+            _pal = False
+        _msl = 342 if _pal else 290
+        # Task #110 (PAL render): per-game display height + PAL-frame scanline
+        # wrap (312 vs 262) + colour-loss enable. NTSC defaults leave the
+        # render path identical. screen_height() defaults to 210 in
+        # GenericRomSettings (xitari Display.Height default).
+        try:
+            _sh = int(self._settings.screen_height())
+        except AttributeError:
+            _sh = 210
+        # Task #110 follow-up: per-game display START scanline (xitari
+        # Display.YStart). Default 34; carnival/pooyan use 26. Render-only.
+        try:
+            _ys = int(self._settings.screen_y_start())
+        except AttributeError:
+            _ys = 34
+        _spf = 312 if _pal else 262
         self._console = self._console._replace(
             bus=self._console.bus._replace(
-                tia=self._console.bus.tia._replace(max_scanlines=_msl)))
+                tia=self._console.bus.tia._replace(
+                    max_scanlines=_msl,
+                    screen_height_rows=_sh,
+                    scanlines_per_frame=_spf,
+                    color_loss_enabled=_pal,
+                    color_loss_active=False,
+                    y_start_row=_ys,
+                )))
         # PXC1-x round 5: for paddle games, push the default paddle
         # resistance into the TIA BEFORE the boot-burn loop runs.
         # xitari constructs `StellaEnvironment` with `resetPaddles` —
@@ -355,19 +378,21 @@ class StellaEnvironment:
     def get_screen(self) -> jnp.ndarray:
         """Return the visible portion of the current framebuffer.
 
-        Shape `(VISIBLE_HEIGHT, SCREEN_WIDTH) = (210, 160)`, uint8 indexed
-        colour — matches xitari/ALE's `Display.YStart=34`/`Display.Height=210`
-        default crop. The top 34 scanlines (VSYNC + VBLANK + any
-        score-header area outside xitari's display window) are cropped
-        out, so jaxtari videos line up vertically with xitari videos.
+        Shape `(screen_height_rows, SCREEN_WIDTH)` — typically (210, 160) for
+        NTSC, (250, 160) for PAL (surround/air_raid), uint8 indexed colour.
+        Matches xitari/ALE's `Display.YStart=34` + per-game `Display.Height`
+        crop. The top 34 scanlines (VSYNC + VBLANK + any score-header area
+        outside xitari's display window) are cropped out so jaxtari videos
+        line up vertically with xitari videos.
 
-        The full internal framebuffer (244 rows, scanlines 0..243) is
-        still on `console.bus.tia.framebuffer` for tests / debugging
-        that want the uncropped view.
+        The full internal framebuffer (312 rows, scanlines 0..311) is still
+        on `console.bus.tia.framebuffer` for tests / debugging that want the
+        uncropped view.
         """
-        from jaxtari.tia.system import Y_START, VISIBLE_HEIGHT
         fb = self._console.bus.tia.framebuffer
-        return fb[Y_START : Y_START + VISIBLE_HEIGHT]
+        ys = int(self._console.bus.tia.y_start_row)
+        height = int(self._console.bus.tia.screen_height_rows)
+        return fb[ys : ys + height]
 
     def get_ram(self) -> jnp.ndarray:
         """Return the 128-byte RIOT RAM."""

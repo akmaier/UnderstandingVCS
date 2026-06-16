@@ -196,19 +196,21 @@ def test_tia_advance_writes_multiple_scanlines():
     assert int(tia.framebuffer[Y_START + 5, 0]) == 0x00
 
 
-def test_tia_advance_does_not_write_offscreen_lines():
-    """Scanlines >= SCREEN_HEIGHT (244) shouldn't write to framebuffer.
+def test_tia_advance_top_display_gate():
+    """Task #83/#110: scanlines < Y_START (the top display gate)
+    do NOT write to the framebuffer.
 
-    NB: the framebuffer height was bumped from 192 to 244 in the
-    video-alignment fix (xitari/ALE crop now happens in `get_screen`,
-    not at framebuffer-write time). 250 is unambiguously off-screen
-    against the new 244-row internal buffer."""
+    Updated for task #110 (PAL): the framebuffer is now 312 rows so no NTSC
+    scanline is off-screen via the buffer bound. The active gate is the
+    Y_START top-of-display test (xitari `myClockStartDisplay = ... +
+    228*myYStart`). Render a scanline at 10 (< Y_START=34); assert nothing
+    landed in the buffer."""
     tia = initial_tia_state()
     tia = _set_regs(tia, pf0=0xF0, colupf=0x42, colubk=0x00)
-    # Jump to scanline 250 (off-screen — beyond the 244-row framebuffer).
-    tia = tia._replace(scanline=250)
+    # Jump to scanline 10 (pre-display-window — < Y_START=34).
+    tia = tia._replace(scanline=10)
     tia = tia_advance(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
-    # No row in the framebuffer should be touched.
+    # No row in the framebuffer should be touched (top display gate).
     assert int(tia.framebuffer.sum()) == 0
 
 

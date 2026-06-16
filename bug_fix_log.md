@@ -5373,3 +5373,81 @@ a collision latch CXxx, INPT, SWCHA idle bits, or an undefined-read data-bus val
 that jutari returns as 0 where xitari returns address/bus bits). Fix the read
 behavior; gate HARD on RAM 64/64 + all 63 exact screens (a collision/read change
 can perturb other games). Screen stays **63/64**; this remains the sole delta.
+
+---
+
+## jaxtari catch-up sprint 1 (2026-06-16) — #109 + #110 + #110b ported
+
+jutari is essentially done (RAM 64/64, screen 63/64); jaxtari is parked behind by
+the entire post-#103 series. Starting an hourly-cron porting loop on `main`
+(durable cron `be725309`, fires :17 every hour, auto-expires after 7 days). User
+works on jutari + paper; AI works on jaxtari catch-up. No conflicts expected
+(distinct subtrees).
+
+**Ported in sprint 1:**
+- **#109** (`2c6197e`): VBLANK output-blanking writes black to framebuffer. xitari
+  `updateFrameScanline` (TIA.cxx:1121-1124) memsets the framebuffer to 0 when
+  `myVBLANK & 0x02`; jaxtari was only SKIPPING the row, leaving stale prior-
+  frame pixels in VBLANK bands. Added the black-row commit in
+  `tia/system.py::tia_advance` VBLANK branch, gated on
+  `tia.scanline >= tia.y_start_row` and using `tia.scanlines_per_frame`.
+- **#110** (`8d5871f`): PAL display height + colour-loss render. Bumped
+  `SCREEN_HEIGHT` 244→312 so PAL 312-line frames don't fold sl 262..311 onto
+  the buffer top; added 4 new `TIAState` fields (`screen_height_rows`,
+  `scanlines_per_frame`, `color_loss_enabled`, `color_loss_active`) defaulting
+  to NTSC; replaced both `% NTSC_SCANLINES_PER_FRAME` sites with
+  `% tia.scanlines_per_frame`; OR'd `px |= 0x01` into each rendered visible
+  pixel when `color_loss_active`; recomputed `color_loss_active` from
+  `lines_since_frame` parity at BOTH frame-end paths (VSYNC hold-gate +
+  max-scanlines cutoff in `tia_poke`). `rom_settings.py::screen_height()`
+  default 210; `joystick_starts.py` overrides 250 for `SurroundRomSettings` +
+  `AirRaidRomSettings`. `env.reset` threads `screen_height_rows /
+  scanlines_per_frame / color_loss_enabled` into the TIA state from
+  `settings.screen_height() / settings.pal()`. `get_screen` crops
+  `screen_height_rows` rows from `Y_START` instead of fixed `VISIBLE_HEIGHT`.
+- **#110 follow-up** (`23dbffc`): per-game YStart. New `y_start_row::int` TIA
+  field (default 34); both framebuffer-commit gates now use
+  `tia.scanline >= tia.y_start_row` instead of the `Y_START` const.
+  `rom_settings.py::screen_y_start()` default 34; `env.reset` threads it in;
+  `get_screen` crops from `y_start_row`. New `CarnivalRomSettings`
+  (`screen_y_start=26`, `screen_height=214`) and `PooyanRomSettings`
+  (`screen_y_start=26`, `screen_height=220`); `JourneyEscapeRomSettings`
+  gains `screen_height=230`. Both new classes wired into
+  `jaxtari/games/__init__.py`.
+
+Updated 1 stale test (`test_tia_advance_does_not_write_offscreen_lines` →
+`test_tia_advance_top_display_gate`): with the framebuffer at 312 rows, no NTSC
+scanline is off-screen via the buffer bound; the actual gate now asserted is
+the top display gate (scanlines `< Y_START` are not committed) — same shape as
+jutari's `runtests.jl` update in #110.
+
+- **#111** (`74a1d6a`): HmoveBlanks property gate. New `TIAState.allow_hmove_blanks`
+  field (default True); the HMOVE comb-arm site in `tia_poke` now uses
+  `bool(tia.allow_hmove_blanks) and _hmove_blank_enabled_at(sc)` instead of just
+  `_hmove_blank_enabled_at(sc)`. `rom_settings.py::hmove_blanks()` default True;
+  new `BattleZoneRomSettings` + `MsPacmanRomSettings` override to False (the
+  only two `Emulation.HmoveBlanks "NO"` games in the 64-ROM set). Both new
+  classes wired into `jaxtari/games/__init__.py`. `env.reset` threads
+  `allow_hmove_blanks=settings.hmove_blanks()` into the TIA state.
+
+Also fixed a pre-existing test bug: `test_p3l_priority.py::
+test_pfp_background_unchanged_in_clear_region` pokes `COLUBK=0x55` and was
+asserting scan[60] == 0x55, but `tia_poke` masks `value & 0xFE` on every COLU*
+poke (xitari's NMOS-hardware behavior). The test was failing on `main` BEFORE
+this sprint's changes; corrected assertion to `0x54` (the post-mask value).
+
+**Note on skiing-VSYNC-rebase** (`fce5969`): not ported as a separate hunk —
+jaxtari's `tia_poke` evaluates the max-scanlines cutoff at the TOP of the
+function (before the W_VSYNC handler), so `lines_since_frame` is reset to 0
+BEFORE any subsequent VSYNC-SET in the same tia_poke would compute a frame_clock
+in the old domain. The jutari bug was specifically that vfc could be armed in
+the same instruction that ended the frame and leak to the next domain; jaxtari
+avoids that via the cutoff-first ordering. If a skiing-class RAM divergence
+shows up in PXC2, revisit.
+
+**Next sprint pick** (hourly cron `be725309`): **#112** (HMOVE comb consume on
+first DISPLAY scanline), **#114** (double-buffer framebuffer), **#115** (RESMP
+defer), **#115b** (joystick INPT0-3 idle LOW), **#115c** (faithful player
+render), **#115d/e** (Cosmic Ark M0), **#115f** (defer VDELP0/1/BL), **#115g**
+(PF reflect left-half latch), **#115h** (RESBL/RESM HMOVE-relative hacks),
+**#118** (per-pixel VBLANK D1), **#119** (HBLANK RESP skip-first-copy).

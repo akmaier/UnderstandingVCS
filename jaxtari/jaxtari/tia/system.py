@@ -209,16 +209,15 @@ def _hmove_blank_enabled_at(scanline_cycle: int) -> bool:
         return False                                  # still out of range
     return _HMOVE_BLANK_ENABLE_CYCLES[sc]
 
-# Internal framebuffer height — covers scanlines 0..243 (everything xitari
-# would ever show with its default `Display.Height=210` starting at
-# `Display.YStart=34`). The unused 0..33 + 244..261 regions stay empty
-# (VSYNC + post-overscan) but having them in the buffer lets the renderer
-# index the framebuffer directly by absolute scanline number without any
-# per-scanline offset arithmetic — which keeps the unit tests' `framebuffer[N]
-# == scanline-N render` invariant intact (matches the pre-vertical-alignment
-# layout) while still capturing scanlines 192..243 which the old 192-row
-# framebuffer was dropping.
-SCREEN_HEIGHT = 244
+# Internal framebuffer height. NTSC needs only scanlines 0..243 (xitari's
+# default `Display.Height=210` from `Display.YStart=34`), but task #110 (PAL)
+# renders the taller PAL display window — surround/air_raid show 250 rows from
+# YStart=34 (= internal scanlines 34..283). 312 covers the full PAL frame so a
+# PAL-aware scanline wrap (`tia.scanlines_per_frame`) never folds sl 262..311
+# back onto the top of the buffer. NTSC games still only touch rows 0..243;
+# the buffer is indexed by absolute scanline so the unit tests' `framebuffer[N]
+# == scanline-N render` invariant holds.
+SCREEN_HEIGHT = 312
 
 # ALE / xitari visible-region crop. The default `Display.YStart` is 34 and
 # the default `Display.Height` is 210 (see xitari/emucore/Props.cxx:300-301).
@@ -363,6 +362,29 @@ class TIAState(NamedTuple):
     # A PAL 312-line frame must not be split by the NTSC 290 cutoff. Mirror
     # of jutari.
     max_scanlines: int = 290
+    # Task #110 (PAL render). NTSC defaults; `StellaEnvironment.reset` overrides
+    # for PAL games. screen_height_rows: number of display rows get_screen
+    # returns from Y_START (210 NTSC, 250 surround/air_raid). scanlines_per_frame:
+    # the framebuffer-row wrap (262 NTSC, 312 PAL) so a PAL frame's sl 262..311
+    # don't fold onto the top of the buffer. color_loss_enabled: PAL/SECAM
+    # colour-loss (xitari TIA.cxx:562-577) — on odd-scanline-count frames the
+    # COLU output has D0 set. color_loss_active: the per-frame state (recomputed
+    # at each frame boundary from the just-ended frame's scanline parity).
+    screen_height_rows: int = 210
+    scanlines_per_frame: int = 262
+    color_loss_enabled: bool = False
+    color_loss_active: bool = False
+    # Task #110 follow-up: per-game display START scanline (xitari
+    # Display.YStart; mirror of myClockStartDisplay = ... + 228*myYStart).
+    # Gates the framebuffer commit AND is the `get_screen` crop base. Default
+    # 34 (the 62 default-YStart games); carnival/pooyan use 26. Override per
+    # ROM in `StellaEnvironment.reset`.
+    y_start_row: int = 34
+    # Task #111: xitari myAllowHMOVEBlanks (per-ROM `Emulation.HmoveBlanks`,
+    # Props.cxx default "YES"). When False, an HMOVE strobe NEVER arms the 8px
+    # left-edge "comb" blank regardless of strobe cycle (TIA.cxx:200,2694).
+    # Default True; in the 64-ROM set only battle_zone + ms_pacman set "NO".
+    allow_hmove_blanks: bool = True
 
 
 def initial_tia_state() -> TIAState:
@@ -745,11 +767,16 @@ def tia_poke(tia: TIAState, addr: int, value: int,
     # 342 PAL), not a hardcoded 290 — a PAL 312-line frame must not be split.
     _frame_clock_pk = int(tia.lines_since_frame) * COLOR_CLOCKS_PER_SCANLINE + int(beam_cc)
     if _frame_clock_pk // COLOR_CLOCKS_PER_SCANLINE > tia.max_scanlines:
+        # Task #110 (PAL colour-loss): recompute color_loss_active from the
+        # just-ended frame's scanline parity (parity of lines_since_frame).
+        # NTSC ROMs have color_loss_enabled=False so this stays False.
+        _new_cl = bool(tia.color_loss_enabled) and bool(int(tia.lines_since_frame) & 1)
         tia = tia._replace(
             frame=tia.frame + 1,
             scanline=0,
             lines_since_frame=0,
             vsync_finish_clock=0x7FFFFFFF,
+            color_loss_active=_new_cl,
         )
 
     # P3i-c: defer PF0/PF1/PF2 to mid-scanline activation. Skip the
@@ -888,6 +915,15 @@ def tia_poke(tia: TIAState, addr: int, value: int,
             # CLEAR and VSYNC held >= 1 scanline → end the frame.
             # Task #80: reset lines_since_frame so the max-scanlines cutoff
             # only fires for genuinely VSYNC-less stretches.
+            # Task #110 (PAL colour-loss): recompute for the NEW frame from
+            # the JUST-ENDED frame's scanline parity, mirroring xitari's
+            # startFrame (TIA.cxx:562-577, keyed on
+            # myScanlineCountForLastFrame & 0x01). Only active when colour-
+            # loss is enabled (PAL/SECAM); NTSC leaves it False so render is
+            # unchanged.
+            new_color_loss_active = (
+                bool(tia.color_loss_enabled) and bool(int(tia.lines_since_frame) & 1)
+            )
             new_tia = new_tia._replace(
                 vsync_active=False,
                 frame=tia.frame + 1,
@@ -895,6 +931,7 @@ def tia_poke(tia: TIAState, addr: int, value: int,
                 scanline_cycle=0,
                 lines_since_frame=0,
                 vsync_finish_clock=0x7FFFFFFF,
+                color_loss_active=new_color_loss_active,
             )
         else:
             new_tia = new_tia._replace(vsync_active=new_vsync)
@@ -947,7 +984,12 @@ def tia_poke(tia: TIAState, addr: int, value: int,
         # *effective* sub-instruction CPU cycle within the scanline
         # (beam_sc), not the stale instruction-start scanline_cycle.
         sc = int(beam_sc)
-        blank = _hmove_blank_enabled_at(sc)
+        # Task #111: gate the HMOVE-blank "comb" on xitari's myAllowHMOVEBlanks
+        # (per-ROM `Emulation.HmoveBlanks` property, default YES). When False
+        # the strobe NEVER arms the 8px left-edge blank regardless of strobe
+        # cycle — battle_zone strobes HMOVE every visible scanline and would
+        # otherwise comb cols 0-7 on every row. battle_zone/ms_pacman = False.
+        blank = bool(tia.allow_hmove_blanks) and _hmove_blank_enabled_at(sc)
         # Task #97/#99: beam_sc >= 76 means the write crossed into the NEXT
         # scanline — BOTH its blank comb AND its object motion belong to line
         # N+1, not the about-to-be-committed line N. #97 deferred the comb;
@@ -1152,7 +1194,15 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
                 if hmove_blank_active:
                     row_pixels.append(0)
                 else:
-                    row_pixels.append(int(render_pixel(tia_for_render, c, cached_sets)))
+                    # Task #110 (PAL colour-loss): on odd-frame PAL frames
+                    # xitari ORs D0 into every COLU register (TIA.cxx:562-
+                    # 577), so each rendered pixel (always a COLU value) has
+                    # bit 0 set. HMOVE-blank + VBLANK pixels stay black.
+                    # NTSC: color_loss_active is always false → no change.
+                    px = int(render_pixel(tia_for_render, c, cached_sets))
+                    if tia_for_render.color_loss_active:
+                        px |= 0x01
+                    row_pixels.append(px)
                 # P3i-d: OR in per-pixel collision bits with the
                 # cached_sets that reflect post-write state at this c.
                 # NOTE: collision still accumulates during the blank
@@ -1178,9 +1228,9 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
             # the cropped-out internal scanline 27. Per-pixel rendering +
             # collision detection above still runs at every scanline so
             # unit tests that check collisions at scanline 0 keep working.
-            if tia.scanline >= Y_START:
+            if tia.scanline >= tia.y_start_row:
                 for i in range(line_advance):
-                    completed_line = (tia.scanline + i) % NTSC_SCANLINES_PER_FRAME
+                    completed_line = (tia.scanline + i) % tia.scanlines_per_frame
                     if completed_line < SCREEN_HEIGHT:
                         fb = fb.at[completed_line].set(row)
                 wrote_framebuffer_this_advance = True
@@ -1196,6 +1246,18 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
             # diff on breakout, commit d66b290 / a8cdcc9, 2026-06-03.)
             for _, reg, val in pending_sorted:
                 tia_for_render = _apply_pending_write(tia_for_render, reg, val)
+            # Task #109: xitari's updateFrameScanline ALSO memsets the
+            # framebuffer to 0 when `myVBLANK & 0x02` (TIA.cxx:1121-1124) —
+            # output-blanking actively writes BLACK, not just skips the row.
+            # Without this jaxtari retained STALE prior-frame pixels in VBLANK
+            # bands (star_gunner top rows, etc). Mirror of jutari.
+            if tia.scanline >= tia.y_start_row:
+                black_row = jnp.zeros((SCREEN_WIDTH,), dtype=jnp.uint8)
+                for i in range(line_advance):
+                    completed_line = (tia.scanline + i) % tia.scanlines_per_frame
+                    if completed_line < SCREEN_HEIGHT:
+                        fb = fb.at[completed_line].set(black_row)
+                wrote_framebuffer_this_advance = True
         new_collisions = jnp.array(running_collisions, dtype=jnp.uint8)
 
     new_line = tia.scanline + line_advance
@@ -1211,7 +1273,7 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
     # stretches without toggling VSYNC at all (e.g. Q*Bert's boot
     # sequence) needs `run_until_frame`'s instruction limit to be
     # generous enough — see `console._FRAME_INSTRUCTION_LIMIT`.
-    new_line = new_line % NTSC_SCANLINES_PER_FRAME
+    new_line = new_line % tia.scanlines_per_frame
     # Task #106 (partial-frame model): the frame boundary is now decided
     # ONLY in `tia_poke` (the VSYNC-clear hold-gate OR the max-scanlines
     # cutoff) — exactly like xitari, where both live in TIA::poke. The

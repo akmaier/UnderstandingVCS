@@ -36,6 +36,9 @@ class AirRaidRomSettings(GenericRomSettings):
         # result — flagged for correctness / xitari parity). See task #103.
         return True
 
+    def screen_height(self) -> int:
+        return 250   # task #110 (PAL bump 210→250)
+
 
 class AsterixRomSettings(GenericRomSettings):
     def starting_actions(self) -> list[int]:
@@ -65,6 +68,47 @@ class GravitarRomSettings(GenericRomSettings):
 class JourneyEscapeRomSettings(GenericRomSettings):
     def starting_actions(self) -> list[int]:
         return [1]   # FIRE
+
+    def screen_height(self) -> int:
+        return 230   # task #110 (stella.pro Display.Height)
+
+
+class CarnivalRomSettings(GenericRomSettings):
+    # Task #110 follow-up: stella.pro Display.YStart=26 / Display.Height=214.
+    # NTSC (rendered content stays within scanline 262), so no PAL flag —
+    # render-only crop overrides.
+    def screen_height(self) -> int:
+        return 214
+
+    def screen_y_start(self) -> int:
+        return 26
+
+
+class PooyanRomSettings(GenericRomSettings):
+    # Task #110 follow-up: stella.pro Display.YStart=26 / Display.Height=220.
+    # NTSC, render-only crop overrides (same shape as Carnival).
+    def screen_height(self) -> int:
+        return 220
+
+    def screen_y_start(self) -> int:
+        return 26
+
+
+class BattleZoneRomSettings(GenericRomSettings):
+    # Task #111: battle_zone's stella.pro entry sets
+    # `Emulation.HmoveBlanks "NO"`. battle_zone strobes HMOVE every visible
+    # scanline (cc 222), and without this disable the comb would blank cols
+    # 0-7 on every row (1112 px). Render-only; no starting actions.
+    def hmove_blanks(self) -> bool:
+        return False
+
+
+class MsPacmanRomSettings(GenericRomSettings):
+    # Task #111: ms_pacman's stella.pro entry sets
+    # `Emulation.HmoveBlanks "NO"`. Same fix as battle_zone — disable the
+    # HMOVE comb. Render-only; no starting actions.
+    def hmove_blanks(self) -> bool:
+        return False
 
 
 class PrivateEyeRomSettings(GenericRomSettings):
@@ -96,6 +140,9 @@ class SurroundRomSettings(GenericRomSettings):
 
     def pal(self) -> bool:
         return True
+
+    def screen_height(self) -> int:
+        return 250   # task #110 (PAL bump 210→250)
 
 
 class UpNDownRomSettings(GenericRomSettings):

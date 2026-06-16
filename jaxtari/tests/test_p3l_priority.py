@@ -97,12 +97,17 @@ def test_pfp_priority_ball_above_player():
 
 def test_pfp_background_unchanged_in_clear_region():
     """PFP=1 still leaves the background untouched in cells where
-    neither playfield, ball nor sprite paints."""
+    neither playfield, ball nor sprite paints.
+
+    NOTE: `tia_poke` masks every COLU* write with `value & 0xFE` to mirror
+    xitari's NMOS behavior (bit 0 is unused), so 0x55 becomes 0x54.
+    """
     tia = _setup_pf_vs_p0(pfp=True)._replace(p0_x=16)
     tia = tia_poke(tia, W_COLUBK, 0x55)
     scan = render_scanline(tia)
-    # Column 60 sits well clear of every object — must remain COLUBK.
-    assert int(scan[60]) == 0x55
+    # Column 60 sits well clear of every object — must remain COLUBK
+    # (post-mask 0x54).
+    assert int(scan[60]) == 0x54
 
 
 # --------------------------------------------------------------------------- #

@@ -144,3 +144,27 @@ class GenericRomSettings:
         # cutoff matters (PAL palette is render-only). Default NTSC. Surround
         # is PAL (312-line frame needs 342 or it gets split). See task #103.
         return False
+
+    def screen_height(self) -> int:
+        # Task #110: the display HEIGHT (rows `get_screen` returns from
+        # Y_START), matching xitari's per-ROM `Display.Height` (Props.cxx
+        # default 210; PAL games that kept the default get auto-bumped to
+        # 250, e.g. surround/air_raid). NTSC default 210. Per-game PAL
+        # overrides return their stella.pro height.
+        return 210
+
+    def screen_y_start(self) -> int:
+        # Task #110 follow-up: per-ROM `Display.YStart` (Props.cxx default 34).
+        # xitari's `myClockStartDisplay = ... + 228*myYStart` (TIA.cxx) gates
+        # BOTH the framebuffer commit AND the HMOVE-blank flag consumption on
+        # this row, so it's not merely a crop — a per-game YStart faithfully
+        # mirrors that gate. Default 34 (62 games); carnival/pooyan use 26.
+        return 34
+
+    def hmove_blanks(self) -> bool:
+        # Task #111: per-ROM `Emulation.HmoveBlanks` (Props.cxx default "YES";
+        # 43 stella.pro games override "NO"). Drives `myAllowHMOVEBlanks`
+        # (TIA.cxx:200,2694) — when False, an HMOVE strobe NEVER arms the 8px
+        # left-edge comb blank regardless of strobe cycle. Default True; in
+        # the 64-ROM set only battle_zone + ms_pacman are "NO".
+        return True

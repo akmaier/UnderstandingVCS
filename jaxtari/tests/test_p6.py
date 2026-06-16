@@ -374,11 +374,11 @@ def test_env_step_advances_frame_counter():
 
 def test_env_get_screen_returns_framebuffer_shape():
     """`env.get_screen()` returns the ALE/xitari visible region —
-    `(VISIBLE_HEIGHT=210, SCREEN_WIDTH=160)`. The internal framebuffer
-    on `env.console.bus.tia.framebuffer` is taller (244 rows, covers
-    full NTSC visible region); `get_screen` crops to the
-    `Display.YStart=34`/`Display.Height=210` window so the user-facing
-    screen aligns vertically with xitari videos."""
+    `(screen_height_rows=210, SCREEN_WIDTH=160)` for default NTSC games.
+    The internal framebuffer on `env.console.bus.tia.framebuffer` is taller
+    (312 rows, covers full PAL visible region after task #110); `get_screen`
+    crops to the per-ROM `Display.YStart`/`Display.Height` window so the
+    user-facing screen aligns vertically with xitari videos."""
     env = StellaEnvironment(_frame_loop_rom())
     env.reset()
     env.step(Action.NOOP)
