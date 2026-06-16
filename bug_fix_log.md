@@ -5147,3 +5147,23 @@ journey_escape, atlantis, amidar, demon_attack, name_this_game, solaris, centipe
 defender, jamesbond, pooyan, asterix, air_raid all → 0. Remaining 5: elevator_action
 (missile RESMP), robotank + up_n_down (RESP/player multiplex), tutankham (PF2
 boundary), wizard_of_wor (CTRLPF reflect).
+
+---
+
+## #115g (2026-06-16) — latch PF reflect (CTRLPF.D0) at left-half → wizard_of_wor + tutankham (59→61/64)
+
+xitari updates the playfield REFLECT mask (CTRLPF.D0 → ourPlayfieldTable) on a
+CTRLPF poke ONLY if the beam is still in the LEFT half ((clock-frameStart)%228 <
+68+79=147, TIA.cxx:2181); a right-half reflect change is deferred to the next
+scanline (re-latched at scanline-end). The other CTRLPF bits (PFP/score D1-2, ball
+size D4-5) apply immediately. jutari recomputed reflect from the LIVE CTRLPF.D0 in
+`_object_pixel_sets` every time → a mid-line reflect change took effect immediately
+(wizard_of_wor writes CTRLPF=0x01 at cc=213, right half → jutari reflected cols
+145-147, xitari kept the old non-reflected PF).
+
+Fix: new `pf_reflect::Bool` latched at scanline start from CTRLPF.D0, updated by a
+CTRLPF activation only when c < 147; `_object_pixel_sets` uses it instead of the
+live bit. **Gated:** RAM 64/64 bit-exact, Pkg.test green. Screen **59→61/64**:
+wizard_of_wor AND tutankham both close (both PF-timing), up_n_down 71→63. Remaining
+3: robotank (ball HMOVE accumulation), up_n_down (VDELP shadow VALUE staleness),
+elevator_action (missile RESMP reposition, frame 41).

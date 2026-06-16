@@ -414,6 +414,14 @@ mutable struct TIAState
     m0_cosmic_ark::Bool
     m0_cosmic_counter::Int
     m0_cosmic_line::Int
+    # Task #115 (faithful PF reflect): xitari only updates the playfield REFLECT
+    # mask (CTRLPF.D0 → ourPlayfieldTable) on a CTRLPF poke if the beam is still in
+    # the LEFT half ((clock-frameStart)%228 < 68+79 = 147); a reflect change in the
+    # right half is deferred to the next scanline (re-latched at scanline end /
+    # HMOVE). The other CTRLPF bits (PFP/score D1-2, ball size D4-5) apply
+    # immediately. `pf_reflect` is that latched reflect bit; the renderer uses it
+    # instead of the live CTRLPF.D0 (wizard_of_wor writes reflect at cc=213).
+    pf_reflect::Bool
 end
 
 # INPT defaults: paddle pots ($80 = centred), triggers idle high (D7=1). Task
@@ -453,6 +461,7 @@ initial_tia_state() = TIAState(
     false,                             # task #114: buffer_swap_pending = false
     false, false,                      # task #115: p0_skip_first / p1_skip_first
     0, false, 0, -1,                   # task #115: cosmic-ark (clock/enabled/counter/line)
+    false,                             # task #115: pf_reflect (latched CTRLPF.D0)
 )
 
 """
@@ -1081,6 +1090,11 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
             # below sets skip-first for the remainder of THIS scanline only.
             tia.p0_skip_first = false
             tia.p1_skip_first = false
+            # Task #115: latch the PF reflect bit at scanline start from the
+            # current CTRLPF.D0 (= xitari's scanline-end re-latch). Left-half
+            # CTRLPF writes update it mid-line in the drain below; right-half ones
+            # don't (deferred to next line).
+            tia.pf_reflect = (tia.registers[W_CTRLPF + 1] & 0x01) != 0
             cached_sets = _object_pixel_sets(tia)
             # P3i-f: HMOVE-blank window. When `hmove_blank_pending` is
             # true at scanline start, the first 8 visible color clocks
@@ -1096,6 +1110,13 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
                     # Task #91 round 2: store + GRP shadow latch at the
                     # activation clock (xitari poke ordering).
                     _apply_pending_write!(tia, reg, val)
+                    # Task #115: a CTRLPF reflect (D0) change takes effect this
+                    # scanline ONLY if the write lands in the left half (c < 68+79
+                    # = 147); xitari TIA.cxx:2181. Right-half reflect changes wait
+                    # for the next scanline. (PFP/score/ball-size already applied.)
+                    if reg == W_CTRLPF && c < HBLANK_COLOR_CLOCKS + 79
+                        tia.pf_reflect = (val & 0x01) != 0
+                    end
                     cached_sets = _object_pixel_sets(tia)
                     write_idx += 1
                 end
@@ -1709,7 +1730,9 @@ function _object_pixel_sets(tia::TIAState)
     pf2    = tia.registers[W_PF2 + 1]
     ctrlpf = tia.registers[W_CTRLPF + 1]
     left_bits  = playfield_bits(pf0, pf1, pf2)
-    right_bits = (ctrlpf & 0x01) != 0 ? reverse(left_bits) : left_bits
+    # Task #115: use the LATCHED reflect (tia.pf_reflect), not the live CTRLPF.D0 —
+    # a right-half CTRLPF reflect change only takes effect next scanline (xitari).
+    right_bits = tia.pf_reflect ? reverse(left_bits) : left_bits
     pf = Set{Int}()
     @inbounds for (i, b) in enumerate(left_bits)
         if b != 0

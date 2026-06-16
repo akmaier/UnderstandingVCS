@@ -2,7 +2,7 @@
 
 Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `trace_dump --screen`, breakout_random_actions stream, first **60** frames after the standard 60-NOOP+4-RESET boot. Same per-game RomSettings as the RAM sweep (so a divergence is a genuine render delta, not a settings/boot mismatch).
 
-**Pixel-exact (0 px) over 60 frames: 59/64.**
+**Pixel-exact (0 px) over 60 frames: 61/64.**
 
 | game | max px/frame | total px | first div frame | worst-frame rows |
 |---|---|---|---|---|
@@ -62,11 +62,11 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | surround | **0 ✅** | 0 | — | — |
 | tennis | **0 ✅** | 0 | — | — |
 | time_pilot | **0 ✅** | 0 | — | — |
-| tutankham | 80 | 4800 | 1 | 103-167 |
-| up_n_down | 71 | 4260 | 1 | 5-203 |
+| tutankham | **0 ✅** | 0 | — | — |
+| up_n_down | 63 | 3780 | 1 | 5-203 |
 | venture | **0 ✅** | 0 | — | — |
 | video_pinball | **0 ✅** | 0 | — | — |
 | videochess | **0 ✅** | 0 | — | — |
-| wizard_of_wor | 3 | 180 | 1 | 164-164 |
+| wizard_of_wor | **0 ✅** | 0 | — | — |
 | yars_revenge | **0 ✅** | 0 | — | — |
 | zaxxon | **0 ✅** | 0 | — | — |
