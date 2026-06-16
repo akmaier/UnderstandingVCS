@@ -1132,9 +1132,13 @@ def tia_poke(tia: TIAState, addr: int, value: int,
             frame_clock = (int(tia.lines_since_frame) * COLOR_CLOCKS_PER_SCANLINE
                            + int(beam_cc))
             if frame_clock == int(tia.last_hmove_clock) + 21 * COLOR_CLOCKS_PER_CPU_CYCLE:
+                # Task #115e: reset m0_cosmic_line=-1 so the enable line
+                # renders normal (the first step in the post-render block
+                # below sets the mask for the following line).
                 new_tia = new_tia._replace(
                     m0_cosmic_ark=True,
                     m0_cosmic_counter=0,
+                    m0_cosmic_line=-1,
                 )
     elif reg == W_HMOVE:
         hmp0 = int(new_tia.registers[W_HMP0])
@@ -1351,13 +1355,11 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
     # contained subsequent scanlines until the next poke."
     pending = tia.pending_writes
     tia_for_render = tia                                  # local copy we mutate
-    # Task #115d (Cosmic Ark): step the M0 motion bug once per completed
-    # scanline — BEFORE the render below and outside the VBLANK gate, so the
-    # counter phase advances every line (incl. VBLANK) exactly like xitari's
-    # scanline-end block, and the rendered row uses the stepped position/mask.
-    # (line_advance > 1 is rare for cosmic games — they WSYNC every line.)
-    if line_advance > 0 and tia_for_render.m0_cosmic_ark:
-        tia_for_render = _cosmic_ark_advance(tia_for_render)
+    # Task #115e (Cosmic Ark counter phase): the advance was moved AFTER the
+    # render (just-rendered line uses the prior step's counter/position;
+    # advance now so the NEXT line drifts/stretches/blanks correctly).
+    # xitari's scanline-END block sets up the next line (TIA.cxx:1805). See
+    # the post-render block further down.
     # Task #83 round 3: see comment around the assignment inside the
     # visible-render branch. Initialised here so the post-render
     # `new_hmove_blank` decision can read it even when line_advance == 0.
@@ -1557,6 +1559,25 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
         new_m1_x = (int(tia_for_render.m1_x) - _dm1) % 160
         new_bl_x = (int(tia_for_render.bl_x) - _dbl) % 160
         new_hmove_motion_next = (0, 0, 0, 0, 0)
+        # Task #115e (Cosmic Ark counter phase): step the M0 motion bug
+        # AFTER the rendered line (xitari's scanline-END block sets up the
+        # NEXT line — TIA.cxx:1805). The just-rendered line used the PRIOR
+        # step's counter/position; advance now so the next line drifts/
+        # stretches/blanks correctly. Off-by-one if stepped before render
+        # (jutari/jaxtari blanked where xitari stretched — journey_escape).
+        # Steps `line_advance` times so multi-line advance keeps counter
+        # phase synced (incl. VBLANK).
+        if tia_for_render.m0_cosmic_ark:
+            stepped = tia_for_render._replace(
+                m0_x=new_m0_x,  # take the post-hmove_motion_next position
+            )
+            for _ in range(line_advance):
+                stepped = _cosmic_ark_advance(stepped)
+            new_m0_x = int(stepped.m0_x)
+            tia_for_render = tia_for_render._replace(
+                m0_cosmic_counter=stepped.m0_cosmic_counter,
+                m0_cosmic_line=stepped.m0_cosmic_line,
+            )
     else:
         new_p0_x, new_p1_x = tia.p0_x, tia.p1_x
         new_m0_x, new_m1_x, new_bl_x = tia.m0_x, tia.m1_x, tia.bl_x
