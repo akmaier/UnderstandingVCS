@@ -5073,3 +5073,27 @@ the ACCEPTED tradeoff: it's a VDELP-shadow game (player should not draw at all, 
 unfixed) so faithful player POSITIONING just changes how the erroneously-drawn
 player looks; it closes once VDELP is fixed. No currently-exact game regressed.
 Spec + remaining steps in PORT_OBJECT_RENDER_PLAN.md.
+
+---
+
+## #115d (2026-06-16) — Cosmic Ark M0 TIA-bug port + harness PAL-height fix
+
+Ported xitari's "Cosmic Ark" missile-0 motion bug (TIA.cxx:1805/2585/2763): armed
+when HMM0 goes 7→6 exactly 21 CPU cycles after the last HMOVE, disabled by any
+HMOVE; while armed, M0 drifts every scanline by {18,33,0,17}[counter] (counter
+cycling), stretched ≥2px at counter 1, blanked at counter 2 — the diagonal star
+field in journey_escape. New TIAState `last_hmove_clock` / `m0_cosmic_ark` /
+`m0_cosmic_counter` / `m0_cosmic_line`; `_cosmic_ark_advance!` stepped once per
+completed scanline (incl. VBLANK, so the counter phase matches); `_missile_set`
+applies the per-line stretch/blank for M0.
+
+**Gated:** RAM 64/64 bit-exact, Pkg.test green. journey_escape 325→311px; NO other
+game changed (only the precise enable triggers it). A faithful mechanism per the
+"match deep runtime logic" directive — but journey_escape's DOMINANT residual is
+NOT the stars: the harness (now PAL-height-aware) shows the worst row is only 3px,
+i.e. ~3px/row spread across the whole screen, within the PFP playfield block near
+p0/p1 — a separate per-row player/playfield sub-pixel bug (TODO).
+
+Also fixed render_diff.py's hardcoded 210-row assumption: `jutari_full_frame` now
+infers the per-frame height (PAL/tall games — air_raid 250, journey_escape — were
+crashing `--auto`).

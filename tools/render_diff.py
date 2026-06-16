@@ -72,9 +72,13 @@ def jutari_full_frame(rom, acts, frame):
                     "--rom", str(rom), "--actions", str(acts),
                     "--out", str(outf), "--max-frames", str(frame + 1)],
                    capture_output=True, text=True, check=True, timeout=900)
-    buf = np.frombuffer(outf.read_bytes(), dtype=np.uint8).reshape(-1, 210, W)
+    raw = outf.read_bytes()
     outf.unlink(missing_ok=True)
-    return buf[frame]
+    # Infer the per-frame row count (PAL/tall games are not 210 — e.g. air_raid
+    # 250, journey_escape). nf frames were written; H = bytes / (nf * W).
+    nf = frame + 1
+    h = len(raw) // (nf * W)
+    return np.frombuffer(raw, dtype=np.uint8).reshape(nf, h, W)[frame]
 
 
 def auto_worst_row(rom, acts, frame):
