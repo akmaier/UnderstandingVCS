@@ -5016,3 +5016,26 @@ agents). The same run surfaced the next high-confidence target: **air_raid** is 
 INPT0 default-bit bug (jutari defaults analog pots INPT0-3 to D7=1; xitari joystick
 controllers drive them D7=0 — air_raid's kernel reads INPT0 via `LDA $58` into
 COLUP0/P1, so jutari paints player pixels 0x98 vs xitari 0x18, 24px/frame).
+
+---
+
+## #115b (2026-06-16) — joystick INPT0-3 idle LOW → air_raid 24→2px
+
+air_raid rendered 24px/frame wrong (rows 219-223, all frames). The
+color-attribution workflow (HIGH confidence) pinned it: jutari defaulted the
+analog pot pins INPT0-3 to D7=1 ($80), but xitari's `Joystick::read(AnalogPin)`
+returns `maximumResistance` → `TIA::INPT0_3` yields D7=0 (TIA.cxx:1877-1885).
+air_raid's bottom-band kernel does `LDA $58` (INPT0 via TIA mirror) → `STA
+COLUP0/COLUP1`, so jutari's D7=1 painted the player pixels 0x98 vs xitari 0x18.
+
+**Fix (controller-aware):** keep the raw TIA default at $80 (paddle-idle), but for
+joystick games (`!romsettings_uses_paddles`) override INPT0-3 to $00 at each
+`_boot_burn!` (StellaEnvironment.jl). Paddle games (pong/breakout) keep $80 + the
+dump-pot model — a first attempt at a *global* $00 default regressed pong's PXC1
+trace (paddles idle HIGH), so the override must be controller-scoped.
+
+**Gated:** RAM 64/64 bit-exact (zero change), jutari Pkg.test green (incl. pong
+PXC1 + the INPT-defaults testset). Screen: air_raid 24→2px (rows 219-222 now
+exact); the residual **2px at row 223** is a separate bottom-band sub-issue (color
+0x19 vs 0xe1, not a D7 bit) — air_raid still counts as non-exact (screen stays
+45/64), TODO. No other game changed.

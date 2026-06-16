@@ -124,6 +124,19 @@ function _boot_burn!(env::StellaEnvironment, boot_noop_steps::Integer,
     env.right_paddle = _PADDLE_DEFAULT
     if romsettings_uses_paddles(env.settings)
         _apply_paddle_action!(env, Int(NOOP))
+    else
+        # Task #115: joystick games drive the analog pot pins INPT0-3 to idle
+        # LOW (D7=0). xitari's `Joystick::read(AnalogPin)` returns
+        # maximumResistance, so `TIA::INPT0_3` yields D7=0 (TIA.cxx:1877-1885) —
+        # NOT the $80 paddle-idle default. air_raid reads INPT0 (`LDA $58`) into
+        # COLUP0/P1, so the wrong D7 painted player pixels 0x98 vs xitari 0x18
+        # (24px/frame). Set here (each boot, before the NOOP burn) so the boot
+        # frames already see the correct pins. Paddle games keep the $80 default
+        # + dump-pot model (the `if` branch); this only touches joystick games.
+        env.console.bus.tia.inpt[1] = 0x00
+        env.console.bus.tia.inpt[2] = 0x00
+        env.console.bus.tia.inpt[3] = 0x00
+        env.console.bus.tia.inpt[4] = 0x00
     end
 
     # --- Console difficulty switches (#103, amidar) ---------------------

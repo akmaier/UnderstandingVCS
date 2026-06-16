@@ -2142,7 +2142,9 @@ end
     end
 
     @testset "INPT defaults as of P6" begin
-        # INPT0-3 (paddle pots) default $80; INPT4/5 (triggers) idle high $80.
+        # Raw TIA default: INPT0-3 (paddle pots) $80; INPT4/5 (triggers) idle
+        # high $80. Joystick games override INPT0-3 to $00 at StellaEnvironment
+        # construction (#115) — see the StellaEnvironment joystick-INPT testset.
         tia = initial_tia_state()
         for reg in 0x38:0x3D
             @test tia_peek(tia, reg) == 0x80

@@ -6,7 +6,7 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 
 | game | max px/frame | total px | first div frame | worst-frame rows |
 |---|---|---|---|---|
-| air_raid | 24 | 1440 | 1 | 219-223 |
+| air_raid | 2 | 120 | 1 | 223-223 |
 | alien | **0 ✅** | 0 | — | — |
 | amidar | 3 | 177 | 2 | 182-182 |
 | assault | **0 ✅** | 0 | — | — |

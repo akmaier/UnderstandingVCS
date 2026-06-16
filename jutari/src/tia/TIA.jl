@@ -394,7 +394,11 @@ mutable struct TIAState
     buffer_swap_pending::Bool
 end
 
-# INPT defaults: paddle pots ($80 = centred), triggers idle high (D7=1).
+# INPT defaults: paddle pots ($80 = centred), triggers idle high (D7=1). Task
+# #115: joystick games override INPT0-3 to $00 (D7=0) at StellaEnvironment
+# construction (xitari's joystick `read(AnalogPin)` returns maximumResistance so
+# `TIA::INPT0_3` yields D7=0, TIA.cxx:1877-1885). This raw default stays $80 for
+# paddle games (pong/breakout use the dump-pot model + idle-high pot).
 initial_tia_state() = TIAState(
     zeros(UInt8, NUM_REGISTERS),
     0, 0, UInt64(0), false,
