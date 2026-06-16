@@ -397,6 +397,14 @@ class TIAState(NamedTuple):
     # overwrite the whole display window so they are unchanged.
     framebuffer_prev: jnp.ndarray = None  # type: ignore
     buffer_swap_pending: bool = False
+    # Task #115c (faithful object render): xitari's per-player "skip first copy"
+    # mask state (the [enable] index of ourPlayerMaskTable). PER-SCANLINE
+    # TRANSIENT — xitari resets it to draw-all at the end of every scanline
+    # (TIA.cxx:1799) and on NUSIZ/HMOVE; only a mid-line RESP whose reset-when
+    # is 0 or 1 sets it (skip the first copy for the rest of that line).
+    # See jutari `76f101e` / PORT_OBJECT_RENDER_PLAN.md.
+    p0_skip_first: bool = False
+    p1_skip_first: bool = False
 
 
 def initial_tia_state() -> TIAState:
@@ -445,6 +453,8 @@ def initial_tia_state() -> TIAState:
         vsync_finish_clock=0x7FFFFFFF,
         framebuffer_prev=jnp.zeros((SCREEN_HEIGHT, SCREEN_WIDTH), dtype=jnp.uint8),
         buffer_swap_pending=False,
+        p0_skip_first=False,
+        p1_skip_first=False,
     )
 
 
@@ -596,6 +606,61 @@ def _resp_player_position(color_clock: int) -> int:
     if color_clock < HBLANK_COLOR_CLOCKS:
         return 3
     return ((color_clock - HBLANK_COLOR_CLOCKS) + 5) % SCREEN_WIDTH
+
+
+# Task #115c (faithful object render): pseudo-register codes used in the
+# `pending_writes` queue to carry a deferred RESP0/RESP1 mid-scanline reposition
+# (value = the new player X). Chosen OUTSIDE the 0..0x3F TIA register range so
+# `_apply_pending_write` dispatches them specially (never indexes `registers`).
+_PEND_RESP0 = 0x40
+_PEND_RESP1 = 0x41
+
+
+def _player_reset_when(mode: int, oldx: int, newx: int) -> int:
+    """Task #115c: port of xitari's `ourPlayerPositionResetWhenTable[mode][oldx][newx]`
+    (TIA.cxx computePlayerPositionResetWhenTable). Returns where a RESP-driven
+    new player position `newx` falls relative to the OLD position `oldx` for
+    NUSIZ copy `mode` (0..7):
+      -1 = inside the 4-clock DELAY of an old copy
+       1 = inside the DISPLAY (8/16/32px) of an old copy
+       0 = neither
+    Drives skip-first-copy: when in {0, 1} the first copy is skipped for the
+    rest of the scanline; when -1 it isn't. Computed (not table-allocated) —
+    copies at the mode's base offsets, display window 8 (modes 0-4,6) / 16
+    (mode 5 double) / 32 (mode 7 quad). The wrap candidate (newx+160) mirrors
+    xitari's `newx < 160+72+5` iteration so right-edge copies wrap.
+    """
+    if mode == 0:
+        copies = (0,)
+    elif mode == 1:
+        copies = (0, 16)
+    elif mode == 2:
+        copies = (0, 32)
+    elif mode == 3:
+        copies = (0, 16, 32)
+    elif mode == 4:
+        copies = (0, 64)
+    elif mode == 6:
+        copies = (0, 32, 64)
+    else:                                # modes 5, 7: single wide copy
+        copies = (0,)
+    dispw = 16 if mode == 5 else 32 if mode == 7 else 8
+    result = 0
+    for n in (newx, newx + 160):
+        if n > 160 + 72 + 4:
+            continue
+        in_delay = False
+        in_disp = False
+        for b in copies:
+            if oldx + b <= n < oldx + b + 4:
+                in_delay = True
+            elif oldx + b + 4 <= n < oldx + b + 4 + dispw:
+                in_disp = True
+        if in_disp:        # display checked after delay (xitari order) — wins
+            result = 1
+        elif in_delay:
+            result = -1
+    return result
 
 
 def _resp_missile_ball_position(color_clock: int) -> int:
@@ -907,6 +972,30 @@ def tia_poke(tia: TIAState, addr: int, value: int,
         # exists in the shadow for ~2 copy slots.
         return tia._replace(pending_writes=new_pending)
 
+    # Task #115c (faithful object render): RESP0/RESP1 mid-scanline reposition.
+    # Defer the player-position change to its activation color clock so the
+    # player renders at the OLD position LEFT of the strobe and the NEW
+    # position RIGHT of it, with skip-first-copy applied per xitari's
+    # reset-when (TIA.cxx case 0x10/0x11 + ourPlayerPositionResetWhenTable).
+    # when==1 (newx inside an old copy's DISPLAY) renders 11 more clocks at
+    # the old position first (xitari `updateFrame(clock + 11)`), so activate
+    # at beam_cc+11. HBLANK strobes (beam_cc < 68) fall through to the
+    # immediate elif chain below — xitari resets skip-first every scanline
+    # end, so an HBLANK strobe never carries skip-first into the visible
+    # region. Carries newx in the pending value; skip-first is recomputed at
+    # activation from the (still-old) p_x.
+    if reg in (W_RESP0, W_RESP1) and beam_cc >= HBLANK_COLOR_CLOCKS:
+        player = 0 if reg == W_RESP0 else 1
+        newx = _resp_player_position(int(beam_cc))
+        oldx = int(tia.p0_x) if player == 0 else int(tia.p1_x)
+        mode = int(tia.registers[W_NUSIZ0 if player == 0 else W_NUSIZ1]) & 0x07
+        when = _player_reset_when(mode, oldx, newx)
+        act = int(beam_cc) + (11 if when == 1 else 0)
+        pseudo = _PEND_RESP0 if player == 0 else _PEND_RESP1
+        return tia._replace(
+            pending_writes=tia.pending_writes + ((act, pseudo, jnp.uint8(newx)),),
+        )
+
     new_registers = tia.registers.at[reg].set(jnp.uint8(value8))
     new_tia = tia._replace(registers=new_registers)
 
@@ -975,10 +1064,19 @@ def tia_poke(tia: TIAState, addr: int, value: int,
     elif reg == W_RESP0:
         # P3i-e/g: xitari-exact RESP0 from the *effective* sub-instruction
         # beam color clock (beam_cc), not the stale instruction-start
-        # tia.color_clock — HBLANK constant 3, visible +5 offset.
-        new_tia = new_tia._replace(p0_x=_resp_player_position(beam_cc))
+        # tia.color_clock — HBLANK constant 3, visible +5 offset. Only
+        # reached for HBLANK strobes (visible-region RESP* was deferred
+        # above). Task #115c: HBLANK strobe → draw all copies (xitari
+        # resets the player mask to skip-first=0 every scanline end).
+        new_tia = new_tia._replace(
+            p0_x=_resp_player_position(beam_cc),
+            p0_skip_first=False,
+        )
     elif reg == W_RESP1:
-        new_tia = new_tia._replace(p1_x=_resp_player_position(beam_cc))
+        new_tia = new_tia._replace(
+            p1_x=_resp_player_position(beam_cc),
+            p1_skip_first=False,
+        )
     elif reg == W_RESM0:
         # P3i-e: missile/ball use the +4 offset / HBLANK constant 2.
         new_tia = new_tia._replace(m0_x=_resp_missile_ball_position(beam_cc))
@@ -1027,6 +1125,8 @@ def tia_poke(tia: TIAState, addr: int, value: int,
                 ),
             )
         else:
+            # Task #115c: HMOVE completeMotion recomputes player masks at
+            # skip-first=0 (xitari TIA.cxx:2749) → draw all copies again.
             new_tia = new_tia._replace(
                 p0_x=(new_tia.p0_x - _hmove_motion(sc, hmp0)) % 160,
                 p1_x=(new_tia.p1_x - _hmove_motion(sc, hmp1)) % 160,
@@ -1034,6 +1134,8 @@ def tia_poke(tia: TIAState, addr: int, value: int,
                 m1_x=(new_tia.m1_x - _hmove_motion(sc, hmm1)) % 160,
                 bl_x=(new_tia.bl_x - _hmove_motion(sc, hmbl)) % 160,
                 hmove_blank_pending=blank,
+                p0_skip_first=False,
+                p1_skip_first=False,
             )
     elif reg == W_HMCLR:
         # HMCLR zeros all five horizontal-motion registers (HMP0/HMP1/HMM0/HMM1/HMBL).
@@ -1119,6 +1221,23 @@ def _apply_pending_write(tia: "TIAState", reg: int, val) -> "TIAState":
     ENABL-lookback fix (breakout frame-92) with exact xitari ordering.
     Mirrors jutari `_apply_pending_write!`.
     """
+    # Task #115c (faithful object render): deferred RESP0/RESP1 reposition.
+    # `val` is the new player X; recompute skip-first from the (still-OLD) p_x
+    # via the reset-when table, then commit the new position. Pseudo-reg codes
+    # are outside the 0..0x3F range, so handle + return BEFORE any
+    # `registers` indexing.
+    if reg == _PEND_RESP0:
+        oldx = int(tia.p0_x)
+        mode = int(tia.registers[W_NUSIZ0]) & 0x07
+        newx = int(val)
+        skip = _player_reset_when(mode, oldx, newx) != -1
+        return tia._replace(p0_x=newx, p0_skip_first=skip)
+    if reg == _PEND_RESP1:
+        oldx = int(tia.p1_x)
+        mode = int(tia.registers[W_NUSIZ1]) & 0x07
+        newx = int(val)
+        skip = _player_reset_when(mode, oldx, newx) != -1
+        return tia._replace(p1_x=newx, p1_skip_first=skip)
     new_tia = tia._replace(registers=tia.registers.at[reg].set(jnp.uint8(val)))
     if reg == W_GRP0:
         return new_tia._replace(grp1_old=int(new_tia.registers[W_GRP1]))
@@ -1127,6 +1246,12 @@ def _apply_pending_write(tia: "TIAState", reg: int, val) -> "TIAState":
             grp0_old=int(new_tia.registers[W_GRP0]),
             enabl_old=int(new_tia.registers[W_ENABL]),
         )
+    # Task #115c: NUSIZ poke recomputes player mask at skip-first=0 (xitari
+    # ourPlayerMaskTable behavior).
+    if reg == W_NUSIZ0:
+        return new_tia._replace(p0_skip_first=False)
+    if reg == W_NUSIZ1:
+        return new_tia._replace(p1_skip_first=False)
     return new_tia
 
 
@@ -1184,6 +1309,13 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
         if not tia.vblank_active:
             row_pixels = []
             write_idx = 0
+            # Task #115c: xitari resets the player mask to draw-all
+            # (skip-first=0) at the end of every scanline (TIA.cxx:1799). So
+            # each rendered scanline STARTS drawing all copies; a mid-line
+            # RESP in the drain below sets skip-first for the remainder of
+            # THIS scanline only. Mirror of jutari `tia_advance!`.
+            tia_for_render = tia_for_render._replace(
+                p0_skip_first=False, p1_skip_first=False)
             cached_sets = _object_pixel_sets(tia_for_render)
             # P3i-f: track the HMOVE-blank window. When
             # `hmove_blank_pending` is true at scanline start, the
@@ -1343,13 +1475,16 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
     # (the beam_sc>=76 strobe deferred its motion); now apply the deferred
     # motion so line N+1 onward use the moved positions. (0,0,0,0,0) → no-op.
     # If no line crossed, keep it parked for a later advance. Mirror of jutari.
+    # Task #115c: source from `tia_for_render` (which has the post-drain p_x
+    # from deferred RESP* + skip_first state), not `tia` (which is the
+    # pre-drain snapshot).
     if line_advance > 0:
         _dp0, _dp1, _dm0, _dm1, _dbl = tia.hmove_motion_next
-        new_p0_x = (int(tia.p0_x) - _dp0) % 160
-        new_p1_x = (int(tia.p1_x) - _dp1) % 160
-        new_m0_x = (int(tia.m0_x) - _dm0) % 160
-        new_m1_x = (int(tia.m1_x) - _dm1) % 160
-        new_bl_x = (int(tia.bl_x) - _dbl) % 160
+        new_p0_x = (int(tia_for_render.p0_x) - _dp0) % 160
+        new_p1_x = (int(tia_for_render.p1_x) - _dp1) % 160
+        new_m0_x = (int(tia_for_render.m0_x) - _dm0) % 160
+        new_m1_x = (int(tia_for_render.m1_x) - _dm1) % 160
+        new_bl_x = (int(tia_for_render.bl_x) - _dbl) % 160
         new_hmove_motion_next = (0, 0, 0, 0, 0)
     else:
         new_p0_x, new_p1_x = tia.p0_x, tia.p1_x
@@ -1386,6 +1521,20 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
         grp0_old=tia_for_render.grp0_old if line_advance > 0 else tia.grp0_old,
         grp1_old=tia_for_render.grp1_old if line_advance > 0 else tia.grp1_old,
         enabl_old=tia_for_render.enabl_old if line_advance > 0 else tia.enabl_old,
+        # Task #115c: skip-first-copy flags. The drain sets them when a
+        # deferred RESP activates with reset-when in {0, 1}; without
+        # threading them out of tia_for_render they would never reach the
+        # next scanline. xitari resets them at scanline END (TIA.cxx:1799)
+        # — so for line_advance>0 they should typically be False (the
+        # render loop already reset them at scanline start); however a
+        # deferred RESP that activates LATE in the same scanline can leave
+        # them set, and a multi-scanline advance would propagate the WRONG
+        # state. The scanline-start reset at the top of the render branch
+        # handles this for any subsequent rendered scanline — by the END of
+        # the last rendered scanline the flag matches xitari's per-scanline
+        # transient state, which is correct.
+        p0_skip_first=tia_for_render.p0_skip_first if line_advance > 0 else tia.p0_skip_first,
+        p1_skip_first=tia_for_render.p1_skip_first if line_advance > 0 else tia.p1_skip_first,
         # P4c (dump-pot): keep a monotonic CPU-cycle counter so
         # `tia_peek` can decide whether the paddle cap has charged
         # past its xitari-formula threshold yet.
@@ -1757,7 +1906,8 @@ def _object_pixel_sets(tia: TIAState) -> dict[str, set[int]]:
     # involving the 2nd/3rd copies and the wide modes are detected.
     # P3h: GRP comes via _vdel_grp so VDELP delayed updates also
     # apply to collision detection.
-    def _player_set(grp_reg: int, refp_reg: int, nusiz_reg: int, x: int) -> set[int]:
+    def _player_set(grp_reg: int, refp_reg: int, nusiz_reg: int, x: int,
+                    skip_first: bool) -> set[int]:
         # `grp_reg` selects the player index (0 or 1) implicitly: W_GRP0 → 0.
         player = 0 if grp_reg == W_GRP0 else 1
         grp = _vdel_grp(tia, player)
@@ -1769,7 +1919,13 @@ def _object_pixel_sets(tia: TIAState) -> dict[str, set[int]]:
         # xitari's quad/double-size mask quirk; see `_overlay_player`.
         nusiz_offset = 1 if scale > 1 else 0
         out: set[int] = set()
-        for copy_off in copy_offsets:
+        # Task #115c: skip-first-copy (xitari ourPlayerMaskTable [enable]=1
+        # index, set by a mid-scanline RESP whose reset-when is 0/1). The
+        # FIRST copy (copy_offsets[0]) is omitted for the rest of the
+        # scanline.
+        for ci, copy_off in enumerate(copy_offsets):
+            if skip_first and ci == 0:
+                continue
             base = (x + copy_off + nusiz_offset) % 160
             for i in range(8):
                 bit_idx = i if reflected else (7 - i)
@@ -1778,8 +1934,8 @@ def _object_pixel_sets(tia: TIAState) -> dict[str, set[int]]:
                         out.add((base + i * scale + k) % 160)
         return out
 
-    p0 = _player_set(W_GRP0, W_REFP0, W_NUSIZ0, tia.p0_x)
-    p1 = _player_set(W_GRP1, W_REFP1, W_NUSIZ1, tia.p1_x)
+    p0 = _player_set(W_GRP0, W_REFP0, W_NUSIZ0, tia.p0_x, bool(tia.p0_skip_first))
+    p1 = _player_set(W_GRP1, W_REFP1, W_NUSIZ1, tia.p1_x, bool(tia.p1_skip_first))
 
     # Missiles — same multi-copy from NUSIZ low 3 bits, width from
     # NUSIZ bits 4-5.

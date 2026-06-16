@@ -3,10 +3,12 @@
 import jax.numpy as jnp
 
 from jaxtari.tia.system import (
+    NTSC_CPU_CYCLES_PER_SCANLINE,
     _hm_offset,
     _resp_position,
     initial_tia_state,
     render_scanline,
+    tia_advance,
     tia_poke,
     W_COLUBK,
     W_COLUP0,
@@ -80,16 +82,24 @@ def test_resp0_sets_p0_x_from_scanline_cycle():
     # P3i-e: RESP0 uses xitari-exact formula `(color_clock - HBLANK + 5) % 160`
     # at visible color clocks, latched to 3 during HBLANK. With
     # color_clock = 30*3 = 90: (90-68+5) % 160 = 27.
+    #
+    # Task #115c (faithful object render): a VISIBLE RESP is now DEFERRED
+    # to its activation color clock so the player renders at the OLD
+    # position left of the strobe (multiplexed-sprite trick). Advance one
+    # scanline so the deferred pending_writes entry drains into p0_x.
     tia = initial_tia_state()._replace(scanline_cycle=30, color_clock=90)
     tia = tia_poke(tia, W_RESP0, 0x00)
+    tia = tia_advance(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
     assert tia.p0_x == 27
 
 
 def test_resp1_does_not_touch_p0_x():
+    # Task #115c: VISIBLE RESP* is deferred — drain via tia_advance.
     tia = initial_tia_state()._replace(scanline_cycle=30, color_clock=90, p0_x=50)
     tia = tia_poke(tia, W_RESP1, 0x00)
+    tia = tia_advance(tia, NTSC_CPU_CYCLES_PER_SCANLINE)
     assert tia.p0_x == 50
-    assert tia.p1_x == 27       # same P3i-e formula as RESP0
+    assert tia.p1_x == 27       # same P3i-e formula as RESP0 (deferred)
 
 
 def test_hmove_applies_hmp_offsets_to_both_players():
