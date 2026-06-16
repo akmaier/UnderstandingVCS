@@ -99,6 +99,12 @@ class QbertRomSettings(RomSettings):
     as the terminal sentinel.
     """
 
+    def screen_y_start(self) -> int:
+        # Task #113: qbert's stella.pro Display.YStart = 40. Render-only crop;
+        # qbert keeps its existing #106 partial-frame semantics from
+        # Generic-style scoring above.
+        return 40
+
     def __init__(self) -> None:
         self._prev_score: int = 0
 

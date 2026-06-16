@@ -149,6 +149,16 @@ class UpNDownRomSettings(GenericRomSettings):
     def starting_actions(self) -> list[int]:
         return [1]   # FIRE
 
+    def screen_y_start(self) -> int:
+        return 30   # task #113 (stella.pro Display.YStart)
+
+
+class PacmanRomSettings(GenericRomSettings):
+    # Task #113: pacman (NOT ms_pacman) has Display.YStart=33 in stella.pro.
+    # Render-only crop override; no starting actions.
+    def screen_y_start(self) -> int:
+        return 33
+
 
 class YarsRevengeRomSettings(GenericRomSettings):
     def starting_actions(self) -> list[int]:
