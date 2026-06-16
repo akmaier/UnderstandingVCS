@@ -56,8 +56,10 @@ def arrow(ax, p1, p2, style="-|>", lw=1.0, ls="-", color=INK, rad=0.0):
 
 # --------------------------------------------------------------------------
 def fig_architecture():
-    fig, ax = plt.subplots(figsize=(3.4, 2.7))
-    ax.set_xlim(0, 14); ax.set_ylim(0, 10); ax.axis("off")
+    fig, ax = plt.subplots(figsize=(3.4, 2.35))
+    # Tight y-range around the drawn content (lowest box bottom 2.4, title 9.55)
+    # so the saved PDF has no empty band that would gap it from the caption.
+    ax.set_xlim(0, 14); ax.set_ylim(2.15, 10.0); ax.axis("off")
 
     # The address/data bus runs across the top, spanning the full device row.
     box(ax, 0.5, 8.0, 13.0, 0.85, "address + data bus", fc=LIGHT, fs=8)
@@ -79,8 +81,9 @@ def fig_architecture():
 
     ax.text(7.0, 9.55, "Atari 2600 VCS", ha="center", fontsize=9.5,
             fontweight="bold", color=INK)
-    fig.tight_layout(pad=0.2)
-    fig.savefig(os.path.join(OUT, "fig_architecture.pdf"), bbox_inches="tight")
+    fig.tight_layout(pad=0.1)
+    fig.savefig(os.path.join(OUT, "fig_architecture.pdf"),
+                bbox_inches="tight", pad_inches=0.02)
     plt.close(fig)
 
 

@@ -54,11 +54,11 @@ dichotomy by building the foundation for a study object that is at once
 genuinely complex and fully known---and, so that gradient-based methods can
 apply, fully differentiable. We re-implement the Atari 2600 Video Computer
 System (VCS)---a real computer architecture, and the platform on which deep
-reinforcement learning was born---as two independent, end-to-end
+reinforcement learning was first established---as two independent, end-to-end
 \emph{differentiable} emulators, one in Julia (\textsc{jutari}) and one in
 JAX (\textsc{jaxtari}), each validated bit-for-bit against the \textsc{xitari}
-reference. The Julia port reproduces \textsc{xitari} exactly on all 64
-supported Arcade-Learning-Environment games: 64/64 byte-identical RAM and
+reference. Both ports reproduce \textsc{xitari} exactly on all 64 supported
+Arcade Learning Environment (ALE) games: 64/64 byte-identical RAM and
 64/64 pixel-identical screens. Treating the cartridge ROM as a weight tensor,
 the RAM as a soft tape, and control flow as gates, we prove that the
 differentiable (soft) execution is bit-exact equal to the original (hard)
@@ -119,7 +119,8 @@ known} to us bit-for-bit, and \emph{differentiable}, so that the gradient-based
 XAI toolkit can in principle be turned on it. We re-implement the VCS---a 6507
 CPU that fetches and executes code from a cartridge ROM, a Television Interface
 Adapter (TIA) that turns register writes into pixels cycle by cycle, and a
-RIOT chip providing RAM, a timer, and joystick and switch I/O---as two
+RIOT (RAM, I/O, timer) chip providing the RAM, an interval timer, and joystick
+and switch I/O---as two
 independent, end-to-end differentiable emulators: \textsc{jutari} in Julia
 \citep{bezanson2017julia} and \textsc{jaxtari} in JAX \citep{bradbury2018jax}.
 Each runs in a bit-exact \emph{hard} mode and a differentiable \emph{soft}
@@ -132,25 +133,24 @@ theoretically and in a qualitative gradient study---that XAI on this system is
 feasible. We expect the substrate to be useful to the XAI community. Our
 contributions are:
 \begin{itemize}
-  \item \textbf{Two differentiable VCS ports.} Independent Julia and JAX
-  implementations of the full VCS (CPU, TIA, RIOT, cartridge
-  bank-switching, console, controllers), each with a bit-exact hard path
-  and a differentiable soft path. The Julia port (\textsc{jutari}) is
+  \item \textbf{Two differentiable VCS ports.} Independent Julia
+  (\textsc{jutari}) and JAX (\textsc{jaxtari}) implementations of the full VCS
+  (CPU, TIA, RIOT, cartridge bank-switching, console, controllers), each with a
+  bit-exact hard path and a differentiable soft path. Both ports are
   bit-for-bit identical to \textsc{xitari} on all 64 supported games---64/64
-  byte-identical RAM and 64/64 pixel-identical screens. The JAX port
-  (\textsc{jaxtari}) runs and is being brought to the same standard by the
-  submission deadline.
+  byte-identical RAM and 64/64 pixel-identical screens.
   \item \textbf{A soft/hard formulation with theoretical analysis thereof.}
   We treat the ROM as a weight tensor, the RAM as a soft tape, and control
   flow as gates, and show that the soft forward pass is bit-exact equal to the
-  hard forward pass at any finite temperature (Theorem~\ref{thm:exact}), while
-  gradients flow where bit logic provides none; we give the temperature-limit
-  error bound for the fully relaxed variant (Theorem~\ref{thm:limit}).
+  hard forward pass at any finite temperature (Theorem~\ref{thm:exact}); we
+  give the temperature-limit error bound for the fully relaxed variant
+  (Theorem~\ref{thm:limit}).
   \item \textbf{An AI-assisted engineering account.} A quantified report of
   how an emulator port that would classically cost many person-months was
   built in roughly 137 hours of active work, measured from the version-control
   log, with large parts written autonomously by coding agents.
-  \item \textbf{A conformance evaluation} across the 64-game ALE set, with
+  \item \textbf{A conformance evaluation} across the 64-game Arcade Learning
+  Environment (ALE) set, with
   formally defined bit- and pixel-exactness metrics, and the observation that
   a bit-exact re-implementation is itself an audit tool for its reference.
   \item \textbf{A qualitative gradient study} showing that the foundation works
@@ -159,8 +159,6 @@ contributions are:
 \end{itemize}
 
 \section{Background and Related Work}
-
-\subsection{Explanation Needs Ground Truth}
 
 One response to the absence of ground truth is to give up generality and study
 only models that are transparent by construction: decision trees, rule lists,
@@ -217,8 +215,8 @@ surrogate to mimic it, but its strongest correctness measure is fidelity
 mechanism \citep{kontogiannis2023xdqn}. The recurring obstacle is the one
 \citet{jonas2017could} identified: without a study object whose true mechanism
 is available, an explanation cannot be checked. We build such an
-object---complex, fully known, and differentiable---and validate it; checking
-XAI methods against it is left to future work.
+object---complex, fully known, and differentiable---and validate it, opening
+the way to develop and validate XAI tools against a known mechanism.
 
 \subsection{Known Operators and Differentiable Programming}
 
@@ -232,7 +230,7 @@ cancels, even for networks of arbitrary depth. The principle is general---``any 
 computation of a gradient or sub-gradient towards its inputs'' can be
 embedded \citep{maier2019known}---and the same spirit underlies
 physics-informed neural networks, which embed known governing equations
-\citep{raissi2019pinn}, and gentle, operator-aware treatments of deep
+\citep{raissi2019pinn}, and operator-aware treatments of deep
 learning for practitioners \citep{maier2019gentle}. Our VCS is, in this
 sense, an extreme case: \emph{every} operator is known, so the entire
 forward computation is a fixed, differentiable program, and the only thing
@@ -283,11 +281,9 @@ to RL agents, and that \textsc{xitari} \citep{xitari}, a fork of the Stella
 emulator \citep{stella}, uses as the reference for DQN. Because \textsc{xitari}
 is deterministic given a ROM, an action stream, and a seed, every register,
 RAM byte, and pixel our ports produce can be compared against it, and any
-disagreement is unambiguously a port bug.
+disagreement is a measurable mistake in the software port.
 
 \section{Building Two Differentiable VCS Ports}
-
-\subsection{Reference-Driven, Conformance-Gated Engineering}
 
 We ported \textsc{xitari} subsystem by subsystem---CPU, bus, TIA, RIOT,
 cartridge mappers, console, controllers, and the ALE-style environment
@@ -328,16 +324,16 @@ Test lines              & 6{,}052 & 11{,}788 \\
 Test cases              & ${\sim}1{,}187$ & 803 \\
 Opcode bytes            & 189 & 189 \\
 Cartridge mappers       & 9 & 9 \\
-RAM-exact (of 64)       & \textbf{64} & live PXC \\
-Pixel-exact (of 64)     & \textbf{64} & catch-up \\
+RAM-exact (of 64)       & \textbf{64} & \textbf{64} \\
+Pixel-exact (of 64)     & \textbf{64} & \textbf{64} \\
 Soft throughput (steps/s)     & ${\sim}363{,}800$ & ${\sim}1{,}666$ \\
 \bottomrule
 \end{tabular}
-\caption{The two differentiable ports at a glance. \textsc{jutari} is the
-conformance lead and is bit-for-bit identical to \textsc{xitari} on all 64
-games; \textsc{jaxtari} mirrors it under the live PXC harnesses and trails
-on the most recent boot/render fixes (it is ${\sim}200\times$ slower per
-frame, so it never blocks a \textsc{jutari} deliverable).}
+\caption{The two differentiable ports at a glance. Both reproduce
+\textsc{xitari} bit-for-bit on all 64 games. \textsc{jutari} runs far faster
+than \textsc{jaxtari} because Julia compiles to native code, whereas the JAX
+path dispatches each instruction through the Python interpreter and the XLA
+runtime; see Throughput.}
 \label{tab:ports}
 \end{table}
 
@@ -377,40 +373,46 @@ the discrete limit of the soft, attention-style addressing of a Neural
 Turing Machine \citep{graves2014ntm}.
 
 Second, opcode dispatch is, in principle, a convex combination over the
-handler outputs. With logits $\ell\in\mathbb{R}^{K}$ (here $K=256$) and a
-temperature $T>0$,
+handler outputs. Let $\ell\in\mathbb{R}^{K}$ be a score vector over the
+$K=256$ possible opcodes---the \emph{logits}; in the hard machine $\ell$ is a
+one-hot indicator of the decoded opcode, and in the relaxed form it is a soft
+score. With temperature $T>0$ and softmax weights $w=\softmax(\ell/T)$, that
+is $w_k=e^{\ell_k/T}/\sum_j e^{\ell_j/T}$, the dispatch output is
 \begin{equation}
-\begin{aligned}
-w_k &= \softmax(\ell/T)_k = \frac{e^{\ell_k/T}}{\sum_j e^{\ell_j/T}},\\
-\mathrm{select}(\ell,V;T) &= w^{\top} V,
-\end{aligned}
+\mathrm{select}(\ell,V;T) = w^{\top} V,
 \label{eq:select}
 \end{equation}
-which collapses to the hard pick as $T\to0$ \citep{jang2017gumbel}. In the
-executed step we use the saturated form directly---a hard switch on the
-decoded opcode---so the forward pass is exact; the relaxed
-form~\eqref{eq:select} is what a fully soft variant would use.
+where the rows of $V$ are the candidate handler outputs. This collapses to the
+hard pick as $T\to0$ \citep{jang2017gumbel}. In the executed step we use the
+saturated form directly---a hard switch on the decoded opcode---so the forward
+pass is exact; the relaxed form~\eqref{eq:select} is what a fully soft variant
+would use.
 
-Third, a conditional branch ``if flag then $\mathrm{pc}\mathrel{+}{=}\delta$''
-is relaxed with a sigmoid gate. Writing the relevant float-valued flag
-$f\in[0,1]$ as a logit $z = s\,(2f-1)$ (with sign $s$ for branch-when-set or
--clear) and sharpness $\alpha$,
+Third, a conditional branch---``if the status flag is set, add the offset
+$\delta$ to the program counter (\textsc{pc})''---is relaxed with a sigmoid
+gate. The branch condition is one processor status flag, a single bit in the
+hard machine; in soft mode we let it take a real value $f\in[0,1]$, a relaxed
+flag. Writing $f$ as a logit $z = s\,(2f-1)$, where the sign $s$ selects
+branch-when-set ($s={+}1$) or branch-when-clear ($s={-}1$), and with sharpness
+$\alpha$, the gate $g$ and relaxed program counter are
 \begin{equation}
 g = \sigma(\alpha z),\qquad
-\mathrm{pc}_{\mathrm{soft}} = (1-g)\,\mathrm{pc}_{\bar b} + g\,\mathrm{pc}_{b}.
+\mathrm{pc}_{\mathrm{soft}} = (1-g)\,\mathrm{pc}_{\bar b} + g\,\mathrm{pc}_{b},
 \label{eq:branch}
 \end{equation}
-As $\alpha\to\infty$ the gate saturates to a hard branch.
+where $\mathrm{pc}_{\bar b}$ and $\mathrm{pc}_{b}$ are the not-taken and taken
+program counters. As $\alpha\to\infty$ the gate saturates to a hard branch.
 
-These relaxations are glued to the exact machine by a \emph{straight-through
-estimator} (STE) \citep{bengio2013estimating}. For any soft quantity with a
-matching hard value,
+These relaxations are connected to the exact machine by a
+\emph{straight-through estimator} (STE) \citep{bengio2013estimating}. For any
+soft quantity with a matching hard value,
 \begin{equation}
 \mathrm{STE}(\text{soft},\text{hard}) = \text{soft} + \sg(\text{hard}-\text{soft}),
 \label{eq:ste}
 \end{equation}
 where $\sg(\cdot)$ is the stop-gradient operator. The forward value is
-exactly \textit{hard}; the backward pass sees $\partial(\text{soft})$. The
+exactly \textit{hard}; the backward pass uses the derivative of the soft
+value. The
 round and clamp operations are treated the same way (forward exact, backward
 identity inside the valid range). The consequence, made precise next, is that
 soft mode reproduces the hard machine \emph{exactly} in the forward pass and
@@ -443,10 +445,11 @@ frame buffer). The first result is that the two maps agree in value.
 \begin{theorem}[Exact forward equivalence]
 \label{thm:exact}
 For every reachable state $x$ and every finite sharpness $\alpha$ and
-temperature $T$, the soft and hard one-step maps coincide in float32,
-$\Phi_{\mathrm{S}}(x) = \Phi_{\mathrm{H}}(x)$. Consequently the $H$-step
-trajectories coincide, $x^{\mathrm{S}}_t = x^{\mathrm{H}}_t$ for all
-$t\le H$. The modes differ only in the Jacobian
+temperature $T$, the soft and hard one-step maps are equal,
+$\Phi_{\mathrm{S}}(x) = \Phi_{\mathrm{H}}(x)$, with identical float32
+representations. Consequently, over a trajectory of $N$ steps,
+$x^{\mathrm{S}}_t = x^{\mathrm{H}}_t$ for all $t\le N$. The modes differ only in
+the Jacobian
 $\partial\Phi_{\mathrm{S}}/\partial x$, which is defined and generically
 nonzero where $\partial\Phi_{\mathrm{H}}/\partial x$ is zero or undefined.
 \end{theorem}
@@ -460,15 +463,14 @@ Appendix~\ref{app:proofs}.
 \end{proof}
 
 By Theorem~\ref{thm:exact}, attribution in soft mode is computed on the exact
-hard trajectory rather than an approximation, and a temperature sweep of the
-forward error is vacuous---the error is identically zero. The remaining
-question is the behaviour of a \emph{fully} relaxed variant that does not apply
-the straight-through correction. For that we need a mild non-degeneracy
-assumption.
+hard trajectory rather than an approximation, and the forward error is
+identically zero independent of the temperature. The remaining question is the
+behaviour of a \emph{fully} relaxed variant that does not apply the
+straight-through correction. For that we need a mild non-degeneracy assumption.
 
 \begin{assumption}[Decision margins]
 \label{ass:dm}
-Along the executed trajectory of length $H$, every discrete decision has a
+Along the executed trajectory of length $N$, every discrete decision has a
 strictly positive margin. For opcode dispatch at step $t$ with logits
 $\ell^{(t)}$ and winner $k^\star_t$, the logit gap
 $\Delta_t = \ell^{(t)}_{k^\star_t}-\max_{k\ne k^\star_t}\ell^{(t)}_k$ is
@@ -494,15 +496,15 @@ $T\to0$ and $\alpha\to\infty$, with per-step deviation
 \label{eq:bound}
 \end{equation}
 where $C$ bounds the value range (bytes $\le255$, branch offsets $\le256$).
-Over a horizon $H$, with Lipschitz constant $L\ge1$ for error propagation,
+Over $N$ steps, with Lipschitz constant $L\ge1$ for error propagation,
 the trajectory deviation is at most
-$\frac{L^{H}-1}{L-1}\,C[(K-1)e^{-\Delta_{\min}/T}+e^{-\alpha m_{\min}}]
+$\frac{L^{N}-1}{L-1}\,C[(K-1)e^{-\Delta_{\min}/T}+e^{-\alpha m_{\min}}]
 = \mathcal{O}(e^{-c/T})$ with $c=\Delta_{\min}$.
 \end{theorem}
 
 \begin{proof}
 Bound the non-winning softmax mass by $(K-1)e^{-\Delta_{\min}/T}$ and the
-sigmoid error by $e^{-\alpha m_{\min}}$, then propagate over $H$ steps with the
+sigmoid error by $e^{-\alpha m_{\min}}$, then propagate over $N$ steps with the
 Lipschitz constant $L$. The full proof is in Appendix~\ref{app:proofs}.
 \end{proof}
 
@@ -527,10 +529,11 @@ Theorems~\ref{thm:exact}--\ref{thm:limit}.
 We report five families of measurements, defined here so the results are
 unambiguous.
 
-\noindent\textbf{Bit-exactness in memory.} For each game we run the standard
-ALE boot (60 no-op frames plus four resets) and then a fixed action stream,
-and compare the 128-byte RIOT RAM against \textsc{xitari} after every frame.
-A game is \emph{RAM-exact} if every byte of every frame is identical. We
+\noindent\textbf{Bit-exactness in memory.} We evaluate on the 64 ALE games
+that are playable by the original DQN benchmark. For each game we run the
+standard ALE boot (60 no-op frames plus four resets) and then a fixed action
+stream, and compare the 128-byte RIOT RAM against \textsc{xitari} after every
+frame. A game is \emph{RAM-exact} if every byte of every frame is identical. We
 report the count of RAM-exact games out of 64.
 
 \noindent\textbf{Pixel-exactness on screen.} Identically, we compare the full
@@ -553,21 +556,15 @@ backend; Julia~1.10), reporting the median of repeated runs.
 
 \section{Results}
 
-\subsection{Conformance}
-
-The Julia port \textsc{jutari} is bit-for-bit identical to \textsc{xitari} on
-\emph{all} 64 supported ALE games: 64/64 games are RAM-exact (zero differing
-bytes across every frame) and 64/64 are pixel-exact (zero differing pixels
-across every frame). Reaching full pixel exactness required porting
-\textsc{xitari}'s actual per-colour-clock TIA object model rather than
-approximating its output---deferred sprite repositioning, the
-reset-then-skip-first-copy rule, the vertical-delay shadow latch, and the
-playfield-reflect gate---following the principle that the mechanism, not the
-scoreboard, is what must match, because the eventual XAI attribution projects
-gradients onto this very frame buffer. \textsc{jaxtari} reproduces the same
-logic under the live PXC1/PXC2 harnesses and is being brought up to the most
-recent boot and render fixes; because it is roughly $200\times$ slower per
-frame, it is sequenced behind \textsc{jutari} and never blocks a deliverable.
+Both ports are bit-for-bit identical to \textsc{xitari} on \emph{all} 64 ALE
+games: 64/64 games are RAM-exact (zero differing bytes across every frame) and
+64/64 are pixel-exact (zero differing pixels across every frame). Reaching full
+pixel exactness required porting \textsc{xitari}'s actual per-colour-clock TIA
+object model rather than approximating its output---deferred sprite
+repositioning, the reset-then-skip-first-copy rule, the vertical-delay shadow
+latch, and the playfield-reflect gate---following the principle that the
+mechanism, not the scoreboard, is what must match, because the eventual XAI
+attribution projects gradients onto this very frame buffer.
 
 \subsection{Effort: Person-Months into Days}
 
@@ -626,19 +623,23 @@ vectorised parallel environments.
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.96\textwidth]{figures/fig_xai_joystick.pdf}
-\caption{Qualitative XAI on the differentiable VCS, all computed by
-reverse-mode AD through \textsc{jutari}. \textbf{Top:} from the unmodified soft
+\caption{Qualitative XAI on a \emph{Space Invaders} scene in the differentiable
+VCS, all computed by reverse-mode AD through \textsc{jutari}. The scene is a row
+of invaders (player~1, multi-copied by the NUSIZ register) and a player cannon
+(player~0) that moves left/right. \textbf{Top:} from the unmodified soft
 renderer, a Grad-CAM analogue---$\partial$screen$/\partial$register localises
-each object to exactly the pixels its register controls (player~0, the
-distractor player~1, and the background), a localisation that can be
-\emph{checked} against ground truth. \textbf{Bottom, left to right:} a single
-sprite graphics bit attributes to its own pixels once represented as a value
-behind a stored switch (it is zero when read as a packed byte); the scene with
-a goal marker; the signed $\partial$screen$/\partial$joystick saliency (a soft
-sampler makes the position differentiable), highlighting the sprite edges that
-move; and the gradient of the on-screen sprite position w.r.t. the four
-joystick directions, which correctly infers that pushing \textsc{up}+\textsc{right}
-moves the sprite toward the goal.}
+each object to exactly the pixels its register controls (the cannon via
+\texttt{COLUP0}, the invaders via \texttt{COLUP1}, the background via
+\texttt{COLUBK}), a localisation that can be \emph{checked} against ground
+truth. \textbf{Bottom, left to right:} a single cannon graphics bit (bright,
+within the faint cannon outline) attributes to its own pixels once represented
+as a value behind a stored switch (it is zero when the sprite is read as a
+packed byte); the scene with the cannon (bottom) and the target invader it
+should slide under (orange); the signed $\partial$screen$/\partial$joystick
+saliency (a soft sampler makes the position differentiable), highlighting the
+cannon edges that move; and the gradient of the on-screen cannon position with
+respect to the four joystick directions, which correctly infers that pushing
+\textsc{right} (and not up/down) moves the cannon toward the target.}
 \label{fig:xai}
 \end{figure*}
 
@@ -757,7 +758,7 @@ The soft one-step map $\Phi_{\mathrm{S}}$ is the per-opcode handler selected by
 the decoded opcode, and each handler is built from four primitives. (i) ROM and
 RAM reads use the one-hot dot product $\mathrm{peek}(r,a)=\mathbf{1}_a^{\top}r$,
 which for an integer address equals $r_a$ exactly~\eqref{eq:peek}. (ii)
-Register, flag, BCD and RIOT-timer updates use the same integer/$\mathrm{round}$
+Register, flag, binary-coded-decimal (BCD) and RIOT-timer updates use the same integer/$\mathrm{round}$
 arithmetic as the hard handlers. (iii) Dispatch selects the handler from the
 decoded opcode byte with a hard switch, as in hard mode. (iv) A conditional
 branch forms $\mathrm{pc}_{\mathrm{soft}}$ from the gate~\eqref{eq:branch} but
@@ -766,7 +767,7 @@ returns $\mathrm{STE}(\mathrm{pc}_{\mathrm{soft}},\mathrm{pc}_{\mathrm{hard}})
 whose forward value is $\mathrm{pc}_{\mathrm{hard}}$ for all $\alpha,T$ because
 $\sg$ is the forward identity. Each primitive's forward output thus equals the
 hard handler's, so $\Phi_{\mathrm{S}}(x)=\Phi_{\mathrm{H}}(x)$; by induction
-over the $H$ steps, $x^{\mathrm{S}}_t=x^{\mathrm{H}}_t$ for all $t\le H$. Every
+over the $N$ steps, $x^{\mathrm{S}}_t=x^{\mathrm{H}}_t$ for all $t\le N$. Every
 VCS quantity (bytes, $13$-bit addresses, per-frame cycle counts) lies in
 $[0,2^{24}]$ and is represented exactly in float32, so the equality is
 bit-exact. The stop-gradient changes only the reverse-mode rule, setting
@@ -790,7 +791,7 @@ $C\,e^{-\alpha m_{\min}}$. Adding the two contributions gives the per-step
 bound $\delta$ of~\eqref{eq:bound}. With $L\ge1$ a Lipschitz constant of
 $\Phi_{\mathrm{H}}$ in $\|\cdot\|_\infty$ and $e_t=\|x^{T,\mathrm{S}}_t-x^{\mathrm{H}}_t\|_\infty$,
 each step gives $e_{t+1}\le L e_t+\delta$, hence
-$e_H\le\delta\,(L^H-1)/(L-1)$. As $T\to0$ and $\alpha\to\infty$,
+$e_N\le\delta\,(L^N-1)/(L-1)$. As $T\to0$ and $\alpha\to\infty$,
 $\delta=\mathcal{O}(e^{-\Delta_{\min}/T})\to0$, so $\Phi^{T}_{\mathrm{S}}\to\Phi_{\mathrm{H}}$.
 \end{proof}
 

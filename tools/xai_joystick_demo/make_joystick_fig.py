@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 
 HERE = os.path.dirname(__file__)
 OUT = os.path.join(HERE, "out")
@@ -19,6 +20,9 @@ plt.rcParams.update({"font.family": "serif", "font.size": 8,
                      "pdf.fonttype": 42, "ps.fonttype": 42})
 
 INK = "#1a1a1a"; STEEL = "#35618f"; ORANGE = "#c8641a"
+# Single-hue dark->orange map: a binary saliency renders as a uniform orange
+# object on a dark field (no confusing white-in-yellow magma highlights).
+SAL = LinearSegmentedColormap.from_list("sal", ["#0c0c16", "#e07a1e"])
 
 
 def load():
@@ -49,34 +53,36 @@ def main():
 
     # Row 1 — genuine gradients in jutari's unmodified soft renderer.
     imshow(ax[0, 0], m["p1_frame"], "gray", "rendered scene")
-    imshow(ax[0, 1], m["p1_sal_colup0"], "magma",
+    imshow(ax[0, 1], m["p1_sal_colup0"], SAL,
            r"$\partial$screen$/\partial$COLUP0 (cannon)")
-    imshow(ax[0, 2], m["p1_sal_colup1"], "magma",
+    imshow(ax[0, 2], m["p1_sal_colup1"], SAL,
            r"$\partial$screen$/\partial$COLUP1 (invaders)")
-    imshow(ax[0, 3], m["p1_sal_colubk"], "magma",
+    imshow(ax[0, 3], m["p1_sal_colubk"], SAL,
            r"$\partial$screen$/\partial$COLUBK (bg)")
 
     # Row 2 — stored switches (graphics) + soft sampler (joystick).
-    # One graphics bit (bright) shown within the faint cannon outline.
-    can = m["p2_cannon"]; can = can / (can.max() + 1e-6) * 0.35
+    # One graphics bit (white) shown within the faint cannon sprite outline.
+    can = m["p2_cannon"]; can = can / (can.max() + 1e-6) * 0.4
     rgb2 = np.stack([can, can, can], axis=-1)
-    rgb2[m["p2_sal_bit"] > 0] = [1.0, 0.85, 0.2]
+    rgb2[m["p2_sal_bit"] > 0] = [1.0, 1.0, 1.0]
     ax[1, 0].imshow(rgb2, aspect="auto", interpolation="nearest")
     ax[1, 0].set_title(r"$\partial$screen$/\partial$(one graphics bit)",
                        fontsize=8)
     ax[1, 0].set_xticks([]); ax[1, 0].set_yticks([])
-    ax[1, 0].set_xlabel("flows via stored switch\n(0 for a packed byte)",
+    ax[1, 0].set_xlabel("white bit within the\ngrey cannon sprite",
                         fontsize=6.5)
 
-    # neutral frame with the goal marker outlined
+    # scene with the player cannon (blue) and the target invader (orange).
     fr = m["p3_frame_neutral"].copy()
-    base = fr / (fr.max() + 1e-6)
+    base = fr / (fr.max() + 1e-6) * 0.5               # dim invaders for context
     rgb = np.stack([base, base, base], axis=-1)
-    goal = m["p3_goal"] > 0
-    rgb[goal] = [0.78, 0.39, 0.10]                    # orange goal marker
+    rgb[m["p3_goal"] > 0] = [0.78, 0.39, 0.10]        # target invader (orange)
+    rgb[m["p3_cannon"] > 0.3] = [0.21, 0.38, 0.56]    # player cannon (blue)
     ax[1, 1].imshow(rgb, aspect="auto", interpolation="nearest")
-    ax[1, 1].set_title("cannon + target invader", fontsize=8)
+    ax[1, 1].set_title("player cannon + target invader", fontsize=8)
     ax[1, 1].set_xticks([]); ax[1, 1].set_yticks([])
+    ax[1, 1].set_xlabel("cannon (blue) slides under\nthe target invader (orange)",
+                        fontsize=6.0)
 
     # joystick saliency: signed directional derivative (right + up combined)
     sal = m["p3_sal_right"] - m["p3_sal_left"] + 0  # right-sense map

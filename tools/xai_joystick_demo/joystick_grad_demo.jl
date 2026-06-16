@@ -119,7 +119,8 @@ println("PART 2: d/d graphics-bit flows (min over lit bits = ",
         minimum(gG[G0 .> 0]), ")")
 i0, j0 = 6, 4
 dump("p2_sal_bit", 60f0 .* FOOT[i0, j0])
-dump("p2_cannon",  60f0 .* sum(FOOT[i, j] for i in 1:8, j in 1:8))
+# cannon SHAPE (lit bits only, not the full 8x8 grid) for the figure backdrop
+dump("p2_cannon",  60f0 .* sum(G0[i, j] .* FOOT[i, j] for i in 1:8, j in 1:8))
 
 # ============================================================================
 # PART 3 — soft sampler: a continuous joystick moves the cannon left/right.
@@ -195,6 +196,7 @@ for (rr, byte) in enumerate(INVADER), b in 0:7
     end
 end
 dump("p3_frame_neutral", render_sampler(joy_x(j0), CAN_PY))
+dump("p3_cannon", cannon_occ(joy_x(j0), CAN_PY))    # cannon mask for the figure
 dump("p3_goal", goal)
 dump("p3_sal_up", dir_saliency(1)); dump("p3_sal_down", dir_saliency(2))
 dump("p3_sal_left", dir_saliency(3)); dump("p3_sal_right", dir_saliency(4))
