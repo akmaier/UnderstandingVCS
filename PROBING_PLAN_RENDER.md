@@ -445,3 +445,34 @@ renders it at x=156 (visible, black over the 136 bar @ cols 156-159); xitari's
 ball reset pos is 6 (left-edge, black region) → the rendered positions differ
 substantially (ball HMOVE-accumulation under per-scanline HMOVE + HMCLR), the
 deepest of the positioning cases.
+
+### Harness v2: color attribution + render compositor map (2026-06-16)
+
+render_diff.py now (commit 3b32440):
+- `--auto` picks the worst-diff screen row in the frame (no longer trusting the
+  sweep table's row column, which is unreliable — e.g. air_raid lists 219-223 > 209).
+- COLOR ATTRIBUTION: each diverging pixel's palette value is matched against
+  jutari's COLU{BK,PF,P0,P1} regs → names the TIA object class xitari drew there
+  (xitari only exposes the composited framebuffer). "pf|bl"=COLUPF, "p0|m0"=COLUP0,
+  "p1|m1"=COLUP1; disambiguate player-vs-missile via obj-x. Prints a
+  "divergence by color" summary (xitari drew {…} / jutari drew {…}).
+
+CAVEAT (important when reading the harness): the probe's per-object SETS (the
+`ju-set=` column) are captured at END of scanline (after all pending writes drain,
+TIA.jl:935), but the actual framebuffer pixel at color clock c was rendered with
+the sets valid AT c (TIA.jl:903 recomputes `cached_sets` after each pending write).
+So when a mid-scanline poke toggles an object, `ju-set` (end state) can disagree
+with the pixel that was actually drawn. That disagreement is a HARNESS artifact,
+NOT necessarily a jutari bug — trust the COLOR (what was drawn), not `ju-set`.
+
+Compositor map (every render fix touches these, jutari/src/tia/TIA.jl):
+- `render_pixel` (1443): the per-color-clock compositor. Priority (non-PFP):
+  bg ← pf ← bl ← M1 ← P1 ← M0 ← P0; (PFP/CTRLPF.D2): bg ← M1 ← P1 ← M0 ← P0 ← pf ← bl.
+  SCOREMODE (CTRLPF.D1): PF left half = COLUP0, right = COLUP1.
+- `_object_pixel_sets` (1496): builds pf/bl/p0/p1/m0/m1 sets from register state +
+  object x. `_player_set` (1527: VDELP/REFP/NUSIZ layout +wide-mode +1 offset),
+  `_missile_set` (1551: ENAM && !RESMP gate, NUSIZ width+copies), ball (1515:
+  VDELBL, CTRLPF size). The render loop in `tia_advance!` (884-934) drains
+  `pending_writes` at their activation clocks and recomputes the sets per poke.
+- `render_scanline`/`_overlay_*` (1385+) is the LEGACY whole-scanline path, kept
+  only for unit tests — NOT the framebuffer path. Don't fix render bugs there.
