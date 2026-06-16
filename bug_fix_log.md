@@ -5337,3 +5337,39 @@ gate hard on RAM 64/64 (revert on ANY byte change) + screen sweep.
 **Status: jutari screen 63/64 pixel-exact, RAM 64/64 bit-exact.** up_n_down (#119)
 closed this session; elevator_action is the sole remaining game and is a deferred
 deep CPU↔TIA beam-phase issue.
+
+---
+
+## #120b (2026-06-16) — elevator_action diagnosis CORRECTED: attract-demo gameplay divergence, NOT a beam-thread bug
+
+Followed up #120 with a per-instruction CPU register trace on BOTH emulators
+(temporary `INSTR` log in jutari M6502 `_step_inner!`, temporary `XICPU` log in
+xitari `M6502Low::execute`, both gated + reverted; xitari rebuilt clean afterward).
+**The #120 "scanline_cycle beam-phase drift" hypothesis was WRONG.** Findings:
+
+- The missile-position kernel (`f9c5`→`f9da LDA $9C`→`fd08`…`fd2e STA RESM0,X`)
+  is RAM/CPU-cycle-faithful: the HMM0 write lands at the SAME beam_cc=30 in both,
+  and the per-iteration loop timing (DEY=2, BPL-taken=3) is exact. The 45cc RESM0
+  shift is just the consequence of a DEY/BPL fine-delay loop running 3 more
+  iterations, because the loop counter Y is computed from `$9C`.
+- `$9C` is the missile X. At frame 40 the kernel reads **jutari $9C=0x4f vs
+  xitari $9C=0x2b** (36 px apart). `$9C` is RIOT RAM (bit-exact at every frame
+  BOUNDARY — elevator RAM is 64/64), so this is a TRANSIENT mid-frame value: set
+  during VBLANK, used to position the missile at sl 3-5, then restored before the
+  frame ends → render diverges while RAM stays exact.
+- Per-frame missile-X: **jutari moves RIGHT** (f22=0x40, f32=0x48, f40=0x4f);
+  **xitari moves LEFT** (f22=0x3a, f32=0x32, f40=0x2b) — same speed, OPPOSITE
+  direction, already 6 px apart by f22. So the attract-mode DEMO plays differently:
+  a moving object's velocity sign diverged at some frame < 22, then the two mirror
+  and drift apart to 36 px by f40.
+
+**Conclusion:** elevator_action's 16 px is a deep attract-demo gameplay divergence
+seeded by an input/TIA-or-RIOT read difference before frame 22 — NOT a render
+mechanism and NOT a beam-thread bug. It is invisible to the RAM sweep because the
+divergent value is transient per frame. **Next step (fresh session):** trace the
+missile-X divergence ONSET (frames 0-22) — log every TIA/RIOT *read* (addr+value)
+in both emulators and diff to find the first read whose value differs (candidate:
+a collision latch CXxx, INPT, SWCHA idle bits, or an undefined-read data-bus value
+that jutari returns as 0 where xitari returns address/bus bits). Fix the read
+behavior; gate HARD on RAM 64/64 + all 63 exact screens (a collision/read change
+can perturb other games). Screen stays **63/64**; this remains the sole delta.
