@@ -5121,3 +5121,29 @@ closed) but the single largest render divergence is essentially solved.
 
 Harness: render_diff.py now prints ENAM0/1 + RESMP0/1 and the M0 cosmic state
 (`cosmic:[enabled,counter,line]`); render probe (TIA.jl) + render_diff.jl carry it.
+
+---
+
+## #115f (2026-06-16) — DEFER VDELP0/VDELP1/VDELBL → journey_escape 0 + WHOLE VDELP cluster (46→59/64)
+
+Working journey_escape's last 3px to zero uncovered the G1 fix. journey_escape uses
+a VDELP multiplex kernel (GRP0/GRP1 rewritten ~5×/scanline, players display the
+DELAYED shadow GRP). The harness (cosmic + GRP TRUE-activation aware) showed
+jutari's GRP shadow LATCH timing was bit-exact — but the players switched
+shadow→live for the WHOLE scanline at the VDELP0/1=0 writes (cc=189/198), where
+xitari keeps the SHADOW for cols left of the write.
+
+Root cause: VDELP0/VDELP1/VDELBL were NEVER in the deferred-write set — they're pure
+render-select flags (live vs delayed GRP/ENABL in `_vdel_grp`/`_vdel_enabl`), no
+side effect, but were applied IMMEDIATELY at poke time → a mid-scanline VDELP write
+took effect for the entire scanline. xitari's poke runs updateFrame(clock+0) first,
+so the flag flips only from the write's beam clock onward. Added VDELP0/VDELP1/
+VDELBL to the deferred list (poke-delay 0 → activate at beam_cc).
+
+This was the REAL G1 "VDELP shadow" fix: the latch was right; the FLAG threading was
+the bug. **Gated:** RAM 64/64 bit-exact, Pkg.test green, NO regression
+(pitfall/breakout/pong — all VDELP users — stay exact). Screen **46→59/64**:
+journey_escape, atlantis, amidar, demon_attack, name_this_game, solaris, centipede,
+defender, jamesbond, pooyan, asterix, air_raid all → 0. Remaining 5: elevator_action
+(missile RESMP), robotank + up_n_down (RESP/player multiplex), tutankham (PF2
+boundary), wizard_of_wor (CTRLPF reflect).

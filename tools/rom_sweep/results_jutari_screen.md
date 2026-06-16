@@ -2,30 +2,30 @@
 
 Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `trace_dump --screen`, breakout_random_actions stream, first **60** frames after the standard 60-NOOP+4-RESET boot. Same per-game RomSettings as the RAM sweep (so a divergence is a genuine render delta, not a settings/boot mismatch).
 
-**Pixel-exact (0 px) over 60 frames: 46/64.**
+**Pixel-exact (0 px) over 60 frames: 59/64.**
 
 | game | max px/frame | total px | first div frame | worst-frame rows |
 |---|---|---|---|---|
-| air_raid | 2 | 120 | 1 | 223-223 |
+| air_raid | **0 ✅** | 0 | — | — |
 | alien | **0 ✅** | 0 | — | — |
-| amidar | 3 | 177 | 2 | 182-182 |
+| amidar | **0 ✅** | 0 | — | — |
 | assault | **0 ✅** | 0 | — | — |
-| asterix | 1 | 60 | 1 | 190-190 |
+| asterix | **0 ✅** | 0 | — | — |
 | asteroids | **0 ✅** | 0 | — | — |
-| atlantis | 40 | 2400 | 1 | 186-186 |
+| atlantis | **0 ✅** | 0 | — | — |
 | bank_heist | **0 ✅** | 0 | — | — |
 | battle_zone | **0 ✅** | 0 | — | — |
 | beam_rider | **0 ✅** | 0 | — | — |
-| berzerk | 5 | 5 | 42 | 180-180 |
+| berzerk | **0 ✅** | 0 | — | — |
 | bowling | **0 ✅** | 0 | — | — |
 | boxing | **0 ✅** | 0 | — | — |
 | breakout | **0 ✅** | 0 | — | — |
 | carnival | **0 ✅** | 0 | — | — |
-| centipede | 3 | 180 | 1 | 193-193 |
+| centipede | **0 ✅** | 0 | — | — |
 | chopper_command | **0 ✅** | 0 | — | — |
 | crazy_climber | **0 ✅** | 0 | — | — |
-| defender | 9 | 540 | 1 | 183-183 |
-| demon_attack | 3 | 180 | 1 | 15-15 |
+| defender | **0 ✅** | 0 | — | — |
+| demon_attack | **0 ✅** | 0 | — | — |
 | double_dunk | **0 ✅** | 0 | — | — |
 | elevator_action | 16 | 160 | 41 | 73-74 |
 | enduro | **0 ✅** | 0 | — | — |
@@ -36,19 +36,19 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | gravitar | **0 ✅** | 0 | — | — |
 | hero | **0 ✅** | 0 | — | — |
 | ice_hockey | **0 ✅** | 0 | — | — |
-| jamesbond | 1 | 60 | 1 | 21-21 |
-| journey_escape | 3 | 180 | 1 | 13-13 |
+| jamesbond | **0 ✅** | 0 | — | — |
+| journey_escape | **0 ✅** | 0 | — | — |
 | kangaroo | **0 ✅** | 0 | — | — |
 | krull | **0 ✅** | 0 | — | — |
 | kung_fu_master | **0 ✅** | 0 | — | — |
 | montezuma_revenge | **0 ✅** | 0 | — | — |
 | ms_pacman | **0 ✅** | 0 | — | — |
-| name_this_game | 6 | 360 | 1 | 188-188 |
+| name_this_game | **0 ✅** | 0 | — | — |
 | pacman | **0 ✅** | 0 | — | — |
 | phoenix | **0 ✅** | 0 | — | — |
 | pitfall | **0 ✅** | 0 | — | — |
 | pong | **0 ✅** | 0 | — | — |
-| pooyan | 1 | 60 | 1 | 11-11 |
+| pooyan | **0 ✅** | 0 | — | — |
 | private_eye | **0 ✅** | 0 | — | — |
 | qbert | **0 ✅** | 0 | — | — |
 | riverraid | **0 ✅** | 0 | — | — |
@@ -56,14 +56,14 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | robotank | 148 | 8868 | 1 | 49-85 |
 | seaquest | **0 ✅** | 0 | — | — |
 | skiing | **0 ✅** | 0 | — | — |
-| solaris | 2 | 120 | 1 | 11-11 |
+| solaris | **0 ✅** | 0 | — | — |
 | space_invaders | **0 ✅** | 0 | — | — |
 | star_gunner | **0 ✅** | 0 | — | — |
 | surround | **0 ✅** | 0 | — | — |
 | tennis | **0 ✅** | 0 | — | — |
 | time_pilot | **0 ✅** | 0 | — | — |
 | tutankham | 80 | 4800 | 1 | 103-167 |
-| up_n_down | 86 | 4275 | 1 | 5-203 |
+| up_n_down | 71 | 4260 | 1 | 5-203 |
 | venture | **0 ✅** | 0 | — | — |
 | video_pinball | **0 ✅** | 0 | — | — |
 | videochess | **0 ✅** | 0 | — | — |

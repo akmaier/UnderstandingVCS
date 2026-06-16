@@ -724,6 +724,14 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
         reg == W_NUSIZ0 || reg == W_NUSIZ1 ||
         reg == W_COLUP0 || reg == W_COLUP1 || reg == W_COLUPF || reg == W_COLUBK ||
         reg == W_CTRLPF || reg == W_REFP0 || reg == W_REFP1 ||
+        # Task #115 (faithful render): defer VDELP0/VDELP1/VDELBL — pure
+        # render-select flags (live vs delayed GRP/ENABL in `_vdel_grp`/
+        # `_vdel_enabl`) with no side effect. A mid-scanline VDELP write must thread
+        # per-color-clock: journey_escape's multiplex kernel clears VDELP0/1 at
+        # cc=189/198, so cols left of that must still show the SHADOW GRP — applying
+        # it immediately (whole scanline) switched the whole line to live GRP
+        # (3px residual). xitari poke-delay = 0 → activate at the write's beam clock.
+        reg == W_VDELP0 || reg == W_VDELP1 || reg == W_VDELBL ||
         # Task #115 (2026-06-16): also defer RESMP0/RESMP1 so the missile
         # enable/suppress re-gate (and the 1→0 reposition) thread per-color-
         # clock instead of applying for the whole scanline. xitari's case
