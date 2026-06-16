@@ -5167,3 +5167,23 @@ live bit. **Gated:** RAM 64/64 bit-exact, Pkg.test green. Screen **59→61/64**:
 wizard_of_wor AND tutankham both close (both PF-timing), up_n_down 71→63. Remaining
 3: robotank (ball HMOVE accumulation), up_n_down (VDELP shadow VALUE staleness),
 elevator_action (missile RESMP reposition, frame 41).
+
+---
+
+## #115h (2026-06-16) — RESBL/RESM HMOVE-relative hacks → robotank ball exact (61→62/64)
+
+New per-scanline obj trace (`TIA._OBJ_TRACE` + `tools/obj_trace.jl`: one CSV row
+per scanline of p0/p1/m0/m1/bl_x + grp0_old/grp1_old + cosmic line) pinned
+robotank's ball: jutari RESBL→2 at sl 79 then carried; xitari's ball is 6 by sl 80
+(both then HMOVE −6 → jutari 156, xitari 0). robotank strobes HMOVE at hpos 9 then
+RESBL at hpos 30 every radar scanline → RESBL lands exactly 7*3=21 color clocks
+after HMOVE at hpos 30, which triggers xitari's "Escape from the Mindmaster" RESBL
+hack (case 0x14): POSBL=6. jutari didn't implement the RES* HMOVE-relative hacks.
+
+Fix: ported the RESBL hacks (18*3/hpos60|69→10, 3*3/hpos18→3, 7*3/hpos30→6,
+6*3/hpos27→5) + the RESM0 Dolphin (20*3/hpos69→8) and RESM1 Pitfall-II
+(3*3/hpos18→3) hacks, using `last_hmove_clock` (already tracked for Cosmic Ark) for
+the cycle gap. **Gated:** RAM 64/64 bit-exact, Pkg.test green. robotank ball now
+6→0 matching xitari → frame 1 exact. Screen **61→62/64**. Remaining 2:
+elevator_action (missile HMOVE/RESM accumulation, 16px @ frame 40), up_n_down
+(VDELP shadow-VALUE staleness + mid-scanline COLU, 63px).

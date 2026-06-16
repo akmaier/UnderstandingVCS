@@ -119,6 +119,14 @@ const HBLANK_COLOR_CLOCKS = 68
 # the caller from the env's `y_start_row`, fixing the by-hand mapping errors).
 const _RENDER_PROBE = Ref{Int}(-1)
 const _RENDER_PROBE_OUT = Ref{Any}(nothing)
+# Task #115 (obj-trace): when `_OBJ_TRACE[]` is true the per-color-clock render
+# loop appends one row per COMPLETED scanline to `_OBJ_TRACE_LOG`:
+# (scanline, p0_x, p1_x, m0_x, m1_x, bl_x, grp0_old, grp1_old, m0_cosmic_line).
+# Lets a single run dump every object's position + GRP shadow across a frame to
+# pin where it diverges from xitari's myPOS*/myDGRP* (the carried HMOVE/shadow
+# accumulation residuals: robotank ball, elevator_action missile, up_n_down).
+const _OBJ_TRACE = Ref{Bool}(false)
+const _OBJ_TRACE_LOG = Vector{NTuple{9,Int}}()
 const COLOR_CLOCKS_PER_SCANLINE = 228
 
 # P3i-c: per-poke write delays, in color clocks. Verbatim port of
@@ -873,10 +881,38 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
     elseif reg == W_RESM0
         # P3i-e: missile/ball use the +4 offset / HBLANK constant 2.
         tia.m0_x = _resp_missile_ball_position(beam_cc)
+        # Task #115: xitari's Dolphin RESM0 HMOVE-relative hack (case 0x12) —
+        # RESM0 exactly 20 CPU cycles after HMOVE at hpos 69 → POSM0=8.
+        let chm = tia.lines_since_frame * COLOR_CLOCKS_PER_SCANLINE + Int(beam_cc) - tia.last_hmove_clock
+            chm == 20 * 3 && Int(beam_cc) == 69 && (tia.m0_x = 8)
+        end
     elseif reg == W_RESM1
         tia.m1_x = _resp_missile_ball_position(beam_cc)
+        # Task #115: xitari's Pitfall-II RESM1 hack (case 0x13) — RESM1 3 cycles
+        # after HMOVE at hpos 18 → POSM1=3.
+        let chm = tia.lines_since_frame * COLOR_CLOCKS_PER_SCANLINE + Int(beam_cc) - tia.last_hmove_clock
+            chm == 3 * 3 && Int(beam_cc) == 18 && (tia.m1_x = 3)
+        end
     elseif reg == W_RESBL
         tia.bl_x = _resp_missile_ball_position(beam_cc)
+        # Task #115: xitari's "Escape from the Mindmaster" RESBL HMOVE-relative
+        # hacks (case 0x14) — RESBL a specific # of CPU cycles after the last HMOVE
+        # at a specific hpos snaps the ball to a fixed position. robotank hits the
+        # 7*3 / hpos-30 case (→ POSBL=6) every radar scanline (the +4 that jutari
+        # was missing → its 148px ball divergence). `last_hmove_clock` is the
+        # frame-relative beam clock of the last HMOVE (also used by Cosmic Ark).
+        let chm = tia.lines_since_frame * COLOR_CLOCKS_PER_SCANLINE + Int(beam_cc) - tia.last_hmove_clock
+            hpos = Int(beam_cc)
+            if chm == 18 * 3 && (hpos == 60 || hpos == 69)
+                tia.bl_x = 10
+            elseif chm == 3 * 3 && hpos == 18
+                tia.bl_x = 3
+            elseif chm == 7 * 3 && hpos == 30
+                tia.bl_x = 6
+            elseif chm == 6 * 3 && hpos == 27
+                tia.bl_x = 5
+            end
+        end
     elseif reg == W_RESMP0
         _resmp_reposition!(tia, 0, resmp_old_d1, value8)
     elseif reg == W_RESMP1
@@ -1168,6 +1204,13 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
                     # activation timing, to diff against xitari's `clock + delay`.
                     pending = [(Int(w[1]), Int(w[2]), Int(w[3])) for w in pending_sorted],
                 )
+            end
+            # Task #115 (obj-trace): one compact row per completed visible scanline.
+            if _OBJ_TRACE[]
+                push!(_OBJ_TRACE_LOG, (Int(tia.scanline),
+                    Int(tia.p0_x), Int(tia.p1_x), Int(tia.m0_x), Int(tia.m1_x),
+                    Int(tia.bl_x), Int(tia.grp0_old), Int(tia.grp1_old),
+                    Int(tia.m0_cosmic_line)))
             end
             # Task #83 round 3 (2026-06-11): only WRITE framebuffer
             # and CONSUME the HMOVE-blank flag for scanlines at or
