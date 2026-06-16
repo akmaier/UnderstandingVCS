@@ -30,16 +30,17 @@ ALE-supported games** via the per-frame diff sweeps in `tools/rom_sweep/`:
 | sweep | metric | result |
 |---|---|---|
 | **RAM** (`sweep_jutari_ram.py`) | 128 B RIOT RAM, per frame, NOOP from the standard 60-NOOP + 4-RESET boot | **64 / 64 BYTE-IDENTICAL to xitari** ✅ |
-| **Screen** (`sweep_jutari_screen.py`) | 210×160 framebuffer, per frame, 60 frames | **59 / 64 pixel-exact** |
+| **Screen** (`sweep_jutari_screen.py`) | 210×160 framebuffer, per frame, 60 frames | **61 / 64 pixel-exact** |
 
-**jutari RAM is bit-exact with xitari on every documented game.** Only **5**
-screen deltas remain (render-only, on RAM-bit-exact emulation): robotank (148 px)
-and up_n_down (71) — RESP/player multiplex; tutankham (80) — PF2 scanline-boundary;
-elevator_action (16) — missile RESMP-reposition; wizard_of_wor (3) — CTRLPF reflect.
-The render arc that took screen 44→59/64 ported xitari's actual per-color-clock
-object model (deferred RESP + reset-when + skip-first-copy, the Cosmic Ark M0 bug,
-and — the master key — deferring the VDELP0/VDELP1/VDELBL render-select flags, which
-closed the whole VDELP/GRP-shadow family at once). Getting RAM to 64/64
+**jutari RAM is bit-exact with xitari on every documented game.** Only **3**
+screen deltas remain (render-only, on RAM-bit-exact emulation), all
+object-HMOVE/shadow accumulation: robotank (148 px) — ball HMOVE accumulation;
+up_n_down (63) — VDELP shadow-VALUE staleness + mid-scanline COLU; elevator_action
+(16) — missile HMOVE/RESM accumulation. The render arc that took screen 44→61/64
+ported xitari's actual per-color-clock object model (deferred RESP + reset-when +
+skip-first-copy, the Cosmic Ark M0 bug, deferring the VDELP0/VDELP1/VDELBL
+render-select flags — the master key that closed the whole VDELP/GRP-shadow family
+at once — and latching the PF reflect bit at the left-half gate). Getting RAM to 64/64
 required, among many fixes: per-game PAL display height + colour-loss, per-game
 `Display.YStart` and `Emulation.HmoveBlanks`, the #106 partial-frame ("grey frame")
 model, a double-buffered framebuffer (swap-not-clear, mirroring Stella), a VSYNC
@@ -80,7 +81,7 @@ For the per-phase commit ledger and the complete list of deferrals see
 
 ## Hand-off — pick up here
 
-**Latest (2026-06-16): jutari RAM is 64/64 BIT-EXACT vs xitari; screen 59/64
+**Latest (2026-06-16): jutari RAM is 64/64 BIT-EXACT vs xitari; screen 61/64
 pixel-exact.** Following the "match the deep runtime logic, not the scoreboard"
 philosophy, the player object renderer was ported to xitari's actual per-color-clock
 model — **#115c**: deferred mid-scanline RESP + reset-when + skip-first-copy
@@ -119,28 +120,25 @@ the core; a temporary `fprintf` in an xitari core loop is acceptable for a
 
 ### Open work — pick up here
 
-**Pixel exactness** is the active front (screen **59/64**, RAM 64/64). Only **5**
-deltas remain (render-only). The harness is `tools/render_diff.py --rom <r> --frame
-<f> --auto` (color-attributes each diverging pixel to a TIA object via the COLU
-registers, prints ENAM/RESMP/cosmic state, infers per-frame height; needs xitari's
-`XI_POKE_DUMP` for true activations). Full per-game diagnoses + ranked synthesis in
-**[RENDER_DIVERGENCE_SYNTHESIS.md](RENDER_DIVERGENCE_SYNTHESIS.md)** (pre-VDELP-fix).
+**Pixel exactness** is the active front (screen **61/64**, RAM 64/64). Only **3**
+deltas remain (render-only) — all object-position accumulation / shadow staleness,
+which need per-scanline obj-x tracing (not a single clear poke). The harness is
+`tools/render_diff.py --rom <r> --frame <f> --auto` (color-attributes each diverging
+pixel to a TIA object via the COLU registers, prints ENAM/RESMP/cosmic state, infers
+per-frame height; needs xitari's `XI_POKE_DUMP` for true activations).
 
-Remaining (all RESP/PF deep sub-cycle, ranked by value/(risk+effort)):
-
-| game | px | mechanism |
+| game | px | mechanism (diagnosed) |
 |---|---|---|
-| robotank | 148 | RESP/player multiplex + ball (the #115c player port helped 241→148; ball/RESP residual) |
-| up_n_down | 71 | RESP/player multiplex (221→71 via #115c+#115f; remaining RESP-strobe segments) |
-| tutankham | 80 | PF2 write straddling the 228 scanline boundary (naive wrap already reverted — needs the boundary-aware defer) |
-| elevator_action | 16 | missile RESMP release-reposition base (reset-base vs HMOVE-shifted) |
-| wizard_of_wor | 3 | CTRLPF.D0 reflect block-render boundary (cols 145-147) |
+| robotank | 148 | BALL HMOVE accumulation — `bl_x=156` (=−4) vs xitari 0, fixed offset; players now correct, so it's the ball-specific HMBL/RESBL accumulation over the per-scanline HMOVE strobes |
+| up_n_down | 63 | VDELP shadow-VALUE staleness — VDELP0=1 player displays a non-zero `grp0_old` where xitari's `myDGRP0`=0 (cross-scanline shadow capture timing) + mid-scanline COLU |
+| elevator_action | 16 | MISSILE HMOVE/RESM accumulation — `m0=81` vs xitari 45 (frame 40, row 73), same class as robotank's ball but for M0 |
 
-Localize with `render_diff.py --auto`; gate every change on the full screen + RAM
-sweep (run alone). The deep model so far: player object render is faithful
-(per-color-clock RESP reset-when + skip-first-copy, #115c) and the VDELP/GRP-shadow
-flags are deferred (#115f); robotank/up_n_down need the remaining RESP-segment +
-ball-mask faithfulness.
+The player object render is now faithful (per-color-clock RESP reset-when +
+skip-first-copy, #115c; Cosmic Ark #115d/e), the VDELP/GRP-shadow FLAGS are deferred
+(#115f), and PF reflect is left-half-latched (#115g). The remaining 3 are the
+missile/ball HMOVE-accumulation + the GRP shadow-VALUE — next step: add per-scanline
+`m0_x`/`bl_x`/`grp*_old` tracing to compare jutari's evolution vs xitari's
+`myPOS*`/`myDGRP*`. Gate every change on the full screen + RAM sweep (run alone).
 
 **jaxtari catch-up**: mirror the recent jutari boot/render fixes (PAL height,
 HmoveBlanks, YStart, double-buffer, VSYNC-rebase, construction-probe) for PXC2
