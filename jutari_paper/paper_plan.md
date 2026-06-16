@@ -87,6 +87,53 @@ Status legend: ✅ ready · ✍️ draft after results land · 🔍 needs citati
    re-verify the repro against a fresh upstream checkout.
 
 ---
+
+## Draft v1 status (2026-06-16) — `paper/` compiles to 8 pages
+
+A complete, compiling first draft lives in **`paper/`**:
+`paper.tex` (single-file AAAI submission), `references.bib` (25 entries),
+`make_figures.py` (regenerates all figures from the git log + diagrams),
+`figures/*.pdf`, and the rendered `paper.pdf`. Build:
+`pdflatex paper && bibtex paper && pdflatex paper && pdflatex paper`.
+Status: **8 pages total** (~6.5 content + references), **0 overfull boxes**,
+**0 undefined refs/cites**, anonymized (`[submission]`).
+
+What is DONE in the draft (all numbers measured, not asserted):
+- Full Intro→Conclusion + Ethical Statement; Maier "gentle"/known-operator
+  voice; explicit fact/hypothesis/speculation separation.
+- TODO 1 (effort): from git — 373 commits, 52 active sessions, **136.8 active h
+  ≈ 5.7 working days** (3 h gap threshold; 106 h @2 h / 162 h @4 h sensitivity)
+  over 28.8 calendar days. → Fig 3 (real data) + Results §.
+- TODO 3 (soft/hard): **honest reframing** — the implemented SOFT forward is
+  *bit-exact* to HARD at any finite temperature (one-hot reads + STE), so the
+  contribution is **exact-forward / relaxed-gradient**, not a τ→0 limit.
+  Theorem 1 (exact forward equivalence) + Assumption DM + Theorem 2 (τ→0 bound
+  $\mathcal{O}(e^{-c/T})$ for the *fully-soft* variant) + Corollary (STE attains
+  the limit at finite T). Backed by existing `test_diff.py` saturation tests.
+- TODO 5 (figures): Fig 1 VCS architecture, Fig 2 soft/hard+STE pipeline,
+  Fig 3 effort timeline (replaces the all-green "conformance heatmap", which is
+  vacuous at 64/64). Table 1 = two-port summary (LOC/tests/opcodes/conformance/
+  throughput).
+- TODO 6 (citations): `references.bib` complete; Fable/Kimi anecdotes written
+  from the commit log (Opus 366 commits, one autonomous Fable session, Kimi
+  declined the port after scaffolding) — kept as prose, no fabricated vendor URL.
+- TODO 7 (style): style guide applied (agents analysed the 3 exemplars incl.
+  arXiv:2605.08517, which resolved).
+- Conformance: jutari **64/64 RAM + 64/64 screen** stated; metrics defined.
+- Throughput: jutari ~363.8k vs jaxtari ~1.66k SOFT steps/s (~218×).
+
+What still BLOCKS a final submission (experiments / catch-up):
+- TODO 4 (gradient analysis): only the register-level localisation
+  (paddle→COLUP0, bg→COLUBK, wall→COLUPF) is in; the full game-length
+  **IG-over-ROM** study is in progress (soft-RIOT-timer busy-loop xfail) —
+  written up honestly as proof-of-concept. Finish for a stronger Results §.
+- jaxtari catch-up to 64/64 (for a second conformance column).
+- TODO 8 (xitari upstream): still gated on arXiv posting.
+- Pre-submission: anonymity self-audit, PDF-metadata scrub, Reproducibility
+  Checklist answers (`ReproducibilityChecklist.tex` copied into `paper/`),
+  OpenReview registration (opens 2026-06-17/24). See `document_check.md`.
+
+---
 ---
 
 ## Author's original notes (verbatim — do not edit)

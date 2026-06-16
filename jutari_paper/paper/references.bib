@@ -1,0 +1,278 @@
+%% ============================================================
+%%  References for "Can an XAI Method Understand a Game Console?"
+%%  AAAI-27 anonymous submission.
+%% ============================================================
+
+%% ---- Foundational provocation ----
+@article{jonas2017could,
+  author    = {Jonas, Eric and Kording, Konrad Paul},
+  title     = {Could a Neuroscientist Understand a Microprocessor?},
+  journal   = {PLOS Computational Biology},
+  year      = {2017},
+  volume    = {13},
+  number    = {1},
+  pages     = {e1005268},
+  doi       = {10.1371/journal.pcbi.1005268},
+  publisher = {Public Library of Science}
+}
+
+%% ---- Gradient / saliency attribution ----
+@article{selvaraju2017gradcam,
+  author    = {Selvaraju, Ramprasaath R. and Cogswell, Michael and Das, Abhishek and Vedantam, Ramakrishna and Parikh, Devi and Batra, Dhruv},
+  title     = {Grad-{CAM}: Visual Explanations from Deep Networks via Gradient-Based Localization},
+  journal   = {International Journal of Computer Vision},
+  year      = {2020},
+  volume    = {128},
+  number    = {2},
+  pages     = {336--359},
+  doi       = {10.1007/s11263-019-01228-7},
+  publisher = {Springer},
+  note      = {Originally arXiv:1610.02391 (2016)}
+}
+
+@inproceedings{chattopadhyay2018gradcampp,
+  author    = {Chattopadhyay, Aditya and Sarkar, Anirban and Howlader, Prantik and Balasubramanian, Vineeth N.},
+  title     = {Grad-{CAM}++: Generalized Gradient-Based Visual Explanations for Deep Convolutional Networks},
+  booktitle = {IEEE Winter Conference on Applications of Computer Vision (WACV)},
+  year      = {2018},
+  pages     = {839--847},
+  publisher = {IEEE},
+  doi       = {10.1109/WACV.2018.00097}
+}
+
+@inproceedings{greydanus2018visualizing,
+  author    = {Greydanus, Sam and Koul, Anurag and Dodge, Jonathan and Fern, Alan},
+  title     = {Visualizing and Understanding {Atari} Agents},
+  booktitle = {Proceedings of the 35th International Conference on Machine Learning (ICML)},
+  volume    = {80},
+  pages     = {1792--1801},
+  year      = {2018},
+  publisher = {PMLR}
+}
+
+%% ---- Saliency-is-not-ground-truth critique ----
+@misc{nikulin2019freelunch,
+  author        = {Nikulin, Dmitry and Ianina, Anastasia and Aliev, Vladimir and Nikolenko, Sergey},
+  title         = {Free-Lunch Saliency via Attention in {Atari} Agents},
+  year          = {2019},
+  eprint        = {1908.02511},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG}
+}
+
+@inproceedings{atrey2020exploratory,
+  author    = {Atrey, Akanksha and Clary, Kaleigh and Jensen, David},
+  title     = {Exploratory Not Explanatory: Counterfactual Analysis of Saliency Maps for Deep Reinforcement Learning},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2020}
+}
+
+@inproceedings{such2019atarizoo,
+  author    = {Such, Felipe Petroski and Madhavan, Vashisht and Liu, Rosanne and Wang, Rui and Castro, Pablo Samuel and Li, Yulun and Zhi, Jiale and Schubert, Ludwig and Bellemare, Marc G. and Clune, Jeff and Lehman, Joel},
+  title     = {An {Atari} Model Zoo for Analyzing, Visualizing, and Comparing Deep Reinforcement Learning Agents},
+  booktitle = {Proceedings of the 28th International Joint Conference on Artificial Intelligence (IJCAI)},
+  year      = {2019},
+  pages     = {3260--3267},
+  doi       = {10.24963/ijcai.2019/452}
+}
+
+%% ---- Explainable-RL surveys + a concrete DQN method ----
+@article{qing2022xrlsurvey,
+  author        = {Qing, Yunpeng and Liu, Shunyu and Song, Jie and Zhou, Yang and Chen, Kaixuan and Wang, Huiqiong and Song, Mingli},
+  title         = {A Survey on Explainable Reinforcement Learning: Concepts, Algorithms, and Challenges},
+  journal       = {arXiv preprint arXiv:2211.06665},
+  year          = {2022},
+  eprint        = {2211.06665},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG}
+}
+
+@article{vouros2023xrlsurvey,
+  author    = {Vouros, George A.},
+  title     = {Explainable Deep Reinforcement Learning: State of the Art and Challenges},
+  journal   = {ACM Computing Surveys},
+  year      = {2023},
+  volume    = {55},
+  number    = {5},
+  pages     = {1--39},
+  doi       = {10.1145/3527448},
+  publisher = {Association for Computing Machinery}
+}
+
+@article{cheng2025xrlsurvey,
+  author        = {Cheng, Zelei and Yu, Jiahao and Xing, Xinyu},
+  title         = {A Survey on Explainable Deep Reinforcement Learning},
+  journal       = {arXiv preprint arXiv:2502.06869},
+  year          = {2025},
+  eprint        = {2502.06869},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG}
+}
+
+@article{saulieres2025xrlsurvey,
+  author        = {Sauli{\`e}res, L{\'e}o},
+  title         = {A Survey of Explainable Reinforcement Learning: Targets, Methods and Needs},
+  journal       = {arXiv preprint arXiv:2507.12599},
+  year          = {2025},
+  eprint        = {2507.12599},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.AI}
+}
+
+@misc{kontogiannis2023xdqn,
+  author        = {Kontogiannis, Andreas and Vouros, George A.},
+  title         = {{XDQN}: Inherently Interpretable {DQN} through Mimicking},
+  year          = {2023},
+  eprint        = {2301.03043},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG}
+}
+
+%% ---- The ground-truth target everyone explains ----
+@article{mnih2013playing,
+  author        = {Mnih, Volodymyr and Kavukcuoglu, Koray and Silver, David and Graves, Alex and Antonoglou, Ioannis and Wierstra, Daan and Riedmiller, Martin},
+  title         = {Playing {Atari} with Deep Reinforcement Learning},
+  journal       = {arXiv preprint arXiv:1312.5602},
+  year          = {2013},
+  eprint        = {1312.5602},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG}
+}
+
+@article{mnih2015human,
+  author    = {Mnih, Volodymyr and Kavukcuoglu, Koray and Silver, David and Rusu, Andrei A. and Veness, Joel and Bellemare, Marc G. and Graves, Alex and Riedmiller, Martin and Fidjeland, Andreas K. and Ostrovski, Georg and Petersen, Stig and Beattie, Charles and Sadik, Amir and Antonoglou, Ioannis and King, Helen and Kumaran, Dharshan and Wierstra, Daan and Legg, Shane and Hassabis, Demis},
+  title     = {Human-Level Control through Deep Reinforcement Learning},
+  journal   = {Nature},
+  year      = {2015},
+  volume    = {518},
+  number    = {7540},
+  pages     = {529--533},
+  doi       = {10.1038/nature14236},
+  publisher = {Nature Publishing Group}
+}
+
+@article{bellemare2013arcade,
+  author    = {Bellemare, Marc G. and Naddaf, Yavar and Veness, Joel and Bowling, Michael},
+  title     = {The {Arcade} {Learning} {Environment}: An Evaluation Platform for General Agents},
+  journal   = {Journal of Artificial Intelligence Research},
+  year      = {2013},
+  volume    = {47},
+  pages     = {253--279},
+  doi       = {10.1613/jair.3912}
+}
+
+%% ---- Reference emulators ----
+@misc{stella,
+  author       = {{Stella Team}},
+  title        = {Stella: A Multi-Platform {Atari} 2600 {VCS} Emulator},
+  year         = {2024},
+  howpublished = {\url{https://stella-emu.github.io}},
+  note         = {Accessed: 2026-06-16}
+}
+
+@misc{xitari,
+  author       = {{DeepMind}},
+  title        = {Xitari: An {Arcade} {Learning} {Environment} Fork},
+  year         = {2016},
+  howpublished = {\url{https://github.com/google-deepmind/xitari}},
+  note         = {Accessed: 2026-06-16}
+}
+
+%% ---- Differentiable-programming frameworks ----
+@article{bezanson2017julia,
+  author    = {Bezanson, Jeff and Edelman, Alan and Karpinski, Stefan and Shah, Viral B.},
+  title     = {Julia: A Fresh Approach to Numerical Computing},
+  journal   = {SIAM Review},
+  year      = {2017},
+  volume    = {59},
+  number    = {1},
+  pages     = {65--98},
+  doi       = {10.1137/141000671}
+}
+
+@misc{innes2019zygote,
+  author        = {Innes, Michael},
+  title         = {Don't Unroll Adjoint: Differentiating {SSA}-Form Programs},
+  year          = {2019},
+  eprint        = {1810.07951},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.PL}
+}
+
+@misc{bradbury2018jax,
+  author       = {Bradbury, James and Frostig, Roy and Hawkins, Peter and Johnson, Matthew James and Leary, Chris and Maclaurin, Dougal and Necula, George and Paszke, Adam and Vander{P}las, Jake and Wanderman-Milne, Skye and Zhang, Qiao},
+  title        = {{JAX}: Composable Transformations of {Python}+{NumPy} Programs},
+  year         = {2018},
+  howpublished = {\url{http://github.com/google/jax}},
+  note         = {Software}
+}
+
+%% ---- Known-operator learning + PINNs ----
+@article{maier2019known,
+  author    = {Maier, Andreas K. and Syben, Christopher and Stimpel, Bernhard and W{\"u}rfl, Tobias and Hoffmann, Mathis and Schebesch, Frank and Fu, Weilin and Mill, Leonid and Kling, Lasse and Christiansen, Silke},
+  title     = {Learning with Known Operators Reduces Maximum Error Bounds},
+  journal   = {Nature Machine Intelligence},
+  year      = {2019},
+  volume    = {1},
+  number    = {8},
+  pages     = {373--380},
+  doi       = {10.1038/s42256-019-0077-5}
+}
+
+@article{maier2019gentle,
+  author    = {Maier, Andreas and Syben, Christopher and Lasser, Tobias and Riess, Christian},
+  title     = {A Gentle Introduction to Deep Learning in Medical Image Processing},
+  journal   = {Zeitschrift f{\"u}r Medizinische Physik},
+  year      = {2019},
+  volume    = {29},
+  number    = {2},
+  pages     = {86--101},
+  doi       = {10.1016/j.zemedi.2018.12.003}
+}
+
+@article{raissi2019pinn,
+  author    = {Raissi, Maziar and Perdikaris, Paris and Karniadakis, George Em},
+  title     = {Physics-Informed Neural Networks: A Deep Learning Framework for Solving Forward and Inverse Problems Involving Nonlinear Partial Differential Equations},
+  journal   = {Journal of Computational Physics},
+  year      = {2019},
+  volume    = {378},
+  pages     = {686--707},
+  doi       = {10.1016/j.jcp.2018.10.045}
+}
+
+%% ---- Relaxation primitives ----
+@inproceedings{jang2017gumbel,
+  author    = {Jang, Eric and Gu, Shixiang and Poole, Ben},
+  title     = {Categorical Reparameterization with {Gumbel}-Softmax},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2017}
+}
+
+@misc{bengio2013estimating,
+  author        = {Bengio, Yoshua and L{\'e}onard, Nicholas and Courville, Aaron},
+  title         = {Estimating or Propagating Gradients through Stochastic Neurons for Conditional Computation},
+  year          = {2013},
+  eprint        = {1308.3432},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG}
+}
+
+@misc{graves2014ntm,
+  author        = {Graves, Alex and Wayne, Greg and Danihelka, Ivo},
+  title         = {Neural {Turing} Machines},
+  year          = {2014},
+  eprint        = {1410.5401},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.NE}
+}
+
+%% ---- Integrated gradients (attribution method used for the gradient study) ----
+@inproceedings{sundararajan2017axiomatic,
+  author    = {Sundararajan, Mukund and Taly, Ankur and Yan, Qiqi},
+  title     = {Axiomatic Attribution for Deep Networks},
+  booktitle = {Proceedings of the 34th International Conference on Machine Learning (ICML)},
+  volume    = {70},
+  pages     = {3319--3328},
+  year      = {2017},
+  publisher = {PMLR}
+}
