@@ -90,8 +90,25 @@ def run_until_frame(console: Console) -> Console:
     skips `startFrame()`). This reproduces qbert's boot→step "sliver" frame.
     Mirror of jutari `run_until_frame!`.
     """
-    start_frame = int(console.bus.tia.frame)
+    # Task #114: xitari's `TIA::update` calls `startFrame()` — which SWAPS the
+    # double framebuffer (TIA.cxx:537-539) — at the START of an update IFF the
+    # previous frame completed (`if(!myPartialFrameFlag)`). jaxtari's equivalent:
+    # if the previous frame completed (buffer_swap_pending armed at the
+    # W_VSYNC hold-gate or max-scanlines cutoff), swap now, BEFORE rendering
+    # the new frame. The just-completed frame's pixels move to
+    # `framebuffer_prev`; the new frame renders into the swapped-in buffer,
+    # whose un-rendered rows still hold content from two frames ago — exactly
+    # like xitari (qbert's boot→game short frame shows the preserved board).
+    # A grey/partial frame does NOT arm the flag, so it continues the same
+    # buffer (no swap) like xitari. Mirror of jutari run_until_frame!.
     cpu, bus = console.cpu, console.bus
+    if bus.tia.buffer_swap_pending:
+        bus = bus._replace(tia=bus.tia._replace(
+            framebuffer=bus.tia.framebuffer_prev,
+            framebuffer_prev=bus.tia.framebuffer,
+            buffer_swap_pending=False,
+        ))
+    start_frame = int(bus.tia.frame)
     for _ in range(_UPDATE_INSTRUCTION_BUDGET):
         cpu, bus = cpu_step(cpu, bus)
         if int(bus.tia.frame) != start_frame:

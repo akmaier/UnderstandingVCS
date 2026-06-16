@@ -5445,9 +5445,47 @@ the same instruction that ended the frame and leak to the next domain; jaxtari
 avoids that via the cutoff-first ordering. If a skiing-class RAM divergence
 shows up in PXC2, revisit.
 
-**Next sprint pick** (hourly cron `be725309`): **#112** (HMOVE comb consume on
-first DISPLAY scanline), **#114** (double-buffer framebuffer), **#115** (RESMP
-defer), **#115b** (joystick INPT0-3 idle LOW), **#115c** (faithful player
+---
+
+## jaxtari catch-up sprint 2 (2026-06-16) — #112 (implicit) + #114 ported
+
+**#112 already in place** (no code change). #112's mechanism in jutari was: in
+the VBLANK branch, clear `hmove_blank_pending` whenever the completed scanline
+is >= y_start_row (so bowling/kangaroo's first display row — which is itself
+VBLANK — invisibly consumes the comb). In jaxtari, the same semantics already
+held: the existing `wrote_framebuffer_this_advance` flag (which gates the
+post-loop `new_hmove_blank = False` clear) is set in BOTH the visible AND VBLANK
+branches when `tia.scanline >= tia.y_start_row` (the visible-branch set was
+pre-existing; the VBLANK-branch set landed with my #109 port last sprint).
+Verified by a direct test: scanline >= y_start_row + VBLANK clears the comb
+(False); scanline < y_start_row + VBLANK preserves it (the pong row-0 carry).
+No commit for #112; this note is the record.
+
+**#114 ported** (`0a8b68f`): double-buffer framebuffer (mirror xitari's
+`myCurrentFrameBuffer / myPreviousFrameBuffer`, TIA.cxx:537-539). Added two
+new TIAState fields: `framebuffer_prev` (a parallel `(SCREEN_HEIGHT,
+SCREEN_WIDTH)` uint8 ndarray, defaulting to zeros) and
+`buffer_swap_pending: bool`. The flag is armed at every frame-COMPLETION path
+(W_VSYNC hold-gate AND max-scanlines cutoff in `tia_poke`), and `console.py
+::run_until_frame` swaps `framebuffer <-> framebuffer_prev` at the START of
+the next call whenever the flag is set (then clears it). Grey/partial frames
+don't arm the flag, so they continue rendering into the same buffer like
+xitari. Pure render-only — no RAM effect.
+
+The xitari intent: when a frame is much SHORTER than a full TV frame (e.g.
+qbert's boot→game transition has an 11-scanline frame), the swapped-in buffer
+still holds the prior frame's pixels for the rows the new frame didn't touch.
+This produces the preserved "attract board" effect that the previous
+single-buffer design lost (the long boot spin overwrote everything to black).
+
+**Test gate**: 125 TIA-layer tests pass. The single-buffer codepath is the
+default in env unit-tests (they reset and run full frames), so existing tests
+exercise the new `framebuffer_prev` initialization but not the swap mechanism;
+the swap will surface in qbert PXC2/PXC-S which are too slow for the hourly
+cadence. If a screen regression appears at PXC-S, revisit.
+
+**Next sprint pick** (cron `be725309`): **#115** (RESMP per-color-clock
+deferral), **#115b** (joystick INPT0-3 idle LOW), **#115c** (faithful player
 render), **#115d/e** (Cosmic Ark M0), **#115f** (defer VDELP0/1/BL), **#115g**
 (PF reflect left-half latch), **#115h** (RESBL/RESM HMOVE-relative hacks),
 **#118** (per-pixel VBLANK D1), **#119** (HBLANK RESP skip-first-copy).

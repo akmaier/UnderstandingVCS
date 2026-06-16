@@ -385,6 +385,18 @@ class TIAState(NamedTuple):
     # left-edge "comb" blank regardless of strobe cycle (TIA.cxx:200,2694).
     # Default True; in the 64-ROM set only battle_zone + ms_pacman set "NO".
     allow_hmove_blanks: bool = True
+    # Task #114: DOUBLE-BUFFER (mirror xitari's myCurrentFrameBuffer /
+    # myPreviousFrameBuffer, swapped in startFrame, TIA.cxx:537-539).
+    # `framebuffer` is the buffer rendered into THIS frame; `framebuffer_prev`
+    # is the other. On frame COMPLETION (the W_VSYNC hold-gate / max-scanlines
+    # cutoff) we set `buffer_swap_pending`; the NEXT `run_until_frame` swaps
+    # them before rendering the new frame. So a SHORT/partial frame that
+    # renders only a few scanlines shows the content from TWO frames ago (the
+    # swapped-in buffer) for un-rendered rows — exactly like xitari (qbert's
+    # boot→game short frame). Render-only (no RAM effect); normal full frames
+    # overwrite the whole display window so they are unchanged.
+    framebuffer_prev: jnp.ndarray = None  # type: ignore
+    buffer_swap_pending: bool = False
 
 
 def initial_tia_state() -> TIAState:
@@ -431,6 +443,8 @@ def initial_tia_state() -> TIAState:
         hmove_motion_next=(0, 0, 0, 0, 0),
         lines_since_frame=0,
         vsync_finish_clock=0x7FFFFFFF,
+        framebuffer_prev=jnp.zeros((SCREEN_HEIGHT, SCREEN_WIDTH), dtype=jnp.uint8),
+        buffer_swap_pending=False,
     )
 
 
@@ -777,6 +791,10 @@ def tia_poke(tia: TIAState, addr: int, value: int,
             lines_since_frame=0,
             vsync_finish_clock=0x7FFFFFFF,
             color_loss_active=_new_cl,
+            # Task #114: this frame completed (max-scanlines cutoff path) → arm
+            # the double-buffer swap so the next run_until_frame swaps before
+            # rendering. Grey/partial frames don't reach here.
+            buffer_swap_pending=True,
         )
 
     # P3i-c: defer PF0/PF1/PF2 to mid-scanline activation. Skip the
@@ -932,6 +950,8 @@ def tia_poke(tia: TIAState, addr: int, value: int,
                 lines_since_frame=0,
                 vsync_finish_clock=0x7FFFFFFF,
                 color_loss_active=new_color_loss_active,
+                # Task #114: frame completed → arm the double-buffer swap.
+                buffer_swap_pending=True,
             )
         else:
             new_tia = new_tia._replace(vsync_active=new_vsync)
