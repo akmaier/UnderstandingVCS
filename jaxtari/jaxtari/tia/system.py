@@ -1135,11 +1135,46 @@ def tia_poke(tia: TIAState, addr: int, value: int,
         )
     elif reg == W_RESM0:
         # P3i-e: missile/ball use the +4 offset / HBLANK constant 2.
-        new_tia = new_tia._replace(m0_x=_resp_missile_ball_position(beam_cc))
+        _m0x = _resp_missile_ball_position(beam_cc)
+        # Task #115h: xitari's Dolphin RESM0 HMOVE-relative hack (TIA.cxx
+        # case 0x12). RESM0 exactly 20 CPU cycles after the last HMOVE at
+        # hpos 69 → POSM0 = 8. `chm` is the gap in color clocks from the
+        # last HMOVE.
+        chm = (int(tia.lines_since_frame) * COLOR_CLOCKS_PER_SCANLINE
+               + int(beam_cc)) - int(tia.last_hmove_clock)
+        if chm == 20 * 3 and int(beam_cc) == 69:
+            _m0x = 8
+        new_tia = new_tia._replace(m0_x=_m0x)
     elif reg == W_RESM1:
-        new_tia = new_tia._replace(m1_x=_resp_missile_ball_position(beam_cc))
+        _m1x = _resp_missile_ball_position(beam_cc)
+        # Task #115h: xitari's Pitfall-II RESM1 HMOVE-relative hack
+        # (TIA.cxx case 0x13). RESM1 exactly 3 CPU cycles after the last
+        # HMOVE at hpos 18 → POSM1 = 3.
+        chm = (int(tia.lines_since_frame) * COLOR_CLOCKS_PER_SCANLINE
+               + int(beam_cc)) - int(tia.last_hmove_clock)
+        if chm == 3 * 3 and int(beam_cc) == 18:
+            _m1x = 3
+        new_tia = new_tia._replace(m1_x=_m1x)
     elif reg == W_RESBL:
-        new_tia = new_tia._replace(bl_x=_resp_missile_ball_position(beam_cc))
+        _blx = _resp_missile_ball_position(beam_cc)
+        # Task #115h: xitari's "Escape from the Mindmaster" RESBL HMOVE-
+        # relative hacks (TIA.cxx case 0x14) — RESBL a specific # of CPU
+        # cycles after the last HMOVE at a specific hpos snaps the ball to
+        # a fixed position. robotank hits the 7*3 / hpos-30 case (→
+        # POSBL=6) every radar scanline — the missing +4 was its 148-px
+        # ball divergence in jutari's sweep.
+        chm = (int(tia.lines_since_frame) * COLOR_CLOCKS_PER_SCANLINE
+               + int(beam_cc)) - int(tia.last_hmove_clock)
+        hpos = int(beam_cc)
+        if chm == 18 * 3 and (hpos == 60 or hpos == 69):
+            _blx = 10
+        elif chm == 3 * 3 and hpos == 18:
+            _blx = 3
+        elif chm == 7 * 3 and hpos == 30:
+            _blx = 6
+        elif chm == 6 * 3 and hpos == 27:
+            _blx = 5
+        new_tia = new_tia._replace(bl_x=_blx)
     elif reg == W_HMM0:
         # Task #115d (Cosmic Ark): arm the M0 motion bug when HMM0 goes
         # 7→6 exactly 21 CPU cycles (63 color clocks) after the last HMOVE
