@@ -37,7 +37,7 @@ Per-frame 210x160 palette-index diff, jutari `jutari_screen_dump.jl` vs xitari `
 | hero | **0 ✅** | 0 | — | — |
 | ice_hockey | **0 ✅** | 0 | — | — |
 | jamesbond | 1 | 60 | 1 | 21-21 |
-| journey_escape | 311 | 18194 | 1 | 13-196 |
+| journey_escape | 3 | 180 | 1 | 13-13 |
 | kangaroo | **0 ✅** | 0 | — | — |
 | krull | **0 ✅** | 0 | — | — |
 | kung_fu_master | **0 ✅** | 0 | — | — |

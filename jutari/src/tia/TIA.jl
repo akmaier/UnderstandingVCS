@@ -914,6 +914,7 @@ function tia_poke!(tia::TIAState, addr::Integer, value::Integer,
                tia.last_hmove_clock + 21 * COLOR_CLOCKS_PER_CPU_CYCLE
             tia.m0_cosmic_ark = true
             tia.m0_cosmic_counter = 0
+            tia.m0_cosmic_line = -1   # enable line renders normal; first step sets the mask
         end
     elseif reg == W_HMCLR
         tia.registers[W_HMP0 + 1] = 0
@@ -1051,12 +1052,6 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
                       COLOR_CLOCKS_PER_SCANLINE
 
     if line_advance > 0
-        # Task #115 (Cosmic Ark): step the M0 motion bug once per completed
-        # scanline — BEFORE the render below and outside the VBLANK gate, so the
-        # counter phase advances every line (incl. VBLANK) exactly like xitari's
-        # scanline-end block, and the rendered row uses the stepped position/mask.
-        # (line_advance>1 is rare for cosmic games — they WSYNC every line.)
-        tia.m0_cosmic_ark && _cosmic_ark_advance!(tia)
         # P3i-c: drain pending PF0/PF1/PF2 writes during the per-
         # color-clock render. Each pending entry (activation_clock,
         # reg, value) applies to the register file at its activation
@@ -1136,6 +1131,9 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
                     p1 = sort(collect(cs.p1)), m0 = sort(collect(cs.m0)),
                     m1 = sort(collect(cs.m1)), bl = sort(collect(cs.bl)),
                     row = copy(row),
+                    # Task #115: Cosmic Ark M0 state at render — (enabled, counter,
+                    # line-mode). line-mode 1=stretch, 2=blank, else normal.
+                    cosmic = (tia.m0_cosmic_ark, tia.m0_cosmic_counter, tia.m0_cosmic_line),
                     # (activation_clock, reg, value) for every deferred write that
                     # applied during THIS scanline's render — jutari's per-poke
                     # activation timing, to diff against xitari's `clock + delay`.
@@ -1248,6 +1246,17 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
             tia.m1_x = mod(tia.m1_x - dm1, 160)
             tia.bl_x = mod(tia.bl_x - dbl, 160)
             tia.hmove_motion_next = (0, 0, 0, 0, 0)
+        end
+        # Task #115 (Cosmic Ark): step the M0 motion bug AFTER the line rendered
+        # (xitari's scanline-END block sets up the NEXT line — TIA.cxx:1805). The
+        # just-rendered line used the prior step's counter/position; advance now so
+        # the next line drifts/stretches/blanks correctly. Off-by-one if stepped
+        # before the render (jutari blanked where xitari stretched, journey_escape).
+        # Runs per completed scanline incl. VBLANK so the counter phase stays synced.
+        if tia.m0_cosmic_ark
+            for _ in 1:line_advance
+                _cosmic_ark_advance!(tia)
+            end
         end
     end
 

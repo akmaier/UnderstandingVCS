@@ -112,6 +112,8 @@ function main()
                   ",\"p1\":", _ints(p.p1), ",\"m0\":", _ints(p.m0),
                   ",\"m1\":", _ints(p.m1), ",\"bl\":", _ints(p.bl),
                   ",\"render_row\":", _ints(p.row),
+                  ",\"cosmic\":[", (p.cosmic[1] ? "true" : "false"), ",",
+                      p.cosmic[2], ",", p.cosmic[3], "]",
                   ",\"pending\":[",
                   join(["[$(a),$(r),$(v)]" for (a, r, v) in p.pending], ","), "]}")
     end

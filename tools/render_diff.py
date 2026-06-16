@@ -192,7 +192,11 @@ def main():
     print("  " + "  ".join(rd(REGNAME[x], x) for x in (0x09, 0x08, 0x06, 0x07)))
     print("  " + "  ".join(rd(REGNAME[x], x) for x in (0x04, 0x05, 0x1B, 0x1C)))
     print("  " + "  ".join(rd(REGNAME[x], x) for x in (0x0B, 0x0C, 0x1F, 0x25)))
+    print("  " + "  ".join(f"{n}={regs[a]:#04x}" for n, a in
+                           (("ENAM0", 0x1D), ("ENAM1", 0x1E), ("RESMP0", 0x28), ("RESMP1", 0x29))))
     print(f"  obj-x: p0={ju['p0_x']} p1={ju['p1_x']} m0={ju['m0_x']} m1={ju['m1_x']} bl={ju['bl_x']}")
+    if ju.get("cosmic") is not None:
+        print(f"  cosmic: {ju['cosmic']}")
 
     sets = {k: set(ju[k]) for k in ("pf", "p0", "p1", "m0", "m1", "bl")}
     def who(x):

@@ -5097,3 +5097,27 @@ p0/p1 — a separate per-row player/playfield sub-pixel bug (TODO).
 Also fixed render_diff.py's hardcoded 210-row assumption: `jutari_full_frame` now
 infers the per-frame height (PAL/tall games — air_raid 250, journey_escape — were
 crashing `--auto`).
+
+---
+
+## #115e (2026-06-16) — Cosmic Ark counter phase off-by-one → journey_escape 311→3px
+
+Re-examined the Cosmic Ark (#115d) with the now-height-fixed harness + the cosmic
+state exposed in the render probe. journey_escape's residual WAS the M0 stars after
+all: at row 80 (m0=26) xitari drew the missile STRETCHED (2px, counter 1) but
+jutari BLANKED it — jutari's cosmic state was `[enabled, counter=2, line=2]` while
+xitari was at counter 1. The position coincided (both 26) only because the extra
+step's motion is m[2]=0.
+
+Root cause: `_cosmic_ark_advance!` ran BEFORE rendering the completing scanline, but
+xitari's scanline-END block sets up the NEXT line. Moved the advance to AFTER the
+render + framebuffer commit (next to the #99 hmove_motion_next "set up next line"
+block), and reset m0_cosmic_line=-1 at enable so the enable line renders normal.
+
+**Gated:** RAM 64/64 bit-exact, Pkg.test green. journey_escape **311→3px** (the M0
+star field is now exact; the residual 3px @ row 13 is the separate per-row player
+sub-pixel issue, not the missile). Screen stays 46/64 (journey_escape not fully
+closed) but the single largest render divergence is essentially solved.
+
+Harness: render_diff.py now prints ENAM0/1 + RESMP0/1 and the M0 cosmic state
+(`cosmic:[enabled,counter,line]`); render probe (TIA.jl) + render_diff.jl carry it.
