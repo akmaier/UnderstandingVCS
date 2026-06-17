@@ -70,7 +70,7 @@ function main()
     env_step!(env, act)
     TIA._OBJ_TRACE[] = false
     TIA._PEND_PROBE_SL[] = -1
-    println("scanline,p0_x,p1_x,m0_x,m1_x,bl_x,grp0_old,grp1_old,m0_cosmic_line")
+    println("scanline,p0_x,p1_x,m0_x,m1_x,bl_x,grp0_old,grp1_old,m0_cosmic_line,grp0_live,grp1_live,vdelp0,vdelp1")
     for r in TIA._OBJ_TRACE_LOG
         println(join(r, ","))
     end

@@ -5944,3 +5944,44 @@ p1 shows grp1_old (latched by GRP0 writes) → each of the 3 copies displays a
 different digit. jaxtari's sequence (running) will be diffed against this; a
 shifted activation clock (e.g. +3cc = +1 CPU cycle) would scramble the per-copy
 digits → the 557 px. (Analysis + fix to follow once jaxtari's dump lands.)
+
+---
+
+## Sprint 4 cont. (2026-06-17, ~14:20) — pending+state+_player_set ALL identical; the xitari FIXTURE disagrees with LIVE xitari/jutari (likely stale) — 557px may be a fixture artifact
+
+Direct cross-port diffs this sprint (pitfall frame 0, NOOP stream):
+- **pending_writes sl57 BYTE-IDENTICAL**: both ports
+  `(100,GRP1,0x18)(109,GRP0,0x66)(118,GRP1,0x66)(127,GRP0,0x18)`.
+- **full per-scanline player state IDENTICAL** (extended jutari obj-trace with
+  live GRP0/GRP1 + VDELP): sl54-58 match on p0_x/p1_x/m*/bl, grp0_old/grp1_old,
+  **grp0_live/grp1_live**, vdelp0/vdelp1, nusiz.
+- **`_player_set` BYTE-IDENTICAL** (line-by-line jutari vs jaxtari: player idx,
+  _vdel_grp, reflected, copy_offsets/scale, nusiz_offset, skip-first, bit_idx,
+  scale loop).
+- **NOT score mode**: CTRLPF=0x01 (D1=0; D0=1 reflect). At sl57 the PLAYFIELD is
+  all-on (PF0/1/2=0xff) colored COLUPF=0xd2, players (COLUP0/1=0x0c, GRP0=0x18/
+  GRP1=0x66, 3 copies each) draw on top.
+
+**The fixture discrepancy (key):** `tools/render_diff.py` reports jutari-LIVE vs
+xitari-LIVE (`trace_dump --screen`) = **0 px** at row 23 (scanline 57), and
+`render_diff.jl` (jutari-live) renders that row as PF `0xd2` + players `0x0c` at
+p0{22,23,26,27,38,39,42,43}∪p1{30,31,34,35} with **NO black**. But the committed
+xitari FIXTURE (`tools/fixtures/screens/pitfall_noop_10.screen.gz`) row 23 has
+**black (0x00)** digit pixels and **no 0x0c** — i.e. the FIXTURE ≠ current LIVE
+xitari/jutari. So the diag/conformance 557 px (jaxtari-live vs this fixture) is at
+least partly a **stale/mismatched-fixture artifact**, not a pure jaxtari bug.
+(History: pitfall fixtures were stale once before — see #91 "fixture off by 5570
+px" — and the #95 settings-map gap also corrupted them.) jaxtari-live's player
+coverage ALSO differs slightly from jutari-LIVE ({21} vs {22,26,27,...}), so a
+smaller real jaxtari↔jutari delta likely remains under the fixture noise.
+
+**NEXT (two prongs):**
+1. **Bypass the fixture — compare jaxtari-LIVE vs jutari-LIVE directly.** Build a
+   `render_diff.jl` twin for jaxtari (dump cached_sets.p0/p1/pf + render_row at a
+   scanline) and diff the player coverage vs jutari-live at sl57. This is the
+   user's actual goal (jaxtari ≡ jutari) and removes the fixture from the loop.
+2. **Verify/regenerate the pitfall (and enduro) xitari+jutari fixtures** against
+   current live xitari (`trace_dump --screen`, pitfall_noop_10 stream + real
+   RomSettings). If stale, regenerate in-place; the conformance 557/114 px may
+   collapse. Confirm `test_screen_conformance.py`'s `_jaxtari_screens` boot/
+   settings match how the fixtures were generated (harness parity, CLAUDE.md pt2).

@@ -126,7 +126,7 @@ const _RENDER_PROBE_OUT = Ref{Any}(nothing)
 # pin where it diverges from xitari's myPOS*/myDGRP* (the carried HMOVE/shadow
 # accumulation residuals: robotank ball, elevator_action missile, up_n_down).
 const _OBJ_TRACE = Ref{Bool}(false)
-const _OBJ_TRACE_LOG = Vector{NTuple{9,Int}}()
+const _OBJ_TRACE_LOG = Vector{NTuple{13,Int}}()
 # pending-writes probe (debug, off by default): when `_PEND_PROBE_SL[] >= 0`,
 # `tia_advance!` pushes the sorted pending_writes for that scanline to
 # `_PEND_PROBE_LOG`. Used to diff the mid-scanline write SEQUENCE against
@@ -1267,7 +1267,9 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
                 push!(_OBJ_TRACE_LOG, (Int(tia.scanline),
                     Int(tia.p0_x), Int(tia.p1_x), Int(tia.m0_x), Int(tia.m1_x),
                     Int(tia.bl_x), Int(tia.grp0_old), Int(tia.grp1_old),
-                    Int(tia.m0_cosmic_line)))
+                    Int(tia.m0_cosmic_line),
+                    Int(tia.registers[W_GRP0 + 1]), Int(tia.registers[W_GRP1 + 1]),
+                    Int(tia.registers[W_VDELP0 + 1]), Int(tia.registers[W_VDELP1 + 1])))
             end
             # Task #83 round 3 (2026-06-11): only WRITE framebuffer
             # and CONSUME the HMOVE-blank flag for scanlines at or
@@ -1322,7 +1324,9 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
                 push!(_OBJ_TRACE_LOG, (Int(tia.scanline),
                     Int(tia.p0_x), Int(tia.p1_x), Int(tia.m0_x), Int(tia.m1_x),
                     Int(tia.bl_x), Int(tia.grp0_old), Int(tia.grp1_old),
-                    Int(tia.m0_cosmic_line)))
+                    Int(tia.m0_cosmic_line),
+                    Int(tia.registers[W_GRP0 + 1]), Int(tia.registers[W_GRP1 + 1]),
+                    Int(tia.registers[W_VDELP0 + 1]), Int(tia.registers[W_VDELP1 + 1])))
             end
             # Task #109 (render): xitari's `updateFrameScanline` MEMSETS the
             # framebuffer to 0 (black) when `myVBLANK & 0x02` (TIA.cxx:1121-
