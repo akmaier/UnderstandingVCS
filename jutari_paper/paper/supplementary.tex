@@ -323,11 +323,11 @@ remain, and at $T{=}0.1$ the mixture is effectively one-hot, a single sharp
 cannon whose chosen column no longer moves under a small change of the control,
 so the gradient collapses to zero between candidate boundaries (peak magnitudes
 $1.00,0.51,0.00$ for $T{=}2.0,0.5,0.1$).
-Figure~\ref{fig:tempheat} shows the underlying softmax weights themselves as a
-heatmap over candidate columns and temperature: a single hard pick at low $T$
-(effective number of columns $N_{\mathrm{eff}}\!\to\!1$) broadens into a
-distribution over neighbouring columns as $T$ rises---the very superposition the
-gradient is then spread across.
+Figure~\ref{fig:tempheat} makes this concrete in pixel space: sampling the
+cannon's column $100$ times from $w=\softmax(\ell/T)$ and averaging the rendered
+sprites gives the expected screen occupancy---a single sharp cannon at low $T$
+($N_{\mathrm{eff}}\!\to\!1$) that spreads into several graded copies as $T$
+rises, the very superposition the gradient is then spread across.
 
 In every panel the forward render is the exact hard one
 (Theorem~\ref{thm:s-exact}); only the gradient changes. It is most informative at
@@ -378,12 +378,15 @@ localised gradient.}
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_temp_heatmap.pdf}
-\caption{Soft-select weights $w=\softmax(\ell/T)$ over the candidate cannon
-columns as a function of temperature $T$ (log scale). At low $T$ the distribution
-is one-hot---a hard pick of the target column---and as $T$ rises it broadens into
-a distribution over neighbouring columns. The right axis gives the effective
-number of selected columns $N_{\mathrm{eff}}=1/\sum_k w_k^2$, which grows from $1$
-(hard) toward several as $T$ increases.}
+\caption{Pixel-space sprite-occupancy heatmap of the soft-select temperature
+$T$. For each $T$ we sample the cannon's column $100$ times from
+$w=\softmax(\ell/T)$, render the hard cannon sprite at each sampled column, and
+average the $100$ images; each pixel's value is the fraction of samples in which
+the sprite covered it---a Monte-Carlo estimate of the expected occupancy
+$\sum_k w_k\,\mathrm{occ}_k$. At $T{=}2.0$ the draws spread over several columns
+(a blurred sprite of graded brightness, $N_{\mathrm{eff}}{=}2.6$ effective
+columns); as $T$ falls the occupancy collapses onto the target column
+($N_{\mathrm{eff}}{\to}1$), a single sharp cannon at full occupancy.}
 \label{fig:tempheat}
 \end{figure}
 

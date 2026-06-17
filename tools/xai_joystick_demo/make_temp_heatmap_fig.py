@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
-"""Soft-select temperature heatmap (supplementary).
+"""Pixel-space sprite-occupancy heatmap of the soft-select temperature T.
 
-Shows that the soft_select (softmax) temperature T turns a HARD pick into a
-DISTRIBUTION over candidate cannon columns.  Same setup as
-tools/xai_joystick_demo/alpha_temp_demo.jl:
+For each T in {2.0, 0.5, 0.1} we SAMPLE the cannon's column 100 times from the
+soft-select distribution w = softmax(logits / T) over the candidate columns,
+render the (hard) cannon sprite at each sampled column, sum the 100 rendered
+images, and divide by 100. The result is a screen-domain heatmap whose value at
+each pixel is the fraction of samples in which the sprite covered that pixel ---
+i.e. a Monte-Carlo estimate of the expected sprite occupancy E[occupancy].
 
-    CAND   = 30:8:110                       (11 candidate cannon columns)
-    target = 70
-    logits_k = -((CAND[k] - 70) / 6)^2
-    w_k(T)   = softmax(logits / T)
+  high T (2.0): the draws spread over several neighbouring columns -> several
+                cannon copies of graded brightness (a blurry, spread sprite);
+  low T  (0.1): the draws collapse onto the target column -> a single sharp
+                cannon at full occupancy.
 
-We sweep a fine log-spaced grid of T from 3.0 (high, spread) down to 0.08
-(low, one-hot) and render a heatmap: x = candidate column, y = T (log scale),
-colour = softmax weight.  An annotation gives the effective number of columns
-N_eff(T) = 1 / sum(w^2) at a few temperatures to quantify the spread.
+The per-column hard sprites come from alpha_temp_demo.jl (at_cand_occ*). Sampling
+uses a fixed seed so the figure is reproducible.
 
-Run:  python3 tools/xai_joystick_demo/make_temp_heatmap_fig.py
+    python3 make_temp_heatmap_fig.py
 """
 import os
 import numpy as np
@@ -24,99 +25,73 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 HERE = os.path.dirname(__file__)
+OUT = os.path.join(HERE, "out")
 FIG = os.path.abspath(os.path.join(HERE, "..", "..", "jutari_paper", "paper",
                                    "figures", "fig_temp_heatmap.pdf"))
 plt.rcParams.update({"font.family": "serif", "font.size": 8,
                      "pdf.fonttype": 42, "ps.fonttype": 42})
 
-STEEL = "#35618f"
-ORANGE = "#c8641a"
-
-# ---- soft_select setup (identical to alpha_temp_demo.jl) -------------------
-CAND = np.arange(30, 111, 8, dtype=float)      # 30,38,...,110  (K = 11)
+# Same setup as alpha_temp_demo.jl.
+CAND = np.arange(30, 111, 8, dtype=float)          # 11 candidate columns
 TARGET = 70.0
 LOGITS = -((CAND - TARGET) / 6.0) ** 2
+K = len(CAND)
+N_SAMPLES = 100
+TS = (2.0, 0.5, 0.1)
+CR = (slice(24, 54), slice(26, 122))               # zoom window around the cannon
 
 
-def softmax(logits, T):
-    z = (logits - logits.max()) / T
-    e = np.exp(z)
+def softmax(T):
+    e = np.exp((LOGITS - LOGITS.max()) / T)
     return e / e.sum()
 
 
-def neff(w):
-    """Effective number of columns: inverse participation ratio."""
-    return 1.0 / np.sum(w ** 2)
+def load_sprites():
+    shape = {}
+    with open(os.path.join(OUT, "alpha_temp_manifest.txt")) as f:
+        for line in f:
+            name, r, c = line.split()
+            shape[name] = (int(r), int(c))
+    occ = []
+    for k in range(1, K + 1):
+        name = f"at_cand_occ{k}"
+        a = np.fromfile(os.path.join(OUT, name + ".bin"), dtype="<f4")
+        occ.append(a.reshape(shape[name]))
+    return np.stack(occ)                            # (K, H, W)
 
 
 def main():
-    # Fine log-spaced T grid: high T (spread) at TOP, low T (one-hot) at BOTTOM.
-    nT = 50
-    T_hi, T_lo = 3.0, 0.08
-    Tgrid = np.logspace(np.log10(T_hi), np.log10(T_lo), nT)   # descending
+    occ = load_sprites()                            # (K, H, W), values in {0,1}
+    rng = np.random.default_rng(0)                  # reproducible sampling
 
-    W = np.vstack([softmax(LOGITS, T) for T in Tgrid])        # (nT, K)
+    fig, axes = plt.subplots(1, 3, figsize=(5.6, 2.1))
+    im = None
+    for ax, T in zip(axes, TS):
+        w = softmax(T)
+        idx = rng.choice(K, size=N_SAMPLES, p=w)    # 100 sampled columns ~ w(T)
+        heat = occ[idx].mean(axis=0)[CR]            # sum images / 100 = E[occ]
+        neff = 1.0 / np.sum(w ** 2)
+        im = ax.imshow(heat, cmap="magma", vmin=0.0, vmax=1.0,
+                       aspect="equal", interpolation="nearest")
+        ax.set_title(rf"$T = {T}$", fontsize=8.5)
+        ax.set_xlabel(rf"$N_{{\mathrm{{eff}}}} = {neff:.1f}$ cols", fontsize=6.8)
+        ax.set_xticks([]); ax.set_yticks([])
 
-    fig, ax = plt.subplots(figsize=(4.6, 3.4))
-
-    # log-scaled y in data coords: use the log10(T) values as cell centres so
-    # pcolormesh spaces rows correctly on a log axis.  Build edges in log space.
-    logT = np.log10(Tgrid)
-    # cell edges (nT+1) midway between successive log-T centres
-    edges_y = np.empty(nT + 1)
-    edges_y[1:-1] = 0.5 * (logT[:-1] + logT[1:])
-    edges_y[0] = logT[0] + 0.5 * (logT[0] - logT[1])
-    edges_y[-1] = logT[-1] - 0.5 * (logT[-2] - logT[-1])
-    # x edges centred on candidate columns (spacing 8)
-    dx = 8.0
-    edges_x = np.concatenate([CAND - dx / 2, [CAND[-1] + dx / 2]])
-
-    pcm = ax.pcolormesh(edges_x, edges_y, W, cmap="magma",
-                        vmin=0.0, vmax=W.max(), shading="flat", rasterized=True)
-
-    # y axis shows actual T values (we plotted log10 T as the coordinate).
-    ytick_T = np.array([3.0, 2.0, 1.0, 0.5, 0.3, 0.2, 0.1])
-    ax.set_yticks(np.log10(ytick_T))
-    ax.set_yticklabels([f"{t:g}" for t in ytick_T])
-    ax.set_ylabel("soft-select temperature $T$  (log scale)")
-    ax.set_xlabel("candidate cannon column")
-    ax.set_xticks(CAND[::2].astype(int))
-
-    # Mark the target column.
-    ax.axvline(TARGET, color="white", lw=0.8, ls="--", alpha=0.75)
-    ax.text(TARGET + 1.5, edges_y[0], "target = 70", color="white",
-            fontsize=6.5, va="top", ha="left", rotation=90)
-
-    ax.set_title("Soft select: temperature $T$ spreads a hard pick\n"
-                 "into a distribution over columns", fontsize=8.5)
-
-    cb = fig.colorbar(pcm, ax=ax, pad=0.14, fraction=0.046)
-    cb.set_label("softmax weight $w_k$", fontsize=8)
-    cb.ax.tick_params(length=2)
+    fig.suptitle(r"Sampled sprite occupancy (100 draws from "
+                 r"$\mathrm{softmax}(\ell/T)$, averaged in pixel space)",
+                 fontsize=8.5, y=1.02)
+    fig.subplots_adjust(left=0.02, right=0.88, top=0.84, bottom=0.10, wspace=0.10)
+    cax = fig.add_axes([0.90, 0.12, 0.018, 0.70])
+    cb = fig.colorbar(im, cax=cax)
+    cb.set_label("occupancy fraction", fontsize=7)
+    cb.ax.tick_params(labelsize=6, length=2)
     cb.outline.set_linewidth(0.5)
-
-    # ---- N_eff annotation at a few temperatures ---------------------------
-    # Right-hand twin axis labelled with effective #columns at marker rows.
-    mark_T = np.array([2.0, 1.0, 0.5, 0.2, 0.1])
-    mark_logT = np.log10(mark_T)
-    mark_neff = np.array([neff(softmax(LOGITS, t)) for t in mark_T])
-
-    ax2 = ax.twinx()
-    ax2.set_ylim(ax.get_ylim())
-    ax2.set_yticks(mark_logT)
-    ax2.set_yticklabels([f"{n:.1f}" for n in mark_neff], fontsize=6.5,
-                        color=STEEL)
-    ax2.set_ylabel(r"effective \#columns  $1/\sum_k w_k^2$",
-                   fontsize=7, color=STEEL)
-    ax2.tick_params(axis="y", length=2, colors=STEEL)
-    for s in ax2.spines.values():
-        s.set_visible(False)
 
     fig.savefig(FIG, bbox_inches="tight", dpi=300)
     print("wrote", FIG)
-    # console summary of N_eff at the annotated T values
-    for t, n in zip(mark_T, mark_neff):
-        print(f"  T={t:4.2f}  N_eff={n:.2f}  max w={softmax(LOGITS,t).max():.3f}")
+    for T in TS:
+        w = softmax(T)
+        print(f"  T={T:4.2f}  N_eff={1/np.sum(w**2):.2f}  max w={w.max():.3f}")
 
 
 if __name__ == "__main__":

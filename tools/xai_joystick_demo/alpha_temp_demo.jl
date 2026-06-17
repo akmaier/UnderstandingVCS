@@ -97,6 +97,13 @@ for (i, T) in enumerate((2f0, 0.5f0, 0.1f0))
             "  effective #cols=", round(1 / sum(w.^2), digits=1))
 end
 
+# Per-candidate HARD cannon occupancies (one image per candidate column), so the
+# pixel-space sampled heatmap (make_temp_heatmap_fig.py) can draw sprite positions
+# ~ softmax(logits/T), render each, and average them in the screen domain.
+for (k, xc) in enumerate(CAND)
+    dump("at_cand_occ$k", cannon_occ(xc))
+end
+
 open(joinpath(OUT, "alpha_temp_manifest.txt"), "w") do io
     for line in MANIFEST; println(io, line); end
 end
