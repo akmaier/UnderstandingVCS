@@ -63,13 +63,23 @@ function main()
         act = k <= length(actions) ? actions[k] : (isempty(actions) ? 0 : actions[end])
         env_step!(env, act)
     end
+    pending = haskey(args, "--pending") ? parse(Int, args["--pending"]) : -1
     empty!(TIA._OBJ_TRACE_LOG); TIA._OBJ_TRACE[] = true
+    empty!(TIA._PEND_PROBE_LOG); TIA._PEND_PROBE_SL[] = pending
     act = (frame + 1) <= length(actions) ? actions[frame + 1] : (isempty(actions) ? 0 : actions[end])
     env_step!(env, act)
     TIA._OBJ_TRACE[] = false
+    TIA._PEND_PROBE_SL[] = -1
     println("scanline,p0_x,p1_x,m0_x,m1_x,bl_x,grp0_old,grp1_old,m0_cosmic_line")
     for r in TIA._OBJ_TRACE_LOG
         println(join(r, ","))
+    end
+    if pending >= 0
+        println("# PENDING_WRITES (activation_clock, reg, value) for scanline ", pending, ":")
+        for (sl, writes) in TIA._PEND_PROBE_LOG
+            ws = join(["($(a),$(string(r, base=16)),$(string(v, base=16)))" for (a, r, v) in writes], " ")
+            println("# sl", sl, ": ", ws)
+        end
     end
     return 0
 end

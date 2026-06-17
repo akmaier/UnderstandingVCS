@@ -127,6 +127,12 @@ const _RENDER_PROBE_OUT = Ref{Any}(nothing)
 # accumulation residuals: robotank ball, elevator_action missile, up_n_down).
 const _OBJ_TRACE = Ref{Bool}(false)
 const _OBJ_TRACE_LOG = Vector{NTuple{9,Int}}()
+# pending-writes probe (debug, off by default): when `_PEND_PROBE_SL[] >= 0`,
+# `tia_advance!` pushes the sorted pending_writes for that scanline to
+# `_PEND_PROBE_LOG`. Used to diff the mid-scanline write SEQUENCE against
+# jaxtari's to localize a per-color-clock activation-timing divergence.
+const _PEND_PROBE_SL = Ref{Int}(-1)
+const _PEND_PROBE_LOG = Vector{Any}()
 const COLOR_CLOCKS_PER_SCANLINE = 228
 
 # P3i-c: per-poke write delays, in color clocks. Verbatim port of
@@ -1146,6 +1152,10 @@ function tia_advance!(tia::TIAState, cpu_cycles::Integer)
         # (via `_apply_pixel_collisions!`) so the bit OR sees the
         # post-write object sets at each color clock.
         pending_sorted = sort(tia.pending_writes; by = w -> w[1])
+        if _PEND_PROBE_SL[] >= 0 && Int(tia.scanline) == _PEND_PROBE_SL[]
+            push!(_PEND_PROBE_LOG, (Int(tia.scanline),
+                [(Int(a), Int(r), Int(v)) for (a, r, v) in pending_sorted]))
+        end
         # Task #118: a scanline is FULLY output-blanked only if VBLANK D1 is on at
         # the visible start AND no VBLANK write clears it this line. Otherwise it
         # has at least one rendered pixel → take the per-pixel visible branch (which

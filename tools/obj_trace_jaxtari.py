@@ -38,6 +38,8 @@ def main(argv=None) -> int:
     p.add_argument("--rom", type=Path, required=True)
     p.add_argument("--actions", type=Path, required=True)
     p.add_argument("--frame", type=int, default=0)
+    p.add_argument("--pending", type=int, default=-1,
+                   help="dump sorted pending_writes for this scanline")
     args = p.parse_args(argv)
 
     rom = np.frombuffer(args.rom.read_bytes(), dtype=np.uint8)
@@ -55,15 +57,23 @@ def main(argv=None) -> int:
         env.step(int(act(k)))
     # Trace exactly the target frame.
     tia_sys._OBJ_TRACE_LOG.clear()
+    tia_sys._PEND_PROBE_LOG.clear()
+    tia_sys._PEND_PROBE_SL = args.pending
     tia_sys._OBJ_TRACE_ENABLED = True
     env.step(int(act(args.frame)))
     tia_sys._OBJ_TRACE_ENABLED = False
+    tia_sys._PEND_PROBE_SL = -1
 
     print("scanline,p0_x,p1_x,m0_x,m1_x,bl_x,grp0_old,grp1_old,m0_cosmic_line,"
           "p0_skip,p1_skip,grp0_live,grp1_live,"
           "vdelp0,vdelp1,vdel_grp0,vdel_grp1,nusiz0,nusiz1")
     for r in tia_sys._OBJ_TRACE_LOG:
         print(",".join(str(v) for v in r))
+    if args.pending >= 0:
+        print(f"# PENDING_WRITES (activation_clock, reg, value) for scanline {args.pending}:")
+        for sl, writes in tia_sys._PEND_PROBE_LOG:
+            ws = " ".join(f"({a},{r:#04x},{v:#04x})" for a, r, v in writes)
+            print(f"# sl{sl}: {ws}")
     return 0
 
 

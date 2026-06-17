@@ -5923,3 +5923,24 @@ correct digit pixels (already have them) — the first copy whose coverage is wr
 and the GRP write whose activation_clock lands on the wrong side of that copy
 boundary, IS the bug. (No jutari-core change needed: the xitari fixture is ground
 truth.)
+
+---
+
+## Sprint 4 (2026-06-17, ~14:00) — pending-writes probe added to BOTH ports; jutari golden sequence captured
+
+Added an off-by-default pending-writes probe to both ports (jaxtari
+`_PEND_PROBE_SL`/`_PEND_PROBE_LOG` in `tia_advance`; jutari `_PEND_PROBE_SL`/
+`_PEND_PROBE_LOG` in `tia_advance!`), surfaced via `--pending <scanline>` in
+`tools/obj_trace_jaxtari.py` + `tools/obj_trace.jl`. Dumps the sorted
+`pending_writes` (activation_clock, reg, value) for a scanline so the
+mid-scanline GRP-write SEQUENCE can be diffed cross-port directly (the decisive
+test from sprint 3).
+
+**jutari golden, pitfall frame 0 scanline 57:**
+`(100,GRP1,0x18) (109,GRP0,0x66) (118,GRP1,0x66) (127,GRP0,0x18)` — 4 GRP writes
+at activation clocks 100/109/118/127. Copy render positions: p0 at cc 89/105/121,
+p1 at cc 97/113/129. With VDELP on, p0 shows grp0_old (latched by GRP1 writes),
+p1 shows grp1_old (latched by GRP0 writes) → each of the 3 copies displays a
+different digit. jaxtari's sequence (running) will be diffed against this; a
+shifted activation clock (e.g. +3cc = +1 CPU cycle) would scramble the per-copy
+digits → the 557 px. (Analysis + fix to follow once jaxtari's dump lands.)

@@ -131,6 +131,15 @@ SCREEN_WIDTH = 160
 _OBJ_TRACE_ENABLED = False
 _OBJ_TRACE_LOG: list = []
 
+# pending-writes probe: when `_PEND_PROBE_SL >= 0`, `tia_advance` appends the
+# sorted pending_writes [(activation_clock, reg, value), ...] for the scanline
+# whose index == `_PEND_PROBE_SL` to `_PEND_PROBE_LOG`. Diffs the mid-scanline
+# write SEQUENCE against jutari's (the golden reference) to localize a
+# per-color-clock activation-timing divergence (e.g. pitfall's 3-copy HUD
+# digits). Off by default → zero behavioural impact.
+_PEND_PROBE_SL = -1
+_PEND_PROBE_LOG: list = []
+
 # P3i-a: color-clock scaffolding. The TIA actually operates at 3× the
 # CPU rate — one CPU cycle = 3 color clocks. A scanline is 228 color
 # clocks: 68 of HBLANK (the chip blanks output while the CRT beam
@@ -1469,6 +1478,9 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
         # Sort pending writes by activation_clock (so we apply them in
         # beam-order during the per-color-clock loop).
         pending_sorted = tuple(sorted(pending, key=lambda w: w[0]))
+        if _PEND_PROBE_SL >= 0 and int(tia.scanline) == _PEND_PROBE_SL:
+            _PEND_PROBE_LOG.append((int(tia.scanline),
+                tuple((int(a), int(r), int(v)) for a, r, v in pending_sorted)))
         # Task #118: a scanline is FULLY output-blanked only if VBLANK D1 is
         # on at the visible start AND no VBLANK CLEAR is pending in the
         # drain. Otherwise the line has at least one rendered pixel → take
