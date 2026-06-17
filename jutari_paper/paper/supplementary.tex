@@ -288,9 +288,9 @@ by the soft primitives. For the sigmoid branch we plot the screen-space
 directional-derivative saliency
 $\partial(\text{screen})/\partial(\text{control})$ as the sharpness $\alpha$ is
 swept (Figure~\ref{fig:alphatemp}), and the gate and its gradient directly
-(Figure~\ref{fig:sigmoid}); for the softmax select we show the temperature's
-effect in pixel space as a sampled sprite-occupancy heatmap
-(Figure~\ref{fig:tempheat}). In the gradient maps the colour encodes the
+(Figure~\ref{fig:sigmoid}); the softmax select's temperature effect is shown in
+pixel space in the main paper (a sampled sprite-occupancy heatmap). In the
+gradient maps the colour encodes the
 \emph{sign} of the derivative---red where a pixel brightens as the control
 increases (the sprite arriving) and blue where it darkens (the sprite
 leaving)---and its intensity the magnitude, on a black background; the colour bar
@@ -318,14 +318,12 @@ largest, most localised gradient at the operating point.
 
 The softmax select positions the sprite as the weighted sum
 $\sum_k w_k\,(\text{sprite at column }k)$ with $w=\softmax(\ell/T)$, so its
-expected screen occupancy is a blend over candidate columns. We visualise this in
-pixel space (Figure~\ref{fig:tempheat}): for each $T$ we sample the sprite's
-column $100$ times from $w$ at pixel resolution, render the hard sprite at each
-draw, and average the images. At a high temperature ($T{=}2.0$) the draws spread
-over a wide band ($\sigma\approx6$ px), giving a broad, smooth occupancy cloud; as
-$T$ falls the distribution concentrates ($\sigma\approx3$ px at $T{=}0.5$, and
-$1.3$ px at $T{=}0.1$) until the sprite is a single sharp, fully occupied
-figure---the hard pick. The gradient with respect to the control follows the same
+expected screen occupancy is a blend over candidate columns whose spread grows
+with $T$. The main paper visualises this in pixel space (the sampled
+sprite-occupancy heatmap): a broad, smooth occupancy cloud at high $T$
+($\sigma\approx6$ px at $T{=}2.0$) that concentrates as $T$ falls
+($\sigma\approx3$ px at $T{=}0.5$, $1.3$ px at $T{=}0.1$) onto a single sharp
+sprite---the hard pick. The gradient with respect to the control follows the same
 arc: spread over the band at high $T$ and collapsing to zero between pixels in the
 hard limit.
 
@@ -340,9 +338,9 @@ the sampled sprite occupancy as $T$ varies, each frame on its own scale---are
 provided as \texttt{fig\_alpha\_anim.gif} and \texttt{fig\_temp\_anim.gif} in the
 supplementary media.
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\includegraphics[width=0.92\textwidth]{figures/fig_alpha_temp.pdf}
+\includegraphics[width=\columnwidth]{figures/fig_alpha_temp.pdf}
 \caption{Soft branch: the screen-space gradient
 $\partial(\text{screen})/\partial z$ as the sharpness $\alpha$ is swept, on
 jutari. The target sprite's placement is a sigmoid-gated blend of a left and a
@@ -354,7 +352,7 @@ peak relative to the maximum. The dipole is strongest at an intermediate $\alpha
 saturates---the hard-branch limit (cf.\ Theorems~\ref{thm:s-exact}
 and~\ref{thm:s-limit}).}
 \label{fig:alphatemp}
-\end{figure*}
+\end{figure}
 
 \begin{figure}[t]
 \centering
@@ -368,22 +366,6 @@ is weak and barely varies with $z$. The intermediate $\alpha{=}6$ places the
 operating point in the sigmoid's steep band and yields the largest, most
 localised gradient.}
 \label{fig:sigmoid}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/fig_temp_heatmap.pdf}
-\caption{Pixel-space sprite-occupancy heatmap of the soft-select temperature
-$T$. For each $T$ we sample the sprite's column $100$ times from
-$w=\softmax(\ell/T)$ at \emph{pixel} resolution, render the hard sprite at each
-sampled column, and average the $100$ images; each pixel's value is the fraction
-of samples in which the sprite covered it---a Monte-Carlo estimate of the expected
-occupancy $\sum_k w_k\,\mathrm{occ}_k$. Sampling at single-pixel column resolution
-makes neighbouring draws overlap, so the average is a smooth occupancy cloud: at
-$T{=}2.0$ a broad blur ($\sigma\approx6$ px), tightening as $T$ falls
-($\sigma\approx3$ px at $T{=}0.5$) to a single sharp, fully occupied sprite at
-$T{=}0.1$ ($\sigma\approx1.3$ px).}
-\label{fig:tempheat}
 \end{figure}
 
 \section{Implementation Effort}

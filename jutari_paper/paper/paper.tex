@@ -72,65 +72,55 @@ it is feasible.
 
 \section{Introduction}
 
-When we explain a system---in explainable AI (XAI) as anywhere else---we are
-making a claim about its inner functioning: \emph{this} part is responsible
-for \emph{that} behaviour. To check whether such a claim is correct, we need
-to know the inner functioning independently, as ground truth. Without it we
-can ask whether an explanation is plausible, or whether humans find it
-convincing, but not whether it is \emph{true}. Ground truth is the
-prerequisite for verification, and it is exactly what is missing where
-explanation matters most.
+When we explain a system---in explainable AI (XAI) as anywhere else---we claim
+that \emph{this} part is responsible for \emph{that} behaviour. Checking such a
+claim requires knowing the inner functioning independently, as ground truth;
+without it we can ask whether an explanation is plausible or convincing, but not
+whether it is \emph{true}. Ground truth is the prerequisite for verification, and
+it is exactly what is missing where explanation matters most.
 
-The systems available to study fall into two unsatisfying camps. On one side
-are simple, procedural models---decision trees, rule lists, sparse linear
-models---whose inner functioning is fully known. But here the explanation is
-essentially the model itself; explaining such a model tests an XAI method on
-nothing it could get wrong, and these are not the systems for which XAI was
-created. On the other side are the systems XAI actually targets---deep neural
-networks, learned agents, real-world pipelines---which are genuinely complex,
-and precisely for that reason have no available ground truth of their inner
-functioning. There, an attribution or saliency map can be plausible,
-confident, and wrong, and we have no way to tell
-\citep{atrey2020exploratory,nikulin2019freelunch}. Known-but-trivial, or
-complex-but-unknown: there is no study object that is at once complex enough
-to be a real test and known well enough to grade the answer.
+The systems available to study fall into two unsatisfying camps. Simple,
+procedural models---decision trees, rule lists, sparse linear models---have fully
+known inner functioning, but there the explanation is essentially the model
+itself, testing an XAI method on nothing it could get wrong; these are not the
+systems XAI was created for. The systems XAI does target---deep neural networks,
+learned agents, real-world pipelines---are genuinely complex and, for that very
+reason, have no ground truth of their inner functioning, so an attribution or
+saliency map can be plausible, confident, and wrong with no way to tell
+\citep{atrey2020exploratory,nikulin2019freelunch}. Known-but-trivial or
+complex-but-unknown: no study object is at once complex enough to be a real test
+and known well enough to grade the answer.
 
-One escape from this dichotomy comes from outside machine learning.
-\citet{jonas2017could} asked whether the
-standard toolkit of systems neuroscience---connectomics, tuning curves,
-lesioning, dimensionality reduction---could recover how a MOS\,6502
-microprocessor computes, using the chip as a model organism precisely because
-its mechanism is complex \emph{and} completely known. With perfect and
-unlimited data, the methods produced structure that looked meaningful but did
-not recover the processor's actual organisation; the conclusion was that the
-\emph{methods} were lacking, and that the way to find out is to test them on a
-system whose ground truth we already possess. Two things, however, stop that
-study short of a substrate for modern XAI: the microprocessor was not
-\emph{differentiable}, so the gradient-based methods at the centre of today's
-toolkit could not be applied to it; and the analyses run on it were classical
-statistics, not XAI. The MOS\,6502 is no accident here---it is the CPU at the
-heart of the Atari 2600 Video Computer System (VCS), the platform on
-which modern deep reinforcement learning was demonstrated
-\citep{mnih2013playing,mnih2015human,bellemare2013arcade}.
+One escape comes from outside machine learning. \citet{jonas2017could} asked
+whether the standard systems-neuroscience toolkit---connectomics, tuning curves,
+lesioning, dimensionality reduction---could recover how a MOS\,6502 microprocessor
+computes, using the chip as a model organism precisely because its mechanism is
+complex \emph{and} completely known. Even with perfect, unlimited data the methods
+produced structure that looked meaningful but did not recover the processor's
+actual organisation; the conclusion was that the \emph{methods} were lacking, and
+that the way to find out is to test them on a system whose ground truth we already
+possess. Two things stop that study short of a substrate for modern XAI: the
+microprocessor was not \emph{differentiable}, so today's gradient-based methods
+could not be applied; and the analyses were classical statistics, not XAI. The
+MOS\,6502 is no accident---it is the CPU at the heart of the Atari 2600 Video
+Computer System (VCS), the platform on which modern deep reinforcement learning
+was demonstrated \citep{mnih2013playing,mnih2015human,bellemare2013arcade}.
 
-We therefore set out to build the missing quadrant: a study object that is
-simultaneously \emph{complex} (a real computer architecture), \emph{fully
-known} to us bit-for-bit, and \emph{differentiable}, so that the gradient-based
-XAI toolkit can in principle be turned on it. We re-implement the VCS---a 6507
-CPU that fetches and executes code from a cartridge ROM, a Television Interface
-Adapter (TIA) that turns register writes into pixels cycle by cycle, and a
-RIOT (RAM, I/O, timer) chip providing the RAM, an interval timer, and joystick
-and switch I/O---as two
-independent, end-to-end differentiable emulators: \textsc{jutari} in Julia
-\citep{bezanson2017julia} and \textsc{jaxtari} in JAX \citep{bradbury2018jax}.
-Each runs in a bit-exact \emph{hard} mode and a differentiable \emph{soft}
-mode, and each is validated against \textsc{xitari} \citep{xitari}, the
-Stella-derived C\texttt{++} emulator \citep{stella} that served as the
+We therefore build the missing quadrant: a study object at once \emph{complex} (a
+real computer architecture), \emph{fully known} to us bit-for-bit, and
+\emph{differentiable}, so the gradient-based XAI toolkit can in principle be turned
+on it. We re-implement the VCS---a 6507 CPU executing code from a cartridge ROM, a
+Television Interface Adapter (TIA) that turns register writes into pixels cycle by
+cycle, and a RIOT (RAM, I/O, timer) chip providing the RAM, an interval timer, and
+joystick and switch I/O---as two independent, end-to-end differentiable emulators:
+\textsc{jutari} in Julia \citep{bezanson2017julia} and \textsc{jaxtari} in JAX
+\citep{bradbury2018jax}. Each runs in a bit-exact \emph{hard} mode and a
+differentiable \emph{soft} mode, validated against \textsc{xitari} \citep{xitari},
+the Stella-derived C\texttt{++} emulator \citep{stella} that served as the
 reference for the original deep-Q-network (DQN) work.
 
-This paper builds and validates that foundation, and shows---both
-theoretically and in a qualitative gradient study---that XAI on this system is
-feasible. We expect the substrate to be useful to the XAI community. Our
+This paper builds and validates that foundation, and shows---both theoretically
+and in a qualitative gradient study---that XAI on this system is feasible. Our
 contributions are:
 \begin{itemize}
   \item \textbf{Two differentiable VCS ports.} Independent Julia
@@ -385,7 +375,27 @@ where the rows of $V$ are the candidate handler outputs. This collapses to the
 hard pick as $T\to0$ \citep{jang2017gumbel}. In the executed step we use the
 saturated form directly---a hard switch on the decoded opcode---so the forward
 pass is exact; the relaxed form~\eqref{eq:select} is what a fully soft variant
-would use.
+would use. The same softmax select governs \emph{any} discrete choice, with $T$
+setting how widely the soft pick spreads---and with it the range over which
+gradients flow. Figure~\ref{fig:tempheat} shows this on a visualisable selection
+(placing a target sprite among candidate screen columns rather than choosing an
+opcode): raising $T$ spreads the pick over neighbouring columns, widening the
+\emph{capture range} over which gradients reach the input, while the forward render
+stays exact.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_temp_heatmap.pdf}
+\caption{Soft-select temperature $T$ in pixel space, on a visualisable selection:
+a target sprite's screen column chosen with $w=\softmax(\ell/T)$. For each $T$ we
+sample the column $100$ times, render the hard sprite, and average, so each pixel
+is the expected occupancy. Low $T$ is a single sharp sprite (the hard pick,
+$\sigma\approx1.3$ px); raising $T$ spreads it over neighbouring columns
+($\sigma\approx3$, then $6$ px), widening the range over which gradients reach---a
+knob for the gradient's capture range. The forward pass stays bit-exact
+(Theorem~\ref{thm:exact}).}
+\label{fig:tempheat}
+\end{figure}
 
 Third, a conditional branch---``if the status flag is set, add the offset
 $\delta$ to the program counter (\textsc{pc})''---is relaxed with a sigmoid
@@ -580,33 +590,29 @@ two independent emulators totalling ${\sim}17{,}900$ lines of source and a
 comparable volume of tests (${\sim}1{,}990$ test cases across the two ports),
 and chased 67 distinct numbered bug investigations to a bit-exact result.
 
-For a baseline we look at the reference itself. \textsc{xitari} is a C\texttt{++}
-emulator core of about 46{,}000 lines, derived from Stella, a project whose
-sources carry copyright dates back to the 1990s and whose xitari fork on
-GitHub spans 2014--2017 \citep{xitari,stella}. It is the product of many
-person-years of cumulative work. Our two ports reproduce its
-behaviour---bit-exact RAM and pixel-exact screens---in about 17{,}900 lines
-written in 137 active hours. We do not claim a controlled comparison; the
-reference is larger in scope (audio, every cartridge type, tooling) than what
-we ported. But the contrast between a multi-year reference codebase and a
-six-working-day reimplementation is, we think, the right order of magnitude
-for what agentic tools change.
+For a baseline, \textsc{xitari} is a C\texttt{++} core of about 46{,}000 lines
+derived from Stella, a project with sources dating to the 1990s and an xitari fork
+spanning 2014--2017 \citep{xitari,stella}---many person-years of cumulative work.
+Our two ports reproduce its behaviour (bit-exact RAM, pixel-exact screens) in about
+17{,}900 lines written in 137 active hours. We do not claim a controlled
+comparison---the reference is larger in scope (audio, every cartridge type,
+tooling)---but the contrast between a multi-year reference codebase and a
+six-working-day reimplementation is the right order of magnitude for what agentic
+tools change.
 
 \subsection{Throughput}
 
-On the soft-mode benchmark, \textsc{jutari} sustains ${\sim}363{,}800$ steps
-per second and \textsc{jaxtari} ${\sim}1{,}666$, a ${\sim}218\times$ gap
+On the soft-mode benchmark, \textsc{jutari} sustains ${\sim}363{,}800$ steps per
+second and \textsc{jaxtari} ${\sim}1{,}666$, a ${\sim}218\times$ gap
 (Table~\ref{tab:ports}). The difference is dominated by per-operation
-kernel-launch overhead in JAX: each soft step decodes one opcode and
-dispatches through a 256-way switch, and at single-instruction granularity the
-per-launch overhead far exceeds the computation of the instruction itself,
-whereas Julia inlines the small handlers. This is a property of the execution
-granularity, not of the AD systems: for a gradient-based XAI workflow, which
-takes one forward-plus-backward pass per attribution, \textsc{jaxtari}'s
-${\sim}30$\,s per 50{,}000-step trace is comfortably interactive and amortises
-over many attributions; for batched, training-scale rollouts the JAX
-implementation is far more efficient when many environments are vectorised and
-run in parallel, which amortises the per-launch overhead.
+kernel-launch overhead in JAX: each soft step dispatches one opcode through a
+256-way switch, and at single-instruction granularity the per-launch overhead far
+exceeds the instruction itself, whereas Julia inlines the small handlers. This is
+a property of the execution granularity, not the AD systems: for a gradient-based
+XAI workflow (one forward-plus-backward pass per attribution) \textsc{jaxtari}'s
+${\sim}30$\,s per 50{,}000-step trace is comfortably interactive, and for
+batched, training-scale rollouts the JAX implementation is far more efficient once
+many environments are vectorised in parallel.
 
 \subsection{Proof of Concept: Ground-Truth Gradients}
 
@@ -663,17 +669,16 @@ known wiring---which is the whole point.
 
 \section{Discussion}
 
-This paper delivers four concrete results. We built two independent
-differentiable ports of the Atari VCS, in Julia and JAX, that are bit-exact in
-RAM and pixel-exact on screen against \textsc{xitari} on all 64 DQN games. We
-proved that the differentiable (soft) forward pass equals the original (hard)
-one exactly, so gradients are computed on the true execution rather than an
-approximation. We measured the implementation effort at about 137 active hours,
-built largely by coding agents---a concrete data point on how quickly such a
-system can now be produced. And we showed qualitatively that gradients on this
-system localise to the correct hardware and can be checked against the known
-mechanism. Together these make ``build a known-ground-truth substrate, then
-study it with XAI'' a practical method rather than a thought experiment.
+This paper delivers four results: two independent differentiable VCS ports (Julia
+and JAX) that are RAM-bit-exact and pixel-exact against \textsc{xitari} on all 64
+DQN games; a proof that the soft forward pass equals the hard one exactly, so
+gradients are computed on the true execution rather than an approximation; an
+implementation-effort measurement of about 137 active hours, built largely by
+coding agents---a data point on how quickly such a system can now be produced; and
+a qualitative demonstration that gradients localise to the correct hardware and
+can be checked against the known mechanism. Together these make ``build a
+known-ground-truth substrate, then study it with XAI'' a practical method rather
+than a thought experiment.
 
 Building the ports also revealed a bug in the reference. Driving the ports to
 64/64 pixel exactness surfaced a latent non-determinism in \textsc{xitari}
@@ -682,49 +687,43 @@ Superchip RAM as a cheap random-number source. \textsc{xitari} seeds that RAM
 from \texttt{time(NULL)} and ignores its own seed parameter, so the title
 renders differently on every run despite a pinned seed. This divergence is
 invisible to RAM-state checks and shows up only on screen. We reach full
-conformance by pinning the seed deterministically in both emulators, which also
-makes the suite reproducible, and we have prepared a fix to submit upstream. A
-bit-exact re-implementation is therefore useful in both directions. The
-reference validates the port, and the port in turn audits the reference for
-reproducibility bugs.
+conformance by pinning the seed deterministically in both emulators (also making
+the suite reproducible), and have prepared an upstream fix---a bit-exact
+re-implementation is useful in both directions: the reference validates the port,
+and the port audits the reference for reproducibility bugs.
 
-The hardest divergences were all in timing---the RIOT timer's
-reset state, the TIA's sub-cycle object rendering, and the boot-time format
-probe that seeds free-running counters games never re-initialise. Two model
-anecdotes are worth recording. The bulk of the work was carried out by Claude
-Opus~4.7 and 4.8. A single autonomous session, during an author absence, was
-driven by Fable~5. An early attempt with Kimi-K2.6 (a one-trillion-parameter
-model) ended when the model refused to start, judging the full port to be months
-of work. We note these only to document that autonomous capability on a task of
-this size is real but uneven across systems.
+The hardest divergences were all in timing---the RIOT timer's reset state, the
+TIA's sub-cycle object rendering, and the boot-time format probe that seeds
+free-running counters games never re-initialise. Two model anecdotes: the bulk of
+the work was carried out by Claude Opus~4.7 and 4.8, with one autonomous session
+driven by Fable~5; an early attempt with Kimi-K2.6 (a one-trillion-parameter
+model) ended when it refused to start, judging the port to be months of
+work---autonomous capability on a task this size is real but uneven across
+systems.
 
-One limitation remains: the effort comparison is an order-of-magnitude estimate
-rather than a controlled trial. However, this does not affect the core claims:
-the forward equivalence of Theorem~\ref{thm:exact} and the measured 64/64
-conformance of both ports.
+One limitation: the effort comparison is an order-of-magnitude estimate, not a
+controlled trial; this does not affect the core claims---the forward equivalence
+of Theorem~\ref{thm:exact} and the measured 64/64 conformance of both ports.
 
 \section{Conclusion}
 
-We set out to give explainable AI something it has never had: a study object
-that escapes the known-but-trivial / complex-but-unknown dichotomy by being a
-genuine, complex information-processing system that is at the same time fully
-known and fully differentiable. We built it twice, in Julia and JAX, validated
-both ports bit-for-bit against the reference on all 64 supported Atari games,
-and proved that the differentiable forward pass is bit-exact equal to the
-original machine while exposing gradients where bit logic has none. With the
-mechanism fully known and differentiable, an attribution a method produces can
-now---for the first time on a system of this complexity---be scored as right or
-wrong against the truth. We hope the community takes up this system as a
-testbed: both to evaluate existing XAI methods against a known mechanism and to
-develop new ones on it.
+We set out to give explainable AI a study object that escapes the
+known-but-trivial / complex-but-unknown dichotomy: a genuine, complex
+information-processing system that is at once fully known and fully
+differentiable. We built it twice, in Julia and JAX, validated both ports
+bit-for-bit against the reference on all 64 supported Atari games, and proved the
+differentiable forward pass bit-exact equal to the original machine while exposing
+gradients where bit logic has none. With the mechanism fully known, an attribution
+can now---for the first time on a system of this complexity---be scored right or
+wrong against the truth. We hope the community takes up this system as a testbed,
+both to evaluate existing XAI methods against a known mechanism and to develop new
+ones.
 
 \section*{Ethical Statement}
-This work involves no human subjects, personal data, or sensitive information;
-it uses Atari ROMs only as fixed computational inputs. The agentic
-software-engineering method we report is dual-use, but coupling autonomy to a
-strict, automatically checked conformance oracle keeps it safe, and our
-intended use---validating XAI against known ground truth---supports the
-transparency of AI systems.
+This work involves no human subjects, personal data, or sensitive information,
+and uses Atari ROMs only as fixed computational inputs. The agentic method we
+report is dual-use, but pairing autonomy with a strict, automatically checked
+conformance oracle keeps it safe.
 
 {\small
 \bibliography{references}

@@ -37,8 +37,9 @@ def load():
 
 def main():
     m = load()
-    fig, ax = plt.subplots(1, 3, figsize=(6.4, 2.0))
-    fig.subplots_adjust(left=0.03, right=0.86, top=0.80, bottom=0.06, wspace=0.08)
+    # Single-column size (the LaTeX caption carries the description).
+    fig, ax = plt.subplots(1, 3, figsize=(3.35, 1.5))
+    fig.subplots_adjust(left=0.02, right=0.83, top=0.88, bottom=0.10, wspace=0.06)
 
     vmax = max(np.abs(m[f"at_branch_grad{j+1}"][CR]).max() for j in range(3)) + 1e-9
     titles = (r"$\alpha = 2$", r"$\alpha = 6$", r"$\alpha = 20$")
@@ -52,23 +53,19 @@ def main():
         gm = np.ma.masked_where(np.abs(gd) < 0.04 * vmax, gd)
         im = ax[j].imshow(gm, cmap="RdBu_r", vmin=-vmax, vmax=vmax,
                           aspect="equal", interpolation="nearest")
-        ax[j].set_title(titles[j], fontsize=8.5)
+        ax[j].set_title(titles[j], fontsize=7.5)
         ax[j].set_xlabel(rf"peak $|\partial|$ = {np.abs(gd).max()/vmax:.2f}",
-                         fontsize=6.8)
+                         fontsize=6.0)
         ax[j].set_xticks([]); ax[j].set_yticks([])
         for s in ax[j].spines.values():
             s.set_visible(False)
 
-    cax = fig.add_axes([0.885, 0.12, 0.015, 0.60])
+    cax = fig.add_axes([0.845, 0.16, 0.02, 0.64])
     cb = fig.colorbar(im, cax=cax, ticks=[-vmax, 0, vmax])
-    cb.ax.set_yticklabels([rf"$-{vmax:.2f}$", "0", rf"$+{vmax:.2f}$"], fontsize=5.8)
-    cb.set_label("blue: darkens\nred: brightens", fontsize=6)
-    cb.ax.tick_params(length=2)
-    cb.outline.set_linewidth(0.5)
-
-    fig.suptitle(r"Soft branch: $\partial$(screen)$/\partial z$ vs. sharpness "
-                 r"$\alpha$ (a dipole at moderate $\alpha$, vanishing as "
-                 r"$\alpha \to \infty$)", fontsize=8.5, y=0.99)
+    cb.ax.set_yticklabels([rf"$-{vmax:.2f}$", "0", rf"$+{vmax:.2f}$"], fontsize=5.0)
+    cb.set_label("blue: darkens\nred: brightens", fontsize=5.5)
+    cb.ax.tick_params(length=1.5)
+    cb.outline.set_linewidth(0.4)
     fig.savefig(FIG, bbox_inches="tight", dpi=300)
     print("wrote", FIG, f"(vmax={vmax:.3f})")
 

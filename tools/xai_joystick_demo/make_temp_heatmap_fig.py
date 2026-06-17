@@ -33,7 +33,7 @@ SIGMA = 6.0                                   # logits = -((x-target)/SIGMA)^2
 COLS = np.arange(30, 111, dtype=int)          # PIXEL-resolution candidate columns
 N_SAMPLES = 100
 TS = (2.0, 0.5, 0.1)
-CR = (slice(22, 54), slice(44, 100))          # zoom around the sprite
+CR = (slice(27, 49), slice(44, 100))          # tight zoom around the sprite
 
 
 def sprite_occ(x):
@@ -56,8 +56,9 @@ def main():
     occ = np.stack([sprite_occ(int(x)) for x in COLS])      # (n_cols, H, W)
     rng = np.random.default_rng(0)                          # reproducible
 
-    fig, axes = plt.subplots(1, 3, figsize=(5.8, 2.0))
-    fig.subplots_adjust(left=0.03, right=0.86, top=0.80, bottom=0.10, wspace=0.08)
+    # Single-column size (the LaTeX caption carries the description).
+    fig, axes = plt.subplots(1, 3, figsize=(3.35, 1.45))
+    fig.subplots_adjust(left=0.02, right=0.84, top=0.88, bottom=0.16, wspace=0.06)
     im = None
     for ax, T in zip(axes, TS):
         w = softmax(T)
@@ -66,19 +67,16 @@ def main():
         std = float(np.sqrt(np.sum(w * (COLS - np.sum(w * COLS)) ** 2)))
         im = ax.imshow(heat, cmap="magma", vmin=0.0, vmax=1.0, aspect="equal",
                        interpolation="bilinear")
-        ax.set_title(rf"$T = {T}$", fontsize=8.5)
-        ax.set_xlabel(rf"spread $\sigma \approx {std:.1f}$ px", fontsize=6.8)
+        ax.set_title(rf"$T = {T}$", fontsize=7.5)
+        ax.set_xlabel(rf"$\sigma \approx {std:.1f}$ px", fontsize=6.0)
         ax.set_xticks([]); ax.set_yticks([])
 
-    cax = fig.add_axes([0.885, 0.14, 0.016, 0.56])
+    cax = fig.add_axes([0.855, 0.18, 0.022, 0.66])
     cb = fig.colorbar(im, cax=cax)
-    cb.set_label("occupancy fraction", fontsize=7)
-    cb.ax.tick_params(labelsize=6, length=2)
-    cb.outline.set_linewidth(0.5)
+    cb.set_label("occupancy", fontsize=6.0)
+    cb.ax.tick_params(labelsize=5.0, length=1.5)
+    cb.outline.set_linewidth(0.4)
 
-    fig.suptitle(r"Sampled sprite occupancy (100 draws from "
-                 r"$\mathrm{softmax}(\ell/T)$ at pixel resolution, averaged)",
-                 fontsize=8.5, y=0.99)
     fig.savefig(FIG, bbox_inches="tight", dpi=300)
     print("wrote", FIG)
     for T in TS:
