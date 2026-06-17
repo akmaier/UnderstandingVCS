@@ -1148,16 +1148,26 @@ def tia_poke(tia: TIAState, addr: int, value: int,
         # beam color clock (beam_cc), not the stale instruction-start
         # tia.color_clock — HBLANK constant 3, visible +5 offset. Only
         # reached for HBLANK strobes (visible-region RESP* was deferred
-        # above). Task #115c: HBLANK strobe → draw all copies (xitari
-        # resets the player mask to skip-first=0 every scanline end).
+        # above).
+        # Task #119: even an HBLANK RESP gets xitari's reset-when
+        # skip-first (case 0x10). Normal games RESP to ~3 with oldx≈3 →
+        # reset-when=-1 (no skip); a FAR jump (up_n_down RESPs 75→3 every
+        # line) → reset-when=0 → skip the first copy. Pre-#119, jaxtari
+        # force-cleared skip_first here, which drew an extra left-edge copy.
+        _newx0 = _resp_player_position(beam_cc)
+        _mode0 = int(new_tia.registers[W_NUSIZ0]) & 0x07
+        _skip0 = _player_reset_when(_mode0, int(tia.p0_x), _newx0) != -1
         new_tia = new_tia._replace(
-            p0_x=_resp_player_position(beam_cc),
-            p0_skip_first=False,
+            p0_x=_newx0,
+            p0_skip_first=_skip0,
         )
     elif reg == W_RESP1:
+        _newx1 = _resp_player_position(beam_cc)
+        _mode1 = int(new_tia.registers[W_NUSIZ1]) & 0x07
+        _skip1 = _player_reset_when(_mode1, int(tia.p1_x), _newx1) != -1
         new_tia = new_tia._replace(
-            p1_x=_resp_player_position(beam_cc),
-            p1_skip_first=False,
+            p1_x=_newx1,
+            p1_skip_first=_skip1,
         )
     elif reg == W_RESM0:
         # P3i-e: missile/ball use the +4 offset / HBLANK constant 2.
@@ -1475,16 +1485,16 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
         if not vblank_fully:
             row_pixels = []
             write_idx = 0
-            # Task #115c: xitari resets the player mask to draw-all
-            # (skip-first=0) at the end of every scanline (TIA.cxx:1799). So
-            # each rendered scanline STARTS drawing all copies; a mid-line
-            # RESP in the drain below sets skip-first for the remainder of
-            # THIS scanline only. Mirror of jutari `tia_advance!`.
-            # Task #115g: also latch pf_reflect at scanline start from the
+            # Task #115c/#119: xitari resets the player mask to draw-all
+            # (skip-first=0) at the END of every scanline (TIA.cxx:1799) —
+            # done in the post-render block below, NOT here. Resetting at
+            # scanline START would clobber an HBLANK RESP's skip-first
+            # (computed in tia_poke BEFORE this render runs), drawing an
+            # extra left-edge copy.
+            # Task #115g: latch pf_reflect at scanline start from the
             # current CTRLPF.D0 — left-half CTRLPF writes update it mid-line
             # below; right-half ones don't (deferred to next line).
             tia_for_render = tia_for_render._replace(
-                p0_skip_first=False, p1_skip_first=False,
                 pf_reflect=bool(int(tia_for_render.registers[W_CTRLPF]) & 0x01),
             )
             cached_sets = _object_pixel_sets(tia_for_render)
@@ -1731,20 +1741,15 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
         grp0_old=tia_for_render.grp0_old if line_advance > 0 else tia.grp0_old,
         grp1_old=tia_for_render.grp1_old if line_advance > 0 else tia.grp1_old,
         enabl_old=tia_for_render.enabl_old if line_advance > 0 else tia.enabl_old,
-        # Task #115c: skip-first-copy flags. The drain sets them when a
-        # deferred RESP activates with reset-when in {0, 1}; without
-        # threading them out of tia_for_render they would never reach the
-        # next scanline. xitari resets them at scanline END (TIA.cxx:1799)
-        # — so for line_advance>0 they should typically be False (the
-        # render loop already reset them at scanline start); however a
-        # deferred RESP that activates LATE in the same scanline can leave
-        # them set, and a multi-scanline advance would propagate the WRONG
-        # state. The scanline-start reset at the top of the render branch
-        # handles this for any subsequent rendered scanline — by the END of
-        # the last rendered scanline the flag matches xitari's per-scanline
-        # transient state, which is correct.
-        p0_skip_first=tia_for_render.p0_skip_first if line_advance > 0 else tia.p0_skip_first,
-        p1_skip_first=tia_for_render.p1_skip_first if line_advance > 0 else tia.p1_skip_first,
+        # Task #115c/#119: skip-first-copy flags. xitari resets them at
+        # scanline END (TIA.cxx:1799). When line_advance > 0 the scanline
+        # just completed → force False so the NEXT scanline starts
+        # draw-all (the next scanline's HBLANK RESP, if any, will set it
+        # again in tia_poke before its render). When line_advance == 0
+        # (no scanline crossed) carry the current value forward so an
+        # HBLANK RESP's skip-first survives until the next render call.
+        p0_skip_first=False if line_advance > 0 else tia.p0_skip_first,
+        p1_skip_first=False if line_advance > 0 else tia.p1_skip_first,
         # Task #115d: Cosmic Ark counter / line. _cosmic_ark_advance was
         # called above on tia_for_render; thread the stepped fields out.
         m0_cosmic_ark=tia_for_render.m0_cosmic_ark if line_advance > 0 else tia.m0_cosmic_ark,
