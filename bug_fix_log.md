@@ -5805,3 +5805,41 @@ holds regardless of which dump wins the title match.)
 FULL sweep (background, across fires) only to confirm 64/64. Reduce `--jobs` if
 the box swaps (12 jaxtari procs × ~0.5–1 GB on 18 GB) or becomes unresponsive.
 Run: `jaxtari/.venv/bin/python tools/rom_sweep/sweep_jaxtari.py` (all 64, both modes).
+
+---
+
+## Sprint 1 (2026-06-17, ~12:30) — pitfall 557 px LOCALIZED to player object-coverage (compositor + VDELP ruled OUT)
+
+Clean serial re-measurement (prior killed-run numbers discarded per user) via
+`tools/diag_screen_diff.py pitfall_noop_10 2` + a new pixel-value dump:
+
+**Measured (frame 0, constant across frames):** jaxtari↔xitari = jaxtari↔jutari =
+**557 px** (jutari≡xitari confirms apples-to-apples). `best shift align dy=0 dx=0`
+→ NOT a vertical/horizontal shift (the #110 crop/geometry hypothesis is DEAD).
+Diffs confined to **columns [18..67]** (left half), output rows ~22–63 (fb 56–97,
+Pitfall's HUD/score band). Only 3 colours: jaxtari paints `d2` where xitari has
+`00` (black) and `0c` where xitari has `d2` — a CONSISTENT remap (00→d2, d2→0c),
+i.e. the player PATTERN/POSITION differs, NOT the colour (registers are bit-exact).
+
+**Ruled OUT by direct jaxtari-vs-jutari source diff:**
+- `render_pixel` compositor — **byte-identical** between ports (same SCOREMODE
+  `pf_col = score ? (x<80?COLUP0:COLUP1) : COLUPF`, same PFP priority order, same
+  colour selection). The divergence is NOT in pixel compositing.
+- `_vdel_grp` (VDELP0/1 shadow selection) — **identical** logic.
+
+**Localized to:** `_object_pixel_sets` PLAYER coverage. The differing columns are
+NOT 4-px-block aligned ⇒ it's players, not playfield — i.e. Pitfall's mid-scanline
+6-digit HUD kernel (GRP0/GRP1 rewritten ~4×/row; #94/#115c/#115f territory). The
+remaining suspect inputs to `_player_set`: player X (`p0_x/p1_x` via RESP timing),
+`skip_first` (#115c/#119), the NUSIZ copy layout, or the GRP-shadow LATCH timing
+in `tia_poke` (when GRP0 write latches GRP1→grp1_old). Prior per-port reverts of
+#115c/#115f/#119 each left 557 px → likely a cumulative/latch-timing effect, not
+one feature.
+
+**NEXT (decisive):** per-scanline object-state trace at the divergent band. jutari
+has `_OBJ_TRACE` (logs scanline,p0_x,p1_x,m0_x,m1_x,bl_x,grp0_old,grp1_old). Build
+the SAME hook in jaxtari `tia_advance` (a module-level trace flag/list), run both
+ports on pitfall, and diff the per-scanline player state at internal scanlines
+~56–63 — the first field that differs (p0_x? grp_old? skip_first?) IS the bug.
+Tooling: `tools/obj_trace.jl` (jutari side already exists). diag now caches
+jaxtari frames to `tools/fixtures/cache/*.npy` for re-analysis without re-running.

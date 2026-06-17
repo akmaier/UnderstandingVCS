@@ -127,11 +127,34 @@ def main():
         dy, dx, dbest = _shift_align(jx[i], xi[i])
         print(f"   best shift align: dy={dy} dx={dx} -> {dbest} px "
               f"(vs {d_xi} unshifted)")
-    # which framebuffer rows does the visible window read? compare a couple
-    print(f"\n== full framebuffer rows 30..40 (frame 0) nonzero-pixel counts ==")
-    fb0 = full[0]
-    for r in range(28, 46):
-        print(f"   fb row {r}: nonzero={int((fb0[r] != 0).sum())}")
+
+    # Cache the run so follow-up analysis doesn't re-run slow jaxtari.
+    cache = _SCREENS.parent / "cache"
+    cache.mkdir(exist_ok=True)
+    np.save(cache / f"{case}_jaxtari_screen.npy", jx)
+    np.save(cache / f"{case}_jaxtari_full.npy", full)
+
+    # PIXEL-VALUE DUMP — for frame 0's worst rows, show the differing columns
+    # with (col: jaxtari -> xitari [jutari]) so we can see WHAT differs
+    # (wrong colour? shifted object? missing/extra pixels?).
+    if m and int((jx[0] != xi[0]).sum()):
+        rows = (jx[0] != xi[0]).sum(axis=1)
+        worst = sorted(np.nonzero(rows)[0].tolist(),
+                       key=lambda r: -rows[r])[:6]
+        print(f"\n== frame 0 worst-row pixel values (out_row = fb_row-34) ==")
+        for r in sorted(worst):
+            cols = np.nonzero(jx[0][r] != xi[0][r])[0]
+            jtr = jt[0][r] if jt is not None else None
+            parts = []
+            for c in cols[:20]:
+                jtv = f",{int(jtr[c]):02x}" if jtr is not None else ""
+                parts.append(f"x{c}:{int(jx[0][r][c]):02x}->{int(xi[0][r][c]):02x}{jtv}")
+            print(f"   row {r:3d} (fb {r+34}, {len(cols)} diff): {' '.join(parts)}"
+                  + (" ..." if len(cols) > 20 else ""))
+        # column span of all differences (is it a contiguous band?)
+        allcols = np.nonzero((jx[0] != xi[0]).any(axis=0))[0]
+        print(f"   all differing columns span: [{allcols.min()}..{allcols.max()}] "
+              f"({len(allcols)} distinct cols)")
 
 
 if __name__ == "__main__":
