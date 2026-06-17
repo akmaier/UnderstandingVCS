@@ -5605,3 +5605,72 @@ seed only affects games that read uninitialised SC RAM — i.e. only elevator; t
 other SC games overwrite it, and RIOT RAM is seed-independent). The conformance
 suite is now fully reproducible (no more time-seeded non-determinism). This was the
 last non-exact game — **jutari ≡ xitari, bit-for-bit, on all 64 ALE games.**
+
+---
+
+## jaxtari sprint 15 follow-up (2026-06-17) — bisect of the pitfall/enduro screen-conformance regressions
+
+After the queue-empty periodic sweep in sprint 15 surfaced 2 pinned-at-0
+regressions vs the xitari screen fixtures:
+
+- `test_jaxtari_screen_matches_xitari[pitfall_noop_10]` — worst 557 px every frame
+- `test_jaxtari_screen_matches_xitari[enduro_noop_10]`  — worst 114 px every frame
+
+Other 10 cases (breakout, pong, space_invaders, seaquest + all xitari↔jutari
+fixture comparisons) still pass at 0 px, so the render layer is mostly
+converged with jutari.
+
+**Constant per-frame diff** = structural rendering difference vs the xitari
+fixture, not state drift. **Fixtures unchanged since `d2978be` (#91)** — long
+predates this porting work, so they're stable ground truth.
+
+**Bisect attempts** (each = ~9 min wall, two screen-conformance tests):
+
+| Reverted port | pitfall px | enduro px | Verdict |
+|---|---|---|---|
+| #115b (joystick INPT0-3 idle LOW, `62f7530`) | 557 | 114 | not cause |
+| #115c visible-RESP defer ONLY (`ac07863`, surgical disable) | 557 | 114 | not cause |
+| #115f (defer VDELP0/1/BL, `62ed699`) | 557 | 114 | not cause |
+| #119 HBLANK skip-first ONLY (`b738f99`, surgical disable) | 557 | 114 | not cause |
+| #121/#122/#123 cart_reset (`2b0ed97`) | 557 | 114 | not cause |
+| #114 double-buffer (`67071f1`, surgical disable) | n/a | n/a | killed (SIGKILL, exit 137) |
+
+**Surround DOUBLE-boot** (sprint 13 `f5e6f6e`): default already flipped to
+`construction_probe=False` in `feb7f71`, so the test runs the legacy single-
+boot path. The regression survives — confirming this isn't the cause either.
+
+**Conclusion so far**: the 6 individually-disabled ports each produce the
+same 557/114 px diff. This suggests:
+
+1. The bug is in a port not yet tested (candidates: #109 VBLANK→black,
+   #110 PAL height + framebuffer 244→312, #115d/e Cosmic Ark M0, #115g
+   PF reflect latch, #115h RESBL hacks, #118 per-pixel VBLANK D1), OR
+2. The bug is the cumulative effect of multiple ports (each individually
+   harmless, together producing the divergence), OR
+3. The bug exists in a render-state-init detail that's stable across the
+   per-port reverts I tried (e.g., a TIAState default that changed when
+   new fields were added in sprints 1, 5, 6, 8, 11).
+
+**Open work**: bisect the remaining suspects. #110's framebuffer 244→312
+bump is a leading hypothesis — it changes the framebuffer SHAPE, which
+could shift everything by a constant offset (consistent with the
+constant-per-frame diff signature). Also worth checking: #115h's
+`last_hmove_clock` interaction (initialised to 0; could fire the RESBL
+HMOVE-relative hacks unintentionally at boot when last HMOVE clock is 0).
+
+Pre-port (sprint 0, `d3fcf31`) jaxtari passed these tests at 0 px. The
+xitari fixtures are unchanged. The regression is provably introduced by
+this porting series; cumulative-effect hypothesis is the most likely
+explanation given the bisect signal.
+
+**Time cost**: each bisect step is ~9 min wall (one screen-conformance
+test pair). The cumulative-effect hypothesis would require many more
+revert combinations. Best path forward is probably to bisect by **commit
+range** (revert sprints 1-N as a block, halving N each iteration) rather
+than per-port — but each block-revert risks merge conflicts due to file
+overlap.
+
+For now: documented, committed; the 17 ports stay landed; tests stay
+red on those 2 cases (TIA-layer unit tests + all other periodic-sweep
+cases stay green). User to decide whether to dig further or accept the
+2 game regressions.
