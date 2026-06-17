@@ -97,47 +97,57 @@ reachable state $x$ and every finite $\alpha,T$, $\Phi_{\mathrm{S}}(x)=
 The two modes differ only in the Jacobian.}
 
 \begin{proof}
-It suffices to show that, for each opcode, the soft and hard handlers produce
-the same output value; the state is then carried forward identically. Each
-handler is composed of four kinds of primitive.
+We first establish the one-step equality $\Phi_{\mathrm{S}}(x)=
+\Phi_{\mathrm{H}}(x)$ for every reachable state $x$, and then extend it to whole
+trajectories by induction on the step index.
 
-\emph{(i) Memory reads.} A ROM or RAM read at integer address $a$ is the one-hot
-dot product~\eqref{eq:s-peek}. Because $a$ is an integer index, $\mathbf{1}_a$
-is exact and $\mathrm{peek}(r,a)=r_a$, identical to a hard array read.
+Fix a reachable state $x$. In both modes the handler to execute is selected by
+the decoded opcode byte through the same hard switch (the softmax
+form~\eqref{eq:s-select} is never evaluated on the forward path), so both modes
+run the same handler on the same input. Within a handler the output is assembled
+from operations that agree value-for-value between the two modes. A read of the
+ROM or RAM at an integer address $a$ is the one-hot dot product
+$\mathrm{peek}(r,a)=\mathbf{1}_a^{\top}r$~\eqref{eq:s-peek}; since $a$ is an
+integer index the indicator $\mathbf{1}_a$ is exact, so $\mathrm{peek}(r,a)=r_a$,
+the value a hard array read returns. Register, status-flag,
+binary-coded-decimal, and timer updates are computed with the same integer and
+$\mathrm{round}$ arithmetic in both modes (soft mode merely keeps the results in
+float32). A conditional branch returns
+$\mathrm{STE}(\mathrm{pc}_{\mathrm{soft}},\mathrm{pc}_{\mathrm{hard}})=
+\mathrm{pc}_{\mathrm{soft}}+\sg(\mathrm{pc}_{\mathrm{hard}}-\mathrm{pc}_{\mathrm{soft}})$
+\eqref{eq:s-ste}, which equals $\mathrm{pc}_{\mathrm{hard}}$ for every $\alpha$
+and $T$ because $\sg$ is the identity in the forward direction. Each component of
+the output therefore equals its hard counterpart, and as the two handlers act on
+the same input their outputs coincide; hence $\Phi_{\mathrm{S}}(x)=
+\Phi_{\mathrm{H}}(x)$.
 
-\emph{(ii) Arithmetic.} Register, status-flag, binary-coded-decimal (BCD), and
-RIOT-timer updates use the same integer and $\mathrm{round}$ operations as the
-hard handlers; the soft path stores these quantities as float32 but computes
-them with integer semantics, so their outputs are equal.
+Now let the two runs share the initial state, $x^{\mathrm{S}}_0=x^{\mathrm{H}}_0$,
+with $x^{\bullet}_{t+1}=\Phi_{\bullet}(x^{\bullet}_t)$, and prove
+$x^{\mathrm{S}}_t=x^{\mathrm{H}}_t$ for all $0\le t\le N$ by induction on $t$. The
+base case $t=0$ holds by the shared initial state. For the inductive step,
+assume $x^{\mathrm{S}}_t=x^{\mathrm{H}}_t=:x$ for some $t<N$; then
+\[
+x^{\mathrm{S}}_{t+1}=\Phi_{\mathrm{S}}(x^{\mathrm{S}}_t)
+=\Phi_{\mathrm{S}}(x)=\Phi_{\mathrm{H}}(x)
+=\Phi_{\mathrm{H}}(x^{\mathrm{H}}_t)=x^{\mathrm{H}}_{t+1},
+\]
+where the second and fourth equalities use the inductive hypothesis and the
+third is the one-step equality. By induction the trajectories coincide for all
+$t\le N$.
 
-\emph{(iii) Dispatch.} The handler is chosen by a hard switch on the decoded
-opcode byte, exactly as in hard mode; the softmax form~\eqref{eq:s-select} is
-not used on the forward path.
+Both modes thus compute the same real number at every step, and these are equal
+in float32 as well: IEEE-754 single precision has a $24$-bit significand and so
+represents every integer in $[-2^{24},2^{24}]$
+exactly~\citep{ieee754_2019,goldberg1991}. Every VCS quantity lies in this range
+(data bytes $\le 255$, $13$-bit addresses, and per-frame cycle counts of a few
+tens of thousands), so the equality is exact rather than approximate.
 
-\emph{(iv) Branch.} A conditional branch forms $\mathrm{pc}_{\mathrm{soft}}$
-from~\eqref{eq:s-branch} but returns
-$\mathrm{STE}(\mathrm{pc}_{\mathrm{soft}},\mathrm{pc}_{\mathrm{hard}})$
-\eqref{eq:s-ste}. As $\sg$ is the identity on the forward pass, this equals
-$\mathrm{pc}_{\mathrm{hard}}$ for every $\alpha$ and $T$.
-
-Each primitive's forward output thus equals the hard handler's, so
-$\Phi_{\mathrm{S}}(x)=\Phi_{\mathrm{H}}(x)$ for every reachable $x$; the hard
-handlers are themselves validated bit-for-bit against \textsc{xitari} by the
-conformance harnesses. By induction over the $N$ steps of a trajectory,
-$x^{\mathrm{S}}_t=x^{\mathrm{H}}_t$ for all $t\le N$.
-
-\emph{Bit-exactness.} float32 represents every integer in $[0,2^{24}]$ exactly,
-and all VCS quantities lie in this range---data bytes are at most $255$,
-addresses are $13$ bits, and per-frame cycle counts are a few tens of
-thousands---so the float32 results are not merely close to the integer results
-but identical.
-
-\emph{Gradients.} The stop-gradient in~(iv) alters only the reverse-mode rule:
-it sets $\partial\,\mathrm{STE}=\partial\,\mathrm{pc}_{\mathrm{soft}}$, the
-derivative of the sigmoid-blended counter, which is generically nonzero where
-the hard branch (a step function of the flag) has zero or undefined derivative;
-likewise the read in~(i) has Jacobian $\mathbf{1}_a$ with respect to $r$. The
-forward pass is unchanged while gradients become available.
+Finally, the stop-gradient in the branch alters only the reverse-mode rule: it
+gives the returned value the derivative of $\mathrm{pc}_{\mathrm{soft}}$, the
+sigmoid-blended counter, which is generically nonzero where the hard branch---a
+step function of the flag---has zero or undefined derivative; the one-hot read
+likewise has Jacobian $\mathbf{1}_a$ with respect to $r$. The forward pass is
+unchanged while gradients become available.
 \end{proof}
 
 \noindent\textbf{Theorem 2 (temperature-limit bound).} \emph{For the fully
@@ -152,18 +162,20 @@ at most $\frac{L^{N}-1}{L-1}$ times this, which is $\mathcal{O}(e^{-c/T})$ with
 $c=\Delta_{\min}$.}
 
 \begin{proof}
-We bound the per-step deviation, then propagate it. Throughout, $C$ bounds the
-range of any state value (bytes $\le 255$, branch offsets $\le 256$).
+We bound the deviation of the relaxed one-step map from the hard one and then
+propagate it along the trajectory. Throughout, $C$ bounds the range of any state
+value (bytes $\le 255$, branch offsets $\le 256$).
 
-\emph{Dispatch term.} At a step with logits $\ell$ and winner $k^\star$, the gap
-is $\Delta\ge\Delta_{\min}>0$ by Assumption~(DM). For any loser $k\ne k^\star$,
+Consider first the dispatch. At a step with logits $\ell$ and winner $k^\star$
+the gap is $\Delta\ge\Delta_{\min}>0$ by Assumption~(DM), so for any loser
+$k\ne k^\star$,
 \[
 w_k=\frac{e^{\ell_k/T}}{\sum_j e^{\ell_j/T}}
 \le\frac{e^{\ell_k/T}}{e^{\ell_{k^\star}/T}}
 =e^{(\ell_k-\ell_{k^\star})/T}\le e^{-\Delta_{\min}/T},
 \]
-so the non-winning mass is $1-w_{k^\star}=\sum_{k\ne k^\star}w_k\le
-(K-1)e^{-\Delta_{\min}/T}$. As the output is the convex combination
+and the non-winning mass is $1-w_{k^\star}=\sum_{k\ne k^\star}w_k\le
+(K-1)e^{-\Delta_{\min}/T}$. Since the dispatch output is the convex combination
 $\sum_k w_k V_k$,
 \[
 \begin{aligned}
@@ -172,18 +184,17 @@ $\sum_k w_k V_k$,
 &\le(K-1)e^{-\Delta_{\min}/T}\,C .
 \end{aligned}
 \]
-
-\emph{Branch term.} For a branch with margin $m=|z|\ge m_{\min}$, the gate error
-is $|\sigma(\alpha z)-[\![z>0]\!]|=\sigma(-\alpha m)\le e^{-\alpha m_{\min}}$, so
-the blended counter $(1-g)\mathrm{pc}_{\bar b}+g\,\mathrm{pc}_b$ differs from the
-hard target by at most $|\mathrm{pc}_b-\mathrm{pc}_{\bar b}|\,e^{-\alpha m_{\min}}
-\le C\,e^{-\alpha m_{\min}}$.
-
-\emph{Per-step bound.} Adding the two contributions gives, for every reachable
-$x$, $\delta:=\|\Phi^{T}_{\mathrm{S}}(x)-\Phi_{\mathrm{H}}(x)\|_\infty\le
+The sigmoid branch contributes similarly: for a margin $m=|z|\ge m_{\min}$ the
+gate error is $|\sigma(\alpha z)-[\![z>0]\!]|=\sigma(-\alpha m)\le
+e^{-\alpha m_{\min}}$, so the blended counter $(1-g)\mathrm{pc}_{\bar b}+
+g\,\mathrm{pc}_b$ differs from the hard target by at most
+$|\mathrm{pc}_b-\mathrm{pc}_{\bar b}|\,e^{-\alpha m_{\min}}\le
+C\,e^{-\alpha m_{\min}}$. Adding the two contributions bounds the per-step
+deviation: for every reachable $x$,
+$\delta:=\|\Phi^{T}_{\mathrm{S}}(x)-\Phi_{\mathrm{H}}(x)\|_\infty\le
 C[(K-1)e^{-\Delta_{\min}/T}+e^{-\alpha m_{\min}}]$.
 
-\emph{Propagation.} Let $L\ge1$ be a Lipschitz constant of $\Phi_{\mathrm{H}}$ in
+To propagate it, let $L\ge1$ be a Lipschitz constant of $\Phi_{\mathrm{H}}$ in
 $\|\cdot\|_\infty$ and $e_t=\|x^{T,\mathrm{S}}_t-x^{\mathrm{H}}_t\|_\infty$ the
 trajectory error after $t$ steps, with $e_0=0$. Each step adds a deviation of at
 most $\delta$ to the hard map applied to the accumulated error, giving
@@ -198,57 +209,104 @@ $\Phi^{T}_{\mathrm{S}}\to\Phi_{\mathrm{H}}$.
 
 Theorems~1 and~2 say the hard limit ($\alpha\to\infty$ for the sigmoid branch,
 $T\to0$ for the softmax select) is exact in value but degenerate in gradient.
-Figure~\ref{fig:alphatemp} shows this directly on jutari, as the relaxation
+Figure~\ref{fig:alphatemp} shows this directly on jutari as the relaxation
 values are swept. We render a single player cannon whose horizontal position is
-produced by the soft primitives---a sigmoid-gated blend of a left/right
-placement (\texttt{soft\_branch}, sharpness $\alpha$) in the top row, and a
-softmax mixture over candidate columns (\texttt{soft\_select}, temperature $T$)
-in the bottom row---and plot the screen-space directional-derivative saliency
-$\partial(\text{screen})/\partial(\text{control})$ (blue/red = the two motion
-directions), with a shared colour scale per row.
+produced by the soft primitives---a sigmoid-gated blend of a left and a right
+placement (\texttt{soft\_branch}, sharpness $\alpha$, top row) and a softmax
+mixture over candidate columns (\texttt{soft\_select}, temperature $T$, bottom
+row)---and plot the screen-space directional-derivative saliency
+$\partial(\text{screen})/\partial(\text{control})$, that is, how each pixel's
+value changes as the scalar control input increases. The colour encodes the
+\emph{sign} of that derivative: red where a pixel brightens as the control
+increases (the sprite arriving) and blue where it darkens (the sprite leaving);
+the colour intensity is the magnitude, normalised to the row maximum, and the
+per-panel number is the peak magnitude relative to that maximum. Pixels with no
+sensitivity keep the faint grey of the rendered cannon.
 
-The trend matches the theory. For the branch, the gradient is strongest at a
-moderate $\alpha$ and collapses as $\alpha$ grows ($\alpha{=}2,6,20$ give peak
-magnitudes $0.53,1.00,0.15$): a very sharp gate is saturated, so its derivative
-$\alpha\,\sigma(\alpha z)(1-\sigma(\alpha z))$ is near zero away from the
-decision. For the select, lower $T$ concentrates the mixture (peak magnitudes
-$1.00,0.51,0.00$ for $T{=}2.0,0.5,0.1$): at $T{=}0.1$ the pick is effectively
-one-hot, so a small change in the control no longer moves the chosen column and
-the gradient vanishes between candidate boundaries. In both cases the forward
-render stays exact (Theorem~1); only the gradient changes, and it is most
-informative at intermediate relaxation. This is a qualitative study of how the
-parameter \emph{values} act on the gradient, run on jutari; we did not need to
-tune them for the bit-exact forward pass.
+For the branch the position is $\mathrm{pc}=(1-g)\,\mathrm{pc}_L+g\,\mathrm{pc}_R$
+with $g=\sigma(\alpha z)$, so its derivative with respect to the control $z$ is
+$\alpha\,\sigma(\alpha z)\,(1-\sigma(\alpha z))\,(\mathrm{pc}_R-\mathrm{pc}_L)$:
+a dipole, blue on the placement being vacated and red on the one being entered.
+The magnitude $\alpha\,\sigma(\alpha z)(1-\sigma(\alpha z))$ is
+\emph{non-monotonic} in $\alpha$ at the fixed operating point $z{=}0.25$. A small
+$\alpha$ gives a shallow gate and hence a small slope; a large $\alpha$ saturates
+the gate ($\sigma(\alpha z)\to1$, so $\sigma(1-\sigma)\to0$). The maximum is the
+intermediate $\alpha$ for which $\alpha z$ falls in the sigmoid's steep band,
+near $\alpha{=}6$ here---$\alpha{=}2,6,20$ give peak magnitudes
+$0.53,1.00,0.15$, and at $\alpha{=}20$ the gate has essentially switched and the
+gradient has nearly vanished (the hard-branch limit).
+
+For the select the rendered cannon is the softmax-weighted sum
+$\sum_k w_k\,(\text{cannon at column }k)$ with $w=\mathrm{softmax}(\ell/T)$. At a
+high temperature the weights spread across several neighbouring candidate
+columns, so the render is a superposition of the cannon at those
+columns---the several faint copies seen at $T{=}2.0$---and the gradient is spread
+over them. As $T$ falls the weights concentrate: at $T{=}0.5$ only a few copies
+remain, and at $T{=}0.1$ the mixture is effectively one-hot, a single sharp
+cannon whose chosen column no longer moves under a small change of the control,
+so the gradient collapses to zero between candidate boundaries (peak magnitudes
+$1.00,0.51,0.00$ for $T{=}2.0,0.5,0.1$).
+
+In every panel the forward render is the exact hard one (Theorem~1); only the
+gradient changes. It is most informative at intermediate relaxation and decays
+to zero as the relaxation is sharpened toward the hard limit (Theorem~2). This
+is a qualitative study of how the parameter \emph{values} act on the gradient,
+run on jutari; the values need not be tuned for the bit-exact forward pass.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_alpha_temp.pdf}
 \caption{Screen-space gradient $\partial(\text{screen})/\partial(\text{control})$
 on jutari as the relaxation strength is swept. \textbf{Top:} sigmoid branch
-(\texttt{soft\_branch}), increasing sharpness $\alpha$. \textbf{Bottom:} softmax
-select (\texttt{soft\_select}), decreasing temperature $T$. Blue/red are the two
-motion directions; the per-panel number is the peak gradient magnitude relative
-to the row maximum. The gradient is largest at intermediate relaxation and
-vanishes toward the hard limit (large $\alpha$, small $T$), consistent with
-Theorems~1 and~2.}
+(\texttt{soft\_branch}), increasing sharpness $\alpha$; the gradient is a dipole
+between the left and right placements. \textbf{Bottom:} softmax select
+(\texttt{soft\_select}), decreasing temperature $T$; a high $T$ renders the
+cannon as several weighted copies. Colour gives the sign of the per-pixel
+derivative (red: the pixel brightens as the control increases; blue: it
+darkens) and its intensity the magnitude, normalised to the row maximum (the
+colour bar is in these per-row units); the per-panel number is the peak relative
+to that maximum, and faint grey is the rendered cannon where the gradient is
+negligible. The gradient is largest at intermediate relaxation and vanishes
+toward the hard limit (large $\alpha$, small $T$), consistent with Theorems~1
+and~2.}
 \label{fig:alphatemp}
 \end{figure}
 
 \section{Implementation Effort}
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=0.98\columnwidth]{figures/fig_timeline.pdf}
-\caption{Implementation effort from the version-control log. Cumulative commits
-against calendar time; shaded bands are active sessions (consecutive commits no
-more than three hours apart). The long flat stretches are idle gaps. The 373
-commits cluster into 52 active sessions totalling ${\sim}137$ hours of
-work---about 5.7 working days---spread across a 29-day calendar window.}
+\includegraphics[width=0.86\textwidth]{figures/fig_timeline.pdf}
+\caption{Implementation effort reconstructed from the version-control log.
+The step curve is the cumulative number of commits against calendar time;
+each shaded band is an active work session (a maximal run of consecutive
+commits no more than three hours apart), and the long flat stretches between
+bands are idle gaps, the largest of which are annotated. The $373$ commits form
+$52$ active sessions totalling ${\sim}137$ hours of work---about $5.7$ working
+days---spread across a $29$-day calendar window.}
 \label{fig:timeline}
-\end{figure}
+\end{figure*}
 
-Figure~\ref{fig:timeline} visualises the effort estimate reported in the main
-paper: 373 commits over a 29-day calendar span, of which the active sessions
-sum to about 137 hours.
+Figure~\ref{fig:timeline} is the evidence behind the effort estimate in the main
+paper. Because every step of the project was committed, the commit timestamps
+record when work actually happened. To turn them into an active-time figure we
+group the commits into sessions, treating a gap of more than three hours between
+consecutive commits as a session boundary. Three hours is well above the
+in-session rhythm---the median gap between consecutive commits is about
+$13$ minutes---and well below the multi-hour and overnight gaps that separate
+genuine work periods, so the partition is insensitive to the exact threshold:
+the active total is $106$ hours at a two-hour cutoff and $162$ hours at a
+four-hour cutoff, bracketing the $137$ hours obtained at three hours.
+
+With the three-hour boundary the $373$ commits fall into $52$ sessions whose
+durations sum to $136.8$ hours, i.e.\ about $5.7$ eight-hour working days, even
+though they are spread over a $29$-day calendar window. The remaining
+${\sim}80\%$ of the calendar span is idle and excluded; it consists mostly of
+stretches during which the lead programmer was travelling and without reliable
+internet access, which appear in the plot as the long flat segments. This active
+total---not the calendar span---is what we compare against the scale of the
+reference codebase in the main paper.
+
+\bibliography{references}
 
 \end{document}

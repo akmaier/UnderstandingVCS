@@ -60,10 +60,21 @@ def main():
 
     ax[0, 0].set_ylabel("soft branch\n(sharpness $\\alpha$)", fontsize=8)
     ax[1, 0].set_ylabel("soft select\n(temperature $T$)", fontsize=8)
-    fig.suptitle(r"$\partial$(screen)$/\partial$(control) vs.\ relaxation "
-                 r"strength (vanishes in the hard limit $\alpha\!\to\!\infty$, "
-                 r"$T\!\to\!0$)", fontsize=8.5, y=0.99)
-    fig.tight_layout(pad=0.4, w_pad=0.4, h_pad=0.6, rect=[0, 0, 1, 0.96])
+    fig.suptitle(r"$\partial$(screen)$/\partial$(control) vs. relaxation "
+                 r"strength (vanishes in the hard limit $\alpha\to\infty$, "
+                 r"$T\to0$)", fontsize=8.5, y=0.99)
+    fig.tight_layout(pad=0.4, w_pad=0.4, h_pad=0.6, rect=[0, 0.08, 1, 0.96])
+
+    # Signed colour key (per-row-max units): blue = darkens, red = brightens.
+    sm = matplotlib.cm.ScalarMappable(
+        norm=matplotlib.colors.Normalize(-1, 1), cmap="RdBu_r")
+    cax = fig.add_axes([0.30, 0.045, 0.40, 0.030])
+    cb = fig.colorbar(sm, cax=cax, orientation="horizontal", ticks=[-1, 0, 1])
+    cb.ax.set_xticklabels(["$-$ (darkens)", "0", "$+$ (brightens)"], fontsize=6.5)
+    cb.set_label(r"$\partial$pixel$/\partial$control (per-row max)", fontsize=6.5)
+    cb.ax.tick_params(length=2)
+    cb.outline.set_linewidth(0.5)
+
     fig.savefig(FIG, bbox_inches="tight", dpi=300)
     print("wrote", FIG)
 
