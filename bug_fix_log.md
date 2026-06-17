@@ -5747,3 +5747,61 @@ scratch before trusting any geometry claim.**
   a fast 1-frame `diag_screen_diff.py` run as the oracle — it cannot miss the
   introduction point the way per-port reverts can. Also build a jaxtari-arm of the
   64-ROM sweep (mirror `tools/rom_sweep/sweep_jutari_*.py`) to measure 64/64.
+
+---
+
+## jaxtari 64-ROM PARALLEL sweep harness — BUILT + validated (2026-06-17, ~12:10)
+
+The loop's 64/64 measurement was jutari-only; jaxtari is the slow engine
+(~7 s/eager-step single-threaded), so the sweep is now PARALLEL and saturates
+the hardware. Two new tools:
+
+- `tools/jaxtari_dump.py` — isolated single-ROM jaxtari runner (mode=ram → 128
+  B/frame; mode=screen → h*160 B/frame). Pinned SINGLE-THREADED before importing
+  jax (`OMP/OPENBLAS/MKL/VECLIB/NUMEXPR=1` + `XLA_FLAGS=--xla_cpu_multi_thread_eigen=false`).
+  Uses the FULL 25-game RomSettings map (matches jutari's `_SETTINGS_BY_BASENAME`;
+  a superset of `tools/check_trace.py`'s 19 — adds battle_zone, carnival,
+  ms_pacman, pacman, pooyan, qbert, else those would be settings-vs-emulation
+  false divergences). Imports every RomSettings class from the top-level
+  `jaxtari.games` package (the submodules have duplicate/relocated classes — e.g.
+  QbertRomSettings is in more_games, not joystick_starts).
+- `tools/rom_sweep/sweep_jaxtari.py` — unified RAM+SCREEN parallel driver. RAM
+  and SCREEN jobs share ONE `ThreadPoolExecutor` so the pool stays full
+  regardless of job mix. `--jobs` defaults to `os.cpu_count()` (= 12 here:
+  Mac15,7 / M4 Pro, 6P+6E, 18 GB). Each (rom,kind) job = one isolated jaxtari
+  subprocess (1 core) + a quick xitari `trace_dump` reference burst. vs xitari,
+  breakout_random_actions stream (RAM 30f, SCREEN 60f), the standard
+  60-NOOP+4-RESET boot. Writes `results_jaxtari_ram.md` + `results_jaxtari_screen.md`.
+
+**THREAD SAFETY** (verified): every jaxtari run is a separate PROCESS → no shared
+JAX state (JAX is not thread-safe in-process); parent threads only spawn/await
+subprocesses (GIL released during `subprocess.run`); all shared mutable state
+(two results dicts + the markdown writes) is under one lock; each subprocess
+writes a UNIQUE `tempfile.mkstemp` output (no clobber).
+
+**HARDWARE SATURATION** (verified): single-threaded jaxtari uses ~1 core/job
+(smoke test: 4 jobs → "385% cpu"), so `--jobs 12` pins all 12 cores. Confirmed
+single-threaded is the THROUGHPUT win, not just simpler: JAX's default CPU
+multi-threading on jaxtari's tiny (160-px) eager ops is ~1.8× LESS core-efficient
+(more total CPU-seconds for a ~2× per-job wall speedup that needs >2 cores), so
+N single-threaded processes beat fewer multi-threaded ones for a batch sweep.
+
+**ROM source = `xitari/roms`** (per user). `resolve_roms.py` repointed
+`COLLECTION` to `xitari/roms` (the in-repo 2207-bin collection) + 2 explicit
+OVERRIDES (montezuma_revenge: possessive "'s" breaks the prefix match; robotank:
+"Robot Tank" norms to `robottank`) → **64/64 resolved**, manifest regenerated.
+(`xitari/roms` no longer holds the big collection's canonical-named files except
+the 6 conformance ROMs, so asteroids/qbert now fuzzy-match instead of curated —
+harmless: xitari and jaxtari load the identical resolved bytes, so conformance
+holds regardless of which dump wins the title match.)
+
+**Validation**: `sweep_jaxtari.py --games pong breakout --ram-frames 3
+--screen-frames 3 --jobs 4` → pong + breakout BOTH 0 ✅ on RAM AND screen
+(known bit-exact ⇒ harness is correct). Per-job ~490–520 s for boot+3 frames.
+
+**Cost / loop guidance**: full 64×{ram,screen} ≈ 128 jobs ≈ **~2.5 h at
+--jobs 12**. So the loop should: (a) ITERATE on a fix with
+`--games <failing roms>` (e.g. pitfall enduro) for a fast signal, and (b) run the
+FULL sweep (background, across fires) only to confirm 64/64. Reduce `--jobs` if
+the box swaps (12 jaxtari procs × ~0.5–1 GB on 18 GB) or becomes unresponsive.
+Run: `jaxtari/.venv/bin/python tools/rom_sweep/sweep_jaxtari.py` (all 64, both modes).

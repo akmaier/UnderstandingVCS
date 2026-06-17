@@ -20,10 +20,23 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 NAMES = (REPO / "tools/rom_sweep/rom_names.txt").read_text().split()
-COLLECTION = REPO / "xitari/games/Atari-2600-VCS-ROM-Collection"
+# The ROM source folder is xitari/roms (the in-repo 2207-bin collection with
+# descriptive filenames). Per-game canonical names are fuzzy-matched against it;
+# the 6 already-canonical files (breakout.bin, pong.bin, ...) are picked directly
+# via the CURATED shortcut below.
+COLLECTION = REPO / "xitari/roms"
 CURATED = REPO / "xitari/roms"
 OUT = REPO / "tools/rom_sweep/roms"
 OUT.mkdir(parents=True, exist_ok=True)
+
+# Explicit overrides for games whose canonical name can't fuzzy-match the
+# collection's verbose title: "Montezuma's Revenge" norms to `montezumas…`
+# (the possessive breaks the prefix), "Robot Tank" norms to `robottank`
+# (double-t vs canonical `robotank`). Exact NTSC-original filenames in xitari/roms.
+OVERRIDES = {
+    "montezuma_revenge": "Montezuma's Revenge - Featuring Panama Joe (Monty) (1984) (Parker Brothers - JWDA, Henry Will IV) (PB5760) ~.bin",
+    "robotank": "Robot Tank (Robotank) (1983) (Activision, Alan Miller) (AZ-028, AG-028-04) ~.bin",
+}
 
 def norm(s: str) -> str:
     # take the leading title (before first parenthesis group), drop non-alnum
@@ -88,6 +101,12 @@ def best_for(game: str) -> Path | None:
 
 resolved, unresolved = {}, []
 for g in NAMES:
+    # Explicit override first (verbose titles the fuzzy matcher misses).
+    ov = OVERRIDES.get(g)
+    if ov and (COLLECTION / ov).is_file():
+        shutil.copy(COLLECTION / ov, OUT / f"{g}.bin")
+        resolved[g] = f"(override) {ov}"
+        continue
     # Prefer an already-curated, correctly-named ROM if one exists.
     curated = CURATED / f"{g}.bin"
     if curated.is_file():
