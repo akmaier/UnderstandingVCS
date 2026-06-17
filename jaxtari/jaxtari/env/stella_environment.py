@@ -88,7 +88,7 @@ class StellaEnvironment:
               boot_reset_steps: int = 0,
               random_noop_max: int = 0,
               seed: Optional[int] = None,
-              construction_probe: bool = True) -> None:
+              construction_probe: bool = False) -> None:
         """Reset the console (PC ← cart reset vector) and the settings.
 
         Parameters
@@ -141,11 +141,15 @@ class StellaEnvironment:
         # A free-running RAM counter the game NEVER re-inits (surround's $7d)
         # is seeded by all three; pre-#119b jaxtari ran only boot #2 from
         # cold RAM-zeroed state, so $7d started 95 short. Mirror the full
-        # sequence with keep-RAM resets so the seed accumulates. For games
-        # that re-init their RAM at boot the probe + extra boot wash out →
-        # all previously-bit-exact games are unchanged (gated on the sweep).
-        # `construction_probe=False` keeps the old single-boot, RAM-zeroing
-        # behaviour for callers that want a bare reset.
+        # sequence with keep-RAM resets so the seed accumulates.
+        # **`construction_probe=False` is the DEFAULT** to preserve backward
+        # compat with the existing xitari screen fixtures (recorded from a
+        # single-boot xitari path). When enabled, _boot_burn runs TWICE per
+        # reset → games WITH starting_actions (pitfall UP, enduro FIRE, …)
+        # fire the action twice, diverging from the single-boot fixtures
+        # (post-port pitfall=557px, enduro=114px on the screen-conformance
+        # sweep). Flip the default to True after the fixtures are
+        # regenerated with the double-boot xitari path (issue: TODO).
         if construction_probe and boot_noop_steps > 0:
             # (1) probe at the 262 NTSC-default cutoff (format not yet detected)
             self._console = self._console._replace(
