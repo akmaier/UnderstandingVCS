@@ -1,20 +1,15 @@
 #!/usr/bin/env python3
 """Pixel-space sprite-occupancy heatmap of the soft-select temperature T.
 
-For each T in {2.0, 0.5, 0.1} we SAMPLE the cannon's column 100 times from the
-soft-select distribution w = softmax(logits / T) over the candidate columns,
-render the (hard) cannon sprite at each sampled column, sum the 100 rendered
-images, and divide by 100. The result is a screen-domain heatmap whose value at
-each pixel is the fraction of samples in which the sprite covered that pixel ---
-i.e. a Monte-Carlo estimate of the expected sprite occupancy E[occupancy].
+For each T in {2.0, 0.5, 0.1} we sample the target sprite's column 100 times from
+w = softmax(logits / T) over a PIXEL-RESOLUTION grid of candidate columns, render
+the (hard) invader sprite at each sampled column, sum the 100 images, and divide
+by 100 --- a screen-domain Monte-Carlo estimate of the expected sprite occupancy.
 
-  high T (2.0): the draws spread over several neighbouring columns -> several
-                cannon copies of graded brightness (a blurry, spread sprite);
-  low T  (0.1): the draws collapse onto the target column -> a single sharp
-                cannon at full occupancy.
-
-The per-column hard sprites come from alpha_temp_demo.jl (at_cand_occ*). Sampling
-uses a fixed seed so the figure is reproducible.
+Sampling at 1-pixel column resolution (not the coarse 8-px candidate spacing used
+for the soft_select gradient demo) makes neighbouring draws overlap, so the
+average is a smooth occupancy cloud that broadens with T, rather than a row of
+discrete sprite copies.
 
     python3 make_temp_heatmap_fig.py
 """
@@ -24,74 +19,72 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-HERE = os.path.dirname(__file__)
-OUT = os.path.join(HERE, "out")
-FIG = os.path.abspath(os.path.join(HERE, "..", "..", "jutari_paper", "paper",
-                                   "figures", "fig_temp_heatmap.pdf"))
+FIG = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..",
+                      "jutari_paper", "paper", "figures", "fig_temp_heatmap.pdf"))
 plt.rcParams.update({"font.family": "serif", "font.size": 8,
                      "pdf.fonttype": 42, "ps.fonttype": 42})
 
-# Same setup as alpha_temp_demo.jl.
-CAND = np.arange(30, 111, 8, dtype=float)          # 11 candidate columns
+# Target sprite: the same 8-wide invader bitmap as alpha_temp_demo.jl.
+INVADER = [0b00011000, 0b00111100, 0b01111110, 0b11011011,
+           0b11111111, 0b10100101, 0b00100100, 0b01000010]
+H, W, VS, YC = 80, 140, 2, 30
 TARGET = 70.0
-LOGITS = -((CAND - TARGET) / 6.0) ** 2
-K = len(CAND)
+SIGMA = 6.0                                   # logits = -((x-target)/SIGMA)^2
+COLS = np.arange(30, 111, dtype=int)          # PIXEL-resolution candidate columns
 N_SAMPLES = 100
 TS = (2.0, 0.5, 0.1)
-CR = (slice(24, 54), slice(26, 122))               # zoom window around the cannon
+CR = (slice(22, 54), slice(44, 100))          # zoom around the sprite
+
+
+def sprite_occ(x):
+    occ = np.zeros((H, W), dtype=np.float32)
+    for rr, byte in enumerate(INVADER):
+        for b in range(8):
+            if (byte >> (7 - b)) & 1:
+                r0 = YC + rr * VS
+                occ[r0:r0 + VS, x + b] = 1.0
+    return occ
 
 
 def softmax(T):
-    e = np.exp((LOGITS - LOGITS.max()) / T)
+    logits = -((COLS - TARGET) / SIGMA) ** 2
+    e = np.exp((logits - logits.max()) / T)
     return e / e.sum()
 
 
-def load_sprites():
-    shape = {}
-    with open(os.path.join(OUT, "alpha_temp_manifest.txt")) as f:
-        for line in f:
-            name, r, c = line.split()
-            shape[name] = (int(r), int(c))
-    occ = []
-    for k in range(1, K + 1):
-        name = f"at_cand_occ{k}"
-        a = np.fromfile(os.path.join(OUT, name + ".bin"), dtype="<f4")
-        occ.append(a.reshape(shape[name]))
-    return np.stack(occ)                            # (K, H, W)
-
-
 def main():
-    occ = load_sprites()                            # (K, H, W), values in {0,1}
-    rng = np.random.default_rng(0)                  # reproducible sampling
+    occ = np.stack([sprite_occ(int(x)) for x in COLS])      # (n_cols, H, W)
+    rng = np.random.default_rng(0)                          # reproducible
 
-    fig, axes = plt.subplots(1, 3, figsize=(5.6, 2.1))
+    fig, axes = plt.subplots(1, 3, figsize=(5.8, 2.0))
+    fig.subplots_adjust(left=0.03, right=0.86, top=0.80, bottom=0.10, wspace=0.08)
     im = None
     for ax, T in zip(axes, TS):
         w = softmax(T)
-        idx = rng.choice(K, size=N_SAMPLES, p=w)    # 100 sampled columns ~ w(T)
-        heat = occ[idx].mean(axis=0)[CR]            # sum images / 100 = E[occ]
-        neff = 1.0 / np.sum(w ** 2)
-        im = ax.imshow(heat, cmap="magma", vmin=0.0, vmax=1.0,
-                       aspect="equal", interpolation="nearest")
+        idx = rng.choice(len(COLS), size=N_SAMPLES, p=w)     # 100 sampled columns
+        heat = occ[idx].mean(axis=0)[CR]                     # sum images / 100
+        std = float(np.sqrt(np.sum(w * (COLS - np.sum(w * COLS)) ** 2)))
+        im = ax.imshow(heat, cmap="magma", vmin=0.0, vmax=1.0, aspect="equal",
+                       interpolation="bilinear")
         ax.set_title(rf"$T = {T}$", fontsize=8.5)
-        ax.set_xlabel(rf"$N_{{\mathrm{{eff}}}} = {neff:.1f}$ cols", fontsize=6.8)
+        ax.set_xlabel(rf"spread $\sigma \approx {std:.1f}$ px", fontsize=6.8)
         ax.set_xticks([]); ax.set_yticks([])
 
-    fig.suptitle(r"Sampled sprite occupancy (100 draws from "
-                 r"$\mathrm{softmax}(\ell/T)$, averaged in pixel space)",
-                 fontsize=8.5, y=1.02)
-    fig.subplots_adjust(left=0.02, right=0.88, top=0.84, bottom=0.10, wspace=0.10)
-    cax = fig.add_axes([0.90, 0.12, 0.018, 0.70])
+    cax = fig.add_axes([0.885, 0.14, 0.016, 0.56])
     cb = fig.colorbar(im, cax=cax)
     cb.set_label("occupancy fraction", fontsize=7)
     cb.ax.tick_params(labelsize=6, length=2)
     cb.outline.set_linewidth(0.5)
 
+    fig.suptitle(r"Sampled sprite occupancy (100 draws from "
+                 r"$\mathrm{softmax}(\ell/T)$ at pixel resolution, averaged)",
+                 fontsize=8.5, y=0.99)
     fig.savefig(FIG, bbox_inches="tight", dpi=300)
     print("wrote", FIG)
     for T in TS:
         w = softmax(T)
-        print(f"  T={T:4.2f}  N_eff={1/np.sum(w**2):.2f}  max w={w.max():.3f}")
+        std = np.sqrt(np.sum(w * (COLS - np.sum(w * COLS)) ** 2))
+        print(f"  T={T:4.2f}  sigma={std:.2f}px  max w={w.max():.3f}")
 
 
 if __name__ == "__main__":

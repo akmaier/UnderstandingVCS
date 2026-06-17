@@ -536,32 +536,20 @@ Theorems~\ref{thm:exact}--\ref{thm:limit}.
 \section{Evaluation Methodology}
 
 We report five families of measurements, defined here so the results are
-unambiguous.
-
-\noindent\textbf{Bit-exactness in memory.} We evaluate on the 64 ALE games
-that are playable by the original DQN benchmark. For each game we run the
-standard ALE boot (60 no-op frames plus four resets) and then a fixed action
-stream, and compare the 128-byte RIOT RAM against \textsc{xitari} after every
-frame. A game is \emph{RAM-exact} if every byte of every frame is identical. We
-report the count of RAM-exact games out of 64.
-
-\noindent\textbf{Pixel-exactness on screen.} Identically, we compare the full
-$210\times160$ frame buffer (palette indices) after every frame. A game is
-\emph{pixel-exact} if every pixel of every frame is identical; we report the
-count out of 64.
-
-\noindent\textbf{Implementation wall-time.} We estimate \emph{active}
-implementation time from the version-control log. Treating any gap between
-consecutive commits longer than three hours as a session boundary, we sum the
-durations of the active sessions; we report the two- and four-hour thresholds
-as a sensitivity check.
-
-\noindent\textbf{Tests and bugs.} We count authored test cases per port and
-the distinct numbered bug investigations recorded in the development log.
-
-\noindent\textbf{Throughput.} We measure soft-mode steps per second on a fixed
-ROM after just-in-time warm-up, on a single Apple~M1~Max core (JAX CPU
-backend; Julia~1.10), reporting the median of repeated runs.
+unambiguous. The two conformance metrics are evaluated on the 64 ALE games
+playable by the original DQN benchmark: for each game we run the standard ALE
+boot (60 no-op frames plus four resets) and then a fixed action stream. A game is
+\emph{RAM-exact} if its 128-byte RIOT RAM is identical to \textsc{xitari} on every
+frame, and \emph{pixel-exact} if its full $210\times160$ frame buffer (palette
+indices) is identical on every frame; we report the count of each out of 64. We
+estimate \emph{active} implementation wall-time from the version-control log,
+treating any gap between consecutive commits longer than three hours as a session
+boundary and summing the active sessions, with the two- and four-hour thresholds
+reported as a sensitivity check. We count authored test cases per port and the
+distinct numbered bug investigations recorded in the development log. Finally, we
+measure soft-mode throughput as steps per second on a fixed ROM after
+just-in-time warm-up, on a single Apple~M1~Max core (JAX CPU backend;
+Julia~1.10), reporting the median of repeated runs.
 
 \section{Results}
 
@@ -708,8 +696,7 @@ Opus~4.7 and 4.8. A single autonomous session, during an author absence, was
 driven by Fable~5. An early attempt with Kimi-K2.6 (a one-trillion-parameter
 model) ended when the model refused to start, judging the full port to be months
 of work. We note these only to document that autonomous capability on a task of
-this size is real but uneven across systems, and that the conformance
-gate---not the model---was what made the autonomy safe.
+this size is real but uneven across systems.
 
 One limitation remains: the effort comparison is an order-of-magnitude estimate
 rather than a controlled trial. However, this does not affect the core claims:

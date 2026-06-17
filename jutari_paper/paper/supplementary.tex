@@ -145,9 +145,11 @@ arithmetic in both modes (soft mode merely keeps the results in float32). A
 conditional branch returns the straight-through value~\eqref{eq:s-ste}; since
 $\sg$ is the identity in the forward direction,
 \begin{equation}
+\begin{aligned}
 \mathrm{STE}(\mathrm{pc}_{\mathrm{soft}},\mathrm{pc}_{\mathrm{hard}})
-=\mathrm{pc}_{\mathrm{soft}}+\sg(\mathrm{pc}_{\mathrm{hard}}-\mathrm{pc}_{\mathrm{soft}})
-=\mathrm{pc}_{\mathrm{hard}}
+&=\mathrm{pc}_{\mathrm{soft}}+\sg(\mathrm{pc}_{\mathrm{hard}}-\mathrm{pc}_{\mathrm{soft}})\\
+&=\mathrm{pc}_{\mathrm{hard}}
+\end{aligned}
 \label{eq:s-branch-eq}
 \end{equation}
 for every $\alpha$ and $T$. Every component of the handler output thus equals its
@@ -225,9 +227,11 @@ so the non-winning mass is $1-w_{k^\star}=\sum_{k\ne k^\star}w_k\le
 (K-1)e^{-\Delta_{\min}/T}$. As the dispatch output is the convex combination
 $\sum_k w_k V_k$,
 \begin{equation}
+\begin{aligned}
 \Big\|\textstyle\sum_k w_k V_k-V_{k^\star}\Big\|_\infty
-\le(1-w_{k^\star})\max_k\|V_k-V_{k^\star}\|_\infty
-\le(K-1)\,e^{-\Delta_{\min}/T}\,C .
+&\le(1-w_{k^\star})\max_k\|V_k-V_{k^\star}\|_\infty\\
+&\le(K-1)\,e^{-\Delta_{\min}/T}\,C .
+\end{aligned}
 \label{eq:s-disp}
 \end{equation}
 
@@ -247,8 +251,11 @@ target $\mathrm{pc}_{\bar b}+[\![z>0]\!]\,\delta$ by
 \textit{Per-step bound.} Adding~\eqref{eq:s-disp} and~\eqref{eq:s-branchterm}
 bounds the one-step deviation: for every reachable $x$,
 \begin{equation}
-\delta_{\mathrm{step}}:=\big\|\Phi^{T}_{\mathrm{S}}(x)-\Phi_{\mathrm{H}}(x)\big\|_\infty
-\le C\big[(K-1)e^{-\Delta_{\min}/T}+e^{-\alpha m_{\min}}\big],
+\begin{aligned}
+\delta_{\mathrm{step}}
+&:=\big\|\Phi^{T}_{\mathrm{S}}(x)-\Phi_{\mathrm{H}}(x)\big\|_\infty\\
+&\le C\big[(K-1)e^{-\Delta_{\min}/T}+e^{-\alpha m_{\min}}\big],
+\end{aligned}
 \label{eq:s-perstep}
 \end{equation}
 which is~\eqref{eq:s-bound}.
@@ -273,26 +280,22 @@ $\Phi^{T}_{\mathrm{S}}\to\Phi_{\mathrm{H}}$.
 
 \section{Effect of the Relaxation Parameters on the Gradient}
 
-Theorems~\ref{thm:s-exact} and~\ref{thm:s-limit} say the hard limit ($\alpha\to\infty$ for the sigmoid branch,
-$T\to0$ for the softmax select) is exact in value but degenerate in gradient.
-Figure~\ref{fig:alphatemp} shows this directly on jutari as the relaxation
-values are swept. We render a single player cannon whose horizontal position is
-produced by the soft primitives---a sigmoid-gated blend of a left and a right
-placement (\texttt{soft\_branch}, sharpness $\alpha$, top row) and a softmax
-mixture over candidate columns (\texttt{soft\_select}, temperature $T$, bottom
-row)---and plot the screen-space directional-derivative saliency
-$\partial(\text{screen})/\partial(\text{control})$, that is, how each pixel's
-value changes as the scalar control input increases. The colour encodes the
-\emph{sign} of that derivative: red where a pixel brightens as the control
-increases (the sprite arriving) and blue where it darkens (the sprite leaving);
-the colour intensity is the magnitude. The two rows are on \emph{individual}
-colour scales: the branch and select gradients are taken with respect to
-different controls and differ in absolute magnitude by more than an order of
-magnitude (peak $0.90$ vs.\ $0.05$ here), so each row carries its own colour bar
-in absolute units, and the per-panel number is the peak relative to that row's
-maximum. A pixel with no sensitivity maps to the same neutral light grey in every
-panel---the faint cannon outline---so the zero level reads identically in both
-rows.
+Theorems~\ref{thm:s-exact} and~\ref{thm:s-limit} say the hard limit
+($\alpha\to\infty$ for the sigmoid branch, $T\to0$ for the softmax select) is
+exact in value but degenerate in gradient. We illustrate both knobs on jutari
+with a single target sprite (an invader) whose horizontal placement is produced
+by the soft primitives. For the sigmoid branch we plot the screen-space
+directional-derivative saliency
+$\partial(\text{screen})/\partial(\text{control})$ as the sharpness $\alpha$ is
+swept (Figure~\ref{fig:alphatemp}), and the gate and its gradient directly
+(Figure~\ref{fig:sigmoid}); for the softmax select we show the temperature's
+effect in pixel space as a sampled sprite-occupancy heatmap
+(Figure~\ref{fig:tempheat}). In the gradient maps the colour encodes the
+\emph{sign} of the derivative---red where a pixel brightens as the control
+increases (the sprite arriving) and blue where it darkens (the sprite
+leaving)---and its intensity the magnitude, on a black background; the colour bar
+is in absolute units and the per-panel number is the peak relative to the row
+maximum.
 
 For the branch the position is $\mathrm{pc}=(1-g)\,\mathrm{pc}_L+g\,\mathrm{pc}_R$
 with $g=\sigma(\alpha z)$, so its derivative with respect to the control $z$ is
@@ -313,21 +316,18 @@ the gate is so shallow that the gradient is weak and barely varies with $z$ (too
 soft: the gradient does not discriminate); the intermediate $\alpha{=}6$ gives the
 largest, most localised gradient at the operating point.
 
-For the select the rendered cannon is the softmax-weighted sum
-$\sum_k w_k\,(\text{cannon at column }k)$ with $w=\mathrm{softmax}(\ell/T)$. At a
-high temperature the weights spread across several neighbouring candidate
-columns, so the render is a superposition of the cannon at those
-columns---the several faint copies seen at $T{=}2.0$---and the gradient is spread
-over them. As $T$ falls the weights concentrate: at $T{=}0.5$ only a few copies
-remain, and at $T{=}0.1$ the mixture is effectively one-hot, a single sharp
-cannon whose chosen column no longer moves under a small change of the control,
-so the gradient collapses to zero between candidate boundaries (peak magnitudes
-$1.00,0.51,0.00$ for $T{=}2.0,0.5,0.1$).
-Figure~\ref{fig:tempheat} makes this concrete in pixel space: sampling the
-cannon's column $100$ times from $w=\softmax(\ell/T)$ and averaging the rendered
-sprites gives the expected screen occupancy---a single sharp cannon at low $T$
-($N_{\mathrm{eff}}\!\to\!1$) that spreads into several graded copies as $T$
-rises, the very superposition the gradient is then spread across.
+The softmax select positions the sprite as the weighted sum
+$\sum_k w_k\,(\text{sprite at column }k)$ with $w=\softmax(\ell/T)$, so its
+expected screen occupancy is a blend over candidate columns. We visualise this in
+pixel space (Figure~\ref{fig:tempheat}): for each $T$ we sample the sprite's
+column $100$ times from $w$ at pixel resolution, render the hard sprite at each
+draw, and average the images. At a high temperature ($T{=}2.0$) the draws spread
+over a wide band ($\sigma\approx6$ px), giving a broad, smooth occupancy cloud; as
+$T$ falls the distribution concentrates ($\sigma\approx3$ px at $T{=}0.5$, and
+$1.3$ px at $T{=}0.1$) until the sprite is a single sharp, fully occupied
+figure---the hard pick. The gradient with respect to the control follows the same
+arc: spread over the band at high $T$ and collapsing to zero between pixels in the
+hard limit.
 
 In every panel the forward render is the exact hard one
 (Theorem~\ref{thm:s-exact}); only the gradient changes. It is most informative at
@@ -336,28 +336,23 @@ the hard limit (Theorem~\ref{thm:s-limit}). This
 is a qualitative study of how the parameter \emph{values} act on the gradient,
 run on jutari; the values need not be tuned for the bit-exact forward pass.
 Animated sweeps of both knobs---the gate and its gradient as $\alpha$ varies, and
-the weight distribution as $T$ varies, each frame on its own scale---are provided
-as \texttt{fig\_alpha\_anim.gif} and \texttt{fig\_temp\_anim.gif} in the
+the sampled sprite occupancy as $T$ varies, each frame on its own scale---are
+provided as \texttt{fig\_alpha\_anim.gif} and \texttt{fig\_temp\_anim.gif} in the
 supplementary media.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.92\textwidth]{figures/fig_alpha_temp.pdf}
-\caption{Screen-space gradient $\partial(\text{screen})/\partial(\text{control})$
-on jutari as the relaxation strength is swept. \textbf{Top:} sigmoid branch
-(\texttt{soft\_branch}), increasing sharpness $\alpha$; the gradient is a dipole
-between the left and right placements. \textbf{Bottom:} softmax select
-(\texttt{soft\_select}), decreasing temperature $T$; a high $T$ renders the cannon
-as several weighted copies. Colour gives the sign of the per-pixel derivative
-(red: the pixel brightens as the control increases; blue: it darkens) and its
-intensity the magnitude. The two rows are on \emph{individual} colour scales (the
-branch and select gradients differ in absolute magnitude by more than
-$10\times$), each with its own colour bar in absolute units; the per-panel number
-is the peak relative to that row's maximum. A pixel with no sensitivity maps to
-the same neutral light grey in both rows (the faint cannon outline), so the zero
-level is consistent. The gradient is largest at intermediate relaxation and
-vanishes toward the hard limit (large $\alpha$, small $T$), consistent with
-Theorems~\ref{thm:s-exact} and~\ref{thm:s-limit}.}
+\caption{Soft branch: the screen-space gradient
+$\partial(\text{screen})/\partial z$ as the sharpness $\alpha$ is swept, on
+jutari. The target sprite's placement is a sigmoid-gated blend of a left and a
+right position, so the gradient is a dipole---blue where a pixel darkens (the
+placement being vacated) and red where it brightens (the one being entered). The
+colour bar is in absolute units (here $\pm0.90$) and the per-panel number is the
+peak relative to the maximum. The dipole is strongest at an intermediate $\alpha$
+(here $\alpha{=}6$) and nearly vanishes by $\alpha{=}20$ as the gate
+saturates---the hard-branch limit (cf.\ Theorems~\ref{thm:s-exact}
+and~\ref{thm:s-limit}).}
 \label{fig:alphatemp}
 \end{figure*}
 
@@ -379,14 +374,15 @@ localised gradient.}
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_temp_heatmap.pdf}
 \caption{Pixel-space sprite-occupancy heatmap of the soft-select temperature
-$T$. For each $T$ we sample the cannon's column $100$ times from
-$w=\softmax(\ell/T)$, render the hard cannon sprite at each sampled column, and
-average the $100$ images; each pixel's value is the fraction of samples in which
-the sprite covered it---a Monte-Carlo estimate of the expected occupancy
-$\sum_k w_k\,\mathrm{occ}_k$. At $T{=}2.0$ the draws spread over several columns
-(a blurred sprite of graded brightness, $N_{\mathrm{eff}}{=}2.6$ effective
-columns); as $T$ falls the occupancy collapses onto the target column
-($N_{\mathrm{eff}}{\to}1$), a single sharp cannon at full occupancy.}
+$T$. For each $T$ we sample the sprite's column $100$ times from
+$w=\softmax(\ell/T)$ at \emph{pixel} resolution, render the hard sprite at each
+sampled column, and average the $100$ images; each pixel's value is the fraction
+of samples in which the sprite covered it---a Monte-Carlo estimate of the expected
+occupancy $\sum_k w_k\,\mathrm{occ}_k$. Sampling at single-pixel column resolution
+makes neighbouring draws overlap, so the average is a smooth occupancy cloud: at
+$T{=}2.0$ a broad blur ($\sigma\approx6$ px), tightening as $T$ falls
+($\sigma\approx3$ px at $T{=}0.5$) to a single sharp, fully occupied sprite at
+$T{=}0.1$ ($\sigma\approx1.3$ px).}
 \label{fig:tempheat}
 \end{figure}
 

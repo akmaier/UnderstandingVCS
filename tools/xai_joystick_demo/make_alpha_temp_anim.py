@@ -67,31 +67,50 @@ def alpha_gif():
     print("wrote", out)
 
 
+# Same invader sprite as alpha_temp_demo.jl / make_temp_heatmap_fig.py.
+_INVADER = [0b00011000, 0b00111100, 0b01111110, 0b11011011,
+            0b11111111, 0b10100101, 0b00100100, 0b01000010]
+_H, _W, _VS, _YC = 80, 140, 2, 30
+_COLS = np.arange(30, 111, dtype=int)
+_TARGET, _SIGMA = 70.0, 6.0
+_CR = (slice(22, 54), slice(44, 100))
+
+
+def _sprite_occ(x):
+    occ = np.zeros((_H, _W), np.float32)
+    for rr, byte in enumerate(_INVADER):
+        for b in range(8):
+            if (byte >> (7 - b)) & 1:
+                occ[_YC + rr * _VS: _YC + rr * _VS + _VS, x + b] = 1.0
+    return occ
+
+
 def temp_gif():
-    cand = np.arange(30, 111, 8.0)
-    target = 70.0
-    logits = -((cand - target) / 6.0) ** 2
-    Ts = np.concatenate([np.linspace(0.08, 3.0, 42), np.linspace(3.0, 0.08, 14)])
-    fig, ax = plt.subplots(figsize=(4.6, 2.8))
+    """Pixel-space sampled occupancy as the soft-select temperature T sweeps:
+    100 draws ~ softmax(l/T) at pixel resolution, rendered + averaged each frame,
+    so the occupancy cloud broadens with T and tightens to a sharp sprite."""
+    occ = np.stack([_sprite_occ(int(x)) for x in _COLS])
 
     def softmax(T):
-        e = np.exp((logits - logits.max()) / T)
+        l = -((_COLS - _TARGET) / _SIGMA) ** 2
+        e = np.exp((l - l.max()) / T)
         return e / e.sum()
+
+    Ts = np.concatenate([np.linspace(3.0, 0.1, 42), np.linspace(0.1, 3.0, 14)])
+    fig, ax = plt.subplots(figsize=(3.4, 2.4))
+    rng = np.random.default_rng(0)
 
     def draw(T):
         ax.clear()
         w = softmax(T)
-        ax.bar(cand, w, width=6.0, color=ORANGE, edgecolor=INK, lw=0.4)
-        ax.axvline(target, color=STEEL, lw=0.9, ls="--")
-        ax.set_ylim(0, max(w.max() * 1.15, 1e-3))                    # autoscale
-        ax.set_xlim(cand[0] - 5, cand[-1] + 5)
-        ax.set_xlabel("candidate cannon column", fontsize=8)
-        ax.set_ylabel("softmax weight $w_k$ (autoscaled)", fontsize=8)
-        neff = 1.0 / np.sum(w ** 2)
-        ax.set_title(rf"soft select temperature  $T={T:.2f}$"
-                     rf"   ($N_{{\mathrm{{eff}}}}={neff:.2f}$ columns)", fontsize=9.5)
-        for s in ("top", "right"):
-            ax.spines[s].set_visible(False)
+        idx = rng.choice(len(_COLS), size=100, p=w)
+        heat = occ[idx].mean(axis=0)[_CR]
+        std = float(np.sqrt(np.sum(w * (_COLS - np.sum(w * _COLS)) ** 2)))
+        ax.imshow(heat, cmap="magma", vmin=0.0, vmax=1.0, aspect="equal",
+                  interpolation="bilinear")
+        ax.set_title(rf"soft select  $T={T:.2f}$   ($\sigma\approx{std:.1f}$ px)",
+                     fontsize=9.5)
+        ax.set_xticks([]); ax.set_yticks([])
         fig.tight_layout()
 
     anim = FuncAnimation(fig, draw, frames=Ts, interval=120)
