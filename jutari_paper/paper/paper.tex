@@ -160,14 +160,13 @@ contributions are:
 
 \section{Background and Related Work}
 
-One response to the absence of ground truth is to give up generality and study
-only models that are transparent by construction: decision trees, rule lists,
-sparse linear models, or interpretable-by-design surrogates. For these the
-inner functioning is known---but it is known because it is trivial, and the
-explanation is little more than the model written out. Such models are not the
-ones XAI was built for, and reproducing their structure tests an XAI method on
-a problem it cannot fail. The interesting regime is the opposite one, and it is
-where ground truth disappears.
+Some models are transparent by construction, such as decision trees, rule
+lists, sparse linear models, and interpretable-by-design surrogates. Their
+inner functioning is known, but it is trivial. The explanation is essentially
+the model written out, so these models do not test an XAI method in a
+meaningful way. XAI is built for the opposite case, namely large neural
+networks whose inner functioning is not known. There, no ground truth is
+available to check an explanation against.
 
 The dominant XAI tools are \emph{attribution} or \emph{saliency} methods,
 which assign each input element a number reflecting how much it mattered to
@@ -458,8 +457,8 @@ nonzero where $\partial\Phi_{\mathrm{H}}/\partial x$ is zero or undefined.
 Each handler's forward output composes one-hot ROM/RAM reads~\eqref{eq:peek},
 integer/round arithmetic, a hard opcode dispatch, and the straight-through
 branch~\eqref{eq:ste}, each forward-identical to the hard handler; the
-stop-gradient alters only the backward rule. The full proof is in
-Appendix~\ref{app:proofs}.
+stop-gradient alters only the backward rule. A full proof is given in the
+supplementary material.
 \end{proof}
 
 By Theorem~\ref{thm:exact}, attribution in soft mode is computed on the exact
@@ -505,7 +504,7 @@ $\frac{L^{N}-1}{L-1}\,C[(K-1)e^{-\Delta_{\min}/T}+e^{-\alpha m_{\min}}]
 \begin{proof}
 Bound the non-winning softmax mass by $(K-1)e^{-\Delta_{\min}/T}$ and the
 sigmoid error by $e^{-\alpha m_{\min}}$, then propagate over $N$ steps with the
-Lipschitz constant $L$. The full proof is in Appendix~\ref{app:proofs}.
+Lipschitz constant $L$. A full proof is given in the supplementary material.
 \end{proof}
 
 \begin{corollary}
@@ -564,20 +563,9 @@ object model rather than approximating its output.
 
 \subsection{Effort: Person-Months into Days}
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.86\textwidth]{figures/fig_timeline.pdf}
-\caption{Implementation effort from the version-control log. Cumulative
-commits against calendar time; shaded bands are active sessions (consecutive
-commits no more than three hours apart). The long flat stretches are idle
-gaps. The 373 commits cluster into 52 active sessions totalling
-${\sim}137$ hours of work---about 5.7 working days---spread across a 29-day
-calendar window.}
-\label{fig:timeline}
-\end{figure*}
-
-The project comprises 373 commits over a 29-day calendar span
-(Figure~\ref{fig:timeline}). To estimate active implementation time we split
+The project comprises 373 commits over a 29-day calendar span (a cumulative
+commit-time plot is given in the supplementary material). To estimate active
+implementation time we split
 the commit stream into work sessions. We use a three-hour gap between
 consecutive commits as the session boundary: within a session commits are
 minutes apart (the median is one every ${\sim}13$ minutes), whereas idle
@@ -691,23 +679,23 @@ study it with XAI'' a practical method rather than a thought experiment.
 
 Building the ports also revealed a bug in the reference. Driving the ports to
 64/64 pixel exactness surfaced a latent non-determinism in \textsc{xitari}
-itself: one title's attract-mode demo reads \emph{uninitialised} on-cartridge
-Superchip RAM as a cheap random-number source, and \textsc{xitari} seeds that
-RAM from \texttt{time(NULL)} while ignoring its own seed parameter, so the
-title renders differently on every run despite a pinned seed. This divergence
-is invisible to RAM-state checks and visible only on screen. We reach full
+itself. One title's attract-mode demo reads \emph{uninitialised} on-cartridge
+Superchip RAM as a cheap random-number source. \textsc{xitari} seeds that RAM
+from \texttt{time(NULL)} and ignores its own seed parameter, so the title
+renders differently on every run despite a pinned seed. This divergence is
+invisible to RAM-state checks and shows up only on screen. We reach full
 conformance by pinning the seed deterministically in both emulators, which also
 makes the suite reproducible, and we have prepared a fix to submit upstream. A
-bit-exact re-implementation is therefore useful in both directions: the
-reference validates the port, and the port can in turn audit the reference for
+bit-exact re-implementation is therefore useful in both directions. The
+reference validates the port, and the port in turn audits the reference for
 reproducibility bugs.
 
-The hardest divergences were in timing: the RIOT timer's
+The hardest divergences were all in timing---the RIOT timer's
 reset state, the TIA's sub-cycle object rendering, and the boot-time format
 probe that seeds free-running counters games never re-initialise. Two model
 anecdotes are worth recording. The bulk of the work was carried out by Claude
-Opus~4.7 and 4.8; a single autonomous session, during an author absence, was
-driven by Fable~5; and an early attempt with Kimi-K2.6 (a one-trillion-parameter
+Opus~4.7 and 4.8. A single autonomous session, during an author absence, was
+driven by Fable~5. An early attempt with Kimi-K2.6 (a one-trillion-parameter
 model) ended when the model refused to start, judging the full port to be months
 of work. We note these only to document that autonomous capability on a task of
 this size is real but uneven across systems, and that the conformance
@@ -743,109 +731,8 @@ checked conformance oracle, which we view as the responsible pattern for such
 tools. Our intended use, validating XAI methods against known ground truth,
 is a contribution to the transparency and accountability of AI systems.
 
+{\small
 \bibliography{references}
-
-\appendix
-\section{Proofs}
-\label{app:proofs}
-
-\noindent\textbf{Theorem~\ref{thm:exact} (exact forward equivalence).}
-\begin{proof}
-Write the full state as $x=(\text{registers},\text{RAM},\text{RIOT},\text{TIA},
-\text{frame buffer})$, and the one-step map $\Phi$ as the per-opcode handler
-selected by the byte at the program counter. It is enough to show that, for
-each opcode, the soft handler and the hard handler produce the same output
-value; the state is then carried forward identically. Every handler is composed
-of four kinds of primitive.
-
-\emph{(i) Memory reads.} A ROM or RAM read at integer address $a$ is the one-hot
-dot product $\mathrm{peek}(r,a)=\mathbf{1}_a^{\top}r=\sum_i [\![i=a]\!]\,r_i$
-\eqref{eq:peek}. Because $a$ is an integer index, $\mathbf{1}_a$ is exact and
-$\mathrm{peek}(r,a)=r_a$, identical to a hard array read.
-
-\emph{(ii) Arithmetic.} Register, status-flag, binary-coded-decimal (BCD), and
-RIOT-timer updates are evaluated with the same integer and $\mathrm{round}$
-operations as the hard handlers; the soft path stores these quantities as
-float32 but computes them with integer semantics, so their outputs are equal.
-
-\emph{(iii) Dispatch.} The handler is chosen by a hard switch on the decoded
-opcode byte, exactly as in hard mode; the softmax form~\eqref{eq:select} is not
-used on the forward path.
-
-\emph{(iv) Branch.} A conditional branch forms the relaxed counter
-$\mathrm{pc}_{\mathrm{soft}}$ from the gate~\eqref{eq:branch}, but returns the
-straight-through combination
-$\mathrm{STE}(\mathrm{pc}_{\mathrm{soft}},\mathrm{pc}_{\mathrm{hard}})
-=\mathrm{pc}_{\mathrm{soft}}+\sg(\mathrm{pc}_{\mathrm{hard}}-\mathrm{pc}_{\mathrm{soft}})$.
-As $\sg$ is the identity on the forward pass, this equals
-$\mathrm{pc}_{\mathrm{hard}}$ for every $\alpha$ and $T$.
-
-Each primitive's forward output thus equals the hard handler's, so
-$\Phi_{\mathrm{S}}(x)=\Phi_{\mathrm{H}}(x)$ for every reachable $x$; the hard
-handlers are themselves validated bit-for-bit against \textsc{xitari} by the
-conformance harnesses. By induction over the $N$ steps of a trajectory,
-$x^{\mathrm{S}}_t=x^{\mathrm{H}}_t$ for all $t\le N$.
-
-\emph{Bit-exactness.} float32 represents every integer in $[0,2^{24}]$ exactly,
-and all VCS quantities lie in this range---data bytes are at most $255$,
-addresses are $13$ bits, and per-frame cycle counts are a few tens of
-thousands---so the float32 results are not merely close to the integer results
-but identical.
-
-\emph{Gradients.} The stop-gradient in~(iv) alters only the reverse-mode rule:
-it sets $\partial\,\mathrm{STE}=\partial\,\mathrm{pc}_{\mathrm{soft}}$, the
-derivative of the sigmoid-blended counter, which is generically nonzero where
-the hard branch (a step function of the flag) has zero or undefined derivative;
-likewise the read in~(i) has Jacobian $\mathbf{1}_a$ with respect to $r$. The
-forward pass is unchanged while gradients become available.
-\end{proof}
-
-\noindent\textbf{Theorem~\ref{thm:limit} (temperature-limit bound).}
-\begin{proof}
-We bound the deviation of the fully relaxed one-step map (softmax
-dispatch~\eqref{eq:select} and sigmoid branch~\eqref{eq:branch}, with no
-straight-through correction) from the hard map, then propagate it along a
-trajectory. Throughout, $C$ bounds the range of any state value (bytes
-$\le 255$, branch offsets $\le 256$).
-
-\emph{Dispatch term.} At a step with logits $\ell$ and winner $k^\star$, let the
-gap be $\Delta=\ell_{k^\star}-\max_{k\ne k^\star}\ell_k\ge\Delta_{\min}>0$
-(Assumption~\ref{ass:dm}). For any loser $k\ne k^\star$,
-\[
-w_k=\frac{e^{\ell_k/T}}{\sum_j e^{\ell_j/T}}
-\le\frac{e^{\ell_k/T}}{e^{\ell_{k^\star}/T}}
-=e^{(\ell_k-\ell_{k^\star})/T}\le e^{-\Delta_{\min}/T},
-\]
-so the non-winning mass is $1-w_{k^\star}=\sum_{k\ne k^\star}w_k\le
-(K-1)e^{-\Delta_{\min}/T}$. As the output is the convex combination
-$\sum_k w_k V_k$ of the candidate rows $V_k$,
-\[
-\begin{aligned}
-\Big\|\textstyle\sum_k w_k V_k-V_{k^\star}\Big\|_\infty
-&\le(1-w_{k^\star})\max_k\|V_k-V_{k^\star}\|_\infty\\
-&\le(K-1)e^{-\Delta_{\min}/T}\,C .
-\end{aligned}
-\]
-
-\emph{Branch term.} For a branch with margin $m=|z|\ge m_{\min}$, the gate error
-is $|\sigma(\alpha z)-[\![z>0]\!]|=\sigma(-\alpha m)\le e^{-\alpha m_{\min}}$, so
-the blended counter $(1-g)\mathrm{pc}_{\bar b}+g\,\mathrm{pc}_b$ differs from the
-hard target by at most $|\mathrm{pc}_b-\mathrm{pc}_{\bar b}|\,e^{-\alpha m_{\min}}
-\le C\,e^{-\alpha m_{\min}}$.
-
-\emph{Per-step bound.} Adding the two contributions gives, for every reachable
-$x$, $\delta:=\|\Phi^{T}_{\mathrm{S}}(x)-\Phi_{\mathrm{H}}(x)\|_\infty\le
-C[(K-1)e^{-\Delta_{\min}/T}+e^{-\alpha m_{\min}}]$, which is~\eqref{eq:bound}.
-
-\emph{Propagation.} Let $L\ge1$ be a Lipschitz constant of $\Phi_{\mathrm{H}}$ in
-$\|\cdot\|_\infty$ and $e_t=\|x^{T,\mathrm{S}}_t-x^{\mathrm{H}}_t\|_\infty$ the
-trajectory error after $t$ steps, with $e_0=0$. Each step adds a deviation of at
-most $\delta$ to the hard map applied to the accumulated error, giving
-$e_{t+1}\le L e_t+\delta$; unrolling, $e_N\le\delta\sum_{i=0}^{N-1}L^i
-=\delta\,(L^N-1)/(L-1)$. As $T\to0$ (and $\alpha\to\infty$, since
-$m_{\min}=\Theta(1)$), $\delta=\mathcal{O}(e^{-\Delta_{\min}/T})\to0$, so the
-relaxed trajectory converges to the hard one and
-$\Phi^{T}_{\mathrm{S}}\to\Phi_{\mathrm{H}}$.
-\end{proof}
+}
 
 \end{document}

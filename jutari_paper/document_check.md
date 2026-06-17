@@ -6,7 +6,7 @@ exists. Sources: AAAI-27 CfP (`https://aaai.org/conference/aaai/aaai-27/`) and A
 (`https://aaai.org/authorkit27/`, extracted in `aaai27_authorkit/`).
 
 > How to run the check (once a draft exists): compile `AnonymousSubmission2027.tex`, confirm
-> it is ≤ 8 content pages, grep the source against each item below, and record the
+> it is ≤ 7 content pages (AAAI-27 main track), grep the source against each item below, and record the
 > section/figure that satisfies it. Re-run before each submission deadline.
 
 ## A. Submission logistics & deadlines
@@ -22,7 +22,7 @@ exists. Sources: AAAI-27 CfP (`https://aaai.org/conference/aaai/aaai-27/`) and A
 - [ ] `\usepackage[submission]{aaai2027}` present; `aaai2027.sty` unmodified.
 - [ ] Bibliography uses **`aaai2027.bst`**.
 - [ ] **Two-column** AAAI layout; letterpaper 8.5×11in; `\frenchspacing`; default fonts/margins (no manual margin/spacing hacks — kit forbids it).
-- [ ] **≤ 8 content pages**; references **unlimited** (do not count toward the 8).
+- [ ] **≤ 7 content pages** (AAAI-27 main track); references **unlimited** (separate from the 7). Proofs + effort figure live in a separate supplementary PDF (supplementary.tex).
 - [ ] Title, author block anonymized; no `\author` identity, no acknowledgements, no self-identifying links/repos in the submission build.
 - [ ] No page numbers / no `\thanks` / no copyright block in the submission variant (handled by `[submission]`).
 - [ ] PDF embeds all fonts; figures are vector/`.pdf` where possible (see `Figures/`).
@@ -89,7 +89,7 @@ Answer each in the checklist with yes/partial/no/NA, and ensure the **paper text
 
 ## G. Pre-submission gate
 - [ ] `pdflatex`+`bibtex` clean (no missing refs/citations, no overfull-hbox blockers).
-- [ ] Page count ≤ 8 (content) verified on the compiled PDF.
+- [ ] Page count ≤ 7 (content) verified on the compiled PDF; references on their own page(s).
 - [ ] Anonymity self-audit (section C) passed.
 - [ ] Reproducibility checklist answers all consistent with paper text.
 - [ ] Code/supplementary bundle prepared + anonymized.

@@ -2,7 +2,7 @@
 
 **Target venue:** AAAI-27 (main technical track).
 **Key dates (UTC-12):** abstracts **2026-07-21**, full papers **2026-07-28**, supplementary + code **2026-07-31**, camera-ready 2026-12-14.
-**Format:** two-column AAAI style (`aaai2027.sty`/`.bst`), **8 content pages** + unlimited references, **double-blind** (anonymous submission — use `AnonymousSubmission2027.tex`), Reproducibility Checklist required (`ReproducibilityChecklist.tex`, can be `\input` before `\end{document}`). See `document_check.md` for the full compliance checklist.
+**Format:** two-column AAAI style (`aaai2027.sty`/`.bst`), **7 content pages** (AAAI-27 main track) + unlimited references, **double-blind** (anonymous submission — use `AnonymousSubmission2027.tex`), Reproducibility Checklist required (`ReproducibilityChecklist.tex`, can be `\input` before `\end{document}`). See `document_check.md` for the full compliance checklist.
 
 > Working title (anonymize for submission): **"A Differentiable Atari VCS: A Complex, Fully Known Ground Truth for Explainable AI."**
 >
