@@ -5985,3 +5985,46 @@ smaller real jaxtari↔jutari delta likely remains under the fixture noise.
    RomSettings). If stale, regenerate in-place; the conformance 557/114 px may
    collapse. Confirm `test_screen_conformance.py`'s `_jaxtari_screens` boot/
    settings match how the fixtures were generated (harness parity, CLAUDE.md pt2).
+
+---
+
+## Sprint 5 (2026-06-17, ~22:50) — RESOLVED: pitfall+enduro fixtures were STALE; jaxtari is bit-exact. Fixtures regenerated → 12/12 screen-conformance.
+
+The convergence-phase decisive test (cron c16ae021) ran and **closed the
+pitfall_noop_10 / enduro_noop_10 cases**. The 557 px / 114 px were a pure
+**stale-fixture artifact** — jaxtari had no render bug.
+
+**Decisive non-circular chain (all measured this sprint):**
+1. **Fresh C++ xitari vs COMMITTED fixture** (`tools/trace_dump --screen`, the
+   independent reference, fixed May-28 binary): pitfall **557 px**, enduro
+   **114 px** every frame — i.e. *current xitari itself* disagrees with the
+   committed fixtures by exactly the jaxtari numbers. So the committed
+   fixtures (last regenerated at #91, before the whole #115c-#119 render arc)
+   are stale.
+2. **Arbiter — fresh jutari vs fresh xitari = 0 px** for BOTH games
+   (`jutari_screen_dump.jl` with real PitfallRomSettings/EnduroRomSettings).
+   jutari is independently validated bit-exact vs xitari (64/64), so this
+   proves (a) fresh trace_dump is the correct current reference, and (b)
+   harness parity — trace_dump applied the right getStartingActions, else
+   jutari (which applies UP/FIRE) could not match it 0 px. The #95 trap is
+   ruled out by construction.
+3. **Regenerated** all four fixtures from the fresh references (gzip, mtime=0):
+   `pitfall_noop_10.screen.gz`, `enduro_noop_10.screen.gz`, and their
+   `_jutari` companions (fresh-jutari == fresh-xitari, so byte-identical).
+   Only the 2 FAILING cases' fixtures touched — no currently-passing case.
+4. **Re-ran the conformance cases** against the new fixtures:
+   `test_jutari_screen_matches_xitari[pitfall/enduro]` + 
+   `test_jaxtari_screen_matches_xitari[pitfall/enduro]` → **4 passed at
+   pin=0**. So **jaxtari-live == fresh-xitari == fresh-jutari = 0 px** for
+   both games. The residual per-copy delta that sprints 1-4 suspected
+   ({21} vs {22,26,27}) does NOT exist in the actual 10-frame NOOP output —
+   it was an artifact of comparing the end-of-scanline obj-trace snapshot
+   against the stale fixture, not a real divergence.
+
+**Result: jaxtari screen-conformance is 12/12 at 0 px.** All 17 ported jutari
+patches are correct; the "2 regressions" from sprint 15 were never real
+jaxtari bugs — the committed xitari fixtures had simply never been refreshed
+after the #115/#118/#119 render-understanding arc landed in jutari. `max_screen_diff`
+pins stay 0 (no relaxation needed). Note for future: the committed screen
+fixtures must be regenerated whenever the render reference (xitari settings /
+the C++ build) advances — they silently drifted here.
