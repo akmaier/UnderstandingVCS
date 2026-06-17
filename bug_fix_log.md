@@ -5706,3 +5706,44 @@ For now: documented, committed; the 17 ports stay landed; tests stay
 red on those 2 cases (TIA-layer unit tests + all other periodic-sweep
 cases stay green). User to decide whether to dig further or accept the
 2 game regressions.
+
+---
+
+## jaxtari → 64/64 — AUTONOMOUS LOOP ARMED (2026-06-17, ~08:30)
+
+User goal: make jaxtari bit-exact to xitari on **all 64 ALE ROMs — 64/64 RAM
+bit-exact AND 64/64 screen pixel-exact**, matching jutari (the golden reference,
+already 64/64 bit-for-bit). "All jutari patches applied to jaxtari but something
+broke" ⇒ the remaining gaps are **porting bugs** (jaxtari code diverging from
+jutari's faithful logic), not new emulation research.
+
+**Loop**: a session-local hourly cron (`9e1409da`, fires :17) drives one debugging
+sprint per fire, each ending in a github sync (commit + pull --rebase + push) and
+a bug_fix_log append — even for ruled-out hypotheses. Terminates (CronDelete) when
+jaxtari is verified 64/64 RAM + 64/64 screen.
+
+**Tooling added**: `tools/diag_screen_diff.py` — runs jaxtari live for a screen
+case, diffs each frame vs BOTH the xitari and jutari fixtures, and reports per-row
+diff counts + a best vertical/horizontal shift-alignment (a pure shift ⇒ a
+crop/row-indexing bug; no shift ⇒ per-pixel render-value bug). Run it SERIALLY
+(one jaxtari process at a time) — jaxtari is slow (~3.5 s/step eager) and the boot
+dominates (~64 frames). NOTE: an earlier concurrent diag run this session was
+killed by the user mid-flight — **those numbers are discarded; re-measure from
+scratch before trusting any geometry claim.**
+
+**Methodology notes for the loop** (avoid repeating the prior dead-ends above):
+- Source-level checks already done this session: the `get_screen` crop base
+  (jaxtari `fb[ys:ys+h]` 0-based == jutari `fb[ys+1:ys+h]` 1-based — IDENTICAL
+  rows 34..243; the Julia `+1` is just 1-based↔0-based), the scanline→framebuffer
+  row write (`fb[completed_line]`, gated `scanline>=y_start_row`,
+  `completed_line<SCREEN_HEIGHT`), and the defaults
+  (`scanlines_per_frame=262`, `screen_height_rows=210`, `y_start_row=34`) ALL
+  match jutari. So the #110 geometry port is faithful at the source level — the
+  divergence is most likely a per-pixel render-value port (a #115*/#118/#119-class
+  patch whose jaxtari translation drifted), to be confirmed by a fresh
+  shift-alignment measurement.
+- Per-port reverts were inconclusive (cumulative-effect suspected). The rigorous
+  next step is **`git bisect`** between `d3fcf31` (good, 0 px) and HEAD (bad), using
+  a fast 1-frame `diag_screen_diff.py` run as the oracle — it cannot miss the
+  introduction point the way per-port reverts can. Also build a jaxtari-arm of the
+  64-ROM sweep (mirror `tools/rom_sweep/sweep_jutari_*.py`) to measure 64/64.
