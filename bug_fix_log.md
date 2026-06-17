@@ -5874,3 +5874,52 @@ should be 1 — most likely a VDELP0 write-DEFERRAL timing bug from the #115f po
 that diverges from jutari). NEXT: re-run obj-trace with VDELP0/VDELP1 + rendered
 `_vdel_grp` logged to confirm, then diff jaxtari's VDELP0 defer handling in
 `tia_poke` against jutari's line-by-line and correct it.
+
+---
+
+## Sprint 3 (2026-06-17, ~13:40) — VDELP0 RULED OUT; whole render path verified identical; bug is per-color-clock activation of the 3-copy HUD GRP rewrites
+
+Re-ran the obj-trace with VDELP0/VDELP1 + rendered `_vdel_grp` + NUSIZ logged.
+
+**VDELP0 hypothesis is WRONG.** At scanlines 56–62: `vdelp0 = vdelp1 = 7` (bit0=1,
+VDELP **ON**) and `vdel_grp0 = vdel_grp1 = 102` (= grp0_old, the correct SHADOW
+digit). So jaxtari's end-of-scanline render selects the right shadow — VDELP
+selection is correct. `nusiz0 = nusiz1 = 0x13` → **3 close copies** each: player 0
+at p0_x=21 → copies 21/37/53, player 1 at p1_x=29 → 29/45/61. Together they draw
+the **6-digit HUD** spanning exactly the diff columns [18..67].
+
+**Decoding the diff pixels** (grp 0x66 → player pixels at copy+1,2,5,6) shows the
+xitari "d2" pixels do NOT line up with a single grp value across the copies — i.e.
+each COPY shows a DIFFERENT digit, set by mid-scanline GRP rewrites (the kernel
+changes grp0_old/grp1_old between copies). jaxtari's per-copy digits differ from
+xitari's → the divergence is in the **per-color-clock activation timing of the
+mid-scanline GRP writes** that determine each copy's digit. (The obj-trace is an
+END-of-scanline snapshot, so its match doesn't cover the per-copy mid-scanline
+values — which is exactly where it diverges.)
+
+**Verified BYTE-IDENTICAL jaxtari≡jutari (exhaustive source diff this sprint), so
+NONE of these is the bug:** `render_pixel` (SCOREMODE + PFP priority + colour
+sel), `_vdel_grp`, `_apply_pending_write` (GRP0→grp1_old / GRP1→grp0_old+enabl_old
+shadow latch), the deferred-write set (incl. GRP0/1 + VDELP0/1/BL), `_POKE_DELAY_
+TABLE` (GRP=1, NUSIZ=8, REFP=1, PF=-1) + `_pf_dynamic_delay` (4,5,2,3), the
+per-color-clock render loop + drain condition (`activation_clock <= c`,
+cached_sets recomputed per write), `_nusiz_player_layout` (nusiz 3 → (0,16,32),1),
+the bus `beam_cc = color_clock + (pending+1)*3` formula, and the unconditional
+`color_clock += cpu_cycles*3 % 228` advance. The one asymmetry — jutari's
+`tia_poke!` 6th arg `extra_cpu_cycles` — only feeds `tia_peek` (reads/timer) +
+the paddle dump-pot cycle, NOT pitfall's render. pending_writes accumulate when
+line_advance=0 and clear on render in BOTH ports; both sorts are stable for the
+small per-scanline lists.
+
+**Conclusion:** the divergence is NOT in any render/compositing/timing FUNCTION —
+they're all identical. It must be in the actual **pending-writes LIST** for
+scanlines 56–57 (the activation_clock of one or more mid-scanline GRP0/GRP1
+writes differs), which traces to the exact `bus.tia.color_clock` / `pending_tia_
+cycles` at each HUD poke. **NEXT (decisive, jaxtari-only):** instrument the
+per-color-clock loop to dump, for a target scanline, the sorted `pending_writes`
+(activation_clock, reg, val) AND the per-color-clock `cached_sets.p0/p1` coverage;
+compare jaxtari's player-0/1 pixel coverage directly against the xitari fixture's
+correct digit pixels (already have them) — the first copy whose coverage is wrong,
+and the GRP write whose activation_clock lands on the wrong side of that copy
+boundary, IS the bug. (No jutari-core change needed: the xitari fixture is ground
+truth.)

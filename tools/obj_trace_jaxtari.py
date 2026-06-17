@@ -60,7 +60,8 @@ def main(argv=None) -> int:
     tia_sys._OBJ_TRACE_ENABLED = False
 
     print("scanline,p0_x,p1_x,m0_x,m1_x,bl_x,grp0_old,grp1_old,m0_cosmic_line,"
-          "p0_skip,p1_skip,grp0_live,grp1_live")
+          "p0_skip,p1_skip,grp0_live,grp1_live,"
+          "vdelp0,vdelp1,vdel_grp0,vdel_grp1,nusiz0,nusiz1")
     for r in tia_sys._OBJ_TRACE_LOG:
         print(",".join(str(v) for v in r))
     return 0
