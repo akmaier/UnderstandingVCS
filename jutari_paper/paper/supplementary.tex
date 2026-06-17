@@ -194,6 +194,46 @@ relaxed trajectory converges to the hard one and
 $\Phi^{T}_{\mathrm{S}}\to\Phi_{\mathrm{H}}$.
 \end{proof}
 
+\section{Effect of the Relaxation Parameters on the Gradient}
+
+Theorems~1 and~2 say the hard limit ($\alpha\to\infty$ for the sigmoid branch,
+$T\to0$ for the softmax select) is exact in value but degenerate in gradient.
+Figure~\ref{fig:alphatemp} shows this directly on jutari, as the relaxation
+values are swept. We render a single player cannon whose horizontal position is
+produced by the soft primitives---a sigmoid-gated blend of a left/right
+placement (\texttt{soft\_branch}, sharpness $\alpha$) in the top row, and a
+softmax mixture over candidate columns (\texttt{soft\_select}, temperature $T$)
+in the bottom row---and plot the screen-space directional-derivative saliency
+$\partial(\text{screen})/\partial(\text{control})$ (blue/red = the two motion
+directions), with a shared colour scale per row.
+
+The trend matches the theory. For the branch, the gradient is strongest at a
+moderate $\alpha$ and collapses as $\alpha$ grows ($\alpha{=}2,6,20$ give peak
+magnitudes $0.53,1.00,0.15$): a very sharp gate is saturated, so its derivative
+$\alpha\,\sigma(\alpha z)(1-\sigma(\alpha z))$ is near zero away from the
+decision. For the select, lower $T$ concentrates the mixture (peak magnitudes
+$1.00,0.51,0.00$ for $T{=}2.0,0.5,0.1$): at $T{=}0.1$ the pick is effectively
+one-hot, so a small change in the control no longer moves the chosen column and
+the gradient vanishes between candidate boundaries. In both cases the forward
+render stays exact (Theorem~1); only the gradient changes, and it is most
+informative at intermediate relaxation. This is a qualitative study of how the
+parameter \emph{values} act on the gradient, run on jutari; we did not need to
+tune them for the bit-exact forward pass.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_alpha_temp.pdf}
+\caption{Screen-space gradient $\partial(\text{screen})/\partial(\text{control})$
+on jutari as the relaxation strength is swept. \textbf{Top:} sigmoid branch
+(\texttt{soft\_branch}), increasing sharpness $\alpha$. \textbf{Bottom:} softmax
+select (\texttt{soft\_select}), decreasing temperature $T$. Blue/red are the two
+motion directions; the per-panel number is the peak gradient magnitude relative
+to the row maximum. The gradient is largest at intermediate relaxation and
+vanishes toward the hard limit (large $\alpha$, small $T$), consistent with
+Theorems~1 and~2.}
+\label{fig:alphatemp}
+\end{figure}
+
 \section{Implementation Effort}
 
 \begin{figure}[t]
