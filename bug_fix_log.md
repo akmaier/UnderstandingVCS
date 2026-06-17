@@ -6028,3 +6028,39 @@ after the #115/#118/#119 render-understanding arc landed in jutari. `max_screen_
 pins stay 0 (no relaxation needed). Note for future: the committed screen
 fixtures must be regenerated whenever the render reference (xitari settings /
 the C++ build) advances — they silently drifted here.
+
+---
+
+## Sprint 6 (2026-06-18, ~01:00) — first full 64-ROM jaxtari RAM sweep: 58/64 bit-exact; 6 divergences triaged
+
+With pitfall/enduro screen cases resolved (Sprint 5), ran the broad convergence
+gate: `tools/rom_sweep/sweep_jaxtari.py --mode ram --ram-frames 30` (64 ROMs,
+shared breakout_random_actions stream, 60-NOOP+4-RESET boot, full RomSettings
+map). **jaxtari RAM bit-exact vs xitari: 58/64.** All 6 divergent games are
+**0 ✅ in jutari** (jutari is 64/64), so each is a real jaxtari-specific
+divergence (jaxtari ≠ jutari ≠ xitari) — genuine convergence targets:
+
+| game | max b/f | first div frame | worst bytes | lead |
+|---|---|---|---|---|
+| surround | 7 | 1 | $66,$6a,$6d,$6f,$72,$7c,**$7d** | **MISSING CONSTRUCTION PROBE** — $7d is the free-running counter jutari's surround DOUBLE-boot probe fixed (commit 6584684). jaxtari has the probe (sprint 13) but `construction_probe` defaults False (feb7f71), and `jaxtari_dump.py`/sweep call `env.reset(...)` without it. |
+| road_runner | 16 | 25 | $07,$13,$29,$3c,$3d,$42,$50,$51 | late divergence (frame 25) — not boot; a mid-run CPU/RIOT/TIA-read drift. |
+| demon_attack | 13 | 2 | $10,$14,$15,$19,$1c,$31,$32,$3a | early (frame 2). VDELP-cluster game but RAM≠render; a CPU/RIOT path. |
+| asterix | 9 | 1 | $0f,$17,$2d,$42,$44,$4c,$60,$6c | frame-1 divergence (boot-adjacent). asterix has getStartingActions=[FIRE]. |
+| solaris | 2 | 4 | $0b,$78 | small; frame 4. |
+| kung_fu_master | 1 | 1 | $76 | single byte $76, frame 1. |
+
+The 6 are NOT explained by the render ports (#109-#119 are TIA render-only;
+RAM is the CPU/RIOT/cart/boot backbone). They are pre-existing jaxtari↔jutari
+gaps that predate this port series (jaxtari was behind on many subsystems) —
+exactly what a broad sweep surfaces. Per CLAUDE.md methodology, a RAM diff is a
+CPU/RIOT/boot bug, chased with `tools/jutari_xitari_ram_diff.py`-style per-bus-op
+traces, NOT a render fix.
+
+**NEXT (cheapest first):** surround — flip `construction_probe` default back to
+True (it was only disabled as a precaution against the pitfall/enduro 557/114px,
+now PROVEN to be stale fixtures, not the probe). Verify surround 7→0 AND that the
+probe does NOT regress the 57 currently-bit-exact games (jutari's probe was a
+no-op for RAM-reiniting games; must confirm the same for jaxtari). If clean, flip
+the default + re-sweep. Then triage kung_fu_master ($76, 1 byte) and solaris (2
+bytes) — small deltas, likely single mis-handled read. asterix/demon_attack/
+road_runner are larger and need per-instruction traces.
