@@ -1,11 +1,25 @@
 #!/usr/bin/env python3
-"""Render the alpha/temperature gradient-map figure (supplementary) from the
-maps written by alpha_temp_demo.jl.  python3 make_alpha_temp_fig.py"""
+"""Render the alpha/temperature gradient-map figure (supplementary, 2-column)
+from the maps written by alpha_temp_demo.jl.
+
+Design notes (addressing reviewer feedback):
+  * Each ROW has its OWN colour scale (the soft-branch and soft-select gradients
+    are with respect to different controls and differ in magnitude), shown by an
+    individual colour bar per row in absolute units.
+  * Zero gradient maps to the SAME neutral in every panel: the diverging colour
+    is alpha-composited over a light, faint-cannon canvas, so a pixel with no
+    sensitivity looks identical (light grey) in both rows -- no white-vs-grey
+    inconsistency between rows.
+  * Wider aspect for a two-column (figure*) placement.
+
+    python3 make_alpha_temp_fig.py
+"""
 import os
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib import colors
 
 HERE = os.path.dirname(__file__)
 OUT = os.path.join(HERE, "out")
@@ -16,6 +30,7 @@ plt.rcParams.update({"font.family": "serif", "font.size": 8,
 
 # Zoom window around the cannon (rows, cols).
 CR = (slice(16, 60), slice(26, 122))
+DIV = matplotlib.colormaps["RdBu_r"]
 
 
 def load():
@@ -28,55 +43,60 @@ def load():
     return maps
 
 
-def panel(ax, scene, grad, title, vmax):
-    sc = scene[CR[0], CR[1]]
-    gd = grad[CR[0], CR[1]]
-    peak = np.abs(gd).max()
-    # faint cannon (grey) underneath, gradient (diverging) on top where nonzero.
-    # A shared `vmax` per row makes magnitude differences visible: the gradient
-    # is brightest at moderate sharpness and FADES as the relaxation saturates.
-    ax.imshow(sc, cmap="gray", vmin=0, vmax=1.6, aspect="equal",
-              interpolation="none")
-    gm = np.ma.masked_where(np.abs(gd) < 0.06 * vmax, gd)
-    ax.imshow(gm, cmap="RdBu_r", vmin=-vmax, vmax=vmax, aspect="equal",
-              interpolation="none")
-    ax.set_title(title, fontsize=8)
-    ax.set_xlabel(f"peak $|\\partial|$ = {peak/vmax:.2f}", fontsize=6.5)
-    ax.set_xticks([]); ax.set_yticks([])
+def composite(scene, grad, vmax):
+    """Light canvas + faint grey cannon + alpha-composited diverging gradient.
+    A pixel with |grad|->0 shows the canvas (the same light grey in every panel),
+    so the neutral point is identical across rows; |grad|->vmax saturates to
+    blue (darkens) / red (brightens)."""
+    sc = scene[CR]
+    gd = grad[CR]
+    spr = sc / (sc.max() + 1e-9)                 # 0..1 cannon mask
+    canvas = np.repeat((0.97 - 0.22 * spr)[..., None], 3, axis=2)  # faint cannon
+    g = np.clip(gd / vmax, -1.0, 1.0)
+    rgb = DIV(0.5 + 0.5 * g)[..., :3]            # diverging colour, white at 0
+    a = np.clip(np.abs(gd) / vmax, 0.0, 1.0)[..., None]  # opacity = |grad|
+    return (1.0 - a) * canvas + a * rgb
+
+
+def row(fig, axes, m, prefix, vals, vmax, cbar_box):
+    for j, ax in enumerate(axes):
+        gd = m[f"{prefix}_grad{j+1}"][CR]
+        ax.imshow(composite(m[f"{prefix}_scene{j+1}"], m[f"{prefix}_grad{j+1}"],
+                            vmax), aspect="equal", interpolation="none")
+        ax.set_xlabel(rf"peak $|\partial|$ = {np.abs(gd).max()/vmax:.2f}", fontsize=6.3)
+        ax.set_xticks([]); ax.set_yticks([])
+        ax.set_title(vals[j], fontsize=8)
+    # individual colour bar for this row, in absolute units
+    cax = fig.add_axes(cbar_box)
+    sm = matplotlib.cm.ScalarMappable(norm=colors.Normalize(-vmax, vmax),
+                                      cmap="RdBu_r")
+    cb = fig.colorbar(sm, cax=cax, ticks=[-vmax, 0, vmax])
+    cb.ax.set_yticklabels([rf"$-{vmax:.2f}$", "0", rf"$+{vmax:.2f}$"], fontsize=5.6)
+    cb.ax.tick_params(length=2)
+    cb.outline.set_linewidth(0.5)
 
 
 def main():
     m = load()
-    fig, ax = plt.subplots(2, 3, figsize=(5.6, 3.6))
+    fig, ax = plt.subplots(2, 3, figsize=(7.1, 3.5))
+    fig.subplots_adjust(left=0.075, right=0.86, top=0.83, bottom=0.10,
+                        wspace=0.08, hspace=0.42)
 
-    av = max(np.abs(m[f"at_branch_grad{j+1}"]).max() for j in range(3)) + 1e-9
-    for j, a in enumerate(("2", "6", "20")):
-        panel(ax[0, j], m[f"at_branch_scene{j+1}"], m[f"at_branch_grad{j+1}"],
-              rf"$\alpha = {a}$", av)
-    tv = max(np.abs(m[f"at_select_grad{j+1}"]).max() for j in range(3)) + 1e-9
-    for j, t in enumerate(("2.0", "0.5", "0.1")):
-        panel(ax[1, j], m[f"at_select_scene{j+1}"], m[f"at_select_grad{j+1}"],
-              rf"$T = {t}$", tv)
+    av = max(np.abs(m[f"at_branch_grad{j+1}"][CR]).max() for j in range(3)) + 1e-9
+    tv = max(np.abs(m[f"at_select_grad{j+1}"][CR]).max() for j in range(3)) + 1e-9
+    row(fig, ax[0], m, "at_branch", (r"$\alpha = 2$", r"$\alpha = 6$",
+        r"$\alpha = 20$"), av, [0.875, 0.55, 0.016, 0.26])
+    row(fig, ax[1], m, "at_select", (r"$T = 2.0$", r"$T = 0.5$", r"$T = 0.1$"),
+        tv, [0.875, 0.14, 0.016, 0.26])
 
     ax[0, 0].set_ylabel("soft branch\n(sharpness $\\alpha$)", fontsize=8)
     ax[1, 0].set_ylabel("soft select\n(temperature $T$)", fontsize=8)
     fig.suptitle(r"$\partial$(screen)$/\partial$(control) vs. relaxation "
-                 r"strength (vanishes in the hard limit $\alpha\to\infty$, "
-                 r"$T\to0$)", fontsize=8.5, y=0.99)
-    fig.tight_layout(pad=0.4, w_pad=0.4, h_pad=0.6, rect=[0, 0.08, 1, 0.96])
-
-    # Signed colour key (per-row-max units): blue = darkens, red = brightens.
-    sm = matplotlib.cm.ScalarMappable(
-        norm=matplotlib.colors.Normalize(-1, 1), cmap="RdBu_r")
-    cax = fig.add_axes([0.30, 0.045, 0.40, 0.030])
-    cb = fig.colorbar(sm, cax=cax, orientation="horizontal", ticks=[-1, 0, 1])
-    cb.ax.set_xticklabels(["$-$ (darkens)", "0", "$+$ (brightens)"], fontsize=6.5)
-    cb.set_label(r"$\partial$pixel$/\partial$control (per-row max)", fontsize=6.5)
-    cb.ax.tick_params(length=2)
-    cb.outline.set_linewidth(0.5)
+                 r"strength: largest at moderate relaxation, vanishing toward the "
+                 r"hard limit ($\alpha\to\infty$, $T\to0$)", fontsize=8.5, y=0.97)
 
     fig.savefig(FIG, bbox_inches="tight", dpi=300)
-    print("wrote", FIG)
+    print("wrote", FIG, f"(branch vmax={av:.3f}, select vmax={tv:.3f})")
 
 
 if __name__ == "__main__":

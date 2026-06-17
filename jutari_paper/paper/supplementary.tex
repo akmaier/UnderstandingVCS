@@ -18,6 +18,7 @@
 
 \setcounter{secnumdepth}{1}
 \newtheorem{theorem}{Theorem}
+\newtheorem{assumption}{Assumption}
 \newcommand{\sg}{\mathrm{sg}}
 \newcommand{\softmax}{\mathrm{softmax}}
 
@@ -41,173 +42,238 @@ timeline.
 The differentiable emulator runs one of two transition maps over the full VCS
 state $x=(\text{registers},\text{RAM},\text{RIOT},\text{TIA},\text{frame
 buffer})$: the bit-exact \emph{hard} map $\Phi_{\mathrm{H}}$ and the
-differentiable \emph{soft} map $\Phi_{\mathrm{S}}$. Both are the per-opcode
-handler selected by the byte at the program counter ($\mathrm{pc}$). Four
-primitives appear in the handlers.
+differentiable \emph{soft} map $\Phi_{\mathrm{S}}$. In both, the handler that
+runs is the one for the opcode byte at the program counter $\mathrm{pc}$. The
+handlers are assembled from four primitives, which we restate here so that the
+proofs are self-contained.
 
-\emph{One-hot reads.} A ROM or RAM read at integer address $a$ is the dot
-product
+The first primitive is the memory read. A read of a memory tensor
+$r\in\mathbb{R}^{M}$ of size $M$ (the ROM or the RAM) at an integer address
+$a\in\{0,\dots,M-1\}$ is written as a dot product against the one-hot address
+indicator $\mathbf{1}_a$,
 \begin{equation}
-\mathrm{peek}(r,a)=\mathbf{1}_a^{\top}r=\textstyle\sum_i[\![i=a]\!]\,r_i=r_a .
+\mathrm{peek}(r,a)=\mathbf{1}_a^{\top}r=\textstyle\sum_i[\![i=a]\!]\,r_i=r_a ,
 \label{eq:s-peek}
 \end{equation}
+so the forward value is the array element $r_a$, while the gradient with respect
+to $r$ is the one-hot vector $\mathbf{1}_a$.
 
-\emph{Softmax dispatch.} With a score vector (logits) $\ell\in\mathbb{R}^{K}$
-over the $K=256$ opcodes, temperature $T>0$, and softmax weights
-$w=\softmax(\ell/T)$, the relaxed dispatch output over candidate handler rows
-$V$ is
+The second primitive is opcode dispatch. With a score vector (logits)
+$\ell\in\mathbb{R}^{K}$ over the $K=256$ opcodes, a temperature $T>0$, and the
+softmax weights $w=\softmax(\ell/T)$, the relaxed dispatch over the candidate
+handler-output rows $V$ is the convex combination
 \begin{equation}
 \mathrm{select}(\ell,V;T)=w^{\top}V,\qquad
 w_k=\frac{e^{\ell_k/T}}{\sum_j e^{\ell_j/T}} .
 \label{eq:s-select}
 \end{equation}
 
-\emph{Sigmoid branch.} For a relaxed status flag $f\in[0,1]$ written as a logit
-$z=s(2f-1)$ (sign $s$ for branch-when-set/clear) and sharpness $\alpha$, the
-gate and relaxed program counter are
+The third primitive is the conditional branch. For a relaxed status flag
+$f\in[0,1]$ written as a logit $z=s(2f-1)$, where the sign $s$ selects
+branch-when-set or branch-when-clear, and a sharpness $\alpha$, the gate and the
+relaxed program counter are
 \begin{equation}
 g=\sigma(\alpha z),\qquad
-\mathrm{pc}_{\mathrm{soft}}=(1-g)\,\mathrm{pc}_{\bar b}+g\,\mathrm{pc}_{b}.
+\mathrm{pc}_{\mathrm{soft}}=(1-g)\,\mathrm{pc}_{\bar b}+g\,\mathrm{pc}_{b}
+=\mathrm{pc}_{\bar b}+g\,\delta ,
 \label{eq:s-branch}
 \end{equation}
+where $\mathrm{pc}_{\bar b}$ is the fall-through (not-taken) counter and
+$\mathrm{pc}_{b}=\mathrm{pc}_{\bar b}+\delta$ is the taken counter for the signed
+branch offset $\delta$.
 
-\emph{Straight-through estimator.} For a soft value with a matching hard value,
+The fourth primitive is the straight-through estimator. For any soft value that
+has a matching hard value it returns
 \begin{equation}
 \mathrm{STE}(\text{soft},\text{hard})=\text{soft}+\sg(\text{hard}-\text{soft}),
 \label{eq:s-ste}
 \end{equation}
-whose forward value is \textit{hard} and whose gradient is that of \text{soft}.
+where $\sg(\cdot)$ is the stop-gradient operator, so the forward value equals
+\textit{hard} while the backward pass uses the gradient of \textit{soft}.
 
 In the executed soft step, dispatch uses the saturated (hard) form of
-\eqref{eq:s-select}, and the branch returns
-$\mathrm{STE}(\mathrm{pc}_{\mathrm{soft}},\mathrm{pc}_{\mathrm{hard}})$;
-\eqref{eq:s-select} and \eqref{eq:s-branch} in their relaxed form define the
-``fully relaxed'' variant analysed in Theorem~2.
+\eqref{eq:s-select} and the branch returns
+$\mathrm{STE}(\mathrm{pc}_{\mathrm{soft}},\mathrm{pc}_{\mathrm{hard}})$; the
+relaxed forms \eqref{eq:s-select} and \eqref{eq:s-branch} \emph{without} the
+straight-through correction define the ``fully relaxed'' variant analysed in
+Theorem~\ref{thm:s-limit}. The temperature-limit result needs one
+non-degeneracy assumption, identical to the one in the main paper.
 
-\paragraph{Assumption (DM, decision margins).} Along the executed trajectory of
-length $N$, every discrete decision has a strictly positive margin: each
-dispatch has a logit gap $\Delta=\ell_{k^\star}-\max_{k\ne k^\star}\ell_k\ge
-\Delta_{\min}>0$, and each branch has a margin $m=|z|\ge m_{\min}>0$.
+\begin{assumption}[Decision margins]
+\label{ass:s-dm}
+Along the executed trajectory of length $N$, every discrete decision has a
+strictly positive margin. For opcode dispatch at step $t$ with logits
+$\ell^{(t)}$ and winner $k^\star_t$, the logit gap
+$\Delta_t=\ell^{(t)}_{k^\star_t}-\max_{k\ne k^\star_t}\ell^{(t)}_k$ is positive;
+for each conditional branch with flag logit $z_t$, the margin $m_t=|z_t|$ is
+positive. Let $\Delta_{\min}=\min_t\Delta_t>0$ and $m_{\min}=\min_t m_t>0$.
+\end{assumption}
 
 \section{Proofs}
 
-\noindent\textbf{Theorem 1 (exact forward equivalence).} \emph{For every
-reachable state $x$ and every finite $\alpha,T$, $\Phi_{\mathrm{S}}(x)=
-\Phi_{\mathrm{H}}(x)$; hence $x^{\mathrm{S}}_t=x^{\mathrm{H}}_t$ for all $t\le N$.
-The two modes differ only in the Jacobian.}
+\begin{theorem}[Exact forward equivalence]
+\label{thm:s-exact}
+For every reachable state $x$ and every finite sharpness $\alpha$ and
+temperature $T$, the soft and hard one-step maps are equal,
+$\Phi_{\mathrm{S}}(x) = \Phi_{\mathrm{H}}(x)$, with identical float32
+representations. Consequently, over a trajectory of $N$ steps,
+$x^{\mathrm{S}}_t = x^{\mathrm{H}}_t$ for all $t\le N$. The modes differ only in
+the Jacobian $\partial\Phi_{\mathrm{S}}/\partial x$, which is defined and
+generically nonzero where $\partial\Phi_{\mathrm{H}}/\partial x$ is zero or
+undefined.
+\end{theorem}
 
 \begin{proof}
-We first establish the one-step equality $\Phi_{\mathrm{S}}(x)=
-\Phi_{\mathrm{H}}(x)$ for every reachable state $x$, and then extend it to whole
-trajectories by induction on the step index.
+We first prove the one-step equality $\Phi_{\mathrm{S}}(x)=\Phi_{\mathrm{H}}(x)$
+for an arbitrary reachable $x$, and then extend it to a trajectory of length $N$
+by induction on the step index.
 
-Fix a reachable state $x$. In both modes the handler to execute is selected by
-the decoded opcode byte through the same hard switch (the softmax
-form~\eqref{eq:s-select} is never evaluated on the forward path), so both modes
-run the same handler on the same input. Within a handler the output is assembled
-from operations that agree value-for-value between the two modes. A read of the
-ROM or RAM at an integer address $a$ is the one-hot dot product
-$\mathrm{peek}(r,a)=\mathbf{1}_a^{\top}r$~\eqref{eq:s-peek}; since $a$ is an
-integer index the indicator $\mathbf{1}_a$ is exact, so $\mathrm{peek}(r,a)=r_a$,
+\textit{One-step equality.} Fix a reachable $x$. In both modes the handler that
+executes is selected by the decoded opcode byte through the same hard switch (the
+softmax form~\eqref{eq:s-select} is not evaluated on the forward path), so both
+modes run the same handler on the same input. It therefore suffices to show that
+each primitive the handler uses returns the same forward value in both modes. A
+memory read at the integer address $a$ uses an exact one-hot indicator, so
+\begin{equation}
+\mathrm{peek}_{\mathrm{S}}(r,a)=\mathbf{1}_a^{\top}r
+=\textstyle\sum_i[\![i=a]\!]\,r_i=r_a=\mathrm{peek}_{\mathrm{H}}(r,a),
+\label{eq:s-peek-eq}
+\end{equation}
 the value a hard array read returns. Register, status-flag,
-binary-coded-decimal, and timer updates are computed with the same integer and
-$\mathrm{round}$ arithmetic in both modes (soft mode merely keeps the results in
-float32). A conditional branch returns
-$\mathrm{STE}(\mathrm{pc}_{\mathrm{soft}},\mathrm{pc}_{\mathrm{hard}})=
-\mathrm{pc}_{\mathrm{soft}}+\sg(\mathrm{pc}_{\mathrm{hard}}-\mathrm{pc}_{\mathrm{soft}})$
-\eqref{eq:s-ste}, which equals $\mathrm{pc}_{\mathrm{hard}}$ for every $\alpha$
-and $T$ because $\sg$ is the identity in the forward direction. Each component of
-the output therefore equals its hard counterpart, and as the two handlers act on
-the same input their outputs coincide; hence $\Phi_{\mathrm{S}}(x)=
-\Phi_{\mathrm{H}}(x)$.
+binary-coded-decimal, and timer updates use the same integer and $\mathrm{round}$
+arithmetic in both modes (soft mode merely keeps the results in float32). A
+conditional branch returns the straight-through value~\eqref{eq:s-ste}; since
+$\sg$ is the identity in the forward direction,
+\begin{equation}
+\mathrm{STE}(\mathrm{pc}_{\mathrm{soft}},\mathrm{pc}_{\mathrm{hard}})
+=\mathrm{pc}_{\mathrm{soft}}+\sg(\mathrm{pc}_{\mathrm{hard}}-\mathrm{pc}_{\mathrm{soft}})
+=\mathrm{pc}_{\mathrm{hard}}
+\label{eq:s-branch-eq}
+\end{equation}
+for every $\alpha$ and $T$. Every component of the handler output thus equals its
+hard counterpart, and as the two handlers act on the same input,
+\begin{equation}
+\Phi_{\mathrm{S}}(x)=\Phi_{\mathrm{H}}(x).
+\label{eq:s-onestep}
+\end{equation}
+These equalities hold in float32, not merely over the reals: IEEE-754 single
+precision has a $24$-bit significand and so represents every integer in
+$[-2^{24},2^{24}]$ exactly~\citep{ieee754_2019,goldberg1991}, and every VCS
+quantity lies in this range (data bytes $\le255$, $13$-bit addresses, per-frame
+cycle counts of a few tens of thousands), so
+\eqref{eq:s-peek-eq}--\eqref{eq:s-onestep} are exact.
 
-Now let the two runs share the initial state, $x^{\mathrm{S}}_0=x^{\mathrm{H}}_0$,
-with $x^{\bullet}_{t+1}=\Phi_{\bullet}(x^{\bullet}_t)$, and prove
-$x^{\mathrm{S}}_t=x^{\mathrm{H}}_t$ for all $0\le t\le N$ by induction on $t$. The
-base case $t=0$ holds by the shared initial state. For the inductive step,
-assume $x^{\mathrm{S}}_t=x^{\mathrm{H}}_t=:x$ for some $t<N$; then
-\[
-x^{\mathrm{S}}_{t+1}=\Phi_{\mathrm{S}}(x^{\mathrm{S}}_t)
-=\Phi_{\mathrm{S}}(x)=\Phi_{\mathrm{H}}(x)
-=\Phi_{\mathrm{H}}(x^{\mathrm{H}}_t)=x^{\mathrm{H}}_{t+1},
-\]
-where the second and fourth equalities use the inductive hypothesis and the
-third is the one-step equality. By induction the trajectories coincide for all
+\textit{Induction on the trajectory.} Let the two runs share the initial state
+and evolve by $x^{\bullet}_{t+1}=\Phi_{\bullet}(x^{\bullet}_t)$. We show
+$x^{\mathrm{S}}_t=x^{\mathrm{H}}_t$ for all $0\le t\le N$.
+
+\textit{Base case} ($t=0$): $x^{\mathrm{S}}_0=x^{\mathrm{H}}_0$ by the shared
+initial state.
+
+\textit{Inductive step:} assume $x^{\mathrm{S}}_t=x^{\mathrm{H}}_t=:x$ for some
+$t<N$. Applying the one-step equality~\eqref{eq:s-onestep} to $x$,
+\begin{equation}
+x^{\mathrm{S}}_{t+1}=\Phi_{\mathrm{S}}(x^{\mathrm{S}}_t)=\Phi_{\mathrm{S}}(x)
+=\Phi_{\mathrm{H}}(x)=\Phi_{\mathrm{H}}(x^{\mathrm{H}}_t)=x^{\mathrm{H}}_{t+1},
+\end{equation}
+where the outer equalities use the inductive hypothesis and the middle one
+is~\eqref{eq:s-onestep}. By induction $x^{\mathrm{S}}_t=x^{\mathrm{H}}_t$ for all
 $t\le N$.
 
-Both modes thus compute the same real number at every step, and these are equal
-in float32 as well: IEEE-754 single precision has a $24$-bit significand and so
-represents every integer in $[-2^{24},2^{24}]$
-exactly~\citep{ieee754_2019,goldberg1991}. Every VCS quantity lies in this range
-(data bytes $\le 255$, $13$-bit addresses, and per-frame cycle counts of a few
-tens of thousands), so the equality is exact rather than approximate.
-
-Finally, the stop-gradient in the branch alters only the reverse-mode rule: it
-gives the returned value the derivative of $\mathrm{pc}_{\mathrm{soft}}$, the
-sigmoid-blended counter, which is generically nonzero where the hard branch---a
-step function of the flag---has zero or undefined derivative; the one-hot read
-likewise has Jacobian $\mathbf{1}_a$ with respect to $r$. The forward pass is
-unchanged while gradients become available.
+\textit{Gradients.} The stop-gradient in~\eqref{eq:s-ste} alters only the
+reverse-mode rule: the returned counter carries the derivative of
+$\mathrm{pc}_{\mathrm{soft}}=\mathrm{pc}_{\bar b}+g\,\delta$, namely
+$\alpha\,g(1-g)\,\delta$, which is generically nonzero where the hard branch---a
+step function of the flag---has zero or undefined derivative; likewise the
+read~\eqref{eq:s-peek} has Jacobian $\mathbf{1}_a$ with respect to $r$. The
+forward pass is unchanged while gradients become available.
 \end{proof}
 
-\noindent\textbf{Theorem 2 (temperature-limit bound).} \emph{For the fully
-relaxed variant (softmax dispatch and sigmoid branch, no straight-through
-correction), under Assumption~(DM),}
-\[
-\big\|\Phi^{T}_{\mathrm{S}}(x)-\Phi_{\mathrm{H}}(x)\big\|_\infty\le
-C\big[(K-1)e^{-\Delta_{\min}/T}+e^{-\alpha m_{\min}}\big],
-\]
-\emph{and over $N$ steps with Lipschitz constant $L\ge1$ the trajectory error is
-at most $\frac{L^{N}-1}{L-1}$ times this, which is $\mathcal{O}(e^{-c/T})$ with
-$c=\Delta_{\min}$.}
+\begin{theorem}[Temperature-limit bound]
+\label{thm:s-limit}
+Consider the fully relaxed emulator that uses the softmax
+dispatch~\eqref{eq:s-select} and sigmoid branch~\eqref{eq:s-branch}
+\emph{without} the straight-through correction. Under
+Assumption~\ref{ass:s-dm}, its one-step map converges to the hard map as
+$T\to0$ and $\alpha\to\infty$, with per-step deviation
+\begin{equation}
+\big\|\Phi^{T}_{\mathrm{S}}(x)-\Phi_{\mathrm{H}}(x)\big\|_\infty
+\;\le\; C\big[(K-1)\,e^{-\Delta_{\min}/T}+e^{-\alpha m_{\min}}\big],
+\label{eq:s-bound}
+\end{equation}
+where $C$ bounds the value range (bytes $\le255$, branch offsets $\le256$). Over
+$N$ steps, with Lipschitz constant $L\ge1$ for error propagation, the trajectory
+deviation is at most
+$\frac{L^{N}-1}{L-1}\,C[(K-1)e^{-\Delta_{\min}/T}+e^{-\alpha m_{\min}}]
+=\mathcal{O}(e^{-c/T})$ with $c=\Delta_{\min}$.
+\end{theorem}
 
 \begin{proof}
 We bound the deviation of the relaxed one-step map from the hard one and then
 propagate it along the trajectory. Throughout, $C$ bounds the range of any state
-value (bytes $\le 255$, branch offsets $\le 256$).
+value (bytes $\le255$, branch offsets $\le256$).
 
-Consider first the dispatch. At a step with logits $\ell$ and winner $k^\star$
-the gap is $\Delta\ge\Delta_{\min}>0$ by Assumption~(DM), so for any loser
+\textit{Dispatch term.} At a step with logits $\ell$ and winner $k^\star$ the
+gap is $\Delta\ge\Delta_{\min}>0$ by Assumption~\ref{ass:s-dm}, so for any loser
 $k\ne k^\star$,
-\[
+\begin{equation}
 w_k=\frac{e^{\ell_k/T}}{\sum_j e^{\ell_j/T}}
 \le\frac{e^{\ell_k/T}}{e^{\ell_{k^\star}/T}}
 =e^{(\ell_k-\ell_{k^\star})/T}\le e^{-\Delta_{\min}/T},
-\]
-and the non-winning mass is $1-w_{k^\star}=\sum_{k\ne k^\star}w_k\le
-(K-1)e^{-\Delta_{\min}/T}$. Since the dispatch output is the convex combination
+\end{equation}
+so the non-winning mass is $1-w_{k^\star}=\sum_{k\ne k^\star}w_k\le
+(K-1)e^{-\Delta_{\min}/T}$. As the dispatch output is the convex combination
 $\sum_k w_k V_k$,
-\[
-\begin{aligned}
+\begin{equation}
 \Big\|\textstyle\sum_k w_k V_k-V_{k^\star}\Big\|_\infty
-&\le(1-w_{k^\star})\max_k\|V_k-V_{k^\star}\|_\infty\\
-&\le(K-1)e^{-\Delta_{\min}/T}\,C .
-\end{aligned}
-\]
-The sigmoid branch contributes similarly: for a margin $m=|z|\ge m_{\min}$ the
-gate error is $|\sigma(\alpha z)-[\![z>0]\!]|=\sigma(-\alpha m)\le
-e^{-\alpha m_{\min}}$, so the blended counter $(1-g)\mathrm{pc}_{\bar b}+
-g\,\mathrm{pc}_b$ differs from the hard target by at most
-$|\mathrm{pc}_b-\mathrm{pc}_{\bar b}|\,e^{-\alpha m_{\min}}\le
-C\,e^{-\alpha m_{\min}}$. Adding the two contributions bounds the per-step
-deviation: for every reachable $x$,
-$\delta:=\|\Phi^{T}_{\mathrm{S}}(x)-\Phi_{\mathrm{H}}(x)\|_\infty\le
-C[(K-1)e^{-\Delta_{\min}/T}+e^{-\alpha m_{\min}}]$.
+\le(1-w_{k^\star})\max_k\|V_k-V_{k^\star}\|_\infty
+\le(K-1)\,e^{-\Delta_{\min}/T}\,C .
+\label{eq:s-disp}
+\end{equation}
 
-To propagate it, let $L\ge1$ be a Lipschitz constant of $\Phi_{\mathrm{H}}$ in
-$\|\cdot\|_\infty$ and $e_t=\|x^{T,\mathrm{S}}_t-x^{\mathrm{H}}_t\|_\infty$ the
-trajectory error after $t$ steps, with $e_0=0$. Each step adds a deviation of at
-most $\delta$ to the hard map applied to the accumulated error, giving
-$e_{t+1}\le L e_t+\delta$; unrolling, $e_N\le\delta\sum_{i=0}^{N-1}L^i
-=\delta\,(L^N-1)/(L-1)$. As $T\to0$ (and $\alpha\to\infty$, since
-$m_{\min}=\Theta(1)$), $\delta=\mathcal{O}(e^{-\Delta_{\min}/T})\to0$, so the
-relaxed trajectory converges to the hard one and
+\textit{Branch term.} For a margin $m=|z|\ge m_{\min}$ the gate error is
+\begin{equation}
+\big|\sigma(\alpha z)-[\![z>0]\!]\big|=\sigma(-\alpha m)\le e^{-\alpha m_{\min}},
+\label{eq:s-gate}
+\end{equation}
+so the blended counter $\mathrm{pc}_{\bar b}+g\,\delta$ differs from the hard
+target $\mathrm{pc}_{\bar b}+[\![z>0]\!]\,\delta$ by
+\begin{equation}
+\big|(g-[\![z>0]\!])\,\delta\big|\le|\delta|\,e^{-\alpha m_{\min}}
+\le C\,e^{-\alpha m_{\min}}.
+\label{eq:s-branchterm}
+\end{equation}
+
+\textit{Per-step bound.} Adding~\eqref{eq:s-disp} and~\eqref{eq:s-branchterm}
+bounds the one-step deviation: for every reachable $x$,
+\begin{equation}
+\delta_{\mathrm{step}}:=\big\|\Phi^{T}_{\mathrm{S}}(x)-\Phi_{\mathrm{H}}(x)\big\|_\infty
+\le C\big[(K-1)e^{-\Delta_{\min}/T}+e^{-\alpha m_{\min}}\big],
+\label{eq:s-perstep}
+\end{equation}
+which is~\eqref{eq:s-bound}.
+
+\textit{Propagation.} Let $L\ge1$ be a Lipschitz constant of $\Phi_{\mathrm{H}}$
+in $\|\cdot\|_\infty$ and $e_t=\|x^{T,\mathrm{S}}_t-x^{\mathrm{H}}_t\|_\infty$ the
+trajectory error after $t$ steps, with $e_0=0$. Each step adds at most
+$\delta_{\mathrm{step}}$ to the hard map applied to the accumulated error,
+\begin{equation}
+e_{t+1}\le L\,e_t+\delta_{\mathrm{step}},
+\end{equation}
+and unrolling from $e_0=0$ gives
+\begin{equation}
+e_N\le\delta_{\mathrm{step}}\sum_{i=0}^{N-1}L^i
+=\delta_{\mathrm{step}}\,\frac{L^N-1}{L-1}.
+\end{equation}
+As $T\to0$ and $\alpha\to\infty$,
+$\delta_{\mathrm{step}}=\mathcal{O}(e^{-\Delta_{\min}/T})\to0$, so the relaxed
+trajectory converges to the hard one,
 $\Phi^{T}_{\mathrm{S}}\to\Phi_{\mathrm{H}}$.
 \end{proof}
 
 \section{Effect of the Relaxation Parameters on the Gradient}
 
-Theorems~1 and~2 say the hard limit ($\alpha\to\infty$ for the sigmoid branch,
+Theorems~\ref{thm:s-exact} and~\ref{thm:s-limit} say the hard limit ($\alpha\to\infty$ for the sigmoid branch,
 $T\to0$ for the softmax select) is exact in value but degenerate in gradient.
 Figure~\ref{fig:alphatemp} shows this directly on jutari as the relaxation
 values are swept. We render a single player cannon whose horizontal position is
@@ -219,9 +285,14 @@ $\partial(\text{screen})/\partial(\text{control})$, that is, how each pixel's
 value changes as the scalar control input increases. The colour encodes the
 \emph{sign} of that derivative: red where a pixel brightens as the control
 increases (the sprite arriving) and blue where it darkens (the sprite leaving);
-the colour intensity is the magnitude, normalised to the row maximum, and the
-per-panel number is the peak magnitude relative to that maximum. Pixels with no
-sensitivity keep the faint grey of the rendered cannon.
+the colour intensity is the magnitude. The two rows are on \emph{individual}
+colour scales: the branch and select gradients are taken with respect to
+different controls and differ in absolute magnitude by more than an order of
+magnitude (peak $0.90$ vs.\ $0.05$ here), so each row carries its own colour bar
+in absolute units, and the per-panel number is the peak relative to that row's
+maximum. A pixel with no sensitivity maps to the same neutral light grey in every
+panel---the faint cannon outline---so the zero level reads identically in both
+rows.
 
 For the branch the position is $\mathrm{pc}=(1-g)\,\mathrm{pc}_L+g\,\mathrm{pc}_R$
 with $g=\sigma(\alpha z)$, so its derivative with respect to the control $z$ is
@@ -235,6 +306,12 @@ intermediate $\alpha$ for which $\alpha z$ falls in the sigmoid's steep band,
 near $\alpha{=}6$ here---$\alpha{=}2,6,20$ give peak magnitudes
 $0.53,1.00,0.15$, and at $\alpha{=}20$ the gate has essentially switched and the
 gradient has nearly vanished (the hard-branch limit).
+Figure~\ref{fig:sigmoid} plots this gate and its gradient directly: at
+$\alpha{=}20$ the gate has saturated and $\mathrm{d}g/\mathrm{d}z$ is essentially
+zero away from the switch (too sharp: no usable gradient), while at $\alpha{=}2$
+the gate is so shallow that the gradient is weak and barely varies with $z$ (too
+soft: the gradient does not discriminate); the intermediate $\alpha{=}6$ gives the
+largest, most localised gradient at the operating point.
 
 For the select the rendered cannon is the softmax-weighted sum
 $\sum_k w_k\,(\text{cannon at column }k)$ with $w=\mathrm{softmax}(\ell/T)$. At a
@@ -246,30 +323,68 @@ remain, and at $T{=}0.1$ the mixture is effectively one-hot, a single sharp
 cannon whose chosen column no longer moves under a small change of the control,
 so the gradient collapses to zero between candidate boundaries (peak magnitudes
 $1.00,0.51,0.00$ for $T{=}2.0,0.5,0.1$).
+Figure~\ref{fig:tempheat} shows the underlying softmax weights themselves as a
+heatmap over candidate columns and temperature: a single hard pick at low $T$
+(effective number of columns $N_{\mathrm{eff}}\!\to\!1$) broadens into a
+distribution over neighbouring columns as $T$ rises---the very superposition the
+gradient is then spread across.
 
-In every panel the forward render is the exact hard one (Theorem~1); only the
-gradient changes. It is most informative at intermediate relaxation and decays
-to zero as the relaxation is sharpened toward the hard limit (Theorem~2). This
+In every panel the forward render is the exact hard one
+(Theorem~\ref{thm:s-exact}); only the gradient changes. It is most informative at
+intermediate relaxation and decays to zero as the relaxation is sharpened toward
+the hard limit (Theorem~\ref{thm:s-limit}). This
 is a qualitative study of how the parameter \emph{values} act on the gradient,
 run on jutari; the values need not be tuned for the bit-exact forward pass.
+Animated sweeps of both knobs---the gate and its gradient as $\alpha$ varies, and
+the weight distribution as $T$ varies, each frame on its own scale---are provided
+as \texttt{fig\_alpha\_anim.gif} and \texttt{fig\_temp\_anim.gif} in the
+supplementary media.
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\columnwidth]{figures/fig_alpha_temp.pdf}
+\includegraphics[width=0.92\textwidth]{figures/fig_alpha_temp.pdf}
 \caption{Screen-space gradient $\partial(\text{screen})/\partial(\text{control})$
 on jutari as the relaxation strength is swept. \textbf{Top:} sigmoid branch
 (\texttt{soft\_branch}), increasing sharpness $\alpha$; the gradient is a dipole
 between the left and right placements. \textbf{Bottom:} softmax select
-(\texttt{soft\_select}), decreasing temperature $T$; a high $T$ renders the
-cannon as several weighted copies. Colour gives the sign of the per-pixel
-derivative (red: the pixel brightens as the control increases; blue: it
-darkens) and its intensity the magnitude, normalised to the row maximum (the
-colour bar is in these per-row units); the per-panel number is the peak relative
-to that maximum, and faint grey is the rendered cannon where the gradient is
-negligible. The gradient is largest at intermediate relaxation and vanishes
-toward the hard limit (large $\alpha$, small $T$), consistent with Theorems~1
-and~2.}
+(\texttt{soft\_select}), decreasing temperature $T$; a high $T$ renders the cannon
+as several weighted copies. Colour gives the sign of the per-pixel derivative
+(red: the pixel brightens as the control increases; blue: it darkens) and its
+intensity the magnitude. The two rows are on \emph{individual} colour scales (the
+branch and select gradients differ in absolute magnitude by more than
+$10\times$), each with its own colour bar in absolute units; the per-panel number
+is the peak relative to that row's maximum. A pixel with no sensitivity maps to
+the same neutral light grey in both rows (the faint cannon outline), so the zero
+level is consistent. The gradient is largest at intermediate relaxation and
+vanishes toward the hard limit (large $\alpha$, small $T$), consistent with
+Theorems~\ref{thm:s-exact} and~\ref{thm:s-limit}.}
 \label{fig:alphatemp}
+\end{figure*}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_sigmoid_alpha.pdf}
+\caption{The soft-branch gate $g=\sigma(\alpha z)$ (left) and its gradient
+$\mathrm{d}g/\mathrm{d}z=\alpha\,\sigma(\alpha z)(1-\sigma(\alpha z))$ (right) for
+$\alpha\in\{2,6,20\}$, with the operating point $z{=}0.25$ marked. Too large an
+$\alpha$ (here $20$) saturates the gate, leaving essentially no gradient away from
+the switch; too small an $\alpha$ (here $2$) gives a shallow gate whose gradient
+is weak and barely varies with $z$. The intermediate $\alpha{=}6$ places the
+operating point in the sigmoid's steep band and yields the largest, most
+localised gradient.}
+\label{fig:sigmoid}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_temp_heatmap.pdf}
+\caption{Soft-select weights $w=\softmax(\ell/T)$ over the candidate cannon
+columns as a function of temperature $T$ (log scale). At low $T$ the distribution
+is one-hot---a hard pick of the target column---and as $T$ rises it broadens into
+a distribution over neighbouring columns. The right axis gives the effective
+number of selected columns $N_{\mathrm{eff}}=1/\sum_k w_k^2$, which grows from $1$
+(hard) toward several as $T$ increases.}
+\label{fig:tempheat}
 \end{figure}
 
 \section{Implementation Effort}

@@ -89,7 +89,7 @@ def fig_architecture():
 
 # --------------------------------------------------------------------------
 def fig_pipeline():
-    fig, ax = plt.subplots(figsize=(7.0, 3.0))
+    fig, ax = plt.subplots(figsize=(8.8, 2.15))
     ax.set_xlim(0, 21); ax.set_ylim(0, 8.4); ax.axis("off")
 
     # Shared inputs (left).

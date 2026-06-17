@@ -340,7 +340,7 @@ runtime; see Throughput.}
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.86\textwidth]{figures/fig_pipeline.pdf}
+\includegraphics[width=0.90\textwidth]{figures/fig_pipeline.pdf}
 \caption{The two execution paths share one known mechanism. The HARD step
 uses integer dispatch and exact bit logic; the SOFT step reads the ROM and
 RAM as one-hot dot products and relaxes the branch decision with a sigmoid
@@ -358,8 +358,8 @@ arithmetic, and flags are bits. In \textbf{soft} mode, the same step is
 re-expressed so that gradients can flow. Three relaxations carry the idea.
 
 First, every ROM and RAM read is written as a dot product against a one-hot
-address vector. For a ROM tensor $r\in\mathbb{R}^{N}$ and address
-$a\in\{0,\dots,N-1\}$,
+address vector. For a memory tensor $r\in\mathbb{R}^{M}$ of size $M$ (the ROM or
+RAM) and an address $a\in\{0,\dots,M-1\}$,
 \begin{equation}
 \mathrm{peek}(r,a) \;=\; \mathbf{1}_a^{\top} r \;=\; \sum_{i} [\![i=a]\!]\, r_i \;=\; r_a .
 \label{eq:peek}
@@ -396,11 +396,17 @@ branch-when-set ($s={+}1$) or branch-when-clear ($s={-}1$), and with sharpness
 $\alpha$, the gate $g$ and relaxed program counter are
 \begin{equation}
 g = \sigma(\alpha z),\qquad
-\mathrm{pc}_{\mathrm{soft}} = (1-g)\,\mathrm{pc}_{\bar b} + g\,\mathrm{pc}_{b},
+\mathrm{pc}_{\mathrm{soft}} = (1-g)\,\mathrm{pc}_{\bar b} + g\,\mathrm{pc}_{b}
+= \mathrm{pc}_{\bar b} + g\,\delta,
 \label{eq:branch}
 \end{equation}
-where $\mathrm{pc}_{\bar b}$ and $\mathrm{pc}_{b}$ are the not-taken and taken
-program counters. As $\alpha\to\infty$ the gate saturates to a hard branch.
+where $\mathrm{pc}_{\bar b}$ is the fall-through (not-taken) counter and
+$\mathrm{pc}_{b}=\mathrm{pc}_{\bar b}+\delta$ is the taken counter, so the blend
+simplifies to $\mathrm{pc}_{\bar b}+g\,\delta$. As $\alpha\to\infty$ the gate
+saturates to a hard branch. For the fully relaxed variant (no straight-through
+correction) $\alpha$ must be large enough that the gate's residual uncertainty
+$g(1-g)$ stays below the integer-rounding threshold of $\mathrm{pc}$, so the
+rounded counter still matches the hard branch (see the supplementary material).
 
 These relaxations are connected to the exact machine by a
 \emph{straight-through estimator} (STE) \citep{bengio2013estimating}. For any
@@ -439,7 +445,9 @@ distinction in the qualitative study below.
 We now state what the construction guarantees. Let $\Phi_{\mathrm{H}}$ and
 $\Phi_{\mathrm{S}}$ be the one-step transition maps of the hard and soft
 emulators, acting on the full state $x$ (CPU registers, RAM, RIOT, TIA, and
-frame buffer). The first result is that the two maps agree in value.
+frame buffer). We state both theorems here and give only \emph{proof sketches};
+the complete, formal proofs are in the supplementary material. The first result
+is that the two maps agree in value.
 
 \begin{theorem}[Exact forward equivalence]
 \label{thm:exact}
@@ -453,12 +461,14 @@ $\partial\Phi_{\mathrm{S}}/\partial x$, which is defined and generically
 nonzero where $\partial\Phi_{\mathrm{H}}/\partial x$ is zero or undefined.
 \end{theorem}
 
-\begin{proof}
+\begin{proof}[Proof sketch]
 Each handler's forward output composes one-hot ROM/RAM reads~\eqref{eq:peek},
 integer/round arithmetic, a hard opcode dispatch, and the straight-through
 branch~\eqref{eq:ste}, each forward-identical to the hard handler; the
-stop-gradient alters only the backward rule. A full proof is given in the
-supplementary material.
+stop-gradient alters only the backward rule. The one-step equality then extends
+to whole trajectories by induction on the step index. The complete proof, with
+the per-primitive equalities and the formal induction, is in the supplementary
+material.
 \end{proof}
 
 By Theorem~\ref{thm:exact}, attribution in soft mode is computed on the exact
@@ -501,10 +511,10 @@ $\frac{L^{N}-1}{L-1}\,C[(K-1)e^{-\Delta_{\min}/T}+e^{-\alpha m_{\min}}]
 = \mathcal{O}(e^{-c/T})$ with $c=\Delta_{\min}$.
 \end{theorem}
 
-\begin{proof}
+\begin{proof}[Proof sketch]
 Bound the non-winning softmax mass by $(K-1)e^{-\Delta_{\min}/T}$ and the
 sigmoid error by $e^{-\alpha m_{\min}}$, then propagate over $N$ steps with the
-Lipschitz constant $L$. A full proof is given in the supplementary material.
+Lipschitz constant $L$. The complete proof is in the supplementary material.
 \end{proof}
 
 \begin{corollary}
