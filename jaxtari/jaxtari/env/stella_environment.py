@@ -87,7 +87,8 @@ class StellaEnvironment:
     def reset(self, *, boot_noop_steps: int = 0,
               boot_reset_steps: int = 0,
               random_noop_max: int = 0,
-              seed: Optional[int] = None) -> None:
+              seed: Optional[int] = None,
+              construction_probe: bool = True) -> None:
         """Reset the console (PC ← cart reset vector) and the settings.
 
         Parameters
@@ -131,6 +132,59 @@ class StellaEnvironment:
         self._console = console_reset(self._console)
         self._settings.reset()
         self._terminal = False
+        # --- Task #119b (surround DOUBLE-boot): xitari construction sequence -- #
+        # xitari, BEFORE episode 1's first action, runs MORE than one boot:
+        #   1. Console ctor: 60-frame format-autodetect probe at the TIA-ctor
+        #      262 cutoff, then a keep-RAM `mySystem->reset()`.
+        #   2. loadROM → reset_game  (boot #1 — the StellaEnvironment::reset).
+        #   3. the explicit ALEInterface::resetGame  (boot #2 — same boot).
+        # A free-running RAM counter the game NEVER re-inits (surround's $7d)
+        # is seeded by all three; pre-#119b jaxtari ran only boot #2 from
+        # cold RAM-zeroed state, so $7d started 95 short. Mirror the full
+        # sequence with keep-RAM resets so the seed accumulates. For games
+        # that re-init their RAM at boot the probe + extra boot wash out →
+        # all previously-bit-exact games are unchanged (gated on the sweep).
+        # `construction_probe=False` keeps the old single-boot, RAM-zeroing
+        # behaviour for callers that want a bare reset.
+        if construction_probe and boot_noop_steps > 0:
+            # (1) probe at the 262 NTSC-default cutoff (format not yet detected)
+            self._console = self._console._replace(
+                bus=self._console.bus._replace(
+                    tia=self._console.bus.tia._replace(
+                        max_scanlines=262,
+                        scanlines_per_frame=262,
+                    )))
+            for _ in range(60):
+                self._console = apply_action(self._console, int(Action.NOOP))
+                self._console = run_until_frame(self._console)
+            # post-probe keep-RAM reset
+            self._console = console_reset(self._console, keep_ram=True)
+            # (2) boot #1 — the ctor's reset_game
+            self._boot_burn(boot_noop_steps, boot_reset_steps)
+            # resetGame's keep-RAM reset
+            self._console = console_reset(self._console, keep_ram=True)
+        # boot (#2 when probing; the only boot otherwise) — the explicit resetGame
+        self._boot_burn(boot_noop_steps, boot_reset_steps)
+
+        # --- P6d: random-NOOP episode randomization ---------------------- #
+        if random_noop_max > 0:
+            rng = _random.Random(seed) if seed is not None else _random
+            n = rng.randint(0, random_noop_max)
+            for _ in range(n):
+                self._console = apply_action(self._console, int(Action.NOOP))
+                self._console = run_until_frame(self._console)
+
+    def _boot_burn(self, boot_noop_steps: int, boot_reset_steps: int) -> None:
+        """One xitari `StellaEnvironment::reset` boot: set per-game PAL/NTSC
+        TV-format fields, push default paddle resistance / joystick INPT-low,
+        assert difficulty, burn `boot_noop_steps` NOOP frames +
+        `boot_reset_steps` RESET-held frames + the per-game starting actions
+        (joystick + console-switch). Does NOT touch RAM or the settings
+        object — `reset()` owns the `console_reset` / `settings.reset()`.
+        Factored out so `reset()` can run it twice (xitari boots once in
+        the ALEInterface ctor's `reset_game`, then again on the explicit
+        `resetGame`). Mirror of jutari `_boot_burn!`.
+        """
         # --- TV format (#103, surround) ---------------------------------- #
         # xitari auto-detects PAL/NTSC and sets the max-scanlines frame cutoff
         # to 342 (PAL) vs 290 (NTSC) (TIA.cxx:206-211). Surround is a 312-line
@@ -290,14 +344,6 @@ class StellaEnvironment:
             # step() frames run with them up, as in xitari.
             self._console = console_switches(
                 self._console, p0_difficulty_a=diff0, p1_difficulty_a=diff1)
-
-        # --- P6d: random-NOOP episode randomization ---------------------- #
-        if random_noop_max > 0:
-            rng = _random.Random(seed) if seed is not None else _random
-            n = rng.randint(0, random_noop_max)
-            for _ in range(n):
-                self._console = apply_action(self._console, int(Action.NOOP))
-                self._console = run_until_frame(self._console)
 
     def step(self, action: int) -> int:
         """Apply `action`, run one console frame, return the per-step reward.

@@ -45,17 +45,25 @@ def initial_console(rom=None) -> Console:
     return Console(cpu=initial_cpu_state(), bus=initial_bus(rom))
 
 
-def console_reset(console: Console) -> Console:
-    """Reset the console: fresh CPU state, fresh TIA/RIOT (RAM zeroed),
-    and load PC from the cart's reset vector at \$FFFC/\$FFFD.
+def console_reset(console: Console, keep_ram: bool = False) -> Console:
+    """Reset the console: fresh CPU state, fresh TIA/RIOT (RAM zeroed
+    unless `keep_ram=True`), and load PC from the cart's reset vector at
+    \$FFFC/\$FFFD.
 
     Cart state itself (current bank) is NOT reset — real hardware doesn't
     have a bank-reset line; the cart's reset code is responsible for any
     initial bank selection.
+
+    Task #119b (surround DOUBLE-boot): xitari's `mySystem->reset()` resets
+    CPU + TIA + RIOT but does NOT zero the 128 B RIOT RAM (M6532 zeroes RAM
+    only in its CONSTRUCTOR). `keep_ram=True` mirrors that — used between
+    the construction probe and the boots in `StellaEnvironment.reset`, so
+    a free-running counter the game never re-inits carries its seed.
+    Mirrors jutari `console_reset!(console; keep_ram=...)`.
     """
     fresh_bus = initial_bus()
     new_bus = console.bus._replace(
-        ram=fresh_bus.ram,
+        ram=console.bus.ram if keep_ram else fresh_bus.ram,
         tia=fresh_bus.tia,
         riot=fresh_bus.riot,
     )
