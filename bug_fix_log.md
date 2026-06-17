@@ -6064,3 +6064,49 @@ no-op for RAM-reiniting games; must confirm the same for jaxtari). If clean, fli
 the default + re-sweep. Then triage kung_fu_master ($76, 1 byte) and solaris (2
 bytes) — small deltas, likely single mis-handled read. asterix/demon_attack/
 road_runner are larger and need per-instruction traces.
+
+---
+
+## Sprint 6 cont. (2026-06-18, ~02:00) — surround lead confirmed; construction_probe path is too SLOW in jaxtari to re-sweep naively
+
+Investigated the surround RAM divergence (the cheapest of the 6). Focused
+8-frame RAM diff vs xitari (`trace_dump`, breakout_random_actions stream):
+- **construction_probe=False (current default): 1 byte/frame** (worst=1 over 8
+  frames; the 30-frame sweep's "7" is the union accumulated over more frames,
+  incl. $7d — the free-running counter jutari's DOUBLE-boot probe seeds).
+- **construction_probe=True: verification INCOMPLETE** — the run was killed
+  after >40 min. Root cause is a *performance* blocker, not a logic one:
+  the probe is 60 frames + the double `_boot_burn` is 2×(60 NOOP + 4 RESET),
+  i.e. ~180 boot frames per reset. At jaxtari's measured ~36 s/frame for
+  surround (PAL; from the sweep's 1084 s/30-frame), ONE probe=True reset is
+  ~1.8 hr, and a full 64-ROM probe-on re-sweep would be ~5+ hr. Not viable as
+  a casual gate.
+
+**Logic is sound** (don't need the slow run to know the fix is correct):
+jutari's `env_reset!` runs the IDENTICAL construction sequence (probe + two
+`_boot_burn!`, starting-actions applied in BOTH boots) and is 64/64 incl.
+surround. jaxtari's `construction_probe` path (sprint 13, f5e6f6e) is a direct
+port. So enabling it SHOULD fix surround's $7d. The sprint-15 worry that
+double-applying starting actions breaks pitfall/enduro was the stale-fixture
+red herring (Sprint 5) — it does not.
+
+**Decision this tick (don't thrash):** do NOT flip the `construction_probe`
+default yet. Flipping it requires confirming the 57 currently-bit-exact games
+don't regress (jutari's probe was a no-op for RAM-reiniting games — must verify
+the same for jaxtari), and the only sound confirmation is a probe-on re-sweep,
+which is ~5+ hr at current speed. surround stays a documented 1-7 b/f residual
+for now (same class jutari accepted pre-probe).
+
+**NEXT — pick the cheaper divergences first** (surround's fix is correct but
+expensive to *verify*; defer it):
+1. **kung_fu_master** (1 byte, $76, frame 1) — single-byte, earliest, likely a
+   lone mis-handled read/register. Trace with `tools/jaxtari_dump.py` +
+   `trace_dump --cpu` per-instruction at frame 1; find the first divergent bus
+   op. This is the highest fix-per-effort target.
+2. **solaris** (2 bytes, $0b/$78, frame 4).
+3. **asterix** (9 bytes, frame 1, getStartingActions=[FIRE]) — boot-adjacent;
+   check if its FIRE-start is applied identically to xitari.
+4. **demon_attack** (13, frame 2), **road_runner** (16, frame 25) — larger /
+   later; per-instruction CPU trace.
+5. **surround** — revisit once boot speed is addressed (or seed $7d directly
+   without the full 60-frame probe).
