@@ -16,6 +16,7 @@ from typing import NamedTuple
 import jax.numpy as jnp
 
 from jaxtari.bus import Bus, initial_bus, peek
+from jaxtari.cart.system import cart_reset
 from jaxtari.cpu.m6502 import step as cpu_step
 from jaxtari.types import CPUState, initial_cpu_state
 
@@ -67,6 +68,15 @@ def console_reset(console: Console, keep_ram: bool = False) -> Console:
         tia=fresh_bus.tia,
         riot=fresh_bus.riot,
     )
+    # Task #119c (elevator_action SC-RAM): xitari's System::reset() resets
+    # EVERY device, including Cartridge::reset() (power-on bank). jaxtari
+    # previously reset only CPU/TIA/RIOT, so a bank the game switched into
+    # during the 60-frame construction probe leaked across this reset, and
+    # the reset vector + init code read at the wrong bank gave divergent
+    # boot register state. cart_reset preserves SC RAM but resets the bank.
+    # The `cart` object is mutable Python (__slots__), so mutate in place.
+    # Mirror of jutari `cart_reset!`.
+    cart_reset(new_bus.cart)
     fresh_cpu = initial_cpu_state()
     # P4d: peek returns `(value, new_bus)`. Vector reads don't have
     # side effects on the cart-mirror addresses ($FFFC/$FFFD) but we

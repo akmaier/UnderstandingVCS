@@ -263,6 +263,29 @@ def make_cart(rom: jnp.ndarray, *, kind: int | None = None) -> Cart:
 
 
 # --------------------------------------------------------------------------- #
+# Reset
+# --------------------------------------------------------------------------- #
+
+def cart_reset(cart: Cart) -> None:
+    """Reset the cart's bank-switch mapping to its power-on default.
+
+    Mirrors xitari's `Cartridge::reset()`, which `System::reset()` invokes
+    on every system reset. The cart is a device on the bus, so a bank the
+    game switched into during the 60-frame construction probe must NOT leak
+    across the post-probe reset. elevator_action (F8SC) ends the probe in
+    bank 0; without resetting here, `console_reset` would read the reset
+    vector + init code from the wrong bank, giving a divergent boot
+    register state.
+
+    RAM (SC RAM + RIOT) is preserved; only the bank / E0 slice mapping
+    resets. Mirror of jutari `cart_reset!`.
+    """
+    cart.current_bank = _DEFAULT_BANK[cart.kind]
+    if cart.kind == KIND_E0:
+        cart.slice_slots = [0, 0, 0]
+
+
+# --------------------------------------------------------------------------- #
 # Peek / poke
 # --------------------------------------------------------------------------- #
 
