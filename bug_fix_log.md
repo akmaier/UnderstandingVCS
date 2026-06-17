@@ -14,6 +14,38 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🛠️ Task #124 — comparison-video tool crashed on the 5 PAL games (2026-06-17)
+
+**Symptom.** `tools/comparison_videos.py --port jutari` failed for `air_raid`,
+`carnival`, `journey_escape`, `pooyan`, `surround`:
+`<game>_xitari_frames.raw: N bytes is not a whole multiple of 33600 (210*160)
+— corrupted dump?`. The byte counts decode as `frames(1800) × W(160) × H` with
+H = 250/214/230/220/250 — i.e. these are PAL games dumped at their per-game PAL
+display height, not 210.
+
+**Root cause (render path only — emulators were correct).** `get_screen` returns
+the per-game display height (210 NTSC, taller PAL — task #110), and
+`jutari_screen_dump.jl` (the conformance sweep) already writes that full height,
+which is why the screen sweep is 64/64 at the PAL height. But the *video*
+pipeline was inconsistent: `dump_xitari_frames.py` wrote `trace_dump`'s native
+`rec['h']` (PAL height), `dump_jutari_frames.jl` hardcoded `for r in 1:210`
+(cropping to 210), and `render_breakout_compare.py::_load_raw` hardcoded 210 for
+both. So the xitari PAL dump (250) was loaded as 210 → byte-count mismatch.
+
+**Fix.** Make the video path height-aware like the sweep:
+- `dump_jutari_frames.jl`: write the actual `size(get_screen,1)` rows (full PAL
+  height), not 210.
+- `dump_xitari_frames.py` / `dump_jutari_frames.jl` / `dump_jaxtari_frames.py`:
+  write a `<out>.raw.shape` sidecar (`n h w`).
+- `render_breakout_compare.py::_load_raw`: read the sidecar for `(h,w)` (falls
+  back to 210); `_encode_against_xitari` loads both dumps at their own height and
+  crops to the common height (handles jaxtari still being NTSC-only on a PAL
+  game).
+
+**After.** All 5 render: both dumps now `n × 250 × 160` (surround), heights match
+per game (250/214/230/220/250), diff panel black (sweep already proved these
+pixel-exact). `5/5 rendered`. No emulator change; conformance untouched.
+
 ### 🎯 Task #103 — SOLVED (elevator_action): cart was F8SC (Superchip), mis-detected as F8 → 53→0 b/f under NOOP (2026-06-15)
 
 The deepest residual, cracked by a per-bus-op trace that bottomed out at the cart layer.

@@ -34,7 +34,7 @@ exists. Sources: AAAI-27 CfP (`https://aaai.org/conference/aaai/aaai-27/`) and A
 - [ ] No identifying institution names in figures, paths, or screenshots.
 
 ## D. Required statements / sections
-- [ ] **Reproducibility Checklist** completed (`ReproducibilityChecklist.tex`) and `\input` before `\end{document}` OR submitted separately per track instructions — see section E.
+- [x] **Reproducibility Checklist** completed (`paper/ReproducibilityChecklist.tex`, all 31 items answered; compiles standalone to 2 pages). AAAI-27 takes it as supplementary/separately — see section E.
 - [ ] **Ethics statement** — include if human subjects / sensitive data (likely **N/A** here; state so).
 - [ ] **Broader-impact statement** — include if required for the category; cover dual-use of agentic coding + XAI honestly.
 - [ ] Clear **abstract** + contributions list.

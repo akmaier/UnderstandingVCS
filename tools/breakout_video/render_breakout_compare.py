@@ -127,18 +127,29 @@ def dump_jutari(rom: Path, actions: Path, out: Path, n: int) -> None:
 # Compositor
 # --------------------------------------------------------------------------- #
 
-def _load_raw(path: Path, n: int, h: int, w: int) -> np.ndarray:
-    """Load a raw frame dump as a `(n_frames, h, w)` array. The
-    declared `n` is a *maximum*; if the file is shorter (e.g. xitari
-    stopped early when the game declared `done=true`), we use whatever
-    is there. The caller is responsible for aligning frame counts
-    across emulators."""
+def _load_raw(path: Path, n: int, h: int | None = None,
+              w: int = COLS) -> np.ndarray:
+    """Load a raw frame dump as a `(n_frames, h, w)` array. The per-frame
+    height is read from the `<path>.shape` sidecar written by the dumpers,
+    because PAL games render a taller screen than NTSC's 210 (task #110).
+    Falls back to the passed `h` (or 210) if no sidecar is present. The
+    declared `n` is a *maximum*; if the file is shorter (e.g. the emulator
+    stopped early) we use whatever is there."""
+    sidecar = Path(str(path) + ".shape")
+    if sidecar.exists():
+        parts = sidecar.read_text().split()
+        if len(parts) >= 3:
+            h, w = int(parts[1]), int(parts[2])
+    if h is None:
+        h = 210
     buf = np.fromfile(path, dtype=np.uint8)
     frame_bytes = h * w
     if buf.size % frame_bytes != 0:
         raise RuntimeError(
             f"{path}: {buf.size} bytes is not a whole multiple of "
-            f"{frame_bytes} ({h}*{w}) — corrupted dump?")
+            f"{frame_bytes} ({h}*{w}) — corrupted dump or a missing/stale "
+            f"'.shape' sidecar (PAL games are taller than 210). Re-run the "
+            f"dump to regenerate it.")
     actual = buf.size // frame_bytes
     if actual < n:
         print(f"  warning: {path.name} has {actual} frames, less than the "
@@ -328,9 +339,20 @@ def main(argv=None) -> int:
             print(f"{label} frames missing ({other_path}); skipping encode.",
                   file=sys.stderr)
             return
-        xitari_full = _load_raw(xitari_path, args.n_frames, 210, COLS)
-        xitari = xitari_full[:, XITARI_TOP_CROP:XITARI_TOP_CROP + XITARI_ROWS, :]
-        other = _load_raw(other_path, args.n_frames, XITARI_ROWS, COLS)
+        # Both dumps carry a `.shape` sidecar with their per-frame height
+        # (210 for NTSC, the taller PAL height for PAL games — task #110).
+        xitari = _load_raw(xitari_path, args.n_frames)
+        other = _load_raw(other_path, args.n_frames)
+        # Both ports match xitari at the per-game height, so the heights are
+        # normally equal. jaxtari may still be NTSC-only (210) on a PAL game;
+        # crop both to the common height so the panels line up.
+        hh = min(xitari.shape[1], other.shape[1])
+        if xitari.shape[1] != other.shape[1]:
+            print(f"  height mismatch: xitari {xitari.shape[1]} vs {label} "
+                  f"{other.shape[1]}; cropping both to {hh} rows.",
+                  file=sys.stderr)
+        xitari = xitari[:, :hh, :]
+        other = other[:, :hh, :]
         xi, ot = _align(xitari, other)
         encode_video(
             xi, ot, palette,

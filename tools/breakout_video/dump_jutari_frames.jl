@@ -122,6 +122,11 @@ function main(argv::Vector{String} = ARGS)
     # Mirrors xitari/ale's resetGame() behavior — needed so the
     # comparison video doesn't freeze at game-over while xitari keeps
     # rendering a fresh game.
+    # Per-frame height = the game's display height: 210 for NTSC, the taller
+    # PAL height (e.g. 250) for PAL games (task #110). Use the actual
+    # get_screen row count, not a hardcoded 210, so PAL games are dumped in
+    # full and stay comparable to xitari's dump.
+    rows = 210
     open(out_path, "w") do io
         for i in 1:n
             if env.terminal
@@ -130,13 +135,11 @@ function main(argv::Vector{String} = ARGS)
                 env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)
             end
             env_step!(env, actions[i])
-            screen = get_screen(env)            # (210, 160) UInt8
-            # Explicit row-major byte write. `screen` in jutari is a
-            # 2D Matrix{UInt8} of size (VISIBLE_HEIGHT, SCREEN_WIDTH)
-            # = (210, 160). Python reads back as (210, 160) C-order
-            # (row-major), so we iterate rows-then-cols and write each
-            # byte directly.
-            for r in 1:210
+            screen = get_screen(env)            # (rows, 160) UInt8
+            rows = size(screen, 1)
+            # Explicit row-major byte write so the Python reader gets
+            # (rows, 160) C-order (row-major).
+            for r in 1:rows
                 for c in 1:160
                     write(io, UInt8(screen[r, c]))
                 end
@@ -146,7 +149,11 @@ function main(argv::Vector{String} = ARGS)
             end
         end
     end
-    println(stderr, "wrote $n frames of shape (210, 160) to $out_path")
+    # Shape sidecar consumed by render_breakout_compare.py::_load_raw.
+    open(string(out_path, ".shape"), "w") do io
+        write(io, "$n $rows 160\n")
+    end
+    println(stderr, "wrote $n frames of shape ($rows, 160) to $out_path")
     return 0
 end
 

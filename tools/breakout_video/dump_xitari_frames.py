@@ -68,6 +68,10 @@ def main(argv=None) -> int:
     arr = np.stack(frames, axis=0)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     arr.tofile(args.out)
+    # Shape sidecar (PAL games are taller than NTSC's 210) read by
+    # render_breakout_compare.py::_load_raw.
+    Path(str(args.out) + ".shape").write_text(
+        f"{len(frames)} {arr.shape[1]} {arr.shape[2]}\n")
     print(f"wrote {len(frames)} frames of shape {arr.shape[1:]} to {args.out}",
           file=sys.stderr)
     return 0

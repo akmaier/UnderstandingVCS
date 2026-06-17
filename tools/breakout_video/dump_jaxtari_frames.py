@@ -111,7 +111,12 @@ def main(argv=None) -> int:
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     frames.tofile(args.out)
-    print(f"wrote {n} frames of shape (210, 160) to {args.out}",
+    # Shape sidecar read by render_breakout_compare.py::_load_raw. jaxtari is
+    # currently NTSC-only (210); on a PAL game the renderer crops both panels
+    # to the common height.
+    Path(str(args.out) + ".shape").write_text(
+        f"{n} {frames.shape[1]} {frames.shape[2]}\n")
+    print(f"wrote {n} frames of shape {frames.shape[1:]} to {args.out}",
           file=sys.stderr)
     return 0
 
