@@ -40,8 +40,17 @@ def load():
     return maps, grad
 
 
+# Square cut-out around the scene: zooms in 2x so the 8-px sprites display
+# twice as large, and gives quadratic panels (80x80 -> square pixels).
+CROP = (slice(8, 88), slice(20, 100))
+
+
+def crop(A):
+    return A[CROP[0], CROP[1]]
+
+
 def imshow(ax, A, cmap, title, vmin=None, vmax=None):
-    ax.imshow(A, cmap=cmap, vmin=vmin, vmax=vmax, aspect=0.5,
+    ax.imshow(crop(A), cmap=cmap, vmin=vmin, vmax=vmax, aspect="equal",
               interpolation="nearest")
     ax.set_title(title, fontsize=8)
     ax.set_xticks([]); ax.set_yticks([])
@@ -65,7 +74,8 @@ def main():
     can = m["p2_cannon"]; can = can / (can.max() + 1e-6) * 0.4
     rgb2 = np.stack([can, can, can], axis=-1)
     rgb2[m["p2_sal_bit"] > 0] = [1.0, 1.0, 1.0]
-    ax[1, 0].imshow(rgb2, aspect=0.5, interpolation="nearest")
+    ax[1, 0].imshow(rgb2[CROP[0], CROP[1]], aspect="equal",
+                    interpolation="nearest")
     ax[1, 0].set_title(r"$\partial$screen$/\partial$(one graphics bit)",
                        fontsize=8)
     ax[1, 0].set_xticks([]); ax[1, 0].set_yticks([])
@@ -78,7 +88,8 @@ def main():
     rgb = np.stack([base, base, base], axis=-1)
     rgb[m["p3_goal"] > 0] = [0.78, 0.39, 0.10]        # target invader (orange)
     rgb[m["p3_cannon"] > 0.3] = [0.21, 0.38, 0.56]    # player cannon (blue)
-    ax[1, 1].imshow(rgb, aspect=0.5, interpolation="nearest")
+    ax[1, 1].imshow(rgb[CROP[0], CROP[1]], aspect="equal",
+                    interpolation="nearest")
     ax[1, 1].set_title("player cannon + target invader", fontsize=8)
     ax[1, 1].set_xticks([]); ax[1, 1].set_yticks([])
     ax[1, 1].set_xlabel("cannon (blue) slides under\nthe target invader (orange)",

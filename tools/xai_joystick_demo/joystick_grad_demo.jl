@@ -55,8 +55,9 @@ const CANNON  = UInt8[0b00010000, 0b00010000, 0b00111000, 0b01111100,
                       0b01111100, 0b11111110, 0b11111110, 0b11111110]
 const VS = 2                                # vertical scale (sprites are 16 tall)
 
-# Layout: invader row near the top, cannon near the bottom.
-const INV_TOP, CAN_TOP = 16, 92
+# Layout: invader row near the top, cannon below. Positions are chosen so the
+# whole scene fits a square cut-out (rows 8:88, cols 20:100) used by the figure.
+const INV_TOP, CAN_TOP = 16, 64
 const INV_X = 28                            # leftmost invader (NUSIZ -> 3 copies)
 const NUSIZ_3COPY = 0b110                   # offsets (0,32,64): invaders at 28,60,92
 const INV_COLS = (INV_X, INV_X + 32, INV_X + 64)
