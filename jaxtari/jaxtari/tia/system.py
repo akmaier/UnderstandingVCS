@@ -121,6 +121,16 @@ NTSC_CPU_CYCLES_PER_SCANLINE = 76        # 228 color clocks / 3
 NTSC_SCANLINES_PER_FRAME = 262
 SCREEN_WIDTH = 160
 
+# obj-trace (mirror of jutari TIA `_OBJ_TRACE`): when `_OBJ_TRACE_ENABLED` is
+# True, the framebuffer-commit loop in `tia_advance` appends one row per
+# completed scanline to `_OBJ_TRACE_LOG`. Off by default → zero behavioural
+# impact (tests never enable it). Used to diff jaxtari's per-scanline object
+# state against jutari's golden trace (tools/obj_trace.jl) to localize a render
+# divergence to the exact divergent field. Columns 0-8 match jutari's CSV
+# exactly; 9-12 are jaxtari-side extras (skip-first + live GRP) for insight.
+_OBJ_TRACE_ENABLED = False
+_OBJ_TRACE_LOG: list = []
+
 # P3i-a: color-clock scaffolding. The TIA actually operates at 3× the
 # CPU rate — one CPU cycle = 3 color clocks. A scanline is 228 color
 # clocks: 68 of HBLANK (the chip blanks output while the CRT beam
@@ -1582,6 +1592,24 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
             # collision detection above still runs at every scanline so
             # unit tests that check collisions at scanline 0 keep working.
             if tia.scanline >= tia.y_start_row:
+                if _OBJ_TRACE_ENABLED:
+                    _OBJ_TRACE_LOG.append((
+                        int(tia.scanline),
+                        int(tia_for_render.p0_x), int(tia_for_render.p1_x),
+                        int(tia_for_render.m0_x), int(tia_for_render.m1_x),
+                        int(tia_for_render.bl_x),
+                        int(tia_for_render.grp0_old), int(tia_for_render.grp1_old),
+                        int(tia_for_render.m0_cosmic_line),
+                        int(tia_for_render.p0_skip_first),
+                        int(tia_for_render.p1_skip_first),
+                        int(tia_for_render.registers[W_GRP0]),
+                        int(tia_for_render.registers[W_GRP1]),
+                        int(tia_for_render.registers[W_VDELP0]),
+                        int(tia_for_render.registers[W_VDELP1]),
+                        int(_vdel_grp(tia_for_render, 0)),
+                        int(_vdel_grp(tia_for_render, 1)),
+                        int(tia_for_render.registers[W_NUSIZ0]),
+                        int(tia_for_render.registers[W_NUSIZ1])))
                 for i in range(line_advance):
                     completed_line = (tia.scanline + i) % tia.scanlines_per_frame
                     if completed_line < SCREEN_HEIGHT:
@@ -1605,6 +1633,24 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
             # Without this jaxtari retained STALE prior-frame pixels in VBLANK
             # bands (star_gunner top rows, etc). Mirror of jutari.
             if tia.scanline >= tia.y_start_row:
+                if _OBJ_TRACE_ENABLED:
+                    _OBJ_TRACE_LOG.append((
+                        int(tia.scanline),
+                        int(tia_for_render.p0_x), int(tia_for_render.p1_x),
+                        int(tia_for_render.m0_x), int(tia_for_render.m1_x),
+                        int(tia_for_render.bl_x),
+                        int(tia_for_render.grp0_old), int(tia_for_render.grp1_old),
+                        int(tia_for_render.m0_cosmic_line),
+                        int(tia_for_render.p0_skip_first),
+                        int(tia_for_render.p1_skip_first),
+                        int(tia_for_render.registers[W_GRP0]),
+                        int(tia_for_render.registers[W_GRP1]),
+                        int(tia_for_render.registers[W_VDELP0]),
+                        int(tia_for_render.registers[W_VDELP1]),
+                        int(_vdel_grp(tia_for_render, 0)),
+                        int(_vdel_grp(tia_for_render, 1)),
+                        int(tia_for_render.registers[W_NUSIZ0]),
+                        int(tia_for_render.registers[W_NUSIZ1])))
                 black_row = jnp.zeros((SCREEN_WIDTH,), dtype=jnp.uint8)
                 for i in range(line_advance):
                     completed_line = (tia.scanline + i) % tia.scanlines_per_frame

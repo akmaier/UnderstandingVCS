@@ -5843,3 +5843,34 @@ ports on pitfall, and diff the per-scanline player state at internal scanlines
 ~56–63 — the first field that differs (p0_x? grp_old? skip_first?) IS the bug.
 Tooling: `tools/obj_trace.jl` (jutari side already exists). diag now caches
 jaxtari frames to `tools/fixtures/cache/*.npy` for re-analysis without re-running.
+
+---
+
+## Sprint 2 (2026-06-17, ~13:20) — pitfall narrowed to VDELP0 selection (HUD digits use LIVE GRP0, not the shadow)
+
+Built the jaxtari obj-trace: an off-by-default `_OBJ_TRACE_ENABLED`/`_OBJ_TRACE_LOG`
+hook in `tia_advance` (mirror of jutari TIA `_OBJ_TRACE`; zero behavioural impact
+when off) + driver `tools/obj_trace_jaxtari.py`. Ran BOTH ports on pitfall frame 0
+(NOOP stream, the case the 557 px is measured on) and diffed per-scanline state.
+
+**At the divergent band (internal scanlines 56–62), the 9 common columns are
+BYTE-IDENTICAL** jaxtari≡jutari: `p0_x=21, p1_x=29, m0_x=8, m1_x=41, bl_x=78`,
+`grp0_old/grp1_old` cycling `60→102(0x66)→60`, `m0_cosmic_line=-1`. So object
+POSITIONS and the GRP SHADOW VALUES are correct in jaxtari.
+
+**Smoking gun (jaxtari-side extras):** `grp0_live` = 0/24 (0x18) ≠ `grp0_old`
+= 60/102 (0x66), while `grp1_live == grp1_old`. Pitfall's HUD is the classic
+2-line VDELP digit kernel: VDELP0/VDELP1 = 1 so the renderer shows the SHADOW
+(`grp_old`, the currently-displayed digit) while the kernel loads the NEXT digit
+into the live GRP. Since `render_pixel` AND `_vdel_grp` are byte-identical between
+ports and `grp0_old` matches jutari, the ONLY way the screen diverges is if
+jaxtari's **VDELP0 selection** picks the LIVE GRP0 (0x18, the next digit) instead
+of the shadow (0x66, the displayed digit) → wrong player-0 digit bitmap → exactly
+the observed left-half pixel diff. Player 1 is immune (grp1_live==grp1_old).
+
+**Hypothesis:** jaxtari's VDELP0 register is 0 (off) at render time where it
+should be 1 — most likely a VDELP0 write-DEFERRAL timing bug from the #115f port
+(reverting #115f didn't help precisely because the deferral itself is the port
+that diverges from jutari). NEXT: re-run obj-trace with VDELP0/VDELP1 + rendered
+`_vdel_grp` logged to confirm, then diff jaxtari's VDELP0 defer handling in
+`tia_poke` against jutari's line-by-line and correct it.
