@@ -50,12 +50,11 @@ def main():
     pal = load_ntsc_palette()
     rgb_e = decode_palette(exact, pal)                     # (n,h,w,3)
     rgb_r = decode_palette(relaxed, pal)
-    diff = np.zeros_like(rgb_e)
-    diff[exact != relaxed] = (255, 0, 255)                 # magenta where they differ
 
-    panels = np.concatenate([rgb_e, rgb_e, rgb_r, diff], axis=2)   # (n,h,4w,3)
+    # 3 panels: HARD | SOFT-STE (= HARD, Theorem 1) | SOFT (relaxed). No diff.
+    panels = np.concatenate([rgb_e, rgb_e, rgb_r], axis=2)         # (n,h,3w,3)
     h, w4 = panels.shape[1], panels.shape[2]
-    band = _header(w4, ["HARD", "SOFT-exact", f"RELAXED {args.label}", "DIFF"])
+    band = _header(w4, ["HARD", "SOFT-STE", f"SOFT {args.label}"])
     band = np.broadcast_to(band, (n, band.shape[0], w4, 3))
     frames = np.concatenate([band, panels], axis=1)               # (n, band+h, 4w, 3)
     frames = frames.repeat(SCALE, axis=1).repeat(SCALE, axis=2)
