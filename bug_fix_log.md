@@ -6374,3 +6374,36 @@ pending_tia_cycles accounting for that addressing mode vs jutari's. A fix there
 is the cycle-phase root for demon_attack + (likely) solaris/asterix/road_runner.
 
 Status: RAM 58/64, screen 12/12. Probe in flight; no code change this tick.
+
+---
+
+## Sprint 12 (2026-06-18, ~09:00) — INVALIDATED Sprint-11 jaxtari trace (boot-harness mismatch); relaunched with matching boot
+
+The Sprint-11 jaxtari INTIM trace was INVALID — a harness-parity slip
+(CLAUDE.md pt2, the same #95-class trap, this time in the diagnostic itself).
+My `/tmp/da_intim_jaxtari.py` booted via raw `console_reset(initial_console)` +
+`run_until_frame` loop, but the sweep's `jaxtari_dump.py` (and the jutari
+reference) boot via `StellaEnvironment(rom, settings).reset(boot_noop_steps=60,
+boot_reset_steps=4)` — a DIFFERENT boot path (StellaEnvironment also does
+paddle/INPT-idle/difficulty setup). Result: the two traces were not comparable.
+
+The tell that caught it: the traces differed WILDLY (jutari F0=707 INTIM reads
+#1=40@(1,105); jaxtari F0=434 reads #1=0b@(29,75)) — but demon_attack is
+bit-exact through frame 1 per the sweep, so a valid trace cannot differ at
+frame 0. A real sub-instruction phase bug would show SUBTLE differences, not
+707-vs-434 read counts. Wild divergence ⇒ harness mismatch, not the bug.
+
+Fix: rewrote the jaxtari trace to use `StellaEnvironment(rom,
+GenericRomSettings()).reset(60,4)` + `env.step()` — matching jaxtari_dump.py
+exactly. Relaunched (`/tmp/da_intim_jaxtari_out2.txt`, ~28 min, background). The
+jutari reference (Sprint 11, env_reset! + env_step!) is valid and unchanged.
+
+LESSON (re-confirmed): every diagnostic trace must use the SAME boot+settings
+harness as the sweep that produced the divergence, or the comparison is noise.
+
+**NEXT TICK:** diff the CORRECTED jaxtari trace (out2) vs the jutari reference.
+F0-F1 should now MATCH (bit-exact frames); the first divergence should appear
+in F2 (demon_attack's first-div frame) — that read's beam position + addressing
+mode pins the cycle offset.
+
+Status: RAM 58/64, screen 12/12. No code change (corrected probe in flight).
