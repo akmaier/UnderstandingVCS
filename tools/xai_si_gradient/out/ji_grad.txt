@@ -1,0 +1,15 @@
+VARIANT STE  on=false alpha=10.0 T=0.1
+  d(move_right)/d(up) = 0.0
+  d(move_right)/d(down) = 0.0
+  d(move_right)/d(left) = -35.7292
+  d(move_right)/d(right) = 35.7292
+VARIANT relax_a6_T0.14  on=true alpha=6.0 T=0.14
+  d(move_right)/d(up) = 0.0
+  d(move_right)/d(down) = 0.0
+  d(move_right)/d(left) = -35.7292
+  d(move_right)/d(right) = 35.7292
+VARIANT relax_a5.5_T0.145  on=true alpha=5.5 T=0.145
+  d(move_right)/d(up) = 0.0
+  d(move_right)/d(down) = 0.0
+  d(move_right)/d(left) = -35.7292
+  d(move_right)/d(right) = 35.7292
