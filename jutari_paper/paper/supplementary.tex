@@ -382,7 +382,7 @@ the run is bit-exact only while every cast rounds correctly.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.55\textwidth]{figures/fig_relax_heatmap.pdf}
+\includegraphics[width=0.58\textwidth]{figures/fig_relax_heatmap.pdf}
 \caption{Overview of the per-step bit-exactness likelihood
 $P_{\mathrm{step}}=p_{\mathrm{read}}(T)^{\rho}\,p_{\mathrm{branch}}(\alpha)^{f_b}$
 of the fully relaxed forward across the $(\alpha,T)$ plane (Space Invaders).
@@ -417,35 +417,37 @@ Theorem~\ref{thm:s-limit}: exactness is recovered as $\alpha\to\infty$ and
 $T\to0$. The jaxtari twin uses the identical cast-to-Int logic, so the same
 analysis applies.
 
-\begin{table*}[t]
+\begin{table}[t]
 \centering
 \caption{Forward bit-exactness of the \emph{fully relaxed} pass (soft branch
 without the straight-through estimator, temperature-$T$ reads) on the full
 simulator running Space Invaders, sampled around the two critical boundaries.
-\textbf{Measured}: the first instruction (of $N=3000$ from reset) at which the
-relaxed trajectory deviates from the executed (straight-through) one; ``exact''
-means no deviation over the whole run. \textbf{Predicted}: the cast-margin
-likelihood model---per-branch exactness $p_{\mathrm{branch}}(\alpha)$, per-read
-exactness $p_{\mathrm{read}}(T)$, and the per-step likelihood
+\textbf{Measured} $N_{\mathrm{div}}$: the first instruction (of $N{=}3000$ from
+reset) at which the relaxed trajectory deviates from the executed
+(straight-through) one; ``exact'' means no deviation over the whole run.
+\textbf{Predicted} (cast-margin model): per-branch exactness
+$p_{\mathrm{branch}}(\alpha)$, per-read exactness $p_{\mathrm{read}}(T)$, and the
+per-step likelihood
 $P_{\mathrm{step}}=p_{\mathrm{read}}^{\rho}\,p_{\mathrm{branch}}^{f_b}$
-($\rho=2.16$, $f_b=0.374$). The forward is bit-exact iff $P_{\mathrm{step}}=1$;
+($\rho=2.16$, $f_b=0.374$); the forward is bit-exact iff $P_{\mathrm{step}}=1$.
 jaxtari uses the identical cast-to-Int logic and is omitted.}
 \label{tab:relax-exact}
 \small
+\setlength{\tabcolsep}{4pt}
 \begin{tabular}{rr c | ccc}
 \toprule
-\multicolumn{2}{c}{} & Measured & \multicolumn{3}{c}{Predicted (cast-margin model)}\\
+\multicolumn{2}{c}{} & Meas. & \multicolumn{3}{c}{Predicted}\\
 \cmidrule(lr){3-3}\cmidrule(lr){4-6}
-$\alpha$ & $T$ & first-divergent step & $p_{\mathrm{branch}}$ & $p_{\mathrm{read}}$ & $P_{\mathrm{step}}$\\
+$\alpha$ & $T$ & $N_{\mathrm{div}}$ & $p_{\mathrm{branch}}$ & $p_{\mathrm{read}}$ & $P_{\mathrm{step}}$\\
 \midrule
-\multicolumn{6}{l}{\emph{Branch boundary} ($T=0.12$ fixed at the read-exact edge)}\\
+\multicolumn{6}{l}{\emph{Branch boundary} ($T{=}0.12$, read-exact)}\\
 $2$ & $0.12$ & $7$     & $0.039$ & $1.000$ & $0.298$\\
 $3$ & $0.12$ & $879$   & $0.953$ & $1.000$ & $0.982$\\
 $4$ & $0.12$ & $1121$  & $0.988$ & $1.000$ & $0.996$\\
 $5$ & $0.12$ & $1216$  & $0.996$ & $1.000$ & $0.999$\\
 $6$ & $0.12$ & \emph{exact} & $1.000$ & $1.000$ & $1.000$\\
 \midrule
-\multicolumn{6}{l}{\emph{Temperature boundary} ($\alpha=6$ fixed at the branch-exact edge)}\\
+\multicolumn{6}{l}{\emph{Temperature boundary} ($\alpha{=}6$, branch-exact)}\\
 $6$ & $0.08$ & \emph{exact} & $1.000$ & $1.000$ & $1.000$\\
 $6$ & $0.10$ & \emph{exact} & $1.000$ & $1.000$ & $1.000$\\
 $6$ & $0.12$ & \emph{exact} & $1.000$ & $1.000$ & $1.000$\\
@@ -454,7 +456,7 @@ $6$ & $0.18$ & $2$   & $1.000$ & $0.223$ & $0.039$\\
 $6$ & $0.20$ & $2$   & $1.000$ & $0.144$ & $0.015$\\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
 
 \paragraph{Choosing $\alpha$ and $T$.} The two bounds are
 \emph{program-independent}, which is what makes the setting reliable across
