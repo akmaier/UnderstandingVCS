@@ -6203,3 +6203,52 @@ other divergent games.
 Status: jaxtari RAM 58/64 (localization only — root cause identified, no fix
 this tick; collision-pipeline fix + the floating-low-bits question are the next
 work, gated on TIA-layer unit tests + targeted RAM re-check).
+
+---
+
+## Sprint 8 (2026-06-18, ~05:00) — kung_fu_master: ruled out cheap causes; solaris characterized (CXPPMM floating-bus). Both read CXPPMM, different bits.
+
+**kung_fu_master ($76) — cheap causes RULED OUT this tick:**
+- RIOT INSTAT/INTIM D7: jaxtari's read formula + the `timer <= -2`
+  read-after-int latch are IDENTICAL to jutari → not the cause.
+- jaxtari collision-detection logic (`_apply_pixel_collisions`):
+  `if p0_here and p1_here: coll[7] |= 0x80` — correct, matches jutari.
+- jaxtari bus floating-bus merge: PRESENT and correct (`_TIA_NOISE_MASK=0x3F`,
+  per-register driven masks, OR'd into TIA reads at the bus layer, mirroring
+  xitari/jutari). My earlier "latent floating-low-bits bug" flag was WRONG.
+- So kung_fu_master's bug is purely the **collision LATCH D7** (collisions[7]
+  bit 7 not set): jaxtari's p0/p1 do not overlap at the boot scanline where
+  jutari's do — a transient, RAM-invisible per-scanline coverage divergence.
+  Needs a slow per-scanline jaxtari↔jutari coverage trace during boot to pin
+  (the only remaining probe; the cheap hypotheses are exhausted).
+
+**solaris ($0b, $78) — characterized via jutari Bus trace (fast):**
+- `$78` final write (sl 233) = `TIAread $37` (CXPPMM) = `0x37`, stored
+  UNMASKED. D7=D6=0 (no collision) → the value is the **floating-bus low
+  bits** (`data_bus_state & 0x3F`). So solaris diverges on the **data_bus_state**
+  value at the CXPPMM read, NOT the collision latch.
+- `$0b` = a counter derived from RAM cells ($8b=RAM $0b self-inc, $9e=RAM
+  $1e) — **downstream** of $78, not a primary divergence.
+
+**Synthesis:** both kung_fu_master and solaris read CXPPMM, but diverge on
+DIFFERENT bits — kung_fu_master the latch D7 (P0-P1 coverage), solaris the
+floating-bus low 6 bits (data_bus_state parity at the read cycle). NOT a single
+shared fix. solaris's data_bus_state divergence implies jaxtari updates
+`data_bus_state` on a different set of bus ops (or at a different cycle) than
+jutari for the instruction stream around the CXPPMM read — a subtle bus-parity
+issue (jaxtari's sequence otherwise matches: only $78/$0b diverge).
+
+**NEXT:**
+- kung_fu_master: trace jutari obj_trace over boot → scanline where p0/p1 first
+  overlap (CXPPMM-D7 latches) → run jaxtari obj_trace same boot → diff p0/p1
+  coverage at that scanline.
+- solaris: diff jaxtari vs jutari `data_bus_state` at the CXPPMM ($37) read
+  (instrument both bus peeks to log data_bus_state at addr $37); find the bus op
+  where the two diverge. Likely a missing/extra data_bus_state update on some
+  cycle class (internal tick / RDY / undriven read).
+- asterix/demon_attack/road_runner still unprobed — trace next to see if they
+  share the data_bus_state or collision-latch class.
+
+Status: jaxtari RAM 58/64 (diagnosis only; no fix — both remaining leads need
+either a slow boot coverage trace (kfm) or a data_bus_state bus-parity trace
+(solaris), both deferred to keep the tick bounded).
