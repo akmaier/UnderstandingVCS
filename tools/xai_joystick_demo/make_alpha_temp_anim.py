@@ -113,9 +113,9 @@ def temp_gif():
         ax.set_xticks([]); ax.set_yticks([])
         fig.tight_layout()
 
-    anim = FuncAnimation(fig, draw, frames=Ts, interval=120)
+    anim = FuncAnimation(fig, draw, frames=Ts, interval=333)
     out = os.path.join(FIGDIR, "fig_temp_anim.gif")
-    anim.save(out, writer=PillowWriter(fps=8))
+    anim.save(out, writer=PillowWriter(fps=3))   # slower sweep (was fps=8)
     plt.close(fig)
     print("wrote", out)
 
