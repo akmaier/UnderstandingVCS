@@ -177,7 +177,7 @@ def fig_timeline():
 
     cal_days = days[-1]
     txt = (f"{n} commits · {len(sessions)} active sessions\n"
-           f"{active:.0f} active h ($\\approx${active/24:.1f} working days)\n"
+           f"{active:.0f} active h ($\\approx${active/24:.1f} days, 24/7)\n"
            f"compressed into {cal_days:.0f} calendar days")
     ax.text(0.97, 0.05, txt, transform=ax.transAxes, ha="right", va="bottom",
             fontsize=7.8,

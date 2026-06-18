@@ -449,6 +449,32 @@ $6$ & $0.20$ & $2$   & $1.000$ & $0.144$ & $0.015$\\
 \end{tabular}
 \end{table}
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_divergence_frame.pdf}
+\caption{One frame of the $60$-second full-simulator comparison (Space Invaders,
+beam-timed). \textbf{HARD} and \textbf{SOFT-STE} are pixel-identical
+(Theorem~\ref{thm:s-exact}). \textbf{SOFT} $\alpha{=}6,T{=}0.14$ is inside the
+bit-exact corner and stays identical to HARD for the whole rollout. \textbf{SOFT}
+$\alpha{=}5.5,T{=}0.145$ is just past the read boundary and diverges \emph{mildly}:
+the game stays recognisable but a column of invaders is missing---the localised
+effect of one corrupted sprite-position read, persistent over the rollout.}
+\label{fig:divframe}
+\end{figure*}
+
+\begin{figure}[tb]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_timeline.pdf}
+\caption{Implementation effort reconstructed from the version-control log.
+The step curve is the cumulative number of commits against calendar time, and
+each shaded band is an active work session (a maximal run of consecutive
+commits no more than three hours apart), and the long flat stretches between
+bands are idle gaps, the largest of which are annotated. The $373$ commits form
+$52$ active sessions totalling ${\sim}137$ hours of work---about $5.7$
+round-the-clock days---spread across a $29$-day calendar window.}
+\label{fig:timeline}
+\end{figure}
+
 \paragraph{Choosing $\alpha$ and $T$.} The two bounds are
 \emph{program-independent}, which is what makes the setting reliable across
 games. A $6502$ branch displacement is at most $|\delta|\le127$, so
@@ -499,33 +525,7 @@ fetch ever fails, so this late divergence is driven purely by an evolving RAM
 read.) The exact--diverge boundary is thus a per-cast threshold \emph{spectrum}
 over both fixed (ROM) and state-dependent (RAM) reads, not a single cliff.
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\textwidth]{figures/fig_divergence_frame.pdf}
-\caption{One frame of the $60$-second full-simulator comparison (Space Invaders,
-beam-timed). \textbf{HARD} and \textbf{SOFT-STE} are pixel-identical
-(Theorem~\ref{thm:s-exact}). \textbf{SOFT} $\alpha{=}6,T{=}0.14$ is inside the
-bit-exact corner and stays identical to HARD for the whole rollout. \textbf{SOFT}
-$\alpha{=}5.5,T{=}0.145$ is just past the read boundary and diverges \emph{mildly}:
-the game stays recognisable but a column of invaders is missing---the localised
-effect of one corrupted sprite-position read, persistent over the rollout.}
-\label{fig:divframe}
-\end{figure*}
-
 \section{Implementation Effort}
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.86\textwidth]{figures/fig_timeline.pdf}
-\caption{Implementation effort reconstructed from the version-control log.
-The step curve is the cumulative number of commits against calendar time, and
-each shaded band is an active work session (a maximal run of consecutive
-commits no more than three hours apart), and the long flat stretches between
-bands are idle gaps, the largest of which are annotated. The $373$ commits form
-$52$ active sessions totalling ${\sim}137$ hours of work---about $5.7$ working
-days---spread across a $29$-day calendar window.}
-\label{fig:timeline}
-\end{figure*}
 
 Figure~\ref{fig:timeline} is the evidence behind the effort estimate in the main
 paper. Because every step of the project was committed, the commit timestamps
