@@ -28,7 +28,7 @@ DPC also deferred.
 """
 module Cart
 
-export CartState, make_cart, cart_peek, cart_poke!, cart_reset!,
+export CartState, make_cart, cart_peek, cart_peek_pure, cart_poke!, cart_reset!,
        KIND_2K, KIND_4K, KIND_F8, KIND_F6, KIND_F4, KIND_E0, KIND_FE,
        KIND_F8SC, KIND_F6SC, KIND_F4SC
 
@@ -256,6 +256,32 @@ function cart_peek(cart::CartState, addr::Integer)
     value = cart.rom[bank_offset + (Int(a) & 0x0FFF) + 1]
     _maybe_switch_bank!(cart, a)
     return value
+end
+
+"""
+    cart_peek_pure(cart, addr) -> UInt8
+
+Side-effect-free cart read: returns the byte at `addr` in the CURRENT bank
+WITHOUT firing any bank-switch hotspot. Used by the (default-off) CPU relaxation
+read-blend for neighbour reads, which must not switch banks or advance any clock.
+Mirrors `cart_peek` minus the `_maybe_switch_*!` calls.
+"""
+function cart_peek_pure(cart::CartState, addr::Integer)
+    a = UInt16(Int(addr) & 0x1FFF)
+    if cart.kind == KIND_2K
+        return cart.rom[(Int(a) & 0x07FF) + 1]
+    elseif cart.kind == KIND_4K
+        return cart.rom[(Int(a) & 0x0FFF) + 1]
+    elseif cart.kind == KIND_E0
+        return cart.rom[_e0_offset(cart, a) + 1]
+    elseif cart.kind == KIND_FE
+        return cart.rom[(Int(addr) & 0x0FFF) +
+                        ((Int(addr) & 0x2000) == 0 ? 0x1000 : 0) + 1]
+    end
+    if cart.kind in _SC_KINDS && (Int(a) & _SC_AREA_MASK) == _SC_READ_BASE
+        return cart.sc_ram[(Int(a) & _SC_OFFSET_MASK) + 1]
+    end
+    return cart.rom[cart.current_bank * 0x1000 + (Int(a) & 0x0FFF) + 1]
 end
 
 """

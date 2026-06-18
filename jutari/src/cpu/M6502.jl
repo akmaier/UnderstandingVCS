@@ -43,6 +43,7 @@ using ..Types: CPUState
 # Multiple-dispatch peek / poke! so `step` accepts either a `BusState`
 # (proper 6507 bus) or a flat `Vector{UInt8}` (P1-style scratch memory).
 using ..Bus: peek, poke!, BusState
+using ..Cart: cart_peek_pure
 # TIA + RIOT timing hooks applied after each instruction when running on a Bus.
 using ..TIA: tia_advance!, tia_apply_wsync!
 using ..RIOT: riot_advance!
@@ -184,9 +185,36 @@ const _STATUS_OP = Dict{UInt8, Tuple{UInt8, Bool}}(
     0xD8 => (FLAG_D, false), 0xF8 => (FLAG_D, true),
 )
 
-# `_peek` is a local alias for the dispatched `peek` from the Bus module —
-# kept so the existing call sites read the same as before this refactor.
-const _peek = peek
+# `_peek` dispatches reads. DEFAULT (relax off) it is exactly `peek`, so the
+# conformance-critical path is unchanged. With the relaxation hook ON it routes
+# value memory (cart ROM / RIOT RAM) through a temperature-blended, rounded read
+# (companion to the SOFT study); TIA / RIOT-I/O reads stay exact (side effects).
+@inline _peek(memory, addr::Integer) =
+    _cpu_relax_on[] ? _relaxed_read(memory, addr) : peek(memory, addr)
+
+# Generic fallback (Vector{UInt8} scratch memory in CPU unit tests): exact read.
+_relaxed_read(memory, addr::Integer) = peek(memory, addr)
+
+# BusState: one exact `peek` (correct value + the single bus cycle + side
+# effects), then a temperature-blended round over PURE neighbour reads (no extra
+# cycles, no bank switch). T = `_cpu_relax_temp`.
+function _relaxed_read(bus::BusState, addr::Integer)
+    v0 = peek(bus, addr)
+    a  = Int(addr) & 0x1FFF
+    iscart = (a & 0x1000) != 0
+    isram  = !iscart && (a & 0x80) != 0 && (a & 0x200) == 0
+    (iscart || isram) || return v0                  # TIA / RIOT-I/O stay exact
+    T = _cpu_relax_temp[]
+    num = 0.0; den = 0.0
+    for k in -4:4
+        w  = exp(-abs(k) / T)
+        bk = k == 0 ? Float64(v0) :
+             iscart ? Float64(cart_peek_pure(bus.cart, addr + k)) :
+                      Float64(bus.ram[(((a & 0x7F) + k) & 0x7F) + 1])
+        num += w * bk; den += w
+    end
+    return UInt8(round(Int, num / den) & 0xFF)
+end
 
 # --------------------------------------------------------------------------- #
 # Relaxation hook (DEFAULT OFF) — companion to the SOFT relaxation study. Lets
@@ -316,7 +344,7 @@ end
 
 function _step_inner!(state::CPUState, memory)
     pc = Int(state.PC) & 0xFFFF
-    opcode = peek(memory, pc)
+    opcode = _peek(memory, pc)
     mode = ADDRESSING_MODE_TABLE[Int(opcode) + 1]
     base_cycles = Int(CYCLE_TABLE[Int(opcode) + 1])
 
