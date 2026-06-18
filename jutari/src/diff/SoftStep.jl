@@ -66,6 +66,13 @@ function soft_rom_peek(rom::AbstractVector{<:Real}, addr::Real)
     # vector at $FFFE/$FFFF must read from the last two bytes of the
     # cart, regardless of cart size). `mod` works for any ROM size,
     # including the small fixtures the unit tests use.
+    # Relaxation study: NTM-style temperature-T read (rounded back to a byte)
+    # so T perturbs the forward fetch. Default-off → bit-exact one-hot read.
+    if _relax_on[]
+        return straight_through_round(
+            soft_memory_read(rom, mod(Int(round(addr)), n);
+                             temperature = _relax_temp[]))
+    end
     idx = mod(Int(addr), n)
     one_hot = Float32.((0:n - 1) .== idx)
     return _dot(one_hot, Float32.(rom))
@@ -78,6 +85,13 @@ Differentiable RAM read — same Zygote-friendly broadcast one-hot.
 """
 function soft_ram_peek(ram::AbstractVector{<:Real}, addr::Real)
     n = length(ram)
+    # Relaxation study: temperature-T read (rounded back to a byte) so T
+    # perturbs the forward. Default-off → bit-exact one-hot read.
+    if _relax_on[]
+        return straight_through_round(
+            soft_memory_read(ram, Int(round(addr));
+                             temperature = _relax_temp[]))
+    end
     one_hot = Float32.((0:n - 1) .== Int(addr))
     return _dot(one_hot, Float32.(ram))
 end
@@ -1870,8 +1884,9 @@ function _func_do_branch(state, bus, flag_field::Symbol,
     logit_sign = take_when_set ? 1f0 : -1f0
     flag_logit = logit_sign * (2f0 * flag_soft - 1f0)
 
-    # Soft PC — sigmoid-blended for the gradient.
-    pc_soft = soft_branch(flag_logit, pc_not_taken, pc_taken; alpha=10.0)
+    # Soft PC — sigmoid-blended for the gradient (alpha defaults to 10.0,
+    # matching the executed branch; the relaxation study overrides it).
+    pc_soft = soft_branch(flag_logit, pc_not_taken, pc_taken; alpha=_relax_alpha[])
 
     # Hard PC — read from packed `state.P` directly so tests that
     # mutate only P (and not P_X) still pick the right branch.
@@ -1884,7 +1899,13 @@ function _func_do_branch(state, bus, flag_field::Symbol,
     # the backward pass sees only the `pc_soft` term — matching the
     # jaxtari `pc_soft + jax.lax.stop_gradient(pc_hard - pc_soft)`
     # straight-through construction.
-    new_pc = pc_soft + _stop_gradient(pc_hard - pc_soft)
+    #
+    # Relaxation study: with the straight-through correction dropped the
+    # forward PC is the rounded sigmoid-blended PC, so alpha controls when
+    # the branch flips (large alpha → equals the hard PC; small alpha → the
+    # blend crosses a rounding boundary and control flow diverges).
+    new_pc = _relax_on[] ? straight_through_round(pc_soft) :
+                           pc_soft + _stop_gradient(pc_hard - pc_soft)
 
     # Cycles +1 when taken. Same straight-through dance.
     extra_hard = take_hard ? 1f0 : 0f0
