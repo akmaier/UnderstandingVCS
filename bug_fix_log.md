@@ -55,8 +55,21 @@ work. Two independent causes:
    cycles); it only "hangs" locally where the ROM is present.
 
 **Result.** All 13 failures fixed (cart/f8sc/nusiz 57 pass; p6c 59 pass). Suite is
-CI-fast again (probe=false). The heavy P8 IG-attribution suite + xdist `-n auto`
-memory on the CI runner is a separate watch-item (see below).
+CI-fast again (probe=false).
+
+**Second CI cause — xdist worker OOM (the "cancelled" jaxtari job).** Even with 0
+test failures, the jaxtari job kept getting *cancelled* (NOT a clean fail) at a
+VARYING wall-time (≈20 min at probe=true, ≈39 min at probe=false) — so not a fixed
+timeout. Reproduced locally: the pytest CONTROLLER hangs at 0% CPU with NO worker
+processes alive = the classic xdist deadlock where a worker is KILLED mid-test and
+the controller waits forever. Culprit: **`test_p8_*` (integrated-gradients
+attribution) peaks at ~2.75 GB per process** (`/usr/bin/time -l`). Under xdist
+`-n auto` (pyproject default) that's N×2.75 GB → OOM-kills a worker on a 7–16 GB
+CI runner → controller deadlock → GitHub cancels the job. Run SERIALLY (`-n0`) it's
+a single 2.75 GB process (4.5 min) — fine. FIX (`.github/workflows/test.yml`): run
+the P8 IG suite as its own serial (`-n0`) step, the rest xdist-parallel (minus
+P8); add `timeout-minutes: 90`. PXC4 Klaus Dormann self-skips in CI (ROM untracked)
+— it only "hangs" locally where the ROM is present (it runs ~100M cycles).
 
 ---
 
