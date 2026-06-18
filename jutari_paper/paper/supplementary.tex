@@ -31,11 +31,16 @@ Ground Truth for Explainable AI}
 \begin{document}
 \maketitle
 
-This supplement gives the full proofs of the two theorems stated in the main
-paper, together with the implementation-effort plot referenced in the Results.
-It is self-contained: we first restate the soft/hard formulation, then prove the
-forward-equivalence and temperature-limit results, and finally show the effort
-timeline.
+This supplement collects the analyses behind the main paper. We give the full
+proofs of the two theorems; a numerical study of how the relaxation parameters
+$\alpha$ and $T$ shape the gradient; an empirical and analytic account of when the
+\emph{fully relaxed} forward stays bit-exact (a cast-margin model, its
+$(\alpha,T)$ likelihood map, and boundary measurements on the full simulator),
+accompanied by the beam-timed comparison videos; and the implementation-effort
+timeline referenced in the Results. It is self-contained: we first restate the
+soft/hard formulation, prove the forward-equivalence and temperature-limit
+results, then study the relaxation gradient and forward bit-exactness, and finally
+show the effort timeline.
 
 \section{Setup and Notation}
 
@@ -310,17 +315,6 @@ near $\alpha{=}6$ here---$\alpha{=}2,6,20$ give peak magnitudes
 $0.53,1.00,0.15$, and at $\alpha{=}20$ the gate has essentially switched and the
 gradient has nearly vanished (the hard-branch limit). The main paper plots this
 gate and its gradient directly.
-
-The softmax select positions the sprite as the weighted sum
-$\sum_k w_k\,(\text{sprite at column }k)$ with $w=\softmax(\ell/T)$, so its
-expected screen occupancy is a blend over candidate columns whose spread grows
-with $T$. The main paper visualises this in pixel space (the sampled
-sprite-occupancy heatmap): a broad, smooth occupancy cloud at high $T$
-($\sigma\approx6$ px at $T{=}2.0$) that concentrates as $T$ falls
-($\sigma\approx3$ px at $T{=}0.5$, $1.3$ px at $T{=}0.1$) onto a single sharp
-sprite---the hard pick. The gradient with respect to the control follows the same
-arc: spread over the band at high $T$ and collapsing to zero between pixels in the
-hard limit.
 
 In every panel the forward render is the exact hard one
 (Theorem~\ref{thm:s-exact}), and only the gradient changes. It is most informative
