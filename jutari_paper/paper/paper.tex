@@ -618,9 +618,9 @@ many environments are vectorised in parallel.
 
 \subsection{Proof of Concept: Ground-Truth Gradients}
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\includegraphics[width=0.82\textwidth]{figures/si_joystick_gradient.pdf}
+\includegraphics[width=\columnwidth]{figures/si_joystick_gradient.pdf}
 \caption{Ground-truth gradients on the \emph{real} Space Invaders ROM in the
 differentiable VCS. \textbf{(a)} the live game $35$\,s after boot---the scene the
 real ROM renders, pixel-exact to \textsc{xitari}. \textbf{(b)} the screen's
@@ -638,7 +638,7 @@ recover the control mapping (push \textsc{right}, not up/down), while the naive
 gradient vanishes. Every recovered quantity can be \emph{checked} against the
 known wiring---the whole point of a ground-truth substrate.}
 \label{fig:xai}
-\end{figure*}
+\end{figure}
 
 The point of the foundation is that gradients computed on it can be
 \emph{checked}. Because soft mode is forward-exact (Theorem~\ref{thm:exact}),
