@@ -488,17 +488,21 @@ but only mildly: the game remains recognisable with a persistent, localised erro
 (a depleted column of invaders), because the relaxation corrupts a sprite-position
 read rather than the control flow.
 
-\paragraph{Why divergence cannot be delayed.} A natural question is whether some
-$(\alpha,T)$ boots cleanly and then diverges only after many frames---a Bernoulli
-first failure deep into the rollout. It cannot, and the margins explain why. The
-borderline casts cluster at a single temperature ($T\approx0.1445$) and lie in
-the display kernel that re-runs every frame, so they are exercised on the very
-first rollout frame. The first failing cast therefore fires immediately whenever
-it fires at all: the transition is a sharp cliff---bit-exact for $T\le0.1445$,
-diverging within the first frame for $T\ge0.145$---rather than a geometric tail. A
-delayed divergence would need a borderline cast executed only rarely, which this
-kernel does not contain, so ``boots, then breaks later'' is not achievable: one
-either stays in the exact corner or breaks at once.
+\paragraph{Delayed divergence.} A setting can also boot cleanly and diverge only
+after many frames---the Bernoulli first failure deep into the rollout. The
+mechanism is that the read margins are \emph{time-varying} for RAM: a data read
+is exact while its neighbouring bytes are similar and crosses $\tfrac12$ only once
+the game state evolves into a high-contrast layout, so the most-borderline cast
+may be one the program reaches only late. Sweeping $T$ just below the read
+boundary on a long clean-boot rollout (boot exact, relaxation enabled only for the
+rollout) makes the first-divergence frame recede: at $\alpha{=}20$ the rollout
+first deviates on frame~$1$ for $T{=}0.1448$, on frame~$194$ for $T{=}0.1446$, and
+only on frame~$2365$ (${\approx}40$\,s of play) for $T\le0.1444$---reproducing the
+game bit-for-bit for tens of seconds before a single late RAM read first rounds
+wrong. (Below $T{=}0.1465$, the lowest fixed ROM-read threshold, no opcode/operand
+fetch ever fails, so this late divergence is driven purely by an evolving RAM
+read.) The exact--diverge boundary is thus a per-cast threshold \emph{spectrum}
+over both fixed (ROM) and state-dependent (RAM) reads, not a single cliff.
 
 \begin{figure*}[t]
 \centering
