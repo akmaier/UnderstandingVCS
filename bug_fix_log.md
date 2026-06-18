@@ -6110,3 +6110,44 @@ expensive to *verify*; defer it):
    later; per-instruction CPU trace.
 5. **surround** — revisit once boot speed is addressed (or seed $7d directly
    without the full 60-frame probe).
+
+---
+
+## Sprint 7 (2026-06-18, ~03:00) — kung_fu_master RAM divergence localized to a single D7 bit at $76
+
+Chased the cheapest of the 6 RAM divergences. Focused per-frame RAM diff,
+jaxtari (GenericRomSettings) vs xitari (`trace_dump`, breakout_random_actions
+stream, 60-NOOP+4-RESET boot), bytes printed with values:
+
+```
+frame 0: $76  xi=0x82  jx=0x02
+frame 1: $76  xi=0x82  jx=0x02
+... (persistent every frame)
+```
+
+**It is a single-bit (D7) divergence:** `0x82 = 0x02 | 0x80`. The low bits
+(`0x02`) match xitari exactly; only **bit 7** differs (xitari D7=1, jaxtari
+D7=0), constant from frame 0. jutari has $76 at 0 b/f (bit-exact), so jaxtari's
+D7 for whatever read feeds $76 diverges from jutari/xitari.
+
+A persistent D7-only delta is the signature of a **D7-bearing register read**
+fed into $76, where jaxtari's D7 is wrong. Candidate sources (in likelihood
+order): (a) a TIA INPT read — INPT4/INPT5 triggers idle HIGH (D7=1) or the
+INPT0-3 idle-LOW path from #115b; (b) RIOT INSTAT D7 (timer-interrupt flag);
+(c) SWCHB D7 (P1 difficulty); (d) a floating-bus read where the data-bus state's
+D7 differs. The matching low bits rule out a *pure* floating-bus read (those
+would scramble the low bits too) — it's a register whose D7 jaxtari drives
+differently than jutari does.
+
+**NEXT (decisive):** `tools/trace_dump --rom kung_fu_master --actions ...
+--cpu --max-frames 1` to get xitari's per-instruction PC trace for frame 0;
+disassemble kung_fu_master around the STA that writes $76 to find the source
+read address; compare jaxtari's peek() for that address vs jutari's. The fix is
+almost certainly a one-line D7 handling correction in jaxtari's bus/TIA/RIOT
+peek path (jutari has it right — diff the two peek implementations for that
+register). Single byte, so the per-instruction trace is bounded.
+
+Status: jaxtari RAM 58/64 (unchanged this tick — localization only, no fix yet;
+kept the tick bounded per the don't-thrash rule). Other divergences pending:
+solaris (2), asterix (9), demon_attack (13), road_runner (16), surround (1-7,
+construction-probe, deferred on speed).
