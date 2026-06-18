@@ -333,7 +333,7 @@ the sampled sprite occupancy as $T$ varies, each frame on its own scale---are
 provided as \texttt{fig\_alpha\_anim.gif} and \texttt{fig\_temp\_anim.gif} in the
 supplementary media.
 
-\begin{figure}[t]
+\begin{figure}[tbh]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_alpha_temp.pdf}
 \caption{Soft branch: the screen-space gradient
@@ -380,9 +380,9 @@ p_{\mathrm{branch}}(\alpha)^{f_b}$, with $\rho=2.16$ reads per instruction and
 branch fraction $f_b=0.374$ measured on the executed Space Invaders trace, and
 the run is bit-exact only while every cast rounds correctly.
 
-\begin{figure*}[t]
+\begin{figure}[tbh]
 \centering
-\includegraphics[width=0.58\textwidth]{figures/fig_relax_heatmap.pdf}
+\includegraphics[width=\columnwidth]{figures/fig_relax_heatmap.pdf}
 \caption{Overview of the per-step bit-exactness likelihood
 $P_{\mathrm{step}}=p_{\mathrm{read}}(T)^{\rho}\,p_{\mathrm{branch}}(\alpha)^{f_b}$
 of the fully relaxed forward across the $(\alpha,T)$ plane (Space Invaders).
@@ -395,7 +395,7 @@ two $1$D profiles, and the two boundary sweeps of Table~\ref{tab:relax-exact} ar
 slices along the green contour's two edges. The star marks the recommended
 operating point ($\alpha{=}6$, $T{=}0.12$)---the corner where they cross.}
 \label{fig:relaxheat}
-\end{figure*}
+\end{figure}
 
 Figure~\ref{fig:relaxheat} maps this likelihood across the whole $(\alpha,T)$
 plane: a bit-exact corner at large $\alpha$ and small $T$, a gradual branch
@@ -417,7 +417,7 @@ Theorem~\ref{thm:s-limit}: exactness is recovered as $\alpha\to\infty$ and
 $T\to0$. The jaxtari twin uses the identical cast-to-Int logic, so the same
 analysis applies.
 
-\begin{table}[t]
+\begin{table}[tbh]
 \centering
 \caption{Forward bit-exactness of the \emph{fully relaxed} pass (soft branch
 without the straight-through estimator, temperature-$T$ reads) on the full
