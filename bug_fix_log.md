@@ -6342,3 +6342,35 @@ all 4 + a regression check that the 58 bit-exact games stay 0.
 
 Status: RAM 58/64, screen 12/12 (classification complete this tick; the 6 are
 now grouped by root with a single high-leverage cycle-phase probe identified).
+
+---
+
+## Sprint 11 (2026-06-18, ~08:00) — demon_attack INTIM-phase probe set up (jutari reference captured; jaxtari trace launched)
+
+Started the highest-leverage cycle-phase probe (demon_attack INTIM, the cleanest
+of the 4 cycle-phase-class games). Verified the cycle formula matches jutari:
+both compute `cur_cycles = total_cycles + pending_tia_cycles`, riot read uses
+`cur_cycles - 1`. So the divergence is the VALUE of pending at the read (sub-
+instruction phase), not the formula.
+
+jutari INTIM reference (demon_attack, breakout_random_actions, generic settings),
+first reads/frame [value @ sl,cc]:
+- F0: 707 reads. #1=40@(1,105) #2=0@(12,18) #3=ff@(13,144) #4=1@(14,180) ...
+- F1: 858 reads. #1=1@(1,105) #2=80@(1,135) #3=ff@(1,198) ...
+- F2: 857 reads. #1=1@(1,105) #2=0@(1,135) #3=ff@(1,198) ...
+
+demon_attack is a heavy INTIM poller (~700-860 reads/frame). The sweep's
+first-div frame is 2, so frames 0-1 RAM is bit-exact → jaxtari's INTIM reads
+must match jutari through F1, and the phase drift emerges in F2. Saved the
+jutari reference to /tmp/da_intim_jutari_ref.txt; launched the jaxtari INTIM
+trace (`/tmp/da_intim_jaxtari.py`, ~28 min, background) logging value+sl+cc per
+INTIM read for F0-F2.
+
+**NEXT TICK:** diff jaxtari vs jutari INTIM reads — find the FIRST read where
+value or (sl,cc) diverges. That read's beam position + the instruction
+addressing mode pin the sub-instruction cycle offset (the bug). If F0/F1 match
+and F2 diverges at read K, inspect the instruction at read K and jaxtari's
+pending_tia_cycles accounting for that addressing mode vs jutari's. A fix there
+is the cycle-phase root for demon_attack + (likely) solaris/asterix/road_runner.
+
+Status: RAM 58/64, screen 12/12. Probe in flight; no code change this tick.
