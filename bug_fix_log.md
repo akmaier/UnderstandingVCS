@@ -101,8 +101,21 @@ double-boot `trace_dump` (commit 0b48b97), so the twice-fired starting actions
 match. **RESULT: full RAM sweep with probe=true = 64/64 — jaxtari is now RAM
 bit-exact with xitari on ALL 64 ROMs**, matching jutari. Every formerly-divergent
 ROM (demon_attack, asterix, kung_fu_master, road_runner, solaris, surround) is
-0 b/f; no regressions. NEXT: confirm pixel-exactness held — screen conformance
-(PXC-S) + PXC2 + env unit tests with the probe on (fixtures already double-boot).
+0 b/f; no regressions.
+
+**ALL GATES GREEN with probe=true (no regression from the flip):**
+- RAM sweep: **64/64** bit-exact vs xitari.
+- Screen conformance (PXC-S): **12/12** — all 6 jaxtari-vs-xitari cases pixel-exact
+  (incl. pitfall/enduro, the double-fire cases that were the documented probe
+  risk; the regenerated double-boot fixtures match).
+- PXC2 (jaxtari ≡ jutari) + test_p6 (max-scanlines path) + breakout/pong env
+  tests: **all pass** (69 tests).
+
+jaxtari now mirrors jutari's RAM conformance exactly (64/64) and holds the screen
+gate. NEXT (comprehensive pixel measurement): full 64-ROM SCREEN sweep with
+probe=true to put a measured number on whole-screen pixel-exactness (jutari is
+64/64 screen). Any shortfall there = render-path edge cases on games outside the
+12-case gate — a separate workstream, same bus-op/screen-diff-vs-jutari method.
 
 ---
 
