@@ -117,6 +117,14 @@ probe=true to put a measured number on whole-screen pixel-exactness (jutari is
 64/64 screen). Any shortfall there = render-path edge cases on games outside the
 12-case gate — a separate workstream, same bus-op/screen-diff-vs-jutari method.
 
+**SCREEN sweep result (probe=true): 62/64 pixel-exact.** RAM is now the strong
+suit (64/64); screen is 62/64. The only 2 misses are **battle_zone** (1112 px/f)
+and **ms_pacman** (224 px/f), both diverging at frame 1 — and both are exactly
+the two games with `allow_hmove_blanks=False`. RAM is 0 b/f for both ⇒ PURE
+RENDER bug (per methodology). jutari renders both at 0 px, so jaxtari's
+HMOVE-blank-disabled render path doesn't yet mirror jutari. NEXT: diff the render
+path for battle_zone vs jutari (allow_hmove_blanks=False handling) and fix.
+
 ---
 
 ### 🛠️ Task #124 — comparison-video tool crashed on the 5 PAL games (2026-06-17)
