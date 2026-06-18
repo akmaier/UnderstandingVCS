@@ -98,8 +98,11 @@ xitari `trace_dump` double-boots natively) + `jaxtari_dump.py` default True
 (probe ≈ 3× boot frames, ~20 min/ROM). The obsolete "probe=false for fixture
 backward-compat" note is gone — the screen fixtures were regenerated from the
 double-boot `trace_dump` (commit 0b48b97), so the twice-fired starting actions
-match. **VERIFYING:** full RAM sweep with probe=true (expect 64/64), then screen
-conformance (expect 12/12) + PXC2 + env unit tests.
+match. **RESULT: full RAM sweep with probe=true = 64/64 — jaxtari is now RAM
+bit-exact with xitari on ALL 64 ROMs**, matching jutari. Every formerly-divergent
+ROM (demon_attack, asterix, kung_fu_master, road_runner, solaris, surround) is
+0 b/f; no regressions. NEXT: confirm pixel-exactness held — screen conformance
+(PXC-S) + PXC2 + env unit tests with the probe on (fixtures already double-boot).
 
 ---
 
