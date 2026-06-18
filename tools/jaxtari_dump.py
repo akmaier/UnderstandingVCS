@@ -119,11 +119,14 @@ def main(argv=None) -> int:
     p.add_argument("--max-frames", type=int, required=True)
     p.add_argument("--mode", choices=("ram", "screen"), required=True)
     p.add_argument("--out", type=Path, required=True)
-    p.add_argument("--construction-probe", action="store_true",
+    p.add_argument("--construction-probe", action=argparse.BooleanOptionalAction,
+                   default=True,
                    help="run xitari's double-boot construction probe "
                         "(ALEInterface ctor format-autodetect + double reset_game). "
                         "xitari's trace_dump does this natively and jutari's "
-                        "harnesses default to it; enable for full xitari parity.")
+                        "jutari_trace_dump.jl defaults to it — so this DEFAULTS TRUE "
+                        "for full xitari/jutari parity (seeds surround's $7d boot "
+                        "counter). Pass --no-construction-probe for a single-boot.")
     args = p.parse_args(argv)
 
     rom = np.frombuffer(args.rom.read_bytes(), dtype=np.uint8)

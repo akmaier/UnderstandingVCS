@@ -86,8 +86,20 @@ same beam-phase root — not a separate bug). All 58 baseline games held at 0 (n
 regression). **ONLY surround remains** (7 b/f at frame 1: $66,$6a,$6d,$6f,$72,
 $7c,$7d — incl. the free-running boot-seed $7d) → the construction-probe /
 double-boot boot-seed issue (jutari needs construction_probe=true for surround;
-the jaxtari sweep boots probe=false). NEXT: close surround via the probe and
-reach 64/64.
+the jaxtari sweep boots probe=false).
+
+**surround FIXED + global probe-flip (mirror jutari).** Confirmed: jaxtari
+surround with `construction_probe=true` is **0 b/f vs xitari across all 3 frames**
+(full 128-byte diff) — $7d reads a1/a2/a3 matching xitari's free-running counter.
+So jaxtari now mirrors jutari's boot: flipped `StellaEnvironment.reset()`
+`construction_probe` default **False→True** (jutari `env_reset!` default is true;
+xitari `trace_dump` double-boots natively) + `jaxtari_dump.py` default True
+(mirror `jutari_trace_dump.jl`) + bumped the sweep per-job timeout 1800→2700 s
+(probe ≈ 3× boot frames, ~20 min/ROM). The obsolete "probe=false for fixture
+backward-compat" note is gone — the screen fixtures were regenerated from the
+double-boot `trace_dump` (commit 0b48b97), so the twice-fired starting actions
+match. **VERIFYING:** full RAM sweep with probe=true (expect 64/64), then screen
+conformance (expect 12/12) + PXC2 + env unit tests.
 
 ---
 

@@ -58,9 +58,12 @@ SCREEN_OUT = REPO / "tools" / "rom_sweep" / "results_jaxtari_screen.md"
 W = 160
 
 # Per-job subprocess timeouts (s). jaxtari is slow; be generous so a healthy-but-
-# slow job isn't killed, but a true hang is still bounded.
+# slow job isn't killed, but a true hang is still bounded. Task #125: jaxtari now
+# boots with the construction probe by default (double-boot + 60-frame probe ≈ 3×
+# the boot frames), so a single ROM's RAM job is ~20 min — bump the ceiling to
+# 45 min so a healthy probe boot isn't killed.
 XITARI_TIMEOUT = 600
-JAXTARI_TIMEOUT = 1800
+JAXTARI_TIMEOUT = 2700
 
 # Force each jaxtari child single-threaded (override any inherited thread vars).
 _CHILD_ENV = {
