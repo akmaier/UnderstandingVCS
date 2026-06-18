@@ -64,7 +64,7 @@ def overlay(a, field, title, cmap, vmx):
     a.set_title(title, fontsize=9); a.set_xticks([]); a.set_yticks([])
 
 overlay(ax[0, 1], sal_f,
-        r"(b) $\partial$screen$/\partial$RIGHT — sampler" + "\n(identical for all 3 variants, max|Δ|=0)",
+        r"(b) $\partial$screen$/\partial$RIGHT — sampler" + "\n(SOFT-STE & soft, identical)",
         "RdBu_r", vmax)
 overlay(ax[1, 0], naive_f,
         r"(c) $\partial$screen$/\partial$RIGHT — naive index $\equiv$ 0 (vanishes)",
@@ -73,17 +73,17 @@ overlay(ax[1, 0], naive_f,
 # (d) inverse bar chart (3 variants x 4 directions)
 dirs = ["up", "down", "left", "right"]
 x = np.arange(4); wbar = 0.26
-nice = {"STE": "SOFT-STE", "relax_a6_T0.14": r"$\alpha$=6,T=.14",
-        "relax_a5.5_T0.145": r"$\alpha$=5.5,T=.145"}
-for i, v in enumerate(variants):
+show = ["STE", "relax_a6_T0.14", "naive"]      # soft-STE, soft, naive (per request)
+nice = {"STE": "SOFT-STE", "relax_a6_T0.14": "soft", "naive": "naive"}
+for i, v in enumerate(show):
     vals = [grads[v][d] for d in dirs]
     ax[1, 1].bar(x + (i - 1) * wbar, vals, wbar, label=nice.get(v, v))
 ax[1, 1].axhline(0, color="k", lw=0.6)
 ax[1, 1].set_xticks(x); ax[1, 1].set_xticklabels(dirs)
 ax[1, 1].set_title(r"(d) inverse: $\partial$(move cannon right)$/\partial$joystick", fontsize=9)
 ax[1, 1].set_ylabel("gradient"); ax[1, 1].legend(fontsize=7, loc="upper left")
-ax[1, 1].annotate("push RIGHT\n(up/down vanish)", (3, grads[variants[0]]["right"]),
-                  textcoords="offset points", xytext=(-6, -28), fontsize=8, ha="center")
+ax[1, 1].annotate("soft recovers push RIGHT;\nnaive vanishes", (3, grads["STE"]["right"]),
+                  textcoords="offset points", xytext=(-10, -30), fontsize=8, ha="center")
 
 for a in (ax[0, 0],): a.set_xticks([]); a.set_yticks([])
 fig.tight_layout()

@@ -108,6 +108,21 @@ open(joinpath(outdir, "ji_grad.txt"), "w") do io
         for i in 1:4; println(io, "  d(move_right)/d($(labels[i])) = ", round(gj[i], digits = 4)); end
         println("variant $nm: inverse grad (u,d,l,r) = ", round.(gj, digits = 3))
     end
+    # NAIVE inverse: cannon position via the integer index round() -> the
+    # gradient vanishes (no sampler), the contrast to the soft variants in (d).
+    cx_naive(px) = (m = mask_int(px); sum(m .* COLS) / (sum(m) + 1f-6))
+    ginv_naive = zeros(Float32, 4)
+    let ε = 0.3f0
+        for i in 1:4
+            jp = zeros(Float32, 4); jp[i] = ε; jm = zeros(Float32, 4); jm[i] = -ε
+            op = -(cx_naive(round(Int, joy_x(jp))) - TARGET)^2
+            om = -(cx_naive(round(Int, joy_x(jm))) - TARGET)^2
+            ginv_naive[i] = (op - om) / (2ε)
+        end
+    end
+    println(io, "VARIANT naive  on=false alpha=0 T=0")
+    for i in 1:4; println(io, "  d(move_right)/d($(labels[i])) = ", round(ginv_naive[i], digits = 4)); end
+    println("variant naive: inverse grad (u,d,l,r) = ", round.(ginv_naive, digits = 3))
 end
 # naive (vanishing) map + crop geometry
 write(joinpath(outdir, "ji_naive.raw"), _cflat(naive_saliency()))

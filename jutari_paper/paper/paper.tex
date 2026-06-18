@@ -620,54 +620,50 @@ many environments are vectorised in parallel.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.82\textwidth]{figures/fig_xai_joystick.pdf}
-\caption{Qualitative XAI on a Space-Invaders-style scene in the differentiable
-VCS: A row of invaders (player~1) and a player cannon (player~0)---rather than a
-trace of the game ROM. \textbf{Top:} differentiating jutari's soft TIA renderer by
-reverse-mode AD gives a Grad-CAM analogue, $\partial$screen$/\partial$register,
-which localises each object to exactly the pixels its register controls (the
-cannon via \texttt{COLUP0}, the invaders via \texttt{COLUP1}, the background via
-\texttt{COLUBK})---a localisation that can be \emph{checked} against ground truth.
-\textbf{Bottom, left to right:} a single cannon graphics bit (bright, within the
-faint cannon outline) attributes to its own pixels once represented as a value
-behind a stored switch. Next, the scene with the cannon and the target invader it
-should slide under (orange). Then the screen's directional derivative with respect
-to each joystick input, where a differentiable sampler over the sprite
-position---not the controller-to-CPU path---makes the position differentiable,
-highlighting the cannon edges that move. Finally, the gradient of the on-screen
-cannon position with respect to the four joystick directions, which recovers the
-control mapping: pushing \textsc{right}, and not up/down, slides the cannon toward
-the target.}
+\includegraphics[width=0.82\textwidth]{figures/si_joystick_gradient.pdf}
+\caption{Ground-truth gradients on the \emph{real} Space Invaders ROM in the
+differentiable VCS. \textbf{(a)} the live game $35$\,s after boot---the scene the
+real ROM renders, pixel-exact to \textsc{xitari}. \textbf{(b)} the screen's
+directional derivative with respect to the \textsc{right} joystick, recovered by a
+differentiable sampler over the player-cannon position (a sub-pixel bilinear
+kernel, as in spatial-transformer networks); it lights exactly the cannon edges
+that move. Because soft mode is forward-exact (Theorem~\ref{thm:exact}), this
+gradient is \emph{identical} for SOFT-STE and the soft (relaxed) variant (the
+leaky, past-boundary variant is studied in the supplement). \textbf{(c)} the
+\emph{naive} gradient runs through the discrete sprite-position index and is
+identically zero---it would wrongly report ``the joystick does not affect the
+screen.'' \textbf{(d)} the inverse problem,
+$\partial(\text{move cannon right})/\partial\text{joystick}$: SOFT-STE and soft
+recover the control mapping (push \textsc{right}, not up/down), while the naive
+gradient vanishes. Every recovered quantity can be \emph{checked} against the
+known wiring---the whole point of a ground-truth substrate.}
 \label{fig:xai}
 \end{figure*}
 
 The point of the foundation is that gradients computed on it can be
 \emph{checked}. Because soft mode is forward-exact (Theorem~\ref{thm:exact}),
 it yields exact gradients of any read-out with respect to the state and the
-ROM. We give a small qualitative study (Figure~\ref{fig:xai}). It is a proof
-of concept that the substrate behaves as intended, not an XAI evaluation.
+ROM, on the true execution rather than an approximation. We illustrate this on
+the \emph{real} Space Invaders ROM, booted and rolled to a live game scene
+(Figure~\ref{fig:xai}a); the whole pipeline runs end-to-end. It is a proof of
+concept that the substrate behaves as intended, not an XAI evaluation.
 
-We differentiate the rendered frame with respect
-to the TIA colour registers: $\partial$screen$/\partial$\texttt{COLUP0}
-localises exactly to the cannon (player~0),
-$\partial$screen$/\partial$\texttt{COLUP1} to the row of invaders (player~1),
-and $\partial$screen$/\partial$\texttt{COLUBK} to the background---each pixel
-attributing to the exactly correct register, a statement that can be
-\emph{checked} here and cannot be on a black box. The stored-switch view
-extends this: a single cannon \emph{graphics} bit, once represented as a value
-behind its switch, has a non-zero gradient to precisely the pixels it lights.
-
-A naive gradient from the joystick to the screen is zero,
-because the path runs through a discrete sprite \emph{position} index. This is
-not a failure of differentiation but the ground truth telling us that a naive
-gradient saliency would wrongly report ``the joystick does not affect the
-screen.'' Applying the differentiable sampler to the position makes the
-relationship visible: the gradient of the on-screen cannon position with
-respect to the four joystick directions correctly recovers the control mapping
-(push \textsc{right}, and not up/down, to slide the cannon toward the target
-invader), and the per-direction $\partial$screen$/\partial$joystick map
-highlights the cannon edges that move. We can \emph{verify} this against the
-known wiring---which is the whole point.
+The joystick moves the player cannon, but the path from the joystick to the
+screen runs through a discrete sprite \emph{position} index---the strobe-timed
+column at which the cannon is drawn. A naive gradient through that index is
+identically zero (Figure~\ref{fig:xai}c): not a failure of differentiation, but
+the ground truth telling us that a naive saliency would wrongly report ``the
+joystick does not affect the screen.'' A differentiable sampler over the
+position---a sub-pixel bilinear kernel, as in spatial-transformer
+networks~\citep{jaderberg2015spatial}---restores the relationship: the
+per-direction $\partial$screen$/\partial$joystick map lights exactly the cannon
+edges that move (Figure~\ref{fig:xai}b), and the inverse gradient of the
+on-screen cannon position with respect to the four joystick directions recovers
+the control mapping---push \textsc{right}, and not up/down (Figure~\ref{fig:xai}d).
+Because the forward pass is exact at any temperature, the recovered gradient is
+identical for SOFT-STE and the soft relaxed variant (the leaky, past-boundary
+variant is studied in the supplement). We can \emph{verify} all of this against
+the known wiring---which is the whole point.
 
 \section{Discussion}
 
