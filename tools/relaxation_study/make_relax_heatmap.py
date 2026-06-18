@@ -62,10 +62,10 @@ def main():
             va="center")
     # recommended operating point: corner of the exact region (smallest alpha,
     # largest T that stay exact) -- where the two boundary sweeps cross.
-    ax.plot([0.12], [6], marker="*", markersize=12, color="#39ff14",
+    ax.plot([0.14], [6], marker="*", markersize=12, color="#39ff14",
             markeredgecolor="black", markeredgewidth=0.6, zorder=5)
-    ax.annotate(r"set here: $\alpha{=}6,\,T{=}0.12$", xy=(0.12, 6),
-                xytext=(0.13, 2.4), color="white", fontsize=6.5,
+    ax.annotate(r"set here: $\alpha{=}6,\,T{=}0.14$", xy=(0.14, 6),
+                xytext=(0.155, 2.4), color="white", fontsize=6.5,
                 arrowprops=dict(arrowstyle="->", color="white", lw=0.6))
     cax = fig.add_axes([0.875, 0.14, 0.03, 0.85])
     cb = fig.colorbar(im, cax=cax)
@@ -75,7 +75,7 @@ def main():
 
     fig.savefig(FIG, bbox_inches="tight", dpi=300)
     print("wrote", FIG)
-    print(f"  rho={rho:.3f} f_b={fb:.3f}; exact corner ~ alpha>=6, T<=0.12")
+    print(f"  rho={rho:.3f} f_b={fb:.3f}; exact corner ~ alpha>=6, T<=0.14")
 
 
 if __name__ == "__main__":
