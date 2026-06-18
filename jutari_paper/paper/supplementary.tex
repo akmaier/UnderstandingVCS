@@ -449,7 +449,7 @@ $6$ & $0.20$ & $2$   & $1.000$ & $0.144$ & $0.015$\\
 \end{tabular}
 \end{table}
 
-\begin{figure*}[t]
+\begin{figure*}[p]
 \centering
 \includegraphics[width=\textwidth]{figures/fig_divergence_frame.pdf}
 \caption{One frame of the $60$-second full-simulator comparison (Space Invaders,
@@ -462,9 +462,9 @@ effect of one corrupted sprite-position read, persistent over the rollout.}
 \label{fig:divframe}
 \end{figure*}
 
-\begin{figure}[tb]
+\begin{figure*}[p]
 \centering
-\includegraphics[width=\columnwidth]{figures/fig_timeline.pdf}
+\includegraphics[width=\textwidth]{figures/fig_timeline.pdf}
 \caption{Implementation effort reconstructed from the version-control log.
 The step curve is the cumulative number of commits against calendar time, and
 each shaded band is an active work session (a maximal run of consecutive
@@ -473,7 +473,7 @@ bands are idle gaps, the largest of which are annotated. The $373$ commits form
 $52$ active sessions totalling ${\sim}137$ hours of work---about $5.7$
 round-the-clock days---spread across a $29$-day calendar window.}
 \label{fig:timeline}
-\end{figure}
+\end{figure*}
 
 \paragraph{Choosing $\alpha$ and $T$.} The two bounds are
 \emph{program-independent}, which is what makes the setting reliable across
