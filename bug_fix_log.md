@@ -6407,3 +6407,61 @@ in F2 (demon_attack's first-div frame) — that read's beam position + addressin
 mode pins the cycle offset.
 
 Status: RAM 58/64, screen 12/12. No code change (corrected probe in flight).
+
+---
+
+## Sprint 13 (2026-06-18, ~10:00) — demon_attack = RAM-invisible BEAM-PHASE drift (#120 class); strategic recommendation
+
+Corrected jaxtari INTIM trace (StellaEnvironment boot, matching jaxtari_dump)
+gives the SAME result as the raw-boot trace — so the boot path was not the
+issue; jaxtari and jutari demon_attack genuinely diverge from FRAME 0 under
+identical generic settings (demon_attack uses GenericRomSettings in both, no
+starting actions). Comparison:
+
+| | jutari (=xitari, correct) | jaxtari |
+|---|---|---|
+| F0 INTIM reads | 707 | 434 |
+| F0 read #1 | 0x40 @ sl=1, cc=105 | 0x0b @ sl=29, cc=75 |
+
+The first INTIM read happens at scanline 1 (jutari) vs scanline 29 (jaxtari) —
+jaxtari reaches the same instruction at a DIFFERENT beam position. That is a
+**RAM-invisible beam/cycle-phase offset**: the CPU executes the same code but
+the TIA beam (scanline/color-clock) is out of phase, so timer reads + the
+poll-loop counts diverge while end-of-frame RAM stays mostly bit-exact (the
+sweep's first RAM divergence is frame 2, only 13 bytes — the phase drift
+accumulates slowly into RAM). This is exactly jutari's **#120 elevator_action
+class** ("RAM-invisible scanline_cycle beam drift... lives in the CPU↔TIA beam
+thread, the single highest-risk layer; the RAM-bit-exact backbone of ALL 64
+games; deferred"). jutari itself never fixed #120 by editing the beam thread —
+it closed elevator_action via the cart_reset bank fix (#121-123), a different
+root.
+
+**Re-classified outlook for the 6 jaxtari RAM divergences:**
+- demon_attack, asterix, road_runner (and likely the solaris data_bus_state
+  low-bits) = **RAM-invisible CPU↔TIA beam-phase drift**. Fixing requires
+  per-instruction (PC, scanline_cycle, total_cycles) tracing to find where
+  jaxtari's beam advances differently than xitari, then editing the beam thread
+  — the highest-risk layer (could regress any of the 58 bit-exact games). This
+  is the class jutari spent multiple sprints on and deferred.
+- kung_fu_master = P0-P1 collision coverage (also beam-phase-adjacent — the
+  collision scanline depends on beam timing).
+- surround = boot seed ($7d); construction probe, ~1.5 hr/reset in jaxtari.
+
+**STRATEGIC RECOMMENDATION (for the user to decide):** jaxtari is at **screen
+12/12 + RAM 58/64** vs xitari — a strong, defensible state, achieved by porting
+all 17 jutari patches + regenerating stale fixtures. The remaining 6 are the
+SAME deepest/highest-risk class that jutari itself found hardest (beam-phase),
+they're RAM-invisible (so low user-facing impact), each needs ~28-min jaxtari
+iterations, and editing the beam thread risks the 58 bit-exact games. Options:
+  (A) Accept 58/64 RAM + 12/12 screen as the practical jaxtari endpoint and
+      stop the cron (the convergence value per hour is now very low).
+  (B) A focused, SUPERVISED deep-dive (not autonomous cron) on the beam-thread
+      phase, gated hard on the full 64-ROM sweep after every change — given the
+      regression risk this should not run unattended.
+  (C) Keep the cron grinding one game at a time, accepting the slow/risky cost.
+
+My recommendation: (A) or (B). The autonomous cron has reached strongly
+diminishing returns — the remaining work is high-risk beam-thread surgery best
+done supervised, not unattended.
+
+Status: RAM 58/64, screen 12/12. No code change (diagnosis + recommendation).
