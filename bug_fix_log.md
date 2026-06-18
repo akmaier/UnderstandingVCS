@@ -6151,3 +6151,55 @@ Status: jaxtari RAM 58/64 (unchanged this tick — localization only, no fix yet
 kept the tick bounded per the don't-thrash rule). Other divergences pending:
 solaris (2), asterix (9), demon_attack (13), road_runner (16), surround (1-7,
 construction-probe, deferred on speed).
+
+---
+
+## Sprint 7 cont. (2026-06-18, ~04:00) — kung_fu_master $76 ROOT CAUSE: jaxtari misses a P0-P1 collision (CXPPMM D7)
+
+Traced jutari (fast, bit-exact, produces the CORRECT $76=0x82) with the Bus
+peek/poke trace over boot + frame 0 (`Bus.trace_enable!`/`trace_take!`). Found
+the exact instruction chain that writes $76 (final write at scanline 196):
+
+```
+LDA $07        ; read CXPPMM (collision P0-P1 / M0-M1) — jutari = 0x87 (D7=1)
+AND #$80       ; keep only D7                          → 0x80
+ORA $02        ; OR with RAM[$02] (= 0x02)             → 0x82
+STA $F6        ; store to RAM index $76                → $76 = 0x82  (correct)
+```
+
+(Confirmed via the trace: `peek addr=7 val=87`, then ROM bytes
+`29 80 / 05 02 / 85 f6` = AND #$80 / ORA $02 / STA $F6.)
+
+jaxtari gets $76 = **0x02**, so its `AND #$80` produced **0x00** → **jaxtari's
+CXPPMM bit 7 (the P0-P1 collision latch) is CLEAR where jutari/xitari set it.**
+This is a TIA **collision-detection** divergence, NOT a RIOT/INSTAT issue
+(INSTAT/INTIM D7 handling was verified identical to jutari this tick and is ruled
+out). The floating-bus low bits of CXPPMM are irrelevant here — `AND #$80` masks
+them — so it is purely the D7 P0-P1-collision bit.
+
+Note: jaxtari's collision read returns `tia.collisions[reg]` (latched D7/D6
+only, no floating low bits), while jutari/xitari OR the data-bus state into the
+low 6 bits (jutari CXPPMM=0x87 = D7 + bus 0x07). That low-bit difference is
+masked away here, but is a SEPARATE latent divergence worth noting — any game
+that reads a collision register WITHOUT masking the low bits would diverge on
+the floating low bits too. (Not kung_fu_master's bug, but flagged.)
+
+**NEXT (root-cause the missed collision):** why does jaxtari not latch the
+P0-P1 collision that jutari/xitari do during kung_fu_master boot? jaxtari's
+`_object_pixel_sets` computes p0/p1 coverage and `_apply_pixel_collisions` ORs
+CXPPMM (bit 7) when they overlap. Candidates: (a) p0_x/p1_x differ at the
+collision scanline (but RAM is otherwise bit-exact, so positions should match);
+(b) jaxtari's collision pipeline misses an overlap jutari catches (NUSIZ
+multi-copy, or a 1-px coverage edge); (c) a VBLANK/HBLANK gating difference in
+when collisions accumulate. Probe: at the boot scanline where jutari first sets
+CXPPMM-D7, dump jaxtari's p0/p1 coverage sets + collision latch vs jutari's
+(obj_trace + a collision-latch column). This may be a SHARED root cause —
+check whether asterix/demon_attack also involve collision reads.
+
+Also flagged: the low-6-bits floating-bus behavior on collision-register reads
+(jaxtari returns 0, jutari/xitari return data-bus state) — verify against the
+other divergent games.
+
+Status: jaxtari RAM 58/64 (localization only — root cause identified, no fix
+this tick; collision-pipeline fix + the floating-low-bits question are the next
+work, gated on TIA-layer unit tests + targeted RAM re-check).
