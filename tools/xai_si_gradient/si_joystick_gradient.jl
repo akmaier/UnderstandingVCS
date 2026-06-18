@@ -2,7 +2,7 @@
 # sampler (main paper, "Proof of Concept: Ground-Truth Gradients" + the
 # sub-pixel bilinear sampler that "restores the position gradient").
 #
-# We take the REAL 35 s scene (the game just begun, frame 2106 — stable), extract
+# We take the REAL 35 s scene (frame 1050 @ 30 fps — classic colours), extract
 # the real player-cannon footprint, and apply the bilinear sampler over its
 # horizontal position. A continuous joystick drives the position (joy_x), NOT the
 # controller-to-CPU path (which is the discrete index the paper says kills the
@@ -23,18 +23,20 @@ using JuTari.Diff: soft_ram_peek, set_relax!, using_relax
 import Zygote
 
 const NOOP = 0
-const CANNON_COLOR = 114
+const CANNON_COLOR = 196          # classic-state player cannon colour (frame 1050)
+const SCENE_FRAME = 1050          # 35 s at the video's 30 fps
 outdir = joinpath(@__DIR__, "out"); isdir(outdir) || mkpath(outdir)
 _cflat(s) = vec(permutedims(s))
 
-# ---- 1. real 35 s scene (post-transition, stable) --------------------------
+# ---- 1. real 35 s scene (frame 1050 @ 30 fps, classic colours) -------------
 rom_bytes = read(joinpath(@__DIR__, "..", "..", "xitari", "roms", "space_invaders.bin"))
 e = StellaEnvironment(rom_bytes); env_reset!(e; boot_noop_steps = 60, boot_reset_steps = 4)
-for _ in 1:2106; env_step!(e, NOOP); end
+for _ in 1:SCENE_FRAME; env_step!(e, NOOP); end
 scene = copy(get_screen(e)); H, W = size(scene)
 write(joinpath(outdir, "ji_scene.raw"), UInt8.(_cflat(scene)))
 write(joinpath(outdir, "ji_scene.shape"), "$H $W")
-println("scene frame 2106; size $H x $W; player-X=", Int(get_ram(e)[29]))
+println("scene frame $SCENE_FRAME (35 s @30fps); size $H x $W; bg=", Int(scene[60, 3]),
+        " player-X=", Int(get_ram(e)[29]))
 
 # ---- 2. extract the real cannon footprint (colour 114) ---------------------
 canpx = [(r, c) for r in 178:198 for c in 24:62 if Int(scene[r, c]) == CANNON_COLOR]
