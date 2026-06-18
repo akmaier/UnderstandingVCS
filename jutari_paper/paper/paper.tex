@@ -621,23 +621,23 @@ many environments are vectorised in parallel.
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.82\textwidth]{figures/fig_xai_joystick.pdf}
-\caption{Qualitative XAI on a \emph{Space Invaders} scene in the differentiable
-VCS, all computed by reverse-mode AD through \textsc{jutari}. The scene is a row
-of invaders (player~1, multi-copied by the NUSIZ register) and a player cannon
-(player~0) that moves left/right. \textbf{Top:} from the unmodified soft
-renderer, a Grad-CAM analogue---$\partial$screen$/\partial$register localises
-each object to exactly the pixels its register controls (the cannon via
-\texttt{COLUP0}, the invaders via \texttt{COLUP1}, the background via
-\texttt{COLUBK}), a localisation that can be \emph{checked} against ground
-truth. \textbf{Bottom, left to right:} a single cannon graphics bit (bright,
-within the faint cannon outline) attributes to its own pixels once represented
-as a value behind a stored switch. Next, the scene with the cannon (bottom) and
-the target invader it should slide under (orange). Then the signed
-$\partial$screen$/\partial$joystick saliency (a soft sampler makes the position
-differentiable), highlighting the cannon edges that move. Finally, the gradient of
-the on-screen cannon position with respect to the four joystick directions, which
-correctly infers that pushing \textsc{right} (and not up/down) moves the cannon
-toward the target.}
+\caption{Qualitative XAI on a Space-Invaders-style scene in the differentiable
+VCS: A row of invaders (player~1) and a player cannon (player~0)---rather than a
+trace of the game ROM. \textbf{Top:} differentiating jutari's soft TIA renderer by
+reverse-mode AD gives a Grad-CAM analogue, $\partial$screen$/\partial$register,
+which localises each object to exactly the pixels its register controls (the
+cannon via \texttt{COLUP0}, the invaders via \texttt{COLUP1}, the background via
+\texttt{COLUBK})---a localisation that can be \emph{checked} against ground truth.
+\textbf{Bottom, left to right:} a single cannon graphics bit (bright, within the
+faint cannon outline) attributes to its own pixels once represented as a value
+behind a stored switch. Next, the scene with the cannon and the target invader it
+should slide under (orange). Then the screen's directional derivative with respect
+to each joystick input, where a differentiable sampler over the sprite
+position---not the controller-to-CPU path---makes the position differentiable,
+highlighting the cannon edges that move. Finally, the gradient of the on-screen
+cannon position with respect to the four joystick directions, which recovers the
+control mapping: pushing \textsc{right}, and not up/down, slides the cannon toward
+the target.}
 \label{fig:xai}
 \end{figure*}
 
