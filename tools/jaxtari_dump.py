@@ -119,6 +119,11 @@ def main(argv=None) -> int:
     p.add_argument("--max-frames", type=int, required=True)
     p.add_argument("--mode", choices=("ram", "screen"), required=True)
     p.add_argument("--out", type=Path, required=True)
+    p.add_argument("--construction-probe", action="store_true",
+                   help="run xitari's double-boot construction probe "
+                        "(ALEInterface ctor format-autodetect + double reset_game). "
+                        "xitari's trace_dump does this natively and jutari's "
+                        "harnesses default to it; enable for full xitari parity.")
     args = p.parse_args(argv)
 
     rom = np.frombuffer(args.rom.read_bytes(), dtype=np.uint8)
@@ -126,7 +131,12 @@ def main(argv=None) -> int:
     env = StellaEnvironment(rom, settings)
     # xitari's ALEInterface::resetGame() burns 60 NOOP + 4 RESET frames; mirror
     # it so the post-boot state matches the xitari trace_dump reference.
-    env.reset(boot_noop_steps=60, boot_reset_steps=4)
+    # `--construction-probe` additionally runs xitari's double-boot construction
+    # probe (which trace_dump performs natively via the ALEInterface ctor) — the
+    # missing piece that seeds free-running counters / beam phase on the
+    # probe-sensitive ROMs (surround, demon_attack, …).
+    env.reset(boot_noop_steps=60, boot_reset_steps=4,
+              construction_probe=args.construction_probe)
 
     actions = _load_actions(args.actions)
     n = min(args.max_frames, len(actions))

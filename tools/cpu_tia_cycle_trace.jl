@@ -52,6 +52,7 @@ function _parse_args(argv::Vector{String})
     rom_path = ""; actions_path = ""; out_path = ""; max_frames = 25
     rom_settings = "generic"
     boot_noop = 60; boot_reset = 4
+    construction_probe = true
     i = 1
     while i <= length(argv)
         a = argv[i]
@@ -62,13 +63,14 @@ function _parse_args(argv::Vector{String})
         elseif a == "--rom-settings"  && i + 1 <= length(argv); rom_settings  = argv[i+1]; i += 2
         elseif a == "--boot-noop"     && i + 1 <= length(argv); boot_noop     = parse(Int, argv[i+1]); i += 2
         elseif a == "--boot-reset"    && i + 1 <= length(argv); boot_reset    = parse(Int, argv[i+1]); i += 2
+        elseif a == "--no-construction-probe";                  construction_probe = false; i += 1
         else error("unknown arg $a")
         end
     end
     isempty(rom_path) && error("--rom required")
     isempty(out_path) && error("--out required")
     return (; rom_path, actions_path, out_path, max_frames, rom_settings,
-            boot_noop, boot_reset)
+            boot_noop, boot_reset, construction_probe)
 end
 
 
@@ -95,7 +97,8 @@ function main(argv::Vector{String} = ARGS)
     # during reset is captured. xitari starts its trace at the same
     # point so the two are comparable cycle-for-cycle.
     trace_enable!()
-    env_reset!(env; boot_noop_steps = args.boot_noop, boot_reset_steps = args.boot_reset)
+    env_reset!(env; boot_noop_steps = args.boot_noop, boot_reset_steps = args.boot_reset,
+               construction_probe = args.construction_probe)
 
     mkpath(dirname(args.out_path))
     open(args.out_path, "w") do io

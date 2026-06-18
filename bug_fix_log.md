@@ -14,6 +14,49 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🔬 Task #125 — jaxtari → 64/64 RAM: beam-phase root-cause hunt (2026-06-18, IN PROGRESS)
+
+**Mandate (user).** "If jutari is able to be RAM and pixel exact, jaxtari must as
+well. Do a deep analysis of the jutari↔jaxtari differences and correct this." No
+deferring. Version control IS the safety net. The 6 open RAM divergences
+(demon_attack / asterix / road_runner / solaris = beam-phase; kung_fu_master =
+collision coverage; surround = boot seed) must close.
+
+**Step 1 — construction-probe hypothesis RULED OUT for the beam-phase class.**
+Both reference harnesses that match xitari boot WITH xitari's double-boot
+construction probe: `jutari_trace_dump.jl` and `jutari_screen_dump.jl` use
+`env_reset!(…)` whose default is `construction_probe=true`; xitari's `trace_dump`
+does it natively (`ALEInterface ale(rom); ale.resetGame()` — ctor probe + double
+reset_game). The jaxtari sweep (`jaxtari_dump.py`) used `construction_probe=False`
+(documented backward-compat default). Looked like THE root.
+
+But the fast jutari oracle falsifies it for demon_attack: dumping jutari RAM for
+demon_attack with `construction_probe=true` vs `false` gives **0 bytes diff at
+frames 0/1/2** (probe-insensitive), and `construction_probe=true` is **bit-exact
+vs xitari** (0 bytes, 3 frames). So jutari(probe=false) ALSO == xitari, yet
+jaxtari(probe=false) diverges 13 B by frame 2 → the demon_attack divergence is a
+genuine **jaxtari execution bug**, not the missing probe. (The probe likely still
+matters for surround's free-running $7d boot seed — tracked separately.)
+
+**Step 2 — bus-op trace scalpel (in flight).** Base `CYCLE_TABLE` is
+**byte-identical** across the two ports, so the drift is a conditional cycle
+(page-cross / branch-taken / RMW dummy / indexed-read extra) or the TIA-advance
+threading — RAM-invisible until a beam/timer-dependent read flips a branch.
+Built `tools/bus_cycle_trace_jaxtari.py` (jaxtari twin of
+`tools/cpu_tia_cycle_trace.jl`) — emits the IDENTICAL CSV schema
+(`…,kind,scanline,scanline_cycle,color_clock,addr,value`), samples the
+instruction-start beam from `bus.tia` (matches jutari's `_TRACE_LIVE_TIA[]`
+convention), traces across the boot-burn, and emits a `tick` per `pending_tick`
+(jutari does the same). `tools/cycle_trace_inspect.py diff` then pins the FIRST
+bus op whose beam/addr/value differs — the root instruction. Both traces use
+`construction_probe=false` (matching the sweep). Added `--construction-probe` to
+`jaxtari_dump.py` and `--no-construction-probe` to `cpu_tia_cycle_trace.jl` (no-flag
+paths unchanged — zero regression risk). **NEXT:** read the diff, inspect that
+instruction's cycle handling in jaxtari `m6502.py`/`addressing.py` vs jutari, fix,
+re-sweep.
+
+---
+
 ### 🛠️ Task #124 — comparison-video tool crashed on the 5 PAL games (2026-06-17)
 
 **Symptom.** `tools/comparison_videos.py --port jutari` failed for `air_raid`,
