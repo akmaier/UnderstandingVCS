@@ -93,7 +93,7 @@ where $\sg(\cdot)$ is the stop-gradient operator, so the forward value equals
 
 In the executed soft step, dispatch uses the saturated (hard) form of
 \eqref{eq:s-select} and the branch returns
-$\mathrm{STE}(\mathrm{pc}_{\mathrm{soft}},\mathrm{pc}_{\mathrm{hard}})$; the
+$\mathrm{STE}(\mathrm{pc}_{\mathrm{soft}},\mathrm{pc}_{\mathrm{hard}})$. The
 relaxed forms \eqref{eq:s-select} and \eqref{eq:s-branch} \emph{without} the
 straight-through correction define the ``fully relaxed'' variant analysed in
 Theorem~\ref{thm:s-limit}. The temperature-limit result needs one
@@ -104,8 +104,8 @@ non-degeneracy assumption, identical to the one in the main paper.
 Along the executed trajectory of length $N$, every discrete decision has a
 strictly positive margin. For opcode dispatch at step $t$ with logits
 $\ell^{(t)}$ and winner $k^\star_t$, the logit gap
-$\Delta_t=\ell^{(t)}_{k^\star_t}-\max_{k\ne k^\star_t}\ell^{(t)}_k$ is positive;
-for each conditional branch with flag logit $z_t$, the margin $m_t=|z_t|$ is
+$\Delta_t=\ell^{(t)}_{k^\star_t}-\max_{k\ne k^\star_t}\ell^{(t)}_k$ is positive,
+and for each conditional branch with flag logit $z_t$, the margin $m_t=|z_t|$ is
 positive. Let $\Delta_{\min}=\min_t\Delta_t>0$ and $m_{\min}=\min_t m_t>0$.
 \end{assumption}
 
@@ -114,7 +114,7 @@ positive. Let $\Delta_{\min}=\min_t\Delta_t>0$ and $m_{\min}=\min_t m_t>0$.
 \begin{theorem}[Exact forward equivalence]
 \label{thm:s-exact}
 For every reachable state $x$ and every finite sharpness $\alpha$ and
-temperature $T$, the soft and hard one-step maps are equal,
+temperature $T$, the soft and hard one-step maps are equal by design,
 $\Phi_{\mathrm{S}}(x) = \Phi_{\mathrm{H}}(x)$, with identical float32
 representations. Consequently, over a trajectory of $N$ steps,
 $x^{\mathrm{S}}_t = x^{\mathrm{H}}_t$ for all $t\le N$. The modes differ only in
@@ -142,7 +142,7 @@ memory read at the integer address $a$ uses an exact one-hot indicator, so
 the value a hard array read returns. Register, status-flag,
 binary-coded-decimal, and timer updates use the same integer and $\mathrm{round}$
 arithmetic in both modes (soft mode merely keeps the results in float32). A
-conditional branch returns the straight-through value~\eqref{eq:s-ste}; since
+conditional branch returns the straight-through value~\eqref{eq:s-ste}. Since
 $\sg$ is the identity in the forward direction,
 \begin{equation}
 \begin{aligned}
@@ -186,7 +186,7 @@ $t\le N$.
 reverse-mode rule: the returned counter carries the derivative of
 $\mathrm{pc}_{\mathrm{soft}}=\mathrm{pc}_{\bar b}+g\,\delta$, namely
 $\alpha\,g(1-g)\,\delta$, which is generically nonzero where the hard branch---a
-step function of the flag---has zero or undefined derivative; likewise the
+step function of the flag---has zero or undefined derivative. Likewise the
 read~\eqref{eq:s-peek} has Jacobian $\mathbf{1}_a$ with respect to $r$. The
 forward pass is unchanged while gradients become available.
 \end{proof}
@@ -287,13 +287,13 @@ with a single target sprite (an invader) whose horizontal placement is produced
 by the soft primitives. For the sigmoid branch we plot the screen-space
 directional-derivative saliency
 $\partial(\text{screen})/\partial(\text{control})$ as the sharpness $\alpha$ is
-swept (Figure~\ref{fig:alphatemp}), and the gate and its gradient directly
-(Figure~\ref{fig:sigmoid}); the softmax select's temperature effect is shown in
-pixel space in the main paper (a sampled sprite-occupancy heatmap). In the
-gradient maps the colour encodes the
+swept (Figure~\ref{fig:alphatemp}). The main paper additionally plots the gate
+and its gradient directly, and shows the softmax select's temperature effect in
+pixel space (a sampled sprite-occupancy heatmap). In the gradient maps the colour
+encodes the
 \emph{sign} of the derivative---red where a pixel brightens as the control
 increases (the sprite arriving) and blue where it darkens (the sprite
-leaving)---and its intensity the magnitude, on a black background; the colour bar
+leaving)---and its intensity the magnitude, on a black background. The colour bar
 is in absolute units and the per-panel number is the peak relative to the row
 maximum.
 
@@ -303,18 +303,13 @@ $\alpha\,\sigma(\alpha z)\,(1-\sigma(\alpha z))\,(\mathrm{pc}_R-\mathrm{pc}_L)$:
 a dipole, blue on the placement being vacated and red on the one being entered.
 The magnitude $\alpha\,\sigma(\alpha z)(1-\sigma(\alpha z))$ is
 \emph{non-monotonic} in $\alpha$ at the fixed operating point $z{=}0.25$. A small
-$\alpha$ gives a shallow gate and hence a small slope; a large $\alpha$ saturates
-the gate ($\sigma(\alpha z)\to1$, so $\sigma(1-\sigma)\to0$). The maximum is the
-intermediate $\alpha$ for which $\alpha z$ falls in the sigmoid's steep band,
+$\alpha$ gives a shallow gate and hence a small slope, and a large $\alpha$
+saturates the gate ($\sigma(\alpha z)\to1$, so $\sigma(1-\sigma)\to0$). The maximum
+is the intermediate $\alpha$ for which $\alpha z$ falls in the sigmoid's steep band,
 near $\alpha{=}6$ here---$\alpha{=}2,6,20$ give peak magnitudes
 $0.53,1.00,0.15$, and at $\alpha{=}20$ the gate has essentially switched and the
-gradient has nearly vanished (the hard-branch limit).
-Figure~\ref{fig:sigmoid} plots this gate and its gradient directly: at
-$\alpha{=}20$ the gate has saturated and $\mathrm{d}g/\mathrm{d}z$ is essentially
-zero away from the switch (too sharp: no usable gradient), while at $\alpha{=}2$
-the gate is so shallow that the gradient is weak and barely varies with $z$ (too
-soft: the gradient does not discriminate); the intermediate $\alpha{=}6$ gives the
-largest, most localised gradient at the operating point.
+gradient has nearly vanished (the hard-branch limit). The main paper plots this
+gate and its gradient directly.
 
 The softmax select positions the sprite as the weighted sum
 $\sum_k w_k\,(\text{sprite at column }k)$ with $w=\softmax(\ell/T)$, so its
@@ -328,11 +323,11 @@ arc: spread over the band at high $T$ and collapsing to zero between pixels in t
 hard limit.
 
 In every panel the forward render is the exact hard one
-(Theorem~\ref{thm:s-exact}); only the gradient changes. It is most informative at
-intermediate relaxation and decays to zero as the relaxation is sharpened toward
+(Theorem~\ref{thm:s-exact}), and only the gradient changes. It is most informative
+at intermediate relaxation and decays to zero as the relaxation is sharpened toward
 the hard limit (Theorem~\ref{thm:s-limit}). This
 is a qualitative study of how the parameter \emph{values} act on the gradient,
-run on jutari; the values need not be tuned for the bit-exact forward pass.
+run on jutari, and the values need not be tuned for the bit-exact forward pass.
 Animated sweeps of both knobs---the gate and its gradient as $\alpha$ varies, and
 the sampled sprite occupancy as $T$ varies, each frame on its own scale---are
 provided as \texttt{fig\_alpha\_anim.gif} and \texttt{fig\_temp\_anim.gif} in the
@@ -354,27 +349,13 @@ and~\ref{thm:s-limit}).}
 \label{fig:alphatemp}
 \end{figure}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/fig_sigmoid_alpha.pdf}
-\caption{The soft-branch gate $g=\sigma(\alpha z)$ (left) and its gradient
-$\mathrm{d}g/\mathrm{d}z=\alpha\,\sigma(\alpha z)(1-\sigma(\alpha z))$ (right) for
-$\alpha\in\{2,6,20\}$, with the operating point $z{=}0.25$ marked. Too large an
-$\alpha$ (here $20$) saturates the gate, leaving essentially no gradient away from
-the switch; too small an $\alpha$ (here $2$) gives a shallow gate whose gradient
-is weak and barely varies with $z$. The intermediate $\alpha{=}6$ places the
-operating point in the sigmoid's steep band and yields the largest, most
-localised gradient.}
-\label{fig:sigmoid}
-\end{figure}
-
 \section{Implementation Effort}
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.86\textwidth]{figures/fig_timeline.pdf}
 \caption{Implementation effort reconstructed from the version-control log.
-The step curve is the cumulative number of commits against calendar time;
+The step curve is the cumulative number of commits against calendar time, and
 each shaded band is an active work session (a maximal run of consecutive
 commits no more than three hours apart), and the long flat stretches between
 bands are idle gaps, the largest of which are annotated. The $373$ commits form
@@ -397,7 +378,7 @@ four-hour cutoff, bracketing the $137$ hours obtained at three hours.
 With the three-hour boundary the $373$ commits fall into $52$ sessions whose
 durations sum to $136.8$ hours, i.e.\ about $5.7$ eight-hour working days, even
 though they are spread over a $29$-day calendar window. The remaining
-${\sim}80\%$ of the calendar span is idle and excluded; it consists mostly of
+${\sim}80\%$ of the calendar span is idle and excluded. It consists mostly of
 stretches during which the lead programmer was travelling and without reliable
 internet access, which appear in the plot as the long flat segments. This active
 total---not the calendar span---is what we compare against the scale of the

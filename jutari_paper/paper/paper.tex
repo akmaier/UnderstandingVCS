@@ -46,7 +46,7 @@ correct, we must know the system's inner functioning. This is precisely what
 is missing wherever explainable AI (XAI) is most needed. The systems we can
 study today fall into two camps. Either they are simple and procedural---
 decision trees, rule lists, sparse linear models---where the mechanism is
-known but trivial, so explaining it tests nothing; or they are genuinely
+known but trivial, so explaining it tests nothing, or they are genuinely
 complex---deep networks, real-world tasks---where XAI is needed but no ground
 truth of the inner functioning exists, so an explanation can be plausible,
 confident, and wrong with no way to tell. We set out to remove this
@@ -74,39 +74,37 @@ it is feasible.
 
 When we explain a system---in explainable AI (XAI) as anywhere else---we claim
 that \emph{this} part is responsible for \emph{that} behaviour. Checking such a
-claim requires knowing the inner functioning independently, as ground truth;
-without it we can ask whether an explanation is plausible or convincing, but not
+claim requires knowing the inner functioning independently, as ground truth.
+Without it we can ask whether an explanation is plausible or convincing, but not
 whether it is \emph{true}. Ground truth is the prerequisite for verification, and
 it is exactly what is missing where explanation matters most.
 
 The systems available to study fall into two unsatisfying camps. Simple,
 procedural models---decision trees, rule lists, sparse linear models---have fully
 known inner functioning, but there the explanation is essentially the model
-itself, testing an XAI method on nothing it could get wrong; these are not the
+itself, testing an XAI method on nothing it could get wrong. These are not the
 systems XAI was created for. The systems XAI does target---deep neural networks,
 learned agents, real-world pipelines---are genuinely complex and, for that very
 reason, have no ground truth of their inner functioning, so an attribution or
 saliency map can be plausible, confident, and wrong with no way to tell
-\citep{atrey2020exploratory,nikulin2019freelunch}. Known-but-trivial or
-complex-but-unknown: no study object is at once complex enough to be a real test
-and known well enough to grade the answer.
+\citep{atrey2020exploratory,nikulin2019freelunch}.
 
-One escape comes from outside machine learning. \citet{jonas2017could} asked
+Neuroscience faces a similar problem. Therefore, \citet{jonas2017could} asked
 whether the standard systems-neuroscience toolkit---connectomics, tuning curves,
 lesioning, dimensionality reduction---could recover how a MOS\,6502 microprocessor
 computes, using the chip as a model organism precisely because its mechanism is
 complex \emph{and} completely known. Even with perfect, unlimited data the methods
 produced structure that looked meaningful but did not recover the processor's
-actual organisation; the conclusion was that the \emph{methods} were lacking, and
+actual organisation. The conclusion was that the \emph{methods} were lacking, and
 that the way to find out is to test them on a system whose ground truth we already
-possess. Two things stop that study short of a substrate for modern XAI: the
+possess. Two things make it difficult to translate this to modern XAI: the
 microprocessor was not \emph{differentiable}, so today's gradient-based methods
-could not be applied; and the analyses were classical statistics, not XAI. The
+could not be applied, and the analyses were classical statistics, not XAI. The
 MOS\,6502 is no accident---it is the CPU at the heart of the Atari 2600 Video
 Computer System (VCS), the platform on which modern deep reinforcement learning
-was demonstrated \citep{mnih2013playing,mnih2015human,bellemare2013arcade}.
+was first demonstrated \citep{mnih2013playing,mnih2015human,bellemare2013arcade}.
 
-We therefore build the missing quadrant: a study object at once \emph{complex} (a
+We therefore build the missing piece: a study object at once \emph{complex} (a
 real computer architecture), \emph{fully known} to us bit-for-bit, and
 \emph{differentiable}, so the gradient-based XAI toolkit can in principle be turned
 on it. We re-implement the VCS---a 6507 CPU executing code from a cartridge ROM, a
@@ -132,7 +130,7 @@ contributions are:
   \item \textbf{A soft/hard formulation with theoretical analysis thereof.}
   We treat the ROM as a weight tensor, the RAM as a soft tape, and control
   flow as gates, and show that the soft forward pass is bit-exact equal to the
-  hard forward pass at any finite temperature (Theorem~\ref{thm:exact}); we
+  hard forward pass at any finite temperature (Theorem~\ref{thm:exact}), and
   give the temperature-limit error bound for the fully relaxed variant
   (Theorem~\ref{thm:limit}).
   \item \textbf{An AI-assisted engineering account.} A quantified report of
@@ -150,19 +148,11 @@ contributions are:
 
 \section{Background and Related Work}
 
-Some models are transparent by construction, such as decision trees, rule
-lists, sparse linear models, and interpretable-by-design surrogates. Their
-inner functioning is known, but it is trivial. The explanation is essentially
-the model written out, so these models do not test an XAI method in a
-meaningful way. XAI is built for the opposite case, namely large neural
-networks whose inner functioning is not known. There, no ground truth is
-available to check an explanation against.
-
 The dominant XAI tools are \emph{attribution} or \emph{saliency} methods,
 which assign each input element a number reflecting how much it mattered to
 the output. Grad-CAM computes the gradient of a target output with respect
 to a convolutional layer and renders it as a heatmap of important regions
-\citep{selvaraju2017gradcam}; Grad-CAM++ refines this with a pixel-wise
+\citep{selvaraju2017gradcam}. Grad-CAM++ refines this with a pixel-wise
 weighting of positive gradients \citep{chattopadhyay2018gradcampp}. These
 methods are powerful and architecture-agnostic, but they share a limitation
 their own authors flag: there is no way to confirm that a heatmap reflects
@@ -179,7 +169,7 @@ agent is the DQN, which learns to play Atari games from raw pixels
 \citep{mnih2013playing,mnih2015human} and became a standard testbed.
 \citet{greydanus2018visualizing} introduced a perturbation-based
 saliency for Atari agents and described strategies such as Breakout
-``tunneling''; the one case in which they verify the saliency is an
+``tunneling''. The one case in which they verify the saliency is an
 experiment where they inserted the ground-truth feature themselves.
 \citet{nikulin2019freelunch} built saliency directly
 into the agent and validated it against human eye-tracking---a behavioural
@@ -245,8 +235,8 @@ straight-through estimators \citep{bengio2013estimating}.
 \centering
 \includegraphics[width=0.92\columnwidth]{figures/fig_architecture.pdf}
 \caption{The Atari 2600 VCS. A 6507 CPU executes code from a
-(bank-switched) cartridge ROM over a shared address/data bus; the RIOT
-provides 128 bytes of RAM, a timer, and joystick/switch I/O; the TIA turns
+(bank-switched) cartridge ROM over a shared address/data bus. The RIOT
+provides 128 bytes of RAM, a timer, and joystick/switch I/O, and the TIA turns
 register writes into a picture and sound, cycle by cycle. Every block is
 re-implemented and differentiated in both ports.}
 \label{fig:arch}
@@ -322,7 +312,7 @@ Soft throughput (steps/s)     & ${\sim}363{,}800$ & ${\sim}1{,}666$ \\
 \textsc{xitari} bit-for-bit on all 64 games. \textsc{jutari} runs far faster
 than \textsc{jaxtari} because Julia compiles to native code, whereas the JAX
 path dispatches each instruction through the Python interpreter and the XLA
-runtime; see Throughput.}
+runtime (see Throughput).}
 \label{tab:ports}
 \end{table}
 
@@ -332,7 +322,7 @@ runtime; see Throughput.}
 \centering
 \includegraphics[width=0.90\textwidth]{figures/fig_pipeline.pdf}
 \caption{The two execution paths share one known mechanism. The HARD step
-uses integer dispatch and exact bit logic; the SOFT step reads the ROM and
+uses integer dispatch and exact bit logic. The SOFT step reads the ROM and
 RAM as one-hot dot products and relaxes the branch decision with a sigmoid
 gate. A straight-through estimator joins them: the forward value is the
 hard one (bit-exact), while the backward pass uses the soft gradient, so the
@@ -363,7 +353,7 @@ Turing Machine \citep{graves2014ntm}.
 
 Second, opcode dispatch is, in principle, a convex combination over the
 handler outputs. Let $\ell\in\mathbb{R}^{K}$ be a score vector over the
-$K=256$ possible opcodes---the \emph{logits}; in the hard machine $\ell$ is a
+$K=256$ possible opcodes---the \emph{logits}. In the hard machine $\ell$ is a
 one-hot indicator of the decoded opcode, and in the relaxed form it is a soft
 score. With temperature $T>0$ and softmax weights $w=\softmax(\ell/T)$, that
 is $w_k=e^{\ell_k/T}/\sum_j e^{\ell_j/T}$, the dispatch output is
@@ -374,7 +364,7 @@ is $w_k=e^{\ell_k/T}/\sum_j e^{\ell_j/T}$, the dispatch output is
 where the rows of $V$ are the candidate handler outputs. This collapses to the
 hard pick as $T\to0$ \citep{jang2017gumbel}. In the executed step we use the
 saturated form directly---a hard switch on the decoded opcode---so the forward
-pass is exact; the relaxed form~\eqref{eq:select} is what a fully soft variant
+pass is exact, and the relaxed form~\eqref{eq:select} is what a fully soft variant
 would use. The same softmax select governs \emph{any} discrete choice, with $T$
 setting how widely the soft pick spreads---and with it the range over which
 gradients flow. Figure~\ref{fig:tempheat} shows this on a visualisable selection
@@ -390,7 +380,7 @@ stays exact.
 a target sprite's screen column chosen with $w=\softmax(\ell/T)$. For each $T$ we
 sample the column $100$ times, render the hard sprite, and average, so each pixel
 is the expected occupancy. Low $T$ is a single sharp sprite (the hard pick,
-$\sigma\approx1.3$ px); raising $T$ spreads it over neighbouring columns
+$\sigma\approx1.3$ px). Raising $T$ spreads it over neighbouring columns
 ($\sigma\approx3$, then $6$ px), widening the range over which gradients reach---a
 knob for the gradient's capture range. The forward pass stays bit-exact
 (Theorem~\ref{thm:exact}).}
@@ -400,7 +390,7 @@ knob for the gradient's capture range. The forward pass stays bit-exact
 Third, a conditional branch---``if the status flag is set, add the offset
 $\delta$ to the program counter (\textsc{pc})''---is relaxed with a sigmoid
 gate. The branch condition is one processor status flag, a single bit in the
-hard machine; in soft mode we let it take a real value $f\in[0,1]$, a relaxed
+hard machine. In soft mode we let it take a real value $f\in[0,1]$, a relaxed
 flag. Writing $f$ as a logit $z = s\,(2f-1)$, where the sign $s$ selects
 branch-when-set ($s={+}1$) or branch-when-clear ($s={-}1$), and with sharpness
 $\alpha$, the gate $g$ and relaxed program counter are
@@ -418,6 +408,19 @@ correction) $\alpha$ must be large enough that the gate's residual uncertainty
 $g(1-g)$ stays below the integer-rounding threshold of $\mathrm{pc}$, so the
 rounded counter still matches the hard branch (see the supplementary material).
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_sigmoid_alpha.pdf}
+\caption{The soft-branch gate $g=\sigma(\alpha z)$ (left) and its gradient
+$\mathrm{d}g/\mathrm{d}z=\alpha\,\sigma(\alpha z)(1-\sigma(\alpha z))$ (right) for
+$\alpha\in\{2,6,20\}$, with the operating point $z{=}0.25$ marked. Too large an
+$\alpha$ (here $20$) saturates the gate, leaving essentially no gradient away from
+the switch. Too small an $\alpha$ (here $2$) gives a shallow gate whose gradient is
+weak and barely varies with $z$. The intermediate $\alpha{=}6$ places the operating
+point in the sigmoid's steep band and yields the largest, most localised gradient.}
+\label{fig:sigmoid}
+\end{figure}
+
 These relaxations are connected to the exact machine by a
 \emph{straight-through estimator} (STE) \citep{bengio2013estimating}. For any
 soft quantity with a matching hard value,
@@ -426,7 +429,7 @@ soft quantity with a matching hard value,
 \label{eq:ste}
 \end{equation}
 where $\sg(\cdot)$ is the stop-gradient operator. The forward value is
-exactly \textit{hard}; the backward pass uses the derivative of the soft
+exactly \textit{hard}, and the backward pass uses the derivative of the soft
 value. The
 round and clamp operations are treated the same way (forward exact, backward
 identity inside the valid range). The consequence, made precise next, is that
@@ -437,7 +440,7 @@ This is the same device that makes \emph{max-pooling} differentiable, and it
 applies far beyond branches. Every hard decision in the machine is a discrete
 \emph{selection}: which opcode handler runs, whether a branch is taken, which
 object owns a pixel under TIA priority, which sprite bit lights it. Each is a
-switch whose winner we record in the forward pass; the backward pass then
+switch whose winner we record in the forward pass, and the backward pass then
 routes the gradient to the selected value, exactly as max-pooling routes its
 gradient to the argmax input. With the switch stored, the entire \emph{content}
 path---register values, sprite colours and graphics bits, priority
@@ -447,22 +450,21 @@ pass. The one quantity a stored switch cannot differentiate is a discrete
 same reason max-pooling gives no gradient with respect to the pooling location.
 There, and only there, a differentiable sampler---a sub-pixel triangular
 (bilinear) kernel, as in spatial transformer networks
-\citep{jaderberg2015spatial}---restores the position gradient. We use this
-distinction in the qualitative study below.
+\citep{jaderberg2015spatial}---restores the position gradient.
 
 \section{Soft Equals Hard: Equivalence and Gradients}
 
 We now state what the construction guarantees. Let $\Phi_{\mathrm{H}}$ and
 $\Phi_{\mathrm{S}}$ be the one-step transition maps of the hard and soft
 emulators, acting on the full state $x$ (CPU registers, RAM, RIOT, TIA, and
-frame buffer). We state both theorems here and give only \emph{proof sketches};
-the complete, formal proofs are in the supplementary material. The first result
+frame buffer). We state both theorems here and give only \emph{proof sketches}.
+The complete, formal proofs are in the supplementary material. The first result
 is that the two maps agree in value.
 
 \begin{theorem}[Exact forward equivalence]
 \label{thm:exact}
 For every reachable state $x$ and every finite sharpness $\alpha$ and
-temperature $T$, the soft and hard one-step maps are equal,
+temperature $T$, the soft and hard one-step maps are equal by design,
 $\Phi_{\mathrm{S}}(x) = \Phi_{\mathrm{H}}(x)$, with identical float32
 representations. Consequently, over a trajectory of $N$ steps,
 $x^{\mathrm{S}}_t = x^{\mathrm{H}}_t$ for all $t\le N$. The modes differ only in
@@ -474,7 +476,7 @@ nonzero where $\partial\Phi_{\mathrm{H}}/\partial x$ is zero or undefined.
 \begin{proof}[Proof sketch]
 Each handler's forward output composes one-hot ROM/RAM reads~\eqref{eq:peek},
 integer/round arithmetic, a hard opcode dispatch, and the straight-through
-branch~\eqref{eq:ste}, each forward-identical to the hard handler; the
+branch~\eqref{eq:ste}, each forward-identical to the hard handler, and the
 stop-gradient alters only the backward rule. The one-step equality then extends
 to whole trajectories by induction on the step index. The complete proof, with
 the per-primitive equalities and the formal induction, is in the supplementary
@@ -493,13 +495,13 @@ Along the executed trajectory of length $N$, every discrete decision has a
 strictly positive margin. For opcode dispatch at step $t$ with logits
 $\ell^{(t)}$ and winner $k^\star_t$, the logit gap
 $\Delta_t = \ell^{(t)}_{k^\star_t}-\max_{k\ne k^\star_t}\ell^{(t)}_k$ is
-positive; for each conditional branch with flag logit $z_t$, the margin
+positive, and for each conditional branch with flag logit $z_t$, the margin
 $m_t = |z_t|$ is positive. Let $\Delta_{\min}=\min_t \Delta_t>0$ and
 $m_{\min}=\min_t m_t>0$.
 \end{assumption}
 
 In the executed dispatch the flags are exact bits, so $z_t = \pm 1$ and
-$m_{\min}=1$; Assumption~\ref{ass:dm} holds trivially for branches and is a
+$m_{\min}=1$, so Assumption~\ref{ass:dm} holds trivially for branches and is a
 statement only about ties in a fully soft dispatch.
 
 \begin{theorem}[Temperature-limit bound]
@@ -551,14 +553,14 @@ playable by the original DQN benchmark: for each game we run the standard ALE
 boot (60 no-op frames plus four resets) and then a fixed action stream. A game is
 \emph{RAM-exact} if its 128-byte RIOT RAM is identical to \textsc{xitari} on every
 frame, and \emph{pixel-exact} if its full $210\times160$ frame buffer (palette
-indices) is identical on every frame; we report the count of each out of 64. We
+indices) is identical on every frame. We report the count of each out of 64. We
 estimate \emph{active} implementation wall-time from the version-control log,
 treating any gap between consecutive commits longer than three hours as a session
 boundary and summing the active sessions, with the two- and four-hour thresholds
 reported as a sensitivity check. We count authored test cases per port and the
 distinct numbered bug investigations recorded in the development log. Finally, we
 measure soft-mode throughput as steps per second on a fixed ROM after
-just-in-time warm-up, on a single Apple~M1~Max core (JAX CPU backend;
+just-in-time warm-up, on a single Apple~M1~Max core (JAX CPU backend,
 Julia~1.10), reporting the median of repeated runs.
 
 \section{Results}
@@ -629,23 +631,23 @@ each object to exactly the pixels its register controls (the cannon via
 \texttt{COLUBK}), a localisation that can be \emph{checked} against ground
 truth. \textbf{Bottom, left to right:} a single cannon graphics bit (bright,
 within the faint cannon outline) attributes to its own pixels once represented
-as a value behind a stored switch; the scene with the cannon (bottom) and the
-target invader it
-should slide under (orange); the signed $\partial$screen$/\partial$joystick
-saliency (a soft sampler makes the position differentiable), highlighting the
-cannon edges that move; and the gradient of the on-screen cannon position with
-respect to the four joystick directions, which correctly infers that pushing
-\textsc{right} (and not up/down) moves the cannon toward the target.}
+as a value behind a stored switch. Next, the scene with the cannon (bottom) and
+the target invader it should slide under (orange). Then the signed
+$\partial$screen$/\partial$joystick saliency (a soft sampler makes the position
+differentiable), highlighting the cannon edges that move. Finally, the gradient of
+the on-screen cannon position with respect to the four joystick directions, which
+correctly infers that pushing \textsc{right} (and not up/down) moves the cannon
+toward the target.}
 \label{fig:xai}
 \end{figure*}
 
 The point of the foundation is that gradients computed on it can be
 \emph{checked}. Because soft mode is forward-exact (Theorem~\ref{thm:exact}),
 it yields exact gradients of any read-out with respect to the state and the
-ROM. We give a small qualitative study (Figure~\ref{fig:xai}); it is a proof
+ROM. We give a small qualitative study (Figure~\ref{fig:xai}). It is a proof
 of concept that the substrate behaves as intended, not an XAI evaluation.
 
-First, a Grad-CAM analogue. We differentiate the rendered frame with respect
+We differentiate the rendered frame with respect
 to the TIA colour registers: $\partial$screen$/\partial$\texttt{COLUP0}
 localises exactly to the cannon (player~0),
 $\partial$screen$/\partial$\texttt{COLUP1} to the row of invaders (player~1),
@@ -655,8 +657,8 @@ attributing to the exactly correct register, a statement that can be
 extends this: a single cannon \emph{graphics} bit, once represented as a value
 behind its switch, has a non-zero gradient to precisely the pixels it lights.
 
-Second, the joystick. A naive gradient from the joystick to the screen is zero,
-because the path runs through a discrete sprite \emph{position} index; this is
+A naive gradient from the joystick to the screen is zero,
+because the path runs through a discrete sprite \emph{position} index. This is
 not a failure of differentiation but the ground truth telling us that a naive
 gradient saliency would wrongly report ``the joystick does not affect the
 screen.'' Applying the differentiable sampler to the position makes the
@@ -669,16 +671,16 @@ known wiring---which is the whole point.
 
 \section{Discussion}
 
-This paper delivers four results: two independent differentiable VCS ports (Julia
-and JAX) that are RAM-bit-exact and pixel-exact against \textsc{xitari} on all 64
-DQN games; a proof that the soft forward pass equals the hard one exactly, so
-gradients are computed on the true execution rather than an approximation; an
-implementation-effort measurement of about 137 active hours, built largely by
-coding agents---a data point on how quickly such a system can now be produced; and
-a qualitative demonstration that gradients localise to the correct hardware and
-can be checked against the known mechanism. Together these make ``build a
-known-ground-truth substrate, then study it with XAI'' a practical method rather
-than a thought experiment.
+This paper delivers four results. We built two independent differentiable ports of
+the Atari VCS, in Julia and JAX, that are bit-exact in RAM and pixel-exact on
+screen against \textsc{xitari} on all 64 DQN games. We proved that the soft forward
+pass equals the hard one exactly, so gradients are computed on the true execution
+rather than an approximation. We measured the implementation effort at about 137
+active hours, built largely by coding agents---a concrete data point on how quickly
+such a system can now be produced. And we showed qualitatively that gradients
+localise to the correct hardware and can be checked against the known mechanism.
+Theoretic analysis of $\alpha$ and $T$ showed that exact operation is also possible
+with the soft version in the forward pass for small $T$ and large $\alpha$.
 
 Building the ports also revealed a bug in the reference. Driving the ports to
 64/64 pixel exactness surfaced a latent non-determinism in \textsc{xitari}
@@ -696,13 +698,11 @@ The hardest divergences were all in timing---the RIOT timer's reset state, the
 TIA's sub-cycle object rendering, and the boot-time format probe that seeds
 free-running counters games never re-initialise. Two model anecdotes: the bulk of
 the work was carried out by Claude Opus~4.7 and 4.8, with one autonomous session
-driven by Fable~5; an early attempt with Kimi-K2.6 (a one-trillion-parameter
-model) ended when it refused to start, judging the port to be months of
-work---autonomous capability on a task this size is real but uneven across
-systems.
+driven by Fable~5. An early attempt with Kimi-K2.6 (a one-trillion-parameter
+model) ended when it refused to start, judging the port to be months of work.
 
 One limitation: the effort comparison is an order-of-magnitude estimate, not a
-controlled trial; this does not affect the core claims---the forward equivalence
+controlled trial. This does not affect the core claims---the forward equivalence
 of Theorem~\ref{thm:exact} and the measured 64/64 conformance of both ports.
 
 \section{Conclusion}
