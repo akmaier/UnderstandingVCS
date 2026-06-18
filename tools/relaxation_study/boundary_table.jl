@@ -83,7 +83,7 @@ function row(a, T)
     @printf("  %5.1f  %5.3f | %9s | %7.3f %7.3f %8.4f  %9s\n",
             a, T, d == -1 ? "exact" : string(d), p_branch(a), p_read(T), P, pred)
 end
-println("  [branch boundary: T = 0.10 fixed]")
-for a in (2.0, 3.0, 4.0, 5.0, 6.0); row(a, 0.10); end
-println("  [temperature boundary: alpha = 20 fixed]")
-for T in (0.08, 0.10, 0.12, 0.15, 0.18, 0.20, 0.25); row(20.0, T); end
+println("  [branch boundary: T = 0.12 fixed (read-exact edge)]")
+for a in (2.0, 3.0, 4.0, 5.0, 6.0); row(a, 0.12); end
+println("  [temperature boundary: alpha = 6 fixed (branch-exact edge)]")
+for T in (0.08, 0.10, 0.12, 0.15, 0.18, 0.20); row(6.0, T); end

@@ -380,9 +380,9 @@ p_{\mathrm{branch}}(\alpha)^{f_b}$, with $\rho=2.16$ reads per instruction and
 branch fraction $f_b=0.374$ measured on the executed Space Invaders trace, and
 the run is bit-exact only while every cast rounds correctly.
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\columnwidth]{figures/fig_relax_heatmap.pdf}
+\includegraphics[width=0.55\textwidth]{figures/fig_relax_heatmap.pdf}
 \caption{Overview of the per-step bit-exactness likelihood
 $P_{\mathrm{step}}=p_{\mathrm{read}}(T)^{\rho}\,p_{\mathrm{branch}}(\alpha)^{f_b}$
 of the fully relaxed forward across the $(\alpha,T)$ plane (Space Invaders).
@@ -391,11 +391,11 @@ $P_{\mathrm{step}}{=}1$---sits at large branch sharpness $\alpha$ and small read
 temperature $T$, bounded by a gradual branch boundary (in $\alpha$) and a sharp
 temperature boundary (in $T$); the white dashed line is $P_{\mathrm{step}}{=}0.5$.
 Because $P_{\mathrm{step}}$ factorises, the plane is the outer combination of the
-two $1$D profiles. The star marks the recommended operating point
-($\alpha{=}6$, $T{=}0.1$). Table~\ref{tab:relax-exact} zooms into the two
-boundaries with the measured first-divergence steps.}
+two $1$D profiles, and the two boundary sweeps of Table~\ref{tab:relax-exact} are
+slices along the green contour's two edges. The star marks the recommended
+operating point ($\alpha{=}6$, $T{=}0.12$)---the corner where they cross.}
 \label{fig:relaxheat}
-\end{figure}
+\end{figure*}
 
 Figure~\ref{fig:relaxheat} maps this likelihood across the whole $(\alpha,T)$
 plane: a bit-exact corner at large $\alpha$ and small $T$, a gradual branch
@@ -408,7 +408,7 @@ re-synchronise and an end-of-run state match would overstate exactness.
 Measurement and model agree---the forward is bit-exact precisely where
 $P_{\mathrm{step}}=1$, namely $\alpha\ge6$ (so $\tau_b$ exceeds the largest
 offset, $122$) and $T\le0.12$, and the first-divergence step grows as
-$P_{\mathrm{step}}\to1$ ($\alpha{=}3,4,5$ at $T{=}0.10$ first diverge at steps
+$P_{\mathrm{step}}\to1$ ($\alpha{=}3,4,5$ at $T{=}0.12$ first diverge at steps
 $879,1121,1216$). The branch boundary is gradual in $\alpha$ while the
 temperature boundary is sharp: a single max-amplitude neighbour already pulls a
 read by $\approx1.7>\tfrac12$, so $p_{\mathrm{read}}$ drops from $1$ at
@@ -438,21 +438,20 @@ jaxtari uses the identical cast-to-Int logic and is omitted.}
 \cmidrule(lr){3-3}\cmidrule(lr){4-6}
 $\alpha$ & $T$ & first-divergent step & $p_{\mathrm{branch}}$ & $p_{\mathrm{read}}$ & $P_{\mathrm{step}}$\\
 \midrule
-\multicolumn{6}{l}{\emph{Branch boundary} ($T=0.10$, reads exact)}\\
-$2$ & $0.10$ & $7$     & $0.039$ & $1.000$ & $0.298$\\
-$3$ & $0.10$ & $879$   & $0.953$ & $1.000$ & $0.982$\\
-$4$ & $0.10$ & $1121$  & $0.988$ & $1.000$ & $0.996$\\
-$5$ & $0.10$ & $1216$  & $0.996$ & $1.000$ & $0.999$\\
-$6$ & $0.10$ & \emph{exact} & $1.000$ & $1.000$ & $1.000$\\
+\multicolumn{6}{l}{\emph{Branch boundary} ($T=0.12$ fixed at the read-exact edge)}\\
+$2$ & $0.12$ & $7$     & $0.039$ & $1.000$ & $0.298$\\
+$3$ & $0.12$ & $879$   & $0.953$ & $1.000$ & $0.982$\\
+$4$ & $0.12$ & $1121$  & $0.988$ & $1.000$ & $0.996$\\
+$5$ & $0.12$ & $1216$  & $0.996$ & $1.000$ & $0.999$\\
+$6$ & $0.12$ & \emph{exact} & $1.000$ & $1.000$ & $1.000$\\
 \midrule
-\multicolumn{6}{l}{\emph{Temperature boundary} ($\alpha=20$, branch exact)}\\
-$20$ & $0.08$ & \emph{exact} & $1.000$ & $1.000$ & $1.000$\\
-$20$ & $0.10$ & \emph{exact} & $1.000$ & $1.000$ & $1.000$\\
-$20$ & $0.12$ & \emph{exact} & $1.000$ & $1.000$ & $1.000$\\
-$20$ & $0.15$ & $803$ & $1.000$ & $0.981$ & $0.959$\\
-$20$ & $0.18$ & $2$   & $1.000$ & $0.223$ & $0.039$\\
-$20$ & $0.20$ & $2$   & $1.000$ & $0.144$ & $0.015$\\
-$20$ & $0.25$ & $1$   & $1.000$ & $0.024$ & $0.000$\\
+\multicolumn{6}{l}{\emph{Temperature boundary} ($\alpha=6$ fixed at the branch-exact edge)}\\
+$6$ & $0.08$ & \emph{exact} & $1.000$ & $1.000$ & $1.000$\\
+$6$ & $0.10$ & \emph{exact} & $1.000$ & $1.000$ & $1.000$\\
+$6$ & $0.12$ & \emph{exact} & $1.000$ & $1.000$ & $1.000$\\
+$6$ & $0.15$ & $803$ & $1.000$ & $0.981$ & $0.959$\\
+$6$ & $0.18$ & $2$   & $1.000$ & $0.223$ & $0.039$\\
+$6$ & $0.20$ & $2$   & $1.000$ & $0.144$ & $0.015$\\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -463,20 +462,20 @@ games. A $6502$ branch displacement is at most $|\delta|\le127$, so
 $\tfrac12(1+e^{\alpha})>127$---that is $\alpha\ge\ln(2\cdot127-1)\approx5.5$---makes
 every branch round correctly, and $\alpha\ge6$ suffices. A read is pulled away
 from its addressed byte by at most $255\,(1-w_0)\approx510\,e^{-1/T}$, which stays
-below $\tfrac12$ once $T\le 1/\ln(4\cdot255)\approx0.14$, so $T\le0.1$ holds with
-margin. Both bounds depend only on the instruction set and the $8$-bit byte
-range, not on the program, so $\alpha{=}6,\ T{=}0.1$ is bit-exact across
-games---verified over $6000$ instructions on Pong, Breakout and Space
-Invaders---whereas \emph{just outside} them the forward fails on a game-dependent
-subset ($\alpha{=}5$ diverges on Space Invaders but not Pong or Breakout;
-$T{=}0.15$ diverges on Pong and Space Invaders but not Breakout), which is exactly
-why the conservative bounds are needed. Within the exact region the relaxed
-gradient is strongest at the boundary (it vanishes as $\alpha\to\infty$,
-$T\to0$; Theorem~\ref{thm:s-limit}), so the recommended operating point is the
-corner of the bit-exact region, $\alpha{=}6,\ T{=}0.1$
-(Figure~\ref{fig:relaxheat}): the smallest $\alpha$ and largest $T$ that keep the
-forward bit-exact, giving the most informative gradient compatible with
-exactness.
+below $\tfrac12$ once $T\le 1/\ln(4\cdot255)\approx0.14$; the corner value
+$T{=}0.12$ sits comfortably inside this (worst-case pull $\approx0.12<\tfrac12$).
+Both bounds depend only on the instruction set and the $8$-bit byte range, not on
+the program, so $\alpha{=}6,\ T{=}0.12$ is bit-exact across games---verified over
+$6000$ instructions on Pong, Breakout and Space Invaders---whereas \emph{just
+outside} them the forward fails on a game-dependent subset ($\alpha{=}5$ diverges
+on Space Invaders but not Pong or Breakout; $T{=}0.15$ diverges on Pong and Space
+Invaders but not Breakout), which is exactly why the conservative bounds are
+needed. Within the exact region the relaxed gradient is strongest at the boundary
+(it vanishes as $\alpha\to\infty$, $T\to0$; Theorem~\ref{thm:s-limit}), so the
+recommended operating point is the corner of the bit-exact region,
+$\alpha{=}6,\ T{=}0.12$ (Figure~\ref{fig:relaxheat}): the smallest $\alpha$ and
+largest $T$ that keep the forward bit-exact, giving the most informative gradient
+compatible with exactness.
 
 \section{Implementation Effort}
 

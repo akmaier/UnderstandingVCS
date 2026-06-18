@@ -60,11 +60,12 @@ def main():
             va="center", weight="bold")
     ax.text(0.55, 1.5, "diverges", color="white", fontsize=7.5, ha="center",
             va="center")
-    # recommended operating point: smallest alpha / largest T that stays exact
-    ax.plot([0.1], [6], marker="*", markersize=12, color="#39ff14",
+    # recommended operating point: corner of the exact region (smallest alpha,
+    # largest T that stay exact) -- where the two boundary sweeps cross.
+    ax.plot([0.12], [6], marker="*", markersize=12, color="#39ff14",
             markeredgecolor="black", markeredgewidth=0.6, zorder=5)
-    ax.annotate(r"set here: $\alpha{=}6,\,T{=}0.1$", xy=(0.1, 6),
-                xytext=(0.11, 2.4), color="white", fontsize=6.5,
+    ax.annotate(r"set here: $\alpha{=}6,\,T{=}0.12$", xy=(0.12, 6),
+                xytext=(0.13, 2.4), color="white", fontsize=6.5,
                 arrowprops=dict(arrowstyle="->", color="white", lw=0.6))
     cax = fig.add_axes([0.875, 0.14, 0.03, 0.85])
     cb = fig.colorbar(im, cax=cax)

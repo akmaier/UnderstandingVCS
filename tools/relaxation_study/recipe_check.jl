@@ -26,10 +26,10 @@ function first_div(rom, pc0, alpha, T)
     set_relax!(on = false); return -1
 end
 
-POINTS = [("recommended a=6,T=0.1", 6.0, 0.1),
-          ("safer a=8,T=0.05",      8.0, 0.05),
-          ("below a-bound a=5,T=0.1", 5.0, 0.1),
-          ("above T-bound a=20,T=0.15", 20.0, 0.15)]
+POINTS = [("recommended a=6,T=0.12", 6.0, 0.12),
+          ("safer a=8,T=0.05",       8.0, 0.05),
+          ("below a-bound a=5,T=0.12", 5.0, 0.12),
+          ("above T-bound a=6,T=0.15", 6.0, 0.15)]
 
 println("first-divergence step over N=$N  (-1 / exact = bit-exact whole run)\n")
 print(rpad("ROM", 26))
