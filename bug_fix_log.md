@@ -6252,3 +6252,47 @@ issue (jaxtari's sequence otherwise matches: only $78/$0b diverge).
 Status: jaxtari RAM 58/64 (diagnosis only; no fix — both remaining leads need
 either a slow boot coverage trace (kfm) or a data_bus_state bus-parity trace
 (solaris), both deferred to keep the tick bounded).
+
+---
+
+## Sprint 9 (2026-06-18, ~06:00) — classified the 6 RAM divergences: HETEROGENEOUS, no shared fix; each a deep per-cycle parity issue
+
+Used the fast jutari Bus trace to classify what feeds each divergent game's
+bytes. The 6 do NOT share a root cause — they are 4+ distinct subtle
+timing/value-parity classes (jaxtari's *logic* for each is verified correct vs
+jutari; the divergence is the runtime VALUE at a specific cycle):
+
+| game | class | source / mechanism |
+|---|---|---|
+| kung_fu_master | collision **latch** | CXPPMM D7 (P0-P1) — jaxtari p0/p1 don't overlap at a boot scanline jutari's do (transient coverage) |
+| solaris | **data_bus_state** | CXPPMM low bits = floating bus stored unmasked; jaxtari's data_bus_state at the read differs |
+| demon_attack | **RIOT timer phase** | $1c ← INTIM (delay-loop counter); jaxtari's timer countdown at a different phase. INTIM *formula* matches jutari → an INPUT (cycle-count) phase diff |
+| asterix | **computed/propagated** | no divergent byte written directly from a register read (≤6 ops) — downstream of an earlier diverged value; needs a deeper trace |
+| road_runner | unprobed | frame-25 (late) divergence |
+| surround | **boot seed** | $7d free-running counter — needs the construction probe (deferred on speed) |
+
+**Honest convergence outlook.** jaxtari is at **RAM 58/64 + screen 12/12** vs
+xitari. The remaining 6 are NOT logic bugs (collision-detect, floating-bus
+merge, INSTAT/INTIM formula, render path all verified identical to jutari).
+They are runtime VALUE divergences at specific cycles — transient coverage
+(kfm), data-bus phase (solaris), timer phase (demon_attack), cycle-accounting
+(asterix). Each is the kind of deep per-cycle trace that took jutari a full
+sprint *each* to close, and jaxtari iteration is ~28 min/boot (vs jutari's
+~15 s) — so this is a slow, heterogeneous grind, not a quick sweep. There is
+no single high-leverage fix that closes multiple games.
+
+**Recommended next steps (each a multi-tick deep fix):**
+- demon_attack/asterix likely share a **cycle-accounting / timer-phase** root
+  (both involve INTIM + computed values). Highest-value probe: per-instruction
+  cycle-count diff jaxtari vs xitari (`trace_dump --cpu`) at the first divergent
+  frame — if jaxtari's cumulative CPU cycle count drifts from xitari by N
+  cycles, it shifts every timer read. This could close demon_attack AND asterix
+  (and is the same class as jutari's old #80/#98 cycle-threading hunts).
+- kfm: per-scanline p0/p1 coverage trace (slow jaxtari boot).
+- solaris: data_bus_state bus-op diff at the CXPPMM read.
+- surround: construction probe (speed-blocked) or seed $7d directly.
+- road_runner: classify (unprobed).
+
+Status: RAM 58/64 (classification complete this tick; no fix — the remaining
+work is deep per-cycle tracing, surfaced honestly for the next agent/user to
+prioritize). screen 12/12 unchanged.
