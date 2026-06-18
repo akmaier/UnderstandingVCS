@@ -363,47 +363,79 @@ rounds to the value the executed (straight-through) path would produce: a large
 $\alpha$ keeps the rounded soft program counter on the hard branch target, and a
 small $T$ keeps the distance-softmax read on the addressed byte.
 
-Table~\ref{tab:relax-exact} reports, after $N=3000$ instructions from reset, the
-fraction of the $128$-byte RAM and of the rendered frame that still match the
-executed reference. The forward is bit-exact for $\alpha\ge 8$ and $T\le 0.1$ and
-degrades outside that corner: as $\alpha$ falls, branches with larger relative
-offsets round to the wrong target, and as $T$ rises, neighbouring bytes bleed
-into each read. The rendered frame is the more brittle measure---a single wrong
-byte typically perturbs some on-screen pixel, so the pixel score collapses to
-zero well before the RAM does (for example $\alpha{=}4$, $T{=}0.05$: $78\%$ of
-RAM still matches but no frame is pixel-exact). This is consistent with
-Theorem~\ref{thm:s-limit}: exactness is recovered as $\alpha\to\infty$ and
-$T\to0$. The jaxtari twin runs the same relaxation and its columns are left open
-for the in-progress port.
+Because each cast is a rounding, the likelihood of staying bit-exact follows
+from the cast margins. A crisp-flag branch with signed offset $\delta$ keeps its
+rounded soft program counter on the hard target exactly when
+$|\delta|<\tau_b(\alpha)$, $\tau_b(\alpha)=\tfrac12(1+e^{\alpha})$, so the
+per-branch exactness $p_{\mathrm{branch}}(\alpha)$ is the fraction of executed
+branch offsets below $\tau_b$. A temperature-$T$ read at address $a$ returns
+$\mathrm{round}\!\big(\sum_k w_k\,\mathrm{mem}[a{+}k]\big)$ with
+$w_k\propto e^{-|k|/T}$, and is exact when the neighbour pull
+$\big|\sum_{k\neq0} w_k(\mathrm{mem}[a{+}k]-\mathrm{mem}[a])\big|<\tfrac12$,
+giving a per-read exactness $p_{\mathrm{read}}(T)$. Treating the $\rho$ reads and
+the occasional branch of an instruction as independent casts, the per-step
+bit-exactness likelihood is
+$P_{\mathrm{step}}(\alpha,T)=p_{\mathrm{read}}(T)^{\rho}\,
+p_{\mathrm{branch}}(\alpha)^{f_b}$, with $\rho=2.16$ reads per instruction and
+branch fraction $f_b=0.374$ measured on the executed Space Invaders trace, and
+the run is bit-exact only while every cast rounds correctly.
 
-\begin{table}[t]
+Table~\ref{tab:relax-exact} probes both boundaries. As the faithful measurement
+we report the first instruction at which the relaxed trajectory deviates from the
+executed one over $N=3000$ steps (``exact'' means no deviation): the game
+re-initialises much of its state every frame, so a diverged run can partially
+re-synchronise and an end-of-run state match would overstate exactness.
+Measurement and model agree---the forward is bit-exact precisely where
+$P_{\mathrm{step}}=1$, namely $\alpha\ge6$ (so $\tau_b$ exceeds the largest
+offset, $122$) and $T\le0.12$, and the first-divergence step grows as
+$P_{\mathrm{step}}\to1$ ($\alpha{=}3,4,5$ at $T{=}0.10$ first diverge at steps
+$879,1121,1216$). The branch boundary is gradual in $\alpha$ while the
+temperature boundary is sharp: a single max-amplitude neighbour already pulls a
+read by $\approx1.7>\tfrac12$, so $p_{\mathrm{read}}$ drops from $1$ at
+$T\le0.12$ to $0.14$ at $T=0.20$. This is the empirical face of
+Theorem~\ref{thm:s-limit}: exactness is recovered as $\alpha\to\infty$ and
+$T\to0$. The jaxtari twin uses the identical cast-to-Int logic, so the same
+analysis applies.
+
+\begin{table*}[t]
 \centering
 \caption{Forward bit-exactness of the \emph{fully relaxed} pass (soft branch
 without the straight-through estimator, temperature-$T$ reads) on the full
-simulator running Space Invaders, after $N=3000$ instructions, versus the
-executed (straight-through) reference. Entries are the percentage of RAM bytes /
-rendered pixels that still match it. jaxtari values are left open for the
-in-progress port.}
+simulator running Space Invaders, sampled around the two critical boundaries.
+\textbf{Measured}: the first instruction (of $N=3000$ from reset) at which the
+relaxed trajectory deviates from the executed (straight-through) one; ``exact''
+means no deviation over the whole run. \textbf{Predicted}: the cast-margin
+likelihood model---per-branch exactness $p_{\mathrm{branch}}(\alpha)$, per-read
+exactness $p_{\mathrm{read}}(T)$, and the per-step likelihood
+$P_{\mathrm{step}}=p_{\mathrm{read}}^{\rho}\,p_{\mathrm{branch}}^{f_b}$
+($\rho=2.16$, $f_b=0.374$). The forward is bit-exact iff $P_{\mathrm{step}}=1$;
+jaxtari uses the identical cast-to-Int logic and is omitted.}
 \label{tab:relax-exact}
 \small
-\begin{tabular}{rr cc cc}
+\begin{tabular}{rr c | ccc}
 \toprule
-& & \multicolumn{2}{c}{jutari} & \multicolumn{2}{c}{jaxtari}\\
-\cmidrule(lr){3-4}\cmidrule(lr){5-6}
-$\alpha$ & $T$ & RAM\,\% & px\,\% & RAM\,\% & px\,\%\\
+\multicolumn{2}{c}{} & Measured & \multicolumn{3}{c}{Predicted (cast-margin model)}\\
+\cmidrule(lr){3-3}\cmidrule(lr){4-6}
+$\alpha$ & $T$ & first-divergent step & $p_{\mathrm{branch}}$ & $p_{\mathrm{read}}$ & $P_{\mathrm{step}}$\\
 \midrule
-$20$ & $0.05$ & $100.0$ & $100.0$ & --- & ---\\
-$20$ & $0.1$  & $100.0$ & $100.0$ & --- & ---\\
-$8$  & $0.1$  & $100.0$ & $100.0$ & --- & ---\\
-$4$  & $0.05$ & $78.1$  & $0.0$   & --- & ---\\
-$2$  & $0.05$ & $21.9$  & $0.0$   & --- & ---\\
-$1$  & $0.05$ & $21.9$  & $0.0$   & --- & ---\\
-$20$ & $0.3$  & $21.9$  & $0.0$   & --- & ---\\
-$20$ & $1.0$  & $3.1$   & $0.0$   & --- & ---\\
-$20$ & $3.0$  & $18.8$  & $0.0$   & --- & ---\\
+\multicolumn{6}{l}{\emph{Branch boundary} ($T=0.10$, reads exact)}\\
+$2$ & $0.10$ & $7$     & $0.039$ & $1.000$ & $0.298$\\
+$3$ & $0.10$ & $879$   & $0.953$ & $1.000$ & $0.982$\\
+$4$ & $0.10$ & $1121$  & $0.988$ & $1.000$ & $0.996$\\
+$5$ & $0.10$ & $1216$  & $0.996$ & $1.000$ & $0.999$\\
+$6$ & $0.10$ & \emph{exact} & $1.000$ & $1.000$ & $1.000$\\
+\midrule
+\multicolumn{6}{l}{\emph{Temperature boundary} ($\alpha=20$, branch exact)}\\
+$20$ & $0.08$ & \emph{exact} & $1.000$ & $1.000$ & $1.000$\\
+$20$ & $0.10$ & \emph{exact} & $1.000$ & $1.000$ & $1.000$\\
+$20$ & $0.12$ & \emph{exact} & $1.000$ & $1.000$ & $1.000$\\
+$20$ & $0.15$ & $803$ & $1.000$ & $0.981$ & $0.959$\\
+$20$ & $0.18$ & $2$   & $1.000$ & $0.223$ & $0.039$\\
+$20$ & $0.20$ & $2$   & $1.000$ & $0.144$ & $0.015$\\
+$20$ & $0.25$ & $1$   & $1.000$ & $0.024$ & $0.000$\\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \section{Implementation Effort}
 
