@@ -475,6 +475,44 @@ $\alpha{=}6,\ T{=}0.12$ (Figure~\ref{fig:relaxheat}): the smallest $\alpha$ and
 largest $T$ that keep the forward bit-exact, giving the most informative gradient
 compatible with exactness.
 
+\paragraph{Full-simulator demonstration.} The per-cast model is borne out on a
+real $60$-second rollout. We render Space Invaders beam-timed in four modes side
+by side (Figure~\ref{fig:divframe}): the exact hard run, the executed soft
+(straight-through) run, and the fully relaxed run at two settings. The relaxed
+frames come from the same cycle-accurate hard renderer driven through a
+default-off relaxation hook on the CPU's branch and reads, so HARD, SOFT-STE and
+any in-corner setting render pixel-identically. At $\alpha{=}6,\ T{=}0.14$---inside
+the bit-exact corner---the relaxed run stays identical to HARD for the entire
+rollout. At $\alpha{=}5.5,\ T{=}0.145$---just past the read boundary---it diverges,
+but only mildly: the game remains recognisable with a persistent, localised error
+(a depleted column of invaders), because the relaxation corrupts a sprite-position
+read rather than the control flow.
+
+\paragraph{Why divergence cannot be delayed.} A natural question is whether some
+$(\alpha,T)$ boots cleanly and then diverges only after many frames---a Bernoulli
+first failure deep into the rollout. It cannot, and the margins explain why. The
+borderline casts cluster at a single temperature ($T\approx0.1445$) and lie in
+the display kernel that re-runs every frame, so they are exercised on the very
+first rollout frame. The first failing cast therefore fires immediately whenever
+it fires at all: the transition is a sharp cliff---bit-exact for $T\le0.1445$,
+diverging within the first frame for $T\ge0.145$---rather than a geometric tail. A
+delayed divergence would need a borderline cast executed only rarely, which this
+kernel does not contain, so ``boots, then breaks later'' is not achievable: one
+either stays in the exact corner or breaks at once.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_divergence_frame.pdf}
+\caption{One frame of the $60$-second full-simulator comparison (Space Invaders,
+beam-timed). \textbf{HARD} and \textbf{SOFT-STE} are pixel-identical
+(Theorem~\ref{thm:s-exact}). \textbf{SOFT} $\alpha{=}6,T{=}0.14$ is inside the
+bit-exact corner and stays identical to HARD for the whole rollout. \textbf{SOFT}
+$\alpha{=}5.5,T{=}0.145$ is just past the read boundary and diverges \emph{mildly}:
+the game stays recognisable but a column of invaders is missing---the localised
+effect of one corrupted sprite-position read, persistent over the rollout.}
+\label{fig:divframe}
+\end{figure*}
+
 \section{Implementation Effort}
 
 \begin{figure*}[t]

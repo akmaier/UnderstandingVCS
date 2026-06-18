@@ -45,16 +45,26 @@ def main():
     ap.add_argument("--out", default=os.path.join(OUT, "divergence_si.mp4"))
     args = ap.parse_args()
 
-    exact, relaxed = _load("exact"), _load("relaxed")
-    n = min(len(exact), len(relaxed)); exact, relaxed = exact[:n], relaxed[:n]
-    pal = load_ntsc_palette()
-    rgb_e = decode_palette(exact, pal)                     # (n,h,w,3)
-    rgb_r = decode_palette(relaxed, pal)
+    # Manifest: one relaxed stream per line "soft<i> alpha T".
+    softs = []
+    mpath = os.path.join(OUT, "manifest.txt")
+    if os.path.exists(mpath):
+        for ln in open(mpath):
+            name, a, t = ln.split(); softs.append((name, float(a), float(t)))
+    else:
+        softs = [("relaxed", 0.0, 0.0)]            # back-compat single stream
 
-    # 3 panels: HARD | SOFT-STE (= HARD, Theorem 1) | SOFT (relaxed). No diff.
-    panels = np.concatenate([rgb_e, rgb_e, rgb_r], axis=2)         # (n,h,3w,3)
+    pal = load_ntsc_palette()
+    exact = _load("exact")
+    streams = [exact] + [_load(name) for name, _, _ in softs]
+    n = min(len(s) for s in streams)
+    rgb = [decode_palette(s[:n], pal) for s in streams]    # [exact, soft0, soft1, ...]
+
+    # Panels: HARD | SOFT-STE (both = exact, Theorem 1) | one SOFT per setting.
+    panels = np.concatenate([rgb[0], rgb[0]] + rgb[1:], axis=2)
     h, w4 = panels.shape[1], panels.shape[2]
-    band = _header(w4, ["HARD", "SOFT-STE", f"SOFT {args.label}"])
+    labels = ["HARD", "SOFT-STE"] + [f"SOFT a={a:g} T={t:g}" for _, a, t in softs]
+    band = _header(w4, labels)
     band = np.broadcast_to(band, (n, band.shape[0], w4, 3))
     frames = np.concatenate([band, panels], axis=1)               # (n, band+h, 4w, 3)
     frames = frames.repeat(SCALE, axis=1).repeat(SCALE, axis=2)
