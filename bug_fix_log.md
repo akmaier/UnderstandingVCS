@@ -6465,3 +6465,37 @@ diminishing returns — the remaining work is high-risk beam-thread surgery best
 done supervised, not unattended.
 
 Status: RAM 58/64, screen 12/12. No code change (diagnosis + recommendation).
+
+---
+
+## Sprint 14 (2026-06-18, ~11:00) — holding line on the Sprint-13 recommendation; launched the missing jaxtari SCREEN sweep (low-risk, completes the picture)
+
+Per the Sprint-13 recommendation (the remaining 6 RAM divergences are high-risk
+beam-thread surgery best done SUPERVISED, not via unattended cron), I am NOT
+starting another autonomous deep beam-phase tick this cycle. The recommendation
+(A: accept 58/64 + stop cron, or B: supervised deep-dive) stands and awaits the
+user's decision.
+
+Instead, did the one remaining LOW-RISK, informative action: launched the full
+64-ROM jaxtari SCREEN sweep (`sweep_jaxtari.py --mode screen --screen-frames 10`,
+background ~40-60 min) → will write `results_jaxtari_screen.md`. This was never
+run (we only had the RAM sweep 58/64 + the 12 unit-test screen cases at 12/12).
+It completes the convergence scoreboard: do the 58 RAM-bit-exact games also
+render screen-exact? (Expected mostly yes — jaxtari's render path is verified
+== jutari's, sprints 1-4, and jutari is 64/64 screen — but the beam-phase games
+may show screen deltas too.) Zero code risk (read-only comparison vs xitari
+trace_dump).
+
+Note (resolves a Sprint-13 loose end): the demon_attack frame-0 INTIM divergence
+(434 vs 707 reads) IS consistent with the sweep's "RAM bit-exact through frame 1"
+— the INTIM reads are delay-loop polling; jaxtari's timer EXPIRES at the same
+point (→ same RAM) but is POLLED a different number of times because each poll's
+beam/cycle phase differs. The phase drift only accumulates into RAM by frame 2
+(13 bytes). So the beam-phase characterization holds and is self-consistent with
+the sweep; no re-verification run needed.
+
+**NEXT TICK:** read results_jaxtari_screen.md → full jaxtari screen scoreboard.
+Then HOLD for the user's A/B decision on the beam-phase RAM work.
+
+Status: RAM 58/64, screen 12/12 (unit cases); full screen sweep in flight. No
+code change.
