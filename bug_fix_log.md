@@ -77,11 +77,17 @@ path) pass. (b) **The demon_attack bus-op trace is now BYTE-IDENTICAL to
 jutari** — `cycle_trace_inspect.py diff` reports *identical for 1,081,242 events,
 both traces fully consumed* across boot + 3 frames (every peek/poke/tick at the
 same scanline/scanline_cycle/color_clock/addr/value). Since jutari is bit-exact
-vs xitari on demon_attack, jaxtari now is too. One shared root → expected to also
-fix asterix/road_runner/solaris. **IN FLIGHT:** full 64-ROM RAM sweep (probe off,
-30 frames) to confirm the 4 beam-phase ROMs → 0 and the 58 hold; surround
-(boot-seed/probe) + kung_fu_master (P0-P1 collision coverage) remain separate
-roots.
+vs xitari on demon_attack, jaxtari now is too.
+
+**RESULT — full RAM sweep (probe off, 30 frames): 58/64 → 63/64.** This ONE fix
+cleared FIVE ROMs to 0 b/f: demon_attack, asterix, kung_fu_master, road_runner,
+solaris (kung_fu_master's "collision coverage" divergence was downstream of the
+same beam-phase root — not a separate bug). All 58 baseline games held at 0 (no
+regression). **ONLY surround remains** (7 b/f at frame 1: $66,$6a,$6d,$6f,$72,
+$7c,$7d — incl. the free-running boot-seed $7d) → the construction-probe /
+double-boot boot-seed issue (jutari needs construction_probe=true for surround;
+the jaxtari sweep boots probe=false). NEXT: close surround via the probe and
+reach 64/64.
 
 ---
 

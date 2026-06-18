@@ -52,7 +52,9 @@ sys.path.insert(0, str(_REPO / "tools"))
 import numpy as np  # noqa: E402
 
 from jaxtari.bus.system import Bus  # noqa: E402
+import jaxtari.bus.system as bus_system  # noqa: E402
 import jaxtari.cpu.m6502 as m6502  # noqa: E402
+import jaxtari.cpu.addressing as addressing  # noqa: E402
 from jaxtari.env.stella_environment import StellaEnvironment  # noqa: E402
 from jaxtari_dump import _settings_for_rom, _load_actions  # noqa: E402
 
@@ -61,32 +63,38 @@ from jaxtari_dump import _settings_for_rom, _load_actions  # noqa: E402
 _BUF: list[tuple] = []
 _TRACING = False
 
-# Capture the originals m6502 imported.
-_orig_peek = m6502.peek
-_orig_poke = m6502.poke
-_orig_tick = m6502.pending_tick
+# We patch at the SOURCE: `_bus_peek` / `_bus_poke` in bus.system. The public
+# `peek`/`poke` wrappers resolve `_bus_peek`/`_bus_poke` by module-global lookup
+# at call time, so patching the source captures EVERY caller — m6502, the
+# addressing resolvers (operand fetches + dummy reads), and console_reset
+# (the reset-vector reads). `pending_tick` is a direct worker imported BY NAME
+# into both m6502 and addressing (as `_tick`), so it must be patched in both.
+_orig_bus_peek = bus_system._bus_peek
+_orig_bus_poke = bus_system._bus_poke
+_orig_tick = bus_system.pending_tick
 
 
-def _beam(world):
-    """Sample instruction-start beam from bus.tia (matches jutari)."""
-    tia = world.tia
+def _beam(bus):
+    """Sample instruction-start beam from bus.tia (matches jutari's
+    `_TRACE_LIVE_TIA[] = bus.tia` — the beam BEFORE pending_tia_cycles)."""
+    tia = bus.tia
     return int(tia.scanline), int(tia.scanline_cycle), int(tia.color_clock)
 
 
-def _traced_peek(world, addr):
-    if _TRACING and isinstance(world, Bus):
-        sl, sc, cc = _beam(world)
-        value, new_world = _orig_peek(world, addr)
+def _traced_bus_peek(bus, addr):
+    if _TRACING:
+        sl, sc, cc = _beam(bus)
+        value, new_bus = _orig_bus_peek(bus, addr)
         _BUF.append(("peek", sl, sc, cc, addr & 0x1FFF, value & 0xFF))
-        return value, new_world
-    return _orig_peek(world, addr)
+        return value, new_bus
+    return _orig_bus_peek(bus, addr)
 
 
-def _traced_poke(world, addr, value):
-    if _TRACING and isinstance(world, Bus):
-        sl, sc, cc = _beam(world)
+def _traced_bus_poke(bus, addr, value):
+    if _TRACING:
+        sl, sc, cc = _beam(bus)
         _BUF.append(("poke", sl, sc, cc, addr & 0x1FFF, value & 0xFF))
-    return _orig_poke(world, addr, value)
+    return _orig_bus_poke(bus, addr, value)
 
 
 def _traced_tick(world):
@@ -109,10 +117,14 @@ def main(argv=None) -> int:
 
     global _TRACING
 
-    # install the trace hooks on the names m6502 actually calls
-    m6502.peek = _traced_peek
-    m6502.poke = _traced_poke
+    # install the trace hooks. Patch the SOURCE peek/poke in bus.system (the
+    # public wrappers dispatch to these by module-global lookup → captures
+    # m6502, the addressing resolvers, and console reset-vector reads), and
+    # pending_tick in BOTH importing namespaces.
+    bus_system._bus_peek = _traced_bus_peek
+    bus_system._bus_poke = _traced_bus_poke
     m6502.pending_tick = _traced_tick
+    addressing._tick = _traced_tick
 
     rom = np.frombuffer(args.rom.read_bytes(), dtype=np.uint8)
     settings = _settings_for_rom(args.rom)
