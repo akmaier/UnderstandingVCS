@@ -6296,3 +6296,49 @@ no single high-leverage fix that closes multiple games.
 Status: RAM 58/64 (classification complete this tick; no fix — the remaining
 work is deep per-cycle tracing, surfaced honestly for the next agent/user to
 prioritize). screen 12/12 unchanged.
+
+---
+
+## Sprint 10 (2026-06-18, ~07:00) — road_runner classified (computed/propagated); refined to a likely 2-root structure
+
+road_runner (frame-25 divergence): jutari Bus trace shows $50←SWCHA,
+$51/$29←RIOT1(SWACNT) — but the values are **incrementing counters**
+($50: 64→65→66→67, $51: 82→83, $29: 0→1→2), so the nearby register peek is NOT
+the true source. Like asterix, road_runner's divergent bytes are
+**computed/propagated** counters; the frame-25 onset indicates a slow-
+accumulating drift, not a boot/register issue.
+
+**Refined synthesis — the 6 divergences cluster into ~2 roots:**
+
+CYCLE-PHASE class (likely ONE shared sub-instruction cycle-threading root,
+4 games):
+- demon_attack — $1c ← INTIM (RIOT timer); phase-sensitive.
+- solaris — $78 ← CXPPMM floating-bus low bits (data_bus_state); cycle-sensitive.
+- asterix, road_runner — computed/propagated counters; drift accumulates.
+All four are consistent with jaxtari reading a timer/bus value at a sub-
+instruction cycle offset by N from xitari (the #98-class "read/write cycle-
+threading" issue jutari fixed). RAM is otherwise bit-exact, so it is NOT a
+gross per-frame cycle drift (that would diverge many more bytes/games) — it is
+a fine sub-instruction phase difference on specific read addressing modes.
+
+RENDER-COVERAGE class (1 game): kung_fu_master — CXPPMM D7 (P0-P1 collision);
+jaxtari p0/p1 don't overlap at a boot scanline. Separate from cycle-phase.
+
+BOOT-SEED class (1 game): surround — $7d free-running counter; construction
+probe (impractically slow in jaxtari, ~1.5 hr/reset; needs a direct-seed
+shortcut).
+
+**NEXT (highest leverage — could close 4 games at once):** pin the sub-
+instruction cycle-threading diff. For demon_attack's INTIM read (the cleanest
+phase-sensitive case): instrument jaxtari's `_bus_peek` to log
+`cur_cycles = total_cycles + pending_tia_cycles` at the INTIM ($0284) read, and
+compare to xitari's `mySystem->cycles()` at the same read (trace_dump --cpu
+gives xitari system cycles per instruction). If jaxtari's cur_cycles is off by
+N at that read, that N is the bug — likely in how `pending_tia_cycles` is
+advanced for a specific addressing mode before the read (cf. jutari #98). One
+fix there would shift demon_attack + solaris + the asterix/road_runner
+propagated counters. Gate on TIA-layer unit tests + targeted RAM re-check of
+all 4 + a regression check that the 58 bit-exact games stay 0.
+
+Status: RAM 58/64, screen 12/12 (classification complete this tick; the 6 are
+now grouped by root with a single high-leverage cycle-phase probe identified).
