@@ -504,9 +504,9 @@ fetch ever fails, so this late divergence is driven purely by an evolving RAM
 read.) The exact--diverge boundary is thus a per-cast threshold \emph{spectrum}
 over both fixed (ROM) and state-dependent (RAM) reads, not a single cliff.
 
-\begin{figure*}[t]
+\begin{figure}[b]
 \centering
-\includegraphics[width=\textwidth]{figures/fig_divergence_frame.pdf}
+\includegraphics[width=\columnwidth]{figures/fig_divergence_frame.pdf}
 \caption{One frame of the $60$-second full-simulator comparison (Space Invaders,
 beam-timed). \textbf{HARD} and \textbf{SOFT-STE} are pixel-identical
 (Theorem~\ref{thm:s-exact}). \textbf{SOFT} $\alpha{=}6,T{=}0.14$ is inside the
@@ -515,7 +515,7 @@ $\alpha{=}5.5,T{=}0.145$ is just past the read boundary and diverges \emph{mildl
 the game stays recognisable but a column of invaders is missing---the localised
 effect of one corrupted sprite-position read, persistent over the rollout.}
 \label{fig:divframe}
-\end{figure*}
+\end{figure}
 
 \section{Implementation Effort}
 
