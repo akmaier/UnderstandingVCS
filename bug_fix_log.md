@@ -14,6 +14,52 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🟢 Task #126 — jaxtari CI green: pre-existing stale tests + MsPacman dup + probe default (2026-06-19)
+
+**Symptom (user).** jaxtari CI ("tests" workflow, jaxtari job) keeps failing.
+
+**Diagnosis.** The jaxtari job was RED *before* this session too (a93fea8 / 454c1f6
+/ 0820841 all `jaxtari=failure`) — pre-existing, NOT caused by the #125 beam-phase
+work. Two independent causes:
+1. **13 real test failures**, all *stale tests asserting pre-fix behaviour while
+   the code is correct & mirrors jutari/xitari* (verified each against jutari):
+   - `test_cart` ×3 + `test_p5b_f8sc` ×2: assert an **all-zero** 8K/16K/32K ROM
+     autodetects as plain F8/F6/F4, but `isProbablySC` (task #103, matches xitari)
+     correctly classifies any all-identical-prefix ROM as F8SC/F6SC/F4SC. Fixed:
+     test with a non-SC ramp ROM (`_non_sc_rom`) so it tests plain-F8 detection.
+   - `test_p3g_nusiz` ×4: double/quad-size players are delayed +1 px (xitari
+     `computePlayerMaskTable`; jutari `_overlay_player` TIA.jl:1632 has the same
+     `nusiz_offset`), and COLU* writes mask `&0xFE` (0x55→0x54). Tests asserted the
+     pre-offset / unmasked values. Fixed to the verified-correct outputs.
+   - `test_p6c_pong` ×1: `PONG_P0/P1_SCORE_ADDR` are 0x0D/0x0E (xitari Pong.cpp:55-56
+     `readRam(13/14)`, jutari `_pong_scores`); the test asserted 0x14/0x15 (decimal
+     13/14 mis-written as hex). Fixed the test.
+   - `test_p6c_arcade_games` (MsPacman) ×3: **duplicate `MsPacmanRomSettings`** —
+     task #111 added a `hmove_blanks`-only stub in `joystick_starts.py` that
+     SHADOWED the real `more_games.MsPacmanRomSettings` (RL score/lives/terminal
+     decoding) in the `games` package export, so `lives()/is_terminal()/reward`
+     silently returned 0/False. Fixed: unified — `more_games.MsPacmanRomSettings`
+     now extends `GenericRomSettings` (env defaults) + `hmove_blanks()=False` +
+     the decoding; removed the stub; `games/__init__.py` no longer re-imports it.
+     (Verified the export keeps `hmove_blanks=False` → ms_pacman screen unchanged.)
+2. **construction_probe default.** #125 had flipped `StellaEnvironment.reset()`'s
+   `construction_probe` default to True (mirror jutari). But jaxtari is ~200× slower
+   per frame than jutari, so the probe (≈3× boot frames) makes every ROM-booting
+   unit/env test ~20 min → the full pytest suite never finishes on a CI runner.
+   **Reverted the default to False** — the probe is a CONFORMANCE-HARNESS opt-in:
+   the RAM/SCREEN sweeps (`tools/jaxtari_dump.py`) still default it TRUE, so 64/64
+   RAM is unchanged; only surround's never-re-inited $7d boot-counter is
+   probe-sensitive and no unit test covers surround. (`test_screen_conformance`
+   verified 12/12 at probe=false too.) `tools/fixtures/cpu/` (Klaus Dormann ROM) is
+   untracked → `test_pxc4_klaus_dormann` SKIPS in CI (it would otherwise run ~100M
+   cycles); it only "hangs" locally where the ROM is present.
+
+**Result.** All 13 failures fixed (cart/f8sc/nusiz 57 pass; p6c 59 pass). Suite is
+CI-fast again (probe=false). The heavy P8 IG-attribution suite + xdist `-n auto`
+memory on the CI runner is a separate watch-item (see below).
+
+---
+
 ### 🔬 Task #125 — jaxtari → 64/64 RAM: beam-phase root-cause hunt (2026-06-18, IN PROGRESS)
 
 **Mandate (user).** "If jutari is able to be RAM and pixel exact, jaxtari must as

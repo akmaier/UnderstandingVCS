@@ -20,9 +20,18 @@ from jaxtari.cart import KIND_F8, KIND_F8SC, Cart, cart_peek, cart_poke, make_ca
 # Detection / construction
 # --------------------------------------------------------------------------- #
 
+# A non-Superchip 8K ROM: bytes vary within each bank's first 256, so
+# `isProbablySC` (task #103) rejects it and autodetect picks plain F8. An
+# all-zero (or per-bank-constant) ROM trips the SC heuristic → F8SC, which is
+# the xitari-faithful content-based detection.
+def _non_sc_8k() -> jnp.ndarray:
+    return (jnp.arange(8192, dtype=jnp.uint32) & 0xFF).astype(jnp.uint8)
+
+
 def test_autodetect_picks_f8_for_8k_rom():
-    """No `kind` override → 8K ROM defaults to F8 (not F8SC)."""
-    cart = make_cart(jnp.zeros((8192,), dtype=jnp.uint8))
+    """A non-SC 8K ROM autodetects as plain F8 (not F8SC). An SC-like
+    (constant-prefix) ROM would correctly pick F8SC — see autodetect tests."""
+    cart = make_cart(_non_sc_8k())
     assert cart.kind == KIND_F8
 
 
@@ -51,8 +60,9 @@ def test_f8_initial_bank_is_1():
 
 def test_plain_f8_has_no_on_cart_ram():
     """Regression guard — plain F8 carts must not allocate an SC RAM
-    buffer (avoids hidden state showing up in non-SC tests)."""
-    cart = make_cart(jnp.zeros((8192,), dtype=jnp.uint8))
+    buffer (avoids hidden state showing up in non-SC tests). Uses a non-SC
+    ROM so autodetect picks plain F8 (an all-zero ROM → F8SC, task #103)."""
+    cart = make_cart(_non_sc_8k())
     assert len(cart.ram) == 0
 
 

@@ -72,7 +72,9 @@ from jaxtari.games.joystick_starts import (
     GopherRomSettings,
     GravitarRomSettings,
     JourneyEscapeRomSettings,
-    MsPacmanRomSettings,
+    # MsPacmanRomSettings is imported from more_games (above) — it carries the
+    # RL decoding AND hmove_blanks=False. Do NOT re-import a stub here (task
+    # #125): a second import would shadow the real one in this package export.
     PacmanRomSettings,
     PooyanRomSettings,
     PrivateEyeRomSettings,

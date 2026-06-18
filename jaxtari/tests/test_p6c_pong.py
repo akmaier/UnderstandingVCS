@@ -151,6 +151,9 @@ def test_pong_settings_satisfies_RomSettings_protocol():
 # --------------------------------------------------------------------------- #
 
 def test_constants_match_xitari_convention():
-    assert PONG_P0_SCORE_ADDR == 0x14
-    assert PONG_P1_SCORE_ADDR == 0x15
+    # xitari Pong.cpp:55-56 reads the scores from RAM addresses 13 and 14
+    # (decimal) = 0x0D (P0/cpu) and 0x0E (P1/human); jutari uses the same.
+    # (The previous 0x14/0x15 assertion mis-wrote decimal 13/14 as hex.)
+    assert PONG_P0_SCORE_ADDR == 0x0D
+    assert PONG_P1_SCORE_ADDR == 0x0E
     assert PONG_TARGET_SCORE  == 21

@@ -17,7 +17,7 @@ from __future__ import annotations
 from typing import Sequence
 
 from jaxtari.console import Console
-from jaxtari.games.rom_settings import RomSettings
+from jaxtari.games.rom_settings import GenericRomSettings, RomSettings
 
 
 # --------------------------------------------------------------------------- #
@@ -143,14 +143,25 @@ MSPACMAN_DEATH_TIMER  = 0xA7
 MSPACMAN_DEATH_VALUE  = 0x53                  # xitari's terminal-frame sentinel
 
 
-class MsPacmanRomSettings(RomSettings):
+class MsPacmanRomSettings(GenericRomSettings):
     """Ms Pac-Man — score from three BCD bytes $F8/$F9/$FA (high to
     low). Lives count from low nibble of $FB. Terminal when lives = 0
     AND the death-animation timer ($A7) reads 0x53 (xitari sentinel).
+
+    Extends GenericRomSettings (joystick-game env defaults) so it carries
+    BOTH the RL decoding (below) AND the per-game env overrides. Task #111:
+    ms_pacman's stella.pro sets `Emulation.HmoveBlanks "NO"` → hmove_blanks
+    False (disables the 8px HMOVE comb; render-only). This unifies the two
+    formerly-separate MsPacmanRomSettings: the decoding one (here) and a
+    hmove_blanks-only stub in joystick_starts.py that used to SHADOW it in
+    the games package export — which silently dropped lives/score/terminal.
     """
 
     def __init__(self) -> None:
         self._prev_score: int = 0
+
+    def hmove_blanks(self) -> bool:
+        return False
 
     def reset(self) -> None:
         self._prev_score = 0

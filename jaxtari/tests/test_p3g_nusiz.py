@@ -104,13 +104,16 @@ def test_hard_nusiz_100_two_copies_wide():
 
 
 def test_hard_nusiz_101_double_size():
-    """One copy at 2× scale: each of the 8 sprite bits paints 2 adjacent
-    screen pixels → 16-pixel-wide player at col 0..15."""
+    """One copy at 2× scale → 16-pixel-wide player. Task #103/NUSIZ: in
+    double/quad-size mode the player output is delayed by 1 pixel (xitari
+    `computePlayerMaskTable`; mirrored in both ports' `_overlay_player`), so
+    at x=0 the 2× player covers cols 1..16, not 0..15."""
     tia = _setup_p0(0b101, x=0)
     scan = render_scanline(tia)
-    for i in range(16):
+    for i in range(1, 17):
         assert int(scan[i]) == 0x42, f"col {i} expected 0x42, got {int(scan[i]):02x}"
-    assert int(scan[16]) == 0
+    assert int(scan[0]) == 0          # +1 double-size delay
+    assert int(scan[17]) == 0
     # And no second copy.
     assert int(scan[32]) == 0
 
@@ -127,12 +130,14 @@ def test_hard_nusiz_110_three_copies_medium():
 
 
 def test_hard_nusiz_111_quad_size():
-    """One copy at 4× scale: 8 bits × 4 = 32-pixel-wide player."""
+    """One copy at 4× scale: 8 bits × 4 = 32-pixel-wide player. Same +1
+    double/quad-size delay as NUSIZ=5 → covers cols 1..32 at x=0."""
     tia = _setup_p0(0b111, x=0)
     scan = render_scanline(tia)
-    for i in range(32):
+    for i in range(1, 33):
         assert int(scan[i]) == 0x42, f"col {i} expected 0x42, got {int(scan[i]):02x}"
-    assert int(scan[32]) == 0
+    assert int(scan[0]) == 0          # +1 quad-size delay
+    assert int(scan[33]) == 0
 
 
 def test_hard_nusiz_double_size_pattern():
@@ -145,9 +150,11 @@ def test_hard_nusiz_double_size_pattern():
     tia = tia_poke(tia, W_GRP0,   0x80)       # only bit 7
     tia = tia_poke(tia, W_NUSIZ0, 0b101)      # 2× scale
     scan = render_scanline(tia)
-    assert int(scan[10]) == 0x42
+    # +1 double-size delay: base 10 → the 2-pixel block lands at cols 11,12.
     assert int(scan[11]) == 0x42
-    assert int(scan[12]) == 0
+    assert int(scan[12]) == 0x42
+    assert int(scan[10]) == 0
+    assert int(scan[13]) == 0
 
 
 def test_hard_missile_inherits_nusiz_multi_copy():
@@ -159,10 +166,13 @@ def test_hard_missile_inherits_nusiz_multi_copy():
     tia = tia_poke(tia, W_ENAM0,  0x02)
     tia = tia_poke(tia, W_NUSIZ0, 0b011)      # 3 copies, 16 apart
     scan = render_scanline(tia)
-    # Each missile copy is 1 pixel wide (NUSIZ bits 4-5 = 0).
-    assert int(scan[0])  == 0x55
-    assert int(scan[16]) == 0x55
-    assert int(scan[32]) == 0x55
+    # Each missile copy is 1 pixel wide (NUSIZ bits 4-5 = 0). COLUP0=0x55 is
+    # stored as `value & 0xFE` → 0x54 (xitari masks the unused LSB of COLU*),
+    # so the missile paints 0x54. Missiles get NO double/quad +1 player delay,
+    # so the 3 copies land exactly at cols 0, 16, 32.
+    assert int(scan[0])  == 0x54
+    assert int(scan[16]) == 0x54
+    assert int(scan[32]) == 0x54
     # Gaps are background.
     assert int(scan[1])  == 0
     assert int(scan[15]) == 0

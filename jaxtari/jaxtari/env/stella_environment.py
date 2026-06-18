@@ -88,7 +88,7 @@ class StellaEnvironment:
               boot_reset_steps: int = 0,
               random_noop_max: int = 0,
               seed: Optional[int] = None,
-              construction_probe: bool = True) -> None:
+              construction_probe: bool = False) -> None:
         """Reset the console (PC ← cart reset vector) and the settings.
 
         Parameters
@@ -142,17 +142,24 @@ class StellaEnvironment:
         # is seeded by all three; pre-#119b jaxtari ran only boot #2 from
         # cold RAM-zeroed state, so $7d started 95 short. Mirror the full
         # sequence with keep-RAM resets so the seed accumulates.
-        # **`construction_probe=True` is the DEFAULT** (task #125, 2026-06-18)
-        # — this mirrors jutari's `env_reset!` default and xitari's
-        # `trace_dump` (which does the double-boot natively via the
-        # ALEInterface ctor + resetGame). It seeds the free-running counters
-        # the game never re-inits (surround's $7d boot-seed) → surround RAM
-        # goes from 7 b/f to 0 b/f vs xitari (the last RAM divergence; jaxtari
-        # reaches 64/64). The xitari screen fixtures were regenerated from the
-        # double-boot trace_dump (commit 0b48b97), so the twice-fired
-        # starting actions (pitfall UP / enduro FIRE) now MATCH the fixtures
-        # (screen conformance stays 12/12). Pass `construction_probe=False`
-        # only for a deliberate single-boot (bare power-on) experiment.
+        # **`construction_probe` is an OPT-IN, defaulting False** (task #125).
+        # When True it runs xitari's double-boot construction probe (the
+        # ALEInterface ctor format-autodetect + double reset_game that
+        # `trace_dump` does natively), which seeds the free-running counters a
+        # game never re-inits (surround's $7d boot-seed) — REQUIRED to match
+        # xitari on surround (64/64 RAM). The conformance harnesses opt in:
+        # `tools/jaxtari_dump.py` (the RAM/SCREEN sweep worker) defaults it
+        # True, mirroring jutari's `jutari_trace_dump.jl` / `env_reset!`.
+        #
+        # Why NOT default True here (unlike jutari's `env_reset!`): jaxtari is
+        # ~200× slower per frame than jutari, so the probe (≈3× the boot
+        # frames) makes every ROM-booting unit/env test ~20 min — the full
+        # pytest suite then never finishes in CI. jutari can afford the True
+        # default because it boots in milliseconds. The probe changes nothing
+        # the booting tests assert (they re-init their state; only surround's
+        # never-re-inited counter is probe-sensitive, and no unit test covers
+        # surround), so defaulting False keeps the suite fast AND green while
+        # the sweeps still reach 64/64 via the explicit opt-in.
         if construction_probe and boot_noop_steps > 0:
             # (1) probe at the 262 NTSC-default cutoff (format not yet detected)
             self._console = self._console._replace(

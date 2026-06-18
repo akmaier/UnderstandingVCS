@@ -43,6 +43,19 @@ def _multi_bank_rom(bank_size: int, n_banks: int) -> jnp.ndarray:
     return rom
 
 
+def _non_sc_rom(size: int) -> jnp.ndarray:
+    """A ROM whose first 256 bytes of each 4 KB bank are NOT a single
+    constant byte, so `Cartridge::isProbablySC` (task #103) correctly
+    rejects it and `make_cart` autodetects the PLAIN F8/F6/F4 kind.
+
+    NB: an all-zero ROM — or `_multi_bank_rom` (each bank a single constant)
+    — trips the Superchip heuristic and autodetects as F8SC/F6SC/F4SC (see
+    `test_p5b_f8sc.py`), which is the xitari-faithful behaviour. The plain-F8
+    detection tests below therefore need a ROM that varies WITHIN each bank's
+    first 256 bytes; a ramp does that. Mirror of jutari behaviour."""
+    return (jnp.arange(size, dtype=jnp.uint32) & 0xFF).astype(jnp.uint8)
+
+
 # --------------------------------------------------------------------------- #
 # make_cart — size → kind auto-detect
 # --------------------------------------------------------------------------- #
@@ -60,19 +73,20 @@ def test_make_cart_detects_4k():
 
 
 def test_make_cart_detects_f8_and_starts_in_last_bank():
-    cart = make_cart(jnp.zeros((8192,), dtype=jnp.uint8))
+    # Non-SC ROM (varies within each bank) → plain F8, not F8SC (task #103).
+    cart = make_cart(_non_sc_rom(8192))
     assert cart.kind == KIND_F8
     assert cart.current_bank == 1
 
 
 def test_make_cart_detects_f6_and_starts_in_last_bank():
-    cart = make_cart(jnp.zeros((16384,), dtype=jnp.uint8))
+    cart = make_cart(_non_sc_rom(16384))
     assert cart.kind == KIND_F6
     assert cart.current_bank == 3
 
 
 def test_make_cart_detects_f4_and_starts_in_last_bank():
-    cart = make_cart(jnp.zeros((32768,), dtype=jnp.uint8))
+    cart = make_cart(_non_sc_rom(32768))
     assert cart.kind == KIND_F4
     assert cart.current_bank == 7
 

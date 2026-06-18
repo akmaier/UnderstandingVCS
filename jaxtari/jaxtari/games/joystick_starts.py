@@ -103,12 +103,11 @@ class BattleZoneRomSettings(GenericRomSettings):
         return False
 
 
-class MsPacmanRomSettings(GenericRomSettings):
-    # Task #111: ms_pacman's stella.pro entry sets
-    # `Emulation.HmoveBlanks "NO"`. Same fix as battle_zone — disable the
-    # HMOVE comb. Render-only; no starting actions.
-    def hmove_blanks(self) -> bool:
-        return False
+# NB: MsPacmanRomSettings lives in `more_games.py` (it carries the RL
+# score/lives/terminal decoding AND `hmove_blanks() == False`). A
+# hmove_blanks-only stub used to live here too and SHADOWED the real one in
+# the games package export, silently dropping the decoding (task #125). The
+# stub was removed; import MsPacmanRomSettings from `more_games`.
 
 
 class PrivateEyeRomSettings(GenericRomSettings):
