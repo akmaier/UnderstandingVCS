@@ -122,8 +122,24 @@ suit (64/64); screen is 62/64. The only 2 misses are **battle_zone** (1112 px/f)
 and **ms_pacman** (224 px/f), both diverging at frame 1 — and both are exactly
 the two games with `allow_hmove_blanks=False`. RAM is 0 b/f for both ⇒ PURE
 RENDER bug (per methodology). jutari renders both at 0 px, so jaxtari's
-HMOVE-blank-disabled render path doesn't yet mirror jutari. NEXT: diff the render
-path for battle_zone vs jutari (allow_hmove_blanks=False handling) and fix.
+HMOVE-blank-disabled render path doesn't yet mirror jutari.
+
+**ROOT CAUSE + FIX (render).** jaxtari's `StellaEnvironment._boot_burn` threaded
+the per-game TV-format fields into the TIA (max_scanlines, screen_height_rows,
+scanlines_per_frame, color_loss_enabled, y_start_row) but **never set
+`allow_hmove_blanks`** — so it stayed at its TIAState default `True` for ALL
+games, even battle_zone/ms_pacman whose `hmove_blanks()` returns False. With
+allow_hmove_blanks wrongly True, every HMOVE strobe armed the 8px left-edge comb
+→ jaxtari blanked cols 0-7 on every HMOVE row that xitari renders (≈8 px/row over
+the visible rows = battle_zone's 1112 px/f). jutari's `_boot_burn!` sets it
+(TIA.jl:114); jaxtari's port dropped that one line. FIX: read
+`settings.hmove_blanks()` (defensive try/except, default True) and thread it into
+`tia._replace(..., allow_hmove_blanks=_hmb)` in `_boot_burn` — mirror of jutari.
+Render-only (RAM unaffected; 62 default games use True = the old default →
+unchanged). **VERIFIED:** re-dumped both games with the fix vs xitari —
+battle_zone 1112→**0 px** and ms_pacman 224→**0 px**, both frames. jaxtari is now
+expected SCREEN **64/64** (62 unchanged + these 2 fixed); confirming with a full
+re-sweep. **jaxtari ≡ jutari ≡ xitari: 64/64 RAM AND 64/64 screen.**
 
 ---
 

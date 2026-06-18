@@ -218,6 +218,18 @@ class StellaEnvironment:
             _ys = int(self._settings.screen_y_start())
         except AttributeError:
             _ys = 34
+        # Task #111/#125: xitari myAllowHMOVEBlanks (per-ROM `Emulation.HmoveBlanks`,
+        # default YES). When False, an HMOVE strobe NEVER arms the 8px left-edge
+        # "comb" blank — battle_zone/ms_pacman set NO. This was NEVER threaded
+        # into the TIA before (allow_hmove_blanks stayed at its True default for
+        # ALL games), so battle_zone/ms_pacman wrongly combed cols 0-7 on every
+        # HMOVE row → ~8px/row screen divergence vs xitari. Mirror of jutari
+        # `_boot_burn!` (TIA.jl:114). GenericRomSettings.hmove_blanks() = True so
+        # the 62 default games are unchanged.
+        try:
+            _hmb = bool(self._settings.hmove_blanks())
+        except AttributeError:
+            _hmb = True
         _spf = 312 if _pal else 262
         self._console = self._console._replace(
             bus=self._console.bus._replace(
@@ -228,6 +240,7 @@ class StellaEnvironment:
                     color_loss_enabled=_pal,
                     color_loss_active=False,
                     y_start_row=_ys,
+                    allow_hmove_blanks=_hmb,
                 )))
         # PXC1-x round 5: for paddle games, push the default paddle
         # resistance into the TIA BEFORE the boot-burn loop runs.
