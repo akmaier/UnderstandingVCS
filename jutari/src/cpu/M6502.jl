@@ -47,7 +47,7 @@ using ..Bus: peek, poke!, BusState
 using ..TIA: tia_advance!, tia_apply_wsync!
 using ..RIOT: riot_advance!
 
-export step
+export step, set_cpu_relax!, cpu_relax_config
 
 # Opcode → mnemonic. Anything not in this dict falls through to the stub.
 const OPCODES = Dict{UInt8, Symbol}(
@@ -187,6 +187,30 @@ const _STATUS_OP = Dict{UInt8, Tuple{UInt8, Bool}}(
 # `_peek` is a local alias for the dispatched `peek` from the Bus module —
 # kept so the existing call sites read the same as before this refactor.
 const _peek = peek
+
+# --------------------------------------------------------------------------- #
+# Relaxation hook (DEFAULT OFF) — companion to the SOFT relaxation study. Lets
+# the cycle-accurate hard CPU render the fully-relaxed run beam-timed (for the
+# hard/soft-exact/relaxed divergence video). When `_cpu_relax_on[] == false`
+# (the default) every hooked site falls through to the exact hard behaviour, so
+# the conformance-critical path is byte-identical. When ON, the branch target is
+# the rounded sigmoid-blended PC at sharpness `_cpu_relax_alpha` (read-blending
+# at temperature `_cpu_relax_temp` lands in a later phase).
+# --------------------------------------------------------------------------- #
+const _cpu_relax_on    = Ref{Bool}(false)
+const _cpu_relax_alpha = Ref{Float64}(5.0)
+const _cpu_relax_temp  = Ref{Float64}(0.15)
+
+cpu_relax_config() = (on = _cpu_relax_on[], alpha = _cpu_relax_alpha[],
+                      temperature = _cpu_relax_temp[])
+function set_cpu_relax!(; on::Bool = _cpu_relax_on[],
+                        alpha::Real = _cpu_relax_alpha[],
+                        temperature::Real = _cpu_relax_temp[])
+    _cpu_relax_on[]    = on
+    _cpu_relax_alpha[] = Float64(alpha)
+    _cpu_relax_temp[]  = Float64(temperature)
+    return nothing
+end
 
 # --------------------------------------------------------------------------- #
 # Stack helpers — shared by JSR/RTS (P1d), PHA/PLA/PHP/PLP (P1e), and
@@ -435,7 +459,22 @@ function _step_inner!(state::CPUState, memory)
         flag, take_when_set = _BRANCH_INFO[opcode]
         flag_set = (state.P & flag) != 0
         take = take_when_set ? flag_set : !flag_set
-        if take
+        if _cpu_relax_on[]
+            # Relaxed branch (companion to the SOFT study): PC = rounded
+            # sigmoid-blended target, g = σ(α·z). Large α ⇒ equals the hard
+            # branch; smaller α ⇒ the blend rounds across a boundary and control
+            # flow diverges. Cycle-2 operand peek kept; page-cross dummy/exact
+            # cycle bookkeeping is approximated (the relaxed run is diverged).
+            off = Int(_peek(memory, UInt16((Int(state.PC) + 1) & 0xFFFF)))
+            off >= 0x80 && (off -= 0x100)
+            pc_nt = (Int(state.PC) + 2) & 0xFFFF
+            pc_tk = (pc_nt + off) & 0xFFFF
+            fb = flag_set ? 1.0 : 0.0
+            z  = (take_when_set ? 1.0 : -1.0) * (2.0 * fb - 1.0)
+            g  = 1.0 / (1.0 + exp(-_cpu_relax_alpha[] * z))
+            state.PC = UInt16(round(Int, (1.0 - g) * pc_nt + g * pc_tk) & 0xFFFF)
+            extra_cycles += take ? 1 : 0
+        elseif take
             target, page = resolve(mode, state, memory)
             # Task #50: real NMOS 6502 branch-taken has a "wasted
             # opcode prefetch" of PC+2 at cycle 3; on page cross,
