@@ -375,6 +375,20 @@ class TIAState(NamedTuple):
     # only ends the frame once the beam reaches it — VSYNC must be HELD >= 1
     # scanline. 0x7FFFFFFF = disarmed (xitari's default). Mirror of jutari.
     vsync_finish_clock: int = 0x7FFFFFFF
+    # 2026-06-18 (task #125): DEFERRED VSYNC 1→0 / max-scanlines frame reset.
+    # xitari's `TIA::startFrame` runs AFTER the CPU completes its update()
+    # call — i.e. AFTER the full frame-ending instruction. Resetting the
+    # scanline / frame counters MID-instruction (the old behaviour, still in
+    # jutari before its 2026-06-04 fix) ALSO reset `scanline_cycle` to 0, then
+    # the rest of the instruction's `tia_advance` re-advanced it from 0 —
+    # desyncing it from `color_clock` (demon_attack: sc=3 vs jutari's 55 at
+    # cc=165, the beam-phase root). The frame end is now only DECIDED in
+    # `tia_poke` (VSYNC-clear hold-gate OR max-scanlines cutoff, both set this
+    # flag) and DRAINED at the END of `tia_advance` — which resets the
+    # scanline COUNTER to 0 but leaves `scanline_cycle`/`color_clock` running,
+    # matching xitari's "frameStart records WHERE we were, scanline counter
+    # resets, beam position keeps going" semantics. Mirror of jutari.
+    vsync_reset_pending: bool = False
     # Task #103 (surround): xitari myMaximumNumberOfScanlines — the
     # max-scanlines frame-cutoff threshold (TIA.cxx:206-211): 290 NTSC, 342
     # PAL. StellaEnvironment.reset() sets 342 for PAL ROMs (settings.pal()).
@@ -920,21 +934,18 @@ def tia_poke(tia: TIAState, addr: int, value: int,
     # Task #103 (surround): threshold is per-TIA `max_scanlines` (290 NTSC /
     # 342 PAL), not a hardcoded 290 — a PAL 312-line frame must not be split.
     _frame_clock_pk = int(tia.lines_since_frame) * COLOR_CLOCKS_PER_SCANLINE + int(beam_cc)
-    if _frame_clock_pk // COLOR_CLOCKS_PER_SCANLINE > tia.max_scanlines:
-        # Task #110 (PAL colour-loss): recompute color_loss_active from the
-        # just-ended frame's scanline parity (parity of lines_since_frame).
-        # NTSC ROMs have color_loss_enabled=False so this stays False.
-        _new_cl = bool(tia.color_loss_enabled) and bool(int(tia.lines_since_frame) & 1)
+    if (_frame_clock_pk // COLOR_CLOCKS_PER_SCANLINE > tia.max_scanlines
+            and not tia.vsync_reset_pending):
+        # Task #125 (2026-06-18): only DECIDE the frame end here — DEFER the
+        # scanline/frame counter reset to the end of `tia_advance` (mirror
+        # jutari's vsync_reset_pending; see the TIAState field note). The old
+        # inline reset advanced `scanline`/counters mid-instruction; the drain
+        # path now does it AFTER the instruction's cycles, leaving
+        # scanline_cycle/color_clock running. Disarm a stale VSYNC hold-gate
+        # so it can't end the next frame. Mirror of jutari TIA.jl:719-724.
         tia = tia._replace(
-            frame=tia.frame + 1,
-            scanline=0,
-            lines_since_frame=0,
+            vsync_reset_pending=True,
             vsync_finish_clock=0x7FFFFFFF,
-            color_loss_active=_new_cl,
-            # Task #114: this frame completed (max-scanlines cutoff path) → arm
-            # the double-buffer swap so the next run_until_frame swaps before
-            # rendering. Grey/partial frames don't reach here.
-            buffer_swap_pending=True,
         )
 
     # P3i-c: defer PF0/PF1/PF2 to mid-scanline activation. Skip the
@@ -1104,28 +1115,20 @@ def tia_poke(tia: TIAState, addr: int, value: int,
                 vsync_finish_clock=frame_clock + COLOR_CLOCKS_PER_SCANLINE,
             )
         elif frame_clock >= int(tia.vsync_finish_clock):
-            # CLEAR and VSYNC held >= 1 scanline → end the frame.
-            # Task #80: reset lines_since_frame so the max-scanlines cutoff
-            # only fires for genuinely VSYNC-less stretches.
-            # Task #110 (PAL colour-loss): recompute for the NEW frame from
-            # the JUST-ENDED frame's scanline parity, mirroring xitari's
-            # startFrame (TIA.cxx:562-577, keyed on
-            # myScanlineCountForLastFrame & 0x01). Only active when colour-
-            # loss is enabled (PAL/SECAM); NTSC leaves it False so render is
-            # unchanged.
-            new_color_loss_active = (
-                bool(tia.color_loss_enabled) and bool(int(tia.lines_since_frame) & 1)
-            )
+            # CLEAR and VSYNC held >= 1 scanline → DECIDE the frame end.
+            # Task #125 (2026-06-18): DEFER the scanline/frame counter reset to
+            # the end of `tia_advance` (vsync_reset_pending) so
+            # scanline_cycle/color_clock keep running across the boundary — the
+            # old inline reset zeroed scanline_cycle mid-instruction, then the
+            # rest of the instruction's tia_advance re-advanced it from 0,
+            # desyncing it from color_clock (demon_attack beam-phase root). The
+            # drain (end of tia_advance) does frame+1 / scanline=0 /
+            # lines_since_frame=0 / colour-loss recompute / buffer-swap arm.
+            # Disarm the hold-gate here. Mirror of jutari TIA.jl:855-862.
             new_tia = new_tia._replace(
                 vsync_active=False,
-                frame=tia.frame + 1,
-                scanline=0,
-                scanline_cycle=0,
-                lines_since_frame=0,
                 vsync_finish_clock=0x7FFFFFFF,
-                color_loss_active=new_color_loss_active,
-                # Task #114: frame completed → arm the double-buffer swap.
-                buffer_swap_pending=True,
+                vsync_reset_pending=True,
             )
         else:
             new_tia = new_tia._replace(vsync_active=new_vsync)
@@ -1698,6 +1701,35 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
     new_lines_since_frame = tia.lines_since_frame + line_advance
     new_frame = tia.frame
     new_vsync_finish_clock = tia.vsync_finish_clock
+    # Task #125 (2026-06-18): DRAIN a deferred VSYNC / max-scanlines frame
+    # reset HERE — at the end of the instruction's advance — so the scanline
+    # COUNTER resets to 0 but `scanline_cycle`/`color_clock` keep running
+    # across the boundary (xitari startFrame semantics: "frameStart records
+    # where we were, scanline counter resets, beam position keeps going").
+    # Empirically jutari found that ALSO resetting scanline_cycle/color_clock
+    # here makes the per-frame screen visibly worse — preserving is correct.
+    # Mirror of jutari `tia_advance!` (TIA.jl:1449-1486).
+    new_buffer_swap_pending = tia.buffer_swap_pending
+    new_color_loss_active = tia.color_loss_active
+    new_vsync_reset_pending = tia.vsync_reset_pending
+    if tia.vsync_reset_pending:
+        # Colour-loss for the NEW frame from the JUST-ENDED frame's scanline
+        # parity (NTSC: color_loss_enabled=False → stays False).
+        new_color_loss_active = (
+            bool(tia.color_loss_enabled) and bool(new_lines_since_frame & 1)
+        )
+        # Rebase an ARMED VSYNC hold-gate into the new frame's clock domain:
+        # lines_since_frame resets to 0 below (the beam color_clock is
+        # preserved), so a gate re-armed during the frame-ending instruction
+        # must shift down by the same amount. Both end paths disarm the gate
+        # (typemax) before the drain, so this only rebases a re-armed gate.
+        if new_vsync_finish_clock != 0x7FFFFFFF:
+            new_vsync_finish_clock -= new_lines_since_frame * COLOR_CLOCKS_PER_SCANLINE
+        new_frame = tia.frame + 1
+        new_line = 0
+        new_lines_since_frame = 0
+        new_buffer_swap_pending = True   # frame completed → arm double-buffer swap
+        new_vsync_reset_pending = False
     # P3i-c: thread the post-drain register file through to the new
     # state, and clear pending_writes (they've all been applied above
     # OR carried forward in the registers field). `tia_for_render`
@@ -1784,6 +1816,13 @@ def tia_advance(tia: TIAState, cpu_cycles: int) -> TIAState:
         frame=new_frame,
         lines_since_frame=new_lines_since_frame,
         vsync_finish_clock=new_vsync_finish_clock,
+        # Task #125: deferred-frame-reset outputs (drained above). On a normal
+        # advance these equal the incoming values (no-op); on a frame boundary
+        # the drain set them. scanline_cycle/color_clock are deliberately NOT
+        # reset (beam position keeps running across the boundary).
+        vsync_reset_pending=new_vsync_reset_pending,
+        buffer_swap_pending=new_buffer_swap_pending,
+        color_loss_active=new_color_loss_active,
         color_clock=new_color_clock,
         framebuffer=fb,
         collisions=new_collisions,

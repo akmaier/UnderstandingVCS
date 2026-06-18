@@ -45,16 +45,30 @@ def test_vsync_d1_only_bit_1_matters():
 def test_vsync_falling_edge_increments_frame_and_resets_scanline():
     """The 1→0 transition ends the frame — but only after VSYNC has been HELD
     for >= 1 scanline (xitari's myVSYNCFinishClock hold-gate, tasks #103/#108).
-    A sub-scanline VSYNC pulse does NOT end the frame."""
+    A sub-scanline VSYNC pulse does NOT end the frame.
+
+    Task #125 (2026-06-18): the frame/scanline reset is now DEFERRED to the
+    next `tia_advance` (vsync_reset_pending), mirroring jutari/xitari — the
+    VSYNC-clear poke only DECIDES the frame end; `scanline_cycle`/`color_clock`
+    keep running across the boundary (here 42 → 46 after the +4 drain advance).
+    Mirror of jutari runtests "VSYNC falling edge increments frame ...".
+    """
     tia = initial_tia_state()._replace(scanline=100, scanline_cycle=42)
     tia = tia_poke(tia, W_VSYNC, 0x02)       # set → arm finish clock
     assert tia.frame == 0
     assert tia.scanline == 100              # not yet reset
     tia = tia_advance(tia, NTSC_CPU_CYCLES_PER_SCANLINE)   # hold >= 1 scanline
-    tia = tia_poke(tia, W_VSYNC, 0x00)       # clear → falling edge ends frame
+    tia = tia_poke(tia, W_VSYNC, 0x00)       # clear → falling edge DECIDES frame end
+    # Reset is deferred — no frame/scanline change yet, only the pending flag.
+    assert tia.frame == 0
+    assert tia.vsync_active is False
+    assert tia.vsync_reset_pending is True
+    # The next tia_advance drains the pending reset.
+    tia = tia_advance(tia, 4)
     assert tia.frame == 1
     assert tia.scanline == 0
-    assert tia.vsync_active is False
+    assert tia.scanline_cycle == 46          # 42 + 4 — beam position PRESERVED
+    assert tia.vsync_reset_pending is False
 
 
 def test_clearing_vsync_when_not_active_does_nothing():
@@ -128,9 +142,15 @@ def test_full_frame_cycle_via_vsync():
     tia = tia_poke(tia, W_VSYNC, 0x02)
     tia = tia_poke(tia, W_VBLANK, 0x02)
     tia = tia_advance(tia, 3 * NTSC_CPU_CYCLES_PER_SCANLINE)
-    tia = tia_poke(tia, W_VSYNC, 0x00)              # falling edge → frame=1
+    tia = tia_poke(tia, W_VSYNC, 0x00)              # falling edge → DECIDE frame end
+    # Task #125 (2026-06-18): the reset is DEFERRED (vsync_reset_pending) —
+    # the frame-ending instruction's tia_advance drains it. Mirror jutari.
+    assert tia.frame == 0
+    assert tia.vsync_reset_pending is True
+    tia = tia_advance(tia, 4)                        # drain: frame→1, scanline→0
     assert tia.frame == 1
     assert tia.scanline == 0
+    assert tia.vsync_reset_pending is False
     # 2. VBLANK: 37 lines (blanked). VBLANK still active.
     tia = tia_advance(tia, 37 * NTSC_CPU_CYCLES_PER_SCANLINE)
     assert int(tia.framebuffer.sum()) == 0          # nothing rendered yet

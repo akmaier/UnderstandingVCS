@@ -38,22 +38,50 @@ jaxtari(probe=false) diverges 13 B by frame 2 → the demon_attack divergence is
 genuine **jaxtari execution bug**, not the missing probe. (The probe likely still
 matters for surround's free-running $7d boot seed — tracked separately.)
 
-**Step 2 — bus-op trace scalpel (in flight).** Base `CYCLE_TABLE` is
-**byte-identical** across the two ports, so the drift is a conditional cycle
-(page-cross / branch-taken / RMW dummy / indexed-read extra) or the TIA-advance
-threading — RAM-invisible until a beam/timer-dependent read flips a branch.
-Built `tools/bus_cycle_trace_jaxtari.py` (jaxtari twin of
-`tools/cpu_tia_cycle_trace.jl`) — emits the IDENTICAL CSV schema
-(`…,kind,scanline,scanline_cycle,color_clock,addr,value`), samples the
-instruction-start beam from `bus.tia` (matches jutari's `_TRACE_LIVE_TIA[]`
-convention), traces across the boot-burn, and emits a `tick` per `pending_tick`
-(jutari does the same). `tools/cycle_trace_inspect.py diff` then pins the FIRST
-bus op whose beam/addr/value differs — the root instruction. Both traces use
-`construction_probe=false` (matching the sweep). Added `--construction-probe` to
-`jaxtari_dump.py` and `--no-construction-probe` to `cpu_tia_cycle_trace.jl` (no-flag
-paths unchanged — zero regression risk). **NEXT:** read the diff, inspect that
-instruction's cycle handling in jaxtari `m6502.py`/`addressing.py` vs jutari, fix,
-re-sweep.
+**Step 2 — bus-op trace scalpel.** Base `CYCLE_TABLE` is **byte-identical**
+across ports, so the drift is a conditional cycle or the TIA-advance threading —
+RAM-invisible until a beam/timer read flips a branch. Built
+`tools/bus_cycle_trace_jaxtari.py` (jaxtari twin of `cpu_tia_cycle_trace.jl`,
+identical CSV schema; samples instruction-start `bus.tia` beam like jutari's
+`_TRACE_LIVE_TIA[]`; traces across boot; `tick` per `pending_tick`).
+`cycle_trace_inspect.py diff` pins the first divergent bus op. (Tracer gotcha
+found + fixed: must patch the SOURCE `bus.system._bus_peek/_bus_poke` — the
+addressing resolvers import their OWN `_peek`/`_tick`, so patching only `m6502`'s
+names missed every operand fetch + dummy read, ~287K events.)
+
+**ROOT CAUSE (demon_attack, frame-0 boot).** First divergence: a 3-cycle
+`STA $00` (VSYNC clear) at scanline=3, sc=52, cc=156 ends a TIA frame. jutari →
+scanline=0, **sc=55**, cc=165 (55×3=165 ✓). jaxtari → scanline=0, **sc=3**,
+cc=165 (3×3≠165 ✗ — scanline_cycle desynced from color_clock). jaxtari's
+`tia_poke` reset `scanline=0` AND **`scanline_cycle=0`** INLINE in the W_VSYNC
+handler (and the max-scanlines cutoff reset `scanline` inline); the rest of the
+instruction's `tia_advance` then re-advanced sc from 0 → 3. This is *exactly the
+pre-2026-06-04 jutari bug* — jutari fixed it by DEFERRING the reset
+(`vsync_reset_pending`): the poke only DECIDES the frame end; the scanline
+COUNTER resets at the END of `tia_advance` while `scanline_cycle`/`color_clock`
+keep running across the boundary (xitari `startFrame` semantics). jaxtari never
+got this fix.
+
+**FIX (task #125).** Ported jutari's deferred reset to jaxtari `tia/system.py`:
+(1) new `vsync_reset_pending` TIAState field; (2) W_VSYNC-clear handler sets the
+flag + disarms the hold-gate instead of resetting inline (mirror TIA.jl:855-862);
+(3) max-scanlines cutoff sets the flag (mirror TIA.jl:719-724); (4) drain at the
+end of `tia_advance` — `frame+1`, `scanline=0`, `lines_since_frame=0`,
+buffer-swap arm, colour-loss recompute, vfc rebase — NOT touching
+scanline_cycle/color_clock (mirror TIA.jl:1449-1486). Updated the two
+`test_tia_vsync_vblank.py` tests that encoded the old inline semantics to drain
+via `tia_advance` (mirror jutari's runtests).
+
+**VERIFIED.** (a) 63 TIA unit tests + 46 `test_p6.py` (the max-scanlines cutoff
+path) pass. (b) **The demon_attack bus-op trace is now BYTE-IDENTICAL to
+jutari** — `cycle_trace_inspect.py diff` reports *identical for 1,081,242 events,
+both traces fully consumed* across boot + 3 frames (every peek/poke/tick at the
+same scanline/scanline_cycle/color_clock/addr/value). Since jutari is bit-exact
+vs xitari on demon_attack, jaxtari now is too. One shared root → expected to also
+fix asterix/road_runner/solaris. **IN FLIGHT:** full 64-ROM RAM sweep (probe off,
+30 frames) to confirm the 4 beam-phase ROMs → 0 and the 58 hold; surround
+(boot-seed/probe) + kung_fu_master (P0-P1 collision coverage) remain separate
+roots.
 
 ---
 
