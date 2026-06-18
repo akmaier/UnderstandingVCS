@@ -349,6 +349,62 @@ and~\ref{thm:s-limit}).}
 \label{fig:alphatemp}
 \end{figure}
 
+\section{Forward Bit-Exactness Under Full Relaxation}
+
+The gradient study above keeps the straight-through estimator, so the forward
+pass is bit-exact at any $\alpha$ and $T$ (Theorem~\ref{thm:s-exact}). To probe
+the temperature-limit bound (Theorem~\ref{thm:s-limit}) empirically we instead
+\emph{drop} the straight-through correction---the fully relaxed forward, where
+$\alpha$ and $T$ act on the executed values themselves---and run it on the full
+jutari simulator executing the real Space Invaders ROM. Every instruction casts
+the sigmoid-blended program counter and the temperature-blended operand reads
+back to integers, so the trajectory stays bit-exact only while every such cast
+rounds to the value the executed (straight-through) path would produce: a large
+$\alpha$ keeps the rounded soft program counter on the hard branch target, and a
+small $T$ keeps the distance-softmax read on the addressed byte.
+
+Table~\ref{tab:relax-exact} reports, after $N=3000$ instructions from reset, the
+fraction of the $128$-byte RAM and of the rendered frame that still match the
+executed reference. The forward is bit-exact for $\alpha\ge 8$ and $T\le 0.1$ and
+degrades outside that corner: as $\alpha$ falls, branches with larger relative
+offsets round to the wrong target, and as $T$ rises, neighbouring bytes bleed
+into each read. The rendered frame is the more brittle measure---a single wrong
+byte typically perturbs some on-screen pixel, so the pixel score collapses to
+zero well before the RAM does (for example $\alpha{=}4$, $T{=}0.05$: $78\%$ of
+RAM still matches but no frame is pixel-exact). This is consistent with
+Theorem~\ref{thm:s-limit}: exactness is recovered as $\alpha\to\infty$ and
+$T\to0$. The jaxtari twin runs the same relaxation and its columns are left open
+for the in-progress port.
+
+\begin{table}[t]
+\centering
+\caption{Forward bit-exactness of the \emph{fully relaxed} pass (soft branch
+without the straight-through estimator, temperature-$T$ reads) on the full
+simulator running Space Invaders, after $N=3000$ instructions, versus the
+executed (straight-through) reference. Entries are the percentage of RAM bytes /
+rendered pixels that still match it. jaxtari values are left open for the
+in-progress port.}
+\label{tab:relax-exact}
+\small
+\begin{tabular}{rr cc cc}
+\toprule
+& & \multicolumn{2}{c}{jutari} & \multicolumn{2}{c}{jaxtari}\\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+$\alpha$ & $T$ & RAM\,\% & px\,\% & RAM\,\% & px\,\%\\
+\midrule
+$20$ & $0.05$ & $100.0$ & $100.0$ & --- & ---\\
+$20$ & $0.1$  & $100.0$ & $100.0$ & --- & ---\\
+$8$  & $0.1$  & $100.0$ & $100.0$ & --- & ---\\
+$4$  & $0.05$ & $78.1$  & $0.0$   & --- & ---\\
+$2$  & $0.05$ & $21.9$  & $0.0$   & --- & ---\\
+$1$  & $0.05$ & $21.9$  & $0.0$   & --- & ---\\
+$20$ & $0.3$  & $21.9$  & $0.0$   & --- & ---\\
+$20$ & $1.0$  & $3.1$   & $0.0$   & --- & ---\\
+$20$ & $3.0$  & $18.8$  & $0.0$   & --- & ---\\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \section{Implementation Effort}
 
 \begin{figure*}[t]
