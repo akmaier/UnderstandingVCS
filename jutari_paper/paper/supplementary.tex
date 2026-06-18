@@ -282,7 +282,7 @@ $\Phi^{T}_{\mathrm{S}}\to\Phi_{\mathrm{H}}$.
 
 Theorems~\ref{thm:s-exact} and~\ref{thm:s-limit} say the hard limit
 ($\alpha\to\infty$ for the sigmoid branch, $T\to0$ for the softmax select) is
-exact in value but degenerate in gradient. We illustrate both knobs on jutari
+exact in value but degenerate in gradient. We illustrate both knobs on \textsc{jutari}
 with a single target sprite (an invader) whose horizontal placement is produced
 by the soft primitives. For the sigmoid branch we plot the screen-space
 directional-derivative saliency
@@ -327,14 +327,14 @@ In every panel the forward render is the exact hard one
 at intermediate relaxation and decays to zero as the relaxation is sharpened toward
 the hard limit (Theorem~\ref{thm:s-limit}). This
 is a qualitative study of how the parameter \emph{values} act on the gradient,
-run on jutari, and the values need not be tuned for the bit-exact forward pass.
+run on \textsc{jutari}, and the values need not be tuned for the bit-exact forward pass.
 
 \begin{figure}[tbh]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_alpha_temp.pdf}
 \caption{Soft branch: the screen-space gradient
 $\partial(\text{screen})/\partial z$ as the sharpness $\alpha$ is swept, on
-jutari. The target sprite's placement is a sigmoid-gated blend of a left and a
+\textsc{jutari}. The target sprite's placement is a sigmoid-gated blend of a left and a
 right position, so the gradient is a dipole---blue where a pixel darkens (the
 placement being vacated) and red where it brightens (the one being entered). The
 colour bar is in absolute units (here $\pm0.90$) and the per-panel number is the
@@ -352,7 +352,7 @@ pass is bit-exact at any $\alpha$ and $T$ (Theorem~\ref{thm:s-exact}). To probe
 the temperature-limit bound (Theorem~\ref{thm:s-limit}) empirically we instead
 \emph{drop} the straight-through correction---the fully relaxed forward, where
 $\alpha$ and $T$ act on the executed values themselves---and run it on the full
-jutari simulator executing the real Space Invaders ROM. Every instruction casts
+\textsc{jutari} simulator executing the real Space Invaders ROM. Every instruction casts
 the sigmoid-blended program counter and the temperature-blended operand reads
 back to integers, so the trajectory stays bit-exact only while every such cast
 rounds to the value the executed (straight-through) path would produce: a large
@@ -410,7 +410,7 @@ temperature boundary is sharp: a single max-amplitude neighbour already pulls a
 read by $\approx1.7>\tfrac12$, so $p_{\mathrm{read}}$ drops from $1$ at
 $T\le0.12$ to $0.14$ at $T=0.20$. This is the empirical face of
 Theorem~\ref{thm:s-limit}: exactness is recovered as $\alpha\to\infty$ and
-$T\to0$. The jaxtari twin uses the identical cast-to-Int logic, so the same
+$T\to0$. The \textsc{jaxtari} twin uses the identical cast-to-Int logic, so the same
 analysis applies.
 
 \begin{table}[tbh]
@@ -426,7 +426,7 @@ $p_{\mathrm{branch}}(\alpha)$, per-read exactness $p_{\mathrm{read}}(T)$, and th
 per-step likelihood
 $P_{\mathrm{step}}=p_{\mathrm{read}}^{\rho}\,p_{\mathrm{branch}}^{f_b}$
 ($\rho=2.16$, $f_b=0.374$); the forward is bit-exact iff $P_{\mathrm{step}}=1$.
-jaxtari uses the identical cast-to-Int logic and is omitted.}
+\textsc{jaxtari} uses the identical cast-to-Int logic and is omitted.}
 \label{tab:relax-exact}
 \small
 \setlength{\tabcolsep}{4pt}
@@ -544,8 +544,9 @@ the active total is $106$ hours at a two-hour cutoff and $162$ hours at a
 four-hour cutoff, bracketing the $137$ hours obtained at three hours.
 
 With the three-hour boundary the $373$ commits fall into $52$ sessions whose
-durations sum to $136.8$ hours, i.e.\ about $5.7$ eight-hour working days, even
-though they are spread over a $29$-day calendar window. The remaining
+durations sum to $136.8$ hours, i.e.\ about $5.7$ round-the-clock days (the
+coding agents run continuously, not in eight-hour shifts), even though they are
+spread over a $29$-day calendar window. The remaining
 ${\sim}80\%$ of the calendar span is idle and excluded. It consists mostly of
 stretches during which the lead programmer was travelling and without reliable
 internet access, which appear in the plot as the long flat segments. This active
