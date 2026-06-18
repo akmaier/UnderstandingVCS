@@ -380,7 +380,26 @@ p_{\mathrm{branch}}(\alpha)^{f_b}$, with $\rho=2.16$ reads per instruction and
 branch fraction $f_b=0.374$ measured on the executed Space Invaders trace, and
 the run is bit-exact only while every cast rounds correctly.
 
-Table~\ref{tab:relax-exact} probes both boundaries. As the faithful measurement
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_relax_heatmap.pdf}
+\caption{Overview of the per-step bit-exactness likelihood
+$P_{\mathrm{step}}=p_{\mathrm{read}}(T)^{\rho}\,p_{\mathrm{branch}}(\alpha)^{f_b}$
+of the fully relaxed forward across the $(\alpha,T)$ plane (Space Invaders).
+A bit-exact corner---bright, with the green contour marking
+$P_{\mathrm{step}}{=}1$---sits at large branch sharpness $\alpha$ and small read
+temperature $T$, bounded by a gradual branch boundary (in $\alpha$) and a sharp
+temperature boundary (in $T$); the white dashed line is $P_{\mathrm{step}}{=}0.5$.
+Because $P_{\mathrm{step}}$ factorises, the plane is the outer combination of the
+two $1$D profiles. Table~\ref{tab:relax-exact} zooms into the two boundaries with
+the measured first-divergence steps.}
+\label{fig:relaxheat}
+\end{figure}
+
+Figure~\ref{fig:relaxheat} maps this likelihood across the whole $(\alpha,T)$
+plane: a bit-exact corner at large $\alpha$ and small $T$, a gradual branch
+boundary, and a sharp temperature boundary. Table~\ref{tab:relax-exact} zooms
+into the two boundaries. As the faithful measurement
 we report the first instruction at which the relaxed trajectory deviates from the
 executed one over $N=3000$ steps (``exact'' means no deviation): the game
 re-initialises much of its state every frame, so a diverged run can partially
