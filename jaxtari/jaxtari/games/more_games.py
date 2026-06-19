@@ -284,3 +284,172 @@ class KangarooRomSettings(RomSettings):
 
     def lives(self, console: Console) -> int:
         return (int(console.bus.ram[KANGAROO_LIVES_ADDR & 0x7F]) & 0x7) + 1
+
+
+# --------------------------------------------------------------------------- #
+# Berzerk — Cluster B (#127b sprint 3). xitari games/supported/Berzerk.cpp::step
+# --------------------------------------------------------------------------- #
+
+# xitari `xitari/games/supported/Berzerk.cpp::step`:
+#   score    = getDecimalScore(95, 94, 93)  ($5D high, $5E mid, $5F low; 3 BCD bytes)
+#   livesByte = readRam(0xDA)
+#   terminal = (livesByte == 0xFF)            ← xitari's game-over sentinel
+#   lives    = livesByte + 1
+# The long-horizon run dies at action-frame 579 (livesByte→0xFF), where xitari
+# auto-resets to a fresh episode but a settings-less front-end kept rendering
+# the dead one — the f581 divergence #127b first MISCLASSIFIED as Cluster A
+# render (then as a VSYNC frame-boundary phase). It is a terminal/auto-reset gap.
+BERZERK_SCORE_ADDRS = (0x5D, 0x5E, 0x5F)   # HIGH-to-LOW BCD bytes
+BERZERK_LIVES_ADDR  = 0xDA
+BERZERK_GAME_OVER   = 0xFF                  # xitari terminal sentinel
+
+
+class BerzerkRomSettings(RomSettings):
+    """Berzerk — score from three BCD bytes $5D/$5E/$5F (high to low).
+    Lives = RAM[$DA] + 1. Terminal when RAM[$DA] == 0xFF (xitari's
+    game-over sentinel). Mirrors xitari Berzerk.cpp byte-for-byte.
+    """
+
+    def __init__(self) -> None:
+        self._prev_score: int = 0
+
+    def reset(self) -> None:
+        self._prev_score = 0
+
+    def get_reward(self, console: Console) -> int:
+        score = _decode_bcd_chain(console, BERZERK_SCORE_ADDRS)
+        reward = score - self._prev_score
+        self._prev_score = score
+        return int(reward)
+
+    def is_terminal(self, console: Console) -> bool:
+        return int(console.bus.ram[BERZERK_LIVES_ADDR & 0x7F]) == BERZERK_GAME_OVER
+
+    def lives(self, console: Console) -> int:
+        return (int(console.bus.ram[BERZERK_LIVES_ADDR & 0x7F]) + 1) & 0xFF
+
+
+# --------------------------------------------------------------------------- #
+# Montezuma's Revenge — Cluster B (#127b sprint 3).
+# xitari games/supported/MontezumaRevenge.cpp::step
+# --------------------------------------------------------------------------- #
+
+# xitari `xitari/games/supported/MontezumaRevenge.cpp::step`:
+#   score     = getDecimalScore(0x95, 0x94, 0x93)   ($93 high, $94 mid, $95 low)
+#   new_lives = readRam(0xBA)
+#   some_byte = readRam(0xB6)
+#   terminal  = (new_lives == 0 && some_byte == 0x60)
+#   lives     = (new_lives & 0x7) + 1
+# Starts with 6 lives. Long-horizon run dies at action-frame 866; xitari
+# auto-resets (lives→6) while a settings-less front-end kept rendering the dead
+# episode — the f867 divergence #127b MISCLASSIFIED as Cluster A render.
+MONTEZUMA_SCORE_ADDRS = (0x93, 0x94, 0x95)   # HIGH-to-LOW BCD bytes
+MONTEZUMA_LIVES_ADDR  = 0xBA
+MONTEZUMA_STATE_ADDR  = 0xB6
+MONTEZUMA_DEATH_STATE = 0x60                 # xitari terminal sentinel
+
+
+class MontezumaRevengeRomSettings(RomSettings):
+    """Montezuma's Revenge — score from three BCD bytes $93/$94/$95 (high
+    to low). Lives = (RAM[$BA] & 0x7) + 1. Terminal when RAM[$BA] == 0 AND
+    RAM[$B6] == 0x60 (xitari's death-state sentinel). Mirrors xitari
+    MontezumaRevenge.cpp byte-for-byte.
+    """
+
+    def __init__(self) -> None:
+        self._prev_score: int = 0
+
+    def reset(self) -> None:
+        self._prev_score = 0
+
+    def get_reward(self, console: Console) -> int:
+        score = _decode_bcd_chain(console, MONTEZUMA_SCORE_ADDRS)
+        reward = score - self._prev_score
+        self._prev_score = score
+        return int(reward)
+
+    def is_terminal(self, console: Console) -> bool:
+        ram = console.bus.ram
+        new_lives = int(ram[MONTEZUMA_LIVES_ADDR & 0x7F])
+        some_byte = int(ram[MONTEZUMA_STATE_ADDR & 0x7F])
+        return new_lives == 0 and some_byte == MONTEZUMA_DEATH_STATE
+
+    def lives(self, console: Console) -> int:
+        return (int(console.bus.ram[MONTEZUMA_LIVES_ADDR & 0x7F]) & 0x7) + 1
+
+
+# --------------------------------------------------------------------------- #
+# River Raid — Cluster B (#127b sprint 3). xitari games/supported/RiverRaid.cpp
+# --------------------------------------------------------------------------- #
+
+# xitari `xitari/games/supported/RiverRaid.cpp::step`:
+#   score: 6 single-byte digits at RAM 87,85,83,81,79,77 (LOW digit first) via a
+#          ram_val→digit LUT (val/8 = digit; only multiples of 8 in [0,72] are
+#          valid digits, else 0).
+#   terminal = (RAM[0xC0] == 0x58 && PREV RAM[0xC0] == 0x59)   ← STATEFUL
+#   reset: prev byte (m_lives_byte) initialised to 0x58.
+# xitari calls step() once per emulated step, updating m_lives_byte each time;
+# the front-end calls is_terminal once per env step (after the frame finishes),
+# so we update the stored byte THERE — same cadence as jutari. Long-horizon run
+# dies at action-frame 956 (0xC0 0x59→0x58); xitari auto-resets (lives→4) while
+# a settings-less front-end kept rendering the dead episode — the f958 "TIA pixel
+# diff (grows over time)" #127b MISCLASSIFIED as Cluster A.
+RIVERRAID_SCORE_ADDRS = (87, 85, 83, 81, 79, 77)   # LOW digit first
+RIVERRAID_LIVES_ADDR  = 0xC0
+RIVERRAID_DEATH_BYTE  = 0x58                        # terminal: cur==0x58 & prev==0x59
+RIVERRAID_PREDEATH    = 0x59
+RIVERRAID_RESET_BYTE  = 0x58                        # m_lives_byte seed
+
+
+def _riverraid_digit(value: int) -> int:
+    """RiverRaid's score-digit LUT: a RAM cell holding 8*k → digit k (k in
+    0..9), every other value → 0 (only the multiples of 8 in [0,72] decode)."""
+    v = value & 0xFF
+    if v % 8 == 0 and 0 <= v <= 72:
+        return v // 8
+    return 0
+
+
+class RiverRaidRomSettings(RomSettings):
+    """River Raid — score from six single-digit cells $57/$55/$53/$51/$4F/$4D
+    (= 87,85,83,81,79,77; LOW digit first), each a 8*k→k LUT. STATEFUL
+    terminal: game over when RAM[$C0] transitions 0x59 → 0x58 (the dying
+    frame). Lives via xitari numericLives. Mirrors xitari RiverRaid.cpp
+    byte-for-byte; the stored prev-byte (m_lives_byte) is updated on each
+    is_terminal call, matching xitari step()'s per-step cadence.
+    """
+
+    def __init__(self) -> None:
+        self._prev_score: int = 0
+        self._lives_byte: int = RIVERRAID_RESET_BYTE
+
+    def reset(self) -> None:
+        self._prev_score = 0
+        self._lives_byte = RIVERRAID_RESET_BYTE
+
+    def get_reward(self, console: Console) -> int:
+        ram = console.bus.ram
+        score = 0
+        mult = 1
+        for addr in RIVERRAID_SCORE_ADDRS:
+            score += mult * _riverraid_digit(int(ram[addr & 0x7F]))
+            mult *= 10
+        reward = score - self._prev_score
+        self._prev_score = score
+        return int(reward)
+
+    def is_terminal(self, console: Console) -> bool:
+        byte_val = int(console.bus.ram[RIVERRAID_LIVES_ADDR & 0x7F])
+        terminal = (byte_val == RIVERRAID_DEATH_BYTE
+                    and self._lives_byte == RIVERRAID_PREDEATH)
+        self._lives_byte = byte_val   # mirror xitari step()'s m_lives_byte update
+        return terminal
+
+    def lives(self, console: Console) -> int:
+        # xitari numericLives(): 0x58 → 4 (episode start), 0x59 → 1, else byte/8 + 1.
+        b = int(console.bus.ram[RIVERRAID_LIVES_ADDR & 0x7F])
+        if b == 0x58:
+            return 4
+        if b == 0x59:
+            return 1
+        return b // 8 + 1

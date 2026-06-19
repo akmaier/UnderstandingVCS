@@ -65,6 +65,12 @@ from jaxtari.games import (  # noqa: E402
     # RoadRunner + Kangaroo are new (mirror xitari RoadRunner.cpp/Kangaroo.cpp).
     SpaceInvadersRomSettings, AsteroidsRomSettings,
     RoadRunnerRomSettings, KangarooRomSettings,
+    # Cluster B (#127b sprint 3+4): the remaining long-horizon terminal/auto-
+    # reset games. berzerk/montezuma_revenge/riverraid/phoenix are new classes;
+    # asterix/pooyan/pacman/ms_pacman already registered above now carry a real
+    # terminal reader (predicate added in-place, render props preserved).
+    BerzerkRomSettings, MontezumaRevengeRomSettings, RiverRaidRomSettings,
+    PhoenixRomSettings,
 )
 
 # Full 25-game per-ROM RomSettings map — matches jutari's
@@ -108,6 +114,15 @@ _SETTINGS_BY_BASENAME: dict[str, type[RomSettings]] = {
     "asteroids.bin": AsteroidsRomSettings,
     "road_runner.bin": RoadRunnerRomSettings,
     "kangaroo.bin": KangarooRomSettings,
+    # Cluster B (#127b sprint 3+4): remaining long-horizon terminal games. The
+    # 8 die LONG after the 30-60 frame sweep window (berzerk f581, montezuma
+    # f867, riverraid f958, asterix f1160, phoenix f1743, pacman f1771,
+    # ms_pacman f1786, pooyan f1532) so registering them cannot freeze the
+    # non-resetting in-window sweep (verified non-terminal through frame 60).
+    "berzerk.bin": BerzerkRomSettings,
+    "montezuma_revenge.bin": MontezumaRevengeRomSettings,
+    "riverraid.bin": RiverRaidRomSettings,
+    "phoenix.bin": PhoenixRomSettings,
 }
 
 

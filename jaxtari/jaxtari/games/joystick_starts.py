@@ -14,6 +14,7 @@ existing `BeamriderRomSettings` scorer in atari_classics.py.)
 
 from __future__ import annotations
 
+from jaxtari.console import Console
 from jaxtari.games.rom_settings import GenericRomSettings
 
 
@@ -51,9 +52,29 @@ class AirRaidRomSettings(GenericRomSettings):
         return 250   # task #110 (PAL bump 210→250)
 
 
+# Asterix terminal addresses — #127b sprint 3 (xitari Asterix.cpp::step):
+#   m_lives       = readRam(0xD3) & 0xF
+#   death_counter = readRam(0xC7)
+#   terminal = (death_counter == 0x01 && m_lives == 1)
+# (xitari can't wait for lives==0 because the agent may restart on the last
+# frame by holding fire.) The long-horizon run dies at action-frame 1158;
+# xitari auto-resets (lives→3) while the render-only Asterix settings (no
+# terminal reader → false) kept rendering the dead episode — the f1160 "TIA
+# pixel diff" #127b MISCLASSIFIED as Cluster A render. This extends the existing
+# FIRE-start class so Asterix keeps starting_actions=[FIRE].
+ASTERIX_LIVES_ADDR = 0xD3
+ASTERIX_DEATH_ADDR = 0xC7
+
+
 class AsterixRomSettings(GenericRomSettings):
     def starting_actions(self) -> list[int]:
         return [1]   # FIRE
+
+    def is_terminal(self, console: Console) -> bool:
+        ram = console.bus.ram
+        lives = int(ram[ASTERIX_LIVES_ADDR & 0x7F]) & 0xF
+        death_counter = int(ram[ASTERIX_DEATH_ADDR & 0x7F])
+        return death_counter == 0x01 and lives == 1
 
 
 class DoubleDunkRomSettings(GenericRomSettings):
@@ -95,6 +116,21 @@ class CarnivalRomSettings(GenericRomSettings):
         return 26
 
 
+# Pooyan terminal addresses — #127b sprint 4 (xitari Pooyan.cpp::step):
+#   lives_byte = readRam(0x96)
+#   some_byte  = readRam(0x98)
+#   terminal = (lives_byte == 0x0 && some_byte == 0x05)
+# #127b first flagged pooyan as "the one genuine TIA render bug" (f1605); that
+# was a TOOLING ARTIFACT (the probes hardcode H=210, pooyan renders at H=220 →
+# fake localized diff). At H=220 the real first-div is f1532 — pooyan's
+# game-over frame; a terminal/auto-reset gap like the rest. Boot RAM[0x96]=2 →
+# terminal false through the in-window sweep. Extends the existing render-only
+# class so Pooyan keeps height=220 / y_start=26.
+POOYAN_LIVES_ADDR = 0x96
+POOYAN_STATE_ADDR = 0x98
+POOYAN_DEATH_STATE = 0x05
+
+
 class PooyanRomSettings(GenericRomSettings):
     # Task #110 follow-up: stella.pro Display.YStart=26 / Display.Height=220.
     # NTSC, render-only crop overrides (same shape as Carnival).
@@ -103,6 +139,12 @@ class PooyanRomSettings(GenericRomSettings):
 
     def screen_y_start(self) -> int:
         return 26
+
+    def is_terminal(self, console: Console) -> bool:
+        ram = console.bus.ram
+        lives_byte = int(ram[POOYAN_LIVES_ADDR & 0x7F])
+        some_byte = int(ram[POOYAN_STATE_ADDR & 0x7F])
+        return lives_byte == 0x0 and some_byte == POOYAN_DEATH_STATE
 
 
 class BattleZoneRomSettings(GenericRomSettings):
@@ -163,11 +205,56 @@ class UpNDownRomSettings(GenericRomSettings):
         return 30   # task #113 (stella.pro Display.YStart)
 
 
+# Pac-Man terminal addresses — #127b sprint 4 (xitari Pacman.cpp::step):
+#   m_lives          = readRam(0x98) + 1     (so RAM[0x98]==0 ⇔ m_lives==1)
+#   animationCounter = readRam(0xE4)
+#   terminal = (m_lives == 1 && animationCounter == 0x3F)
+# Pac-Man (distinct from ms_pacman). The long-horizon run dies at action-frame
+# 1770 (RAM[0x98]→0, RAM[0xE4]→0x3F); xitari auto-resets (lives→4) while the
+# render-only Pacman settings (no terminal reader → false) kept rendering the
+# dead episode — the f1771 tail #127b MISCLASSIFIED as Cluster A render. Boot
+# RAM[0x98]=3 → terminal false. Extends the existing render-only class so Pacman
+# keeps y_start=33.
+PACMAN_LIVES_ADDR = 0x98
+PACMAN_ANIM_ADDR  = 0xE4
+PACMAN_DEATH_ANIM = 0x3F
+
+
 class PacmanRomSettings(GenericRomSettings):
     # Task #113: pacman (NOT ms_pacman) has Display.YStart=33 in stella.pro.
     # Render-only crop override; no starting actions.
     def screen_y_start(self) -> int:
         return 33
+
+    def is_terminal(self, console: Console) -> bool:
+        ram = console.bus.ram
+        lives_byte = int(ram[PACMAN_LIVES_ADDR & 0x7F])
+        animation_counter = int(ram[PACMAN_ANIM_ADDR & 0x7F])
+        return lives_byte == 0 and animation_counter == PACMAN_DEATH_ANIM
+
+
+# Phoenix terminal address — #127b sprint 4 (xitari Phoenix.cpp::step):
+#   state_byte = readRam(0xCC)
+#   terminal = (state_byte == 0x80)
+#   m_lives  = readRam(0xCB) & 0x7   (starts at 5)
+# Phoenix has no stella.pro render override (default NTSC) and no
+# getStartingActions, so this class behaves like GenericRomSettings except for
+# the terminal reader. The long-horizon run dies at action-frame 1742
+# (RAM[0xCC]→0x80); xitari auto-resets (lives→5) while a settings-less front-end
+# (Generic → never terminal) kept rendering the dead episode — the f1743
+# whole-screen swap #127b flagged "Cluster A render (medium confidence)" is this
+# terminal/auto-reset gap. Boot RAM[0xCC]=0 → terminal false. New class.
+PHOENIX_STATE_ADDR = 0xCC
+PHOENIX_DEATH_STATE = 0x80
+PHOENIX_LIVES_ADDR = 0xCB
+
+
+class PhoenixRomSettings(GenericRomSettings):
+    def is_terminal(self, console: Console) -> bool:
+        return int(console.bus.ram[PHOENIX_STATE_ADDR & 0x7F]) == PHOENIX_DEATH_STATE
+
+    def lives(self, console: Console) -> int:
+        return int(console.bus.ram[PHOENIX_LIVES_ADDR & 0x7F]) & 0x7
 
 
 class YarsRevengeRomSettings(GenericRomSettings):

@@ -31,6 +31,10 @@ from jaxtari.games.joystick_starts import (
     ElevatorActionRomSettings, GopherRomSettings, GravitarRomSettings,
     JourneyEscapeRomSettings, PrivateEyeRomSettings, SkiingRomSettings,
     UpNDownRomSettings, YarsRevengeRomSettings,
+    # Cluster B (#127b sprint 3+4) — terminal/auto-reset in this auto-resetting
+    # video pipeline. asterix already imported; pooyan/pacman extended in place;
+    # phoenix new. (ms_pacman is in more_games — see below.)
+    PacmanRomSettings, PooyanRomSettings, PhoenixRomSettings,
 )
 # Cluster B (#127b) — long-horizon terminal/auto-reset. Without a per-game
 # RomSettings with a real game-over reader these ROMs fall back to bare
@@ -43,6 +47,8 @@ from jaxtari.games.joystick_starts import (
 from jaxtari.games.space_invaders import SpaceInvadersRomSettings
 from jaxtari.games.more_games import (
     AsteroidsRomSettings, RoadRunnerRomSettings, KangarooRomSettings,
+    BerzerkRomSettings, MontezumaRevengeRomSettings, RiverRaidRomSettings,
+    MsPacmanRomSettings,
 )
 
 # ROM basename → RomSettings constructor. Defaults to bare StellaEnvironment
@@ -79,6 +85,18 @@ _SETTINGS_BY_BASENAME = {
     "asteroids.bin":       AsteroidsRomSettings,
     "road_runner.bin":     RoadRunnerRomSettings,
     "kangaroo.bin":        KangarooRomSettings,
+    # Cluster B (#127b sprint 3+4) — the remaining long-horizon terminal games
+    # (mirror of dump_jutari_frames.jl): berzerk f581, montezuma f867, riverraid
+    # f958, asterix f1160, pooyan f1532, phoenix f1743, pacman f1771, ms_pacman
+    # f1786 — all die long after the in-window sweep, so registering is safe.
+    "berzerk.bin":           BerzerkRomSettings,
+    "montezuma_revenge.bin": MontezumaRevengeRomSettings,
+    "riverraid.bin":         RiverRaidRomSettings,
+    "phoenix.bin":           PhoenixRomSettings,
+    "asterix.bin":           AsterixRomSettings,
+    "pooyan.bin":            PooyanRomSettings,
+    "pacman.bin":            PacmanRomSettings,
+    "ms_pacman.bin":         MsPacmanRomSettings,
 }
 
 

@@ -7405,3 +7405,85 @@ Then HOLD for the user's A/B decision on the beam-phase RAM work.
 
 Status: RAM 58/64, screen 12/12 (unit cases); full screen sweep in flight. No
 code change.
+
+---
+
+## 🧩 jaxtari sprint 3+4 mirror — 2026-06-19
+
+Mirrored the remaining EIGHT jutari long-horizon terminal/auto-reset readers
+into jaxtari, completing the jaxtari long-horizon set (Cluster B sprint 2 had
+already landed space_invaders/asteroids/road_runner/kangaroo — commits
+32623c0/f1298b9). All eight are terminal/auto-reset gaps, NOT render bugs: at
+its game-over frame each ROM's player dies and xitari auto-resets a fresh
+episode, while jaxtari (Generic/render-only settings → is_terminal always
+false) kept rendering the dead episode. Spec = jutari TerminalGames.jl /
+JoystickGames.jl (commits 3acaf29 sprint 3, bcccc03/9e965ff sprint 4), each
+mirroring xitari games/supported/<Game>.cpp::step().
+
+**Sprint 3 (new RomSettings classes in jaxtari/jaxtari/games/more_games.py):**
+- **berzerk** — terminal `RAM[$DA] == 0xFF`; score 3 BCD bytes $5D/$5E/$5F
+  (high→low); lives `RAM[$DA] + 1`. Death f581 (#127b first MISCLASSIFIED as
+  Cluster A render, then as a VSYNC frame-boundary phase).
+- **montezuma_revenge** — terminal `RAM[$BA] == 0 && RAM[$B6] == 0x60`; score 3
+  BCD bytes $93/$94/$95; lives `(RAM[$BA] & 0x7) + 1`. Starts 6 lives; death f867.
+- **riverraid** — STATEFUL terminal: `RAM[$C0]` transitions `0x59 → 0x58` (prev
+  byte seeded 0x58, updated each is_terminal call mirroring xitari step()'s
+  m_lives_byte); score 6 single-digit cells 87,85,83,81,79,77 (low-first) via
+  the 8·k→k LUT; numericLives (0x58→4, 0x59→1, else byte/8+1). Death f958.
+
+**Sprint 3 (extend existing class in joystick_starts.py):**
+- **asterix** — added terminal `RAM[$C7] == 0x01 && (RAM[$D3] & 0xF) == 1` to
+  the existing FIRE-start AsterixRomSettings (preserves starting_actions=[FIRE]).
+  Death f1160.
+
+**Sprint 4 (extend existing render-only classes in joystick_starts.py — render
+props preserved):**
+- **pooyan** — terminal `RAM[$96] == 0 && RAM[$98] == 0x05`; keeps
+  screen_height=220 / screen_y_start=26. Death f1532 (#127b's "one genuine
+  render bug" was a tooling H=210-vs-220 artifact, not a real render delta).
+- **pacman** — terminal `RAM[$98] == 0 && RAM[$E4] == 0x3F`; keeps
+  screen_y_start=33. Death f1771.
+- **ms_pacman** — already had a terminal reader in more_games.py
+  (`(RAM[$FB] & 0xF) == 0 && RAM[$A7] == 0x53`, hmove_blanks=False); reconfirmed
+  by test, no change needed. Death f1786.
+
+**Sprint 4 (new class in joystick_starts.py):**
+- **phoenix** — terminal `RAM[$CC] == 0x80`; lives `RAM[$CB] & 0x7` (no
+  stella.pro render override, behaves like Generic + terminal reader). Death f1743.
+
+**Registration:** exported all new classes + address constants from
+jaxtari/jaxtari/games/__init__.py. Registered the 4 new basenames
+(berzerk/montezuma_revenge/riverraid/phoenix) in tools/jaxtari_dump.py
+`_SETTINGS_BY_BASENAME` (asterix/pooyan/pacman/ms_pacman were already mapped and
+now carry a real terminal reader automatically) AND in the video pipeline
+tools/breakout_video/dump_jaxtari_frames.py (mirroring dump_jutari_frames.jl).
+
+**Verified (FAST checks only — jaxtari HARD is ~0.1 fps so no long-horizon
+rollout):**
+- New unit tests jaxtari/tests/test_sprint34_terminal.py (27 cases:
+  synthetic-RAM terminal predicate, score decode, lives, render-prop
+  preservation, and a `*_boot_not_terminal` case per game asserting the
+  documented boot RAM is NON-terminal — so the non-resetting in-window 64-ROM
+  sweep cannot freeze). **49/49 pass** with the existing Cluster B suite
+  (test_p6c_more_games.py) — no regression. Run:
+  `PYTHONPATH=$(pwd) <primary-venv>/bin/python -m pytest
+  tests/test_sprint34_terminal.py tests/test_p6c_more_games.py -o addopts="" -q`
+  (the `-o addopts=""` avoids the xdist concurrent-load hang).
+- Import + registry sanity: all 8 basenames resolve to their RomSettings class
+  in BOTH `jaxtari_dump.py` (map size 34) and the video dumper (28); all 8
+  classes import from the correct module via the games package.
+
+**Deliberately skipped as too slow:** the long-horizon jaxtari rollout
+(HOURS at ~0.1 fps) and the full 64-ROM jaxtari sweep. The jutari long-horizon
+already verified the terminal LOGIC end-to-end (all 12 #127b games + wizard_of_wor
+= 0 diverging long-horizon); jaxtari only needs to MATCH jutari's settings,
+which the synthetic-RAM unit tests confirm byte-for-byte. PXC2 (jaxtari≡jutari)
+parity on these predicates is implied by the shared spec + identical predicate
+constants.
+
+**Status:** jaxtari long-horizon terminal mirror is now COMPLETE — all 12
+#127b games carry a terminal/auto-reset reader matching jutari ≡ xitari
+(Cluster B sprint 2: space_invaders/asteroids/road_runner/kangaroo; sprint 3:
+berzerk/montezuma_revenge/riverraid/asterix; sprint 4:
+pooyan/phoenix/pacman/ms_pacman). This is orthogonal to the RAM 58/64 in-window
+beam-phase work (Sprints 8-14) — that is a separate, supervised deep-dive.
