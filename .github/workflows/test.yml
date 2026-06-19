@@ -19,11 +19,14 @@ on:
 jobs:
   jaxtari:
     runs-on: ubuntu-latest
-    # jaxtari boots ROMs in pure-Python/JAX (≈200× slower than jutari) and the
-    # `tests/conftest.py` pins JAX single-threaded (so xdist workers don't
-    # oversubscribe and crash — see below), so the suite is genuinely long on a
-    # 2–4 core runner. Give it ample room (GitHub default is 360).
-    timeout-minutes: 180
+    # FAST PR/push gate (task #126): the light unit tests only. The HEAVY tests
+    # — the P7 soft/differentiable + P8 integrated-gradients suites (~2.75 GB
+    # each → N xdist workers OOM-kill the 16 GB runner → job "cancelled") and the
+    # slow ROM-booting integration/conformance tests (P6/P6c, breakout, pong,
+    # screen) — moved to the scheduled `heavy.yml` workflow (nightly + manual).
+    # This keeps PR feedback fast and reliable; full coverage runs nightly.
+    # (~10 min locally with single-threaded JAX; give margin for a 4-core runner.)
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -38,24 +41,23 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
-      # One xdist-parallel run (pyproject `-n auto`), skipping PXC2 (separate
-      # job below, needs the jutari fixture). PXC4 (Klaus Dormann) self-skips
-      # when its ROM is absent — it is in CI (tools/fixtures/cpu/ is untracked).
-      #
-      # Two CI-reliability guards (task #126), after the job kept getting
-      # CANCELLED (xdist controller deadlock — a worker died mid-test):
-      #   * tests/conftest.py pins JAX/XLA/BLAS single-threaded BEFORE jax is
-      #     imported, so N spawned workers don't oversubscribe the runner's
-      #     cores/RAM (the deadlock cause). Verified locally: 808 passed, 0
-      #     deadlocks (vs reliable hangs without it).
-      #   * --max-worker-restart=6 lets xdist RECOVER a worker that still dies
-      #     instead of hanging the controller — so a flaky crash becomes a
-      #     re-run, not a cancelled job.
-      - name: Run pytest (skipping PXC2 — needs the jutari fixture, separate job)
+      # xdist-parallel (pyproject `-n auto`). Skips: PXC2 (separate job, needs
+      # the jutari fixture); the heavy P7/P8 autodiff suites + the slow booting
+      # tests (→ heavy.yml). PXC4 (Klaus Dormann) self-skips when its ROM is
+      # absent — it is in CI (tools/fixtures/cpu/ is untracked). tests/conftest.py
+      # pins JAX single-threaded so even the remaining xdist workers don't
+      # oversubscribe; --max-worker-restart recovers any flaky worker death.
+      - name: Run pytest — fast unit suite
         working-directory: jaxtari
         run: |
-          pytest -q --max-worker-restart=6 \
-            --ignore=tests/test_pxc2_jaxtari_vs_jutari.py
+          pytest -q --max-worker-restart=4 \
+            --ignore=tests/test_pxc2_jaxtari_vs_jutari.py \
+            --ignore-glob='*test_p6*' \
+            --ignore-glob='*test_p7*' \
+            --ignore-glob='*test_p8*' \
+            --ignore-glob='*test_breakout*' \
+            --ignore-glob='*test_pong*' \
+            --ignore-glob='*test_screen*'
 
   jutari:
     runs-on: ubuntu-latest

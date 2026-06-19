@@ -1,0 +1,57 @@
+# Heavy jaxtari suite — scheduled (nightly) + manual.
+#
+# These tests are split out of the fast PR gate (`test.yml`) because they
+# don't fit a 16 GB GitHub-hosted runner under full xdist parallelism (task
+# #126):
+#   * P7 (soft / differentiable) + P8 (integrated-gradients attribution) run
+#     JAX autodiff through the emulator — ~2.75 GB PER process. Under `-n auto`
+#     (4 workers) that peaks past 16 GB → a worker is OOM-killed → the pytest
+#     controller deadlocks → GitHub reports the job "cancelled".
+#   * P6 / P6c + the breakout / pong / screen-conformance integration tests
+#     boot ROMs in eager pure-Python/JAX (≈200× slower than jutari) and are
+#     simply slow on a 2–4 core runner.
+#
+# Here we bound the memory by capping xdist at 2 workers (≈5.5 GB) and keep
+# `tests/conftest.py`'s single-thread pinning (no oversubscription). Slow is
+# fine on a nightly run; PR feedback stays fast via `test.yml`.
+
+name: tests (heavy)
+
+on:
+  schedule:
+    - cron: "0 4 * * *"   # 04:00 UTC daily
+  workflow_dispatch: {}    # allow manual runs
+
+jobs:
+  jaxtari-heavy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install jaxtari + dev deps
+        working-directory: jaxtari
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      # The heavy P7/P8 autodiff suites + the slow ROM-booting integration /
+      # conformance tests. `-n 2` caps concurrent JAX processes to ≈5.5 GB
+      # (safe on a 16 GB runner); tests/conftest.py pins JAX single-threaded;
+      # --max-worker-restart recovers a flaky worker death. (PXC4 Klaus Dormann
+      # self-skips — its ROM is untracked. PXC2 has its own job in test.yml.)
+      - name: Run pytest — heavy suite (P6/P6c, P7, P8, booting/conformance)
+        working-directory: jaxtari
+        run: |
+          pytest -q -n 2 --max-worker-restart=4 \
+            tests/test_p6*.py \
+            tests/test_p7*.py \
+            tests/test_p8*.py \
+            tests/test_breakout*.py \
+            tests/test_pong*.py \
+            tests/test_screen*.py

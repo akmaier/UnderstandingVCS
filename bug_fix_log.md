@@ -88,6 +88,22 @@ but takes ~5 h wall — too slow for CI; the conftest+restart keeps parallelism.
 PXC4 Klaus Dormann self-skips in CI (ROM untracked) — only "hangs" locally where
 the ROM is present (~100M cycles).
 
+**FINAL RESOLUTION — split CI (the conftest alone didn't fix CI).** The conftest
+fixed the *local* thread-oversubscription crash, but CI kept getting cancelled at
+~18 min: the runner is `ubuntu-latest` = **4 vCPU / 16 GB**, and the autodiff
+tests are ~2.75 GB EACH (memory, independent of thread-pinning), so `-n auto`=4
+workers peak past 16 GB → OOM-kill → deadlock → cancel. Thread-pinning doesn't
+reduce that memory. Per the user's choice, **split the suite**:
+- `test.yml` (PR/push, fast gate, `timeout-minutes: 30`): the LIGHT unit tests
+  only — `--ignore-glob` the heavy P6/P6c, P7, P8, breakout, pong, screen files.
+  Quick, reliable green.
+- `heavy.yml` (NEW; nightly cron + `workflow_dispatch`, `timeout-minutes: 300`):
+  the heavy autodiff (P7/P8) + slow booting/conformance tests, capped at `-n 2`
+  (≈5.5 GB, fits 16 GB) + `--max-worker-restart`. Full coverage, just nightly.
+The conftest single-thread pinning is kept (helps both jobs). A larger CI runner
+(8-core/32 GB) would let the full suite run in one fast job — deferred to the
+user (CI-minutes cost).
+
 ---
 
 ### 🔬 Task #125 — jaxtari → 64/64 RAM: beam-phase root-cause hunt (2026-06-18, IN PROGRESS)
