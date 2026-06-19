@@ -59,7 +59,7 @@ from jaxtari.games import (  # noqa: E402
     JourneyEscapeRomSettings, MsPacmanRomSettings, PacmanRomSettings,
     PooyanRomSettings, PrivateEyeRomSettings, SkiingRomSettings,
     SurroundRomSettings, UpNDownRomSettings, YarsRevengeRomSettings,
-    QbertRomSettings,
+    QbertRomSettings, WizardOfWorRomSettings,
 )
 
 # Full 25-game per-ROM RomSettings map — matches jutari's
@@ -94,6 +94,7 @@ _SETTINGS_BY_BASENAME: dict[str, type[RomSettings]] = {
     "pacman.bin": PacmanRomSettings,
     "pooyan.bin": PooyanRomSettings,
     "qbert.bin": QbertRomSettings,
+    "wizard_of_wor.bin": WizardOfWorRomSettings,
 }
 
 

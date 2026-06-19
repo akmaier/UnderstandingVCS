@@ -20,7 +20,8 @@ using ..RomSettingsModule: RomSettings
 using ..ConsoleModule: Console
 import ..RomSettingsModule: romsettings_starting_actions, romsettings_difficulty,
     romsettings_is_legal_action, romsettings_console_switch_starts, romsettings_pal,
-    romsettings_screen_height, romsettings_y_start, romsettings_hmove_blanks
+    romsettings_screen_height, romsettings_y_start, romsettings_hmove_blanks,
+    romsettings_agent_player
 
 export PitfallRomSettings, EnduroRomSettings,
        AirRaidRomSettings, AsterixRomSettings, BeamRiderRomSettings,
@@ -30,7 +31,7 @@ export PitfallRomSettings, EnduroRomSettings,
        AmidarRomSettings, SurroundRomSettings,
        CarnivalRomSettings, PooyanRomSettings,
        BattleZoneRomSettings, MsPacmanRomSettings,
-       PacmanRomSettings, QbertRomSettings
+       PacmanRomSettings, QbertRomSettings, WizardOfWorRomSettings
 
 # --------------------------------------------------------------------------- #
 # Task #100 follow-up: 12 joystick games whose only conformance-relevant
@@ -42,6 +43,13 @@ export PitfallRomSettings, EnduroRomSettings,
 # `xitari/games/supported/<Game>.cpp::getStartingActions`.
 # Scoring is left to GenericRomSettings (irrelevant for conformance).
 # --------------------------------------------------------------------------- #
+# wizard_of_wor: xitari/ALE drives the single-player agent on the RIGHT
+# controller (P1, SWCHA low nibble) — verified by the SWCHA read on the first
+# in-play joystick press (agent RIGHT clears bit 3, not bit 7). jutari's default
+# P0 routing diverged once gameplay reads the stick (past the conformance window).
+struct WizardOfWorRomSettings    <: RomSettings end
+romsettings_agent_player(::WizardOfWorRomSettings) = 1
+
 struct AirRaidRomSettings        <: RomSettings end
 struct AsterixRomSettings        <: RomSettings end
 struct BeamRiderRomSettings      <: RomSettings end

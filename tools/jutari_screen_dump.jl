@@ -24,7 +24,7 @@ using JuTari.JoystickGames: PitfallRomSettings, EnduroRomSettings,
     AmidarRomSettings, SurroundRomSettings,
     CarnivalRomSettings, PooyanRomSettings,
     BattleZoneRomSettings, MsPacmanRomSettings,
-    PacmanRomSettings, QbertRomSettings
+    PacmanRomSettings, QbertRomSettings, WizardOfWorRomSettings
 
 # Task #95/#98 (2026-06-15): full per-ROM RomSettings map — MUST stay in sync
 # with tools/jutari_trace_dump.jl. A game booted with the wrong settings (e.g.
@@ -56,6 +56,7 @@ const _SETTINGS_BY_BASENAME = Dict{String,Function}(
     "ms_pacman.bin"       => () -> MsPacmanRomSettings(),
     "pacman.bin"          => () -> PacmanRomSettings(),
     "qbert.bin"           => () -> QbertRomSettings(),
+    "wizard_of_wor.bin"   => () -> WizardOfWorRomSettings(),
 )
 _settings_for_rom(p) = haskey(_SETTINGS_BY_BASENAME, basename(p)) ?
     _SETTINGS_BY_BASENAME[basename(p)]() : GenericRomSettings()

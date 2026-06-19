@@ -81,6 +81,7 @@ from jaxtari.games.joystick_starts import (
     SkiingRomSettings,
     SurroundRomSettings,
     UpNDownRomSettings,
+    WizardOfWorRomSettings,
     YarsRevengeRomSettings,
 )
 from jaxtari.games.rom_settings import GenericRomSettings, RomSettings
@@ -155,5 +156,6 @@ __all__ = [
     "SkiingRomSettings",
     "SurroundRomSettings",
     "UpNDownRomSettings",
+    "WizardOfWorRomSettings",
     "YarsRevengeRomSettings",
 ]

@@ -17,6 +17,17 @@ from __future__ import annotations
 from jaxtari.games.rom_settings import GenericRomSettings
 
 
+class WizardOfWorRomSettings(GenericRomSettings):
+    # wizard_of_wor's single-player agent is the RIGHT player (P1, SWCHA low
+    # nibble) in xitari/ALE, not the default LEFT (P0). Verified by the SWCHA
+    # read on the first in-play joystick press (agent RIGHT clears bit 3, not
+    # bit 7). Routing to P0 was bit-exact through the conformance window but
+    # diverged the instant gameplay reads the stick (~frame 217). No starting
+    # actions. Mirror of jutari WizardOfWorRomSettings.
+    def agent_player(self) -> int:
+        return 1
+
+
 class AmidarRomSettings(GenericRomSettings):
     # Task #103: amidar's stella.pro overrides BOTH console difficulty
     # switches to "A" → SWCHB 0xFF (xitari default is B/B = 0x3F). amidar

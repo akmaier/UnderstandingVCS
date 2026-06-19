@@ -21,7 +21,7 @@ export RomSettings, GenericRomSettings,
        romsettings_is_legal_action,
        romsettings_console_switch_starts, romsettings_pal,
        romsettings_screen_height, romsettings_y_start,
-       romsettings_hmove_blanks
+       romsettings_hmove_blanks, romsettings_agent_player
 
 abstract type RomSettings end
 
@@ -113,6 +113,13 @@ romsettings_y_start(::RomSettings) = 34
 # an HMOVE strobe NEVER arms the 8px left-edge "comb" blank, regardless of strobe
 # cycle. Default true; in the 64-ROM set only battle_zone + ms_pacman are "NO".
 romsettings_hmove_blanks(::RomSettings) = true
+
+# Which controller the single-player agent's joystick drives: 0 = left (P0,
+# SWCHA high nibble), 1 = right (P1, low nibble). Default 0. wizard_of_wor's
+# agent is the RIGHT player in xitari/ALE — verified by the SWCHA read (agent
+# RIGHT clears bit 3, the P1 nibble), so its first in-play joystick read
+# diverged from jutari (which routed to P0) past the conformance window.
+romsettings_agent_player(::RomSettings) = 0
 
 """No-op RomSettings — never terminal, zero reward, joystick-only."""
 mutable struct GenericRomSettings <: RomSettings

@@ -5952,3 +5952,17 @@ end
         @info "surround rom missing — skipping boot-seed regression test"
     end
 end
+
+@testset "wizard_of_wor agent on RIGHT controller (P1) — long-horizon fix" begin
+    # wizard_of_wor's single-player agent is the RIGHT player (P1, SWCHA low
+    # nibble) in xitari/ALE, not the default LEFT (P0, high nibble). Routing the
+    # agent's joystick to P0 was bit-exact through the conformance window but
+    # diverged the instant gameplay reads the stick (~frame 217). Guard the
+    # dispatch: wizard_of_wor → 1, everything else → 0 (default).
+    @test JuTari.RomSettingsModule.romsettings_agent_player(
+              JuTari.JoystickGames.WizardOfWorRomSettings()) == 1
+    @test JuTari.RomSettingsModule.romsettings_agent_player(
+              JuTari.RomSettingsModule.GenericRomSettings()) == 0
+    @test JuTari.RomSettingsModule.romsettings_agent_player(
+              JuTari.JoystickGames.AsterixRomSettings()) == 0
+end

@@ -168,3 +168,13 @@ class GenericRomSettings:
         # left-edge comb blank regardless of strobe cycle. Default True; in
         # the 64-ROM set only battle_zone + ms_pacman are "NO".
         return True
+
+    def agent_player(self) -> int:
+        # Which controller the single-player agent's joystick drives:
+        # 0 = left (P0, SWCHA high nibble), 1 = right (P1, low nibble).
+        # Default 0. wizard_of_wor's agent is the RIGHT player in xitari/ALE
+        # — verified by the SWCHA read (agent RIGHT clears bit 3, the P1
+        # nibble), so its first in-play joystick read diverged from the
+        # default P0 routing past the conformance window. Mirrors jutari's
+        # `romsettings_agent_player`.
+        return 0

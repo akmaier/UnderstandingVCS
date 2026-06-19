@@ -411,7 +411,13 @@ class StellaEnvironment:
         # P0_LEFT) instead of paddle 0's (= bit 7, P0_RIGHT). Thread
         # the swap flag through so apply_action can swap accordingly.
         swap = self._settings.swap_paddles() if uses_paddles else False
+        # Which controller the agent drives: 0 = P0 (default), 1 = P1.
+        # wizard_of_wor's agent is the RIGHT player (P1) in xitari/ALE; routing
+        # to the default P0 diverged the instant gameplay read the stick (past
+        # the conformance window). Defensive getattr for older RomSettings.
+        agent_player = getattr(self._settings, "agent_player", lambda: 0)()
         self._console = apply_action(self._console, int(action),
+                                      player=agent_player,
                                       paddle_mode=uses_paddles,
                                       swap_paddles=swap)
         self._console = run_until_frame(self._console)

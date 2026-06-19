@@ -22,7 +22,7 @@ using ..RomSettingsModule: RomSettings, GenericRomSettings,
                            romsettings_is_legal_action,
                            romsettings_console_switch_starts, romsettings_pal,
                            romsettings_screen_height, romsettings_y_start,
-                           romsettings_hmove_blanks
+                           romsettings_hmove_blanks, romsettings_agent_player
 using ..TIA: Y_START, VISIBLE_HEIGHT, set_paddle_resistance!
 
 export StellaEnvironment, env_reset!, env_step!,
@@ -280,7 +280,8 @@ function env_step!(env::StellaEnvironment, action::Integer)
     # the same paddle as the resistance (Pong's SwapPaddles=YES wires
     # the USER's fire to paddle 1's SWCHA bit, not paddle 0's).
     apply_action!(env.console, action; paddle_mode = uses_paddles,
-                  swap_paddles = swap_paddles)
+                  swap_paddles = swap_paddles,
+                  player = romsettings_agent_player(env.settings))
     run_until_frame!(env.console)
     reward = Int(romsettings_get_reward(env.settings, env.console))
     env.terminal = romsettings_is_terminal(env.settings, env.console)

@@ -33,7 +33,7 @@ results_longhorizon.md; first screen divergence, 60 fps video pipeline):**
 | game | first div | sec | frozen | class |
 |---|---|---|---|---|
 | asteroids | f194 | 3.2 | xi stalls (xi_tail 359) | RNG/LFSR seed cascade (1 upstream tick, not N bugs) |
-| wizard_of_wor | f216 RAM / f219 screen | 3.6 | no | in-play; RAM $1a/$1b (per-scanline sprite scratch) on joystick-RIGHT → misplaced flickered monster (~32 col ≈ HMOVE quantum, 1 lum step) |
+| wizard_of_wor | ✅ SOLVED (was f216 RAM / f219 screen) | 3.6 | no | **agent-controller routing**: xitari/ALE drives wizard_of_wor's single-player agent on the RIGHT controller (P1, SWCHA low nibble), not the default LEFT (P0). See #127a below. |
 | berzerk | f581 | 9.7 | no | in-play; bg(0)→0x88 at game start |
 | road_runner | f765 | 12.8 | ju freezes (audit ju_tail 26) | death/freeze |
 | montezuma_revenge | f867 | 14.4 | no | in-play |
@@ -61,6 +61,41 @@ wizard_of_wor via the per-instruction CPU trace path (`full_instr_trace.jl` +
 `instr_diff.py`) — the bus-trace path hit a frame-origin/granularity mismatch between
 `cpu_tia_cycle_trace.jl` and xitari `--bus-trace`. **Paper:** "64/64 bit-exact" must
 be qualified to the conformance window (or fixed) before AAAI submission.
+
+### ✅ #127a — wizard_of_wor SOLVED: agent drives the RIGHT controller (P1), not the default LEFT (P0) (2026-06-19, Claude Opus 4.8)
+
+**Root cause.** jutari/jaxtari routed EVERY single-player agent action to P0
+(SWCHA high nibble, bit 7 = RIGHT). xitari/ALE drives wizard_of_wor's agent on
+the RIGHT controller — **P1, SWCHA low nibble** (bit 3 = RIGHT). RAM is bit-exact
+through the whole attract sequence (no joystick reads), so the in-window sweep was
+clean; the instant gameplay reads the stick (first RIGHT press at frame 217) jutari
+cleared bit 7 (SWCHA 0x7F) where xitari clears bit 3 (SWCHA 0xF7). The game's
+per-scanline sprite-scratch RAM $1a/$1b then toggled one frame early (jutari (7,8)
+at f217 vs xitari's (15,0) at f217 → (7,8) at f218), cascading into the
+flickered/misplaced monster the user saw at ~3.6 s.
+
+**Diagnosis path.** `tools/probe_agent_player.py` runs xitari `--bus-trace` over a
+window around each long-horizon game's first divergence and reports the first SWCHA
+read with a direction bit cleared + which nibble. Result: of the ~13 reported
+games, **only wizard_of_wor** drives P1; road_runner/riverraid/montezuma/asterix/
+pacman/ms_pacman all drive P0 (jutari already correct) — so this is NOT a shared
+cause. `tools/wow_bus_trace.jl` reproduced the conformance trajectory and confirmed
+the $1a/$1b toggle.
+
+**Fix (both ports).** New per-game `agent_player` hook on the RomSettings
+interface (default 0 = P0). `WizardOfWorRomSettings` returns 1; `env_step!` /
+`StellaEnvironment.step` route the agent action via `apply_action(..., player=)`
+(jaxtari `apply_action` and jutari `apply_action!` already supported `player=1`
+from the two-player work #18). Registered wizard_of_wor.bin in every conformance
+basename map (jutari: trace/screen/obj/render_diff/dump_jutari_frames; jaxtari:
+jaxtari_dump).
+
+**Verified.** wizard_of_wor long-horizon screen diff: **0 diverging frames over
+900 frames** (was first_div f219). In-window gates unchanged: **64/64 RAM (all
+maxdiff=0), 64/64 screen pixel-exact**, jutari Pkg.test green (+ new
+agent-player dispatch testset). jaxtari mirror verified bit-identical $1a/$1b
+toggle. The other 12 long-horizon games have DIFFERENT causes (collision-latch
+freeze, RNG seed, mid-scanline TIA write sampling) — still open.
 
 ### ✅ Convergence tick — pitfall/enduro long-resolved; phase COMPLETE; new jutari work is relaxation-study (2026-06-19, ~12:00, Claude Opus 4.8)
 

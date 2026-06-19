@@ -26,7 +26,7 @@ using JuTari.JoystickGames: PitfallRomSettings, EnduroRomSettings,
     GravitarRomSettings, JourneyEscapeRomSettings, PrivateEyeRomSettings,
     SkiingRomSettings, UpNDownRomSettings, YarsRevengeRomSettings,
     AmidarRomSettings, SurroundRomSettings, CarnivalRomSettings, PooyanRomSettings,
-    BattleZoneRomSettings, MsPacmanRomSettings, PacmanRomSettings, QbertRomSettings
+    BattleZoneRomSettings, MsPacmanRomSettings, PacmanRomSettings, QbertRomSettings, WizardOfWorRomSettings
 import JuTari.TIA
 
 const _SETTINGS = Dict{String,Function}(
@@ -42,6 +42,7 @@ const _SETTINGS = Dict{String,Function}(
     "carnival.bin" => () -> CarnivalRomSettings(), "pooyan.bin" => () -> PooyanRomSettings(),
     "battle_zone.bin" => () -> BattleZoneRomSettings(), "ms_pacman.bin" => () -> MsPacmanRomSettings(),
     "pacman.bin" => () -> PacmanRomSettings(), "qbert.bin" => () -> QbertRomSettings(),
+    "wizard_of_wor.bin" => () -> WizardOfWorRomSettings(),
 )
 _settings(p) = haskey(_SETTINGS, basename(p)) ? _SETTINGS[basename(p)]() : GenericRomSettings()
 

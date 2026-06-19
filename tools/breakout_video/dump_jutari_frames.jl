@@ -23,7 +23,7 @@ using JuTari.JoystickGames: PitfallRomSettings, EnduroRomSettings,
     AmidarRomSettings, SurroundRomSettings,
     CarnivalRomSettings, PooyanRomSettings,
     BattleZoneRomSettings, MsPacmanRomSettings,
-    PacmanRomSettings, QbertRomSettings
+    PacmanRomSettings, QbertRomSettings, WizardOfWorRomSettings
 using JuTari.RomSettingsModule: GenericRomSettings
 
 # ROM basename → RomSettings constructor (mirror of
@@ -62,6 +62,7 @@ const _SETTINGS_BY_BASENAME = Dict{String,Function}(
     "ms_pacman.bin"       => () -> MsPacmanRomSettings(),
     "pacman.bin"          => () -> PacmanRomSettings(),
     "qbert.bin"           => () -> QbertRomSettings(),
+    "wizard_of_wor.bin"   => () -> WizardOfWorRomSettings(),
 )
 _settings_for_rom(p) = haskey(_SETTINGS_BY_BASENAME, basename(p)) ?
     _SETTINGS_BY_BASENAME[basename(p)]() : GenericRomSettings()
