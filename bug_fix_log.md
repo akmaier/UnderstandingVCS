@@ -71,6 +71,62 @@ timing bug in `jutari/src/tia/TIA.jl`), then montezuma_revenge / riverraid /
 asterix / pooyan / phoenix / pacman / ms_pacman.
 
 ---
+### 🟢 Cluster B (jaxtari) — register space_invaders/asteroids + add RoadRunner/Kangaroo settings (2026-06-19, sprint 1, Claude Opus 4.8)
+
+**Scope.** Mirror the #127b "Cluster B" terminal/auto-reset fix on the **jaxtari**
+side. Cluster B games (`space_invaders`, `asteroids`, `road_runner`, `kangaroo`)
+were absent from jaxtari's `_SETTINGS_BY_BASENAME` (`tools/jaxtari_dump.py`) → they
+fell back to `GenericRomSettings`, whose `is_terminal` is ALWAYS `False`, so the
+comparison-video pipeline never auto-resets at game-over while xitari/ALE does
+(the user-visible long-horizon "dead-episode keeps rendering" divergence; e.g. the
+space_invaders f1092 background flash, road_runner f765, kangaroo f1720). NOT a TIA
+or emulation-core bug — purely a settings/registration gap.
+
+**Audit (jaxtari side).**
+- `SpaceInvadersRomSettings` (lives==0 terminal) and `AsteroidsRomSettings`
+  (lives high-nibble==0 terminal) **already existed** but were never registered →
+  registration only.
+- `RoadRunner` and `Kangaroo` had **no settings class on either port** → new
+  classes required.
+
+**Fix.**
+- New `RoadRunnerRomSettings` + `KangarooRomSettings` in
+  `jaxtari/jaxtari/games/more_games.py`, mirroring xitari
+  `games/supported/RoadRunner.cpp` / `Kangaroo.cpp` byte-for-byte:
+  - RoadRunner: score = four single-nibble digits at $C9..$CC (low digit first,
+    0xA = blank-zero sentinel), ×100; lives = ($C4 & 0x7) + 1; terminal =
+    lives-field 0 AND (y-vel $B9 ≠ 0 OR death x-vel $BD ≠ 0).
+  - Kangaroo: score = getDecimalScore($A8 low, $A7 high) BCD pairs ×100; lives =
+    ($AD & 0x7) + 1; terminal = $AD == 0xFF.
+- Exported both from `jaxtari/jaxtari/games/__init__.py`.
+- Registered all four basenames in `tools/jaxtari_dump.py` `_SETTINGS_BY_BASENAME`
+  (`space_invaders.bin`, `asteroids.bin`, `road_runner.bin`, `kangaroo.bin`).
+
+**Verified.**
+- New unit tests in `jaxtari/tests/test_p6c_more_games.py` (RoadRunner score/
+  lives/terminal, Kangaroo score/lives/terminal, RomSettings-protocol) — **22
+  passed** (file run without xdist via `-o addopts=""` to dodge the concurrent
+  pytest-xdist hang).
+- `tools/jaxtari_dump.py::_settings_for_rom` now resolves all four basenames to
+  their real settings class (was `GenericRomSettings`); unknown basenames still
+  fall back to Generic.
+- Standalone semantic cross-check vs xitari decode confirmed exact for all four
+  (RoadRunner 1200/lives3/terminal-iff-dead-and-moving, Kangaroo 123400/lives3/
+  terminal-iff-$AD==0xFF, SpaceInvaders lives==0, Asteroids high-nibble==0).
+- **CANNOT regress the in-window 64/64 sweeps**: those run short NOOP/fixed
+  streams that never reach game-over, so `is_terminal` is never `True`; settings
+  changes are tool-side and don't touch the emulation core.
+
+**Pending (sprint partial — jaxtari is ~205× slow):** (a) PXC2 full
+jaxtari≡jutari cross-check + a single-game live jaxtari_dump on road_runner were
+launched but had not finished when this entry landed; (b) jutari side still lacks
+these registrations/classes too (a separate jutari sprint — the #127b priority
+list owns it). The jaxtari changes are independent of the emulation core, so the
+risk to the backbone is nil; the long-horizon screen-diff confirmation is deferred.
+
+**Next jaxtari open point:** finish PXC2 confirmation, then Cluster A (#127b) —
+mirror the berzerk COLUBK write-sampling TIA fix into `jaxtari/jaxtari/tia/`
+(once jutari lands it).
 
 ### 🔬 Task #127 — LONG-HORIZON conformance is window-limited: ~13 games diverge past the sweep window (2026-06-19, Claude Opus 4.8, user-reported)
 

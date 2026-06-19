@@ -60,6 +60,11 @@ from jaxtari.games import (  # noqa: E402
     PooyanRomSettings, PrivateEyeRomSettings, SkiingRomSettings,
     SurroundRomSettings, UpNDownRomSettings, YarsRevengeRomSettings,
     QbertRomSettings, WizardOfWorRomSettings,
+    # Cluster B (#127b): long-horizon terminal-detection. SpaceInvaders +
+    # Asteroids already had settings classes but were never registered here;
+    # RoadRunner + Kangaroo are new (mirror xitari RoadRunner.cpp/Kangaroo.cpp).
+    SpaceInvadersRomSettings, AsteroidsRomSettings,
+    RoadRunnerRomSettings, KangarooRomSettings,
 )
 
 # Full 25-game per-ROM RomSettings map — matches jutari's
@@ -95,6 +100,14 @@ _SETTINGS_BY_BASENAME: dict[str, type[RomSettings]] = {
     "pooyan.bin": PooyanRomSettings,
     "qbert.bin": QbertRomSettings,
     "wizard_of_wor.bin": WizardOfWorRomSettings,
+    # Cluster B (#127b): terminal/auto-reset gap on long-horizon rollouts.
+    # These ROMs previously fell back to GenericRomSettings (is_terminal always
+    # False) so the comparison-video pipeline never auto-reset at game-over,
+    # while xitari/ALE does. Registering a real terminal reader closes the gap.
+    "space_invaders.bin": SpaceInvadersRomSettings,
+    "asteroids.bin": AsteroidsRomSettings,
+    "road_runner.bin": RoadRunnerRomSettings,
+    "kangaroo.bin": KangarooRomSettings,
 }
 
 

@@ -1,9 +1,10 @@
-"""Per-game `RomSettings` — Asteroids, Q*Bert, Ms Pac-Man.
+"""Per-game `RomSettings` — Asteroids, Q*Bert, Ms Pac-Man, Road Runner, Kangaroo.
 
-Three more scorers in the same mould as Pong / Breakout / Space
-Invaders. RAM addresses and BCD layouts come from `xitari/games/
-supported/Asteroids.cpp / QBert.cpp / MsPacman.cpp` and are mirrored
-here byte-for-byte. See the docstring of each class for the layout.
+Scorers in the same mould as Pong / Breakout / Space Invaders. RAM
+addresses and BCD layouts come from `xitari/games/supported/
+Asteroids.cpp / QBert.cpp / MsPacman.cpp / RoadRunner.cpp / Kangaroo.cpp`
+and are mirrored here byte-for-byte. See the docstring of each class for
+the layout.
 
 A small `_decode_bcd_chain(addresses)` helper packs up the "score is
 spread across N bytes, each holding 2 BCD digits, concatenate to get
@@ -180,3 +181,106 @@ class MsPacmanRomSettings(GenericRomSettings):
 
     def lives(self, console: Console) -> int:
         return int(console.bus.ram[MSPACMAN_LIVES_ADDR & 0x7F]) & 0x0F
+
+
+# --------------------------------------------------------------------------- #
+# Road Runner
+# --------------------------------------------------------------------------- #
+
+# xitari `xitari/games/supported/RoadRunner.cpp::step`:
+#   score: 4 single-nibble digits at $C9..$CC (low nibble each), LOW digit
+#          first (mult 1,10,100,1000); 0xA is the "blank zero" sentinel → 0;
+#          the assembled value is then *100.
+#   lives: ($C4 & 0x7); reported lives = that + 1.
+#   terminal: lives_byte == 0 AND (y_vel ($B9) != 0 OR x_vel_death ($BD) != 0)
+#             — i.e. the runner is dead AND still moving (death animation).
+ROADRUNNER_SCORE_ADDRS    = (0xC9, 0xCA, 0xCB, 0xCC)  # LOW digit first
+ROADRUNNER_SCORE_MULT     = 100
+ROADRUNNER_BLANK_DIGIT    = 0xA                        # '0, don't display'
+ROADRUNNER_LIVES_ADDR     = 0xC4                       # low 3 bits = lives
+ROADRUNNER_YVEL_ADDR      = 0xB9
+ROADRUNNER_XVEL_DEATH_ADDR = 0xBD
+
+
+class RoadRunnerRomSettings(RomSettings):
+    """Road Runner — score is four single-nibble decimal digits at
+    $C9..$CC (low digit first), with 0xA meaning "blank zero"; the
+    assembled value is *100. Lives = ($C4 & 0x7) + 1. Terminal when
+    the lives field is 0 AND the runner is still moving in its death
+    animation (y-velocity $B9 != 0 OR death x-velocity $BD != 0).
+    Mirrors xitari RoadRunner.cpp byte-for-byte.
+    """
+
+    def __init__(self) -> None:
+        self._prev_score: int = 0
+
+    def reset(self) -> None:
+        self._prev_score = 0
+
+    def _score(self, console: Console) -> int:
+        ram = console.bus.ram
+        score = 0
+        mult = 1
+        for addr in ROADRUNNER_SCORE_ADDRS:
+            value = int(ram[addr & 0x7F]) & 0x0F
+            if value == ROADRUNNER_BLANK_DIGIT:
+                value = 0
+            score += mult * value
+            mult *= 10
+        return score * ROADRUNNER_SCORE_MULT
+
+    def get_reward(self, console: Console) -> int:
+        score = self._score(console)
+        reward = score - self._prev_score
+        self._prev_score = score
+        return int(reward)
+
+    def is_terminal(self, console: Console) -> bool:
+        ram = console.bus.ram
+        lives_byte = int(ram[ROADRUNNER_LIVES_ADDR & 0x7F]) & 0x7
+        y_vel = int(ram[ROADRUNNER_YVEL_ADDR & 0x7F])
+        x_vel_death = int(ram[ROADRUNNER_XVEL_DEATH_ADDR & 0x7F])
+        return lives_byte == 0 and (y_vel != 0 or x_vel_death != 0)
+
+    def lives(self, console: Console) -> int:
+        return (int(console.bus.ram[ROADRUNNER_LIVES_ADDR & 0x7F]) & 0x7) + 1
+
+
+# --------------------------------------------------------------------------- #
+# Kangaroo
+# --------------------------------------------------------------------------- #
+
+# xitari `xitari/games/supported/Kangaroo.cpp::step`:
+#   score: getDecimalScore(0xA8, 0xA7) — two BCD bytes, $A7 is the HIGH
+#          byte (thousands+hundreds), $A8 the LOW byte (tens+ones); *100.
+#   lives: ($AD & 0x7) + 1.
+#   terminal: $AD == 0xFF.
+KANGAROO_SCORE_ADDRS = (0xA7, 0xA8)   # HIGH byte first (BCD pairs)
+KANGAROO_SCORE_MULT  = 100
+KANGAROO_LIVES_ADDR  = 0xAD
+KANGAROO_GAME_OVER   = 0xFF           # xitari's terminal sentinel
+
+
+class KangarooRomSettings(RomSettings):
+    """Kangaroo — score from two BCD bytes $A7 (high) / $A8 (low), *100.
+    Lives = ($AD & 0x7) + 1. Terminal when $AD == 0xFF (xitari's
+    game-over sentinel). Mirrors xitari Kangaroo.cpp byte-for-byte.
+    """
+
+    def __init__(self) -> None:
+        self._prev_score: int = 0
+
+    def reset(self) -> None:
+        self._prev_score = 0
+
+    def get_reward(self, console: Console) -> int:
+        score = _decode_bcd_chain(console, KANGAROO_SCORE_ADDRS) * KANGAROO_SCORE_MULT
+        reward = score - self._prev_score
+        self._prev_score = score
+        return int(reward)
+
+    def is_terminal(self, console: Console) -> bool:
+        return int(console.bus.ram[KANGAROO_LIVES_ADDR & 0x7F]) == KANGAROO_GAME_OVER
+
+    def lives(self, console: Console) -> int:
+        return (int(console.bus.ram[KANGAROO_LIVES_ADDR & 0x7F]) & 0x7) + 1

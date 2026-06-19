@@ -15,6 +15,13 @@ from jaxtari.games import (
     BREAKOUT_SCORE_HI_ADDR,
     BREAKOUT_SCORE_LO_ADDR,
     BreakoutRomSettings,
+    KANGAROO_GAME_OVER,
+    KANGAROO_LIVES_ADDR,
+    KangarooRomSettings,
+    ROADRUNNER_LIVES_ADDR,
+    ROADRUNNER_XVEL_DEATH_ADDR,
+    ROADRUNNER_YVEL_ADDR,
+    RoadRunnerRomSettings,
     SI_LIVES_ADDR,
     SI_SCORE_HI_ADDR,
     SI_SCORE_LO_ADDR,
@@ -169,3 +176,71 @@ def test_both_settings_satisfy_RomSettings_protocol():
     from jaxtari.games import RomSettings
     assert isinstance(BreakoutRomSettings(), RomSettings)
     assert isinstance(SpaceInvadersRomSettings(), RomSettings)
+
+
+# --------------------------------------------------------------------------- #
+# Road Runner — Cluster B (#127b). Mirror xitari RoadRunner.cpp::step.
+# --------------------------------------------------------------------------- #
+
+def test_road_runner_score_single_nibble_digits_low_first():
+    # $C9..$CC are single-nibble decimal digits, LOW digit first; 0xA is the
+    # "blank zero" sentinel. C9=2 CA=1 CB=0xA CC=0 → 2+10+0+0 = 12 → *100.
+    s = RoadRunnerRomSettings()
+    c = _console_with({0xC9: 2, 0xCA: 1, 0xCB: 0xA, 0xCC: 0})
+    assert s.get_reward(c) == 1200
+
+
+def test_road_runner_lives_low3_plus_one():
+    s = RoadRunnerRomSettings()
+    c = _console_with({ROADRUNNER_LIVES_ADDR: 2})
+    assert s.lives(c) == 3
+
+
+def test_road_runner_terminal_only_when_dead_and_moving():
+    s = RoadRunnerRomSettings()
+    # lives 0 but velocities 0 → not yet terminal (death anim hasn't started)
+    c = _console_with({ROADRUNNER_LIVES_ADDR: 0,
+                       ROADRUNNER_YVEL_ADDR: 0,
+                       ROADRUNNER_XVEL_DEATH_ADDR: 0})
+    assert s.is_terminal(c) is False
+    # lives 0 and y-velocity nonzero → terminal
+    c = _console_with({ROADRUNNER_LIVES_ADDR: 0, ROADRUNNER_YVEL_ADDR: 5})
+    assert s.is_terminal(c) is True
+    # lives 0 and death x-velocity nonzero → terminal
+    c = _console_with({ROADRUNNER_LIVES_ADDR: 0, ROADRUNNER_XVEL_DEATH_ADDR: 7})
+    assert s.is_terminal(c) is True
+    # lives remaining → never terminal regardless of velocity
+    c = _console_with({ROADRUNNER_LIVES_ADDR: 1, ROADRUNNER_YVEL_ADDR: 5})
+    assert s.is_terminal(c) is False
+
+
+# --------------------------------------------------------------------------- #
+# Kangaroo — Cluster B (#127b). Mirror xitari Kangaroo.cpp::step.
+# --------------------------------------------------------------------------- #
+
+def test_kangaroo_score_bcd_high_low_times_100():
+    # getDecimalScore(0xA8, 0xA7): A7 high (thousands+hundreds), A8 low
+    # (tens+ones); *100. A7=0x12 A8=0x34 → 1234 → *100.
+    s = KangarooRomSettings()
+    c = _console_with({0xA7: 0x12, 0xA8: 0x34})
+    assert s.get_reward(c) == 123400
+
+
+def test_kangaroo_lives_low3_plus_one():
+    s = KangarooRomSettings()
+    c = _console_with({KANGAROO_LIVES_ADDR: 2})
+    assert s.lives(c) == 3
+
+
+def test_kangaroo_terminal_on_game_over_sentinel():
+    s = KangarooRomSettings()
+    c = _console_with({KANGAROO_LIVES_ADDR: KANGAROO_GAME_OVER})
+    assert s.is_terminal(c) is True
+    c = _console_with({KANGAROO_LIVES_ADDR: 0x00})
+    assert s.is_terminal(c) is False
+
+
+def test_cluster_b_settings_satisfy_RomSettings_protocol():
+    from jaxtari.games import RomSettings
+    assert isinstance(RoadRunnerRomSettings(), RomSettings)
+    assert isinstance(KangarooRomSettings(), RomSettings)
