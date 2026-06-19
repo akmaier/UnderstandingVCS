@@ -14,6 +14,25 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### ⚠️ CORRECTION — the JAX persistent compilation cache does NOT speed up the conformance dump (measured) — 2026-06-19
+
+The perf-benchmark entry (commit 74eae97) recommended enabling
+`JAX_COMPILATION_CACHE_DIR` in the sweep workers, citing a ~20× cold-start cut
+(47s→2.3s). **Re-measured directly on the actual tool and it's a NO-OP for the
+eager HARD conformance path.** Wired the cache into `tools/jaxtari_dump.py` +
+`tools/rom_sweep/sweep_jaxtari.py`, ran a full `jaxtari_dump.py` (pong, real boot):
+JAX *did* read the env var (it created the cache dir) but wrote **0 cache entries**
+in a ~30-min run. Reason: the HARD dump is a concrete-value eager interpreter — it
+issues no large `jit`/`pjit` compilation to cache, and its wall-clock is bound by
+**eager execution (~0.1 fps)**, not compilation. The 74eae97 "47s→2.3s" was a
+`jit`-path micro-benchmark (e.g. compiling `soft_run_scan`), which does NOT reflect
+the dump. So the cache only benefits the SOFT/diff/XAI jit paths, never the
+eager conformance dump/sweep. **The wiring was reverted** (do not re-add it for
+the sweep). Net: with the NumPy backend declined, there is no cheap jaxtari
+verification speedup — but jaxtari conformance is already DONE via fast short
+cross-checks + unit tests, so this is not blocking. See
+[[project_bugfix_sprint_loop]].
+
 ### ⚠️ jaxtari HARD rollout speedup via jit+lax.scan — INVESTIGATED, NOT ADOPTED (the premise is false); the real fix is a NumPy integer backend — 2026-06-19
 
 **Verdict: the briefed approach ("wrap HARD `cpu_step` in `jax.lax.scan` /
