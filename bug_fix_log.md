@@ -14,6 +14,100 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### ⚠️ jaxtari HARD rollout speedup via jit+lax.scan — INVESTIGATED, NOT ADOPTED (the premise is false); the real fix is a NumPy integer backend — 2026-06-19
+
+**Verdict: the briefed approach ("wrap HARD `cpu_step` in `jax.lax.scan` /
+`while_loop` like the SOFT path, get a dramatic speedup") is BOTH infeasible AND
+counterproductive, proven by measurement. No HARD rollout was made compiled. A
+reusable benchmark/diagnosis tool was landed (`tools/bench_jaxtari_rollout.py`),
+and the correct path forward is documented below. NO emulation-core change; the
+conformance path (`StellaEnvironment` → `run_until_frame` → `cpu.step`) is
+untouched and bit-exactness is unaffected.**
+
+**Why jit/scan over the HARD path is INFEASIBLE.** `jaxtari/jaxtari/cpu/m6502.py
+step()` is a *concrete-value Python interpreter*, not a JAX computation: it does
+`int(state.PC)`, `int(opcode)`, `mode=int(...)`, `OPCODES.get(opcode)` dict
+lookups and `if mnemonic == "LDA": ...` dispatch chains (~98 `int(jax_array)`
+call sites across m6502.py/addressing.py/bus/system.py). All of that branches on
+*traced* values and cannot survive `jax.jit`. Independently, `Console.bus.cart`
+is a **mutable Python `Cart`** (`jaxtari/jaxtari/cart/system.py`, `__slots__`,
+in-place bank mutation on peek) — not a pytree — so a `Console` can't even be
+passed through `jit`/`scan`. Verified empirically:
+`jax.jit(console_step)(c)` → `TypeError: ... <class '...Cart'> ... not an
+abstract array`. So `run_until_frame_jit` / `step_frame_jit` / `run_frames_scan`
+as briefed cannot be written against the existing HARD `cpu_step` without first
+rewriting the entire HARD CPU+TIA+RIOT+cart into traceable form.
+
+**Why the SOFT path is NOT the cure (the brief's premise is empirically false).**
+`jaxtari/jaxtari/diff/soft_step.py soft_run_scan` IS `jit`+`lax.scan` and its
+docstring says "dramatically faster" — but that is relative to the *unrolled
+Python-loop* `soft_run`, NOT relative to eager HARD. Measured on pong (single-
+threaded, jax 0.10.1, x64=False, `tools/bench_jaxtari_rollout.py`):
+
+| path | throughput |
+|---|---|
+| eager HARD `console_step` | **~1,000 instr/s** (≈960 µs/instr) |
+| eager HARD `run_until_frame` | **~0.10 frames/s (≈10 s/frame)** |
+| SOFT-scan (jit+scan), warm steady-state | **~13 instr/s** |
+
+The compiled SOFT scan is ~**80× SLOWER** than eager HARD. The compile itself is
+cheap (~0.9 s for the 256-way opcode `lax.switch`); the *run* is what's slow —
+SOFT models memory as a **dense one-hot dot product over the whole ROM/RAM on
+every byte access** plus a 256-way switch per instruction, i.e. orders of
+magnitude more FLOPs/instruction than HARD's native integer ops. And SOFT models
+only CPU + 128 B RAM + a minimal RIOT timer — **no TIA register file, no
+rendering (no screen), no frame-end detection, no bank-switching** — so it could
+never produce the per-frame screen or detect frame boundaries the conformance
+rollout needs anyway. SOFT-forward RAM matches HARD only in the trivial pre-TIA
+boot spin (measured: pong 150 instr from raw reset → 0/128 RAM bytes differ, PC
+& A identical) and will diverge the instant the ROM branches on a TIA/RIOT read.
+
+**Where the time actually goes (the basis for the recommendation).** Per-call
+micro-costs (`tools/bench_jaxtari_rollout.py [micro]`): `int(jax_scalar)` is
+**~38× slower** than `int(numpy_scalar)`; a single eager `jnp.uint8 + jnp.uint8`
+is **~100–123× slower** than the NumPy equivalent. The HARD interpreter pays
+~98 `int()` host-syncs + dozens of tiny eager-XLA ops *per instruction*, all on
+1-element / (64,) / (128,) / (312,160) arrays — i.e. it uses JAX as a (very slow)
+boxed-integer scalar library. `tia.frame`/`tia.scanline` are plain Python ints,
+so the `int(bus.tia.frame)` in `run_until_frame` is FREE — the bottleneck is the
+per-instruction eager dispatch + register `int()` syncs, not that loop's guard.
+
+**RECOMMENDATION — do NOT adopt jit/scan; build a NumPy integer backend.** The
+HARD CPU/TIA/RIOT/cart is pure wrapping-integer arithmetic on uint8/16/32, which
+NumPy computes ~100× faster *and bit-identically* (same wraparound semantics) —
+no XLA dispatch, no host-sync, `int()` ~38× cheaper. Concretely: make the hot
+modules (m6502, addressing, alu, bus, tia, riot, cart) backend-pluggable on an
+`xp` alias (`jnp` ↔ `numpy`), or provide a parallel NumPy-leaf `Console` + a
+NumPy `run_frames` worker, and gate it on a byte-for-byte 30-frame-RAM /
+60-frame-screen diff against the eager JAX path on the 5+ representative ROMs.
+Projected ceiling: ~100s of thousands of instr/s → **~100–1000× over the current
+~1,000 instr/s eager path**, taking a 30-frame pong RAM dump from ~minutes to
+sub-second. This is the right speedup for the per-ROM sweep workers
+(`tools/jaxtari_dump.py`, `tools/rom_sweep/sweep_jaxtari.py`) and PXC2. A fully-
+traceable JAX reimplementation (SOFT-style `lax.switch` but integer, with a real
+TIA) is the alternative, but on CPU it would still pay XLA's overhead and (per
+the SOFT measurement) is unlikely to beat NumPy for these tiny arrays.
+
+**Persistent compilation cache (for whatever compiled path is eventually used).**
+`JAX_COMPILATION_CACHE_DIR` works in this jax (0.10.1) and gives a big cross-
+process cold-start win: SOFT 300-step scan, fresh process, empty cache → **47 s**
+(wrote 9 cache files); SECOND fresh process with cache populated → **2.3 s**
+(~20× faster cold-start). Worth enabling in the sweep workers regardless of which
+compiled backend lands, since the sweep spawns one process per ROM.
+
+**Files (additive only):**
+- `tools/bench_jaxtari_rollout.py` — NEW. Measures eager instr/s + frames/s,
+  the `int()`/op micro-cost decomposition, the SOFT-scan compiled ceiling
+  (compile vs warm), and has a `--soft-only` mode for the persistent-cache demo.
+  Pins single-threaded like `tools/jaxtari_dump.py`; ROM is a runtime arg.
+
+**Follow-up wiring (when the NumPy backend lands):** swap `tools/jaxtari_dump.py`'s
+per-frame `env.step` loop onto the NumPy `run_frames` (keeping the eager JAX path
+behind a `--backend jax` flag for the conformance gate), then re-run the 64/64
+screen+RAM sweep to confirm byte-identity before making NumPy the default.
+
+---
+
 ### ✅ pooyan + phoenix + pacman + ms_pacman (jutari) — the FINAL 4 long-horizon games are ALL terminal/auto-reset; jutari long-horizon list COMPLETE — 2026-06-19, sprint 4
 
 **Verdict: FIXED (front-end terminal readers; NO emulation-core change). All four
