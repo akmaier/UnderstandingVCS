@@ -264,6 +264,21 @@ is deterministic given a ROM, an action stream, and a seed, every register,
 RAM byte, and pixel our ports produce can be compared against it, and any
 disagreement is a measurable mistake in the software port.
 
+\paragraph{Other Atari substrates and differentiable simulators.}
+The Atari platform is also used as a throughput target and as a structured RL
+environment. CuLE ports ALE to CUDA for massive-batch rollouts (up to
+${\sim}155$M frames/h on a single GPU) but is neither bit-exact nor
+differentiable \citep{dalton2020cule}; object-centric and JAX-native Atari
+environments such as OCAtari and JAXAtari expose structured states and run on
+the GPU \citep{delfosse2023ocatari,delfosse2025jaxatari}, but they are RL
+\emph{environments}, not a gate-level differentiable port validated bit-for-bit
+against the DQN reference. Differentiable simulators are by now standard in
+continuous physics---Brax back-propagates through rigid-body dynamics in JAX
+\citep{freeman2021brax}---whereas our substrate differentiates a \emph{discrete}
+computer architecture whose hard forward pass is provably exact. We follow the
+ALE evaluation protocol and its game catalogue
+\citep{bellemare2013arcade,machado2018revisiting}.
+
 \section{Building Two Differentiable VCS Ports}
 
 We ported \textsc{xitari} subsystem by subsystem---CPU, bus, TIA, RIOT,
@@ -554,8 +569,11 @@ Theorems~\ref{thm:exact}--\ref{thm:limit}.
 \section{Evaluation Methodology}
 
 We report five families of measurements, defined here so the results are
-unambiguous. The two conformance metrics are evaluated on the 64 ALE games
-playable by the original DQN benchmark: for each game we run the standard ALE
+unambiguous. The two conformance metrics are evaluated on the 64 ALE games in
+our \textsc{xitari} configuration---\textsc{xitari} being the emulator DeepMind
+released with DQN; the canonical DQN results were reported on a 49-game subset
+\citep{mnih2015human}, later work on an Atari-57 set, all drawn from ALE's larger
+catalogue \citep{machado2018revisiting}. For each game we run the standard ALE
 boot (60 no-op frames plus four resets) and then a fixed action stream. A game is
 \emph{RAM-exact} if its 128-byte RIOT RAM is identical to \textsc{xitari} on every
 frame, and \emph{pixel-exact} if its full $210\times160$ frame buffer (palette
@@ -580,47 +598,39 @@ object model rather than approximating its output.
 \subsection{Effort: Person-Months into Days}
 
 The project comprises 373 commits over a 29-day calendar span (a cumulative
-commit-time plot is given in the supplementary material). To estimate active
-implementation time we split
-the commit stream into work sessions. We use a three-hour gap between
-consecutive commits as the session boundary: within a session commits are
-minutes apart (the median is one every ${\sim}13$ minutes), whereas idle
-periods last many hours, so three hours sits well above normal working pauses
-and below the idle stretches. The split is therefore insensitive to the exact
-value---106 active hours at a two-hour cutoff, 162 at four hours. With the
-three-hour boundary, the 373 commits form 52 active sessions totalling
-\textbf{136.8 hours}, or about \textbf{5.7 round-the-clock days}. The remaining
-${\sim}80\%$ of the calendar span was idle and excluded: it consists mostly of
-stretches when the lead programmer was travelling and without reliable internet
-access. The work used Anthropic's Claude Opus~4.7 and Opus~4.8 as the primary
-coding models, with a brief autonomous stint by Fable~5. Against this we built
-two independent emulators totalling ${\sim}17{,}900$ lines of source and a
-comparable volume of tests (${\sim}1{,}990$ test cases across the two ports),
-and chased 67 distinct numbered bug investigations to a bit-exact result.
+commit-time plot is in the supplement). Splitting the commit stream at three-hour
+gaps---the session boundary defined in the methodology, with commits within a
+session a median ${\sim}13$ minutes apart---yields 52 active sessions totalling
+\textbf{136.8 hours}, about \textbf{5.7 round-the-clock days}, and the split is
+insensitive to the cutoff (106 hours at two hours, 162 at four). The remaining
+${\sim}80\%$ of the span was idle, mostly travel without reliable internet. The
+work used Anthropic's Claude Opus~4.7 and 4.8 as the primary coding models, with a
+brief autonomous stint by Fable~5. Against this we built two independent emulators
+totalling ${\sim}17{,}900$ lines of source and a comparable volume of tests
+(${\sim}1{,}990$ cases across the two ports), and chased 67 numbered bug
+investigations to a bit-exact result.
 
 For a baseline, \textsc{xitari} is a C\texttt{++} core of about 46{,}000 lines
-derived from Stella, a project with sources dating to the 1990s and an \textsc{xitari} fork
-spanning 2014--2017 \citep{xitari,stella}---many person-years of cumulative work.
-Our two ports reproduce its behaviour (bit-exact RAM, pixel-exact screens) in about
-17{,}900 lines written in 137 active hours. We do not claim a controlled
-comparison---the reference is larger in scope (audio, every cartridge type,
-tooling)---but the contrast between a multi-year reference codebase and a
-six-day reimplementation is the right order of magnitude for what agentic
-tools change.
+derived from Stella, with sources dating to the 1990s and an \textsc{xitari} fork
+spanning 2014--2017 \citep{xitari,stella}---many person-years of work. Our two
+ports reproduce its behaviour (bit-exact RAM, pixel-exact screens) in about
+17{,}900 lines and 137 active hours. We do not claim a controlled comparison---the
+reference is larger in scope (audio, every cartridge type, tooling)---but the
+contrast between a multi-year reference and a six-day reimplementation is the right
+order of magnitude for what agentic tools change.
 
 \subsection{Throughput}
 
 On the soft-mode benchmark, \textsc{jutari} sustains ${\sim}370{,}100$ steps per
-second and \textsc{jaxtari} ${\sim}1{,}178$, a ${\sim}314\times$ gap
-(Table~\ref{tab:ports}). The difference is dominated by per-operation
-kernel-launch overhead in JAX: each soft step dispatches one opcode through a
-256-way switch, and at single-instruction granularity the per-launch overhead far
-exceeds the instruction itself, whereas Julia inlines the small handlers. This is
-a property of the execution granularity, not the AD systems: for a gradient-based
-XAI workflow (one forward-plus-backward pass per attribution) \textsc{jaxtari}'s
-${\sim}42$\,s per 50{,}000-step trace is comfortably interactive, and for
-batched, training-scale rollouts the JAX implementation is far more efficient once
-many environments are vectorised in parallel.
+second (one step = one CPU instruction) and \textsc{jaxtari} ${\sim}1{,}178$, a
+${\sim}314\times$ gap (Table~\ref{tab:ports}). The difference is dominated by
+JAX's per-operation kernel-launch overhead: each soft step dispatches one opcode
+through a 256-way switch, so at single-instruction granularity the launch overhead
+dwarfs the instruction, whereas Julia inlines the small handlers---a property of
+the granularity, not the AD systems. For a gradient-based XAI workflow (one
+forward-plus-backward pass per attribution) \textsc{jaxtari}'s ${\sim}42$\,s per
+50{,}000-step trace is comfortably interactive, and batched rollouts vectorise
+many environments in parallel.
 
 \subsection{Proof of Concept: Ground-Truth Gradients}
 
@@ -647,48 +657,38 @@ known wiring---the whole point of a ground-truth substrate.}
 \end{figure}
 
 The point of the foundation is that gradients computed on it can be
-\emph{checked}. Because soft mode is forward-exact (Theorem~\ref{thm:exact}),
-the \emph{surrogate} gradients it exposes are evaluated along the true (exact)
-hard trajectory rather than an approximation of it---exact for one-hot reads,
-relaxation-dependent for branches and spatial indices. We illustrate this on
-the \emph{real} Space Invaders ROM, booted and rolled to a live game scene
-(Figure~\ref{fig:xai}a); the whole pipeline runs end-to-end. It is a proof of
-concept that the substrate behaves as intended, not an XAI evaluation.
+\emph{checked}. Because soft mode is forward-exact (Theorem~\ref{thm:exact}), the
+surrogate gradients are taken along the true hard trajectory, not an
+approximation; we illustrate this end-to-end on the \emph{real} Space Invaders
+ROM, rolled to a live scene (Figure~\ref{fig:xai}a). It is a proof of concept
+that the substrate behaves as intended, not an XAI evaluation.
 
-The joystick moves the player cannon, but the path from the joystick to the
-screen runs through a discrete sprite \emph{position} index---the strobe-timed
-column at which the cannon is drawn. A naive gradient through that index is
-identically zero (Figure~\ref{fig:xai}c): not a failure of differentiation, but
-the ground truth telling us that a naive saliency would wrongly report ``the
-joystick does not affect the screen.'' A differentiable sampler over the
-position---a sub-pixel bilinear kernel, as in spatial-transformer
-networks~\citep{jaderberg2015spatial}---restores the relationship: the
-per-direction $\partial$screen$/\partial$joystick map lights exactly the cannon
-edges that move (Figure~\ref{fig:xai}b), and the inverse gradient of the
-on-screen cannon position with respect to the four joystick directions recovers
-the control mapping---push \textsc{right}, and not up/down (Figure~\ref{fig:xai}d).
-Because the forward pass is exact at any temperature, the recovered gradient is
-identical for SOFT-STE and the soft relaxed variant (the leaky, past-boundary
-variant is studied in the supplement). We can \emph{verify} all of this against
-the known wiring---which is the whole point.
+The joystick moves the cannon, but the path to the screen runs through a discrete
+sprite \emph{position} index, so a naive gradient is identically zero
+(Figure~\ref{fig:xai}c)---the ground truth itself warning that a naive saliency
+would report ``the joystick does not affect the screen.'' A differentiable
+sampler over the position (a sub-pixel bilinear kernel, as in spatial-transformer
+networks~\citep{jaderberg2015spatial}) restores it: the per-direction map lights
+exactly the cannon edges that move (Figure~\ref{fig:xai}b), and the inverse
+recovers the control mapping---push \textsc{right}, not up/down
+(Figure~\ref{fig:xai}d). The result is identical for SOFT-STE and the soft relaxed
+variant (the leaky variant is studied in the supplement), and all of it can be
+\emph{verified} against the known wiring---which is the whole point.
 
 \section{Discussion}
 
 This paper delivers five results. We built two independent differentiable ports of
-the Atari VCS, in Julia and JAX, that are bit-exact in RAM and pixel-exact on
-screen against \textsc{xitari} on all 64 DQN games. We proved that the soft forward
-pass equals the hard one exactly, so gradients are computed on the true execution
-rather than an approximation. We measured the implementation effort at about 137
-active hours, built largely by coding agents---a concrete data point on how quickly
-such a system can now be produced. We evaluated bit- and pixel-exact conformance
-across the full 64-game ALE set, finding that a bit-exact re-implementation is
-itself an audit tool for its reference. And we showed qualitatively that gradients
-localise to the correct hardware and can be checked against the known mechanism.
-Theoretic analysis of $\alpha$ and $T$ showed that exact operation is also possible
-with the soft version in the forward pass for small $T$ and large $\alpha$.
-The supplementary material collects the full proofs, the numerical relaxation
-analyses ($\alpha$/$T$ gradient maps and the forward-bit-exactness boundaries),
-and the beam-timed comparison videos.
+the Atari VCS, in Julia and JAX, bit-exact in RAM and pixel-exact on screen against
+\textsc{xitari} on all 64 DQN games; proved the soft forward pass equals the hard
+one exactly, so gradients run on the true execution rather than an approximation;
+measured the implementation effort at about 137 active hours, built largely by
+coding agents; found that a bit-exact re-implementation is itself an audit tool for
+its reference; and showed qualitatively that gradients localise to the correct
+hardware and can be checked against the known mechanism. A theoretical analysis of
+$\alpha$ and $T$ shows that the fully relaxed variant, too, is forward-exact for
+small $T$ and large $\alpha$. The supplement collects the full proofs, the
+numerical relaxation analyses ($\alpha$/$T$ gradient maps and the
+forward-bit-exactness boundaries), and the beam-timed comparison videos.
 
 Building the ports also revealed a bug in the reference. Driving the ports to
 64/64 pixel exactness surfaced a latent non-determinism in \textsc{xitari}
@@ -704,14 +704,22 @@ and the port audits the reference for reproducibility bugs.
 
 The hardest divergences were all in timing---the RIOT timer's reset state, the
 TIA's sub-cycle object rendering, and the boot-time format probe that seeds
-free-running counters games never re-initialise. Two model anecdotes: the bulk of
-the work was carried out by Claude Opus~4.7 and 4.8, with one autonomous session
-driven by Fable~5. An early attempt with Kimi-K2.6 (a one-trillion-parameter
-model) ended when it refused to start, judging the port to be months of work.
+free-running counters games never re-initialise. As one model anecdote, an early
+attempt with Kimi-K2.6 (a one-trillion-parameter model) ended when it refused to
+start, judging the port to be months of work.
 
-One limitation: the effort comparison is an order-of-magnitude estimate, not a
-controlled trial. This does not affect the core claims---the forward equivalence
-of Theorem~\ref{thm:exact} and the measured 64/64 conformance of both ports.
+\paragraph{What we do not claim.} This paper builds and validates the substrate;
+it is not yet an XAI benchmark. We neither rank attribution methods nor study a
+learned agent---the gradients here explain the \emph{known machine}, not a policy,
+and are surrogate estimators of the hard map (Corollary~\ref{cor:ste}), not the
+hard derivative.
+
+\paragraph{Limitations.} The effort figure is an order-of-magnitude estimate, not
+a controlled trial; this does not affect the core claims (Theorem~\ref{thm:exact}
+and the measured 64/64 conformance). Audio is not implemented, being irrelevant to
+a pixel- and RAM-level XAI substrate. Evaluating attribution methods on this
+ground truth, and extending it from the known environment to learned agents, is
+the program this foundation opens.
 
 \section{Conclusion}
 
@@ -720,18 +728,26 @@ known-but-trivial / complex-but-unknown dichotomy: a genuine, complex
 information-processing system that is at once fully specified and fully
 differentiable. We built it twice, in Julia and JAX, validated both ports
 bit-for-bit against the reference on all 64 supported Atari games, and proved the
-differentiable forward pass bit-exact equal to the original machine while exposing
-\emph{surrogate} gradients where bit logic has none. With the mechanism fully
-specified, an attribution can now---to our knowledge, for the first time on a
-system of this complexity---be scored against the truth. We hope the community takes up this system as a testbed,
-both to evaluate existing XAI methods against a known mechanism and to develop new
-ones.
+forward pass bit-exact while exposing \emph{surrogate} gradients where bit logic
+has none. An attribution can now---to our knowledge, for the first time on a system
+of this complexity---be scored against the truth, and we hope the community takes
+up the substrate as a testbed for evaluating and developing XAI methods against a
+known mechanism.
 
 \section*{Ethical Statement}
-This work involves no human subjects, personal data, or sensitive information,
-and uses Atari ROMs only as fixed computational inputs. The agentic method we
-report is dual-use, but pairing autonomy with a strict, automatically checked
-conformance oracle keeps it safe.
+This work involves no human subjects, personal data, or sensitive information. The
+commercial Atari ROMs are used only as fixed inputs; they are copyrighted and
+\emph{not} redistributed---we release SHA-256 hashes for identification only. The
+agentic method is dual-use; pairing autonomy with a strict, automatically checked
+conformance oracle mitigates its central risk, silent divergence from the
+reference, without eliminating it.
+
+\section*{Reproducibility and Artifact}
+Both ports, the conformance harnesses, and the action streams and seeds live in a
+public repository, withheld here for anonymous review (AAAI policy) and released on
+acceptance. Exact language, library, and model versions and the conformance command
+are in the reproducibility checklist; the supplement lists every game with its ROM
+hash, mapper, and per-frame RAM/pixel exactness.
 
 {\small
 \bibliography{references}
