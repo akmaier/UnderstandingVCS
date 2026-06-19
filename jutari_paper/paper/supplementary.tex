@@ -125,13 +125,14 @@ strictly positive margin. For opcode dispatch at step $t$ with logits
 $\ell^{(t)}$ and winner $k^\star_t$, the logit gap
 $\Delta_t=\ell^{(t)}_{k^\star_t}-\max_{k\ne k^\star_t}\ell^{(t)}_k$ is positive,
 and for each conditional branch with flag logit $z_t$, the margin $m_t=|z_t|$ is
-positive. Let $\Delta_{\min}=\min_t\Delta_t>0$ and $m_{\min}=\min_t m_t>0$. These positive
-margins are a property of the \emph{executed} length-$N$ trajectory; geometrically
-they define a tube around it inside which the relaxed maps agree with the hard
-one. The relaxed read~\eqref{eq:s-read} needs no margin: its off-target weights
-decay unconditionally with $T$ (proved below), so only dispatch and branches
-require~\ref{ass:s-dm}.
+positive. Let $\Delta_{\min}=\min_t\Delta_t>0$ and $m_{\min}=\min_t m_t>0$.
 \end{assumption}
+
+These positive margins are a property of the \emph{executed} length-$N$
+trajectory; geometrically they define a tube around it inside which the relaxed
+maps agree with the hard one. The relaxed read~\eqref{eq:s-read} needs no margin:
+its off-target weights decay unconditionally with $T$ (proved below), so only
+dispatch and branches require Assumption~\ref{ass:s-dm}.
 
 The three execution modes referenced throughout are summarised in
 Table~\ref{tab:s-modes}.
@@ -166,6 +167,89 @@ Both ports apply the \emph{same} round-to-integer after each soft primitive, so
 trajectories. The float path carries gradients only; a quantity outside the
 $24$-bit range---which the VCS never produces---would forfeit the exactness
 guarantee.
+
+\begin{table*}[p]
+\centering
+\caption{Per-game conformance over the 64 ALE games supported by our \textsc{xitari} configuration. \textbf{Map}: mapper auto-detected by the ports (the set exercises seven of the ten implemented formats: 2K, 4K, F8, F6, E0, FE, F8SC; F4, F6SC and F4SC are implemented but unused here). \textbf{SHA-256}: first 12 hex digits of the ROM image (full hashes ship in the repository manifest; ROMs are not redistributed). \textbf{R}/\textbf{P}: RAM- and pixel-exact against \textsc{xitari} on every evaluated frame (30 NOOP frames for RAM, 60 frames of the fixed action stream for pixels, after the standard 60-NOOP+4-reset boot). All 64 games are exact in both (\checkmark); \textsc{jaxtari} matches \textsc{jutari} game-for-game.}
+\label{tab:games}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lllcc@{}}
+\toprule
+Game & Map & SHA-256 & R & P\\
+\midrule
+air\_raid & 4K & \texttt{6b5a22ec074a} & \checkmark & \checkmark\\
+alien & 4K & \texttt{9cd556c7d7f5} & \checkmark & \checkmark\\
+amidar & 4K & \texttt{da5b760d3ada} & \checkmark & \checkmark\\
+assault & 4K & \texttt{d32ca4dd9e84} & \checkmark & \checkmark\\
+asterix & F8 & \texttt{b6161db0530d} & \checkmark & \checkmark\\
+asteroids & F8 & \texttt{d1a6e808412b} & \checkmark & \checkmark\\
+atlantis & 4K & \texttt{cef4b7b91ea2} & \checkmark & \checkmark\\
+bank\_heist & 4K & \texttt{c32daffdb926} & \checkmark & \checkmark\\
+battle\_zone & F8 & \texttt{efd6f639e724} & \checkmark & \checkmark\\
+beam\_rider & F8 & \texttt{83b30cb52649} & \checkmark & \checkmark\\
+berzerk & 4K & \texttt{cdff0422329d} & \checkmark & \checkmark\\
+bowling & 2K & \texttt{dff44a85289f} & \checkmark & \checkmark\\
+boxing & 2K & \texttt{54760d7e0710} & \checkmark & \checkmark\\
+breakout & 2K & \texttt{376323f051c3} & \checkmark & \checkmark\\
+carnival & 4K & \texttt{80eab759b6bd} & \checkmark & \checkmark\\
+centipede & F8 & \texttt{6def669f54bd} & \checkmark & \checkmark\\
+chopper\_command & 4K & \texttt{055637282252} & \checkmark & \checkmark\\
+crazy\_climber & F8 & \texttt{486ad4cc8956} & \checkmark & \checkmark\\
+defender & 4K & \texttt{e3c7ed7a073f} & \checkmark & \checkmark\\
+demon\_attack & 4K & \texttt{8d72feeb267d} & \checkmark & \checkmark\\
+double\_dunk & F6 & \texttt{c0ea53a91a39} & \checkmark & \checkmark\\
+elevator\_action & F8SC & \texttt{f3b3ad03fd8c} & \checkmark & \checkmark\\
+enduro & 4K & \texttt{ca9bb89755a6} & \checkmark & \checkmark\\
+fishing\_derby & 2K & \texttt{84753bc6ecb4} & \checkmark & \checkmark\\
+freeway & 2K & \texttt{3ef620234b98} & \checkmark & \checkmark\\
+frostbite & 4K & \texttt{cbfdad89480d} & \checkmark & \checkmark\\
+gopher & 4K & \texttt{b4aff03aeb0f} & \checkmark & \checkmark\\
+gravitar & F8 & \texttt{17a19cd7b5ca} & \checkmark & \checkmark\\
+hero & F8 & \texttt{75bd02ec7545} & \checkmark & \checkmark\\
+ice\_hockey & 4K & \texttt{06df1fc568d9} & \checkmark & \checkmark\\
+jamesbond & E0 & \texttt{995253f0d3a2} & \checkmark & \checkmark\\
+journey\_escape & 4K & \texttt{963e2d3da52b} & \checkmark & \checkmark\\
+\bottomrule
+\end{tabular}\hfill\begin{tabular}{@{}lllcc@{}}
+\toprule
+Game & Map & SHA-256 & R & P\\
+\midrule
+kangaroo & F8 & \texttt{a2826eaea3a8} & \checkmark & \checkmark\\
+krull & F8 & \texttt{b40f10d14217} & \checkmark & \checkmark\\
+kung\_fu\_master & F8 & \texttt{3f6501a649ad} & \checkmark & \checkmark\\
+montezuma\_revenge & E0 & \texttt{69d363a74754} & \checkmark & \checkmark\\
+ms\_pacman & F8 & \texttt{dde0b43c5dee} & \checkmark & \checkmark\\
+name\_this\_game & 4K & \texttt{cc219a7246e8} & \checkmark & \checkmark\\
+pacman & 4K & \texttt{58e781b472e0} & \checkmark & \checkmark\\
+phoenix & F8 & \texttt{b01085bc5227} & \checkmark & \checkmark\\
+pitfall & 4K & \texttt{c719b47714d8} & \checkmark & \checkmark\\
+pong & 2K & \texttt{41623e3c2614} & \checkmark & \checkmark\\
+pooyan & 4K & \texttt{ac9abbfc272d} & \checkmark & \checkmark\\
+private\_eye & F8 & \texttt{c8f9ce1b2e80} & \checkmark & \checkmark\\
+qbert & 4K & \texttt{3257221832a7} & \checkmark & \checkmark\\
+riverraid & 4K & \texttt{4c6842b8af64} & \checkmark & \checkmark\\
+road\_runner & F6 & \texttt{4b6c2e68d693} & \checkmark & \checkmark\\
+robotank & FE & \texttt{c186409481e6} & \checkmark & \checkmark\\
+seaquest & 4K & \texttt{fbc29f4678f6} & \checkmark & \checkmark\\
+skiing & 2K & \texttt{804eff5f0196} & \checkmark & \checkmark\\
+solaris & F6 & \texttt{0afa36e5f4d8} & \checkmark & \checkmark\\
+space\_invaders & 4K & \texttt{7224b17462b9} & \checkmark & \checkmark\\
+star\_gunner & 4K & \texttt{3ad501a39280} & \checkmark & \checkmark\\
+surround & 2K & \texttt{c6864f5c9f43} & \checkmark & \checkmark\\
+tennis & 2K & \texttt{5a2052f020bf} & \checkmark & \checkmark\\
+time\_pilot & F8 & \texttt{8ea97e335a2f} & \checkmark & \checkmark\\
+tutankham & E0 & \texttt{403397fe8583} & \checkmark & \checkmark\\
+up\_n\_down & F8 & \texttt{74890a43e591} & \checkmark & \checkmark\\
+venture & 4K & \texttt{1870b0dd6fb1} & \checkmark & \checkmark\\
+video\_pinball & 4K & \texttt{cef82c39bbb0} & \checkmark & \checkmark\\
+videochess & 4K & \texttt{d44f2a115393} & \checkmark & \checkmark\\
+wizard\_of\_wor & 4K & \texttt{d69ee89e65c3} & \checkmark & \checkmark\\
+yars\_revenge & 4K & \texttt{ff777c8d4ea0} & \checkmark & \checkmark\\
+zaxxon & F8 & \texttt{e1c323ce00cc} & \checkmark & \checkmark\\
+\bottomrule
+\end{tabular}
+\end{table*}
 
 \section{Proofs}
 
@@ -268,9 +352,7 @@ where $C$ bounds the value range (bytes $\le255$, branch offsets $\le256$) and
 $\rho$ the number of reads in the step. Over $N$ steps, with Lipschitz constant
 $L\ge1$ for error propagation, the trajectory deviation is at most
 $\frac{L^{N}-1}{L-1}$ times the right-hand side of~\eqref{eq:s-bound}, which is
-$\mathcal{O}(e^{-c/T})$ with $c=\min(\Delta_{\min},1)$. The read term, decaying as
-$e^{-1/T}$, dominates whenever $\Delta_{\min}>1$---the read-limited regime observed
-empirically in the full-relaxation experiments below.
+$\mathcal{O}(e^{-c/T})$ with $c=\min(\Delta_{\min},1)$.
 \end{theorem}
 
 \begin{proof}
@@ -614,93 +696,13 @@ exactness, so the headline 64/64 claim can be audited game by game. Both ports
 pass every game; \textsc{jaxtari} and \textsc{jutari} agree game-for-game, and
 the cross-check between them is part of the test suite.
 
-\begin{table*}[t]
-\centering
-\caption{Per-game conformance over the 64 ALE games supported by our \textsc{xitari} configuration. \textbf{Map}: mapper auto-detected by the ports (the set exercises seven of the ten implemented formats: 2K, 4K, F8, F6, E0, FE, F8SC; F4, F6SC and F4SC are implemented but unused here). \textbf{SHA-256}: first 12 hex digits of the ROM image (full hashes ship in the repository manifest; ROMs are not redistributed). \textbf{R}/\textbf{P}: RAM- and pixel-exact against \textsc{xitari} on every evaluated frame (30 NOOP frames for RAM, 60 frames of the fixed action stream for pixels, after the standard 60-NOOP+4-reset boot). All 64 games are exact in both (\checkmark); \textsc{jaxtari} matches \textsc{jutari} game-for-game.}
-\label{tab:games}
-\small
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}lllcc@{}}
-\toprule
-Game & Map & SHA-256 & R & P\\
-\midrule
-air\_raid & 4K & \texttt{6b5a22ec074a} & \checkmark & \checkmark\\
-alien & 4K & \texttt{9cd556c7d7f5} & \checkmark & \checkmark\\
-amidar & 4K & \texttt{da5b760d3ada} & \checkmark & \checkmark\\
-assault & 4K & \texttt{d32ca4dd9e84} & \checkmark & \checkmark\\
-asterix & F8 & \texttt{b6161db0530d} & \checkmark & \checkmark\\
-asteroids & F8 & \texttt{d1a6e808412b} & \checkmark & \checkmark\\
-atlantis & 4K & \texttt{cef4b7b91ea2} & \checkmark & \checkmark\\
-bank\_heist & 4K & \texttt{c32daffdb926} & \checkmark & \checkmark\\
-battle\_zone & F8 & \texttt{efd6f639e724} & \checkmark & \checkmark\\
-beam\_rider & F8 & \texttt{83b30cb52649} & \checkmark & \checkmark\\
-berzerk & 4K & \texttt{cdff0422329d} & \checkmark & \checkmark\\
-bowling & 2K & \texttt{dff44a85289f} & \checkmark & \checkmark\\
-boxing & 2K & \texttt{54760d7e0710} & \checkmark & \checkmark\\
-breakout & 2K & \texttt{376323f051c3} & \checkmark & \checkmark\\
-carnival & 4K & \texttt{80eab759b6bd} & \checkmark & \checkmark\\
-centipede & F8 & \texttt{6def669f54bd} & \checkmark & \checkmark\\
-chopper\_command & 4K & \texttt{055637282252} & \checkmark & \checkmark\\
-crazy\_climber & F8 & \texttt{486ad4cc8956} & \checkmark & \checkmark\\
-defender & 4K & \texttt{e3c7ed7a073f} & \checkmark & \checkmark\\
-demon\_attack & 4K & \texttt{8d72feeb267d} & \checkmark & \checkmark\\
-double\_dunk & F6 & \texttt{c0ea53a91a39} & \checkmark & \checkmark\\
-elevator\_action & F8SC & \texttt{f3b3ad03fd8c} & \checkmark & \checkmark\\
-enduro & 4K & \texttt{ca9bb89755a6} & \checkmark & \checkmark\\
-fishing\_derby & 2K & \texttt{84753bc6ecb4} & \checkmark & \checkmark\\
-freeway & 2K & \texttt{3ef620234b98} & \checkmark & \checkmark\\
-frostbite & 4K & \texttt{cbfdad89480d} & \checkmark & \checkmark\\
-gopher & 4K & \texttt{b4aff03aeb0f} & \checkmark & \checkmark\\
-gravitar & F8 & \texttt{17a19cd7b5ca} & \checkmark & \checkmark\\
-hero & F8 & \texttt{75bd02ec7545} & \checkmark & \checkmark\\
-ice\_hockey & 4K & \texttt{06df1fc568d9} & \checkmark & \checkmark\\
-jamesbond & E0 & \texttt{995253f0d3a2} & \checkmark & \checkmark\\
-journey\_escape & 4K & \texttt{963e2d3da52b} & \checkmark & \checkmark\\
-\bottomrule
-\end{tabular}\hfill\begin{tabular}{@{}lllcc@{}}
-\toprule
-Game & Map & SHA-256 & R & P\\
-\midrule
-kangaroo & F8 & \texttt{a2826eaea3a8} & \checkmark & \checkmark\\
-krull & F8 & \texttt{b40f10d14217} & \checkmark & \checkmark\\
-kung\_fu\_master & F8 & \texttt{3f6501a649ad} & \checkmark & \checkmark\\
-montezuma\_revenge & E0 & \texttt{69d363a74754} & \checkmark & \checkmark\\
-ms\_pacman & F8 & \texttt{dde0b43c5dee} & \checkmark & \checkmark\\
-name\_this\_game & 4K & \texttt{cc219a7246e8} & \checkmark & \checkmark\\
-pacman & 4K & \texttt{58e781b472e0} & \checkmark & \checkmark\\
-phoenix & F8 & \texttt{b01085bc5227} & \checkmark & \checkmark\\
-pitfall & 4K & \texttt{c719b47714d8} & \checkmark & \checkmark\\
-pong & 2K & \texttt{41623e3c2614} & \checkmark & \checkmark\\
-pooyan & 4K & \texttt{ac9abbfc272d} & \checkmark & \checkmark\\
-private\_eye & F8 & \texttt{c8f9ce1b2e80} & \checkmark & \checkmark\\
-qbert & 4K & \texttt{3257221832a7} & \checkmark & \checkmark\\
-riverraid & 4K & \texttt{4c6842b8af64} & \checkmark & \checkmark\\
-road\_runner & F6 & \texttt{4b6c2e68d693} & \checkmark & \checkmark\\
-robotank & FE & \texttt{c186409481e6} & \checkmark & \checkmark\\
-seaquest & 4K & \texttt{fbc29f4678f6} & \checkmark & \checkmark\\
-skiing & 2K & \texttt{804eff5f0196} & \checkmark & \checkmark\\
-solaris & F6 & \texttt{0afa36e5f4d8} & \checkmark & \checkmark\\
-space\_invaders & 4K & \texttt{7224b17462b9} & \checkmark & \checkmark\\
-star\_gunner & 4K & \texttt{3ad501a39280} & \checkmark & \checkmark\\
-surround & 2K & \texttt{c6864f5c9f43} & \checkmark & \checkmark\\
-tennis & 2K & \texttt{5a2052f020bf} & \checkmark & \checkmark\\
-time\_pilot & F8 & \texttt{8ea97e335a2f} & \checkmark & \checkmark\\
-tutankham & E0 & \texttt{403397fe8583} & \checkmark & \checkmark\\
-up\_n\_down & F8 & \texttt{74890a43e591} & \checkmark & \checkmark\\
-venture & 4K & \texttt{1870b0dd6fb1} & \checkmark & \checkmark\\
-video\_pinball & 4K & \texttt{cef82c39bbb0} & \checkmark & \checkmark\\
-videochess & 4K & \texttt{d44f2a115393} & \checkmark & \checkmark\\
-wizard\_of\_wor & 4K & \texttt{d69ee89e65c3} & \checkmark & \checkmark\\
-yars\_revenge & 4K & \texttt{ff777c8d4ea0} & \checkmark & \checkmark\\
-zaxxon & F8 & \texttt{e1c323ce00cc} & \checkmark & \checkmark\\
-\bottomrule
-\end{tabular}
-\end{table*}
-
 \section{Implementation Effort}
 
 Figure~\ref{fig:timeline} is the evidence behind the effort estimate in the main
-paper. Because every step of the project was committed, the commit timestamps
+paper. All effort numbers are derived from the project's \texttt{git} history,
+which---like the rest of the artifact---will be made public on acceptance of the
+paper, so every figure here can be independently recomputed from the commit log.
+Because every step of the project was committed, the commit timestamps
 record when work actually happened. To turn them into an active-time figure we
 group the commits into sessions, treating a gap of more than three hours between
 consecutive commits as a session boundary. Three hours is well above the

@@ -517,26 +517,30 @@ statement only about ties in a fully soft dispatch.
 \begin{theorem}[Temperature-limit bound]
 \label{thm:limit}
 Consider the fully relaxed emulator that uses the softmax
-dispatch~\eqref{eq:select} and sigmoid branch~\eqref{eq:branch}
-\emph{without} the straight-through correction. Under
-Assumption~\ref{ass:dm}, its one-step map converges to the hard map as
-$T\to0$ and $\alpha\to\infty$, with per-step deviation
+dispatch~\eqref{eq:select}, sigmoid branch~\eqref{eq:branch}, and a
+distance-softmax (temperature-$T$) read \emph{without} the straight-through
+correction. Under Assumption~\ref{ass:dm}, its one-step map converges to the hard
+map as $T\to0$ and $\alpha\to\infty$, with per-step deviation
 \begin{equation}
+\begin{aligned}
 \big\|\Phi^{T}_{\mathrm{S}}(x)-\Phi_{\mathrm{H}}(x)\big\|_\infty
-\;\le\; C\Big[(K-1)\,e^{-\Delta_{\min}/T} + e^{-\alpha m_{\min}}\Big],
+\;\le\; C\Big[&(K-1)\,e^{-\Delta_{\min}/T}\\
+&{}+ e^{-\alpha m_{\min}} + \rho\,e^{-1/T}\Big],
+\end{aligned}
 \label{eq:bound}
 \end{equation}
-where $C$ bounds the value range (bytes $\le255$, branch offsets $\le256$).
-Over $N$ steps, with Lipschitz constant $L\ge1$ for error propagation,
-the trajectory deviation is at most
-$\frac{L^{N}-1}{L-1}\,C[(K-1)e^{-\Delta_{\min}/T}+e^{-\alpha m_{\min}}]
-= \mathcal{O}(e^{-c/T})$ with $c=\Delta_{\min}$.
+where $C$ bounds the value range (bytes $\le255$, branch offsets $\le256$) and
+$\rho$ the number of reads per step. Over $N$ steps, with Lipschitz constant
+$L\ge1$ for error propagation, the trajectory deviation is at most
+$\frac{L^{N}-1}{L-1}$ times~\eqref{eq:bound}, which is $\mathcal{O}(e^{-c/T})$
+with $c=\min(\Delta_{\min},1)$.
 \end{theorem}
 
 \begin{proof}[Proof sketch]
-Bound the non-winning softmax mass by $(K-1)e^{-\Delta_{\min}/T}$ and the
-sigmoid error by $e^{-\alpha m_{\min}}$, then propagate over $N$ steps with the
-Lipschitz constant $L$. The complete proof is in the supplementary material.
+Bound the non-winning softmax mass by $(K-1)e^{-\Delta_{\min}/T}$, the sigmoid
+error by $e^{-\alpha m_{\min}}$, and the temperature-read pull by $e^{-1/T}$ (no
+margin needed), then propagate over $N$ steps with the Lipschitz constant $L$. The
+complete proof is in the supplementary material.
 \end{proof}
 
 \begin{corollary}
