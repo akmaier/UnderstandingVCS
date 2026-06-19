@@ -270,9 +270,10 @@ environment. CuLE ports ALE to CUDA for massive-batch rollouts (up to
 ${\sim}155$M frames/h on a single GPU) but is neither bit-exact nor
 differentiable \citep{dalton2020cule}; object-centric and JAX-native Atari
 environments such as OCAtari and JAXAtari expose structured states and run on
-the GPU \citep{delfosse2023ocatari,delfosse2025jaxatari}, but they are RL
-\emph{environments}, not a gate-level differentiable port validated bit-for-bit
-against the DQN reference. Differentiable simulators are by now standard in
+the GPU \citep{delfosse2023ocatari,delfosse2025jaxatari}, but JAXAtari
+\emph{reimplements} each game's logic in JAX and cannot execute the original ROMs
+at all, and both are RL \emph{environments} rather than a gate-level
+differentiable port validated bit-for-bit against the emulator reference. Differentiable simulators are by now standard in
 continuous physics---Brax back-propagates through rigid-body dynamics in JAX
 \citep{freeman2021brax}---whereas our substrate differentiates a \emph{discrete}
 computer architecture whose hard forward pass is provably exact. We follow the
@@ -298,15 +299,6 @@ execution modes, and nine cartridge mappers (2K, 4K, F8, F6, F4, their
 Superchip variants, and E0) with content-based auto-detection mirroring
 the reference. Table~\ref{tab:ports} summarises the two ports.
 
-This is work that would classically be measured in person-months of expert
-labour. The cycle-level timing of the TIA, the sub-cycle behaviour of the
-RIOT timer, and the boot-time quirks of bank-switched cartridges are
-exactly the kind of detail that resists a clean specification and must be
-recovered by tracing the reference. We carried it out with coding agents
-operating largely autonomously under the conformance gates, committing
-after each step so that the version-control log doubles as a developer
-journal. We quantify the effort in the Results.
-
 \begin{table}[t]
 \centering
 \setlength{\tabcolsep}{4pt}
@@ -315,9 +307,9 @@ journal. We quantify the effort in the Results.
  & \textsc{jutari} & \textsc{jaxtari} \\
 \midrule
 Language / AD            & Julia / Zygote & JAX / XLA \\
-Source lines            & 8{,}427 & 9{,}464 \\
-Test lines              & 6{,}052 & 11{,}788 \\
-Test cases              & ${\sim}1{,}187$ & 803 \\
+Source lines            & 8{,}630 & 10{,}111 \\
+Test lines              & 6{,}052 & 11{,}855 \\
+Test cases              & ${\sim}1{,}183$ & 803 \\
 Opcode bytes            & 189 & 189 \\
 Cartridge mappers       & 9 & 9 \\
 RAM-exact (of 64)       & \textbf{64} & \textbf{64} \\
@@ -578,11 +570,8 @@ boot (60 no-op frames plus four resets) and then a fixed action stream. A game i
 \emph{RAM-exact} if its 128-byte RIOT RAM is identical to \textsc{xitari} on every
 frame, and \emph{pixel-exact} if its full $210\times160$ frame buffer (palette
 indices) is identical on every frame. We report the count of each out of 64. We
-estimate \emph{active} implementation wall-time from the version-control log,
-treating any gap between consecutive commits longer than three hours as a session
-boundary and summing the active sessions, with the two- and four-hour thresholds
-reported as a sensitivity check. We count authored test cases per port and the
-distinct numbered bug investigations recorded in the development log. Finally, we
+estimate \emph{active} implementation wall-time from the version-control log.
+Finally, we
 measure soft-mode throughput as steps per second on a fixed ROM after
 just-in-time warm-up, on a single Apple~M1~Max core (JAX CPU backend,
 Julia~1.12), reporting the median of repeated runs.
@@ -591,9 +580,7 @@ Julia~1.12), reporting the median of repeated runs.
 
 Both ports are bit-for-bit identical to \textsc{xitari} on \emph{all} 64 ALE
 games: 64/64 games are RAM-exact (zero differing bytes across every frame) and
-64/64 are pixel-exact (zero differing pixels across every frame). Reaching full
-pixel exactness required porting \textsc{xitari}'s actual per-colour-clock TIA
-object model rather than approximating its output.
+64/64 are pixel-exact (zero differing pixels across every frame).
 
 \subsection{Effort: Person-Months into Days}
 
@@ -606,15 +593,15 @@ insensitive to the cutoff (106 hours at two hours, 162 at four). The remaining
 ${\sim}80\%$ of the span was idle, mostly travel without reliable internet. The
 work used Anthropic's Claude Opus~4.7 and 4.8 as the primary coding models, with a
 brief autonomous stint by Fable~5. Against this we built two independent emulators
-totalling ${\sim}17{,}900$ lines of source and a comparable volume of tests
-(${\sim}1{,}990$ cases across the two ports), and chased 67 numbered bug
+totalling ${\sim}18{,}700$ lines of source and a comparable volume of tests
+(${\sim}1{,}990$ cases across the two ports), and chased dozens of numbered bug
 investigations to a bit-exact result.
 
 For a baseline, \textsc{xitari} is a C\texttt{++} core of about 46{,}000 lines
 derived from Stella, with sources dating to the 1990s and an \textsc{xitari} fork
 spanning 2014--2017 \citep{xitari,stella}---many person-years of work. Our two
 ports reproduce its behaviour (bit-exact RAM, pixel-exact screens) in about
-17{,}900 lines and 137 active hours. We do not claim a controlled comparison---the
+18{,}700 lines and 137 active hours. We do not claim a controlled comparison---the
 reference is larger in scope (audio, every cartridge type, tooling)---but the
 contrast between a multi-year reference and a six-day reimplementation is the right
 order of magnitude for what agentic tools change.
