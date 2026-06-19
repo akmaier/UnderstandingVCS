@@ -23,7 +23,8 @@ using JuTari.JoystickGames: PitfallRomSettings, EnduroRomSettings,
     AmidarRomSettings, SurroundRomSettings,
     CarnivalRomSettings, PooyanRomSettings,
     BattleZoneRomSettings, MsPacmanRomSettings,
-    PacmanRomSettings, QbertRomSettings, WizardOfWorRomSettings
+    PacmanRomSettings, QbertRomSettings, WizardOfWorRomSettings,
+    PhoenixRomSettings
 # Task #127b Cluster B: terminal/game-over readers. This pipeline AUTO-RESETS
 # on `env.terminal` (matching xitari trace_dump --auto-reset), so registering
 # a real terminal reader is exactly what makes jutari restart the episode at
@@ -86,6 +87,13 @@ const _SETTINGS_BY_BASENAME = Dict{String,Function}(
     "berzerk.bin"         => () -> BerzerkRomSettings(),
     "montezuma_revenge.bin" => () -> MontezumaRevengeRomSettings(),
     "riverraid.bin"       => () -> RiverRaidRomSettings(),
+    # #127b sprint 4: phoenix/pacman/ms_pacman were MIS-classified as Cluster A
+    # render (the f1743/f1771/f1786 first-divs are the death/auto-reset boundary:
+    # trace_dump --auto-reset shows done=true,lives=0 at the frame BEFORE each
+    # first-div, then xitari restarts a fresh episode while jutari kept rendering
+    # the dead one). pacman/ms_pacman were already mapped below (render-only
+    # classes) — their classes now carry a terminal reader. phoenix is added here.
+    "phoenix.bin"         => () -> PhoenixRomSettings(),
 )
 _settings_for_rom(p) = haskey(_SETTINGS_BY_BASENAME, basename(p)) ?
     _SETTINGS_BY_BASENAME[basename(p)]() : GenericRomSettings()

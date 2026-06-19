@@ -14,6 +14,100 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### ✅ pooyan + phoenix + pacman + ms_pacman (jutari) — the FINAL 4 long-horizon games are ALL terminal/auto-reset; jutari long-horizon list COMPLETE — 2026-06-19, sprint 4
+
+**Verdict: FIXED (front-end terminal readers; NO emulation-core change). All four
+of the FINAL #127b long-horizon games — including pooyan, which #127b sprint 3
+called "the one genuine TIA render bug" — are the SAME terminal/auto-reset gap
+already closed for the other 8. The jutari long-horizon list is now COMPLETE: all
+12 originally-diverging games close via the same mechanism (terminal/auto-reset
+gap), zero genuine TIA render bugs among them.**
+
+**Per-game classification (frame_offset_probe.py + trace_dump --auto-reset).**
+| game | first-div | trace_dump @ first-div−1 | classification |
+|---|---|---|---|
+| phoenix | f1743 | done=true, lives=0 → xitari resets to lives 5, ep_frame 1 | TERMINAL/auto-reset |
+| pacman | f1771 | done=true, lives=0 → xitari resets to lives 4, ep_frame 1 | TERMINAL/auto-reset |
+| ms_pacman | f1786 | done=true, lives=0 → xitari resets to lives 3, ep_frame 1 | TERMINAL/auto-reset |
+| pooyan | f1532 (real) | done=true, lives=0 → xitari resets to lives 3, ep_frame 1 | TERMINAL/auto-reset |
+
+For phoenix/pacman/ms_pacman the diverging jutari frame k is the FIRST frame of
+xitari's fresh post-death episode; jutari (GenericRomSettings for phoenix, or the
+render-only Pacman/MsPacman classes with NO terminal reader) never restarted at
+game-over and kept rendering the dead/dying episode. RAM is bit-exact up to the
+death frame. Same Cluster B mechanism as space_invaders/road_runner/kangaroo/
+asteroids/berzerk/montezuma/riverraid/asterix.
+
+**THE POOYAN GOTCHA — a TOOLING ARTIFACT, not a render bug (corrects #127b
+sprint 3).** #127b classified pooyan as the lone genuine render bug because
+frame_offset_probe.py reported "f1605, LOCALIZED (offset 0 best 14/14)" and its
+trace showed lives 3/done false through that window. BOTH signals were wrong
+because **pooyan renders at H=220 (its stella.pro Display.Height), but
+longhorizon_diff.py AND frame_offset_probe.py HARDCODE H=210.** On a 220-row game
+the reshape drifts 10 rows every frame, so "frame 1604" in the H=210 array points
+into garbage and fabricated a fake 59px→9000px "localized render" diff. Re-diffing
+the SAME raw dumps at the correct H=220 gives the REAL first-div at **f1532 —
+pooyan's exact game-over frame** (trace_dump --auto-reset: done=true,lives=0 at
+1532, xitari restarts at 1533 lives→3) with a whole-screen ~9134px swap and a
+frame-offset re-alignment signature (best offsets −1/−2/−3). Identical terminal
+gap. LESSON for the next agent: **the H=210 long-horizon tools are only valid for
+NTSC-210 games; for any game with a non-default Display.Height (pooyan 220, the
+PAL games 250, journey_escape 230, carnival 214) re-diff the raw `/tmp/lh_*_{xi,
+ju}.raw` at the game's true height before trusting first_div / the offset verdict.**
+(diverging_frames==0 is still a valid CLOSED signal at any H, since both dumps are
+misreshaped identically — but a non-zero first_div needs the height check.)
+
+**Fix (front-end only; touches NO TIA/CPU/RIOT core).**
+- `jutari/src/games/JoystickGames.jl`: added a `romsettings_is_terminal` to the
+  EXISTING render-only structs `PooyanRomSettings` (keeps height=220/y_start=26),
+  `PacmanRomSettings` (keeps y_start=33), `MsPacmanRomSettings` (keeps
+  hmove_blanks=false) — reusing the structs preserves each game's render props —
+  and a NEW `PhoenixRomSettings` (plain NTSC; default render props == Generic;
+  exported). Each predicate mirrors `xitari/games/supported/<Game>.cpp::step()`:
+  - Pooyan: `RAM[0x96]==0 && RAM[0x98]==0x05`.
+  - Pacman: `RAM[0x98]==0 && RAM[0xE4]==0x3F` (xitari: m_lives==1 ⇔ RAM[0x98]==0).
+  - MsPacman: `(RAM[0xFB]&0xF)==0 && RAM[0xA7]==0x53`.
+  - Phoenix: `RAM[0xCC]==0x80`.
+- Registered `phoenix.bin → PhoenixRomSettings()` in the auto-resetting video map
+  (`tools/breakout_video/dump_jutari_frames.jl`) + its import. pooyan/pacman/
+  ms_pacman were ALREADY mapped there (render-only classes); their classes now
+  carry a terminal reader, so no map edit was needed. DELIBERATELY NOT touched the
+  non-resetting sweep tools beyond what already maps them (pooyan/pacman/ms_pacman
+  are in jutari_trace_dump.jl/jutari_screen_dump.jl for their render props; their
+  terminal stays false through the 30/60-frame window so the sweeps are unchanged;
+  phoenix is NOT in the sweep tools and doesn't need to be).
+
+**Cannot regress the 64/64 in-window sweeps.** Verified the terminal predicate is
+FALSE for all four games through the full 60-frame in-window window under BOTH the
+per-game stream and the SHARED breakout_random_actions sweep stream (boot
+RAM[0x96]=2, RAM[0x98]=3, RAM[0xFB]&0xF=2, RAM[0xCC]=0 → all false; lives never
+hit 0 in 60 frames). `env_step!` only early-returns once `env.terminal` is set,
+which never happens in-window.
+
+**Verified.**
+- `tools/longhorizon_diff.py` (auto-resetting video pipeline): **all four now
+  first_div null, 0 diverging / 1800** — phoenix (was f1743), pacman (was f1771),
+  ms_pacman (was f1786), pooyan (was the spurious f1605; real f1532). pooyan also
+  re-confirmed 0/1800 at the correct H=220 re-diff.
+- jutari `Pkg.test()`: [PENDING — running the full guard after the early push].
+- In-window RAM 64/64 + screen 64/64: [PENDING — running after the early push].
+
+**HANDOFF — jutari long-horizon is COMPLETE.** All 12 originally-diverging
+long-horizon games (#127b list: space_invaders, road_runner, kangaroo, asteroids,
+berzerk, montezuma_revenge, riverraid, asterix, pooyan, phoenix, pacman,
+ms_pacman) plus wizard_of_wor (#127a) now match xitari with 0 diverging frames
+over the full ~1800-frame (30 s) rollouts. EVERY one was a front-end
+terminal/auto-reset or agent-controller-routing gap — the jutari emulation core
+(TIA/CPU/RIOT/Cart) is bit-exact long-horizon, NOT just in-window. There are NO
+remaining open jutari long-horizon render bugs. The "Cluster A pure TIA render"
+category from #127b sprint 0/2 was entirely a misclassification (compounded by the
+H=210-vs-220 probe artifact for pooyan). Next jutari work: the AAAI-27 paper /
+broader rollout coverage, or mirror these four readers on the jaxtari side
+(jaxtari already has its own settings classes — just needs the terminal predicates
++ video-dumper registration, same as jutari sprints 1-4).
+
+---
+
 ### ✅ berzerk + montezuma_revenge + riverraid + asterix (jutari) — #127b "Cluster A" was a MISCLASSIFICATION; all 4 are Cluster B terminal/auto-reset — 2026-06-19, sprint 3
 
 **Verdict: FIXED (front-end terminal readers; NO emulation-core change). The

@@ -31,7 +31,8 @@ export PitfallRomSettings, EnduroRomSettings,
        AmidarRomSettings, SurroundRomSettings,
        CarnivalRomSettings, PooyanRomSettings,
        BattleZoneRomSettings, MsPacmanRomSettings,
-       PacmanRomSettings, QbertRomSettings, WizardOfWorRomSettings
+       PacmanRomSettings, QbertRomSettings, WizardOfWorRomSettings,
+       PhoenixRomSettings
 
 # --------------------------------------------------------------------------- #
 # Task #100 follow-up: 12 joystick games whose only conformance-relevant
@@ -136,6 +137,24 @@ romsettings_y_start(::CarnivalRomSettings)       = 26        # stella.pro Displa
 struct PooyanRomSettings <: RomSettings end
 romsettings_screen_height(::PooyanRomSettings)   = 220       # stella.pro Display.Height
 romsettings_y_start(::PooyanRomSettings)         = 26        # stella.pro Display.YStart
+# Pooyan terminal — xitari/games/supported/Pooyan.cpp::step():
+#   lives_byte = readRam(0x96)
+#   some_byte  = readRam(0x98)
+#   terminal = (lives_byte == 0x0 && some_byte == 0x05)
+# Reuses the existing render-only struct so Pooyan keeps height=220/y_start=26.
+# #127b flagged pooyan as "the one genuine TIA render bug" (f1605, LOCALIZED) but
+# that verdict was a TOOLING ARTIFACT: longhorizon_diff.py / frame_offset_probe.py
+# hardcode H=210, while pooyan renders at H=220 (its Display.Height), so the
+# misreshape drifted 10 rows/frame and fabricated a fake f1605 localized diff. At
+# the correct H=220 the REAL first-div is f1532 — pooyan's game-over frame
+# (trace_dump --auto-reset: done=true, lives=0 at 1532, then xitari restarts at
+# 1533 lives→3) — a whole-screen terminal/auto-reset gap, identical mechanism to
+# the other three. Boot RAM[0x96]=2 → terminal false through the in-window sweep. ✓
+function romsettings_is_terminal(::PooyanRomSettings, console::Console)
+    lives_byte = _jg_ram(console, 0x96)
+    some_byte  = _jg_ram(console, 0x98)
+    return lives_byte == 0x0 && some_byte == 0x05
+end
 
 # battle_zone + ms_pacman are the only two ROMs in the 64-game set whose
 # stella.pro entry sets `Emulation.HmoveBlanks "NO"` (default is "YES"). With
@@ -147,6 +166,20 @@ struct BattleZoneRomSettings <: RomSettings end
 romsettings_hmove_blanks(::BattleZoneRomSettings) = false
 struct MsPacmanRomSettings <: RomSettings end
 romsettings_hmove_blanks(::MsPacmanRomSettings)   = false
+# Ms. Pac-Man terminal — xitari/games/supported/MsPacman.cpp::step():
+#   lives_byte  = readRam(0xFB) & 0xF
+#   death_timer = readRam(0xA7)
+#   terminal = (lives_byte == 0 && death_timer == 0x53)
+# Reuses the existing render-only struct so MsPacman keeps hmove_blanks=false.
+# The long-horizon run dies at action-frame 1785 (lives_byte→0, death_timer→0x53);
+# xitari auto-resets (lives→3) while jutari (no terminal reader → false) kept
+# rendering the dead episode — the f1786 "low-severity cosmetic tail" #127b
+# MISCLASSIFIED as Cluster A render. Boot RAM[0xFB]&0xF=2 → terminal false. ✓
+function romsettings_is_terminal(::MsPacmanRomSettings, console::Console)
+    lives_byte  = _jg_ram(console, 0xFB) & 0xF
+    death_timer = _jg_ram(console, 0xA7)
+    return lives_byte == 0 && death_timer == 0x53
+end
 
 # Task #113: three more games with an EXPLICIT non-default `Display.YStart` in
 # stella.pro (default 34). jutari rendered from YStart=34, vertically OFFSETTING
@@ -160,8 +193,39 @@ romsettings_hmove_blanks(::MsPacmanRomSettings)   = false
 romsettings_y_start(::UpNDownRomSettings) = 30   # stella.pro Display.YStart
 struct PacmanRomSettings <: RomSettings end
 romsettings_y_start(::PacmanRomSettings)  = 33   # stella.pro Display.YStart
+# Pac-Man terminal — xitari/games/supported/Pacman.cpp::step():
+#   m_lives          = readRam(0x98) + 1
+#   animationCounter = readRam(0xE4)
+#   terminal = (m_lives == 1 && animationCounter == 0x3F)   (m_lives==1 ⇔ RAM[0x98]==0)
+# Reuses the existing render-only struct so Pacman keeps y_start=33.
+# The long-horizon run dies at action-frame 1770 (RAM[0x98]→0, RAM[0xE4]→0x3F);
+# xitari auto-resets (lives→4) while jutari (no terminal reader → false) kept
+# rendering the dead episode — the f1771 "low-severity cosmetic tail" #127b
+# MISCLASSIFIED as Cluster A render. Boot RAM[0x98]=3 → terminal false. ✓
+function romsettings_is_terminal(::PacmanRomSettings, console::Console)
+    lives_byte        = _jg_ram(console, 0x98)
+    animation_counter = _jg_ram(console, 0xE4)
+    return lives_byte == 0 && animation_counter == 0x3F
+end
 struct QbertRomSettings <: RomSettings end
 romsettings_y_start(::QbertRomSettings)   = 40   # stella.pro Display.YStart
+
+# Phoenix terminal — xitari/games/supported/Phoenix.cpp::step():
+#   state_byte = readRam(0xCC)
+#   terminal = (state_byte == 0x80)
+#   m_lives  = readRam(0xCB) & 0x7   (starts at 5)
+# Phoenix has no stella.pro render override (default NTSC Height=210/YStart=34/
+# HmoveBlanks=yes) and no getStartingActions — so this render-only struct behaves
+# identically to GenericRomSettings except for the terminal reader. The
+# long-horizon run dies at action-frame 1742 (RAM[0xCC]→0x80); xitari auto-resets
+# (lives→5) while jutari (Generic → never terminal) kept rendering the dead
+# episode — the f1743 whole-screen swap #127b flagged "Cluster A render
+# (medium confidence)" is this terminal/auto-reset gap. Boot RAM[0xCC]=0 →
+# terminal false through the in-window sweep. ✓
+struct PhoenixRomSettings <: RomSettings end
+function romsettings_is_terminal(::PhoenixRomSettings, console::Console)
+    return _jg_ram(console, 0xCC) == 0x80
+end
 
 # Task #103 (amidar): amidar's stella.pro entry overrides BOTH console
 # difficulty switches to "A" (Console.LeftDifficulty/RightDifficulty = "A"),
