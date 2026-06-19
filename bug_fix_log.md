@@ -14,6 +14,54 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🟢 Cluster B (jaxtari) — VERIFY + close the video-pipeline registration gap — 2026-06-19, sprint 2, Claude Opus 4.8
+
+**Scope.** Complete the verification of the sprint-1 jaxtari Cluster B mirror
+(origin/main `32623c0`: SpaceInvaders/Asteroids settings registered +
+RoadRunner/Kangaroo new classes in `more_games.py`, all four registered in
+`tools/jaxtari_dump.py`). That commit was only UNIT-verified (22 tests); PXC2 +
+the per-game long-horizon cross-check were left pending.
+
+**Gap found + fixed (front-end only, NO emulation core).** The sprint-1 commit
+registered the four Cluster B basenames in `tools/jaxtari_dump.py` (the
+sweep/RAM dumper) but NOT in `tools/breakout_video/dump_jaxtari_frames.py` —
+the *comparison-video* pipeline, which is the jaxtari twin of jutari's
+`dump_jutari_frames.jl` (jutari registered Cluster B in BOTH dumpers). So the
+auto-resetting video dumper still fell back to a bare `StellaEnvironment`
+(`game_over()` → `GenericRomSettings.is_terminal` → always `False`) and would
+NEVER restart these four games at game-over while xitari's
+`trace_dump --auto-reset` does — i.e. the user-visible long-horizon divergence
+was NOT actually closed on the jaxtari render side. Registered all four
+(`space_invaders`/`asteroids`/`road_runner`/`kangaroo`) in
+`dump_jaxtari_frames.py::_SETTINGS_BY_BASENAME` (asteroids included, matching
+the jutari video dumper — this dumper auto-resets on the boot/attract game-over
+byte, mirroring xitari's attract stall). Import + map resolution sanity-checked:
+all four now resolve to their real settings class.
+
+**Verification status.**
+- ✅ Unit: `tests/test_p6c_more_games.py` **22 passed** (single-process,
+  `-o addopts=""`), incl. RoadRunner/Kangaroo score/lives/terminal + the
+  RomSettings protocol.
+- ✅ Import sanity: Cluster B classes import; `jaxtari_dump.py` AND
+  `dump_jaxtari_frames.py` both resolve all four basenames to the real class
+  (was `Generic`).
+- ⏳ PXC2 (`tests/test_pxc2_jaxtari_vs_jutari.py`, `-o addopts=""`): launched —
+  the headline jaxtari≡jutari per-frame-RAM invariant (incl. the
+  `space_invaders_noop_10` case, the only Cluster B game with committed
+  fixtures). jaxtari is ~205× slower so this runs long; result to be recorded.
+- ⏳ Per-game jaxtari terminal cross-check (NOOP, 60-frame in-window window for
+  SI/RR/Kangaroo non-terminal; asteroids terminal-at-boot like jutari) —
+  launched.
+- **CANNOT regress the in-window 64/64 sweeps**: settings-only, never touches
+  the emulation core; the short NOOP/fixed streams never reach game-over so
+  `is_terminal` is never `True` during the sweep window.
+
+**Next jaxtari open point:** record the PXC2 + per-game results above; then
+Cluster A (#127b) — mirror the berzerk COLUBK write-sampling TIA fix into
+`jaxtari/jaxtari/tia/` ONCE it lands on origin/main (it has not yet). Do NOT
+re-touch wizard_of_wor.
+
+---
 ### ✅ space_invaders + road_runner + kangaroo + asteroids (jutari) — Cluster B terminal/auto-reset CLOSED — 2026-06-19, sprint 0
 
 **Root cause (#127b Cluster B).** All four games fell back to

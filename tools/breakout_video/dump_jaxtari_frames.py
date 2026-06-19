@@ -32,6 +32,18 @@ from jaxtari.games.joystick_starts import (
     JourneyEscapeRomSettings, PrivateEyeRomSettings, SkiingRomSettings,
     UpNDownRomSettings, YarsRevengeRomSettings,
 )
+# Cluster B (#127b) — long-horizon terminal/auto-reset. Without a per-game
+# RomSettings with a real game-over reader these ROMs fall back to bare
+# StellaEnvironment (is_terminal always False), so this auto-resetting video
+# pipeline NEVER restarts at game-over while xitari's trace_dump --auto-reset
+# does, leaving the dead/old episode rendering (the user-visible long-horizon
+# divergence: space_invaders f1092 background flash, road_runner f765,
+# kangaroo f1720, asteroids). Mirror of jutari tools/breakout_video/
+# dump_jutari_frames.jl (which registers all four here).
+from jaxtari.games.space_invaders import SpaceInvadersRomSettings
+from jaxtari.games.more_games import (
+    AsteroidsRomSettings, RoadRunnerRomSettings, KangarooRomSettings,
+)
 
 # ROM basename → RomSettings constructor. Defaults to bare StellaEnvironment
 # (no per-game scoring/termination) for unrecognised ROMs — same convention
@@ -58,6 +70,15 @@ _SETTINGS_BY_BASENAME = {
     "skiing.bin":          SkiingRomSettings,
     "up_n_down.bin":       UpNDownRomSettings,
     "yars_revenge.bin":    YarsRevengeRomSettings,
+    # Cluster B (#127b) — terminal/auto-reset so the auto-resetting video
+    # pipeline restarts at game-over (mirror of dump_jutari_frames.jl). All
+    # four registered here (asteroids included: this dumper auto-resets every
+    # iteration on its boot/attract-mode game-over byte, matching xitari's
+    # trace_dump --auto-reset attract stall — see jutari note).
+    "space_invaders.bin":  SpaceInvadersRomSettings,
+    "asteroids.bin":       AsteroidsRomSettings,
+    "road_runner.bin":     RoadRunnerRomSettings,
+    "kangaroo.bin":        KangarooRomSettings,
 }
 
 
