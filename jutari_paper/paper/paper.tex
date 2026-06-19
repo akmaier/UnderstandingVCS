@@ -671,9 +671,13 @@ sampler over the position (a sub-pixel bilinear kernel, as in spatial-transforme
 networks~\citep{jaderberg2015spatial}) restores it: the per-direction map lights
 exactly the cannon edges that move (Figure~\ref{fig:xai}b), and the inverse
 recovers the control mapping---push \textsc{right}, not up/down
-(Figure~\ref{fig:xai}d). The result is identical for SOFT-STE and the soft relaxed
-variant (the leaky variant is studied in the supplement), and all of it can be
-\emph{verified} against the known wiring---which is the whole point.
+(Figure~\ref{fig:xai}d), identically for SOFT-STE and the soft relaxed variant
+(the leaky variant is in the supplement). Because the wiring is known these
+gradients can be \emph{scored}: the sampler puts $100\%$ of its
+$\partial$screen$/\partial\textsc{right}$ mass on the cannon and the naive map
+none ($\equiv0$), and the inverse Jacobian is $+35.7/{-}35.7$ for
+\textsc{right}/\textsc{left} and $0$ up/down (axis and sign right), the naive
+gradient silent.
 
 \section{Discussion}
 
@@ -690,17 +694,16 @@ small $T$ and large $\alpha$. The supplement collects the full proofs, the
 numerical relaxation analyses ($\alpha$/$T$ gradient maps and the
 forward-bit-exactness boundaries), and the beam-timed comparison videos.
 
-Building the ports also revealed a bug in the reference. Driving the ports to
-64/64 pixel exactness surfaced a latent non-determinism in \textsc{xitari}
-itself. One title's attract-mode demo reads \emph{uninitialised} on-cartridge
-Superchip RAM as a cheap random-number source. \textsc{xitari} seeds that RAM
-from \texttt{time(NULL)} and ignores its own seed parameter, so the title
-renders differently on every run despite a pinned seed. This divergence is
-invisible to RAM-state checks and shows up only on screen. We reach full
-conformance by pinning the seed deterministically in both emulators (also making
-the suite reproducible), and have prepared an upstream fix---a bit-exact
-re-implementation is useful in both directions: the reference validates the port,
-and the port audits the reference for reproducibility bugs.
+Building the ports also revealed a bug in the reference. Driving them to 64/64
+pixel exactness surfaced a latent non-determinism in \textsc{xitari} itself: one
+title's attract-mode demo reads \emph{uninitialised} on-cartridge Superchip RAM as
+a random-number source, and \textsc{xitari} seeds that RAM from
+\texttt{time(NULL)} while ignoring its own seed parameter, so the title renders
+differently on every run despite a pinned seed---a divergence invisible to RAM
+checks and visible only on screen. We reach full conformance by pinning the seed
+deterministically in both emulators and have prepared an upstream fix: a bit-exact
+re-implementation is useful in both directions, the reference validating the port
+and the port auditing the reference.
 
 The hardest divergences were all in timing---the RIOT timer's reset state, the
 TIA's sub-cycle object rendering, and the boot-time format probe that seeds
@@ -726,13 +729,11 @@ the program this foundation opens.
 We set out to give explainable AI a study object that escapes the
 known-but-trivial / complex-but-unknown dichotomy: a genuine, complex
 information-processing system that is at once fully specified and fully
-differentiable. We built it twice, in Julia and JAX, validated both ports
-bit-for-bit against the reference on all 64 supported Atari games, and proved the
-forward pass bit-exact while exposing \emph{surrogate} gradients where bit logic
-has none. An attribution can now---to our knowledge, for the first time on a system
-of this complexity---be scored against the truth, and we hope the community takes
-up the substrate as a testbed for evaluating and developing XAI methods against a
-known mechanism.
+differentiable. We built it twice and validated both ports bit-for-bit against the
+reference, with a forward pass proven bit-exact yet exposing \emph{surrogate}
+gradients where bit logic has none. An attribution can now---to our knowledge, for
+the first time on a system of this complexity---be scored against the truth: the
+XAI testbed we hope the community takes up.
 
 \section*{Ethical Statement}
 This work involves no human subjects, personal data, or sensitive information. The
