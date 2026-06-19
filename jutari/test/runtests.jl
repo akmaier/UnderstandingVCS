@@ -5966,3 +5966,106 @@ end
     @test JuTari.RomSettingsModule.romsettings_agent_player(
               JuTari.JoystickGames.AsterixRomSettings()) == 0
 end
+
+# -------------------------------------------------------------------------- #
+# Cluster B terminal/auto-reset readers (task #127b)
+# -------------------------------------------------------------------------- #
+# space_invaders / road_runner / kangaroo / asteroids fell back to
+# GenericRomSettings (terminal always false), so the auto-resetting
+# comparison-video pipeline never restarted the episode at game-over and
+# jutari kept rendering the dead episode while xitari/ALE started a fresh
+# game (the long-horizon divergences). Each new TerminalGames reader is a
+# mechanistic mirror of the matching xitari ALE settings. These tests pin:
+#  (a) the terminal RAM predicate matches xitari exactly (synthetic RAM), and
+#  (b) the boot-window behaviour: SI/RR/Kangaroo are NON-terminal through the
+#      sweep window (so they are SAFE to register in the non-resetting sweep
+#      tool), while asteroids IS terminal at boot (attract RAM[0x3C]=0) — which
+#      is why it is registered only in the auto-resetting video pipeline.
+@testset "Cluster B terminal readers (task #127b)" begin
+    using JuTari.TerminalGames: SpaceInvadersRomSettings, RoadRunnerRomSettings,
+        KangarooRomSettings, AsteroidsRomSettings
+    using JuTari.RomSettingsModule: romsettings_is_terminal
+
+    # Resolve a ROM from either xitari/roms or the (git-ignored) sweep roms dir.
+    function _resolve_rom(stem)
+        for p in (joinpath(@__DIR__, "..", "..", "xitari", "roms", "$stem.bin"),
+                  joinpath(@__DIR__, "..", "..", "tools", "rom_sweep", "roms", "$stem.bin"))
+            isfile(p) && return p
+        end
+        return nothing
+    end
+
+    @inline _setram!(env, addr, val) =
+        (env.console.bus.ram[(Int(addr) & 0x7F) + 1] = UInt8(val); nothing)
+
+    # (a) Synthetic-RAM terminal-predicate unit tests (no ROM needed) — use a
+    # tiny frame-loop ROM just to construct a Console whose RAM we poke.
+    @testset "terminal predicates mirror xitari (synthetic RAM)" begin
+        mkenv(s) = (e = JuTari.Env.StellaEnvironment(_frame_loop_rom(), s);
+                    JuTari.Env.env_reset!(e); e)
+
+        # SpaceInvaders: terminal = (RAM[0x98]&0x80)!=0 || RAM[0xC9]==0
+        e = mkenv(SpaceInvadersRomSettings())
+        _setram!(e, 0xC9, 3); _setram!(e, 0x98, 0x00)
+        @test romsettings_is_terminal(e.settings, e.console) == false
+        _setram!(e, 0x98, 0x80)                         # game-over bit
+        @test romsettings_is_terminal(e.settings, e.console) == true
+        _setram!(e, 0x98, 0x00); _setram!(e, 0xC9, 0)   # lives==0
+        @test romsettings_is_terminal(e.settings, e.console) == true
+
+        # RoadRunner: terminal = (RAM[0xC4]&7)==0 && (RAM[0xB9]!=0 || RAM[0xBD]!=0)
+        e = mkenv(RoadRunnerRomSettings())
+        _setram!(e, 0xC4, 2); _setram!(e, 0xB9, 0); _setram!(e, 0xBD, 0)
+        @test romsettings_is_terminal(e.settings, e.console) == false
+        _setram!(e, 0xC4, 0)                            # lives_byte==0, but velocities 0
+        @test romsettings_is_terminal(e.settings, e.console) == false
+        _setram!(e, 0xB9, 5)                            # + a death velocity
+        @test romsettings_is_terminal(e.settings, e.console) == true
+
+        # Kangaroo: terminal = RAM[0xAD] == 0xFF
+        e = mkenv(KangarooRomSettings())
+        _setram!(e, 0xAD, 2)
+        @test romsettings_is_terminal(e.settings, e.console) == false
+        _setram!(e, 0xAD, 0xFF)
+        @test romsettings_is_terminal(e.settings, e.console) == true
+
+        # Asteroids: terminal = high-nibble(RAM[0x3C]) == 0
+        e = mkenv(AsteroidsRomSettings())
+        _setram!(e, 0x3C, 0x20)                         # 2 lives (high nibble)
+        @test romsettings_is_terminal(e.settings, e.console) == false
+        _setram!(e, 0x3C, 0x00)                         # 0 lives
+        @test romsettings_is_terminal(e.settings, e.console) == true
+    end
+
+    # (b) Real-ROM boot-window behaviour (skips gracefully if a ROM is absent).
+    @testset "boot-window terminal behaviour" begin
+        for (stem, mk, boot_terminal) in (
+                ("space_invaders", SpaceInvadersRomSettings, false),
+                ("road_runner",    RoadRunnerRomSettings,    false),
+                ("kangaroo",       KangarooRomSettings,      false),
+                ("asteroids",      AsteroidsRomSettings,     true))
+            p = _resolve_rom(stem)
+            if p === nothing
+                @info "ROM missing — skipping boot-window terminal test" stem
+                continue
+            end
+            env = JuTari.Env.StellaEnvironment(read(p), mk())
+            JuTari.Env.env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)
+            # NOTE: env_reset! clears env.terminal to false unconditionally;
+            # the predicate is what the (auto-resetting) video pipeline reads
+            # to decide a restart, so assert the predicate directly here.
+            @test romsettings_is_terminal(env.settings, env.console) == boot_terminal
+            if !boot_terminal
+                # SI/RR/Kangaroo must stay non-terminal across the 60-frame
+                # NOOP window so they are safe in the non-resetting sweep tool
+                # (which would freeze on env_step!'s `env.terminal && return 0`).
+                stayed = true
+                for _ in 1:60
+                    JuTari.Env.env_step!(env, Int(NOOP))
+                    env.terminal && (stayed = false; break)
+                end
+                @test stayed == true
+            end
+        end
+    end
+end

@@ -14,6 +14,64 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### ✅ space_invaders + road_runner + kangaroo + asteroids (jutari) — Cluster B terminal/auto-reset CLOSED — 2026-06-19, sprint 0
+
+**Root cause (#127b Cluster B).** All four games fell back to
+`GenericRomSettings` (terminal always false) in BOTH dump-tool basename maps
+(`tools/jutari_trace_dump.jl`, `tools/breakout_video/dump_jutari_frames.jl`).
+The comparison-video pipeline auto-resets on `env.terminal` to mirror xitari's
+`trace_dump --auto-reset` (which checks `ale.gameOver()` before each `act`), so
+with no real game-over reader jutari never restarted the episode at game-over
+and kept rendering the dead/old episode while xitari/ALE started a fresh game.
+Confirmed NOT a TIA/emulation bug: all four are RAM-bit-exact through game-over.
+
+**Fix (front-end only — touches NO emulation core).** New module
+`jutari/src/games/TerminalGames.jl` with four `RomSettings` subtypes, each a
+mechanistic mirror of the matching `xitari/games/supported/<Game>.cpp::step()`
+(same RAM addresses, same terminal predicate, same `getDecimalScore` BCD decode):
+- `SpaceInvadersRomSettings`: lives=RAM[0xC9]; terminal=`(RAM[0x98]&0x80)!=0 || lives==0`.
+  (jaxtari's existing class had BOTH the score addresses AND the terminal
+  predicate wrong — it omitted the 0x98 game-over bit and used 0xE8/0xE9 instead
+  of getDecimalScore(0xE8,0xE6). This jutari port follows xitari, not jaxtari.)
+- `RoadRunnerRomSettings`: lives_byte=RAM[0xC4]&7; terminal=`lives_byte==0 && (RAM[0xB9]!=0 || RAM[0xBD]!=0)`.
+- `KangarooRomSettings`: terminal=`RAM[0xAD]==0xFF`.
+- `AsteroidsRomSettings`: lives=high-nibble(RAM[0x3C]); terminal=`lives==0`.
+Exported from `JuTari.jl`; registered in both dump maps.
+
+**The asteroids subtlety (and why it can't regress the sweeps).** Asteroids'
+game-over byte RAM[0x3C]=0 during the attract sequence at boot → terminal=true
+at frame 0. xitari sees this too: its trace stalls in attract, auto-resetting
+every iteration (longhorizon ju_tail==xi_tail==299 — they now MATCH; before,
+jutari ran on). But the NON-auto-resetting sweep tool (`jutari_trace_dump.jl`)
+would FREEZE on asteroids because `env_step!` early-returns `0` once
+`env.terminal` is set. So asteroids is registered ONLY in the auto-resetting
+video pipeline (`dump_jutari_frames.jl`), DELIBERATELY OMITTED from the sweep
+tool. The other three stay terminal=false through the whole 60-frame NOOP window
+(verified), so registering them in the sweep tool is byte-identical to the
+Generic run.
+
+**Verified (all gates green).**
+- jutari `Pkg.test()`: GREEN, incl. new `Cluster B terminal readers (task #127b)`
+  testset (17/17: synthetic-RAM predicate unit tests + real-ROM boot-window
+  behaviour — SI/RR/Kangaroo non-terminal through the window, asteroids terminal
+  at boot).
+- In-window RAM sweep: **64/64 bit-exact** (all maxdiff=0; cluster B rows all 0).
+- In-window screen sweep (60 frames): **64/64 pixel-exact**.
+- `tools/longhorizon_diff.py`: space_invaders **first_div null, 0 diverging /
+  1200** (was f1092 — this is the user-reported "background flash"); road_runner
+  **0 div / 900** (was f765); kangaroo **0 div / 1850, no jutari frozen tail**
+  (was f1720, ju_tail 81); asteroids **0 div / 300** with ju_tail==xi_tail==299
+  (now matches xitari's attract stall).
+
+**Next jutari open point:** Cluster B is exhausted. Move to **Cluster A — pure
+TIA render** (RAM bit-exact, pixels only, higher risk — touches the 64/64 screen
+backbone). Best entry per #127b is **berzerk** (f581: whole-screen COLUBK swap,
+xitari bg lum 0 vs jutari 0x88 — a COLUBK write-sampling / VBLANK-vs-colour latch
+timing bug in `jutari/src/tia/TIA.jl`), then montezuma_revenge / riverraid /
+asterix / pooyan / phoenix / pacman / ms_pacman.
+
+---
+
 ### 🔬 Task #127 — LONG-HORIZON conformance is window-limited: ~13 games diverge past the sweep window (2026-06-19, Claude Opus 4.8, user-reported)
 
 **The "64/64 bit-exact" claim holds only INSIDE the conformance window** — the

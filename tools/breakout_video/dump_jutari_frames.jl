@@ -24,6 +24,15 @@ using JuTari.JoystickGames: PitfallRomSettings, EnduroRomSettings,
     CarnivalRomSettings, PooyanRomSettings,
     BattleZoneRomSettings, MsPacmanRomSettings,
     PacmanRomSettings, QbertRomSettings, WizardOfWorRomSettings
+# Task #127b Cluster B: terminal/game-over readers. This pipeline AUTO-RESETS
+# on `env.terminal` (matching xitari trace_dump --auto-reset), so registering
+# a real terminal reader is exactly what makes jutari restart the episode at
+# game-over instead of freezing on / re-rendering the dead episode. All four
+# games are RAM-bit-exact through game-over (#127b); the only divergence was
+# the missing auto-reset. (asteroids IS registered here — its attract-mode
+# terminal-at-boot matches xitari's own behaviour, which stalls in attract.)
+using JuTari.TerminalGames: SpaceInvadersRomSettings, RoadRunnerRomSettings,
+    KangarooRomSettings, AsteroidsRomSettings
 using JuTari.RomSettingsModule: GenericRomSettings
 
 # ROM basename → RomSettings constructor (mirror of
@@ -63,6 +72,11 @@ const _SETTINGS_BY_BASENAME = Dict{String,Function}(
     "pacman.bin"          => () -> PacmanRomSettings(),
     "qbert.bin"           => () -> QbertRomSettings(),
     "wizard_of_wor.bin"   => () -> WizardOfWorRomSettings(),
+    # Cluster B terminal readers (#127b) — auto-reset on game-over here.
+    "space_invaders.bin"  => () -> SpaceInvadersRomSettings(),
+    "road_runner.bin"     => () -> RoadRunnerRomSettings(),
+    "kangaroo.bin"        => () -> KangarooRomSettings(),
+    "asteroids.bin"       => () -> AsteroidsRomSettings(),
 )
 _settings_for_rom(p) = haskey(_SETTINGS_BY_BASENAME, basename(p)) ?
     _SETTINGS_BY_BASENAME[basename(p)]() : GenericRomSettings()

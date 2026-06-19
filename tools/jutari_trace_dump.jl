@@ -35,6 +35,18 @@ using JuTari.JoystickGames: PitfallRomSettings, EnduroRomSettings,
     CarnivalRomSettings, PooyanRomSettings,
     BattleZoneRomSettings, MsPacmanRomSettings,
     PacmanRomSettings, QbertRomSettings, WizardOfWorRomSettings
+# Task #127b Cluster B: terminal/game-over readers (mirror xitari ALE
+# settings) so the auto-resetting comparison-video pipeline aligns with
+# xitari. SAFE in this NON-auto-resetting sweep tool: all three stay
+# terminal=false through the 30/60-frame NOOP window (verified), so they
+# never trip `env_step!`'s `env.terminal && return 0` short-circuit and the
+# RAM/screen output is byte-identical to the GenericRomSettings run.
+# asteroids is DELIBERATELY NOT registered here: its game-over byte
+# (RAM[0x3C]) is 0 during the attract sequence at boot → terminal=true at
+# frame 0, which WOULD freeze this non-resetting tool. It is registered only
+# in the auto-resetting video pipeline (dump_jutari_frames.jl).
+using JuTari.TerminalGames: SpaceInvadersRomSettings, RoadRunnerRomSettings,
+    KangarooRomSettings
 
 # Per-ROM RomSettings autodetection — mirror of jaxtari `tools/check_trace.py`.
 # Activates the dump-pot model + paddle-action handling for paddle
@@ -70,6 +82,11 @@ const _SETTINGS_BY_BASENAME = Dict{String,Function}(
     "pacman.bin"          => () -> PacmanRomSettings(),
     "qbert.bin"           => () -> QbertRomSettings(),
     "wizard_of_wor.bin"   => () -> WizardOfWorRomSettings(),
+    # Cluster B terminal readers (safe: non-terminal through the sweep window)
+    "space_invaders.bin"  => () -> SpaceInvadersRomSettings(),
+    "road_runner.bin"     => () -> RoadRunnerRomSettings(),
+    "kangaroo.bin"        => () -> KangarooRomSettings(),
+    # asteroids OMITTED here on purpose — terminal at boot (attract); see note above.
 )
 _settings_for_rom(rom_path::AbstractString) =
     haskey(_SETTINGS_BY_BASENAME, basename(rom_path)) ?
