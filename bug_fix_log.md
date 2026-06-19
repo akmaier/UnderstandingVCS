@@ -14,6 +14,54 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🔬 Task #127 — LONG-HORIZON conformance is window-limited: ~13 games diverge past the sweep window (2026-06-19, Claude Opus 4.8, user-reported)
+
+**The "64/64 bit-exact" claim holds only INSIDE the conformance window** — the
+sweeps verify 30 frames RAM / 60 frames screen. The user reviewed the full 60 s
+comparison videos and found jutari (and jaxtari — both ports behave identically)
+diverging from xitari on longer rollouts in many games. Confirmed real & current
+(not stale videos): jutari/src TIA/Cart/CPU changed after the 06-17 videos, but
+fresh current-code dumps still diverge.
+
+**GOTCHA:** the comparison videos are **60 fps / 3600 frames** (render_breakout_compare.py
+`FPS=60`). User reports in SECONDS → **frame = sec × 60** (not 30). Assuming 30 fps
+gave false "clean" results at first.
+
+**Audit (tools/longhorizon_diff.py + tools/rom_sweep/sweep_longhorizon.py →
+results_longhorizon.md; first screen divergence, 60 fps video pipeline):**
+
+| game | first div | sec | frozen | class |
+|---|---|---|---|---|
+| asteroids | f194 | 3.2 | xi stalls (xi_tail 359) | RNG/LFSR seed cascade (1 upstream tick, not N bugs) |
+| wizard_of_wor | f216 RAM / f219 screen | 3.6 | no | in-play; RAM $1a/$1b (per-scanline sprite scratch) on joystick-RIGHT → misplaced flickered monster (~32 col ≈ HMOVE quantum, 1 lum step) |
+| berzerk | f581 | 9.7 | no | in-play; bg(0)→0x88 at game start |
+| road_runner | f765 | 12.8 | ju freezes (audit ju_tail 26) | death/freeze |
+| montezuma_revenge | f867 | 14.4 | no | in-play |
+| riverraid | f958 | 16.0 | no | in-play (grows) |
+| space_invaders | f1092 | 18.2 | no | in-play; background flash color 0x14 jutari renders, xitari does NOT (real bug — xitari does not flash; new-game-period music/speed change) |
+| asterix | f1160 | 19.3 | no in window (user saw a later freeze) | in-play / death |
+| pooyan | f1605 | 26.8 | no | in-play |
+| kangaroo | f1720 | 28.7 | ju freezes (ju_tail 81 vs xi 12) | death/freeze |
+| phoenix | f1743 | 29.1 | no | in-play |
+| pacman | f1771 | 29.5 | no (30-frame cosmetic tail) | in-play (low severity) |
+| ms_pacman | f1786 | 29.8 | no (15-frame cosmetic tail) | in-play (low severity) |
+
+**Two clusters + leading hypotheses:**
+- **A death/game-over freeze** (kangaroo, road_runner): TIA collision-latch (CXxx)
+  read/clear timing → game-over fires a frame off; jutari freezes while xitari continues.
+- **B in-play render/state** (wizard_of_wor, space_invaders, berzerk, + montezuma/
+  riverraid/pooyan/phoenix/asterix likely cascades): mid-scanline TIA write
+  sampling — HMOVE/RESPx horizontal position + COLUBK/COLUPx color-register timing.
+- **Single highest-leverage fix:** cycle-by-cycle TIA collision-latch + HMOVE/RESPx
+  write-sampling audit vs xitari (plausibly closes both). Best first lead: wizard_of_wor.
+
+**Status:** conformance sweep extended to the affected games only
+(`sweep_longhorizon.py`; user manually cleared the rest). Root-causing next, starting
+wizard_of_wor via the per-instruction CPU trace path (`full_instr_trace.jl` +
+`instr_diff.py`) — the bus-trace path hit a frame-origin/granularity mismatch between
+`cpu_tia_cycle_trace.jl` and xitari `--bus-trace`. **Paper:** "64/64 bit-exact" must
+be qualified to the conformance window (or fixed) before AAAI submission.
+
 ### ✅ Convergence tick — pitfall/enduro long-resolved; phase COMPLETE; new jutari work is relaxation-study (2026-06-19, ~12:00, Claude Opus 4.8)
 
 **Convergence is done — the cron's premise (pitfall 557 px / enduro 114 px failing)
