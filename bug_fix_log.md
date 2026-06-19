@@ -14,6 +14,86 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### ✅ berzerk + montezuma_revenge + riverraid + asterix (jutari) — #127b "Cluster A" was a MISCLASSIFICATION; all 4 are Cluster B terminal/auto-reset — 2026-06-19, sprint 3
+
+**Verdict: FIXED (front-end terminal readers; NO emulation-core change). The
+prior berzerk VSYNC frame-boundary diagnosis (commit 14d60e5) was WRONG, and the
+#127b table's placement of montezuma/riverraid/asterix in "Cluster A pure render"
+was WRONG.** All four long-horizon first-divergences (berzerk f581, montezuma
+f867, riverraid f958, asterix f1160) are the SAME terminal/auto-reset gap already
+closed for space_invaders/road_runner/kangaroo/asteroids — NOT TIA render bugs.
+
+**Decisive evidence.** A frame-offset probe (`tools/frame_offset_probe.py`, new)
+showed each game's diverging jutari frame k re-aligns PIXEL-PERFECTLY to xitari
+frame k−1/k−2 (e.g. montezuma `ju[866] == xi[865]`, 0/33600 px) — a whole-frame
+content lag, not a localized per-pixel artifact. Then `tools/trace_dump
+--auto-reset` (xitari) showed at each first-div frame the player DIES:
+`done=true, lives=0`, after which xitari auto-resets to a fresh episode
+(berzerk lives→3, montezuma→6, riverraid→4, asterix→3). jutari mapped these ROMs
+to `GenericRomSettings` (terminal always false) in the auto-resetting video/
+longhorizon pipeline (`tools/breakout_video/dump_jutari_frames.jl`), so it never
+restarted at game-over and kept rendering the dead/dying episode — exactly the
+Cluster B mechanism. RAM is bit-exact up to the death frame (re-verified jutari↔
+xitari RAM identical through montezuma idx 865). The berzerk "orange maze-border
+1 extra frame" is the dying/post-death animation, not a VSYNC phase lag.
+
+**Why the prior berzerk VSYNC diagnosis was wrong.** It relied on cross-tool
+scanline alignment (which that same entry flagged as unreliable, the GOTCHA).
+Direct in-tool instrumentation (temporary `JU_FB_DBG` trace in TIA.jl, since
+reverted) showed jutari's berzerk AND montezuma frames are a rock-stable 262
+lines + fixed beam carry across the divergence — the VSYNC SET/CLEAR lands on
+the SAME scanline (258→262) every frame, frames 862–870. There is NO
+frame-boundary phase variation. Both jutari framebuffers (cur AND prev) hold the
+identical pre-reset content, ruling out the double-buffer too.
+
+**Fix (front-end only; touches NO TIA/CPU/RIOT core).**
+- `jutari/src/games/TerminalGames.jl`: new `BerzerkRomSettings`,
+  `MontezumaRevengeRomSettings`, `RiverRaidRomSettings` — each a mechanistic
+  mirror of `xitari/games/supported/<Game>.cpp::step()`:
+  - Berzerk: terminal `RAM[0xDA]==0xFF`; score `getDecimalScore(95,94,93)`.
+  - Montezuma: terminal `RAM[0xBA]==0 && RAM[0xFE]==0x60`; score
+    `getDecimalScore(0x95,0x94,0x93)`; lives `(RAM[0xBA]&7)+1`.
+  - RiverRaid: terminal `RAM[0xC0]==0x58 && PREV RAM[0xC0]==0x59` (STATEFUL —
+    `is_terminal` records the prev byte each call, mirroring xitari's per-step
+    `m_lives_byte`; reset seeds 0x58); ram_val→digit score LUT.
+  Added the 3-byte `_decimal_score3` helper (`getDecimalScore(lo,mid,hi)`).
+- `jutari/src/games/JoystickGames.jl`: `AsterixRomSettings` already existed
+  (render-only, FIRE start) — ADDED its terminal predicate
+  `RAM[0xC7]==0x01 && (RAM[0xD3]&0xF)==1` (xitari Asterix.cpp).
+- Exported the three new types from `JuTari.jl`; registered berzerk/
+  montezuma_revenge/riverraid in the auto-resetting video map
+  (`dump_jutari_frames.jl`); asterix was already mapped there (now with a
+  terminal reader). DELIBERATELY NOT added to the non-resetting sweep tool
+  (`tools/jutari_trace_dump.jl`) — unneeded (longhorizon uses the video tool)
+  and avoids any in-window early-return risk; asterix was already in the sweep
+  map and stays non-terminal in-window.
+
+**Cannot regress the 64/64 in-window sweeps.** Those run short NOOP/fixed
+streams that never reach game-over (all four boot with full lives → terminal
+false through the window, asserted in the new testset). The change is invisible
+to the RAM (30-frame) and screen (60-frame) sweeps.
+
+**Verified.**
+- `tools/longhorizon_diff.py` (auto-resetting video pipeline): **all four now
+  0 diverging frames** — berzerk 0/620 (was f581), montezuma 0/900 (was f867),
+  riverraid 0/1100 (was f958), asterix 0/1300 (was f1160). berzerk frozen-tail
+  now 14==14 (matches xitari).
+- jutari `Pkg.test()`: [PENDING — running the full guard after the early push].
+- In-window RAM 64/64 + screen 64/64: [PENDING — running after the early push].
+
+**Remaining #127b open point.** Of the original 7 "Cluster A" games, 4 are now
+closed as Cluster B. The only genuine localized TIA render bug is **pooyan**
+(f1605) — the frame-offset probe verdict was "LOCALIZED" (offset 0 stays best,
+no whole-frame re-alignment) AND its trace shows `lives 3, done false` through
+the divergence (no death/reset). phoenix/pacman/ms_pacman (low-severity,
+~15–30-frame cosmetic tails) still need the same probe + done/lives triage
+before being treated as render bugs — they may also be terminal-gap
+misclassifications. NEXT: triage phoenix/pacman/ms_pacman with
+`frame_offset_probe.py` + `trace_dump --auto-reset`, then root-cause pooyan as
+the one true render divergence.
+
+---
+
 ### 🟢 Cluster B (jaxtari) — VERIFY + close the video-pipeline registration gap — 2026-06-19, sprint 2, Claude Opus 4.8
 
 **Scope.** Complete the verification of the sprint-1 jaxtari Cluster B mirror

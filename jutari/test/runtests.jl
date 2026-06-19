@@ -6069,3 +6069,94 @@ end
         end
     end
 end
+
+# -------------------------------------------------------------------------- #
+# Cluster B sprint 3 (task #127b) — berzerk / montezuma / riverraid / asterix
+# -------------------------------------------------------------------------- #
+# These four were MIS-classified as Cluster A "pure render" in the original
+# #127b diagnosis. Their long-horizon first divergences (berzerk f581,
+# montezuma f867, riverraid f958, asterix f1160) are the SAME terminal/
+# auto-reset gap as Cluster B: at the first-div frame the player dies
+# (done=True / lives=0 in xitari's trace), xitari auto-resets to a fresh
+# episode, and jutari (GenericRomSettings / no-terminal render settings) kept
+# rendering the dead/dying episode. Each reader mirrors the matching xitari
+# ALE settings (Berzerk/MontezumaRevenge/RiverRaid/Asterix.cpp::step()).
+# riverraid's predicate is STATEFUL (needs the previous-step RAM[0xC0]).
+@testset "Cluster B sprint 3 terminal readers (task #127b)" begin
+    using JuTari.TerminalGames: BerzerkRomSettings, MontezumaRevengeRomSettings,
+        RiverRaidRomSettings
+    using JuTari.JoystickGames: AsterixRomSettings
+    using JuTari.RomSettingsModule: romsettings_is_terminal
+
+    function _resolve_rom3(stem)
+        for p in (joinpath(@__DIR__, "..", "..", "xitari", "roms", "$stem.bin"),
+                  joinpath(@__DIR__, "..", "..", "tools", "rom_sweep", "roms", "$stem.bin"))
+            isfile(p) && return p
+        end
+        return nothing
+    end
+    @inline _setram3!(env, addr, val) =
+        (env.console.bus.ram[(Int(addr) & 0x7F) + 1] = UInt8(val); nothing)
+
+    @testset "terminal predicates mirror xitari (synthetic RAM)" begin
+        mkenv(s) = (e = JuTari.Env.StellaEnvironment(_frame_loop_rom(), s);
+                    JuTari.Env.env_reset!(e); e)
+
+        # Berzerk: terminal = RAM[0xDA] == 0xFF
+        e = mkenv(BerzerkRomSettings())
+        _setram3!(e, 0xDA, 2)
+        @test romsettings_is_terminal(e.settings, e.console) == false
+        _setram3!(e, 0xDA, 0xFF)
+        @test romsettings_is_terminal(e.settings, e.console) == true
+
+        # Montezuma: terminal = RAM[0xBA]==0 && RAM[0xFE]==0x60
+        e = mkenv(MontezumaRevengeRomSettings())
+        _setram3!(e, 0xBA, 6); _setram3!(e, 0xFE, 0x00)
+        @test romsettings_is_terminal(e.settings, e.console) == false
+        _setram3!(e, 0xBA, 0)                          # 0 lives, but FE != 0x60
+        @test romsettings_is_terminal(e.settings, e.console) == false
+        _setram3!(e, 0xFE, 0x60)                        # both conditions
+        @test romsettings_is_terminal(e.settings, e.console) == true
+
+        # Asterix: terminal = RAM[0xC7]==0x01 && (RAM[0xD3]&0xF)==1
+        e = mkenv(AsterixRomSettings())
+        _setram3!(e, 0xD3, 0x03); _setram3!(e, 0xC7, 0x05)
+        @test romsettings_is_terminal(e.settings, e.console) == false
+        _setram3!(e, 0xD3, 0x01); _setram3!(e, 0xC7, 0x01) # last life + death counter
+        @test romsettings_is_terminal(e.settings, e.console) == true
+
+        # RiverRaid: STATEFUL — terminal = RAM[0xC0]==0x58 && prev==0x59.
+        # reset() seeds prev=0x58, so the first call can never be terminal.
+        e = mkenv(RiverRaidRomSettings())
+        _setram3!(e, 0xC0, 0x18)                        # 3 lives, not death
+        @test romsettings_is_terminal(e.settings, e.console) == false  # prev now 0x18
+        _setram3!(e, 0xC0, 0x59)                        # last-life sentinel
+        @test romsettings_is_terminal(e.settings, e.console) == false  # prev now 0x59
+        _setram3!(e, 0xC0, 0x58)                        # death after 0x59 → terminal
+        @test romsettings_is_terminal(e.settings, e.console) == true
+        # and the prev is updated to 0x58, so a repeat 0x58 is NOT terminal
+        @test romsettings_is_terminal(e.settings, e.console) == false
+    end
+
+    @testset "boot-window non-terminal behaviour" begin
+        for (stem, mk) in (("berzerk",           BerzerkRomSettings),
+                           ("montezuma_revenge", MontezumaRevengeRomSettings),
+                           ("riverraid",         RiverRaidRomSettings),
+                           ("asterix",           AsterixRomSettings))
+            p = _resolve_rom3(stem)
+            if p === nothing
+                @info "ROM missing — skipping boot-window terminal test" stem
+                continue
+            end
+            env = JuTari.Env.StellaEnvironment(read(p), mk())
+            JuTari.Env.env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)
+            @test romsettings_is_terminal(env.settings, env.console) == false
+            stayed = true
+            for _ in 1:30
+                JuTari.Env.env_step!(env, Int(NOOP))
+                env.terminal && (stayed = false; break)
+            end
+            @test stayed == true
+        end
+    end
+end

@@ -35,7 +35,9 @@ using .RomSettingsModule: RomSettings, GenericRomSettings
 using .PaddleGames: BreakoutRomSettings, PongRomSettings
 using .JoystickGames: PitfallRomSettings, EnduroRomSettings
 using .TerminalGames: SpaceInvadersRomSettings, RoadRunnerRomSettings,
-                      KangarooRomSettings, AsteroidsRomSettings
+                      KangarooRomSettings, AsteroidsRomSettings,
+                      BerzerkRomSettings, MontezumaRevengeRomSettings,
+                      RiverRaidRomSettings
 using .Env: StellaEnvironment
 using .CPU.CPUTables: FLAG_N, FLAG_V, FLAG_U, FLAG_B, FLAG_D, FLAG_I, FLAG_Z, FLAG_C
 using .Diff: Mode, HARD, SOFT, current_mode, set_mode!, using_mode,

@@ -32,7 +32,8 @@ using JuTari.JoystickGames: PitfallRomSettings, EnduroRomSettings,
 # the missing auto-reset. (asteroids IS registered here — its attract-mode
 # terminal-at-boot matches xitari's own behaviour, which stalls in attract.)
 using JuTari.TerminalGames: SpaceInvadersRomSettings, RoadRunnerRomSettings,
-    KangarooRomSettings, AsteroidsRomSettings
+    KangarooRomSettings, AsteroidsRomSettings,
+    BerzerkRomSettings, MontezumaRevengeRomSettings, RiverRaidRomSettings
 using JuTari.RomSettingsModule: GenericRomSettings
 
 # ROM basename → RomSettings constructor (mirror of
@@ -77,6 +78,14 @@ const _SETTINGS_BY_BASENAME = Dict{String,Function}(
     "road_runner.bin"     => () -> RoadRunnerRomSettings(),
     "kangaroo.bin"        => () -> KangarooRomSettings(),
     "asteroids.bin"       => () -> AsteroidsRomSettings(),
+    # #127b sprint 3: berzerk/montezuma/riverraid/asterix were MIS-classified as
+    # Cluster A render (the f581/f867/f958/f1160 first-divs are the death/reset
+    # boundary — xitari auto-resets at game-over, jutari (Generic) kept rendering
+    # the dead episode). asterix already mapped below to AsterixRomSettings
+    # (now with a terminal reader).
+    "berzerk.bin"         => () -> BerzerkRomSettings(),
+    "montezuma_revenge.bin" => () -> MontezumaRevengeRomSettings(),
+    "riverraid.bin"       => () -> RiverRaidRomSettings(),
 )
 _settings_for_rom(p) = haskey(_SETTINGS_BY_BASENAME, basename(p)) ?
     _SETTINGS_BY_BASENAME[basename(p)]() : GenericRomSettings()

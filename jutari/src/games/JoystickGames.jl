@@ -21,7 +21,7 @@ using ..ConsoleModule: Console
 import ..RomSettingsModule: romsettings_starting_actions, romsettings_difficulty,
     romsettings_is_legal_action, romsettings_console_switch_starts, romsettings_pal,
     romsettings_screen_height, romsettings_y_start, romsettings_hmove_blanks,
-    romsettings_agent_player
+    romsettings_agent_player, romsettings_is_terminal
 
 export PitfallRomSettings, EnduroRomSettings,
        AirRaidRomSettings, AsterixRomSettings, BeamRiderRomSettings,
@@ -65,6 +65,24 @@ struct YarsRevengeRomSettings    <: RomSettings end
 
 romsettings_starting_actions(::AirRaidRomSettings)        = Int[1]   # FIRE
 romsettings_starting_actions(::AsterixRomSettings)        = Int[1]   # FIRE
+
+# Asterix terminal — xitari/games/supported/Asterix.cpp::step():
+#   m_lives      = readRam(0xD3) & 0xF
+#   death_counter = readRam(0xC7)
+#   terminal = (death_counter == 0x01 && m_lives == 1)
+# (xitari can't wait for lives==0 because the agent may restart on the last
+# frame by holding fire.) Stateless predicate, so it lives on the existing
+# immutable struct. The long-horizon run dies at action-frame 1158; xitari
+# auto-resets (lives→3) while jutari (its render-only Asterix settings has no
+# terminal reader → falls through to false) kept rendering the dead episode —
+# the f1160 "TIA pixel diff" #127b MISCLASSIFIED as Cluster A render.
+@inline _jg_ram(console::Console, addr::Integer) =
+    @inbounds Int(console.bus.ram[(Int(addr) & 0x7F) + 1])
+function romsettings_is_terminal(::AsterixRomSettings, console::Console)
+    lives = _jg_ram(console, 0xD3) & 0xF
+    death_counter = _jg_ram(console, 0xC7)
+    return death_counter == 0x01 && lives == 1
+end
 romsettings_starting_actions(::BeamRiderRomSettings)      = Int[3]   # RIGHT
 romsettings_starting_actions(::DoubleDunkRomSettings)     = Int[10]  # UPFIRE
 romsettings_starting_actions(::ElevatorActionRomSettings) = fill(1, 16)  # 16× FIRE (xitari ElevatorAction.cpp loop)
