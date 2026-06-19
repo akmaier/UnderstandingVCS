@@ -62,6 +62,91 @@ Cluster A (#127b) — mirror the berzerk COLUBK write-sampling TIA fix into
 re-touch wizard_of_wor.
 
 ---
+
+### 🔬 berzerk (jutari) — Cluster A f581 is NOT a COLUBK bug: it is a VSYNC frame-boundary / CPU↔TIA clock-phase divergence (~1 scanline at the frame edge) — 2026-06-19, sprint 2
+
+**Verdict: DIAGNOSED, deferred (no code change). The `#127b` hypothesis was
+wrong** — berzerk's long-horizon divergence is NOT a "whole-screen COLUBK swap /
+VBLANK-vs-colour latch". The `0→136` swap is the *symptom* of a **1-frame lag in
+the maze-wipe animation**: the orange (lum 136 = 0x88) playfield maze border that
+xitari has already wiped, jutari still renders for ~1 extra frame, tapering over
+3 frames.
+
+**What it actually is.** At a level/respawn transition (screen idx 580, ≈9.7 s)
+Berzerk runs a vertical "wipe" kernel: each frame it writes the SOLID top-wall
+playfield (PF0=224, PF1=255, PF2=7) at a scanline that marches DOWN the screen
+(sl 20 → 22 → … → 38 → 40), erasing the maze top wall row-by-row. RAM is
+bit-exact and the per-instruction PF/WSYNC writes are byte-identical (verified —
+WSYNC count 115/frame in BOTH; the wall PF kernel writes match). The divergence
+is purely **which displayed frame each wipe-step lands in**, because jutari and
+xitari place the VSYNC frame boundary ~1 scanline apart.
+
+**Decisive evidence (corrected for the dump frame-alignment off-by-one — see
+GOTCHA).** Per-frame solid-PF (PF0=224) scanlines, action-frame index:
+| frame | xitari PF0=224 sl | jutari PF0=224 sl |
+|---|---|---|
+| 578 | 20, 209 | 20, 210 |
+| 579 | 20, 209 | 20, 210 |
+| 580 | 22, 209 | 22, 210 |
+| 581 | *(none — stopped)* | **38, 40, 210, 212** |
+| 582 | *(none)* | 40, 210 |
+
+xitari ends the wipe one action-frame earlier; jutari's frame 581 STILL contains
+the wall-PF writes (at sl 38/40) that xitari assigned to frame 580. Per-frame max
+scanline: **xitari 262, jutari 261** — jutari's VSYNC-delimited frame is 1 line
+SHORTER. The VSYNC SET→CLEAR trace: xitari `VSYNC=3 sl258 → VSYNC=0 sl262`;
+jutari `VSYNC=3 sl259 → VSYNC=0 sl0(wrap)`. The gate LOGIC is already faithful
+(jutari `vsync_finish_clock = frame_clock+228`, end-on-clear-iff-held-≥-228 ==
+xitari `myVSYNCFinishClock = clock+228`, TIA.cxx:2038/2040). The divergence is in
+the **clock DOMAIN**: xitari uses `clock = mySystem->cycles()*3` (absolute) and
+carries the sub-scanline remainder across the boundary
+(`myClockWhenFrameStarted -= total%228`, TIA.cxx:545-551), whereas jutari
+reconstructs `frame_clock = lines_since_frame*228 + beam_cc` and resets
+`lines_since_frame=0` at the END of `tia_advance!` while DECIDING the boundary
+mid-instruction in `tia_poke!` from `beam_cc`. When the VSYNC-clear instruction
+itself crosses a scanline, the decide-vs-reset split lands the boundary ~1 line
+off → the wipe-step bucketing shifts by one displayed frame.
+
+**Why it never trips the 64/64 in-window sweeps.** The 1-line/frame phase is
+INVISIBLE for static content (the get_screen crop sl 34-243 is identical
+regardless of the off-by-one frame length) — it only shows when the rendered
+content CHANGES every frame (the wipe). The screen sweep is 60 frames of NOOP
+(no wipe); RAM is bit-exact regardless. So this is genuinely a long-horizon-only,
+animation-only artifact.
+
+**GOTCHA — dump frame alignment (cost me a wrong first pass).** The longhorizon
+raw screens (`dump_xitari_frames.py`) SKIP trace_dump's synthetic `boot_end`
+frame 0, so **raw screen idx N = trace_dump/bus-trace frame N+1**. jutari's
+`cpu_tia_cycle_trace.jl` lumps the whole `env_reset!` boot into "frame 0" (2.07 M
+ops) then frames 1..N are the action frames, so **jutari trace-frame i = raw
+screen idx i-1** too. Cross-tool `color_clock`/`scanline_cycle` numbers are NOT
+directly comparable (each tool samples at a different sub-instruction point — e.g.
+a non-WSYNC PF2 write reads cc 162 in xitari vs 180 in jutari in a PIXEL-EXACT
+frame); only same-tool frame-to-frame deltas and the rendered pixels are ground
+truth.
+
+**Safe-fix direction (NOT attempted — touches the 64/64 VSYNC backbone; needs a
+full re-validation cycle).** Align jutari's frame-boundary decision to xitari's
+absolute-clock semantics: decide AND apply the VSYNC reset against the same
+sub-scanline phase xitari carries (`myClockWhenFrameStarted -= total%228`), so a
+VSYNC-clear instruction that crosses a scanline places the boundary on the same
+line as xitari. Likely the fix is in `tia_poke!`'s `frame_clock` (W_VSYNC branch,
+TIA.jl:849-858) + the `vsync_reset_pending` drain (TIA.jl:1449-1486): the
+mid-instruction DECIDE and the end-of-instruction RESET must agree on the beam
+phase. Gate on the FULL 64/64 screen + RAM sweep (run alone) and re-check several
+VSYNC-driven games (skiing $00 boot, surround, air_raid #103 hold-gate) — those
+were tuned against the current behaviour, so this is the highest-regression-risk
+change in the TIA.
+
+**Diagnosis tooling (this sprint).** `tools/longhorizon_diff.py berzerk
+--frames 620` (first_div 581/screen-idx 580, 960 px, swap [0→136 ×960]);
+`tools/cpu_tia_cycle_trace.jl --rom-settings generic` for jutari per-poke
+(scanline, color_clock); `tools/trace_dump --bus-trace` for xitari; align via the
+GOTCHA above. **Next jutari Cluster-A open point:** montezuma_revenge (f867) — but
+verify it isn't ALSO this same VSYNC-boundary/animation-lag class before treating
+it as an independent render bug.
+
+---
 ### ✅ space_invaders + road_runner + kangaroo + asteroids (jutari) — Cluster B terminal/auto-reset CLOSED — 2026-06-19, sprint 0
 
 **Root cause (#127b Cluster B).** All four games fell back to
