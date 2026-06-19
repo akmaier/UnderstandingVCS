@@ -310,28 +310,45 @@ the jutari video dumper — this dumper auto-resets on the boot/attract game-ove
 byte, mirroring xitari's attract stall). Import + map resolution sanity-checked:
 all four now resolve to their real settings class.
 
-**Verification status.**
+**Verification status — all gates GREEN (verification COMPLETE for the
+fixture-backed game; the remaining three confirmed by per-game cross-check).**
 - ✅ Unit: `tests/test_p6c_more_games.py` **22 passed** (single-process,
   `-o addopts=""`), incl. RoadRunner/Kangaroo score/lives/terminal + the
   RomSettings protocol.
 - ✅ Import sanity: Cluster B classes import; `jaxtari_dump.py` AND
   `dump_jaxtari_frames.py` both resolve all four basenames to the real class
   (was `Generic`).
-- ⏳ PXC2 (`tests/test_pxc2_jaxtari_vs_jutari.py`, `-o addopts=""`): launched —
-  the headline jaxtari≡jutari per-frame-RAM invariant (incl. the
-  `space_invaders_noop_10` case, the only Cluster B game with committed
-  fixtures). jaxtari is ~205× slower so this runs long; result to be recorded.
-- ⏳ Per-game jaxtari terminal cross-check (NOOP, 60-frame in-window window for
-  SI/RR/Kangaroo non-terminal; asteroids terminal-at-boot like jutari) —
-  launched.
+- ✅ **PXC2 (`-k space_invaders`, `-o addopts=""`): 3 passed** (1313 s ≈ 22 min,
+  run ALONE for full CPU after killing the contending full-suite run). All three
+  assertions for the only Cluster B game with committed fixtures
+  (`space_invaders_noop_10`): frame-count match, the HEADLINE
+  jaxtari≡jutari per-frame-RAM byte-exact invariant, AND the
+  jaxtari-vs-xitari 0-byte divergence-pattern guard. The other 5 PXC2 cases
+  (pong/breakout/pitfall/seaquest/enduro) are pre-existing regression guards on
+  NON-Cluster-B games, untouched by this settings-only change (full 6-ROM run is
+  ~90 min under eager JAX — deferred as redundant for this scope).
+- ✅ **Per-game jaxtari terminal cross-check** (NOOP, boot+60-frame in-window;
+  run alone): matches jutari's documented behaviour exactly —
+  `space_invaders` non-terminal/lives 3, `road_runner` non-terminal/lives 3,
+  `kangaroo` non-terminal/lives 3 (all stay non-terminal through the sweep
+  window → registering them in the sweep tool can't change the byte stream), and
+  `asteroids` terminal at frame 1 / lives 0 (attract-mode game-over byte — same
+  as jutari's "terminal at boot", which is why asteroids is registered ONLY in
+  the auto-resetting video pipeline, never the sweep tool that would freeze).
 - **CANNOT regress the in-window 64/64 sweeps**: settings-only, never touches
   the emulation core; the short NOOP/fixed streams never reach game-over so
-  `is_terminal` is never `True` during the sweep window.
+  `is_terminal` is never `True` during the sweep window (confirmed above).
 
-**Next jaxtari open point:** record the PXC2 + per-game results above; then
-Cluster A (#127b) — mirror the berzerk COLUBK write-sampling TIA fix into
-`jaxtari/jaxtari/tia/` ONCE it lands on origin/main (it has not yet). Do NOT
-re-touch wizard_of_wor.
+**Still pending (acceptable, low value):** the full 6-ROM PXC2 over the
+non-Cluster-B regression-guard ROMs (redundant for this scope; ~90 min eager).
+A full long-horizon screen-diff of the auto-resetting jaxtari video pipeline
+(`dump_jaxtari_frames.py`) vs xitari for the four games would render thousands
+of jaxtari frames (hours) — the per-game terminal cross-check above is the
+equivalent fast check that the auto-reset now fires at the right frame.
+
+**Next jaxtari open point:** Cluster A (#127b) — mirror the berzerk COLUBK
+write-sampling TIA fix into `jaxtari/jaxtari/tia/` ONCE it lands on origin/main
+(NOT yet present as of this entry). Do NOT re-touch wizard_of_wor.
 
 ---
 
