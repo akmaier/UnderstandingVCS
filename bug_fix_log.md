@@ -97,6 +97,55 @@ agent-player dispatch testset). jaxtari mirror verified bit-identical $1a/$1b
 toggle. The other 12 long-horizon games have DIFFERENT causes (collision-latch
 freeze, RNG seed, mid-scanline TIA write sampling) — still open.
 
+### 🔬 #127b — LONG-HORIZON diagnosis COMPLETE: 8 pure-render + 4 terminal/auto-reset (NOT collision-latch/HMOVE) (2026-06-19, Claude Opus 4.8, 13-agent diagnosis workflow)
+
+Ran a per-game diagnosis (screen diff via `longhorizon_diff.py` + per-frame RAM diff
+via `jutari_xitari_ram_diff.py`) on all 12 remaining long-horizon games. The result
+overturns the original "collision-latch + HMOVE" guess: **11 of 12 are RAM-bit-exact;
+the emulation core is correct.** This is the AUTHORITATIVE open-bug list — work it
+top-down (highest leverage / lowest risk first).
+
+**CLUSTER B — terminal / auto-reset gap (TOP PRIORITY: low-risk, jutari-fast, 4 games).**
+All RAM-bit-exact through game-over. Root cause: these ROMs are ABSENT from the
+`_SETTINGS_BY_BASENAME` maps (tools/jutari_trace_dump.jl, tools/breakout_video/
+dump_jutari_frames.jl) → fall back to `GenericRomSettings`, whose
+`romsettings_is_terminal` is ALWAYS false → the comparison-video pipeline
+(dump_jutari_frames.jl auto-resets on `env.terminal`) NEVER fires for them, so jutari
+keeps rendering the dead/old episode while xitari's ALE auto-resets at game-over. NOT
+a TIA bug. Fix = add a per-game `RomSettings` with a real lives/game-over reader
+(mirror xitari's ALE settings for each) + register the basename. CANNOT regress the
+64/64 in-window sweeps (those run short NOOP/fixed streams that never reach game-over).
+| game | screen_div | note |
+|---|---|---|
+| space_invaders | f1092 (RAM f1091) | **fixes the user-reported "flash"** — jutari renders the dead episode's 0x14/lum-20 background (flicker) because it never resets; xitari starts a fresh game at 1092 (lives 0→3). jutari has NO SpaceInvadersRomSettings (jaxtari does). Add + register. |
+| road_runner | f765 | xitari halts at 764 (lives=0, done); jutari runs on. Add RoadRunner terminal. |
+| kangaroo | f1720 | jutari stalls 81 frames at death (ju_tail 81 vs xi 4); RAM bit-exact. Add Kangaroo terminal. |
+| asteroids | f194 | XITARI stalls (xi_tail 299, trace_dump emitted 1 frame) — likely game-over at ~3.2s; jutari (Generic, no terminal) continues. Add Asteroids terminal; LOW priority (partly an xitari-side artifact). |
+
+**CLUSTER A — pure TIA render (RAM bit-exact, pixels only; HIGHER risk: touches the
+TIA pixel pipeline = the 64/64 screen backbone — gate every change on the full screen
+sweep).** Best entry = berzerk (cleanest signal).
+| game | screen_div | symptom |
+|---|---|---|
+| berzerk | f581 | whole-screen background colour swap: xitari bg lum 0 (black), jutari lum 136 (0x88). Single swap [0→136 ×960]. COLUBK write-sampling / VBLANK-vs-colour latch timing in TIA.jl. |
+| montezuma_revenge | f867 | localized TIA pixel diff (RAM bit-exact through f866). |
+| riverraid | f958 | TIA pixel diff (grows over time). |
+| asterix | f1160 | TIA pixel diff (last identical RAM frame 1159 immediately precedes). |
+| pooyan | f1605 | TIA pixel diff. |
+| phoenix | f1743 | TIA pixel diff (medium confidence). |
+| pacman | f1771 | TIA pixel diff, low severity (~30-frame cosmetic tail). |
+| ms_pacman | f1786 | TIA pixel diff, low severity (~15-frame cosmetic tail). |
+
+**jaxtari note:** jaxtari "faces almost the same problems" — it ALSO lacks these
+basename registrations in tools/jaxtari_dump.py (`_SETTINGS_BY_BASENAME`) even though
+jaxtari already HAS SpaceInvaders/Asteroids/MsPacman settings classes. Mirror each
+jutari fix on the jaxtari side and verify via the PXC2 cross-check + jaxtari sweeps
+(xdist DISABLED to avoid the concurrent-load hang).
+
+**PRIORITY ORDER for the sprint loop:** (1) Cluster B terminal-detection
+[space_invaders → road_runner → kangaroo → asteroids], then (2) berzerk COLUBK, then
+(3) the remaining 7 render games per-game. See [[project_longhorizon_conformance_window]].
+
 ### ✅ Convergence tick — pitfall/enduro long-resolved; phase COMPLETE; new jutari work is relaxation-study (2026-06-19, ~12:00, Claude Opus 4.8)
 
 **Convergence is done — the cron's premise (pitfall 557 px / enduro 114 px failing)
