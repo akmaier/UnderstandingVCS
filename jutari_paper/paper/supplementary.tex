@@ -702,14 +702,27 @@ exactness, so the headline 64/64 claim can be audited game by game. Both ports
 pass every game; \textsc{jaxtari} and \textsc{jutari} agree game-for-game, and
 the cross-check between them is part of the test suite.
 
-\section{Batched Throughput}
+\section{Throughput}
 
-The single-step soft throughput in the main paper (${\sim}1{,}178$ steps/s for
-\textsc{jaxtari}) is dominated by per-instruction kernel-launch overhead. Two modes
-recover throughput: compiling a whole rollout into one \texttt{lax.scan}
-(${\sim}30{,}000$ steps/s for a single environment, a ${\sim}25\times$ gain that
-amortises the launches), and \texttt{vmap}-ing that scan over a batch of independent
-environments. Table~\ref{tab:s-batched} reports the batched scaling on the CPU
+We measure soft-mode throughput as steps per second (one step $=$ one CPU
+instruction) on a fixed ROM after just-in-time warm-up, on a single Apple~M1~Max
+core (JAX CPU backend, Julia~1.12), reporting the median of repeated runs.
+
+At single-instruction granularity \textsc{jutari} sustains ${\sim}370{,}100$
+steps/s and \textsc{jaxtari} ${\sim}1{,}178$, a ${\sim}314\times$ gap. The
+difference is dominated by JAX's per-operation kernel-launch overhead: each soft
+step dispatches one opcode through a $256$-way switch, so at single-instruction
+granularity the launch overhead dwarfs the instruction, whereas Julia inlines the
+small handlers---a property of the execution granularity, not the AD systems. For a
+gradient-based XAI workflow (one forward-plus-backward pass per attribution)
+\textsc{jaxtari}'s ${\sim}42$\,s per $50{,}000$-step trace is comfortably
+interactive.
+
+Two modes recover throughput beyond this single-step figure: compiling a whole
+rollout into one \texttt{lax.scan} (${\sim}30{,}000$ steps/s for a single
+environment, a ${\sim}25\times$ gain that amortises the launches), and
+\texttt{vmap}-ing that scan over a batch of independent environments.
+Table~\ref{tab:s-batched} reports the batched scaling on the CPU
 backend (Apple~M1~Max, real Pong ROM, median of repeated $3{,}000$-step runs after
 JIT warm-up; the batched run is verified bit-identical to the unbatched one).
 Aggregate throughput rises \emph{sub-linearly} with the batch because the
