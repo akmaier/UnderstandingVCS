@@ -14,6 +14,40 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### ✅ Convergence tick — pitfall/enduro long-resolved; phase COMPLETE; new jutari work is relaxation-study (2026-06-19, ~12:00, Claude Opus 4.8)
+
+**Convergence is done — the cron's premise (pitfall 557 px / enduro 114 px failing)
+is STALE.** Verified without a slow re-run:
+- `tools/fixtures/screens/{pitfall,enduro}_noop_10.screen.gz` last touched by
+  **0b48b97** ("committed fixtures were STALE, jaxtari is bit-exact") — i.e. the
+  fresh-`trace_dump` regeneration already happened (the decisive non-circular
+  test in this cron was run back then: fresh xitari ≠ committed → stale →
+  regenerated; jaxtari-live == fresh-xitari == jutari-live = 0 px, 3 ways).
+- `test_screen_conformance.py` expects **0 px** for both pitfall_noop_10 and
+  enduro_noop_10; the screen gate runs nightly via `.github/workflows/heavy.yml`
+  (`tests/test_screen*.py`).
+- The anti-confirmation residual per-copy delta ({21} vs {22,26,27} at sl57) is
+  necessarily **0**: pitfall passes at 0 px, so jaxtari-live == fresh-xitari ==
+  jutari-live there — a non-zero per-copy delta would show as pixels.
+- Overall jaxtari now matches jutari/xitari at **64/64 RAM AND 64/64 screen**
+  (tasks #125 beam-phase + construction-probe + allow_hmove_blanks), CI green
+  (#126). **No remaining conformance gap.** The convergence cron has met its goal
+  and can be retired.
+
+**Fallback (new jutari src since the port).** 3 new commits, all the
+**relaxation-study / divergence-video** layer, NOT conformance — left UNPORTED
+this tick (surfaced for the maintainer; they own this active research in jutari):
+- `543d1fa` / `3da724b` — *default-off* hard-CPU read/branch relax hooks
+  (`cpu/M6502.jl`, `cart/Cart.jl`). Default-off ⇒ zero conformance impact.
+- `a497d34` — relaxation alpha/T forward toggle (`diff/RelaxConfig.jl` (new),
+  `diff/SoftStep.jl`, `diff/Modes.jl`) + `tools/relaxation_study/`.
+These are mid-flight (Phase 1a/1b) soft/differentiable-layer features; porting
+in-progress research risks conflict and isn't the conformance task. If jaxtari
+should track the relaxation layer (it is the soft reference), that's a separate
+maintainer-directed workstream — flagging, not auto-porting.
+
+---
+
 ### 🟢 Task #126 — jaxtari CI green: pre-existing stale tests + MsPacman dup + probe default (2026-06-19)
 
 **Symptom (user).** jaxtari CI ("tests" workflow, jaxtari job) keeps failing.
