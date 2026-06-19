@@ -57,19 +57,36 @@ work. Two independent causes:
 **Result.** All 13 failures fixed (cart/f8sc/nusiz 57 pass; p6c 59 pass). Suite is
 CI-fast again (probe=false).
 
-**Second CI cause — xdist worker OOM (the "cancelled" jaxtari job).** Even with 0
-test failures, the jaxtari job kept getting *cancelled* (NOT a clean fail) at a
-VARYING wall-time (≈20 min at probe=true, ≈39 min at probe=false) — so not a fixed
-timeout. Reproduced locally: the pytest CONTROLLER hangs at 0% CPU with NO worker
-processes alive = the classic xdist deadlock where a worker is KILLED mid-test and
-the controller waits forever. Culprit: **`test_p8_*` (integrated-gradients
-attribution) peaks at ~2.75 GB per process** (`/usr/bin/time -l`). Under xdist
-`-n auto` (pyproject default) that's N×2.75 GB → OOM-kills a worker on a 7–16 GB
-CI runner → controller deadlock → GitHub cancels the job. Run SERIALLY (`-n0`) it's
-a single 2.75 GB process (4.5 min) — fine. FIX (`.github/workflows/test.yml`): run
-the P8 IG suite as its own serial (`-n0`) step, the rest xdist-parallel (minus
-P8); add `timeout-minutes: 90`. PXC4 Klaus Dormann self-skips in CI (ROM untracked)
-— it only "hangs" locally where the ROM is present (it runs ~100M cycles).
+**Second CI cause — xdist worker deadlock (the "cancelled" jaxtari job).** Even
+with 0 test failures the jaxtari job kept getting *cancelled* (NOT a clean fail)
+at a VARYING wall-time (≈20/39/17 min) — so not a fixed timeout. Reproduced
+locally: the pytest CONTROLLER sits at 0% CPU with NO worker processes alive =
+the classic xdist deadlock where a worker DIED mid-test and the controller waits
+forever. Root cause: **the test suite never pinned JAX/XLA/BLAS single-threaded**
+(only `tools/jaxtari_dump.py` did). Under xdist `-n auto`, each spawned worker
+spins up its own multi-threaded JAX → the runner's cores/RAM are oversubscribed →
+a worker is killed (no Python traceback = OS SIGKILL; memory was 71% free, so not
+a simple per-test OOM — it's oversubscription) → controller deadlock → GitHub
+cancels. This is *flaky* (crashed at 17/86/98 % across runs) and hit EVERY
+parallel config tried (isolate-P8, `-n 2`, …), confirming it's not one suite.
+
+**FIX (two guards, verified locally — full suite 808 passed, EXIT=0, no
+deadlock):**
+1. **`jaxtari/tests/conftest.py`** pins `OMP/OPENBLAS/MKL/VECLIB/NUMEXPR
+   _NUM_THREADS=1` + `XLA_FLAGS=--xla_cpu_multi_thread_eigen=false` BEFORE any
+   test imports jax (pytest imports conftest before collecting; each xdist
+   worker re-imports it). Same pinning the sweep worker already uses. Removes the
+   oversubscription.
+2. **`--max-worker-restart=6`** in `.github/workflows/test.yml` so xdist RECOVERS
+   a worker that still dies (re-run) instead of the controller hanging → a flaky
+   crash becomes a re-run, never a cancelled job. Bumped `timeout-minutes` to 180
+   (single-threaded JAX + slow ROM boots on a 2–4 core runner make the suite
+   long; the serial-equivalent compute is the cost, but it COMPLETES).
+Reverted the interim P8-only `-n0` split (insufficient — the deadlock wasn't P8;
+many autodiff/soft tests are heavy). NOTE: serial `-n0` completes too (808 pass)
+but takes ~5 h wall — too slow for CI; the conftest+restart keeps parallelism.
+PXC4 Klaus Dormann self-skips in CI (ROM untracked) — only "hangs" locally where
+the ROM is present (~100M cycles).
 
 ---
 

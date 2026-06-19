@@ -19,10 +19,11 @@ on:
 jobs:
   jaxtari:
     runs-on: ubuntu-latest
-    # jaxtari boots ROMs in pure-Python/JAX (≈200× slower than jutari), so the
-    # suite is genuinely long on a 2–4 core runner; give it room (default would
-    # be 360, but be explicit).
-    timeout-minutes: 90
+    # jaxtari boots ROMs in pure-Python/JAX (≈200× slower than jutari) and the
+    # `tests/conftest.py` pins JAX single-threaded (so xdist workers don't
+    # oversubscribe and crash — see below), so the suite is genuinely long on a
+    # 2–4 core runner. Give it ample room (GitHub default is 360).
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
 
@@ -37,30 +38,24 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
-      # The main suite runs xdist-parallel (pyproject `-n auto`), skipping PXC2
-      # (separate job, needs the jutari fixture) and the P8 integrated-gradients
-      # attribution suite (run separately below). PXC4 (Klaus Dormann) self-skips
-      # when its ROM is absent — it is, in CI (tools/fixtures/cpu/ is untracked).
-      - name: Run pytest — main suite (xdist-parallel)
+      # One xdist-parallel run (pyproject `-n auto`), skipping PXC2 (separate
+      # job below, needs the jutari fixture). PXC4 (Klaus Dormann) self-skips
+      # when its ROM is absent — it is in CI (tools/fixtures/cpu/ is untracked).
+      #
+      # Two CI-reliability guards (task #126), after the job kept getting
+      # CANCELLED (xdist controller deadlock — a worker died mid-test):
+      #   * tests/conftest.py pins JAX/XLA/BLAS single-threaded BEFORE jax is
+      #     imported, so N spawned workers don't oversubscribe the runner's
+      #     cores/RAM (the deadlock cause). Verified locally: 808 passed, 0
+      #     deadlocks (vs reliable hangs without it).
+      #   * --max-worker-restart=6 lets xdist RECOVER a worker that still dies
+      #     instead of hanging the controller — so a flaky crash becomes a
+      #     re-run, not a cancelled job.
+      - name: Run pytest (skipping PXC2 — needs the jutari fixture, separate job)
         working-directory: jaxtari
         run: |
-          pytest -q \
-            --ignore=tests/test_pxc2_jaxtari_vs_jutari.py \
-            --ignore=tests/test_p8_a_ig.py \
-            --ignore=tests/test_p8_b_attribution_demo.py \
-            --ignore=tests/test_p8_c_pong_attribution.py
-
-      # P8 IG attribution materialises large per-step gradient tensors; running
-      # it under xdist's N parallel JAX workers can exhaust a CI runner's RAM
-      # (OOM-kill → the job is "cancelled"). Run it SERIALLY (`-n0`, one process)
-      # so its peak memory is bounded. It is still exercised in full.
-      - name: Run pytest — P8 IG attribution (serial, memory-bounded)
-        working-directory: jaxtari
-        run: |
-          pytest -q -n0 \
-            tests/test_p8_a_ig.py \
-            tests/test_p8_b_attribution_demo.py \
-            tests/test_p8_c_pong_attribution.py
+          pytest -q --max-worker-restart=6 \
+            --ignore=tests/test_pxc2_jaxtari_vs_jutari.py
 
   jutari:
     runs-on: ubuntu-latest
