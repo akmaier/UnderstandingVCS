@@ -6160,3 +6160,85 @@ end
         end
     end
 end
+
+@testset "Cluster B sprint 4 terminal readers (task #127b)" begin
+    using JuTari.JoystickGames: PooyanRomSettings, PhoenixRomSettings,
+        PacmanRomSettings, MsPacmanRomSettings
+    using JuTari.RomSettingsModule: romsettings_is_terminal
+
+    function _resolve_rom4(stem)
+        for p in (joinpath(@__DIR__, "..", "..", "xitari", "roms", "$stem.bin"),
+                  joinpath(@__DIR__, "..", "..", "tools", "rom_sweep", "roms", "$stem.bin"))
+            isfile(p) && return p
+        end
+        return nothing
+    end
+    @inline _setram4!(env, addr, val) =
+        (env.console.bus.ram[(Int(addr) & 0x7F) + 1] = UInt8(val); nothing)
+
+    @testset "terminal predicates mirror xitari (synthetic RAM)" begin
+        mkenv(s) = (e = JuTari.Env.StellaEnvironment(_frame_loop_rom(), s);
+                    JuTari.Env.env_reset!(e); e)
+
+        # Pooyan: terminal = RAM[0x96]==0 && RAM[0x98]==0x05
+        e = mkenv(PooyanRomSettings())
+        _setram4!(e, 0x96, 2); _setram4!(e, 0x98, 0x01)
+        @test romsettings_is_terminal(e.settings, e.console) == false
+        _setram4!(e, 0x96, 0)                              # 0 lives, but 0x98 != 5
+        @test romsettings_is_terminal(e.settings, e.console) == false
+        _setram4!(e, 0x98, 0x05)                            # both conditions
+        @test romsettings_is_terminal(e.settings, e.console) == true
+
+        # Phoenix: terminal = RAM[0xCC]==0x80
+        e = mkenv(PhoenixRomSettings())
+        _setram4!(e, 0xCC, 0x00)
+        @test romsettings_is_terminal(e.settings, e.console) == false
+        _setram4!(e, 0xCC, 0x80)
+        @test romsettings_is_terminal(e.settings, e.console) == true
+
+        # Pacman: terminal = RAM[0x98]==0 && RAM[0xE4]==0x3F (xitari m_lives==1)
+        e = mkenv(PacmanRomSettings())
+        _setram4!(e, 0x98, 3); _setram4!(e, 0xE4, 0x3B)
+        @test romsettings_is_terminal(e.settings, e.console) == false
+        _setram4!(e, 0x98, 0)                               # last life, anim != 0x3F
+        @test romsettings_is_terminal(e.settings, e.console) == false
+        _setram4!(e, 0xE4, 0x3F)                            # both conditions
+        @test romsettings_is_terminal(e.settings, e.console) == true
+
+        # MsPacman: terminal = (RAM[0xFB]&0xF)==0 && RAM[0xA7]==0x53
+        e = mkenv(MsPacmanRomSettings())
+        _setram4!(e, 0xFB, 0x02); _setram4!(e, 0xA7, 0x00)
+        @test romsettings_is_terminal(e.settings, e.console) == false
+        _setram4!(e, 0xFB, 0x00)                            # 0 lives, timer != 0x53
+        @test romsettings_is_terminal(e.settings, e.console) == false
+        _setram4!(e, 0xA7, 0x53)                            # both conditions
+        @test romsettings_is_terminal(e.settings, e.console) == true
+        # high nibble of 0xFB is ignored (only low nibble = lives_byte)
+        _setram4!(e, 0xFB, 0xF0)                            # low nibble still 0
+        @test romsettings_is_terminal(e.settings, e.console) == true
+    end
+
+    @testset "boot-window non-terminal behaviour" begin
+        # All four stay non-terminal through the full in-window window, so adding
+        # the terminal reader cannot regress the 64/64 RAM/screen sweeps.
+        for (stem, mk) in (("pooyan",    PooyanRomSettings),
+                           ("phoenix",   PhoenixRomSettings),
+                           ("pacman",    PacmanRomSettings),
+                           ("ms_pacman", MsPacmanRomSettings))
+            p = _resolve_rom4(stem)
+            if p === nothing
+                @info "ROM missing — skipping boot-window terminal test" stem
+                continue
+            end
+            env = JuTari.Env.StellaEnvironment(read(p), mk())
+            JuTari.Env.env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)
+            @test romsettings_is_terminal(env.settings, env.console) == false
+            stayed = true
+            for _ in 1:60
+                JuTari.Env.env_step!(env, Int(NOOP))
+                env.terminal && (stayed = false; break)
+            end
+            @test stayed == true
+        end
+    end
+end

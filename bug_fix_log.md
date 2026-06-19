@@ -89,8 +89,12 @@ which never happens in-window.
   first_div null, 0 diverging / 1800** — phoenix (was f1743), pacman (was f1771),
   ms_pacman (was f1786), pooyan (was the spurious f1605; real f1532). pooyan also
   re-confirmed 0/1800 at the correct H=220 re-diff.
-- jutari `Pkg.test()`: [PENDING — running the full guard after the early push].
-- In-window RAM 64/64 + screen 64/64: [PENDING — running after the early push].
+- jutari `Pkg.test()`: **GREEN** — new testset "Cluster B sprint 4 terminal
+  readers (task #127b)" 20/20 (synthetic-RAM predicate unit tests for all four +
+  real-ROM 60-frame boot-window non-terminal behaviour).
+- In-window RAM sweep: **64/64 bit-exact** (all maxdiff=0; the four target rows
+  all 0 b/f). In-window screen sweep (60 frames): **64/64 pixel-exact** (the four
+  target rows all 0 px).
 
 **HANDOFF — jutari long-horizon is COMPLETE.** All 12 originally-diverging
 long-horizon games (#127b list: space_invaders, road_runner, kangaroo, asteroids,
