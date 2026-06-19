@@ -49,7 +49,7 @@ state $x=(\text{registers},\text{RAM},\text{RIOT},\text{TIA},\text{frame
 buffer})$: the bit-exact \emph{hard} map $\Phi_{\mathrm{H}}$ and the
 differentiable \emph{soft} map $\Phi_{\mathrm{S}}$. In both, the handler that
 runs is the one for the opcode byte at the program counter $\mathrm{pc}$. The
-handlers are assembled from four primitives, which we restate here so that the
+handlers are assembled from five primitives, which we restate here so that the
 proofs are self-contained.
 
 The first primitive is the memory read. A read of a memory tensor
@@ -96,6 +96,20 @@ has a matching hard value it returns
 where $\sg(\cdot)$ is the stop-gradient operator, so the forward value equals
 \textit{hard} while the backward pass uses the gradient of \textit{soft}.
 
+The fifth primitive is the \emph{relaxed read}, the differentiable counterpart of
+the exact read~\eqref{eq:s-peek}. It blurs the integer address with a
+distance-softmax of width $T$, returning the temperature-weighted average of the
+neighbouring cells,
+\begin{equation}
+\mathrm{peek}_{\mathrm{R}}(r,a;T)=\textstyle\sum_k w_k\,r_{a+k},\qquad
+w_k=\frac{e^{-|k|/T}}{\sum_j e^{-|j|/T}},
+\label{eq:s-read}
+\end{equation}
+so that $\mathrm{peek}_{\mathrm{R}}\!\to r_a$ as $T\to0$ while the address carries
+a nonzero gradient for $T>0$. The executed (SOFT-STE) path uses the exact one-hot
+read~\eqref{eq:s-peek}; only the fully relaxed variant of
+Theorem~\ref{thm:s-limit} uses~\eqref{eq:s-read}.
+
 In the executed soft step, dispatch uses the saturated (hard) form of
 \eqref{eq:s-select} and the branch returns
 $\mathrm{STE}(\mathrm{pc}_{\mathrm{soft}},\mathrm{pc}_{\mathrm{hard}})$. The
@@ -111,8 +125,47 @@ strictly positive margin. For opcode dispatch at step $t$ with logits
 $\ell^{(t)}$ and winner $k^\star_t$, the logit gap
 $\Delta_t=\ell^{(t)}_{k^\star_t}-\max_{k\ne k^\star_t}\ell^{(t)}_k$ is positive,
 and for each conditional branch with flag logit $z_t$, the margin $m_t=|z_t|$ is
-positive. Let $\Delta_{\min}=\min_t\Delta_t>0$ and $m_{\min}=\min_t m_t>0$.
+positive. Let $\Delta_{\min}=\min_t\Delta_t>0$ and $m_{\min}=\min_t m_t>0$. These positive
+margins are a property of the \emph{executed} length-$N$ trajectory; geometrically
+they define a tube around it inside which the relaxed maps agree with the hard
+one. The relaxed read~\eqref{eq:s-read} needs no margin: its off-target weights
+decay unconditionally with $T$ (proved below), so only dispatch and branches
+require~\ref{ass:s-dm}.
 \end{assumption}
+
+The three execution modes referenced throughout are summarised in
+Table~\ref{tab:s-modes}.
+
+\begin{table}[tbh]
+\centering
+\caption{The three execution modes. \textsc{soft-ste} is the mode used for every
+gradient in this paper: its forward pass is bit-identical to \textsc{hard}
+(Theorem~\ref{thm:s-exact}) and its backward pass is a surrogate. The fully
+relaxed mode (\textsc{full}) is used only for the temperature-limit analysis
+(Theorem~\ref{thm:s-limit}); its forward pass is bit-exact only inside the corner
+of small $T$ and large $\alpha$.}
+\label{tab:s-modes}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Mode & Forward & Gradient & Used for\\
+\midrule
+\textsc{hard} & bit-exact & none & conformance\\
+\textsc{soft-ste} & $=$\,\textsc{hard} & surrogate & attribution\\
+\textsc{full} & exact in corner & relaxed & $T{\to}0$ study\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Numerical scope.} Soft mode keeps every quantity in float32 but only
+ever at integer values in $[-2^{24},2^{24}]$ (Theorem~\ref{thm:s-exact}), so no
+representation error accrues and the equalities below are exact, not approximate.
+Both ports apply the \emph{same} round-to-integer after each soft primitive, so
+\textsc{jutari} (Zygote) and \textsc{jaxtari} (JAX/XLA) produce identical integer
+trajectories. The float path carries gradients only; a quantity outside the
+$24$-bit range---which the VCS never produces---would forfeit the exactness
+guarantee.
 
 \section{Proofs}
 
@@ -199,20 +252,25 @@ forward pass is unchanged while gradients become available.
 \begin{theorem}[Temperature-limit bound]
 \label{thm:s-limit}
 Consider the fully relaxed emulator that uses the softmax
-dispatch~\eqref{eq:s-select} and sigmoid branch~\eqref{eq:s-branch}
-\emph{without} the straight-through correction. Under
-Assumption~\ref{ass:s-dm}, its one-step map converges to the hard map as
-$T\to0$ and $\alpha\to\infty$, with per-step deviation
+dispatch~\eqref{eq:s-select}, sigmoid branch~\eqref{eq:s-branch}, and
+distance-softmax reads~\eqref{eq:s-read} \emph{without} the straight-through
+correction. Under Assumption~\ref{ass:s-dm}, its one-step map converges to the
+hard map as $T\to0$ and $\alpha\to\infty$, with per-step deviation
 \begin{equation}
+\begin{aligned}
 \big\|\Phi^{T}_{\mathrm{S}}(x)-\Phi_{\mathrm{H}}(x)\big\|_\infty
-\;\le\; C\big[(K-1)\,e^{-\Delta_{\min}/T}+e^{-\alpha m_{\min}}\big],
+\;\le\; C\big[&(K-1)\,e^{-\Delta_{\min}/T}\\
+&{}+e^{-\alpha m_{\min}}+\rho\,e^{-1/T}\big],
+\end{aligned}
 \label{eq:s-bound}
 \end{equation}
-where $C$ bounds the value range (bytes $\le255$, branch offsets $\le256$). Over
-$N$ steps, with Lipschitz constant $L\ge1$ for error propagation, the trajectory
-deviation is at most
-$\frac{L^{N}-1}{L-1}\,C[(K-1)e^{-\Delta_{\min}/T}+e^{-\alpha m_{\min}}]
-=\mathcal{O}(e^{-c/T})$ with $c=\Delta_{\min}$.
+where $C$ bounds the value range (bytes $\le255$, branch offsets $\le256$) and
+$\rho$ the number of reads in the step. Over $N$ steps, with Lipschitz constant
+$L\ge1$ for error propagation, the trajectory deviation is at most
+$\frac{L^{N}-1}{L-1}$ times the right-hand side of~\eqref{eq:s-bound}, which is
+$\mathcal{O}(e^{-c/T})$ with $c=\min(\Delta_{\min},1)$. The read term, decaying as
+$e^{-1/T}$, dominates whenever $\Delta_{\min}>1$---the read-limited regime observed
+empirically in the full-relaxation experiments below.
 \end{theorem}
 
 \begin{proof}
@@ -253,13 +311,27 @@ target $\mathrm{pc}_{\bar b}+[\![z>0]\!]\,\delta$ by
 \label{eq:s-branchterm}
 \end{equation}
 
-\textit{Per-step bound.} Adding~\eqref{eq:s-disp} and~\eqref{eq:s-branchterm}
-bounds the one-step deviation: for every reachable $x$,
+\textit{Read term.} A distance-softmax read~\eqref{eq:s-read} deviates from the
+hard value $r_a$ by the neighbour pull. Using $|r_{a+k}-r_a|\le 2C$ and
+$1-w_0=\big(\sum_{k\ne0}e^{-|k|/T}\big)/\big(\sum_j e^{-|j|/T}\big)
+\le 2\sum_{k\ge1}e^{-k/T}=2e^{-1/T}/(1-e^{-1/T})$,
+\begin{equation}
+\Big|\textstyle\sum_{k\ne0}w_k(r_{a+k}-r_a)\Big|
+\le (1-w_0)\,2C\le C\,e^{-1/T}
+\label{eq:s-readterm}
+\end{equation}
+for $T$ below a fixed $T_0$, absorbing the geometric factor and the byte range
+into $C$. Unlike dispatch and branch this requires no margin: the integer address
+spacing is $\ge1$, so the off-target weights decay as $e^{-1/T}$ unconditionally.
+The $\rho$ reads of the step contribute at most $\rho\,C\,e^{-1/T}$.
+
+\textit{Per-step bound.} Adding~\eqref{eq:s-disp}, \eqref{eq:s-branchterm},
+and~\eqref{eq:s-readterm} bounds the one-step deviation: for every reachable $x$,
 \begin{equation}
 \begin{aligned}
 \delta_{\mathrm{step}}
 &:=\big\|\Phi^{T}_{\mathrm{S}}(x)-\Phi_{\mathrm{H}}(x)\big\|_\infty\\
-&\le C\big[(K-1)e^{-\Delta_{\min}/T}+e^{-\alpha m_{\min}}\big],
+&\le C\big[(K-1)e^{-\Delta_{\min}/T}+e^{-\alpha m_{\min}}+\rho\,e^{-1/T}\big],
 \end{aligned}
 \label{eq:s-perstep}
 \end{equation}
@@ -278,8 +350,8 @@ e_N\le\delta_{\mathrm{step}}\sum_{i=0}^{N-1}L^i
 =\delta_{\mathrm{step}}\,\frac{L^N-1}{L-1}.
 \end{equation}
 As $T\to0$ and $\alpha\to\infty$,
-$\delta_{\mathrm{step}}=\mathcal{O}(e^{-\Delta_{\min}/T})\to0$, so the relaxed
-trajectory converges to the hard one,
+$\delta_{\mathrm{step}}=\mathcal{O}(e^{-c/T})\to0$ with
+$c=\min(\Delta_{\min},1)$, so the relaxed trajectory converges to the hard one,
 $\Phi^{T}_{\mathrm{S}}\to\Phi_{\mathrm{H}}$.
 \end{proof}
 
@@ -369,6 +441,11 @@ $P_{\mathrm{step}}(\alpha,T)=p_{\mathrm{read}}(T)^{\rho}\,
 p_{\mathrm{branch}}(\alpha)^{f_b}$, with $\rho=2.16$ reads per instruction and
 branch fraction $f_b=0.374$ measured on the executed Space Invaders trace, and
 the run is bit-exact only while every cast rounds correctly.
+$P_{\mathrm{step}}$ is a \emph{heuristic} likelihood---it treats the casts as
+independent Bernoulli rounds, which they are not---so it predicts \emph{where}
+exactness degrades rather than giving a probabilistic guarantee; the guarantee is
+the deterministic worst-case cast condition, with $P_{\mathrm{step}}{=}1$ exactly
+when every cast margin holds.
 
 \begin{figure}[tbh]
 \centering
@@ -494,7 +571,11 @@ needed. Within the exact region the relaxed gradient is strongest at the boundar
 recommended operating point is the corner of the bit-exact region,
 $\alpha{=}6,\ T{=}0.14$ (Figure~\ref{fig:relaxheat}): the smallest $\alpha$ and
 largest $T$ that keep the forward bit-exact, giving the most informative gradient
-compatible with exactness.
+compatible with exactness. We present this as a conservative, program-independent
+operating point---its per-cast bounds are worst-case over the instruction set and
+the $8$-bit byte range, and the cross-game exactness is confirmed empirically
+(Pong, Breakout, Space Invaders)---not as a theorem that every program is exact at
+this setting.
 
 \paragraph{Full-simulator demonstration.} The per-cast model is borne out on a
 real $60$-second rollout. We render Space Invaders beam-timed in four modes side
@@ -524,6 +605,97 @@ wrong. (Below $T{=}0.1465$, the lowest fixed ROM-read threshold, no opcode/opera
 fetch ever fails, so this late divergence is driven purely by an evolving RAM
 read.) The exact--diverge boundary is thus a per-cast threshold \emph{spectrum}
 over both fixed (ROM) and state-dependent (RAM) reads, not a single cliff.
+
+\section{Per-Game Conformance}
+
+Table~\ref{tab:games} lists every game in the conformance set with its
+auto-detected mapper, a short ROM hash, and its per-frame RAM and pixel
+exactness, so the headline 64/64 claim can be audited game by game. Both ports
+pass every game; \textsc{jaxtari} and \textsc{jutari} agree game-for-game, and
+the cross-check between them is part of the test suite.
+
+\begin{table*}[t]
+\centering
+\caption{Per-game conformance over the 64 ALE games supported by our \textsc{xitari} configuration. \textbf{Map}: mapper auto-detected by the ports (the set exercises seven of the ten implemented formats: 2K, 4K, F8, F6, E0, FE, F8SC; F4, F6SC and F4SC are implemented but unused here). \textbf{SHA-256}: first 12 hex digits of the ROM image (full hashes ship in the repository manifest; ROMs are not redistributed). \textbf{R}/\textbf{P}: RAM- and pixel-exact against \textsc{xitari} on every evaluated frame (30 NOOP frames for RAM, 60 frames of the fixed action stream for pixels, after the standard 60-NOOP+4-reset boot). All 64 games are exact in both (\checkmark); \textsc{jaxtari} matches \textsc{jutari} game-for-game.}
+\label{tab:games}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lllcc@{}}
+\toprule
+Game & Map & SHA-256 & R & P\\
+\midrule
+air\_raid & 4K & \texttt{6b5a22ec074a} & \checkmark & \checkmark\\
+alien & 4K & \texttt{9cd556c7d7f5} & \checkmark & \checkmark\\
+amidar & 4K & \texttt{da5b760d3ada} & \checkmark & \checkmark\\
+assault & 4K & \texttt{d32ca4dd9e84} & \checkmark & \checkmark\\
+asterix & F8 & \texttt{b6161db0530d} & \checkmark & \checkmark\\
+asteroids & F8 & \texttt{d1a6e808412b} & \checkmark & \checkmark\\
+atlantis & 4K & \texttt{cef4b7b91ea2} & \checkmark & \checkmark\\
+bank\_heist & 4K & \texttt{c32daffdb926} & \checkmark & \checkmark\\
+battle\_zone & F8 & \texttt{efd6f639e724} & \checkmark & \checkmark\\
+beam\_rider & F8 & \texttt{83b30cb52649} & \checkmark & \checkmark\\
+berzerk & 4K & \texttt{cdff0422329d} & \checkmark & \checkmark\\
+bowling & 2K & \texttt{dff44a85289f} & \checkmark & \checkmark\\
+boxing & 2K & \texttt{54760d7e0710} & \checkmark & \checkmark\\
+breakout & 2K & \texttt{376323f051c3} & \checkmark & \checkmark\\
+carnival & 4K & \texttt{80eab759b6bd} & \checkmark & \checkmark\\
+centipede & F8 & \texttt{6def669f54bd} & \checkmark & \checkmark\\
+chopper\_command & 4K & \texttt{055637282252} & \checkmark & \checkmark\\
+crazy\_climber & F8 & \texttt{486ad4cc8956} & \checkmark & \checkmark\\
+defender & 4K & \texttt{e3c7ed7a073f} & \checkmark & \checkmark\\
+demon\_attack & 4K & \texttt{8d72feeb267d} & \checkmark & \checkmark\\
+double\_dunk & F6 & \texttt{c0ea53a91a39} & \checkmark & \checkmark\\
+elevator\_action & F8SC & \texttt{f3b3ad03fd8c} & \checkmark & \checkmark\\
+enduro & 4K & \texttt{ca9bb89755a6} & \checkmark & \checkmark\\
+fishing\_derby & 2K & \texttt{84753bc6ecb4} & \checkmark & \checkmark\\
+freeway & 2K & \texttt{3ef620234b98} & \checkmark & \checkmark\\
+frostbite & 4K & \texttt{cbfdad89480d} & \checkmark & \checkmark\\
+gopher & 4K & \texttt{b4aff03aeb0f} & \checkmark & \checkmark\\
+gravitar & F8 & \texttt{17a19cd7b5ca} & \checkmark & \checkmark\\
+hero & F8 & \texttt{75bd02ec7545} & \checkmark & \checkmark\\
+ice\_hockey & 4K & \texttt{06df1fc568d9} & \checkmark & \checkmark\\
+jamesbond & E0 & \texttt{995253f0d3a2} & \checkmark & \checkmark\\
+journey\_escape & 4K & \texttt{963e2d3da52b} & \checkmark & \checkmark\\
+\bottomrule
+\end{tabular}\hfill\begin{tabular}{@{}lllcc@{}}
+\toprule
+Game & Map & SHA-256 & R & P\\
+\midrule
+kangaroo & F8 & \texttt{a2826eaea3a8} & \checkmark & \checkmark\\
+krull & F8 & \texttt{b40f10d14217} & \checkmark & \checkmark\\
+kung\_fu\_master & F8 & \texttt{3f6501a649ad} & \checkmark & \checkmark\\
+montezuma\_revenge & E0 & \texttt{69d363a74754} & \checkmark & \checkmark\\
+ms\_pacman & F8 & \texttt{dde0b43c5dee} & \checkmark & \checkmark\\
+name\_this\_game & 4K & \texttt{cc219a7246e8} & \checkmark & \checkmark\\
+pacman & 4K & \texttt{58e781b472e0} & \checkmark & \checkmark\\
+phoenix & F8 & \texttt{b01085bc5227} & \checkmark & \checkmark\\
+pitfall & 4K & \texttt{c719b47714d8} & \checkmark & \checkmark\\
+pong & 2K & \texttt{41623e3c2614} & \checkmark & \checkmark\\
+pooyan & 4K & \texttt{ac9abbfc272d} & \checkmark & \checkmark\\
+private\_eye & F8 & \texttt{c8f9ce1b2e80} & \checkmark & \checkmark\\
+qbert & 4K & \texttt{3257221832a7} & \checkmark & \checkmark\\
+riverraid & 4K & \texttt{4c6842b8af64} & \checkmark & \checkmark\\
+road\_runner & F6 & \texttt{4b6c2e68d693} & \checkmark & \checkmark\\
+robotank & FE & \texttt{c186409481e6} & \checkmark & \checkmark\\
+seaquest & 4K & \texttt{fbc29f4678f6} & \checkmark & \checkmark\\
+skiing & 2K & \texttt{804eff5f0196} & \checkmark & \checkmark\\
+solaris & F6 & \texttt{0afa36e5f4d8} & \checkmark & \checkmark\\
+space\_invaders & 4K & \texttt{7224b17462b9} & \checkmark & \checkmark\\
+star\_gunner & 4K & \texttt{3ad501a39280} & \checkmark & \checkmark\\
+surround & 2K & \texttt{c6864f5c9f43} & \checkmark & \checkmark\\
+tennis & 2K & \texttt{5a2052f020bf} & \checkmark & \checkmark\\
+time\_pilot & F8 & \texttt{8ea97e335a2f} & \checkmark & \checkmark\\
+tutankham & E0 & \texttt{403397fe8583} & \checkmark & \checkmark\\
+up\_n\_down & F8 & \texttt{74890a43e591} & \checkmark & \checkmark\\
+venture & 4K & \texttt{1870b0dd6fb1} & \checkmark & \checkmark\\
+video\_pinball & 4K & \texttt{cef82c39bbb0} & \checkmark & \checkmark\\
+videochess & 4K & \texttt{d44f2a115393} & \checkmark & \checkmark\\
+wizard\_of\_wor & 4K & \texttt{d69ee89e65c3} & \checkmark & \checkmark\\
+yars\_revenge & 4K & \texttt{ff777c8d4ea0} & \checkmark & \checkmark\\
+zaxxon & F8 & \texttt{e1c323ce00cc} & \checkmark & \checkmark\\
+\bottomrule
+\end{tabular}
+\end{table*}
 
 \section{Implementation Effort}
 
