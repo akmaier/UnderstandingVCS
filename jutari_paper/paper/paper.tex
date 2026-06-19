@@ -620,8 +620,13 @@ through a 256-way switch, so at single-instruction granularity the launch overhe
 dwarfs the instruction, whereas Julia inlines the small handlers---a property of
 the granularity, not the AD systems. For a gradient-based XAI workflow (one
 forward-plus-backward pass per attribution) \textsc{jaxtari}'s ${\sim}42$\,s per
-50{,}000-step trace is comfortably interactive, and batched rollouts vectorise
-many environments in parallel.
+50{,}000-step trace is comfortably interactive. Two modes lift it above the
+single-step figure: compiling a whole rollout into one \texttt{lax.scan} amortises
+the per-step launches (${\sim}30{,}000$ steps/s), and vmapping that scan over a
+batch raises aggregate throughput to ${\sim}56{,}000$ environment-steps/s at $128$
+environments on the CPU---sub-linear because the data-dependent dispatch evaluates
+all branches under \texttt{vmap}, but exactly the pattern that parallelises on a
+GPU (supplementary material).
 
 \subsection{Proof of Concept: Ground-Truth Gradients}
 

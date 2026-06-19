@@ -702,6 +702,45 @@ exactness, so the headline 64/64 claim can be audited game by game. Both ports
 pass every game; \textsc{jaxtari} and \textsc{jutari} agree game-for-game, and
 the cross-check between them is part of the test suite.
 
+\section{Batched Throughput}
+
+The single-step soft throughput in the main paper (${\sim}1{,}178$ steps/s for
+\textsc{jaxtari}) is dominated by per-instruction kernel-launch overhead. Two modes
+recover throughput: compiling a whole rollout into one \texttt{lax.scan}
+(${\sim}30{,}000$ steps/s for a single environment, a ${\sim}25\times$ gain that
+amortises the launches), and \texttt{vmap}-ing that scan over a batch of independent
+environments. Table~\ref{tab:s-batched} reports the batched scaling on the CPU
+backend (Apple~M1~Max, real Pong ROM, median of repeated $3{,}000$-step runs after
+JIT warm-up; the batched run is verified bit-identical to the unbatched one).
+Aggregate throughput rises \emph{sub-linearly} with the batch because the
+data-dependent $256$-way opcode dispatch (\texttt{lax.switch}) evaluates all
+candidate handler branches under \texttt{vmap}; on a CPU this serialises, so the
+aggregate asymptotes near ${\sim}60{,}000$ env-steps/s. On a GPU the same all-branch
+evaluation parallelises across lanes, so large batches (e.g.\ $1024$) are the
+intended operating regime there rather than on the CPU measured here.
+
+\begin{table}[tbh]
+\centering
+\caption{Batched soft-mode throughput of \textsc{jaxtari} on the CPU backend
+(M1~Max, Pong, a compiled \texttt{lax.scan} \texttt{vmap}-ped over $N$ environments).
+\emph{Aggregate} is total environment-steps per second; \emph{per-env} is
+aggregate$/N$. Batching trades single-environment latency for aggregate throughput.}
+\label{tab:s-batched}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{rrrr}
+\toprule
+batch $N$ & aggregate & per-env & vs.\ $N{=}1$\\
+ & (env-steps/s) & (steps/s) & \\
+\midrule
+$1$   & $30{,}200$ & $30{,}200$ & $1.0\times$\\
+$16$  & $35{,}200$ & $2{,}200$  & $1.2\times$\\
+$64$  & $48{,}300$ & $750$      & $1.6\times$\\
+$128$ & $55{,}900$ & $440$      & $1.9\times$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \section{Implementation Effort}
 
 Figure~\ref{fig:timeline} is the evidence behind the effort estimate in the main
