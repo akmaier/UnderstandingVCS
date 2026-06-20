@@ -18,6 +18,7 @@ mkdir -p results/slurm results/gpu            # output-dir trap (guide §4.3)
 
 GPUTYPE="${GPUTYPE:-unknown}"
 STEPS="${STEPS:-3000}"
+REPEATS="${REPEATS:-10}"   # timed repeats per config; mean+-std reported (median too)
 # Sweep well past where memory matters — soft state is tiny (~25-56 KB/env), so on
 # these cards the limit is compute/occupancy, not memory. The bench records OOM and
 # continues, so over-shooting the batch list is safe.
@@ -35,7 +36,7 @@ source .venv/bin/activate
 python -c "import jax, sys; ds = jax.devices(); assert any(d.platform == 'gpu' for d in ds), f'FATAL: no GPU device visible to JAX: {ds}'; print('jax', jax.__version__, 'backend', jax.default_backend(), 'devices', ds)"
 
 python tools/bench_jaxtari_gpu.py --rom "$ROM" \
-  --steps "$STEPS" --batch-sizes "$BATCHES" --modes fwd,fwdbwd --repeats 3 \
+  --steps "$STEPS" --batch-sizes "$BATCHES" --modes fwd,fwdbwd --repeats "$REPEATS" \
   --device gpu --cache-dir /cluster/maier/.jax_cache \
   --out "results/gpu/${GPUTYPE}.json"
 echo "=== DONE $(date -u +%FT%TZ) ==="
