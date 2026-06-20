@@ -1,5 +1,16 @@
-# Relaxation config for the supplementary study "Effect of the relaxation
-# parameters (alpha, T) on pixel exactness" run on the FULL jutari simulator.
+# Relaxation config for the supplementary study "Forward Bit-Exactness Under
+# Full Relaxation" / "Effect of the Relaxation Parameters on the Gradient",
+# run on the FULL jutari simulator.
+#
+# Paper reference: this switch selects between the paper's SOFT-STE mode
+# and the fully relaxed FULL mode (supplementary Table "The three
+# execution modes"). DEFAULT-OFF is SOFT-STE — forward bit-identical to
+# HARD (Theorem 1, "Exact forward equivalence"). Turning it ON drops the
+# straight-through correction, giving the FULL mode whose forward is
+# bit-exact only inside the small-T / large-alpha corner (Theorem 2,
+# "Temperature-limit bound"); the cast-margin model and the recommended
+# operating point alpha=6, T=0.14 are in the supplementary "Forward
+# Bit-Exactness Under Full Relaxation".
 #
 # DEFAULT-OFF. When `_relax_on[] == false` the soft execution path is
 # byte-identical to the validated executed path: one-hot memory reads and the

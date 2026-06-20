@@ -4,6 +4,16 @@
 # computes a one-hot dot product with the ROM, so the returned scalar
 # differentiates back to the ROM array.
 #
+# Paper reference: the first of the three relaxations in "Hard and Soft
+# Execution" — the memory read peek(r, a) = 1_a' r = r_a (Eq. "peek";
+# supplementary "Setup and Notation", first primitive). The forward
+# value is exactly the addressed byte r_a, so the soft read is bit-exact
+# to the hard one (Theorem 1, "Exact forward equivalence"), while the
+# gradient d peek / d r = 1_a is one-hot — "ROM as a weight tensor" and
+# the discrete limit of Neural-Turing-Machine soft addressing (Graves et
+# al. 2014). Mirrors the hard read xitari M6502Low::peek / System::peek
+# (a plain mem[address] index).
+#
 # This is the PORTING_PLAN.md §6.2 "ROM-as-weights" primitive — the
 # building block for SOFT execution mode and the eventual XAI work.
 

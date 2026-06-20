@@ -4,6 +4,15 @@
 # Saturation: with very-large logits the softmax collapses to one-hot
 # and the result is bit-exact-equal to the hard-pick value. Lower
 # temperature → harder pick; higher temperature → smoother mixture.
+#
+# Paper reference: the second relaxation in "Hard and Soft Execution" —
+# opcode dispatch as a convex combination over handler outputs,
+# select(l, V; T) = w' V with w = softmax(l / T) (Eq. "select";
+# supplementary second primitive). The executed step uses the saturated
+# (hard) form, so dispatch is forward-exact (Theorem 1); the relaxed
+# form here is the one analysed in Theorem 2 ("Temperature-limit bound"),
+# whose proof bounds the non-winning softmax mass by (K-1)exp(-Delta_min
+# / T). Mirrors the hard opcode switch of xitari M6502Low::execute.
 
 @inline function _softmax(logits::AbstractVector{<:Real})
     m = maximum(logits)

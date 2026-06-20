@@ -1,5 +1,16 @@
 """SoftCPUState + SoftBus — parallel float-valued state for SOFT-mode execution.
 
+Paper reference: the soft state x = (registers, RAM, RIOT, TIA, frame
+buffer) on which the soft transition map Phi_S acts (paper "Soft Equals
+Hard"; supplementary "Setup and Notation"). The 128-byte RIOT RAM
+carried here as a float vector is the paper's "RAM as a soft tape"
+(a Neural-Turing-Machine-style addressable tape, Graves et al. 2014);
+the cartridge ROM carried in `SoftBus.rom` is the "ROM as a weight
+tensor". All quantities are float32 but only ever at integer values in
+[-2^24, 2^24], so float32 represents every VCS byte/address exactly and
+the forward equality of Theorem 1 holds in float32, not merely over the
+reals (supplementary "Numerical scope").
+
 The HARD-mode `CPUState` and `Bus` are kept untouched; SOFT mode runs
 against these parallel types so neither the HARD test suite nor the
 existing CPU dispatch needs to change. The two paths share nothing

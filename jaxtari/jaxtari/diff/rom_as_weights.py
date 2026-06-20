@@ -1,5 +1,21 @@
 """ROM-as-weights — make cartridge bytes differentiable parameters.
 
+Paper reference: this is the first of the three relaxations in
+"Building Two Differentiable VCS Ports / Hard and Soft Execution" —
+"every ROM and RAM read is written as a dot product against a one-hot
+address vector", i.e. the memory-read primitive peek(r, a) = 1_a^T r =
+r_a (Eq. "peek"; supplementary "Setup and Notation", first primitive).
+The forward value is exactly the addressed byte r_a so the soft read is
+bit-exact to the hard one (Theorem 1, "Exact forward equivalence"),
+while the gradient d peek / d r = 1_a is now defined and one-hot — the
+construction that turns "which ROM byte explains this pixel?" into a
+gradient question and the discrete limit of the Neural-Turing-Machine
+soft addressing (Graves et al. 2014).
+
+Mirrors the hard read xitari M6502Low::peek / System::peek (a plain
+`mem[address]` array index); here the same value is produced by the
+one-hot dot product so autodiff can flow through it.
+
 The XAI use case this enables: "which ROM byte explains this output?"
 A normal `int(rom[addr])` indexing has zero gradient w.r.t. the ROM —
 JAX can't backprop through an integer index. By replacing the index
@@ -53,7 +69,12 @@ class RomTensor:
 
     def peek(self, addr) -> jnp.ndarray:
         """Differentiable read of one byte. `addr` is an integer or int-like
-        scalar. Returns a 0-d float32 array."""
+        scalar. Returns a 0-d float32 array.
+
+        Implements peek(r, a) = one_hot(a) . r = r_a (paper Eq. "peek").
+        Forward value equals the array element r_a (so it is bit-exact to
+        a hard `rom[a]` read, Theorem 1), and the gradient w.r.t. `rom`
+        is the one-hot vector 1_a."""
         one_hot = jax.nn.one_hot(addr, self.size, dtype=jnp.float32)
         return jnp.dot(one_hot, self.rom)
 

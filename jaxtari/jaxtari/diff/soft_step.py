@@ -1,5 +1,15 @@
 """SOFT-mode `step()` — a differentiable parallel to `cpu.m6502.step`.
 
+Paper reference: this is the one-step soft transition map Phi_S of the
+paper ("Soft Equals Hard"; supplementary "Setup and Notation"),
+assembled from the soft primitives — one-hot ROM/RAM reads (Eq. "peek"),
+the hard opcode dispatch (saturated softmax select, Eq. "select"), and
+the straight-through conditional branch (Eq. "branch" + Eq. "ste"). By
+Theorem 1 ("Exact forward equivalence") each primitive is forward-
+identical to its hard counterpart, so Phi_S(x) = Phi_H(x) in float32 and
+this step emits a bit-exact frame together with a surrogate gradient
+(Corollary 1). Mirrors one iteration of xitari M6502Low::execute.
+
 `soft_step(state, bus)` executes one 6502 instruction with the SOFT
 primitives from `jaxtari.diff`: memory access goes through
 `soft_rom_peek` / `soft_ram_peek` (one-hot dot products, gradient-friendly);
@@ -64,6 +74,13 @@ def _rom_array(rom) -> jnp.ndarray:
 def soft_rom_peek(rom, addr) -> jnp.ndarray:
     """Differentiable cart byte read — `one_hot(addr) · rom`.
 
+    The one-hot exact read peek(r, a) = 1_a^T r = r_a (paper Eq. "peek";
+    supplementary first primitive): forward value is the addressed byte
+    (bit-exact, Theorem 1), gradient w.r.t. `rom` is one-hot at `addr`.
+    Mirrors xitari M6502Low::peekWithPC / System::peek (the opcode/operand
+    fetch), here as a dot product so the ROM is a differentiable weight.
+
+
     `rom` may be a raw 1-D numeric array or a `RomTensor` (P7d). `addr`
     is a scalar (int or float). The address is wrapped modulo the
     ROM size so the cart mirrors correctly in the 4 KB $F000-$FFFF
@@ -83,7 +100,11 @@ def soft_rom_peek(rom, addr) -> jnp.ndarray:
 
 
 def soft_ram_peek(ram: jnp.ndarray, addr) -> jnp.ndarray:
-    """Differentiable RAM read — same one-hot trick, on the 128-byte RAM."""
+    """Differentiable RAM read — same one-hot trick, on the 128-byte RAM.
+
+    The RAM-as-soft-tape read (paper Eq. "peek" applied to the RIOT RAM;
+    the "RAM as a soft tape" in "Hard and Soft Execution"). Forward-exact
+    (Theorem 1) with a one-hot gradient w.r.t. the addressed cell."""
     one_hot = jax.nn.one_hot(addr, ram.shape[0], dtype=jnp.float32)
     return jnp.dot(one_hot, ram.astype(jnp.float32))
 
@@ -1035,17 +1056,26 @@ def _signed_offset(offset_byte: jnp.ndarray) -> jnp.ndarray:
 
 
 def _straight_through(soft: jnp.ndarray, hard: jnp.ndarray) -> jnp.ndarray:
-    """Forward = `hard`; backward = ∂soft. Lets `_do_branch` keep the
-    PXC1 bit-exact forward semantics (the new PC is whatever the hard
-    branch chose) while routing the gradient through the sigmoid-
-    blended `soft` value, so a `jax.grad` of a trace gets a meaningful
+    """Straight-through estimator STE(soft, hard) = soft + sg(hard - soft)
+    (paper Eq. "ste"). Forward = `hard`; backward = ∂soft. Lets
+    `_do_branch` keep the PXC1 bit-exact forward semantics (the new PC is
+    whatever the hard branch chose, Theorem 1) while routing the gradient
+    through the sigmoid-blended `soft` value (the surrogate gradient of
+    Corollary 1), so a `jax.grad` of a trace gets a meaningful
     contribution from both branch destinations."""
     return soft + jax.lax.stop_gradient(hard - soft)
 
 
 def _do_branch(state: SoftCPUState, bus: SoftBus,
                flag_attr: str, flag_mask: int, take_when_set: bool):
-    """Conditional branch.
+    """Conditional branch — the soft-branch relaxation of "Hard and Soft
+    Execution" wrapped in a straight-through estimator. Builds the
+    sigmoid gate g = sigmoid(alpha * z) and the blended PC pc_soft =
+    pc_not_taken + g * delta (Eq. "branch"), then returns
+    STE(pc_soft, pc_hard) (Eq. "ste"): forward = the exact hard branch
+    (Theorem 1), backward = the soft gate gradient (surrogate, Corollary
+    1). Mirrors the xitari relative-branch macro (M6502Hi.m4,
+    `address = PC + (Int8)operand`).
 
     `flag_attr` is one of `"P_N"`, `"P_Z"`, `"P_C"`, `"P_V"` (the
     float-valued mirror `_with_p` keeps in sync with `P`) and
@@ -1756,7 +1786,10 @@ SOFT_SUPPORTED_OPCODES = frozenset({
 # --------------------------------------------------------------------------- #
 
 def soft_step(state: SoftCPUState, bus: SoftBus):
-    """Execute one instruction.
+    """Execute one instruction — the soft one-step map Phi_S (paper "Soft
+    Equals Hard", Theorem 1). Forward-identical to the hard step Phi_H so
+    a whole trajectory is bit-exact (Theorem 1's induction), while every
+    primitive carries a surrogate gradient (Corollary 1).
 
     Memory access is differentiable (one-hot dot product on ROM and
     RAM). Dispatch is `jax.lax.switch` over the 256-way opcode table.

@@ -1,11 +1,27 @@
 """
     Diff
 
-Differentiability layer.
+Differentiability layer — the paper's "new methods" (SOFT execution path).
+
+This module implements the differentiable (SOFT) execution of the VCS
+from the paper "A Differentiable Atari VCS": the cartridge ROM as a
+weight tensor (RomAsWeights), the RAM as a soft tape, control flow as
+gates (SoftBranch / SoftSelect), and the straight-through estimator
+(StraightThrough + `_stop_gradient`) that joins the soft path to the
+bit-exact hard path. Together they give a soft forward pass bit-exact
+equal to the hard one at any finite temperature (Theorem 1, "Exact
+forward equivalence") while exposing surrogate gradients where the bit
+logic has none (Corollary 1). See paper sections "Hard and Soft
+Execution" and "Soft Equals Hard", and the supplementary "Setup and
+Notation" for the five primitives.
 
 Mode toggle (HARD vs SOFT, default HARD): runtime flag controlling
 whether the (eventual) SOFT execution path is used in step() — see
-PORTING_PLAN.md §6.
+PORTING_PLAN.md §6. The paper's three modes are HARD (conformance),
+SOFT == SOFT-STE (attribution; forward == HARD), and the fully relaxed
+FULL mode reached by enabling RelaxConfig's default-off forward hook
+(the T -> 0 study of Theorem 2; supplementary Table "The three
+execution modes").
 
 P7 primitives:
   RomTensor + peek    differentiable ROM byte access (one-hot dot product)
@@ -37,10 +53,12 @@ import ChainRulesCore
     _stop_gradient(x) -> x
 
 Identity on the forward pass; backward pass propagates no gradient.
-Julia's equivalent of `jax.lax.stop_gradient` — used to build the
-straight-through estimator inside `_func_do_branch` so the forward
-PC is bit-exact (matching the packed `P` decision) while the
-backward gradient runs through the sigmoid-blended soft PC.
+Julia's equivalent of `jax.lax.stop_gradient` — the `sg(.)` operator of
+the straight-through estimator STE(soft, hard) = soft + sg(hard - soft)
+(paper Eq. "ste"). Used inside `_func_do_branch` so the forward PC is
+bit-exact (matching the packed `P` decision, Theorem 1) while the
+backward gradient runs through the sigmoid-blended soft PC (the
+surrogate gradient, Corollary 1).
 
 Implemented via a manual `rrule` because `ChainRulesCore.@ignore_derivatives`
 isn't directly composable here.

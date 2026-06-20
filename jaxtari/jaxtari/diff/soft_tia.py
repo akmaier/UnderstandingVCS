@@ -6,6 +6,19 @@ that finally lets `jax.grad` flow from a framebuffer **pixel** back to
 a ROM byte — the headline `∂pixel / ∂ROM` the whole project is built
 around.
 
+Paper reference: this renders the TIA part of the soft state's frame
+buffer (paper "Soft Equals Hard"; the soft step of Fig. "pipeline").
+The colour path is differentiable with no approximation while the
+forward render stays bit-exact (Theorem 1), so a colour register
+STA'd from a ROM byte reaches every pixel it paints. Per the paper's
+"every hard decision is a discrete selection" argument, the *content*
+path (colours, sprite bits, priority compositing) is differentiable
+via stored switches like max-pooling, whereas a discrete sprite
+*position* index is the one quantity a stored switch cannot
+differentiate (cf. the spatial-transformer bilinear sampler used in
+the joystick-to-screen gradient study, Fig. "si_joystick_gradient",
+Jaderberg et al. 2015). Mirrors xitari TIA::updateFrameScanline.
+
 **Why no SoftBus change.** The SOFT bus collapses the TIA register
 file into the low cells of `bus.ram`: a `STA $09` resolves through the
 `addr & 0x7F` decode to `ram[9]`, and $09 *is* COLUBK. So the renderer
@@ -368,7 +381,11 @@ def soft_collision_registers(bus) -> jnp.ndarray:
     same pixel; each register packs its hit flags into D7 / D6. The
     result is a structural (boolean) property of the scanline, so the
     gradient through it is ~0 — collisions are forward feature parity
-    with the HARD TIA's P3e latches, not a gradient-flow path.
+    with the HARD TIA's P3e latches, not a gradient-flow path. This is
+    the paper's "structural" half of the soft TIA (Theorem 1 keeps the
+    forward bit-exact; no surrogate gradient is exposed here). Mirrors
+    the xitari collision logic (TIA::updateFrameScanline,
+    `myCollision |= ourCollisionTable[...]`).
 
     This function is standalone (like `soft_render_scanline`); wiring it
     into the bus so a program can *read* $00-$07 as collision data is

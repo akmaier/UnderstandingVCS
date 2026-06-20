@@ -1,5 +1,17 @@
 """Straight-through estimator helpers — hard forward, soft backward.
 
+Paper reference: the straight-through estimator (STE) of the "Hard and
+Soft Execution" section, STE(soft, hard) = soft + sg(hard - soft) with
+sg the stop-gradient operator (Eq. "ste"; supplementary fourth
+primitive). The round and clamp operations here are the "round and clamp
+... treated the same way (forward exact, backward identity inside the
+valid range)" the paper calls out. This is the device that makes the
+soft forward pass bit-exact to the hard one at any finite temperature
+(Theorem 1, "Exact forward equivalence") while exposing a *surrogate*
+gradient (Corollary 1: STE is a surrogate-gradient estimator, not the
+limiting hard derivative), the same device that makes max-pooling
+differentiable; cf. Bengio et al. 2013.
+
 PORTING_PLAN.md §6.3: for opcodes where the soft relaxation is too
 expensive (or where the discrete behaviour is genuinely correct in the
 forward pass), we want the forward computation to give the hard

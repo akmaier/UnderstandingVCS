@@ -4,6 +4,15 @@
 # `straight_through_clamp` clips to [lo, hi]. For both, the BACKWARD
 # pass is the identity (modulo the inside-interval mask for clamp).
 #
+# Paper reference: the round/clamp companions of the straight-through
+# estimator STE(soft, hard) = soft + sg(hard - soft) (Eq. "ste";
+# supplementary fourth primitive) — "the round and clamp operations are
+# treated the same way (forward exact, backward identity inside the valid
+# range)" ("Hard and Soft Execution"). These keep the soft forward pass
+# bit-exact to the hard one (Theorem 1) while exposing surrogate
+# gradients (Corollary 1); cf. Bengio et al. 2013. (The branch STE
+# itself is built in Modes._stop_gradient + SoftStep._func_do_branch.)
+#
 # Forward-behaviour implementations here. Identity-backward Jacobian
 # wiring uses ChainRulesCore.@scalar_rule / @non_differentiable when
 # the differentiability layer is fully wired up in P7b; for now the

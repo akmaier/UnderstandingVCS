@@ -1,4 +1,16 @@
-"""Differentiability layer.
+"""Differentiability layer — the paper's "new methods" (SOFT execution path).
+
+This package implements the differentiable (SOFT) execution of the VCS
+described in the paper "A Differentiable Atari VCS": the cartridge ROM
+as a weight tensor (rom_as_weights), the RAM as a soft tape, control
+flow as gates (soft_branch / soft_select), and the straight-through
+estimator (straight_through) that joins the soft path to the bit-exact
+hard path. Together these give a soft forward pass that is bit-exact
+equal to the hard one at any finite temperature (Theorem 1, "Exact
+forward equivalence") while exposing surrogate gradients where the bit
+logic has none (Corollary 1). See paper sections "Hard and Soft
+Execution" and "Soft Equals Hard", and the supplementary "Setup and
+Notation" for the five primitives.
 
 See PORTING_PLAN.md §6 for the design (HARD vs SOFT mode, soft opcode
 dispatch, soft RAM addressing, ROM-as-weights, straight-through estimator).

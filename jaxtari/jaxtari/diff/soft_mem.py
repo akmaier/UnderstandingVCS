@@ -1,6 +1,22 @@
 """NTM-style soft memory read — differentiable access to RAM by a
 continuous-valued address.
 
+Paper reference: this is the *relaxed read* primitive — the
+distance-softmax (temperature-T) read peek_R(r, a; T) = sum_k w_k
+r_{a+k} with w_k proportional to exp(-|k| / T) (supplementary "Setup
+and Notation", fifth primitive, Eq. "s-read"). It is the differentiable
+counterpart of the one-hot exact read (rom_as_weights.peek): peek_R ->
+r_a as T -> 0 while the address carries a nonzero gradient for T > 0,
+the discrete limit of the soft attention-style addressing of a Neural
+Turing Machine (Graves et al. 2014). The executed (SOFT-STE) path uses
+the *exact* one-hot read instead; only the fully relaxed variant of
+Theorem 2 ("Temperature-limit bound") uses this read, whose off-target
+weights decay unconditionally as exp(-1/T) (the proof's "Read term").
+
+Mirrors the hard read xitari M6502Low::peek / System::peek (a discrete
+`mem[address]`); here a continuous address selects a temperature-blended
+neighbourhood so gradients reach the address itself.
+
 PORTING_PLAN.md §6.2: indirect / indexed RAM addressing becomes a
 positional-attention read,
 

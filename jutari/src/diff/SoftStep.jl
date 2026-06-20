@@ -7,6 +7,16 @@
 # Julia branch table over a constant `_HANDLERS` vector. The HARD `step`
 # is left untouched — SOFT mode is a parallel execution path.
 #
+# Paper reference: this is the one-step soft transition map Phi_S of the
+# paper ("Soft Equals Hard"; supplementary "Setup and Notation"),
+# assembled from the soft primitives — one-hot ROM/RAM reads (Eq.
+# "peek"), the hard opcode dispatch (saturated softmax select, Eq.
+# "select"), and the straight-through conditional branch (Eq. "branch" +
+# Eq. "ste"). By Theorem 1 ("Exact forward equivalence") each primitive
+# is forward-identical to its hard counterpart, so Phi_S(x) = Phi_H(x) in
+# Float32 and the step emits a bit-exact frame plus a surrogate gradient
+# (Corollary 1). Mirrors one iteration of xitari M6502Low::execute.
+#
 # Opcode coverage:
 #
 #   P7b (the original 8-opcode core):
@@ -58,6 +68,13 @@
 Differentiable cart byte read — `one_hot(addr) · rom`. The one-hot is
 built by a broadcast comparison (no `setindex!`) so the call is
 Zygote-differentiable w.r.t. `rom` — see P7e.
+
+The one-hot exact read peek(r, a) = 1_a' r = r_a (paper Eq. "peek";
+supplementary first primitive): forward-exact (Theorem 1) with a one-hot
+gradient w.r.t. `rom`. Mirrors xitari M6502Low::peekWithPC (opcode/operand
+fetch). When the relaxation study is on (`_relax_on[]`), the read switches
+to the distance-softmax relaxed read of Eq. "s-read" — the FULL-mode read
+analysed in Theorem 2.
 """
 function soft_rom_peek(rom::AbstractVector{<:Real}, addr::Real)
     n = length(rom)
@@ -82,6 +99,11 @@ end
     soft_ram_peek(ram, addr) -> Float32
 
 Differentiable RAM read — same Zygote-friendly broadcast one-hot.
+
+The RAM-as-soft-tape read (paper Eq. "peek" on the RIOT RAM; the "RAM as
+a soft tape" of "Hard and Soft Execution"). Forward-exact (Theorem 1)
+with a one-hot gradient w.r.t. the addressed cell; the relaxation study
+swaps in the Eq. "s-read" distance-softmax read of Theorem 2.
 """
 function soft_ram_peek(ram::AbstractVector{<:Real}, addr::Real)
     n = length(ram)
@@ -1274,9 +1296,13 @@ const SOFT_SUPPORTED_OPCODES = Set{UInt8}([
 """
     soft_step!(state::SoftCPUState, bus::SoftBus) -> nothing
 
-Execute one instruction. Memory access is differentiable (one-hot dot
-product on ROM and RAM). Dispatch is a Julia table lookup over the
-256-way opcode handler list. Mutates `state` and `bus.ram` in place.
+Execute one instruction — the soft one-step map Phi_S (paper "Soft Equals
+Hard", Theorem 1). Forward-identical to the hard step Phi_H, so a whole
+trajectory is bit-exact (Theorem 1's induction) while every primitive
+carries a surrogate gradient (Corollary 1). Memory access is
+differentiable (one-hot dot product on ROM and RAM). Dispatch is a Julia
+table lookup over the 256-way opcode handler list. Mutates `state` and
+`bus.ram` in place. (`soft_step` is the Zygote-friendly functional twin.)
 """
 function soft_step!(state::SoftCPUState, bus::SoftBus)
     rom_off = _cart_addr(state.PC)
@@ -1849,7 +1875,16 @@ _func_ror_abs_x(s, b) = _func_shift_memory(s, b, _addr_abs_x, _ror_value, 3, 7)
 """
     _func_do_branch(state, bus, flag_field, flag_mask, take_when_set)
 
-Conditional branch.
+Conditional branch — the soft-branch relaxation of "Hard and Soft
+Execution" wrapped in a straight-through estimator. Builds the sigmoid
+gate g = sigmoid(alpha z) and the blended PC pc_soft = pc_notaken +
+g*delta (Eq. "branch"), then returns STE(pc_soft, pc_hard) (Eq. "ste")
+via `_stop_gradient`: forward = the exact hard branch (Theorem 1),
+backward = the soft gate gradient (surrogate, Corollary 1). With the
+relaxation study on, the straight-through correction is dropped and the
+forward PC is the rounded blended PC — the FULL-mode branch of Theorem 2.
+Mirrors the xitari relative-branch macro (M6502Hi.m4,
+`address = PC + (Int8)operand`).
 
 `flag_field` is one of `:P_N`, `:P_Z`, `:P_C`, `:P_V` — the
 float-valued mirror `_with_p` keeps in sync with `P`. `flag_mask`

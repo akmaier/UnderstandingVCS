@@ -5,6 +5,17 @@
 #   value   = sum_i weights[i] * RAM[i]
 #
 # As τ → 0 the result collapses to ordinary indexing.
+#
+# Paper reference: the *relaxed read* primitive — the distance-softmax
+# (temperature-T) read peek_R(r, a; T) = sum_k w_k r_{a+k}, w_k ∝
+# exp(-|k| / T) (supplementary "Setup and Notation", fifth primitive,
+# Eq. "s-read"). It is the differentiable counterpart of the one-hot
+# exact read (RomAsWeights.peek): peek_R → r_a as T → 0 while the
+# address carries a nonzero gradient for T > 0 (NTM soft addressing,
+# Graves et al. 2014). The executed (SOFT-STE) path uses the exact
+# one-hot read; only the fully relaxed variant of Theorem 2 uses this
+# read, whose off-target weights decay unconditionally as exp(-1/T)
+# (the proof's "Read term"). Mirrors xitari M6502Low::peek / System::peek.
 
 """
     soft_memory_read(memory, addr_continuous; temperature=1.0) -> Float32

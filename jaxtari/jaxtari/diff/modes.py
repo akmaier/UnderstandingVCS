@@ -1,5 +1,16 @@
 """Global HARD vs SOFT execution mode toggle.
 
+Paper reference: the execution-mode toggle behind the "three execution
+modes" of the paper (supplementary Table "The three execution modes").
+HARD is the bit-exact conformance machine; SOFT here is the SOFT-STE
+mode used for every gradient in the paper — its forward pass is
+bit-identical to HARD (Theorem 1, "Exact forward equivalence") and its
+backward pass is a surrogate (Corollary 1). The third, fully relaxed
+mode (FULL, used only for the T -> 0 study of Theorem 2) is not a
+separate enum value; it is reached by enabling the default-off forward
+relaxation hook (see RelaxConfig in the jutari twin / the relaxation
+study).
+
 HARD: bit-exact emulation against xitari. Integer state, hard opcode switch,
 indexed memory reads. No gradients. This is the default and what every
 conformance test in `tests/conformance/` runs in.

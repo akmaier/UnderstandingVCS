@@ -5,6 +5,19 @@
 # reverse-mode AD flow from a framebuffer *pixel* back to a ROM byte —
 # the headline ∂pixel/∂ROM the project is built around.
 #
+# Paper reference: this renders the TIA part of the soft state's frame
+# buffer (paper "Soft Equals Hard"; the soft step of Fig. "pipeline").
+# The colour path is differentiable with no approximation while the
+# forward render stays bit-exact (Theorem 1), so a colour register STA'd
+# from a ROM byte reaches every pixel it paints. Per the paper's "every
+# hard decision is a discrete selection" argument, the *content* path
+# (colours, sprite bits, priority compositing) is differentiable via
+# stored switches like max-pooling, whereas a discrete sprite *position*
+# index is the one quantity a stored switch cannot differentiate (cf. the
+# spatial-transformer bilinear sampler of the joystick-to-screen gradient
+# study, Fig. "si_joystick_gradient", Jaderberg et al. 2015). Mirrors
+# xitari TIA::updateFrameScanline.
+#
 # The SOFT bus collapses the TIA register file ($00-$3F) into the low
 # cells of `bus.ram`: a `STA $09` resolves through the `addr & 0x7F`
 # decode to ram[9], and $09 is COLUBK. So the renderer reads its
@@ -306,7 +319,10 @@ indexed CXM0P, CXM1P, CXP0FB, CXP1FB, CXM0FB, CXM1FB, CXBLPF, CXPPMM.
 Two objects collide when their masks are both 1.0 at the same pixel;
 each register packs its hit flags into D7 / D6. Collisions are a
 structural (boolean) property — forward feature parity with the HARD
-TIA's P3e latches, not a gradient-flow path.
+TIA's P3e latches, not a gradient-flow path. This is the "structural"
+half of the soft TIA: Theorem 1 keeps the forward bit-exact, but no
+surrogate gradient is exposed here. Mirrors the xitari collision logic
+(TIA::updateFrameScanline, `myCollision |= ourCollisionTable[...]`).
 """
 function soft_collision_registers(bus::SoftBus)
     pf, p0, p1, m0, m1, bl = _object_masks(bus)
