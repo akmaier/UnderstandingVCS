@@ -114,17 +114,26 @@ while IFS=$'\t' read -r nn type src; do
     wav="build/slide-${nn}.wav"
     out="build/seg-${nn}.mp4"
     [[ -f "$wav" ]] || { echo "  MISSING $wav"; exit 1; }
+    # Measure the EXACT (sub-second) narration duration and frame-align it to the
+    # FPS grid (not to whole seconds). Then force BOTH streams to that length with
+    # -t Dv and apad. NOTE: -shortest overruns the video on looped/still sources
+    # by a fixed ~1.8 s per segment, which accumulates into A/V drift across the
+    # video; pinning video==audio==Dv per segment removes the drift entirely.
+    Dwav=$(ffprobe -v error -show_entries format=duration -of default=nk=1:nw=1 "$wav")
+    Dv=$(awk -v d="$Dwav" -v f="$FPS" 'BEGIN{ printf "%.6f", int(d*f + 0.5)/f }')
     if [[ "$type" == "slide" ]]; then
         "${FF[@]}" -loop 1 -i "build/${src}.png" -i "$wav" \
-            -filter_complex "[0:v]${PAD_WHITE}[v]" -map "[v]" -map 1:a \
-            -tune stillimage "${VENC[@]}" "${AENC[@]}" -shortest "$out"
+            -filter_complex "[0:v]${PAD_WHITE}[v];[1:a]apad[a]" -map "[v]" -map "[a]" \
+            -t "$Dv" -tune stillimage "${VENC[@]}" "${AENC[@]}" "$out"
     else
         "${FF[@]}" -stream_loop -1 -i "build/${src}.mp4" -i "$wav" \
-            -map 0:v:0 -map 1:a:0 "${VENC[@]}" "${AENC[@]}" -shortest "$out"
+            -filter_complex "[1:a]apad[a]" -map 0:v:0 -map "[a]" \
+            -t "$Dv" "${VENC[@]}" "${AENC[@]}" "$out"
     fi
     echo "file 'seg-${nn}.mp4'" >> build/concat.txt
-    printf "  seg %s (%s) %.1fs\n" "$nn" "$type" \
-        "$(ffprobe -v error -show_entries format=duration -of default=nk=1:nw=1 "$out")"
+    sv=$(ffprobe -v error -select_streams v:0 -show_entries stream=duration -of default=nk=1:nw=1 "$out")
+    sa=$(ffprobe -v error -select_streams a:0 -show_entries stream=duration -of default=nk=1:nw=1 "$out")
+    printf "  seg %s (%s) wav=%.3f Dv=%.3f vid=%.3f aud=%.3f\n" "$nn" "$type" "$Dwav" "$Dv" "${sv:-0}" "${sa:-0}"
 done < segments.tsv
 
 # ---------------------------------------------------------------------------
