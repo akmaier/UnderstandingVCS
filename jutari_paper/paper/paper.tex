@@ -304,6 +304,11 @@ the reference. Table~\ref{tab:ports} summarises the two ports.
 \begin{table}[t]
 \centering
 \setlength{\tabcolsep}{4pt}
+\caption{The two differentiable ports at a glance. Both reproduce
+\textsc{xitari} bit-for-bit on all 64 games. Throughput rows are soft-mode
+env-steps/s (Pong, $3{,}000$ steps); a dash marks a regime the port does not
+target. Full per-batch scaling is in the supplementary material.}
+\label{tab:ports}
 \begin{tabular}{lcc}
 \toprule
  & \textsc{jutari} & \textsc{jaxtari} \\
@@ -322,11 +327,6 @@ Throughput, batched CPU & --- & ${\sim}60{,}000$ \\
 Throughput, batched GPU & --- & \textbf{$\sim$3.1\,M} \\
 \bottomrule
 \end{tabular}
-\caption{The two differentiable ports at a glance. Both reproduce
-\textsc{xitari} bit-for-bit on all 64 games. Throughput rows are soft-mode
-env-steps/s (Pong, $3{,}000$ steps); a dash marks a regime the port does not
-target. Full per-batch scaling is in the supplementary material.}
-\label{tab:ports}
 \end{table}
 
 \subsection{Hard and Soft Execution}
