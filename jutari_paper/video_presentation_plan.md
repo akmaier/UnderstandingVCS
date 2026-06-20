@@ -6,8 +6,34 @@ videos**. Built with the same reproducible pipeline as the previous paper
 (`EmpiricalBoundsKnownOperator/presentation`), extended to embed real gameplay
 clips, with a **fully anonymous synthetic voice-over** for double-blind review.
 
-> **Status: PLAN ONLY.** Nothing is built yet. Open questions for you are at the
-> bottom (§8). Once we agree, implementation is ~1–2 build iterations.
+> **Status: PLAN AGREED — ready to build.** Decisions locked in §8. Nothing is
+> built yet beyond a layout mock; awaiting final go-ahead.
+
+### Decisions (locked)
+
+- **Length:** ~5:00.
+- **Final MP4:** committed to the repo (under `jutari_paper/presentation/`).
+- **Segment 5 (centerpiece) = two phases:** (a) **one game large** — a single
+  `XITARI | JUTARI | DIFFERENCE` clip full-width; then (b) **switch to a stacked
+  grid**: top row = `XITARI | JUTARI | DIFFERENCE`, bottom row =
+  `XITARI | JAXTARI | DIFFERENCE`, composited to **16:9 (1920×1080)**. Both
+  DIFFERENCE panels are black → "two independent ports, both bit-exact" in one
+  shot. Layout confirmed via a rendered mock.
+- **jaxtari shown:** yes — it is the bottom row of the grid (side-by-side with jutari).
+- **Voice:** Chatterbox built-in synthetic voice. **AAAI explicitly forbids
+  "identifiable voices" in supplementary video**, so a synthetic voice is required,
+  not merely preferred.
+
+### AAAI-26/27 supplementary rules (verified)
+
+- Supplementary material is **one `.zip` uploaded to OpenReview** (code + multimedia together).
+- **Anonymization is mandatory:** AAAI urges authors to ensure a submitted video
+  "avoids images of the authors, **identifiable voices**, university or lab logos,
+  recognizable campus scenes, etc." → drives every anonymity choice here.
+- **No published hard size/codec limit**; OpenReview enforces a max, and if data
+  exceeds it authors upload a representative subset. → keep the MP4 modest (target
+  well under ~50 MB, H.264).
+- Supplementary deadline is one week after the paper deadline (was Aug 4 for AAAI-26).
 
 ---
 
@@ -63,7 +89,7 @@ in English (no LaTeX read aloud), sentences < 20 words, no em-dashes/semicolons.
 | 2 | **The XAI ground-truth gap** | Beamer bullets (known-but-trivial vs complex-but-unknown) | 35 | Why explanation needs ground truth; today's dichotomy. |
 | 3 | **Idea: the Atari VCS** | `fig_architecture.pdf` (VCS block diagram) | 30 | A real 1977 computer: complex, fully specified, and we make it differentiable. |
 | 4 | **Two bit-exact ports** | `tab:ports` rendered as a slide (jutari/jaxtari, 64/64) | 30 | Built twice (Julia + JAX); both match xitari bit-for-bit on all 64 games. |
-| 5 | **★ Conformance montage** | **3–4 comparison clips in sequence** (e.g. Space Invaders, Pong, Seaquest, Enduro), XITARI \| PORT \| DIFFERENCE | 60 | "Left: reference. Middle: our port. Right: the difference — solid black, every frame, every game." The showcase. |
+| 5 | **★ Conformance showcase** | **(a) one game large** (`XITARI\|JUTARI\|DIFFERENCE`, full-width, ~18 s) → **(b) stacked grid**: top `XITARI\|JUTARI\|DIFFERENCE`, bottom `XITARI\|JAXTARI\|DIFFERENCE`, 16:9, cycling 2–3 games (~42 s) | 60 | "Left: reference. Middle: our port. Right: the difference — solid black, every frame. And both ports agree: jutari on top, jaxtari below, both pixel-identical to xitari." The showcase. |
 | 6 | **Soft equals Hard** | `fig_pipeline.pdf` + the `fig_alpha_anim`/`fig_temp_anim` GIFs as motion | 40 | ROM as weights, RAM as soft tape, branches as gates; forward bit-exact, surrogate gradients. |
 | 7 | **GPU throughput** | `gpu_throughput.png` | 25 | jutari fastest per-env on CPU; jaxtari vmap-batches to ~3M env-steps/s on a commodity GPU. |
 | 8 | **XAI proof of concept** | `si_joystick_gradient.pdf` (real Space Invaders gradient) | 35 | Gradients of a pixel w.r.t. ROM/inputs on a real ROM — attribution scored against truth. |
@@ -108,11 +134,15 @@ jutari_paper/
 - **File size:** four 1080p clip segments + slides; H.264 CRF ~23 should land well under 50 MB. Will verify against AAAI's supplementary-material size/format limits (**Q1**).
 - **Anonymity regressions:** the title slide, any burned-in captions, and the MP4 metadata are the three leak points; all three are explicitly handled.
 
-## 8. Open questions for you (let's settle these, then I build)
+## 8. Decisions (resolved)
 
-1. **AAAI supplementary limits** — I'll verify the exact accepted format and max file size for the AAAI-27 supplementary video before building; any preference if it must be split or heavily compressed?
-2. **Length** — 5:00 good, or tighter (~3:30) / longer (~7:00)?
-3. **Segment 5 style** — sequential clips (my default: SI → Pong → Seaquest → Enduro, ~60 s) **or** a 2×2 simultaneous grid (~25 s, denser, frees time for more narrative)? Different games?
-4. **Repo policy for the MP4** — commit `presentation.mp4` to the repo (convenient, but it's a binary), or keep only the sources and build on demand / attach at submission?
-5. **Voice** — Chatterbox default synthetic voice (anonymous) is my plan. OK, or do you want a specific tone (e.g. slower pacing via `--cfg-weight`)? (No author-voice cloning, to preserve anonymity.)
-6. **Show jaxtari clips too?** The 10 s jaxtari clips could appear briefly in segment 5 to make "two independent ports" concrete — or keep segment 5 all-jutari for consistency and mention jaxtari verbally.
+1. **AAAI limits** — verified (see §1): single anonymized ZIP to OpenReview; no hard size cap; keep MP4 modest.
+2. **Length** — **~5:00** (10 segments as storyboarded).
+3. **Segment 5** — **two-phase**: one game large, then a stacked jutari-top / jaxtari-bottom grid at 16:9 (layout mock confirmed). Candidate games: Space Invaders (lead), then cycle e.g. Seaquest / Enduro / Pong.
+4. **MP4** — **committed** to `jutari_paper/presentation/`.
+5. **Voice** — Chatterbox synthetic default (required by AAAI's no-identifiable-voices rule). Pacing tuned via `--cfg-weight` if needed.
+6. **jaxtari** — **shown**, as the bottom row of the segment-5 grid.
+
+### Remaining before build
+- Final go-ahead from the author.
+- Pick the exact games for the grid cycle (default: Space Invaders → Seaquest → Enduro).
