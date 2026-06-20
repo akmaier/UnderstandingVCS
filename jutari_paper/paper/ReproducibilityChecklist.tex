@@ -152,7 +152,7 @@ yes --- bit-exact conformance sweeps, throughput benchmarks, and a gradient-base
 	yes --- released publicly on acceptance under the MIT License
         
 	\question{All source code implementing new methods have comments detailing the implementation, with references to the paper where each step comes from}{(yes/partial/no)}
-	partial --- much of the new code is commented with references to the paper and to xitari, but not uniformly
+	yes --- every differentiable (soft) source in both ports (\texttt{jaxtari/jaxtari/diff/}, \texttt{jutari/src/diff/}) carries module- and function-level comments that name the paper construct each step implements---the five differentiable primitives (one-hot read, softmax dispatch, sigmoid branch, straight-through estimator, distance-softmax relaxed read), the forward-equivalence and temperature-limit theorems, the surrogate-gradient corollary, and the three execution modes---together with the \textsc{xitari} routine each one mirrors
 
 	\question{If an algorithm depends on randomness, then the method used for setting seeds is described in a way sufficient to allow replication of results}{(yes/partial/no/NA)}
 	yes --- deterministic action streams and the Mnih-style random-NOOP-reset seeding are described and recorded
