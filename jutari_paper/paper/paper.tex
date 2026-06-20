@@ -316,12 +316,16 @@ Opcode bytes            & 189 & 189 \\
 Cartridge mappers       & 9 & 9 \\
 RAM-exact (of 64)       & \textbf{64} & \textbf{64} \\
 Pixel-exact (of 64)     & \textbf{64} & \textbf{64} \\
+\addlinespace
+Throughput, 1 env (CPU) & $\mathbf{370{,}100}$ & $1{,}178$ \\
+Throughput, batched CPU & --- & ${\sim}60{,}000$ \\
+Throughput, batched GPU & --- & \textbf{$\sim$3.1\,M} \\
 \bottomrule
 \end{tabular}
 \caption{The two differentiable ports at a glance. Both reproduce
-\textsc{xitari} bit-for-bit on all 64 games. Throughput---single-step,
-compiled-rollout, and batched---is measured and reported in the supplementary
-material.}
+\textsc{xitari} bit-for-bit on all 64 games. Throughput rows are soft-mode
+env-steps/s (Pong, $3{,}000$ steps); a dash marks a regime the port does not
+target. Full per-batch scaling is in the supplementary material.}
 \label{tab:ports}
 \end{table}
 
