@@ -99,7 +99,42 @@
   \end{itemize}
 \end{frame}
 
-% ---- Page 6 : GPU throughput (segment 9) ----
+% ---- Page 6 : Theorem 1 (segment 8) ----
+\begin{frame}{Theorem 1: exact forward equivalence}
+  \begin{block}{}
+    For every reachable state $x$ and every finite sharpness $\alpha$ and
+    temperature $T$,
+    \[
+      \Phi_{\mathrm{S}}(x) \;=\; \Phi_{\mathrm{H}}(x)
+    \]
+    in identical float32, so the soft and hard trajectories coincide at every
+    step. The modes differ only in the gradient
+    $\partial\Phi_{\mathrm{S}}/\partial x$, which is defined and nonzero where the
+    hard one is zero or undefined.
+  \end{block}
+  \textbf{Why it matters.} Attribution is computed on the \emph{exact} hard
+  trajectory, not an approximation. The forward error is identically zero, at any
+  temperature.
+\end{frame}
+
+% ---- Page 7 : Theorem 2 (segment 9) ----
+\begin{frame}{Theorem 2: temperature-limit bound}
+  \begin{block}{}
+    The \emph{fully relaxed} step (softmax dispatch, sigmoid branch,
+    distance-softmax read, \emph{without} the straight-through correction)
+    converges to the hard step as $T\to0$ and $\alpha\to\infty$:
+    \[
+      \big\|\Phi^{T}_{\mathrm{S}}(x)-\Phi_{\mathrm{H}}(x)\big\|_\infty
+      \le C\big[(K{-}1)\,e^{-\Delta_{\min}/T} + e^{-\alpha m_{\min}} + \rho\,e^{-1/T}\big].
+    \]
+    The deviation falls exponentially as the temperature drops and the sharpness grows.
+  \end{block}
+  \textbf{Why it matters.} The relaxation is principled even without the
+  straight-through trick. The straight-through estimator reaches this hard limit
+  \emph{exactly} at finite temperature.
+\end{frame}
+
+% ---- Page 8 : GPU throughput (segment 11) ----
 \begin{frame}{Throughput: a GPU path}
   \begin{columns}
     \begin{column}{0.6\textwidth}
@@ -116,19 +151,24 @@
   \end{columns}
 \end{frame}
 
-% ---- Page 7 : XAI proof of concept (segment 10) ----
+% ---- Page 9 : XAI proof of concept (segment 12) ----
 \begin{frame}{Gradients with a ground truth}
-  \centering
-  \includegraphics[width=0.95\linewidth]{si_joystick_gradient.pdf}
-  \vspace{0.4em}
-  \begin{itemize}\setlength\itemsep{0.3em}
-    \item A real Space Invaders ROM, run in the differentiable substrate
-    \item Gradient of the screen with respect to the joystick action
-    \item An attribution that can be scored against the true mechanism
-  \end{itemize}
+  \begin{columns}
+    \begin{column}{0.54\textwidth}
+      \centering
+      \includegraphics[height=0.72\textheight]{si_joystick_gradient.pdf}
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \begin{itemize}\setlength\itemsep{0.6em}
+        \item A real Space Invaders ROM, run in the differentiable substrate
+        \item Gradient of the screen with respect to the joystick action
+        \item An attribution that can be scored against the true mechanism
+      \end{itemize}
+    \end{column}
+  \end{columns}
 \end{frame}
 
-% ---- Page 8 : In the supplement (segment 11) ----
+% ---- Page 10 : In the supplement (segment 13) ----
 \begin{frame}{In the supplementary material}
   \begin{itemize}\setlength\itemsep{0.5em}
     \item Full proofs of the forward-equivalence and temperature-limit results
@@ -139,7 +179,7 @@
   \end{itemize}
 \end{frame}
 
-% ---- Page 9 : Conclusion (segment 12) ----
+% ---- Page 11 : Conclusion (segment 14) ----
 \begin{frame}{A testbed for explainable AI}
   \begin{itemize}\setlength\itemsep{0.5em}
     \item A complex system that is fully known and fully differentiable
