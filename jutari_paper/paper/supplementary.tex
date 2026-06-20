@@ -694,24 +694,7 @@ fetch ever fails, so this late divergence is driven purely by an evolving RAM
 read.) The exact--diverge boundary is thus a per-cast threshold \emph{spectrum}
 over both fixed (ROM) and state-dependent (RAM) reads, not a single cliff.
 
-\section{Per-Game Conformance}
-
-Table~\ref{tab:games} lists every game in the conformance set with its
-auto-detected mapper, a short ROM hash, and its per-frame RAM and pixel
-exactness, so the headline 64/64 claim can be audited game by game. Both ports
-pass every game; \textsc{jaxtari} and \textsc{jutari} agree game-for-game, and
-the cross-check between them is part of the test suite.
-
-\section{Throughput}
-
-We measure soft-mode throughput as steps per second (one step $=$ one CPU
-instruction) on a fixed ROM after just-in-time warm-up, on a single Apple~M1~Max
-core (JAX CPU backend, Julia~1.12), reporting the median of repeated runs.
-Table~\ref{tab:s-compare} summarises the three operating points the rest of this
-section develops; the per-batch scaling behind the batched rows is in
-Tables~\ref{tab:s-batched} (CPU) and~\ref{tab:s-gpu} (GPU).
-
-\begin{table}[tbh]
+\begin{table}[tb]
 \centering
 \caption{Throughput across engine $\times$ backend (real Pong ROM, soft mode,
 $3{,}000$-step rollout, median of repeated runs after JIT warm-up). \textsc{jutari}
@@ -735,50 +718,26 @@ engine \& backend & mode & env-steps/s\\
 \end{tabular}
 \end{table}
 
-At single-instruction granularity \textsc{jutari} sustains ${\sim}370{,}100$
-steps/s and \textsc{jaxtari} ${\sim}1{,}178$, a ${\sim}314\times$ gap. The
-difference is dominated by JAX's per-operation kernel-launch overhead: each soft
-step dispatches one opcode through a $256$-way switch, so at single-instruction
-granularity the launch overhead dwarfs the instruction, whereas Julia inlines the
-small handlers---a property of the execution granularity, not the AD systems. For a
-gradient-based XAI workflow (one forward-plus-backward pass per attribution)
-\textsc{jaxtari}'s ${\sim}42$\,s per $50{,}000$-step trace is comfortably
-interactive.
+\section{Per-Game Conformance}
 
-Two modes recover throughput beyond this single-step figure: compiling a whole
-rollout into one \texttt{lax.scan} (${\sim}30{,}000$ steps/s for a single
-environment, a ${\sim}25\times$ gain that amortises the launches), and
-\texttt{vmap}-ing that scan over a batch of independent environments.
-Table~\ref{tab:s-batched} reports the batched scaling on the CPU
-backend (Apple~M1~Max, real Pong ROM, median of repeated $3{,}000$-step runs after
-JIT warm-up; the batched run is verified bit-identical to the unbatched one).
-Aggregate throughput rises \emph{sub-linearly} with the batch because the
-data-dependent $256$-way opcode dispatch (\texttt{lax.switch}) evaluates all
-candidate handler branches under \texttt{vmap}; on a CPU these branches serialise,
-so the aggregate asymptotes near ${\sim}60{,}000$ env-steps/s (Table~\ref{tab:s-batched}).
+Table~\ref{tab:games} lists every game in the conformance set with its
+auto-detected mapper, a short ROM hash, and its per-frame RAM and pixel
+exactness, so the headline 64/64 claim can be audited game by game. Both ports
+pass every game; \textsc{jaxtari} and \textsc{jutari} agree game-for-game, and
+the cross-check between them is part of the test suite.
 
-\paragraph{GPU.} On a GPU the same all-branch evaluation maps onto the device's
-parallel lanes instead of serialising, so batching the differentiable rollout is the
-intended operating regime. Table~\ref{tab:s-gpu} and Figure~\ref{fig:gpu-throughput}
-measure this on a single \emph{commodity} GTX~1080~Ti (an 11\,GB Pascal card; real
-Pong ROM, a $3{,}000$-step \texttt{lax.scan} \texttt{vmap}-ped over $N$ environments,
-median of $3$ runs after JIT warm-up, verified bit-identical to the CPU rollout).
-Aggregate forward throughput climbs from ${\sim}2{,}500$ env-steps/s at $N{=}1$ to a
-peak of ${\sim}2.95$M at $N{\approx}4096$---roughly $50\times$ the CPU asymptote and
-${\sim}1200\times$ the single-environment rate---then rolls off gently as the device
-saturates. The workload is compute/occupancy-bound, not memory-bound: the peak uses
-only ${\sim}0.1$\,GB, so the ceiling is lane parallelism rather than capacity.
-Crucially the reverse-mode gradient is nearly free at scale---\emph{forward+gradient}
-tracks forward to within ${\sim}5\%$ at the peak (${\sim}2.8$M env-steps/s)---so a
-commodity GPU turns batched \emph{differentiable} rollouts (gradient-based RL or
-attribution over thousands of environments at once) into the natural way to use
-\textsc{jaxtari}. A second, newer architecture (Quadro~RTX~5000, 16\,GB Turing)
-traces the same curve and peaks slightly higher (${\sim}3.12$M env-steps/s at
-$N{\approx}4096$; Figure~\ref{fig:gpu-throughput}), so the scaling reflects the
-batched all-branch execution rather than one specific GPU. We report widely-available
-cards deliberately: the curve's shape, not a datacenter accelerator, is the point.
+\section{Throughput}
 
-\begin{table}[tbh]
+We measure soft-mode throughput as steps per second (one step $=$ one CPU
+instruction) on a fixed ROM after just-in-time warm-up, on a single Apple~M1~Max
+core (JAX CPU backend, Julia~1.12), reporting the median of repeated runs.
+Table~\ref{tab:s-compare} summarises the three operating points the rest of this
+section develops; the per-batch scaling behind the batched rows is in
+Tables~\ref{tab:s-batched} (CPU) and~\ref{tab:s-gpu} (GPU).
+
+
+
+\begin{table}[tb]
 \centering
 \caption{Batched soft-mode throughput of \textsc{jaxtari} on the CPU backend
 (M1~Max, Pong, a compiled \texttt{lax.scan} \texttt{vmap}-ped over $N$ environments).
@@ -800,7 +759,7 @@ $128$ & $55{,}900$ & $440$      & $1.9\times$\\
 \end{tabular}
 \end{table}
 
-\begin{table}[tbh]
+\begin{table}[tb]
 \centering
 \caption{Batched soft-mode \textsc{jaxtari} throughput on a single \emph{commodity}
 GTX~1080~Ti (11\,GB Pascal), Pong, a $3{,}000$-step \texttt{lax.scan}
@@ -827,7 +786,31 @@ $65536$ & $2{,}599{,}999$ & $2{,}533{,}964$\\
 \end{tabular}
 \end{table}
 
-\begin{figure}[tbh]
+
+
+At single-instruction granularity \textsc{jutari} sustains ${\sim}370{,}100$
+steps/s and \textsc{jaxtari} ${\sim}1{,}178$, a ${\sim}314\times$ gap. The
+difference is dominated by JAX's per-operation kernel-launch overhead: each soft
+step dispatches one opcode through a $256$-way switch, so at single-instruction
+granularity the launch overhead dwarfs the instruction, whereas Julia inlines the
+small handlers---a property of the execution granularity, not the AD systems. For a
+gradient-based XAI workflow (one forward-plus-backward pass per attribution)
+\textsc{jaxtari}'s ${\sim}42$\,s per $50{,}000$-step trace is comfortably
+interactive.
+
+Two modes recover throughput beyond this single-step figure: compiling a whole
+rollout into one \texttt{lax.scan} (${\sim}30{,}000$ steps/s for a single
+environment, a ${\sim}25\times$ gain that amortises the launches), and
+\texttt{vmap}-ing that scan over a batch of independent environments.
+Table~\ref{tab:s-batched} reports the batched scaling on the CPU
+backend (Apple~M1~Max, real Pong ROM, median of repeated $3{,}000$-step runs after
+JIT warm-up; the batched run is verified bit-identical to the unbatched one).
+Aggregate throughput rises \emph{sub-linearly} with the batch because the
+data-dependent $256$-way opcode dispatch (\texttt{lax.switch}) evaluates all
+candidate handler branches under \texttt{vmap}; on a CPU these branches serialise,
+so the aggregate asymptotes near ${\sim}60{,}000$ env-steps/s (Table~\ref{tab:s-batched}).
+
+\begin{figure}[tb]
 \centering
 \includegraphics[width=\linewidth]{figures/gpu_throughput.pdf}
 \caption{\textsc{jaxtari} soft-mode GPU throughput vs.\ batch size $N$ (Pong,
@@ -838,6 +821,29 @@ saturates---the $256$-way \texttt{lax.switch} all-branch dispatch parallelises a
 lanes on the GPU where it serialises on the CPU.}
 \label{fig:gpu-throughput}
 \end{figure}
+
+\paragraph{GPU.} On a GPU the same all-branch evaluation maps onto the device's
+parallel lanes instead of serialising, so batching the differentiable rollout is the
+intended operating regime. Table~\ref{tab:s-gpu} and Figure~\ref{fig:gpu-throughput}
+measure this on a single \emph{commodity} GTX~1080~Ti (an 11\,GB Pascal card; real
+Pong ROM, a $3{,}000$-step \texttt{lax.scan} \texttt{vmap}-ped over $N$ environments,
+median of $3$ runs after JIT warm-up, verified bit-identical to the CPU rollout).
+Aggregate forward throughput climbs from ${\sim}2{,}500$ env-steps/s at $N{=}1$ to a
+peak of ${\sim}2.95$M at $N{\approx}4096$---roughly $50\times$ the CPU asymptote and
+${\sim}1200\times$ the single-environment rate---then rolls off gently as the device
+saturates. The workload is compute/occupancy-bound, not memory-bound: the peak uses
+only ${\sim}0.1$\,GB, so the ceiling is lane parallelism rather than capacity.
+Crucially the reverse-mode gradient is nearly free at scale---\emph{forward+gradient}
+tracks forward to within ${\sim}5\%$ at the peak (${\sim}2.8$M env-steps/s)---so a
+commodity GPU turns batched \emph{differentiable} rollouts (gradient-based RL or
+attribution over thousands of environments at once) into the natural way to use
+\textsc{jaxtari}. A second, newer architecture (Quadro~RTX~5000, 16\,GB Turing)
+traces the same curve and peaks slightly higher (${\sim}3.12$M env-steps/s at
+$N{\approx}4096$; Figure~\ref{fig:gpu-throughput}), so the scaling reflects the
+batched all-branch execution rather than one specific GPU. We report widely-available
+cards deliberately: the curve's shape, not a datacenter accelerator, is the point.
+
+
 
 \section{Implementation Effort}
 
