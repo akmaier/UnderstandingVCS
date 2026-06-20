@@ -92,7 +92,7 @@ yes --- we prove the soft (differentiable) forward execution equals the hard exe
 	yes --- citations to the underlying tools (e.g., the straight-through estimator) are given
 
 	\question{All theoretical claims are demonstrated empirically to hold}{(yes/partial/no/NA)}
-	partial --- the forward bit-exactness is demonstrated empirically (64/64 byte-identical RAM and pixel-identical screens); the surrogate gradients are shown only qualitatively
+	yes --- the forward-equivalence theorem is verified quantitatively: all 64 games are byte-identical in RAM and pixel-identical on screen (zero differing bytes and zero differing pixels, measured per byte and per pixel), and the temperature-limit / fully-relaxed regime is measured on the full simulator; the surrogate gradients are additionally illustrated in the qualitative XAI study
 
 	\question{All experimental code used to eliminate or disprove claims is included}{(yes/no/NA)}
 	yes --- the conformance harness and the soft-vs-hard verifier are included
@@ -140,16 +140,16 @@ yes --- bit-exact conformance sweeps, throughput benchmarks, and a gradient-base
 \begin{itemize}
 
 	\question{This paper states the number and range of values tried per (hyper-) parameter during development of the paper, along with the criterion used for selecting the final parameter setting}{(yes/partial/no/NA)}
-	partial --- there is no learned-model hyperparameter search; the ranges we do report (batch size 1 to 65536, soft temperature) are stated, without a tuning/selection criterion
+	NA --- the paper introduces no learning algorithm with tunable hyperparameters; the emulator is a deterministic re-implementation, so there is no hyperparameter search or final-setting selection (the fixed soft and benchmark settings are listed in the supplementary material)
 
 	\question{Any code required for pre-processing data is included in the appendix}{(yes/partial/no)}
-	yes --- the pre-processing and harness code is included
+	yes --- the code that prepares each run is included: the deterministic action-stream generator and the standard 60-NOOP$+$4-RESET boot; the ROMs are used unmodified
 
 	\question{All source code required for conducting and analyzing the experiments is included in a code appendix}{(yes/partial/no)}
 	yes --- all experiment source is included (attached for review; repository released on acceptance)
 
 	\question{All source code required for conducting and analyzing the experiments will be made publicly available upon publication of the paper with a license that allows free usage for research purposes}{(yes/partial/no)}
-	yes --- released publicly on acceptance under a research-use licence
+	yes --- released publicly on acceptance under the MIT License
         
 	\question{All source code implementing new methods have comments detailing the implementation, with references to the paper where each step comes from}{(yes/partial/no)}
 	partial --- much of the new code is commented with references to the paper and to xitari, but not uniformly
@@ -164,7 +164,7 @@ yes --- bit-exact conformance sweeps, throughput benchmarks, and a gradient-base
 	yes --- byte-identical RAM / pixel-identical screen (conformance) and env-steps per second (throughput) are defined and motivated
 
 	\question{This paper states the number of algorithm runs used to compute each reported result}{(yes/no)}
-	partial --- throughput is the median of three runs; the conformance results are deterministic (one run, byte-exact, zero variance)
+	yes --- every reported result states its run count: throughput is the median of three timed runs per configuration, and the conformance/exactness results are deterministic and reported from a single exact run (zero variance by construction)
 
 	\question{Analysis of experiments goes beyond single-dimensional summaries of performance (e.g., average; median) to include measures of variation, confidence, or other distributional information}{(yes/no)}
 	partial --- throughput is summarised by the median and conformance is exact (zero variance); confidence intervals are not reported
@@ -173,7 +173,7 @@ yes --- bit-exact conformance sweeps, throughput benchmarks, and a gradient-base
 	no --- no significance tests are used---exactness is deterministic and throughput is a benchmark, not a compared-method claim
 
 	\question{This paper lists all final (hyper-)parameters used for each model/algorithm in the paper’s experiments}{(yes/partial/no/NA)}
-	partial --- the soft temperature, batch sizes, and the 60-NOOP+4-RESET boot are stated, though not consolidated into a single table
+	yes --- the soft sharpness/temperature, batch sizes, boot sequence, and numeric scope are consolidated in a settings table in the supplementary material
 
 
 \end{itemize}

@@ -131,7 +131,7 @@ def main(argv=None) -> int:
             t0 = time.perf_counter()
             jax.block_until_ready(fn(*call_args))
             ts.append(time.perf_counter() - t0)
-        return float(np.median(ts))
+        return np.asarray(ts)
 
     results = []
     s0 = initial_soft_cpu_state(pc=pc0)
@@ -144,23 +144,27 @@ def main(argv=None) -> int:
                 if mode == "fwd":
                     fn = build_fwd()
                     sB, bB = _broadcast(s0, N), _broadcast(b0, N)
-                    wall = time_call(fn, sB, bB)
+                    ts = time_call(fn, sB, bB)
                 elif mode == "fwdbwd":
                     fn = build_fwdbwd(b0)
                     epsB = jnp.zeros((N,), jnp.float32)
-                    wall = time_call(fn, epsB)
+                    ts = time_call(fn, epsB)
                 else:
                     raise ValueError(f"unknown mode {mode}")
                 env_steps = N * n_steps
+                med = float(np.median(ts))
+                thr = env_steps / ts                       # per-repeat throughput
                 rec.update({
-                    "wall_s": round(wall, 6),
-                    "env_steps_per_s": round(env_steps / wall, 1),
-                    "per_env_steps_per_s": round(n_steps / wall, 1),
+                    "wall_s": round(med, 6),
+                    "env_steps_per_s": round(env_steps / med, 1),         # median-based
+                    "env_steps_per_s_mean": round(float(thr.mean()), 1),
+                    "env_steps_per_s_std": round(float(thr.std()), 1),
+                    "per_env_steps_per_s": round(n_steps / med, 1),
                     "mem_bytes": _mem_bytes(),
                     "ok": True,
                 })
                 print(f"  {mode:7s} N={N:<6d} {rec['env_steps_per_s']:>14,.0f} env-steps/s"
-                      f"  ({rec['per_env_steps_per_s']:>10,.0f}/env)  mem={rec['mem_bytes']}", flush=True)
+                      f"  (mean {rec['env_steps_per_s_mean']:,.0f} +/- {rec['env_steps_per_s_std']:,.0f})  mem={rec['mem_bytes']}", flush=True)
             except Exception as e:                       # OOM or trace error -> record + continue
                 rec.update({"ok": False, "error": f"{type(e).__name__}: {str(e)[:200]}"})
                 print(f"  {mode:7s} N={N:<6d} FAILED: {rec['error']}", flush=True)

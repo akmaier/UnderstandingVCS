@@ -873,4 +873,35 @@ reference codebase in the main paper.
 
 \bibliography{references}
 
+\section{Fixed Settings and Parameters}
+
+Table~\ref{tab:s-params} consolidates the fixed settings and relaxation
+parameters used across the paper's experiments. The executed gradient mode is
+\textsc{soft-ste}, whose forward pass is bit-identical to \textsc{hard} and is
+therefore independent of the temperature $T$; the sharpness $\alpha$ and $T$
+enter only the relaxation analysis and the surrogate gradient.
+
+\begin{table}[h]
+\centering
+\caption{Fixed settings and (hyper-)parameters used in the paper's experiments.}
+\label{tab:s-params}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Setting & Value\\
+\midrule
+Soft sharpness $\alpha$       & $2,\,6,\,20$ (gradient-shape study)\\
+Soft temperature $T$          & swept; \textsc{soft-ste} forward independent of $T$\\
+Numeric representation        & float32, integer-valued in $[-2^{24},2^{24}]$\\
+Boot sequence                 & 60 NOOP + 4 RESET frames\\
+Episode-start randomization   & 0--30 random NOOPs (Mnih-style)\\
+Conformance window            & 30 frames (RAM), 60 frames (screen)\\
+Throughput rollout length     & 3{,}000 CPU instructions\\
+Throughput batch sizes $N$    & 1, 16, 64, 256, 1024, 4096, 16384, 65536\\
+Throughput repeats            & median of 3 runs (JIT warm-up excluded)\\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \end{document}
