@@ -63,7 +63,9 @@ Arcade Learning Environment (ALE) games: 64/64 byte-identical RAM and
 the RAM as a soft tape, and control flow as gates, we prove that the
 differentiable (soft) execution is bit-exact equal to the original (hard)
 execution in the forward pass at any finite temperature, while exposing
-\emph{surrogate} gradients where the bit logic itself has none. The system was built in roughly 137 hours
+\emph{surrogate} gradients where the bit logic itself has none. The JAX port also
+opens a GPU path: batched, fully differentiable rollouts reach millions of
+environment-steps per second on a single commodity GPU. The system was built in roughly 137 hours
 of active work over 29 calendar days, with large parts written autonomously
 by coding agents. This paper builds and validates the foundation, and shows---
 theoretically and in a qualitative gradient study---that gradient-based XAI on
@@ -573,8 +575,10 @@ boot (60 no-op frames plus four resets) and then a fixed action stream. A game i
 frame, and \emph{pixel-exact} if its full $210\times160$ frame buffer (palette
 indices) is identical on every frame. We report the count of each out of 64. We
 estimate \emph{active} implementation wall-time from the version-control log.
-Soft-mode throughput---single-step, compiled-rollout, and batched---is measured and
-reported in the supplementary material.
+\textsc{jutari} is the faster engine per single environment on the CPU, whereas
+\textsc{jaxtari} scales on the GPU---batched differentiable rollouts reach
+${\sim}3$M environment-steps per second on a commodity card---with the full
+single-step, compiled-rollout, batched, and GPU numbers in the supplementary material.
 
 \section{Results}
 

@@ -727,10 +727,26 @@ backend (Apple~M1~Max, real Pong ROM, median of repeated $3{,}000$-step runs aft
 JIT warm-up; the batched run is verified bit-identical to the unbatched one).
 Aggregate throughput rises \emph{sub-linearly} with the batch because the
 data-dependent $256$-way opcode dispatch (\texttt{lax.switch}) evaluates all
-candidate handler branches under \texttt{vmap}; on a CPU this serialises, so the
-aggregate asymptotes near ${\sim}60{,}000$ env-steps/s. On a GPU the same all-branch
-evaluation parallelises across lanes, so large batches (e.g.\ $1024$) are the
-intended operating regime there rather than on the CPU measured here.
+candidate handler branches under \texttt{vmap}; on a CPU these branches serialise,
+so the aggregate asymptotes near ${\sim}60{,}000$ env-steps/s (Table~\ref{tab:s-batched}).
+
+\paragraph{GPU.} On a GPU the same all-branch evaluation maps onto the device's
+parallel lanes instead of serialising, so batching the differentiable rollout is the
+intended operating regime. Table~\ref{tab:s-gpu} and Figure~\ref{fig:gpu-throughput}
+measure this on a single \emph{commodity} GTX~1080~Ti (an 11\,GB Pascal card; real
+Pong ROM, a $3{,}000$-step \texttt{lax.scan} \texttt{vmap}-ped over $N$ environments,
+median of $3$ runs after JIT warm-up, verified bit-identical to the CPU rollout).
+Aggregate forward throughput climbs from ${\sim}2{,}500$ env-steps/s at $N{=}1$ to a
+peak of ${\sim}2.95$M at $N{\approx}4096$---roughly $50\times$ the CPU asymptote and
+${\sim}1200\times$ the single-environment rate---then rolls off gently as the device
+saturates. The workload is compute/occupancy-bound, not memory-bound: the peak uses
+only ${\sim}0.1$\,GB, so the ceiling is lane parallelism rather than capacity.
+Crucially the reverse-mode gradient is nearly free at scale---\emph{forward+gradient}
+tracks forward to within ${\sim}5\%$ at the peak (${\sim}2.8$M env-steps/s)---so a
+commodity GPU turns batched \emph{differentiable} rollouts (gradient-based RL or
+attribution over thousands of environments at once) into the natural way to use
+\textsc{jaxtari}. We report a single widely-available card deliberately: the curve's
+shape, not a specific datacenter GPU, is the point.
 
 \begin{table}[tbh]
 \centering
@@ -753,6 +769,45 @@ $128$ & $55{,}900$ & $440$      & $1.9\times$\\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\begin{table}[tbh]
+\centering
+\caption{Batched soft-mode \textsc{jaxtari} throughput on a single \emph{commodity}
+GTX~1080~Ti (11\,GB Pascal), Pong, a $3{,}000$-step \texttt{lax.scan}
+\texttt{vmap}-ped over $N$ environments (median of $3$ runs, JIT warm-up excluded).
+Aggregate environment-steps per second, forward and forward+gradient. Both peak near
+$N{=}4096$ at ${\sim}3$M env-steps/s---${\sim}50\times$ the CPU \texttt{vmap}
+asymptote (Table~\ref{tab:s-batched})---and the gradient costs only ${\sim}5\%$ more.}
+\label{tab:s-gpu}
+\small
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{rrr}
+\toprule
+batch $N$ & forward & forward+grad\\
+ & (env-steps/s) & (env-steps/s)\\
+\midrule
+$1$     & $2{,}459$       & $1{,}275$\\
+$64$    & $259{,}705$     & $225{,}371$\\
+$256$   & $677{,}888$     & $596{,}736$\\
+$1024$  & $2{,}024{,}866$ & $1{,}830{,}998$\\
+$4096$  & $\mathbf{2{,}953{,}695}$ & $\mathbf{2{,}805{,}168}$\\
+$16384$ & $2{,}850{,}165$ & $2{,}577{,}024$\\
+$65536$ & $2{,}599{,}999$ & $2{,}533{,}964$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[tbh]
+\centering
+\includegraphics[width=\linewidth]{figures/gpu_throughput.pdf}
+\caption{\textsc{jaxtari} soft-mode GPU throughput vs.\ batch size $N$ (Pong,
+$3{,}000$ steps; commodity GTX~1080~Ti). Forward and forward+gradient both rise
+${\sim}1200\times$ from $N{=}1$ to a peak near $N{=}4096$ (${\sim}3$M env-steps/s,
+${\sim}50\times$ the CPU \texttt{vmap} asymptote, dotted), then roll off as the device
+saturates---the $256$-way \texttt{lax.switch} all-branch dispatch parallelises across
+lanes on the GPU where it serialises on the CPU.}
+\label{fig:gpu-throughput}
+\end{figure}
 
 \section{Implementation Effort}
 

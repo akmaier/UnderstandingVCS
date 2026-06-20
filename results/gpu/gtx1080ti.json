@@ -1,0 +1,157 @@
+{
+  "env": {
+    "rom": "pong.bin",
+    "jax": "0.10.1",
+    "backend": "gpu",
+    "device": "cuda:0",
+    "device_kind": "NVIDIA GeForce GTX 1080 Ti",
+    "steps": 3000,
+    "repeats": 3
+  },
+  "results": [
+    {
+      "mode": "fwd",
+      "N": 1,
+      "wall_s": 1.220146,
+      "env_steps_per_s": 2458.7,
+      "per_env_steps_per_s": 2458.7,
+      "mem_bytes": 148480,
+      "ok": true
+    },
+    {
+      "mode": "fwd",
+      "N": 16,
+      "wall_s": 0.715877,
+      "env_steps_per_s": 67050.6,
+      "per_env_steps_per_s": 4190.7,
+      "mem_bytes": 459008,
+      "ok": true
+    },
+    {
+      "mode": "fwd",
+      "N": 64,
+      "wall_s": 0.739299,
+      "env_steps_per_s": 259705.4,
+      "per_env_steps_per_s": 4057.9,
+      "mem_bytes": 1711104,
+      "ok": true
+    },
+    {
+      "mode": "fwd",
+      "N": 256,
+      "wall_s": 1.132931,
+      "env_steps_per_s": 677887.8,
+      "per_env_steps_per_s": 2648.0,
+      "mem_bytes": 6217216,
+      "ok": true
+    },
+    {
+      "mode": "fwd",
+      "N": 1024,
+      "wall_s": 1.517137,
+      "env_steps_per_s": 2024866.1,
+      "per_env_steps_per_s": 1977.4,
+      "mem_bytes": 19467776,
+      "ok": true
+    },
+    {
+      "mode": "fwd",
+      "N": 4096,
+      "wall_s": 4.160212,
+      "env_steps_per_s": 2953695.3,
+      "per_env_steps_per_s": 721.1,
+      "mem_bytes": 101346048,
+      "ok": true
+    },
+    {
+      "mode": "fwd",
+      "N": 16384,
+      "wall_s": 17.245319,
+      "env_steps_per_s": 2850164.7,
+      "per_env_steps_per_s": 174.0,
+      "mem_bytes": 315347968,
+      "ok": true
+    },
+    {
+      "mode": "fwd",
+      "N": 65536,
+      "wall_s": 75.618488,
+      "env_steps_per_s": 2599999.1,
+      "per_env_steps_per_s": 39.7,
+      "mem_bytes": 1261212672,
+      "ok": true
+    },
+    {
+      "mode": "fwdbwd",
+      "N": 1,
+      "wall_s": 2.353611,
+      "env_steps_per_s": 1274.6,
+      "per_env_steps_per_s": 1274.6,
+      "mem_bytes": 1261212672,
+      "ok": true
+    },
+    {
+      "mode": "fwdbwd",
+      "N": 16,
+      "wall_s": 0.835343,
+      "env_steps_per_s": 57461.4,
+      "per_env_steps_per_s": 3591.3,
+      "mem_bytes": 1261212672,
+      "ok": true
+    },
+    {
+      "mode": "fwdbwd",
+      "N": 64,
+      "wall_s": 0.851929,
+      "env_steps_per_s": 225371.0,
+      "per_env_steps_per_s": 3521.4,
+      "mem_bytes": 1261212672,
+      "ok": true
+    },
+    {
+      "mode": "fwdbwd",
+      "N": 256,
+      "wall_s": 1.287002,
+      "env_steps_per_s": 596735.5,
+      "per_env_steps_per_s": 2331.0,
+      "mem_bytes": 1261212672,
+      "ok": true
+    },
+    {
+      "mode": "fwdbwd",
+      "N": 1024,
+      "wall_s": 1.677774,
+      "env_steps_per_s": 1830997.7,
+      "per_env_steps_per_s": 1788.1,
+      "mem_bytes": 1261212672,
+      "ok": true
+    },
+    {
+      "mode": "fwdbwd",
+      "N": 4096,
+      "wall_s": 4.380486,
+      "env_steps_per_s": 2805168.0,
+      "per_env_steps_per_s": 684.9,
+      "mem_bytes": 1261212672,
+      "ok": true
+    },
+    {
+      "mode": "fwdbwd",
+      "N": 16384,
+      "wall_s": 19.073166,
+      "env_steps_per_s": 2577023.7,
+      "per_env_steps_per_s": 157.3,
+      "mem_bytes": 1261212672,
+      "ok": true
+    },
+    {
+      "mode": "fwdbwd",
+      "N": 65536,
+      "wall_s": 77.589104,
+      "env_steps_per_s": 2533964.0,
+      "per_env_steps_per_s": 38.7,
+      "mem_bytes": 3649117952,
+      "ok": true
+    }
+  ]
+}
