@@ -17,7 +17,24 @@ VENPY = REPO / "jaxtari/.venv/bin/python"
 XI = REPO / "tools/breakout_video/dump_xitari_frames.py"
 JU = REPO / "tools/breakout_video/dump_jutari_frames.jl"
 OUTDIR = REPO / "tools/comparison_videos/output"
-H, W = 210, 160
+H, W = 210, 160   # NTSC fallback; real per-game (h,w) comes from the .shape sidecar
+
+
+def _load_raw(path):
+    """Load a raw screen dump as (n, h, w). The per-game height is read from the
+    `<path>.shape` sidecar the dumpers write — NTSC is 210 but pooyan renders 220
+    and PAL games 250 (task #110). Hardcoding 210 mis-reshaped those and
+    fabricated false divergences (pooyan's bogus 'render bug', #127b). Falls back
+    to 210x160 only if no sidecar is present."""
+    arr = np.fromfile(path, np.uint8)
+    h, w = H, W
+    sc = Path(str(path) + ".shape")
+    if sc.exists():
+        parts = sc.read_text().split()
+        if len(parts) >= 3:
+            h, w = int(parts[1]), int(parts[2])
+    n = len(arr) // (h * w)
+    return arr[:n * h * w].reshape(n, h, w)
 
 
 def _last_static_run(arr):
@@ -56,10 +73,11 @@ def main():
         print(json.dumps({"game": a.game, "error": "dump failed", "detail": err}))
         return 1
 
-    xi = np.fromfile(xr, np.uint8); ju = np.fromfile(jr, np.uint8)
-    nxi, nju = len(xi) // (H * W), len(ju) // (H * W)
-    xi = xi[:nxi * H * W].reshape(nxi, H, W)
-    ju = ju[:nju * H * W].reshape(nju, H, W)
+    xi = _load_raw(xr); ju = _load_raw(jr)
+    # crop to a common (h,w); xitari and the port should agree, but guard PAL/NTSC edges
+    hh = min(xi.shape[1], ju.shape[1]); ww = min(xi.shape[2], ju.shape[2])
+    xi = xi[:, :hh, :ww]; ju = ju[:, :hh, :ww]
+    nxi, nju = xi.shape[0], ju.shape[0]
     m = min(nxi, nju)
 
     first, sym = None, {}

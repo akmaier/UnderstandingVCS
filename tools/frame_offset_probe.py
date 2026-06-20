@@ -22,13 +22,26 @@ from pathlib import Path
 H, W = 210, 160
 
 
+def _load_raw(path):
+    """Load a raw dump as (n, h, w), reading per-game (h,w) from the
+    `<path>.shape` sidecar (pooyan=220, PAL=250 — task #110). 210 is only a
+    fallback; hardcoding it fabricated false offsets for non-NTSC-210 games."""
+    arr = np.fromfile(path, np.uint8)
+    h, w = H, W
+    sc = Path(str(path) + ".shape")
+    if sc.exists():
+        parts = sc.read_text().split()
+        if len(parts) >= 3:
+            h, w = int(parts[1]), int(parts[2])
+    n = len(arr) // (h * w)
+    return arr[:n * h * w].reshape(n, h, w)
+
+
 def load(game):
-    xi = np.fromfile(f"/tmp/lh_{game}_xi.raw", np.uint8)
-    ju = np.fromfile(f"/tmp/lh_{game}_ju.raw", np.uint8)
-    nxi, nju = len(xi) // (H * W), len(ju) // (H * W)
-    xi = xi[:nxi * H * W].reshape(nxi, H, W)
-    ju = ju[:nju * H * W].reshape(nju, H, W)
-    return xi, ju
+    xi = _load_raw(f"/tmp/lh_{game}_xi.raw")
+    ju = _load_raw(f"/tmp/lh_{game}_ju.raw")
+    hh = min(xi.shape[1], ju.shape[1]); ww = min(xi.shape[2], ju.shape[2])
+    return xi[:, :hh, :ww], ju[:, :hh, :ww]
 
 
 def main():
