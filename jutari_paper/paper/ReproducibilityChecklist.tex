@@ -58,44 +58,44 @@
 \begin{itemize}
 
 \question{Includes a conceptual outline and/or pseudocode description of AI methods introduced}{(yes/partial/no/NA)}
-yes
+yes --- the differentiable execution (ROM as weights, RAM as a soft tape, control flow as gates) is described conceptually and formally
 
 \question{Clearly delineates statements that are opinions, hypothesis, and speculation from objective facts and results}{(yes/no)}
-yes
+yes --- proven and measured claims are kept distinct from the explicitly qualitative XAI-feasibility claim
 
 \question{Provides well-marked pedagogical references for less-familiar readers to gain background necessary to replicate the paper}{(yes/no)}
-yes
+yes --- background on the VCS, the 6502, and ALE is cited
 
 \end{itemize}
 \checksubsection{Theoretical Contributions}
 \begin{itemize}
 
 \question{Does this paper make theoretical contributions?}{(yes/no)}
-yes
+yes --- we prove the soft (differentiable) forward execution equals the hard execution bit-for-bit at any finite temperature
 
 	\ifyespoints{\vspace{1.2em}If yes, please address the following points:}
         \begin{itemize}
 	
 	\question{All assumptions and restrictions are stated clearly and formally}{(yes/partial/no)}
-	yes
+	yes --- the finite-temperature and straight-through assumptions are stated formally
 
 	\question{All novel claims are stated formally (e.g., in theorem statements)}{(yes/partial/no)}
-	yes
+	yes --- the soft-equals-hard equality is given as formal theorems
 
 	\question{Proofs of all novel claims are included}{(yes/partial/no)}
-	yes
+	yes --- full proofs are in the supplementary material
 
 	\question{Proof sketches or intuitions are given for complex and/or novel results}{(yes/partial/no)}
-	yes
+	yes --- proof sketches and intuitions accompany the formal results
 
 	\question{Appropriate citations to theoretical tools used are given}{(yes/partial/no)}
-	yes
+	yes --- citations to the underlying tools (e.g., the straight-through estimator) are given
 
 	\question{All theoretical claims are demonstrated empirically to hold}{(yes/partial/no/NA)}
-	partial
+	partial --- the forward bit-exactness is demonstrated empirically (64/64 byte-identical RAM and pixel-identical screens); the surrogate gradients are shown only qualitatively
 
 	\question{All experimental code used to eliminate or disprove claims is included}{(yes/no/NA)}
-	yes
+	yes --- the conformance harness and the soft-vs-hard verifier are included
 	
 	\end{itemize}
 \end{itemize}
@@ -104,28 +104,28 @@ yes
 \begin{itemize}
 
 \question{Does this paper rely on one or more datasets?}{(yes/no)}
-yes
+yes --- the Atari~2600 cartridge ROMs / ALE games
 
 \ifyespoints{If yes, please address the following points:}
 \begin{itemize}
 
 	\question{A motivation is given for why the experiments are conducted on the selected datasets}{(yes/partial/no/NA)}
-	yes
+	yes --- Atari/ALE is the platform on which deep RL was established; all 64 supported games are used
 
 	\question{All novel datasets introduced in this paper are included in a data appendix}{(yes/partial/no/NA)}
-	NA
+	NA --- no novel datasets are introduced
 
 	\question{All novel datasets introduced in this paper will be made publicly available upon publication of the paper with a license that allows free usage for research purposes}{(yes/partial/no/NA)}
-	NA
+	NA --- no novel datasets are introduced
 
 	\question{All datasets drawn from the existing literature (potentially including authors' own previously published work) are accompanied by appropriate citations}{(yes/no/NA)}
-	yes
+	yes --- ALE and the Atari platform are cited
 
 	\question{All datasets drawn from the existing literature (potentially including authors' own previously published work) are publicly available}{(yes/partial/no/NA)}
-	yes
+	yes --- the standard ALE ROM set is publicly obtainable (e.g., via ALE / AutoROM)
 
 	\question{All datasets that are not publicly available are described in detail, with explanation why publicly available alternatives are not scientifically satisficing}{(yes/partial/no/NA)}
-	NA
+	NA --- all datasets used are publicly available
 
 \end{itemize}
 \end{itemize}
@@ -134,46 +134,46 @@ yes
 \begin{itemize}
 
 \question{Does this paper include computational experiments?}{(yes/no)}
-yes
+yes --- bit-exact conformance sweeps, throughput benchmarks, and a gradient-based XAI study
 
 \ifyespoints{If yes, please address the following points:}
 \begin{itemize}
 
 	\question{This paper states the number and range of values tried per (hyper-) parameter during development of the paper, along with the criterion used for selecting the final parameter setting}{(yes/partial/no/NA)}
-	partial
+	partial --- there is no learned-model hyperparameter search; the ranges we do report (batch size 1 to 65536, soft temperature) are stated, without a tuning/selection criterion
 
 	\question{Any code required for pre-processing data is included in the appendix}{(yes/partial/no)}
-	yes
+	yes --- the pre-processing and harness code is included
 
 	\question{All source code required for conducting and analyzing the experiments is included in a code appendix}{(yes/partial/no)}
-	yes
+	yes --- all experiment source is included (attached for review; repository released on acceptance)
 
 	\question{All source code required for conducting and analyzing the experiments will be made publicly available upon publication of the paper with a license that allows free usage for research purposes}{(yes/partial/no)}
-	yes
+	yes --- released publicly on acceptance under a research-use licence
         
 	\question{All source code implementing new methods have comments detailing the implementation, with references to the paper where each step comes from}{(yes/partial/no)}
-	partial
+	partial --- much of the new code is commented with references to the paper and to xitari, but not uniformly
 
 	\question{If an algorithm depends on randomness, then the method used for setting seeds is described in a way sufficient to allow replication of results}{(yes/partial/no/NA)}
-	yes
+	yes --- deterministic action streams and the Mnih-style random-NOOP-reset seeding are described and recorded
 
 	\question{This paper specifies the computing infrastructure used for running experiments (hardware and software), including GPU/CPU models; amount of memory; operating system; names and versions of relevant software libraries and frameworks}{(yes/partial/no)}
 	yes --- the supplementary \emph{Throughput} section specifies the CPU (Apple~M1~Max) and GPU (NVIDIA GTX~1080~Ti, 11\,GB, and Quadro RTX~5000, 16\,GB, on the FAU LME Slurm cluster) models and memory, plus the software stack and versions (JAX~0.10.1 with CUDA~12, Python~3.12, Julia~1.12, Slurm~21.08.5).
 
 	\question{This paper formally describes evaluation metrics used and explains the motivation for choosing these metrics}{(yes/partial/no)}
-	yes
+	yes --- byte-identical RAM / pixel-identical screen (conformance) and env-steps per second (throughput) are defined and motivated
 
 	\question{This paper states the number of algorithm runs used to compute each reported result}{(yes/no)}
-	partial
+	partial --- throughput is the median of three runs; the conformance results are deterministic (one run, byte-exact, zero variance)
 
 	\question{Analysis of experiments goes beyond single-dimensional summaries of performance (e.g., average; median) to include measures of variation, confidence, or other distributional information}{(yes/no)}
-	partial
+	partial --- throughput is summarised by the median and conformance is exact (zero variance); confidence intervals are not reported
 
 	\question{The significance of any improvement or decrease in performance is judged using appropriate statistical tests (e.g., Wilcoxon signed-rank)}{(yes/partial/no)}
-	no
+	no --- no significance tests are used---exactness is deterministic and throughput is a benchmark, not a compared-method claim
 
 	\question{This paper lists all final (hyper-)parameters used for each model/algorithm in the paper’s experiments}{(yes/partial/no/NA)}
-	partial
+	partial --- the soft temperature, batch sizes, and the 60-NOOP+4-RESET boot are stated, though not consolidated into a single table
 
 
 \end{itemize}
