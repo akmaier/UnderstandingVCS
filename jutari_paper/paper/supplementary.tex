@@ -707,6 +707,33 @@ the cross-check between them is part of the test suite.
 We measure soft-mode throughput as steps per second (one step $=$ one CPU
 instruction) on a fixed ROM after just-in-time warm-up, on a single Apple~M1~Max
 core (JAX CPU backend, Julia~1.12), reporting the median of repeated runs.
+Table~\ref{tab:s-compare} summarises the three operating points the rest of this
+section develops; the per-batch scaling behind the batched rows is in
+Tables~\ref{tab:s-batched} (CPU) and~\ref{tab:s-gpu} (GPU).
+
+\begin{table}[tbh]
+\centering
+\caption{Throughput across engine $\times$ backend (real Pong ROM, soft mode,
+$3{,}000$-step rollout, median of repeated runs after JIT warm-up). \textsc{jutari}
+(Julia) executes one environment with inlined opcode handlers; \textsc{jaxtari} (JAX)
+is slow per single environment but recovers---and on the GPU far exceeds---that by
+\texttt{vmap}-batching the compiled rollout, its intended regime. Single-env rows are
+steps/s ($=$ env-steps/s at batch~1); batched rows are aggregate env-steps/s at their
+best batch ($N{\approx}4096$ on the GPU).}
+\label{tab:s-compare}
+\small
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{llr}
+\toprule
+engine \& backend & mode & env-steps/s\\
+\midrule
+\textsc{jutari}, CPU  & single env              & $370{,}100$\\
+\textsc{jaxtari}, CPU & single env              & $1{,}178$\\
+\textsc{jaxtari}, CPU & batched (\texttt{vmap})  & ${\sim}60{,}000$\\
+\textsc{jaxtari}, GPU & batched (\texttt{vmap})  & $\mathbf{3{,}122{,}386}$\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 At single-instruction granularity \textsc{jutari} sustains ${\sim}370{,}100$
 steps/s and \textsc{jaxtari} ${\sim}1{,}178$, a ${\sim}314\times$ gap. The
