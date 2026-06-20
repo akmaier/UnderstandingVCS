@@ -745,8 +745,11 @@ Crucially the reverse-mode gradient is nearly free at scale---\emph{forward+grad
 tracks forward to within ${\sim}5\%$ at the peak (${\sim}2.8$M env-steps/s)---so a
 commodity GPU turns batched \emph{differentiable} rollouts (gradient-based RL or
 attribution over thousands of environments at once) into the natural way to use
-\textsc{jaxtari}. We report a single widely-available card deliberately: the curve's
-shape, not a specific datacenter GPU, is the point.
+\textsc{jaxtari}. A second, newer architecture (Quadro~RTX~5000, 16\,GB Turing)
+traces the same curve and peaks slightly higher (${\sim}3.12$M env-steps/s at
+$N{\approx}4096$; Figure~\ref{fig:gpu-throughput}), so the scaling reflects the
+batched all-branch execution rather than one specific GPU. We report widely-available
+cards deliberately: the curve's shape, not a datacenter accelerator, is the point.
 
 \begin{table}[tbh]
 \centering
@@ -801,7 +804,7 @@ $65536$ & $2{,}599{,}999$ & $2{,}533{,}964$\\
 \centering
 \includegraphics[width=\linewidth]{figures/gpu_throughput.pdf}
 \caption{\textsc{jaxtari} soft-mode GPU throughput vs.\ batch size $N$ (Pong,
-$3{,}000$ steps; commodity GTX~1080~Ti). Forward and forward+gradient both rise
+$3{,}000$ steps; two commodity GPUs, GTX~1080~Ti and Quadro~RTX~5000). Forward and forward+gradient both rise
 ${\sim}1200\times$ from $N{=}1$ to a peak near $N{=}4096$ (${\sim}3$M env-steps/s,
 ${\sim}50\times$ the CPU \texttt{vmap} asymptote, dotted), then roll off as the device
 saturates---the $256$-way \texttt{lax.switch} all-branch dispatch parallelises across
