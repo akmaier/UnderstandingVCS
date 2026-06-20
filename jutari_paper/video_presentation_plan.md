@@ -23,6 +23,13 @@ clips, with a **fully anonymous synthetic voice-over** for double-blind review.
 - **Voice:** Chatterbox built-in synthetic voice. **AAAI explicitly forbids
   "identifiable voices" in supplementary video**, so a synthetic voice is required,
   not merely preferred.
+- **Continuous narration over all motion:** every clip *and* animation segment
+  carries synchronized voice-over — there is no silent gameplay or silent
+  animation. Each motion segment is trimmed/looped to exactly its narration
+  length so audio and motion stay locked. The game-montage and the
+  relaxation-animation segments are scripted as a **guided walkthrough of what is
+  on screen** ("watch the difference panel stay black as the invaders descend"),
+  not generic captions.
 
 ### AAAI-26/27 supplementary rules (verified)
 

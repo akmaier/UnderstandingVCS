@@ -1,0 +1,16 @@
+# timeline manifest: NN <tab> type <tab> source
+# type=slide -> source is a beamer page (build/<source>.png)
+# type=clip  -> source is a pre-built montage clip (build/<source>.mp4)
+# every segment NN is narrated by build/slide-NN.wav (matched duration)
+01	slide	page-01
+02	slide	page-02
+03	slide	page-03
+04	slide	page-04
+05	clip	clip-05
+06	clip	clip-06
+07	slide	page-05
+08	clip	clip-08
+09	slide	page-06
+10	slide	page-07
+11	slide	page-08
+12	slide	page-09
