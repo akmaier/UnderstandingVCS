@@ -18,15 +18,21 @@ mkdir -p results/slurm results/gpu            # output-dir trap (guide §4.3)
 
 GPUTYPE="${GPUTYPE:-unknown}"
 STEPS="${STEPS:-3000}"
-BATCHES="${BATCHES:-1,16,64,256,1024,4096}"
+# Sweep well past where memory matters — soft state is tiny (~25-56 KB/env), so on
+# these cards the limit is compute/occupancy, not memory. The bench records OOM and
+# continues, so over-shooting the batch list is safe.
+BATCHES="${BATCHES:-1,16,64,256,1024,4096,16384,65536}"
 ROM="${ROM:-tools/rom_sweep/roms/pong.bin}"
 
 echo "=== node=$(hostname) gpu=${GPUTYPE} $(date -u +%FT%TZ) ==="
-nvidia-smi || { echo "FATAL: nvidia-smi failed — no GPU in this allocation"; exit 1; }
+# Informational only — do NOT abort on a non-zero exit: nvidia-smi returns non-zero
+# for a sibling GPU's "infoROM is corrupted" warning even when the allocated GPU is
+# fine. The real GPU check is the jax.devices() assertion below.
+nvidia-smi || echo "WARN: nvidia-smi returned non-zero (sibling-GPU warning?) — continuing"
 [ -f "$ROM" ] || { echo "FATAL: ROM $ROM missing (copy it — ROMs are gitignored)"; exit 1; }
 
 source .venv/bin/activate
-python -c "import jax; print('jax', jax.__version__, 'backend', jax.default_backend(), 'devices', jax.devices())"
+python -c "import jax, sys; ds = jax.devices(); assert any(d.platform == 'gpu' for d in ds), f'FATAL: no GPU device visible to JAX: {ds}'; print('jax', jax.__version__, 'backend', jax.default_backend(), 'devices', ds)"
 
 python tools/bench_jaxtari_gpu.py --rom "$ROM" \
   --steps "$STEPS" --batch-sizes "$BATCHES" --modes fwd,fwdbwd --repeats 3 \
