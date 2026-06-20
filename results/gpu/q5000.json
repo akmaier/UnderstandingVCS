@@ -6,152 +6,149 @@
     "device": "cuda:0",
     "device_kind": "Quadro RTX 5000",
     "steps": 3000,
-    "repeats": 3
+    "repeats": 10
   },
   "results": [
     {
       "mode": "fwd",
       "N": 1,
-      "wall_s": 1.10797,
-      "env_steps_per_s": 2707.7,
-      "per_env_steps_per_s": 2707.7,
+      "env_steps_per_s": 2766.0,
+      "env_steps_per_s_mean": 2766.0,
+      "env_steps_per_s_std": 1.0,
       "mem_bytes": 144896,
       "ok": true
     },
     {
       "mode": "fwd",
       "N": 16,
-      "wall_s": 0.609121,
-      "env_steps_per_s": 78802.0,
-      "per_env_steps_per_s": 4925.1,
+      "env_steps_per_s": 79451.0,
+      "env_steps_per_s_mean": 79499.0,
+      "env_steps_per_s_std": 138.0,
       "mem_bytes": 485120,
       "ok": true
     },
     {
       "mode": "fwd",
       "N": 64,
-      "wall_s": 0.602529,
-      "env_steps_per_s": 318657.1,
-      "per_env_steps_per_s": 4979.0,
+      "env_steps_per_s": 318719.0,
+      "env_steps_per_s_mean": 318707.0,
+      "env_steps_per_s_std": 76.0,
       "mem_bytes": 1693184,
       "ok": true
     },
     {
       "mode": "fwd",
       "N": 256,
-      "wall_s": 0.87552,
-      "env_steps_per_s": 877192.8,
-      "per_env_steps_per_s": 3426.5,
+      "env_steps_per_s": 878284.0,
+      "env_steps_per_s_mean": 878308.0,
+      "env_steps_per_s_std": 71.0,
       "mem_bytes": 6708224,
       "ok": true
     },
     {
       "mode": "fwd",
       "N": 1024,
-      "wall_s": 1.250675,
-      "env_steps_per_s": 2456272.9,
-      "per_env_steps_per_s": 2398.7,
+      "env_steps_per_s": 2455304.0,
+      "env_steps_per_s_mean": 2455428.0,
+      "env_steps_per_s_std": 444.0,
       "mem_bytes": 22431744,
       "ok": true
     },
     {
       "mode": "fwd",
       "N": 4096,
-      "wall_s": 3.935452,
-      "env_steps_per_s": 3122385.6,
-      "per_env_steps_per_s": 762.3,
+      "env_steps_per_s": 3119115.0,
+      "env_steps_per_s_mean": 3117908.0,
+      "env_steps_per_s_std": 2871.0,
       "mem_bytes": 110526976,
       "ok": true
     },
     {
       "mode": "fwd",
       "N": 16384,
-      "wall_s": 17.644668,
-      "env_steps_per_s": 2785657.3,
-      "per_env_steps_per_s": 170.0,
+      "env_steps_per_s": 2785582.0,
+      "env_steps_per_s_mean": 2785570.0,
+      "env_steps_per_s_std": 68.0,
       "mem_bytes": 339694336,
       "ok": true
     },
     {
       "mode": "fwd",
       "N": 65536,
-      "wall_s": 73.633672,
-      "env_steps_per_s": 2670082.8,
-      "per_env_steps_per_s": 40.7,
+      "env_steps_per_s": 2670032.0,
+      "env_steps_per_s_mean": 2670033.0,
+      "env_steps_per_s_std": 9.0,
       "mem_bytes": 1792581120,
       "ok": true
     },
     {
       "mode": "fwdbwd",
       "N": 1,
-      "wall_s": 2.036839,
-      "env_steps_per_s": 1472.9,
-      "per_env_steps_per_s": 1472.9,
+      "env_steps_per_s": 1462.0,
+      "env_steps_per_s_mean": 1462.0,
+      "env_steps_per_s_std": 1.0,
       "mem_bytes": 1792581120,
       "ok": true
     },
     {
       "mode": "fwdbwd",
       "N": 16,
-      "wall_s": 0.702177,
-      "env_steps_per_s": 68358.8,
-      "per_env_steps_per_s": 4272.4,
+      "env_steps_per_s": 67929.0,
+      "env_steps_per_s_mean": 67925.0,
+      "env_steps_per_s_std": 10.0,
       "mem_bytes": 1792581120,
       "ok": true
     },
     {
       "mode": "fwdbwd",
       "N": 64,
-      "wall_s": 0.692495,
-      "env_steps_per_s": 277258.4,
-      "per_env_steps_per_s": 4332.2,
+      "env_steps_per_s": 273174.0,
+      "env_steps_per_s_mean": 273169.0,
+      "env_steps_per_s_std": 83.0,
       "mem_bytes": 1792581120,
       "ok": true
     },
     {
       "mode": "fwdbwd",
       "N": 256,
-      "wall_s": 0.993295,
-      "env_steps_per_s": 773184.0,
-      "per_env_steps_per_s": 3020.2,
+      "env_steps_per_s": 769047.0,
+      "env_steps_per_s_mean": 769028.0,
+      "env_steps_per_s_std": 112.0,
       "mem_bytes": 1792581120,
       "ok": true
     },
     {
       "mode": "fwdbwd",
       "N": 1024,
-      "wall_s": 1.34013,
-      "env_steps_per_s": 2292315.6,
-      "per_env_steps_per_s": 2238.6,
+      "env_steps_per_s": 2281871.0,
+      "env_steps_per_s_mean": 2281833.0,
+      "env_steps_per_s_std": 444.0,
       "mem_bytes": 1792581120,
       "ok": true
     },
     {
       "mode": "fwdbwd",
       "N": 4096,
-      "wall_s": 4.20388,
-      "env_steps_per_s": 2923013.7,
-      "per_env_steps_per_s": 713.6,
+      "env_steps_per_s": 2911069.0,
+      "env_steps_per_s_mean": 2912479.0,
+      "env_steps_per_s_std": 2430.0,
       "mem_bytes": 1792581120,
       "ok": true
     },
     {
       "mode": "fwdbwd",
       "N": 16384,
-      "wall_s": 20.354475,
-      "env_steps_per_s": 2414800.7,
-      "per_env_steps_per_s": 147.4,
+      "env_steps_per_s": 2414792.0,
+      "env_steps_per_s_mean": 2414712.0,
+      "env_steps_per_s_std": 146.0,
       "mem_bytes": 1792581120,
       "ok": true
     },
     {
       "mode": "fwdbwd",
       "N": 65536,
-      "wall_s": 83.977572,
-      "env_steps_per_s": 2341196.5,
-      "per_env_steps_per_s": 35.7,
-      "mem_bytes": 4039191552,
-      "ok": true
+      "ok": false,
+      "error": "not measured: 40-min walltime cap reached before this final config (rerun pending)"
     }
   ]
 }

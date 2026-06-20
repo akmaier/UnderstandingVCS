@@ -99,7 +99,7 @@ on the GPU).
 | **jutari**, CPU | single env | 370,100 |
 | **jaxtari**, CPU | single env | 1,178 |
 | **jaxtari**, CPU | batched (`vmap`) | ~60,000 |
-| **jaxtari**, GPU | batched (`vmap`) | **3,122,386** |
+| **jaxtari**, GPU | batched (`vmap`) | **3,119,115** |
 
 CPU is an Apple M1 Max core; the GPU figure is a commodity Quadro RTX 5000 (16 GB
 Turing) — a GTX 1080 Ti (11 GB Pascal) traces the same curve and peaks at ~2.95M.

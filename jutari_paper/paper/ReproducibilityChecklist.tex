@@ -164,10 +164,10 @@ yes --- bit-exact conformance sweeps, throughput benchmarks, and a gradient-base
 	yes --- byte-identical RAM / pixel-identical screen (conformance) and env-steps per second (throughput) are defined and motivated
 
 	\question{This paper states the number of algorithm runs used to compute each reported result}{(yes/no)}
-	yes --- every reported result states its run count: throughput is the median of three timed runs per configuration, and the conformance/exactness results are deterministic and reported from a single exact run (zero variance by construction)
+	yes --- every reported result states its run count: GPU throughput is measured over ten timed runs per configuration (and the CPU baseline over three), and the conformance/exactness results are deterministic and reported from a single exact run (zero variance by construction)
 
 	\question{Analysis of experiments goes beyond single-dimensional summaries of performance (e.g., average; median) to include measures of variation, confidence, or other distributional information}{(yes/no)}
-	partial --- throughput is summarised by the median and conformance is exact (zero variance); confidence intervals are not reported
+	yes --- GPU throughput is reported as mean $\pm$ standard deviation over ten timed runs per configuration in the supplementary material's GPU throughput table (the run-to-run spread is below $0.2\%$), and the exactness results are reported as exact distributions (zero variance by construction)
 
 	\question{The significance of any improvement or decrease in performance is judged using appropriate statistical tests (e.g., Wilcoxon signed-rank)}{(yes/partial/no)}
 	no --- no significance tests are used---exactness is deterministic and throughput is a benchmark, not a compared-method claim

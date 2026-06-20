@@ -713,7 +713,7 @@ engine \& backend & mode & env-steps/s\\
 \textsc{jutari}, CPU  & single env              & $370{,}100$\\
 \textsc{jaxtari}, CPU & single env              & $1{,}178$\\
 \textsc{jaxtari}, CPU & batched (\texttt{vmap})  & ${\sim}60{,}000$\\
-\textsc{jaxtari}, GPU & batched (\texttt{vmap})  & $\mathbf{3{,}122{,}386}$\\
+\textsc{jaxtari}, GPU & batched (\texttt{vmap})  & $\mathbf{3{,}119{,}115}$\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -763,10 +763,12 @@ $128$ & $55{,}900$ & $440$      & $1.9\times$\\
 \centering
 \caption{Batched soft-mode \textsc{jaxtari} throughput on a single \emph{commodity}
 GTX~1080~Ti (11\,GB Pascal), Pong, a $3{,}000$-step \texttt{lax.scan}
-\texttt{vmap}-ped over $N$ environments (median of $3$ runs, JIT warm-up excluded).
-Aggregate environment-steps per second, forward and forward+gradient. Both peak near
-$N{=}4096$ at ${\sim}3$M env-steps/s---${\sim}50\times$ the CPU \texttt{vmap}
-asymptote (Table~\ref{tab:s-batched})---and the gradient costs only ${\sim}5\%$ more.}
+\texttt{vmap}-ped over $N$ environments (\textbf{mean $\pm$ standard deviation over
+$10$ timed runs}, JIT warm-up excluded). Aggregate environment-steps per second,
+forward and forward+gradient. Both peak near $N{=}4096$ at ${\sim}3$M env-steps/s---%
+${\sim}50\times$ the CPU \texttt{vmap} asymptote (Table~\ref{tab:s-batched})---and the
+gradient costs only ${\sim}5\%$ more. The run-to-run spread is ${<}0.2\%$ throughout,
+so the throughput measurement is highly stable.}
 \label{tab:s-gpu}
 \small
 \setlength{\tabcolsep}{6pt}
@@ -775,13 +777,13 @@ asymptote (Table~\ref{tab:s-batched})---and the gradient costs only ${\sim}5\%$ 
 batch $N$ & forward & forward+grad\\
  & (env-steps/s) & (env-steps/s)\\
 \midrule
-$1$     & $2{,}459$       & $1{,}275$\\
-$64$    & $259{,}705$     & $225{,}371$\\
-$256$   & $677{,}888$     & $596{,}736$\\
-$1024$  & $2{,}024{,}866$ & $1{,}830{,}998$\\
-$4096$  & $\mathbf{2{,}953{,}695}$ & $\mathbf{2{,}805{,}168}$\\
-$16384$ & $2{,}850{,}165$ & $2{,}577{,}024$\\
-$65536$ & $2{,}599{,}999$ & $2{,}533{,}964$\\
+$1$     & $2{,}458 \pm 1$         & $1{,}265 \pm 4$\\
+$64$    & $258{,}747 \pm 17$      & $224{,}194 \pm 48$\\
+$256$   & $677{,}299 \pm 345$     & $595{,}776 \pm 177$\\
+$1024$  & $2{,}024{,}825 \pm 216$ & $1{,}819{,}602 \pm 365$\\
+$4096$  & $\mathbf{2{,}949{,}204 \pm 2{,}562}$ & $\mathbf{2{,}799{,}834 \pm 162}$\\
+$16384$ & $2{,}848{,}876 \pm 490$ & $2{,}575{,}793 \pm 444$\\
+$65536$ & $2{,}599{,}829 \pm 100$ & $2{,}534{,}157 \pm 43$\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -827,7 +829,8 @@ parallel lanes instead of serialising, so batching the differentiable rollout is
 intended operating regime. Table~\ref{tab:s-gpu} and Figure~\ref{fig:gpu-throughput}
 measure this on a single \emph{commodity} GTX~1080~Ti (an 11\,GB Pascal card; real
 Pong ROM, a $3{,}000$-step \texttt{lax.scan} \texttt{vmap}-ped over $N$ environments,
-median of $3$ runs after JIT warm-up, verified bit-identical to the CPU rollout).
+mean over $10$ runs after JIT warm-up---with the per-run standard deviation in
+Table~\ref{tab:s-gpu}---verified bit-identical to the CPU rollout).
 Aggregate forward throughput climbs from ${\sim}2{,}500$ env-steps/s at $N{=}1$ to a
 peak of ${\sim}2.95$M at $N{\approx}4096$---roughly $50\times$ the CPU asymptote and
 ${\sim}1200\times$ the single-environment rate---then rolls off gently as the device
@@ -838,8 +841,9 @@ tracks forward to within ${\sim}5\%$ at the peak (${\sim}2.8$M env-steps/s)---so
 commodity GPU turns batched \emph{differentiable} rollouts (gradient-based RL or
 attribution over thousands of environments at once) into the natural way to use
 \textsc{jaxtari}. A second, newer architecture (Quadro~RTX~5000, 16\,GB Turing)
-traces the same curve and peaks slightly higher (${\sim}3.12$M env-steps/s at
-$N{\approx}4096$; Figure~\ref{fig:gpu-throughput}), so the scaling reflects the
+traces the same curve and peaks slightly higher ($3{,}117{,}908 \pm 2{,}871$
+env-steps/s, mean over $10$ runs, at $N{\approx}4096$; Figure~\ref{fig:gpu-throughput}),
+so the scaling reflects the
 batched all-branch execution rather than one specific GPU. We report widely-available
 cards deliberately: the curve's shape, not a datacenter accelerator, is the point.
 
@@ -887,7 +891,7 @@ enter only the relaxation analysis and the surrogate gradient.
 \label{tab:s-params}
 \small
 \setlength{\tabcolsep}{5pt}
-\begin{tabular}{@{}ll@{}}
+\begin{tabular}{@{}l p{0.52\columnwidth}@{}}
 \toprule
 Setting & Value\\
 \midrule
@@ -899,7 +903,7 @@ Episode-start randomization   & 0--30 random NOOPs (Mnih-style)\\
 Conformance window            & 30 frames (RAM), 60 frames (screen)\\
 Throughput rollout length     & 3{,}000 CPU instructions\\
 Throughput batch sizes $N$    & 1, 16, 64, 256, 1024, 4096, 16384, 65536\\
-Throughput repeats            & median of 3 runs (JIT warm-up excluded)\\
+Throughput repeats            & 10 (GPU), 3 (CPU baseline); JIT warm-up excluded\\
 \bottomrule
 \end{tabular}
 \end{table}
