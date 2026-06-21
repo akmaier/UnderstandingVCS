@@ -1,40 +1,48 @@
-# Paper 2 — Plan: a fully-known, differentiable model organism for the science of understanding AI
+# Paper 2 — Plan: the Atari VCS as a fully-known, differentiable model organism for interpretability
 
 **Working title:** *Do our methods recover what is true? A fully-known,
 differentiable model organism for evaluating interpretability.*
 
-**One-line thesis.** There are **three traditions** for understanding an opaque
-system: the **mechanistic/neuroscience** tradition (Jonas & Kording 2017 — probe
-the substrate), the **attributional/XAI** tradition (saliency, Grad-CAM,
-attribution/activation patching, SAEs, circuits), and the **behavioral/psychology**
-tradition (Binz & Schulz 2023; Shiffrin & Mitchell 2023 — treat the system as a
-participant). Each "finds structure," but none can be *validated* without ground
-truth — exactly Kording's warning, and exactly Shiffrin & Mitchell's caution about
-psychology-of-AI. Our Atari VCS (Paper 1) is **fully specified, bit-exact, and
-end-to-end differentiable**, so we can compute the *true* causal attribution for
-any output and, for the first time, **score all three traditions against ground
-truth** on a system complex enough to matter. We adopt a formal definition of
-interpretability (Barbiero et al. 2025) operationalized as *ground-truth
-recovery*, replicate the Kording battery, audit today's XAI **including the
-mechanistic-interpretability toolkit (activation/attribution patching, sparse
-autoencoders, circuits)**, test behavioral/psychology-style probing, measure where
-each diverges from truth, and from that argue what the science of understanding AI
+**Scope (read this first).** The **subject of study is the Atari VCS itself** — the
+chip, the game program, and the game's own decision logic — *not* learned RL agents.
+We take the entire modern interpretability toolkit and turn it on the VCS:
+neuroscience/mechanistic methods (Jonas & Kording), attribution/XAI, mechanistic
+interpretability (activation/attribution patching, sparse autoencoders, circuits,
+probing), and behavioral/psychology-style probing. The VCS is bit-exact and
+end-to-end differentiable (Paper 1), so for any output we can compute the *true*
+causal structure and **score every method against ground truth**. Learned DQN
+agents are explicitly **out of scope** (a natural Paper 3); they are not needed and
+removing them makes this study entirely **self-contained on the current substrate**.
+
+**One-line thesis.** There are several traditions for understanding a complex
+opaque system — **mechanistic/neuroscience** (Kording 2017), **attributional/XAI**,
+**mechanistic interpretability**, and **behavioral/psychology** (Binz & Schulz 2023;
+Shiffrin & Mitchell 2023). Each "finds structure," but none can be *validated*
+without ground truth — exactly Kording's warning and Shiffrin & Mitchell's caution.
+The Atari VCS is **fully specified, bit-exact, and differentiable**, so we apply all
+of these methods to *one* system and, for the first time, **score them against
+ground truth** on a system complex enough to matter. We operationalize "interpretable"
+(Barbiero et al. 2025) as *ground-truth recovery*, replicate the Kording battery,
+audit attribution/XAI and the mechanistic-interpretability toolkit on the VCS's own
+computation, test behavioral probing on the game's own decision logic, measure where
+each diverges from truth, and argue what the science of understanding complex systems
 actually needs.
 
-> **Status: PLAN — experiment-prep adopted.** Template fetched into `paper/`
-> (Springer Nature, `sn-nature`). Decisions taken (this revision):
-> 1. **Conduct the experiments; decide scope later.** Both granularities stay in
->    scope — architectural state (our level) leads; a transistor-level head-to-head
->    via the Visual6502 netlist runs as a parallel track and we cut whichever the
->    pilots show is weaker (§4, §8).
-> 2. **Compute:** pilots run locally; full Phase-A sweeps and all of Phase B run on
->    the LME GPU cluster — see the compute plan (§4.6). Short answer: **yes, the
->    cluster is needed for the full runs.**
+> **Status: PLAN — scope corrected (this revision): the VCS is the subject in every
+> phase; agents removed.** Template fetched into `paper/` (Springer Nature,
+> `sn-nature`). Decisions taken:
+> 1. **Conduct the experiments; decide scope later.** Architectural state (our
+>    level) leads; a transistor-level head-to-head via the Visual6502 netlist runs
+>    as a parallel track and we cut whichever the pilots show is weaker (§4, §8).
+> 2. **Compute:** pilots local; full state-sweeps and SAE training on the LME
+>    cluster (§4.6). Short answer: cluster for the full runs, but **every phase is
+>    evaluable on the current substrate** — see §3.1.
 > 3. **Method coverage reviewed** (§4.4–4.5): our Paper-1 literature is strong on
 >    classic XRL but misses the 2023–25 mechanistic-interpretability wave
->    (activation/attribution patching, causal scrubbing, SAEs, probing, circuits).
->    These are added — they are the most ground-truth-relevant methods we test.
-> Experiment scaffolding: `tools/xai_study/` (specs + harness stubs).
+>    (activation/attribution patching, causal scrubbing, SAEs, probing, circuits) —
+>    added, applied here to the VCS, where they are most ground-truth-relevant.
+> Detailed per-phase design (measure / ideal / right / best case) in
+> [`experiment_design.md`](experiment_design.md). Scaffolding: `tools/xai_study/`.
 
 ---
 
@@ -43,80 +51,118 @@ actually needs.
 The differentiable VCS (jutari + jaxtari, 64/64 bit-exact vs xitari) already
 exposes exactly the machinery this study needs:
 
-- **Full ground truth.** Every architectural state variable has a *known
-  semantic role*: RAM bytes (RIOT 128 B), CPU registers (A, X, Y, S, P, PC),
-  TIA/RIOT registers, opcodes, ROM bytes, the framebuffer. We know the true
-  data-flow (which instruction reads/writes which cell) and the true I/O map.
-- **Exact interventions.** We can knock out / clamp / perturb any state variable
-  or ROM byte and re-run deterministically (the "lesion" knob, but clean).
-- **Differentiability.** `peek` one-hot reads, `soft_select` dispatch,
-  `soft_branch`, the straight-through estimator, and the relaxed read give us
-  gradients of any output (a pixel, the score, an agent's action/value) w.r.t.
-  any input (ROM byte, RAM cell, register, joystick action) — *the* ingredient
-  Kording did not have.
-- **Reusable tooling:** `tools/xai_si_gradient/` (real-ROM screen↔action
-  gradient), the IG-on-ROM experiment (P8), the conformance harness, the
-  comparison-video renderer.
+- **Ground truth — in tiers (do not overclaim).**
+  - **T1 causal/mechanistic (exact, all 64 games):** the exact causal effect of any
+    state variable / input on any output, by intervention + gradient — *by
+    construction*; the backbone; no labels needed.
+  - **T2 hardware semantics (exact, all 64):** the role of every CPU/TIA/RIOT
+    register, opcode and flag, and the true read/write data-flow (documented chip;
+    the same silicon for every cartridge).
+  - **T3 game-concept semantics (partial):** which RAM byte = ball-x / lives /
+    score is set by the *program*, undocumented, and **not** free. Known only for a
+    handful of addresses today; extendable on demand — and *verifiable by
+    intervention* (perturb a byte → watch the object move on the exact framebuffer).
+    Needed only for the *semantic-level* scoring (§3.1).
+- **Exact interventions.** Knock out / clamp / perturb any RAM cell, register, ROM
+  byte, opcode, or input and re-run deterministically (the "lesion" knob, but clean).
+- **Differentiability.** `peek` one-hot reads, `soft_select` dispatch, `soft_branch`,
+  the straight-through estimator, and the relaxed read give gradients of any output
+  (a pixel, the score, a game event) w.r.t. any input (ROM byte, RAM cell, register,
+  joystick action) — *the* ingredient Kording did not have.
+- **Reusable tooling:** `tools/xai_si_gradient/` (real-ROM screen↔input gradient),
+  the IG-on-ROM experiment (Paper-1 P8 — already an attribution-on-the-VCS result),
+  the conformance harness, the comparison-video renderer.
 
 This is the crucial upgrade over Jonas & Kording, who used the Visual6502
-*transistor netlist* and could only say results "felt unsatisfying." We work at
-the **architectural level** (registers/RAM/opcodes) — the level at which
-"understanding" is actually defined (Marr's algorithmic level) — *and* we can put
-a number on every method's faithfulness.
+*transistor netlist* and could only say results "felt unsatisfying." We work at the
+**architectural level** (registers/RAM/opcodes) — where "understanding" is actually
+defined (Marr's algorithmic level) — *and* we can put a number on every method's
+faithfulness.
 
 ## 2. Contributions (what's new vs Paper 1 and vs Jonas & Kording)
 
-1. **A ground-truth interpretability benchmark.** A complex, fully-known,
-   differentiable system where the *true* causal attribution is computable, so
-   any interpretability method can be scored, not just eyeballed.
+1. **A ground-truth interpretability benchmark on one fully-known, differentiable,
+   complex system.** The *true* causal structure of every output is computable, so
+   any interpretability method can be scored, not eyeballed.
 2. **A quantitative re-run of Jonas & Kording.** Each neuroscience method
    (connectomics, lesions, tuning curves, correlations, LFP, Granger causality,
-   dimensionality reduction) reproduced on our state variables, each scored
-   against the known mechanism — converting their qualitative critique into
-   measured faithfulness.
-3. **A faithfulness audit of modern XAI — attribution *and* mechanistic.**
-   Saliency, Grad-CAM/++, Integrated Gradients, perturbation/occlusion, attention,
-   counterfactual **and, as first-class targets, the mechanistic-interpretability
-   toolkit — activation patching, attribution patching, sparse autoencoders,
-   circuit discovery** — applied to DQN agents and scored against the *true* causal
-   attribution from the exact `emulator ∘ agent` pipeline.
-4. **A ground-truth test of the *behavioral/psychology* tradition.** Treat the
-   agent (and the chip) as a psychology participant — controlled-stimulus
-   ("psychophysics") probes — and ask whether the inferred behavioral account
-   matches the known mechanism. This puts Shiffrin & Mitchell's caution to a
-   *measurable* test (a first).
-5. **A formal, operationalized notion of interpretability.** Adopt Barbiero et
-   al.'s (2025) definition and operationalize "an explanation is correct" as
-   *recovering the ground-truth causal structure*; include interpretable-by-design
-   models as a comparison arm.
-6. **Evidence of the discrepancy + concrete new directions:** where each tradition
+   dimensionality reduction) reproduced on the VCS state and scored against the
+   known mechanism — converting their qualitative critique into measured faithfulness.
+3. **A faithfulness audit of attribution / XAI on the VCS's own computation.**
+   Saliency, Integrated Gradients (cf. P8), occlusion/perturbation, SHAP/LIME, and
+   counterfactual methods explaining a VCS output (a pixel, the score, a game event)
+   from its inputs/state — scored against the *exact* causal attribution. Includes
+   the finding that several popular methods (Grad-CAM, attention) are
+   *NN-architecture-specific* and do not even apply to a non-neural computation.
+4. **Mechanistic interpretability validated on a *known circuit*.** Activation /
+   attribution patching, sparse autoencoders, circuit discovery and probing applied
+   to the VCS state trajectory and scored against the true data-flow and known
+   variables — the first validation of the mechanistic-interpretability toolkit on a
+   complex system whose circuits are actually known.
+5. **A ground-truth test of the *behavioral/psychology* tradition.** Probe the
+   game's own decision logic (e.g., a game's built-in opponent AI) as a "participant"
+   — controlled-stimulus / psychophysics experiments — and ask whether the inferred
+   behavioral account matches the known code. This puts Shiffrin & Mitchell's
+   caution to a *measurable* test (a first).
+6. **A formal, operationalized notion of interpretability.** Adopt Barbiero et al.'s
+   (2025) definition and operationalize "an explanation is correct" as *recovering
+   the ground-truth causal structure*; interpretable-by-design as a comparison arm.
+7. **Evidence of the discrepancy + concrete new directions:** where each tradition
    fails, why, and what a faithful, ground-truth-validated science of understanding
-   AI should look like (causal/known-operator attribution; ground-truth-scored
-   benchmarking; which behavioral inferences are trustworthy).
+   complex systems should look like (causal/known-operator attribution;
+   ground-truth-scored benchmarking; which behavioral inferences are trustworthy).
 
-## 3. Two subjects under the same microscope
+## 3. One subject under many microscopes — the VCS
 
-- **(A) The emulator as "model organism"** — the Jonas & Kording subject, now
-  fully known *and* differentiable. We probe the running VCS itself.
-- **(B) DQN agents playing on the emulator** — the *actual* XAI use case. The
-  differentiable emulator is what makes the agent's input attribution have a
-  **ground truth**: the true causal effect of each pixel/object on the agent's
-  action is computable by exact intervention and by end-to-end gradients through
-  `emulator ∘ agent`. This is the bridge from "fully-known chip" to "real XAI."
+The single object of study is the **running Atari VCS**, a deterministic function
+
+> `output(t) = VCS(ROM, inputs[0..t], initial_state)`
+
+with three faces, all fully observable and intervenable:
+
+- **Inputs** — ROM bytes, joystick/paddle actions, console switches. *We drive the
+  inputs ourselves* (scripted, random, or replay traces); no agent is required to
+  make a game run.
+- **Internal state ("the activations")** — RAM (128 B), CPU registers (A,X,Y,S,P,PC),
+  TIA/RIOT registers, and the executing opcode stream.
+- **Outputs ("the predictions to explain")** — a framebuffer pixel, the score, a
+  game event (a bounce, a life lost), or a future state.
+
+This one subject supports every tradition: attribute an *output* to inputs/state
+(XAI); treat the *state trajectory* as activations to patch/decompose (mechanistic
+interp); run the *neuroscience battery* on the state (Kording); and probe the
+*game's own decision logic* behaviorally (psychology). Because all of T1/T2 (and,
+where labeled, T3) are known, each method has a ground truth to be scored against.
+
+The game's **own decision logic** is a genuine, hand-coded decision-maker we can
+study behaviorally without any learned agent — e.g., Pong's CPU opponent (where does
+it move the paddle given the ball?), Space Invaders' alien movement/fire logic,
+pursuit/evasion AIs. These are the "participants" of Phase D, and their true
+mechanism is in the ROM.
+
+### 3.1 Which phases run on the current substrate (the answer to "what substrate is required")
+
+Every phase below is evaluable on the **current** jutari/jaxtari substrate — because
+the subject *is* the substrate. The only non-substrate ingredient ever needed is
+**T3 game-concept labels**, and only for the *semantic-level* sub-metrics; those
+labels are derivable/verifiable with the substrate's own interventions. There is **no
+phase that needs a different or extended substrate**, with one optional exception:
+long-horizon end-to-end gradients (credit through many steps of dynamics), which the
+core single-step attribution metrics do not require. The detailed per-phase
+substrate audit is in §10.
 
 ## 4. Experiment plan
 
-> **Detailed per-phase design — what is measured, the ideal explanation, when an
+> Detailed per-phase design — what is measured, the ideal explanation, when an
 > explanation is *right* (the F∧S∧M correctness triad), and the best-case outcome —
-> is in [`experiment_design.md`](experiment_design.md). The phases below are the
-> overview; that file is the spec.**
+> is in [`experiment_design.md`](experiment_design.md). Below is the overview.
 
 ### Phase A — Replicate Jonas & Kording, with ground-truth scoring
 
-Map each neuroscience method onto our architectural state; for each, report both
-the Kording-style qualitative result **and** a quantitative agreement with the
-known mechanism. Subjects: the three games they used (Donkey Kong, Space
-Invaders, Pitfall) plus several of our 64 for generality.
+Map each neuroscience method onto the VCS state; for each, report both the
+Kording-style qualitative result **and** a quantitative agreement with the known
+mechanism. Subjects: the three games they used (Donkey Kong, Space Invaders,
+Pitfall) plus several of our 64 for generality.
 
 | # | Kording method | Our analog (on VCS state) | Ground-truth score |
 |---|---|---|---|
@@ -129,270 +175,296 @@ Invaders, Pitfall) plus several of our 64 for generality.
 | A7 | Dimensionality reduction (NMF/PCA) | Over full state-trajectory tensor | recovered components vs known signals (clock, R/W, vsync) |
 | A8 | Whole-"brain" recording | Full RAM+register state map over time | descriptive baseline |
 
-**Punchline of Phase A:** the same "interesting but unfaithful" structure
-Kording found, now *quantified* — most methods score poorly against the known
-mechanism even with unlimited, noiseless, fully-observed data.
+**Punchline of Phase A:** the same "interesting but unfaithful" structure Kording
+found, now *quantified* — most methods score poorly against the known mechanism even
+with unlimited, noiseless, fully-observed data.
 
-### Phase B — Modern XAI on DQN agents, scored against true causal attribution
+### Phase B — Attribution / XAI on the VCS's input→output computation
 
-1. **Agents.** Obtain/representative DQN agents (Mnih 2015; the Atari Model Zoo,
-   Such et al. 2019) and run them on jutari/jaxtari.
-2. **Ground-truth attribution.** For a state, compute the *true* causal influence
-   of each input pixel / detected object / RAM byte on the agent's chosen action
-   and Q-values, via (a) **exact interventions** on the emulator (occlude/replace
-   a pixel or object and measure the deterministic effect) and (b) **end-to-end
-   gradients** through `emulator ∘ agent` (Paper 1's differentiability makes this
-   exact-forward). Cross-validate (a) vs (b).
-3. **Methods under test — two families, both first-class.**
-   - **B1 Attribution / saliency:** Greydanus perturbation, Grad-CAM (Selvaraju) +
-     Grad-CAM++ (Chattopadhyay), Integrated Gradients, occlusion, attention
-     (Nikulin/Mott), counterfactual (Atrey/Olson), SHAP/LIME; interpretable-by-design
-     baselines (XDQN Kontogiannis; Barbiero-style). Survey scope from our XRL notes
-     (Qing 2022, Vouros 2023, Cheng 2025, Saulières 2025).
-   - **B2 Mechanistic (first-class):** **activation patching / causal tracing,
-     attribution patching (+ edge AP), sparse autoencoders / dictionary learning,
-     circuit discovery, linear probing.** Capture agent activations; patch by
-     resample/clamp; train SAEs on activations; discover candidate circuits — then
-     **score the recovered circuit / features / patched effects against the *true*
-     causal structure** (for the chip in Phase A the true circuits are *known*; for
-     the agent the oracle is the reference). This is the modern, causal core and a
-     contribution back to mechanistic-interpretability, not only XRL.
+Treat the VCS as the function to explain: attribute a chosen **output** (a pixel,
+the score, a game event) to its **causes** (ROM bytes, RAM cells, registers, joystick
+inputs).
+
+1. **Ground-truth attribution.** The *true* causal influence of each candidate cause
+   on the output, via (a) **exact interventions** (occlude/clamp/replace and measure
+   the deterministic Δoutput) and (b) **gradients** through the differentiable
+   substrate. Cross-validate (a) vs (b).
+2. **Methods under test (those that apply to a non-NN computation).** Vanilla
+   gradient / saliency, **Integrated Gradients** (our P8), SmoothGrad,
+   occlusion/perturbation, SHAP/LIME (model-agnostic), counterfactual states (made
+   *on-distribution* here: set state, re-render). Survey scope from our XRL notes
+   (Greydanus 2017; Iyer/Anderson; Qing 2022, Vouros 2023, Cheng 2025, Saulières 2025).
+3. **Explicit N/A finding.** Grad-CAM/Grad-CAM++ (need conv feature maps), attention
+   maps, and policy-distillation surrogates are *NN-architecture-specific* and do not
+   transfer to the VCS — a measured statement about the narrowness of popular XAI.
 4. **Faithfulness metrics vs ground truth.** Correlation with the true causal map;
-   deletion/insertion AUC on the *true* emulator (not a proxy); pointing-game /
-   object-hit rate; (mechanistic) recovered-effect vs exact-patch agreement,
-   feature↔known-variable matching for SAEs.
-5. **Result:** quantify the discrepancy — which methods (attribution *and*
-   mechanistic) track the true causes vs produce plausible-but-wrong accounts;
-   expected: causal/patching/IG pass, popular visual saliency fails (a measured
-   sharpening of Atrey 2020).
+   deletion/insertion AUC measured on the *true* VCS (not a proxy); precision@k /
+   pointing-game / object-hit vs the true causal top-k.
+5. **Result:** which methods track the true causes vs produce plausible-but-wrong
+   maps (a measured, ground-truthed sharpening of Atrey 2020 — now about the system,
+   not an agent).
 
-### Phase C — Beyond: a benchmark and better directions
+### Phase C — Mechanistic interpretability on the VCS (the known-circuit testbed)
 
-- **C1 Ground-truth XAI benchmark.** Package the scoring suite as a reusable
-  benchmark (tasks, true-attribution oracle, faithfulness metrics) — a
+The modern successor to Kording's connectomics. The VCS **state trajectory is the
+"activations"** and the program's **data-flow is the "circuit"** — both known.
+
+1. **Activation patching / causal tracing.** Patch RAM cells / registers / TIA state
+   between a clean and a corrupted run; measure the effect; score the recovered
+   important components against the exact intervention effect (the oracle) and the
+   true data-flow.
+2. **Attribution patching (+ edge AP).** Gradient approximation of patching; score
+   the approximation error against true patching.
+3. **Sparse autoencoders / dictionary learning.** Train an SAE on the state
+   trajectory; score discovered features against **known variables** (T2 hardware
+   signals always; T3 game variables where labeled) — feature↔variable matching and
+   causal use (does patching the feature move the output as predicted?).
+4. **Circuit discovery + causal scrubbing.** Recover the circuit for a behavior
+   (e.g., the ball-bounce or opponent-AI routine); validate by scrubbing
+   (resample the hypothesised-irrelevant parts; behavior preserved?) against the true
+   disassembled routine.
+5. **Linear probing.** Decode game/hardware concepts from state; contrast
+   "decodable" vs "actually used" — the probing/tuning-curve trap (cf. A3).
+
+**Punchline of Phase C:** the first time the mechanistic-interpretability toolkit is
+scored against a *known* circuit in a complex system — a calibration and validation
+the mech-interp community currently lacks.
+
+### Phase D — Behavioral / psychology probing of the game's own logic
+
+The behavioral tradition (Binz & Schulz 2023; Shiffrin & Mitchell 2023): infer a
+system's "cognition" from behavior. Their open worry — does behavioral probing reveal
+the true mechanism or just plausible correspondences? — is *unanswerable for LLMs*
+(no ground truth). **We answer it on a known decision-maker: the game's own logic.**
+
+- **Subjects:** a game's built-in decision logic (e.g., Pong's CPU opponent, Space
+  Invaders' alien/fire logic), whose mechanism is in the ROM.
+- **Probes:** controlled-stimulus / psychophysics experiments — vary one factor of
+  the game situation (object position/distance, timing, distractors) by setting state
+  and re-rendering, then read the program's response; fit "cognitive" accounts
+  (decision variables, biases, reaction-time analogues).
+- **The test:** does the inferred behavioral account match the *true* code (the
+  Phase-A/C ground truth)? Quantify "right for the wrong reasons."
+- **Contribution:** the first ground-truthed verdict on behavioral-probing
+  methodology — which inferences are trustworthy, which are mirages.
+
+### Phase E — Synthesis: a benchmark and better directions
+
+- **E1 Ground-truth interpretability benchmark.** Package the scoring suite (tasks,
+  true-attribution oracle, faithfulness metrics) as a reusable benchmark — a
   "leaderboard with real ground truth."
-- **C2 Faithful attribution methods.** Show that gradient- / known-operator- /
-  causal-intervention-based attribution (native to our differentiable substrate)
-  is measurably more faithful, and propose how such ideas transfer to opaque
-  models that *lack* ground truth.
-- **C3 Directions.** From the discrepancy, articulate what interpretability needs:
-  ground-truth-validated benchmarking, causal rather than correlational
-  attribution, and method development that is *sieved* on known systems first.
-
-### Phase D — Behavioral / psychology probing, scored against ground truth
-
-The third tradition (Binz & Schulz 2023; Shiffrin & Mitchell 2023): treat the
-system as a *participant* and infer its "cognition" from behavior. Their open
-worry — does behavioral probing reveal the true mechanism, or just plausible
-correspondences? — is *unanswerable for LLMs* because there is no ground truth.
-**We can answer it.**
-
-- **Subjects:** the DQN agent (primary) and, as a stress test, the chip.
-- **Probes:** controlled-stimulus / psychophysics-style experiments — vary one
-  factor of the input (object position, distractor presence, reward cue) and read
-  the behavioral response (action, Q); fit "cognitive" accounts (decision
-  variables, biases, tuning) the way a psychologist would.
-- **The test:** does the inferred behavioral account match the *known* causal
-  mechanism (Phase-A ground truth for the chip; the oracle + the agent's true
-  decision variables for the agent)? Quantify "right for the wrong reasons."
-- **Contribution:** the first ground-truthed verdict on psychology-of-AI methods —
-  which behavioral inferences are trustworthy, which are anthropomorphic mirages.
+- **E2 Faithful methods.** Show that causal-intervention / gradient / known-operator
+  attribution (native to our differentiable substrate) is measurably more faithful,
+  and propose how such ideas transfer to opaque systems that *lack* ground truth.
+- **E3 Directions.** From the discrepancy: ground-truth-validated benchmarking,
+  causal rather than correlational attribution, and method development *sieved* on
+  known systems first.
 
 ## 4.4 Method matrix — where we expect success vs failure
 
-The expected **punchline** (and the paper's narrative): methods that are *causal /
-intervention-grounded* should track our ground truth; methods that are
-*correlational, attention-based, off-manifold, or spatially coarse* should produce
-plausible-but-wrong explanations — the exact analogue of Kording's lesson that
-correlational neuroscience methods mislead even with unlimited data.
+Expected **punchline**: methods that are *causal / intervention-grounded* track our
+ground truth; methods that are *correlational, off-manifold, architecture-specific,
+or spatially coarse* produce plausible-but-wrong explanations — the exact analogue of
+Kording's lesson that correlational methods mislead even with unlimited data.
 
-| Method (category) | In our lit? | Expected vs ground truth | Why |
-|---|---|---|---|
-| **Activation patching / causal tracing** (causal, mechanistic) | ✗ add | **Succeed** | causal by construction; directly comparable to our intervention oracle |
-| **Causal scrubbing** (hypothesis test) | ✗ add | **Succeed** | we *have* ground-truth hypotheses to scrub against — ideal testbed |
-| **Integrated Gradients** (axiomatic gradient) | ~partly (our P8) | **Succeed/partial** | completeness axiom + exact-forward gradients on our substrate; baseline-sensitive |
-| **Occlusion/perturbation on the true emulator** | ✓ (Greydanus, Iyer/Anderson) | **Succeed/partial** | faithful when the perturbation is a valid intervention; Greydanus uses Gaussian blur (off-distribution) and smears small sprites |
-| **Attribution patching / edge attribution patching** (gradient approx of patching) | ✗ add | **Partial** | cheap approximation of patching; we can score the approximation error against true patching |
-| **Sparse autoencoders / dictionary learning** (feature disentangling) | ~1 note | **Partial** | recovers interpretable features; score them against the *known* game variables; faithfulness-to-computation debated |
-| **Circuit / mechanistic analysis** | ~1 note | **Partial→Succeed** | the goal state is exactly our ground truth; measure recovered circuit vs true data-flow |
-| **Linear probing** (concept readout) | ✗ add | **Partial / misleading** | detects info is *present*, not that it is *used* — the tuning-curve trap (Phase A A3) |
-| **SHAP / LIME / Shapley** (model-agnostic attribution) | ✓ (surveys) | **Partial/Fail** | baseline- and sampling-dependent; approximations diverge; costly |
-| **Grad-CAM / Grad-CAM++** (CAM) | ✓ | **Fail/partial** | last-conv coarse; built for classification CNNs; misses tiny Atari sprites |
-| **Vanilla gradient / raw saliency** | ✓ | **Fail** | noisy, gradient-shattering, non-causal |
-| **Attention maps** (Mott, Nikulin free-lunch) | ✓ | **Fail** | attention ≠ attribution (well documented); expect divergence from true causes |
-| **Counterfactual states** (Olson; Atrey) | ✓ | **Partial/Fail** | generative counterfactuals go off-manifold; Atrey already argues "exploratory not explanatory" — we quantify it |
-| **Surrogate trees / policy distillation** (VIPER, XDQN) | ✓ | **Partial** | global fidelity ≠ local faithfulness; can misattribute |
-| **Reward decomposition** (RDX/MSX) | ✓ | **Succeed (own task)** | explains *which goal*, not input attribution; we know the true reward structure |
+| Method (category) | In our lit? | Applies to VCS? | Expected vs ground truth | Why |
+|---|---|---|---|---|
+| **Activation patching / causal tracing** (causal, mechanistic) | ✗ add | ✓ (state) | **Succeed** | causal by construction; directly comparable to our intervention oracle |
+| **Causal scrubbing** (hypothesis test) | ✗ add | ✓ | **Succeed** | we *have* ground-truth hypotheses to scrub against — ideal testbed |
+| **Integrated Gradients** (axiomatic gradient) | ~partly (P8) | ✓ | **Succeed/partial** | completeness axiom + exact-forward gradients; baseline-sensitive |
+| **Occlusion/perturbation on the true VCS** | ✓ (Greydanus, Iyer/Anderson) | ✓ | **Succeed/partial** | faithful when the perturbation is a valid intervention; Gaussian-blur variants go off-distribution |
+| **Counterfactual states** (Olson; Atrey) | ✓ | ✓ (on-distribution here!) | **Partial→Succeed** | our substrate makes counterfactuals valid (set state, re-render) — removes Atrey's off-manifold objection |
+| **Attribution patching / edge AP** (gradient approx of patching) | ✗ add | ✓ | **Partial** | cheap approximation; we score the approximation error against true patching |
+| **Sparse autoencoders / dictionary learning** | ~1 note | ✓ (state) | **Partial** | recovers features; score vs known variables; faithfulness-to-computation debated |
+| **Circuit / mechanistic analysis** | ~1 note | ✓ | **Partial→Succeed** | the goal state is exactly our ground truth; measure recovered circuit vs true data-flow |
+| **Linear probing** (concept readout) | ✗ add | ✓ | **Partial / misleading** | detects info is *present*, not *used* — the tuning-curve trap (A3) |
+| **SHAP / LIME / Shapley** (model-agnostic) | ✓ (surveys) | ✓ | **Partial/Fail** | baseline- and sampling-dependent; approximations diverge; costly |
+| **Vanilla gradient / raw saliency** | ✓ | ✓ | **Fail** | noisy, gradient-shattering, non-causal |
+| **Grad-CAM / Grad-CAM++** (CAM) | ✓ | **✗ N/A** | — | needs conv feature maps; does not apply to a non-NN computation (a finding) |
+| **Attention maps** (Mott, Nikulin) | ✓ | **✗ N/A** | — | needs attention layers; not present in the VCS (a finding) |
+| **Surrogate trees / policy distillation** (VIPER, XDQN) | ✓ | **✗ N/A** | — | need a learned policy; out of scope (agents) |
 
-Headline expected result: **causal/gradient methods grounded in real interventions
-pass the ground-truth test; the most *popular* visual XAI (Grad-CAM, attention,
-vanilla saliency) fails it** — a measured, ground-truthed sharpening of Atrey 2020.
+Headline expected result: **causal/gradient/mechanistic methods grounded in real
+interventions pass the ground-truth test; correlational and architecture-specific
+methods fail or don't even apply** — a measured, ground-truthed sharpening of the
+Kording lesson and of Atrey 2020.
 
 ## 4.5 Newest methods we must add (gap from the Paper-1 literature)
 
 Our Paper-1 notes (RL-centric XRL surveys) **miss the 2023–25 mechanistic-
 interpretability wave**, which is the most relevant to a *causal ground-truth*
-benchmark. Add to the literature/bib and the Phase-B matrix (verify each entry to
-Paper-1's no-hallucination standard before it enters the bib):
+benchmark. Add to the literature/bib and the matrix (verify each entry to Paper-1's
+no-hallucination standard before it enters the bib):
 
-- **Activation patching / causal tracing** — Meng et al. 2022 (ROME); Heimersheim & Nanda 2024, "How to use and interpret activation patching".
+- **Activation patching / causal tracing** — Meng et al. 2022 (ROME); Heimersheim & Nanda 2024.
 - **Attribution patching** — Nanda 2023; **Edge Attribution Patching**, Syed et al. 2023.
 - **Causal scrubbing** — Chan et al. 2022 (Redwood).
 - **Sparse autoencoders for interpretability** — Cunningham et al. 2023; Bricken et al. 2023 ("Towards Monosemanticity").
 - **Unifying theory** — Geiger et al. 2023/25, "Causal Abstraction: A Theoretical Foundation for Mechanistic Interpretability".
 - **Field reviews** — Bereska & Gavves 2024 (mech-interp for AI safety).
-- **Behavioral / psychology tradition (Phase D)** — Binz & Schulz 2023 ("Using
-  cognitive psychology to understand GPT-3", PNAS); Shiffrin & Mitchell 2023
-  ("Probing the psychology of AI models", PNAS) [in `papers/`].
-- **Formal definition of interpretability** — Barbiero et al. 2025, "Foundations
-  of Interpretable Models" (arXiv:2508.00545) — our definitional anchor +
-  interpretable-by-design comparison arm.
-- Also confirm we cite the RL-native pieces already in our notes: object saliency (Iyer/Anderson), attention agents (Mott 2019), StateMask (Cheng 2023), EDGE (Guo 2021), HIGHLIGHTS (Amir & Amir).
+- **Behavioral / psychology tradition (Phase D)** — Binz & Schulz 2023 (PNAS);
+  Shiffrin & Mitchell 2023 (PNAS) [in `papers/`].
+- **Formal definition of interpretability** — Barbiero et al. 2025, "Foundations of
+  Interpretable Models" (arXiv:2508.00545) — definitional anchor + interpretable-by-design.
+- **Atari semantics resources (T3 labels)** — OCAtari (Delfosse et al. 2023, 40+
+  games, RAM+vision) and AtariARI (Anand et al. 2019, ~22 games) — sources for
+  game-concept labels, *verified/extended by our interventions*.
 
 These newest methods are also the paper's *positive* story: they are exactly the
-causal tools we expect to pass, so testing them on ground truth is a contribution
-to the mechanistic-interpretability community, not only to XRL.
+causal tools we expect to pass, so testing them on ground truth is a contribution to
+the mechanistic-interpretability community.
 
 ## 4.6 Compute plan — do we need the cluster?
 
-**Yes for the full runs; pilots are local.** Key enabler from Paper 1: the
-**SOFT-STE forward pass is bit-exact to HARD and GPU-batchable** (`vmap`,
-millions of env-steps/s), so the exact intervention oracle and end-to-end
-gradients can run *batched on GPU* rather than on the slow CPU-only HARD path.
+**Pilots local; full runs on the cluster.** Key enabler from Paper 1: the
+**SOFT-STE forward is bit-exact to HARD and GPU-batchable** (`vmap`, millions of
+env-steps/s), so the exact intervention oracle and the gradients run *batched on
+GPU* rather than the slow CPU-only HARD path. (No agents → no agent training/zoo.)
 
 | Workload | Where | Why |
 |---|---|---|
 | Phase-A pilot (1 game: lesion + tuning + dim-reduction, scored) | **local** (M1 Max) | small; reuses Paper-1 tooling |
-| Phase-B pilot (1 agent, IG vs intervention oracle, 1 game) | **local** | proves the oracle pipeline |
-| Phase-A full lesion sweeps (RAM bits × ROM bytes × opcodes × games) | **cluster (CPU array jobs)** | embarrassingly parallel; thousands of short deterministic re-runs |
-| Phase-B intervention oracle (per-pixel/object occlusion × states × agents × games) | **cluster (GPU)** | huge forward count; batched SOFT-STE exact-forward on GPU |
-| Phase-B end-to-end gradients through `emulator ∘ agent` | **cluster (GPU)** | the differentiable path is jit+vmap, GPU-bound |
-| SAE training on agent activations; any agent (re)training | **cluster (GPU)** | standard DL training |
+| Phase-B pilot (IG vs intervention oracle on one output, 1 game) | **local** | proves the oracle pipeline (extends P8) |
+| Phase-C pilot (activation patching + 1 SAE on the VCS state, 1 game) | **local** | proves the mech-interp-on-VCS pipeline |
+| Phase-D pilot (one psychophysics probe of a game's opponent logic) | **local** | proves the behavioral pipeline |
+| Phase-A/B full lesion + occlusion sweeps (RAM × ROM × opcodes × outputs × games) | **cluster (CPU array / GPU)** | embarrassingly parallel; batched SOFT-STE exact-forward on GPU |
+| Batched gradients / IG over outputs × games | **cluster (GPU)** | jit+vmap, GPU-bound |
+| SAE training on VCS state trajectories | **cluster (GPU)** | standard DL training on recorded state |
 
-Reuse the Paper-1 cluster setup verbatim: LME Slurm, repo on `/cluster/maier`,
-the `tools/cluster/*.sbatch` pattern + the jaxtari GPU venv (jax[cuda12]). Prefer
-**existing zoo agents** (Such et al. 2019) over training to keep GPU cost down.
-Add: agent-activation capture + patching infra + SAE training (GPU) for Phase B2;
-behavioral-probe sweeps (Phase D) are many short rollouts (cluster, CPU/GPU).
+Reuse the Paper-1 cluster setup verbatim: LME Slurm, repo on `/cluster/maier`, the
+`tools/cluster/*.sbatch` pattern + the jaxtari GPU venv (jax[cuda12]).
 
-## 5. Discussion — three traditions of understanding AI, scored against truth
+## 5. Discussion — the traditions of understanding, scored against truth
 
-- **Three traditions, one ground truth.** Mechanistic/neuroscience (Phase A),
-  attributional/XAI incl. mechanistic-interp (Phase B), and behavioral/psychology
-  (Phase D) are the three ways the community tries to understand opaque systems.
-  Each "finds structure"; our platform is the first place all three can be
-  *validated* against known truth on a complex system.
-- **What "interpretable" means.** We adopt Barbiero et al.'s (2025) formal
-  definition and operationalize it as *ground-truth recovery* — making "is this
-  explanation correct?" a measurable question rather than a matter of taste.
-- **The shared toolkit.** Neuroscience and XAI use the *same* methods under
-  different names: tuning curves ↔ feature visualization; lesions ↔ ablations;
-  connectomics ↔ circuit/mechanistic analysis; dimensionality reduction ↔
-  probing; Granger ↔ causal-attribution. The VCS is a common benchmark for both.
+- **Many traditions, one ground truth.** Neuroscience/mechanistic (Phase A),
+  attribution/XAI (B), mechanistic interpretability (C), and behavioral/psychology
+  (D) are the ways the community tries to understand opaque systems. Each "finds
+  structure"; the VCS is the first place all can be *validated* against known truth
+  on a complex system.
+- **What "interpretable" means.** We adopt Barbiero et al.'s (2025) definition and
+  operationalize it as *ground-truth recovery* — making "is this explanation
+  correct?" measurable rather than a matter of taste.
+- **The shared toolkit.** Neuroscience and XAI use the *same* methods under different
+  names: tuning curves ↔ feature visualization; lesions ↔ ablations; connectomics ↔
+  circuit/mechanistic analysis; dimensionality reduction ↔ probing; Granger ↔
+  causal-attribution. The VCS is a common benchmark for all.
 - **Kording's lesson, made measurable.** "Finds structure ≠ understanding" was a
   warning; with ground truth it becomes a *test* a method passes or fails.
-- **Beyond the microprocessor.** From "could a neuroscientist understand a
-  microprocessor?" to "can an interpretability method recover known ground
-  truth?" — a falsifiable program for both fields, and a validation harness for
-  the rising field of **mechanistic interpretability** of neural networks.
-- **Where it goes beyond neuroscience.** Unlike a brain, our system is
-  differentiable, so it also tells us which *gradient-based* explanations are
-  trustworthy — directly relevant to interpreting the deep networks neuroscience
-  now uses as brain models. (Co-author fit: P. Krauss bridges pattern
-  recognition and neuroscience/neuroprosthetics.)
-- **And beyond to psychology-of-AI.** Shiffrin & Mitchell ask whether treating a
-  model as a psychology participant reveals its true mechanism — unanswerable for
-  LLMs (no ground truth), answerable here. We give the behavioral tradition its
-  first ground-truthed verdict, completing the mechanistic↔attributional↔behavioral
-  triangle — the natural arena for a cognitive scientist + ML co-authorship.
+- **Mechanistic interpretability, finally calibrated.** Mech-interp seeks "circuits"
+  in neural nets; here we run the same algorithms on a system whose circuits are
+  *known*, giving the field its first ground-truth calibration — directly relevant to
+  interpreting the deep networks neuroscience now uses as brain models. (Co-author
+  fit: P. Krauss bridges pattern recognition and neuroscience/neuroprosthetics.)
+- **And the behavioral question.** Shiffrin & Mitchell ask whether behavioral probing
+  reveals a system's true mechanism — unanswerable for LLMs (no ground truth),
+  answerable here on the game's known decision logic. We give behavioral methodology
+  its first ground-truthed verdict.
+- **Where it goes beyond the brain.** Unlike a brain, our system is differentiable,
+  so it also tells us which *gradient-based* explanations are trustworthy.
 
 ## 6. Paper structure (Nature Portfolio format)
 
-`paper/main.tex` is wired to `\documentclass[sn-nature]{sn-jnl}` (template files
-fetched). Nature-style layout:
+`paper/main.tex` is wired to `\documentclass[sn-nature]{sn-jnl}` (template fetched).
 
 - **Title; Abstract** (~150–200 words, unreferenced).
-- **Main text** (Nature has no rigid IMRaD): Introduction → Results
-  (Phase A mechanistic/Kording scoring; Phase B attribution **and**
-  mechanistic-interp audit; Phase D behavioral probing; the cross-tradition
-  discrepancy; a faithful-method demonstration) → Discussion (§5).
-- **Main display items** (~6 figures): (1) the platform & ground-truth oracle;
-  (2) the three traditions scored side by side (headline); (3) Kording battery
-  scored; (4) attribution vs mechanistic-interp faithfulness on agents;
-  (5) behavioral-probe verdict vs truth; (6) failure taxonomy / what to do instead.
-- **Methods** (after references, no length limit): emulator, true-attribution
-  oracle, each analysis, agents, metrics.
-- **Extended Data** (additional figures), **Supplementary Information** (full
-  per-method results, proofs of the attribution oracle, all games).
+- **Main text** (Nature has no rigid IMRaD): Introduction → Results (Phase A Kording
+  scoring; Phase B attribution audit; Phase C mechanistic-interp on the known
+  circuit; Phase D behavioral probing; the cross-tradition discrepancy; a
+  faithful-method demonstration) → Discussion (§5).
+- **Main display items** (~6 figures): (1) the VCS platform & ground-truth oracle;
+  (2) the traditions scored side by side (headline); (3) Kording battery scored;
+  (4) attribution vs mechanistic-interp faithfulness on the VCS; (5) behavioral-probe
+  verdict vs the true code; (6) failure taxonomy / what to do instead.
+- **Methods** (after references, no length limit): emulator, true-attribution oracle,
+  each analysis, metrics.
+- **Extended Data**, **Supplementary Information** (full per-method results, oracle
+  proofs, all games).
 - **End matter:** Data availability, Code availability, Author contributions,
   Competing interests, Reporting Summary, Acknowledgements (see `document_check.md`).
 
 ## 7. Journal: *Nature Machine Intelligence* vs *Nature*
 
-**Recommendation: target *Nature Machine Intelligence* (primary).** Reasoning:
+**Recommendation: target *Nature Machine Intelligence* (primary).**
 
 - **Scope fit.** NMI explicitly covers interpretability/XAI, the AI↔neuroscience
-  interface, benchmarks, and methodological critique — this paper is squarely in
-  its remit. Jonas & Kording itself was a methods-critique (PLOS Comp Biol); the
-  XAI successor lives at NMI.
-- **The "discrepancy + new directions" framing** you want is exactly NMI's
-  **Analysis** article type (or a regular Article). NMI rewards "an important step
-  ahead" conceptual contributions, not only SOTA numbers.
-- **Odds.** Realistic, high-fit home; *Nature* would demand broad
-  general-science significance and tends to read a benchmark/critique as
-  specialized.
+  interface, benchmarks, and methodological critique. Jonas & Kording itself was a
+  methods-critique (PLOS Comp Biol); the successor lives at NMI.
+- **The "discrepancy + new directions" framing** is exactly NMI's **Analysis**
+  article type (or a regular Article).
+- **Odds.** Realistic, high-fit home; *Nature* would demand broad general-science
+  significance and may read a benchmark/critique as specialized.
 
-**When *Nature* is justified:** if the discrepancy result is dramatic and broadly
-framed — "widely used interpretability methods fail a ground-truth test, and here
-is the testbed that reframes the field." Because **Nature and NMI share this exact
-template**, we can write it broadly and *shoot for Nature first* at essentially
-zero switching cost (downgrade to NMI on rejection without reformatting). My
-suggestion: **write to Nature's bar, submit to Nature first only if Phase B shows
-a striking, clearly-communicated failure of popular methods; otherwise NMI.**
-Decide after Phase B results are in.
+**When *Nature* is justified:** if the discrepancy is dramatic and broadly framed —
+"widely used interpretability methods fail a ground-truth test, and here is the
+testbed that reframes the field." Because **Nature and NMI share this template**, we
+write broadly and *shoot for Nature first* at near-zero switching cost (downgrade to
+NMI on rejection without reformatting). Decide after the pilots/Phase-B–C results.
 
-Article-type note: a standard **Article** if the benchmark + experiments lead; an
+Article-type: a standard **Article** if the benchmark + experiments lead; an
 **Analysis** if the cross-method audit/critique leads. I lean **Article**.
 
 ## 8. Risks / open questions
 
 - **Granularity vs Kording.** *Decided: run both, cut later.* Architectural level
-  (our level, where "understanding" is defined) leads; the Visual6502 transistor
-  netlist runs as a parallel A1/A2 track for a direct head-to-head with Kording.
-  Pilots decide which we feature. (Visual6502 netlist is public; importing it is a
-  bounded add, not a new simulator.)
-- **Agent training cost.** Use existing zoo agents where possible (jaxtari GPU
-  rollouts help); training from scratch is a time sink.
+  (where "understanding" is defined) leads; the Visual6502 transistor netlist runs as
+  a parallel A1/A2 track for a direct head-to-head. Pilots decide which we feature.
+- **T3 label coverage.** Semantic-level metrics need game-concept labels; we have
+  few today. Mitigation: source from OCAtari/AtariARI, verify/extend by intervention,
+  and lean on T1/T2 (which need no labels) for the bulk of the scoring.
 - **Defining "the true causal map."** Intervention-based vs gradient-based ground
-  truth can disagree at non-smooth points; we report both and treat agreement as
-  part of the result.
-- **Scope control.** Phase A + B alone is a strong paper; C2 (new methods) can be
-  a follow-up if it bloats.
+  truth can disagree at non-smooth points; we report both and treat agreement as part
+  of the result.
+- **Scope control.** Phases A–C alone are a strong paper; D and E can be staged.
 
 ## 9. Phasing / next actions
 
-**Prepared (this revision):** scaffolding at `tools/xai_study/` — specs +
-harness stubs for the ground-truth oracle, Phase A, and Phase B; method matrix and
-compute plan locked above.
+**Prepared:** scaffolding at `tools/xai_study/` — specs + harness stubs for the
+ground-truth oracle and each phase; method matrix and compute plan locked above.
 
-Immediate (the two pilots de-risk the whole paper; both run **locally**):
-1. **Phase-A pilot** — `tools/xai_study/phaseA_kording/`: lesion + tuning-curve +
-   dim-reduction on Space Invaders, with ground-truth scoring (reuses Paper-1
-   tooling). Proves the scoring concept.
-2. **Phase-B pilot** — `tools/xai_study/phaseB_agents/`: one DQN agent (zoo) +
-   Integrated Gradients vs the exact intervention oracle on one game. Proves the
-   ground-truth attribution pipeline.
+Immediate pilots (all run **locally**, all on the current substrate):
+1. **Phase-A pilot** — lesion + tuning-curve + dim-reduction on Space Invaders, with
+   ground-truth scoring (reuses Paper-1 tooling).
+2. **Phase-B pilot** — IG vs the exact intervention oracle for one output (extends P8).
+3. **Phase-C pilot** — activation patching + one SAE on the VCS state, scored vs the
+   true data-flow / known variables.
+4. **Phase-D pilot** — one psychophysics probe of a game's opponent logic vs the code.
 
-Fast-follow pilots once the oracle works:
-3. **Phase-B2 mechanistic pilot** — activation patching + one SAE on the agent;
-   score the patched effect vs the exact patch and SAE features vs known variables.
-4. **Phase-D behavioral pilot** — one psychophysics-style probe of the agent;
-   compare the inferred decision variable to the true one.
+Then: stand up the cluster sweeps (§4.6); expand the method matrix (§4.4) incl. the
+newest causal methods (§4.5) and more games; build the benchmark (E1); draft
+`main.tex` (§6). Lock journal/article-type after the pilots (§7).
 
-Then: secure a zoo agent set; stand up the cluster runs (§4.6); expand to the full
-method matrix (§4.4) across attribution + mechanistic + behavioral and multiple
-games; build the benchmark (C1); draft `main.tex` (§6). Lock
-journal/article-type/authors after the pilots (§7).
+Author fit (provisional): A. Maier, S. Bayer, P. Krauss (+ collaborators); Krauss's
+neuroscience/neuroprosthetics background anchors the §5 bridge.
 
-Author fit (provisional, TBD): A. Maier, S. Bayer, P. Krauss (+ collaborators);
-Krauss's neuroscience/neuroprosthetics background anchors the §5 bridge.
+## 10. Per-phase substrate audit (which phases run on the current substrate)
+
+This is the audit, re-done after the scope fix. Substrate = jutari/jaxtari as in
+Paper 1 (exact forward, exact interventions on any state, full observability,
+gradients of any output w.r.t. any input, GPU-batched SOFT-STE). The subject is the
+VCS in every phase, so the substrate is *both* instrument and subject throughout.
+
+| Phase / method | Substrate capability required | In current substrate? | Other ingredient | Evaluable now? |
+|---|---|---|---|---|
+| **A1** connectomics | per-instruction R/W observability; true data-flow | ✅ | — | **Yes** |
+| **A2** lesions | exact state intervention + deterministic re-run | ✅ | — | **Yes** |
+| **A3** tuning | full state+pixel recording | ✅ | T3 only for game-concept scoring | **Yes** (T1/T2); semantic part needs T3 |
+| **A4–A8** corr/LFP/Granger/dim-red/whole-state | full state recording; known clocks & data-flow | ✅ | — | **Yes** |
+| **B** attribution/XAI | exact intervention + gradient of an output w.r.t. inputs/state | ✅ (P8 already does this) | T3 only for object/concept-level scoring | **Yes** |
+| **C** mechanistic interp | clamp/resample state between runs; record state trajectory; gradients | ✅ | SAE training code (standard); T3 for semantic checks | **Yes** |
+| **D** behavioral | set state + re-render controlled stimuli; read program response | ✅ | T3 / vision to define the situation variable | **Yes** |
+| **E** synthesis/benchmark | aggregates A–D | — | depends on A–D | **Yes** (follows) |
+
+**Cross-cutting (neither is a new substrate):**
+- **T3 game-concept labels** — external knowledge, *not* a substrate capability, but
+  derivable/verifiable with the substrate's interventions. Gates only the
+  semantic-level sub-metrics (A3-semantic, B object/concept attribution, C
+  SAE-feature↔variable, D situation variables). Everything else scores against
+  T1/T2, which are intrinsic.
+- **Long-horizon end-to-end gradients** (credit through many steps of dynamics) — the
+  one item that could stress the substrate (BPTT / memory / the short conformance
+  window). Single-step attribution — what the core metrics use — is already covered.
+
+**Bottom line:** with the subject corrected to the VCS, **all phases are evaluable on
+the current substrate.** No phase requires a different or extended substrate; the only
+optional "more substrate" item is long-horizon gradients, which the planned
+experiments do not need.

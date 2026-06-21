@@ -1,13 +1,14 @@
 # Experiment design — Paper 2 (per-phase: measure, ideal, correct, best case)
 
-Companion to `xai_paper_plan.md`. For every phase we answer the same four
-questions you asked:
+Companion to `xai_paper_plan.md`. **Subject in every phase: the Atari VCS itself**
+(chip + program + game logic) — *not* learned agents. For every phase we answer the
+same four questions:
 1. **What can be done & measured?**
 2. **What is the ideal explanation of what we observe?**
 3. **When is the explanation *right*?** (the correctness criterion)
 4. **What is the best-case outcome of the analysis?**
 
-Everything hangs on one definition (§0) and one oracle (§1); the phases (§2–§5)
+Everything hangs on one definition (§0) and one oracle (§1); the phases (§2–§6)
 instantiate them. A compact master table is in §7.
 
 ---
@@ -18,20 +19,20 @@ We make "correct" measurable (operationalizing Barbiero et al. 2025 via our grou
 truth, in Marr's terms, and Lazebnik's "fix-the-radio" sufficiency). An explanation
 `Ê` of how output `y` arises is **right** iff it is:
 
-- **(F) Faithful** — the causes/structure it claims are the *true* causes.
-  Measured against the oracle (§1): the claimed dependencies match the
-  intervention-verified dependencies (precision/recall, sign, magnitude).
-- **(S) Sufficient** — it *predicts behavior under interventions it did not see*
-  and could regenerate the behavior. Measured by **held-out interchange accuracy**
+- **(F) Faithful** — the causes/structure it claims are the *true* causes. Measured
+  against the oracle (§1): claimed dependencies match the intervention-verified
+  dependencies (precision/recall, sign, magnitude).
+- **(S) Sufficient** — it *predicts behavior under interventions it did not see* and
+  could regenerate the behavior. Measured by **held-out interchange accuracy**
   (causal-abstraction / causal-scrubbing style): apply a new intervention, predict
   `y` from `Ê`, compare to the true `y`.
 - **(M) Minimal & at the right level** — parsimonious, no spurious parts, stated at
-  the algorithmic level (registers/RAM/opcodes for the chip; features/circuits/
-  decision-variables for the agent), matching the known module decomposition.
+  the algorithmic level (registers/RAM/opcodes; the program's variables, circuits,
+  and decision logic), matching the known module decomposition.
 
-`right = F ∧ S ∧ M`. Each is a number on our system. This triad is the spine of
-every phase; "interesting structure" that is not F∧S∧M is the failure mode Kording
-and Shiffrin–Mitchell warned about.
+`right = F ∧ S ∧ M`. Each is a number on our system. This triad is the spine of every
+phase; "interesting structure" that is not F∧S∧M is the failure mode Kording and
+Shiffrin–Mitchell warned about.
 
 **Two reporting axes (the headline plot):** *faithfulness* (X, vs ground truth) vs
 *human-plausibility* (Y, does it look right). The danger zone — high plausibility,
@@ -41,29 +42,33 @@ low faithfulness — is where we predict the popular methods land.
 
 ## 1. The ground-truth oracle (shared measurement instrument)
 
-For any output `y` and candidate cause `u` (pixel, object, RAM byte, register,
-ROM byte, opcode, or an internal agent activation/feature):
+For any output `y` (a pixel, the score, a game event, a future state) and candidate
+cause `u` (ROM byte, RAM cell, register, opcode, joystick input, or — for mechanistic
+interp — an internal state variable):
 
-- **Causal effect (exact):** intervene on `u` (occlude / clamp / resample),
-  re-run deterministically, record Δ`y`. Bit-exact; no world-model assumed. The
-  *true causal map* is `{Δy(u)}`.
-- **Differential effect:** `∂y/∂u` through the differentiable substrate (and
-  through `emulator ∘ agent` end-to-end).
-- **Known semantics:** the true role of every chip state variable (from the spec)
-  and the true game variables (ball-x, paddle-x, lives, score — known RAM
-  addresses from Paper 1).
+- **Causal effect (exact):** intervene on `u` (occlude / clamp / resample), re-run
+  deterministically, record Δ`y`. Bit-exact; no world-model assumed. The *true causal
+  map* is `{Δy(u)}`.
+- **Differential effect:** `∂y/∂u` through the differentiable substrate.
+- **Known semantics — in tiers (do not overclaim):**
+  - **T1 causal/mechanistic** (exact, all 64 games, by construction);
+  - **T2 hardware semantics** (exact, all 64: register/opcode roles, data-flow);
+  - **T3 game-concept semantics** (which RAM byte = ball-x / lives / score) —
+    *partial*, set by the program, undocumented; sourced from OCAtari/AtariARI and
+    **verified/extended by our own interventions** (perturb byte → object moves).
+    Needed only for *semantic-level* metrics.
 
 The oracle is itself validated (intervention vs gradient agreement); disagreement
 flags non-smooth points and is reported, not hidden. **Everything below is scored
 against this oracle.**
 
-Running example used throughout: **Pong** — true decision variables are
-ball position, paddle position, ball velocity (known RAM); a competent agent's
-action must causally depend on the ball–paddle relative position.
+Running example throughout: **Pong** — outputs to explain: the score, the ball-pixel;
+known variables: ball position, paddle positions, score (RAM); behavioral subject:
+the **CPU opponent** (its paddle-tracking logic, in the ROM).
 
 ---
 
-## 2. Phase A — mechanistic / neuroscience on the chip (Kording, quantified)
+## 2. Phase A — neuroscience / mechanistic battery on the VCS (Kording, quantified)
 
 Subject: the running VCS. Each classical method emits a "finding"; we score it.
 
@@ -72,138 +77,137 @@ Subject: the running VCS. Each classical method emits a "finding"; we score it.
 | Analysis | Finding (what the method outputs) | Measured score |
 |---|---|---|
 | A1 connectomics | recovered dependency graph over state vars | precision/recall + graph-edit-distance vs the *true* read/write graph |
-| A2 lesions | per-unit importance (does the game still run?) | rank-correlation of lesion-importance with the unit's *true* functional role; #units flagged "specific" that are actually generic |
+| A2 lesions | per-unit importance (does the game still run?) | rank-correlation of lesion-importance with the unit's *true* role; #units flagged "specific" that are actually generic |
 | A3 tuning curves | per-unit tuning to luminance/game var | fraction of strongly-tuned units whose tuning ≠ their true role (spurious-tuning rate) |
 | A4 correlations | pairwise/global correlation structure | weak-pairwise/strong-global reproduced; vs true coupling |
 | A5 LFP | regional power spectra / "rhythms" | are peaks the known clocks (frame/scanline)? %-variance that is epiphenomenal |
 | A6 Granger | inferred subsystem causality | false-edge / missed-edge rate vs true data-flow |
-| A7 dim-reduction | latent components | matched-component fraction vs known signals (clock, R/W, vsync); interpretable-variance |
+| A7 dim-reduction | latent components | matched-component fraction vs known signals (clock, R/W, vsync) |
 | A8 whole-state | descriptive map | baseline only |
 
 **(2) Ideal explanation** — the register-transfer-level account: *"frame-1 of this
-game is produced by the display kernel reading RAM cells X through opcodes Y,
-driving TIA registers Z; module M implements function f."* (Known exactly.)
+game is produced by the display kernel reading RAM cells X through opcodes Y, driving
+TIA registers Z; module M implements function f."* (Known exactly.)
 
 **(3) When right** — F: recovered graph/role = true graph/role. S: the recovered
-structure predicts held-out lesions/interventions. M: it lands on the module level
-(registers/adders), not transistors or epiphenomena. A lesion result is "right"
-only if the unit's *true role* explains the broken behavior — not merely "game X
-broke."
+structure predicts held-out lesions/interventions. M: module level (registers/adders),
+not transistors or epiphenomena. A lesion result is "right" only if the unit's *true
+role* explains the broken behavior — not merely "game X broke."
 
 **(4) Best case** — a *quantified* Kording: every classical method scores **low on
-F∧S** despite finding rich structure (e.g., "lesion-importance explains <X%> of
-true functional role; tuning is spurious for <Y%> of tuned units"), while the same
-*causal* operators (intervention/patching at the chip level) score **high** — proving
-the gap is the **method**, not the data or the system. Plus the direct Visual6502
-transistor-level head-to-head (parallel track).
+F∧S** despite rich structure (e.g., "lesion-importance explains <X%> of true role;
+tuning is spurious for <Y%> of tuned units"), while the *causal* operators
+(intervention/patching, §4) score **high** — proving the gap is the **method**, not
+the data or the system. Plus the Visual6502 transistor-level head-to-head (parallel
+track).
 
 ---
 
-## 3. Phase B1 — attribution / saliency on agents
+## 3. Phase B — attribution / XAI on the VCS's input→output computation
 
-Subject: a DQN agent's action/Q. Each method emits an attribution map over inputs.
+Subject: the VCS as a function. Explain a chosen **output** `y` (pixel / score /
+event) from its **causes** (ROM, RAM, registers, inputs). Each method emits an
+attribution map over those causes.
 
-**(1) Measure** — vs the oracle's true causal map over pixels/objects:
-- correlation (Spearman) with the true Δaction/ΔQ map;
-- **deletion/insertion AUC measured on the true emulator** (remove top-attributed
-  inputs, measure the *actual* effect — not a learned proxy);
+**(1) Measure** — vs the oracle's true causal map:
+- correlation (Spearman) with the true Δ`y` map;
+- **deletion/insertion AUC measured on the true VCS** (remove top-attributed causes,
+  measure the *actual* effect — not a proxy);
 - precision@k / pointing-game / object-hit vs the true causal top-k;
-- **plausibility** (does it highlight human-sensible objects) for the X-vs-Y plot.
+- **plausibility** (does it highlight human-sensible causes) for the X-vs-Y plot.
+- **N/A check:** Grad-CAM / attention / policy-surrogates need NN structure absent in
+  the VCS — record as "does not apply" (a finding about popular XAI).
 
-**(2) Ideal explanation** — the minimal set of pixels/objects whose change actually
-flips the action, with correct sign/magnitude: the *true causal saliency*
-(e.g., Pong: the ball and the paddle, not the score digits or background).
+**(2) Ideal explanation** — the minimal set of causes whose change actually moves `y`,
+with correct sign/magnitude: the *true causal saliency* (e.g., for the Pong score: the
+ball-position and paddle RAM cells and the scoring opcode, not the background).
 
-**(3) When right** — F: top-k attributed = true causal top-k. S: deleting them on
-the real emulator changes the action as predicted (insertion/deletion faithfulness).
-M: sparse, object-level. Explicitly *not* "looks like it's watching the ball"
-(plausibility) unless the ball is the true cause *and* the map points there.
+**(3) When right** — F: top-k attributed = true causal top-k. S: deleting them on the
+real VCS changes `y` as predicted. M: sparse, at the variable/opcode level. Explicitly
+*not* "the map looks reasonable" unless the highlighted cause is the true one.
 
-**(4) Best case** — a **faithfulness leaderboard with real ground truth**: popular
-visual XAI (Grad-CAM, attention, vanilla saliency) sits near-chance on F while high
-on plausibility — the measured, ground-truthed form of Atrey 2020 — whereas
-IG / occlusion-on-the-true-emulator approach the ceiling. The deliverable claim:
-"*plausible ≠ faithful*, and here is the gap, in numbers."
+**(4) Best case** — a **faithfulness leaderboard with real ground truth**: vanilla
+saliency / model-agnostic methods sit low on F while plausible; IG /
+occlusion-on-the-true-VCS / on-distribution counterfactuals approach the ceiling; the
+NN-specific methods don't even apply. Deliverable claim: "*plausible ≠ faithful*, and
+here is the gap, in numbers — on the system itself."
 
-## 4. Phase B2 — mechanistic interpretability on agents (first-class)
+## 4. Phase C — mechanistic interpretability on the VCS (the known-circuit testbed)
 
-Ground truth for the agent = the agent's **own true causal structure**, always
-obtainable because we hold the weights *and* can intervene exactly on inputs and
-activations. The known game variables are an extra semantic anchor.
+The VCS **state trajectory is the "activations"**, the program's **data-flow is the
+"circuit"** — both known. Ground truth = T1/T2 (always) + T3 (where labeled).
 
 **(1) Measure**
-- **Activation patching / causal tracing:** patch activations clean↔corrupted;
-  score = patched effect vs the **exact** intervention effect (the oracle on
-  activations). Recovery of the truly-important components (P/R).
-- **Attribution patching (+ edge AP):** gradient approximation; score =
-  approximation error vs true patching, and important-edge recovery.
-- **Sparse autoencoders:** train on activations; score = **feature ↔ known game
-  variable** matching (probing accuracy / MI of a feature for ball-x, lives, …)
-  *and* causal use (does patching the feature move the output as predicted?).
-- **Circuits + causal scrubbing:** resample the hypothesised-irrelevant parts; if
-  behavior is preserved, the hypothesis holds. Score = scrubbing-preserved
-  performance + match to the known game logic.
+- **Activation patching / causal tracing:** patch RAM cells / registers / TIA state
+  clean↔corrupted; score = patched effect vs the **exact** intervention effect (the
+  oracle) and recovery of the truly-important components (P/R).
+- **Attribution patching (+ edge AP):** gradient approximation; score = approximation
+  error vs true patching, and important-edge recovery.
+- **Sparse autoencoders:** train on the state trajectory; score = **feature ↔ known
+  variable** matching (probing accuracy / MI for a hardware signal or, where labeled,
+  a game variable) *and* causal use (does patching the feature move `y` as predicted?).
+- **Circuits + causal scrubbing:** recover the circuit for a behavior (ball-bounce,
+  opponent-AI); resample the hypothesised-irrelevant parts — behavior preserved? Score
+  = scrubbing-preserved performance + match to the true disassembled routine.
+- **Linear probing:** decode concepts from state; contrast decodable vs *used*.
 
-**(2) Ideal explanation** — a circuit/feature-level account of *how the agent
-computes its action*: e.g., "feature φ encodes ball-x, feature ψ encodes
-paddle-x, circuit C computes ψ−φ and selects up/down" — verified to be the actual
-computation.
+**(2) Ideal explanation** — a circuit/feature-level account of *how the program
+computes `y`*: e.g., "RAM cell c = ball-x; the bounce routine compares c to the wall
+constant and negates the velocity cell" — verified against the disassembly.
 
-**(3) When right** — F: recovered features/circuit = the agent's true causal
-structure (patching-verified). S: the recovered circuit alone reproduces the
-behavior (causal scrubbing passes; ablating the rest is harmless). M: minimal,
-monosemantic features, matched to known variables.
+**(3) When right** — F: recovered features/circuit = the true data-flow
+(patching-verified). S: the recovered circuit alone reproduces the behavior (causal
+scrubbing passes). M: minimal, monosemantic features matched to known variables.
 
-**(4) Best case** — mechanistic methods score **high**, giving (a) the **first
-validation of mechanistic interpretability against a complex system's ground
-truth** (it really recovers the computation), and (b) a **calibration for SAEs**
-(features map to known variables at a measured rate, with a measured monosemanticity
-ceiling). A genuine contribution *to* mechanistic interpretability, not only a
-critique. (Caveat to test: the agent may compute via features that don't cleanly
-map to human game variables — itself a reportable finding.)
+**(4) Best case** — the **first validation of the mechanistic-interpretability toolkit
+against a *known* circuit in a complex system**: (a) patching recovers the true
+data-flow at a measured rate; (b) an SAE calibration — features map to known variables
+at a measured rate with a measured monosemanticity ceiling. A contribution *to*
+mech-interp, not only a critique. (Caveat to test: some computations may not decompose
+into human-clean features — itself a reportable finding.)
 
-## 5. Phase D — behavioral / psychology probing
+## 5. Phase D — behavioral / psychology probing of the game's own logic
 
-Subject: the agent (primary), the chip (stress test), as a "participant."
+Subject: a game's built-in decision logic (e.g., Pong's CPU opponent), as a
+"participant." Mechanism is in the ROM, so we can check.
 
-**(1) Measure** — psychophysics-style: vary one controlled factor (ball position,
-distractor, reward cue, onset timing, masking), read action/Q, fit a behavioral
-account (psychometric curve, inferred decision variable, bias, RT-analogue). Then
-compare the **inferred** decision variable to the **true** causal driver (oracle).
-Key metric: **"right-for-the-wrong-reasons" rate** — good behavioral fit, wrong
-driver; plus held-out generalization of the behavioral law to novel stimuli.
+**(1) Measure** — psychophysics-style: vary one controlled factor of the situation
+(object position/distance, timing, distractor) by setting state and re-rendering; read
+the program's response; fit a behavioral account (psychometric curve, inferred
+decision variable, bias, reaction-time analogue). Compare the **inferred** decision
+variable to the **true** driver (the code / oracle). Key metric:
+**"right-for-the-wrong-reasons" rate** + held-out generalization to novel stimuli.
 
-**(2) Ideal explanation** — a behavioral law that names the agent's true decision
-variables and their functional form (e.g., "P(up) is a logistic in
-ball-y − paddle-y").
+**(2) Ideal explanation** — a behavioral law over the program's true decision
+variables (e.g., "the opponent moves toward `sign(ball_y − paddle_y)` with a 1-frame
+lag and a dead-zone").
 
-**(3) When right** — F: inferred variable = true causal driver (intervention-
-verified). S: the law predicts behavior on **novel** stimuli (not just the probe
-set) — directly answering Shiffrin–Mitchell's context-dependence / "right for the
-wrong reasons" / training-contamination concerns. M: the simplest law that holds.
+**(3) When right** — F: inferred variable = true driver (verified against the code).
+S: the law predicts behavior on **novel** stimuli — directly answering Shiffrin &
+Mitchell's "right for the wrong reasons" / context-dependence concern. M: simplest law
+that holds.
 
-**(4) Best case** — the **first ground-truthed verdict on psychology-of-AI**:
-a measured split of behavioral inferences into *trustworthy* (match truth +
-generalize) vs *mirage* (fit but wrong driver / confounded), with the conditions
-that predict each. E.g., "behaviorally-inferred decision variables match the true
-driver X% of the time; failures are confounded by Z."
+**(4) Best case** — the **first ground-truthed verdict on behavioral-probing
+methodology**: a measured split into *trustworthy* (match truth + generalize) vs
+*mirage* (fit but wrong driver), with the conditions that predict each.
 
-## 6. Phase C — synthesis (the cross-tradition result)
+## 6. Phase E — synthesis (the cross-tradition result)
 
-**(1) Measure** — put every method from A/B1/B2/D on the two shared axes
-(faithfulness/sufficiency vs plausibility) with one common scoring protocol.
+**(1) Measure** — put every method (A neuroscience, B attribution, C mechanistic, D
+behavioral) on the two shared axes (faithfulness/sufficiency vs plausibility) with one
+common protocol.
 
 **(2/3) Ideal/right** — a single comparable F∧S∧M score per method.
 
 **(4) Best case — the paper's headline:**
-- **One figure, three traditions:** mechanistic-neuroscience, attribution+mech-interp,
-  and behavioral, each scored against one ground truth, on a system complex enough
-  to matter. The "plausible-but-wrong" quadrant is populated by the *popular*
-  methods; the causal/mechanistic methods occupy the faithful region.
+- **One figure, all traditions:** neuroscience, attribution, mechanistic, behavioral,
+  each scored against one ground truth on a system complex enough to matter. The
+  "plausible-but-wrong" quadrant is the *popular* methods; the causal/mechanistic
+  methods occupy the faithful region.
 - **A benchmark artifact** (tasks + oracle + metrics) others can run.
-- **A directions claim:** the science of understanding AI needs ground-truth
-  validation, causal (not correlational) attribution, and method development
-  *sieved on known systems first* — with our platform as that sieve.
+- **A directions claim:** the science of understanding complex systems needs
+  ground-truth validation, causal (not correlational) attribution, and method
+  development *sieved on known systems first* — with the VCS as that sieve.
 
 ---
 
@@ -211,12 +215,13 @@ driver X% of the time; failures are confounded by Z."
 
 | Phase | Measure (output → score) | Ideal explanation | Right when (F∧S∧M) | Best-case outcome |
 |---|---|---|---|---|
-| **A** chip / neuroscience | finding (graph, lesion map, tuning, components) → agreement with known mechanism | register-transfer account of the frame | recovered structure = true graph/role; predicts held-out lesions; module-level | quantified Kording: classical methods low-F, causal methods high-F — gap is the method |
-| **B1** agent / attribution | attribution map → corr + deletion/insertion AUC on true emulator + precision@k | minimal true-causal pixels/objects | top-k = true causal top-k; deletion behaves as predicted; sparse | leaderboard: popular saliency plausible-but-unfaithful; IG/occlusion faithful |
-| **B2** agent / mechanistic | patch/SAE/circuit → vs exact patch + feature↔known-var + scrubbing | circuit/feature account of the agent's computation | recovered = agent's true causal structure; circuit reproduces behavior; monosemantic | first ground-truth validation of mech-interp + SAE calibration |
-| **D** agent / behavioral | psychometric fit → inferred driver vs true driver + generalization | behavioral law over true decision variables | inferred var = true driver; predicts novel stimuli; simplest | first ground-truthed verdict: trustworthy vs mirage behavioral inferences |
-| **C** synthesis | all methods on faithfulness-vs-plausibility | one comparable F∧S∧M score | — | three-tradition headline figure + benchmark + directions |
+| **A** VCS / neuroscience | finding (graph, lesion map, tuning, components) → agreement with known mechanism | register-transfer account of the frame | recovered structure = true graph/role; predicts held-out lesions; module-level | quantified Kording: classical low-F, causal high-F — gap is the method |
+| **B** VCS / attribution | attribution map for an output → corr + deletion/insertion AUC on true VCS + precision@k | minimal true-causal inputs/state for that output | top-k = true causal top-k; deletion behaves as predicted; sparse | leaderboard: popular methods plausible-but-unfaithful or N/A; IG/occlusion/causal faithful |
+| **C** VCS / mechanistic | patch/SAE/circuit on state → vs exact patch + feature↔known-var + scrubbing | circuit/feature account of how the program computes the output | recovered = true data-flow; circuit reproduces behavior; monosemantic | first validation of mech-interp on a *known* circuit + SAE calibration |
+| **D** game-logic / behavioral | psychometric fit → inferred driver vs true code + generalization | behavioral law over the program's true decision variables | inferred var = true driver; predicts novel stimuli; simplest | first ground-truthed verdict: trustworthy vs mirage behavioral inferences |
+| **E** synthesis | all methods on faithfulness-vs-plausibility | one comparable F∧S∧M score | — | cross-tradition headline figure + benchmark + directions |
 
 > Outcomes in §2–§6 are *hypotheses* (our predictions), to be confirmed by the
-> experiments — the pilots (`tools/xai_study/*`) test the two riskiest links first:
-> the oracle, and one method per tradition.
+> experiments — the pilots (`tools/xai_study/*`) test the riskiest links first: the
+> oracle, and one method per tradition. **Every phase runs on the current substrate**
+> (the subject is the VCS); see `xai_paper_plan.md` §10.

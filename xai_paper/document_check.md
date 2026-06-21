@@ -46,7 +46,7 @@ LaTeX template (`sn-jnl.cls`, `sn-nature.bst`) is in `paper/`.
 - [ ] **Competing interests** statement.
 - [ ] **Acknowledgements** (funding, compute).
 - [ ] **Reporting Summary** — the Nature Portfolio Reporting Summary is required; complete and submit it.
-- [ ] **Ethics / dual-use / broader impact** as applicable (agentic-coding + interpretability dual-use, stated honestly; no human-subjects data).
+- [ ] **Ethics / dual-use / broader impact** as applicable (interpretability-method dual-use, stated honestly; no human-subjects data; ROMs not redistributed).
 - [ ] **Statistics & reproducibility**: every quantitative claim states n, the test, and uncertainty; faithfulness scores reported with variation across seeds/games.
 
 ## E. Figures & display items
@@ -57,11 +57,13 @@ LaTeX template (`sn-jnl.cls`, `sn-nature.bst`) is in `paper/`.
 
 ## F. Content coverage vs `xai_paper_plan.md`
 - [ ] **Intro:** the ground-truth gap in interpretability; Jonas & Kording framing; the differentiable-VCS opportunity (builds on Paper 1, cited).
-- [ ] **Results — Phase A:** Kording battery (connectomics, lesions, tuning, correlations, LFP, Granger, dim-reduction) reproduced **and scored** against the known mechanism.
-- [ ] **Results — Phase B:** modern deep-RL XAI (saliency, Grad-CAM/++, IG, occlusion, attention, counterfactual, XDQN) on DQN agents, scored against the true intervention/gradient attribution oracle.
-- [ ] **Results — discrepancy:** quantified failure modes; a faithful-attribution demonstration (Phase C2).
-- [ ] **Discussion:** XAI ↔ neuroscience shared toolkit; Kording's lesson made measurable; mechanistic-interpretability validation; where it goes beyond (§5).
-- [ ] **Benchmark artifact (C1)** described and released.
+- [ ] **Results — Phase A (neuroscience):** Kording battery (connectomics, lesions, tuning, correlations, LFP, Granger, dim-reduction) reproduced **and scored** against the known mechanism.
+- [ ] **Results — Phase B (attribution/XAI):** attribution of a VCS output (pixel/score/event) to its inputs/state (saliency, IG, occlusion, SHAP/LIME, counterfactual), scored vs the intervention/gradient oracle; the N/A finding for NN-specific methods (Grad-CAM, attention).
+- [ ] **Results — Phase C (mechanistic):** activation/attribution patching, SAEs, circuits, probing on the VCS state, scored against the *known* circuit/data-flow/variables.
+- [ ] **Results — Phase D (behavioral):** psychophysics-style probing of the game's own decision logic, scored against the true code ("right for the wrong reasons").
+- [ ] **Results — discrepancy:** quantified failure modes; a faithful-attribution demonstration (Phase E2).
+- [ ] **Discussion:** the traditions' shared toolkit; Kording's lesson made measurable; mechanistic-interpretability validation on a known circuit; the behavioral verdict; where it goes beyond (§5).
+- [ ] **Benchmark artifact (E1)** described and released.
 - [ ] Every claim has a backing experiment; all referenced works real (run the Paper-1 reference-verification pass on the new bib).
 
 ## G. Pre-submission gate
