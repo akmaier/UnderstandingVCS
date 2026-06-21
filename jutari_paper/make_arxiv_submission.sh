@@ -24,6 +24,14 @@ awk '/\\maketitle/{p=1;next} /^\{\\small/{p=0} p' "$PAPER/paper.tex"          > 
 awk '/\\maketitle/{p=1;next} /\\bibliography\{references\}/{p=0} p' "$PAPER/supplementary.tex" > "$STAGE/body_supp.tex"
 echo "  body_main: $(wc -l < "$STAGE/body_main.tex") lines   body_supp: $(wc -l < "$STAGE/body_supp.tex") lines"
 
+# arXiv-only abstract edit: the code is already public, so link the repo. The
+# anonymous AAAI build (paper.tex) is left untouched -- it keeps "released upon
+# acceptance" because a repo link would break double-blind.
+perl -0777 -i -pe 's{The full code of both ports will be released under the\s+MIT\s+license upon acceptance\.}{The full code of both ports is available under the MIT license at \\url{https://github.com/akmaier/UnderstandingVCS}.}s' "$STAGE/body_main.tex"
+grep -q 'is available under the MIT license at' "$STAGE/body_main.tex" \
+    && echo "  abstract: code-availability sentence -> public repo link" \
+    || { echo "  FATAL: abstract MIT sentence not found/rewritten"; exit 1; }
+
 # --- 2. support files (style, bib, figures) ---
 step "2/5 copy style / bib / figures"
 cp "$PAPER/aaai2027.sty" "$PAPER/aaai2027.bst" "$PAPER/references.bib" "$STAGE/"
@@ -113,6 +121,8 @@ chkno 'Reproducibility Checklist' 'no reproducibility checklist'
 chk   'Supplementary Material'    'supplement appendix'
 chk   'Temperature-limit bound'  'supplement theorem content'
 chk   'presentation.mp4'         'video link'
+chk   'github.com/akmaier/UnderstandingVCS' 'abstract repo link'
+chkno 'upon acceptance'          'no "released upon acceptance"'
 [[ "$ERR" == 0 && "$FAILED" == 0 ]] || { echo "VERIFICATION FAILED"; exit 1; }
 
 # --- 5. zip the SOURCE for arXiv (arXiv compiles it); also drop a preview PDF ---
