@@ -7,6 +7,10 @@ up: **read [`general_paper_plan.md`](general_paper_plan.md) first** — it is th
 
 ## Layout
 - **[`general_paper_plan.md`](general_paper_plan.md)** — the program map. Read first.
+- **[`SCRUM.md`](SCRUM.md)** — the **reusable agentic SCRUM process**: how multiple
+  subagents build a paper in parallel off a shared backlog, commit to `main`, and
+  synchronize at sprint barriers without write-conflicts. Governs P2 first; reused for
+  P3/P4/P5.
 - **One subfolder per paper, named `xai_N_topic/`:**
   - **[`xai_2_interpretability/`](xai_2_interpretability/)** — P2 (active): the
     interpretability ground-truth benchmark — Phases **A** (neuroscience) **+ B**
@@ -33,6 +37,12 @@ up: **read [`general_paper_plan.md`](general_paper_plan.md) first** — it is th
   holds the shared §0 triad, §1 oracle, §2 T3 procedure, §3 substrate audit; P3/P4
   reference those rather than repeat them.)
 - Plus **`document_check.md`** (venue compliance) and **`paper/`** (LaTeX).
+- **Execution layer** (added for P2; reused per paper): **`SPEC.md`** — the full work
+  breakdown (epics → tasks with file-scopes/deps/where/DoD) that the SCRUM backlog is built
+  from; **`backlog/`** — one file per work item + the sprint `BOARD.md`; **`sprints/`** —
+  per-sprint planning/review notes. The agentic process over these is [`SCRUM.md`](SCRUM.md).
+  *Mapping:* `plan.md`/`experiment_design.md` = **what & why**; `SPEC.md`/`backlog/` =
+  **work items & state**; `SCRUM.md` = **how agents execute them**.
 
 **Rule of thumb:** "How do we *say* it?" → `plan.md`. "What do we *run*, and how do we
 *score* it?" → `experiment_design.md`. A storyline change edits the plan only; a
