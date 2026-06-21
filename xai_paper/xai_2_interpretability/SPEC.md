@@ -8,7 +8,9 @@ the **work breakdown** the SCRUM backlog is generated from (see [`../SCRUM.md`](
 (local/cluster), and **Definition of Done (DoD)**.
 
 > Conventions: subject = the VCS (no agents). Code lives in `tools/xai_study/`; results in
-> each phase's `out/`; the paper in `paper/`. Results schema in §R. Game set in §G.
+> each phase's `out/`; the paper in `paper/`. **ROMs:
+`xitari/games/Atari-2600-VCS-ROM-Collection/ROMS/` (local, gitignored — use in place).**
+Results schema in §R. Game set in §G.
 > Reuse Paper-1 gates; never modify the emulator core (SCRUM §7).
 
 ## G. Game set (decide in E0, fix for the paper)
@@ -133,16 +135,18 @@ self-contained legend.
 
 ## E8 — Nature paper draft (writing)  *(Sprint 6; local; one section per item)*
 Split `paper/main.tex` into `paper/sections/*.tex` (SCRUM §6) so writers are disjoint.
-- **E8-0 Skeleton.** SM converts `paper/` to `main.tex` + `\input` of empty section files;
-  imitate **Andreas Maier's writing style** (analyse his Paper-1 prose first). *scope:*
-  `paper/main.tex`, `paper/sections/*.tex` (created empty). *SM task.*
+- **E8-0 Skeleton.** SM converts `paper/` to `main.tex` + `\input` of empty section files.
+  **All drafting follows [`../STYLE.md`](../STYLE.md)** — Andreas Maier's voice, already
+  analysed from his three papers in `papers/` (the Gentle-Introduction, Known-Operator, and
+  hybrid-ML review; **Paper 1 excluded**). *scope:* `paper/main.tex`, `paper/sections/*.tex`
+  (created empty). *SM task.*
 - **E8-1..E8-9** abstract · intro (gap→opportunity→move→payoff + representativeness +
   prior ground-truth benchmarks) · related work · methods (emulator, oracle, metrics) ·
   results A · results B · results C · results-comparison · discussion + end-matter. *scope
   (each):* one `paper/sections/<NN>_*.tex`. *deps:* E6,E7 (results/figures) for results
-  sections; E1–E2 for methods. *DoD (each):* section drafted in Maier style, cites real
-  refs (verify), compiles via the master, within the venue length budget
-  (`document_check.md`).
+  sections; E1–E2 for methods. *DoD (each):* section drafted **in Maier's voice per
+  [`../STYLE.md`](../STYLE.md) (run its §6 self-check)**, cites real refs (verify), compiles
+  via the master, within the venue length budget (`document_check.md`).
 
 ## E9 — Reproducibility & submission prep  *(Sprint 7; local; SM-led)*
 - **E9-1 document_check pass** (`document_check.md` fully satisfied: statements, Reporting

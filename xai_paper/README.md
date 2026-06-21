@@ -11,6 +11,8 @@ up: **read [`general_paper_plan.md`](general_paper_plan.md) first** — it is th
   subagents build a paper in parallel off a shared backlog, commit to `main`, and
   synchronize at sprint barriers without write-conflicts. Governs P2 first; reused for
   P3/P4/P5.
+- **[`STYLE.md`](STYLE.md)** — Andreas Maier's **writing-style guide** (analysed from three
+  of his papers; Paper 1 excluded). Mandatory for every paper-drafting item; reused P2–P5.
 - **One subfolder per paper, named `xai_N_topic/`:**
   - **[`xai_2_interpretability/`](xai_2_interpretability/)** — P2 (active): the
     interpretability ground-truth benchmark — Phases **A** (neuroscience) **+ B**

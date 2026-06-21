@@ -156,14 +156,19 @@ Split `paper/main.tex` into per-section files and `\input` them:
 (disjoint). `paper/main.tex` (the master with `\input`s) and `references.bib` are
 **SM-only at Review** (the SM merges new bib keys + adds any new `\input`). Figures: each
 figure is its own `.py`/`.pdf` pair under `paper/figures/` (disjoint per item).
+**Every writing item must follow [`STYLE.md`](STYLE.md) — Andreas Maier's voice — and pass
+its self-check before `done`.**
 
 ## 7. Local vs cluster, and the Paper-1 gotchas (carry into every sprint)
 
 - `where: local` → runs on this machine (M1 Max): the oracle, pilots, small sweeps,
   figures, writing.
-- `where: cluster` → LME Slurm (`ssh maier@…`, repo on `/cluster/maier`,
-  `tools/cluster/*.sbatch`, jaxtari GPU venv `jax[cuda12]`): full lesion/occlusion
-  sweeps, SAE training, batched gradients.
+- `where: cluster` → LME Slurm (login user **`maier`**, confirmed; repo on
+  `/cluster/maier`, `tools/cluster/*.sbatch`, jaxtari GPU venv `jax[cuda12]`): full
+  lesion/occlusion sweeps, SAE training, batched gradients.
+- **ROMs (local):** `xitari/games/Atari-2600-VCS-ROM-Collection/ROMS/` (repo-relative;
+  gitignored — **use in place, never commit**); the same collection is available on the
+  cluster under `/cluster/maier`.
 - **Always `git fetch && git rebase origin/main` before push** (a background jaxtari
   agent may push concurrently); **always `git -C <primary> pull --ff-only` after push.**
 - **jutari before jaxtari** (jaxtari ~205× slower) — never let a jaxtari item block a
@@ -195,6 +200,24 @@ rebase. The Workflow returns when all developers finish = the synchronization ba
 the SM then runs Review (§4c) in the main session. Sprint 0 (backlog build) and Reviews
 are SM steps, not fan-outs. (A sprint can also be run by spawning the developer agents
 with the `Agent` tool and waiting for all to finish — same contract.)
+
+### 9.1 Concurrency & cadence (loop-driven)
+- **Concurrency cap: at most 3 developer agents in parallel** (Opus 4.8). Much P2 work is
+  **cluster-wait-bound** (Slurm jobs run minutes–hours), so 3 local workers + queued cluster
+  jobs already saturate throughput; more workers mostly idle. Budget is ample — keep it to 3.
+- **Cluster items don't hold a worker.** A worker *submits* its Slurm job, records the job id
+  in its item file, and returns; the SM collects that job's results at the next Review. A
+  sprint of cluster work is therefore: submit (fast, parallel) → wait → review.
+- **Across-sprint cadence is loop-driven.** Sprints are not back-to-back. Drive the cadence
+  with `/loop` (or `ScheduleWakeup`/a cron). Each tick the SM: (a) checks whether the current
+  sprint's items + their Slurm jobs are all `done`; (b) if yes → Review + next Planning +
+  launch the next sprint's Workflow; (c) if no → sleep to the next tick. Match the sleep to
+  job runtime: while actively polling a running job, stay under the ~5-min cache window
+  (60–270 s ticks); when idle, use 20–30-min ticks. (Same shape as the Paper-1 bug-fix
+  sprint loop.)
+- **Sprint 0 is the manual test** of this machinery: run it **synchronously now (no loop)** to
+  validate the worker fan-out + the disjoint-scope discipline + the commit/push flow; switch
+  to the loop from Sprint 1 onward.
 
 ## 10. Sprint 0 is special: build the backlog
 The **first** SCRUM action for a paper is **Sprint 0 — Backlog Construction**: an SM/agent
