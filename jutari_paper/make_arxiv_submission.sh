@@ -27,7 +27,7 @@ echo "  body_main: $(wc -l < "$STAGE/body_main.tex") lines   body_supp: $(wc -l 
 # arXiv-only abstract edit: the code is already public, so link the repo. The
 # anonymous AAAI build (paper.tex) is left untouched -- it keeps "released upon
 # acceptance" because a repo link would break double-blind.
-perl -0777 -i -pe 's{The full code of both ports will be released under the\s+MIT\s+license upon acceptance\.}{The full code of both ports is available under the MIT license at \\url{https://github.com/akmaier/UnderstandingVCS}.}s' "$STAGE/body_main.tex"
+perl -0777 -i -pe 's{The\s+full\s+code\s+of\s+both\s+ports\s+will\s+be\s+released\s+under\s+the\s+MIT\s+license\s+upon\s+acceptance\.}{The full code of both ports is available under the MIT license at \\url{https://github.com/akmaier/UnderstandingVCS}.}s' "$STAGE/body_main.tex"
 grep -q 'is available under the MIT license at' "$STAGE/body_main.tex" \
     && echo "  abstract: code-availability sentence -> public repo link" \
     || { echo "  FATAL: abstract MIT sentence not found/rewritten"; exit 1; }

@@ -41,36 +41,31 @@ Ground Truth for Explainable AI}
 \maketitle
 
 \begin{abstract}
-Explanation requires ground truth: to verify that an account of a system is
-correct, we must know the system's inner functioning. This is precisely what
-is missing wherever explainable AI (XAI) is most needed. The systems we can
-study today fall into two camps. Either they are simple and procedural---
-decision trees, rule lists, sparse linear models---where the mechanism is
-known but trivial, so explaining it tests nothing, or they are genuinely
-complex---deep networks, real-world tasks---where XAI is needed but no ground
-truth of the inner functioning exists, so an explanation can be plausible,
-confident, and wrong with no way to tell. We set out to remove this
-dichotomy by building the foundation for a study object that is at once
-genuinely complex yet fully specified---inspectable by construction---and, so that gradient-based methods can
-apply, fully differentiable. We re-implement the Atari 2600 Video Computer
-System (VCS)---a real computer architecture, and the platform on which deep
+Explanation requires ground truth: to verify an account of a system, we must
+know its inner functioning---precisely what is missing wherever explainable AI
+(XAI) is most needed. Today's study objects fall into two camps: simple and
+procedural---decision trees, rule lists, sparse linear models---where the
+mechanism is known but trivial, so explaining it tests nothing; or genuinely
+complex---deep networks, real-world tasks---where XAI is needed but no
+ground-truth mechanism exists, so an explanation can be plausible, confident, and
+wrong with no way to tell. We remove this dichotomy with a study object
+at once genuinely complex yet fully specified---inspectable by construction---and
+fully differentiable. We re-implement the Atari 2600 Video Computer System
+(VCS)---a real computer architecture, and the platform on which deep
 reinforcement learning was first established---as two independent, end-to-end
-\emph{differentiable} emulators, one in Julia (\textsc{jutari}) and one in
-JAX (\textsc{jaxtari}), each validated bit-for-bit against the \textsc{xitari}
-reference. Both ports reproduce \textsc{xitari} exactly on all 64 supported
-Arcade Learning Environment (ALE) games: 64/64 byte-identical RAM and
-64/64 pixel-identical screens. Treating the cartridge ROM as a weight tensor,
-the RAM as a soft tape, and control flow as gates, we prove that the
-differentiable (soft) execution is bit-exact equal to the original (hard)
-execution in the forward pass at any finite temperature, while exposing
-\emph{surrogate} gradients where the bit logic itself has none. The JAX port also
-opens a GPU path: batched, fully differentiable rollouts reach millions of
-environment-steps per second on a single commodity GPU. The system was built in roughly 137 hours
-of active work over 29 calendar days, with large parts written autonomously
-by coding agents. This paper builds and validates the foundation, and shows---
-theoretically and in a qualitative gradient study---that gradient-based XAI on
-it is feasible. The full code of both ports will be released under the MIT
-license upon acceptance.
+\emph{differentiable} emulators, \textsc{jutari} (Julia) and \textsc{jaxtari}
+(JAX), each validated bit-for-bit against the \textsc{xitari} reference: 64/64
+byte-identical RAM and 64/64 pixel-identical screens on all 64 supported Arcade
+Learning Environment (ALE) games. Treating the cartridge ROM as a weight tensor,
+the RAM as a soft tape, and control flow as gates, we prove the differentiable
+(soft) execution equals the original (hard) execution bit-for-bit in the forward
+pass at any finite temperature, while exposing \emph{surrogate} gradients where
+the bit logic has none. The JAX port opens a GPU path: batched differentiable
+rollouts reach millions of environment-steps per second on one commodity GPU.
+Built in roughly 137 hours over 29 days, largely by autonomous coding agents, the
+paper validates this foundation and shows---theoretically and in a qualitative
+gradient study---that gradient-based XAI on it is feasible. The full code of both
+ports will be released under the MIT license upon acceptance.
 \end{abstract}
 
 \section{Introduction}
@@ -196,9 +191,13 @@ among the field's open needs. Even methods designed for interpretability
 inherit the problem: XDQN makes a DQN interpretable by training a transparent
 surrogate to mimic it, but its strongest correctness measure is fidelity
 \emph{to the DQN}---agreement with another black box, not with a known
-mechanism \citep{kontogiannis2023xdqn}. The recurring obstacle is the one
-\citet{jonas2017could} identified: without a study object whose true mechanism
-is available, an explanation cannot be checked. We build such an
+mechanism \citep{kontogiannis2023xdqn}. A parallel line manufactures
+interpretability ground truth---inserted features \citep{yangkim2019bim}, or small
+transformers compiled or trained to a known structure
+\citep{lindner2023tracr,gupta2024interpbench}---but on synthetic, built-to-be-interpretable
+models, not a real complex system. The recurring obstacle is the one
+\citet{jonas2017could} identified: without a study object whose true mechanism is
+available, an explanation cannot be checked. We build such an
 object---complex, fully specified, and differentiable---and validate it, opening
 the way to develop and validate XAI tools against a known mechanism.
 
