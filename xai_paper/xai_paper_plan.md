@@ -106,6 +106,11 @@ a number on every method's faithfulness.
 
 ## 4. Experiment plan
 
+> **Detailed per-phase design — what is measured, the ideal explanation, when an
+> explanation is *right* (the F∧S∧M correctness triad), and the best-case outcome —
+> is in [`experiment_design.md`](experiment_design.md). The phases below are the
+> overview; that file is the spec.**
+
 ### Phase A — Replicate Jonas & Kording, with ground-truth scoring
 
 Map each neuroscience method onto our architectural state; for each, report both
