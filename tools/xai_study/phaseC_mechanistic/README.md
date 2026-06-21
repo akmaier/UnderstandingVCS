@@ -35,4 +35,4 @@ patch sweeps over state × outputs × games; SAE training on recorded state
 trajectories. See plan §4.6.
 
 Outputs: `out/mech_<method>_<game>.*` → faithfulness vs the known circuit, feeding
-benchmark E1.
+the cross-tradition comparison and Phase E (semantic recovery).

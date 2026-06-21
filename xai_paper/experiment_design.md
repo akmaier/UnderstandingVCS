@@ -1,15 +1,16 @@
 # Experiment design — Paper 2 (the full experiment list)
 
 > **Role of this file:** the *experiments* — what we run and how we score each one.
-> The *storyline* and the Nature structure live in
+> The *storyline*, the Nature structure, and the **Discussion / direction** (incl. the
+> general-T3-methods survey and the software-reverse-engineering framing) live in
 > [`xai_paper_plan.md`](xai_paper_plan.md). See [`README.md`](README.md) for the
 > document rules. **Subject in every phase: the Atari VCS itself** (chip + program +
 > game logic) — *no learned agents*. Every citation below is **to be verified to
 > Paper-1's no-hallucination standard before it enters the bib.**
 
 Contents: §0 correctness criterion · §1 oracle · §2 obtaining T3 · §3 substrate audit ·
-§4–§7 Phases A–D (each with an `Analysis | Finding | Measured score` table) · §8 method
-matrix · §9 compute · §10 Phase E (deferred) · §11 master table.
+§4–§7 Phases A–D · §8 Phase E (semantic recovery) · §9 method matrix · §10 compute ·
+§11 master table. (Each phase leads with an `Analysis | Finding | Measured score` table.)
 
 ---
 
@@ -80,44 +81,12 @@ coverage ~22 → 40+ of our 64, extendable. **Thesis tie-in:** probing shows inf
 *present*, not *used* (Hewitt & Liang 2019 control tasks — our A3/Phase-C trap); our
 intervention test is strictly stronger.
 
-### 2.1 Are there *general* methods for obtaining T3?
-
-T3 = grounding internal variables in human concepts — essentially the core problem of
-interpretability, and there is **no method that obtains it in a fully general,
-guaranteed way**: unsupervised recovery of the true factors is *provably* impossible
-without inductive biases or some supervision (Locatello et al. 2019). What exist are
-general *families*, in increasing rigour:
-
-1. **Supervised probing against a concept set** (Alain & Bengio 2017; TCAV, Kim et al.
-   2018). *Tests* whether a concept is decodable, but needs the labels already — so it
-   does not *obtain* T3, and it shows presence, not use (Hewitt & Liang 2019).
-2. **Unsupervised discovery + automated naming.** Discover candidate features/concepts
-   without labels — dictionary learning / SAEs (Cunningham 2023; Bricken 2023),
-   ACE (Ghorbani et al. 2019), completeness-aware concepts (Yeh et al. 2020) — then
-   *auto-label* them, e.g. an LLM explaining each unit and scoring by simulation
-   (Bills et al. 2023). General, but underdetermined (Locatello) and the labels are
-   hypotheses, not ground truth.
-3. **Cross-representation alignment to an external observable.** Align internal
-   variables to an *independently measured* signal — object positions read from the
-   rendered frame (OCAtari vision mode), or a physical quantity — via correlation/
-   regression, RSA (Kriegeskorte 2008), or CCA/SVCCA (Raghu et al. 2017). This is our
-   §2 *discovery* step; general wherever an external observable exists (for the VCS,
-   the framebuffer always provides one).
-4. **Causal / intervention-based labeling.** Perturb a candidate variable and read
-   which observable changes; assign meaning by the *effect*. Formalized as interchange
-   interventions / causal abstraction (Geiger et al. 2021, 2023). The most rigorous —
-   it certifies *use*, not mere presence — and exactly our §2 *verification* step.
-5. **Program / symbolic analysis (chip-specific).** Static data-flow analysis,
-   decompilation and variable recovery from the binary — the *automated* version of
-   AtariARI's hand-reading of disassemblies.
-
-**The reflexive point.** Families 1–3 give *candidate* labels but cannot certify them;
-only the causal family (4) can, and a **bit-exact, differentiable, fully-intervenable
-substrate is the rare place where (4) is *exact*.** So for the VCS, "obtain T3 in a
-general way" has an unusually strong answer — intervention against the exact framebuffer
-— and the same machinery lets the VCS *benchmark the T3-acquisition methods themselves*
-(do SAE auto-labels / probing / alignment recover what intervention proves?). A natural
-Phase-E / follow-up contribution.
+> Note: the **general** question — "are there general methods for obtaining T3, and
+> which direction is most promising?" — and the **software-reverse-engineering
+> framing** of T3 are *direction/discussion*, so they live in
+> [`xai_paper_plan.md`](xai_paper_plan.md) (Discussion), not here. This §2 is the
+> concrete procedure *we run* to obtain our labels; the *recovery as an experiment*
+> is Phase E (§8).
 
 ---
 
@@ -133,13 +102,14 @@ subject *is* the substrate, so it is both instrument and subject throughout.
 | **B** | exact intervention + gradient of an output w.r.t. inputs/state | ✅ (P8 already does this) | T3 only for object/concept attribution | **Yes** |
 | **C** | clamp/resample state between runs; record state trajectory; gradients | ✅ | standard SAE training code; T3 for semantic checks | **Yes** |
 | **D** | set state + re-render controlled stimuli; read program response | ✅ | T3 / vision for the situation variable | **Yes** |
+| **E** | trace logging; **membership + equivalence queries** (exact teacher); the ROM binary | ✅ (the bit-exact emulator is an exact MAT teacher) | RE tooling (decompiler, Daikon, L* lib); T3 = the *target* to score against | **Yes** |
 
 Cross-cutting (neither is a new substrate): **T3 labels** — external knowledge, but
-derivable/verifiable with our own interventions (§2); gates only semantic-level
-metrics. **Long-horizon end-to-end gradients** (credit through many steps) — the one
-item that could stress the substrate; the core single-step metrics don't need it.
-**Bottom line: all phases are evaluable on the current substrate;** the cluster is for
-*scale* (§9), not capability.
+derivable/verifiable with our own interventions (§2); gates the semantic-level metrics
+(and is the *target* of Phase E). **Long-horizon end-to-end gradients** (credit through
+many steps) — the one item that could stress the substrate; the core single-step
+metrics don't need it. **Bottom line: all phases are evaluable on the current
+substrate;** the cluster is for *scale* (§10), not capability.
 
 ---
 
@@ -230,7 +200,8 @@ variable rate, monosemanticity ceiling).
 
 Subject: a game's built-in decision logic (e.g., Pong's CPU opponent), as a
 "participant." Present controlled situations by state-set + re-render; read the
-program's response.
+program's response. **Phase D is the semantic-grounding bridge: it establishes the
+symbol→concept link that feeds the documentation recovered in Phase E.**
 
 | Analysis (named method) | Finding (output) | Measured score | Needs T3? |
 |---|---|---|---|
@@ -254,51 +225,89 @@ inferred variable = true driver (F); predicts novel stimuli (S); simplest law (M
 **Best case:** the first ground-truthed verdict on behavioral-probing methodology —
 trustworthy vs mirage, with the conditions that predict each.
 
+## 8. Phase E — semantic recovery (design recovery): reconstructing the documentation
+
+The constructive goal. The IEEE definition of *software* (programs + procedures +
+**documentation** + data) sets the **bar**: to understand the VCS program is to
+*recover its documentation/design*, not merely describe its behavior. The deployed ROM
+is software with that documentation stripped, so recovery = **reverse engineering /
+design recovery** (Chikofsky & Cross 1990), which by definition needs *external
+information added to observations* — supplied here by Phase D's behavioral grounding and
+the exact oracle. We combine A–D and the software-RE toolkit to reconstruct the design
+and **score the recovered documentation against the truth we hold**. This is framed
+honestly as *measuring the gap to the bar*, not as "solving recovery."
+
+| Analysis (named method) | Finding (output) | Measured score | Needs T3? |
+|---|---|---|---|
+| **E1** Variable / data-dictionary recovery — binary type/var recovery (TIE, Lee et al. 2011; Howard, Slowinska et al. 2011; REWARDS, Lin et al. 2010) + neural name/type recovery (DEBIN, He et al. 2018; DIRE, Lacomis et al. 2019; DIRTY, Chen et al. 2022) + **Phase-D behavioral grounding** | candidate RAM/register → concept/type map (a "data dictionary") | precision/recall + type-accuracy vs the *true* data dictionary (T3 truth we hold); fraction grounded *observationally* | **This IS T3 recovery** — scored vs held-out T3 |
+| **E2** Routine / concept recovery — concept assignment (Biggerstaff et al. 1993/94); neural function naming (Nero, David et al. 2020) + **Phase-C circuits** | "this routine = ball-bounce / opponent-AI" labels | match to the true disassembled routine; behavior-equivalence under scrubbing | naming = T3; structure = T1/T2 |
+| **E3** Specification / behavior recovery — dynamic invariant detection (Daikon, Ernst et al. 2007); specification mining (Ammons et al. 2002); **active automata / model learning** (Angluin 1987 L*; Vaandrager 2017) | inferred invariants / state machine / behavioral spec | held-out behavioral prediction vs true rules; invariant P/R; learned-automaton equivalence (**exact**, via the bit-exact teacher) | **No** for the behavioral spec (vs true rules = T1/T2); naming states/vars = T3 |
+| **E4** Redocumentation / decompilation & gap-to-bar — decompilation (Ghidra/Hex-Rays; LLM4Decompile 2024; Pearce et al. 2022) assembling E1–E3 | human-readable design doc | **fraction of the IEEE "software" recovered** (documentation %); correctness vs the true design | naming = T3 |
+
+**Why this is uniquely possible here.** (i) *Active automata learning* (E3) needs a
+"minimally adequate teacher" answering membership **and** equivalence queries — our
+bit-exact emulator answers both *exactly* (equivalence against the reference), which is
+normally the hard part. (ii) Daikon-style invariant detection (E3) is the behavioral/
+observational link of point (b), made concrete. (iii) We hold the *true* design, so we
+can score genuine **recovery** — unlike the field's workaround of **reimplementation**
+(AtariARI hand-reads disassemblies; OCAtari hand-codes extractors; JAXAtari fully
+reimplements), which *re-authors* the documentation rather than recovering it, and is
+circular as a ground truth.
+
+**Ideal:** the recovered documentation == the true design (the IEEE "software" made
+whole). **Right when:** recovered dictionary/routines/spec match truth (F), predict
+held-out behavior (S), at the design level (M). **Best case:** a measured **recovery
+rate toward the bar** showing (i) behavioral grounding is *necessary* to cross from
+operational to design semantics, and (ii) current methods fall short of full recovery —
+with our substrate as the first *non-circular* yardstick. (The cross-tradition
+comparison of A–E on the shared faithfulness axes — the former "synthesis" — is part of
+the **Results reporting**, not a separate phase.)
+
 ---
 
-## 8. Method matrix — expected success vs failure (a prediction to test)
+## 9. Method matrix — expected success vs failure (a prediction to test)
 
 | Method (category) | Applies to VCS? | Expected vs ground truth | Why |
 |---|---|---|---|
-| Activation patching / causal tracing | ✓ | **Succeed** | causal by construction; comparable to the oracle |
-| Causal scrubbing | ✓ | **Succeed** | we *have* ground-truth hypotheses to scrub |
-| Integrated Gradients | ✓ | **Succeed/partial** | completeness + exact-forward gradients; baseline-sensitive |
-| Occlusion on the true VCS | ✓ | **Succeed/partial** | faithful when the perturbation is a valid intervention |
-| On-distribution counterfactuals | ✓ | **Partial→Succeed** | set-state-and-re-render removes Atrey's off-manifold objection |
-| Attribution / edge patching | ✓ | **Partial** | cheap approximation; score the approx error vs true patching |
-| Sparse autoencoders | ✓ | **Partial** | recovers features; faithfulness-to-computation debated |
-| Circuit discovery (ACDC, path patching) | ✓ | **Partial→Succeed** | goal state = our ground truth; measure recovered vs true |
-| Linear probing | ✓ | **Partial / misleading** | present ≠ used — the tuning-curve trap |
-| SHAP / LIME | ✓ | **Partial/Fail** | baseline/sampling-dependent; approximations diverge |
-| Vanilla gradient / saliency | ✓ | **Fail** | noisy, gradient-shattering, non-causal |
-| Grad-CAM/++ , attention, VIPER | **✗ N/A** | — | need conv maps / attention / a learned policy |
+| Activation patching / causal tracing (C) | ✓ | **Succeed** | causal by construction; comparable to the oracle |
+| Causal scrubbing (C) | ✓ | **Succeed** | we *have* ground-truth hypotheses to scrub |
+| Integrated Gradients (B) | ✓ | **Succeed/partial** | completeness + exact-forward gradients; baseline-sensitive |
+| Occlusion on the true VCS (B) | ✓ | **Succeed/partial** | faithful when the perturbation is a valid intervention |
+| On-distribution counterfactuals (B) | ✓ | **Partial→Succeed** | set-state-and-re-render removes Atrey's off-manifold objection |
+| Attribution / edge patching (C) | ✓ | **Partial** | cheap approximation; score the approx error vs true patching |
+| Sparse autoencoders (C) | ✓ | **Partial** | recovers features; faithfulness-to-computation debated |
+| Circuit discovery (ACDC, path patching) (C) | ✓ | **Partial→Succeed** | goal state = our ground truth; measure recovered vs true |
+| Linear probing (C) | ✓ | **Partial / misleading** | present ≠ used — the tuning-curve trap |
+| SHAP / LIME (B) | ✓ | **Partial/Fail** | baseline/sampling-dependent; approximations diverge |
+| Vanilla gradient / saliency (B) | ✓ | **Fail** | noisy, gradient-shattering, non-causal |
+| Grad-CAM/++ , attention, VIPER (B) | **✗ N/A** | — | need conv maps / attention / a learned policy |
+| **Active automata / model learning** (E) | ✓ | **Succeed** (finite-state parts) | exact MAT teacher (membership + equivalence) from the bit-exact emulator |
+| **Dynamic invariant detection — Daikon** (E) | ✓ | **Partial→Succeed** | recovers true invariants from traces; coverage-limited to what traces exercise |
+| **Binary type/variable recovery — TIE/DIRTY** (E) | ✓ | **Partial** | recovers types/structure; *names* are guesses (no intent in the binary) |
+| **Decompilation (+LLM)** (E) | ✓ | **Partial** | recovers code structure, not intent; redocumentation hallucination risk |
+| **Concept assignment / feature location** (E) | ✓ | **Partial / hard** | the AI-hard mapping; needs the behavioral anchor (D) |
 
 Headline expectation: **causal/gradient/mechanistic methods pass; correlational and
-architecture-specific methods fail or don't apply** — a measured sharpening of
-Kording's lesson and of Atrey 2020.
+architecture-specific methods fail or don't apply; recovery (E) succeeds for behavior/
+structure but stalls on *intent/names* without behavioral grounding** — a measured
+sharpening of Kording's lesson and of Atrey 2020, and a measured statement of how far
+reverse engineering gets toward the documentation bar.
 
-## 9. Compute plan
+## 10. Compute plan
 
 Pilots local; full runs on the LME cluster. Enabler: SOFT-STE forward is bit-exact to
 HARD and GPU-batchable (`vmap`), so the oracle and gradients run *batched on GPU*.
 
 | Workload | Where |
 |---|---|
-| All four pilots (1 game each: A lesion/tuning/dim-red · B IG-vs-oracle · C patching+SAE · D one psychophysics probe) | **local** (M1 Max) |
+| All five pilots (1 game each: A lesion/tuning/dim-red · B IG-vs-oracle · C patching+SAE · D one psychophysics probe · E invariant-mining + L* on one routine) | **local** (M1 Max) |
 | Full lesion + occlusion sweeps (RAM × ROM × opcodes × outputs × games) | **cluster (CPU array / GPU)** |
 | Batched gradients / IG over outputs × games | **cluster (GPU)** |
 | SAE training on recorded state trajectories | **cluster (GPU)** |
+| Phase-E recovery (trace logging for Daikon; query-driven automata learning; decompilation) × games | **cluster (CPU array)** — many short deterministic re-runs / queries |
 
 Reuse Paper-1 setup: LME Slurm, `/cluster/maier`, `tools/cluster/*.sbatch`, the jaxtari
 GPU venv. No agents → no agent training/zoo.
-
-## 10. Phase E — synthesis (deferred by design)
-
-Designed **once results are in**. It will: place every method on the shared
-faithfulness-vs-plausibility axes (the headline figure), package the scoring suite as a
-reusable **benchmark**, demonstrate a faithful method, and articulate directions.
-**Semantics (T3) will be central here** (the cross-tradition comparison leans on the
-game-concept level). Not specified in advance.
 
 ## 11. Master table
 
@@ -308,8 +317,9 @@ game-concept level). Not specified in advance.
 | **B** attribution | attribution map → corr + del/ins AUC + precision@k | minimal true-causal causes | top-k = true; deletion as predicted; sparse | leaderboard: plausible ≠ faithful |
 | **C** mechanistic | patch/SAE/circuit → vs exact patch + feature↔var + scrubbing | circuit/feature account | recovered = true data-flow; reproduces behavior; monosemantic | first mech-interp validation on a known circuit |
 | **D** behavioral | psychometric fit → inferred driver vs true code + generalization | behavioral law over true variables | inferred = true driver; predicts novel stimuli; simplest | first ground-truthed verdict: trustworthy vs mirage |
-| **E** synthesis | (deferred) all methods on faithfulness-vs-plausibility | one comparable F∧S∧M score | — | headline figure + benchmark + directions; semantics central |
+| **E** semantic recovery | recovered data-dictionary/routines/spec → vs the true design | the recovered documentation = the true design (IEEE "software" whole) | recovered = true (F); predicts held-out behavior (S); design-level (M) | a measured recovery rate to the bar; behavioral grounding shown necessary; first non-circular yardstick |
 
-> Outcomes in §4–§7 and §10 are *hypotheses* (predictions), confirmed by the
-> experiments. Pilots test the riskiest links first: the oracle, and one method per
-> phase. Every phase runs on the current substrate (§3).
+> Outcomes in §4–§8 are *hypotheses* (predictions), confirmed by the experiments.
+> Pilots test the riskiest links first: the oracle, and one method per phase. Every
+> phase runs on the current substrate (§3). The general-T3-methods survey and the
+> software-RE direction are in `xai_paper_plan.md` (Discussion).

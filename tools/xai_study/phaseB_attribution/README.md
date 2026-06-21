@@ -31,4 +31,5 @@ Attribution + oracle over outputs × causes × games (batched SOFT-STE exact-for
 See plan §4.6.
 
 Outputs: `out/faithfulness_<method>_<game>_<output>.*` → leaderboard (method →
-faithfulness), feeding benchmark E1.
+faithfulness), feeding the cross-tradition comparison (Results reporting) and Phase E
+(semantic recovery).

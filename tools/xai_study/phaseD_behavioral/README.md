@@ -33,4 +33,4 @@ logic; report inferred decision variable vs the true code.
 probe batteries × factors × games — many short deterministic re-runs (CPU/GPU).
 
 Outputs: `out/behavioral_<probe>_<game>.*` + a "trustworthy vs mirage" table feeding
-the cross-tradition comparison and benchmark E1.
+the cross-tradition comparison and Phase E (semantic recovery).

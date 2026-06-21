@@ -27,8 +27,10 @@ with the named methods (+ citations) as rows, followed by the ideal explanation 
 when-right / best-case for that phase; then the expected-pass/fail method matrix and
 the compute plan.
 
-**Phase E (synthesis)** is deferred — we design it once results are in; **semantics
-(T3) will be central there.** Do not detail it in advance.
+**Phase E (semantic recovery / design recovery)** is now a full phase, developed like
+A–D in `experiment_design.md` §8 (reconstruct the documentation/design; score the
+recovery rate against the truth). The earlier "synthesis" idea — one cross-tradition
+comparison figure + the released benchmark — is **Results reporting**, not a phase.
 
 ## `paper/` — the LaTeX build (`sn-jnl`, Nature Portfolio).
 ## `document_check.md` — submission-compliance checklist.

@@ -61,9 +61,10 @@ LaTeX template (`sn-jnl.cls`, `sn-nature.bst`) is in `paper/`.
 - [ ] **Results — Phase B (attribution/XAI):** attribution of a VCS output (pixel/score/event) to its inputs/state (saliency, IG, occlusion, SHAP/LIME, counterfactual), scored vs the intervention/gradient oracle; the N/A finding for NN-specific methods (Grad-CAM, attention).
 - [ ] **Results — Phase C (mechanistic):** activation/attribution patching, SAEs, circuits, probing on the VCS state, scored against the *known* circuit/data-flow/variables.
 - [ ] **Results — Phase D (behavioral):** psychophysics-style probing of the game's own decision logic, scored against the true code ("right for the wrong reasons").
-- [ ] **Results — discrepancy:** quantified failure modes; a faithful-attribution demonstration (Phase E2).
+- [ ] **Results — Phase E (semantic recovery):** reconstructing the documentation/design (data-dictionary, routine/concept, spec via invariant mining + active automata learning, redocumentation) scored against the true design — the recovery rate / gap-to-bar.
+- [ ] **Results — cross-tradition comparison + faithful-method demonstration:** all methods on the shared faithfulness-vs-plausibility axes (reporting, the former "synthesis").
 - [ ] **Discussion:** the traditions' shared toolkit; Kording's lesson made measurable; mechanistic-interpretability validation on a known circuit; the behavioral verdict; where it goes beyond (§5).
-- [ ] **Benchmark artifact (E1)** described and released.
+- [ ] **Benchmark artifact** (scoring suite + ground-truth oracle + metrics) described and released.
 - [ ] Every claim has a backing experiment; all referenced works real (run the Paper-1 reference-verification pass on the new bib).
 
 ## G. Pre-submission gate

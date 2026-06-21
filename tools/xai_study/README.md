@@ -16,7 +16,11 @@ against ground truth**, not eyeballed. Every phase runs on the current substrate
   *known* circuit.
 - **Phase D** (`phaseD_behavioral/`): *behavioral / psychology* — probe the game's own
   decision logic (e.g., a built-in opponent AI) as a participant; test whether the
-  inferred account matches the true code.
+  inferred account matches the true code. Also the semantic-grounding bridge to E.
+- **Phase E** (`phaseE_recovery/`): *semantic recovery (design recovery)* — reconstruct
+  the documentation/design from A–D + the software-reverse-engineering toolkit (binary
+  variable/type recovery, invariant mining, active automata learning, decompilation),
+  scored against the true design (the recovery rate / gap-to-the-IEEE-bar).
 
 The shared foundation is the **ground-truth attribution oracle** (`ground_truth/`):
 the object every method is scored against. "Interpretable" is operationalized as
