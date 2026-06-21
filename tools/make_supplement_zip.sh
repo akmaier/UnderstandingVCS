@@ -28,7 +28,10 @@ git archive --format=tar HEAD -- \
     jutari_paper/presentation/presentation.mp4 \
     LICENSE \
   | tar -x -C "$STAGE"
-# drop anything heavy/irrelevant that lives under the included trees
+# drop anything heavy/irrelevant that lives under the included trees, and the
+# packaging script itself (meta-tooling, not part of the artifact -- and its own
+# grep pattern literally contains identity words, which would trip the leak scan).
+rm -f  "$STAGE"/tools/make_supplement_zip.sh 2>/dev/null || true
 rm -rf "$STAGE"/tools/comparison_videos "$STAGE"/jaxtari/.venv "$STAGE"/**/__pycache__ 2>/dev/null || true
 find "$STAGE" -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
 find "$STAGE" -name '.DS_Store' -delete 2>/dev/null || true
