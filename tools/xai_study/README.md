@@ -5,14 +5,20 @@ The thesis: our bit-exact + differentiable Atari VCS lets us compute the **true
 causal attribution** for any output, so every interpretability method (classic and
 mechanistic) can be **scored against ground truth**, not eyeballed.
 
-Two subjects, one microscope:
-- **Phase A** (`phaseA_kording/`): the emulator as Jonas & Kording's "model
-  organism" — replay the neuroscience battery on our architectural state, scored.
-- **Phase B** (`phaseB_agents/`): DQN agents — audit modern XAI against the true
-  causal pixel/object attribution from the oracle below.
+**Three traditions of understanding, one ground truth:**
+- **Phase A** (`phaseA_kording/`): *mechanistic / neuroscience* — the emulator as
+  Jonas & Kording's "model organism"; replay the neuroscience battery on our
+  architectural state, scored against the known mechanism.
+- **Phase B** (`phaseB_agents/`): *attributional / XAI* on DQN agents — **B1**
+  attribution/saliency and **B2** mechanistic-interpretability (activation/
+  attribution patching, SAEs, circuits, probing) — both scored vs the oracle.
+- **Phase D** (`phaseD_behavioral/`): *behavioral / psychology* — probe the agent
+  as a psychology participant (Binz & Schulz 2023; Shiffrin & Mitchell 2023) and
+  test whether the inferred account matches the true mechanism.
 
 The shared foundation is the **ground-truth attribution oracle**
-(`ground_truth/`): the object every method is scored against.
+(`ground_truth/`): the object every method is scored against. "Interpretable" is
+operationalized as *ground-truth recovery* (Barbiero et al. 2025).
 
 ## Reuse from Paper 1
 - jutari (Julia/Zygote) + jaxtari (JAX) differentiable emulators, bit-exact.

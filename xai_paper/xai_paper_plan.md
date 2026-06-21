@@ -1,18 +1,25 @@
-# Paper 2 — Plan: a fully-known, differentiable model organism for explainable AI
+# Paper 2 — Plan: a fully-known, differentiable model organism for the science of understanding AI
 
-**Working title:** *Scoring Explainable AI against ground truth: a differentiable Atari VCS as a model organism for interpretability.*
+**Working title:** *Do our methods recover what is true? A fully-known,
+differentiable model organism for evaluating interpretability.*
 
-**One-line thesis.** Jonas & Kording (2017) showed that neuroscience analysis
-methods, applied to a fully-known microprocessor, *find structure but do not
-yield understanding* — yet they could only judge this qualitatively. We turn
-that thought experiment into a **quantitative, falsifiable benchmark**: our
-Atari VCS port (Paper 1) is not only fully specified but **bit-exact and
-end-to-end differentiable**, so for the first time we can compute the *true*
-causal attribution for any output and **score** each interpretability method
-(neuroscience-style *and* modern XAI) against it. We replicate the Kording
-battery, extend it to today's deep-RL XAI toolkit on real DQN agents, measure
-where popular methods diverge from ground truth, and from that argue what new
-directions interpretability actually needs.
+**One-line thesis.** There are **three traditions** for understanding an opaque
+system: the **mechanistic/neuroscience** tradition (Jonas & Kording 2017 — probe
+the substrate), the **attributional/XAI** tradition (saliency, Grad-CAM,
+attribution/activation patching, SAEs, circuits), and the **behavioral/psychology**
+tradition (Binz & Schulz 2023; Shiffrin & Mitchell 2023 — treat the system as a
+participant). Each "finds structure," but none can be *validated* without ground
+truth — exactly Kording's warning, and exactly Shiffrin & Mitchell's caution about
+psychology-of-AI. Our Atari VCS (Paper 1) is **fully specified, bit-exact, and
+end-to-end differentiable**, so we can compute the *true* causal attribution for
+any output and, for the first time, **score all three traditions against ground
+truth** on a system complex enough to matter. We adopt a formal definition of
+interpretability (Barbiero et al. 2025) operationalized as *ground-truth
+recovery*, replicate the Kording battery, audit today's XAI **including the
+mechanistic-interpretability toolkit (activation/attribution patching, sparse
+autoencoders, circuits)**, test behavioral/psychology-style probing, measure where
+each diverges from truth, and from that argue what the science of understanding AI
+actually needs.
 
 > **Status: PLAN — experiment-prep adopted.** Template fetched into `paper/`
 > (Springer Nature, `sn-nature`). Decisions taken (this revision):
@@ -67,15 +74,25 @@ a number on every method's faithfulness.
    dimensionality reduction) reproduced on our state variables, each scored
    against the known mechanism — converting their qualitative critique into
    measured faithfulness.
-3. **A faithfulness audit of modern deep-RL XAI.** Saliency, Grad-CAM/++,
-   Integrated Gradients, perturbation/occlusion, attention, and counterfactual
-   methods applied to DQN agents, scored against the *true* causal pixel/object
-   attribution obtained by differentiating (and intervening on) the exact
-   emulator∘agent pipeline.
-4. **Evidence of the discrepancy + concrete new directions:** where popular
-   methods fail, why, and what a faithful, ground-truth-validated interpretability
-   program should look like (gradient/known-operator/causal-intervention
-   attribution; ground-truth-scored XAI benchmarking).
+3. **A faithfulness audit of modern XAI — attribution *and* mechanistic.**
+   Saliency, Grad-CAM/++, Integrated Gradients, perturbation/occlusion, attention,
+   counterfactual **and, as first-class targets, the mechanistic-interpretability
+   toolkit — activation patching, attribution patching, sparse autoencoders,
+   circuit discovery** — applied to DQN agents and scored against the *true* causal
+   attribution from the exact `emulator ∘ agent` pipeline.
+4. **A ground-truth test of the *behavioral/psychology* tradition.** Treat the
+   agent (and the chip) as a psychology participant — controlled-stimulus
+   ("psychophysics") probes — and ask whether the inferred behavioral account
+   matches the known mechanism. This puts Shiffrin & Mitchell's caution to a
+   *measurable* test (a first).
+5. **A formal, operationalized notion of interpretability.** Adopt Barbiero et
+   al.'s (2025) definition and operationalize "an explanation is correct" as
+   *recovering the ground-truth causal structure*; include interpretable-by-design
+   models as a comparison arm.
+6. **Evidence of the discrepancy + concrete new directions:** where each tradition
+   fails, why, and what a faithful, ground-truth-validated science of understanding
+   AI should look like (causal/known-operator attribution; ground-truth-scored
+   benchmarking; which behavioral inferences are trustworthy).
 
 ## 3. Two subjects under the same microscope
 
@@ -121,17 +138,28 @@ mechanism even with unlimited, noiseless, fully-observed data.
    a pixel or object and measure the deterministic effect) and (b) **end-to-end
    gradients** through `emulator ∘ agent` (Paper 1's differentiability makes this
    exact-forward). Cross-validate (a) vs (b).
-3. **Methods under test.** Greydanus saliency, Grad-CAM (Selvaraju) and Grad-CAM++
-   (Chattopadhyay), Integrated Gradients, occlusion/perturbation, attention
-   (Nikulin free-lunch), counterfactual (Atrey), and an interpretable-by-design
-   baseline (XDQN, Kontogiannis). Survey scope grounded in our XRL-survey notes
-   (Qing 2022, Vouros 2023, Cheng 2025, Saulières 2025).
-4. **Faithfulness metrics vs ground truth.** Correlation with the true causal
-   map; deletion/insertion AUC measured on the *true* emulator (not a proxy);
-   pointing-game / object-hit rate against true causal objects.
-5. **Result:** quantify the discrepancy — which methods track the true causes,
-   which produce plausible-but-wrong maps (sharpening Atrey's "exploratory not
-   explanatory" into a measured claim with real ground truth).
+3. **Methods under test — two families, both first-class.**
+   - **B1 Attribution / saliency:** Greydanus perturbation, Grad-CAM (Selvaraju) +
+     Grad-CAM++ (Chattopadhyay), Integrated Gradients, occlusion, attention
+     (Nikulin/Mott), counterfactual (Atrey/Olson), SHAP/LIME; interpretable-by-design
+     baselines (XDQN Kontogiannis; Barbiero-style). Survey scope from our XRL notes
+     (Qing 2022, Vouros 2023, Cheng 2025, Saulières 2025).
+   - **B2 Mechanistic (first-class):** **activation patching / causal tracing,
+     attribution patching (+ edge AP), sparse autoencoders / dictionary learning,
+     circuit discovery, linear probing.** Capture agent activations; patch by
+     resample/clamp; train SAEs on activations; discover candidate circuits — then
+     **score the recovered circuit / features / patched effects against the *true*
+     causal structure** (for the chip in Phase A the true circuits are *known*; for
+     the agent the oracle is the reference). This is the modern, causal core and a
+     contribution back to mechanistic-interpretability, not only XRL.
+4. **Faithfulness metrics vs ground truth.** Correlation with the true causal map;
+   deletion/insertion AUC on the *true* emulator (not a proxy); pointing-game /
+   object-hit rate; (mechanistic) recovered-effect vs exact-patch agreement,
+   feature↔known-variable matching for SAEs.
+5. **Result:** quantify the discrepancy — which methods (attribution *and*
+   mechanistic) track the true causes vs produce plausible-but-wrong accounts;
+   expected: causal/patching/IG pass, popular visual saliency fails (a measured
+   sharpening of Atrey 2020).
 
 ### Phase C — Beyond: a benchmark and better directions
 
@@ -145,6 +173,25 @@ mechanism even with unlimited, noiseless, fully-observed data.
 - **C3 Directions.** From the discrepancy, articulate what interpretability needs:
   ground-truth-validated benchmarking, causal rather than correlational
   attribution, and method development that is *sieved* on known systems first.
+
+### Phase D — Behavioral / psychology probing, scored against ground truth
+
+The third tradition (Binz & Schulz 2023; Shiffrin & Mitchell 2023): treat the
+system as a *participant* and infer its "cognition" from behavior. Their open
+worry — does behavioral probing reveal the true mechanism, or just plausible
+correspondences? — is *unanswerable for LLMs* because there is no ground truth.
+**We can answer it.**
+
+- **Subjects:** the DQN agent (primary) and, as a stress test, the chip.
+- **Probes:** controlled-stimulus / psychophysics-style experiments — vary one
+  factor of the input (object position, distractor presence, reward cue) and read
+  the behavioral response (action, Q); fit "cognitive" accounts (decision
+  variables, biases, tuning) the way a psychologist would.
+- **The test:** does the inferred behavioral account match the *known* causal
+  mechanism (Phase-A ground truth for the chip; the oracle + the agent's true
+  decision variables for the agent)? Quantify "right for the wrong reasons."
+- **Contribution:** the first ground-truthed verdict on psychology-of-AI methods —
+  which behavioral inferences are trustworthy, which are anthropomorphic mirages.
 
 ## 4.4 Method matrix — where we expect success vs failure
 
@@ -189,6 +236,12 @@ Paper-1's no-hallucination standard before it enters the bib):
 - **Sparse autoencoders for interpretability** — Cunningham et al. 2023; Bricken et al. 2023 ("Towards Monosemanticity").
 - **Unifying theory** — Geiger et al. 2023/25, "Causal Abstraction: A Theoretical Foundation for Mechanistic Interpretability".
 - **Field reviews** — Bereska & Gavves 2024 (mech-interp for AI safety).
+- **Behavioral / psychology tradition (Phase D)** — Binz & Schulz 2023 ("Using
+  cognitive psychology to understand GPT-3", PNAS); Shiffrin & Mitchell 2023
+  ("Probing the psychology of AI models", PNAS) [in `papers/`].
+- **Formal definition of interpretability** — Barbiero et al. 2025, "Foundations
+  of Interpretable Models" (arXiv:2508.00545) — our definitional anchor +
+  interpretable-by-design comparison arm.
 - Also confirm we cite the RL-native pieces already in our notes: object saliency (Iyer/Anderson), attention agents (Mott 2019), StateMask (Cheng 2023), EDGE (Guo 2021), HIGHLIGHTS (Amir & Amir).
 
 These newest methods are also the paper's *positive* story: they are exactly the
@@ -214,9 +267,19 @@ gradients can run *batched on GPU* rather than on the slow CPU-only HARD path.
 Reuse the Paper-1 cluster setup verbatim: LME Slurm, repo on `/cluster/maier`,
 the `tools/cluster/*.sbatch` pattern + the jaxtari GPU venv (jax[cuda12]). Prefer
 **existing zoo agents** (Such et al. 2019) over training to keep GPU cost down.
+Add: agent-activation capture + patching infra + SAE training (GPU) for Phase B2;
+behavioral-probe sweeps (Phase D) are many short rollouts (cluster, CPU/GPU).
 
+## 5. Discussion — three traditions of understanding AI, scored against truth
 
-
+- **Three traditions, one ground truth.** Mechanistic/neuroscience (Phase A),
+  attributional/XAI incl. mechanistic-interp (Phase B), and behavioral/psychology
+  (Phase D) are the three ways the community tries to understand opaque systems.
+  Each "finds structure"; our platform is the first place all three can be
+  *validated* against known truth on a complex system.
+- **What "interpretable" means.** We adopt Barbiero et al.'s (2025) formal
+  definition and operationalize it as *ground-truth recovery* — making "is this
+  explanation correct?" a measurable question rather than a matter of taste.
 - **The shared toolkit.** Neuroscience and XAI use the *same* methods under
   different names: tuning curves ↔ feature visualization; lesions ↔ ablations;
   connectomics ↔ circuit/mechanistic analysis; dimensionality reduction ↔
@@ -232,6 +295,11 @@ the `tools/cluster/*.sbatch` pattern + the jaxtari GPU venv (jax[cuda12]). Prefe
   trustworthy — directly relevant to interpreting the deep networks neuroscience
   now uses as brain models. (Co-author fit: P. Krauss bridges pattern
   recognition and neuroscience/neuroprosthetics.)
+- **And beyond to psychology-of-AI.** Shiffrin & Mitchell ask whether treating a
+  model as a psychology participant reveals its true mechanism — unanswerable for
+  LLMs (no ground truth), answerable here. We give the behavioral tradition its
+  first ground-truthed verdict, completing the mechanistic↔attributional↔behavioral
+  triangle — the natural arena for a cognitive scientist + ML co-authorship.
 
 ## 6. Paper structure (Nature Portfolio format)
 
@@ -240,12 +308,13 @@ fetched). Nature-style layout:
 
 - **Title; Abstract** (~150–200 words, unreferenced).
 - **Main text** (Nature has no rigid IMRaD): Introduction → Results
-  (Phase A scoring; Phase B agent-XAI audit; the discrepancy; a faithful-method
-  demonstration) → Discussion (§5).
-- **Main display items** (~5–6 figures): (1) the platform & ground-truth oracle;
-  (2) Kording battery scored; (3) agent-XAI faithfulness vs ground truth;
-  (4) discrepancy map / failure taxonomy; (5) a faithful-attribution result;
-  (6) the XAI↔neuroscience method correspondence.
+  (Phase A mechanistic/Kording scoring; Phase B attribution **and**
+  mechanistic-interp audit; Phase D behavioral probing; the cross-tradition
+  discrepancy; a faithful-method demonstration) → Discussion (§5).
+- **Main display items** (~6 figures): (1) the platform & ground-truth oracle;
+  (2) the three traditions scored side by side (headline); (3) Kording battery
+  scored; (4) attribution vs mechanistic-interp faithfulness on agents;
+  (5) behavioral-probe verdict vs truth; (6) failure taxonomy / what to do instead.
 - **Methods** (after references, no length limit): emulator, true-attribution
   oracle, each analysis, agents, metrics.
 - **Extended Data** (additional figures), **Supplementary Information** (full
@@ -309,10 +378,16 @@ Immediate (the two pilots de-risk the whole paper; both run **locally**):
    Integrated Gradients vs the exact intervention oracle on one game. Proves the
    ground-truth attribution pipeline.
 
+Fast-follow pilots once the oracle works:
+3. **Phase-B2 mechanistic pilot** — activation patching + one SAE on the agent;
+   score the patched effect vs the exact patch and SAE features vs known variables.
+4. **Phase-D behavioral pilot** — one psychophysics-style probe of the agent;
+   compare the inferred decision variable to the true one.
+
 Then: secure a zoo agent set; stand up the cluster runs (§4.6); expand to the full
-method matrix (§4.4) incl. the newest causal methods (§4.5) and multiple games;
-build the benchmark (C1); draft `main.tex` (§6). Lock journal/article-type/authors
-after the Phase-B result (§7).
+method matrix (§4.4) across attribution + mechanistic + behavioral and multiple
+games; build the benchmark (C1); draft `main.tex` (§6). Lock
+journal/article-type/authors after the pilots (§7).
 
 Author fit (provisional, TBD): A. Maier, S. Bayer, P. Krauss (+ collaborators);
 Krauss's neuroscience/neuroprosthetics background anchors the §5 bridge.
