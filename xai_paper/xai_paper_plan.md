@@ -70,8 +70,12 @@ exposes exactly the machinery this study needs:
   (a pixel, the score, a game event) w.r.t. any input (ROM byte, RAM cell, register,
   joystick action) — *the* ingredient Kording did not have.
 - **Reusable tooling:** `tools/xai_si_gradient/` (real-ROM screen↔input gradient),
-  the IG-on-ROM experiment (Paper-1 P8 — already an attribution-on-the-VCS result),
-  the conformance harness, the comparison-video renderer.
+  the IG-on-ROM experiment — **P8**: the Paper-1 milestone where a SOFT program
+  executes, the differentiable TIA renders a pixel, and three attribution methods
+  (plain gradient, occlusion, smart-baseline Integrated Gradients) correctly trace
+  that pixel to the ROM byte / TIA register that explains it, with the recorded
+  finding that *naive zero-baseline IG collapses on discrete opcode bytes* — the
+  conformance harness, the comparison-video renderer.
 
 This is the crucial upgrade over Jonas & Kording, who used the Visual6502
 *transistor netlist* and could only say results "felt unsatisfying." We work at the
@@ -151,6 +155,44 @@ long-horizon end-to-end gradients (credit through many steps of dynamics), which
 core single-step attribution metrics do not require. The detailed per-phase
 substrate audit is in §10.
 
+### 3.2 How we obtain T3 (game-concept labels), and what the T3 papers do
+
+T3 = the map from RAM bytes to game concepts (ball-x, lives, score). Two public
+sources supply *candidate* labels; our substrate then makes them *causal* and extends
+them — the step neither source can take.
+
+- **AtariARI** (Anand et al. 2019, NeurIPS — the *Atari Annotated RAM Interface*).
+  Labels for **22 games**, obtained by reading commented disassemblies / source
+  (Engelhardt & Jentzsch; CPUWIZ) to locate the RAM bytes holding sprite positions,
+  room/score/lives; shipped as a gym wrapper that emits a state label per frame.
+  **What they do with it:** use it as a *probing benchmark* — score whether a learned
+  representation *linearly separates* the labeled variables (F1). Known caveat (their
+  issue tracker): raw RAM (x,y) is **not aligned** to the rendered position (the game
+  applies offsets at render time).
+- **OCAtari** (Delfosse et al. 2023). Object-centric state for **40+ games** via two
+  modes: a **RAM mode** that maps RAM to object properties *with the rendering offsets
+  applied* (fixing AtariARI's misalignment), and a **Vision mode** that extracts an
+  object list from the rendered RGB frame by per-object color filters; the two
+  cross-validate. HackAtari (Delfosse 2024) builds controlled variants on top.
+
+**Our procedure (the substrate's unique lever).**
+1. **Import** OCAtari/AtariARI labels as *candidates* for the labeled subset.
+2. **Verify causally by intervention:** set the candidate byte, re-render, and confirm
+   the object appears at the predicted place on the **bit-exact framebuffer** — this
+   upgrades a *correlational* label to a *verified causal* one and auto-corrects the
+   rendering offset.
+3. **Discover new labels** where no source exists: (a) correlate each RAM byte's
+   time-series with an object position tracked from the framebuffer over rollouts; and
+   (b) sweep interventions — perturb each byte, detect which object moved (vision) — to
+   build the byte↔concept map; then verify as in (2).
+4. **Coverage:** ~22 (AtariARI) → 40+ (OCAtari) of our 64, extended by (3).
+
+**Why this matters for the thesis.** AtariARI is itself a *probing* benchmark, and
+probing shows only that information is *present*, not *used* (the control-task
+critique, Hewitt & Liang 2019 — exactly our A3/Phase-C trap). Our intervention test is
+strictly stronger: it shows the byte is *causally* the variable. T3 is needed only for
+the *semantic-level* metrics; T1/T2 carry the bulk and need no labels.
+
 ## 4. Experiment plan
 
 > Detailed per-phase design — what is measured, the ideal explanation, when an
@@ -189,14 +231,29 @@ inputs).
    on the output, via (a) **exact interventions** (occlude/clamp/replace and measure
    the deterministic Δoutput) and (b) **gradients** through the differentiable
    substrate. Cross-validate (a) vs (b).
-2. **Methods under test (those that apply to a non-NN computation).** Vanilla
-   gradient / saliency, **Integrated Gradients** (our P8), SmoothGrad,
-   occlusion/perturbation, SHAP/LIME (model-agnostic), counterfactual states (made
-   *on-distribution* here: set state, re-render). Survey scope from our XRL notes
-   (Greydanus 2017; Iyer/Anderson; Qing 2022, Vouros 2023, Cheng 2025, Saulières 2025).
-3. **Explicit N/A finding.** Grad-CAM/Grad-CAM++ (need conv feature maps), attention
-   maps, and policy-distillation surrogates are *NN-architecture-specific* and do not
-   transfer to the VCS — a measured statement about the narrowness of popular XAI.
+2. **Methods under test — named** (those that apply to a non-NN computation; verify
+   each citation before it enters the bib):
+   - *Gradient / backprop saliency:* vanilla gradient (Simonyan et al. 2014),
+     Gradient×Input + DeepLIFT (Shrikumar et al. 2017), Guided Backprop
+     (Springenberg et al. 2015), SmoothGrad (Smilkov et al. 2017), **Integrated
+     Gradients** (Sundararajan et al. 2017 — our P8), Expected Gradients
+     (Erion et al. 2021).
+   - *Perturbation / occlusion on the true VCS:* occlusion (Zeiler & Fergus 2014),
+     prediction-difference (Zintgraf et al. 2017), meaningful/extremal perturbations
+     (Fong & Vedaldi 2017; Fong et al. 2019), RISE (Petsiuk et al. 2018), Greydanus
+     perturbation saliency (2018), object occlusion (Iyer/Anderson 2018).
+   - *Model-agnostic / game-theoretic:* LIME (Ribeiro et al. 2016), KernelSHAP
+     (Lundberg & Lee 2017), Shapley-value sampling (Štrumbelj & Kononenko 2014).
+   - *Counterfactual:* on-distribution counterfactual states via exact state-set +
+     re-render (cf. Olson et al. 2021; Atrey et al. 2020 — but *valid* here).
+   - *Controls:* sanity checks via model/data randomization (Adebayo et al. 2018) to
+     flag methods that ignore the system. Survey scope from our XRL notes (Qing 2022,
+     Vouros 2023, Cheng 2025, Saulières 2025).
+3. **Explicit N/A finding.** Grad-CAM/Grad-CAM++ (Selvaraju et al. 2017;
+   Chattopadhyay et al. 2018 — need conv feature maps), attention rollout (Abnar &
+   Zuidema 2020), and policy-distillation surrogates (VIPER, Bastani et al. 2018) are
+   *NN-architecture-specific* and do not transfer to the VCS — a measured statement
+   about the narrowness of popular XAI.
 4. **Faithfulness metrics vs ground truth.** Correlation with the true causal map;
    deletion/insertion AUC measured on the *true* VCS (not a proxy); precision@k /
    pointing-game / object-hit vs the true causal top-k.
@@ -209,22 +266,31 @@ inputs).
 The modern successor to Kording's connectomics. The VCS **state trajectory is the
 "activations"** and the program's **data-flow is the "circuit"** — both known.
 
-1. **Activation patching / causal tracing.** Patch RAM cells / registers / TIA state
-   between a clean and a corrupted run; measure the effect; score the recovered
-   important components against the exact intervention effect (the oracle) and the
-   true data-flow.
-2. **Attribution patching (+ edge AP).** Gradient approximation of patching; score
-   the approximation error against true patching.
+Methods are named below (verify each citation before it enters the bib):
+
+1. **Activation patching / causal tracing.** Clamp/resample RAM cells / registers /
+   TIA state between a clean and a corrupted run; score recovered components against
+   the exact intervention effect (the oracle) and the true data-flow. Methods: causal
+   mediation analysis (Vig et al. 2020), causal tracing / ROME (Meng et al. 2022),
+   interchange interventions & causal abstraction (Geiger et al. 2021, 2023),
+   distributed alignment search (Geiger et al. 2024).
+2. **Attribution patching + automatic circuit discovery.** attribution patching
+   (Nanda 2023), edge attribution patching (Syed et al. 2023), path patching / the
+   IOI circuit (Wang et al. 2022; Goldowsky-Dill et al. 2023), ACDC (Conmy et al.
+   2023); score against true patching and the true data-flow.
 3. **Sparse autoencoders / dictionary learning.** Train an SAE on the state
-   trajectory; score discovered features against **known variables** (T2 hardware
-   signals always; T3 game variables where labeled) — feature↔variable matching and
-   causal use (does patching the feature move the output as predicted?).
-4. **Circuit discovery + causal scrubbing.** Recover the circuit for a behavior
-   (e.g., the ball-bounce or opponent-AI routine); validate by scrubbing
-   (resample the hypothesised-irrelevant parts; behavior preserved?) against the true
-   disassembled routine.
-5. **Linear probing.** Decode game/hardware concepts from state; contrast
-   "decodable" vs "actually used" — the probing/tuning-curve trap (cf. A3).
+   trajectory; score features against **known variables** (T2 hardware signals
+   always; T3 game variables where labeled) — feature↔variable matching + causal use
+   (does patching the feature move the output as predicted?). Methods: SAEs
+   (Cunningham et al. 2023; Bricken et al. 2023; Templeton et al. 2024) plus classical
+   NMF/PCA dictionaries.
+4. **Circuit validation by causal scrubbing** (Chan et al. 2022): resample the
+   hypothesised-irrelevant parts; behavior preserved? — against the true disassembled
+   routine (the ball-bounce or opponent-AI kernel).
+5. **Probing & its controls.** linear probes (Alain & Bengio 2017) with control
+   tasks / selectivity (Hewitt & Liang 2019); logit/tuned-lens readouts adapted to the
+   VCS (nostalgebraist 2020; Belrose et al. 2023). Contrast "decodable" vs "actually
+   used" — the probing/tuning-curve trap (cf. A3).
 
 **Punchline of Phase C:** the first time the mechanistic-interpretability toolkit is
 scored against a *known* circuit in a complex system — a calibration and validation
@@ -241,8 +307,14 @@ the true mechanism or just plausible correspondences? — is *unanswerable for L
   Invaders' alien/fire logic), whose mechanism is in the ROM.
 - **Probes:** controlled-stimulus / psychophysics experiments — vary one factor of
   the game situation (object position/distance, timing, distractors) by setting state
-  and re-rendering, then read the program's response; fit "cognitive" accounts
-  (decision variables, biases, reaction-time analogues).
+  and re-rendering, then read the program's response.
+- **Methods — named** (verify each citation before it enters the bib):
+  psychometric-function fitting (Wichmann & Hill 2001), method of constant stimuli /
+  adaptive staircases, signal-detection theory (Green & Swets 1966), reverse
+  correlation / classification images (Ahumada 1971; Murray 2011), drift-diffusion /
+  sequential-sampling models for "frames-to-respond" (Ratcliff 1978), ideal-observer
+  analysis, and cognitive-task batteries in the style of Binz & Schulz (2023);
+  Shiffrin & Mitchell (2023) frame the caveats we test against.
 - **The test:** does the inferred behavioral account match the *true* code (the
   Phase-A/C ground truth)? Quantify "right for the wrong reasons."
 - **Contribution:** the first ground-truthed verdict on behavioral-probing
