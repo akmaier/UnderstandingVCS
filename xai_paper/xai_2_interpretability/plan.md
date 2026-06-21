@@ -72,16 +72,24 @@ Discussion:
 6. **The discrepancy + concrete directions** for faithful, ground-truth-validated
    interpretability (pointing to the companion papers P3 behavioral, P4 recovery).
 
-## Novelty / related work (must be argued, not assumed — verify cites before bib)
-Prior work *does* score interpretability against ground truth, on **synthetic or
-compiled** systems: **Tracr** (Lindner et al. 2023, compiled transformers with circuits
-by construction), **InterpBench** (Gupta et al. 2024, semi-synthetic transformers with
-known circuits), **BIM** (Yang & Kim 2019, ground-truth attribution benchmark), and
-synthetic-attribution benchmarks. **Our delta:** we score against a *real, deployed,
-hand-authored, complex* artifact (the shipped ROM on real silicon semantics) whose
-ground truth is **independent of the artifact** (not a toy built to be interpretable,
-not a program compiled into weights). State this explicitly; do not claim an unqualified
-"first."
+## Novelty / related work (must be argued, not assumed)
+Prior work *does* score interpretability against ground truth — but on **synthetic or
+compiled** systems (citations **verified**):
+- **Tracr** — Lindner et al., *NeurIPS* 2023, arXiv:2301.05062 — human-readable programs
+  *compiled* into transformers with circuits **by construction**, used as interpretability
+  ground truth.
+- **InterpBench** — Gupta et al., *NeurIPS* 2024 (Datasets & Benchmarks), arXiv:2407.14494
+  — *semi-synthetic* transformers with **known circuits** (trained via Strict IIT,
+  built on Tracr) for evaluating mechanistic-interpretability methods.
+- **BIM** — Yang & Kim, 2019, arXiv:1907.09701 — ground-truth **attribution** benchmark
+  with known important features + false-positive metrics.
+
+**Our delta (state explicitly; do not claim an unqualified "first"):** we score against
+a *real, deployed, hand-authored, complex* artifact (the shipped ROM on real silicon
+semantics) whose ground truth is **independent of the artifact** — not a toy built to be
+interpretable, not a program compiled into weights, not a synthetic dataset. Tracr/
+InterpBench build the ground truth *into* the model; we *recover* it from a system that
+was never designed to be interpretable.
 
 ## The single subject — the VCS (framing)
 `output(t) = VCS(ROM, inputs[0..t], initial_state)`, three observable/intervenable

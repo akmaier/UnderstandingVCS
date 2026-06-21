@@ -54,7 +54,7 @@ guidelines / Content types". Template (`sn-jnl.cls`, `sn-nature.bst`) is in `pap
 - [ ] Extended Data called out in the main text; SI items numbered and referenced.
 
 ## F. Content coverage vs `plan.md`
-- [ ] **Intro:** the ground-truth gap; Jonas & Kording framing; the differentiable-VCS opportunity (Paper 1, cited); **prior ground-truth benchmarks acknowledged** (Tracr, InterpBench, BIM) with the real-artifact delta argued.
+- [ ] **Intro:** the ground-truth gap; Jonas & Kording framing; the differentiable-VCS opportunity (Paper 1, cited); **prior ground-truth benchmarks acknowledged** — Tracr (Lindner et al., NeurIPS 2023, arXiv:2301.05062), InterpBench (Gupta et al., NeurIPS 2024 D&B, arXiv:2407.14494), BIM (Yang & Kim 2019, arXiv:1907.09701) — *citations verified real* — with the real-artifact delta argued (they build truth into the model; we recover it).
 - [ ] **Representativeness / necessary-condition screen** stated up front (the VCS↔NN failure-mode map; "fail here ⇒ don't trust on an NN").
 - [ ] **Results — Phase A (neuroscience):** Kording battery reproduced **and scored** against the known mechanism (calibration baseline; delta over J&K argued).
 - [ ] **Results — Phase B (attribution/XAI):** attribution of a VCS output to its inputs/state, scored vs the intervention oracle; the N/A finding for NN-specific methods.
