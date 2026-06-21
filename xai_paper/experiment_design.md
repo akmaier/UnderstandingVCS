@@ -80,6 +80,45 @@ coverage ~22 → 40+ of our 64, extendable. **Thesis tie-in:** probing shows inf
 *present*, not *used* (Hewitt & Liang 2019 control tasks — our A3/Phase-C trap); our
 intervention test is strictly stronger.
 
+### 2.1 Are there *general* methods for obtaining T3?
+
+T3 = grounding internal variables in human concepts — essentially the core problem of
+interpretability, and there is **no method that obtains it in a fully general,
+guaranteed way**: unsupervised recovery of the true factors is *provably* impossible
+without inductive biases or some supervision (Locatello et al. 2019). What exist are
+general *families*, in increasing rigour:
+
+1. **Supervised probing against a concept set** (Alain & Bengio 2017; TCAV, Kim et al.
+   2018). *Tests* whether a concept is decodable, but needs the labels already — so it
+   does not *obtain* T3, and it shows presence, not use (Hewitt & Liang 2019).
+2. **Unsupervised discovery + automated naming.** Discover candidate features/concepts
+   without labels — dictionary learning / SAEs (Cunningham 2023; Bricken 2023),
+   ACE (Ghorbani et al. 2019), completeness-aware concepts (Yeh et al. 2020) — then
+   *auto-label* them, e.g. an LLM explaining each unit and scoring by simulation
+   (Bills et al. 2023). General, but underdetermined (Locatello) and the labels are
+   hypotheses, not ground truth.
+3. **Cross-representation alignment to an external observable.** Align internal
+   variables to an *independently measured* signal — object positions read from the
+   rendered frame (OCAtari vision mode), or a physical quantity — via correlation/
+   regression, RSA (Kriegeskorte 2008), or CCA/SVCCA (Raghu et al. 2017). This is our
+   §2 *discovery* step; general wherever an external observable exists (for the VCS,
+   the framebuffer always provides one).
+4. **Causal / intervention-based labeling.** Perturb a candidate variable and read
+   which observable changes; assign meaning by the *effect*. Formalized as interchange
+   interventions / causal abstraction (Geiger et al. 2021, 2023). The most rigorous —
+   it certifies *use*, not mere presence — and exactly our §2 *verification* step.
+5. **Program / symbolic analysis (chip-specific).** Static data-flow analysis,
+   decompilation and variable recovery from the binary — the *automated* version of
+   AtariARI's hand-reading of disassemblies.
+
+**The reflexive point.** Families 1–3 give *candidate* labels but cannot certify them;
+only the causal family (4) can, and a **bit-exact, differentiable, fully-intervenable
+substrate is the rare place where (4) is *exact*.** So for the VCS, "obtain T3 in a
+general way" has an unusually strong answer — intervention against the exact framebuffer
+— and the same machinery lets the VCS *benchmark the T3-acquisition methods themselves*
+(do SAE auto-labels / probing / alignment recover what intervention proves?). A natural
+Phase-E / follow-up contribution.
+
 ---
 
 ## 3. Substrate-feasibility audit (which phases run on the current substrate)
@@ -106,16 +145,16 @@ item that could stress the substrate; the core single-step metrics don't need it
 
 ## 4. Phase A — neuroscience / mechanistic battery on the VCS (Kording, quantified)
 
-| Analysis | Finding (what the method outputs) | Measured score |
-|---|---|---|
-| **A1** connectomics / data-flow graph | recovered dependency graph over state vars | precision/recall + graph-edit-distance vs the *true* read/write graph |
-| **A2** single-unit lesions | per-unit importance map (boot/run still works?) | rank-correlation of importance with the unit's *true* role; #units flagged "specific" that are generic |
-| **A3** tuning curves | per-unit tuning to luminance / a game variable | spurious-tuning rate (strongly-tuned units whose tuning ≠ true role) [T3 for game-var version] |
-| **A4** spike-word / pairwise correlations | pairwise + global correlation structure | weak-pairwise/strong-global reproduced; vs true coupling |
-| **A5** local field potentials | regional pooled-activity power spectra | %-variance that is the known clocks (frame/scanline) → epiphenomenal |
-| **A6** Granger causality | inferred CPU/TIA/RIOT causal edges | false-edge / missed-edge rate vs true data-flow |
-| **A7** dim-reduction (NMF/PCA) | latent components of the state tensor | matched-component fraction vs known signals (clock, R/W, vsync) |
-| **A8** whole-state recording | full RAM+register state map over time | descriptive baseline |
+| Analysis | Finding (what the method outputs) | Measured score | Needs T3? |
+|---|---|---|---|
+| **A1** connectomics / data-flow graph | recovered dependency graph over state vars | precision/recall + graph-edit-distance vs the *true* read/write graph | **No** (T1/T2) |
+| **A2** single-unit lesions | per-unit importance map (boot/run still works?) | rank-correlation of importance with the unit's *true* role; #units flagged "specific" that are generic | **No** (T1 causal role); game-concept role naming optional |
+| **A3** tuning curves | per-unit tuning to luminance / a game variable | spurious-tuning rate (strongly-tuned units whose tuning ≠ true role) | **Game-variable version only** (scoring); hardware-tuning version: No |
+| **A4** spike-word / pairwise correlations | pairwise + global correlation structure | weak-pairwise/strong-global reproduced; vs true coupling | **No** (T1) |
+| **A5** local field potentials | regional pooled-activity power spectra | %-variance that is the known clocks (frame/scanline) → epiphenomenal | **No** (T2 clocks) |
+| **A6** Granger causality | inferred CPU/TIA/RIOT causal edges | false-edge / missed-edge rate vs true data-flow | **No** (T1) |
+| **A7** dim-reduction (NMF/PCA) | latent components of the state tensor | matched-component fraction vs known signals (clock, R/W, vsync) | **No** (T2 signals); matching to game variables optional |
+| **A8** whole-state recording | full RAM+register state map over time | descriptive baseline | **No** |
 
 **Ideal explanation:** the register-transfer account of the frame (known exactly).
 **Right when:** recovered graph/role = true (F); predicts held-out lesions (S);
@@ -128,21 +167,28 @@ despite rich structure, while the causal operators (§6) score high → the gap 
 Explain a chosen output `y` (pixel/score/event) from its causes (ROM/RAM/registers/
 inputs). Score every map against the §1 oracle.
 
-| Analysis (named method) | Finding (output) | Measured score |
-|---|---|---|
-| Vanilla gradient (Simonyan et al. 2014) | saliency map over causes | corr + deletion/insertion AUC on the true VCS + precision@k vs true causal top-k |
-| Grad×Input / DeepLIFT (Shrikumar et al. 2017) | attribution map | as above (+ completeness where defined) |
-| Guided Backprop (Springenberg et al. 2015) | saliency map | as above + sanity-check pass/fail (Adebayo et al. 2018) |
-| SmoothGrad (Smilkov et al. 2017) | noise-averaged saliency | as above |
-| **Integrated Gradients** (Sundararajan et al. 2017; our P8) | path-integrated attribution | corr + del/ins AUC + completeness; baseline-sensitivity sweep |
-| Expected Gradients (Erion et al. 2021) | baseline-averaged IG | as above |
-| Occlusion (Zeiler & Fergus 2014) | Δ`y` per occluded region | del/ins AUC; ≈ a coarse intervention oracle |
-| Meaningful / extremal perturbation (Fong & Vedaldi 2017; Fong et al. 2019) | learned minimal mask | mask IoU vs the true causal set; del/ins |
-| RISE (Petsiuk et al. 2018) | randomized-mask saliency | corr + del/ins |
-| LIME (Ribeiro et al. 2016) | local linear weights | corr vs true map; stability across seeds |
-| KernelSHAP / Shapley sampling (Lundberg & Lee 2017; Štrumbelj & Kononenko 2014) | Shapley values | corr vs true; convergence vs compute |
-| On-distribution counterfactual (state-set + re-render; cf. Olson 2021; Atrey 2020) | minimal valid counterfactual edit | validity (re-renders) + minimality vs true minimal set |
-| **N/A** Grad-CAM/++ (Selvaraju 2017; Chattopadhyay 2018), attention rollout (Abnar & Zuidema 2020), VIPER (Bastani 2018) | needs NN layers / a policy | *does not apply* — recorded finding |
+| Analysis (named method) | Finding (output) | Measured score | Needs T3? |
+|---|---|---|---|
+| Vanilla gradient (Simonyan et al. 2014) | saliency map over causes | corr + deletion/insertion AUC on the true VCS + precision@k vs true causal top-k | No* |
+| Grad×Input / DeepLIFT (Shrikumar et al. 2017) | attribution map | as above (+ completeness where defined) | No* |
+| Guided Backprop (Springenberg et al. 2015) | saliency map | as above + sanity-check pass/fail (Adebayo et al. 2018) | No* |
+| SmoothGrad (Smilkov et al. 2017) | noise-averaged saliency | as above | No* |
+| **Integrated Gradients** (Sundararajan et al. 2017; our P8) | path-integrated attribution | corr + del/ins AUC + completeness; baseline-sensitivity sweep | No* |
+| Expected Gradients (Erion et al. 2021) | baseline-averaged IG | as above | No* |
+| Occlusion (Zeiler & Fergus 2014) | Δ`y` per occluded region | del/ins AUC; ≈ a coarse intervention oracle | No* |
+| Meaningful / extremal perturbation (Fong & Vedaldi 2017; Fong et al. 2019) | learned minimal mask | mask IoU vs the true causal set; del/ins | No* (object-set IoU needs T3) |
+| RISE (Petsiuk et al. 2018) | randomized-mask saliency | corr + del/ins | No* |
+| LIME (Ribeiro et al. 2016) | local linear weights | corr vs true map; stability across seeds | No* |
+| KernelSHAP / Shapley sampling (Lundberg & Lee 2017; Štrumbelj & Kononenko 2014) | Shapley values | corr vs true; convergence vs compute | No* |
+| On-distribution counterfactual (state-set + re-render; cf. Olson 2021; Atrey 2020) | minimal valid counterfactual edit | validity (re-renders) + minimality vs true minimal set | **Object-level: yes** (which bytes = the object); pixel-level: no |
+| **N/A** Grad-CAM/++ (Selvaraju 2017; Chattopadhyay 2018), attention rollout (Abnar & Zuidema 2020), VIPER (Bastani 2018) | needs NN layers / a policy | *does not apply* — recorded finding | — |
+
+> **\* T3 enters Phase B only at the *object level*.** The faithfulness metrics —
+> correlation, deletion/insertion AUC, and precision@k over *cells/pixels* — score
+> against the causal map (T1) and need **no T3**. T3 is required only for the
+> *object-level read-outs* (object-hit / pointing-game, "the map points to the ball")
+> and for *object-level* counterfactuals (removing a named object) — i.e., to name the
+> causes, not to find them.
 
 **Ideal:** the minimal true-causal causes of `y`, with sign/magnitude. **Right when:**
 top-k = true causal top-k (F); deletion behaves as predicted (S); sparse (M).
@@ -154,18 +200,25 @@ system itself.
 The state trajectory = "activations"; the program's data-flow = the "circuit" — both
 known. Ground truth = T1/T2 (always) + T3 (where labeled).
 
-| Analysis (named method) | Finding (output) | Measured score |
-|---|---|---|
-| Activation patching / causal mediation (Vig et al. 2020; ROME causal tracing, Meng et al. 2022) | per-site causal effect | recovered effect vs the *exact* patch; important-site P/R vs true data-flow |
-| Interchange interventions / DAS (Geiger et al. 2021, 2023, 2024) | aligned causal variables | interchange accuracy; alignment vs the true variable |
-| Attribution patching / edge AP (Nanda 2023; Syed et al. 2023) | gradient-approx site/edge effects | approximation error vs true patching; edge P/R |
-| Path patching / IOI circuit (Wang et al. 2022; Goldowsky-Dill et al. 2023) | recovered circuit (path set) | circuit P/R vs the true routine |
-| ACDC — automatic circuit discovery (Conmy et al. 2023) | auto-discovered circuit graph | edge P/R + scrubbing-preserved performance vs true data-flow |
-| Sparse autoencoders (Cunningham et al. 2023; Bricken et al. 2023; Templeton et al. 2024) | learned features over state | feature↔known-variable match (probe F1/MI) + causal use (patch effect) + monosemanticity |
-| NMF/PCA dictionaries | latent components | matched-component fraction vs known variables |
-| Causal scrubbing (Chan et al. 2022) | hypothesis pass/fail | scrubbing-preserved performance vs the true routine |
-| Linear probing + control tasks (Alain & Bengio 2017; Hewitt & Liang 2019) | concept decodability | accuracy **and** selectivity (probe − control) → present-vs-used gap |
-| Logit / tuned lens (nostalgebraist 2020; Belrose et al. 2023) | per-stage readout of state | readout fidelity vs the true intermediate value |
+| Analysis (named method) | Finding (output) | Measured score | Needs T3? |
+|---|---|---|---|
+| Activation patching / causal mediation (Vig et al. 2020; ROME causal tracing, Meng et al. 2022) | per-site causal effect | recovered effect vs the *exact* patch; important-site P/R vs true data-flow | **No** (T1/T2); game-name optional |
+| Interchange interventions / DAS (Geiger et al. 2021, 2023, 2024) | aligned causal variables | interchange accuracy; alignment vs the true variable | **If aligning to a game-concept variable: yes** (the target variable); hardware variable: No |
+| Attribution patching / edge AP (Nanda 2023; Syed et al. 2023) | gradient-approx site/edge effects | approximation error vs true patching; edge P/R | **No** (T1) |
+| Path patching / IOI circuit (Wang et al. 2022; Goldowsky-Dill et al. 2023) | recovered circuit (path set) | circuit P/R vs the true routine | **No** (T1); game-name optional |
+| ACDC — automatic circuit discovery (Conmy et al. 2023) | auto-discovered circuit graph | edge P/R + scrubbing-preserved performance vs true data-flow | **No** (T1/T2) |
+| Sparse autoencoders (Cunningham et al. 2023; Bricken et al. 2023; Templeton et al. 2024) | learned features over state | feature↔known-variable match (probe F1/MI) + causal use (patch effect) + monosemanticity | **Game-variable matching: yes**; hardware-signal match + causal-use: No |
+| NMF/PCA dictionaries | latent components | matched-component fraction vs known variables | **Game-variable matching: yes**; hardware signals: No |
+| Causal scrubbing (Chan et al. 2022) | hypothesis pass/fail | scrubbing-preserved performance vs the true routine | **No** (T1) |
+| Linear probing + control tasks (Alain & Bengio 2017; Hewitt & Liang 2019) | concept decodability | accuracy **and** selectivity (probe − control) → present-vs-used gap | **Target** — the probe *needs* the concept labels (T3 for game concepts; T2 for hardware) |
+| Logit / tuned lens (nostalgebraist 2020; Belrose et al. 2023) | per-stage readout of state | readout fidelity vs the true intermediate value | **No** (T1/T2) |
+
+> **T3 in Phase C** is needed for the *semantic* layer only: naming a recovered
+> feature/circuit/variable in game-concept terms (SAE/NMF game-variable matching;
+> probing *for* a game concept; DAS aligned to a game variable). The *causal* core —
+> patching/scrubbing/circuit recovery scored against the exact patch and the true
+> data-flow — runs on T1/T2 alone. (Probing is the one method that *requires* labels
+> as input, by definition.)
 
 **Ideal:** a circuit/feature account of *how the program computes `y`*, verified
 against the disassembly. **Right when:** recovered = true data-flow (F); the circuit
@@ -179,15 +232,22 @@ Subject: a game's built-in decision logic (e.g., Pong's CPU opponent), as a
 "participant." Present controlled situations by state-set + re-render; read the
 program's response.
 
-| Analysis (named method) | Finding (output) | Measured score |
-|---|---|---|
-| Psychometric-function fitting (Wichmann & Hill 2001) | response curve vs a stimulus factor (threshold, slope) | does the inferred factor = the true driver? threshold vs the coded boundary |
-| Method of constant stimuli / adaptive staircases | decision-boundary estimate | vs the true boundary in the code |
-| Signal-detection theory (Green & Swets 1966) | d′, criterion | vs the true (deterministic) decision rule |
-| Reverse correlation / classification images (Ahumada 1971; Murray 2011) | recovered stimulus "template" | overlap with the true input region the code reads |
-| Drift-diffusion / sequential sampling (Ratcliff 1978) | inferred decision variable + "frames-to-respond" | inferred variable vs true driver; latency vs the true code latency |
-| Ideal-observer analysis | the optimal-strategy account | gap to the actual (often suboptimal) coded strategy |
-| Cognitive-task battery, Binz & Schulz (2023) style; Shiffrin & Mitchell (2023) caveats | behavioral "trait" inferences | "right-for-the-wrong-reasons" rate vs the code; generalization to novel stimuli |
+| Analysis (named method) | Finding (output) | Measured score | Needs T3? |
+|---|---|---|---|
+| Psychometric-function fitting (Wichmann & Hill 2001) | response curve vs a stimulus factor (threshold, slope) | does the inferred factor = the true driver? threshold vs the coded boundary | **Yes — stimulus + scoring** |
+| Method of constant stimuli / adaptive staircases | decision-boundary estimate | vs the true boundary in the code | **Yes — stimulus + scoring** |
+| Signal-detection theory (Green & Swets 1966) | d′, criterion | vs the true (deterministic) decision rule | **Yes — stimulus + scoring** |
+| Reverse correlation / classification images (Ahumada 1971; Murray 2011) | recovered stimulus "template" | overlap with the true input region the code reads | **No** (template vs the code's *read-set* = T1/T2); naming = T3 |
+| Drift-diffusion / sequential sampling (Ratcliff 1978) | inferred decision variable + "frames-to-respond" | inferred variable vs true driver; latency vs the true code latency | **Yes — scoring** (name the driver); stimulus optional |
+| Ideal-observer analysis | the optimal-strategy account | gap to the actual (often suboptimal) coded strategy | **Yes — scoring** (the coded strategy's variables) |
+| Cognitive-task battery, Binz & Schulz (2023) style; Shiffrin & Mitchell (2023) caveats | behavioral "trait" inferences | "right-for-the-wrong-reasons" rate vs the code; generalization to novel stimuli | **Yes — stimulus + scoring** |
+
+> **Phase D is the most T3-dependent**: to vary a *named* game factor we set the
+> corresponding RAM byte (needs T3), and to score "inferred driver = true driver" we
+> must name the true driver (T3). The exception is *reverse correlation*, whose
+> recovered template can be scored against the code's read-set (T1/T2 data-flow) with
+> no labels. Where T3 is missing, stimuli can still be varied via raw inputs (joystick)
+> or vision-selected frames, at the cost of a coarser "factor."
 
 **Ideal:** a behavioral law over the program's true decision variables. **Right when:**
 inferred variable = true driver (F); predicts novel stimuli (S); simplest law (M).
