@@ -14,9 +14,20 @@ battery, extend it to today's deep-RL XAI toolkit on real DQN agents, measure
 where popular methods diverge from ground truth, and from that argue what new
 directions interpretability actually needs.
 
-> **Status: PLAN.** Template fetched into `paper/` (Springer Nature, `sn-nature`
-> style — same base for *Nature* and *Nature Machine Intelligence*). Journal
-> recommendation in §7. Discuss before we start building experiments.
+> **Status: PLAN — experiment-prep adopted.** Template fetched into `paper/`
+> (Springer Nature, `sn-nature`). Decisions taken (this revision):
+> 1. **Conduct the experiments; decide scope later.** Both granularities stay in
+>    scope — architectural state (our level) leads; a transistor-level head-to-head
+>    via the Visual6502 netlist runs as a parallel track and we cut whichever the
+>    pilots show is weaker (§4, §8).
+> 2. **Compute:** pilots run locally; full Phase-A sweeps and all of Phase B run on
+>    the LME GPU cluster — see the compute plan (§4.6). Short answer: **yes, the
+>    cluster is needed for the full runs.**
+> 3. **Method coverage reviewed** (§4.4–4.5): our Paper-1 literature is strong on
+>    classic XRL but misses the 2023–25 mechanistic-interpretability wave
+>    (activation/attribution patching, causal scrubbing, SAEs, probing, circuits).
+>    These are added — they are the most ground-truth-relevant methods we test.
+> Experiment scaffolding: `tools/xai_study/` (specs + harness stubs).
 
 ---
 
@@ -135,7 +146,76 @@ mechanism even with unlimited, noiseless, fully-observed data.
   ground-truth-validated benchmarking, causal rather than correlational
   attribution, and method development that is *sieved* on known systems first.
 
-## 5. Discussion — XAI ↔ neuroscience, and beyond (a core section)
+## 4.4 Method matrix — where we expect success vs failure
+
+The expected **punchline** (and the paper's narrative): methods that are *causal /
+intervention-grounded* should track our ground truth; methods that are
+*correlational, attention-based, off-manifold, or spatially coarse* should produce
+plausible-but-wrong explanations — the exact analogue of Kording's lesson that
+correlational neuroscience methods mislead even with unlimited data.
+
+| Method (category) | In our lit? | Expected vs ground truth | Why |
+|---|---|---|---|
+| **Activation patching / causal tracing** (causal, mechanistic) | ✗ add | **Succeed** | causal by construction; directly comparable to our intervention oracle |
+| **Causal scrubbing** (hypothesis test) | ✗ add | **Succeed** | we *have* ground-truth hypotheses to scrub against — ideal testbed |
+| **Integrated Gradients** (axiomatic gradient) | ~partly (our P8) | **Succeed/partial** | completeness axiom + exact-forward gradients on our substrate; baseline-sensitive |
+| **Occlusion/perturbation on the true emulator** | ✓ (Greydanus, Iyer/Anderson) | **Succeed/partial** | faithful when the perturbation is a valid intervention; Greydanus uses Gaussian blur (off-distribution) and smears small sprites |
+| **Attribution patching / edge attribution patching** (gradient approx of patching) | ✗ add | **Partial** | cheap approximation of patching; we can score the approximation error against true patching |
+| **Sparse autoencoders / dictionary learning** (feature disentangling) | ~1 note | **Partial** | recovers interpretable features; score them against the *known* game variables; faithfulness-to-computation debated |
+| **Circuit / mechanistic analysis** | ~1 note | **Partial→Succeed** | the goal state is exactly our ground truth; measure recovered circuit vs true data-flow |
+| **Linear probing** (concept readout) | ✗ add | **Partial / misleading** | detects info is *present*, not that it is *used* — the tuning-curve trap (Phase A A3) |
+| **SHAP / LIME / Shapley** (model-agnostic attribution) | ✓ (surveys) | **Partial/Fail** | baseline- and sampling-dependent; approximations diverge; costly |
+| **Grad-CAM / Grad-CAM++** (CAM) | ✓ | **Fail/partial** | last-conv coarse; built for classification CNNs; misses tiny Atari sprites |
+| **Vanilla gradient / raw saliency** | ✓ | **Fail** | noisy, gradient-shattering, non-causal |
+| **Attention maps** (Mott, Nikulin free-lunch) | ✓ | **Fail** | attention ≠ attribution (well documented); expect divergence from true causes |
+| **Counterfactual states** (Olson; Atrey) | ✓ | **Partial/Fail** | generative counterfactuals go off-manifold; Atrey already argues "exploratory not explanatory" — we quantify it |
+| **Surrogate trees / policy distillation** (VIPER, XDQN) | ✓ | **Partial** | global fidelity ≠ local faithfulness; can misattribute |
+| **Reward decomposition** (RDX/MSX) | ✓ | **Succeed (own task)** | explains *which goal*, not input attribution; we know the true reward structure |
+
+Headline expected result: **causal/gradient methods grounded in real interventions
+pass the ground-truth test; the most *popular* visual XAI (Grad-CAM, attention,
+vanilla saliency) fails it** — a measured, ground-truthed sharpening of Atrey 2020.
+
+## 4.5 Newest methods we must add (gap from the Paper-1 literature)
+
+Our Paper-1 notes (RL-centric XRL surveys) **miss the 2023–25 mechanistic-
+interpretability wave**, which is the most relevant to a *causal ground-truth*
+benchmark. Add to the literature/bib and the Phase-B matrix (verify each entry to
+Paper-1's no-hallucination standard before it enters the bib):
+
+- **Activation patching / causal tracing** — Meng et al. 2022 (ROME); Heimersheim & Nanda 2024, "How to use and interpret activation patching".
+- **Attribution patching** — Nanda 2023; **Edge Attribution Patching**, Syed et al. 2023.
+- **Causal scrubbing** — Chan et al. 2022 (Redwood).
+- **Sparse autoencoders for interpretability** — Cunningham et al. 2023; Bricken et al. 2023 ("Towards Monosemanticity").
+- **Unifying theory** — Geiger et al. 2023/25, "Causal Abstraction: A Theoretical Foundation for Mechanistic Interpretability".
+- **Field reviews** — Bereska & Gavves 2024 (mech-interp for AI safety).
+- Also confirm we cite the RL-native pieces already in our notes: object saliency (Iyer/Anderson), attention agents (Mott 2019), StateMask (Cheng 2023), EDGE (Guo 2021), HIGHLIGHTS (Amir & Amir).
+
+These newest methods are also the paper's *positive* story: they are exactly the
+causal tools we expect to pass, so testing them on ground truth is a contribution
+to the mechanistic-interpretability community, not only to XRL.
+
+## 4.6 Compute plan — do we need the cluster?
+
+**Yes for the full runs; pilots are local.** Key enabler from Paper 1: the
+**SOFT-STE forward pass is bit-exact to HARD and GPU-batchable** (`vmap`,
+millions of env-steps/s), so the exact intervention oracle and end-to-end
+gradients can run *batched on GPU* rather than on the slow CPU-only HARD path.
+
+| Workload | Where | Why |
+|---|---|---|
+| Phase-A pilot (1 game: lesion + tuning + dim-reduction, scored) | **local** (M1 Max) | small; reuses Paper-1 tooling |
+| Phase-B pilot (1 agent, IG vs intervention oracle, 1 game) | **local** | proves the oracle pipeline |
+| Phase-A full lesion sweeps (RAM bits × ROM bytes × opcodes × games) | **cluster (CPU array jobs)** | embarrassingly parallel; thousands of short deterministic re-runs |
+| Phase-B intervention oracle (per-pixel/object occlusion × states × agents × games) | **cluster (GPU)** | huge forward count; batched SOFT-STE exact-forward on GPU |
+| Phase-B end-to-end gradients through `emulator ∘ agent` | **cluster (GPU)** | the differentiable path is jit+vmap, GPU-bound |
+| SAE training on agent activations; any agent (re)training | **cluster (GPU)** | standard DL training |
+
+Reuse the Paper-1 cluster setup verbatim: LME Slurm, repo on `/cluster/maier`,
+the `tools/cluster/*.sbatch` pattern + the jaxtari GPU venv (jax[cuda12]). Prefer
+**existing zoo agents** (Such et al. 2019) over training to keep GPU cost down.
+
+
 
 - **The shared toolkit.** Neuroscience and XAI use the *same* methods under
   different names: tuning curves ↔ feature visualization; lesions ↔ ablations;
@@ -202,11 +282,11 @@ Article-type note: a standard **Article** if the benchmark + experiments lead; a
 
 ## 8. Risks / open questions
 
-- **Granularity vs Kording.** We work at the architectural level, not transistors
-  (our sim is functional/cycle-accurate, not a netlist). This is a *feature*
-  (the level where understanding is defined) but reviewers may want a direct
-  transistor-level head-to-head — optional stretch: import the Visual6502 netlist
-  for A1/A2 parity. Decision needed.
+- **Granularity vs Kording.** *Decided: run both, cut later.* Architectural level
+  (our level, where "understanding" is defined) leads; the Visual6502 transistor
+  netlist runs as a parallel A1/A2 track for a direct head-to-head with Kording.
+  Pilots decide which we feature. (Visual6502 netlist is public; importing it is a
+  bounded add, not a new simulator.)
 - **Agent training cost.** Use existing zoo agents where possible (jaxtari GPU
   rollouts help); training from scratch is a time sink.
 - **Defining "the true causal map."** Intervention-based vs gradient-based ground
@@ -215,15 +295,24 @@ Article-type note: a standard **Article** if the benchmark + experiments lead; a
 - **Scope control.** Phase A + B alone is a strong paper; C2 (new methods) can be
   a follow-up if it bloats.
 
-## 9. Phasing / next actions (after sign-off)
+## 9. Phasing / next actions
 
-1. Lock journal target + article type + author list.
-2. Phase A pilot: lesion + tuning-curve + dim-reduction on Space Invaders, with
-   ground-truth scoring (reuses Paper-1 tooling) — proves the scoring concept.
-3. Phase B pilot: one DQN agent + Integrated Gradients vs the intervention oracle
-   on one game — proves the ground-truth attribution pipeline.
-4. Expand to the method matrix and multiple games; build the benchmark (C1).
-5. Draft `main.tex` against the structure in §6.
+**Prepared (this revision):** scaffolding at `tools/xai_study/` — specs +
+harness stubs for the ground-truth oracle, Phase A, and Phase B; method matrix and
+compute plan locked above.
+
+Immediate (the two pilots de-risk the whole paper; both run **locally**):
+1. **Phase-A pilot** — `tools/xai_study/phaseA_kording/`: lesion + tuning-curve +
+   dim-reduction on Space Invaders, with ground-truth scoring (reuses Paper-1
+   tooling). Proves the scoring concept.
+2. **Phase-B pilot** — `tools/xai_study/phaseB_agents/`: one DQN agent (zoo) +
+   Integrated Gradients vs the exact intervention oracle on one game. Proves the
+   ground-truth attribution pipeline.
+
+Then: secure a zoo agent set; stand up the cluster runs (§4.6); expand to the full
+method matrix (§4.4) incl. the newest causal methods (§4.5) and multiple games;
+build the benchmark (C1); draft `main.tex` (§6). Lock journal/article-type/authors
+after the Phase-B result (§7).
 
 Author fit (provisional, TBD): A. Maier, S. Bayer, P. Krauss (+ collaborators);
 Krauss's neuroscience/neuroprosthetics background anchors the §5 bridge.
