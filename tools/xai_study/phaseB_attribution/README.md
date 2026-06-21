@@ -28,7 +28,7 @@ output (e.g., the Pong score) on one game; report faithfulness. Proves the pipel
 
 ## Scale-out (cluster, GPU)
 Attribution + oracle over outputs × causes × games (batched SOFT-STE exact-forward).
-See plan §4.6.
+See `xai_paper/xai_2_interpretability/experiment_design.md` §8 (compute).
 
 Outputs: `out/faithfulness_<method>_<game>_<output>.*` → leaderboard (method →
 faithfulness), feeding the cross-tradition comparison (Results reporting) and Phase E

@@ -8,8 +8,8 @@ hold**. The bar (from the IEEE 610.12 definition of *software* = programs + proc
 documentation/design, not just describing behavior — i.e., **reverse engineering /
 design recovery** (Chikofsky & Cross 1990), which needs an *external anchor* supplied by
 our behavioral probing + exact oracle. Framed honestly as **measuring the gap to the
-bar**, not "solving recovery." (See `xai_paper/experiment_design.md` §8 and the
-Discussion in `xai_paper/xai_paper_plan.md`.)
+bar**, not "solving recovery." (See `xai_paper/xai_4_recovery/experiment_design.md`
+and `xai_paper/xai_4_recovery/plan.md`.)
 
 ## Sub-experiments (named methods → output → score)
 - **E1 Variable / data-dictionary recovery** — binary type/var recovery (TIE, Lee 2011;

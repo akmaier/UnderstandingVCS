@@ -1,6 +1,8 @@
 # xai_study — experiment harness for Paper 2 (ground-truth interpretability benchmark)
 
-Experiments for the XAI study planned in `../xai_paper/xai_paper_plan.md`.
+Experiments for the XAI research **program** mapped in
+`../xai_paper/general_paper_plan.md` (the phases belong to different papers — see the
+phase→paper map below).
 **Subject: the Atari VCS itself** (chip + program + game logic) — *not* learned
 agents. The thesis: our bit-exact + differentiable VCS lets us compute the **true
 causal structure** of any output, so every interpretability method can be **scored
@@ -22,6 +24,11 @@ against ground truth**, not eyeballed. Every phase runs on the current substrate
   variable/type recovery, invariant mining, active automata learning, decompilation),
   scored against the true design (the recovery rate / gap-to-the-IEEE-bar).
 
+**Phase → paper** (see `../xai_paper/general_paper_plan.md`): A, B, C → **P2**
+(`xai_2_interpretability/`); D → **P3** (`xai_3_psychology/`); E → **P4**
+(`xai_4_recovery/`); learned agents → **P5** (`xai_5_agents/`). The shared oracle / T3 /
+correctness triad are defined in `xai_2_interpretability/experiment_design.md` §0–§3.
+
 The shared foundation is the **ground-truth attribution oracle** (`ground_truth/`):
 the object every method is scored against. "Interpretable" is operationalized as
 *ground-truth recovery* (Barbiero et al. 2025).
@@ -36,7 +43,7 @@ the object every method is scored against. "Interpretable" is operationalized as
 
 ## Compute
 Pilots run locally (M1 Max). Full sweeps + SAE training go to the LME cluster — see
-`xai_paper_plan.md` §4.6. Reuse the Paper-1 `tools/cluster/*.sbatch` pattern,
+each paper's `experiment_design.md` (compute section). Reuse the Paper-1 `tools/cluster/*.sbatch` pattern,
 `/cluster/maier`, and the jaxtari GPU venv.
 
 ## Status

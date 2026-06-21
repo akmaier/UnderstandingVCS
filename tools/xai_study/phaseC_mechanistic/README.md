@@ -32,7 +32,7 @@ game; patched-effect vs exact-patch; SAE-feature vs known-variable matching.
 
 ## Scale-out (cluster, GPU)
 patch sweeps over state × outputs × games; SAE training on recorded state
-trajectories. See plan §4.6.
+trajectories. See `xai_paper/xai_2_interpretability/experiment_design.md` §8 (compute).
 
 Outputs: `out/mech_<method>_<game>.*` → faithfulness vs the known circuit, feeding
 the cross-tradition comparison and Phase E (semantic recovery).
