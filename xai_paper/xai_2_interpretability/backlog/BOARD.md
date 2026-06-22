@@ -58,8 +58,8 @@
 | P2-E7-2 | Figure 2 — A–C on the shared faithfulness-vs-plausibility axes (headline) | E7 | 6 | — | local | done | P2-E6-1, P2-E6-3 | `paper/figures/fig_2.py`<br>`paper/figures/fig_2.pdf` |
 | P2-E7-3 | Figure 3 — the Kording neuroscience battery, scored | E7 | 6 | — | local | done | P2-E6-1 | `paper/figures/fig_3.py`<br>`paper/figures/fig_3.pdf` |
 | P2-E7-4 | Figure 4 — attribution (Phase B) vs mechanistic interp (Phase C) | E7 | 6 | agent-3 | local | done | P2-E6-1 | `paper/figures/fig4_attribution_vs_mechanistic.py`<br>`paper/figures/fig4_attribution_vs_mechanistic.pdf` |
-| P2-E7-5 | Figure 5 — VCS↔NN failure-mode / representativeness map | E7 | 6 | — | local | todo |  | `paper/figures/fig_5.py`<br>`paper/figures/fig_5.pdf` |
-| P2-E7-6 | Figure 6 — failure taxonomy | E7 | 6 | — | local | todo |  | `paper/figures/fig_6.py`<br>`paper/figures/fig_6.pdf` |
+| P2-E7-5 | Figure 5 — VCS↔NN failure-mode / representativeness map | E7 | 6 | — | local | done |  | `paper/figures/fig5_representativeness_map.py`<br>`paper/figures/fig5_representativeness_map.pdf` |
+| P2-E7-6 | Figure 6 — failure taxonomy | E7 | 6 | agent-2 | local | done |  | `paper/figures/fig6_failure_taxonomy.py`<br>`paper/figures/fig6_failure_taxonomy.pdf` |
 | P2-E8-0 | Paper skeleton — main.tex + empty section files (SM task) | E8 | 6 | — | local | todo |  | `paper/main.tex`<br>`paper/sections/00_abstract.tex`<br>`paper/sections/01_intro.tex`<br>`paper/sections/02_related.tex`<br>`paper/sections/03_methods.tex`<br>`paper/sections/04_results_A.tex`<br>`paper/sections/05_results_B.tex`<br>`paper/sections/06_results_C.tex`<br>`paper/sections/07_results_compare.tex`<br>`paper/sections/08_discussion.tex`<br>`paper/sections/09_endmatter.tex` |
 | P2-E8-1 | Write the abstract | E8 | 6 | — | local | todo | P2-E8-0, P2-E6-1 | `paper/sections/00_abstract.tex` |
 | P2-E8-2 | Write the introduction | E8 | 6 | — | local | todo | P2-E8-0 | `paper/sections/01_intro.tex` |

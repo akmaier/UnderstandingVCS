@@ -29,5 +29,31 @@ Deps: all method results (E3/E4/E5) done; oracle + game set done; E2-1 (T3 candi
 Figures read the committed leaderboard/§R records (matplotlib via the jaxtari venv numpy/mpl, no
 new pip) → `.pdf` + the generating `.py`.
 
-## Review
-_(to be filled at the Sprint-6 barrier)_
+## Review — closed 2026-06-23: synthesis + benchmark + figures + T3 DONE (the experimental program is complete)
+
+- **E6-1 leaderboard** (`bd1317f`) — 257 §R records → 31 methods on the faithfulness-vs-plausibility
+  axes; headline gap causal/intervention **0.68** vs gradient/correlational **0.29** (position
+  regime 0.41 vs 0.07); danger-zone topped by expected_gradients Δ0.87, linear_probing Δ0.69.
+- **E6-2 benchmark** (`1d7d909`) — packaged reusable benchmark (14 tasks + oracle interface +
+  metric API + runnable example; oracle_copy control F=1.0). `compare/benchmark/`.
+- **E6-3 faithful-method demo** (`3ce0687`) — activation_patching **1.000** vs vanilla saliency
+  **0.000** on the position regime (gap matches the leaderboard exactly).
+- **E7-1..6 figures** (`935ea72`,`8b91976`,`a8a47ef`,`2df2fcd`,`a4c88f0`,`3732551`) — all six
+  publication-quality vector PDFs: platform/oracle schematic, the headline scatter +
+  danger-zone, the Kording battery, B-vs-C, the VCS↔NN representativeness map (the "single
+  strongest objection" rebuttal), and the failure taxonomy. Every plotted number traced to a
+  committed record; self-checks pass.
+- **E2-2 / E2-3 T3** (`4c65045`,`02543e7`) — 53/96 candidate labels verified causal-by-intervention
+  + 30 newly discovered causally-grounded labels.
+
+**Verification:** 13/13 Sprint-6 items `status: done`; 6/6 figure PDFs render; leaderboard
+self-check 5/5. **CI:** the nightly heavy suite, broken for days, is fixed — 6/7 groups green
+(autodiff + screen all pass after the OOM-split + ROM-skip + JAX-cache-clear fixes); `boot`
+finishing.
+
+**Program state:** the entire **experimental program for Paper 2 is complete** — substrate
+(Paper 1), oracle, T3, Phase A/B/C method matrix (~30 methods × 6 games vs the exact oracle),
+cross-method leaderboard, packaged benchmark, and all figures. **55/70 backlog items done.**
+
+**Remaining = the paper + submission, both PO-gated:** E8 (Nature draft, 10 items) and E9
+(submission prep, 4 items); E3-9 (optional Visual6502) deferrable. **PAUSED for PO before E8.**
