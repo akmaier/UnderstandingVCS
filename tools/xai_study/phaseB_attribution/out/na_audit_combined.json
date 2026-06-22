@@ -1,0 +1,58 @@
+{
+  "applies": false,
+  "arrays": null,
+  "ci": null,
+  "commit": "2845cf9",
+  "extra": {
+    "core_games": [
+      "pong",
+      "breakout",
+      "space_invaders",
+      "seaquest",
+      "ms_pacman",
+      "qbert"
+    ],
+    "finding": "Across all 6 core games the result is identical: the architecture-/policy-specific XAI methods do not apply (the VCS has no NN and no learned policy in ANY game). Recorded per game for leaderboard uniformity; the finding is game-independent.",
+    "methods_not_applicable": [
+      "grad_cam",
+      "grad_cam_pp",
+      "attention_rollout",
+      "viper",
+      "cam",
+      "feature_vis"
+    ],
+    "n_methods_not_applicable": 6,
+    "per_game_candidate_cause_counts": {
+      "breakout": 16,
+      "ms_pacman": 48,
+      "pong": 22,
+      "qbert": 28,
+      "seaquest": 46,
+      "space_invaders": 23
+    },
+    "per_game_records": [
+      "na_audit_pong.json",
+      "na_audit_breakout.json",
+      "na_audit_space_invaders.json",
+      "na_audit_seaquest.json",
+      "na_audit_ms_pacman.json",
+      "na_audit_qbert.json"
+    ],
+    "spec_ref": "experiment_design.md §5 (N/A) + §7; SPEC.md §E4.",
+    "writeup": "na_audit.md"
+  },
+  "game": "ALL_CORE",
+  "method": "na_audit",
+  "metric_name": "n_methods_not_applicable",
+  "n": 6,
+  "oracle_ref": null,
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "seed": null,
+  "state": null,
+  "stderr": null,
+  "target_output": "applicability_of_NN/policy-specific_XAI_to_the_VCS",
+  "timestamp": "1782143467",
+  "value": 6,
+  "where": "local"
+}
