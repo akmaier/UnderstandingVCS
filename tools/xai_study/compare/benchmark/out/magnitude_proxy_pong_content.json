@@ -1,0 +1,65 @@
+{
+  "paper": "P2",
+  "phase": "benchmark",
+  "method": "magnitude_proxy",
+  "game": "pong",
+  "frame": null,
+  "state": "f120+30",
+  "target_output": "content(ram_self@54)",
+  "metric_name": "pearson_corr_with_oracle",
+  "value": 0.271417,
+  "ci": null,
+  "stderr": null,
+  "n": 18,
+  "seed": 0,
+  "where": "local",
+  "commit": "fe4e1a6",
+  "oracle_ref": "oracle_intervene@pong#content(ram_self@54)",
+  "timestamp": "2026-06-22T22:32:31Z",
+  "extra": {
+    "benchmark": "P2-E6-2",
+    "regime": "content",
+    "metrics": {
+      "pearson_corr": 0.271417,
+      "spearman_corr": 0.417765,
+      "precision_at_k": 0.666667,
+      "topk": 3,
+      "deletion_auc": null,
+      "insertion_auc": null
+    },
+    "triad": {
+      "F": 0.271417,
+      "S": null,
+      "M": null
+    },
+    "FSM_composite": 0.271417,
+    "faithfulness": 0.271417,
+    "cause_names": [
+      "ram[13]:set",
+      "ram[13]:occlude",
+      "ram[14]:set",
+      "ram[14]:occlude",
+      "ram[45]:set",
+      "ram[45]:occlude",
+      "ram[46]:set",
+      "ram[46]:occlude",
+      "ram[49]:set",
+      "ram[49]:occlude",
+      "ram[50]:set",
+      "ram[50]:occlude",
+      "ram[51]:set",
+      "ram[51]:occlude",
+      "ram[54]:set",
+      "ram[54]:occlude",
+      "tia[COLUBK]:set",
+      "joystick:RIGHT"
+    ],
+    "true_top_k": [
+      "ram[49]:occlude",
+      "ram[54]:occlude",
+      "ram[54]:set"
+    ],
+    "oracle_source": "phaseB_attribution/out/occlusion_pong_content.json",
+    "oracle_commit": "3b9c5a2"
+  }
+}

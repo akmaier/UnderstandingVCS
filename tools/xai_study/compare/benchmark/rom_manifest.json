@@ -1,0 +1,19 @@
+{
+  "_about": "ROM-not-redistributed handling for the P2 benchmark (SCRUM §7; SPEC E9-3). Atari 2600 ROMs are NOT shipped in this repo — they are gitignored and used in place. The benchmark itself needs NO ROM (the oracle ground truth is read from the committed §R records). This manifest references each core ROM by SHA-256 + size + AutoROM name ONLY, for the OPTIONAL live deletion/insertion AUC re-run; it never contains ROM bytes.",
+  "rom_required_to_score": false,
+  "rom_required_for": "the optional live deletion/insertion AUC (run.py --with-rerun), which re-runs the real ROM on jutari",
+  "obtain": {
+    "AutoROM": "pip install autorom && AutoROM --accept-license  (installs the licensed Atari 2600 ROM set used by ALE/Gymnasium)",
+    "local_in_place": "xitari/games/Atari-2600-VCS-ROM-Collection/ROMS/ (gitignored; resolved by tools/xai_study/common/loader.resolve_rom)",
+    "verify": "match the SHA-256 below; loader.resolve_rom(name) prefers the NTSC original"
+  },
+  "hash_algo": "sha256",
+  "roms": {
+    "pong":           {"sha256": "41623e3c26148f96cbe77d56512845d224a63c8fe5bf90e38527155e39ec96d3", "size_bytes": 2048, "autorom_name": "pong"},
+    "breakout":       {"sha256": "376323f051c3c373c887fd83abead39d87d844ff283d435f4addbfc1710c6fd5", "size_bytes": 2048, "autorom_name": "breakout"},
+    "space_invaders": {"sha256": "7224b17462b992d67f4e06a3c85f269c9822b06df6015bf038b55f384ced0301", "size_bytes": 4096, "autorom_name": "space_invaders"},
+    "seaquest":       {"sha256": "fbc29f4678f69ac27fe46da298c8c22f98cba2a3e5491e6b308fd9bf68d2ee43", "size_bytes": 4096, "autorom_name": "seaquest"},
+    "ms_pacman":      {"sha256": "dde0b43c5dee7ce1a35ac8e2f625b32a16118512d9be4064115053b972280b14", "size_bytes": 8192, "autorom_name": "ms_pacman"},
+    "qbert":          {"sha256": "3257221832a7607696b06b9985103c12a4c24c61b0c655e8f52aed8e38194b76", "size_bytes": 4096, "autorom_name": "qbert"}
+  }
+}

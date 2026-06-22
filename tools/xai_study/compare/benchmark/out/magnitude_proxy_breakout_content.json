@@ -1,0 +1,67 @@
+{
+  "paper": "P2",
+  "phase": "benchmark",
+  "method": "magnitude_proxy",
+  "game": "breakout",
+  "frame": null,
+  "state": "f120+30",
+  "target_output": "content(ram_self@30)",
+  "metric_name": "pearson_corr_with_oracle",
+  "value": 0.076302,
+  "ci": null,
+  "stderr": null,
+  "n": 20,
+  "seed": 0,
+  "where": "local",
+  "commit": "fe4e1a6",
+  "oracle_ref": "oracle_intervene@breakout#content(ram_self@30)",
+  "timestamp": "2026-06-22T22:32:31Z",
+  "extra": {
+    "benchmark": "P2-E6-2",
+    "regime": "content",
+    "metrics": {
+      "pearson_corr": 0.076302,
+      "spearman_corr": 0.141432,
+      "precision_at_k": 0.0,
+      "topk": 3,
+      "deletion_auc": null,
+      "insertion_auc": null
+    },
+    "triad": {
+      "F": 0.076302,
+      "S": null,
+      "M": null
+    },
+    "FSM_composite": 0.076302,
+    "faithfulness": 0.076302,
+    "cause_names": [
+      "ram[30]:set",
+      "ram[30]:occlude",
+      "ram[72]:set",
+      "ram[72]:occlude",
+      "ram[77]:set",
+      "ram[77]:occlude",
+      "ram[84]:set",
+      "ram[84]:occlude",
+      "ram[99]:set",
+      "ram[99]:occlude",
+      "ram[101]:set",
+      "ram[101]:occlude",
+      "ram[0]:set",
+      "ram[0]:occlude",
+      "ram[57]:set",
+      "ram[57]:occlude",
+      "ram[76]:set",
+      "ram[76]:occlude",
+      "tia[COLUBK]:set",
+      "joystick:RIGHT"
+    ],
+    "true_top_k": [
+      "ram[30]:occlude",
+      "ram[30]:set",
+      "ram[72]:set"
+    ],
+    "oracle_source": "phaseB_attribution/out/occlusion_breakout_content.json",
+    "oracle_commit": "3b9c5a2"
+  }
+}

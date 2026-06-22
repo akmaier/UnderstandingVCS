@@ -1,0 +1,188 @@
+{
+  "benchmark": "P2 interpretability ground-truth benchmark",
+  "item": "P2-E6-2",
+  "paper": "P2 (xai_2_interpretability)",
+  "version": "1.0.0",
+  "generated_by": "tools/xai_study/compare/benchmark/ (run.py + oracle.py + metrics.py + tasks.py)",
+  "commit": "fe4e1a6",
+  "timestamp": "2026-06-22T22:33:08Z",
+  "what_it_is": "Score one interpretability method end-to-end against the P2 \u00a71 ground-truth causal oracle and obtain a comparable faithfulness score (the same axis as the E6-1 leaderboard).",
+  "entrypoint": {
+    "cli": "python -m tools.xai_study.compare.benchmark.run --method <name|module:callable> [--game G] [--regime R]",
+    "self_test": "python -m tools.xai_study.compare.benchmark.run --self-test",
+    "list_tasks": "python -m tools.xai_study.compare.benchmark.run --list-tasks",
+    "python_api": "from tools.xai_study.compare.benchmark import run, oracle, metrics, tasks"
+  },
+  "method_contract": {
+    "signature": "method(task, oracle) -> {'attribution': {cause_name: float}, 'S': float|None, 'M': float|None}",
+    "attribution": "score for EVERY candidate cause (higher = more important); missing causes score 0; extra causes ignored",
+    "S": "optional Sufficiency leg (\u00a70): predicts y under a held-out intervention; method-reported (benchmark cannot synthesise generically)",
+    "M": "optional Minimality leg (\u00a70): parsimony / right-level; method-reported",
+    "F": "always benchmark-measured = corr-with-oracle clipped to [0,1]"
+  },
+  "oracle_interface": {
+    "module": "tools/xai_study/compare/benchmark/oracle.py",
+    "load": "oracle.load_oracle(game, regime) -> OracleMap(cause_names, abs_delta, target_output, ...)",
+    "ground_truth_source": "the committed Phase-B \u00a7R records' extra.cause_names + extra.oracle_abs_delta_per_cause (the EXACT |\u0394y(u)| intervention map, experiment_design.md \u00a71); no ROM needed",
+    "regenerate": "tools/xai_study/ground_truth/oracle_intervene.jl on the real ROM (Julia)"
+  },
+  "metric_api": {
+    "module": "tools/xai_study/compare/benchmark/metrics.py",
+    "score_method": "metrics.score_method(method_output, oracle, k=3, rerun_fn=None) -> {pearson_corr, spearman_corr, precision_at_k, deletion_auc, insertion_auc, faithfulness, triad{F,S,M}, FSM_composite}",
+    "offline_metrics": [
+      "pearson_corr",
+      "spearman_corr",
+      "precision_at_k",
+      "faithfulness"
+    ],
+    "live_metrics": [
+      "deletion_auc",
+      "insertion_auc"
+    ],
+    "live_metrics_note": "deletion/insertion AUC re-run the real ROM via an optional rerun_fn hook (off by default); formulas mirror the committed Julia scorer pilot_ig_vs_oracle.jl",
+    "faithfulness_definition": "F = max(0, pearson_corr(attribution, |\u0394y_oracle|)) clipped to [0,1] \u2014 the \u00a70 F leg, comparable to the E6-1 leaderboard"
+  },
+  "task_set": {
+    "core_games": [
+      "pong",
+      "breakout",
+      "space_invaders",
+      "seaquest",
+      "ms_pacman",
+      "qbert"
+    ],
+    "regimes": {
+      "content": "content/colour output (\u2202y/\u2202u defined; gradients can work)",
+      "position": "discrete sprite-position/index output (NAIVE gradient = 0 \u2192 only intervention/causal methods recover it)",
+      "ball_pixel": "a content pixel on the ball band (Pong running example)"
+    },
+    "n_scorable_tasks": 14,
+    "tasks": [
+      {
+        "game": "breakout",
+        "regime": "content",
+        "target_output": "content(ram_self@30)",
+        "n_causes": "20",
+        "scorable": "1"
+      },
+      {
+        "game": "ms_pacman",
+        "regime": "ball_pixel",
+        "target_output": "ball_pixel@r105c80",
+        "n_causes": "40",
+        "scorable": "1"
+      },
+      {
+        "game": "ms_pacman",
+        "regime": "content",
+        "target_output": "content(ram_self@6)",
+        "n_causes": "40",
+        "scorable": "1"
+      },
+      {
+        "game": "ms_pacman",
+        "regime": "position",
+        "target_output": "position:pixel@r84c77",
+        "n_causes": "40",
+        "scorable": "1"
+      },
+      {
+        "game": "pong",
+        "regime": "ball_pixel",
+        "target_output": "ball_pixel@r118c17",
+        "n_causes": "18",
+        "scorable": "1"
+      },
+      {
+        "game": "pong",
+        "regime": "content",
+        "target_output": "content(ram_self@54)",
+        "n_causes": "18",
+        "scorable": "1"
+      },
+      {
+        "game": "pong",
+        "regime": "position",
+        "target_output": "position:pixel@r111c52",
+        "n_causes": "18",
+        "scorable": "1"
+      },
+      {
+        "game": "qbert",
+        "regime": "ball_pixel",
+        "target_output": "ball_pixel@r65c85",
+        "n_causes": "42",
+        "scorable": "1"
+      },
+      {
+        "game": "qbert",
+        "regime": "content",
+        "target_output": "content(ram_self@46)",
+        "n_causes": "42",
+        "scorable": "1"
+      },
+      {
+        "game": "qbert",
+        "regime": "position",
+        "target_output": "position:pixel@r94c45",
+        "n_causes": "42",
+        "scorable": "1"
+      },
+      {
+        "game": "seaquest",
+        "regime": "content",
+        "target_output": "content(ram_self@1)",
+        "n_causes": "48",
+        "scorable": "1"
+      },
+      {
+        "game": "space_invaders",
+        "regime": "ball_pixel",
+        "target_output": "ball_pixel@r170c43",
+        "n_causes": "36",
+        "scorable": "1"
+      },
+      {
+        "game": "space_invaders",
+        "regime": "content",
+        "target_output": "content(ram_self@81)",
+        "n_causes": "36",
+        "scorable": "1"
+      },
+      {
+        "game": "space_invaders",
+        "regime": "position",
+        "target_output": "position:pixel@r124c25",
+        "n_causes": "36",
+        "scorable": "1"
+      }
+    ],
+    "degenerate_excluded": {
+      "n": 4,
+      "why": "oracle column is constant/all-zero within the conformance horizon (no probed cause affected that pixel) \u2192 correlation carries no signal; even a perfect oracle copy scores 0",
+      "list": [
+        "breakout/ball_pixel",
+        "breakout/position",
+        "seaquest/ball_pixel",
+        "seaquest/position"
+      ]
+    }
+  },
+  "examples": {
+    "module": "tools/xai_study/compare/benchmark/example_method.py",
+    "bundled": {
+      "oracle_copy": "positive control \u2014 copies the oracle's importance \u2192 faithfulness 1.0 (validates the scoring pipeline)",
+      "uniform": "floor \u2014 constant attribution \u2192 corr 0",
+      "random": "chance baseline \u2014 seeded random scores",
+      "magnitude_proxy": "an oracle-free toy method (RAM-index structural prior) \u2192 genuine non-trivial score; the runnable demonstration"
+    },
+    "demonstration_output": "tools/xai_study/compare/benchmark/out/magnitude_proxy_<game>_<regime>.json (14 records)"
+  },
+  "rom_handling": {
+    "rom_required_to_score": false,
+    "manifest": "tools/xai_study/compare/benchmark/rom_manifest.json (SHA-256 + AutoROM names; never ROM bytes)",
+    "policy": "SCRUM \u00a77 \u2014 ROMs gitignored, used in place, never committed; benchmark needs none"
+  },
+  "output_schema": "SPEC \u00a7R (out/<method>_<game>_<regime>.json with extra.triad.F so the E6-1 leaderboard reads it like any phase record)",
+  "self_check": "python -m tools.xai_study.compare.benchmark.run --self-test (oracle_copy F==1 on all tasks; uniform at floor; magnitude_proxy finite F on pong/content; oracle interface corr==1; >=6 tasks)"
+}
