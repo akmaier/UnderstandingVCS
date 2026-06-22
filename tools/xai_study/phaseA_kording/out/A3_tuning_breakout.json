@@ -1,0 +1,133 @@
+{
+  "arrays": "A3_tuning_breakout.npz",
+  "ci": null,
+  "commit": "39cd1d3",
+  "extra": {
+    "A3_tuning": {
+      "clock_corr_per_cell": {
+        "RAM[0]:blocks": 0.0,
+        "RAM[101]:ball_y": 0.14609882218061906,
+        "RAM[30]:block_bit_map": 0.0,
+        "RAM[57]:lives": 0.8314028634575386,
+        "RAM[72]:player_x": 0.12009152472164447,
+        "RAM[76]:score": 0.0,
+        "RAM[77]:blocks_hit_count": 0.0,
+        "RAM[84]:score": 0.0,
+        "RAM[99]:ball_x": 0.5661918447210113
+      },
+      "epiphenomenal_control": "frame_clock",
+      "game_variable_signals": [
+        "block_bit_map@30",
+        "player_x@72",
+        "blocks_hit_count@77",
+        "score@84",
+        "ball_x@99",
+        "ball_y@101",
+        "blocks@0",
+        "lives@57",
+        "score@76",
+        "score_raw@84"
+      ],
+      "game_variable_spurious_tuning_rate": 0.0,
+      "gvar_selectivity_per_cell": {
+        "RAM[0]:blocks": 0.0,
+        "RAM[101]:ball_y": 0.5055032210731456,
+        "RAM[30]:block_bit_map": 0.0,
+        "RAM[57]:lives": 0.8527827121573858,
+        "RAM[72]:player_x": 0.12522750045357012,
+        "RAM[76]:score": 0.0,
+        "RAM[77]:blocks_hit_count": 0.0,
+        "RAM[84]:score": 0.0,
+        "RAM[99]:ball_x": 0.8527827121573858
+      },
+      "luminance_corr_per_cell": {
+        "RAM[0]:blocks": 0.0,
+        "RAM[101]:ball_y": 0.5310612802298547,
+        "RAM[30]:block_bit_map": 0.0,
+        "RAM[57]:lives": 0.08563574653999417,
+        "RAM[72]:player_x": 0.06724644031086698,
+        "RAM[76]:score": 0.0,
+        "RAM[77]:blocks_hit_count": 0.0,
+        "RAM[84]:score": 0.0,
+        "RAM[99]:ball_x": 0.3105065576703674
+      },
+      "luminance_spurious_tuning_rate": 0.0,
+      "n_spurious_gvar": 0,
+      "n_spurious_luminance": 0,
+      "n_strongly_tuned_gvar": 2,
+      "n_strongly_tuned_luminance": 0,
+      "note": "selectivity = max |corr| to a GAME variable (the cell's own self-column excluded; frame clock excluded — it is the epiphenomenal control). spurious = strongly-tuned (selectivity≥τ) but NOT causal by the oracle — the present≠used tuning-curve trap (experiment_design.md §4 A3, Phase-A's headline failure). The luminance family is the HARDWARE (no-T3) version of the same trap.",
+      "spurious_gvar_cells": [],
+      "strongly_tuned_gvar_cells": [
+        "RAM[99]:ball_x",
+        "RAM[57]:lives"
+      ],
+      "tau": 0.7,
+      "trajectory_frames": 150,
+      "trajectory_trace": "active (FIRE×4 + periodic RIGHTFIRE/LEFTFIRE)"
+    },
+    "bit_exact_rerun": true,
+    "candidate_cells": [
+      "RAM[30]:block_bit_map",
+      "RAM[72]:player_x",
+      "RAM[77]:blocks_hit_count",
+      "RAM[84]:score",
+      "RAM[99]:ball_x",
+      "RAM[101]:ball_y",
+      "RAM[0]:blocks",
+      "RAM[57]:lives",
+      "RAM[76]:score"
+    ],
+    "candidate_ram_indices": [
+      30,
+      72,
+      77,
+      84,
+      99,
+      101,
+      0,
+      57,
+      76
+    ],
+    "candidates_file": "candidates_breakout.json",
+    "n_oracle_causal": 6,
+    "oracle_importance_per_cell": {
+      "RAM[0]:blocks": 0.0,
+      "RAM[101]:ball_y": 40.0,
+      "RAM[30]:block_bit_map": 0.0,
+      "RAM[57]:lives": 88.0,
+      "RAM[72]:player_x": 8.0,
+      "RAM[76]:score": 104.0,
+      "RAM[77]:blocks_hit_count": 208.0,
+      "RAM[84]:score": 0.0,
+      "RAM[99]:ball_x": 16.0
+    },
+    "positive_control_oracle_as_method_F": 1.0,
+    "rom_settings": "JuTari.PaddleGames.BreakoutRomSettings",
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the oracle causal map is EXACT interventions re-run on the true ROM; the tuning curves are a DESCRIPTIVE active-trace recording (the recorder's documented purpose), not a bit-exact-vs-xitari claim.",
+    "triad": {
+      "F": 0.2239570043823417,
+      "F_note": "Spearman(A3 game-variable selectivity, oracle causal importance) over 9 candidate cells",
+      "M": 1.0,
+      "M_note": "1 − over-claim rate: fraction of strongly-tuned cells the oracle says are generic (non-causal)",
+      "S": 0.4990554755706752,
+      "S_note": "Pearson(A3 selectivity, held-out do(base+37) screen break) — sufficiency on a bit-exact re-run",
+      "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): a tuning-curve importance map scores LOW faithfulness despite fully-known structure. F<1 / spurious-tuning>0 quantify where the classical analysis departs from the ground truth. The oracle-as-method positive control (F=1.0) confirms the harness rewards a perfectly-faithful map."
+    }
+  },
+  "game": "breakout",
+  "method": "A3_tuning_curves(luminance+game_variable)+spurious_tuning_rate",
+  "metric_name": "A3_game_variable_spurious_tuning_rate",
+  "n": 9,
+  "oracle_ref": "oracle_intervene@breakout#screen-break",
+  "paper": "P2",
+  "phase": "phaseA_kording",
+  "seed": 0,
+  "state": "f30+30",
+  "stderr": null,
+  "target_output": "screen-break (oracle causal importance) vs tuning selectivity",
+  "timestamp": "1782141164",
+  "value": 0.0,
+  "where": "local"
+}
