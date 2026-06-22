@@ -14,8 +14,8 @@
 | P2-E1-2 | Gradient oracle (content path) | E1 | 1 | — | local | done | P2-E1-1 | `tools/xai_study/ground_truth/oracle_grad.*` |
 | P2-E1-3 | Oracle cross-check + validation | E1 | 1 | — | local | done | P2-E1-1, P2-E1-2 | `tools/xai_study/ground_truth/oracle_xcheck.*`<br>`tools/xai_study/ground_truth/out/oracle_xcheck_*` |
 | P2-E2-1 | Import OCAtari/AtariARI candidate labels | E2 | 1 | agent-2 | local | done |  | `tools/xai_study/t3/import_labels.*`<br>`tools/xai_study/t3/out/candidates_*` |
-| P2-E2-2 | Verify-by-intervention + offset-correct T3 labels | E2 | 6 | — | local | todo | P2-E2-1, P2-E1-1 | `tools/xai_study/t3/verify_labels.*`<br>`tools/xai_study/t3/out/verified_*` |
-| P2-E2-3 | Discover new T3 labels (correlation + sweep) | E2 | 6 | — | local | todo | P2-E2-2 | `tools/xai_study/t3/discover_labels.*`<br>`tools/xai_study/t3/out/discovered_*` |
+| P2-E2-2 | Verify-by-intervention + offset-correct T3 labels | E2 | 6 | — | local | done | P2-E2-1, P2-E1-1 | `tools/xai_study/t3/verify_labels.*`<br>`tools/xai_study/t3/out/verified_*` |
+| P2-E2-3 | Discover new T3 labels (correlation + sweep) | E2 | 6 | — | local | done | P2-E2-2 | `tools/xai_study/t3/discover_labels.*`<br>`tools/xai_study/t3/out/discovered_*` |
 | P2-E3-0 | Phase-A pilot (A2+A3+A7 on Space Invaders, scored) | E3 | 3 | — | local | done | P2-E1-1, P2-E0-2j | `tools/xai_study/phaseA_kording/pilot_si.*`<br>`tools/xai_study/phaseA_kording/out/pilotA_*` |
 | P2-E3-1 | A1 connectomics / data-flow graph recovery | E3 | 4 | — | local | done | P2-E3-0 | `tools/xai_study/phaseA_kording/A1_connectomics.jl`<br>`tools/xai_study/phaseA_kording/out/A1_*` |
 | P2-E3-2 | A2 single-unit lesions importance map | E3 | 5 | — | local | done | P2-E3-0 | `tools/xai_study/phaseA_kording/A2_lesions.py`<br>`tools/xai_study/phaseA_kording/out/A2_*` |
@@ -51,10 +51,10 @@
 | P2-E5-8 | Causal scrubbing — hypothesis pass/fail vs true routine | E5 | 5 | — | local | done | P2-E5-0 | `tools/xai_study/phaseC_mechanistic/causal_scrubbing.jl`<br>`tools/xai_study/phaseC_mechanistic/out/causal_scrubbing_*` |
 | P2-E5-9 | Linear probing + control tasks — present-vs-used gap | E5 | 5 | agent | local | done | P2-E5-0 | `tools/xai_study/phaseC_mechanistic/linear_probing.jl`<br>`tools/xai_study/phaseC_mechanistic/out/linear_probing_*` |
 | P2-E5-10 | Logit / tuned lens — readout fidelity vs true intermediate | E5 | 5 | — | local | done | P2-E5-0 | `tools/xai_study/phaseC_mechanistic/logit_tuned_lens.py`<br>`tools/xai_study/phaseC_mechanistic/out/logit_tuned_lens_*` |
-| P2-E6-1 | Cross-tradition leaderboard (faithfulness vs plausibility) | E6 | 6 | — | local | todo | P2-E3-0, P2-E4-0, P2-E5-0 | `tools/xai_study/compare/leaderboard.py`<br>`tools/xai_study/compare/out/leaderboard.*` |
-| P2-E6-2 | Package the reusable benchmark artifact (tasks + oracle + metrics) | E6 | 5 | — | local | todo | P2-E6-1 | `tools/xai_study/benchmark/**` |
-| P2-E6-3 | Faithful-method demonstration (causal near-ceiling vs popular near-chance) | E6 | 5 | — | local | todo | P2-E6-1 | `tools/xai_study/compare/faithful_demo.py`<br>`tools/xai_study/compare/out/faithful_demo.*` |
-| P2-E7-1 | Figure 1 — platform & ground-truth oracle schematic | E7 | 5 | — | local | todo |  | `paper/figures/fig_1.py`<br>`paper/figures/fig_1.pdf` |
+| P2-E6-1 | Cross-tradition leaderboard (faithfulness vs plausibility) | E6 | 6 | — | local | done | P2-E3-0, P2-E4-0, P2-E5-0 | `tools/xai_study/compare/leaderboard.py`<br>`tools/xai_study/compare/out/leaderboard.*` |
+| P2-E6-2 | Package the reusable benchmark artifact (tasks + oracle + metrics) | E6 | 6 | — | local | todo | P2-E6-1 | `tools/xai_study/benchmark/**` |
+| P2-E6-3 | Faithful-method demonstration (causal near-ceiling vs popular near-chance) | E6 | 6 | — | local | todo | P2-E6-1 | `tools/xai_study/compare/faithful_demo.py`<br>`tools/xai_study/compare/out/faithful_demo.*` |
+| P2-E7-1 | Figure 1 — platform & ground-truth oracle schematic | E7 | 6 | — | local | todo |  | `paper/figures/fig_1.py`<br>`paper/figures/fig_1.pdf` |
 | P2-E7-2 | Figure 2 — A–C on the shared faithfulness-vs-plausibility axes (headline) | E7 | 5 | — | local | todo | P2-E6-1, P2-E6-3 | `paper/figures/fig_2.py`<br>`paper/figures/fig_2.pdf` |
 | P2-E7-3 | Figure 3 — the Kording neuroscience battery, scored | E7 | 5 | — | local | todo | P2-E6-1 | `paper/figures/fig_3.py`<br>`paper/figures/fig_3.pdf` |
 | P2-E7-4 | Figure 4 — attribution (Phase B) vs mechanistic interp (Phase C) | E7 | 5 | — | local | todo | P2-E6-1 | `paper/figures/fig_4.py`<br>`paper/figures/fig_4.pdf` |
@@ -76,7 +76,7 @@
 | P2-E9-4 | Final build + page/limit gate (SM) | E9 | 7 | — | local | todo | P2-E9-1, P2-E9-2, P2-E9-3 | `paper/main.tex`<br>`paper/build/**` |
 
 ## Items per sprint
-Sprint 0: 3, Sprint 1: 6, Sprint 2: 1, Sprint 3: 4, Sprint 4: 8, Sprint 5: 31, Sprint 6: 13, Sprint 7: 4
+Sprint 0: 3, Sprint 1: 6, Sprint 2: 1, Sprint 3: 4, Sprint 4: 8, Sprint 5: 28, Sprint 6: 16, Sprint 7: 4
 
 ## Sprint log
 See [`../sprints/`](../sprints/) for per-sprint Planning + Review notes.
