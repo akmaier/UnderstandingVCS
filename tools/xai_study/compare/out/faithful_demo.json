@@ -1,0 +1,172 @@
+{
+  "item": "P2-E6-3",
+  "title": "Faithful-method demonstration (causal near-ceiling vs popular near-chance)",
+  "paper": "P2",
+  "phase": "compare",
+  "method": "faithful_demo",
+  "generated_by": "tools/xai_study/compare/faithful_demo.py",
+  "reads": "compare/out/leaderboard.json",
+  "note": "Pure read over the committed leaderboard (E6-1) + the \u00a7R per-game records it aggregates. No experiment re-run. The aggregate gap is asserted equal to the leaderboard's headline position-regime gap.",
+  "headline_regime": "position",
+  "oracle_ref": "oracle_intervene (P2-E1-1) \u2014 exact \u00a71 ground truth; ceiling=1.0",
+  "faithful_method": {
+    "method": "activation_patching",
+    "phase": "phaseC_mechanistic",
+    "tradition": "causal",
+    "faithfulness_all_regimes": 1.0,
+    "faithfulness_ci95": 0.0,
+    "faithfulness_position_regime": 1.0,
+    "faithfulness_content_regime": null,
+    "plausibility_proxy": 0.5,
+    "n_games": 6,
+    "n_records": 7,
+    "faith_source": "value:max_abs_recovered_minus_exact",
+    "metric_names": "max_abs_recovered_minus_exact",
+    "commits": "86fdc27;9e3cdfd"
+  },
+  "popular_method": {
+    "method": "vanilla_saliency",
+    "phase": "phaseB_attribution",
+    "tradition": "gradient",
+    "faithfulness_all_regimes": 0.2667,
+    "faithfulness_ci95": 0.2142,
+    "faithfulness_position_regime": 0.0,
+    "faithfulness_content_regime": 0.5334,
+    "plausibility_proxy": 0.9,
+    "n_games": 6,
+    "n_records": 12,
+    "faith_source": "value:pearson_corr_with_oracle",
+    "metric_names": "pearson_corr_with_oracle",
+    "commits": "90bf6f1"
+  },
+  "pair_contrast": {
+    "regime": "position",
+    "faithful": "activation_patching",
+    "popular": "vanilla_saliency",
+    "faithful_faithfulness_position": 1.0,
+    "popular_faithfulness_position": 0.0,
+    "position_gap": 1.0,
+    "faithful_faithfulness_all_regimes": 1.0,
+    "popular_faithfulness_all_regimes": 0.2667,
+    "all_regime_gap": 0.7333,
+    "oracle_ceiling": 1.0,
+    "naive_gradient_floor": 0.0
+  },
+  "aggregate_contrast": {
+    "regime": "position",
+    "faithful_bucket": "causal/intervention",
+    "popular_bucket": "gradient/correlational",
+    "faithful_bucket_mean": 0.4118,
+    "faithful_bucket_ci95": 0.3902,
+    "faithful_bucket_n": 4,
+    "popular_bucket_mean": 0.0683,
+    "popular_bucket_ci95": 0.0701,
+    "popular_bucket_n": 9,
+    "bucket_gap": 0.3435,
+    "source": "leaderboard.headline_contrast.position_regime (E6-1)"
+  },
+  "per_game": [
+    {
+      "game": "breakout",
+      "faithful_faithfulness": 1.0,
+      "faithful_regime": "all",
+      "popular_faithfulness": 0.0,
+      "popular_regime": "position",
+      "gap": 1.0
+    },
+    {
+      "game": "ms_pacman",
+      "faithful_faithfulness": 1.0,
+      "faithful_regime": "all",
+      "popular_faithfulness": 0.0,
+      "popular_regime": "position",
+      "gap": 1.0
+    },
+    {
+      "game": "pong",
+      "faithful_faithfulness": 1.0,
+      "faithful_regime": "position",
+      "popular_faithfulness": 0.0,
+      "popular_regime": "position",
+      "gap": 1.0
+    },
+    {
+      "game": "qbert",
+      "faithful_faithfulness": 1.0,
+      "faithful_regime": "all",
+      "popular_faithfulness": 0.0,
+      "popular_regime": "position",
+      "gap": 1.0
+    },
+    {
+      "game": "seaquest",
+      "faithful_faithfulness": 1.0,
+      "faithful_regime": "all",
+      "popular_faithfulness": 0.0,
+      "popular_regime": "position",
+      "gap": 1.0
+    },
+    {
+      "game": "space_invaders",
+      "faithful_faithfulness": 1.0,
+      "faithful_regime": "all",
+      "popular_faithfulness": 0.0,
+      "popular_regime": "position",
+      "gap": 1.0
+    }
+  ],
+  "per_game_paired_games": [
+    "breakout",
+    "ms_pacman",
+    "pong",
+    "qbert",
+    "seaquest",
+    "space_invaders"
+  ],
+  "metric_name": "faithfulness_gap_causal_minus_popular_position_regime",
+  "value": 0.3435,
+  "summary": "On a system where the answer is known exactly \u2014 the bit-exact VCS with the \u00a71 intervention oracle as ground truth \u2014 the field's default attribution tool scores near chance where a causal method scores near the ceiling. On the position/index regime (discrete sprite-position outputs whose naive gradient is provably zero, \u00a71), the FAITHFUL method 'activation_patching' (causal) reaches faithfulness 1.000 (\u2248 the oracle ceiling 1.0), while the POPULAR method 'vanilla_saliency' (gradient) collapses to 0.000 (\u2248 the 0.0 naive-gradient floor) \u2014 a per-method gap of 1.000. Aggregated over the regime, causal/intervention methods average 0.412 (\u00b10.390, n=4) vs 0.068 (\u00b10.070, n=9) for gradient/correlational methods \u2014 a 0.344 faithfulness gap. The popular method nonetheless carries the higher human-plausibility proxy (0.9 vs 0.5): plausible \u2260 faithful (the \u00a70 danger zone), measured.",
+  "arrays": "faithful_demo.npz",
+  "self_check": {
+    "pass": true,
+    "checks": [
+      {
+        "name": "faithful beats popular on the position regime",
+        "pass": true,
+        "detail": "1.0000 > 0.0000"
+      },
+      {
+        "name": "per-method position gap > 0",
+        "pass": true,
+        "detail": "gap=1.0000"
+      },
+      {
+        "name": "aggregate bucket gap matches leaderboard headline",
+        "pass": true,
+        "detail": "demo=0.3435 lb=0.3435"
+      },
+      {
+        "name": "faithful is near ceiling (>=0.9 of oracle 1.0)",
+        "pass": true,
+        "detail": "1.0000 >= 0.9"
+      },
+      {
+        "name": "popular is near chance (<=0.15)",
+        "pass": true,
+        "detail": "0.0000 <= 0.15"
+      },
+      {
+        "name": "popular plausibility proxy > faithful (danger zone)",
+        "pass": true,
+        "detail": "0.9 > 0.5"
+      },
+      {
+        "name": "every paired per-game row has faithful >= popular",
+        "pass": true,
+        "detail": "n_paired=6"
+      }
+    ]
+  },
+  "where": "local",
+  "commit": null
+}
