@@ -1,0 +1,122 @@
+{
+  "arrays": "A4_pong.npz",
+  "ci": null,
+  "commit": "39cd1d3",
+  "extra": {
+    "bit_exact_rerun": true,
+    "candidate_cells": [
+      "RAM[13]:enemy_score",
+      "RAM[14]:player_score",
+      "RAM[45]:enemy_x",
+      "RAM[46]:player_x",
+      "RAM[49]:ball_x",
+      "RAM[50]:enemy_y",
+      "RAM[51]:player_y",
+      "RAM[54]:ball_y"
+    ],
+    "candidate_concept_family": [
+      "enemy_score",
+      "score",
+      "enemy",
+      "player",
+      "ball",
+      "enemy",
+      "player",
+      "ball"
+    ],
+    "candidate_ram_indices": [
+      13,
+      14,
+      45,
+      46,
+      49,
+      50,
+      51,
+      54
+    ],
+    "clustering": {
+      "cluster_label_per_cell": {
+        "RAM[13]:enemy_score": 1,
+        "RAM[14]:player_score": 2,
+        "RAM[45]:enemy_x": 3,
+        "RAM[46]:player_x": 4,
+        "RAM[49]:ball_x": 5,
+        "RAM[50]:enemy_y": 5,
+        "RAM[51]:player_y": 6,
+        "RAM[54]:ball_y": 5
+      },
+      "homogeneity": 0.9444444444444445,
+      "mean_cluster_size": 1.3333333333333333,
+      "mean_true_group_size": 1.6,
+      "n_clusters": 6,
+      "n_true_groups": 5,
+      "note": "single-linkage on |corr|≥tau; over_grouping_ratio = fraction of within-cluster pairs whose cells are in DIFFERENT true variable groups (correlation lumping unrelated cells); size_inflation>1 ⇒ recovered clusters bigger than true groups.",
+      "over_grouping_ratio": 0.6666666666666666,
+      "rand_index": 0.8571428571428571,
+      "size_inflation": 0.8333333333333333,
+      "tau_cluster": 0.7
+    },
+    "conformance_note": "scored oracle frame f60+30 is inside the Paper-1 60-frame screen conformance window (jutari↔xitari bit-exact).",
+    "n_true_variable_groups": 5,
+    "oracle_coupling": {
+      "n_coupled_pairs": 4,
+      "n_total_pairs": 28,
+      "note": "true coupling(i,j) = max |Δ candidate-cell j| under an EXACT do(i:=0)/do(i:=base+17) intervention on cell i, re-run on the real ROM (symmetrised). The §1 oracle restricted to candidate-cell pairs — the TRUE coupling A4 is scored against.",
+      "self_footprint_per_cell": {
+        "RAM[13]:enemy_score": 160.0,
+        "RAM[14]:player_score": 160.0,
+        "RAM[45]:enemy_x": 0.0,
+        "RAM[46]:player_x": 0.0,
+        "RAM[49]:ball_x": 344.0,
+        "RAM[50]:enemy_y": 0.0,
+        "RAM[51]:player_y": 0.0,
+        "RAM[54]:ball_y": 144.0
+      }
+    },
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
+    "scored_in_conformance_window": true,
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the coupling oracle uses EXACT interventions re-run on the true ROM.",
+    "trajectory_frames": 150,
+    "trajectory_trace": "active trace (4×FIRE + periodic RIGHTFIRE/LEFTFIRE)",
+    "triad": {
+      "F": 0.6328515172740399,
+      "F_note": "Spearman(|pairwise corr|, oracle cell-cell coupling) over 28 candidate-cell pairs",
+      "M": 1.0,
+      "M_note": "1 − over-claim rate: fraction of |corr|≥0.7-flagged pairs the oracle says are NOT coupled (correlation over-grouping)",
+      "S": -0.03281901478878524,
+      "S_note": "Pearson(|pairwise corr|, held-out do(base+37) coupling) — sufficiency on the bit-exact re-run",
+      "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): pairwise correlation structure GENERALLY OVER-GROUPS — it lumps causally-unrelated cells that merely co-vary (the present≠used trap, pairwise). F<1 + over_grouping_ratio>0 quantify the departure from the true coupling.",
+      "n_pairs": 28
+    },
+    "weak_pairwise_strong_global": {
+      "candidate_frac_strong_pairs(|corr|>=0.5)": 0.5,
+      "candidate_mean_abs_pairwise": 0.5856931657100627,
+      "candidate_median_abs_pairwise": 0.5714669164616014,
+      "candidate_n_varying_cells": 4,
+      "candidate_participation_ratio": 1.6638519680566908,
+      "candidate_top3_eig_share": 0.9999210928266624,
+      "candidate_top_eig_share": 0.7399730242787192,
+      "note": "the spike-word headline (Schneidman 2006; Tkačik 2014): over the FULL POPULATION of varying RAM cells the median pairwise |corr| is WEAK while a few GLOBAL eigen-modes dominate — the effective dimensionality (participation ratio) is far below the #cells, so the collective structure greatly exceeds the pairwise structure. WPSG flag = population median|corr|<0.5 AND population top3-eig-share≥0.6. (The candidate_* set is curated so its pairwise corr runs higher.)",
+      "population_mean_abs_pairwise": 0.5003416624845969,
+      "population_median_abs_pairwise": 0.4124246970520858,
+      "population_n_cells": 18,
+      "population_participation_ratio": 2.5378733063864205,
+      "population_top3_eig_share": 0.8729553754287591,
+      "weak_pairwise_strong_global": true
+    }
+  },
+  "game": "pong",
+  "method": "A4_spike_word_pairwise_correlation",
+  "metric_name": "A4_faithfulness_spearman_corr_vs_oracle_coupling",
+  "n": 8,
+  "oracle_ref": "oracle_intervene@pong#cell-cell-coupling(screen+RAM)",
+  "paper": "P2",
+  "phase": "phaseA_kording",
+  "seed": 0,
+  "state": "f60+30",
+  "stderr": null,
+  "target_output": "cell-cell-coupling",
+  "timestamp": "1782141947",
+  "value": 0.6328515172740399,
+  "where": "local"
+}
