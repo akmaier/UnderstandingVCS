@@ -42,8 +42,15 @@ in its **jit+vmap SOFT-STE GPU-batch** path, not eager HARD stepping. **Recommen
 run experiments on **jutari (Julia)** — the proven fast real-ROM path (`tools/xai_si_gradient`
 already does real-Pong gradients there) with native Zygote differentiability for the
 gradient oracle — and reserve jaxtari for **GPU-batched SOFT sweeps on the cluster**. This
-re-targets E0-1 (loader/replay), E0-2 (recorder), and E1-1 (oracle) onto jutari. **Awaiting
-PO go-ahead before Sprint 2.**
+re-targets E0-1 (loader/replay), E0-2 (recorder), and E1-1 (oracle) onto jutari.
+
+**RESOLVED — PO approved jutari (2026-06-22).** E1-1 re-built on jutari and **bit-exact
+VERIFIED**: 8/8 test assertions in ~16 s (`ae8daa6`); SM independently re-ran (score-cell
+Δ nonzero, bg control = 0.0, ball causes 232 px). The oracle boots+maps real Pong in ~13 s
+vs jaxtari's 10-min stall. **Sprint 1 COMPLETE (5/5).** SCRUM §7 updated (jutari = local
+experiments; jaxtari = cluster GPU-batch only; no `pip install` into the shared venv). The
+jaxtari Python harness is retained as the cluster SOFT-STE path. Proceeding to Sprint 2 on
+jutari.
 
 **Retro / process fixes (apply on pivot):** (1) agents must NOT `pip install` into the
 shared venv — E2-1 broke jax transiently (add SCRUM §7 gotcha; done in spirit). (2) make

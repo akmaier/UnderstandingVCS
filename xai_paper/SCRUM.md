@@ -171,8 +171,18 @@ its self-check before `done`.**
   cluster under `/cluster/maier`.
 - **Always `git fetch && git rebase origin/main` before push** (a background jaxtari
   agent may push concurrently); **always `git -C <primary> pull --ff-only` after push.**
-- **jutari before jaxtari** (jaxtari ~205× slower) — never let a jaxtari item block a
-  deliverable; tag jaxtari work as background/cluster.
+- **Run experiments on jutari (Julia) locally; jaxtari is the cluster GPU-batch path
+  only.** jaxtari *eager* HARD stepping is ~205× slower than jutari — a single Pong boot is
+  ~10 min and stalled the oracle in Sprint 1; jutari boots+runs the same oracle in ~13 s
+  (Paper-1 64/64 bit-exact). Build local experiments on jutari (reuse
+  `tools/xai_si_gradient` + `tools/xai_study/common/jutari_oracle.jl`); reserve jaxtari's
+  jit+vmap SOFT-STE for **batched sweeps on the cluster** (`tools/cluster/xai_*.sbatch`).
+  Run jutari as `julia --project=<primary>/jutari` (the global `~/.julia` depot is warm —
+  worktrees pay no recompile).
+- **Never `pip install` into the shared primary venv** — cross-agent hazard (a Sprint-1
+  agent installing OCAtari pinned `numpy<2.0` and transiently broke `jax`). Parse package
+  sources without importing, or use a throwaway venv; verify `import jax, numpy` after any
+  unavoidable change.
 - **Heavy gates run alone** (pytest xdist can hang at 0% CPU under load) — don't schedule
   two heavy local jobs in the same sprint slot.
 - **One SSH session per wakeup** on the cluster; never `sudo`; never bypass host-key

@@ -9,7 +9,7 @@
 | P2-E0-3 | Cluster job templates | E0 | 0 | — | local | done |  | `tools/cluster/xai_*.sbatch`<br>`tools/xai_study/common/cluster.md` |
 | P2-E0-4 | Game-set + T3 coverage audit | E0 | 1 | — | local | todo | P2-E2-1 | `tools/xai_study/common/game_set.md`<br>`tools/xai_study/common/game_set.json` |
 | P2-E0-5 | Backlog construction (Sprint 0) | E0 | 0 | — | local | done |  | `backlog/**` |
-| P2-E1-1 | Intervention oracle (exact) | E1 | 1 | — | local | blocked | P2-E0-1, P2-E0-2 | `tools/xai_study/ground_truth/oracle_intervene.*`<br>`tools/xai_study/ground_truth/out/oracle_*` |
+| P2-E1-1 | Intervention oracle (exact) | E1 | 1 | — | local | done | P2-E0-1, P2-E0-2 | `tools/xai_study/ground_truth/oracle_intervene.*`<br>`tools/xai_study/ground_truth/out/oracle_*`<br>`tools/xai_study/ground_truth/test_oracle.jl`<br>`tools/xai_study/common/jutari_oracle.jl` |
 | P2-E1-2 | Gradient oracle (content path) | E1 | 1 | — | local | todo | P2-E1-1 | `tools/xai_study/ground_truth/oracle_grad.*` |
 | P2-E1-3 | Oracle cross-check + validation | E1 | 1 | — | local | todo | P2-E1-1, P2-E1-2 | `tools/xai_study/ground_truth/oracle_xcheck.*`<br>`tools/xai_study/ground_truth/out/oracle_xcheck_*` |
 | P2-E2-1 | Import OCAtari/AtariARI candidate labels | E2 | 1 | agent-2 | local | done |  | `tools/xai_study/t3/import_labels.*`<br>`tools/xai_study/t3/out/candidates_*` |
