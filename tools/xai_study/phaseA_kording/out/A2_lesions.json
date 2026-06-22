@@ -1,0 +1,95 @@
+{
+  "arrays": "A2_lesions.npz",
+  "ci": null,
+  "commit": "3b9c5a2",
+  "game": "core_set",
+  "games": [
+    "pong",
+    "breakout",
+    "space_invaders",
+    "seaquest",
+    "ms_pacman",
+    "qbert"
+  ],
+  "method": "A2_lesions(exhaustive single-unit lesion importance map)",
+  "metric_name": "mean_lesion_importance_spearman_vs_oracle_role",
+  "n": 6,
+  "oracle_ref": "oracle_intervene (per-unit causal role per game)",
+  "paper": "P2",
+  "per_game": {
+    "breakout": {
+      "false_specificity_rate": 0.0,
+      "interaction_missed_rate": 0.027777777777777776,
+      "max_superadditive_delta": 0.0,
+      "n_units": 9,
+      "positive_control_rho": 0.9999999999999999,
+      "spearman_rho_lesion_vs_oracle": 0.9737945687202025,
+      "triad_F": 0.9737945687202025,
+      "triad_M": 1.0,
+      "triad_S": 0.9029731455405514
+    },
+    "ms_pacman": {
+      "false_specificity_rate": 0.14285714285714285,
+      "interaction_missed_rate": 0.03636363636363636,
+      "max_superadditive_delta": 0.0,
+      "n_units": 19,
+      "positive_control_rho": 0.9999999999999998,
+      "spearman_rho_lesion_vs_oracle": 0.9999999999999998,
+      "triad_F": 0.9999999999999998,
+      "triad_M": 0.8571428571428572,
+      "triad_S": 0.3675204491286011
+    },
+    "pong": {
+      "false_specificity_rate": 0.0,
+      "interaction_missed_rate": 0.10714285714285714,
+      "max_superadditive_delta": 128.0,
+      "n_units": 8,
+      "positive_control_rho": 1.0000000000000002,
+      "spearman_rho_lesion_vs_oracle": 1.0000000000000002,
+      "triad_F": 1.0000000000000002,
+      "triad_M": 1.0,
+      "triad_S": 1.0000000000000002
+    },
+    "qbert": {
+      "false_specificity_rate": 0.0,
+      "interaction_missed_rate": 0.05454545454545454,
+      "max_superadditive_delta": 19.0,
+      "n_units": 20,
+      "positive_control_rho": 0.9999999999999998,
+      "spearman_rho_lesion_vs_oracle": 0.9984051036682614,
+      "triad_F": 0.9984051036682614,
+      "triad_M": 1.0,
+      "triad_S": 0.16422497766923685
+    },
+    "seaquest": {
+      "false_specificity_rate": 0.06666666666666667,
+      "interaction_missed_rate": 0.14545454545454545,
+      "max_superadditive_delta": 228.0,
+      "n_units": 23,
+      "positive_control_rho": 1.0,
+      "spearman_rho_lesion_vs_oracle": 1.0,
+      "triad_F": 1.0,
+      "triad_M": 0.9333333333333333,
+      "triad_S": 0.7986045033197152
+    },
+    "space_invaders": {
+      "false_specificity_rate": 0.25,
+      "interaction_missed_rate": 0.4,
+      "max_superadditive_delta": 1044.0,
+      "n_units": 17,
+      "positive_control_rho": 0.9999999999999999,
+      "spearman_rho_lesion_vs_oracle": 0.9753694581280786,
+      "triad_F": 0.9753694581280786,
+      "triad_M": 0.75,
+      "triad_S": 0.5061943216035562
+    }
+  },
+  "phase": "phaseA_kording",
+  "seed": 0,
+  "state": "f30+30",
+  "stderr": null,
+  "target_output": "per-unit behavioural-importance map (per game)",
+  "timestamp": "1782159345",
+  "value": 0.9912615217527572,
+  "where": "local"
+}
