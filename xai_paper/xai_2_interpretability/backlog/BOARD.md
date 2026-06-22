@@ -5,7 +5,7 @@
 | ID | Title | Epic | Sprint | Owner | Where | Status | Depends on | File-scope |
 |----|-------|------|--------|-------|-------|--------|------------|------------|
 | P2-E0-1 | Harness skeleton & results schema | E0 | 0 | — | local | done |  | `tools/xai_study/common/__init__.py`<br>`tools/xai_study/common/loader.py`<br>`tools/xai_study/common/replay.py`<br>`tools/xai_study/common/results.py`<br>`tools/xai_study/common/seeds.py`<br>`tools/xai_study/common/conftest.py`<br>`tools/xai_study/common/test_common.py` |
-| P2-E0-2j | jutari state/trajectory recorder | E0 | 3 | — | local | todo | P2-E1-1 | `tools/xai_study/common/jutari_record.jl`<br>`tools/xai_study/common/test_jutari_record.jl`<br>`tools/xai_study/common/out/traj_*` |
+| P2-E0-2j | jutari state/trajectory recorder | E0 | 3 | — | local | done | P2-E1-1 | `tools/xai_study/common/jutari_record.jl`<br>`tools/xai_study/common/test_jutari_record.jl`<br>`tools/xai_study/common/out/traj_*` |
 | P2-E0-2 | State/trajectory recorder | E0 | 1 | agent-P2-S1-E0-2 | local | done | P2-E0-1 | `tools/xai_study/common/record_state.*` |
 | P2-E0-3 | Cluster job templates | E0 | 0 | — | local | done |  | `tools/cluster/xai_*.sbatch`<br>`tools/xai_study/common/cluster.md` |
 | P2-E0-4 | Game-set + T3 coverage audit | E0 | 1 | — | local | done | P2-E2-1 | `tools/xai_study/common/game_set.md`<br>`tools/xai_study/common/game_set.json` |
@@ -16,7 +16,7 @@
 | P2-E2-1 | Import OCAtari/AtariARI candidate labels | E2 | 1 | agent-2 | local | done |  | `tools/xai_study/t3/import_labels.*`<br>`tools/xai_study/t3/out/candidates_*` |
 | P2-E2-2 | Verify-by-intervention + offset-correct T3 labels | E2 | 2 | — | local | todo | P2-E2-1, P2-E1-1 | `tools/xai_study/t3/verify_labels.*`<br>`tools/xai_study/t3/out/verified_*` |
 | P2-E2-3 | Discover new T3 labels (correlation + sweep) | E2 | 2 | — | cluster | todo | P2-E2-2 | `tools/xai_study/t3/discover_labels.*`<br>`tools/xai_study/t3/out/discovered_*` |
-| P2-E3-0 | Phase-A pilot (A2+A3+A7 on Space Invaders, scored) | E3 | 3 | — | local | todo | P2-E1-1, P2-E0-2j | `tools/xai_study/phaseA_kording/pilot_si.*`<br>`tools/xai_study/phaseA_kording/out/pilotA_*` |
+| P2-E3-0 | Phase-A pilot (A2+A3+A7 on Space Invaders, scored) | E3 | 3 | — | local | done | P2-E1-1, P2-E0-2j | `tools/xai_study/phaseA_kording/pilot_si.*`<br>`tools/xai_study/phaseA_kording/out/pilotA_*` |
 | P2-E3-1 | A1 connectomics / data-flow graph recovery | E3 | 3 | — | local | todo | P2-E3-0 | `tools/xai_study/phaseA_kording/A1_connectomics.py`<br>`tools/xai_study/phaseA_kording/out/A1_*` |
 | P2-E3-2 | A2 single-unit lesions importance map | E3 | 3 | — | cluster | todo | P2-E3-0 | `tools/xai_study/phaseA_kording/A2_lesions.py`<br>`tools/xai_study/phaseA_kording/out/A2_*` |
 | P2-E3-3 | A3 tuning curves + spurious-tuning rate | E3 | 3 | — | local | todo | P2-E3-0 | `tools/xai_study/phaseA_kording/A3_tuning.py`<br>`tools/xai_study/phaseA_kording/out/A3_*` |
@@ -40,7 +40,7 @@
 | P2-E4-11 | KernelSHAP / Shapley sampling attribution vs oracle | E4 | 3 | — | cluster | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/kernelshap_shapley.py`<br>`tools/xai_study/phaseB_attribution/out/kernelshap_shapley_*` |
 | P2-E4-12 | On-distribution counterfactual attribution vs oracle | E4 | 3 | — | cluster | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/counterfactual_ondist.py`<br>`tools/xai_study/phaseB_attribution/out/counterfactual_ondist_*` |
 | P2-E4-13 | N/A audit — Grad-CAM/attention/VIPER do-not-apply writeup | E4 | 3 | — | local | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/na_audit.py`<br>`tools/xai_study/phaseB_attribution/out/na_audit_*` |
-| P2-E5-0 | Phase-C pilot — activation patching + 1 SAE on VCS state | E5 | 3 | — | local | todo | P2-E1-1, P2-E0-2j | `tools/xai_study/phaseC_mechanistic/pilot_patch_sae.py`<br>`tools/xai_study/phaseC_mechanistic/out/pilotC_*` |
+| P2-E5-0 | Phase-C pilot — activation patching + 1 SAE on VCS state | E5 | 3 | — | local | done | P2-E1-1, P2-E0-2j | `tools/xai_study/phaseC_mechanistic/pilot_patch_sae.jl`<br>`tools/xai_study/phaseC_mechanistic/pilot_patch_sae.py`<br>`tools/xai_study/phaseC_mechanistic/out/pilotC_*` |
 | P2-E5-1 | Activation patching / causal tracing vs exact patch | E5 | 3 | — | cluster | todo | P2-E5-0 | `tools/xai_study/phaseC_mechanistic/activation_patching.py`<br>`tools/xai_study/phaseC_mechanistic/out/activation_patching_*` |
 | P2-E5-2 | Interchange interventions / DAS vs true variable alignment | E5 | 3 | — | cluster | todo | P2-E5-0 | `tools/xai_study/phaseC_mechanistic/interchange_das.py`<br>`tools/xai_study/phaseC_mechanistic/out/interchange_das_*` |
 | P2-E5-3 | Attribution patching / edge patching vs true patching | E5 | 3 | — | cluster | todo | P2-E5-0 | `tools/xai_study/phaseC_mechanistic/attribution_patching.py`<br>`tools/xai_study/phaseC_mechanistic/out/attribution_patching_*` |
