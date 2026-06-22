@@ -37,8 +37,8 @@ jobs:
           # worker's growing RSS can't sum past 16 GB.
           - group: p7-soft
             args: "-n 2 tests/test_p7b.py tests/test_p7c_*.py tests/test_p7d.py"
-          - group: p7-func
-            args: "-n 2 tests/test_p7f_*.py"
+          - group: p7-func          # heavier per-test RSS than p7-soft → serial
+            args: "-n 1 tests/test_p7f_*.py"
           - group: p8-attrib          # integrated-gradients — the heaviest; serial
             args: "-n 1 tests/test_p8_*.py"
           # Slow ROM-booting integration / conformance (light memory, just slow).

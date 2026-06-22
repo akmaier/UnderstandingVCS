@@ -237,6 +237,9 @@ def test_jaxtari_screen_matches_xitari(case: _Case):
     xi = _xitari(case)
     if xi is None:
         pytest.skip(f"[{case.name}] missing xitari screen fixture")
+    if not (_ROMS / case.rom).exists():
+        pytest.skip(f"[{case.name}] ROM {case.rom} not present (gitignored) — "
+                    f"the jaxtari-live boot needs the real ROM; run locally")
     jx = _jaxtari_screens(case, len(xi))
     diffs = _per_frame_diffs(xi, jx)
     worst = max(diffs)

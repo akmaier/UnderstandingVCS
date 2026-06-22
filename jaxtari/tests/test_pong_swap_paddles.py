@@ -8,15 +8,21 @@ the initial 0x6e / 0x6d because jaxtari put the user paddle on INPT0
 """
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path('/Users/maier/Documents/code/UnderstandingVCS') / 'jaxtari'))
+_REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(_REPO / 'jaxtari'))
 
 import numpy as np
+import pytest
 from jaxtari.env.stella_environment import StellaEnvironment
 from jaxtari.games.pong import PongRomSettings
 
+_PONG_ROM = _REPO / "xitari" / "roms" / "pong.bin"
 
+
+@pytest.mark.skipif(not _PONG_ROM.exists(),
+                    reason="pong.bin not present (gitignored ROM); run locally")
 def test_pong_paddle_moves_under_right_action():
-    rom = np.fromfile('/Users/maier/Documents/code/UnderstandingVCS/xitari/roms/pong.bin', dtype=np.uint8)
+    rom = np.fromfile(str(_PONG_ROM), dtype=np.uint8)
     env = StellaEnvironment(rom, PongRomSettings())
     env.reset(boot_noop_steps=60, boot_reset_steps=4)
     # Push 20 NOOPs + 1 FIRE + 3 NOOPs + several RIGHT actions

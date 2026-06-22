@@ -16,9 +16,11 @@ unit-test time, not after a costly side-by-side video re-render.
 """
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path('/Users/maier/Documents/code/UnderstandingVCS') / 'jaxtari'))
+_REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(_REPO / 'jaxtari'))
 
 import numpy as np
+import pytest
 
 from jaxtari.games.pong import (
     PongRomSettings,
@@ -42,6 +44,11 @@ def test_score_address_constants_match_xitari():
     assert PONG_TARGET_SCORE == 21
 
 
+_PONG_ROM = _REPO / "xitari" / "roms" / "pong.bin"
+
+
+@pytest.mark.skipif(not _PONG_ROM.exists(),
+                    reason="pong.bin not present (gitignored ROM); run locally")
 def test_pong_terminal_does_not_falsely_trigger_during_play():
     """The original bug: env.terminal became True after ~60 frames of
     FIRE+LEFT because $15 reads back >= 21 from sprite-pattern data.
@@ -49,9 +56,7 @@ def test_pong_terminal_does_not_falsely_trigger_during_play():
     """
     from jaxtari.env.stella_environment import StellaEnvironment
 
-    rom = np.fromfile(
-        '/Users/maier/Documents/code/UnderstandingVCS/xitari/roms/pong.bin',
-        dtype=np.uint8)
+    rom = np.fromfile(str(_PONG_ROM), dtype=np.uint8)
     env = StellaEnvironment(rom, PongRomSettings())
     env.reset(boot_noop_steps=60, boot_reset_steps=4)
     env.step(1)              # FIRE (start the ball)
