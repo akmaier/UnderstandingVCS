@@ -1,0 +1,647 @@
+{
+  "arrays": "A6_ms_pacman.npz",
+  "ci": null,
+  "commit": "68b6ba6",
+  "extra": {
+    "bit_exact_rerun": true,
+    "candidate_cells": [
+      "RAM[6]:enemy_sue_x",
+      "RAM[7]:enemy_inky_x",
+      "RAM[8]:enemy_pinky_x",
+      "RAM[9]:enemy_blinky_x",
+      "RAM[10]:player_x",
+      "RAM[11]:fruit_x",
+      "RAM[12]:enemy_sue_y",
+      "RAM[13]:enemy_inky_y",
+      "RAM[14]:enemy_pinky_y",
+      "RAM[15]:enemy_blinky_y",
+      "RAM[16]:player_y",
+      "RAM[17]:fruit_y",
+      "RAM[19]:ghosts_count",
+      "RAM[56]:player_direction",
+      "RAM[119]:dots_eaten_count",
+      "RAM[120]:player_score",
+      "RAM[123]:num_lives",
+      "RAM[121]:score",
+      "RAM[122]:score"
+    ],
+    "candidate_ram_indices": [
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      19,
+      56,
+      119,
+      120,
+      123,
+      121,
+      122
+    ],
+    "cell_scope": {
+      "direction_disagreement": 0.0,
+      "false_edge_rate": 0.8313253012048193,
+      "inferred_edges_0based": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          3
+        ],
+        [
+          0,
+          6
+        ],
+        [
+          0,
+          7
+        ],
+        [
+          0,
+          9
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          15
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          1,
+          6
+        ],
+        [
+          1,
+          7
+        ],
+        [
+          1,
+          8
+        ],
+        [
+          1,
+          9
+        ],
+        [
+          1,
+          13
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          6
+        ],
+        [
+          2,
+          7
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          2,
+          9
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          3,
+          6
+        ],
+        [
+          3,
+          8
+        ],
+        [
+          3,
+          9
+        ],
+        [
+          3,
+          13
+        ],
+        [
+          3,
+          14
+        ],
+        [
+          3,
+          15
+        ],
+        [
+          4,
+          0
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          4,
+          6
+        ],
+        [
+          4,
+          8
+        ],
+        [
+          4,
+          9
+        ],
+        [
+          4,
+          13
+        ],
+        [
+          4,
+          14
+        ],
+        [
+          4,
+          15
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          6,
+          4
+        ],
+        [
+          6,
+          9
+        ],
+        [
+          6,
+          13
+        ],
+        [
+          7,
+          0
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          7,
+          2
+        ],
+        [
+          7,
+          8
+        ],
+        [
+          7,
+          9
+        ],
+        [
+          7,
+          13
+        ],
+        [
+          7,
+          14
+        ],
+        [
+          7,
+          15
+        ],
+        [
+          8,
+          0
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          8,
+          2
+        ],
+        [
+          8,
+          3
+        ],
+        [
+          8,
+          6
+        ],
+        [
+          8,
+          7
+        ],
+        [
+          8,
+          13
+        ],
+        [
+          9,
+          0
+        ],
+        [
+          9,
+          3
+        ],
+        [
+          9,
+          4
+        ],
+        [
+          9,
+          6
+        ],
+        [
+          9,
+          13
+        ],
+        [
+          9,
+          14
+        ],
+        [
+          9,
+          15
+        ],
+        [
+          13,
+          3
+        ],
+        [
+          13,
+          4
+        ],
+        [
+          13,
+          9
+        ],
+        [
+          13,
+          14
+        ],
+        [
+          13,
+          15
+        ],
+        [
+          14,
+          0
+        ],
+        [
+          14,
+          2
+        ],
+        [
+          14,
+          3
+        ],
+        [
+          14,
+          6
+        ],
+        [
+          14,
+          7
+        ],
+        [
+          14,
+          9
+        ],
+        [
+          14,
+          13
+        ],
+        [
+          15,
+          0
+        ],
+        [
+          15,
+          2
+        ],
+        [
+          15,
+          3
+        ],
+        [
+          15,
+          6
+        ],
+        [
+          15,
+          7
+        ],
+        [
+          15,
+          9
+        ],
+        [
+          15,
+          13
+        ]
+      ],
+      "missed_edge_rate": 0.6666666666666666,
+      "n_inferred_edges": 83,
+      "n_nodes": 19,
+      "n_true_edges": 42,
+      "note": "false_edge_rate=#(Granger edge, true absent)/#Granger edges (=1−precision); missed_edge_rate=#(true edge, Granger absent)/#true edges (=1−recall); direction_disagreement = of unordered pairs with a single true AND single Granger arrow, the fraction whose directions OPPOSE — the headline temporal-precedence≠causation Granger failure.",
+      "true_edges_0based": [
+        [
+          0,
+          6
+        ],
+        [
+          1,
+          7
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          3,
+          9
+        ],
+        [
+          4,
+          0
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          4,
+          7
+        ],
+        [
+          4,
+          8
+        ],
+        [
+          4,
+          14
+        ],
+        [
+          4,
+          15
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          2
+        ],
+        [
+          9,
+          0
+        ],
+        [
+          9,
+          3
+        ],
+        [
+          10,
+          4
+        ],
+        [
+          10,
+          14
+        ],
+        [
+          10,
+          15
+        ],
+        [
+          12,
+          0
+        ],
+        [
+          12,
+          1
+        ],
+        [
+          12,
+          2
+        ],
+        [
+          12,
+          3
+        ],
+        [
+          12,
+          4
+        ],
+        [
+          12,
+          5
+        ],
+        [
+          12,
+          6
+        ],
+        [
+          12,
+          7
+        ],
+        [
+          12,
+          8
+        ],
+        [
+          12,
+          9
+        ],
+        [
+          12,
+          10
+        ],
+        [
+          12,
+          11
+        ],
+        [
+          12,
+          13
+        ],
+        [
+          12,
+          14
+        ],
+        [
+          12,
+          15
+        ],
+        [
+          12,
+          17
+        ],
+        [
+          12,
+          18
+        ],
+        [
+          16,
+          0
+        ],
+        [
+          16,
+          3
+        ],
+        [
+          16,
+          7
+        ],
+        [
+          16,
+          8
+        ],
+        [
+          18,
+          15
+        ],
+        [
+          18,
+          16
+        ]
+      ]
+    },
+    "conformance_note": "scored oracle frame f330+30 is BEYOND the strict 60-frame screen conformance window — the game only reaches live play later. This is an HONEST descriptive jutari result (the bit-exact jutari re-run IS asserted), not an xitari-parity claim; A6 is the calibration baseline.",
+    "granger_estimator": {
+      "alpha": 0.05,
+      "edge_rule": "canonical Granger: edge x→y iff the F-test p-value ≤ alpha (significance), optionally AND-gated by a magnitude floor G(x→y) ≥ granger_tau (default granger_tau=0.0 = significance alone, the textbook procedure)",
+      "form": "bivariate lag-p log-likelihood-ratio G(x→y)=ln(RSS_restricted/RSS_unrestricted) (Geweke 1982)",
+      "granger_tau": 0.0,
+      "lag": 2,
+      "pvalue": "F-test on the RSS drop; survival function via the regularized incomplete beta (dependency-free)"
+    },
+    "positive_control": {
+      "f1": 1.0,
+      "false_edge_rate": 0.0,
+      "method": "true-data-flow-graph-as-method",
+      "missed_edge_rate": 0.0,
+      "note": "scoring the exact true graph as the candidate method yields false-edge=missed-edge=0, F1=1 — the harness rewards a perfectly-faithful directed map, so a sub-1 Granger F is a real measurement."
+    },
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
+    "scored_in_conformance_window": false,
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the true data-flow graph uses EXACT interventions re-run on the true ROM.",
+    "subsystem_scope": {
+      "activity_metric": "per-frame #bytes changed vs previous frame (CPU=RAM working set lower 3/4; TIA=64-byte register file; RIOT=upper-RAM timer/SWCHx I/O block)",
+      "direction_disagreement": 1.0,
+      "false_edge_rate": 1.0,
+      "inferred_edges_0based": [
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          2
+        ]
+      ],
+      "missed_edge_rate": 1.0,
+      "note": "on a tightly clock-locked frame loop Granger generically infers DENSE bidirectional edges among all co-active subsystems (every subsystem's past predicts every other's) — false-edge rate > 0 despite the true data-flow being sparse and directional.",
+      "subsystems": [
+        "CPU",
+        "TIA",
+        "RIOT"
+      ],
+      "true_dataflow_edges_0based": [
+        [
+          0,
+          1
+        ],
+        [
+          2,
+          0
+        ]
+      ],
+      "true_dataflow_note": "T2 known data-flow: the 6507 CPU is the only bus master — CPU→TIA (writes graphics), RIOT→CPU (reads timer/inputs); TIA and RIOT never drive each other or the CPU. Index order [CPU,TIA,RIOT]."
+    },
+    "trajectory_frames": 400,
+    "trajectory_trace": "directional maze trace (FIRE warmup + cyclic UP/DOWN/LEFT/RIGHT)",
+    "triad": {
+      "F": 0.22399999999999995,
+      "F_note": "F1 of the Granger-inferred directed edges vs the exact-oracle true data-flow edges (19 candidate cells)",
+      "M": 0.1686746987951807,
+      "M_note": "1 − false-edge rate: fraction of Granger-inferred edges the oracle says are spurious (temporal precedence ≠ causation)",
+      "S": 0.7222222222222222,
+      "S_note": "off-diagonal directed-edge agreement between the Granger graph and the HELD-OUT base+37 true data-flow (generalisation to an unseen intervention, bit-exact re-run)",
+      "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): Granger causality infers TEMPORAL PRECEDENCE, which is NOT the true causal data-flow direction. On a deterministic register-transfer machine the two demonstrably disagree — false_edge_rate>0, missed_edge_rate>0, and direction_disagreement>0 quantify the departure from the known data-flow.",
+      "n_inferred_edges": 83,
+      "n_nodes": 19,
+      "n_true_edges": 42
+    }
+  },
+  "game": "ms_pacman",
+  "method": "A6_granger_causality(CPU/TIA/RIOT + cell-cell directed edges)",
+  "metric_name": "A6_cell_false_edge_rate_vs_true_dataflow",
+  "n": 19,
+  "oracle_ref": "oracle_intervene@ms_pacman#directed-data-flow(candidate cells)",
+  "paper": "P2",
+  "phase": "phaseA_kording",
+  "seed": 0,
+  "state": "f330+30",
+  "stderr": null,
+  "target_output": "directed data-flow edges (CPU/TIA/RIOT subsystems + candidate RAM cells)",
+  "timestamp": "1782142726",
+  "value": 0.8313253012048193,
+  "where": "local"
+}

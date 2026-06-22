@@ -1,0 +1,159 @@
+{
+  "arrays": "A6_breakout.npz",
+  "ci": null,
+  "commit": "68b6ba6",
+  "extra": {
+    "bit_exact_rerun": true,
+    "candidate_cells": [
+      "RAM[30]:block_bit_map",
+      "RAM[72]:player_x",
+      "RAM[77]:blocks_hit_count",
+      "RAM[84]:score",
+      "RAM[99]:ball_x",
+      "RAM[101]:ball_y",
+      "RAM[0]:blocks",
+      "RAM[57]:lives",
+      "RAM[76]:score"
+    ],
+    "candidate_ram_indices": [
+      30,
+      72,
+      77,
+      84,
+      99,
+      101,
+      0,
+      57,
+      76
+    ],
+    "cell_scope": {
+      "direction_disagreement": 0.0,
+      "false_edge_rate": 0.3333333333333333,
+      "inferred_edges_0based": [
+        [
+          5,
+          1
+        ],
+        [
+          5,
+          4
+        ],
+        [
+          7,
+          4
+        ]
+      ],
+      "missed_edge_rate": 0.6,
+      "n_inferred_edges": 3,
+      "n_nodes": 9,
+      "n_true_edges": 5,
+      "note": "false_edge_rate=#(Granger edge, true absent)/#Granger edges (=1−precision); missed_edge_rate=#(true edge, Granger absent)/#true edges (=1−recall); direction_disagreement = of unordered pairs with a single true AND single Granger arrow, the fraction whose directions OPPOSE — the headline temporal-precedence≠causation Granger failure.",
+      "true_edges_0based": [
+        [
+          2,
+          3
+        ],
+        [
+          5,
+          4
+        ],
+        [
+          5,
+          7
+        ],
+        [
+          7,
+          4
+        ],
+        [
+          7,
+          5
+        ]
+      ]
+    },
+    "conformance_note": "scored oracle frame f60+30 is inside the Paper-1 60-frame screen conformance window (jutari↔xitari bit-exact).",
+    "granger_estimator": {
+      "alpha": 0.05,
+      "edge_rule": "canonical Granger: edge x→y iff the F-test p-value ≤ alpha (significance), optionally AND-gated by a magnitude floor G(x→y) ≥ granger_tau (default granger_tau=0.0 = significance alone, the textbook procedure)",
+      "form": "bivariate lag-p log-likelihood-ratio G(x→y)=ln(RSS_restricted/RSS_unrestricted) (Geweke 1982)",
+      "granger_tau": 0.0,
+      "lag": 2,
+      "pvalue": "F-test on the RSS drop; survival function via the regularized incomplete beta (dependency-free)"
+    },
+    "positive_control": {
+      "f1": 1.0,
+      "false_edge_rate": 0.0,
+      "method": "true-data-flow-graph-as-method",
+      "missed_edge_rate": 0.0,
+      "note": "scoring the exact true graph as the candidate method yields false-edge=missed-edge=0, F1=1 — the harness rewards a perfectly-faithful directed map, so a sub-1 Granger F is a real measurement."
+    },
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
+    "scored_in_conformance_window": true,
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the true data-flow graph uses EXACT interventions re-run on the true ROM.",
+    "subsystem_scope": {
+      "activity_metric": "per-frame #bytes changed vs previous frame (CPU=RAM working set lower 3/4; TIA=64-byte register file; RIOT=upper-RAM timer/SWCHx I/O block)",
+      "direction_disagreement": 0.0,
+      "false_edge_rate": 0.6666666666666666,
+      "inferred_edges_0based": [
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          0
+        ]
+      ],
+      "missed_edge_rate": 0.5,
+      "note": "on a tightly clock-locked frame loop Granger generically infers DENSE bidirectional edges among all co-active subsystems (every subsystem's past predicts every other's) — false-edge rate > 0 despite the true data-flow being sparse and directional.",
+      "subsystems": [
+        "CPU",
+        "TIA",
+        "RIOT"
+      ],
+      "true_dataflow_edges_0based": [
+        [
+          0,
+          1
+        ],
+        [
+          2,
+          0
+        ]
+      ],
+      "true_dataflow_note": "T2 known data-flow: the 6507 CPU is the only bus master — CPU→TIA (writes graphics), RIOT→CPU (reads timer/inputs); TIA and RIOT never drive each other or the CPU. Index order [CPU,TIA,RIOT]."
+    },
+    "trajectory_frames": 150,
+    "trajectory_trace": "active trace (4×FIRE + periodic RIGHTFIRE/LEFTFIRE)",
+    "triad": {
+      "F": 0.5,
+      "F_note": "F1 of the Granger-inferred directed edges vs the exact-oracle true data-flow edges (9 candidate cells)",
+      "M": 0.6666666666666667,
+      "M_note": "1 − false-edge rate: fraction of Granger-inferred edges the oracle says are spurious (temporal precedence ≠ causation)",
+      "S": 0.9444444444444444,
+      "S_note": "off-diagonal directed-edge agreement between the Granger graph and the HELD-OUT base+37 true data-flow (generalisation to an unseen intervention, bit-exact re-run)",
+      "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): Granger causality infers TEMPORAL PRECEDENCE, which is NOT the true causal data-flow direction. On a deterministic register-transfer machine the two demonstrably disagree — false_edge_rate>0, missed_edge_rate>0, and direction_disagreement>0 quantify the departure from the known data-flow.",
+      "n_inferred_edges": 3,
+      "n_nodes": 9,
+      "n_true_edges": 5
+    }
+  },
+  "game": "breakout",
+  "method": "A6_granger_causality(CPU/TIA/RIOT + cell-cell directed edges)",
+  "metric_name": "A6_cell_false_edge_rate_vs_true_dataflow",
+  "n": 9,
+  "oracle_ref": "oracle_intervene@breakout#directed-data-flow(candidate cells)",
+  "paper": "P2",
+  "phase": "phaseA_kording",
+  "seed": 0,
+  "state": "f60+30",
+  "stderr": null,
+  "target_output": "directed data-flow edges (CPU/TIA/RIOT subsystems + candidate RAM cells)",
+  "timestamp": "1782142764",
+  "value": 0.3333333333333333,
+  "where": "local"
+}
