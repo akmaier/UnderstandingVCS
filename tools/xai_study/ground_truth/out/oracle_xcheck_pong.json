@@ -1,0 +1,114 @@
+{
+  "arrays": "oracle_xcheck_pong.npz",
+  "ci": null,
+  "commit": "22881c2",
+  "extra": {
+    "content_path": {
+      "agrees": true,
+      "gradient": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "interpretation": "on the content path the forward-exact one-hot gradient (=1 per unit colour) PREDICTS the exact finite intervention Δ (∂y/∂u×step = true Δ; residual≈0; ρ≈r≈+1) ⇒ the gradient is a valid companion to the exact oracle there.",
+      "intervention_per_unit": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "max_abs_residual": 0.0,
+      "n_paired": 16,
+      "paired_exact_delta": [
+        4.0,
+        8.0,
+        16.0,
+        32.0,
+        4.0,
+        8.0,
+        16.0,
+        32.0,
+        4.0,
+        8.0,
+        16.0,
+        32.0,
+        4.0,
+        8.0,
+        16.0,
+        32.0
+      ],
+      "paired_predicted_delta": [
+        4.0,
+        8.0,
+        16.0,
+        32.0,
+        4.0,
+        8.0,
+        16.0,
+        32.0,
+        4.0,
+        8.0,
+        16.0,
+        32.0,
+        4.0,
+        8.0,
+        16.0,
+        32.0
+      ],
+      "pearson": 1.0,
+      "regs": [
+        "COLUP0(left-paddle/agent)",
+        "COLUP1(right-paddle/ball)",
+        "COLUPF(playfield/score)",
+        "COLUBK(background)"
+      ],
+      "saturated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "spearman": 1.0
+    },
+    "disagreement_reasons": "index = discrete sprite-position gradient vanishes (round) while intervention sees a finite move; saturated = finite Δ clamps to 0 while the linear content gradient stays 1; non_smooth = naive index flat where the bilinear sampler has a step.",
+    "disagreements": [
+      {
+        "gradient": 0.0,
+        "intervention": 20.0,
+        "name": "ball_x_position",
+        "note": "naive ∂(pixel)/∂(ball x) through round() = 0.0 (vanishes); the intervention oracle moves the same pixel by a finite Δ = 20.0. The intervention oracle is the SOLE ground truth for position/index/event outputs; gradient methods are methods-under-test in Phase B.",
+        "reason": "index"
+      },
+      {
+        "gradient": 0.0,
+        "intervention": 166.0,
+        "name": "sprite_edge_nonsmooth",
+        "note": "at the sprite edge the naive index gradient = 0.0 (flat) while the bilinear sampler restores a nonzero slope = 166.0. The sampler is the documented workaround (Paper-1 sub-pixel sampler), NOT the oracle for position outputs — E1-1 is.",
+        "reason": "non_smooth"
+      }
+    ],
+    "experiment_design_ref": "experiment_design.md §1 'Cross-check': correlation between intervention and gradient on the content path; disagreement (non-smooth/saturated/index) is reported, not hidden.",
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) + the retained jaxtari GPU SOFT-STE path — the SOFT forward is bit-exact to this HARD map.",
+    "substrate": "jutari (Julia) — exact intervention (HARD re-run) × Zygote content-path gradient; reuses oracle_intervene.jl + oracle_grad.jl + jutari_oracle.jl.",
+    "verdict": {
+      "content_companion_agrees": true,
+      "intervention_oracle_is_reference_for_ABC": true,
+      "statement": "VALIDATED: on the content path the gradient companion agrees with the exact intervention oracle; OFF the content path (index/saturated/non-smooth) they disagree as predicted by the Paper-1 caveat. The EXACT INTERVENTION ORACLE (P2-E1-1) is hereby declared the reference instrument for Phases A/B/C; the gradient is its companion on content outputs only, and gradient methods are evaluated as methods-under-test in Phase B (E4) for position/index/event outputs."
+    }
+  },
+  "game": "pong",
+  "method": "oracle_xcheck_intervention_vs_gradient",
+  "metric_name": "spearman_content_path",
+  "n": 4,
+  "oracle_ref": "oracle_intervene@pong#score,ball_pixel × oracle_grad@pong#content_path",
+  "paper": "P2",
+  "phase": "ground_truth",
+  "seed": 0,
+  "state": "f120+30",
+  "stderr": null,
+  "target_output": "content_pixel(colour-register path) vs ball-position pixel",
+  "timestamp": "1782105515",
+  "value": 1.0,
+  "where": "local"
+}
