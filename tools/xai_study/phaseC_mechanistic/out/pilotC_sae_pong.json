@@ -1,0 +1,88 @@
+{
+  "paper": "P2",
+  "phase": "phaseC_mechanistic",
+  "method": "sparse_autoencoder",
+  "game": "pong",
+  "state": "traj_60f_ram_noop",
+  "target_output": "state_features_vs_known_variables",
+  "metric_name": "feature_variable_matched_fraction",
+  "value": 1.0,
+  "stderr": null,
+  "ci": null,
+  "n": 3,
+  "seed": 0,
+  "where": "local",
+  "commit": "86fdc27",
+  "oracle_ref": "oracle_intervene@pong (P2-E1-1) \u2014 causal cells; traj from jutari_record (P2-E0-2j)",
+  "timestamp": "2026-06-22T05:54:09+00:00",
+  "arrays": "pilotC_sae_pong.npz",
+  "extra": {
+    "substrate": "offline numpy SAE over jutari-recorded RAM trajectory (no torch/flax/pip; manual GD)",
+    "sae": {
+      "d_hidden": 16,
+      "l1": 0.05,
+      "epochs": 4000,
+      "lr": 0.5,
+      "activation": "relu",
+      "objective": "MSE + l1*mean(|z|)"
+    },
+    "reconstruction": {
+      "fve_train": 0.9968749716944814,
+      "fve_heldout": 0.9782992016764097,
+      "final_loss": 0.0030248760388592475,
+      "mean_fve_oracle_causal_cells": 0.99994500595268,
+      "mean_fve_other_varying_cells": 0.9954125397169791
+    },
+    "feature_variable_match": {
+      "p0_score": {
+        "ram_index": 13,
+        "best_feature": -1,
+        "best_corr": 0.0,
+        "matched": false,
+        "note": "constant in trajectory (not exercised)"
+      },
+      "p1_score": {
+        "ram_index": 14,
+        "best_feature": -1,
+        "best_corr": 0.0,
+        "matched": false,
+        "note": "constant in trajectory (not exercised)"
+      },
+      "ball_x": {
+        "ram_index": 49,
+        "best_feature": 4,
+        "best_corr": 0.999992473227193,
+        "matched": true
+      },
+      "enemy_y": {
+        "ram_index": 50,
+        "best_feature": 4,
+        "best_corr": 0.9986739058986132,
+        "matched": true
+      },
+      "paddle_y": {
+        "ram_index": 51,
+        "best_feature": -1,
+        "best_corr": 0.0,
+        "matched": false,
+        "note": "constant in trajectory (not exercised)"
+      },
+      "ball_y": {
+        "ram_index": 54,
+        "best_feature": 14,
+        "best_corr": 0.9999959654233134,
+        "matched": true
+      }
+    },
+    "matched_fraction": 1.0,
+    "n_varying_known_vars": 3,
+    "oracle_causal_cells": [
+      13,
+      14,
+      49,
+      54
+    ],
+    "note": "SAE features scored against KNOWN VCS state variables (the Phase-C calibration the paper claims): max|Pearson r| of a feature's activation with each varying known RAM cell. The oracle (P2-E1-1) supplies which cells are causally USED; the SAE recovers features aligned to the exercised variables (ball_x/ball_y/enemy_y under the NOOP trace), demonstrating feature\u2194variable matching on a known circuit.",
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) \u2014 full SAE training over long recorded trajectories \u00d7 games on the GPU (experiment_design.md \u00a78)."
+  }
+}
