@@ -33,19 +33,32 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # JAX autodiff (memory-heavy). Bounded subsets + low xdist so a
-          # worker's growing RSS can't sum past 16 GB.
+          # JAX autodiff (memory-heavy). Bounded subsets + low xdist + per-test
+          # JAX cache clearing (clear:"1" → XAI_CLEAR_JAX_CACHES; see conftest.py)
+          # so a worker's RSS can't climb past 16 GB. test_p7f_* OOM'd even as one
+          # -n1 group (cache accumulation across the suite), so it is split 3 ways.
           - group: p7-soft
             args: "-n 2 tests/test_p7b.py tests/test_p7c_*.py tests/test_p7d.py"
-          - group: p7-func          # heavier per-test RSS than p7-soft → serial
-            args: "-n 1 tests/test_p7f_*.py"
+            clear: "1"
+          - group: p7f-ab
+            args: "-n 1 tests/test_p7f_a.py tests/test_p7f_b.py"
+            clear: "1"
+          - group: p7f-cd
+            args: "-n 1 tests/test_p7f_c.py tests/test_p7f_d.py"
+            clear: "1"
+          - group: p7f-vblank
+            args: "-n 1 tests/test_p7f_vblank.py"
+            clear: "1"
           - group: p8-attrib          # integrated-gradients — the heaviest; serial
             args: "-n 1 tests/test_p8_*.py"
+            clear: "1"
           # Slow ROM-booting integration / conformance (light memory, just slow).
           - group: boot
             args: "-n 2 tests/test_p6*.py tests/test_breakout*.py tests/test_pong*.py"
+            clear: ""
           - group: screen
             args: "-n 2 tests/test_screen*.py"
+            clear: ""
     steps:
       - uses: actions/checkout@v4
 
@@ -64,4 +77,6 @@ jobs:
       # overrides the `-n auto` from pyproject addopts. conftest pins threads.
       - name: Run pytest — heavy ${{ matrix.group }}
         working-directory: jaxtari
+        env:
+          XAI_CLEAR_JAX_CACHES: ${{ matrix.clear }}
         run: pytest -q --max-worker-restart=4 ${{ matrix.args }}
