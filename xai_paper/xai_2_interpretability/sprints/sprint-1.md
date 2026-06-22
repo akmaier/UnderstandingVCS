@@ -23,4 +23,30 @@ absolute paths** (ROMs at `xitari/games/Atari-2600-VCS-ROM-Collection/ROMS/`, ja
 `.venv`, `julia --project=.../jutari`); never modify the emulator core.
 
 ## Review
-_(to be filled at the Sprint-1 barrier)_
+**Foundation: DONE (4/4), verified.** E0-1 harness, E0-2 recorder, E0-3 cluster templates,
+E2-1 T3 candidate labels — built, pushed, present; the shared jaxtari venv is intact
+(numpy 2.4.6 / jax 0.10.1 / smoke OK) after E2-1's transient ocatari→numpy churn (restored).
+
+**E1-1 intervention oracle: code written (`fc9316c`) but BLOCKED — NOT verified.**
+`oracle_intervene.py` + `test_oracle.py` are implemented and logic-checked (reads Pong
+$0D/$0E, 18 causes set/occlude/replace, bit-exact assertion + §R writer), but it could not
+RUN: a single **jaxtari eager** Pong boot is ~10 min (E0-1's test = 1305 s for 2 boots; an
+SM diagnostic timed out at 280 s for one boot in the *primary*). The oracle needs ~3 boots
++ interventions → it stalled even at 28 min. The bit-exact assertion never executed; no
+causal-map artifact exists. Status: **blocked**.
+
+**Root cause + decision (PAUSED for PO).** The foundation was built on the **jaxtari eager**
+HARD path, which is ~**205× slower than jutari** — ~10 min/boot makes it unusable for the
+experiment volume (B/C = methods × games × many interventions). jaxtari's speed lives only
+in its **jit+vmap SOFT-STE GPU-batch** path, not eager HARD stepping. **Recommendation:**
+run experiments on **jutari (Julia)** — the proven fast real-ROM path (`tools/xai_si_gradient`
+already does real-Pong gradients there) with native Zygote differentiability for the
+gradient oracle — and reserve jaxtari for **GPU-batched SOFT sweeps on the cluster**. This
+re-targets E0-1 (loader/replay), E0-2 (recorder), and E1-1 (oracle) onto jutari. **Awaiting
+PO go-ahead before Sprint 2.**
+
+**Retro / process fixes (apply on pivot):** (1) agents must NOT `pip install` into the
+shared venv — E2-1 broke jax transiently (add SCRUM §7 gotcha; done in spirit). (2) make
+"experiments run on **jutari** locally; jaxtari = **cluster GPU-batch** only" an explicit
+ENV fact in SCRUM/SPEC. (3) heavy-RUN items need real ROMs/venv — worktrees lack gitignored
+files; run them in the primary or provision the worktree.

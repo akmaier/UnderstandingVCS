@@ -4,15 +4,15 @@
 
 | ID | Title | Epic | Sprint | Owner | Where | Status | Depends on | File-scope |
 |----|-------|------|--------|-------|-------|--------|------------|------------|
-| P2-E0-1 | Harness skeleton & results schema | E0 | 0 | — | local | todo |  | `tools/xai_study/common/__init__.py`<br>`tools/xai_study/common/loader.py`<br>`tools/xai_study/common/replay.py`<br>`tools/xai_study/common/results.py`<br>`tools/xai_study/common/seeds.py`<br>`tools/xai_study/common/conftest.py`<br>`tools/xai_study/common/test_common.py` |
-| P2-E0-2 | State/trajectory recorder | E0 | 1 | — | local | todo | P2-E0-1 | `tools/xai_study/common/record_state.*` |
-| P2-E0-3 | Cluster job templates | E0 | 0 | — | local | todo |  | `tools/cluster/xai_*.sbatch`<br>`tools/xai_study/common/cluster.md` |
+| P2-E0-1 | Harness skeleton & results schema | E0 | 0 | — | local | done |  | `tools/xai_study/common/__init__.py`<br>`tools/xai_study/common/loader.py`<br>`tools/xai_study/common/replay.py`<br>`tools/xai_study/common/results.py`<br>`tools/xai_study/common/seeds.py`<br>`tools/xai_study/common/conftest.py`<br>`tools/xai_study/common/test_common.py` |
+| P2-E0-2 | State/trajectory recorder | E0 | 1 | agent-P2-S1-E0-2 | local | done | P2-E0-1 | `tools/xai_study/common/record_state.*` |
+| P2-E0-3 | Cluster job templates | E0 | 0 | — | local | done |  | `tools/cluster/xai_*.sbatch`<br>`tools/xai_study/common/cluster.md` |
 | P2-E0-4 | Game-set + T3 coverage audit | E0 | 1 | — | local | todo | P2-E2-1 | `tools/xai_study/common/game_set.md`<br>`tools/xai_study/common/game_set.json` |
 | P2-E0-5 | Backlog construction (Sprint 0) | E0 | 0 | — | local | done |  | `backlog/**` |
-| P2-E1-1 | Intervention oracle (exact) | E1 | 1 | — | local | todo | P2-E0-1, P2-E0-2 | `tools/xai_study/ground_truth/oracle_intervene.*`<br>`tools/xai_study/ground_truth/out/oracle_*` |
+| P2-E1-1 | Intervention oracle (exact) | E1 | 1 | — | local | blocked | P2-E0-1, P2-E0-2 | `tools/xai_study/ground_truth/oracle_intervene.*`<br>`tools/xai_study/ground_truth/out/oracle_*` |
 | P2-E1-2 | Gradient oracle (content path) | E1 | 1 | — | local | todo | P2-E1-1 | `tools/xai_study/ground_truth/oracle_grad.*` |
 | P2-E1-3 | Oracle cross-check + validation | E1 | 1 | — | local | todo | P2-E1-1, P2-E1-2 | `tools/xai_study/ground_truth/oracle_xcheck.*`<br>`tools/xai_study/ground_truth/out/oracle_xcheck_*` |
-| P2-E2-1 | Import OCAtari/AtariARI candidate labels | E2 | 1 | — | local | todo |  | `tools/xai_study/t3/import_labels.*`<br>`tools/xai_study/t3/out/candidates_*` |
+| P2-E2-1 | Import OCAtari/AtariARI candidate labels | E2 | 1 | agent-2 | local | done |  | `tools/xai_study/t3/import_labels.*`<br>`tools/xai_study/t3/out/candidates_*` |
 | P2-E2-2 | Verify-by-intervention + offset-correct T3 labels | E2 | 2 | — | local | todo | P2-E2-1, P2-E1-1 | `tools/xai_study/t3/verify_labels.*`<br>`tools/xai_study/t3/out/verified_*` |
 | P2-E2-3 | Discover new T3 labels (correlation + sweep) | E2 | 2 | — | cluster | todo | P2-E2-2 | `tools/xai_study/t3/discover_labels.*`<br>`tools/xai_study/t3/out/discovered_*` |
 | P2-E3-0 | Phase-A pilot (A2+A3+A7 on Space Invaders, scored) | E3 | 2 | — | local | todo | P2-E1-1, P2-E0-2 | `tools/xai_study/phaseA_kording/pilot_si.*`<br>`tools/xai_study/phaseA_kording/out/pilotA_*` |
