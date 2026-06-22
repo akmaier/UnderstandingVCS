@@ -1,19 +1,21 @@
 # Heavy jaxtari suite — scheduled (nightly) + manual.
 #
-# These tests are split out of the fast PR gate (`test.yml`) because they
-# don't fit a 16 GB GitHub-hosted runner under full xdist parallelism (task
-# #126):
-#   * P7 (soft / differentiable) + P8 (integrated-gradients attribution) run
-#     JAX autodiff through the emulator — ~2.75 GB PER process. Under `-n auto`
-#     (4 workers) that peaks past 16 GB → a worker is OOM-killed → the pytest
-#     controller deadlocks → GitHub reports the job "cancelled".
-#   * P6 / P6c + the breakout / pong / screen-conformance integration tests
-#     boot ROMs in eager pure-Python/JAX (≈200× slower than jutari) and are
-#     simply slow on a 2–4 core runner.
+# Split out of the fast PR gate (`test.yml`) because the JAX-autodiff P7/P8
+# suites and the slow ROM-booting integration/conformance tests do not fit a
+# 16 GB / 2-core GitHub-hosted runner as ONE job: each autodiff worker's JAX
+# RSS grows across tests and, summed under xdist, OOM-kills the runner mid-run
+# ("The runner has received a shutdown signal" at ~75 min, well under the
+# timeout — confirmed nightly 2026-06-20..22).
 #
-# Here we bound the memory by capping xdist at 2 workers (≈5.5 GB) and keep
-# `tests/conftest.py`'s single-thread pinning (no oversubscription). Slow is
-# fine on a nightly run; PR feedback stays fast via `test.yml`.
+# Fix: a job MATRIX. Each group runs on its OWN fresh 16 GB runner over a
+# BOUNDED subset, so per-process JAX accumulation cannot sum past 16 GB; the
+# autodiff/IG groups cap xdist (`-n 1`/`-n 2`) to hold the peak down.
+# `fail-fast: false` so one group's result never cancels the others, and a
+# failure points at a specific group instead of the whole monolith.
+# `tests/conftest.py` still pins JAX/XLA/BLAS single-threaded.
+#
+# The union of the matrix globs equals the old single command
+# (test_p6* + test_p7* + test_p8* + test_breakout* + test_pong* + test_screen*).
 
 name: tests (heavy)
 
@@ -23,9 +25,27 @@ on:
   workflow_dispatch: {}    # allow manual runs
 
 jobs:
-  jaxtari-heavy:
+  heavy:
+    name: heavy (${{ matrix.group }})
     runs-on: ubuntu-latest
-    timeout-minutes: 300
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # JAX autodiff (memory-heavy). Bounded subsets + low xdist so a
+          # worker's growing RSS can't sum past 16 GB.
+          - group: p7-soft
+            args: "-n 2 tests/test_p7b.py tests/test_p7c_*.py tests/test_p7d.py"
+          - group: p7-func
+            args: "-n 2 tests/test_p7f_*.py"
+          - group: p8-attrib          # integrated-gradients — the heaviest; serial
+            args: "-n 1 tests/test_p8_*.py"
+          # Slow ROM-booting integration / conformance (light memory, just slow).
+          - group: boot
+            args: "-n 2 tests/test_p6*.py tests/test_breakout*.py tests/test_pong*.py"
+          - group: screen
+            args: "-n 2 tests/test_screen*.py"
     steps:
       - uses: actions/checkout@v4
 
@@ -40,18 +60,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
-      # The heavy P7/P8 autodiff suites + the slow ROM-booting integration /
-      # conformance tests. `-n 2` caps concurrent JAX processes to ≈5.5 GB
-      # (safe on a 16 GB runner); tests/conftest.py pins JAX single-threaded;
-      # --max-worker-restart recovers a flaky worker death. (PXC4 Klaus Dormann
-      # self-skips — its ROM is untracked. PXC2 has its own job in test.yml.)
-      - name: Run pytest — heavy suite (P6/P6c, P7, P8, booting/conformance)
+      # `--max-worker-restart` recovers a flaky worker death; the `-n` in args
+      # overrides the `-n auto` from pyproject addopts. conftest pins threads.
+      - name: Run pytest — heavy ${{ matrix.group }}
         working-directory: jaxtari
-        run: |
-          pytest -q -n 2 --max-worker-restart=4 \
-            tests/test_p6*.py \
-            tests/test_p7*.py \
-            tests/test_p8*.py \
-            tests/test_breakout*.py \
-            tests/test_pong*.py \
-            tests/test_screen*.py
+        run: pytest -q --max-worker-restart=4 ${{ matrix.args }}
