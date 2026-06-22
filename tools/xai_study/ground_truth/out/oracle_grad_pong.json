@@ -1,0 +1,48 @@
+{
+  "arrays": "oracle_grad_pong.npz",
+  "ci": null,
+  "commit": "5353731",
+  "extra": {
+    "bg_color": 34.0,
+    "caveat": "experiment_design.md §1: the STE gradient routes to the CONTENT path (colour/graphics-bit values). The discrete INDEX/POSITION output (sprite position via strobe timing) has ZERO naive gradient; the bilinear sampler is the workaround. For position/index/event outputs the INTERVENTION oracle (P2-E1-1) is the SOLE ground truth and gradient methods are evaluated as methods-under-test in Phase B (E4), NOT as oracle.",
+    "content": {
+      "grad_at_reg": 1.0,
+      "grad_l1": 1.0,
+      "ig_attr_at_reg": 200.0,
+      "ig_completeness_err": 0.0,
+      "ig_steps": 64,
+      "intervention_oracle_finite_delta_per_unit": 1.0,
+      "is_valid_companion": true,
+      "reg_index": 7,
+      "reg_name": "COLUP1(ball/right-paddle colour)"
+    },
+    "fg_color": 200.0,
+    "index": {
+      "ball_x": 70.0,
+      "intervention_is_sole_truth": true,
+      "intervention_oracle_finite_delta": 20.0,
+      "naive_grad_dpix_dpos": 0.0,
+      "naive_gradient_vanishes": true
+    },
+    "sampler": {
+      "bilinear_grad_dpix_dpos": 166.0,
+      "note": "documented workaround (Paper-1 sub-pixel sampler); NOT the oracle for position outputs — E1-1 is.",
+      "restores_position_gradient": true
+    },
+    "substrate": "jutari (Julia) Zygote — real-ROM content-path gradient; reuses tools/xai_si_gradient soft_ram_peek read + bilinear sampler."
+  },
+  "game": "pong",
+  "method": "gradient_oracle_content_path",
+  "metric_name": "content_grad_at_reg",
+  "n": 1,
+  "oracle_ref": "oracle_grad@pong#content_path",
+  "paper": "P2",
+  "phase": "ground_truth",
+  "seed": 0,
+  "state": "f120+30",
+  "stderr": null,
+  "target_output": "content_pixel(COLUP1) + ball-position pixel",
+  "timestamp": "1782104880",
+  "value": 1.0,
+  "where": "local"
+}
