@@ -38,19 +38,19 @@
 | P2-E4-9 | RISE attribution vs oracle | E4 | 3 | — | cluster | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/rise.py`<br>`tools/xai_study/phaseB_attribution/out/rise_*` |
 | P2-E4-10 | LIME attribution vs oracle | E4 | 3 | — | cluster | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/lime.py`<br>`tools/xai_study/phaseB_attribution/out/lime_*` |
 | P2-E4-11 | KernelSHAP / Shapley sampling attribution vs oracle | E4 | 3 | — | cluster | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/kernelshap_shapley.py`<br>`tools/xai_study/phaseB_attribution/out/kernelshap_shapley_*` |
-| P2-E4-12 | On-distribution counterfactual attribution vs oracle | E4 | 5 | — | local | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/counterfactual_ondist.py`<br>`tools/xai_study/phaseB_attribution/out/counterfactual_ondist_*` |
+| P2-E4-12 | On-distribution counterfactual attribution vs oracle | E4 | 5 | — | local | done | P2-E4-0 | `tools/xai_study/phaseB_attribution/counterfactual.jl`<br>`tools/xai_study/phaseB_attribution/out/counterfactual_*` |
 | P2-E4-13 | N/A audit — Grad-CAM/attention/VIPER do-not-apply writeup | E4 | 4 | — | local | done | P2-E4-0 | `tools/xai_study/phaseB_attribution/na_audit.jl`<br>`tools/xai_study/phaseB_attribution/na_audit.md`<br>`tools/xai_study/phaseB_attribution/out/na_audit_*` |
 | P2-E5-0 | Phase-C pilot — activation patching + 1 SAE on VCS state | E5 | 3 | — | local | done | P2-E1-1, P2-E0-2j | `tools/xai_study/phaseC_mechanistic/pilot_patch_sae.jl`<br>`tools/xai_study/phaseC_mechanistic/pilot_patch_sae.py`<br>`tools/xai_study/phaseC_mechanistic/out/pilotC_*` |
 | P2-E5-1 | Activation patching / causal tracing vs exact patch | E5 | 5 | — | local | done | P2-E5-0 | `tools/xai_study/phaseC_mechanistic/activation_patching.py`<br>`tools/xai_study/phaseC_mechanistic/out/activation_patching_*` |
-| P2-E5-2 | Interchange interventions / DAS vs true variable alignment | E5 | 5 | — | local | todo | P2-E5-0 | `tools/xai_study/phaseC_mechanistic/interchange_das.py`<br>`tools/xai_study/phaseC_mechanistic/out/interchange_das_*` |
-| P2-E5-3 | Attribution patching / edge patching vs true patching | E5 | 5 | — | local | todo | P2-E5-0 | `tools/xai_study/phaseC_mechanistic/attribution_patching.py`<br>`tools/xai_study/phaseC_mechanistic/out/attribution_patching_*` |
+| P2-E5-2 | Interchange interventions / DAS vs true variable alignment | E5 | 5 | — | local | done | P2-E5-0 | `tools/xai_study/phaseC_mechanistic/das.jl`<br>`tools/xai_study/phaseC_mechanistic/out/das_*` |
+| P2-E5-3 | Attribution patching / edge patching vs true patching | E5 | 5 | — | local | done | P2-E5-0 | `tools/xai_study/phaseC_mechanistic/attribution_patching.py`<br>`tools/xai_study/phaseC_mechanistic/out/attribution_patching_*` |
 | P2-E5-4 | Path patching / IOI-style circuit recovery vs true routine | E5 | 3 | — | cluster | todo | P2-E5-0 | `tools/xai_study/phaseC_mechanistic/path_patching.py`<br>`tools/xai_study/phaseC_mechanistic/out/path_patching_*` |
 | P2-E5-5 | ACDC — automatic circuit discovery vs true data-flow | E5 | 3 | — | cluster | todo | P2-E5-0 | `tools/xai_study/phaseC_mechanistic/acdc.py`<br>`tools/xai_study/phaseC_mechanistic/out/acdc_*` |
 | P2-E5-6 | Sparse autoencoders — feature↔variable match + causal use | E5 | 3 | — | cluster | todo | P2-E5-0 | `tools/xai_study/phaseC_mechanistic/sae.py`<br>`tools/xai_study/phaseC_mechanistic/out/sae_*` |
 | P2-E5-7 | NMF/PCA dictionaries — matched-component fraction | E5 | 3 | — | cluster | todo | P2-E5-0 | `tools/xai_study/phaseC_mechanistic/nmf_pca.py`<br>`tools/xai_study/phaseC_mechanistic/out/nmf_pca_*` |
 | P2-E5-8 | Causal scrubbing — hypothesis pass/fail vs true routine | E5 | 3 | — | cluster | todo | P2-E5-0 | `tools/xai_study/phaseC_mechanistic/causal_scrubbing.py`<br>`tools/xai_study/phaseC_mechanistic/out/causal_scrubbing_*` |
-| P2-E5-9 | Linear probing + control tasks — present-vs-used gap | E5 | 3 | — | cluster | todo | P2-E5-0 | `tools/xai_study/phaseC_mechanistic/probing_control.py`<br>`tools/xai_study/phaseC_mechanistic/out/probing_control_*` |
-| P2-E5-10 | Logit / tuned lens — readout fidelity vs true intermediate | E5 | 3 | — | cluster | todo | P2-E5-0 | `tools/xai_study/phaseC_mechanistic/logit_tuned_lens.py`<br>`tools/xai_study/phaseC_mechanistic/out/logit_tuned_lens_*` |
+| P2-E5-9 | Linear probing + control tasks — present-vs-used gap | E5 | 5 | — | local | todo | P2-E5-0 | `tools/xai_study/phaseC_mechanistic/probing_control.py`<br>`tools/xai_study/phaseC_mechanistic/out/probing_control_*` |
+| P2-E5-10 | Logit / tuned lens — readout fidelity vs true intermediate | E5 | 5 | — | local | todo | P2-E5-0 | `tools/xai_study/phaseC_mechanistic/logit_tuned_lens.py`<br>`tools/xai_study/phaseC_mechanistic/out/logit_tuned_lens_*` |
 | P2-E6-1 | Cross-tradition leaderboard (faithfulness vs plausibility) | E6 | 5 | — | local | todo | P2-E3-0, P2-E4-0, P2-E5-0 | `tools/xai_study/compare/leaderboard.py`<br>`tools/xai_study/compare/out/leaderboard.*` |
 | P2-E6-2 | Package the reusable benchmark artifact (tasks + oracle + metrics) | E6 | 5 | — | local | todo | P2-E6-1 | `tools/xai_study/benchmark/**` |
 | P2-E6-3 | Faithful-method demonstration (causal near-ceiling vs popular near-chance) | E6 | 5 | — | local | todo | P2-E6-1 | `tools/xai_study/compare/faithful_demo.py`<br>`tools/xai_study/compare/out/faithful_demo.*` |
@@ -76,7 +76,7 @@
 | P2-E9-4 | Final build + page/limit gate (SM) | E9 | 7 | — | local | todo | P2-E9-1, P2-E9-2, P2-E9-3 | `paper/main.tex`<br>`paper/build/**` |
 
 ## Items per sprint
-Sprint 0: 3, Sprint 1: 6, Sprint 2: 3, Sprint 3: 17, Sprint 4: 8, Sprint 5: 19, Sprint 6: 10, Sprint 7: 4
+Sprint 0: 3, Sprint 1: 6, Sprint 2: 3, Sprint 3: 15, Sprint 4: 8, Sprint 5: 21, Sprint 6: 10, Sprint 7: 4
 
 ## Sprint log
 See [`../sprints/`](../sprints/) for per-sprint Planning + Review notes.
