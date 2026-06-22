@@ -1,0 +1,763 @@
+{
+  "method": "ram_framebuffer_correlation_plus_intervention_sweep",
+  "game": "enduro",
+  "source_crosscheck": {
+    "atariari_indices": [],
+    "ocatari_available": true,
+    "indices_known": true,
+    "ocatari_indices": [46, 52, 59],
+    "atariari_available": false
+  },
+  "arrays": "discovered_enduro.npz",
+  "discovered_labels": [{
+  "causal": true,
+  "ram_index": 118,
+  "ram_addr_hex": "0xF6",
+  "region_color": 20,
+  "concept": "color20_x",
+  "attribute": "x",
+  "response_kind": "position",
+  "novel": true,
+  "evidence": {
+    "causal_slope": -0.3071,
+    "causal_range_px": 68.207,
+    "render_offset": 125.757,
+    "sweep_centroids": [135.563, 117.049, 99.9, 81.98, 73.02, 72.895, 75.75, 67.356],
+    "corr_r": null,
+    "sweep_vals": [10, 40, 70, 100, 130, 160, 190, 220],
+    "corr_flagged": false,
+    "causal_intercept": 125.757,
+    "causal_r2": 0.8359
+  },
+  "source_status": "novel_no_source",
+  "verified": true
+}, {
+  "causal": true,
+  "ram_index": 19,
+  "ram_addr_hex": "0x93",
+  "region_color": 0,
+  "concept": "color0_x",
+  "attribute": "x",
+  "response_kind": "position",
+  "novel": true,
+  "evidence": {
+    "causal_slope": 0.0665,
+    "causal_range_px": 10.479,
+    "render_offset": 67.609,
+    "sweep_centroids": [70.021, 70.021, 70.021, 70.021, 80.5, 80.5, 80.5, 80.5],
+    "corr_r": null,
+    "sweep_vals": [10, 40, 70, 100, 130, 160, 190, 220],
+    "corr_flagged": false,
+    "causal_intercept": 67.609,
+    "causal_r2": 0.7619
+  },
+  "source_status": "novel_no_source",
+  "verified": true
+}, {
+  "causal": true,
+  "ram_index": 19,
+  "ram_addr_hex": "0x93",
+  "region_color": 0,
+  "concept": "color0_y",
+  "attribute": "y",
+  "response_kind": "position",
+  "novel": true,
+  "evidence": {
+    "causal_slope": -0.3987,
+    "causal_range_px": 62.794,
+    "render_offset": 182.747,
+    "sweep_centroids": [168.294, 168.294, 168.294, 168.294, 105.5, 105.5, 105.5, 105.5],
+    "corr_r": null,
+    "sweep_vals": [10, 40, 70, 100, 130, 160, 190, 220],
+    "corr_flagged": false,
+    "causal_intercept": 182.747,
+    "causal_r2": 0.7619
+  },
+  "source_status": "novel_no_source",
+  "verified": true
+}, {
+  "causal": true,
+  "ram_index": 59,
+  "ram_addr_hex": "0xBB",
+  "region_color": 2,
+  "concept": "color2_y",
+  "attribute": "y",
+  "response_kind": "position",
+  "novel": false,
+  "evidence": {
+    "causal_slope": 0.2675,
+    "causal_range_px": 49.176,
+    "render_offset": 64.843,
+    "sweep_centroids": [74.988, 73.488, 78.99, 96.494, 75.489, 122.664, 121.373, 121.373],
+    "corr_r": null,
+    "sweep_vals": [10, 40, 70, 100, 130, 160, 190, 220],
+    "corr_flagged": false,
+    "causal_intercept": 64.843,
+    "causal_r2": 0.7399
+  },
+  "source_status": "rederives_known_index",
+  "verified": true
+}, {
+  "causal": true,
+  "ram_index": 46,
+  "ram_addr_hex": "0xAE",
+  "region_color": 2,
+  "concept": "color2_x",
+  "attribute": "x",
+  "response_kind": "position",
+  "novel": false,
+  "evidence": {
+    "causal_slope": -0.4088,
+    "causal_range_px": 104.997,
+    "render_offset": 126.664,
+    "sweep_centroids": [98.234, 128.234, 119.542, 78.63, 78.63, 58.468, 23.237, 52.238],
+    "corr_r": null,
+    "sweep_vals": [10, 40, 70, 100, 130, 160, 190, 220],
+    "corr_flagged": false,
+    "causal_intercept": 126.664,
+    "causal_r2": 0.7276
+  },
+  "source_status": "rederives_known_index",
+  "verified": true
+}, {
+  "causal": true,
+  "ram_index": 47,
+  "ram_addr_hex": "0xAF",
+  "region_color": 0,
+  "concept": "color0_size",
+  "attribute": "size",
+  "response_kind": "extent",
+  "novel": true,
+  "evidence": {
+    "causal_slope": 0.7329,
+    "causal_range_px": 119.0,
+    "render_offset": 8247.087,
+    "sweep_centroids": [8279.0, 8279.0, 8279.0, 8279.0, 8341.0, 8398.0, 8398.0, 8398.0],
+    "corr_r": null,
+    "sweep_vals": [10, 40, 70, 100, 130, 160, 190, 220],
+    "corr_flagged": false,
+    "causal_intercept": 8247.087,
+    "causal_r2": 0.8328
+  },
+  "source_status": "novel_no_source",
+  "verified": true
+}, {
+  "causal": true,
+  "ram_index": 42,
+  "ram_addr_hex": "0xAA",
+  "region_color": 0,
+  "concept": "color0_size",
+  "attribute": "size",
+  "response_kind": "extent",
+  "novel": true,
+  "evidence": {
+    "causal_slope": 0.1369,
+    "causal_range_px": 37.0,
+    "render_offset": 8286.131,
+    "sweep_centroids": [8279.0, 8302.0, 8298.0, 8298.0, 8302.0, 8307.0, 8313.0, 8316.0],
+    "corr_r": null,
+    "sweep_vals": [10, 40, 70, 100, 130, 160, 190, 220],
+    "corr_flagged": false,
+    "causal_intercept": 8286.131,
+    "causal_r2": 0.7847
+  },
+  "source_status": "novel_no_source",
+  "verified": true
+}, {
+  "causal": true,
+  "ram_index": 42,
+  "ram_addr_hex": "0xAA",
+  "region_color": 40,
+  "concept": "color40_size",
+  "attribute": "size",
+  "response_kind": "extent",
+  "novel": true,
+  "evidence": {
+    "causal_slope": -0.1369,
+    "causal_range_px": 37.0,
+    "render_offset": 506.869,
+    "sweep_centroids": [514.0, 491.0, 495.0, 495.0, 491.0, 486.0, 480.0, 477.0],
+    "corr_r": null,
+    "sweep_vals": [10, 40, 70, 100, 130, 160, 190, 220],
+    "corr_flagged": false,
+    "causal_intercept": 506.869,
+    "causal_r2": 0.7847
+  },
+  "source_status": "novel_no_source",
+  "verified": true
+}, {
+  "causal": true,
+  "ram_index": 45,
+  "ram_addr_hex": "0xAD",
+  "region_color": 0,
+  "concept": "color0_size",
+  "attribute": "size",
+  "response_kind": "extent",
+  "novel": true,
+  "evidence": {
+    "causal_slope": 0.1369,
+    "causal_range_px": 37.0,
+    "render_offset": 8306.131,
+    "sweep_centroids": [8299.0, 8322.0, 8318.0, 8318.0, 8322.0, 8327.0, 8333.0, 8336.0],
+    "corr_r": null,
+    "sweep_vals": [10, 40, 70, 100, 130, 160, 190, 220],
+    "corr_flagged": false,
+    "causal_intercept": 8306.131,
+    "causal_r2": 0.7847
+  },
+  "source_status": "novel_no_source",
+  "verified": true
+}, {
+  "causal": true,
+  "ram_index": 19,
+  "ram_addr_hex": "0x93",
+  "region_color": 0,
+  "concept": "color0_size",
+  "attribute": "size",
+  "response_kind": "extent",
+  "novel": true,
+  "evidence": {
+    "causal_slope": 160.7683,
+    "causal_range_px": 25321.0,
+    "render_offset": 2451.151,
+    "sweep_centroids": [8279.0, 8279.0, 8279.0, 8279.0, 33600.0, 33600.0, 33600.0, 33600.0],
+    "corr_r": null,
+    "sweep_vals": [10, 40, 70, 100, 130, 160, 190, 220],
+    "corr_flagged": false,
+    "causal_intercept": 2451.151,
+    "causal_r2": 0.7619
+  },
+  "source_status": "novel_no_source",
+  "verified": true
+}, {
+  "causal": true,
+  "ram_index": 59,
+  "ram_addr_hex": "0xBB",
+  "region_color": 2,
+  "concept": "color2_size",
+  "attribute": "size",
+  "response_kind": "extent",
+  "novel": false,
+  "evidence": {
+    "causal_slope": 1.3905,
+    "causal_range_px": 256.0,
+    "render_offset": 29.095,
+    "sweep_centroids": [86.0, 80.0, 102.0, 172.0, 88.0, 336.0, 324.0, 324.0],
+    "corr_r": null,
+    "sweep_vals": [10, 40, 70, 100, 130, 160, 190, 220],
+    "corr_flagged": false,
+    "causal_intercept": 29.095,
+    "causal_r2": 0.7412
+  },
+  "source_status": "rederives_known_index",
+  "verified": true
+}, {
+  "causal": true,
+  "ram_index": 64,
+  "ram_addr_hex": "0xC0",
+  "region_color": 130,
+  "concept": "color130_size",
+  "attribute": "size",
+  "response_kind": "extent",
+  "novel": true,
+  "evidence": {
+    "causal_slope": 4.2381,
+    "causal_range_px": 712.0,
+    "render_offset": 6797.619,
+    "sweep_centroids": [6840.0, 6840.0, 6840.0, 7552.0, 7552.0, 7552.0, 7552.0, 7552.0],
+    "corr_r": null,
+    "sweep_vals": [10, 40, 70, 100, 130, 160, 190, 220],
+    "corr_flagged": false,
+    "causal_intercept": 6797.619,
+    "causal_r2": 0.7143
+  },
+  "source_status": "novel_no_source",
+  "verified": true
+}],
+  "state": "checkpoint@30",
+  "ci": null,
+  "status": "discovered_verified_causal",
+  "target_output": "discovered_ram_to_concept_labels",
+  "value": 12,
+  "correlation_minus_causation": [{
+  "causal": false,
+  "ram_index": 38,
+  "ram_addr_hex": "0xA6",
+  "region_color": 0,
+  "corr_r": 0.9995,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "y"
+}, {
+  "causal": false,
+  "ram_index": 37,
+  "ram_addr_hex": "0xA5",
+  "region_color": 0,
+  "corr_r": 0.9995,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "y"
+}, {
+  "causal": false,
+  "ram_index": 114,
+  "ram_addr_hex": "0xF2",
+  "region_color": 0,
+  "corr_r": -0.9995,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "y"
+}, {
+  "causal": false,
+  "ram_index": 36,
+  "ram_addr_hex": "0xA4",
+  "region_color": 0,
+  "corr_r": 0.9995,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "y"
+}, {
+  "causal": false,
+  "ram_index": 125,
+  "ram_addr_hex": "0xFD",
+  "region_color": 0,
+  "corr_r": -0.9995,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "y"
+}, {
+  "causal": false,
+  "ram_index": 112,
+  "ram_addr_hex": "0xF0",
+  "region_color": 0,
+  "corr_r": -0.9994,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "y"
+}, {
+  "causal": false,
+  "ram_index": 12,
+  "ram_addr_hex": "0x8C",
+  "region_color": 8,
+  "corr_r": 0.9993,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "y"
+}, {
+  "causal": false,
+  "ram_index": 13,
+  "ram_addr_hex": "0x8D",
+  "region_color": 8,
+  "corr_r": 0.9987,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "y"
+}, {
+  "causal": false,
+  "ram_index": 38,
+  "ram_addr_hex": "0xA6",
+  "region_color": 40,
+  "corr_r": -0.9945,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "y"
+}, {
+  "causal": false,
+  "ram_index": 37,
+  "ram_addr_hex": "0xA5",
+  "region_color": 40,
+  "corr_r": -0.9945,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "y"
+}, {
+  "causal": false,
+  "ram_index": 114,
+  "ram_addr_hex": "0xF2",
+  "region_color": 40,
+  "corr_r": 0.9945,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "y"
+}, {
+  "causal": false,
+  "ram_index": 36,
+  "ram_addr_hex": "0xA4",
+  "region_color": 40,
+  "corr_r": -0.9945,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "y"
+}, {
+  "causal": false,
+  "ram_index": 125,
+  "ram_addr_hex": "0xFD",
+  "region_color": 40,
+  "corr_r": 0.9945,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "y"
+}, {
+  "causal": false,
+  "ram_index": 112,
+  "ram_addr_hex": "0xF0",
+  "region_color": 40,
+  "corr_r": 0.9944,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "y"
+}, {
+  "causal": false,
+  "ram_index": 36,
+  "ram_addr_hex": "0xA4",
+  "region_color": 40,
+  "corr_r": -0.9942,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 125,
+  "ram_addr_hex": "0xFD",
+  "region_color": 40,
+  "corr_r": 0.9942,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 36,
+  "ram_addr_hex": "0xA4",
+  "region_color": 0,
+  "corr_r": 0.9942,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 125,
+  "ram_addr_hex": "0xFD",
+  "region_color": 0,
+  "corr_r": -0.9942,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 38,
+  "ram_addr_hex": "0xA6",
+  "region_color": 40,
+  "corr_r": -0.9942,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 37,
+  "ram_addr_hex": "0xA5",
+  "region_color": 40,
+  "corr_r": -0.9942,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 38,
+  "ram_addr_hex": "0xA6",
+  "region_color": 0,
+  "corr_r": 0.9942,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 37,
+  "ram_addr_hex": "0xA5",
+  "region_color": 0,
+  "corr_r": 0.9942,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 114,
+  "ram_addr_hex": "0xF2",
+  "region_color": 40,
+  "corr_r": 0.9942,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 114,
+  "ram_addr_hex": "0xF2",
+  "region_color": 0,
+  "corr_r": -0.9942,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 112,
+  "ram_addr_hex": "0xF0",
+  "region_color": 40,
+  "corr_r": 0.9941,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 112,
+  "ram_addr_hex": "0xF0",
+  "region_color": 0,
+  "corr_r": -0.9941,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 25,
+  "ram_addr_hex": "0x99",
+  "region_color": 8,
+  "corr_r": -0.9893,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "y"
+}, {
+  "causal": false,
+  "ram_index": 59,
+  "ram_addr_hex": "0xBB",
+  "region_color": 8,
+  "corr_r": -0.9892,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "y"
+}, {
+  "causal": false,
+  "ram_index": 14,
+  "ram_addr_hex": "0x8E",
+  "region_color": 8,
+  "corr_r": 0.985,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "y"
+}, {
+  "causal": false,
+  "ram_index": 15,
+  "ram_addr_hex": "0x8F",
+  "region_color": 8,
+  "corr_r": 0.9847,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "y"
+}, {
+  "causal": false,
+  "ram_index": 114,
+  "ram_addr_hex": "0xF2",
+  "region_color": 0,
+  "corr_r": -0.9821,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "x"
+}, {
+  "causal": false,
+  "ram_index": 36,
+  "ram_addr_hex": "0xA4",
+  "region_color": 0,
+  "corr_r": 0.9821,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "x"
+}, {
+  "causal": false,
+  "ram_index": 125,
+  "ram_addr_hex": "0xFD",
+  "region_color": 0,
+  "corr_r": -0.9821,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "x"
+}, {
+  "causal": false,
+  "ram_index": 38,
+  "ram_addr_hex": "0xA6",
+  "region_color": 0,
+  "corr_r": 0.9821,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "x"
+}, {
+  "causal": false,
+  "ram_index": 37,
+  "ram_addr_hex": "0xA5",
+  "region_color": 0,
+  "corr_r": 0.9821,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "x"
+}, {
+  "causal": false,
+  "ram_index": 112,
+  "ram_addr_hex": "0xF0",
+  "region_color": 0,
+  "corr_r": -0.9819,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "x"
+}, {
+  "causal": false,
+  "ram_index": 12,
+  "ram_addr_hex": "0x8C",
+  "region_color": 8,
+  "corr_r": 0.9717,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 16,
+  "ram_addr_hex": "0x90",
+  "region_color": 8,
+  "corr_r": 0.9674,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "y"
+}, {
+  "causal": false,
+  "ram_index": 17,
+  "ram_addr_hex": "0x91",
+  "region_color": 8,
+  "corr_r": 0.9592,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "y"
+}, {
+  "causal": false,
+  "ram_index": 11,
+  "ram_addr_hex": "0x8B",
+  "region_color": 8,
+  "corr_r": 0.9575,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "y"
+}, {
+  "causal": false,
+  "ram_index": 16,
+  "ram_addr_hex": "0x90",
+  "region_color": 8,
+  "corr_r": 0.9564,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 13,
+  "ram_addr_hex": "0x8D",
+  "region_color": 8,
+  "corr_r": 0.9472,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 36,
+  "ram_addr_hex": "0xA4",
+  "region_color": 40,
+  "corr_r": -0.9416,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "x"
+}, {
+  "causal": false,
+  "ram_index": 125,
+  "ram_addr_hex": "0xFD",
+  "region_color": 40,
+  "corr_r": 0.9416,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "x"
+}, {
+  "causal": false,
+  "ram_index": 38,
+  "ram_addr_hex": "0xA6",
+  "region_color": 40,
+  "corr_r": -0.9416,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "x"
+}, {
+  "causal": false,
+  "ram_index": 37,
+  "ram_addr_hex": "0xA5",
+  "region_color": 40,
+  "corr_r": -0.9416,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "x"
+}, {
+  "causal": false,
+  "ram_index": 114,
+  "ram_addr_hex": "0xF2",
+  "region_color": 40,
+  "corr_r": 0.9416,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "x"
+}, {
+  "causal": false,
+  "ram_index": 112,
+  "ram_addr_hex": "0xF0",
+  "region_color": 40,
+  "corr_r": 0.9413,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "x"
+}, {
+  "causal": false,
+  "ram_index": 14,
+  "ram_addr_hex": "0x8E",
+  "region_color": 8,
+  "corr_r": 0.9387,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 59,
+  "ram_addr_hex": "0xBB",
+  "region_color": 8,
+  "corr_r": -0.9334,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 25,
+  "ram_addr_hex": "0x99",
+  "region_color": 8,
+  "corr_r": -0.9315,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 15,
+  "ram_addr_hex": "0x8F",
+  "region_color": 8,
+  "corr_r": 0.9223,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 17,
+  "ram_addr_hex": "0x91",
+  "region_color": 8,
+  "corr_r": 0.8809,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 11,
+  "ram_addr_hex": "0x8B",
+  "region_color": 8,
+  "corr_r": 0.8799,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 67,
+  "ram_addr_hex": "0xC3",
+  "region_color": 2,
+  "corr_r": 0.8097,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "x"
+}, {
+  "causal": false,
+  "ram_index": 97,
+  "ram_addr_hex": "0xE1",
+  "region_color": 2,
+  "corr_r": -0.8069,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "x"
+}],
+  "paper": "P2",
+  "summary": {
+    "n_extent_labels": 7,
+    "n_discovered_causal": 12,
+    "n_corr_only_rejected": 56,
+    "n_position_labels": 5,
+    "n_novel_no_source": 9,
+    "n_rederives_known": 3
+  },
+  "note": "Discovered source-agnostically from RAM↔framebuffer correlation, then UPGRADED to verified-causal by an intervention sweep on the bit-exact framebuffer (experiment_design.md §2 step 3). `novel`=true ⇒ no AtariARI/OCAtari source names that RAM index.",
+  "frame": 30,
+  "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path",
+  "params": {
+    "n_moving_regions": 14,
+    "frames": 40,
+    "move_px_min": 4.0,
+    "r2_min": 0.7,
+    "action_stream": [1, 3, 3, 5, 5, 1, 4, 4, 2, 2, 1, 3, 5, 4, 2, 1, 1, 3, 3, 5, 5, 1, 4, 4, 2, 2, 1, 3, 5, 4, 2, 1, 1, 3, 3, 5, 5, 1, 4, 4],
+    "sweep_vals": [10, 40, 70, 100, 130, 160, 190, 220],
+    "checkpoint": 30,
+    "r_corr_min": 0.8,
+    "background": 192
+  },
+  "where": "local",
+  "commit": "c4705da",
+  "phase": "E2-T3-discover",
+  "stderr": null,
+  "seed": 0,
+  "oracle_ref": "jutari_oracle@enduro (bit-exact replay + intervene_ram!)",
+  "metric_name": "n_discovered_causal_labels",
+  "timestamp": "1782166814",
+  "n": 12
+}

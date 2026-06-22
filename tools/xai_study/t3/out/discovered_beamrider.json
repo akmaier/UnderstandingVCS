@@ -1,0 +1,193 @@
+{
+  "method": "ram_framebuffer_correlation_plus_intervention_sweep",
+  "game": "beamrider",
+  "source_crosscheck": {
+    "atariari_indices": [],
+    "ocatari_available": true,
+    "indices_known": true,
+    "ocatari_indices": [25, 32, 33, 40, 41],
+    "atariari_available": false
+  },
+  "arrays": "discovered_beamrider.npz",
+  "discovered_labels": [{
+  "causal": true,
+  "ram_index": 84,
+  "ram_addr_hex": "0xD4",
+  "region_color": 66,
+  "concept": "color66_y",
+  "attribute": "y",
+  "response_kind": "position",
+  "novel": true,
+  "evidence": {
+    "causal_slope": -0.3763,
+    "causal_range_px": 59.275,
+    "render_offset": 179.976,
+    "sweep_centroids": [166.333, 166.333, 166.333, 166.333, 107.059, 107.059, 107.059, 107.059],
+    "corr_r": null,
+    "sweep_vals": [10, 40, 70, 100, 130, 160, 190, 220],
+    "corr_flagged": false,
+    "causal_intercept": 179.976,
+    "causal_r2": 0.7619
+  },
+  "source_status": "novel_no_source",
+  "verified": true
+}, {
+  "causal": true,
+  "ram_index": 84,
+  "ram_addr_hex": "0xD4",
+  "region_color": 66,
+  "concept": "color66_x",
+  "attribute": "x",
+  "response_kind": "position",
+  "novel": true,
+  "evidence": {
+    "causal_slope": -0.2226,
+    "causal_range_px": 35.059,
+    "render_offset": 93.069,
+    "sweep_centroids": [85.0, 85.0, 85.0, 85.0, 49.941, 49.941, 49.941, 49.941],
+    "corr_r": null,
+    "sweep_vals": [10, 40, 70, 100, 130, 160, 190, 220],
+    "corr_flagged": false,
+    "causal_intercept": 93.069,
+    "causal_r2": 0.7619
+  },
+  "source_status": "novel_no_source",
+  "verified": true
+}, {
+  "causal": true,
+  "ram_index": 5,
+  "ram_addr_hex": "0x85",
+  "region_color": 26,
+  "concept": "color26_y",
+  "attribute": "y",
+  "response_kind": "position",
+  "novel": true,
+  "evidence": {
+    "causal_slope": -0.0547,
+    "causal_range_px": 8.886,
+    "render_offset": 186.182,
+    "sweep_centroids": [183.794, 184.412, 184.412, 184.412, 175.526, 175.526, 175.526, 175.526],
+    "corr_r": null,
+    "sweep_vals": [10, 40, 70, 100, 130, 160, 190, 220],
+    "corr_flagged": false,
+    "causal_intercept": 186.182,
+    "causal_r2": 0.7404
+  },
+  "source_status": "novel_no_source",
+  "verified": true
+}, {
+  "causal": true,
+  "ram_index": 94,
+  "ram_addr_hex": "0xDE",
+  "region_color": 164,
+  "concept": "color164_size",
+  "attribute": "size",
+  "response_kind": "extent",
+  "novel": true,
+  "evidence": {
+    "causal_slope": -0.6548,
+    "causal_range_px": 106.0,
+    "render_offset": 1936.298,
+    "sweep_centroids": [1918.0, 1918.0, 1911.0, 1893.0, 1812.0, 1812.0, 1812.0, 1812.0],
+    "corr_r": null,
+    "sweep_vals": [10, 40, 70, 100, 130, 160, 190, 220],
+    "corr_flagged": false,
+    "causal_intercept": 1936.298,
+    "causal_r2": 0.8257
+  },
+  "source_status": "novel_no_source",
+  "verified": true
+}, {
+  "causal": true,
+  "ram_index": 84,
+  "ram_addr_hex": "0xD4",
+  "region_color": 164,
+  "concept": "color164_size",
+  "attribute": "size",
+  "response_kind": "extent",
+  "novel": true,
+  "evidence": {
+    "causal_slope": 0.2921,
+    "causal_range_px": 46.0,
+    "render_offset": 1907.413,
+    "sweep_centroids": [1918.0, 1918.0, 1918.0, 1918.0, 1964.0, 1964.0, 1964.0, 1964.0],
+    "corr_r": null,
+    "sweep_vals": [10, 40, 70, 100, 130, 160, 190, 220],
+    "corr_flagged": false,
+    "causal_intercept": 1907.413,
+    "causal_r2": 0.7619
+  },
+  "source_status": "novel_no_source",
+  "verified": true
+}],
+  "state": "checkpoint@30",
+  "ci": null,
+  "status": "discovered_verified_causal",
+  "target_output": "discovered_ram_to_concept_labels",
+  "value": 5,
+  "correlation_minus_causation": [{
+  "causal": false,
+  "ram_index": 120,
+  "ram_addr_hex": "0xF8",
+  "region_color": 164,
+  "corr_r": 0.8925,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 121,
+  "ram_addr_hex": "0xF9",
+  "region_color": 164,
+  "corr_r": 0.8844,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 122,
+  "ram_addr_hex": "0xFA",
+  "region_color": 164,
+  "corr_r": 0.8601,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}, {
+  "causal": false,
+  "ram_index": 24,
+  "ram_addr_hex": "0x98",
+  "region_color": 164,
+  "corr_r": -0.8115,
+  "reason": "correlated (|r|≥0.8) but NOT intervention-causal (present ≠ used; Hewitt & Liang control-task lesson)",
+  "attribute": "size"
+}],
+  "paper": "P2",
+  "summary": {
+    "n_extent_labels": 2,
+    "n_discovered_causal": 5,
+    "n_corr_only_rejected": 4,
+    "n_position_labels": 3,
+    "n_novel_no_source": 5,
+    "n_rederives_known": 0
+  },
+  "note": "Discovered source-agnostically from RAM↔framebuffer correlation, then UPGRADED to verified-causal by an intervention sweep on the bit-exact framebuffer (experiment_design.md §2 step 3). `novel`=true ⇒ no AtariARI/OCAtari source names that RAM index.",
+  "frame": 30,
+  "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path",
+  "params": {
+    "n_moving_regions": 6,
+    "frames": 40,
+    "move_px_min": 4.0,
+    "r2_min": 0.7,
+    "action_stream": [1, 3, 3, 5, 5, 1, 4, 4, 2, 2, 1, 3, 5, 4, 2, 1, 1, 3, 3, 5, 5, 1, 4, 4, 2, 2, 1, 3, 5, 4, 2, 1, 1, 3, 3, 5, 5, 1, 4, 4],
+    "sweep_vals": [10, 40, 70, 100, 130, 160, 190, 220],
+    "checkpoint": 30,
+    "r_corr_min": 0.8,
+    "background": 0
+  },
+  "where": "local",
+  "commit": "c4705da",
+  "phase": "E2-T3-discover",
+  "stderr": null,
+  "seed": 0,
+  "oracle_ref": "jutari_oracle@beamrider (bit-exact replay + intervene_ram!)",
+  "metric_name": "n_discovered_causal_labels",
+  "timestamp": "1782166821",
+  "n": 5
+}

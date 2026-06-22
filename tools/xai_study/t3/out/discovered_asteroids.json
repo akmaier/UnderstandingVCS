@@ -1,0 +1,73 @@
+{
+  "method": "ram_framebuffer_correlation_plus_intervention_sweep",
+  "game": "asteroids",
+  "source_crosscheck": {
+    "atariari_indices": [],
+    "ocatari_available": true,
+    "indices_known": true,
+    "ocatari_indices": [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 39, 60, 61, 62, 73, 74, 77, 83, 84, 86, 87, 89, 90],
+    "atariari_available": false
+  },
+  "arrays": "discovered_asteroids.npz",
+  "discovered_labels": [{
+  "causal": true,
+  "ram_index": 115,
+  "ram_addr_hex": "0xF3",
+  "region_color": 68,
+  "concept": "color68_y",
+  "attribute": "y",
+  "response_kind": "position",
+  "novel": true,
+  "evidence": {
+    "causal_slope": 0.2518,
+    "causal_range_px": 52.114,
+    "render_offset": 102.239,
+    "sweep_centroids": [94.863, 108.705, 123.212, 135.701, 146.976, 146.697, 146.807, 146.629],
+    "corr_r": null,
+    "sweep_vals": [10, 40, 70, 100, 130, 160, 190, 220],
+    "corr_flagged": false,
+    "causal_intercept": 102.239,
+    "causal_r2": 0.832
+  },
+  "source_status": "novel_no_source",
+  "verified": true
+}],
+  "state": "checkpoint@30",
+  "ci": null,
+  "status": "discovered_verified_causal",
+  "target_output": "discovered_ram_to_concept_labels",
+  "value": 1,
+  "correlation_minus_causation": [],
+  "paper": "P2",
+  "summary": {
+    "n_extent_labels": 0,
+    "n_discovered_causal": 1,
+    "n_corr_only_rejected": 0,
+    "n_position_labels": 1,
+    "n_novel_no_source": 1,
+    "n_rederives_known": 0
+  },
+  "note": "Discovered source-agnostically from RAM↔framebuffer correlation, then UPGRADED to verified-causal by an intervention sweep on the bit-exact framebuffer (experiment_design.md §2 step 3). `novel`=true ⇒ no AtariARI/OCAtari source names that RAM index.",
+  "frame": 30,
+  "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path",
+  "params": {
+    "n_moving_regions": 1,
+    "frames": 40,
+    "move_px_min": 4.0,
+    "r2_min": 0.7,
+    "action_stream": [1, 3, 3, 5, 5, 1, 4, 4, 2, 2, 1, 3, 5, 4, 2, 1, 1, 3, 3, 5, 5, 1, 4, 4, 2, 2, 1, 3, 5, 4, 2, 1, 1, 3, 3, 5, 5, 1, 4, 4],
+    "sweep_vals": [10, 40, 70, 100, 130, 160, 190, 220],
+    "checkpoint": 30,
+    "r_corr_min": 0.8,
+    "background": 0
+  },
+  "where": "local",
+  "commit": "c4705da",
+  "phase": "E2-T3-discover",
+  "stderr": null,
+  "seed": 0,
+  "oracle_ref": "jutari_oracle@asteroids (bit-exact replay + intervene_ram!)",
+  "metric_name": "n_discovered_causal_labels",
+  "timestamp": "1782166819",
+  "n": 1
+}
