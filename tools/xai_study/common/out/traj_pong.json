@@ -1,0 +1,22 @@
+{
+  "paper": "P2",
+  "timestamp": "1782106832",
+  "method": "trajectory_recorder",
+  "game": "pong",
+  "fields": ["ram"],
+  "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path",
+  "arrays": "traj_pong.npz",
+  "dtype": "uint8",
+  "frames": 60,
+  "shape": [60, 128],
+  "where": "local",
+  "commit": "43ec4a4",
+  "widths": [128],
+  "phase": "common",
+  "target_output": "state_trajectory",
+  "value": 60,
+  "seed": 0,
+  "metric_name": "n_frames",
+  "oracle_ref": "jutari_oracle@pong (bit-exact replay)",
+  "n": 60
+}
