@@ -17,14 +17,14 @@
 | P2-E2-2 | Verify-by-intervention + offset-correct T3 labels | E2 | 2 | — | local | todo | P2-E2-1, P2-E1-1 | `tools/xai_study/t3/verify_labels.*`<br>`tools/xai_study/t3/out/verified_*` |
 | P2-E2-3 | Discover new T3 labels (correlation + sweep) | E2 | 2 | — | cluster | todo | P2-E2-2 | `tools/xai_study/t3/discover_labels.*`<br>`tools/xai_study/t3/out/discovered_*` |
 | P2-E3-0 | Phase-A pilot (A2+A3+A7 on Space Invaders, scored) | E3 | 3 | — | local | done | P2-E1-1, P2-E0-2j | `tools/xai_study/phaseA_kording/pilot_si.*`<br>`tools/xai_study/phaseA_kording/out/pilotA_*` |
-| P2-E3-1 | A1 connectomics / data-flow graph recovery | E3 | 3 | — | local | todo | P2-E3-0 | `tools/xai_study/phaseA_kording/A1_connectomics.py`<br>`tools/xai_study/phaseA_kording/out/A1_*` |
+| P2-E3-1 | A1 connectomics / data-flow graph recovery | E3 | 4 | — | local | todo | P2-E3-0 | `tools/xai_study/phaseA_kording/A1_connectomics.py`<br>`tools/xai_study/phaseA_kording/out/A1_*` |
 | P2-E3-2 | A2 single-unit lesions importance map | E3 | 3 | — | cluster | todo | P2-E3-0 | `tools/xai_study/phaseA_kording/A2_lesions.py`<br>`tools/xai_study/phaseA_kording/out/A2_*` |
-| P2-E3-3 | A3 tuning curves + spurious-tuning rate | E3 | 3 | — | local | todo | P2-E3-0 | `tools/xai_study/phaseA_kording/A3_tuning.py`<br>`tools/xai_study/phaseA_kording/out/A3_*` |
-| P2-E3-4 | A4 spike-word / pairwise correlations | E3 | 3 | — | local | todo | P2-E3-0 | `tools/xai_study/phaseA_kording/A4_correlations.py`<br>`tools/xai_study/phaseA_kording/out/A4_*` |
-| P2-E3-5 | A5 local field potentials (pooled-activity spectra) | E3 | 3 | — | local | todo | P2-E3-0 | `tools/xai_study/phaseA_kording/A5_lfp.py`<br>`tools/xai_study/phaseA_kording/out/A5_*` |
-| P2-E3-6 | A6 Granger causality on CPU/TIA/RIOT | E3 | 3 | — | local | todo | P2-E3-0 | `tools/xai_study/phaseA_kording/A6_granger.py`<br>`tools/xai_study/phaseA_kording/out/A6_*` |
-| P2-E3-7 | A7 dim-reduction (NMF/PCA) latent components | E3 | 3 | — | local | todo | P2-E3-0 | `tools/xai_study/phaseA_kording/A7_dimred.py`<br>`tools/xai_study/phaseA_kording/out/A7_*` |
-| P2-E3-8 | A8 whole-state recording (descriptive baseline) | E3 | 3 | — | local | todo | P2-E3-0 | `tools/xai_study/phaseA_kording/A8_wholestate.py`<br>`tools/xai_study/phaseA_kording/out/A8_*` |
+| P2-E3-3 | A3 tuning curves + spurious-tuning rate | E3 | 4 | — | local | todo | P2-E3-0 | `tools/xai_study/phaseA_kording/A3_tuning.py`<br>`tools/xai_study/phaseA_kording/out/A3_*` |
+| P2-E3-4 | A4 spike-word / pairwise correlations | E3 | 4 | — | local | todo | P2-E3-0 | `tools/xai_study/phaseA_kording/A4_correlations.py`<br>`tools/xai_study/phaseA_kording/out/A4_*` |
+| P2-E3-5 | A5 local field potentials (pooled-activity spectra) | E3 | 4 | — | local | todo | P2-E3-0 | `tools/xai_study/phaseA_kording/A5_lfp.py`<br>`tools/xai_study/phaseA_kording/out/A5_*` |
+| P2-E3-6 | A6 Granger causality on CPU/TIA/RIOT | E3 | 4 | — | local | todo | P2-E3-0 | `tools/xai_study/phaseA_kording/A6_granger.py`<br>`tools/xai_study/phaseA_kording/out/A6_*` |
+| P2-E3-7 | A7 dim-reduction (NMF/PCA) latent components | E3 | 4 | — | local | todo | P2-E3-0 | `tools/xai_study/phaseA_kording/A7_dimred.py`<br>`tools/xai_study/phaseA_kording/out/A7_*` |
+| P2-E3-8 | A8 whole-state recording (descriptive baseline) | E3 | 4 | — | local | todo | P2-E3-0 | `tools/xai_study/phaseA_kording/A8_wholestate.py`<br>`tools/xai_study/phaseA_kording/out/A8_*` |
 | P2-E3-9 | (optional) Visual6502 transistor track for A1/A2 head-to-head | E3 | 3 | — | local | todo | P2-E3-1, P2-E3-2 | `tools/xai_study/phaseA_kording/visual6502/**` |
 | P2-E4-0 | Phase-B pilot — IG vs oracle (one output, one game) | E4 | 2 | — | local | done | P2-E1-1, P2-E1-2 | `tools/xai_study/phaseB_attribution/pilot_ig_vs_oracle.py`<br>`tools/xai_study/phaseB_attribution/pilot_ig_vs_oracle.jl`<br>`tools/xai_study/phaseB_attribution/out/pilotB_*` |
 | P2-E4-1 | Vanilla gradient (saliency) attribution vs oracle | E4 | 3 | — | cluster | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/vanilla_gradient.py`<br>`tools/xai_study/phaseB_attribution/out/vanilla_gradient_*` |
@@ -39,7 +39,7 @@
 | P2-E4-10 | LIME attribution vs oracle | E4 | 3 | — | cluster | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/lime.py`<br>`tools/xai_study/phaseB_attribution/out/lime_*` |
 | P2-E4-11 | KernelSHAP / Shapley sampling attribution vs oracle | E4 | 3 | — | cluster | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/kernelshap_shapley.py`<br>`tools/xai_study/phaseB_attribution/out/kernelshap_shapley_*` |
 | P2-E4-12 | On-distribution counterfactual attribution vs oracle | E4 | 3 | — | cluster | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/counterfactual_ondist.py`<br>`tools/xai_study/phaseB_attribution/out/counterfactual_ondist_*` |
-| P2-E4-13 | N/A audit — Grad-CAM/attention/VIPER do-not-apply writeup | E4 | 3 | — | local | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/na_audit.py`<br>`tools/xai_study/phaseB_attribution/out/na_audit_*` |
+| P2-E4-13 | N/A audit — Grad-CAM/attention/VIPER do-not-apply writeup | E4 | 4 | — | local | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/na_audit.py`<br>`tools/xai_study/phaseB_attribution/out/na_audit_*` |
 | P2-E5-0 | Phase-C pilot — activation patching + 1 SAE on VCS state | E5 | 3 | — | local | done | P2-E1-1, P2-E0-2j | `tools/xai_study/phaseC_mechanistic/pilot_patch_sae.jl`<br>`tools/xai_study/phaseC_mechanistic/pilot_patch_sae.py`<br>`tools/xai_study/phaseC_mechanistic/out/pilotC_*` |
 | P2-E5-1 | Activation patching / causal tracing vs exact patch | E5 | 3 | — | cluster | todo | P2-E5-0 | `tools/xai_study/phaseC_mechanistic/activation_patching.py`<br>`tools/xai_study/phaseC_mechanistic/out/activation_patching_*` |
 | P2-E5-2 | Interchange interventions / DAS vs true variable alignment | E5 | 3 | — | cluster | todo | P2-E5-0 | `tools/xai_study/phaseC_mechanistic/interchange_das.py`<br>`tools/xai_study/phaseC_mechanistic/out/interchange_das_*` |
@@ -76,7 +76,7 @@
 | P2-E9-4 | Final build + page/limit gate (SM) | E9 | 7 | — | local | todo | P2-E9-1, P2-E9-2, P2-E9-3 | `paper/main.tex`<br>`paper/build/**` |
 
 ## Items per sprint
-Sprint 0: 3, Sprint 1: 6, Sprint 2: 3, Sprint 3: 35, Sprint 5: 9, Sprint 6: 10, Sprint 7: 4
+Sprint 0: 3, Sprint 1: 6, Sprint 2: 3, Sprint 3: 27, Sprint 4: 8, Sprint 5: 9, Sprint 6: 10, Sprint 7: 4
 
 ## Sprint log
 See [`../sprints/`](../sprints/) for per-sprint Planning + Review notes.
