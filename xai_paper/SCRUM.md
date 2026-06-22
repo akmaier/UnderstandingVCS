@@ -164,8 +164,13 @@ its self-check before `done`.**
 - `where: local` → runs on this machine (M1 Max): the oracle, pilots, small sweeps,
   figures, writing.
 - `where: cluster` → LME Slurm (login user **`maier`**, confirmed; repo on
-  `/cluster/maier`, `tools/cluster/*.sbatch`, jaxtari GPU venv `jax[cuda12]`): full
-  lesion/occlusion sweeps, SAE training, batched gradients.
+  `/cluster/maier`, `tools/cluster/*.sbatch`): full lesion/occlusion sweeps, SAE training,
+  batched gradients. **Per-user QOS cap = 10 concurrent jobs** (raised 2026-06-22 from ~4);
+  the operator also runs `mayo-*` jobs there, so **throttle P2 arrays with `%N`** (e.g.
+  `--array=0-63%6`) to leave headroom. The cluster needed provisioning (no Julia / no ROMs
+  by default): the Julia depot + jutari precompile live on `/cluster/maier/.julia`; the ROM
+  set is rsync'd up (gitignored); **jutari** jobs use `tools/cluster/xai_array_jl.sbatch`
+  (Julia), and the jaxtari GPU SOFT-STE path uses `xai_gpu.sbatch` (`jax[cuda12]`).
 - **ROMs (local):** `xitari/games/Atari-2600-VCS-ROM-Collection/ROMS/` (repo-relative;
   gitignored — **use in place, never commit**); the same collection is available on the
   cluster under `/cluster/maier`.
