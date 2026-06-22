@@ -1,0 +1,337 @@
+{
+  "arrays": "oracle_pong_score.npz",
+  "ci": null,
+  "commit": "aca7293",
+  "extra": {
+    "bit_exact_rerun": true,
+    "causes": [
+      {
+        "concept": "enemy_score",
+        "index": 13,
+        "kind": "ram",
+        "mode": "set",
+        "name": "ram[13]:set",
+        "note": "RAM[13] enemy_score <- base+17",
+        "value": 17
+      },
+      {
+        "concept": "enemy_score",
+        "index": 13,
+        "kind": "ram",
+        "mode": "occlude",
+        "name": "ram[13]:occlude",
+        "note": "RAM[13] enemy_score <- 0",
+        "value": 0
+      },
+      {
+        "concept": "player_score",
+        "index": 14,
+        "kind": "ram",
+        "mode": "set",
+        "name": "ram[14]:set",
+        "note": "RAM[14] player_score <- base+17",
+        "value": 17
+      },
+      {
+        "concept": "player_score",
+        "index": 14,
+        "kind": "ram",
+        "mode": "occlude",
+        "name": "ram[14]:occlude",
+        "note": "RAM[14] player_score <- 0",
+        "value": 0
+      },
+      {
+        "concept": "enemy_x",
+        "index": 45,
+        "kind": "ram",
+        "mode": "set",
+        "name": "ram[45]:set",
+        "note": "RAM[45] enemy_x <- base+17",
+        "value": 81
+      },
+      {
+        "concept": "enemy_x",
+        "index": 45,
+        "kind": "ram",
+        "mode": "occlude",
+        "name": "ram[45]:occlude",
+        "note": "RAM[45] enemy_x <- 0",
+        "value": 0
+      },
+      {
+        "concept": "player_x",
+        "index": 46,
+        "kind": "ram",
+        "mode": "set",
+        "name": "ram[46]:set",
+        "note": "RAM[46] player_x <- base+17",
+        "value": 205
+      },
+      {
+        "concept": "player_x",
+        "index": 46,
+        "kind": "ram",
+        "mode": "occlude",
+        "name": "ram[46]:occlude",
+        "note": "RAM[46] player_x <- 0",
+        "value": 0
+      },
+      {
+        "concept": "ball_x",
+        "index": 49,
+        "kind": "ram",
+        "mode": "set",
+        "name": "ram[49]:set",
+        "note": "RAM[49] ball_x <- base+17",
+        "value": 87
+      },
+      {
+        "concept": "ball_x",
+        "index": 49,
+        "kind": "ram",
+        "mode": "occlude",
+        "name": "ram[49]:occlude",
+        "note": "RAM[49] ball_x <- 0",
+        "value": 0
+      },
+      {
+        "concept": "enemy_y",
+        "index": 50,
+        "kind": "ram",
+        "mode": "set",
+        "name": "ram[50]:set",
+        "note": "RAM[50] enemy_y <- base+17",
+        "value": 201
+      },
+      {
+        "concept": "enemy_y",
+        "index": 50,
+        "kind": "ram",
+        "mode": "occlude",
+        "name": "ram[50]:occlude",
+        "note": "RAM[50] enemy_y <- 0",
+        "value": 0
+      },
+      {
+        "concept": "player_y",
+        "index": 51,
+        "kind": "ram",
+        "mode": "set",
+        "name": "ram[51]:set",
+        "note": "RAM[51] player_y <- base+17",
+        "value": 126
+      },
+      {
+        "concept": "player_y",
+        "index": 51,
+        "kind": "ram",
+        "mode": "occlude",
+        "name": "ram[51]:occlude",
+        "note": "RAM[51] player_y <- 0",
+        "value": 0
+      },
+      {
+        "concept": "ball_y",
+        "index": 54,
+        "kind": "ram",
+        "mode": "set",
+        "name": "ram[54]:set",
+        "note": "RAM[54] ball_y <- base+17",
+        "value": 201
+      },
+      {
+        "concept": "ball_y",
+        "index": 54,
+        "kind": "ram",
+        "mode": "occlude",
+        "name": "ram[54]:occlude",
+        "note": "RAM[54] ball_y <- 0",
+        "value": 0
+      },
+      {
+        "concept": "bg_colour",
+        "index": 9,
+        "kind": "tia_reg",
+        "mode": "set",
+        "name": "tia[COLUBK]:set",
+        "note": "TIA COLUBK <- 0x0E (white) — content path to bg pixels",
+        "value": 14
+      },
+      {
+        "concept": "agent_input",
+        "index": -1,
+        "kind": "joystick",
+        "mode": "replace",
+        "name": "joystick:RIGHT",
+        "note": "do(action := RIGHT) at the target frame",
+        "value": 3
+      }
+    ],
+    "delta_map": {
+      "joystick:RIGHT": {
+        "ball_pixel@r118c17": 0.0,
+        "bg_pixel@r208c80": 0.0,
+        "n_changed_px": 48.0,
+        "p0_score": 0.0,
+        "p1_score": 0.0
+      },
+      "ram[13]:occlude": {
+        "ball_pixel@r118c17": 0.0,
+        "bg_pixel@r208c80": 0.0,
+        "n_changed_px": 0.0,
+        "p0_score": 0.0,
+        "p1_score": 0.0
+      },
+      "ram[13]:set": {
+        "ball_pixel@r118c17": 0.0,
+        "bg_pixel@r208c80": 0.0,
+        "n_changed_px": 160.0,
+        "p0_score": 17.0,
+        "p1_score": 0.0
+      },
+      "ram[14]:occlude": {
+        "ball_pixel@r118c17": 0.0,
+        "bg_pixel@r208c80": 0.0,
+        "n_changed_px": 0.0,
+        "p0_score": 0.0,
+        "p1_score": 0.0
+      },
+      "ram[14]:set": {
+        "ball_pixel@r118c17": 0.0,
+        "bg_pixel@r208c80": 0.0,
+        "n_changed_px": 160.0,
+        "p0_score": 0.0,
+        "p1_score": 17.0
+      },
+      "ram[45]:occlude": {
+        "ball_pixel@r118c17": 0.0,
+        "bg_pixel@r208c80": 0.0,
+        "n_changed_px": 0.0,
+        "p0_score": 0.0,
+        "p1_score": 0.0
+      },
+      "ram[45]:set": {
+        "ball_pixel@r118c17": 0.0,
+        "bg_pixel@r208c80": 0.0,
+        "n_changed_px": 0.0,
+        "p0_score": 0.0,
+        "p1_score": 0.0
+      },
+      "ram[46]:occlude": {
+        "ball_pixel@r118c17": 0.0,
+        "bg_pixel@r208c80": 0.0,
+        "n_changed_px": 0.0,
+        "p0_score": 0.0,
+        "p1_score": 0.0
+      },
+      "ram[46]:set": {
+        "ball_pixel@r118c17": 0.0,
+        "bg_pixel@r208c80": 0.0,
+        "n_changed_px": 0.0,
+        "p0_score": 0.0,
+        "p1_score": 0.0
+      },
+      "ram[49]:occlude": {
+        "ball_pixel@r118c17": -22.0,
+        "bg_pixel@r208c80": 0.0,
+        "n_changed_px": 232.0,
+        "p0_score": 0.0,
+        "p1_score": 1.0
+      },
+      "ram[49]:set": {
+        "ball_pixel@r118c17": 0.0,
+        "bg_pixel@r208c80": 0.0,
+        "n_changed_px": 16.0,
+        "p0_score": 0.0,
+        "p1_score": 0.0
+      },
+      "ram[50]:occlude": {
+        "ball_pixel@r118c17": 0.0,
+        "bg_pixel@r208c80": 0.0,
+        "n_changed_px": 0.0,
+        "p0_score": 0.0,
+        "p1_score": 0.0
+      },
+      "ram[50]:set": {
+        "ball_pixel@r118c17": 0.0,
+        "bg_pixel@r208c80": 0.0,
+        "n_changed_px": 0.0,
+        "p0_score": 0.0,
+        "p1_score": 0.0
+      },
+      "ram[51]:occlude": {
+        "ball_pixel@r118c17": 0.0,
+        "bg_pixel@r208c80": 0.0,
+        "n_changed_px": 0.0,
+        "p0_score": 0.0,
+        "p1_score": 0.0
+      },
+      "ram[51]:set": {
+        "ball_pixel@r118c17": 0.0,
+        "bg_pixel@r208c80": 0.0,
+        "n_changed_px": 0.0,
+        "p0_score": 0.0,
+        "p1_score": 0.0
+      },
+      "ram[54]:occlude": {
+        "ball_pixel@r118c17": -22.0,
+        "bg_pixel@r208c80": 0.0,
+        "n_changed_px": 76.0,
+        "p0_score": 0.0,
+        "p1_score": 0.0
+      },
+      "ram[54]:set": {
+        "ball_pixel@r118c17": -22.0,
+        "bg_pixel@r208c80": 0.0,
+        "n_changed_px": 144.0,
+        "p0_score": 0.0,
+        "p1_score": 0.0
+      },
+      "tia[COLUBK]:set": {
+        "ball_pixel@r118c17": 0.0,
+        "bg_pixel@r208c80": 0.0,
+        "n_changed_px": 0.0,
+        "p0_score": 0.0,
+        "p1_score": 0.0
+      }
+    },
+    "output_notes": [
+      "RAM[$0D] agent/cpu score",
+      "RAM[$0E] opponent/human score",
+      "palette index at the (causally-located) ball cell (row=118, col=17)",
+      "negative-control background cell (row=208, col=80)",
+      "count of framebuffer cells differing from the baseline frame"
+    ],
+    "outputs": [
+      "p0_score",
+      "p1_score",
+      "ball_pixel@r118c17",
+      "bg_pixel@r208c80",
+      "n_changed_px"
+    ],
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) + the retained jaxtari oracle_intervene.py for GPU SOFT-STE batches — forward is bit-exact to this HARD map.",
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path",
+    "y_baseline": {
+      "ball_pixel@r118c17": 56.0,
+      "bg_pixel@r208c80": 14.0,
+      "n_changed_px": 0.0,
+      "p0_score": 0.0,
+      "p1_score": 0.0
+    }
+  },
+  "game": "pong",
+  "method": "intervention_oracle",
+  "metric_name": "max_abs_score_delta",
+  "n": 18,
+  "oracle_ref": "oracle_intervene@pong#score,ball_pixel",
+  "paper": "P2",
+  "phase": "ground_truth",
+  "seed": 0,
+  "state": "f120+30",
+  "stderr": null,
+  "target_output": "pong_score+ball_pixel",
+  "timestamp": "1782103983",
+  "value": 17.0,
+  "where": "local"
+}
