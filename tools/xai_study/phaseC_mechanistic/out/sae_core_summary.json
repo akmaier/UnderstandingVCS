@@ -1,0 +1,144 @@
+{
+  "commit": "b08fa17",
+  "games": [
+    {
+      "FSM": [
+        0.04081727099225389,
+        -0.3362197135119086,
+        0.26785714285714285
+      ],
+      "ablate_eq_oracle": true,
+      "best_d_hidden": 64,
+      "best_l1": 0.01,
+      "fve_held": 0.9954275065661237,
+      "fve_train": 0.9955001102978871,
+      "game": "pong",
+      "in_window": true,
+      "matched_fraction": 1.0,
+      "mean_target_share": 0.5,
+      "n_cands": 8,
+      "n_causal_use_features": 2,
+      "n_causal_use_moved": 0,
+      "n_oracle_causal": 4,
+      "n_varying_known": 4,
+      "state": "f60+30"
+    },
+    {
+      "FSM": [
+        -0.5316851282763626,
+        -0.16294847825788497,
+        0.18333333333333335
+      ],
+      "ablate_eq_oracle": true,
+      "best_d_hidden": 64,
+      "best_l1": 0.01,
+      "fve_held": 0.982114917410822,
+      "fve_train": 0.9950557470413802,
+      "game": "breakout",
+      "in_window": true,
+      "matched_fraction": 1.0,
+      "mean_target_share": 0.3333333333333333,
+      "n_cands": 9,
+      "n_causal_use_features": 3,
+      "n_causal_use_moved": 2,
+      "n_oracle_causal": 7,
+      "n_varying_known": 4,
+      "state": "f60+30"
+    },
+    {
+      "FSM": [
+        -0.5562440457566233,
+        -0.12712197233114955,
+        0.0
+      ],
+      "ablate_eq_oracle": true,
+      "best_d_hidden": 32,
+      "best_l1": 0.01,
+      "fve_held": 0.8269788098593578,
+      "fve_train": 0.9961152064178435,
+      "game": "space_invaders",
+      "in_window": false,
+      "matched_fraction": 1.0,
+      "mean_target_share": 0.0,
+      "n_cands": 17,
+      "n_causal_use_features": 1,
+      "n_causal_use_moved": 0,
+      "n_oracle_causal": 10,
+      "n_varying_known": 7,
+      "state": "f120+30"
+    },
+    {
+      "FSM": [
+        -0.01920152687044829,
+        0.5539476327904542,
+        0.001084010840108401
+      ],
+      "ablate_eq_oracle": true,
+      "best_d_hidden": 32,
+      "best_l1": 0.01,
+      "fve_held": 0.9850284363092863,
+      "fve_train": 0.9964862245497208,
+      "game": "seaquest",
+      "in_window": false,
+      "matched_fraction": 1.0,
+      "mean_target_share": 0.0018066847335140017,
+      "n_cands": 23,
+      "n_causal_use_features": 3,
+      "n_causal_use_moved": 2,
+      "n_oracle_causal": 12,
+      "n_varying_known": 11,
+      "state": "f120+30"
+    },
+    {
+      "FSM": [
+        -0.034518193085326165,
+        -0.2687590110966592,
+        0.12670709922510542
+      ],
+      "ablate_eq_oracle": true,
+      "best_d_hidden": 64,
+      "best_l1": 0.01,
+      "fve_held": 0.9846259184712366,
+      "fve_train": 0.9929886501670797,
+      "game": "ms_pacman",
+      "in_window": false,
+      "matched_fraction": 0.8333333333333334,
+      "mean_target_share": 0.24527419245704415,
+      "n_cands": 19,
+      "n_causal_use_features": 8,
+      "n_causal_use_moved": 6,
+      "n_oracle_causal": 14,
+      "n_varying_known": 12,
+      "state": "f330+30"
+    },
+    {
+      "FSM": [
+        0.3221587763010645,
+        -0.10629795905373268,
+        0.009070294784580499
+      ],
+      "ablate_eq_oracle": true,
+      "best_d_hidden": 16,
+      "best_l1": 0.01,
+      "fve_held": 0.08569152933693736,
+      "fve_train": 0.9914790445761862,
+      "game": "qbert",
+      "in_window": true,
+      "matched_fraction": 0.9375,
+      "mean_target_share": 0.015873015873015872,
+      "n_cands": 20,
+      "n_causal_use_features": 7,
+      "n_causal_use_moved": 0,
+      "n_oracle_causal": 7,
+      "n_varying_known": 16,
+      "state": "f60+30"
+    }
+  ],
+  "headline": "Full L1 SAE over recorded VCS RAM trajectories on the 6 core games: (a) reconstruction FVE (best of a d_hidden×l1 sweep), (b) feature↔variable match-rate vs the verified T3 cells, (c) CAUSAL USE — ablate a matched feature, decode back to RAM, re-run the real ROM (ablate==exact-patch oracle, asserted bit-exact) + specificity/monosemanticity (decode-leakage, target-share). Method-matrix expectation = PARTIAL: recovers features; faithfulness-to-computation debated.",
+  "item": "P2-E5-6",
+  "method": "sparse_autoencoder",
+  "n_games": 6,
+  "paper": "P2",
+  "phase": "phaseC_mechanistic",
+  "timestamp": "1782165182"
+}
