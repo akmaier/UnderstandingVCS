@@ -1,0 +1,127 @@
+{
+  "arrays": "acdc_breakout.npz",
+  "budget": {
+    "horizon_frames": 30,
+    "note": "paper-reasonable: the τ sweep adds zero re-runs (it thresholds the cached effect matrix). Heavy cost is the N resample re-runs + the exhaustive 3N ground-truth re-runs; re-runnable incrementally from the cached deepcopy checkpoint.",
+    "rom_reruns_acdc": "N resample-ablations (1 per source) + 1 corrupted boot + 1 scrub re-run + 2 bit-exact baselines",
+    "rom_reruns_true_graph": "≤ 3·N exhaustive interventions (N=9 cells × 3 do-values)",
+    "tau_sweep": "2 thresholds (pure thresholding of the cached effect matrix — NO extra re-runs)"
+  },
+  "ci": null,
+  "commit": "7be1f32",
+  "extra": {
+    "ablation": "resample (parent overwritten with its value from the corrupted RIGHT-action donor run); standard ACDC corruption (Conmy et al. 2023 §3), not zero.",
+    "bit_exact_rerun": true,
+    "candidate_cells": [
+      "RAM[30]:block_bit_map",
+      "RAM[72]:player_x",
+      "RAM[77]:blocks_hit_count",
+      "RAM[84]:score",
+      "RAM[99]:ball_x",
+      "RAM[101]:ball_y",
+      "RAM[0]:blocks",
+      "RAM[57]:lives",
+      "RAM[76]:score"
+    ],
+    "candidate_ram_indices": [
+      30,
+      72,
+      77,
+      84,
+      99,
+      101,
+      0,
+      57,
+      76
+    ],
+    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/.claude/worktrees/wf_6fa7951f-2ea-2/tools/xai_study/t3/out/candidates_breakout.json",
+    "circuit": {
+      "best_tau": 2.5,
+      "discovered_edges_at_best_tau": [
+        [
+          2,
+          3
+        ]
+      ],
+      "f1": 1.0,
+      "fn": 0,
+      "fp": 0,
+      "n_discovered_edges_at_best": 1,
+      "n_nodes": 9,
+      "n_true_edges": 1,
+      "note": "edges are 0-based candidate ordinals [i,j] = cell i -> cell j. TRUE = exhaustive oracle (do 0/base+17/base+37, full horizon, any value changes j); DISCOVERED = ACDC keep-rule (resample-ablation effect > τ). The τ sweep is the ROC frontier.",
+      "precision": 1.0,
+      "recall": 1.0,
+      "roc_auc": 1.0,
+      "tp": 1,
+      "true_edges": [
+        [
+          2,
+          3
+        ]
+      ]
+    },
+    "n_source_diverged": 1,
+    "positive_control": {
+      "f1": 1.0,
+      "name": "oracle-as-ACDC (exhaustive do-set, full horizon, τ=0)",
+      "note": "the exhaustive keep-rule IS the true-graph procedure, so it scores F1=1 — the harness rewards a perfectly-faithful discovery, so the resample-ACDC F1<1 is a real cheap-ablation faithfulness gap.",
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "rom_basename": "breakout.bin",
+    "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard/--nshards/--shard-kind game --out-dir --roms-dir --where) — the full ACDC battery over the core + breadth sets; forward bit-exact to this HARD path.",
+    "scrubbing": {
+      "n_scrubbed_parents": 8,
+      "note": "causal scrubbing of the best-F1 discovered circuit: resample-ablate every parent NOT in the circuit, re-run, report the fraction of candidate-cell readouts unchanged vs clean.",
+      "preserved_fraction": 0.4444444444444444
+    },
+    "settings": "BreakoutRomSettings",
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge effect is an EXACT resample-ablation re-run on the true ROM.",
+    "tau_sweep": [
+      {
+        "f1": 1.0,
+        "fn": 0,
+        "fp": 0,
+        "n_discovered": 1,
+        "precision": 1.0,
+        "recall": 1.0,
+        "tau": 2.5,
+        "tp": 1
+      },
+      {
+        "f1": 0.0,
+        "fn": 1,
+        "fp": 0,
+        "n_discovered": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "tau": 6.0,
+        "tp": 0
+      }
+    ],
+    "triad": {
+      "F": 1.0,
+      "F_note": "best-F1 of the ACDC-discovered circuit edges vs the exhaustive-oracle true data-flow (9 candidate cells)",
+      "M": 1.0,
+      "M_note": "1 − over-claim rate at best-F1 τ: fraction of discovered edges the oracle says are spurious (false wiring kept by the cheap ablation)",
+      "S": 0.4444444444444444,
+      "S_note": "scrubbing-preserved performance: the discovered circuit alone (non-circuit parents resample-scrubbed) reproduces the clean candidate-cell readouts (fraction unchanged, bit-exact re-run)",
+      "interpretation": "ACDC's goal state IS our ground truth (experiment_design.md §7: Partial→Succeed). The discovery uses a cheap single-value resample-ablation, so it can miss edges that fire only for a different value (recall deficit) and keep transient ones (precision deficit) vs the exhaustive true data-flow."
+    }
+  },
+  "game": "breakout",
+  "method": "ACDC(automatic circuit discovery, resample-ablation edge pruning)",
+  "metric_name": "discovered_circuit_best_F1_vs_true_dataflow",
+  "n": 9,
+  "oracle_ref": "A1_connectomics/oracle_intervene@breakout — exhaustive exact inter-cell data-flow (do-set 0/base+17/base+37, full horizon)",
+  "paper": "P2",
+  "phase": "phaseC_mechanistic",
+  "seed": 0,
+  "state": "f30+30",
+  "stderr": null,
+  "target_output": "auto-discovered inter-cell data-flow circuit (candidate RAM cells)",
+  "timestamp": "1782163062",
+  "value": 1.0,
+  "where": "local"
+}

@@ -1,0 +1,210 @@
+{
+  "arrays": "acdc_ms_pacman.npz",
+  "budget": {
+    "horizon_frames": 30,
+    "note": "paper-reasonable: the τ sweep adds zero re-runs (it thresholds the cached effect matrix). Heavy cost is the N resample re-runs + the exhaustive 3N ground-truth re-runs; re-runnable incrementally from the cached deepcopy checkpoint.",
+    "rom_reruns_acdc": "N resample-ablations (1 per source) + 1 corrupted boot + 1 scrub re-run + 2 bit-exact baselines",
+    "rom_reruns_true_graph": "≤ 3·N exhaustive interventions (N=19 cells × 3 do-values)",
+    "tau_sweep": "2 thresholds (pure thresholding of the cached effect matrix — NO extra re-runs)"
+  },
+  "ci": null,
+  "commit": "7be1f32",
+  "extra": {
+    "ablation": "resample (parent overwritten with its value from the corrupted RIGHT-action donor run); standard ACDC corruption (Conmy et al. 2023 §3), not zero.",
+    "bit_exact_rerun": true,
+    "candidate_cells": [
+      "RAM[6]:enemy_sue_x",
+      "RAM[7]:enemy_inky_x",
+      "RAM[8]:enemy_pinky_x",
+      "RAM[9]:enemy_blinky_x",
+      "RAM[10]:player_x",
+      "RAM[11]:fruit_x",
+      "RAM[12]:enemy_sue_y",
+      "RAM[13]:enemy_inky_y",
+      "RAM[14]:enemy_pinky_y",
+      "RAM[15]:enemy_blinky_y",
+      "RAM[16]:player_y",
+      "RAM[17]:fruit_y",
+      "RAM[19]:ghosts_count",
+      "RAM[56]:player_direction",
+      "RAM[119]:dots_eaten_count",
+      "RAM[120]:player_score",
+      "RAM[123]:num_lives",
+      "RAM[121]:score",
+      "RAM[122]:score"
+    ],
+    "candidate_ram_indices": [
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      19,
+      56,
+      119,
+      120,
+      123,
+      121,
+      122
+    ],
+    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/.claude/worktrees/wf_6fa7951f-2ea-2/tools/xai_study/t3/out/candidates_ms_pacman.json",
+    "circuit": {
+      "best_tau": 1.0,
+      "discovered_edges_at_best_tau": [],
+      "f1": 0.0,
+      "fn": 18,
+      "fp": 0,
+      "n_discovered_edges_at_best": 0,
+      "n_nodes": 19,
+      "n_true_edges": 18,
+      "note": "edges are 0-based candidate ordinals [i,j] = cell i -> cell j. TRUE = exhaustive oracle (do 0/base+17/base+37, full horizon, any value changes j); DISCOVERED = ACDC keep-rule (resample-ablation effect > τ). The τ sweep is the ROC frontier.",
+      "precision": 0.0,
+      "recall": 0.0,
+      "roc_auc": 0.5,
+      "tp": 0,
+      "true_edges": [
+        [
+          12,
+          0
+        ],
+        [
+          12,
+          1
+        ],
+        [
+          12,
+          2
+        ],
+        [
+          12,
+          3
+        ],
+        [
+          12,
+          4
+        ],
+        [
+          12,
+          5
+        ],
+        [
+          12,
+          6
+        ],
+        [
+          12,
+          7
+        ],
+        [
+          12,
+          8
+        ],
+        [
+          12,
+          9
+        ],
+        [
+          12,
+          10
+        ],
+        [
+          12,
+          11
+        ],
+        [
+          12,
+          13
+        ],
+        [
+          12,
+          14
+        ],
+        [
+          12,
+          15
+        ],
+        [
+          12,
+          16
+        ],
+        [
+          12,
+          17
+        ],
+        [
+          12,
+          18
+        ]
+      ]
+    },
+    "n_source_diverged": 0,
+    "positive_control": {
+      "f1": 1.0,
+      "name": "oracle-as-ACDC (exhaustive do-set, full horizon, τ=0)",
+      "note": "the exhaustive keep-rule IS the true-graph procedure, so it scores F1=1 — the harness rewards a perfectly-faithful discovery, so the resample-ACDC F1<1 is a real cheap-ablation faithfulness gap.",
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "rom_basename": "mspacman.bin",
+    "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard/--nshards/--shard-kind game --out-dir --roms-dir --where) — the full ACDC battery over the core + breadth sets; forward bit-exact to this HARD path.",
+    "scrubbing": {
+      "n_scrubbed_parents": 19,
+      "note": "causal scrubbing of the best-F1 discovered circuit: resample-ablate every parent NOT in the circuit, re-run, report the fraction of candidate-cell readouts unchanged vs clean.",
+      "preserved_fraction": 0.05263157894736842
+    },
+    "settings": "MsPacmanRomSettings",
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge effect is an EXACT resample-ablation re-run on the true ROM.",
+    "tau_sweep": [
+      {
+        "f1": 0.0,
+        "fn": 18,
+        "fp": 0,
+        "n_discovered": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "tau": 0.0,
+        "tp": 0
+      },
+      {
+        "f1": 0.0,
+        "fn": 18,
+        "fp": 0,
+        "n_discovered": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "tau": 1.0,
+        "tp": 0
+      }
+    ],
+    "triad": {
+      "F": 0.0,
+      "F_note": "best-F1 of the ACDC-discovered circuit edges vs the exhaustive-oracle true data-flow (19 candidate cells)",
+      "M": 1.0,
+      "M_note": "1 − over-claim rate at best-F1 τ: fraction of discovered edges the oracle says are spurious (false wiring kept by the cheap ablation)",
+      "S": 0.05263157894736842,
+      "S_note": "scrubbing-preserved performance: the discovered circuit alone (non-circuit parents resample-scrubbed) reproduces the clean candidate-cell readouts (fraction unchanged, bit-exact re-run)",
+      "interpretation": "ACDC's goal state IS our ground truth (experiment_design.md §7: Partial→Succeed). The discovery uses a cheap single-value resample-ablation, so it can miss edges that fire only for a different value (recall deficit) and keep transient ones (precision deficit) vs the exhaustive true data-flow."
+    }
+  },
+  "game": "ms_pacman",
+  "method": "ACDC(automatic circuit discovery, resample-ablation edge pruning)",
+  "metric_name": "discovered_circuit_best_F1_vs_true_dataflow",
+  "n": 19,
+  "oracle_ref": "A1_connectomics/oracle_intervene@ms_pacman — exhaustive exact inter-cell data-flow (do-set 0/base+17/base+37, full horizon)",
+  "paper": "P2",
+  "phase": "phaseC_mechanistic",
+  "seed": 0,
+  "state": "f30+30",
+  "stderr": null,
+  "target_output": "auto-discovered inter-cell data-flow circuit (candidate RAM cells)",
+  "timestamp": "1782163080",
+  "value": 0.0,
+  "where": "local"
+}
