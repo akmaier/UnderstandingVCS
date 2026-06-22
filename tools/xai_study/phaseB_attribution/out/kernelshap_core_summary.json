@@ -1,0 +1,384 @@
+{
+  "budget_note": {
+    "convergence": "SHAP re-solved at N/8, N/4, N/2, N from the SAME coalition pool — no extra re-runs",
+    "cost": "≤ n_coalitions unique real re-runs + 2 pinned endpoints per output (2 outputs/game: content + position)",
+    "n_coalitions": 512
+  },
+  "commit": "db5c9dc",
+  "games": [
+    "pong",
+    "breakout",
+    "space_invaders",
+    "seaquest",
+    "ms_pacman",
+    "qbert"
+  ],
+  "headline": "KernelSHAP / Shapley sampling (Lundberg & Lee 2017; Štrumbelj & Kononenko 2014): estimate the Shapley values of the candidate RAM cells for y by sampling N=512 coalitions from the Shapley kernel, masking absent cells to 0, RE-RUNNING the real ROM for each unique coalition, and solving the efficiency-constrained weighted least squares. Scored vs the intervention oracle (corr + del/ins AUC + precision@k); the EFFICIENCY axiom Σφ = y(intact) − y(all-masked) is reported as completeness; the CONVERGENCE sweep (N/8…N) shows the estimate stabilising as N grows (SHAP variance ∝ 1/N — the §7 'approximations diverge' knob). NO surrogate: the value function IS the true emulator. KEY CONTRAST vs IG/saliency: KernelSHAP ALSO works on POSITION outputs where the gradient methods VANISH. Oracle-as-method positive control corr=1/p@k=1.",
+  "horizon": 30,
+  "item": "P2-E4-11",
+  "method": "kernelshap",
+  "metrics_note": {
+    "convergence": "corr/p@k/del-ins/residual vs the coalition count N (convergence vs compute)",
+    "efficiency": "Σφ ≈ y(intact) − y(all-masked) (the SHAP completeness axiom)",
+    "faithfulness": "corr + deletion/insertion AUC on the TRUE VCS + precision@k vs the oracle top-k"
+  },
+  "n_coalitions": 512,
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "completeness_residual": 2.842170943040401e-14,
+      "content_ram_index": 54,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.6638397989937669,
+        0.6557594904741557,
+        0.635324830865633,
+        0.6253220182208505
+      ],
+      "deletion_auc": 0.01648059542796385,
+      "game": "pong",
+      "insertion_auc": 0.5890483785220628,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 165,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@54)",
+      "output_kind": "content",
+      "pearson": 0.6253220182208505,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.5809036604762328
+    },
+    {
+      "completeness_residual": 2.220446049250313e-16,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.8587479029042702,
+        0.8576524584208381,
+        0.8654483144596398,
+        0.674058926773775
+      ],
+      "deletion_auc": 0.8888888888888888,
+      "game": "pong",
+      "insertion_auc": 0.8888888888888888,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 165,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "ball_pixel@r118c17",
+      "output_kind": "position",
+      "pearson": 0.674058926773775,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.5773502691896257
+    },
+    {
+      "completeness_residual": 2.842170943040401e-14,
+      "content_ram_index": 30,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.7497409755188418,
+        0.7497409755188416,
+        0.7497409755188416,
+        0.7497409755188419
+      ],
+      "deletion_auc": 0.025,
+      "game": "breakout",
+      "insertion_auc": 0.925,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 223,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@30)",
+      "output_kind": "content",
+      "pearson": 0.7497409755188419,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.5215091519019602
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "deletion_auc": null,
+      "game": "breakout",
+      "insertion_auc": null,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 223,
+      "oracle_self_pearson": 0.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "ball_pixel@r105c80",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 1.0,
+      "spearman": 0.0
+    },
+    {
+      "completeness_residual": 4.263256414560601e-14,
+      "content_ram_index": 81,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.6871312092463469,
+        0.5300602466417482,
+        0.47852934735564945,
+        0.4880664828738509
+      ],
+      "deletion_auc": 0.010670731707317074,
+      "game": "space_invaders",
+      "insertion_auc": 0.3591350496838302,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 380,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@81)",
+      "output_kind": "content",
+      "pearson": 0.4880664828738509,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.5031903129457951
+    },
+    {
+      "completeness_residual": 2.842170943040401e-14,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.4705882351219499,
+        0.47058823477486855,
+        0.47058823485003864,
+        0.47058823519781395
+      ],
+      "deletion_auc": 0.013888888888888888,
+      "game": "space_invaders",
+      "insertion_auc": 0.9583333333333334,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 380,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "ball_pixel@r170c43",
+      "output_kind": "position",
+      "pearson": 0.47058823519781395,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.16361870293156425
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": 118,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "deletion_auc": null,
+      "game": "seaquest",
+      "insertion_auc": null,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 400,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@118)",
+      "output_kind": "content",
+      "pearson": 0.0,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.0
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "deletion_auc": null,
+      "game": "seaquest",
+      "insertion_auc": null,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 400,
+      "oracle_self_pearson": 0.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "ball_pixel@r105c80",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 1.0,
+      "spearman": 0.0
+    },
+    {
+      "completeness_residual": 1.4210854715202004e-14,
+      "content_ram_index": 16,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.8105163119782961,
+        0.8105163119782973,
+        0.8105163119782972,
+        0.8105163119782981
+      ],
+      "deletion_auc": 0.0125,
+      "game": "ms_pacman",
+      "insertion_auc": 0.9625,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 399,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@16)",
+      "output_kind": "content",
+      "pearson": 0.8105163119782981,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.3778402039041062
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "deletion_auc": null,
+      "game": "ms_pacman",
+      "insertion_auc": null,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 399,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "ball_pixel@r105c80",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 0.0,
+      "spearman": 0.0
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": 39,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.9994497161363335,
+        0.9994497161363467,
+        0.999449716136347,
+        0.999449716136347
+      ],
+      "deletion_auc": 0.011904761904761904,
+      "game": "qbert",
+      "insertion_auc": 0.9642857142857143,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 376,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@39)",
+      "output_kind": "content",
+      "pearson": 0.999449716136347,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.36916461886061924
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.5288995380578841,
+        0.5288995396731833,
+        0.5288995398486119,
+        0.5288995404406451
+      ],
+      "deletion_auc": 0.011904761904761904,
+      "game": "qbert",
+      "insertion_auc": 0.9642857142857143,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 376,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "ball_pixel@r65c85",
+      "output_kind": "position",
+      "pearson": 0.5288995404406451,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.22342522500566306
+    }
+  ],
+  "seed": 0,
+  "target_frame": 120,
+  "timestamp": "1782161507",
+  "topk": 3,
+  "total_budget_reruns": 3886,
+  "where": "local"
+}
