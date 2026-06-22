@@ -18,7 +18,7 @@
 | P2-E2-3 | Discover new T3 labels (correlation + sweep) | E2 | 2 | — | cluster | todo | P2-E2-2 | `tools/xai_study/t3/discover_labels.*`<br>`tools/xai_study/t3/out/discovered_*` |
 | P2-E3-0 | Phase-A pilot (A2+A3+A7 on Space Invaders, scored) | E3 | 3 | — | local | done | P2-E1-1, P2-E0-2j | `tools/xai_study/phaseA_kording/pilot_si.*`<br>`tools/xai_study/phaseA_kording/out/pilotA_*` |
 | P2-E3-1 | A1 connectomics / data-flow graph recovery | E3 | 4 | — | local | done | P2-E3-0 | `tools/xai_study/phaseA_kording/A1_connectomics.jl`<br>`tools/xai_study/phaseA_kording/out/A1_*` |
-| P2-E3-2 | A2 single-unit lesions importance map | E3 | 5 | — | local | todo | P2-E3-0 | `tools/xai_study/phaseA_kording/A2_lesions.py`<br>`tools/xai_study/phaseA_kording/out/A2_*` |
+| P2-E3-2 | A2 single-unit lesions importance map | E3 | 5 | — | local | done | P2-E3-0 | `tools/xai_study/phaseA_kording/A2_lesions.py`<br>`tools/xai_study/phaseA_kording/out/A2_*` |
 | P2-E3-3 | A3 tuning curves + spurious-tuning rate | E3 | 4 | agent-A3 | local | done | P2-E3-0 | `tools/xai_study/phaseA_kording/A3_tuning.jl`<br>`tools/xai_study/phaseA_kording/out/A3_*` |
 | P2-E3-4 | A4 spike-word / pairwise correlations | E3 | 4 | — | local | done | P2-E3-0 | `tools/xai_study/phaseA_kording/A4_correlations.jl`<br>`tools/xai_study/phaseA_kording/out/A4_*` |
 | P2-E3-5 | A5 local field potentials (pooled-activity spectra) | E3 | 4 | agent-A5 | local | done | P2-E3-0 | `tools/xai_study/phaseA_kording/A5_lfp.jl`<br>`tools/xai_study/phaseA_kording/out/A5_*` |
@@ -33,11 +33,11 @@
 | P2-E4-4 | SmoothGrad attribution vs oracle | E4 | 5 | — | local | done | P2-E4-0 | `tools/xai_study/phaseB_attribution/smoothgrad.jl`<br>`tools/xai_study/phaseB_attribution/out/smoothgrad_*` |
 | P2-E4-5 | Integrated Gradients attribution vs oracle (+ baseline sweep) | E4 | 5 | — | local | done | P2-E4-0 | `tools/xai_study/phaseB_attribution/integrated_gradients.py`<br>`tools/xai_study/phaseB_attribution/out/integrated_gradients_*` |
 | P2-E4-6 | Expected Gradients attribution vs oracle | E4 | 5 | — | local | done | P2-E4-0 | `tools/xai_study/phaseB_attribution/expected_gradients.py`<br>`tools/xai_study/phaseB_attribution/out/expected_gradients_*` |
-| P2-E4-7 | Occlusion attribution vs oracle | E4 | 5 | — | local | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/occlusion.py`<br>`tools/xai_study/phaseB_attribution/out/occlusion_*` |
-| P2-E4-8 | Meaningful/extremal perturbation attribution vs oracle | E4 | 3 | — | cluster | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/extremal_perturbation.py`<br>`tools/xai_study/phaseB_attribution/out/extremal_perturbation_*` |
-| P2-E4-9 | RISE attribution vs oracle | E4 | 5 | — | local | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/rise.py`<br>`tools/xai_study/phaseB_attribution/out/rise_*` |
-| P2-E4-10 | LIME attribution vs oracle | E4 | 3 | — | cluster | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/lime.py`<br>`tools/xai_study/phaseB_attribution/out/lime_*` |
-| P2-E4-11 | KernelSHAP / Shapley sampling attribution vs oracle | E4 | 3 | — | cluster | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/kernelshap_shapley.py`<br>`tools/xai_study/phaseB_attribution/out/kernelshap_shapley_*` |
+| P2-E4-7 | Occlusion attribution vs oracle | E4 | 5 | — | local | done | P2-E4-0 | `tools/xai_study/phaseB_attribution/occlusion.jl`<br>`tools/xai_study/phaseB_attribution/out/occlusion_*` |
+| P2-E4-8 | Meaningful/extremal perturbation attribution vs oracle | E4 | 5 | — | local | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/extremal_perturbation.py`<br>`tools/xai_study/phaseB_attribution/out/extremal_perturbation_*` |
+| P2-E4-9 | RISE attribution vs oracle | E4 | 5 | — | local | done | P2-E4-0 | `tools/xai_study/phaseB_attribution/rise.jl`<br>`tools/xai_study/phaseB_attribution/out/rise_*` |
+| P2-E4-10 | LIME attribution vs oracle | E4 | 5 | — | local | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/lime.py`<br>`tools/xai_study/phaseB_attribution/out/lime_*` |
+| P2-E4-11 | KernelSHAP / Shapley sampling attribution vs oracle | E4 | 5 | — | local | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/kernelshap_shapley.py`<br>`tools/xai_study/phaseB_attribution/out/kernelshap_shapley_*` |
 | P2-E4-12 | On-distribution counterfactual attribution vs oracle | E4 | 5 | — | local | done | P2-E4-0 | `tools/xai_study/phaseB_attribution/counterfactual.jl`<br>`tools/xai_study/phaseB_attribution/out/counterfactual_*` |
 | P2-E4-13 | N/A audit — Grad-CAM/attention/VIPER do-not-apply writeup | E4 | 4 | — | local | done | P2-E4-0 | `tools/xai_study/phaseB_attribution/na_audit.jl`<br>`tools/xai_study/phaseB_attribution/na_audit.md`<br>`tools/xai_study/phaseB_attribution/out/na_audit_*` |
 | P2-E5-0 | Phase-C pilot — activation patching + 1 SAE on VCS state | E5 | 3 | — | local | done | P2-E1-1, P2-E0-2j | `tools/xai_study/phaseC_mechanistic/pilot_patch_sae.jl`<br>`tools/xai_study/phaseC_mechanistic/pilot_patch_sae.py`<br>`tools/xai_study/phaseC_mechanistic/out/pilotC_*` |
@@ -76,7 +76,7 @@
 | P2-E9-4 | Final build + page/limit gate (SM) | E9 | 7 | — | local | todo | P2-E9-1, P2-E9-2, P2-E9-3 | `paper/main.tex`<br>`paper/build/**` |
 
 ## Items per sprint
-Sprint 0: 3, Sprint 1: 6, Sprint 2: 3, Sprint 3: 12, Sprint 4: 8, Sprint 5: 24, Sprint 6: 10, Sprint 7: 4
+Sprint 0: 3, Sprint 1: 6, Sprint 2: 3, Sprint 3: 9, Sprint 4: 8, Sprint 5: 27, Sprint 6: 10, Sprint 7: 4
 
 ## Sprint log
 See [`../sprints/`](../sprints/) for per-sprint Planning + Review notes.
