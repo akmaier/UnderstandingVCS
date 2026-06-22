@@ -1,0 +1,285 @@
+{
+  "arrays": "A5_space_invaders.npz",
+  "ci": null,
+  "commit": "68b6ba6",
+  "extra": {
+    "bit_exact_rerun": true,
+    "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): the LFP-analog pooled-activity spectrum is rich, but a high fraction of its power is the KNOWN frame/animation clocks — epiphenomenal structure that says nothing about the causal computation (the dominant spectral peaks are clock harmonics). A5 REVEALS the pooled periodicities and MISSES the causal map; the clock-explained fraction is the quantified-Kording measurement here.",
+    "known_clocks": {
+      "clock_basis_dim": 11,
+      "clock_cells": [
+        {
+          "kind": "periodic",
+          "period": 2,
+          "ram_index": 1,
+          "stride": 0
+        },
+        {
+          "kind": "periodic",
+          "period": 32,
+          "ram_index": 72,
+          "stride": 0
+        },
+        {
+          "kind": "periodic",
+          "period": 2,
+          "ram_index": 112,
+          "stride": 0
+        },
+        {
+          "kind": "periodic",
+          "period": 32,
+          "ram_index": 126,
+          "stride": 0
+        },
+        {
+          "kind": "periodic",
+          "period": 32,
+          "ram_index": 127,
+          "stride": 0
+        }
+      ],
+      "n_clock_cells": 5,
+      "n_harmonics_per_period": 3,
+      "n_periodic": 5,
+      "n_ramp": 0,
+      "note": "known clocks (T2) = RAM cells that are EXACT free-running counters over the trajectory: constant-stride ramps (frame/down counters, prescalers) or fixed-period cyclic timers (animation/blink). These are hardware/firmware clocks driven by the frame cadence, NOT game state — detected structurally (no labels). The clock basis is the frame ramp + sin/cos harmonics of every detected clock period; the %-variance a pooled signal projects onto it is the EPIPHENOMENAL fraction (experiment_design.md §4 A5)."
+    },
+    "method_kind": "descriptive (no oracle F/S/M; A5 reports the pooled spectral structure it REVEALS vs the causal map it MISSES — the clock-explained fraction quantifies how much of the headline spectrum is causally inert).",
+    "regions": [
+      {
+        "clock_explained_variance_fraction": 0.4762237984908801,
+        "dominant_period_frames": 16.0,
+        "dominant_power_share": 0.10146501178921788,
+        "n_cells": 38,
+        "n_cells_varying": 38,
+        "ram_cells": [
+          1,
+          2,
+          3,
+          4,
+          8,
+          9,
+          10,
+          11,
+          26,
+          42,
+          70,
+          72,
+          74,
+          75,
+          76,
+          77,
+          78,
+          79,
+          80,
+          81,
+          82,
+          83,
+          84,
+          85,
+          87,
+          89,
+          90,
+          106,
+          109,
+          110,
+          111,
+          112,
+          120,
+          121,
+          124,
+          125,
+          126,
+          127
+        ],
+        "region": "global"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 2,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          16,
+          18
+        ],
+        "region": "(unnamed)"
+      },
+      {
+        "clock_explained_variance_fraction": 0.7449344158430259,
+        "dominant_period_frames": 128.0,
+        "dominant_power_share": 0.3284940868588878,
+        "n_cells": 1,
+        "n_cells_varying": 1,
+        "ram_cells": [
+          81
+        ],
+        "region": "bullets"
+      },
+      {
+        "clock_explained_variance_fraction": 0.9343250983683254,
+        "dominant_period_frames": 256.0,
+        "dominant_power_share": 0.6110921147231311,
+        "n_cells": 2,
+        "n_cells_varying": 1,
+        "ram_cells": [
+          24,
+          26
+        ],
+        "region": "enemy"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 1,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          17
+        ],
+        "region": "invaders_left"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 1,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          73
+        ],
+        "region": "lives"
+      },
+      {
+        "clock_explained_variance_fraction": 0.29291312904480066,
+        "dominant_period_frames": 128.0,
+        "dominant_power_share": 0.11131719631672561,
+        "n_cells": 1,
+        "n_cells_varying": 1,
+        "ram_cells": [
+          9
+        ],
+        "region": "missiles"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 1,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          28
+        ],
+        "region": "player"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 1,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          30
+        ],
+        "region": "satellite"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 2,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          104,
+          102
+        ],
+        "region": "score"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 1,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          43
+        ],
+        "region": "shields"
+      },
+      {
+        "clock_explained_variance_fraction": 0.05781579179832501,
+        "dominant_period_frames": 19.692307692307693,
+        "dominant_power_share": 0.061081240075181606,
+        "n_cells": 1,
+        "n_cells_varying": 1,
+        "ram_cells": [
+          90
+        ],
+        "region": "value"
+      },
+      {
+        "clock_explained_variance_fraction": 0.7366396874356689,
+        "dominant_period_frames": 128.0,
+        "dominant_power_share": 0.3225760510073267,
+        "n_cells": 1,
+        "n_cells_varying": 1,
+        "ram_cells": [
+          120
+        ],
+        "region": "visible"
+      },
+      {
+        "clock_explained_variance_fraction": 0.7621076385138281,
+        "dominant_period_frames": 128.0,
+        "dominant_power_share": 0.3408077714403048,
+        "n_cells": 2,
+        "n_cells_varying": 2,
+        "ram_cells": [
+          85,
+          87
+        ],
+        "region": "xy"
+      }
+    ],
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
+    "spectrum": {
+      "dft": "dependency-free one-sided DFT power (no FFTW added to the shared jutari env); freq unit = cycles/frame; DC bin dropped after detrend; Hann-windowed; linear trend (frame-counter ramp) removed.",
+      "frame_cadence_note": "the per-frame sampling clock is 1 frame; dominant periods are reported in FRAMES (period p ⇒ p-frame cycle, e.g. a period-2 blink, a period-N animation/score-flash timer). Relate to game cadence: short integer periods are animation/blink timers driven by the frame counter (T2), not game-state oscillations.",
+      "global_dominant_period_frames": 16.0,
+      "global_dominant_power_share": 0.10146501178921788,
+      "global_top_peak_periods_frames": [
+        16.0,
+        2.0,
+        28.444444444444443,
+        32.0,
+        17.066666666666666
+      ],
+      "global_top_peak_power": [
+        18.88702401515664,
+        14.122014318649114,
+        13.431962115519148,
+        11.651586198797734,
+        9.338835988407848
+      ]
+    },
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the analysed RAM trajectory is a deterministic re-run (asserted).",
+    "trajectory_frames": 256,
+    "trajectory_trace": "active trace (4×FIRE + periodic RIGHTFIRE/LEFTFIRE)"
+  },
+  "game": "space_invaders",
+  "method": "A5_local_field_potentials(pooled_activity_spectra)",
+  "metric_name": "A5_global_pool_clock_explained_variance_fraction_epiphenomenal",
+  "n": 38,
+  "oracle_ref": "T2_known_clocks@space_invaders (frame-counter + free-running periodic timers; structural detection)",
+  "paper": "P2",
+  "phase": "phaseA_kording",
+  "seed": 0,
+  "state": "f0+256",
+  "stderr": null,
+  "target_output": "pooled-activity-power-spectrum",
+  "timestamp": "1782143108",
+  "value": 0.4762237984908801,
+  "where": "local"
+}
