@@ -1,0 +1,101 @@
+{
+  "arrays": "A8_breakout.npz",
+  "ci": null,
+  "commit": "2845cf9",
+  "extra": {
+    "bit_exact_rerun": true,
+    "candidate_cells": [
+      "RAM[30]:block_bit_map",
+      "RAM[72]:player_x",
+      "RAM[77]:blocks_hit_count",
+      "RAM[84]:score",
+      "RAM[99]:ball_x",
+      "RAM[101]:ball_y",
+      "RAM[0]:blocks",
+      "RAM[57]:lives",
+      "RAM[76]:score"
+    ],
+    "candidate_ram_indices": [
+      30,
+      72,
+      77,
+      84,
+      99,
+      101,
+      0,
+      57,
+      76
+    ],
+    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/.claude/worktrees/wf_d845c9bf-d97-7/tools/xai_study/t3/out/candidates_breakout.json",
+    "oracle_causal_ram_indices": [
+      72,
+      77,
+      99,
+      101,
+      57,
+      76
+    ],
+    "oracle_importance_per_cell": {
+      "RAM[0]:blocks": 0.0,
+      "RAM[101]:ball_y": 40.0,
+      "RAM[30]:block_bit_map": 0.0,
+      "RAM[57]:lives": 88.0,
+      "RAM[72]:player_x": 8.0,
+      "RAM[76]:score": 104.0,
+      "RAM[77]:blocks_hit_count": 208.0,
+      "RAM[84]:score": 0.0,
+      "RAM[99]:ball_x": 16.0
+    },
+    "positive_control": {
+      "F": 1.0,
+      "M": 1.0,
+      "S": 1.0,
+      "minimal_set_sufficient": true,
+      "name": "oracle minimal causal set (keep ONLY oracle-causal cells)",
+      "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.047 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
+    },
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
+    "settings": "BreakoutRomSettings",
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
+    "triad": {
+      "F": 1.0,
+      "F_note": "recall of oracle-causal candidate cells under the whole-state map = 1.0 (the recorded whole state contains every cell, so it misses no causal cell)",
+      "M": 0.046875,
+      "M_note": "minimality at the FLOOR: |recovered set| = the whole 128-byte state; M = #oracle-causal cells / 128 = 6/128 (over-recording factor 21.3×)",
+      "S": 1.0,
+      "S_note": "the recorded whole 128-byte RAM state, restored into a fresh checkpoint, reproduces the exact RAM + rendered frame (lossless ⇒ literally sufficient)",
+      "interpretation": "A8 is the DESCRIPTIVE BASELINE (experiment_design.md §4): 'record everything'. It is trivially FAITHFUL (F=1: the whole state contains every causal cell) and SUFFICIENT (S=1: the recorded state, restored, reproduces the exact frame), but maximally NON-MINIMAL (M at the floor: the recovered set IS the whole machine). This M is the lower bound the other A-methods (A1..A7) and the causal operators (§6) are measured against on the minimality axis — the F/M trade-off the quantified-Kording story turns on."
+    },
+    "wholestate": {
+      "ideal_minimal_size": 6,
+      "n_oracle_causal_cells": 6,
+      "n_varying_ram_cells": 16,
+      "note": "the whole-state recorder keeps ALL 192 state bytes every frame; only 6 candidate cells are causal by the oracle ⇒ it over-records by 21.3× — trivially faithful/sufficient, maximally non-minimal.",
+      "over_recording_factor": 21.333333333333332,
+      "ram_size": 128,
+      "tape_shape": [
+        150,
+        192
+      ],
+      "tia_size": 64,
+      "trajectory_frames": 150,
+      "trajectory_trace": "active (FIRE×4 + periodic RIGHTFIRE/LEFTFIRE)",
+      "wholestate_restore_lossless": true,
+      "wholestate_size": 192
+    }
+  },
+  "game": "breakout",
+  "method": "A8_wholestate(record-everything descriptive baseline)",
+  "metric_name": "wholestate_minimality_M_vs_oracle",
+  "n": 9,
+  "oracle_ref": "oracle_intervene@breakout#whole-screen-break causal importance (exhaustive do-set, full horizon)",
+  "paper": "P2",
+  "phase": "phaseA_kording",
+  "seed": 0,
+  "state": "f30+30",
+  "stderr": null,
+  "target_output": "full RAM+register state map over time (whole-state record)",
+  "timestamp": "1782143573",
+  "value": 0.046875,
+  "where": "local"
+}

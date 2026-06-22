@@ -1,0 +1,94 @@
+{
+  "arrays": "A8_pong.npz",
+  "ci": null,
+  "commit": "2845cf9",
+  "extra": {
+    "bit_exact_rerun": true,
+    "candidate_cells": [
+      "RAM[13]:enemy_score",
+      "RAM[14]:player_score",
+      "RAM[45]:enemy_x",
+      "RAM[46]:player_x",
+      "RAM[49]:ball_x",
+      "RAM[50]:enemy_y",
+      "RAM[51]:player_y",
+      "RAM[54]:ball_y"
+    ],
+    "candidate_ram_indices": [
+      13,
+      14,
+      45,
+      46,
+      49,
+      50,
+      51,
+      54
+    ],
+    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/.claude/worktrees/wf_d845c9bf-d97-7/tools/xai_study/t3/out/candidates_pong.json",
+    "oracle_causal_ram_indices": [
+      13,
+      14
+    ],
+    "oracle_importance_per_cell": {
+      "RAM[13]:enemy_score": 160.0,
+      "RAM[14]:player_score": 160.0,
+      "RAM[45]:enemy_x": 0.0,
+      "RAM[46]:player_x": 0.0,
+      "RAM[49]:ball_x": 0.0,
+      "RAM[50]:enemy_y": 0.0,
+      "RAM[51]:player_y": 0.0,
+      "RAM[54]:ball_y": 0.0
+    },
+    "positive_control": {
+      "F": 1.0,
+      "M": 1.0,
+      "S": 1.0,
+      "minimal_set_sufficient": true,
+      "name": "oracle minimal causal set (keep ONLY oracle-causal cells)",
+      "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.016 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
+    },
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
+    "settings": "PongRomSettings",
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
+    "triad": {
+      "F": 1.0,
+      "F_note": "recall of oracle-causal candidate cells under the whole-state map = 1.0 (the recorded whole state contains every cell, so it misses no causal cell)",
+      "M": 0.015625,
+      "M_note": "minimality at the FLOOR: |recovered set| = the whole 128-byte state; M = #oracle-causal cells / 128 = 2/128 (over-recording factor 64.0×)",
+      "S": 1.0,
+      "S_note": "the recorded whole 128-byte RAM state, restored into a fresh checkpoint, reproduces the exact RAM + rendered frame (lossless ⇒ literally sufficient)",
+      "interpretation": "A8 is the DESCRIPTIVE BASELINE (experiment_design.md §4): 'record everything'. It is trivially FAITHFUL (F=1: the whole state contains every causal cell) and SUFFICIENT (S=1: the recorded state, restored, reproduces the exact frame), but maximally NON-MINIMAL (M at the floor: the recovered set IS the whole machine). This M is the lower bound the other A-methods (A1..A7) and the causal operators (§6) are measured against on the minimality axis — the F/M trade-off the quantified-Kording story turns on."
+    },
+    "wholestate": {
+      "ideal_minimal_size": 2,
+      "n_oracle_causal_cells": 2,
+      "n_varying_ram_cells": 18,
+      "note": "the whole-state recorder keeps ALL 192 state bytes every frame; only 2 candidate cells are causal by the oracle ⇒ it over-records by 64.0× — trivially faithful/sufficient, maximally non-minimal.",
+      "over_recording_factor": 64.0,
+      "ram_size": 128,
+      "tape_shape": [
+        150,
+        192
+      ],
+      "tia_size": 64,
+      "trajectory_frames": 150,
+      "trajectory_trace": "active (FIRE×4 + periodic RIGHTFIRE/LEFTFIRE)",
+      "wholestate_restore_lossless": true,
+      "wholestate_size": 192
+    }
+  },
+  "game": "pong",
+  "method": "A8_wholestate(record-everything descriptive baseline)",
+  "metric_name": "wholestate_minimality_M_vs_oracle",
+  "n": 8,
+  "oracle_ref": "oracle_intervene@pong#whole-screen-break causal importance (exhaustive do-set, full horizon)",
+  "paper": "P2",
+  "phase": "phaseA_kording",
+  "seed": 0,
+  "state": "f30+30",
+  "stderr": null,
+  "target_output": "full RAM+register state map over time (whole-state record)",
+  "timestamp": "1782143572",
+  "value": 0.015625,
+  "where": "local"
+}
