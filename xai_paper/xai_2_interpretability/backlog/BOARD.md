@@ -27,10 +27,10 @@
 | P2-E3-8 | A8 whole-state recording (descriptive baseline) | E3 | 4 | — | local | done | P2-E3-0 | `tools/xai_study/phaseA_kording/A8_wholestate.py`<br>`tools/xai_study/phaseA_kording/out/A8_*` |
 | P2-E3-9 | (optional) Visual6502 transistor track for A1/A2 head-to-head | E3 | 3 | — | local | todo | P2-E3-1, P2-E3-2 | `tools/xai_study/phaseA_kording/visual6502/**` |
 | P2-E4-0 | Phase-B pilot — IG vs oracle (one output, one game) | E4 | 2 | — | local | done | P2-E1-1, P2-E1-2 | `tools/xai_study/phaseB_attribution/pilot_ig_vs_oracle.py`<br>`tools/xai_study/phaseB_attribution/pilot_ig_vs_oracle.jl`<br>`tools/xai_study/phaseB_attribution/out/pilotB_*` |
-| P2-E4-1 | Vanilla gradient (saliency) attribution vs oracle | E4 | 3 | — | cluster | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/vanilla_gradient.py`<br>`tools/xai_study/phaseB_attribution/out/vanilla_gradient_*` |
-| P2-E4-2 | Grad×Input / DeepLIFT attribution vs oracle | E4 | 3 | — | cluster | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/gradxinput_deeplift.py`<br>`tools/xai_study/phaseB_attribution/out/gradxinput_deeplift_*` |
+| P2-E4-1 | Vanilla gradient (saliency) attribution vs oracle | E4 | 5 | — | local | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/vanilla_gradient.py`<br>`tools/xai_study/phaseB_attribution/out/vanilla_gradient_*` |
+| P2-E4-2 | Grad×Input / DeepLIFT attribution vs oracle | E4 | 5 | — | local | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/gradxinput_deeplift.py`<br>`tools/xai_study/phaseB_attribution/out/gradxinput_deeplift_*` |
 | P2-E4-3 | Guided Backprop attribution vs oracle (+ sanity checks) | E4 | 3 | — | cluster | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/guided_backprop.py`<br>`tools/xai_study/phaseB_attribution/out/guided_backprop_*` |
-| P2-E4-4 | SmoothGrad attribution vs oracle | E4 | 3 | — | cluster | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/smoothgrad.py`<br>`tools/xai_study/phaseB_attribution/out/smoothgrad_*` |
+| P2-E4-4 | SmoothGrad attribution vs oracle | E4 | 5 | — | local | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/smoothgrad.py`<br>`tools/xai_study/phaseB_attribution/out/smoothgrad_*` |
 | P2-E4-5 | Integrated Gradients attribution vs oracle (+ baseline sweep) | E4 | 3 | — | cluster | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/integrated_gradients.py`<br>`tools/xai_study/phaseB_attribution/out/integrated_gradients_*` |
 | P2-E4-6 | Expected Gradients attribution vs oracle | E4 | 3 | — | cluster | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/expected_gradients.py`<br>`tools/xai_study/phaseB_attribution/out/expected_gradients_*` |
 | P2-E4-7 | Occlusion attribution vs oracle | E4 | 3 | — | cluster | todo | P2-E4-0 | `tools/xai_study/phaseB_attribution/occlusion.py`<br>`tools/xai_study/phaseB_attribution/out/occlusion_*` |
@@ -76,7 +76,7 @@
 | P2-E9-4 | Final build + page/limit gate (SM) | E9 | 7 | — | local | todo | P2-E9-1, P2-E9-2, P2-E9-3 | `paper/main.tex`<br>`paper/build/**` |
 
 ## Items per sprint
-Sprint 0: 3, Sprint 1: 6, Sprint 2: 3, Sprint 3: 27, Sprint 4: 8, Sprint 5: 9, Sprint 6: 10, Sprint 7: 4
+Sprint 0: 3, Sprint 1: 6, Sprint 2: 3, Sprint 3: 24, Sprint 4: 8, Sprint 5: 12, Sprint 6: 10, Sprint 7: 4
 
 ## Sprint log
 See [`../sprints/`](../sprints/) for per-sprint Planning + Review notes.
