@@ -60,16 +60,16 @@
 | P2-E7-4 | Figure 4 — attribution (Phase B) vs mechanistic interp (Phase C) | E7 | 6 | agent-3 | local | done | P2-E6-1 | `paper/figures/fig4_attribution_vs_mechanistic.py`<br>`paper/figures/fig4_attribution_vs_mechanistic.pdf` |
 | P2-E7-5 | Figure 5 — VCS↔NN failure-mode / representativeness map | E7 | 6 | — | local | done |  | `paper/figures/fig5_representativeness_map.py`<br>`paper/figures/fig5_representativeness_map.pdf` |
 | P2-E7-6 | Figure 6 — failure taxonomy | E7 | 6 | agent-2 | local | done |  | `paper/figures/fig6_failure_taxonomy.py`<br>`paper/figures/fig6_failure_taxonomy.pdf` |
-| P2-E8-0 | Paper skeleton — main.tex + empty section files (SM task) | E8 | 7 | — | local | todo |  | `paper/main.tex`<br>`paper/sections/00_abstract.tex`<br>`paper/sections/01_intro.tex`<br>`paper/sections/02_related.tex`<br>`paper/sections/03_methods.tex`<br>`paper/sections/04_results_A.tex`<br>`paper/sections/05_results_B.tex`<br>`paper/sections/06_results_C.tex`<br>`paper/sections/07_results_compare.tex`<br>`paper/sections/08_discussion.tex`<br>`paper/sections/09_endmatter.tex` |
-| P2-E8-1 | Write the abstract | E8 | 7 | — | local | todo | P2-E8-0, P2-E6-1 | `paper/sections/00_abstract.tex` |
-| P2-E8-2 | Write the introduction | E8 | 7 | — | local | todo | P2-E8-0 | `paper/sections/01_intro.tex` |
-| P2-E8-3 | Write the related-work section | E8 | 7 | — | local | todo | P2-E8-0 | `paper/sections/02_related.tex` |
-| P2-E8-4 | Write the methods section (emulator, oracle, metrics) | E8 | 7 | — | local | todo | P2-E8-0 | `paper/sections/03_methods.tex` |
-| P2-E8-5 | Write results A (neuroscience battery) | E8 | 7 | — | local | todo | P2-E8-0, P2-E6-1, P2-E7-3 | `paper/sections/04_results_A.tex` |
-| P2-E8-6 | Write results B (attribution / XAI) | E8 | 7 | — | local | todo | P2-E8-0, P2-E6-1, P2-E7-4 | `paper/sections/05_results_B.tex` |
-| P2-E8-7 | Write results C (mechanistic interpretability) | E8 | 7 | — | local | todo | P2-E8-0, P2-E6-1, P2-E7-4 | `paper/sections/06_results_C.tex` |
-| P2-E8-8 | Write the results-comparison section | E8 | 7 | — | local | todo | P2-E8-0, P2-E6-1, P2-E6-3, P2-E7-2 | `paper/sections/07_results_compare.tex` |
-| P2-E8-9 | Write discussion + end-matter | E8 | 7 | — | local | todo | P2-E8-0, P2-E6-1 | `paper/sections/08_discussion.tex`<br>`paper/sections/09_endmatter.tex` |
+| P2-E8-0 | Paper skeleton — main.tex + empty section files (SM task) | E8 | 7 | — | local | done |  | `paper/main.tex`<br>`paper/sections/00_abstract.tex`<br>`paper/sections/01_intro.tex`<br>`paper/sections/02_related.tex`<br>`paper/sections/03_methods.tex`<br>`paper/sections/04_results_A.tex`<br>`paper/sections/05_results_B.tex`<br>`paper/sections/06_results_C.tex`<br>`paper/sections/07_results_compare.tex`<br>`paper/sections/08_discussion.tex`<br>`paper/sections/09_endmatter.tex` |
+| P2-E8-1 | Write the abstract | E8 | 7 | — | local | done | P2-E8-0, P2-E6-1 | `paper/sections/00_abstract.tex` |
+| P2-E8-2 | Write the introduction | E8 | 7 | — | local | done | P2-E8-0 | `paper/sections/01_intro.tex` |
+| P2-E8-3 | Write the related-work section | E8 | 7 | — | local | done | P2-E8-0 | `paper/sections/02_related.tex` |
+| P2-E8-4 | Write the methods section (emulator, oracle, metrics) | E8 | 7 | — | local | done | P2-E8-0 | `paper/sections/03_methods.tex` |
+| P2-E8-5 | Write results A (neuroscience battery) | E8 | 7 | — | local | done | P2-E8-0, P2-E6-1, P2-E7-3 | `paper/sections/04_results_A.tex` |
+| P2-E8-6 | Write results B (attribution / XAI) | E8 | 7 | — | local | done | P2-E8-0, P2-E6-1, P2-E7-4 | `paper/sections/05_results_B.tex` |
+| P2-E8-7 | Write results C (mechanistic interpretability) | E8 | 7 | — | local | done | P2-E8-0, P2-E6-1, P2-E7-4 | `paper/sections/06_results_C.tex` |
+| P2-E8-8 | Write the results-comparison section | E8 | 7 | — | local | done | P2-E8-0, P2-E6-1, P2-E6-3, P2-E7-2 | `paper/sections/07_results_compare.tex` |
+| P2-E8-9 | Write discussion + end-matter | E8 | 7 | — | local | done | P2-E8-0, P2-E6-1 | `paper/sections/08_discussion.tex`<br>`paper/sections/09_endmatter.tex` |
 | P2-E9-1 | document_check pass — required statements, Reporting Summary, limits | E9 | 7 | — | local | todo | P2-E8-9 | `document_check.md`<br>`paper/sections/09_statements.tex` |
 | P2-E9-2 | Reference verification — no-hallucination pass on the new bib | E9 | 7 | — | local | todo | P2-E8-9 | `paper/references.bib` |
 | P2-E9-3 | Reproducibility bundle — seeds, configs, benchmark, ROM hashes | E9 | 7 | — | local | todo | P2-E6-2 | `tools/xai_study/benchmark/REPRO.md` |
