@@ -2,7 +2,7 @@
 id: P2-R-S06-resultsC
 title: Revise Results Phase C — oracle-equiv controls, ACDC/SAE/probe rigor + CIs, "verified:false", §refs
 epic: RV (Revision — section)
-status: todo
+status: done
 sprint: 12
 owner:
 where: local

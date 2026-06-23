@@ -90,10 +90,12 @@ named but causally inert. The gap runs in both directions at once.
 Linear probing closes the triptych with the classic trap. With control tasks (Hewitt \&
 Liang's selectivity), probes decode game-concept cells well above chance (mean probe accuracy
 $0.89$, mean selectivity $0.16$), confirming that the information is present in the state.
-Yet presence is not use. Cross-referenced against the exact intervention oracle, $6$ of the
-decodable concept cells across the core games are decodable yet not causally used, and the
-oracle flags $25$ such cells in total, among them Breakout's score cell~84, linearly
-associated with the displayed score yet provably inert under intervention within the window.
+Yet presence is not use. Cross-referenced against the exact intervention oracle, the oracle
+flags $25$ concept cells across the core games that the program never causally uses within the
+window; of those, $6$ are also decodable above chance, so a probe would have nominated them as
+encoded concepts. Breakout's score cell~84 sits in the larger set: it is present in the state
+and linearly associated with the displayed score, yet provably inert under intervention within
+the window.
 The oracle is strictly stronger than the probe: it asks not whether a value can be read out,
 but whether changing it changes the output. Probing earns a high plausibility proxy ($0.85$)
 on a faithfulness of $0.16$, the second-worst entry in the danger zone (Fig.~\ref{fig:fig4}b).
@@ -112,8 +114,15 @@ faithfulness $0.63$, the highest of the three phases) and a recovery layer that 
 precise-but-partial (attribution and path patching, ACDC) or present-but-inert (SAEs,
 dictionaries, probing). The three separations are adjudicated by the oracle, not by our
 preference, and they appear exactly where the field's success metrics report victory:
-graph-correct yet behaviour-incomplete (ACDC F$=1.0$/M$=1.0$, S$=0.44$), named yet causally
-inert (SAE matched $1.0$, F$=0.041$), decodable yet unused (cell~84). Faithfulness, on a
+graph-correct yet behaviour-incomplete (ACDC on Breakout F$=1.0$/M$=1.0$, S$=0.44$), named yet
+causally inert (SAE on Pong matched $1.0$, F$=0.041$), present yet unused (cell~84). The
+faithfulness advantage that the causal core holds over the gradient methods is itself
+regime-dependent, and we state that plainly: the gap is robust only on the position-output
+regime ($0.34$, 95\% CI $[0.02,0.50]$, excluding zero), and it collapses when the output is
+content rather than position or when the oracle-equivalent controls are excluded ($0.12$ and
+$0.04$, both with confidence intervals crossing zero). The separations above survive that
+caveat because each is a within-method contradiction on a single game, not a cross-family
+mean. Faithfulness, on a
 machine that grants it for free, is therefore the necessary half of understanding and not
 the sufficient one. The residual, the wiring recovered and the meaning withheld, is the
 semantic gap, which §\ref{sec:results_compare} places on the shared axes and the Discussion
