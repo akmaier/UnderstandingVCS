@@ -1,0 +1,79 @@
+\section{Coverage and applicability}\label{supp:coverage}
+
+The benchmark scores methods on a six-game core drawn from a larger bit-exact substrate, and
+the coverage table makes the scope of that choice explicit. Paper~1 validates the
+differentiable VCS ports bit-for-bit against the \texttt{xitari} reference on all 64 Arcade
+Learning Environment games, within a 30-frame RAM and 60-frame screen window; the
+interpretability study reported here runs on the six games for which all three tiers of
+ground truth (\S3.3) are available and the oracle is exact, listed in
+Table~\ref{supp:tab:coverage}. The remaining 58 games are bit-exact substrate but are not
+scored here, either because they fall outside the validated horizon for the analyses we run
+or because the tiered labels they would need are not yet produced; they are candidates for
+the larger sweep rather than excluded for any methodological reason. The horizon column
+records the validated window, and the tier column records which of the three ground-truth
+tiers (T1 exact intervention, T2 data-flow, T3 externally-supplied semantic labels) is
+available.
+
+\begin{table}[t]
+\centering
+\caption{\textbf{Core-game coverage.} The six core games carry exact tiered ground truth and
+the full method battery; faithfulness is scored within the Paper~1 bit-exact window. The
+last two columns give the methods run and the per-game output records contributed. The wider
+64-game substrate is bit-exact (Paper~1) but is reserved for the larger sweep; T3 labels are
+external (\S3.3), which is recorded so the benchmark does not appear to certify them.}
+\label{supp:tab:coverage}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}p{2.4cm}p{1.9cm}p{1.5cm}p{1.7cm}p{1.5cm}p{1.4cm}@{}}
+\toprule
+Game & Paper-1 status & Horizon & Tiers & Methods run & Records \\
+\midrule
+breakout & bit-exact & 30/60 fr & T1,T2,T3 & all 30 & per-game \\
+ms\_pacman & bit-exact & 30/60 fr & T1,T2,T3 & all 30 & per-game \\
+pong & bit-exact & 30/60 fr & T1,T2,T3 & all 30 & per-game \\
+qbert & bit-exact & 30/60 fr & T1,T2,T3 & all 30 & per-game \\
+seaquest & bit-exact & 30/60 fr & T1,T2,T3 & all 30 & per-game \\
+space\_invaders & bit-exact & 30/60 fr & T1,T2,T3 & all 30 & per-game \\
+\midrule
+58 further games & bit-exact (P1) & 30/60 fr & T1,T2 partial & reserved & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Whether a method applies at all depends on what the method needs from its target, and the
+applicability matrix records that for every method family. The Phase~A neuroscience analyses
+read the raw machine state and need neither a learned policy nor gradients; the Phase~B
+attribution methods split into gradient members, which need a differentiable forward pass,
+and intervention members, which need only the ability to set state; the Phase~C mechanistic
+methods need access to internal activations and, for the causal members, the ability to
+intervene. Table~\ref{supp:tab:applic} records, per family, whether the method operates on
+the raw VCS, whether it requires a learned policy, gradients, internal layers or attention,
+or external labels, whether it uses oracle-like interventions, and whether it receives a
+supplied hypothesis. The pattern the table exposes is the one the results confirm: the
+families that earn faithfulness are exactly those that can intervene, and the families that
+collapse on the position regime are exactly the gradient and correlational ones.
+
+\begin{table}[t]
+\centering
+\caption{\textbf{Per-family applicability.} What each method family requires of its target.
+``Intervenes'' marks oracle-like $\mathrm{do}(u)$ access; ``hypothesis'' marks methods that
+receive a supplied circuit hypothesis to test. The raw-VCS column distinguishes analyses that
+read machine state directly from those that need a differentiable or layered model. A blank
+means the requirement does not apply.}
+\label{supp:tab:applic}
+\footnotesize
+\begin{tabular}{@{}p{3.0cm}cccccc@{}}
+\toprule
+Family & raw VCS & policy & gradients & layers/attn & intervenes & hypothesis \\
+\midrule
+A neuroscience & yes & no & no & no & A2 only & no \\
+B gradient & yes & no & yes & no & no & no \\
+B intervention & yes & no & no & no & yes & no \\
+C causal & yes & no & no & yes & yes & yes \\
+C gradient (attr.\ patch) & yes & no & yes & yes & approx. & yes \\
+C probing & yes & no & no & yes & no & no \\
+C / A dim.\ reduction & yes & no & no & yes & no & no \\
+oracle (control) & yes & no & no & yes & exact & --- \\
+\bottomrule
+\end{tabular}
+\end{table}

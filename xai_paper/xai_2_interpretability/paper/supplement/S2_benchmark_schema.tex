@@ -1,0 +1,59 @@
+\section{Benchmark schema and glossary}\label{supp:schema}
+
+The leaderboard is built from a flat record schema, and stating it removes the ambiguity
+about what a single number on the benchmark counts. Each method is run per game and writes a
+per-game record under its phase's \texttt{out/} tree; the leaderboard aggregates those
+records into one row per method by averaging over games. The schema columns of a leaderboard
+row are given in Table~\ref{supp:tab:schema}; the aggregation rule is a mean over the
+$n_{\text{games}}$ games (with the per-game records first reduced within a game when a method
+emits several output records), and the faithfulness, sufficiency, and minimality columns
+report the F, S, and M axes defined in \S3.4. We do not re-derive those definitions here.
+
+\begin{table}[t]
+\centering
+\caption{\textbf{Leaderboard row schema.} The columns of one row in
+\texttt{compare/out/leaderboard.json} (\texttt{rows[\,]}) and its uncertainty companion
+\texttt{leaderboard\_ci.csv}. The metric column names the per-method scoring function from
+Sec.~\ref{supp:protocols}; F, S, and M are the triad axes of \S3.4. Aggregation is a mean
+over $n_{\text{games}}$, with bootstrap confidence intervals over games (and, where present,
+over records).}
+\label{supp:tab:schema}
+\footnotesize
+\begin{tabular}{@{}p{3.0cm}p{8.4cm}@{}}
+\toprule
+Column & Meaning \\
+\midrule
+\texttt{phase} & phaseA\_kording, phaseB\_attribution, phaseC\_mechanistic, or ground\_truth \\
+\texttt{method} & method identifier (the row key) \\
+\texttt{tradition} & intervention, causal, gradient, correlational, \jkey{dim_reduction}, probing, descriptive, oracle \\
+\jkey{n_games} & number of games the method was scored on (6 for the core set; 1 for the oracle) \\
+\jkey{n_records} & number of per-game output records aggregated into the row \\
+\texttt{faithfulness} (F) & faithfulness vs.\ the intervention oracle (\S3.2), $[0,1]$, higher better \\
+\jkey{faithfulness_ci95} & $95\%$ bootstrap CI half-width over games \\
+\jkey{faithfulness_position_regime} & F restricted to the discrete sprite-position/index regime \\
+\jkey{faithfulness_content_regime} & F restricted to the continuous content regime \\
+\texttt{triad\_S} / \texttt{triad\_M} & sufficiency / minimality axes (\S3.4), where applicable \\
+\jkey{plausibility_proxy} & documented method-tradition proxy, $[0,1]$ --- not a human-subjects measurement \\
+\jkey{is_positive_control} & 1 for the oracle row, 0 otherwise \\
+\jkey{metric_names} & the per-method scoring function (Sec.~\ref{supp:protocols}) \\
+\texttt{commits} & the commit(s) at which the per-game records were produced \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The vocabulary that the schema implies is worth fixing precisely, because the review asked
+for a single unambiguous method count. We distinguish a \emph{method} (one interpretability
+technique, e.g.\ \texttt{vanilla\_saliency}), a \emph{method row} (its single aggregated line
+on the leaderboard), a \emph{per-game record} (one method scored on one game, written under a
+phase \texttt{out/} tree), an \emph{output record} (a per-game record for one output regime,
+several of which a method may emit on one game), a \emph{family mean} (the average over the
+members of a tradition family, e.g.\ causal/intervention), the \emph{oracle positive
+control} (the exact $\mathrm{do}(u)$ ground truth of \S3.2, scored as a method to anchor the
+ceiling), and a \emph{not-applicable method} (one that does not apply to a given output
+regime and is recorded as N/A rather than as a zero). With this vocabulary the count is
+unambiguous. The benchmark scores 30 interpretability methods together with the intervention
+oracle as a positive control, for 31 leaderboard rows in total
+(\texttt{leaderboard.json.n\_methods}~$=31$), aggregating 257 per-game records
+(\texttt{n\_per\_game\_records\_aggregated}~$=257$): 8 methods in Phase~A, 12 in Phase~B, 10
+in Phase~C, and the one oracle row. This count is the canonical one used in the abstract,
+the figures, and throughout this Supplement.

@@ -1,0 +1,146 @@
+\section{Per-method protocols}\label{supp:protocols}
+
+This section records, for each method under test, the exact objects it consumes and
+produces, the reference it is scored against, its sampling or optimization budget, the
+metric that turns its output into a faithfulness score, and the committed record file that
+holds the per-game results. All methods share one evaluation contract, which we state once
+and then specialize per method. Every method receives the same bit-exact VCS trajectory on
+one of the six core games (\texttt{breakout}, \texttt{ms\_pacman}, \texttt{pong},
+\texttt{qbert}, \texttt{seaquest}, \texttt{space\_invaders}); the candidate-cause set is the
+machine's own state, that is the 128 RAM bytes together with the CPU registers and the TIA
+and RIOT registers exposed by the substrate; the reference is the intervention oracle of
+\S3.2, evaluated by exact re-runs of the emulator under $\mathrm{do}(u)$; and a method that
+cannot be applied to a given output regime is recorded as not-applicable rather than scored
+as zero, so that an empty result never masquerades as a wrong one. Faithfulness is the F
+axis of the main-text triad (\S3.4); we reference that definition and do not restate it.
+Records live under \texttt{tools/xai\_study/<phase>/out/}; the aggregate they feed is
+\texttt{tools/xai\_study/compare/out/leaderboard.json}.
+
+The neuroscience battery (Phase~A) treats the running machine as a brain and asks how far
+each classical analysis recovers the known mechanism. Each method's baseline is the exact
+data-flow graph or causal role that the substrate makes available, its budget is the
+six-game core unless noted, and its scoring metric is named in
+Table~\ref{supp:tab:phaseA}.
+
+\begin{table}[t]
+\centering
+\caption{\textbf{Phase~A protocols (neuroscience battery).} One row per method: the input it
+reads, the reference it is scored against, the sampling or intervention budget, the scoring
+metric, and the committed record. All eight run on the six core games; faithfulness is the F
+axis of \S3.4. The whole-state recording (A8) is included as a descriptive upper bound on
+coverage, not as a faithful explanation, and is read for its minimality $M$ rather than its
+trivial $F$.}
+\label{supp:tab:phaseA}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}p{1.7cm}p{2.6cm}p{1.9cm}p{2.6cm}p{1.0cm}@{}}
+\toprule
+Method & Input / candidate causes & Reference & Scoring metric & Record \\
+\midrule
+A1 connectomics & RAM/register activity over trajectory & data-flow graph & data-flow graph $F_1$ vs.\ oracle & A1 \\
+A2 lesions & single-cell knockouts via $\mathrm{do}(u)$ & true causal role & lesion-importance $\rho$ vs.\ role & A2 \\
+A3 tuning curves & per-cell response vs.\ variable & variable coupling & $1-$ spurious-tuning rate & A3 \\
+A4 spike-word / pairwise & pairwise cell correlations & true coupling & corr.\ $\rho$ vs.\ coupling & A4 \\
+A5 field potentials & pooled-activity spectra & true causal share & $1-$ clock-explained var. & A5 \\
+A6 Granger & directed lag structure & true data-flow & $1-$ false-edge rate & A6 \\
+A7 dim.\ reduction & NMF/PCA over activity & known variables & NMF matched-component frac. & A7 \\
+A8 whole-state & full state record & oracle decomp. & minimality $M$ vs.\ oracle & A8 \\
+\bottomrule
+\end{tabular}
+
+\smallskip
+\noindent\scriptsize Records: \texttt{tools/xai\_study/phaseA\_kording/out/A\{1..8\}\_*}; all
+eight run on the six core games.
+\end{table}
+
+The attribution battery (Phase~B) runs the everyday XAI toolbox over the same trajectories.
+These methods produce a real-valued saliency or attribution over the candidate-cause set,
+which we score by Pearson correlation against the oracle attribution; the gradient-based
+members additionally inherit the gradient-vanishing failure of the discrete position regime
+(\S5). The sampling budgets that matter are the Monte-Carlo or perturbation counts of the
+sampling estimators, recorded per method in Table~\ref{supp:tab:phaseB}; the
+seed-dispersion of the stochastic members is carried in
+\texttt{leaderboard\_ci.csv} (\texttt{seed\_sd}, \texttt{seed\_sd\_source}) and reproduced
+in Sec.~\ref{supp:provenance}.
+
+\begin{table}[t]
+\centering
+\caption{\textbf{Phase~B protocols (attribution battery).} Each method emits a saliency over
+the candidate-cause set and is scored by Pearson correlation against the oracle attribution
+(\S3.2). The reference and the six-game budget are shared; the budget column records the
+sampling or perturbation count that drives each estimator, and the seed column flags which
+methods carry an independent-seed dispersion in \texttt{leaderboard\_ci.csv}.}
+\label{supp:tab:phaseB}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}p{2.9cm}p{1.75cm}p{4.3cm}p{1.15cm}@{}}
+\toprule
+Method & Tradition & Budget / hyperparameters & Seed sd \\
+\midrule
+\jkey{vanilla_saliency} & gradient & single backward pass & --- \\
+smoothgrad & gradient & noise-averaged gradient; $\sigma$-robustness committed & 0.0 \\
+\jkey{guided_backprop} & gradient & single guided pass & --- \\
+\jkey{gradxinput_deeplift} & gradient & DeepLIFT reference-difference & --- \\
+\jkey{integrated_gradients} & gradient & path integral, baseline = zero state & --- \\
+\jkey{expected_gradients} & gradient & expectation over baselines (refits) & yes \\
+kernelshap & gradient & Monte-Carlo coalition sampling ($\propto 1/\sqrt{N}$) & 0.017 \\
+lime & gradient & local linear fit, perturbation refits & 0.029 \\
+rise & gradient & random-mask Monte-Carlo ($\propto 1/\sqrt{N}$) & 0.051 \\
+occlusion & intervention & exhaustive single-cell masking & --- \\
+\jkey{extremal_perturbation} & intervention & optimized mask, area-constrained & --- \\
+\jkey{on_distribution_counterfactual} & intervention & on-manifold $\mathrm{do}(u)$ resampling & --- \\
+\bottomrule
+\end{tabular}
+
+\smallskip
+\noindent\scriptsize Records: \texttt{tools/xai\_study/phaseB\_attribution/out/}; all twelve run
+on the six core games and are scored by Pearson correlation against the oracle (\S3.2). Seed
+sd is the independent-seed dispersion from \texttt{leaderboard\_ci.csv}.
+\end{table}
+
+The mechanistic battery (Phase~C) runs the methods built to recover circuits, scoring each
+against the true data-flow or the exact recovered-minus-exact deviation. The causal members
+of this phase are the ones that reach the oracle ceiling, and we list their exact scoring
+metric so that the ceiling is not mistaken for a tautology: each is scored against the
+substrate's known routine, not against another method. Two members (NMF/PCA dictionaries and
+the sparse autoencoder) are dimensionality-reduction methods carried here for comparison, and
+the sparse autoencoder is the one whose two aggregations differ, which we reconcile in
+Sec.~\ref{supp:provenance}.
+
+\begin{table}[t]
+\centering
+\caption{\textbf{Phase~C protocols (mechanistic battery).} Each method is scored against the
+substrate's known circuit or the exact recovered-minus-exact deviation (\S3.2), not against
+another method, which is what keeps the oracle ceiling non-circular. The probing and
+dictionary-learning members are included for comparison with the causal members.}
+\label{supp:tab:phaseC}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}p{3.4cm}p{1.4cm}p{5.2cm}@{}}
+\toprule
+Method & Tradition & Scoring metric \\
+\midrule
+\jkey{activation_patching} & causal & $\max|\text{recovered}-\text{exact}|$ vs.\ oracle \\
+\jkey{causal_scrubbing} & causal & scrubbing-preserved performance \\
+\jkey{interchange_interventions_das} & causal & aligned interchange accuracy \\
+\jkey{logit_tuned_lens} & causal & logit-lens fidelity to true intermediate \\
+\jkey{path_patching} & causal & path-circuit $F_1$ vs.\ true routine \\
+ACDC & causal & discovered-circuit best $F_1$ vs.\ data-flow \\
+\jkey{attribution_patching} & gradient & corr.\ of approximation vs.\ exact patch \\
+\jkey{linear_probing_control_tasks} & probing & selectivity vs.\ control task \\
+\jkey{nmf_pca_dictionaries} & dim.\ red. & matched-component fraction vs.\ vars \\
+\jkey{sparse_autoencoder} & dim.\ red. & feature-variable matched fraction \\
+\bottomrule
+\end{tabular}
+
+\smallskip
+\noindent\scriptsize Records: \texttt{tools/xai\_study/phaseC\_mechanistic/out/}; all ten run
+on the six core games.
+\end{table}
+
+The intervention oracle is the positive control, not a method under test. It is the exact
+$\mathrm{do}(u)$ ground truth of \S3.2, evaluated by re-running the bit-exact machine, and it
+attains $F=S=M=1.0$ by construction; its record triple is the intervention oracle, the
+content-path gradient oracle, and their cross-check
+(\texttt{tools/xai\_study/ground\_truth/out/}). It anchors the ceiling against which every
+other row is read, which is why it occupies the thirty-first leaderboard row.

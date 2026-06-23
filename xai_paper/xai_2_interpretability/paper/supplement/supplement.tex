@@ -1,0 +1,59 @@
+%% supplement.tex — Supplementary Information for Paper 2 (xai_2_interpretability).
+%%
+%% SCRUM note (P2-R-SUPP): this fragment is \input{} into the main paper by the SM
+%% integration write (R6 wires \input{supplement/supplement} into main.tex). It is also
+%% a self-contained \input target: the six S-files below carry all SI content the main
+%% paper promises (improvement_instructions P0#2, P0#4; P1#13, P1#14, P1#21; P3#35, P3#36).
+%%
+%% It re-uses, but does not re-derive, the §3 F/S/M definitions (S03 is authoritative)
+%% and the canonical method count "30 interpretability methods + the oracle positive
+%% control = 31 rows" (S07 is authoritative). Every reported number traces to a committed
+%% record under tools/xai_study/compare/out/ (verifiable via the §6.5 traceability table
+%% of REPRODUCIBILITY.md and re-derived by S5 below).
+%%
+%% Standalone compile (for review, before R6 wires it into main): wrap this file in the
+%% sn-jnl preamble of a scratch driver (\documentclass[sn-nature,pdflatex]{sn-jnl} +
+%% graphicx, booktabs, multirow, amsmath, longtable) and \input{supplement}; the tables
+%% render without overfull boxes and the two SI figures resolve from ../figures/.
+
+\clearpage
+\appendix
+
+%% Breakable monospaced JSON key: lets long under_scored keys wrap inside narrow table
+%% columns. Used by S5 (number provenance). Defined here so the S-files stay self-contained.
+\providecommand{\jkey}[1]{\texttt{\expandafter\jkeyaux#1\relax}}
+\makeatletter
+\def\jkeyaux#1{\ifx\relax#1\else
+  \ifx_#1\discretionary{}{}{}\char`\_\else
+    \ifx.#1\discretionary{}{}{}.\else#1\fi\fi
+  \expandafter\jkeyaux\fi}
+\makeatother
+
+\section*{Supplementary Information}
+\setcounter{table}{0}
+\setcounter{figure}{0}
+\renewcommand{\thetable}{S\arabic{table}}
+\renewcommand{\thefigure}{S\arabic{figure}}
+\renewcommand{\thesection}{S\arabic{section}}
+\setcounter{section}{0}
+
+This Supplementary Information records what the main paper summarizes. We give the
+per-method protocols (Sec.~\ref{supp:protocols}), the leaderboard schema and its glossary
+(Sec.~\ref{supp:schema}), the coverage and applicability of every method across games and
+output regimes (Sec.~\ref{supp:coverage}), the mapping from each headline claim to its
+evidence (Sec.~\ref{supp:claims}), the provenance of every headline number down to the
+record file and command that produced it (Sec.~\ref{supp:provenance}), and a plain
+statement of what the paper does not claim (Sec.~\ref{supp:notclaimed}). The two
+full-resolution diagnostic figures whose simplified forms appear in the main text are
+reproduced here at full density (Figs.~\ref{supp:fig:repmap} and~\ref{supp:fig:taxonomy}).
+The correctness triad $\mathrm{F}\wedge\mathrm{S}\wedge\mathrm{M}$ used throughout is the
+one defined in the main Methods (\S3.4); we reference it here rather than restating it. The
+benchmark scores 30 interpretability methods together with the intervention oracle (\S3.2)
+as a positive control, for 31 leaderboard rows in total.
+
+\input{supplement/S1_per_method_protocols}
+\input{supplement/S2_benchmark_schema}
+\input{supplement/S3_coverage_applicability}
+\input{supplement/S4_claims_evidence}
+\input{supplement/S5_number_provenance}
+\input{supplement/S6_not_claimed}

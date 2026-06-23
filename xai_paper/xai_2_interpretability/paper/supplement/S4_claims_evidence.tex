@@ -1,0 +1,33 @@
+\section{Claims and evidence}\label{supp:claims}
+
+Every headline claim in the paper rests on a specific artifact, and the claims-and-evidence
+table makes that dependency checkable. We list each claim, the figure or table that carries
+it, the games and methods it draws on, the metric, the artifact it traces to, and the
+limitation that bounds it. The faithfulness, sufficiency, and minimality references are the
+triad axes of \S3.4, and the numbers themselves are sourced in Sec.~\ref{supp:provenance};
+the table below names which evidence supports which claim, not the values.
+
+\begin{table}[t]
+\centering
+\caption{\textbf{Claims and their evidence.} Each headline claim maps to the figure or table
+that carries it, the games and methods involved, the metric, the committed artifact, and the
+limitation that bounds the claim. The artifact column points at the record that
+Sec.~\ref{supp:provenance} traces to a value; the limitation column states the scope so the
+claim is not read wider than the evidence.}
+\label{supp:tab:claims}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}p{3.0cm}p{1.9cm}p{1.8cm}p{1.9cm}p{2.4cm}@{}}
+\toprule
+Claim & Evidence & Methods / games & Metric & Limitation \\
+\midrule
+Causal/intervention methods beat gradient/correlational on faithfulness across all regimes & Fig.~2; leaderboard & 25 methods, 6 games & F mean (gap $0.387$) & families, not every member \\
+The gap holds with the same sign on the discrete position regime & Fig.~2; \jkey{faithful_demo} & 13 rows, 6 games & F position (gap $0.344$) & position regime only \\
+A faithful causal method reaches the oracle ceiling where the default tool collapses & \jkey{faithful_demo}; Fig.~2 & act.\ patching vs.\ vanilla saliency, 6 games & F $1.0$ vs.\ $0.0$ & one decisive pair \\
+The naive gradient of a discrete index output is provably zero & \S5; \jkey{oracle_grad} & all gradient methods & grad@index $=0$ & index path only \\
+High plausibility coexists with low faithfulness (the danger zone) & Fig.~2; \jkey{faithful_demo} & vanilla saliency & proxy $0.9$, F $0.0$ & proxy, not measured plausibility \\
+Faithful attribution recovers the wiring but not the computation's semantics & Fig.~5 (\S\ref{supp:coverage}); discussion & Phase~B vs.\ C & F vs.\ S, M & necessary-condition stress test \\
+The failure modes have documented NN analogues & Fig.~6 (Fig.~\ref{supp:fig:taxonomy}) & taxonomy & --- & analogues, not proof \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,60 @@
+\section{Number provenance}\label{supp:provenance}
+
+Every headline number traces to a committed record, the script that produced it, and the
+command that re-derives it, and this section is the in-paper copy of that traceability table.
+It mirrors \S6.5 of the reproducibility document
+(\texttt{xai\_2\_interpretability/REPRODUCIBILITY.md}); the values are the measured,
+committed ones at the current revision, and the confidence intervals are read from
+\texttt{tools/xai\_study/compare/out/leaderboard\_ci.csv} rather than recomputed here. Each
+record additionally carries \texttt{seed}, \texttt{where}, \texttt{commit}, and
+\texttt{timestamp}, so the provenance of every value is self-documenting.
+
+\begin{table}[t]
+\centering
+\caption{\textbf{Headline-number provenance.} Each number $\rightarrow$ its committed record
+and JSON key $\rightarrow$ the generating or aggregating script $\rightarrow$ the command
+that reproduces it. Values are the measured, committed numbers at this revision (consistent
+with REPRODUCIBILITY \S6.5); CIs are read from \jkey{leaderboard_ci.csv}. Paths are
+relative to \texttt{tools/xai\_study/}.}
+\label{supp:tab:provenance}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}p{2.5cm}p{1.6cm}p{3.4cm}p{1.9cm}@{}}
+\toprule
+Number & Value & Record (JSON key) & Command \\
+\midrule
+Faithfulness gap, position regime (causal $-$ gradient) & $0.3435$ & \texttt{faithful\_demo}: \texttt{value};\linebreak[1] \texttt{leaderboard}: \jkey{...position_regime.gap} & \jkey{faithful_demo.py} \\
+Causal/interv.\ mean F, position regime & $0.4118$\newline {\scriptsize$\pm0.39$, $n{=}4$} & \texttt{leaderboard}: \jkey{...position_regime.causal_..._mean} & \jkey{leaderboard.py} \\
+Gradient/corr.\ mean F, position regime & $0.0683$\newline {\scriptsize$\pm0.07$, $n{=}9$} & \texttt{leaderboard}: \jkey{...position_regime.gradient_..._mean} & \jkey{leaderboard.py} \\
+Causal/interv.\ mean F, all regimes & $0.6808$\newline {\scriptsize$n{=}11$} & \texttt{leaderboard}: \jkey{all_regimes.causal_..._mean} & \jkey{leaderboard.py} \\
+Gradient/corr.\ mean F, all regimes & $0.2938$\newline {\scriptsize$n{=}14$} & \texttt{leaderboard}: \jkey{all_regimes.gradient_..._mean} & \jkey{leaderboard.py} \\
+Faithfulness gap, all regimes & $0.3869$ & \texttt{leaderboard}: \jkey{all_regimes.gap} & \jkey{leaderboard.py} \\
+Decisive pair, position regime (act.\ patch vs.\ vanilla sal.) & $1.000$\newline vs.\ $0.000$ & \texttt{faithful\_demo}: \jkey{pair_contrast} & \jkey{faithful_demo.py} \\
+Plausibility proxy, decisive pair & $0.5$ vs.\ $0.9$ & \texttt{faithful\_demo}: \jkey{...plausibility_proxy} & \jkey{faithful_demo.py} \\
+ACDC sufficiency $S$ & $0.3247$ & \jkey{leaderboard_ci.csv}: ACDC \jkey{S_mean} & \jkey{uncertainty.py} \\
+Whole-state minimality $M$ & $0.0703$ & \jkey{leaderboard_ci.csv}: A8 \jkey{M_mean} & \jkey{uncertainty.py} \\
+Methods scored (rows) & $31$ & \texttt{leaderboard}: \jkey{n_methods} & \jkey{leaderboard.py} \\
+Per-game records aggregated & $257$ & \texttt{leaderboard}: \jkey{n_per_game_records_aggregated} & \jkey{leaderboard.py} \\
+Naive gradient, discrete index output & index $0$;\newline content $1.0$ & \jkey{oracle_grad_pong.json}: \texttt{value} & \jkey{oracle_grad.jl} \\
+Exact oracle $\max|\Delta\text{score}|$ (Pong) & $17.0$ & \jkey{oracle_pong_score.json}: \texttt{value} & \jkey{oracle_intervene.jl} \\
+\bottomrule
+\end{tabular}
+
+\smallskip
+\noindent\scriptsize Scripts live under \texttt{tools/xai\_study/compare/} (Python) and
+\texttt{tools/xai\_study/ground\_truth/} (Julia); records under the corresponding \texttt{out/}
+trees. JSON keys are abbreviated with ``\texttt{...}'' where nested; the full paths are in
+REPRODUCIBILITY \S6.5.
+\end{table}
+
+One number requires a reconciliation, and we record it rather than hide it. The sparse
+autoencoder is the only method whose two aggregations disagree: the over-games mean is
+$F=0.1404$ with a $95\%$ bootstrap CI of $[0.0,\,0.3139]$, while the over-records mean is
+$0.1947$ with CI $[0.0058,\,0.4804]$, both read from \jkey{leaderboard_ci.csv}. The
+figures and the main-text leaderboard plot the over-records value $0.1947$, which lies inside
+the over-games interval; we treat the over-games mean as the canonical row value for the
+aggregation rule of Sec.~\ref{supp:schema} and report the over-records figure alongside it,
+so that text, table, and figure agree on which aggregation each cites. No headline claim
+depends on which of the two is read, since the sparse autoencoder sits near the floor under
+both.

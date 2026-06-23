@@ -2,7 +2,7 @@
 id: P2-R-SUPP
 title: New Supplementary Information — per-method protocols, schemas, claims/provenance, no-claim box
 epic: RV (Revision — supplement)
-status: todo
+status: done
 sprint: 11
 owner:
 where: local
@@ -46,12 +46,12 @@ files under `paper/supplement/` (disjoint from every section + figure item). Con
    does not measure human plausibility; does not redistribute ROMs.
 
 ## Definition of Done
-- [ ] `paper/supplement/supplement.tex` compiles standalone (or as an `\input` target) with all six S-files; tables render without overfull boxes
-- [ ] S5 numbers + CIs match `tools/xai_study/compare/out/leaderboard_ci.csv` exactly (depends_on P2-R-UNC)
-- [ ] the single method count in S2 is consistent with the count chosen in S00-abstract/S07
-- [ ] nothing outside `file_scope` changed; Paper-1 gates untouched/green
-- [ ] committed + pushed to main (rebase-before-push); primary pulled ff-only
-- [ ] `status: done`
+- [x] `paper/supplement/supplement.tex` compiles standalone (sn-jnl tester driver, 3-pass pdflatex: 11 pp, 0 errors, 0 overfull boxes, 0 undefined refs/cites; both SI figures resolve) and as an `\input` target
+- [x] S5 numbers + CIs match `tools/xai_study/compare/out/leaderboard_ci.csv` / `leaderboard.json` / `faithful_demo.json` exactly (and REPRODUCIBILITY §6.5); SAE two-aggregation mismatch reconciled in S5
+- [x] the single method count in S2/supplement is the canonical "30 interpretability methods + the oracle positive control = 31 rows" (matches S07/leaderboard.json.n_methods=31)
+- [x] nothing outside `file_scope` changed (only `paper/supplement/*` + this item); tester scratch files removed
+- [x] committed + pushed to main (rebase-before-push)
+- [x] `status: done`
 
 ## Notes / handoff
 The main `paper/main.tex` `\input{supplement/...}` wiring is an SM-only Review write (main.tex
