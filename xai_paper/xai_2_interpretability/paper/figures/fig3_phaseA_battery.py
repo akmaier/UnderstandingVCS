@@ -1,45 +1,51 @@
 #!/usr/bin/env python3
-"""Figure 3 — the Kording neuroscience battery, scored (P2-E7-3).
+"""Phase-A neuroscience battery, scored — embedded as **paper Figure 2** (P2-E7-3).
+
+(Filename ≠ caption number: this file is `fig3_phaseA_battery.py` but it is the
+bar-chart battery that compiles as **Figure 2** of the paper via
+`sections/04_results_A.tex`. The R2 revision applies the figure_detail_pass
+"Fig. 2 — Kording neuroscience battery" block, NOT the "Fig. 3" attribution block
+— that one is `fig4_attribution_vs_mechanistic.py`.)
 
 The Phase-A battery (A1 connectomics, A2 single-unit lesions, A3 tuning curves,
 A4 spike-word/pairwise correlations, A5 local field potentials, A6 Granger
 causality, A7 dim-reduction, A8 whole-state recording) run on the bit-exact,
-fully-known Atari VCS and SCORED against the §3.2 intervention oracle. This is the
-*quantified* Jonas & Kording (2017): each classical analysis finds rich
+fully-known Atari VCS and SCORED against the intervention oracle (§3.2). This is
+the *quantified* Jonas & Kording (2017): each classical analysis finds rich
 structure, yet most score LOW in faithfulness against the known register-transfer
 mechanism — while the oracle-as-method positive control sits at 1.0 by
-construction. Phase A is the calibration baseline that the causal contrast in
-Fig. 4 sharpens (plan.md Results-A; experiment_design.md §4 / §9 Phase-A row).
+construction. Phase A is the calibration baseline that the causal contrast in the
+next figure sharpens (plan.md Results-A; experiment_design.md §4 / §9 Phase-A row).
 
-LAYOUT
-  (a) The battery, scored. One bar per analysis A1–A8 = its headline
-      faithfulness vs the oracle (leaderboard.json), coloured by method tradition.
-      Where the §0 correctness triad is available (A1–A4, A6, A8), the F / S / M
-      points are overlaid on the bar. The oracle positive control is drawn as a
-      reference at faithfulness = 1.0 (dashed line + a labelled control bar).
-  (b) Four key findings, each annotated with the exact per-game numbers that
-      drive them:
-        · A6 Granger F = 0 on Pong — temporal precedence ≠ causation
-        · A3 spurious tuning — strongly-tuned units whose tuning ≠ true role
-        · A2 ρ = 0.99 yet an interaction blind-spot (super-additive lesions)
-        · A7 NMF > PCA on matched components (and both are mediocre)
+LAYOUT (figure_detail_pass "Fig. 2" recommended redraw: bar chart + key-results
+table, legend OUTSIDE the data field, one numeric label per bar):
+  (a) The battery, scored. One bar per analysis A1–A8 = its headline faithfulness
+      vs the oracle (leaderboard.json), coloured by method tradition. ONE numeric
+      label per bar, placed consistently above the upper CI whisker. The oracle
+      positive control is a 9th, set-apart hatched bar at 1.0 with a dashed
+      reference line. Tradition legend is a horizontal strip BELOW the axes.
+  (b) A compact key-results TABLE (replaces the old callout boxes that overlapped:
+      fig_pass blocker). Rows A6 / A3 / A2 / A7; columns finding · number ·
+      interpretation. Every number is read from / asserted equal to the committed
+      §R per-method records.
 
 DATA — every plotted number traces to a committed record (no re-run, no fabrication):
   tools/xai_study/compare/out/leaderboard.json            (E6-1 aggregate per method)
   tools/xai_study/compare/out/leaderboard_ci.csv          (R-UNC 95% bootstrap CIs)
   tools/xai_study/phaseA_kording/out/A{1..8}_*.json        (per-method §R records)
 The script reads these files at run time; constants below are mirrored ONLY for
-the annotation callouts and are asserted equal to the on-disk records by the
-self-check, so the figure cannot silently drift from the data. The whiskers are
-the asymmetric 95% bootstrap CIs from leaderboard_ci.csv (R-UNC). The exact data
-paths are NOT printed inside the figure (they live in the Supplement provenance
-table); the figure body carries only the takeaway.
+the table cells and are asserted equal to the on-disk records by the self-check, so
+the figure cannot silently drift from the data. The whiskers are the asymmetric
+95% bootstrap CIs from leaderboard_ci.csv (R-UNC); every Phase-A bar has a CI row,
+so every bar gets a whisker (none are fabricated). The exact data paths are NOT
+printed inside the figure (they live in the Supplement provenance table); the
+figure body carries only the takeaway.
 
 Run:
     python fig3_phaseA_battery.py
     # (DoD command) python fig3_phaseA_battery.py --leaderboard <path>
 Produces:
-    fig3_phaseA_battery.pdf   (vector, colour-blind-safe, self-contained legend)
+    fig3_phaseA_battery.pdf   (vector, colour-blind-safe, fonts embedded)
 """
 
 import os
@@ -52,8 +58,7 @@ import matplotlib
 
 matplotlib.use("Agg")  # headless vector backend
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyBboxPatch, Patch
-from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
 
 # ---------------------------------------------------------------------------
 # Locate the committed data records (repo-relative; robust to the worktree path)
@@ -87,7 +92,7 @@ with open(args.leaderboard) as fh:
     LB = json.load(fh)
 
 # Pull the eight Phase-A method rows + the oracle positive control from the
-# leaderboard (these ARE the headline faithfulness numbers; triad F/S/M ride along).
+# leaderboard (these ARE the headline faithfulness numbers).
 LB_BY_METHOD = {r["method"]: r for r in LB["rows"]}
 ORACLE = LB_BY_METHOD["ORACLE"]
 assert ORACLE["is_positive_control"] == 1 and abs(ORACLE["faithfulness"] - 1.0) < 1e-9, \
@@ -114,7 +119,7 @@ def _load_phaseA(name):
 # ---------------------------------------------------------------------------
 C_BG = "#ffffff"
 C_INK = "#1a1a1a"
-C_MUTE = "#5b5b5b"
+C_MUTE = "#4a4a4a"
 C_GRID = "#dcdcdc"
 C_ORACLE = "#000000"  # the positive-control reference (neutral black)
 
@@ -146,6 +151,7 @@ A_ORDER = list(A_NAMES.keys())
 
 # What the headline faithfulness number MEANS for each analysis (the metric, oriented
 # so higher = more faithful to the known mechanism). Straight from the §R metric_names.
+# Kept for provenance + the Supplement handoff; not printed in the figure body.
 A_METRIC = {
     "A1_connectomics": "data-flow graph F1 vs oracle",
     "A2_lesions": "lesion-importance ρ vs true role",
@@ -166,13 +172,16 @@ for m in A_ORDER:
     faith = r["faithfulness"]
     # Asymmetric 95% bootstrap CI whiskers from R-UNC's leaderboard_ci.csv,
     # expressed as (lower, upper) error-bar lengths relative to the bar height.
-    # Clamp to >=0 so a tiny mean/headline mismatch never flips a whisker.
+    # Every Phase-A method has a CI row, so every bar gets a whisker (we never
+    # fabricate one). Clamp to >=0 so a tiny mean/headline mismatch never flips it.
     ci_lohi = CI_BY_METHOD.get(m)
     if ci_lohi:
         lo, hi = ci_lohi
         yerr = [max(0.0, faith - lo), max(0.0, hi - faith)]
+        has_ci = True
     else:
         yerr = None
+        has_ci = False
     bars.append({
         "method": m,
         "short": A_NAMES[m][0],
@@ -180,10 +189,8 @@ for m in A_ORDER:
         "metric": A_METRIC[m],
         "trad": r["tradition"],
         "faith": faith,
-        "F": r.get("triad_F"),
-        "S": r.get("triad_S"),
-        "M": r.get("triad_M"),
         "yerr": yerr,            # asymmetric [lo, hi] from leaderboard_ci.csv
+        "has_ci": has_ci,
     })
 
 # ---------------------------------------------------------------------------
@@ -225,228 +232,212 @@ FACT_A7 = {
 }
 
 # ---------------------------------------------------------------------------
-# rcParams
+# rcParams — 8 pt minimum font everywhere; embed TrueType fonts (pdf.fonttype=42).
 # ---------------------------------------------------------------------------
+FS_MIN = 8.0
 plt.rcParams.update({
     "font.family": "DejaVu Sans",
-    "font.size": 8.4,
-    "pdf.fonttype": 42,   # embed TrueType (editable, not bitmap)
+    "font.size": FS_MIN,
+    "pdf.fonttype": 42,   # embed TrueType (editable, not bitmap) — fonts embedded
+    "ps.fonttype": 42,
     "svg.fonttype": "none",
     "figure.dpi": 150,
     "axes.linewidth": 0.8,
 })
 
 # ---------------------------------------------------------------------------
-# Figure scaffold: (a) the scored battery (left, wide) · (b) findings (right)
+# Figure scaffold: (a) the scored battery (left, wide) · (b) findings TABLE (right)
 # ---------------------------------------------------------------------------
-FIG_W, FIG_H = 12.6, 6.4
+FIG_W, FIG_H = 12.6, 6.0
 fig = plt.figure(figsize=(FIG_W, FIG_H), facecolor=C_BG)
 
 # Title band
-fig.text(0.012, 0.967,
+fig.text(0.012, 0.965,
          "The neuroscience battery on a known machine — scored against ground truth",
-         ha="left", va="center", fontsize=13.0, fontweight="bold", color=C_INK)
-fig.text(0.012, 0.932,
+         ha="left", va="center", fontsize=12.5, fontweight="bold", color=C_INK)
+fig.text(0.012, 0.927,
          "Jonas & Kording's battery, quantified: classical analyses find rich structure yet "
          "score low in faithfulness to the true mechanism.",
          ha="left", va="center", fontsize=8.6, color=C_MUTE, fontstyle="italic")
 
-# --- Panel (a): grouped scored bars -----------------------------------------
-# Top lowered (0.795) to leave a clean legend strip ABOVE the data field, so the
-# tradition + triad legends never sit over the bars (fig_pass: legends outside).
-axA = fig.add_axes([0.062, 0.150, 0.560, 0.645])
+# --- Panel (a): scored bars --------------------------------------------------
+# Bottom raised to leave a clean tradition-legend strip BELOW the axes, so the
+# legend never sits over the bars (fig_pass: legends outside the plotting area).
+# The panel bottom (0.255) reserves a band for the two-line x-tick labels + the
+# legend strip + the footnote, with no collision/clipping at the figure edge.
+axA = fig.add_axes([0.060, 0.255, 0.560, 0.585])
 axA.set_facecolor(C_BG)
 
 n = len(bars)
 xs = list(range(n))
-bw = 0.62
+bw = 0.64
 
-# oracle positive-control reference line at 1.0
-axA.axhline(1.0, color=C_ORACLE, lw=1.4, ls=(0, (5, 3)), zorder=1)
-# label sits in the headroom above the line (clears every bar value label, which
-# top out ~1.05) and is left-anchored so it cannot overflow the right edge.
-axA.text(-0.55, 1.115, "oracle-as-method (positive control) = 1.0",
-         ha="left", va="bottom", fontsize=7.8, color=C_ORACLE, fontstyle="italic")
-
-# faint horizontal gridlines
+# faint horizontal gridlines (drawn first, behind everything)
 for yv in (0.25, 0.5, 0.75):
     axA.axhline(yv, color=C_GRID, lw=0.8, zorder=0)
+
+# oracle positive-control reference line at 1.0
+axA.axhline(1.0, color=C_ORACLE, lw=1.3, ls=(0, (5, 3)), zorder=1)
+# label sits in the headroom above the line, left-anchored so it never overflows
+# the right edge (fig_pass: oracle ceiling squeezed against the edge).
+axA.text(-0.55, 1.108, "oracle-as-method (positive control) = 1.0",
+         ha="left", va="bottom", fontsize=8.0, color=C_ORACLE, fontstyle="italic")
 
 for i, b in enumerate(bars):
     col = TRAD_COLOR[b["trad"]]
     axA.bar(i, b["faith"], width=bw, color=col, edgecolor=C_INK,
-            linewidth=0.7, zorder=3, alpha=0.92)
-    # asymmetric 95% bootstrap-CI whisker from leaderboard_ci.csv (R-UNC)
+            linewidth=0.7, zorder=3, alpha=0.95)
+    # asymmetric 95% bootstrap-CI whisker from leaderboard_ci.csv (R-UNC).
     top = b["faith"]
     if b["yerr"]:
         yl, yh = b["yerr"]
         axA.errorbar(i, b["faith"], yerr=[[yl], [yh]], fmt="none",
-                     ecolor=C_INK, elinewidth=0.9, capsize=2.5, zorder=4)
+                     ecolor=C_INK, elinewidth=1.0, capsize=3.0, zorder=4)
         top = b["faith"] + yh
-    # value label above the bar (clears the upper whisker)
-    axA.text(i, top + 0.028, f"{b['faith']:.2f}",
-             ha="center", va="bottom", fontsize=8.0, fontweight="bold",
+    # ONE numeric label per bar, consistently above the upper whisker
+    # (fig_pass: "Keep only one numeric label per bar, placed consistently above").
+    # Black text on coloured bars for contrast.
+    axA.text(i, top + 0.030, f"{b['faith']:.2f}",
+             ha="center", va="bottom", fontsize=8.4, fontweight="bold",
              color=C_INK, zorder=6)
-    # overlay the F / S / M triad points where available
-    triad = [("F", b["F"], "o"), ("S", b["S"], "s"), ("M", b["M"], "^")]
-    offs = [-0.20, 0.0, 0.20]
-    for (lab, val, mk), dx in zip(triad, offs):
-        if val is None:
-            continue
-        axA.scatter(i + dx, val, marker=mk, s=34, facecolor="white",
-                    edgecolor=C_INK, linewidth=1.0, zorder=7)
 
 # the oracle control bar at the far right (a 9th column, set apart)
 ox = n + 0.55
 axA.bar(ox, 1.0, width=bw, color="white", edgecolor=C_ORACLE,
         linewidth=1.4, hatch="////", zorder=3)
-axA.text(ox, 1.012, "1.00", ha="center", va="bottom", fontsize=8.0,
+axA.text(ox, 1.018, "1.00", ha="center", va="bottom", fontsize=8.4,
          fontweight="bold", color=C_ORACLE, zorder=6)
 
 axA.set_xlim(-0.7, ox + 0.7)
 axA.set_ylim(0, 1.18)
 axA.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
-axA.set_ylabel("faithfulness to the true mechanism\n(vs §3.2 intervention oracle)",
+axA.tick_params(axis="y", labelsize=8.0)
+axA.set_ylabel("faithfulness to the true mechanism\n(vs intervention oracle, §3.2)",
                fontsize=9.0)
 axA.set_xticks(xs + [ox])
 xtl = [f"{b['short']}\n{b['name']}" for b in bars] + ["GT\noracle"]
-axA.set_xticklabels(xtl, fontsize=7.6)
+axA.set_xticklabels(xtl, fontsize=8.0)
 # colour the oracle tick label
 for t, lab in zip(axA.get_xticklabels(), [b["short"] for b in bars] + ["GT"]):
     if lab == "GT":
         t.set_color(C_ORACLE)
         t.set_fontweight("bold")
-axA.tick_params(axis="both", length=3)
+axA.tick_params(axis="x", length=3)
 for sp in ("top", "right"):
     axA.spines[sp].set_visible(False)
 
-# NOTE: the per-bar metric microcaptions (what each headline number measures, e.g.
-# "data-flow graph F1 vs oracle") were removed in the R2 redraw — at figure scale
-# they printed below the 7.5 pt floor and added prose the fig_pass flags. The
-# per-analysis metric definitions now live in the caption / Supplement table
-# (handoff to P2-R-S04-resultsA); the A_METRIC dict is kept only so the data
-# provenance stays in the script.
-
 axA.set_title("(a)  the eight analyses, scored", loc="left",
-              fontsize=10.0, fontweight="bold", pad=8)
+              fontsize=10.0, fontweight="bold", pad=6)
 
-# legend for panel (a): traditions + triad markers
+# Tradition legend — a single horizontal strip BELOW the axes (outside the data
+# field). Placed as a FIGURE-level legend at an absolute y so it sits cleanly in
+# the band between the two-line x-tick labels and the footnote: nothing over the
+# bars, nothing clipping the figure edge (fig_pass: legends outside the plotting
+# area). Only one legend now — the triad-marker overlay was removed so each bar
+# carries exactly one numeric label (fig_pass: "one numeric label per bar").
 trad_handles = [
     Patch(facecolor=TRAD_COLOR[t], edgecolor=C_INK, linewidth=0.7,
           label=TRAD_LABEL[t])
     for t in ("intervention", "correlational", "dim_reduction", "descriptive")
 ]
-triad_handles = [
-    Line2D([0], [0], marker="o", color="none", markerfacecolor="white",
-           markeredgecolor=C_INK, markersize=7, label="F  faithful"),
-    Line2D([0], [0], marker="s", color="none", markerfacecolor="white",
-           markeredgecolor=C_INK, markersize=7, label="S  sufficient"),
-    Line2D([0], [0], marker="^", color="none", markerfacecolor="white",
-           markeredgecolor=C_INK, markersize=7, label="M  minimal"),
-]
-# Both legends sit OUTSIDE the data field, in the strip above panel (a)
-# (fig_pass: "Move legends outside the panels"). They are laid out horizontally so
-# they never overlap the bars or the triad markers.
-leg1 = axA.legend(handles=trad_handles, loc="lower left",
-                  bbox_to_anchor=(0.0, 1.045), frameon=True, fontsize=7.6,
-                  title="tradition", title_fontsize=7.8, handlelength=1.2,
-                  ncol=4, columnspacing=1.1, handletextpad=0.5,
-                  borderpad=0.45)
-leg1.get_frame().set_edgecolor("#cccccc")
-leg1.get_frame().set_linewidth(0.7)
-axA.add_artist(leg1)
-leg2 = axA.legend(handles=triad_handles, loc="lower right",
-                  bbox_to_anchor=(1.0, 1.045), frameon=True, fontsize=7.6,
-                  title="triad (F/S/M, where scored)", title_fontsize=7.8,
-                  ncol=3, columnspacing=1.0, handlelength=1.0,
-                  handletextpad=0.4, borderpad=0.45)
-leg2.get_frame().set_edgecolor("#cccccc")
-leg2.get_frame().set_linewidth(0.7)
+leg = fig.legend(handles=trad_handles, loc="center",
+                 bbox_to_anchor=(0.34, 0.085), frameon=True, fontsize=8.0,
+                 title="method tradition", title_fontsize=8.2, handlelength=1.3,
+                 ncol=4, columnspacing=1.4, handletextpad=0.5, borderpad=0.5)
+leg.get_frame().set_edgecolor("#cccccc")
+leg.get_frame().set_linewidth(0.7)
 
-# --- Panel (b): the four key findings ---------------------------------------
-axB = fig.add_axes([0.655, 0.060, 0.335, 0.815])
+# --- Panel (b): the four key findings as a COMPACT TABLE ---------------------
+# fig_pass "Fig. 2" blocker fix: the old callout boxes overlapped (head over body
+# text). Replaced with a clean three-column table (finding · number ·
+# interpretation), no boxes over data, all text >= 8 pt.
+axB = fig.add_axes([0.660, 0.060, 0.332, 0.785])
 axB.set_xlim(0, 100)
 axB.set_ylim(0, 100)
 axB.axis("off")
 axB.set_title("(b)  key findings", loc="left", fontsize=10.0,
-              fontweight="bold", pad=8)
+              fontweight="bold", pad=6)
+
+# Column anchors (x in 0..100). tag chip | head + driving number + interpretation.
+# ROW_H is the vertical pitch; each row's content fits well inside it so the bottom
+# interpretation line never reaches the next row's chip (the overlap blocker fix).
+COL_TAG = 2.0
+COL_BODY = 16.0
+ROW_TOP = 97.0
+ROW_H = 24.0      # vertical pitch between rows (4 rows × 24 = 96 < ROW_TOP)
+HEAD_FS = 8.8
+NUM_FS = 8.4
+BODY_FS = 8.0
+
+# faint row separators (one per row, just under the head band)
+for k in range(4):
+    yref = ROW_TOP - k * ROW_H + 3.0
+    axB.plot([0, 100], [yref, yref], color=C_GRID, lw=0.7, zorder=1)
 
 
-def finding(y, h, accent, tag, head, lines):
-    """A small annotated callout card."""
-    axB.add_patch(FancyBboxPatch(
-        (1.5, y), 97.0, h,
-        boxstyle="round,pad=0.0,rounding_size=2.2",
-        facecolor="#fbfbfb", edgecolor=accent, linewidth=1.3, zorder=2))
-    # accent tag chip
-    axB.add_patch(FancyBboxPatch(
-        (3.0, y + h - 8.0), 13.0, 6.2,
-        boxstyle="round,pad=0.0,rounding_size=1.0",
-        facecolor=accent, edgecolor="none", zorder=3))
-    axB.text(9.5, y + h - 4.9, tag, ha="center", va="center", color="white",
-             fontsize=8.4, fontweight="bold", zorder=4)
-    axB.text(19.0, y + h - 4.9, head, ha="left", va="center", color=C_INK,
-             fontsize=8.6, fontweight="bold", zorder=4)
-    ly = y + h - 11.5
-    for s, bold in lines:
-        axB.text(4.5, ly, s, ha="left", va="top",
-                 fontsize=7.5 if not bold else 7.8,  # >= 7.5 pt floor (fig_pass)
-                 color=C_INK if bold else C_MUTE,
-                 fontweight="bold" if bold else "normal", zorder=4)
-        ly -= 5.2
+def finding_row(k, accent, tag, head, number_line, interp_lines):
+    """One compact table row: colour chip + tag, bold finding head, the driving
+    number (bold), then a 2-line interpretation. No box — avoids the overlap
+    blocker. Content depth (~18) stays well inside ROW_H (24)."""
+    y0 = ROW_TOP - k * ROW_H
+    # accent colour chip + tag
+    axB.add_patch(plt.Rectangle((COL_TAG, y0 - 5.4), 11.5, 5.4,
+                                facecolor=accent, edgecolor="none", zorder=3))
+    axB.text(COL_TAG + 5.75, y0 - 2.7, tag, ha="center", va="center",
+             color="white", fontsize=HEAD_FS, fontweight="bold", zorder=4)
+    # finding head
+    axB.text(COL_BODY, y0 - 2.7, head, ha="left", va="center", color=C_INK,
+             fontsize=HEAD_FS, fontweight="bold", zorder=4)
+    # the driving number (bold, ink)
+    ly = y0 - 9.2
+    axB.text(COL_BODY - 1.0, ly, number_line, ha="left", va="top",
+             color=C_INK, fontsize=NUM_FS, fontweight="bold", zorder=4)
+    ly -= 4.7
+    # interpretation (muted, normal weight) — at most 2 lines to keep the row short
+    for s in interp_lines:
+        axB.text(COL_BODY - 1.0, ly, s, ha="left", va="top",
+                 color=C_MUTE, fontsize=BODY_FS, zorder=4)
+        ly -= 4.3
 
 
-# A6 Granger F = 0
-finding(
-    75.5, 22.5, TRAD_COLOR["correlational"], "A6",
-    "Granger F = 0",
-    [(f"Pong: false-edge rate = {FACT_A6['pong_false_edge']:.2f},", False),
-     (f"missed-edge = {FACT_A6['pong_missed_edge']:.2f}  →  triad F = {FACT_A6['pong_triadF']:.2f}.", True),
-     ("Temporal precedence ≠ causation: on a", False),
-     ("clock-locked machine Granger infers", False),
-     ("spurious bidirectional edges everywhere.", False)],
+# Row A6 — Granger F = 0
+finding_row(
+    0, TRAD_COLOR["correlational"], "A6", "Granger F = 0",
+    f"Pong false-edge {FACT_A6['pong_false_edge']:.2f}, missed {FACT_A6['pong_missed_edge']:.2f} → F = {FACT_A6['pong_triadF']:.2f}",
+    ["Temporal precedence ≠ causation: a clock-locked",
+     "machine yields spurious bidirectional edges."],
 )
 
-# A3 spurious tuning
-_a3_hi = max(FACT_A3.items(), key=lambda kv: kv[1])
-finding(
-    51.0, 22.5, TRAD_COLOR["correlational"], "A3",
-    "spurious tuning",
-    [(f"Pong spurious-tuning rate = {FACT_A3['pong']:.2f};", True),
-     (f"Space Invaders = {FACT_A3['space_invaders']:.2f}, Q*bert = {FACT_A3['qbert']:.2f}.", False),
-     ("Strongly-tuned units whose tuning does", False),
-     ("NOT match their true causal role —", False),
-     ("the classic tuning-curve trap, quantified.", False)],
+# Row A3 — spurious tuning
+finding_row(
+    1, TRAD_COLOR["correlational"], "A3", "spurious tuning",
+    f"Pong rate {FACT_A3['pong']:.2f}; Space Inv. {FACT_A3['space_invaders']:.2f}; Q*bert {FACT_A3['qbert']:.2f}",
+    ["Strongly-tuned units whose tuning ≠ true causal",
+     "role — the tuning-curve trap, quantified."],
 )
 
-# A2 rho 0.99 but interaction blind spot
-finding(
-    26.5, 22.5, TRAD_COLOR["intervention"], "A2",
-    "ρ = 0.99, blind to interactions",
-    [(f"Single-unit lesion importance ρ = {FACT_A2['rho_mean']:.2f}", True),
-     ("vs the true role — yet single lesions", False),
-     (f"miss {FACT_A2['si_miss']*100:.0f}% of interactions (Space Inv.):", False),
-     (f"super-additive pair Δ up to {FACT_A2['si_superadd']:.0f}", True),
-     ("invisible to one-unit-at-a-time ablation.", False)],
+# Row A2 — rho ~ 0.99 but interaction blind spot
+finding_row(
+    2, TRAD_COLOR["intervention"], "A2", "ρ = 0.99, blind to interactions",
+    f"ρ = {FACT_A2['rho_mean']:.2f} vs true role; misses {FACT_A2['si_miss']*100:.0f}% of interactions",
+    [f"Super-additive pair Δ up to {FACT_A2['si_superadd']:.0f} (Space Inv.) is",
+     "invisible to one-unit-at-a-time ablation."],
 )
 
-# A7 NMF > PCA
-finding(
-    2.0, 22.5, TRAD_COLOR["dim_reduction"], "A7",
-    "NMF > PCA (both mediocre)",
-    [(f"NMF matched-component fraction = {FACT_A7['nmf_mean']:.2f}", True),
-     (f"vs PCA = {FACT_A7['pca_mean']:.2f} mean (NMF best {FACT_A7['nmf_best']:.1f}).", False),
-     ("Non-negativity aligns components with", False),
-     ("the additive register basis better than", False),
-     ("PCA — but neither recovers the mechanism.", False)],
+# Row A7 — NMF > PCA (both mediocre)
+finding_row(
+    3, TRAD_COLOR["dim_reduction"], "A7", "NMF > PCA (both mediocre)",
+    f"NMF matched frac {FACT_A7['nmf_mean']:.2f} vs PCA {FACT_A7['pca_mean']:.2f} (NMF best {FACT_A7['nmf_best']:.1f})",
+    ["Non-negativity aligns components with the additive",
+     "register basis better — but neither recovers it."],
 )
 
 # provenance footnote — no data-path microtext in the figure body (fig_pass #6);
 # exact paths live in the Supplement provenance table.
-fig.text(0.012, 0.020,
-         "Data: committed §R records (6 core games); whiskers = 95% bootstrap CI. "
-         "See Supplement provenance table.",
-         ha="left", va="bottom", fontsize=7.5, color=C_MUTE, fontstyle="italic")
+fig.text(0.012, 0.018,
+         "Data: committed §R records (6 core games); whiskers = 95% bootstrap CI "
+         "(every bar has a CI record). See Supplement provenance table.",
+         ha="left", va="bottom", fontsize=8.0, color=C_MUTE, fontstyle="italic")
 
 # ---------------------------------------------------------------------------
 # Save (vector PDF)
@@ -476,6 +467,11 @@ for b in bars:
     if abs(b["faith"] - r["faithfulness"]) > 1e-9:
         problems.append(f"{b['method']} bar != leaderboard faithfulness")
 
+# (2b) every Phase-A bar has a CI whisker (no fabricated, none missing)
+for b in bars:
+    if not b["has_ci"] or b["yerr"] is None:
+        problems.append(f"{b['method']} has no CI row in leaderboard_ci.csv")
+
 # (3) positive control == 1.0
 if abs(ORACLE["faithfulness"] - 1.0) > 1e-9:
     problems.append("oracle positive control != 1.0")
@@ -502,7 +498,8 @@ if problems:
     sys.exit(1)
 
 print(f"[OK] wrote {OUT}  ({sz} bytes, header {head!r})")
-print(f"[OK] {len(bars)} analyses scored; oracle control = 1.0")
+print(f"[OK] {len(bars)} analyses scored; oracle control = 1.0; "
+      f"{sum(b['has_ci'] for b in bars)}/{len(bars)} bars have CI whiskers")
 print(f"[OK] findings: A6 Pong F={FACT_A6['pong_triadF']:.2f}; "
       f"A3 Pong spurious={FACT_A3['pong']:.2f}; "
       f"A2 rho={FACT_A2['rho_mean']:.2f}/superadd={FACT_A2['si_superadd']:.0f}; "
