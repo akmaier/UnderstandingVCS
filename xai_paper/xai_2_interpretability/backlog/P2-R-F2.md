@@ -2,7 +2,7 @@
 id: P2-R-F2
 title: Redraw Fig 2 (Kording battery) — fix callout overlaps, legends outside, key-findings table, fonts
 epic: RV (Revision — figure)
-status: todo
+status: done
 sprint: 10
 owner:
 where: local
