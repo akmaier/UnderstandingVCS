@@ -1,7 +1,8 @@
 % 07_results_compare.tex — Cross-tradition comparison, the danger zone, and the
-% semantic gap (the paper's centre of gravity). Drafted by item P2-E8-8 (P2 Sprint 7).
-% Voice: ../STYLE.md (Andreas Maier). Numbers: tools/xai_study/compare/out/leaderboard.md
-% + faithful_demo.md + the §R per-method records under tools/xai_study/phaseC_mechanistic/out/.
+% semantic gap (the paper's centre of gravity). Drafted by item P2-E8-8 (P2 Sprint 7);
+% restyled + condensed by P2-E8 Sprint 8 (Maier voice; ../STYLE.md).
+% Numbers: tools/xai_study/compare/out/leaderboard.md + faithful_demo.md + the §R
+% per-method records under tools/xai_study/phaseC_mechanistic/out/.
 % Honesty contract (../plan.md): we DEFINE and MEASURE the semantic gap; we do NOT claim
 % any method recovered meaning, algorithm, variables, or design from scratch. All T3
 % semantic labels are external (AtariARI/OCAtari) and only causally VERIFIED, not discovered.
@@ -9,42 +10,39 @@
 \section{Across the traditions --- and the boundary the leaderboard cannot
 cross}\label{sec:results_compare}
 
-We have now run three traditions on one machine, and the scores live on a single
-axis. It is worth pausing to ask what the axis measures and what it does not.
-Faithfulness asks whether an explanation names the true causes; on the VCS we can
-answer it exactly, because the \S\ref{sec:oracle} intervention oracle re-runs the
+We have now run three traditions on one machine, and their scores live on a single
+axis. Faithfulness asks whether an explanation names the true causes, and on the
+VCS we answer it exactly: the \S\ref{sec:oracle} intervention oracle re-runs the
 bit-exact program for every candidate cause and returns the ground truth no real
-network affords. In this section we first place all of Phases~A--C on the shared
-faithfulness-versus-plausibility plane and read off the leaderboard and its danger
-zone---the \emph{confirm} half of the paper. We then do the thing the leaderboard
-cannot: with the same oracle, we mark the boundary where even a perfectly faithful
-method stops. Faithfulness, it turns out, is the easier half of the problem. The
-harder half---the variable's meaning, the routine's algorithm---is a separate
-object, and on this machine the distance to it is a number. We name that residual
-the \emph{semantic gap} and measure its symptoms.
+network affords. In the following we place all of Phases~A--C on the shared
+faithfulness-versus-plausibility plane, read off the leaderboard and its danger
+zone, the \emph{confirm} half of the paper, and then mark, with the same oracle, the
+boundary where even a perfectly faithful method stops. Faithfulness is the easier
+half of the problem. The harder half, the variable's meaning and the routine's
+algorithm, is a separate object, and on this machine the distance to it is a number.
+We name that residual the \emph{semantic gap} and measure its symptoms.
 
-\subsection*{The faithfulness leaderboard: causal wins, correlational loses}
+\subsection*{The faithfulness leaderboard}
 
-The headline is a clean separation along the axis that matters. Aggregating the
+The leaderboard separates cleanly along the axis that matters. Aggregating the
 257 committed per-game records into 31 method rows~\cite{leaderboardP2}
 (Fig.~\ref{fig:faithfulness}), the causal and intervention methods average a
 faithfulness of $0.681$ against the oracle, while the gradient and correlational
-methods average $0.294$---a gap of $0.387$ across all output regimes. Restrict to
-the \emph{position} regime, the discrete sprite-position outputs whose naive
-gradient is provably zero (Sec.~\ref{sec:results-b}), and the gap holds with the
-same sign: causal/intervention $0.412$ versus gradient/correlational $0.068$. The
-ordering is the one the method matrix predicted (Sec.~\ref{sec:methods}), now
-measured: activation patching, causal scrubbing, interchange interventions, and
-the logit lens sit at the oracle ceiling of $1.0$; the single-unit lesion follows
-at $0.99$; the gradient family and the classical correlational analyses---tuning
-curves, Granger causality, spike-word correlations---fall to the floor. The single
-starkest pair makes the spread concrete and is bit-exact on every game: on the
-position regime the causal method activation patching reaches faithfulness $1.000$,
-the oracle ceiling, on all six core games, while vanilla saliency---the field's
-default tool---collapses to $0.000$ on all six, a per-method gap of
-$1.000$~\cite{faithfuldemoP2}. On a system where the answer is known exactly, the
-everyday attribution tool scores near chance where a causal method scores near the
-ceiling.
+methods average $0.294$, a gap of $0.387$ across all output regimes. On the
+\emph{position} regime, the discrete sprite-position outputs whose naive gradient is
+provably zero (Sec.~\ref{sec:results-b}), the gap holds with the same sign: causal
+and intervention $0.412$ versus gradient and correlational $0.068$. The ordering is
+the one the method matrix predicted
+(Sec.~\ref{sec:methods}), now measured. Activation patching, causal scrubbing,
+interchange interventions, and the logit lens sit at the oracle ceiling of $1.0$;
+the single-unit lesion follows at $0.99$; the gradient family and the classical
+correlational analyses, the tuning curves, Granger causality, and spike-word
+correlations, fall to the floor. The starkest pair is bit-exact on every game: on
+the position regime activation patching reaches faithfulness $1.000$, the oracle
+ceiling, on all six core games, while vanilla saliency, the field's default tool,
+collapses to $0.000$ on all six, a per-method gap of $1.000$~\cite{faithfuldemoP2}.
+Hence, on a system where the answer is known exactly, the everyday attribution tool
+scores near chance where a causal method scores near the ceiling.
 
 \begin{figure}[t]
 \centering
@@ -68,66 +66,58 @@ from the committed cross-tradition leaderboard; no number is re-run or
 estimated.}\label{fig:faithfulness}
 \end{figure}
 
-\subsection*{The danger zone: plausible is not faithful}
+\subsection*{The danger zone}
 
 The faithfulness axis would be unremarkable if it agreed with how convincing a
-method looks. It does not. Plotting the same methods against the
-plausibility proxy of Sec.~\ref{sec:methods}, the cloud separates into a benign
-diagonal and a hazardous corner. The methods the field reaches for first---the
-gradient family, plausibility $0.9$; tuning and Granger, plausibility $0.8$;
-linear probing with control tasks, plausibility $0.85$---are precisely the methods
-whose faithfulness sits near the floor. Expected Gradients tops the danger list at
-plausibility $0.9$ against faithfulness $0.034$, a gap of $0.87$; linear probing
-follows at $0.85$ against $0.162$; A3 tuning at $0.8$ against $0.116$. The
-inversion is the whole point: the map that is provably empty on the position
-regime looks \emph{more} convincing than the map that is exactly right. We state
-the obvious caveat plainly. The plausibility axis is a documented
+method looks, and it does not. Plotted against the plausibility proxy of
+Sec.~\ref{sec:methods}, the cloud separates into a benign diagonal and a hazardous
+corner. The methods the field reaches for first sit near the faithfulness floor:
+Expected Gradients tops the danger list at plausibility $0.9$ against faithfulness
+$0.034$, a gap of $0.87$; linear probing follows at $0.85$ against $0.162$; A3
+tuning at $0.8$ against $0.116$. The inversion is the point: the map that is
+provably empty on the position regime looks \emph{more} convincing than the map that
+is exactly right. We state the caveat plainly. The plausibility axis is a documented
 method-tradition proxy, not a human-subjects measurement, and we report it as such
 to avoid overclaiming the danger zone. Yet the faithfulness axis is exact, and the
 ranking it inverts is the field's own habit of trust; the hazard is therefore real
-even at the proxy's coarse resolution. The danger zone is not a worry on the VCS.
-It is a measurement.
+even at the proxy's coarse resolution. The danger zone is not a worry but a
+measurement.
 
 \subsection*{Where the leaderboard stops --- the semantic gap}
 
-Here the paper turns. Suppose we hand the audit its best case: a method that scores
-$1.0$ against the oracle, a faithfulness no real network can certify. Has it given
-us an understanding of what the program does? We claim, and now show, that it has
-not---and we are careful about what that claim is and is not. We do \emph{not}
-claim that no method can recover meaning; that is the unbounded statement, and it
-is the subject of the companion design-recovery work (Paper~4), which we have not
-run here. We claim the bounded thing the oracle can prove: even when a method
-recovers the true causal structure exactly, what it returns is the \emph{wiring}
----a causal-effect map, a data-flow graph---and not the \emph{semantics}: the
-variable's meaning or the routine's algorithm. The missing object is of a
-different type, not a worse-fit instance of the same one. The triad of
-Sec.~\ref{sec:triad} makes this operational: an explanation is right only if it is
-\textbf{F}aithful (true causes), \textbf{S}ufficient (it regenerates the behavior
-under held-out interventions), and \textbf{M}inimal (at the algorithmic level).
-Three committed separations, each adjudicated by the oracle rather than by our
-preference, show the axes pulling apart---and, tellingly, pulling apart in
-\emph{both directions at once} (Fig.~\ref{fig:taxonomy}).
+Here the paper turns. Hand the audit its best case, a method that scores $1.0$
+against the oracle, and ask whether it has given us an understanding of what the
+program does. It has not, and we are careful about what that claim is and is not. We
+do \emph{not} claim that no method
+can recover meaning; that is the unbounded statement, the subject of the companion
+design-recovery work (Paper~4), which we have not run here. We claim the bounded
+thing the oracle can prove: even when a method recovers the true causal structure
+exactly, what it returns is the \emph{wiring}---a causal-effect map, a data-flow
+graph---and not the \emph{semantics}, the variable's meaning or the routine's
+algorithm. The missing object is of a different type, not a worse-fit instance of
+the same one. The triad of Sec.~\ref{sec:triad} makes this operational: an
+explanation is right only if it is \textbf{F}aithful (true causes), \textbf{S}ufficient
+(it regenerates the behavior under held-out interventions), and \textbf{M}inimal (at
+the algorithmic level). Three committed separations, each adjudicated by the oracle,
+show the axes pulling apart in \emph{both directions at once} (Fig.~\ref{fig:taxonomy}).
 
-\paragraph{Graph-correct, behavior-incomplete.}
-Automatic circuit discovery (ACDC)~\cite{conmy2023towards} on Breakout recovers a
-data-flow graph that is, by the exact data-flow oracle, perfectly correct and
-perfectly parsimonious: $F = 1.0$ and $M = 1.0$~\cite{leaderboardP2}. And yet the
-discovered circuit alone, with its non-circuit parents scrubbed, reproduces the
-clean candidate-cell readouts only $44\%$ of the time: $S = 0.44$. A correct graph
-of which cells feed which is not the function those cells compute. The companion
-causal method shows the same thing from the faithful side: activation
-patching~\cite{vig2020investigating} recovers the exact per-site causal-effect
-table on every one of the six games---the record carries
-\texttt{recovered\_equals\_exact: true} bit-for-bit~\cite{leaderboardP2}---and a
-table of effects, however exact, is not the bounce algorithm that produced them.
-Crucially, there is no tuning budget left to spend here: the effect table is
+The first separation is graph-correct yet behavior-incomplete. Automatic circuit
+discovery (ACDC)~\cite{conmy2023towards} on Breakout recovers a data-flow graph
+that is, by the exact data-flow oracle, perfectly correct and perfectly
+parsimonious: $F = 1.0$ and $M = 1.0$~\cite{leaderboardP2}. Yet the discovered
+circuit alone, with its non-circuit parents scrubbed, reproduces the clean
+candidate-cell readouts only $44\%$ of the time: $S = 0.44$. A correct graph of
+which cells feed which is not the function those cells compute. The faithful side
+shows the same: activation patching~\cite{vig2020investigating} recovers the
+exact per-site causal-effect table on every one of the six games, the record
+carrying \texttt{recovered\_equals\_exact: true} bit-for-bit~\cite{leaderboardP2},
+and a table of effects, however exact, is not the bounce algorithm that produced
+them. No tuning budget is left to spend here, because the effect table is
 \emph{already} exact, so the residual to the algorithm cannot be a worse fit closed
-by a better hyperparameter. It is a missing object of a different type. This is the
-sharpest reading of the triad and the reason the gap is not merely
-``methods underperform.''
+by a better hyperparameter. It is a missing object of a different type, and that is
+why the gap is not merely ``methods underperform.''
 
-\paragraph{Named, yet causally inert.}
-The reverse failure is just as instructive. A sparse
+The second separation is named yet causally inert, the reverse failure. A sparse
 autoencoder~\cite{cunningham2023sparse} trained on the recorded Pong state matches
 every one of its candidate game-concept variables: the feature$\leftrightarrow$
 variable matched fraction is $1.0$, a perfect semantic alignment by the field's
@@ -135,51 +125,48 @@ usual yardstick. By the oracle, those same matched features are nearly causally
 inert: faithfulness $F = 0.041$ and a \emph{negative} sufficiency $S =
 -0.336$~\cite{leaderboardP2}. ``Looks like the ball's $x$'' is not ``is how the
 program computes with the ball's $x$.'' Where the circuit was correct yet
-incomplete, the dictionary is named yet wrong---the gap runs the other way on the
-same axis, and a story in which methods simply score too low cannot produce both at
-once. We add the obvious guard against reading semantic success into an aligned
-variable: the interchange-intervention alignment (DAS)~\cite{geiger2023finding}
-reports an aligned-variable accuracy of $1.0$, but that $1.0$ is true \emph{by
-construction}---it verifies a \emph{supplied} variable rather than discovering one.
-A method that confirms a given concept is not a method that found the meaning.
+incomplete, the dictionary is named yet wrong; the gap runs the other way on the
+same axis, which a story of methods scoring too low cannot produce. We guard against
+reading semantic success into an aligned variable: the
+interchange-intervention alignment (DAS)~\cite{geiger2023finding} reports an
+aligned-variable accuracy of $1.0$, but that $1.0$ is true \emph{by construction},
+verifying a \emph{supplied} variable rather than discovering one. A method that
+confirms a given concept is not a method that found the meaning.
 
-\paragraph{Decodable, yet unused.}
-The third separation is the present-versus-used trap, and the oracle is strictly
-stronger than the probe that walks into it. Linear probing with control
-tasks~\cite{hewitt2019designing} decodes game concepts from the Breakout state at a
-mean accuracy of $0.72$ with positive selectivity over its control---the
-information is demonstrably \emph{present}. Yet the exact oracle flags a decodable
-score-related cell (cell~$84$) as \emph{not causally used}: re-derived within the
-horizon, its value has no downstream effect on the
-output~\cite{leaderboardP2}. A concept can be linearly readable from the state and
-play no part in the computation, exactly Hewitt and Liang's control-task
-warning---decodability is necessary, never sufficient. Probing answers ``is it
-there''; the oracle answers ``is it used,'' and only the second is about how the
-program works. Linear probing's leaderboard faithfulness of $0.162$ paired with a
-plausibility proxy of $0.85$ is its place in the danger zone, and the
-decodable-but-unused cell is the mechanism behind that placement.
+The third separation is decodable yet unused, the present-versus-used trap, where
+the oracle is strictly stronger than the probe that walks into it. Linear probing
+with control tasks~\cite{hewitt2019designing} decodes game concepts from the
+Breakout state at a mean accuracy of $0.72$ with positive selectivity over its
+control; the information is demonstrably \emph{present}. Yet the exact oracle flags a
+decodable score-related cell (cell~$84$) as \emph{not causally used}: re-derived
+within the horizon, its value has no downstream effect on the
+output~\cite{leaderboardP2}. A concept can be linearly readable yet play no part in
+the computation, exactly Hewitt and Liang's control-task warning; decodability is
+necessary, never sufficient. Probing answers ``is it there,'' the oracle answers
+``is it used,'' and only the second is about how the program works.
+Linear probing's leaderboard faithfulness of $0.162$ paired with a plausibility
+proxy of $0.85$ is its place in the danger zone, and this cell is the mechanism
+behind that placement.
 
-\paragraph{The gap is a number, and a different kind of object.}
-Read together (the leaderboard plane of Fig.~\ref{fig:faithfulness} and the
-failure taxonomy of Fig.~\ref{fig:taxonomy}), the three separations make the same
-point from three sides. The triad's axes are not redundant: a method can be faithful and minimal
-yet not sufficient (ACDC, $F = M = 1.0$, $S = 0.44$); it can match a named concept
-perfectly yet be causally inert (the SAE, matched fraction $1.0$, $F = 0.041$); it
-can decode a variable that the program never uses (cell~$84$). The robustness of
-the claim does not rest on any single low number---a lone low $S$ could be a
-tuning artifact---but on the gap appearing where tuning \emph{cannot} reach (an
-already-exact effect table) and running in opposite directions on the same axis
-at once. That two-sidedness is what a ``methods are not good enough yet'' account
-cannot generate. We restate the honesty contract here, because the temptation to
-overread is greatest at the paper's centre. We have \emph{not} recovered the
-program's meaning, algorithm, variables, or design from scratch. Every semantic
-label we used is external---imported from AtariARI~\cite{anand2019unsupervised} and
-OCAtari~\cite{delfosse2023ocatari}, \texttt{verified:false} in provenance---and
-the substrate only \emph{causally verifies} a supplied label; it does not
-\emph{discover} the concept. The faithful methods recover the wiring; the meaning
-is a separate object, and the distance to it is what we have measured. Recovering
-that meaning is a different problem, and it is the companion paper's, not this
-one's.
+Read together, the leaderboard plane of Fig.~\ref{fig:faithfulness} and the failure
+taxonomy of Fig.~\ref{fig:taxonomy} make the same point from three sides. The
+triad's axes are not redundant: a method can be faithful and minimal yet not
+sufficient (ACDC, $F = M = 1.0$, $S = 0.44$); it can match a named concept perfectly
+yet be causally inert (the SAE, matched fraction $1.0$, $F = 0.041$); it can decode
+a variable that the program never uses (cell~$84$). The claim does not rest on any
+single low number, since a lone low $S$ could be a tuning artifact, but on the gap
+appearing where tuning \emph{cannot} reach (an already-exact effect table) and
+running in opposite directions on the same axis at once. That two-sidedness is what
+a ``methods are not good enough yet'' account cannot generate. We restate the
+honesty contract here, where the temptation to overread is greatest. We have
+\emph{not} recovered the program's meaning, algorithm, variables, or design from
+scratch. Every semantic label we used is external, imported from
+AtariARI~\cite{anand2019unsupervised} and OCAtari~\cite{delfosse2023ocatari},
+\texttt{verified:false} in provenance, and the substrate only \emph{causally
+verifies} a supplied label; it does not \emph{discover} the concept. Hence, the
+faithful methods recover the wiring; the meaning is a separate object, and the
+distance to it is what we have measured. Recovering that meaning is a different
+problem, and it is the companion paper's, not this one's.
 
 \begin{figure}[t]
 \centering
