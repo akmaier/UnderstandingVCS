@@ -31,6 +31,16 @@ item).
 4. **Figures:** move the FULL Fig 5 (taxonomy tree) and Fig 6 (VCS→NN map) to **Supplementary
    Information**; keep simplified main-text versions (consistent with Nature SI policy).
 
+## CANONICAL NUMBERS + audit fix-list → `reviews/number_audit.md` (2026-06-24; agents MUST apply §2)
+The number-provenance + consistency audit (119 findings; **no fatal error**; `prop:zero` SOUND;
+F/S/M consistent except the M4 F-formula) is authoritative for every quantitative claim. §1 is the
+canonical-numbers table; §2 is the owner-tagged fix-list. R4/R5/R6 section items MUST apply their
+tagged §2 fixes; the R3-done files (03_methods, 07_results_compare, supplement) are patched in a
+separate R3-fix pass. Recurring rules: ACDC `F=1.0/S=0.44` is the **Breakout exemplar** (always
+"on Breakout"); ACDC family mean is F=0.45/S=0.32. SAE `F=0.04` is the **Pong exemplar** ("on
+Pong"); SAE family is F=0.19. The 1.000-vs-0.000 contrast is **position regime only**. The
+all-regimes gap 0.387 is **not robust** (collapses off the position regime).
+
 ## Decision: figure-caption ownership (one rule, stated)
 Figure captions live inside the section `.tex` that embeds the figure. To keep file_scopes
 disjoint, **the section item owns the caption; the figure item (`P2-R-F*`) edits ONLY the `.py`**
