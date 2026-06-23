@@ -375,9 +375,18 @@
    pages     = {2733--2743}, year = {2019}}
 
 @misc{maier2025vcs,
-   title  = {A Bit-Exact, Differentiable Atari 2600 (Paper 1)},
-   author = {Maier, Andreas and Bayer, Stefan and Krauss, Patrick},
-   year   = {2025}, note = {companion paper; this program}}
+   title         = {A Differentiable {Atari} {VCS}: A Complex, Fully Known Ground
+                    Truth for Explainable {AI}},
+   author        = {Maier, Andreas and Bayer, Siming and Krauss, Patrick},
+   year          = {2026},
+   eprint        = {2606.22447},
+   archivePrefix = {arXiv},
+   primaryClass  = {cs.AI},
+   howpublished  = {arXiv:2606.22447; code at
+                    \url{https://github.com/akmaier/UnderstandingVCS}},
+   note          = {Companion port paper (Paper~1) of this program; submitted
+                    2026-06-21. Code: \url{https://github.com/akmaier/UnderstandingVCS}.
+                    Citation key \texttt{maier2025vcs} retained for stability.}}
 
 @inproceedings{jacovi2020towards,
    author    = {Jacovi, Alon and Goldberg, Yoav},
@@ -840,12 +849,17 @@
  }
 
 @misc{yang2019bim,
-   author       = {Yang, Mengjiao and Kim, Been},
-   title        = {{BIM}: Towards Quantitative Evaluation of Interpretability Methods
-                   with Ground Truth},
-   year         = {2019},
-   howpublished = {arXiv preprint},
-   note         = {arXiv:1907.09701}
+   author        = {Yang, Mengjiao and Kim, Been},
+   title         = {{BAM}: Benchmarking Attribution Methods with Relative Feature
+                    Importance},
+   year          = {2019},
+   eprint        = {1907.09701},
+   archivePrefix = {arXiv},
+   primaryClass  = {cs.LG},
+   note          = {Introduces the {BAM} benchmark: models trained with known
+                    relative feature importance plus paired-model/paired-input
+                    metrics for attribution methods. (Key \texttt{yang2019bim}
+                    retained for citation stability; the work is {BAM}, not {BIM}.)}
  }
 
 @article{lazebnik2002can,
@@ -868,4 +882,176 @@
    note         = {Defines ``software'' as computer programs, procedures, and
                    possibly associated documentation and data.}
  }
+
+%% ============================================================
+%%  R1 revision additions (P2-R-REF): ground-truth interpretability
+%%  benchmarks + Figure-6 cited works. Every entry WebSearch-verified
+%%  (authors / year / venue / title) on 2026-06-23 — see verification
+%%  note at the bottom of this file.
+%% ============================================================
+
+%% ---- Ground-truth / faithfulness interpretability benchmarks ----
+@inproceedings{mib2025,
+   author    = {Mueller, Aaron and Geiger, Atticus and Wiegreffe, Sarah and
+                Arad, Dana and Arcuschin, Iv{\'a}n and Belfki, Adam and
+                Chan, Yik Siu and Fiotto-Kaufman, Jaden and Haklay, Tal and
+                Hanna, Michael and Huang, Jing and Gupta, Rohan and
+                Nikankin, Yaniv and Orgad, Hadas and Prakash, Nikhil and
+                Reusch, Anja and Sankaranarayanan, Aruna and Shao, Shun and
+                Stolfo, Alessandro and Tutek, Martin and Zur, Amir and
+                Bau, David and Belinkov, Yonatan},
+   title     = {{MIB}: A Mechanistic Interpretability Benchmark},
+   booktitle = {Proceedings of the 42nd International Conference on Machine
+                Learning (ICML)},
+   series    = {PMLR},
+   volume    = {267},
+   year      = {2025},
+   eprint        = {2504.13151},
+   archivePrefix = {arXiv},
+   primaryClass  = {cs.LG},
+   note      = {Two tracks (circuit localization; causal-variable localization)
+                over four tasks and five neural language models.}
+ }
+
+@inproceedings{saebench2025,
+   author    = {Karvonen, Adam and Rager, Can and Lin, Johnny and Tigges, Curt
+                and Bloom, Joseph and Chanin, David and Lau, Yeu-Tong and
+                Farrell, Eoin and McDougall, Callum and Ayonrinde, Kola and
+                Till, Demian and Wearden, Matthew and Conmy, Arthur and
+                Marks, Samuel and Nanda, Neel},
+   title     = {{SAEBench}: A Comprehensive Benchmark for Sparse Autoencoders in
+                Language Model Interpretability},
+   booktitle = {Proceedings of the 42nd International Conference on Machine
+                Learning (ICML)},
+   series    = {PMLR},
+   volume    = {267},
+   year      = {2025},
+   eprint        = {2503.09532},
+   archivePrefix = {arXiv},
+   primaryClass  = {cs.LG},
+   note      = {Eight metrics over $>$200 open-sourced SAEs; finds gains on proxy
+                metrics do not reliably translate to practical interpretability.}
+ }
+
+@inproceedings{m4_2023,
+   author    = {Li, Xuhong and Du, Mengnan and Chen, Jiamin and Chai, Yekun and
+                Lakkaraju, Himabindu and Xiong, Haoyi},
+   title     = {{$\mathcal{M}^4$}: A Unified {XAI} Benchmark for Faithfulness
+                Evaluation of Feature Attribution Methods across Metrics,
+                Modalities and Models},
+   booktitle = {Advances in Neural Information Processing Systems (NeurIPS),
+                Datasets and Benchmarks Track},
+   volume    = {36},
+   year      = {2023}
+ }
+
+%% ---- Works named in Figure 6 (added so the figure's citations resolve) ----
+@inproceedings{balduzzi2017shattered,
+   author    = {Balduzzi, David and Frean, Marcus and Leary, Lennox and
+                Lewis, J. P. and Ma, Kurt Wan-Duo and McWilliams, Brian},
+   title     = {The Shattered Gradients Problem: If Resnets Are the Answer, Then
+                What Is the Question?},
+   booktitle = {Proceedings of the 34th International Conference on Machine
+                Learning (ICML)},
+   series    = {PMLR},
+   volume    = {70},
+   pages     = {342--350},
+   year      = {2017}
+ }
+
+@inproceedings{jain2019attention,
+   author    = {Jain, Sarthak and Wallace, Byron C.},
+   title     = {Attention Is Not Explanation},
+   booktitle = {Proceedings of the 2019 Conference of the North American Chapter
+                of the Association for Computational Linguistics: Human Language
+                Technologies (NAACL-HLT)},
+   pages     = {3543--3556},
+   year      = {2019},
+   publisher = {Association for Computational Linguistics},
+   doi       = {10.18653/v1/N19-1357}
+ }
+
+@inproceedings{morcos2018single,
+   author    = {Morcos, Ari S. and Barrett, David G. T. and Botvinick, Matthew
+                and Rabinowitz, Neil C.},
+   title     = {On the Importance of Single Directions for Generalization},
+   booktitle = {International Conference on Learning Representations (ICLR)},
+   year      = {2018},
+   eprint        = {1803.06959},
+   archivePrefix = {arXiv},
+   primaryClass  = {stat.ML}
+ }
+
+@inproceedings{leavitt2020falsifiable,
+   author    = {Leavitt, Matthew L. and Morcos, Ari S.},
+   title     = {Towards Falsifiable Interpretability Research},
+   booktitle = {NeurIPS 2020 Workshop: ML Retrospectives, Surveys \& Meta-Analyses
+                (ML-RSA)},
+   year      = {2020},
+   eprint        = {2010.12016},
+   archivePrefix = {arXiv},
+   primaryClass  = {cs.LG}
+ }
+
+@misc{elhage2022toy,
+   author        = {Elhage, Nelson and Hume, Tristan and Olsson, Catherine and
+                    Schiefer, Nicholas and Henighan, Tom and Kravec, Shauna and
+                    Hatfield-Dodds, Zac and Lasenby, Robert and Drain, Dawn and
+                    Chen, Carol and Grosse, Roger and McCandlish, Sam and
+                    Kaplan, Jared and Amodei, Dario and Wattenberg, Martin and
+                    Olah, Christopher},
+   title         = {Toy Models of Superposition},
+   year          = {2022},
+   eprint        = {2209.10652},
+   archivePrefix = {arXiv},
+   primaryClass  = {cs.LG},
+   note          = {Transformer Circuits Thread,
+                    \url{https://transformer-circuits.pub/2022/toy_model/index.html}}
+ }
+
+@incollection{kindermans2019unreliability,
+   author    = {Kindermans, Pieter-Jan and Hooker, Sara and Adebayo, Julius and
+                Alber, Maximilian and Sch{\"u}tt, Kristof T. and D{\"a}hne, Sven
+                and Erhan, Dumitru and Kim, Been},
+   title     = {The (Un)reliability of Saliency Methods},
+   booktitle = {Explainable AI: Interpreting, Explaining and Visualizing Deep
+                Learning},
+   series    = {Lecture Notes in Computer Science},
+   volume    = {11700},
+   pages     = {267--280},
+   year      = {2019},
+   publisher = {Springer},
+   doi       = {10.1007/978-3-030-28954-6_14}
+ }
+
+@article{sturmfels2020baselines,
+   author  = {Sturmfels, Pascal and Lundberg, Scott and Lee, Su-In},
+   title   = {Visualizing the Impact of Feature Attribution Baselines},
+   journal = {Distill},
+   year    = {2020},
+   volume  = {5},
+   number  = {1},
+   doi     = {10.23915/distill.00022},
+   note    = {\url{https://distill.pub/2020/attribution-baselines}}
+ }
+
+%% ============================================================
+%%  Verification note (P2-R-REF, R1) — WebSearch-confirmed 2026-06-23:
+%%   - maier2025vcs: arXiv:2606.22447, "A Differentiable Atari VCS: A Complex,
+%%       Fully Known Ground Truth for Explainable AI", Maier, Siming Bayer,
+%%       Krauss; submitted 2026-06-21; code github.com/akmaier/UnderstandingVCS.
+%%   - yang2019bim: arXiv:1907.09701 is BAM ("Benchmarking Attribution Methods
+%%       with Relative Feature Importance", Yang & Kim 2019) — prior title said
+%%       "BIM ... with Ground Truth", which was WRONG; corrected to BAM.
+%%   - mib2025: ICML 2025 (PMLR v267), arXiv:2504.13151, Mueller et al.
+%%   - saebench2025: ICML 2025 (PMLR v267), arXiv:2503.09532, Karvonen et al.
+%%   - m4_2023: NeurIPS 2023 Datasets & Benchmarks, Li/Du/Chen/Chai/Lakkaraju/Xiong.
+%%   - balduzzi2017shattered: ICML 2017 (PMLR v70:342-350).
+%%   - jain2019attention: NAACL-HLT 2019, N19-1357.
+%%   - morcos2018single: ICLR 2018, arXiv:1803.06959.
+%%   - leavitt2020falsifiable: NeurIPS 2020 ML-Retrospectives wksp, arXiv:2010.12016.
+%%   - elhage2022toy: Transformer Circuits Thread 2022, arXiv:2209.10652.
+%%   - kindermans2019unreliability: Springer LNCS 11700:267-280 (2019).
+%%   - sturmfels2020baselines: Distill 5(1), 2020, doi 10.23915/distill.00022.
+%% ============================================================
 
