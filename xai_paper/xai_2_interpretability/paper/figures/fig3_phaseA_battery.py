@@ -424,12 +424,12 @@ finding_row(
      "invisible to one-unit-at-a-time ablation."],
 )
 
-# Row A7 — NMF > PCA (both mediocre)
+# Row A7 — NMF = PCA (both mediocre)
 finding_row(
-    3, TRAD_COLOR["dim_reduction"], "A7", "NMF > PCA (both mediocre)",
-    f"NMF matched frac {FACT_A7['nmf_mean']:.2f} vs PCA {FACT_A7['pca_mean']:.2f} (NMF best {FACT_A7['nmf_best']:.1f})",
-    ["Non-negativity aligns components with the additive",
-     "register basis better — but neither recovers it."],
+    3, TRAD_COLOR["dim_reduction"], "A7", "NMF = PCA (both mediocre)",
+    f"NMF matched frac {FACT_A7['nmf_mean']:.2f} = PCA {FACT_A7['pca_mean']:.2f} (best {FACT_A7['nmf_best']:.1f})",
+    ["Tied on matched components; NMF leads only on the",
+     "recon-error composite — neither recovers the basis."],
 )
 
 # provenance footnote — no data-path microtext in the figure body (fig_pass #6);
@@ -488,8 +488,8 @@ if not (FACT_A2["rho_mean"] >= 0.98):
     problems.append("A2 mean rho not ~0.99 (headline finding broken)")
 if not (FACT_A2["si_superadd"] > 0):
     problems.append("A2 interaction blind-spot absent (super-additive delta = 0)")
-if not (FACT_A7["nmf_mean"] >= FACT_A7["pca_mean"]):
-    problems.append("A7 NMF not >= PCA (headline finding broken)")
+if not (abs(FACT_A7["nmf_mean"] - FACT_A7["pca_mean"]) < 1e-9):
+    problems.append("A7 NMF != PCA on matched components (headline finding: tied at 0.60)")
 
 if problems:
     print("[FAIL] self-check:")
@@ -503,4 +503,4 @@ print(f"[OK] {len(bars)} analyses scored; oracle control = 1.0; "
 print(f"[OK] findings: A6 Pong F={FACT_A6['pong_triadF']:.2f}; "
       f"A3 Pong spurious={FACT_A3['pong']:.2f}; "
       f"A2 rho={FACT_A2['rho_mean']:.2f}/superadd={FACT_A2['si_superadd']:.0f}; "
-      f"A7 NMF={FACT_A7['nmf_mean']:.2f} > PCA={FACT_A7['pca_mean']:.2f}")
+      f"A7 NMF={FACT_A7['nmf_mean']:.2f} = PCA={FACT_A7['pca_mean']:.2f}")

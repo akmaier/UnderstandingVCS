@@ -17,7 +17,8 @@ known VCS, where the true causal role of every register and RAM cell is
 recoverable by exact intervention (\S\ref{sec:methods}), turns Kording's
 qualitative lesson into a measured one. Across the eight analyses A1--A8,
 faithfulness against the oracle ranges from $0.116$ to $1.0$ and averages
-$0.49 \pm 0.24$~\cite{leaderboardP2}, while the oracle-as-method positive
+$0.49$ (95\% bootstrap CI $\pm 0.24$)~\cite{leaderboardP2}, while the
+oracle-as-method positive
 control sits at $1.0$ by construction (Fig.~\ref{fig:phaseA}). The structure
 these methods report is real; yet structure is not cause, and the gap is what
 the score measures.
@@ -33,7 +34,7 @@ the one classical number near the ceiling proves it.
 
 Yet a near-perfect rank order hides an interaction blind-spot. A single-unit
 lesion changes one cell at a time, so it is blind to causes that act only in
-concert. On Space Invaders the per-unit ranking misses $25\%$ of the
+concert. On Space Invaders the per-unit ranking misses $40\%$ of the
 interactions the oracle records, and one super-additive pair swings behavior by
 up to $1044$ screen-pixels beyond the sum of its parts~\cite{leaderboardP2}. The
 map of which units matter is right, the model of how they combine absent. Hence
@@ -67,14 +68,16 @@ causation infers spurious edges everywhere. No longer lag or stricter threshold
 repairs that; precedence and causation come apart here, and only the
 intervention oracle tells them apart.
 
-Dimensionality reduction lands in the middle, NMF edging out PCA. A7 decomposes
-the state tensor into latent components and matches them to the known clock,
-read/write, and vsync signals; non-negative matrix factorization recovers a
-matched-component fraction of $0.60$ (best $0.80$ on a single game), slightly
-ahead of PCA at $0.60$ on average, its non-negativity a better fit to the
-substrate~\cite{leaderboardP2}. Neither clears two-thirds of the known
-components, so A7's $0.60$, second-strongest behind only the causal lesion,
-leaves the latent space half interpretable and half opaque.
+Dimensionality reduction lands in the middle, with NMF and PCA tied. A7
+decomposes the state tensor into latent components and matches them to the known
+clock, read/write, and vsync signals; non-negative matrix factorization and PCA
+both recover a matched-component fraction of $0.60$ on average (best $0.80$ on a
+single game), so neither factorization is the more faithful at this
+analogue~\cite{leaderboardP2}. NMF leads only on the secondary recon-error/FSM
+composite, where its non-negativity better fits the additive register basis.
+Neither clears two-thirds of the known components, so A7's $0.60$,
+second-strongest behind only the causal lesion, leaves the latent space half
+interpretable and half opaque.
 
 A perfect record is still not an explanation. A8 records the full RAM and
 register state, faithful and sufficient by definition ($F = 1.0$, $S = 1.0$), and
@@ -98,23 +101,26 @@ paper measures.
 \begin{figure}[t]
   \centering
   \includegraphics[width=\textwidth]{fig3_phaseA_battery.pdf}
-  \caption{\textbf{The Kording neuroscience battery, scored against the exact
-  oracle.} Each analysis A1--A8 is run on the bit-exact, fully known VCS and
-  graded for faithfulness against the \S\ref{sec:methods} intervention oracle;
-  bars are coloured by method tradition, and the oracle-as-method positive
-  control is drawn at faithfulness $=1.0$ (dashed reference). The classical
-  battery averages $0.49$, with only the causal single-unit lesion (A2) and
-  dimensionality reduction (A7) clearly above chance. Note that the four
-  callouts isolate the mechanism behind the low scores: A6 Granger causality
-  reaches $F=0$ on Pong (temporal precedence read as causation on a clock-locked
-  machine), A3 tuning shows a spurious-tuning rate of $1.0$ on Pong
-  (strongly-tuned units whose tuning is not their true causal role), A2 attains
-  a single-unit importance correlation of $\rho=0.99$ yet misses $25\%$ of
-  interactions with a super-additive pair swinging up to $1044$ pixels, and A7
-  NMF edges out PCA on matched components while both stay below two-thirds. The
-  figure is the calibration baseline that the causal contrast of
-  Fig.~\ref{fig:faithfulness} sharpens. Every plotted value reads from a
-  committed per-game record; no number is re-run or estimated.}
+  \caption{\textbf{The Kording neuroscience battery scores well below the
+  intervention oracle.} Faithfulness of each classical analysis A1--A8 against
+  the intervention oracle (\S\ref{sec:oracle}); the battery averages $0.49$, and
+  only the causal single-unit lesion (A2) and dimensionality reduction (A7) sit
+  clearly above chance, while the oracle-as-method positive control reaches
+  $1.0$ (dashed reference). Per-metric meanings: A1 = data-flow-graph $F_1$ vs
+  oracle; A2 = lesion-importance $\rho$ vs true role; A3 = $1-$spurious-tuning
+  rate; A4 = coupling correlation vs true coupling; A5 = $1-$clock-explained
+  variance; A6 = $1-$false-edge rate vs true data-flow; A7 = NMF
+  matched-component fraction; A8 = minimality $M$. Bars are coloured by method
+  tradition; whiskers are asymmetric 95\% bootstrap CIs
+  (\texttt{leaderboard\_ci.csv}), present on all eight Phase-A bars. Panel~(b) is
+  a key-results table isolating the mechanism behind the low scores: A6 Granger
+  causality reaches $F=0$ on Pong (temporal precedence read as causation on a
+  clock-locked machine); A3 tuning shows a spurious-tuning rate of $1.0$ on Pong;
+  A2 attains $\rho=0.99$ yet misses $40\%$ of interactions, one super-additive
+  pair swinging up to $1044$ pixels; and A7 NMF and PCA tie at $0.60$ on matched
+  components, both below two-thirds. The figure is the calibration baseline that
+  the causal contrast of Fig.~\ref{fig:faithfulness} sharpens. Every plotted
+  value reads from a committed per-game record; no number is re-run or estimated.}
   \label{fig:phaseA}
 \end{figure}
 

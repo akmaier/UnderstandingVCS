@@ -2,7 +2,7 @@
 id: P2-R-S04-resultsA
 title: Revise Results Phase A — per-game values + CIs, justify analogues, Fig3 caption fixes
 epic: RV (Revision — section)
-status: todo
+status: done
 sprint: 12
 owner:
 where: local
