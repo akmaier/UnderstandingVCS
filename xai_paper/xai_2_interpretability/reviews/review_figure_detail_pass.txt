@@ -1,0 +1,379 @@
+Figure detail pass for XAI_maier.pdf
+
+Input reviewed
+- PDF: /Users/maier/Documents/review/Papers/XAI_maier.pdf
+- Rendered pages inspected:
+  - Fig. 1: page 6
+  - Fig. 2: page 11
+  - Fig. 3: page 12
+  - Table 1 / surrounding layout: page 15, light check only
+  - Fig. 4: page 18
+  - Fig. 5: page 30
+  - Fig. 6: page 31
+- Enlarged figure crops generated under:
+  - /Users/maier/Documents/review/tmp/pdfs/xai_maier_figure_crops/
+
+Severity key
+- Blocker: must fix before submission because the figure is misleading, inconsistent, or visibly broken.
+- Major: seriously hurts readability or credibility.
+- Minor: polish issue, still worth fixing.
+
+Global figure diagnosis
+
+1. Too much prose is embedded inside figures.
+- Many figures try to carry the title, thesis, data source, methods, caveats, legends, result summary, and interpretation inside the graphic itself.
+- This creates overlapping text, unreadable micro-labels, and captions that repeat what the figure already says.
+- Fix: each figure should answer one visual question. Move provenance, source paths, and secondary caveats to captions or supplement tables.
+
+2. Minimum font size is too small.
+- Several labels appear below practical print size, especially source lines, legends, callouts, and in-box subtitles.
+- Target:
+  - Main panel labels: 8-9 pt minimum in final PDF.
+  - Axis ticks and method labels: 7.5-8 pt minimum.
+  - Source/provenance text: move to supplement rather than printing at 3-4 pt.
+
+3. In-figure legends are covering data or competing with data.
+- Figures 2, 3, 4, and 5 place legends inside the data field or at locations that collide with labels, bars, or grids.
+- Fix: place legends outside plotting areas, or replace them with direct facet labels.
+
+4. Several figures use section references that are wrong or stale.
+- Multiple captions and in-figure labels refer to "Section 1 oracle" or use "vs Section 1 intervention oracle" even though the oracle is defined in Section 3.2.
+- Fix: replace all "Section 1 oracle" references with "Section 3.2 oracle" or simply "intervention oracle."
+
+5. Figure captions are too long.
+- Captions are being used as mini-results sections. This makes the visual page visually heavy and increases the chance of page-number/caption collisions.
+- Fix: first sentence should state the figure's takeaway. Put detailed provenance and caveats in a compact "Data:" sentence or supplement.
+
+6. Many data-source strings should not be in the figure body.
+- Strings such as tools/xai_study/compare/out/leaderboard.json, P2-E6-1, faithful_demo.json, and experiment_design.md are unreadable at figure size.
+- Fix: replace with "Data: committed records; see Supplement Table Sx." Put exact paths in the supplement.
+
+7. Color/contrast accessibility needs a pass.
+- Pale pink, pale gray, and light blue labels are hard to read against white or shaded backgrounds.
+- Fix: use a colorblind-safe palette and ensure text contrast is high. Avoid using light-colored text for critical labels.
+
+8. Method counts and figure numbering need consistency.
+- Fig. 4 says "All 30 methods" while text elsewhere says 31 methods / 31 method rows.
+- Page 30 figure header says "Figure 6" but the caption says Fig. 5.
+- Fix: create a figure-number and method-count checklist before final compile.
+
+9. The two taxonomy/map figures are overloaded.
+- Fig. 5 and Fig. 6 are visually dense enough to be supplement figures unless simplified.
+- Fix: either simplify them radically or move one of them to supplement.
+
+10. Page layout needs a float-spacing pass.
+- Fig. 5 caption collides with the page number on page 30.
+- Fix: reserve enough vertical space for caption plus footer; consider a figure-only page, landscape page, or shorter caption.
+
+Fig. 1 - Measurement platform and oracle, page 6
+
+Blocker issues
+- The implementation label is wrong/inconsistent: the figure says "jutari (JAX) - jaxtari (JAX)", while the text says jutari is Julia and jaxtari is JAX/Python.
+- The figure uses "faithfulness vs. human plausibility" even though the paper later says plausibility is a proxy, not a human measurement.
+
+Major readability issues
+- The figure is trying to be a pipeline, definitions box, oracle definition, metric definition, caveat box, legend, and source statement all at once.
+- The bottom legend is cramped and visually competes with the caption. It includes long labels that are too small to read comfortably.
+- The arrows from substrate to oracle and oracle to score are cluttered by tiny labels such as "ground truth", "outputs y", and "causes u." These labels sit between panels rather than in clean lanes.
+- The score panel contains too much small prose inside the F/S/M boxes. The internal gray text is not readable at normal page scale.
+- The "content-path gradient companion" area contains nested boxes, dashed arrows, and a caveat box; the conceptual hierarchy is hard to parse.
+- The small source/provenance line under the figure is nearly unreadable.
+
+Specific fixes
+- Correct to "jutari (Julia) - jaxtari (JAX)" or "jutari (Julia/Zygote) - jaxtari (JAX/XLA)", depending on final terminology.
+- Rename "human plausibility" to "plausibility proxy" unless actual human ratings are added.
+- Split the figure into three clean columns:
+  - Substrate: exact forward, interventions, observability, gradients.
+  - Oracle: do-intervention and optional content-path gradient companion.
+  - Scoring: F, S, M.
+- Remove most prose from boxes. Use short labels only:
+  - "Exact re-run"
+  - "do(u := v')"
+  - "Delta y"
+  - "F: causes"
+  - "S: behavior"
+  - "M: parsimony"
+- Move "precision/recall/sign/magnitude" and similar details to caption or method table.
+- Make the discrete-index caveat a separate small callout under the oracle, not nested inside the gradient panel.
+- Replace the legend with direct colored panel headers or remove it entirely.
+- Ensure minimum 8 pt final font for all in-figure text.
+
+Recommended redraw
+- Best option: split into Fig. 1a "Substrate and intervention oracle" and Fig. 1b "Scoring triad."
+- If kept as one figure, use full page width, no source path, no micro-legend, and only one caveat callout.
+
+Fig. 2 - Kording neuroscience battery, page 11
+
+Blocker issues
+- The right-side callouts have actual text collisions. In the A3/A2/A7 callout boxes, labels and headline text overlap each other. This is not just small text; it is visibly broken.
+- The source/provenance line below the plot is illegible and partially visually collides with the area above the caption.
+
+Major readability issues
+- Two legends in the upper-left chart area overlap the plot field and compete with the dashed oracle line and data markers.
+- The dashed oracle line label is too small and sits on/near plotted markers.
+- The x-axis method names are multi-line and cramped.
+- The y-axis label is long and narrow; it is readable only because the crop is enlarged.
+- The right panel callouts repeat content that is also in the caption, producing clutter without much additional information.
+- Some bar labels and triad marker symbols are too close to error bars.
+
+Specific fixes
+- Do not use callout boxes for the "key findings." Replace right panel with a compact table:
+  - Row: A6, A3, A2, A7
+  - Columns: finding, number, interpretation
+- Put the two legends outside the plotting area, preferably above the chart in one row or below it.
+- Increase x-axis label space or rotate/abbreviate method labels.
+- Keep only one numeric label per bar, placed consistently above bars.
+- Remove the tiny source path from the image; cite a supplement table instead.
+- Reduce the caption by removing repeated callout explanations.
+
+Recommended redraw
+- Full-width two-panel figure:
+  - Panel A: bar chart only.
+  - Panel B: readable key-results table, no callout boxes.
+- Alternative: make the bar chart the main figure and put the key findings as bullets in the text, not in the graphic.
+
+Fig. 3 - Attribution vs mechanistic interpretability, page 12
+
+Blocker issues
+- The left panel's orange "INTERVENTION / PERTURBATION" label overlaps bar area and value labels.
+- Caption and in-figure references say "Section 1 intervention oracle"; this should be Section 3.2 or simply "intervention oracle."
+
+Major readability issues
+- The top gray summary box is too small and contains too much text.
+- The left panel has many repeated "0.00" labels, creating clutter near the axis and method labels.
+- Some method labels use light blue/orange text with low contrast.
+- The "GRADIENT FAMILY" label sits close to bars and does not function as a clean facet header.
+- Right panel bracket annotation "present not used" is cramped and competes with the bars, legend, and axis region.
+- The right-panel legend sits inside or immediately adjacent to the plot area and visually crowds the bottom bars.
+- The "oracle ceiling 1.00" annotation is squeezed against the right edge.
+- The source line is unreadable.
+
+Specific fixes
+- Split Phase B and Phase C into two separate figures or stack them vertically.
+- Replace the overlay family labels with proper facet strips:
+  - Gradient family
+  - Intervention/perturbation
+  - Causal/intervention
+  - Approximate/search
+  - Present-not-used
+- Do not print every 0.00 value. Use one annotation: "all gradient-position scores = 0.00" or use faint zero markers.
+- Move legends outside the panels.
+- Increase right margin so "oracle ceiling" and bar-end labels do not touch the edge.
+- Use darker label colors or black labels with colored bars.
+- Replace the gray summary box with a one-sentence caption lead.
+
+Recommended redraw
+- Fig. 3a: Phase B attribution, faceted by output regime or method family.
+- Fig. 3b: Phase C mechanistic interpretability, with method groups separated by horizontal spacing.
+- Put family means in a small table rather than in the figure title.
+
+Table 1 - Page 15, light check
+
+Minor/major issues
+- The table itself is mostly readable.
+- The caption is long and front-loads too much interpretation.
+- The final N/A row is visually dense because the "does not apply" explanation spans columns.
+
+Specific fixes
+- Shorten caption to define columns only.
+- Move "danger zone" interpretation to text.
+- Consider a separate "N/A methods" note below the table rather than forcing it into the main table.
+
+Fig. 4 - Faithfulness vs plausibility plane, page 18
+
+Blocker issues
+- The title says "All 30 methods" while text elsewhere says 31 methods or 31 method rows.
+- The y-axis says "PLAUDIBILITY - how convincing it LOOKS" with "not a measurement"; the paper should not visually foreground plausibility as if it is measured. Rename to "plausibility proxy."
+- The "activation patching" label on the right is clipped/truncated at the figure edge.
+
+Major readability issues
+- Top-left labels overlap heavily: expected gradients, tuning curves, Granger causality, vanilla saliency, and their leader lines collide.
+- Several orange gradient/saliency markers overlap or nearly overlap, with labels not disambiguating them.
+- The central white callout box covers the plot field and competes with data points and the dashed arrow.
+- Two legends sit inside the plot area and take up substantial data space.
+- The x-axis title, parenthetical subtitle, and source line are vertically crowded. The source line is too small and visually collides with the axis/caption area.
+- The danger-zone text is decorative but not very informative; it consumes plot space.
+- The dashed curve/arrow dominates the data and may imply an interpolation path that is not analytically justified.
+
+Specific fixes
+- Resolve method count: "30 methods", "31 methods", or "31 method rows including oracle."
+- Rename y-axis to "plausibility proxy" and remove "how convincing it LOOKS" unless measured.
+- Use automatic label repulsion (for example ggrepel/adjustText) or label only 5-7 anchor methods.
+- Move the full method list to a side table or supplement.
+- Move legends outside the plotting area.
+- Move the "default tool to faithful one" explanation to the caption or a small inset outside the axes.
+- Increase x-limit or right margin so activation-patching label is not clipped.
+- Remove or de-emphasize the dashed curve unless it has a defined meaning.
+- Remove the source path from the plot image.
+
+Recommended redraw
+- Main figure: scatter with only anchor labels:
+  - expected gradients
+  - vanilla saliency
+  - activation patching
+  - linear probing
+  - occlusion
+  - oracle
+- Supplement: full labeled scatter with every method.
+- Add a marginal table listing all methods and scores.
+
+Fig. 5 - Taxonomy of failure modes, page 30
+
+Blocker issues
+- The top title says "Figure 6 - A taxonomy..." but the caption says Fig. 5. This is a numbering/title mismatch.
+- The page number collides with the caption in the rendered full page.
+- The figure is too dense for a main-paper page; several labels and footnotes are effectively unreadable at normal scale.
+
+Major readability issues
+- The legend at the top right overlaps or crowds the right-side bar/grid area; the rightmost content appears squeezed.
+- The left vertical label "INTERPRETABILITY FAILURE MODES on the VCS" is awkward and visually collides with the tree structure.
+- The tree/branch lines are visually heavy and take space from actual content.
+- The method rows and numeric badges are legible only after zooming.
+- The right-side mini bar chart adds visual complexity but little interpretable information at page scale.
+- The N/A block at the bottom is faint and hard to read.
+- The bottom provenance/source paragraph is too small.
+- The caption is very long and repeats much of the figure.
+
+Specific fixes
+- Correct the figure title/number.
+- Put Fig. 5 on a landscape page or split it.
+- Remove the right-side mini bar chart, or replace it with a single numeric column.
+- Replace the tree with a table:
+  - Branch
+  - Failure mechanism
+  - Example methods
+  - Faithfulness range
+  - Interpretation
+- Put the N/A control in a separate note or supplement table.
+- Move the source/provenance paragraph to supplement.
+- Shorten caption to one takeaway plus data pointer.
+- Fix page/caption/footer spacing.
+
+Recommended redraw
+- Main paper version: five-row taxonomy table with one example method per row.
+- Supplement version: full method tree with every method and score.
+- If the full tree remains in main paper, make it a full-page landscape figure and remove the long caption.
+
+Fig. 6 - VCS to neural-network failure-mode map, page 31
+
+Blocker issues
+- The pink callout overlaps the subtitle line. The underlying subtitle text is visibly crossed/obscured.
+- The figure contains citations in cells that are missing from the bibliography.
+- It still uses "Section 1 oracle" style references in the figure/caption/source text.
+
+Major readability issues
+- There is excessive top whitespace before the figure begins.
+- The title/subtitle block is overloaded: title, objection quote, asymmetry claim, necessary-condition claim, and pink callout all compete.
+- The table text is small, especially in the VCS evidence and neural-network counterpart cells.
+- The repeated green/orange status badges add clutter. Because every row has the same status relation, repeating it six times is unnecessary.
+- The row-number circles at left are large and pull attention away from the content.
+- The bottom source/provenance text is too small.
+- The caption is again long and repeats table content.
+- Phrases such as "has no business being trusted" are visually prominent in the figure and may read as combative.
+
+Specific fixes
+- Remove the pink callout or move it above the figure with enough vertical space.
+- Delete the subtitle if the callout remains; do not use both.
+- Replace repeated status badges with a single legend/header:
+  - VCS evidence: proven in this benchmark.
+  - NN counterpart: documented analogue, not proven by this benchmark.
+- Increase cell font size; reduce per-cell text to one sentence.
+- Use a landscape page or split into two panels:
+  - Panel A: VCS measured failures.
+  - Panel B: neural-network analogues.
+- Add all cited works to the bibliography or move citations into the caption/supplement.
+- Replace "has no business" with calmer wording, e.g. "should not be trusted for stronger claims without further evidence."
+- Remove the tiny source path and put artifact provenance in supplement.
+
+Recommended redraw
+- Convert to a clean 6-row table with short text and one status column:
+  - Failure mode
+  - VCS measured evidence
+  - Neural-network analogue
+  - Boundary of inference
+- Put full citation lists in a footnote or supplement table.
+
+Priority fix list
+
+1. Fix all hard contradictions and stale labels.
+- Fig. 1: jutari label.
+- Fig. 4: method count.
+- Fig. 5: figure number/title.
+- All figures: Section 1 oracle references.
+- Fig. 6: missing references.
+
+2. Fix actual overlaps.
+- Fig. 2 right callouts.
+- Fig. 3 family labels crossing bars.
+- Fig. 5 caption/page-number collision.
+- Fig. 6 pink callout over subtitle.
+- Fig. 4 right-edge label clipping and top-left label collisions.
+
+3. Remove source-path microtext from figures.
+- Put exact data paths in supplementary provenance tables.
+- Figures should say only "Data: see Supplement Table Sx" if needed.
+
+4. Enforce a figure style guide.
+- Minimum font size: 7.5-8 pt.
+- No text boxes over data.
+- Legends outside axes.
+- No more than 6-8 labeled points in a scatter plot.
+- Captions under 120-160 words for main figures.
+- One primary takeaway per figure.
+
+5. Decide which figures belong in the main paper.
+- Keep in main paper after simplification:
+  - Fig. 1: platform/oracle schematic.
+  - Fig. 3 or Fig. 4: main empirical result.
+  - One semantic-gap figure/table.
+- Move to supplement unless heavily simplified:
+  - Fig. 5 full taxonomy tree.
+  - Fig. 6 full representativeness map.
+
+Suggested main-paper figure set after revision
+
+Figure 1: Clean oracle schematic.
+- Purpose: explain substrate, intervention oracle, and F/S/M at high level.
+- One page-width schematic, no source paths, no microtext.
+
+Figure 2: Benchmark leaderboard.
+- Either use current Fig. 4 simplified or current Fig. 3 split into panels.
+- Purpose: show causal/intervention methods vs gradient/correlational methods.
+- Use fewer labels and clear uncertainty.
+
+Figure 3: Semantic-gap separations.
+- New clean figure or table with three rows:
+  - graph-correct but behavior-incomplete,
+  - named but causally inert,
+  - decodable but unused.
+- This may replace the current overloaded Fig. 5.
+
+Supplement figures
+- Full neuroscience battery chart.
+- Full Phase B/Phase C method chart.
+- Full taxonomy tree.
+- Full VCS-to-NN representativeness map.
+
+Concrete LaTeX / plotting checks
+
+- Compile at final venue page size before inspecting.
+- Render PDF to PNG at 150-200 dpi and inspect every figure at 100 percent.
+- Run a visual checklist:
+  - no overlapping text,
+  - no clipped labels,
+  - no caption/footer collision,
+  - no unreadable source lines,
+  - no legends over data,
+  - no stale section references,
+  - all figure numbers match captions,
+  - all in-figure citations have bibliography entries.
+- If using Matplotlib:
+  - call tight_layout or constrained_layout, but inspect manually because legends and annotations often still collide.
+  - use bbox_inches="tight" carefully; it can clip labels if anchors are outside axes.
+  - use adjustText or manual label placement for Fig. 4.
+  - export as PDF/SVG with embedded fonts.
+- If using TikZ/PGF:
+  - define a global minimum font size.
+  - use fixed node widths and anchors.
+  - use matrix/table layouts for text-heavy figures rather than absolute positioning.
+  - reserve caption/footer spacing explicitly.

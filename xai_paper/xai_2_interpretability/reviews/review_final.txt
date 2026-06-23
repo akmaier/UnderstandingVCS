@@ -1,0 +1,38 @@
+Final review draft
+
+Summary
+- This paper proposes a ground-truth audit of interpretability methods on a fully known Atari 2600 VCS substrate. The authors use deterministic interventions on a claimed bit-exact, differentiable emulator to construct an oracle over causal effects, then score neuroscience-style analyses, attribution/XAI methods, and mechanistic-interpretability methods. The headline empirical result is that causal/intervention methods are far more faithful than gradient/correlational methods, especially for discrete position/index outputs. The conceptual result is that even exact causal wiring does not amount to semantic understanding, leaving what the authors call the "semantic gap."
+
+Main contribution
+- The strongest contribution is the proposed evaluation setting: a real, hand-authored software artifact with an intervention oracle, used to calibrate interpretability methods. The semantic-gap framing is also valuable: it cleanly separates "names the true causal sites" from "recovers the algorithm or meaning."
+
+Strengths
+- The paper asks an important question: how can interpretability methods be validated when ground truth is normally unavailable?
+- The use of a known engineered artifact is well motivated by Jonas and Kording, and the Atari VCS setting is more complex and task-rich than many toy known-answer settings.
+- The T1/T2/T3 distinction is useful, especially the honesty that semantic labels are imported and causally verified rather than discovered.
+- The paper has several compelling examples: graph-correct but behavior-incomplete, named but causally inert, and decodable but unused.
+- The distinction between content outputs and discrete position/index outputs is important and likely useful beyond this system.
+
+Major weaknesses
+- The submission is not currently self-contained or reproducible as an XAI benchmark. Most quantitative claims are supported by internal records [33,34] under tools/xai_study, but those artifacts, the per-method protocols, the leaderboard, the action streams, and the XAI scoring code are not available in the provided package.
+- The paper depends critically on a companion Paper 1 for bit-exactness, the differentiable emulator, and the gradient caveat. Updated context: that paper is now available as arXiv:2606.22447, and arXiv lists the emulator code at https://github.com/akmaier/UnderstandingVCS. The XAI manuscript should cite this directly and cite exact theorem/validation sections.
+- The central metrics need formal definitions. Faithfulness is sometimes correlation, sometimes F1, sometimes a causal-effect score; F/S/M are introduced as boolean predicates but reported as continuous values; minimality and sufficiency are especially underdefined.
+- The plausibility axis is not a human measurement. It is described as a documented tradition-level proxy, yet the abstract and figures invite the reader to interpret it as human plausibility. This substantially weakens the "danger zone" claim unless the proxy is justified, preregistered, or replaced by measured ratings.
+- The novelty framing is incomplete. MIB 2025, SAEBench 2025, and M4 2023 are directly relevant and should be included in the related work and positioning.
+- Several scope claims are too strong. The VCS is a useful necessary-condition stress test, but the paper does not prove that the measured semantic gap is a floor for neural networks, nor that a method failing here has "no business" being trusted elsewhere.
+
+Correctness and clarity
+- The main qualitative argument is plausible, but the quantitative results are not yet checkable. The "provably zero" gradient claim should either be proved in this paper or tied to a precise theorem in the companion paper.
+- The manuscript also has fixable consistency issues: "about 31 methods" vs "all 30 methods"; Section 1 oracle references despite the oracle being in Section 3.2; Fig. 1 says jutari is JAX while the text says jutari is Julia; Fig. 6 cites works absent from the bibliography; Fig. 2 callouts are unreadable; Fig. 5 caption collides with the page number.
+
+Reproducibility
+- Weak in current form for the XAI benchmark. The companion emulator substrate now appears publicly available, but this paper should still ship a reviewable XAI artifact: environment, ROM hash list, retrieval procedure, action streams, seeds, exact records, scripts that regenerate figures/tables, scoring code, and a frozen leaderboard.
+
+Ethics and broader impact
+- The paper appropriately states that no human-subject data are used and that ROMs are not redistributed. However, because plausibility is not measured from humans, the wording around "human plausibility" should be corrected. The ROM retrieval/hashing procedure should be made concrete.
+
+Recommendation
+- Major revision before submission or weak reject in current form.
+
+Justification
+- The idea is strong and the paper could become a valuable contribution. The companion substrate is now more checkable via arXiv:2606.22447, but the current manuscript still asks the reader to trust inaccessible XAI records and underdefined metrics. The path to a strong version is clear: make the XAI artifact reviewable, formalize the metrics, update the related work, tighten the claims, and fix the visible PDF/bookkeeping issues.

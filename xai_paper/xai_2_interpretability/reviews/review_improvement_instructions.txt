@@ -1,0 +1,605 @@
+Exhaustive constructive improvement instructions
+
+Executive priority
+- The paper has a genuinely interesting core: a known real software artifact can be used to audit interpretability methods, and causal faithfulness is not the same as semantic understanding.
+- The present version should be revised as a benchmark paper first and a philosophical manifesto second. The benchmark must be reviewable, reproducible, and formally specified.
+- The strongest revision strategy is to narrow the novelty claim, release the evidence bundle, define every metric, and make the semantic-gap claim precise without overreaching to all neural networks.
+
+P0 - Fix before any serious submission
+
+1. Make the evidence bundle available at review time.
+- Provide a single archive or repository containing:
+  - tools/xai_study/ exactly as cited,
+  - leaderboard.json,
+  - faithful_demo.json or faithful_demo.md,
+  - all phaseA/phaseB/phaseC per-game records,
+  - scripts that regenerate every table and figure,
+  - environment files,
+  - exact package versions,
+  - commit hashes,
+  - random seeds,
+  - action streams,
+  - output logs,
+  - figure-generation scripts.
+- Do not wait until acceptance. For anonymous review, use an anonymized archive, Zenodo private link, OpenReview supplementary zip, or repository snapshot.
+- In the paper, replace "will be released upon acceptance" for the XAI benchmark/scoring suite with "is available for review at [anonymized link]" or venue-compatible equivalent. The companion emulator code can now be cited at https://github.com/akmaier/UnderstandingVCS via arXiv:2606.22447.
+
+2. Provide the missing Supplementary Information.
+- The main paper says per-method setups live in the Supplementary Information. Include it.
+- The supplement should contain one subsection per method with:
+  - exact input/output objects,
+  - candidate-cause set,
+  - output regime,
+  - baseline/reference choice,
+  - number of samples or interventions,
+  - optimization settings,
+  - thresholds,
+  - compute budget,
+  - random seeds,
+  - applicability conditions,
+  - failure/N/A criteria,
+  - metric formula,
+  - aggregation rule.
+- Add a table mapping each main-paper result to the supplement section and artifact file.
+
+3. Cite and integrate the now-public Paper 1.
+- The XAI paper relies on Paper 1 for:
+  - bit-exact VCS,
+  - 64-game validation,
+  - validated horizon,
+  - differentiability/STE formulation,
+  - content-path gradient,
+  - discrete-index gradient caveat.
+- Update [4] to the arXiv citation: arXiv:2606.22447, "A Differentiable Atari VCS:A Complex, Fully Known Ground Truth for Explainable AI", submitted 2026-06-21.
+- Cite the emulator code URL listed there: https://github.com/akmaier/UnderstandingVCS.
+- Summarize the required theorem/validation details self-containedly in this paper and cite exact theorem/section numbers from Paper 1.
+- Add a "Dependency on companion paper" paragraph: exactly which claims are imported and which are new here.
+
+4. Define the unit of evaluation.
+- Create a "Benchmark schema" table:
+  - row id,
+  - method,
+  - family,
+  - phase,
+  - game,
+  - output type,
+  - output regime,
+  - candidate-cause universe,
+  - metric,
+  - number of records,
+  - applicability flag,
+  - artifact file path.
+- Explain the difference between:
+  - method,
+  - method row,
+  - per-game record,
+  - output record,
+  - family mean,
+  - oracle positive control,
+  - N/A method.
+- Resolve "about 31 methods" vs "all 30 methods" vs "31 method rows." Use one count consistently.
+
+5. Formalize faithfulness.
+- Pick a primary faithfulness metric for the leaderboard or state that the leaderboard is multi-metric.
+- If using a scalar leaderboard score, define:
+  - the per-record metric,
+  - normalization to [0,1],
+  - how negative correlations or negative sufficiency scores are handled,
+  - how vector outputs are reduced,
+  - how graph metrics are mapped to the same scale as attribution metrics,
+  - how records are averaged across outputs/games,
+  - whether games or methods are equally weighted,
+  - confidence intervals and uncertainty.
+- Include formulas for:
+  - Pearson/Spearman correlation,
+  - precision at k,
+  - deletion/insertion AUC,
+  - graph F1,
+  - sign agreement,
+  - magnitude agreement,
+  - final faithfulness score.
+- Add a sensitivity table showing whether the main ranking survives alternative choices.
+
+6. Formalize sufficiency.
+- Define S as an actual estimator.
+- Specify:
+  - held-out intervention set,
+  - train/calibration vs test split,
+  - what an explanation is allowed to predict,
+  - whether it predicts y, Delta y, ranking, or behavior class,
+  - metric and range,
+  - tolerance for exact match,
+  - what negative S means.
+- For the ACDC example, explain how S=0.44 is computed and why it is not a consequence of using the wrong intervention distribution or an overly strict tolerance.
+- Report confidence intervals or bootstrap intervals for S.
+
+7. Formalize minimality.
+- Define M with a reproducible formula.
+- Possible choices:
+  - edge/node count penalty relative to true minimal graph,
+  - precision-penalized sparsity,
+  - minimum description length,
+  - module-level match score,
+  - redundancy/spurious-part rate.
+- State the target level: register, RAM cell, opcode, module, variable, routine, or object concept.
+- Explain why "whole-state recording" gets M=0.07 and how a reader can reproduce that value.
+
+8. Separate predicates from scores.
+- Eq. 3 currently uses boolean conjunction while results report continuous F, S, M.
+- Fix by writing:
+  - F_score(E), S_score(E), M_score(E) in [possibly real range],
+  - thresholds tau_F, tau_S, tau_M for binary "right",
+  - right(E)=1 if F_score >= tau_F and S_score >= tau_S and M_score >= tau_M.
+- Or keep only continuous reporting and avoid boolean "right."
+
+9. Repair the plausibility axis.
+- Do not call it "human plausibility" unless humans actually rated it.
+- Rename it to "plausibility proxy" everywhere, including abstract and figure axis labels.
+- Provide a rubric:
+  - who assigned values,
+  - which criteria were used,
+  - whether values were preregistered before seeing faithfulness scores,
+  - whether multiple raters agreed,
+  - whether values are tradition-level or method-level.
+- Include a sensitivity analysis:
+  - plot faithfulness without plausibility,
+  - plot danger zone under alternative proxy assignments,
+  - show that the main conclusion does not depend on exact proxy values.
+- Stronger option: run a small human-subjects or expert-rater study and report actual plausibility ratings with ethics/IRB details if needed.
+
+10. Make the "provably zero" claim self-contained.
+- Add a short proposition:
+  - conditions under which the output is a discrete index/position,
+  - how the strobe/index mapping is represented,
+  - why the naive gradient is zero almost everywhere or identically under the hard forward map,
+  - which surrogate gradients are excluded,
+  - which bilinear sampler/content-path gradients are exceptions.
+- If this proof is entirely in arXiv:2606.22447, cite the exact theorem/section and summarize enough for this paper to stand alone.
+- Replace broad statements like "gradient methods are provably zero" with "the naive gradient for these discrete position/index outputs is zero under the hard forward map; methods that reduce to this gradient inherit the failure."
+
+11. Tighten the semantic-gap definition.
+- Define "semantic gap" operationally as the residual between causal-structure recovery and algorithmic/semantic recovery.
+- Avoid implying a single scalar if you only measure three separations. Better:
+  - "We operationalize the gap through three separations: faithful-not-sufficient, named-not-causal, decodable-not-used."
+- Give each separation a formal diagnostic:
+  - Graph-correct but behavior-incomplete: high F/M, low S.
+  - Named but causally inert: high matched fraction, low causal F.
+  - Decodable but unused: high probe accuracy/selectivity, low intervention effect.
+- State explicitly that these diagnose semantic failure modes, not a complete theory of semantics.
+
+12. Scope the neural-network transfer claim.
+- Replace "a method that fails here has no business being trusted on a neural network" with a narrower claim:
+  - "Failure on this fully observable known system is strong negative evidence for claims that the same method reliably recovers causal mechanisms in harder unknown systems."
+- Replace "the gap here is a floor on the gap there" with:
+  - "The result suggests that faithfulness alone should not be treated as understanding in less observable neural systems."
+- Figure 6 can remain as an analogy map, but label it as analogy/evidence transfer, not proof.
+
+P1 - Strengthen empirical design and reporting
+
+13. Add a benchmark coverage table.
+- Rows: all 64 games.
+- Columns:
+  - Paper-1 bit-exact status,
+  - RAM horizon,
+  - screen horizon,
+  - T1 availability,
+  - T2 availability,
+  - T3 AtariARI availability,
+  - T3 OCAtari availability,
+  - core-game flag,
+  - methods run,
+  - output regimes tested,
+  - number of records,
+  - excluded methods and reasons.
+
+14. Add a method applicability table.
+- For each method:
+  - applicable to raw VCS? yes/no,
+  - applicable to learned policy? yes/no,
+  - needs gradients? yes/no,
+  - needs neural layers? yes/no,
+  - needs attention? yes/no,
+  - needs labels? yes/no,
+  - uses oracle-like interventions? yes/no,
+  - receives supplied hypothesis/alignment? yes/no.
+- This will prevent readers from misreading the leaderboard as a universal ranking.
+
+15. Separate upper-bound controls from methods under test.
+- Activation patching and some causal interventions may be nearly identical to the oracle operation in this substrate.
+- Consider three categories:
+  - Oracle/positive controls.
+  - Intervention methods that are valid but coarse approximations to the oracle.
+  - Non-intervention methods.
+- If a method literally performs the oracle operation, call it an upper bound, not a surprising method win.
+
+16. Report uncertainty.
+- Add error bars/confidence intervals to all family means.
+- Use bootstrap over games and records.
+- Report per-game values in supplementary tables.
+- For sampling methods, report seed variance.
+- For thresholded methods like ACDC, report threshold sensitivity curves.
+- For mask/optimization methods, report convergence and compute budgets.
+
+17. Make aggregation robust.
+- Show results under:
+  - equal weighting by method,
+  - equal weighting by game,
+  - equal weighting by output regime,
+  - excluding oracle-like methods,
+  - excluding N/A methods,
+  - content-only outputs,
+  - position-only outputs,
+  - T1/T2-only results,
+  - T3-label-dependent results.
+- A reviewer should be able to see which conclusions are robust and which are regime-specific.
+
+18. Clarify output regimes.
+- Define:
+  - content output,
+  - position/index output,
+  - event output,
+  - score output,
+  - pixel output.
+- For each game, list the outputs used.
+- For each output, state whether the gradient is expected to be valid, zero, or surrogate-only.
+
+19. Explain intervention validity.
+- Some interventions may create impossible or off-manifold machine states.
+- For each intervention type, state whether it is:
+  - surgical but off-manifold,
+  - donor-state/on-manifold,
+  - resampling from trajectory,
+  - occlusion baseline,
+  - counterfactual but valid under emulator.
+- Explain why off-manifold interventions are acceptable for causal oracle scoring, and where they are not.
+
+20. Add ROM and action-stream reproducibility.
+- Include a table with:
+  - game name,
+  - ROM source procedure,
+  - SHA-256,
+  - action stream hash,
+  - seed,
+  - start state,
+  - number of frames,
+  - validation horizon,
+  - output ids.
+- Do not redistribute ROMs, but make the retrieval and verification procedure explicit.
+
+21. Provide artifact traceability.
+- Every number in the paper should have:
+  - artifact file,
+  - JSON key/path,
+  - script that generated it,
+  - command to reproduce it,
+  - timestamp/commit hash.
+- Add a "number provenance" supplement table for all headline claims.
+
+22. Strengthen the SAE/probing analysis.
+- Cite SAEBench and recent SAE evaluation work.
+- Clarify:
+  - SAE architecture,
+  - dictionary size,
+  - sparsity penalty,
+  - training data,
+  - train/test split,
+  - reconstruction metrics,
+  - feature matching algorithm,
+  - causal ablation protocol,
+  - why S can be negative.
+- Add controls:
+  - random features,
+  - neurons/RAM cells as features,
+  - PCA/NMF baselines,
+  - matched-but-randomized labels,
+  - intervention on true variable vs SAE feature.
+
+23. Strengthen the probing analysis.
+- Report:
+  - chance accuracy,
+  - control-task accuracy,
+  - selectivity,
+  - probe class,
+  - regularization,
+  - train/test split,
+  - label balance,
+  - causal use criterion.
+- For the cell 84 example, include a mini case study:
+  - what the cell encodes,
+  - how probe detects it,
+  - what intervention was performed,
+  - why it is unused within the horizon,
+  - whether it might matter outside the horizon.
+
+24. Make T3 label provenance concrete.
+- For every T3 label:
+  - source: AtariARI, OCAtari, or discovered by correlation/intervention,
+  - original RAM cell,
+  - corrected offset,
+  - verification intervention,
+  - success/failure,
+  - final inclusion status.
+- Remove implementation tokens like "verified:false" from prose.
+
+25. Clarify the validation horizon.
+- The paper says Paper 1 bit-exactness holds for about 30 RAM frames and 60 screen frames.
+- Add a table showing every experiment's horizon and confirming it lies within the certified range.
+- If any result uses longer trajectories for SAE/probing training, distinguish:
+  - exactness of recorded state trajectory,
+  - exactness of causal intervention evaluation,
+  - training data generation.
+
+P2 - Literature and positioning
+
+26. Update related work with MIB 2025.
+- Add a paragraph:
+  - MIB provides mechanistic-interpretability benchmarks for causal pathways and causal variables in neural language models.
+  - Your benchmark differs by using a real hand-authored emulator artifact with exact intervention over software state, not neural LMs.
+  - Your semantic-gap claim complements MIB by asking whether causal localization suffices for semantic/program understanding.
+
+27. Add SAEBench 2025.
+- Use it to contextualize the SAE result:
+  - SAE proxy metrics can fail to translate to practical interpretability.
+  - Your oracle offers a different causal-use test on a known system.
+
+28. Add M4 2023 and BAM/BIM carefully.
+- M4 is a faithfulness benchmark across modalities and metrics.
+- Yang/Kim reference should be checked for correct title/acronym.
+- Position your work as using exact intervention ground truth on a real software artifact rather than pseudo/synthetic feature ground truth.
+
+29. Add or discuss substrate-adjacent Atari systems.
+- If you claim a reusable Atari benchmark or JAX/Python substrate, mention:
+  - ALE/Farama,
+  - xitari,
+  - OCAtari,
+  - JAXAtari,
+  - CuLE,
+  - CALE if relevant.
+- Be clear that the novelty is not "Atari environment" but "bit-exact differentiable/intervention oracle for interpretability."
+
+30. Add missing Figure 6 references.
+- Add bibliography entries for every citation named in Figure 6:
+  - Balduzzi 2017,
+  - Jain & Wallace 2019,
+  - Morcos et al. 2018,
+  - Leavitt & Morcos 2020,
+  - Elhage et al. 2022,
+  - Kindermans et al. 2019,
+  - Sturmfels et al. 2020.
+- Alternatively, remove named citations from the figure and discuss them in text.
+
+31. Tone down "first" claims.
+- Safer wording:
+  - "To our knowledge, this is the first cross-tradition audit of these methods on a real hand-authored software artifact with an exact intervention oracle."
+- Avoid broad "first ground-truth calibration" claims unless you carefully exclude Tracr, InterpBench, MIB, M4, BAM/BIM, synthetic known-feature benchmarks, and Jonas/Kording.
+
+P3 - Structure and writing
+
+32. Reframe the abstract.
+- Current abstract has strong claims but not enough caveats.
+- Revised abstract should include:
+  - exact substrate,
+  - six core games plus 64-game T1/T2 scope,
+  - that plausibility is a proxy,
+  - that code/data are available,
+  - semantic labels are supplied/verified, not discovered,
+  - central empirical numbers with uncertainty.
+- Avoid "Scoring about 31 methods." Use exact count.
+
+33. Reduce rhetorical heat.
+- Replace:
+  - "We remove the excuse" with "We provide a setting where this can be measured."
+  - "has no business being trusted" with "should not be trusted for stronger claims without further evidence."
+  - "the field's default tool" with "a widely used baseline."
+- The paper's argument will be stronger if reviewers do not feel accused.
+
+34. Move repeated claims into tables.
+- The text repeats:
+  - causal methods high,
+  - gradient methods low,
+  - plausibility inversion,
+  - semantic gap.
+- Keep one strong statement in intro, one in results, one in discussion.
+- Use tables/figures for details.
+
+35. Add a "Claims and evidence" table.
+- Columns:
+  - claim,
+  - evidence source,
+  - games,
+  - methods,
+  - metric,
+  - artifact,
+  - limitations.
+- Include all headline claims.
+
+36. Add a "What this paper does not claim" box.
+- Include:
+  - does not recover program semantics from scratch,
+  - does not evaluate learned agents,
+  - does not prove neural-network interpretability impossibility,
+  - does not measure human plausibility unless separately studied,
+  - does not redistribute ROMs.
+
+37. Clarify companion-paper roadmap.
+- The manuscript mentions Paper 2, Paper 3, Paper 4, Paper 5.
+- Add a short roadmap:
+- Paper 1: emulator/substrate, now arXiv:2606.22447.
+  - This paper: interpretability audit and semantic-gap diagnosis.
+  - Paper 3/4/5: only if real and available.
+- If these papers are not submitted or public, avoid leaning on them in the main argument.
+
+P4 - Figure and layout fixes
+
+For a dedicated figure-only pass with page-specific overlap and typesetting notes, see /Users/maier/Documents/review/Papers/XAI_maier_figure_detail_pass.txt.
+
+38. Fix Figure 1.
+- Correct "jutari (JAX)" to "jutari (Julia)" if the main text is right.
+- Increase small text size.
+- Avoid putting too many definitions inside one schematic.
+- Make "oracle" and "method under test" visually distinct so readers do not think gradients are an oracle for position/index outputs.
+
+39. Fix Figure 2.
+- The callout text is unreadable/overlapped in the rendered PDF.
+- Either:
+  - split into two figures,
+  - move callout details to a table,
+  - enlarge figure to full page,
+  - remove microtext.
+- Keep only labels that can be read in print.
+
+40. Fix Figure 3.
+- The left-panel method labels and top legend are small.
+- Separate content-output and position-output panels if possible.
+- Mark methods with oracle-like interventions separately.
+
+41. Fix Figure 4.
+- Change title from "All 30 methods" to the exact count.
+- Rename Y axis to "plausibility proxy" unless human data are added.
+- Explain jitter and danger-zone boundaries in a compact caption.
+- Add uncertainty or avoid overinterpreting exact point positions.
+
+42. Fix Figure 5.
+- The page number collides with the caption on page 30.
+- Figure title/extracted text says "Figure 6" while caption says Fig. 5. Check source numbering.
+- The caption is too long. Move mechanism details to the supplement.
+
+43. Fix Figure 6.
+- Add missing references or remove citation names.
+- The figure is visually dense. Make it a supplement figure unless it is central.
+- Label neural-network counterparts as "analogy" or "counterpart", not proof.
+
+44. Check all cross-references.
+- Replace "Section 1 oracle" and "Section 4 oracle" with "Section 3.2 oracle."
+- Check every Fig., Table, Eq., and Section reference after recompile.
+- Run a grep over the TeX source for "Section 1", "Section 4", "Paper 4", "Paper 5", "verified:false", "human plausibility", and "all 30."
+
+P5 - Section-by-section revision plan
+
+45. Introduction
+- Cut by 25-35 percent.
+- State:
+  - problem,
+  - substrate,
+  - what is measured,
+  - three results,
+  - limits.
+- Keep the semantic-gap framing, but do not repeat all examples before definitions.
+
+46. Related work
+- Reorganize into:
+  - XAI/faithfulness evaluation,
+  - known-answer interpretability benchmarks,
+  - mechanistic-interpretability benchmarks,
+  - Atari/ALE/object-state resources,
+  - software reverse engineering/semantics.
+- Add MIB, SAEBench, M4.
+- Correct [35].
+
+47. Methods
+- Add formal definitions before results.
+- Put all metrics in one subsection.
+- Add tables for games, outputs, methods, and applicability.
+- Move implementation detail to supplement, but keep enough to evaluate fairness.
+
+48. Results Phase A
+- Report per-game values, not only averages.
+- Explain why each neuroscience method is a reasonable analogue.
+- Do not overstate if methods are intentionally outside their intended use.
+
+49. Results Phase B
+- Separate:
+  - content-output gradient results,
+  - position/index gradient failure,
+  - perturbation/intervention methods,
+  - N/A methods.
+- For Integrated/Expected Gradients, show baseline distributions and sensitivity.
+- For LIME/SHAP/RISE, report sampling budgets and variance.
+
+50. Results Phase C
+- Separate oracle-equivalent positive controls from real recovery methods.
+- For ACDC, path patching, and attribution patching, show threshold/approximation sensitivity.
+- For SAE/probing, align discussion with SAEBench and control-task literature.
+
+51. Cross-tradition leaderboard
+- Make it explicitly exploratory unless all metrics are commensurable.
+- Provide alternate rankings and robustness.
+- Avoid using the plausibility proxy as a measured human result.
+
+52. Discussion
+- Keep the semantic-gap conclusion.
+- Tone down neural-network transfer.
+- Convert "field recommendations" into precise recommendations:
+  - validate on known systems,
+  - report causal and non-causal metrics separately,
+  - avoid using plausibility as faithfulness,
+  - distinguish present, used, causal, sufficient, minimal, and semantic.
+
+P6 - Reproducibility package checklist
+
+53. Repository structure
+- README with one-command reproduction.
+- environment.yml/pyproject.toml/Project.toml/Manifest.toml.
+- Dockerfile or Nix/Conda environment.
+- data/README explaining ROM policy.
+- scripts/reproduce_all.sh or equivalent.
+- notebooks only as optional, not primary reproduction.
+
+54. Data files
+- ROM hash table, not ROMs.
+- Action streams and seeds.
+- State trajectories or deterministic regeneration scripts.
+- Per-method raw outputs.
+- Aggregated leaderboard.
+- Figure CSV/JSON files.
+
+55. Validation scripts
+- Verify ROM hashes.
+- Verify xitari/jutari/jaxtari conformance for selected trajectories.
+- Verify six-core-game T3 labels.
+- Verify table and figure numbers from raw records.
+- Produce a checksum manifest for all artifacts.
+
+56. Review-mode artifact
+- If ROM retrieval cannot be automated for legal reasons, provide:
+  - stub tests without ROMs,
+  - exact expected hashes,
+  - instructions for reviewers with legally obtained ROMs,
+  - synthetic mini-ROM or toy VCS-like example for CI.
+
+P7 - Minimal viable revision path
+
+57. If time is short, do these six things first.
+- Add the reviewable XAI artifact link.
+- Add the supplement with per-method protocols.
+- Add formal metric definitions and aggregation rules.
+- Correct count/reference/layout errors.
+- Add MIB/SAEBench/M4 and missing Figure 6 references.
+- Rewrite the abstract and discussion to narrow claims.
+
+58. If aiming for a top-tier benchmark paper, also do these.
+- Add full uncertainty and robustness analysis.
+- Add human or expert plausibility ratings, or remove plausibility as an axis.
+- Add a standardized benchmark API and leaderboard format.
+- Add ablation/sensitivity studies for candidate-cause sets and output regimes.
+- Add a separate paper section proving the discrete-index gradient result.
+
+Final resubmission checklist
+- All headline numbers trace to public or reviewable artifacts.
+- Paper 1 is cited as arXiv:2606.22447, with exact theorem/validation pointers.
+- Supplement contains every method setup.
+- F, S, M, faithfulness, plausibility, and aggregation are formally defined.
+- Six core games vs 64-game scope is explicit.
+- Method counts are consistent.
+- Section references are correct.
+- Figure 1 naming is fixed.
+- Figure 2 is readable.
+- Figure 5 caption no longer collides with page number.
+- Figure 6 citations are in the bibliography.
+- [33]/[34] are archived artifacts, not opaque internal citations.
+- "Human plausibility" is replaced or measured.
+- MIB, SAEBench, M4, and missing counterpart references are cited.
+- Author contributions and acknowledgements are complete.
+- ROM hash/retrieval protocol is concrete.
+- Code availability is review-time availability, not only acceptance-time availability.
+- The final claim is: this benchmark measures where interpretability methods recover causal wiring, and where causal wiring still fails to recover semantic/program understanding. That is strong enough.
