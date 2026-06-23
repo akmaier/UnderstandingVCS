@@ -1,1 +1,73 @@
-% 09_endmatter.tex — End matter (data/code availability, contributions, competing interests, acknowledgements). Drafted by item P2-E8-9. STUB: empty until then.
+% 09_endmatter.tex — End matter (data/code availability, author contributions,
+% competing interests, acknowledgements). Drafted by item P2-E8-9 (P2 Sprint 7).
+% Voice: ../STYLE.md (Andreas Maier). Requirements: document_check.md §D.
+% Availability statements kept consistent with the repro bundle (E9). The MIT-on-
+% acceptance line is the project's release policy. Author contributions are a
+% CRediT-style placeholder pending final author list (provisional in main.tex).
+% Honour the honesty contract: the benchmark releases the scoring suite, oracle, and
+% metrics; no semantic-recovery claim is made here (that is Paper 4).
+
+\backmatter
+
+\bmhead{Data availability}
+The interpretability scores reported here are derived from the committed analysis
+records under \texttt{tools/xai\_study/} (the per-method, per-game §R records and the
+aggregated cross-tradition leaderboard~\cite{leaderboardP2,faithfuldemoP2}); every
+quantitative claim in the Article reads from one of these committed artifacts, and no
+number is re-run or estimated. The game cartridges used as the subject are
+third-party Atari~2600 ROMs that we do \emph{not} redistribute; following the
+practice of the underlying emulator port~\cite{maier2025vcs}, we provide the SHA-256
+hashes of each ROM and the \texttt{AutoROM} retrieval procedure so that the exact
+binaries can be reproduced independently. The recorded state trajectories used to
+train the sparse autoencoders and to run the patching and probing experiments are
+regenerated deterministically from those ROMs and the published action streams.
+
+\bmhead{Code availability}
+The differentiable, bit-exact emulator in its two interchangeable realizations
+(\texttt{jutari}, Julia; \texttt{jaxtari}, JAX/Python) and the ground-truth
+intervention oracle are described in the companion port paper~\cite{maier2025vcs}.
+The interpretability benchmark introduced here---the scoring suite, the F\,$\wedge$\,
+S\,$\wedge$\,M triad metrics, and the per-phase method implementations
+(\texttt{tools/xai\_study/})---will be released as a reusable open-source artifact.
+The full source for the emulator, the oracle, and the benchmark will be made
+available under the MIT license upon acceptance.
+
+\bmhead{Author contributions}
+\emph{[CRediT placeholder, to be finalised with the author list.]} A.M. conceived the
+study, designed the ground-truth audit and the F\,$\wedge$\,S\,$\wedge$\,M triad, and
+wrote the manuscript. S.B. and P.K. contributed to the method design, the
+substrate and oracle, and the analysis. All authors discussed the results,
+interpreted the semantic-gap finding, and revised the manuscript. The
+differentiability framing and the gradient-faithfulness analysis were developed
+jointly with P.K.
+
+\bmhead{Competing interests}
+The authors declare no competing interests.
+
+\bmhead{Ethics and broader impact}
+This study uses no human-subjects data; the human-plausibility axis is a documented
+method-tradition proxy rather than a measurement, and we report it as such. The
+subject is a fully deterministic, hand-coded program with no learned policy, so no
+agent is trained. Interpretability methods are dual-use, in that a tool that audits a
+system can also be used to probe it; our contribution is a calibration that makes
+explanation claims more, not less, trustworthy, and we release it openly to that end.
+The game cartridges are not redistributed.
+
+\bmhead{Acknowledgements}
+\emph{[To be completed: funding sources and compute allocations.]} The authors thank
+the maintainers of the AtariARI~\cite{anand2019unsupervised} and
+OCAtari~\cite{delfosse2023ocatari} projects, whose game-concept labels we imported as
+external candidates and only causally verified, and the maintainers of the
+\texttt{xitari} reference emulator~\cite{xitari} against which the substrate is
+validated bit-for-bit. The pilots were run locally; the full sweeps used the
+institutional compute cluster.
+
+% =====================================================================
+% BIBTEX-NEEDED: this section introduces NO new keys. Every key cited above is
+% already declared in a sibling section's BIBTEX-NEEDED block (SM to merge):
+%   leaderboardP2          -> 04_results_A.tex
+%   faithfuldemoP2         -> 07_results_compare.tex
+%   maier2025vcs, xitari   -> 03_methods.tex
+%   anand2019unsupervised  -> 03_methods.tex
+%   delfosse2023ocatari    -> 03_methods.tex
+% =====================================================================
