@@ -121,12 +121,14 @@ that vanishes under the hard forward map. We make this precise.
 Let an output $y$ depend on a cause $u$ only through a discrete index
 $n(u)=\lfloor g(u)\rfloor\in\mathbb{Z}$, the integer count of color clocks between a strobe
 write and the position-counter reset that the VCS uses to place a sprite, missile, or ball,
-with $g$ continuous and piecewise smooth. Under the hard (bit-exact) forward map the rendered
-output is $y=h(n(u))$ for a fixed render function $h$. Then $n(\cdot)$ is locally constant
-wherever $g(u)\notin\mathbb{Z}$, so $\partial y/\partial u=0$ at every such point, and $y$ is
-discontinuous at the measure-zero set $\{u:g(u)\in\mathbb{Z}\}$ where the gradient is
-undefined. Hence the naive gradient is zero almost everywhere and never positive: an
-infinitesimal change in $u$ cannot move the sprite by a fractional pixel. Any method that
+with $g$ continuous, piecewise linear, and non-constant (strictly monotone on each linear
+piece). Under the hard (bit-exact) forward map the rendered output is $y=h(n(u))$ for a fixed
+render function $h$. Then $n(\cdot)$ is locally constant wherever $g(u)\notin\mathbb{Z}$, so
+$\partial y/\partial u=0$ at every such point, and $y$ is discontinuous on the set
+$\{u:g(u)\in\mathbb{Z}\}$, which is measure zero precisely because $g$ is strictly monotone on
+each piece, and there the gradient is undefined. Hence the naive gradient is zero wherever the
+derivative exists: an infinitesimal change in $u$ cannot move the sprite by a fractional
+pixel. Any method that
 reduces to this naive gradient inherits the failure on position, index, and event outputs.
 \end{proposition}
 
@@ -208,26 +210,35 @@ non-circular.
 Faithfulness asks whether the claimed causes are the \emph{true} causes, scored against the
 intervention oracle of Eq.~\eqref{eq:doy}. The per-record metric depends on the explanation's
 output type, so $\mathrm{F}_{\mathrm{score}}$ is a single number assembled from three
-type-matched primitives, each already in $[0,1]$. For a real-valued attribution map we use the
-causal-effect-agreement score $\tfrac{1}{2}\!\left(1+\rho(\hat{E},\{\Delta y(u)\})\right)$,
-the affinely rescaled Pearson (or Spearman, for ranked outputs) correlation between the
-attribution and the true causal effects, so a negative correlation maps below $0.5$ rather
-than being clipped to zero; for the same map we also report deletion/insertion
-area-under-curve and precision at $k$ against the true causal top-$k$, $\mathrm{P@}k=
-|\,\mathrm{top}_k(\hat{E})\cap\mathrm{top}_k(\{\Delta y(u)\})\,|/k$. For a graph-valued
-explanation (Phase~A connectomics, Phase~C circuit discovery) we use the edge $F_1$ against the
-true data-flow graph, the harmonic mean of precision and recall over recovered edges. The
-final $\mathrm{F}_{\mathrm{score}}$ is the per-record primary metric averaged first within a
-game over its output records, then with equal weight across the six core games, so no
-game-rich method dominates; confidence intervals are 95\% bootstrap over games
-(\S\ref{sec:scoring}). The three Phases differ only in which primitive is primary: Phase~A
-uses graph $F_1$ for the data-flow methods and effect-agreement $\rho$ for the single-unit and
-tuning analyses, Phase~B uses effect-agreement $\rho$ with deletion/insertion AUC and
-$\mathrm{P@}k$ as the attribution map's quality measures, and Phase~C uses the
-causal-effect-agreement score for patching and mediation and graph $F_1$ for circuit
-discovery. The leaderboard score is therefore a single scalar per method on a common $[0,1]$
-scale, but it is multi-metric in origin, and the per-method choice is recorded in the
-Supplement.
+type-matched primitives. The committed score is the bare effect-agreement primitive, not a
+rescaled one: for a real-valued attribution map we report the Pearson (or Spearman, for ranked
+outputs) correlation $\rho(\hat{E},\{\Delta y(u)\})$ between the attribution and the true causal
+effects, scored \emph{raw}, so that a method whose attribution carries no causal signal lands at
+$\rho=0$ rather than at the $0.5$ of an affine $\tfrac{1}{2}(1+\rho)$ remap. This is what makes
+the position regime informative: under Prop.~\ref{prop:zero} the naive gradient is identically
+zero there, its correlation with the oracle is $0$, and the reported faithfulness is therefore
+$0.00$ and not a $0.5$ floor. The two committed estimators differ only in how the raw
+correlation is summarized across the six core games. Phase~B reports the raw correlation
+directly (e.g.\ occlusion at $\rho=0.482$), so a negative correlation is recorded as a negative
+number; Phase~A's single-unit and tuning analyses, where per-game correlations can be negative,
+report the per-game correlation clipped at $0$ and then averaged across games (e.g.\ the tuning
+analysis A3, lowest in Phase~A at $0.116$, the clip-at-zero mean of six per-game correlations
+that include negatives). For the same attribution map we also report, as quality measures,
+deletion/insertion area-under-curve and precision at $k$ against the true causal top-$k$,
+$\mathrm{P@}k=|\,\mathrm{top}_k(\hat{E})\cap\mathrm{top}_k(\{\Delta y(u)\})\,|/k$. For a
+graph-valued explanation (Phase~A connectomics, Phase~C circuit discovery) we use the edge
+$F_1$ against the true data-flow graph, the harmonic mean of precision and recall over recovered
+edges, and for Phase~C patching and mediation the causal-effect-agreement correlation against
+the true $\{\Delta y(u)\}$. The final $\mathrm{F}_{\mathrm{score}}$ is the per-record primary
+metric averaged first within a game over its output records, then with equal weight across the
+six core games, so no game-rich method dominates; confidence intervals are 95\% bootstrap over
+games (\S\ref{sec:scoring}). The three Phases differ only in which primitive is primary: Phase~A
+uses graph $F_1$ for the data-flow methods and the clip-at-zero mean correlation for the
+single-unit and tuning analyses, Phase~B uses the raw effect-agreement correlation $\rho$ with
+deletion/insertion AUC and $\mathrm{P@}k$ as the attribution map's quality measures, and Phase~C
+uses the causal-effect-agreement correlation for patching and mediation and graph $F_1$ for
+circuit discovery. The leaderboard score is therefore a single scalar per method, but it is
+multi-metric in origin, and the per-method choice is recorded in the Supplement.
 
 Sufficiency asks whether the explanation could regenerate the behavior under interventions it
 has not seen. We treat $\mathrm{S}_{\mathrm{score}}$ as a held-out predictive estimator:
