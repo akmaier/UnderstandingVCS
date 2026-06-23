@@ -3,7 +3,7 @@ id: P2-R-S00-abstract
 title: Revise abstract — reframe, exact method count, plausibility-proxy, drop rhetorical heat
 epic: RV (Revision — section)
 status: todo
-sprint:
+sprint: 14
 owner:
 where: local
 depends_on: [P2-R-UNC, P2-R-S07-compare]

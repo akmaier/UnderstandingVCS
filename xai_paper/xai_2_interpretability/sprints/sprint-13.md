@@ -30,5 +30,22 @@ number_audit §1 canonical numbers; ACDC=Breakout exemplar / SAE=Pong exemplar /
 regime / gap not robust off position. STYLE.md voice (no run-in \paragraph headings; vivid but
 restrained; Siming Bayer is 2nd author). Never fabricate. Recompile-clean before done.
 
-## Review
-_(to be filled at the R5 barrier)_
+## Review — R5 closed 2026-06-24 (3/3; recompiles 36 pp, 0 undefined)
+
+- **S01-intro** (`63802b5`): SAE "on Pong"; semantics reframe + explicit honesty contract
+  (faithfulness necessary-not-sufficient; what we do NOT claim); NN-transfer narrowed ("strong
+  negative evidence", not a proven floor); tone cooled; oracle→§3.2 (sec:oracle). Body 1021→955 w.
+- **S08-discussion** (`df87e72`): M7 cell 84 "present-but-unused"; ACDC "on Breakout" + 1−S=0.56
+  resolved as Breakout (family 1−0.32=0.68 given); SAE "on Pong"; Fig 6 (map) caption handoff
+  (shortened, "documented analogue not proven", 11 analogue works cited, §3.2 oracle); scope =
+  necessary-condition stress test not a forecast; S6 "does NOT claim" pointer.
+- **S09-endmatter** (`5767196`): Code/Data Availability → "available for review at
+  github.com/akmaier/UnderstandingVCS + Zenodo DOI snapshot + optional Code Ocean capsule" (no more
+  "upon acceptance"); ROMs via AutoROM + SI hash table; emulator public at arXiv:2606.22447; author
+  contributions completed (A.M. / **S.B.=Siming Bayer** / P.K.); ethics "plausibility proxy".
+
+**Stale-string grep:** clean except (a) abstract residuals → R6 owns 00; (b) `06:11` "We remove that
+excuse" + `07:5` leftover comment → R6 SM cleanup; (c) `S3` "all 30" = per-game coverage of the 30
+interpretability methods (consistent — R6 clarifies "+oracle"); (d) `S6:24` "We do not measure human
+plausibility" = the intended disclaimer (keep). **Next:** R6 finale (abstract + supplement
+integration + length + final grep + checklist).
