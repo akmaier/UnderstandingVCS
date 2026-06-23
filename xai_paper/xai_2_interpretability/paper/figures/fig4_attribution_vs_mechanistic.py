@@ -2,14 +2,16 @@
 """Figure 4 — attribution (Phase B) vs mechanistic interpretability (Phase C).
 
 A head-to-head of the twelve Phase-B attribution methods against the ten Phase-C
-mechanistic-interpretability methods, scored on the SAME §1 intervention-oracle
-faithfulness axis. The figure makes two measured claims (experiment_design.md §5,
-§6, §7; plan.md figure 4):
+mechanistic-interpretability methods, scored on the SAME intervention-oracle
+faithfulness axis (the §3.2 oracle). These 22 method rows are a SUBSET of the
+canonical leaderboard (30 interpretability methods + the oracle positive control
+= 31 rows); the cross-tradition headline scatter is Figure 2. The figure makes two
+measured claims (experiment_design.md §5, §6, §7; plan.md figure 4):
 
   (i)  PHASE B, regime split.  Faithfulness is split by the output regime the
        attribution targets: CONTENT (a register/colour/graphics-bit value, which
        the STE gradient routes to) vs POSITION/INDEX (a discrete sprite position
-       via strobe timing, whose naive gradient is provably zero — §1). The whole
+       via strobe timing, whose naive gradient is provably zero — §3.2). The whole
        GRADIENT family (vanilla saliency, SmoothGrad, guided backprop, Grad×Input/
        DeepLIFT, Integrated Gradients, Expected Gradients, plus the sampling/linear
        surrogates LIME/KernelSHAP/RISE that lean on it) COLLAPSES toward chance on
@@ -33,9 +35,17 @@ POSITION regime the causal/intervention bucket averages 0.412 (±0.390, n=4) vs
 gap; the exact causal method activation_patching reaches 1.000 (= the oracle
 ceiling) where vanilla saliency collapses to 0.000 (= the naive-gradient floor).
 
+UNCERTAINTY (R-UNC, P2-R-UNC).  Every faithfulness point carries a bootstrap-over-
+games 95% CI read from leaderboard_ci.csv:
+  * Panel (b) per-method whiskers come from the per-method CI rows.
+  * Panel (a) is a regime split (per-method regime CIs are not recorded); the
+    FAMILY-level position/content 95% CI bands are drawn behind the bars from the
+    family CI rows, so point positions are not over-interpreted.
+
 ALL plotted numbers are READ from committed records — no experiment is re-run:
-  * tools/xai_study/compare/out/leaderboard.json   (P2-E6-1; the aggregate index)
-  * tools/xai_study/compare/out/faithful_demo.json (P2-E6-3; the headline gap)
+  * tools/xai_study/compare/out/leaderboard.json     (P2-E6-1; the aggregate index)
+  * tools/xai_study/compare/out/leaderboard_ci.csv   (P2-R-UNC; bootstrap 95% CIs)
+  * tools/xai_study/compare/out/faithful_demo.json   (P2-E6-3; the headline gap)
 The per-method §R records under tools/xai_study/phase{B,C}_*/out/*.json are the
 sources the leaderboard aggregates (referenced, not re-read here).
 
@@ -47,6 +57,7 @@ Produces:
 """
 
 import argparse
+import csv
 import json
 import os
 import sys
@@ -57,8 +68,7 @@ import matplotlib
 matplotlib.use("Agg")  # headless vector backend
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.lines import Line2D
-from matplotlib.patches import Patch
+from matplotlib.patches import Patch, Rectangle
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 # repo root = .../  (figures -> paper -> xai_2_interpretability -> xai_paper -> root)
@@ -86,10 +96,13 @@ C_ORACLE = "#000000"        # black       — oracle ceiling reference line
 C_CONTENT = "#56B4E9"       # sky blue    — content regime
 C_POSITION = "#009E73"      # bluish-green — position/index regime
 
+# minimum in-figure font (figure-detail-pass target): 7.5 pt
+FS_MIN = 7.5
+
 plt.rcParams.update(
     {
         "font.family": "DejaVu Sans",
-        "font.size": 8.4,
+        "font.size": 8.6,
         "axes.linewidth": 0.8,
         "axes.edgecolor": C_MUTE,
         "pdf.fonttype": 42,    # embed TrueType (editable, not bitmap)
@@ -108,10 +121,25 @@ plt.rcParams.update(
 def load_records(leaderboard_path):
     with open(leaderboard_path) as fh:
         lb = json.load(fh)
-    demo_path = os.path.join(os.path.dirname(leaderboard_path), "faithful_demo.json")
-    with open(demo_path) as fh:
+    base = os.path.dirname(leaderboard_path)
+    with open(os.path.join(base, "faithful_demo.json")) as fh:
         demo = json.load(fh)
-    return lb, demo
+    # R-UNC bootstrap-over-games 95% CIs (P2-R-UNC).
+    ci_method = {}      # method -> (mean, lo, hi)  all-regime faithfulness CI
+    ci_family = {}      # family key -> (mean, lo, hi)
+    ci_path = os.path.join(base, "leaderboard_ci.csv")
+    with open(ci_path) as fh:
+        for row in csv.DictReader(fh):
+            kind = row.get("kind")
+            try:
+                triple = (float(row["mean"]), float(row["ci_lo"]), float(row["ci_hi"]))
+            except (TypeError, ValueError, KeyError):
+                continue
+            if kind == "method":
+                ci_method[row["method"]] = triple
+            elif kind == "family":
+                ci_family[row["method"]] = triple
+    return lb, demo, ci_method, ci_family
 
 
 # Pretty labels (the records' machine names -> publication labels + citation tags).
@@ -183,7 +211,7 @@ def main():
     )
     args = ap.parse_args()
 
-    lb, demo = load_records(args.leaderboard)
+    lb, demo, ci_method, ci_family = load_records(args.leaderboard)
     rows = {r["method"]: r for r in lb["rows"]}
 
     # ---- assemble Phase-B regime table (content vs position) ----------------
@@ -209,7 +237,9 @@ def main():
     # sort by faithfulness desc so exact (1.0) at top
     c_order = sorted(c_methods, key=lambda m: -rows[m]["faithfulness"])
     c_faith = [rows[m]["faithfulness"] for m in c_order]
-    c_ci = [rows[m].get("faithfulness_ci95") or 0.0 for m in c_order]
+    # R-UNC bootstrap 95% CI per method (asymmetric lo/hi about the point).
+    c_lo = [ci_method.get(m, (rows[m]["faithfulness"],) * 3)[1] for m in c_order]
+    c_hi = [ci_method.get(m, (rows[m]["faithfulness"],) * 3)[2] for m in c_order]
     c_labels = [PRETTY_C[m] for m in c_order]
     c_cat = [C_CATEGORY[m][0] for m in c_order]
     c_col = [C_CATEGORY[m][1] for m in c_order]
@@ -218,13 +248,18 @@ def main():
     agg = demo["aggregate_contrast"]
     pair = demo["pair_contrast"]
 
+    # family-level regime CI bands (R-UNC) for Panel (a) — per-method regime CIs
+    # are not recorded, so we show the family band instead of over-precise points.
+    fam_pos_grad = ci_family.get("family_gradient_correlational_position")
+    fam_pos_caus = ci_family.get("family_causal_intervention_position")
+
     # =======================================================================
     # FIGURE
     # =======================================================================
-    fig = plt.figure(figsize=(13.2, 6.5), facecolor=C_BG)
+    fig = plt.figure(figsize=(13.2, 7.1), facecolor=C_BG)
     gs = fig.add_gridspec(
-        1, 2, width_ratios=[1.18, 1.0], left=0.135, right=0.955,
-        top=0.78, bottom=0.115, wspace=0.40,
+        1, 2, width_ratios=[1.18, 1.0], left=0.135, right=0.965,
+        top=0.745, bottom=0.180, wspace=0.40,
     )
     axB = fig.add_subplot(gs[0, 0])
     axC = fig.add_subplot(gs[0, 1])
@@ -233,70 +268,104 @@ def main():
     nB = len(b_order)
     y = np.arange(nB)[::-1]          # top-to-bottom in listed order
     h = 0.38
+
     axB.barh(y + h / 2 + 0.02, b_content, height=h, color=C_CONTENT,
              edgecolor=C_INK, linewidth=0.4, label="content output", zorder=3)
     axB.barh(y - h / 2 - 0.02, b_position, height=h, color=C_POSITION,
              edgecolor=C_INK, linewidth=0.4, label="position / index output", zorder=3)
 
-    # value annotations
+    # value annotations (>= FS_MIN)
     for yi, v in zip(y + h / 2 + 0.02, b_content):
         axB.text(v + 0.012, yi, f"{v:.2f}", va="center", ha="left",
-                 fontsize=6.6, color=C_MUTE)
+                 fontsize=FS_MIN, color=C_MUTE)
     for yi, v in zip(y - h / 2 - 0.02, b_position):
         txt = f"{v:.2f}"
         axB.text(max(v, 0.0) + 0.012, yi, txt, va="center", ha="left",
-                 fontsize=6.6, color=(C_INTERV if v == 0.0 else C_MUTE),
+                 fontsize=FS_MIN, color=(C_INTERV if v == 0.0 else C_MUTE),
                  fontweight=("bold" if v == 0.0 else "normal"))
 
     axB.set_yticks(y)
-    axB.set_yticklabels(b_labels, fontsize=8.0)
+    axB.set_yticklabels(b_labels, fontsize=8.2)
     # colour-tint the family on the left margin via tick label colour
     for tick, fam in zip(axB.get_yticklabels(), b_fam):
         tick.set_color(C_GRAD if fam == "gradient" else C_INTERV)
     axB.set_xlim(0, 1.0)
-    axB.set_xlabel("faithfulness vs §1 intervention oracle  (Pearson corr, 0–1)",
-                   fontsize=8.4)
+    axB.set_xlabel("faithfulness vs intervention oracle (§3.2)  ·  Pearson corr, 0–1",
+                   fontsize=9.0)
     axB.set_ylim(-0.8, nB - 0.2)
     axB.xaxis.grid(True, color=C_GRID, linewidth=0.6, zorder=0)
     axB.set_axisbelow(True)
     for s in ("top", "right"):
         axB.spines[s].set_visible(False)
 
-    # divider between the gradient family and the intervention family
+    # Family-level POSITION-regime 95% CI bands (R-UNC). Per-method regime CIs
+    # are not recorded; the family band shows the regime uncertainty without
+    # over-precising any single point. The translucent span sits BEHIND the bars
+    # over the position (green) sub-bars only; the mean + CI are stated once in
+    # the family tag (right), not duplicated as in-data prose.
     n_grad = len(grad_b)
+
+    def _pos_band(ci, y_lo, y_hi, color):
+        if not ci:
+            return None
+        mean, lo, hi = ci
+        axB.add_patch(Rectangle((lo, y_lo), hi - lo, y_hi - y_lo,
+                                facecolor=color, alpha=0.13, edgecolor="none",
+                                zorder=1))
+        axB.plot([mean, mean], [y_lo, y_hi], color=color, linewidth=1.0,
+                 linestyle=(0, (2, 2)), alpha=0.9, zorder=2)
+        return mean, lo, hi
+
+    # position (green) sub-bars occupy y - h/2 - 0.02 +/- h/2 in each row.
+    grad_pos_lo = (y[n_grad - 1] - h / 2 - 0.02) - h / 2 - 0.04
+    grad_pos_hi = (y[0] - h / 2 - 0.02) + h / 2 + 0.04
+    interv_pos_lo = (y[-1] - h / 2 - 0.02) - h / 2 - 0.04
+    interv_pos_hi = (y[n_grad] - h / 2 - 0.02) + h / 2 + 0.04
+    g_ci = _pos_band(fam_pos_grad, grad_pos_lo, grad_pos_hi, C_POSITION)
+    i_ci = _pos_band(fam_pos_caus, interv_pos_lo, interv_pos_hi, C_POSITION)
+
+    # divider between the gradient family and the intervention family
     div_y = (y[n_grad - 1] + y[n_grad]) / 2.0  # between last grad and first interv
     axB.axhline(div_y, color=C_MUTE, linewidth=0.8, linestyle=(0, (4, 3)), zorder=2)
-    axB.text(0.985, y[0] + 0.55, "GRADIENT FAMILY", ha="right", va="center",
-             fontsize=7.2, color=C_GRAD, fontweight="bold")
-    axB.text(0.985, y[n_grad] + 0.55, "INTERVENTION / PERTURBATION",
-             ha="right", va="center", fontsize=7.2, color=C_INTERV,
-             fontweight="bold")
+
+    # family tags (right), each carrying the position-regime family mean + CI once.
+    g_tag = "GRADIENT FAMILY"
+    if g_ci:
+        g_tag += f"\nposition F̄={g_ci[0]:.2f}  CI [{g_ci[1]:.2f}, {g_ci[2]:.2f}]"
+    i_tag = "INTERVENTION / PERTURBATION"
+    if i_ci:
+        i_tag += f"\nposition F̄={i_ci[0]:.2f}  CI [{i_ci[1]:.2f}, {i_ci[2]:.2f}]"
+    axB.text(0.985, y[0] + 0.62, g_tag, ha="right", va="center",
+             fontsize=FS_MIN, color=C_GRAD, fontweight="bold", linespacing=1.15)
+    axB.text(0.985, y[n_grad] + 0.62, i_tag, ha="right", va="center",
+             fontsize=FS_MIN, color=C_INTERV, fontweight="bold", linespacing=1.15)
 
     axB.set_title(
         "(a)  Phase B — attribution, split by output regime",
-        fontsize=10.0, fontweight="bold", loc="left", pad=8,
+        fontsize=10.2, fontweight="bold", loc="left", pad=8,
     )
-    axB.legend(loc="lower right", fontsize=7.6, frameon=True, framealpha=0.95,
-               edgecolor=C_GRID, handlelength=1.3, borderpad=0.5)
 
     # ---------------- Panel C: Phase-C faithfulness (categorised bars) -------
     nC = len(c_order)
     yc = np.arange(nC)[::-1]
-    bars = axC.barh(yc, c_faith, height=0.62, color=c_col, edgecolor=C_INK,
-                    linewidth=0.4, zorder=3)
-    # 95% CI whiskers
-    axC.errorbar(c_faith, yc, xerr=c_ci, fmt="none", ecolor=C_INK,
-                 elinewidth=0.8, capsize=2.2, zorder=4)
-    for yi, v, cat in zip(yc, c_faith, c_cat):
-        axC.text(min(v, 1.0) + 0.018, yi, f"{v:.2f}", va="center", ha="left",
-                 fontsize=6.8, color=C_MUTE)
+    axC.barh(yc, c_faith, height=0.62, color=c_col, edgecolor=C_INK,
+             linewidth=0.4, zorder=3)
+    # R-UNC bootstrap 95% CI whiskers (asymmetric about the point).
+    xerr = np.array([[f - lo for f, lo in zip(c_faith, c_lo)],
+                     [hi - f for f, hi in zip(c_faith, c_hi)]])
+    xerr = np.clip(xerr, 0.0, None)
+    axC.errorbar(c_faith, yc, xerr=xerr, fmt="none", ecolor=C_INK,
+                 elinewidth=0.8, capsize=2.4, zorder=4)
+    for yi, v, hi in zip(yc, c_faith, c_hi):
+        axC.text(min(max(v, hi), 1.0) + 0.022, yi, f"{v:.2f}", va="center",
+                 ha="left", fontsize=FS_MIN, color=C_MUTE)
 
     axC.set_yticks(yc)
-    axC.set_yticklabels(c_labels, fontsize=8.0)
+    axC.set_yticklabels(c_labels, fontsize=8.2)
     axC.set_xlim(0, 1.18)
     axC.set_xticks([0, 0.25, 0.5, 0.75, 1.0])
-    axC.set_xlabel("faithfulness vs exact patch / true data-flow  (0–1)",
-                   fontsize=8.4)
+    axC.set_xlabel("faithfulness vs exact patch / true data-flow  ·  0–1",
+                   fontsize=9.0)
     axC.set_ylim(-0.7, nC - 0.3)
     axC.xaxis.grid(True, color=C_GRID, linewidth=0.6, zorder=0)
     axC.set_axisbelow(True)
@@ -306,28 +375,13 @@ def main():
     # oracle ceiling line at 1.0
     axC.axvline(1.0, color=C_ORACLE, linewidth=1.0, linestyle=(0, (2, 2)),
                 zorder=2)
-    axC.text(1.0, nC - 0.35, " oracle\n ceiling", ha="left", va="top",
-             fontsize=6.8, color=C_ORACLE)
+    axC.text(1.0, nC - 0.32, " oracle\n ceiling", ha="left", va="top",
+             fontsize=FS_MIN, color=C_ORACLE)
 
     axC.set_title(
         "(b)  Phase C — mechanistic interpretability",
-        fontsize=10.0, fontweight="bold", loc="left", pad=8,
+        fontsize=10.2, fontweight="bold", loc="left", pad=8,
     )
-
-    # ---- Phase-C category legend (exact / partial / approx / present-not-used)
-    cat_handles = [
-        Patch(facecolor=C_CAUSAL, edgecolor=C_INK, linewidth=0.4,
-              label="causal (exact / partial)"),
-        Patch(facecolor=C_APPROX, edgecolor=C_INK, linewidth=0.4,
-              label="gradient approximation"),
-        Patch(facecolor=C_DIMRED, edgecolor=C_INK, linewidth=0.4,
-              label="dim-reduction / SAE  (present‑not‑used)"),
-        Patch(facecolor=C_PROBE, edgecolor=C_INK, linewidth=0.4,
-              label="probing  (present‑not‑used)"),
-    ]
-    axC.legend(handles=cat_handles, loc="lower right", fontsize=7.2,
-               frameon=True, framealpha=0.95, edgecolor=C_GRID,
-               handlelength=1.2, borderpad=0.5, labelspacing=0.35)
 
     # bracket the three "present-not-used" rows (kept inside the axes box)
     pnu_idx = [i for i, cat in enumerate(c_cat) if cat == "present-not-used"]
@@ -342,7 +396,7 @@ def main():
         axC.plot([xb - 0.012, xb], [ybot, ybot], color=C_MUTE, linewidth=1.0,
                  clip_on=False, zorder=5)
         axC.text(xb + 0.012, (ytop + ybot) / 2, "present\nnot\nused",
-                 ha="left", va="center", fontsize=6.6, color=C_MUTE,
+                 ha="left", va="center", fontsize=FS_MIN, color=C_MUTE,
                  clip_on=False)
 
     # =======================================================================
@@ -351,16 +405,22 @@ def main():
     fig.suptitle(
         "Attribution (Phase B) vs mechanistic interpretability (Phase C): "
         "faithfulness on the bit-exact VCS",
-        fontsize=12.6, fontweight="bold", x=0.045, ha="left", y=0.965,
+        fontsize=12.8, fontweight="bold", x=0.045, ha="left", y=0.975,
+    )
+    fig.text(
+        0.045, 0.940,
+        "The 22 Phase-B + Phase-C method rows (a subset of the 30 methods + the "
+        "oracle = 31-row leaderboard; the cross-tradition scatter is Fig. 2).",
+        fontsize=8.4, color=C_MUTE, style="italic", ha="left", va="top",
     )
     headline = (
         "On the POSITION/INDEX regime (discrete sprite-position outputs, naive "
         "gradient provably zero): the whole gradient family collapses toward "
         "chance while intervention methods hold.  "
         f"Causal/intervention bucket {agg['faithful_bucket_mean']:.3f} "
-        f"(±{agg['faithful_bucket_ci95']:.3f}, n={agg['faithful_bucket_n']}) "
+        f"(95% CI ±{agg['faithful_bucket_ci95']:.3f}, n={agg['faithful_bucket_n']}) "
         f"vs gradient/correlational {agg['popular_bucket_mean']:.3f} "
-        f"(±{agg['popular_bucket_ci95']:.3f}, n={agg['popular_bucket_n']}) "
+        f"(95% CI ±{agg['popular_bucket_ci95']:.3f}, n={agg['popular_bucket_n']}) "
         f"— a {agg['bucket_gap']:.3f} faithfulness gap.  "
         f"Activation patching = {pair['faithful_faithfulness_position']:.3f} "
         f"(oracle ceiling) vs vanilla saliency = "
@@ -368,22 +428,64 @@ def main():
     )
     # Wrap explicitly (robust across matplotlib versions; the figure-text wrap=
     # heuristic changed in 3.x). The banner spans the full usable width.
-    headline_wrapped = "\n".join(textwrap.wrap(headline, width=175))
+    headline_wrapped = "\n".join(textwrap.wrap(headline, width=170))
     fig.text(
-        0.045, 0.915, headline_wrapped, fontsize=7.9, color=C_INK,
+        0.045, 0.910, headline_wrapped, fontsize=8.0, color=C_INK,
         ha="left", va="top",
         bbox=dict(boxstyle="round,pad=0.5", facecolor="#f5f7fa",
                   edgecolor=C_GRID, linewidth=0.7),
     )
 
-    # provenance footer
+    # =======================================================================
+    # Legends — OUTSIDE the data field, in a strip beneath the two panels.
+    # =======================================================================
+    regime_handles = [
+        Patch(facecolor=C_CONTENT, edgecolor=C_INK, linewidth=0.4,
+              label="content output"),
+        Patch(facecolor=C_POSITION, edgecolor=C_INK, linewidth=0.4,
+              label="position / index output"),
+    ]
+    legB = fig.legend(
+        handles=regime_handles, title="(a) output regime",
+        loc="lower left", bbox_to_anchor=(0.135, 0.018), ncol=2,
+        frameon=True, fontsize=8.0, title_fontsize=8.4,
+        handlelength=1.3, borderpad=0.55, columnspacing=1.4,
+    )
+    legB.get_frame().set_edgecolor(C_GRID)
+    legB.get_frame().set_linewidth(0.7)
+    legB._legend_box.align = "left"
+
+    cat_handles = [
+        Patch(facecolor=C_CAUSAL, edgecolor=C_INK, linewidth=0.4,
+              label="causal (exact / partial)"),
+        Patch(facecolor=C_APPROX, edgecolor=C_INK, linewidth=0.4,
+              label="gradient approximation"),
+        Patch(facecolor=C_DIMRED, edgecolor=C_INK, linewidth=0.4,
+              label="dim-reduction / SAE  (present-not-used)"),
+        Patch(facecolor=C_PROBE, edgecolor=C_INK, linewidth=0.4,
+              label="probing  (present-not-used)"),
+        plt.Line2D([0], [0], color=C_INK, linewidth=1.0,
+                   label="95% CI (bootstrap over games, R-UNC)"),
+    ]
+    legC = fig.legend(
+        handles=cat_handles, title="(b) Phase-C category  +  uncertainty",
+        loc="lower left", bbox_to_anchor=(0.560, 0.018), ncol=3,
+        frameon=True, fontsize=8.0, title_fontsize=8.4,
+        handlelength=1.3, borderpad=0.55, columnspacing=1.4,
+        labelspacing=0.4,
+    )
+    legC.get_frame().set_edgecolor(C_GRID)
+    legC.get_frame().set_linewidth(0.7)
+    legC._legend_box.align = "left"
+
+    # provenance footer — no in-figure data paths (figure-detail-pass: remove
+    # microtext source strings; exact paths live in the Supplement).
     fig.text(
-        0.045, 0.018,
-        "Source: tools/xai_study/compare/out/leaderboard.json (P2-E6-1) + "
-        "faithful_demo.json (P2-E6-3); per-method §R records under "
-        "tools/xai_study/phase{B,C}_*/out/. 6 core games, 30-frame horizon. "
-        "Pure read — no experiment re-run.",
-        fontsize=6.4, color=C_MUTE, ha="left", va="bottom",
+        0.045, 0.004,
+        "Data: committed records (leaderboard + bootstrap CIs + faithful-demo); "
+        "6 core games, 30-frame horizon; pure read — no experiment re-run. "
+        "Exact paths & per-number provenance in the Supplement.",
+        fontsize=FS_MIN, color=C_MUTE, ha="left", va="bottom",
     )
 
     fig.savefig(args.out, format="pdf", facecolor=C_BG)
@@ -414,6 +516,8 @@ def main():
     # data-integrity: every plotted number traced to the leaderboard
     check("12 Phase-B methods plotted", len(b_order) == 12, f"n={len(b_order)}")
     check("10 Phase-C methods plotted", len(c_order) == 10, f"n={len(c_order)}")
+    check("22 method rows total (subset of 30+oracle=31)",
+          len(b_order) + len(c_order) == 22)
     check(
         "gradient family vanishes on position (all == 0.0)",
         all(rows[m]["faithfulness_position_regime"] == 0.0 for m in grad_b
@@ -441,6 +545,19 @@ def main():
         abs(agg["bucket_gap"] - 0.3435) < 1e-6,
         f"gap={agg['bucket_gap']}",
     )
+    # R-UNC uncertainty: every Phase-C point has a bootstrap CI from the CI file.
+    check(
+        "every Phase-C method carries an R-UNC CI",
+        all(m in ci_method for m in c_order),
+        "leaderboard_ci.csv method rows",
+    )
+    check(
+        "Phase-C CIs bracket their points",
+        all(lo <= f + 1e-6 and hi >= f - 1e-6
+            for f, lo, hi in zip(c_faith, c_lo, c_hi)),
+    )
+    # all in-figure fonts >= 7.5 pt (the minimum used anywhere is FS_MIN).
+    check("min in-figure font >= 7.5 pt", FS_MIN >= 7.5, f"FS_MIN={FS_MIN}")
 
     print("Figure 4 self-check:")
     print("\n".join(msgs))
