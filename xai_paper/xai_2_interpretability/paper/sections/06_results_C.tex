@@ -1,1 +1,265 @@
-% 06_results_C.tex — Results C: mechanistic interpretability. Drafted by item P2-E8-6. STUB: empty until then.
+% 06_results_C.tex — Results C: mechanistic interpretability (P2-E8-7).
+% Phase-C: the mech-interp toolkit scored against the exact patch / true data-flow /
+% scrubbing oracle, on a known real circuit. Maier voice (../STYLE.md). Numbers are
+% committed §R values (leaderboard.md + phaseC_mechanistic/out/*_core_summary.json).
+
+\section{Mechanistic interpretability on a known circuit}\label{sec:results-c}
+
+Mechanistic interpretability promises the strongest claim of all: not where a system
+attends, but \emph{how it computes}. Its methods read internal activations as a circuit
+and try to recover that circuit. On a neural network the recovered circuit can only be
+checked against itself, because the true wiring is unknown. We remove that excuse. The
+VCS's data-flow is the program's data-flow, known exactly from the disassembly, and every
+intermediate value is a RAM cell or a register we can read, clamp, and re-run bit-exactly.
+We therefore turn ten mechanistic-interpretability methods onto a circuit whose answer is
+already on the page, and score each against the same §\ref{sec:results-a}~oracle: the
+exact intervention table, the true read/write graph, and the F\,$\wedge$\,S\,$\wedge$\,M
+triad of §\ref{sec:methods}. To the best of our knowledge this is the first calibration of
+the toolkit against a \emph{known} circuit inside a real, hand-authored artifact, rather
+than a synthetic or compiled one. Figure~\ref{fig:fig4}b places the Phase-C methods on the
+shared faithfulness axis. The result splits cleanly, and the split is the point of the
+paper: the causal methods are exact, yet exactness buys the wiring, not the meaning.
+
+\subsection*{Exact methods recover the wiring exactly}
+
+The headline is bare. Activation patching recovers the true causal-effect table
+\emph{exactly}: across all six core games the recovered per-site effect equals the exact
+intervention oracle to the last bit (\texttt{recovered\_equals\_exact}: true; maximum
+absolute deviation $0.0$), with site precision and recall both $1.0$. Causal mediation by
+clamping a RAM cell to a donor value and re-running the real ROM is, on this machine,
+literally the oracle's own operation, so it cannot disagree with it. Causal scrubbing
+inherits the same strength: the true data-flow hypothesis preserves behaviour under
+resample-ablation of everything outside it on all six games (preserved performance $1.0$),
+while a deliberately wrong hypothesis does not ($0.52$), and the two are discriminated on
+every game. Interchange interventions with distributed alignment search (DAS) verify the
+supplied alignment at interchange accuracy $1.0$ against a mis-aligned control at $0.0$.
+The tuned-lens family is the same story read off a stage: the logit lens reproduces the
+true intermediate value at fidelity $1.0$ on every game. Four of the five causal methods
+sit at faithfulness $1.0$ on the cross-tradition leaderboard, level with the oracle
+positive control (Fig.~\ref{fig:fig4}b).
+
+These numbers confirm what the method matrix predicted, and they confirm it without
+hedging. Where a method's operation \emph{is} an intervention, faithfulness is not hard to
+earn on a fully observable machine; it is automatic. That is the easy half of the problem,
+and it is genuinely solved here.
+
+\subsection*{Approximate and search-based recovery is precise but partial}
+
+The causal account weakens the moment a method trades exact re-runs for an approximation
+or a search. Attribution patching, the gradient-linear surrogate for activation patching,
+correlates with the exact patch at only $0.50$ and matches it inside the linear regime in
+just $0.19$ of cases; yet its recovered edges are precise (edge precision $0.95$, recall
+$0.70$) because the linearisation errs in magnitude, not in sign of presence. Path
+patching, run in the IOI style as a single directed do-operation, recovers the directed
+edge set of the true routine at mean $F1=0.46$: on Q*bert it matches the (empty) direct
+circuit perfectly ($F1=1.0$), while on Pong it recovers none of the six true edges
+($F1=0.0$) because each receiver's value is re-derived within the horizon, so no one-step
+path carries a surviving signal. ACDC, discovering the circuit automatically by
+resample-ablation edge pruning over a threshold sweep, reaches mean $F1=0.45$
+(ROC-AUC $0.70$). Crucially, a positive control re-runs the identical edge-restricted
+procedure under the exhaustive do-set and scores $F1=1.0$ on every game, so the deficit is
+a real measurement of single-shot recovery, not a broken scorer.
+
+The interpretive takeaway is uncomfortable. These are the methods the field reaches for
+when the exact intervention is too expensive, and on a machine where the exact
+intervention is cheap they leave structure on the table. They are precise about what they
+do find and silent about transitively re-derived dependencies — a recall ceiling, not a
+precision failure. We report both directions plainly: the gap to the positive control is
+the quantified cost of approximation against a circuit that is known.
+
+\subsection*{The first separation: graph-correct, behaviour-incomplete}
+
+Here the paper turns. ACDC on Breakout recovers the data-flow circuit at
+\emph{perfect} $F1$ against the true routine, and the recovered graph is minimal at the
+algorithmic level: F$=1.0$, M$=1.0$. Yet that same graph, scrubbed and asked to
+\emph{regenerate} the behaviour under held-out interventions, preserves only S$=0.44$ of
+it (mean scrub-preserved performance $0.32$ across games). A circuit can be the right
+graph and still not be the computed function. The missing object is not a better-fit
+instance of the same type — a denser or cleaner graph — because activation patching has
+already recovered the effect table \emph{exactly}, with no tuning budget left to spend. A
+table of per-site effects is not the bounce algorithm; a correct data-flow graph is not the
+routine it routes. The two methods bracket the gap: one is exact and the other is
+graph-perfect, and between them the behaviour still escapes. This is the semantic gap made
+into a pair of committed numbers, and it is the separation a ``methods underperform'' story
+can never produce, because nothing here underperformed.
+
+\subsection*{The second separation: named but causally inert}
+
+The dictionary methods sharpen the gap from the other side. A sparse autoencoder trained on
+the recorded RAM trajectory reconstructs the state almost perfectly (fraction of variance
+explained $>0.99$ on Pong) and matches every verified game-variable cell it was asked to:
+matched fraction $1.0$. By the metric the field uses to claim a feature ``is'' a concept,
+the SAE has succeeded outright. By the oracle it has not: ablating the matched Pong feature
+and re-running the real ROM gives causal faithfulness F$=0.041$, with S$=-0.336$ —
+the matched feature, removed, does not change the computation it supposedly names. Across
+the six games the SAE's mean leaderboard faithfulness is $0.19$ against a method-tradition
+plausibility proxy of $0.75$, placing it squarely in the §\ref{sec:methods} danger zone.
+The NMF/PCA dictionary contrast tells the same tale at lower resolution: matched-component
+fractions up to $0.75$ co-exist with near-zero causal use. ``Looks like a known variable''
+and ``is how the program computes'' are different predicates, and on this machine the
+distance between them is measurable. Note that this separation runs \emph{opposite} to the
+first: the circuit was causal but behaviourally incomplete, the feature is perfectly named
+but causally inert. The gap runs in both directions at once.
+
+\subsection*{The third separation: decodable but unused}
+
+Linear probing closes the triptych with the classic trap. With control tasks
+(Hewitt \& Liang's selectivity), probes decode game-concept cells well above chance —
+mean probe accuracy $0.89$, mean selectivity $0.16$ — confirming that the information is
+\emph{present} in the state. Presence is not use. Cross-referenced against the exact
+intervention oracle, $6$ of the decodable concept cells across the core games are
+decodable yet \emph{not causally used}, and the oracle flags $25$ such cells in total —
+among them Breakout's score cell~84, linearly associated with the displayed score yet
+provably inert under intervention within the window. The oracle is strictly stronger than
+the probe: it asks not whether a value can be read out, but whether changing it changes the
+output. Probing earns a high plausibility proxy ($0.85$) on a faithfulness of $0.16$, the
+second-worst entry in the danger zone (Fig.~\ref{fig:fig4}b). We state the obvious caveat
+in the same breath: these labels are imported externally (AtariARI, OCAtari) and only
+\emph{verified} causally, never \emph{discovered} — DAS's alignment accuracy of $1.0$ is
+true ``by construction'' because it confirms a \emph{supplied} variable. The probe tells us
+a concept is in the representation; only the intervention tells us the program uses it.
+
+\subsection*{Summary: exactness is necessary, not sufficient}
+
+Phase~C is the cleanest demonstration of the paper's claim. The mechanistic toolkit, run
+against a known real circuit, separates into a causal core that is faithful by
+construction (activation patching, causal scrubbing, DAS, the logit lens, all at $1.0$;
+phase mean faithfulness $0.63$, the highest of the three phases) and a recovery layer that
+is precise-but-partial (attribution/path patching, ACDC) or present-but-inert (SAEs,
+dictionaries, probing). The three separations — graph-correct yet behaviour-incomplete
+(ACDC F$=1.0$/M$=1.0$, S$=0.44$), named yet causally inert (SAE matched $1.0$,
+F$=0.041$), decodable yet unused (cell~84) — are adjudicated by the oracle, not by our
+preference, and they appear exactly where the field's success metrics report victory.
+Faithfulness, on a machine that grants it for free, is therefore the necessary half of
+understanding and not the sufficient one. The residual — the wiring recovered, the meaning
+withheld — is the semantic gap, which §\ref{sec:results_compare} places on the shared axes
+and the Discussion names as the field's open problem.
+
+% =====================================================================
+% BIBTEX-NEEDED: new keys cited above, for the SM to merge into references.bib.
+% (Do NOT edit references.bib here — SM-only.)
+% =====================================================================
+% @inproceedings{vig2020causalmediation,
+%   author    = {Vig, Jesse and Gehrmann, Sebastian and Belinkov, Yonatan and Qian, Sharon and Nevo, Daniel and Singer, Yaron and Shieber, Stuart},
+%   title     = {Investigating Gender Bias in Language Models Using Causal Mediation Analysis},
+%   booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+%   volume    = {33},
+%   pages     = {12388--12401},
+%   year      = {2020}
+% }
+% @inproceedings{meng2022rome,
+%   author    = {Meng, Kevin and Bau, David and Andonian, Alex and Belinkov, Yonatan},
+%   title     = {Locating and Editing Factual Associations in {GPT}},
+%   booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+%   volume    = {35},
+%   pages     = {17359--17372},
+%   year      = {2022}
+% }
+% @inproceedings{geiger2021abstraction,
+%   author    = {Geiger, Atticus and Lu, Hanson and Icard, Thomas and Potts, Christopher},
+%   title     = {Causal Abstractions of Neural Networks},
+%   booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+%   volume    = {34},
+%   pages     = {9574--9586},
+%   year      = {2021}
+% }
+% @inproceedings{geiger2023das,
+%   author    = {Geiger, Atticus and Wu, Zhengxuan and Potts, Christopher and Icard, Thomas and Goodman, Noah D.},
+%   title     = {Finding Alignments Between Interpretable Causal Variables and Distributed Neural Representations},
+%   booktitle = {Proceedings of the Third Conference on Causal Learning and Reasoning (CLeaR)},
+%   year      = {2024},
+%   note      = {arXiv:2303.02536}
+% }
+% @inproceedings{conmy2023acdc,
+%   author    = {Conmy, Arthur and Mavor-Parker, Augustine N. and Lynch, Aengus and Heimersheim, Stefan and Garriga-Alonso, Adri{\`a}},
+%   title     = {Towards Automated Circuit Discovery for Mechanistic Interpretability},
+%   booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+%   volume    = {36},
+%   year      = {2023},
+%   note      = {arXiv:2304.14997}
+% }
+% @inproceedings{wang2022ioi,
+%   author    = {Wang, Kevin and Variengien, Alexandre and Conmy, Arthur and Shlegeris, Buck and Steinhardt, Jacob},
+%   title     = {Interpretability in the Wild: A Circuit for Indirect Object Identification in {GPT-2} Small},
+%   booktitle = {International Conference on Learning Representations (ICLR)},
+%   year      = {2023},
+%   note      = {arXiv:2211.00593}
+% }
+% @article{goldowskydill2023pathpatching,
+%   author    = {Goldowsky-Dill, Nicholas and MacLeod, Chris and Sato, Lucas and Arora, Aryaman},
+%   title     = {Localizing Model Behavior with Path Patching},
+%   journal   = {arXiv preprint arXiv:2304.05969},
+%   year      = {2023}
+% }
+% @misc{nanda2023attributionpatching,
+%   author    = {Nanda, Neel},
+%   title     = {Attribution Patching: Activation Patching at Industrial Scale},
+%   howpublished = {\url{https://www.neelnanda.io/mechanistic-interpretability/attribution-patching}},
+%   year      = {2023}
+% }
+% @article{syed2023attributionpatching,
+%   author    = {Syed, Aaquib and Rager, Can and Conmy, Arthur},
+%   title     = {Attribution Patching Outperforms Automated Circuit Discovery},
+%   journal   = {arXiv preprint arXiv:2310.10348},
+%   year      = {2023}
+% }
+% @article{cunningham2023sparse,
+%   author    = {Cunningham, Hoagy and Ewart, Aidan and Riggs, Logan and Huben, Robert and Sharkey, Lee},
+%   title     = {Sparse Autoencoders Find Highly Interpretable Features in Language Models},
+%   journal   = {arXiv preprint arXiv:2309.08600},
+%   year      = {2023}
+% }
+% @article{bricken2023monosemanticity,
+%   author    = {Bricken, Trenton and Templeton, Adly and Batson, Joshua and Chen, Brian and Jermyn, Adam and others},
+%   title     = {Towards Monosemanticity: Decomposing Language Models with Dictionary Learning},
+%   journal   = {Transformer Circuits Thread},
+%   year      = {2023},
+%   note      = {\url{https://transformer-circuits.pub/2023/monosemantic-features}}
+% }
+% @article{templeton2024scaling,
+%   author    = {Templeton, Adly and Conerly, Tom and Marcus, Jonathan and Lindsey, Jack and Bricken, Trenton and others},
+%   title     = {Scaling Monosemanticity: Extracting Interpretable Features from {Claude 3 Sonnet}},
+%   journal   = {Transformer Circuits Thread},
+%   year      = {2024},
+%   note      = {\url{https://transformer-circuits.pub/2024/scaling-monosemanticity}}
+% }
+% @misc{chan2022causalscrubbing,
+%   author    = {Chan, Lawrence and Garriga-Alonso, Adri{\`a} and Goldowsky-Dill, Nicholas and Greenblatt, Ryan and Nitishinskaya, Jenny and Radhakrishnan, Ansh and Shlegeris, Buck and Thomas, Nate},
+%   title     = {Causal Scrubbing: A Method for Rigorously Testing Interpretability Hypotheses},
+%   howpublished = {AI Alignment Forum},
+%   year      = {2022}
+% }
+% @inproceedings{alain2017probing,
+%   author    = {Alain, Guillaume and Bengio, Yoshua},
+%   title     = {Understanding Intermediate Layers Using Linear Classifier Probes},
+%   booktitle = {International Conference on Learning Representations (ICLR) Workshop},
+%   year      = {2017},
+%   note      = {arXiv:1610.01644}
+% }
+% @inproceedings{hewitt2019control,
+%   author    = {Hewitt, John and Liang, Percy},
+%   title     = {Designing and Interpreting Probes with Control Tasks},
+%   booktitle = {Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing (EMNLP-IJCNLP)},
+%   pages     = {2733--2743},
+%   year      = {2019}
+% }
+% @misc{nostalgebraist2020logitlens,
+%   author    = {{nostalgebraist}},
+%   title     = {Interpreting {GPT}: The Logit Lens},
+%   howpublished = {LessWrong},
+%   year      = {2020},
+%   note      = {\url{https://www.lesswrong.com/posts/AcKRB8wDpdaN6v6ru/interpreting-gpt-the-logit-lens}}
+% }
+% @article{belrose2023tunedlens,
+%   author    = {Belrose, Nora and Furman, Zach and Smith, Logan and Halawi, Danny and Ostrovsky, Igor and McKinney, Lev and Biderman, Stella and Steinhardt, Jacob},
+%   title     = {Eliciting Latent Predictions from Transformers with the Tuned Lens},
+%   journal   = {arXiv preprint arXiv:2303.08112},
+%   year      = {2023}
+% }
+% @inproceedings{anand2019atariari,
+%   author    = {Anand, Ankesh and Racah, Evan and Ozair, Sherjil and Bengio, Yoshua and C{\^o}t{\'e}, Marc-Alexandre and Hjelm, R. Devon},
+%   title     = {Unsupervised State Representation Learning in {Atari}},
+%   booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+%   volume    = {32},
+%   year      = {2019}
+% }
