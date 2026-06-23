@@ -74,12 +74,12 @@
 | P2-E9-2 | Reference verification — no-hallucination pass on the new bib | E9 | 8 | — | local | done | P2-E8-9 | `paper/references.bib` |
 | P2-E9-3 | Reproducibility bundle — seeds, configs, benchmark, ROM hashes | E9 | 8 | — | local | done | P2-E6-2 | `tools/xai_study/benchmark/REPRO.md` |
 | P2-E9-4 | Final build + page/limit gate (SM) | E9 | 8 | — | local | done | P2-E9-1, P2-E9-2, P2-E9-3 | `paper/main.tex`<br>`paper/build/**` |
-| P2-R-F1 | Redraw Fig 1 (platform/oracle) — jutari(Julia), plausibility-proxy, split/declutter, fonts | RV | 10 | — | local | todo |  | `paper/figures/fig1_platform_oracle.py` |
-| P2-R-F2 | Redraw Fig 2 (Kording battery) — fix callout overlaps, legends outside, key-findings table, fonts | RV | 10 | — | local | todo | P2-R-UNC | `paper/figures/fig2_faithfulness_vs_plausibility.py` |
-| P2-R-F3 | Redraw Fig 3 (attribution vs mechanistic) — facet strips, legends outside, mark oracle-like, fonts | RV | 10 | — | local | todo | P2-R-UNC | `paper/figures/fig3_phaseA_battery.py` |
-| P2-R-F4 | Redraw Fig 4 (faithfulness vs plausibility plane) — exact count, proxy axis, fix clip+label collisions | RV | 10 | — | local | todo | P2-R-UNC | `paper/figures/fig4_attribution_vs_mechanistic.py` |
-| P2-R-F5 | Redraw Fig 5 (failure taxonomy) — fix "Figure 6" title mismatch, declutter to table, supplement decision | RV | 10 | — | local | todo |  | `paper/figures/fig5_representativeness_map.py` |
-| P2-R-F6 | Redraw Fig 6 (VCS->NN map) — pink-callout overlap, "no business" wording, §1 refs, analogy labels | RV | 10 | — | local | todo |  | `paper/figures/fig6_failure_taxonomy.py` |
+| P2-R-F1 | Redraw Fig 1 (platform/oracle) — jutari(Julia), plausibility-proxy, split/declutter, fonts | RV | 10 | — | local | done |  | `paper/figures/fig1_platform_oracle.py` |
+| P2-R-F2 | Redraw Fig 2 (Kording battery) — fix callout overlaps, legends outside, key-findings table, fonts | RV | 10 | — | local | done | P2-R-UNC | `paper/figures/fig2_faithfulness_vs_plausibility.py` |
+| P2-R-F3 | Redraw Fig 3 (attribution vs mechanistic) — facet strips, legends outside, mark oracle-like, fonts | RV | 10 | — | local | done | P2-R-UNC | `paper/figures/fig3_phaseA_battery.py` |
+| P2-R-F4 | Redraw Fig 4 (faithfulness vs plausibility plane) — exact count, proxy axis, fix clip+label collisions | RV | 10 | — | local | done | P2-R-UNC | `paper/figures/fig4_attribution_vs_mechanistic.py` |
+| P2-R-F5 | Redraw Fig 5 (failure taxonomy) — fix "Figure 6" title mismatch, declutter to table, supplement decision | RV | 10 | — | local | done |  | `paper/figures/fig5_representativeness_map.py` |
+| P2-R-F6 | Redraw Fig 6 (VCS->NN map) — pink-callout overlap, "no business" wording, §1 refs, analogy labels | RV | 10 | — | local | done |  | `paper/figures/fig6_failure_taxonomy.py` |
 | P2-R-REF | Fix references.bib — Paper 1 arXiv + code URL, MIB/SAEBench/M4, Fig-6 refs, [35] title | RV | 9 | — | local | done |  | `paper/references.bib` |
 | P2-R-REPRO | Reproducibility doc — review-time artifact, ROM SHA-256 + retrieval, action-stream hashes | RV | 9 | — | local | done |  | `xai_paper/xai_2_interpretability/REPRODUCIBILITY.md`<br>`tools/xai_study/repro/rom_hash_table.csv`<br>`tools/xai_study/repro/action_stream_hashes.csv`<br>`tools/xai_study/repro/make_hash_tables.py` |
 | P2-R-S00-abstract | Revise abstract — reframe, exact method count, plausibility-proxy, drop rhetorical heat | RV |  | — | local | todo | P2-R-UNC, P2-R-S07-compare | `paper/sections/00_abstract.tex` |
