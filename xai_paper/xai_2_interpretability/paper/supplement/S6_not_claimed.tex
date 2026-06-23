@@ -33,7 +33,7 @@ as hashes so a third party supplies their own legally obtained copies.
 \centering
 \includegraphics[width=\textwidth]{../figures/fig5_representativeness_map_full.pdf}
 \caption{\textbf{Full VCS-to-NN representativeness map.} The full-density version of the
-main-text map (Fig.~5): each VCS failure mode is placed against its documented
+main-text map (Fig.~\ref{fig:representativeness}): each VCS failure mode is placed against its documented
 neural-network analogue from the literature. The neural-network column records documented
 analogues, not parallels proven by this benchmark; the oracle is the intervention oracle of
 \S3.2, and the underlying per-method values trace to
@@ -46,11 +46,11 @@ map is the figure the simplified main-text version condenses.}
 \centering
 \includegraphics[width=\textwidth]{../figures/fig6_failure_taxonomy_full.pdf}
 \caption{\textbf{Full failure taxonomy.} The full-density version of the main-text taxonomy
-(Fig.~6): the families of interpretability failure observed on the machine, each annotated
+(Fig.~\ref{fig:taxonomy}): the families of interpretability failure observed on the machine, each annotated
 with its faithfulness against the intervention oracle (\S3.2), reported as $F$ with its
 $95\%$ bootstrap confidence interval. The leaf values trace to
 \texttt{compare/out/leaderboard.json} and \texttt{leaderboard\_ci.csv} via
 Sec.~\ref{supp:provenance}. Note that the gradient and correlational branches collapse on
-the discrete position regime, where the naive gradient is provably zero (\S5).}
+the discrete position regime, where the naive gradient is provably zero (Prop.~\ref{prop:zero}).}
 \label{supp:fig:taxonomy}
 \end{figure}
