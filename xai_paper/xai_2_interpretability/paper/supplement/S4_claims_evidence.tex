@@ -21,11 +21,11 @@ claim is not read wider than the evidence.}
 \toprule
 Claim & Evidence & Methods / games & Metric & Limitation \\
 \midrule
-Causal/intervention methods beat gradient/correlational on faithfulness across all regimes & Fig.~2; leaderboard & 25 methods, 6 games & F mean (gap $0.387$) & families, not every member \\
+Causal/intervention methods beat gradient/correlational on faithfulness across all regimes & Fig.~2; leaderboard & 25 methods, 6 games & F mean (gap $0.387$) & not robust: gap collapses to $0.123$ $[-0.008,0.256]$ excl.\ oracle-like and $0.045$ $[-0.087,0.153]$ content-only (CIs cross zero); only the position-regime gap $0.3435$ is robust \\
 The gap holds with the same sign on the discrete position regime & Fig.~2; \jkey{faithful_demo} & 13 rows, 6 games & F position (gap $0.344$) & position regime only \\
-A faithful causal method reaches the oracle ceiling where the default tool collapses & \jkey{faithful_demo}; Fig.~2 & act.\ patching vs.\ vanilla saliency, 6 games & F $1.0$ vs.\ $0.0$ & one decisive pair \\
+A faithful causal method reaches the oracle ceiling where the default tool collapses & \jkey{faithful_demo}; Fig.~2 & act.\ patching vs.\ vanilla saliency, 6 games & F $1.0$ vs.\ $0.0$ (position regime; all-regimes saliency F $0.267$, plotted in Fig.~2) & one decisive pair, position regime only \\
 The naive gradient of a discrete index output is provably zero & \S5; \jkey{oracle_grad} & all gradient methods & grad@index $=0$ & index path only \\
-High plausibility coexists with low faithfulness (the danger zone) & Fig.~2; \jkey{faithful_demo} & vanilla saliency & proxy $0.9$, F $0.0$ & proxy, not measured plausibility \\
+High plausibility coexists with low faithfulness (the danger zone) & Fig.~2; \jkey{faithful_demo} & vanilla saliency & proxy $0.9$, F $0.0$ (position regime; all-regimes F $0.267$, plotted in Fig.~2) & proxy, not measured plausibility \\
 Faithful attribution recovers the wiring but not the computation's semantics & Fig.~5 (\S\ref{supp:coverage}); discussion & Phase~B vs.\ C & F vs.\ S, M & necessary-condition stress test \\
 The failure modes have documented NN analogues & Fig.~6 (Fig.~\ref{supp:fig:taxonomy}) & taxonomy & --- & analogues, not proof \\
 \bottomrule

@@ -27,9 +27,9 @@ Number & Value & Record (JSON key) & Command \\
 Faithfulness gap, position regime (causal $-$ gradient) & $0.3435$ & \texttt{faithful\_demo}: \texttt{value};\linebreak[1] \texttt{leaderboard}: \jkey{...position_regime.gap} & \jkey{faithful_demo.py} \\
 Causal/interv.\ mean F, position regime & $0.4118$\newline {\scriptsize$\pm0.39$, $n{=}4$} & \texttt{leaderboard}: \jkey{...position_regime.causal_..._mean} & \jkey{leaderboard.py} \\
 Gradient/corr.\ mean F, position regime & $0.0683$\newline {\scriptsize$\pm0.07$, $n{=}9$} & \texttt{leaderboard}: \jkey{...position_regime.gradient_..._mean} & \jkey{leaderboard.py} \\
-Causal/interv.\ mean F, all regimes & $0.6808$\newline {\scriptsize$n{=}11$} & \texttt{leaderboard}: \jkey{all_regimes.causal_..._mean} & \jkey{leaderboard.py} \\
-Gradient/corr.\ mean F, all regimes & $0.2938$\newline {\scriptsize$n{=}14$} & \texttt{leaderboard}: \jkey{all_regimes.gradient_..._mean} & \jkey{leaderboard.py} \\
-Faithfulness gap, all regimes & $0.3869$ & \texttt{leaderboard}: \jkey{all_regimes.gap} & \jkey{leaderboard.py} \\
+Causal/interv.\ mean F, all regimes & $0.6811$\newline {\scriptsize$n{=}11$} & \jkey{leaderboard_ci.csv}: \jkey{family_causal_intervention} \jkey{mean} & \jkey{uncertainty.py} \\
+Gradient/corr.\ mean F, all regimes & $0.2938$\newline {\scriptsize$n{=}14$} & \jkey{leaderboard_ci.csv}: \jkey{family_gradient_correlational} \jkey{mean} & \jkey{uncertainty.py} \\
+Faithfulness gap, all regimes & $0.3873$ & \jkey{leaderboard_ci.csv}: \jkey{all_regime_gap} \jkey{mean} & \jkey{uncertainty.py} \\
 Decisive pair, position regime (act.\ patch vs.\ vanilla sal.) & $1.000$\newline vs.\ $0.000$ & \texttt{faithful\_demo}: \jkey{pair_contrast} & \jkey{faithful_demo.py} \\
 Plausibility proxy, decisive pair & $0.5$ vs.\ $0.9$ & \texttt{faithful\_demo}: \jkey{...plausibility_proxy} & \jkey{faithful_demo.py} \\
 ACDC sufficiency $S$ & $0.3247$ & \jkey{leaderboard_ci.csv}: ACDC \jkey{S_mean} & \jkey{uncertainty.py} \\
