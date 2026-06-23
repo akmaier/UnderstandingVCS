@@ -2,7 +2,7 @@
 id: P2-R-S05-resultsB
 title: Revise Results Phase B — separate regimes, baselines/variance, CIs, drop "default tool", §1→§3.2, Fig4 caption
 epic: RV (Revision — section)
-status: todo
+status: done
 sprint: 12
 owner:
 where: local
