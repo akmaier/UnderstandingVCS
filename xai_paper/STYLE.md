@@ -192,6 +192,27 @@ best of our knowledge, the first…"* only where true. End the body on a vision 
 with calibrated optimism, never on a metric. Keep the non-specialist able to follow the
 motivation and the consequence even if they skip the proofs.
 
+## 6b. Stakes and vividness (this paper earns it)
+
+This paper identifies and *quantifies* an important problem, the way Jonas and Kording asked
+whether a neuroscientist could understand a microprocessor. Write so the reader feels that
+weight — this is not a dry methods report. But the vividness must come from the **problem and
+the numbers, not from ornament**: no hype, no marketing adjectives (§3 still holds).
+
+- **Open on the stakes.** State the real, slightly provocative problem plainly and early: the
+  field trusts explanations it cannot check, because real models offer no ground truth; we
+  built the one complex system where the explanation *can* be checked, and the verdict is
+  sharp. A flat declarative sentence carrying a big idea is more striking than any flourish.
+- **Carry one throughline** the reader remembers — *the wiring, not the meaning* — and let it
+  recur naturally at the section level, never as a slogan repeated verbatim.
+- **Let the result be the drama.** The strongest sentences are the plainest: a faithful causal
+  method scores 1.0 where the field's default scores 0.0, on a machine whose answer is known
+  exactly. Anchor every vivid claim to an exact number; concrete imagery (an "empty saliency
+  map," a "wiring diagram that is not an account of the computation") over abstraction.
+- **One or two grounded rhetorical reaches** are allowed in the introduction and discussion —
+  as Maier does (*"may be key to gaining a better understanding of deep networks"*) — each
+  tied to evidence and kept calibrated. Energy, not exaggeration.
+
 ---
 
 ## 7. Self-check (run before marking a section done)
