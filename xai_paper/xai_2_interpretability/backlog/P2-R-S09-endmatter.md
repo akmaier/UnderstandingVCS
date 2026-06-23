@@ -2,7 +2,7 @@
 id: P2-R-S09-endmatter
 title: Revise endmatter — code review-time availability, [33]/[34] as archived artifacts, Paper-1 cite, contributions
 epic: RV (Revision — section)
-status: todo
+status: done
 sprint: 13
 owner:
 where: local

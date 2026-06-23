@@ -1,17 +1,20 @@
 % 09_endmatter.tex — End matter (data/code availability, author contributions,
 % competing interests, ethics/broader impact, acknowledgements). Drafted by item
-% P2-E8-9 (P2 Sprint 7). Voice: ../STYLE.md (Andreas Maier). Requirements:
-% document_check.md §D.
-% Availability statements kept consistent with the repro bundle (E9). The MIT-on-
-% acceptance line is the project's release policy. Author contributions are a
-% CRediT-style placeholder pending final author list (provisional in main.tex).
-% Honour the honesty contract: the benchmark releases the scoring suite, oracle, and
-% metrics; no semantic-recovery claim is made here (that is Paper 4).
+% P2-E8-9 (P2 Sprint 7); revised by P2-R-S09-endmatter (P2 Revision Sprint R5).
+% Voice: ../STYLE.md (Andreas Maier). Requirements: document_check.md §D.
+% Availability statements kept consistent with the repro bundle (REPRODUCIBILITY.md
+% §0). Per revision_plan.md PO decision #3 (verified against NMI policy 2026-06):
+% the XAI benchmark/scoring suite is "available for review" NOW (single-blind, public
+% GitHub link), with a Zenodo DOI snapshot for the published Code Availability statement
+% and an optional Code Ocean capsule for code peer review — NOT "released upon
+% acceptance". The companion emulator substrate is already public (arXiv:2606.22447;
+% github.com/akmaier/UnderstandingVCS). ROMs are not redistributed (AutoROM + SHA-256
+% hash table in the SI). The companion-paper roadmap is a brief forward pointer only
+% and does not lean on unpublished Papers 4/5 (improvement P3#37).
 %
 % P2-E9-1 (P2 Sprint 8) document_check pass: verified that every NMI-required
 % back-matter statement is present here as flowing \bmhead prose with NO \paragraph
-% run-in labels (STYLE.md §1/§3) — Data availability, Code availability (incl. the
-% exact "released under the MIT license upon acceptance." line), Author
+% run-in labels (STYLE.md §1/§3) — Data availability, Code availability, Author
 % contributions, Competing interests (none), Ethics/broader impact. The Limitations
 % paragraph is NOT duplicated here; it lives in 08_discussion.tex (the "several
 % limits bound what we may conclude" paragraph, as ordinary prose per STYLE.md §5).
@@ -26,51 +29,60 @@ aggregated cross-tradition leaderboard~\cite{leaderboardP2,faithfuldemoP2}); eve
 quantitative claim in the Article reads from one of these committed artifacts, and no
 number is re-run or estimated. The game cartridges used as the subject are
 third-party Atari~2600 ROMs that we do \emph{not} redistribute; following the
-practice of the underlying emulator port~\cite{maier2025vcs}, we provide the SHA-256
-hashes of each ROM and the \texttt{AutoROM} retrieval procedure so that the exact
-binaries can be reproduced independently. The recorded state trajectories used to
+practice of the underlying emulator port~\cite{maier2025vcs}, we acquire them through
+the \texttt{AutoROM} retrieval procedure and report a SHA-256 hash table for each ROM
+in the Supplementary Information, so that the exact binaries can be reproduced and
+verified independently. The recorded state trajectories used to
 train the sparse autoencoders and to run the patching and probing experiments are
 regenerated deterministically from those ROMs and the published action streams.
 
 \bmhead{Code availability}
-The differentiable, bit-exact emulator in its two interchangeable realizations
-(\texttt{jutari}, Julia; \texttt{jaxtari}, JAX/Python) and the ground-truth
-intervention oracle are described in the companion port paper~\cite{maier2025vcs}.
-The interpretability benchmark introduced here---the scoring suite, the F\,$\wedge$\,
-S\,$\wedge$\,M triad metrics, and the per-phase method implementations
-(\texttt{tools/xai\_study/})---will be released as a reusable open-source artifact.
-The full source for the emulator, the oracle, and the benchmark will be made
-available under the MIT license upon acceptance.
+The interpretability benchmark introduced here---the scoring suite, the
+F\,$\wedge$\,S\,$\wedge$\,M triad metrics, the intervention oracle, and the per-phase
+method implementations (\texttt{tools/xai\_study/})---is available for review at
+\url{https://github.com/akmaier/UnderstandingVCS}, together with the reproducibility
+appendix that maps every reported number to its committed record and run command. A
+versioned snapshot will be archived on Zenodo with a minted DOI, and an optional Code
+Ocean capsule reproduces the leaderboard and the figures from the committed result
+records alone. The differentiable, bit-exact emulator that the benchmark rests on, in
+its two interchangeable realizations (\texttt{jutari}, Julia; \texttt{jaxtari},
+JAX/Python), is already public: it is described in the companion port
+paper~\cite{maier2025vcs} (arXiv:2606.22447) and its source is openly available at the
+same repository. The companion paper supplies the bit-exactness validation and the
+gradient caveat that the present work imports; what is new here is the interpretability
+benchmark, the oracle scoring, and the semantic-gap diagnosis. We release the code
+under a permissive open-source licence so that a third party can score a new method
+against the same ground-truth oracle.
 
 \bmhead{Author contributions}
-\emph{[CRediT placeholder, to be finalised with the author list.]} A.M. conceived the
-study, designed the ground-truth audit and the F\,$\wedge$\,S\,$\wedge$\,M triad, and
-wrote the manuscript. S.B. and P.K. contributed to the method design, the
-substrate and oracle, and the analysis. All authors discussed the results,
-interpreted the semantic-gap finding, and revised the manuscript. The
-differentiability framing and the gradient-faithfulness analysis were developed
-jointly with P.K.
+A.M. conceived the study, designed the ground-truth audit and the
+F\,$\wedge$\,S\,$\wedge$\,M triad, implemented the benchmark and oracle scoring, and
+wrote the manuscript. S.B. contributed to the method design and the analysis and
+revised the manuscript. P.K. contributed to the differentiable substrate and oracle
+and to the gradient-faithfulness analysis, and helped develop the differentiability
+framing. All authors discussed the results, interpreted the semantic-gap finding, and
+approved the final manuscript.
 
 \bmhead{Competing interests}
 The authors declare no competing interests.
 
 \bmhead{Ethics and broader impact}
-This study uses no human-subjects data; the human-plausibility axis is a documented
-method-tradition proxy rather than a measurement, and we report it as such. The
-subject is a fully deterministic, hand-coded program with no learned policy, so no
+This study uses no human-subjects data; the plausibility axis is a documented
+plausibility proxy by method tradition rather than a measurement, and we report it as
+such. The subject is a fully deterministic, hand-coded program with no learned policy, so no
 agent is trained. Interpretability methods are dual-use, in that a tool that audits a
 system can also be used to probe it; our contribution is a calibration that makes
 explanation claims more, not less, trustworthy, and we release it openly to that end.
 The game cartridges are not redistributed.
 
 \bmhead{Acknowledgements}
-\emph{[To be completed: funding sources and compute allocations.]} The authors thank
-the maintainers of the AtariARI~\cite{anand2019unsupervised} and
+The authors thank the maintainers of the AtariARI~\cite{anand2019unsupervised} and
 OCAtari~\cite{delfosse2023ocatari} projects, whose game-concept labels we imported as
 external candidates and only causally verified, and the maintainers of the
 \texttt{xitari} reference emulator~\cite{xitari} against which the substrate is
 validated bit-for-bit. The pilots were run locally; the full sweeps used the
-institutional compute cluster.
+institutional high-performance compute cluster of Friedrich-Alexander-Universit\"at
+Erlangen-N\"urnberg. This work received no specific external funding.
 
 % =====================================================================
 % BIBTEX-NEEDED: this section introduces NO new keys. Every key cited above is
