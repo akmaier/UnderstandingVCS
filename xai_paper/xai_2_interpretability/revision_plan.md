@@ -11,6 +11,26 @@ disjoint (SCRUM §0). At most one item owns any file. The cross-cutting string f
 by whichever section item owns each occurrence (the exact line numbers are recorded in each
 item).
 
+## PO DECISIONS — RESOLVED 2026-06-23 (agents MUST follow these)
+1. **Plausibility:** use "plausibility proxy" everywhere (abstract, axes, text) + a rubric + a
+   sensitivity analysis. **No human-subjects study.**
+2. **Canonical method count:** "**30 interpretability methods + the oracle positive control = 31
+   rows**." `P2-R-S07-compare` sets it; every other section/figure/supplement follows verbatim.
+3. **Artifact & blinding** (verified against NMI policy 2026-06):
+   - NMI peer review is **single-blind by default** (double-anonymized is opt-in, NOT required) →
+     **do not anonymize**; a **public GitHub link works for review** (`https://github.com/akmaier/UnderstandingVCS`).
+   - GitHub alone is **insufficient for the published Code Availability statement** — Nature
+     requires a DOI-minting archive → archive a **Zenodo DOI snapshot** and cite it.
+   - **Code Ocean** (still partnered with Springer Nature, 2025) is the recommended optional route
+     for *code peer review*: a Compute Capsule that **regenerates the leaderboard + figures from the
+     committed §R records (no ROMs needed)**, private during review, published on acceptance.
+   - `P2-R-REPRO` + `P2-R-S09-endmatter` wording: code is "available for review at
+     github.com/akmaier/UnderstandingVCS; a versioned snapshot will be archived on Zenodo (DOI) and
+     an optional Code Ocean capsule reproduces the leaderboard and figures." Drop the "anonymized
+     link" placeholder.
+4. **Figures:** move the FULL Fig 5 (taxonomy tree) and Fig 6 (VCS→NN map) to **Supplementary
+   Information**; keep simplified main-text versions (consistent with Nature SI policy).
+
 ## Decision: figure-caption ownership (one rule, stated)
 Figure captions live inside the section `.tex` that embeds the figure. To keep file_scopes
 disjoint, **the section item owns the caption; the figure item (`P2-R-F*`) edits ONLY the `.py`**
