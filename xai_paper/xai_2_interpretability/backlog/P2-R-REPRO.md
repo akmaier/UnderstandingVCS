@@ -3,7 +3,7 @@ id: P2-R-REPRO
 title: Reproducibility doc — review-time artifact, ROM SHA-256 + retrieval, action-stream hashes
 epic: RV (Revision — reproducibility)
 status: todo
-sprint:
+sprint: 9
 owner:
 where: local
 depends_on: []

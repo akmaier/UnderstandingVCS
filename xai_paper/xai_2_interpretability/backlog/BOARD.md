@@ -80,8 +80,8 @@
 | P2-R-F4 | Redraw Fig 4 (faithfulness vs plausibility plane) — exact count, proxy axis, fix clip+label collisions | RV |  | — | local | todo | P2-R-UNC | `paper/figures/fig4_attribution_vs_mechanistic.py` |
 | P2-R-F5 | Redraw Fig 5 (failure taxonomy) — fix "Figure 6" title mismatch, declutter to table, supplement decision | RV |  | — | local | todo |  | `paper/figures/fig5_representativeness_map.py` |
 | P2-R-F6 | Redraw Fig 6 (VCS->NN map) — pink-callout overlap, "no business" wording, §1 refs, analogy labels | RV |  | — | local | todo |  | `paper/figures/fig6_failure_taxonomy.py` |
-| P2-R-REF | Fix references.bib — Paper 1 arXiv + code URL, MIB/SAEBench/M4, Fig-6 refs, [35] title | RV |  | — | local | todo |  | `paper/references.bib` |
-| P2-R-REPRO | Reproducibility doc — review-time artifact, ROM SHA-256 + retrieval, action-stream hashes | RV |  | — | local | todo |  | `xai_paper/xai_2_interpretability/REPRODUCIBILITY.md`<br>`tools/xai_study/repro/rom_hash_table.csv`<br>`tools/xai_study/repro/action_stream_hashes.csv`<br>`tools/xai_study/repro/make_hash_tables.py` |
+| P2-R-REF | Fix references.bib — Paper 1 arXiv + code URL, MIB/SAEBench/M4, Fig-6 refs, [35] title | RV | 9 | — | local | todo |  | `paper/references.bib` |
+| P2-R-REPRO | Reproducibility doc — review-time artifact, ROM SHA-256 + retrieval, action-stream hashes | RV | 9 | — | local | todo |  | `xai_paper/xai_2_interpretability/REPRODUCIBILITY.md`<br>`tools/xai_study/repro/rom_hash_table.csv`<br>`tools/xai_study/repro/action_stream_hashes.csv`<br>`tools/xai_study/repro/make_hash_tables.py` |
 | P2-R-S00-abstract | Revise abstract — reframe, exact method count, plausibility-proxy, drop rhetorical heat | RV |  | — | local | todo | P2-R-UNC, P2-R-S07-compare | `paper/sections/00_abstract.tex` |
 | P2-R-S01-intro | Revise intro — cut 25-35%, tone down, scope NN-transfer claim, fix oracle/section refs | RV |  | — | local | todo |  | `paper/sections/01_intro.tex` |
 | P2-R-S02-related | Revise related work — add MIB/SAEBench/M4 + substrate-adjacent Atari, reorganize, tone "first" | RV |  | — | local | todo | P2-R-REF | `paper/sections/02_related.tex` |
@@ -93,10 +93,10 @@
 | P2-R-S08-discussion | Revise discussion — tone down NN-transfer/"no business", precise recommendations, Fig5 caption | RV |  | — | local | todo | P2-R-F5 | `paper/sections/08_discussion.tex` |
 | P2-R-S09-endmatter | Revise endmatter — code review-time availability, [33]/[34] as archived artifacts, Paper-1 cite, contributions | RV |  | — | local | todo | P2-R-REPRO, P2-R-REF | `paper/sections/09_endmatter.tex` |
 | P2-R-SUPP | New Supplementary Information — per-method protocols, schemas, claims/provenance, no-claim box | RV |  | — | local | todo | P2-R-UNC | `paper/supplement/supplement.tex`<br>`paper/supplement/S1_per_method_protocols.tex`<br>`paper/supplement/S2_benchmark_schema.tex`<br>`paper/supplement/S3_coverage_applicability.tex`<br>`paper/supplement/S4_claims_evidence.tex`<br>`paper/supplement/S5_number_provenance.tex`<br>`paper/supplement/S6_not_claimed.tex` |
-| P2-R-UNC | Bootstrap CIs + threshold/sampling sensitivity over the committed leaderboard | RV |  | — | local | todo |  | `tools/xai_study/compare/uncertainty.py`<br>`tools/xai_study/compare/out/leaderboard_ci.json`<br>`tools/xai_study/compare/out/leaderboard_ci.csv`<br>`tools/xai_study/compare/out/threshold_sensitivity.csv`<br>`tools/xai_study/compare/out/aggregation_robustness.csv` |
+| P2-R-UNC | Bootstrap CIs + threshold/sampling sensitivity over the committed leaderboard | RV | 9 | — | local | todo |  | `tools/xai_study/compare/uncertainty.py`<br>`tools/xai_study/compare/out/leaderboard_ci.json`<br>`tools/xai_study/compare/out/leaderboard_ci.csv`<br>`tools/xai_study/compare/out/threshold_sensitivity.csv`<br>`tools/xai_study/compare/out/aggregation_robustness.csv` |
 
 ## Items per sprint
-Sprint 0: 3, Sprint 1: 6, Sprint 2: 1, Sprint 3: 4, Sprint 4: 8, Sprint 5: 23, Sprint 6: 11, Sprint 7: 10, Sprint 8: 4, Sprint ?: 20
+Sprint 0: 3, Sprint 1: 6, Sprint 2: 1, Sprint 3: 4, Sprint 4: 8, Sprint 5: 23, Sprint 6: 11, Sprint 7: 10, Sprint 8: 4, Sprint 9: 3, Sprint ?: 17
 
 ## Sprint log
 See [`../sprints/`](../sprints/) for per-sprint Planning + Review notes.
