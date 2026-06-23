@@ -3,7 +3,7 @@ id: P2-R-S02-related
 title: Revise related work — add MIB/SAEBench/M4 + substrate-adjacent Atari, reorganize, tone "first"
 epic: RV (Revision — section)
 status: todo
-sprint:
+sprint: 12
 owner:
 where: local
 depends_on: [P2-R-REF]

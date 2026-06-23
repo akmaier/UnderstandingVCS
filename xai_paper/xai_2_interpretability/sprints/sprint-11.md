@@ -34,5 +34,24 @@ and ship a reviewable supplement (per-method protocols + schema/coverage/applica
 - Plausibility = "plausibility proxy"; oracle = "intervention oracle (§3.2)".
 - Never fabricate; every reported number traces to a committed record. Recompile-clean before done.
 
-## Review
-_(to be filled at the R3 barrier)_
+## Review — R3 closed 2026-06-24 (3/3 + audit + R3-fix; recompiles 35 pp, 0 undefined)
+
+- **S03-methods** (`84e086b`): F/S/M formalized (continuous [0,1] + threshold predicate); `prop:zero`
+  proved inline (cited `maier2025vcs`); Fig 1 caption handoff. **+ R3-fix `55509be`:** M4 rewrote the
+  F definition to the committed estimators (raw Pearson for Phase B, clip-at-0 for Phase A) — no 0.5
+  floor, so the position-regime collapse-to-0.00 is now consistent with `prop:zero`; prop hypothesis
+  tightened (g non-constant per piece; "zero wherever defined").
+- **S07-compare** (`b443a59`): canonical count, `verified:false` removed, robustness framing, SAE
+  reconciliation, Fig 2/6 captions, benchmark cites. **+ R3-fix `1fa4ef9`:** U1–U4 + M7 — ACDC
+  "on Breakout", SAE "on Pong", cell-84 "present-but-unused", Fig 6 caption = family-mean F±CI (not
+  "leaderboard F=1.0"), per-record provenance in headers.
+- **SUPP** (`aa3208f`): S1–S6 supplement (protocols, schema, coverage, claims-evidence, provenance,
+  not-claimed box) + full SI figures; standalone-compiles 11 pp. **+ R3-fix `ae18e60`:** M6 (S5
+  0.6808→0.6811, 0.3869→0.3873, family-row provenance) + S4 regime + robustness-caveat labels.
+
+**The number audit** (`a050bb5`, `reviews/number_audit.md`) is the spine: 119 findings, **no fatal
+error**, `prop:zero` SOUND, F/S/M consistent. 7 R3-owned fixes applied above; the remaining §2 fixes
+are routed to R4 (02/04/05/06 + fig3.py), R5 (01/08), R6 (00) and folded into those sprint plans.
+
+**Watch:** page count 31→33→35 (M4 + supplement detail). R6 must run a real **length/tightening
+pass** (push detail into the SI; the sn-jnl print form is shorter, but trim anyway). **Next:** R4.
