@@ -31,5 +31,19 @@ Assemble `main.tex`, merge `references.bib`, build the PDF, check it compiles + 
 then the **E9 gate** (PAUSE for PO): document_check, reference no-hallucination pass,
 reproducibility bundle, final build.
 
-## Review
-_(to be filled at the Sprint-7 barrier)_
+## Review — closed 2026-06-23: the NMI draft is WRITTEN and BUILDS (E8 10/10)
+
+- **E8-0 skeleton** (sn-jnl / sn-nature, reframed title + provisional authors) + **E8-1..9** all
+  sections in Maier's voice, centered on *faithful attribution recovers the wiring, not the
+  semantics*, every quantitative claim citing a committed number or one of the 6 figures, honesty
+  contract honoured.
+- **SM integration:** merged 59 section BibTeX entries → `references.bib` (95 total); fixed a
+  **corrupted `sn-nature.bst`** (`format.in.ed.booktitle` popped an empty stack on every
+  `@inproceedings`) + 3 related-work cross-ref typos.
+- **Build:** `latexmk` exits 0 → `paper/main.pdf`: **37 pages, 0 undefined refs/cites, all 6
+  figures embedded** (commit `301cc3d`).
+- **Length:** ~19.5k words / 37 pp — a complete but MAXIMAL v1; **needs condensing** to NMI Article
+  length in E9 (abstract 289 w → ~200).
+
+**Next:** E9 (submission prep) — **PO-gated**: E9-1 document_check, E9-2 reference no-hallucination
+pass, E9-3 reproducibility bundle, E9-4 condense + final page/limit build. **PAUSED for PO.**
