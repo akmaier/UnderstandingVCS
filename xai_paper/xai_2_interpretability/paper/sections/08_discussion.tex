@@ -37,10 +37,10 @@ plant.
 Yet the same oracle marks a boundary the leaderboard cannot cross, and that boundary is the
 subject of this paper. A perfect faithfulness score certifies that a method named the true
 causes, not that it recovered what the program means. We saw the boundary three times, from
-three sides (Fig.~\ref{fig:taxonomy}): a circuit that is graph-correct and minimal
-($F=M=1.0$) yet reproduces behavior only $44\%$ of the time ($S=0.44$); a feature dictionary
-that matches every named variable (matched fraction $1.0$) while being nearly causally inert
-($F=0.041$, $S=-0.336$); and a concept that is linearly decodable yet, by the oracle, never
+three sides (Fig.~\ref{fig:taxonomy}): on Breakout a circuit that is graph-correct and minimal
+($F=M=1.0$) yet reproduces behavior only $44\%$ of the time ($S=0.44$); on Pong a feature
+dictionary that matches every named variable (matched fraction $1.0$) while being nearly causally
+inert ($F=0.041$, $S=-0.336$); and a concept that is linearly decodable yet, by the oracle, never
 used in the computation. The gap runs in both directions on the same axis at once,
 correct-but-incomplete and named-but-wrong, which is precisely what a ``methods are not good
 enough yet'' story cannot produce.
@@ -75,7 +75,7 @@ there is no disassembly to check against, is Paper~5.
 Probing reads the same result from the data side: it shows that a concept is present in the
 state, not that it is used, the control-task warning of Hewitt and
 Liang~\cite{hewitt2019designing}. Our intervention oracle is strictly stronger, asking whether
-the byte causes the output, and it found a decodable score cell the program never reads.
+the byte causes the output, and it found a present-but-unused score cell the program never reads.
 Decodability is presence; use is an algorithmic fact; understanding needs the second, and only
 the oracle supplies it. Note that the three traditions are, at bottom, one toolkit under
 different names, as tuning curves are feature visualization, lesions are ablations, and Granger
@@ -88,16 +88,19 @@ software verification at once.
 
 The obvious objection deserves a hearing. The VCS is deterministic, hand-coded, and small,
 while the systems these methods target are learned, distributed, stochastic, and large. We do
-not ask a score here to predict a transformer. The benchmark is a necessary-condition screen,
-not a sufficiency predictor: a method that fails here, with perfect ground truth, full
-observability, exact interventions, and no learning to muddy the picture, has no business being
-trusted on a neural network, where every one of those advantages is gone. Passing here is
-necessary, not sufficient; failing here is decisive. The same logic upgrades the semantic-gap
-claim. If even the strongest causal account a fully observable machine permits stops short of
-meaning, then on a neural network, less observable and with no clean ground truth,
-faithfulness is \emph{a fortiori} not understanding, so the gap we measure here is a floor on
-the gap there. We measure $1-S=0.56$ on an exactly recovered circuit, and we should not expect
-to do better where the circuit itself is uncertain.
+not ask a score here to predict a transformer. The benchmark is a necessary-condition stress
+test, not a sufficiency predictor: when a method fails here, with perfect ground truth, full
+observability, exact interventions, and no learning to muddy the picture, that failure is
+strong negative evidence for any claim that the same method reliably recovers causal mechanisms
+in harder, less observable systems. Passing here is necessary, not sufficient; failing here is
+telling. The same logic suggests, rather than proves, a reading of the semantic gap. If even
+the strongest causal account a fully observable machine permits stops short of meaning, the
+result suggests that faithfulness alone should not be treated as understanding in less
+observable neural systems, where the circuit itself is uncertain and no clean ground truth is
+on hand. We measure $1-S=0.56$ on an exactly recovered circuit on Breakout
+($1-0.4444$; the ACDC family mean is $1-0.32=0.68$), and we do not extend that number to neural
+networks as a proven floor; the precise scope, and what this paper does not claim, are set out
+in the Supplementary box on what we do and do not measure (S6).
 
 The chip also exhibits the properties that make real systems hard to interpret: aliased,
 polysemantic RAM cells reused across routines, a hand-coded echo of superposition; computation
@@ -111,17 +114,20 @@ Paper~5.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{fig5_representativeness_map.pdf}
-\caption{\textbf{The VCS$\leftrightarrow$neural-network failure-mode map.} Each row pairs an
-interpretability failure mode we measured on the VCS (left, blue) with the neural-network
-counterpart it stands in for (right, vermillion); on the VCS each failure is provable because
-we hold the exact ground truth, whereas on a network it is only suspected. Vanilla saliency and
-integrated gradients score $0.000$ on the discrete position regime (the shattered-gradient
-analogue); Granger causality reaches faithfulness $0.136$ with a high false-edge rate (the
-spurious-edge analogue); the single-unit lesion view is faithful ($0.987$) yet misses the
-wiring that connectomics recovers ($0.41$); and the sparse autoencoder matches every named
-variable yet scores $F=0.041$ (the present-not-used and superposition analogue). What the VCS
-does not capture (learned features, scale, stochasticity) is deferred to Paper~5. Every VCS
-value reads from a committed record.}\label{fig:representativeness}
+\caption{\textbf{The VCS$\leftrightarrow$neural-network failure-mode map.} Each row pairs a
+failure mode we measured on the VCS against the oracle (§3.2)~--- left, blue~--- with the
+neural-network behavior it is a documented analogue of~--- right, vermillion. On the VCS the
+failure is provable because we hold the exact ground truth; the neural-network column is a
+documented analogue, not proven by this benchmark, and reads the attribution and probing
+literature
+(\cite{balduzzi2017shattered,sundararajan2017axiomatic,adebayo2018sanity,sturmfels2020baselines}
+on gradients; \cite{jain2019attention,morcos2018single,leavitt2020falsifiable,hewitt2019designing}
+on use vs.\ presence; \cite{anand2019unsupervised,elhage2022toy,kindermans2019unreliability} on
+probing, superposition, and reliability). The takeaway is one line: every VCS failure has a named
+counterpart in how interpretability methods are reported to fail on networks, so a property
+provable here is one to suspect there. Per-row VCS scores, their committed records, and the full
+map (\texttt{fig5\_representativeness\_map\_full.pdf}) are in the Supplementary Information.
+}\label{fig:representativeness}
 \end{figure}
 
 \subsection*{What interpretability needs}
@@ -149,7 +155,7 @@ both directions at once. The plausibility axis is a documented method-tradition 
 human-subjects measurement, reported at that proxy's coarse resolution. Our scores hold within
 Paper~1's validated conformance window; outside that horizon the substrate is not certified
 bit-exact, and we keep every scored claim inside it. The subject is one old machine with no
-learning, which is the necessary-condition framing once more: a floor, not a forecast.
+learning, which is the necessary-condition framing once more: a stress test, not a forecast.
 
 We close by reaching past the present result. Because the substrate is differentiable, it tells
 us which gradient explanations are trustworthy and where they vanish, as the content path carries

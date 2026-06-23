@@ -2,7 +2,7 @@
 id: P2-R-S08-discussion
 title: Revise discussion — tone down NN-transfer/"no business", precise recommendations, Fig5 caption
 epic: RV (Revision — section)
-status: todo
+status: done
 sprint: 13
 owner:
 where: local
