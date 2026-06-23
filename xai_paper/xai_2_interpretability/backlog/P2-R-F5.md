@@ -3,7 +3,7 @@ id: P2-R-F5
 title: Redraw Fig 5 (failure taxonomy) — fix "Figure 6" title mismatch, declutter to table, supplement decision
 epic: RV (Revision — figure)
 status: todo
-sprint:
+sprint: 10
 owner:
 where: local
 depends_on: []

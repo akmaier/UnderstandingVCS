@@ -3,7 +3,7 @@ id: P2-R-F6
 title: Redraw Fig 6 (VCS->NN map) — pink-callout overlap, "no business" wording, §1 refs, analogy labels
 epic: RV (Revision — figure)
 status: todo
-sprint:
+sprint: 10
 owner:
 where: local
 depends_on: []

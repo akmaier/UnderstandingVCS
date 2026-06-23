@@ -3,7 +3,7 @@ id: P2-R-F4
 title: Redraw Fig 4 (faithfulness vs plausibility plane) — exact count, proxy axis, fix clip+label collisions
 epic: RV (Revision — figure)
 status: todo
-sprint:
+sprint: 10
 owner:
 where: local
 depends_on: [P2-R-UNC]

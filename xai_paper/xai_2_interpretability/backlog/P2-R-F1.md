@@ -3,7 +3,7 @@ id: P2-R-F1
 title: Redraw Fig 1 (platform/oracle) — jutari(Julia), plausibility-proxy, split/declutter, fonts
 epic: RV (Revision — figure)
 status: todo
-sprint:
+sprint: 10
 owner:
 where: local
 depends_on: []

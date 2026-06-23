@@ -25,5 +25,20 @@ the figures (need CI numbers), the supplement (needs the artifact/repro spine), 
 - Review-time artifact link = a **placeholder** the PO fills (Zenodo/OpenReview/anon repo).
 - Full Fig 5 / Fig 6 → simplify in main, full versions to supplement (figure items decide).
 
-## Review
-_(to be filled at the R1 barrier)_
+## Review — R1 closed 2026-06-23 (3/3 done; paper recompiles, 0 undefined)
+
+- **P2-R-UNC** (`3bfa0fe`): `compare/uncertainty.py` + bootstrap CIs (n=2000 over the 6 games),
+  threshold-sensitivity, aggregation-robustness. CIs bracket the committed point estimates.
+  **Carry-forward finding (R4/R5/figures MUST disclose):** the causal>gradient gap is robust under
+  equal-by-method / equal-by-game / position-only (CIs exclude 0) BUT **shrinks with CI crossing 0
+  under `content_only` (0.045 [−0.087, 0.153]) and `excluding_oracle_like` (0.123 [−0.008, 0.256])**
+  — the gap is driven by the position/index regime and the near-ceiling oracle-like methods. Report
+  this honestly (it answers reviewer "separate oracle controls" + "regime-specific" cautions).
+- **P2-R-REF** (`dcb3751`): Paper 1 → arXiv:2606.22447 (+ Siming author fix); **BIM→BAM** title fix
+  (1907.09701 is BAM); +MIB2025/SAEBench2025/M4-2023 + all 7 Fig-6 refs; WebSearch-verified. The 10
+  new keys are unused until S07/S02/S08 `\cite` them (R3–R5).
+- **P2-R-REPRO** (`8e7760b`): `REPRODUCIBILITY.md` §0 + real ROM SHA-256 table + action-stream
+  hashes + traceability. Open: §0 link placeholder + endmatter "upon acceptance" → trued-up to the
+  GitHub→Zenodo→Code Ocean decision (revision_plan PO#3) by the **S09-endmatter** item in R5.
+
+**Recompile:** `latexmk` exit 0, 0 undefined citations, 31 pp. **Next:** R2 figures (sprint 10).

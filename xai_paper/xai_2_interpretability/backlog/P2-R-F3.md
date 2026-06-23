@@ -3,7 +3,7 @@ id: P2-R-F3
 title: Redraw Fig 3 (attribution vs mechanistic) — facet strips, legends outside, mark oracle-like, fonts
 epic: RV (Revision — figure)
 status: todo
-sprint:
+sprint: 10
 owner:
 where: local
 depends_on: [P2-R-UNC]
