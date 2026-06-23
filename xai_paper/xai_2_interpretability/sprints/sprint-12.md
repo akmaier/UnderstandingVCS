@@ -37,5 +37,21 @@ number_audit §1 canonical numbers are authoritative; ACDC F=1.0/S=0.44 = "on Br
 \paragraph headings; Maier register). Never fabricate. Recompile-clean (latexmk exit 0, 0 undefined)
 before done.
 
-## Review
-_(to be filled at the R4 barrier)_
+## Review — R4 closed 2026-06-24 (4/4; recompiles 36 pp, 0 undefined)
+
+- **S04-resultsA** (`0e712aa`): M1 A2 25%→40% (prose + Fig 2 caption); M2 A7 NMF=PCA tied in BOTH
+  04.tex and fig3.py (asserts changed to equality; fig3.pdf regenerated); CI label "(95% CI)"; Fig 2
+  caption handoff (A1–A8 keys, §3.2 oracle via sec:oracle, CI whiskers, panel-b table).
+- **S05-resultsB** (`0712dbe`): M3 cross-phase family qualifier (0.681/0.294 labeled cross-phase +
+  Phase-B-only 0.393/0.298 given, Table 1 caption fixed); M5 ROM range 95–127→69–127 (seaquest
+  69.3); extremal/on_dist_cf position (0.202/0.139) vs all-regime (0.346/0.350) labeled; Fig 3 caption
+  handoff; "field's default tool"→"a widely used baseline"; \S1→sec:oracle.
+- **S06-resultsC** (`8227b46`): "25 such cells" superset/subset fixed (25 not-causally-used ⊃ 6
+  decodable-not-causal); cell 84 present-not-decodable; ACDC-Breakout/SAE-Pong exemplar labels;
+  **honest regime-gap disclosure** (robust on position 0.34 [0.02,0.50]; collapses content-only 0.04 /
+  excl-oracle-like 0.12, CIs cross zero).
+- **S02-related** (`3f047dc`): MIB 2025 + SAEBench 2025 + M4 2023 cited and positioned;
+  ground-truth/known-answer vs fully-known-machine reorganization; "first" toned down.
+
+All numbers traced to committed records; no fabrication. **Length now 36 pp — R6 length pass is
+mandatory** (push detail to SI, trim). **Next:** R5 framing (01 intro, 08 discussion, 09 endmatter).
