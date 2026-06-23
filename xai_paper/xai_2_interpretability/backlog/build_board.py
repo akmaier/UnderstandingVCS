@@ -33,8 +33,14 @@ def parse(path):
 
 
 def sortkey(fm):
-    m = re.match(r'P2-E(\d+)-(\d+)', fm.get('id', ''))
-    return (int(m.group(1)), int(m.group(2))) if m else (99, 99)
+    iid = fm.get('id', '')
+    m = re.match(r'P2-E(\d+)-(\d+)', iid)
+    if m:
+        return (0, int(m.group(1)), int(m.group(2)), '')
+    # Revision items (P2-R-*) sort after all epic items, alphabetically by id.
+    if iid.startswith('P2-R-'):
+        return (1, 0, 0, iid)
+    return (2, 99, 99, iid)
 
 
 def as_list(v):
