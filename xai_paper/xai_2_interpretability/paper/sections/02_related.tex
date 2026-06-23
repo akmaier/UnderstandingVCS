@@ -6,144 +6,89 @@
 
 \section{Related work}\label{sec:related}
 
-Interpretability is studied in three communities that rarely cite one another, yet
-all three ask the same question of a complex system: \emph{what, inside it, caused
-this output?} We organise the prior work along those three traditions --- the
-neuroscience battery, the attribution and explainable-AI toolkit, and mechanistic
-interpretability --- and then turn to the literature that tries to \emph{validate}
-such explanations. The recurring theme is the one our study removes: on the systems
-these methods were built for, there is no ground truth, so faithfulness can be argued
-but not measured. We close by positioning our delta against the few benchmarks that
-\emph{do} supply ground truth, and against a different recent notion of what
-``interpretable'' should mean.
+Interpretability is studied in three communities that rarely cite one another, yet all
+ask what, inside a complex system, caused this output. The neuroscience tradition records
+and perturbs a system, through tuning curves, lesions, connectomics, and directed
+influence. Jonas and Kording~\cite{jonas2017could} turned this battery on a
+microprocessor running classic games and found that it produces rich, publishable structure
+while missing how the chip computes. Their study reported what the analyses found, not how
+far each fell from the mechanism; we supply that number (Sec.~\ref{sec:results-a}).
 
-\subsection*{Three traditions, one question}
-
-The neuroscience tradition reads a system by recording it and perturbing it: tuning
-curves, lesions, connectomics, dimensionality reduction, spike-train correlations,
-field potentials, and Granger-style directed influence. Jonas and
-Kording~\cite{jonas2017could} turned this battery on a known artifact --- a
-microprocessor running classic games --- and showed that the methods produce rich,
-publishable structure while missing how the chip actually computes. Their study is
-the provocation behind ours, and we read it as a warning rather than a verdict: it
-\emph{could not} score its own methods, because it reported what the analyses found,
-not how far each fell from the known mechanism. We re-run the battery and attach that
-missing number (Sec.~\ref{sec:results-a}).
-
-The attribution and explainable-AI tradition asks, for a single decision, which inputs
-mattered. Gradient and saliency maps~\cite{simonyan2014deep,sundararajan2017axiomatic,smilkov2017smoothgrad,springenberg2015striving},
+The attribution tradition asks, for a single decision, which inputs mattered. Gradient and
+saliency maps~\cite{simonyan2014deep,sundararajan2017axiomatic,smilkov2017smoothgrad,springenberg2015striving},
 class-activation methods~\cite{selvaraju2017gradcam,chattopadhyay2018gradcampp},
-perturbation and occlusion methods~\cite{zeiler2014visualizing,fong2017interpretable,petsiuk2018rise},
-and surrogate or game-theoretic attributions~\cite{ribeiro2016why,lundberg2017unified}
-form the working toolkit. In the reinforcement-learning setting these methods have
-been applied directly to Atari agents to visualise what a policy attends
-to~\cite{greydanus2018visualizing,such2019atarizoo}. Yet a counterfactual analysis of
-those very saliency maps found them \emph{exploratory, not
-explanatory}~\cite{atrey2020exploratory}: the highlighted regions need not be the
-causes. The doubt is well placed, but on a learned policy it can only be argued, never
-settled, because the true cause is unknown. We settle it on the VCS, where the cause is
-computable (Sec.~\ref{sec:results-b}).
+occlusion~\cite{zeiler2014visualizing,fong2017interpretable,petsiuk2018rise}, and surrogate
+or game-theoretic attributions~\cite{ribeiro2016why,lundberg2017unified} form the toolkit,
+applied to Atari agents to visualise what a policy
+attends~\cite{greydanus2018visualizing,such2019atarizoo}. Yet a counterfactual analysis of those
+same maps found them exploratory, not explanatory~\cite{atrey2020exploratory}: the
+highlighted regions need not be the causes. On a learned policy that doubt can only be
+argued, the true cause being unknown; we settle it where it is computable
+(Sec.~\ref{sec:results-b}).
 
-Mechanistic interpretability, the youngest of the three, aims past attribution at the
-\emph{circuit} --- the internal subgraph that implements a behaviour. Activation and
-path patching, causal mediation, and causal scrubbing localise an effect by
-intervening on internal activations~\cite{vig2020investigating,meng2022locating,wang2022interpretability,conmy2023towards};
-distributed alignment search and interchange interventions test whether a hypothesised
-variable is causally realised~\cite{geiger2021causal,geiger2023finding};
-sparse dictionaries and probes try to read the system's features and concepts off its
+Mechanistic interpretability, the youngest tradition, aims past attribution at the circuit,
+the subgraph that implements a behaviour. Path patching, causal mediation, and scrubbing
+intervene on internal
+activations~\cite{vig2020investigating,meng2022locating,wang2022interpretability,conmy2023towards};
+alignment search and interchange interventions test whether a hypothesised variable is
+causally realised~\cite{geiger2021causal,geiger2023finding}; sparse dictionaries and probes
+read features off the
 state~\cite{cunningham2023sparse,alain2017understanding,hewitt2019designing,belrose2023eliciting,nanda2023attribution}.
-These are the most causal tools in the field, and on a real artifact they are also the
-ones we find most faithful (Sec.~\ref{sec:results-c}). The open question is what a
-recovered circuit \emph{is}: we show, with the same oracle, that it is a correct
-data-flow graph and not yet the computed function.
+On a real artifact these prove the most faithful (Sec.~\ref{sec:results-c}). Yet a recovered
+circuit, the same oracle shows, is a correct data-flow graph, not the computed function.
 
-\subsection*{Faithfulness, and the trouble with measuring it}
+The agreed criterion across these traditions is faithfulness: claimed causes should be the
+true causes. Jacovi and Goldberg~\cite{jacovi2020towards} make it precise, yet its
+diagnostics stay indirect when ground truth is absent. Adebayo et
+al.~\cite{adebayo2018sanity} sharpened this into the sanity check: a saliency method should
+change when weights or labels are randomised, and several popular methods do not. Yet such
+checks are only negative: with no reference map none can certify a right method, and the
+field optimises a proxy it cannot directly score. Our oracle supplies that map and converts
+faithfulness into a measured quantity: on the discrete sprite-position regime
+\texttt{activation\_patching} reaches faithfulness $1.000$ while the popular
+\texttt{vanilla\_saliency} collapses to $0.000$ on all six core
+games~\cite{faithfuldemoP2}, and the leaderboard plots all $31$ methods against the same
+ground truth (Fig.~\ref{fig:faithfulness})~\cite{leaderboardP2}.
 
-Across all three traditions the agreed quality criterion is \emph{faithfulness} --- an
-explanation is good if its claimed causes are the true causes. Jacovi and
-Goldberg~\cite{jacovi2020towards} make the criterion precise and observe that it must
-be defined operationally and evaluated with diagnostics matched to the explanation
-type. The diagnostics, however, are necessarily indirect when the ground truth is
-absent. Adebayo et al.~\cite{adebayo2018sanity} sharpened this into a now-standard
-\emph{sanity check}: a saliency method should at least change when the model's weights
-or the labels are randomised, and several popular methods do not, behaving like edge
-detectors regardless of what the network learned. Such checks are powerful and
-necessary. Still, they are \emph{negative} tests --- they can expose a method that is
-clearly wrong, but they cannot certify that a method is right, because there is no
-reference map to compare against. The field therefore optimises a proxy it cannot
-directly score. Our oracle supplies the reference map and converts faithfulness from an
-argued property into a measured one: on the discrete sprite-position regime, the causal
-method \texttt{activation\_patching} reaches faithfulness $1.000$ while the popular
-\texttt{vanilla\_saliency} collapses to $0.000$ on every one of the six core
-games~\cite{faithfuldemoP2}, and the cross-tradition leaderboard plots all $31$ methods
-against the same ground truth (Fig.~\ref{fig:faithfulness})~\cite{leaderboardP2}.
-
-\subsection*{The semantic labels are external --- AtariARI and OCAtari}
-
-Two public resources attach human-readable concepts to the Atari state. AtariARI
-extracts labels for object positions, scores, and lives from commented
-disassemblies and exposes them as a probing
-benchmark~\cite{anand2019unsupervised}; OCAtari adds render-time offset
-corrections and object detection so that the labelled coordinates align with what is
-drawn~\cite{delfosse2023ocatari}. We use both, and we are deliberate about their
-status. These labels are \emph{imported}, not discovered; our contribution is to
-\emph{verify them causally} by intervention --- set the byte, re-render, confirm the
-object moves to the predicted place on the bit-exact framebuffer --- which upgrades a
-correlational label to a verified-causal one and auto-corrects its offset. This is the
-hinge of our honesty contract: every concept-level (T3) score in this paper measures
-\emph{alignment to a supplied label}, not the recovery of a meaning the method found on
-its own. The distinction matters because a concept can be linearly decodable from the
-state and still play no causal role, the ``present $\neq$ used'' trap that control
-tasks were designed to catch~\cite{hewitt2019designing}; our intervention test is
-strictly stronger than probing, and the resulting separation is one of the three
+The concepts we score against are external. AtariARI labels object positions, scores, and
+lives from commented disassemblies as a probing benchmark~\cite{anand2019unsupervised};
+OCAtari adds offset corrections so the coordinates align with the
+render~\cite{delfosse2023ocatari}. These labels are imported, not discovered, and we verify
+them causally by intervention --- set the byte, re-render, confirm the object moves to its
+predicted place on the bit-exact framebuffer. This is the hinge of our honesty contract:
+every concept-level (T3) score measures alignment to a supplied label, not a meaning found
+on its own. Note that a concept can be linearly decodable yet play no causal role, the
+``present $\neq$ used'' trap that control tasks were built to catch~\cite{hewitt2019designing};
+our intervention test is stronger than probing, and that separation is one of the three
 counted in Fig.~\ref{fig:taxonomy}.
 
-\subsection*{Ground-truth benchmarks for interpretability --- and our delta}
+Ours is not the first study to score interpretability against a known answer, yet existing
+benchmarks build the answer into the system. Yang and Kim~\cite{yang2019benchmarking} grade
+attribution maps against images with known feature importance; Tracr~\cite{lindner2023tracr}
+compiles programs into transformers with circuits known by construction;
+InterpBench~\cite{gupta2024interpbench} trains semi-synthetic transformers to a specified
+circuit. Our subject is instead a real, hand-authored artifact
+whose ground truth is independent of it: never designed to be interpretable, the VCS yields
+its causal structure to an exhaustive intervention oracle on a bit-exact, differentiable
+port~\cite{maier2025vcs}, built on the Atari substrate~\cite{bellemare2013arcade} and the
+reference emulator~\cite{xitari}. More importantly, those benchmarks validate faithfulness alone,
+because there the circuit is the meaning by fiat; on a real artifact the meaning is a
+separate object from the causal structure. Hence we can do what none of them can: separate
+faithfulness from understanding, and show that a method which perfectly recovers the true
+wiring has not recovered the semantics (Fig.~\ref{fig:taxonomy}). We measure that
+residual, the semantic gap, and are explicit that closing it --- recovering a program's
+variables and design from scratch --- is a different problem, the subject of companion work;
+we claim no unqualified ``first''.
 
-Ours is not the first study to score interpretability against a known answer. The
-existing benchmarks, however, build the answer \emph{into} the system. Yang and
-Kim~\cite{yang2019benchmarking} construct images with a controlled, known relative
-feature importance so that attribution maps can be graded against it, with explicit
-false-positive metrics. Tracr~\cite{lindner2023tracr} compiles human-readable programs
-into transformers whose circuits are therefore known by construction, and uses them as
-a laboratory for mechanistic interpretability; InterpBench~\cite{gupta2024interpbench}
-extends this to semi-synthetic transformers trained to realise a specified circuit,
-giving a more realistic but still planted ground truth. These are valuable, and we
-build on their logic. Our delta is twofold, and we state it without claiming an
-unqualified ``first''. \emph{First}, our subject is a real, deployed, hand-authored,
-complex artifact whose ground truth is \emph{independent of the artifact}: the VCS was
-never designed to be interpretable, and we recover its causal structure from an
-exhaustive intervention oracle on a bit-exact, differentiable
-port~\cite{maier2025vcs}, the platform built on the established Atari evaluation
-substrate~\cite{bellemare2013arcade} and the reference emulator~\cite{xitari}.
-\emph{Second}, and more importantly, the planted-circuit benchmarks validate
-\emph{faithfulness} --- did the method recover the circuit that was built in? --- and
-nothing beyond it, because there the circuit \emph{is} the meaning by fiat. On a real
-artifact the meaning is a separate object from the causal structure, so we can do
-something none of these benchmarks can: use exact ground truth to \emph{separate
-faithfulness from understanding}, and show that a method which perfectly recovers the
-true causal wiring has not thereby recovered the semantics (Fig.~\ref{fig:taxonomy}).
-We \emph{measure} that residual --- the semantic gap --- and are explicit that closing
-it, by recovering a program's variables and design from scratch, is a different problem
-and the subject of companion work.
-
-\subsection*{A different ``interpretable''}
-
-Finally, our use of the word \emph{interpretable} is one of several in circulation, and
-we name the difference rather than blur it. We operationalise interpretability as
-\emph{ground-truth recovery}: an explanation is interpretable to the degree that its
-claimed structure matches the system's true causal structure, scored by the oracle.
-Barbiero et al.~\cite{barbiero2025neural} instead define interpretability as
-\emph{inference equivariance} --- a model is interpretable if a user can correctly
-predict its outputs by simulating its reasoning --- and design networks to satisfy that
-property. Their notion is a design target for new models; ours is an audit criterion
-for an existing system whose answer is known. We cite their framework as a contrast,
-not as the source of our definition. Read against Marr's levels of
-analysis~\cite{marr1982vision} and Lazebnik's ``fix-the-radio''
-parable~\cite{lazebnik2002radio}, both notions agree on the deeper point that drives
-this paper: a faithful description of a system's wiring is not yet an account of the
-algorithm it runs --- and on a fully known machine, that gap is no longer a matter of
-opinion but a measured quantity.
+Our use of ``interpretable'' is one of several in circulation. We operationalise it as
+ground-truth recovery: an explanation is interpretable to the degree that its claimed
+structure matches the system's true causal structure, scored by the oracle. Barbiero et
+al.~\cite{barbiero2025neural} instead define it as inference equivariance, a design target
+for new models, while ours audits a system already known. Read against Marr's
+levels of analysis~\cite{marr1982vision} and Lazebnik's ``fix-the-radio''
+parable~\cite{lazebnik2002radio}, the point that drives this paper holds: a faithful
+description of a system's wiring is not yet an account of the algorithm it runs, and on a
+known machine that gap is measured.
 
 % =====================================================================
 % BIBTEX-NEEDED: full entries for the keys this section cites that are NOT
