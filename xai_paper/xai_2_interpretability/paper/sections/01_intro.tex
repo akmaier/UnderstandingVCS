@@ -1,1 +1,201 @@
-% 01_intro.tex — Introduction. Drafted by item P2-E8-1. STUB: empty until then.
+% 01_intro.tex — Introduction (item P2-E8-2). Maier voice per ../STYLE.md.
+% Arc: gap -> opportunity -> confirm -> the deeper move -> payoff.
+% Central thread: faithfulness vs understanding / the semantic gap.
+% Numbers cited from leaderboard.md / faithful_demo.md (committed §R) and figs 1,2.
+
+\section{Introduction}\label{sec:intro}
+
+When a method tells us what a system is doing, do we believe it because it is
+\emph{true} or because it is \emph{plausible}? And once we have established that
+its account is true, have we thereby \emph{understood} the program, or only named
+its causes? These two questions sit at the centre of interpretability, and they
+are not the same question. A neural network now drives a car, reads a scan, and
+files a loan; before we trust such a decision we ask an explanation method why it
+was made. The explanation is load-bearing for safety and for science alike, yet
+on the systems we most want to explain we cannot check whether it is correct.
+Saliency maps for an Atari agent look convincing and shift with the action, but a
+convincing map is not a verified one~\cite{greydanus2018visualizing}. The field
+has therefore converged on \emph{faithfulness} --- whether an explanation names
+the system's \emph{true} causes --- as its quality criterion. Faithfulness is the
+right criterion. The difficulty is that on a real neural network there is nothing
+to measure it against.
+
+This is the predicament Jonas and Kording made vivid by turning the
+neuroscientist's toolkit on a microprocessor whose every transistor is
+known~\cite{jonas2017could}. Lesions, tuning curves, and connectomics produced
+rich, suggestive structure --- and none of it recovered how the chip actually
+computes. Their lesson generalizes: when the ground truth is unknown, a method
+that finds structure cannot be told apart from a method that finds the
+\emph{right} structure. The same blind spot recurs across explainable AI, where
+attribution maps are validated against each other or against human intuition
+rather than against the system's mechanism~\cite{atrey2020exploratory}. Lacking a
+reference, the community has quietly let faithfulness stand in for understanding,
+and cannot test whether the proxy holds. We remove that excuse.
+
+\paragraph{The opportunity.}
+Paper~1 of this program built the missing reference: a bit-exact, differentiable
+port of the Atari 2600 Video Computer System (VCS) that reproduces a real,
+hand-authored 1977 machine to the byte and to the pixel~\cite{maier2025vcs,xitari}.
+The VCS is software with a known specification, so the true cause of any output is
+not a matter of opinion --- it is computable by exact intervention. We can clamp a
+RAM cell, replace a register, occlude a ROM byte, re-run the machine
+deterministically, and read off the change in the output. This gives us an
+\emph{intervention oracle}: for every candidate cause of every output, the true
+causal effect, measured rather than estimated. Figure~\ref{fig:platform} lays out
+the platform and the oracle --- the three faces of the system we can observe and
+intervene on (inputs, internal state, outputs) and the tiers of ground truth they
+afford. On this machine, for the first time on a real and complex artifact, an
+interpretability claim can simply be scored as right or wrong.
+
+\paragraph{The move --- confirm.}
+We turn the toolkit on this one system and score it. Across the neuroscience
+battery, the attribution and explainable-AI methods, and the mechanistic-%
+interpretability toolkit --- $31$ methods aggregated from $257$ per-game records
+--- we place every method on two axes: faithfulness against the oracle, and a
+documented plausibility proxy that captures how convincing the method's tradition
+tends to look. The result confirms what the causal view predicts, now in numbers.
+Causal and intervention methods are faithful; popular gradient and correlational
+saliency methods are not. On discrete sprite-position outputs --- where the naive
+gradient is provably zero, because position is set by strobe timing rather than by
+a value the gradient can flow through --- the contrast is at its sharpest:
+activation patching reaches faithfulness $1.000$, the oracle ceiling, while
+vanilla saliency collapses to $0.000$, the naive-gradient floor, on every one of
+the six core games. Aggregated over that regime, causal and intervention methods
+average $0.412$ faithfulness against $0.068$ for the gradient and correlational
+family, a gap of $0.344$. The popular method nonetheless carries the higher
+plausibility ($0.9$ versus $0.5$): it looks more convincing precisely where it is
+least correct. This is the field's danger zone --- conviction without correctness
+--- and Fig.~\ref{fig:faithfulness} marks it out as a measured region of the
+plane, not a cautionary metaphor.
+
+\paragraph{The deeper move --- the boundary the leaderboard cannot cross.}
+Securing faithfulness, however, is the smaller half of the problem. This is the
+paper's central claim, and it is where a ground-truth machine lets us say
+something the leaderboard alone cannot. With the same oracle we ask not only
+\emph{which} methods are faithful but \emph{what a faithful method delivers}, and
+the answer is a true causal-effect map or a true data-flow graph --- not the
+variable's meaning and not the routine's algorithm. To make this precise we
+require that an explanation be right only if it is \textbf{F}aithful (its claimed
+causes are the true causes), \textbf{S}ufficient (it regenerates the behavior
+under held-out interventions), and \textbf{M}inimal at the algorithmic level
+(no spurious parts, at the granularity of the program's variables and circuits):
+$\mathrm{right} = \mathbf{F}\wedge\mathbf{S}\wedge\mathbf{M}$ (Section~\ref{sec:triad}).
+The committed data then show the gap directly, and in both directions at once. An
+automatically discovered circuit for Breakout is graph-correct and minimal yet
+does not reproduce the behavior it explains ($\mathbf{F}=1.0$, $\mathbf{M}=1.0$,
+$\mathbf{S}=0.44$): a correct wiring diagram is not the computed function. A
+learned feature dictionary matches a named game variable perfectly (matched
+fraction $1.0$) while being causally almost inert ($\mathbf{F}=0.04$): looking
+like a known variable is not being how the program computes it. And a concept can
+be linearly decodable from the state yet provably unused by the computation --- the
+familiar trap that what is \emph{present} need not be \emph{used}. The residual
+between a faithful attribution and an understanding of the computation is therefore
+not philosophy. On this machine it is a number. We name it the \emph{semantic
+gap}, and making it a measured quantity is the contribution we care about most.
+
+\paragraph{Why a 1977 chip judges methods built for neural networks.}
+The obvious objection is that deterministic, hand-coded software is the wrong place
+to judge methods designed for learned, distributed, stochastic networks. Our
+answer, stated here and not deferred to the discussion, is that the VCS is a
+\emph{necessary-condition screen}, not a predictor of success. A method that fails
+\emph{here} --- with perfect ground truth, full observability, exact
+interventions, and no learning to obscure the mechanism --- has no business being
+trusted on a neural network, where every one of those advantages is lost. Passing
+here is necessary, not sufficient; failing here is decisive. The same logic
+strengthens the harder claim: if even the strongest causal account a fully
+observable machine permits stops short of meaning, then on a network --- less
+observable, without clean ground truth --- faithfulness is \emph{a fortiori} not
+understanding. The gap we measure here is a floor on the gap there. The VCS also
+exhibits the very properties that make interpretation hard --- RAM cells aliased
+and reused across routines, race-the-beam timing that distributes a computation
+across a scanline, and registers whose meaning depends on context. What it does
+not capture --- learned features, scale, stochasticity --- we state plainly and
+leave to the program's later papers on learned agents.
+
+\paragraph{An honesty contract.}
+Because the claim is sharp, we are deliberate about its limits. We do \emph{not}
+claim that any method recovered the program's meaning, algorithm, variables, or
+design from scratch. Every semantic label we use is imported from external sources
+--- the AtariARI and OCAtari annotation
+sets~\cite{anand2019unsupervised,delfosse2023ocatari} --- and then only
+\emph{causally verified} on our substrate, never \emph{discovered} by a method
+under test. When an alignment method reports perfect accuracy against such a label,
+it is right by construction, because it is checking a variable we supplied. Probing
+shows that information is present, not that it is used~\cite{hewitt2019designing};
+our intervention oracle is the strictly stronger test. Accordingly, Paper~2
+\emph{defines and measures} the semantic gap; \emph{closing} it --- recovering a
+system's documentation and design from nothing but the system --- is the companion
+work, not this paper. We measure the gap; we do not pretend to have crossed it.
+
+\paragraph{In this Article.}
+We make four contributions. \emph{First}, a ground-truth interpretability benchmark
+on a single fully known, differentiable, and \emph{real} complex system, with the
+necessary-condition-screen framing for reading a score on it; the headline is that
+faithful equals causal, that popular saliency is plausible-but-unfaithful and
+provably zero on discrete position outputs, and that the faithfulness-versus-%
+plausibility danger zone is quantified (Fig.~\ref{fig:faithfulness}). \emph{Second},
+and most importantly, the semantic gap made measurable: an operational definition,
+$\mathrm{right}=\mathbf{F}\wedge\mathbf{S}\wedge\mathbf{M}$, under which even a
+perfectly faithful method is shown on committed data to recover the causal wiring
+and not the semantics --- graph-correct circuits that fail sufficiency, perfectly
+matched features that are causally inert, decodable-but-unused concepts.
+\emph{Third}, a quantitative re-run of the Jonas--Kording experiment, scoring the
+neuroscience battery against a known mechanism and supplying the high-faithfulness
+causal contrast they could not. \emph{Fourth}, the first ground-truth calibration
+of mechanistic interpretability on a real artifact rather than a synthetic or
+compiled one, together with the demonstration that circuit recovery yields a graph,
+not the computed function. Read as a whole, the study offers a reusable benchmark
+for explainable AI, mechanistic interpretability, AI safety, and software
+verification alike, and reframes the field's open problem. The hard part of
+interpretability is not faithfulness. It is the semantic gap that remains once
+faithfulness has been secured --- and we believe that naming and measuring it is
+the necessary first step toward closing it.
+
+
+% BIBTEX-NEEDED: keys cited in this section that are NOT yet in references.bib at draft time
+% are: maier2025vcs, anand2019unsupervised, hewitt2019designing (please MERGE these three).
+% Already present (do NOT duplicate): jonas2017could, atrey2020exploratory,
+% greydanus2018visualizing, xitari, delfosse2023ocatari. Full entries below for all keys
+% I cite, for completeness; SM should de-duplicate against references.bib before merging.
+%
+% @article{jonas2017could,
+%   title   = {Could a Neuroscientist Understand a Microprocessor?},
+%   author  = {Jonas, Eric and Kording, Konrad Paul},
+%   journal = {PLoS Computational Biology},
+%   volume  = {13}, number = {1}, pages = {e1005268}, year = {2017},
+%   publisher = {Public Library of Science}, doi = {10.1371/journal.pcbi.1005268}}
+%
+% @inproceedings{atrey2020exploratory,
+%   title     = {Exploratory Not Explanatory: Counterfactual Analysis of Saliency Maps for Deep Reinforcement Learning},
+%   author    = {Atrey, Akanksha and Clary, Kaleigh and Jensen, David},
+%   booktitle = {International Conference on Learning Representations (ICLR)},
+%   year      = {2020}}
+%
+% @inproceedings{greydanus2018visualizing,
+%   title     = {Visualizing and Understanding Atari Agents},
+%   author    = {Greydanus, Sam and Koul, Anurag and Dodge, Jonathan and Fern, Alan},
+%   booktitle = {International Conference on Machine Learning (ICML)},
+%   pages     = {1792--1801}, year = {2018}, organization = {PMLR}}
+%
+% @inproceedings{anand2019unsupervised,
+%   title     = {Unsupervised State Representation Learning in Atari},
+%   author    = {Anand, Ankesh and Racah, Evan and Ozair, Sherjil and Bengio, Yoshua and C\^{o}t\'{e}, Marc-Alexandre and Hjelm, R Devon},
+%   booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+%   volume    = {32}, year = {2019}}
+%
+% @inproceedings{delfosse2023ocatari,
+%   title     = {OCAtari: Object-Centric Atari 2600 Reinforcement Learning Environments},
+%   author    = {Delfosse, Quentin and Bl{\"u}ml, Jannis and Gregori, Bjarne and Sztwiertnia, Sebastian and Kersting, Kristian},
+%   booktitle = {Reinforcement Learning Conference (RLC)}, year = {2024},
+%   note      = {arXiv:2306.08649}}
+%
+% @inproceedings{hewitt2019designing,
+%   title     = {Designing and Interpreting Probes with Control Tasks},
+%   author    = {Hewitt, John and Liang, Percy},
+%   booktitle = {Conference on Empirical Methods in Natural Language Processing (EMNLP)},
+%   pages     = {2733--2743}, year = {2019}}
+%
+% @misc{maier2025vcs,
+%   title  = {A Bit-Exact, Differentiable Atari 2600 (Paper 1)},
+%   author = {Maier, Andreas and Bayer, Stefan and Krauss, Patrick},
+%   year   = {2025}, note = {companion paper; this program}}
