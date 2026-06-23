@@ -2,7 +2,7 @@
 id: P2-R-REPRO
 title: Reproducibility doc — review-time artifact, ROM SHA-256 + retrieval, action-stream hashes
 epic: RV (Revision — reproducibility)
-status: todo
+status: done
 sprint: 9
 owner:
 where: local
@@ -35,12 +35,12 @@ Make the XAI benchmark reviewable and reproducible (improvement_instructions P0#
    and verifiable), printing a checksum manifest.
 
 ## Definition of Done
-- [ ] runs to completion: `python tools/xai_study/repro/make_hash_tables.py` → writes both CSVs + prints a manifest
-- [ ] `rom_hash_table.csv` lists SHA-256 for every core/T1 game used in the paper; no ROM bytes are committed
-- [ ] REPRODUCIBILITY.md states review-time availability (not acceptance-time) and the github/arXiv pointers
-- [ ] nothing outside `file_scope` changed; Paper-1 gates untouched/green
-- [ ] committed + pushed to main (rebase-before-push); primary pulled ff-only
-- [ ] `status: done`
+- [x] runs to completion: `python tools/xai_study/repro/make_hash_tables.py` → writes both CSVs + prints a manifest (deterministic; `--verify` re-hashes ROMs → PASS)
+- [x] `rom_hash_table.csv` lists SHA-256 for every core game used in the paper (6/6, real digests verified against bytes); no ROM bytes are committed (no `.bin` in repro/)
+- [x] REPRODUCIBILITY.md states review-time availability (§0, not acceptance-time) + the github/arXiv pointers (arXiv:2606.22447 / github.com/akmaier/UnderstandingVCS); adds §5 hash tables + §6.5 artifact-traceability
+- [x] nothing outside `file_scope` changed; Paper-1 gates untouched/green (no emulator core touched — doc + offline analysis script only)
+- [x] committed + pushed to main (rebase-before-push); primary pulled ff-only
+- [x] `status: done`
 
 ## Notes / handoff
 The S09-endmatter item owns the in-paper "code availability" prose ("released upon acceptance"

@@ -1,16 +1,55 @@
 # Reproducibility appendix — Paper 2 (ground-truth interpretability)
 
 > **What this is.** Everything a reader needs to reproduce *every number* in the
-> P2 (`xai_2_interpretability`) paper: the substrate + commit pins, the result-record
-> schema (SPEC §R) and where the records live, the seeds + exact run command per
-> phase, the packaged benchmark (so a third party can score a new method end-to-end),
-> the ROM provenance (SHA-256 + AutoROM; ROMs are **not** redistributed), and the
-> figure-regeneration scripts.
+> P2 (`xai_2_interpretability`) paper: the review-time availability statement (§0),
+> the substrate + commit pins, the result-record schema (SPEC §R) and where the
+> records live, the seeds + exact run command per phase, the packaged benchmark (so a
+> third party can score a new method end-to-end), the ROM provenance + action-stream
+> hashes (SHA-256 + AutoROM; ROMs are **not** redistributed — §5, `tools/xai_study/repro/`),
+> the per-number artifact-traceability table (§6.5), and the figure-regeneration scripts.
 >
 > **Read-only doc.** Reproduces what is committed; it does not change any experiment
 > code or result. The committed §R records are the source of truth — the leaderboard
 > (E6-1), the benchmark (E6-2), the faithful-method demo (E6-3) and all figures are
 > **pure reads** over them.
+
+---
+
+## 0. Availability at review time (not acceptance time)
+
+> *Addresses reviewer improvement-instructions P0#1 and the final-review §Reproducibility:
+> "Do not wait until acceptance … replace 'will be released upon acceptance' for the XAI
+> benchmark/scoring suite with 'is available for review.'"*
+
+**The XAI benchmark + scoring suite + all result records are available for review now.**
+The complete evidence bundle — `tools/xai_study/` exactly as cited (the oracle, the
+T1/T2/T3 labels, every Phase A/B/C per-game §R record, the packaged benchmark, the
+cross-tradition leaderboard, the faithful-method demo, the figure-generation scripts,
+the environment files, the commit pins, the seeds, and the ROM/action-stream hash
+tables in `tools/xai_study/repro/`) — is provided to reviewers as a single archive at:
+
+> **`[REVIEW-ARTIFACT-LINK]`** — *PO to fill before submission.* For double-blind
+> review use one of: an **anonymized repository snapshot** (e.g. anonymous.4open.science),
+> a **Zenodo** record with a private reviewer link, or the **OpenReview** supplementary
+> `.zip`. The mechanics (which channel; whether a DOI is minted at submission vs.
+> camera-ready) are a PO decision recorded in `revision_plan.md §PO`. The bundle is a
+> snapshot of this repo at the §1 HEAD pin with ROMs excluded (§5).
+
+**The companion emulator substrate is already public.** The differentiable VCS this
+paper rests on (bit-exactness, the 64-game validation, the validated horizon, the
+STE/content-path/discrete-index gradient results) is published as a companion paper and
+its code is openly available — cite both directly:
+
+| Artifact | Pointer |
+|---|---|
+| Companion paper (the substrate) | **arXiv:2606.22447** — *"A Differentiable Atari VCS: A Complex, Fully Known Ground Truth for Explainable AI"* (submitted 2026-06-21) |
+| Emulator source code | **https://github.com/akmaier/UnderstandingVCS** (the `jutari`/`jaxtari` ports + the `xitari` reference; listed on the arXiv page) |
+
+The in-paper *Code availability* statement (`paper/sections/09_endmatter.tex`) is the
+authoritative in-manuscript wording and **must agree** with this doc — "**available for
+review**" for the XAI benchmark/scoring suite (not "upon acceptance"), with the companion
+emulator cited via arXiv:2606.22447 / the GitHub URL above. (That `.tex` line is owned by
+the S09-endmatter revision item; the two are kept in sync per `revision_plan.md`.)
 
 ---
 
@@ -21,11 +60,16 @@ run on two bit-exact differentiable ports validated against the `xitari` C++ ref
 
 | Component | Pin | Role |
 |---|---|---|
-| **Repo** | this checkout's `git rev-parse HEAD` | the frozen snapshot that produced the records |
+| **Repo** | this checkout's `git rev-parse HEAD`; public at **github.com/akmaier/UnderstandingVCS** (companion paper **arXiv:2606.22447**) | the frozen snapshot that produced the records |
 | **jutari** (Julia/Zygote) | `jutari/` at repo HEAD (`JuTari` v0.0.1) | the experiment substrate — every Phase A/B/C runner is `julia --project=<repo>/jutari …` |
 | **jaxtari** (JAX) | `jaxtari/` at repo HEAD (`jaxtari` v0.0.1, `requires-python >=3.10`, `jax>=0.4.30`) | cross-check port; benchmark + leaderboard + figures run on its venv (`numpy`/`json` only) |
 | **xitari** | `xitari/` at repo HEAD | the bit-exact reference oracle the ports are validated against |
 | **Julia** | 1.12.x (authoring env: 1.12.6); deps pinned by `jutari/Project.toml` | jutari runtime |
+
+Environment files (committed): `jutari/Project.toml` + `jutari/Manifest.toml` (Julia
+deps, fully pinned); `jaxtari/pyproject.toml` (Python deps). These are the
+`environment.yml`/`Project.toml`/`Manifest.toml`/`pyproject.toml` set requested by the
+reproducibility checklist (improvement-instructions P6 §53).
 
 **Paper-1 conformance (the foundation this paper rests on).** jutari ≡ xitari
 **bit-for-bit on all 64 ALE games — 64/64 RAM AND 64/64 screen** (README §"Conformance
@@ -204,7 +248,10 @@ The full machine-readable contract is `benchmark/manifest.json`; the human guide
 
 ---
 
-## 5. ROM provenance (not redistributed)
+## 5. ROM provenance + action-stream hashes (not redistributed)
+
+> *Addresses improvement-instructions P1#20 ("ROM and action-stream reproducibility")
+> and P6 §54–56 (ROM hash table not ROMs; action streams + seeds; review-mode artifact).*
 
 Atari 2600 ROMs are **gitignored and never committed** (SCRUM §7). Two facts make this
 clean:
@@ -212,27 +259,55 @@ clean:
 1. **Scoring needs no ROM.** The oracle ground truth is read from the committed §R
    records (`extra.cause_names` + `extra.oracle_abs_delta_per_cause`), produced by the
    exact intervention oracle on the real ROM. The whole benchmark + leaderboard +
-   figures run offline.
+   figures run offline (review-mode artifact, P6 §56: a reviewer with no ROM can
+   regenerate every derived number from the records + the hash tables below).
 2. **For the optional live re-run** (deletion/insertion AUC, which re-runs the real ROM)
-   each core ROM is referenced by **SHA-256 + size + AutoROM name only**, never by bytes,
-   in `tools/xai_study/compare/benchmark/rom_manifest.json`:
+   each core ROM is referenced by **SHA-256 + size + AutoROM name only**, never by bytes.
 
-   | game | sha256 | bytes | AutoROM name |
-   |---|---|---|---|
-   | pong | `41623e3c…ec96d3` | 2048 | `pong` |
-   | breakout | `376323f0…0c6fd5` | 2048 | `breakout` |
-   | space_invaders | `7224b174…ced0301` | 4096 | `space_invaders` |
-   | seaquest | `fbc29f46…d2ee43` | 4096 | `seaquest` |
-   | ms_pacman | `dde0b43c…280b14` | 8192 | `ms_pacman` |
-   | qbert | `3257221…194b76` | 4096 | `qbert` |
+### 5.1 The hash tables (`tools/xai_study/repro/`)
 
-   (full 64-char hashes in `rom_manifest.json`).
+`tools/xai_study/repro/make_hash_tables.py` regenerates two CSVs and prints a checksum
+manifest. It hashes the ROMs **in place** (never copies, never commits a byte) via the
+same `loader.resolve_rom` the oracle uses, and derives the deterministic action streams
+from the committed `state` encodings. Run:
 
-**Obtain ROMs** (then verify against the manifest hashes):
+```bash
+# from a worktree set XAI_PRIMARY_REPO so the gitignored ROMs resolve in the primary:
+XAI_PRIMARY_REPO=<repo> python3 tools/xai_study/repro/make_hash_tables.py
+python3 tools/xai_study/repro/make_hash_tables.py --verify   # re-hash + assert digests match
+```
+
+**`rom_hash_table.csv`** — game · AutoROM name · **SHA-256** · size · resolved path ·
+retrieval procedure · validation horizon, for every core game used in the paper:
+
+| game | sha256 | bytes | AutoROM name |
+|---|---|---|---|
+| pong | `41623e3c…ec96d3` | 2048 | `pong` |
+| breakout | `376323f0…0c6fd5` | 2048 | `breakout` |
+| space_invaders | `7224b174…ced0301` | 4096 | `space_invaders` |
+| seaquest | `fbc29f46…d2ee43` | 4096 | `seaquest` |
+| ms_pacman | `dde0b43c…280b14` | 8192 | `ms_pacman` |
+| qbert | `3257221…194b76` | 4096 | `qbert` |
+
+(full 64-char hashes in `rom_hash_table.csv`; the same six also in
+`tools/xai_study/compare/benchmark/rom_manifest.json` — the two agree by construction,
+both produced from the in-place bytes.)
+
+**`action_stream_hashes.csv`** — one row per deterministic `state` encoding: the boot
+(`60 NOOP + 4 RESET`, xitari/ALE parity), the replay action (NOOP, id 0), the
+target-frame / horizon / total-frame counts, the **seed (0)**, the **SHA-256 of the
+explicit action-token stream**, and the output ids it backs. Every committed §R record's
+`state` field (`fW+H`, `traj_60f_ram_noop`) maps to one of these rows. The headline
+checkpoint is `f120+30` (used by the ground-truth oracle, Phase B/C, and the benchmark);
+its stream hash is in the CSV. Seeded methods (random / RISE / SmoothGrad /
+Expected-Gradients) reproduce exactly because the substrate is deterministic at `seed=0`.
+
+### 5.2 Obtain ROMs (then verify against the table)
 ```bash
 pip install autorom && AutoROM --accept-license          # the licensed ALE/Gymnasium ROM set
 # or place them in place (gitignored): xitari/games/Atari-2600-VCS-ROM-Collection/ROMS/
-# tools/xai_study/common/loader.resolve_rom(name) resolves + you verify SHA-256
+# tools/xai_study/common/loader.resolve_rom(name) resolves them; then:
+python3 tools/xai_study/repro/make_hash_tables.py --verify   # asserts your bytes match
 ```
 This mirrors Paper 1 and `document_check.md` §D (Data availability).
 
@@ -269,16 +344,55 @@ in `paper/figures/`.
 
 ---
 
+## 6.5 Artifact traceability — every headline number → record · script · command
+
+> *Addresses improvement-instructions P1#21 ("artifact traceability") and P6 §55
+> ("verify table and figure numbers from raw records"). Every headline claim traces to a
+> committed §R record (the `value` field) + the script that produced/aggregates it + the
+> command to reproduce it. The numbers below are the **measured, committed** values at this
+> HEAD — this doc only records them, it never alters a result.*
+
+The canonical method count is **30 interpretability methods + the oracle positive control
+= 31 rows** (`leaderboard.json.n_methods = 31`; SPEC §S07). The plausibility axis is a
+**plausibility proxy** (tradition-level, documented rubric — not a human-subject
+measurement); use that wording everywhere (abstract, figures, leaderboard Y-axis).
+
+| Headline number | Value | Record (JSON key) | Script | Command |
+|---|---|---|---|---|
+| Faithfulness gap, position/index regime (causal − gradient) | **0.3435** | `compare/out/faithful_demo.json` → `value`; also `compare/out/leaderboard.json` → `headline_contrast.position_regime.gap` | `compare/faithful_demo.py`, `compare/leaderboard.py` | `python3 tools/xai_study/compare/faithful_demo.py` |
+| Causal/intervention mean faithfulness, position regime | **0.4118** (±0.3902 CI95, n=4) | `leaderboard.json` → `headline_contrast.position_regime.causal_intervention_faithfulness_mean` | `compare/leaderboard.py` | `python3 tools/xai_study/compare/leaderboard.py` |
+| Gradient/correlational mean faithfulness, position regime | **0.0683** (±0.0701 CI95, n=9) | `leaderboard.json` → `headline_contrast.position_regime.gradient_correlational_faithfulness_mean` | `compare/leaderboard.py` | `python3 tools/xai_study/compare/leaderboard.py` |
+| Methods scored (rows on the leaderboard) | **31** (30 methods + oracle) | `leaderboard.json` → `n_methods`; `rows` (len 31) | `compare/leaderboard.py` | `python3 tools/xai_study/compare/leaderboard.py` |
+| Per-game §R records aggregated | **257** | `leaderboard.json` → `n_per_game_records_aggregated` | `compare/leaderboard.py` | (as above) |
+| Discrete index/position output has **zero naive gradient** (content-path grad = 1.0; index path = 0) | grad@content **1.0**; index **0** | `ground_truth/out/oracle_grad_pong.json` → `value` + `extra.caveat` | `ground_truth/oracle_grad.jl` | `julia --project=<repo>/jutari tools/xai_study/ground_truth/oracle_grad.jl` |
+| Exact intervention oracle `max|Δscore|` (Pong, `f120+30`) | **17.0** | `ground_truth/out/oracle_pong_score.json` → `value` | `ground_truth/oracle_intervene.jl` | `julia --project=<repo>/jutari tools/xai_study/ground_truth/oracle_intervene.jl --game pong` |
+| Intervention↔gradient cross-check (content path) | spearman **1.0** | `ground_truth/out/oracle_xcheck_pong.json` → `value` | `ground_truth/oracle_xcheck.jl` | `julia --project=<repo>/jutari tools/xai_study/ground_truth/oracle_xcheck.jl` |
+| ROM SHA-256 + size, all 6 core games | see table | `repro/rom_hash_table.csv` | `repro/make_hash_tables.py` | `XAI_PRIMARY_REPO=<repo> python3 tools/xai_study/repro/make_hash_tables.py` |
+| Action-stream hash + seed, per `state` | see table | `repro/action_stream_hashes.csv` | `repro/make_hash_tables.py` | (as above) |
+
+Each record additionally carries `seed`, `where`, `commit`, and `timestamp` (SPEC §R), so
+every number's provenance (the exact commit it was produced at) is self-documenting. The
+`make_hash_tables.py --verify` path re-hashes the ROMs and asserts the committed digests
+still match the bytes on disk (P6 §55 checksum manifest).
+
+---
+
 ## 7. End-to-end reproduction (one path)
 
-1. Check out this repo at the HEAD pin; run the conformance gate (§1).
-2. (Optional) regenerate the oracle on the real ROM (needs ROMs via §5):
+1. Check out this repo at the HEAD pin (public at github.com/akmaier/UnderstandingVCS,
+   companion arXiv:2606.22447); run the conformance gate (§1).
+2. (Optional) obtain ROMs (§5) and verify them:
+   `python3 tools/xai_study/repro/make_hash_tables.py --verify` (must print `PASS`).
+3. (Optional) regenerate the oracle on the real ROM (needs ROMs via §5):
    `julia --project=<repo>/jutari tools/xai_study/ground_truth/oracle_intervene.jl --game pong`.
-3. Re-run any phase runner (§3) — it writes §R records into that phase's `out/`.
-4. `python3 tools/xai_study/compare/leaderboard.py` — re-derives the leaderboard from
-   the records (pure read; embedded self-check must PASS).
-5. Score a new method against the same oracle: `… benchmark.run --method <yours>` (§4).
-6. Regenerate the figures (§6).
+4. Re-run any phase runner (§3) — it writes §R records into that phase's `out/`.
+5. `python3 tools/xai_study/compare/leaderboard.py` — re-derives the leaderboard from
+   the records (pure read; embedded self-check must PASS). Cross-check the printed
+   numbers against the §6.5 traceability table.
+6. Score a new method against the same oracle: `… benchmark.run --method <yours>` (§4).
+7. Regenerate the figures (§6).
 
-Every number in the paper traces to a committed §R record; steps 3–6 regenerate the
-derived artifacts from those records without touching the emulator core.
+Every number in the paper traces to a committed §R record (§6.5); steps 4–7 regenerate the
+derived artifacts from those records without touching the emulator core. The XAI artifact
+is **available for review now** (§0) — a reviewer reproduces every derived number offline
+from the committed records + hash tables, with **no ROM required** for scoring.

@@ -1,0 +1,9 @@
+experiment_state,boot,replay_action,target_frame,horizon_frames,total_frames,n_action_tokens,seed,action_stream_sha256,output_ids
+f120+30,60 NOOP + 4 RESET (xitari/ALE parity),NOOP (action id 0),120,30,150,214,0,6168162cc5a75a8d21ac5af677cfc4cfdfa37cb3ba5f810887b56b144dda35e0,ground_truth oracle + Phase B/C + benchmark headline checkpoint
+f30+30,60 NOOP + 4 RESET (xitari/ALE parity),NOOP (action id 0),30,30,60,124,0,3021b6d1425dd535a7519964f714ad8e3fda8a4195d18fffd6fa4efb51cd3bbf,Phase A / Phase C early-window checkpoint
+f60+30,60 NOOP + 4 RESET (xitari/ALE parity),NOOP (action id 0),60,30,90,154,0,b68deb86d681d16a783276bf4a0776623f911bb504e0f75091bc2a70fe49ff61,Phase A / Phase C mid-window checkpoint
+f330+30,60 NOOP + 4 RESET (xitari/ALE parity),NOOP (action id 0),330,30,360,424,0,b86210cfa6aa39565dcb31a00f953e3e8c3fde51f3413acc41a044a2a9c9a61f,Ms. Pac-Man late-window checkpoint (Phase A/C)
+f300+30,60 NOOP + 4 RESET (xitari/ALE parity),NOOP (action id 0),300,30,330,394,0,65b330da9690e4f2e48d35878642e230a503c166cb8a5b79750af534a60d35e2,Pong late-window checkpoint (Phase B)
+f0+256,60 NOOP + 4 RESET (xitari/ALE parity),NOOP (action id 0),0,256,256,320,0,926365d810663e453524771891eb7b5ffcf6b2557a48956b66c50829b46faf04,Phase A whole-state recording window (A8)
+f0+400,60 NOOP + 4 RESET (xitari/ALE parity),NOOP (action id 0),0,400,400,464,0,e428a3fd0e5a3b0517663220d71ec0d8ff4b0ed2eab3cd1ee2e106f5da0ccf58,Ms. Pac-Man Phase A whole-state recording window
+traj_60f_ram_noop,60 NOOP + 4 RESET (xitari/ALE parity),NOOP (action id 0),0,60,60,124,0,3021b6d1425dd535a7519964f714ad8e3fda8a4195d18fffd6fa4efb51cd3bbf,Phase C 60-frame NOOP RAM trajectory
