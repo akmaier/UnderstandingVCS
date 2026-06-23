@@ -1,28 +1,25 @@
-% 00_abstract.tex — Abstract. Drafted by item P2-E8-1.
+% 00_abstract.tex — Abstract. Drafted by item P2-E8-1; restyled+condensed P2-E8.
 % Body only: this file is \input{} inside \abstract{...} in main.tex (no \section).
 % NMI rule (document_check.md C): UNREFERENCED abstract — no \cite — and ~150-200 words.
 % Maier/NMI voice per ../STYLE.md; honesty contract per ../plan.md.
-We ask whether a faithful explanation is already an understanding.
-Interpretability methods are judged by their faithfulness --- whether they name
-the true causes --- yet on real neural systems there is no ground truth against
-which to check them. We remove that excuse on a system whose ground truth is
-computable: a bit-exact, differentiable port of the Atari~2600, never built to be
-interpretable, in which the cause of any output follows from exact intervention.
-Scoring about~31 interpretability methods against this oracle, we find causal
-methods faithful, while popular gradient and correlational saliency methods are
-provably zero on discrete position outputs (activation patching $1.000$ versus
-vanilla saliency $0.000$) yet score higher on human plausibility --- a danger
-zone of conviction without correctness. Yet
-faithfulness is the smaller half of understanding: an exact method returns a
-causal-effect map or a data-flow graph, not the computation. A graph-correct
-circuit need not reproduce behavior (sufficiency $0.44$), and a feature matching a
-named variable can be causally inert (matched fraction $1.0$,
-faithfulness $0.04$). We name this measured
-residual the \emph{semantic gap}, and stress that we \emph{measure} it, not
-\emph{close} it. As such, the approach offers a reusable ground-truth benchmark
-for explainable AI, mechanistic interpretability, AI safety, and software
-verification. We assume that it will help redirect the field toward recovering
-meaning, not merely confirming causes.
+Interpretability methods are judged by their faithfulness, by whether they name
+the true causes of a system's output. Yet on real neural systems there is no
+ground truth against which to check that judgement. We remove the excuse on a
+system whose ground truth is computable: a bit-exact, differentiable port of the
+Atari~2600, never built to be interpretable, in which the cause of any output
+follows from exact intervention. Scoring about~31 methods against this oracle, we
+find causal methods faithful while popular gradient and correlational saliency
+methods are provably zero on discrete position outputs (activation patching
+$1.000$ versus vanilla saliency $0.000$), yet score higher on human plausibility.
+Faithfulness is the smaller half of understanding. An exact method returns a
+causal-effect map or a data-flow graph, not the computation: a graph-correct
+circuit need not reproduce behaviour (sufficiency $0.44$), and a feature matching
+a named variable can be causally inert (matched fraction $1.0$, faithfulness
+$0.04$). We name this measured residual the \emph{semantic gap}, and stress that
+we \emph{measure} it, not \emph{close} it. As such, the machine offers a reusable
+ground-truth benchmark for explainable AI, mechanistic interpretability, AI
+safety, and software verification. We believe it will help redirect the field
+toward recovering meaning, not merely confirming causes.
 
 % BIBTEX-NEEDED: (none) — the abstract is intentionally citation-free per the NMI
 %   unreferenced-abstract rule (document_check.md C). No \cite keys introduced;
