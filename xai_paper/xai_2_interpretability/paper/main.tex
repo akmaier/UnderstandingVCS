@@ -1,0 +1,95 @@
+%% main.tex — Paper 2 (xai_2_interpretability) master document.
+%% Built from the Springer Nature sn-jnl class (sn-article-SAMPLE.tex as reference).
+%% Target: Nature Machine Intelligence (Nature Portfolio) — Article/Analysis.
+%%
+%% SCRUM note: this master \input{}s one file per section. Each per-section file is
+%% owned by a single writing item (P2-E8-1 .. P2-E8-9) so they can be drafted in
+%% parallel without colliding (SCRUM §6 disjoint file_scope). Do NOT inline section
+%% bodies here. All drafting follows ../STYLE.md (Andreas Maier's voice).
+%%
+%% NOTE on the SN single-file rule: the SN sample says "do not use \input{...}".
+%% That rule governs the *final submission package* (one .tex for production XML).
+%% For drafting we keep sections split; a flatten step at submission time inlines them.
+
+%% Style for submissions to Nature Portfolio journals (NMI is Nature Portfolio).
+%% pdflatex option: compile with pdflatex/xelatex.
+\documentclass[sn-nature,pdflatex]{sn-jnl}
+
+%%%% Standard packages
+\usepackage{graphicx}%
+\usepackage{multirow}%
+\usepackage{amsmath,amssymb,amsfonts}%
+\usepackage{amsthm}%
+\usepackage{mathrsfs}%
+\usepackage[title]{appendix}%
+\usepackage{xcolor}%
+\usepackage{textcomp}%
+\usepackage{manyfoot}%
+\usepackage{booktabs}%
+\usepackage{algorithm}%
+\usepackage{algorithmicx}%
+\usepackage{algpseudocode}%
+\usepackage{listings}%
+
+%% Figures live in figures/ (fig1..fig6 PDFs already generated there).
+\graphicspath{{figures/}}
+
+%% Theorem environments (the F and S and M triad / definitions go here).
+\theoremstyle{thmstyleone}%
+\newtheorem{theorem}{Theorem}%
+\newtheorem{proposition}[theorem]{Proposition}%
+\theoremstyle{thmstyletwo}%
+\newtheorem{example}{Example}%
+\newtheorem{remark}{Remark}%
+\theoremstyle{thmstylethree}%
+\newtheorem{definition}{Definition}%
+
+\raggedbottom
+
+\begin{document}
+
+%%=============================================================%%
+%% Title — reframed (declarative-claim register, Maier/Nature-family):
+%% the title states the *result*, not the artifact.
+%%=============================================================%%
+\title[Faithful attribution recovers the causal wiring, not the semantics]{Faithful attribution recovers the causal wiring, not the semantics: a ground-truth audit of interpretability on a fully known machine}
+
+%%=============================================================%%
+%% Authors (provisional) — A. Maier et al.
+%%=============================================================%%
+\author*[1]{\fnm{Andreas} \sur{Maier}}\email{andreas.maier@fau.de}
+
+\author[1]{\fnm{Stefan} \sur{Bayer}}
+
+\author[1]{\fnm{Patrick} \sur{Krauss}}
+
+\affil*[1]{\orgdiv{Pattern Recognition Lab}, \orgname{Friedrich-Alexander-Universit\"at Erlangen-N\"urnberg}, \orgaddress{\city{Erlangen}, \country{Germany}}}
+
+%%=============================================================%%
+%% Abstract + keywords (body drafted in sections/00_abstract.tex)
+%%=============================================================%%
+\abstract{\input{sections/00_abstract}}
+
+\keywords{interpretability, explainable AI, mechanistic interpretability, faithfulness, ground truth, causal attribution, semantic gap, Atari VCS}
+
+\maketitle
+
+%%=============================================================%%
+%% Body — one \input per section (SCRUM §6 ordering).
+%%=============================================================%%
+\input{sections/01_intro}
+\input{sections/02_related}
+\input{sections/03_methods}
+\input{sections/04_results_A}
+\input{sections/05_results_B}
+\input{sections/06_results_C}
+\input{sections/07_results_compare}
+\input{sections/08_discussion}
+\input{sections/09_endmatter}
+
+%%=============================================================%%
+%% Bibliography — existing references.bib, sn-nature style.
+%%=============================================================%%
+\bibliography{references}
+
+\end{document}
