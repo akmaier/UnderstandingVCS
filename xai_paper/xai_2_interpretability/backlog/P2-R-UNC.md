@@ -2,7 +2,7 @@
 id: P2-R-UNC
 title: Bootstrap CIs + threshold/sampling sensitivity over the committed leaderboard
 epic: RV (Revision — empirical)
-status: todo
+status: done
 sprint: 9
 owner:
 where: local
