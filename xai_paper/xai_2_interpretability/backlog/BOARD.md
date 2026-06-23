@@ -70,10 +70,10 @@
 | P2-E8-7 | Write results C (mechanistic interpretability) | E8 | 7 | — | local | done | P2-E8-0, P2-E6-1, P2-E7-4 | `paper/sections/06_results_C.tex` |
 | P2-E8-8 | Write the results-comparison section | E8 | 7 | — | local | done | P2-E8-0, P2-E6-1, P2-E6-3, P2-E7-2 | `paper/sections/07_results_compare.tex` |
 | P2-E8-9 | Write discussion + end-matter | E8 | 7 | — | local | done | P2-E8-0, P2-E6-1 | `paper/sections/08_discussion.tex`<br>`paper/sections/09_endmatter.tex` |
-| P2-E9-1 | document_check pass — required statements, Reporting Summary, limits | E9 | 8 | — | local | todo | P2-E8-9 | `document_check.md`<br>`paper/sections/09_statements.tex` |
-| P2-E9-2 | Reference verification — no-hallucination pass on the new bib | E9 | 8 | — | local | todo | P2-E8-9 | `paper/references.bib` |
-| P2-E9-3 | Reproducibility bundle — seeds, configs, benchmark, ROM hashes | E9 | 8 | — | local | todo | P2-E6-2 | `tools/xai_study/benchmark/REPRO.md` |
-| P2-E9-4 | Final build + page/limit gate (SM) | E9 | 8 | — | local | todo | P2-E9-1, P2-E9-2, P2-E9-3 | `paper/main.tex`<br>`paper/build/**` |
+| P2-E9-1 | document_check pass — required statements, Reporting Summary, limits | E9 | 8 | — | local | done | P2-E8-9 | `document_check.md`<br>`paper/sections/09_statements.tex` |
+| P2-E9-2 | Reference verification — no-hallucination pass on the new bib | E9 | 8 | — | local | done | P2-E8-9 | `paper/references.bib` |
+| P2-E9-3 | Reproducibility bundle — seeds, configs, benchmark, ROM hashes | E9 | 8 | — | local | done | P2-E6-2 | `tools/xai_study/benchmark/REPRO.md` |
+| P2-E9-4 | Final build + page/limit gate (SM) | E9 | 8 | — | local | done | P2-E9-1, P2-E9-2, P2-E9-3 | `paper/main.tex`<br>`paper/build/**` |
 
 ## Items per sprint
 Sprint 0: 3, Sprint 1: 6, Sprint 2: 1, Sprint 3: 4, Sprint 4: 8, Sprint 5: 23, Sprint 6: 11, Sprint 7: 10, Sprint 8: 4

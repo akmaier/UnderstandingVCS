@@ -25,5 +25,24 @@ and the honesty contract. Do NOT invent or alter any result.
 3. **Final build (`E9-4`, SM):** assemble, coherence/transition pass, `latexmk` build, page/word
    count vs the NMI limit, the final package + checklist. Then hand back to PO.
 
-## Review
-_(to be filled at the Sprint-8 barrier — the submission package)_
+## Review — closed 2026-06-23: SUBMISSION PACKAGE READY (E9 done; 69/70, only optional E3-9 left)
+
+- **Restyle + condense:** 37 pp / ~19.5k words → **31 pp / ~9.5k prose words**; every run-in
+  `\paragraph` heading removed (0 left; only proper `\subsection` titles); rewritten to Maier's
+  voice from the corrected STYLE.md (re-derived from his 3 real papers; §6b stakes/vividness in
+  the Jonas-Kording register). Author corrected to **Siming Bayer**.
+- **E9-1 document_check** (`c338f6b`): NMI statements in `09_endmatter` (data + code availability
+  incl. the MIT-on-acceptance line, author contributions, competing interests, ethics, acks);
+  limitations verified in the discussion; `document_check.md` checklist.
+- **E9-2 reference no-hallucination** (`9a1be88` + E9-4 cleanup): 55 cited refs verified — 51 OK,
+  1 fixed (Barbiero authors), **no hallucinations**; Tracr/InterpBench/BIM present + verified; dup
+  keys canonicalized (`yang2019bim`, `lazebnik2002can`). `reference_check.md`.
+- **E9-3 reproducibility** (`ba3e21d`): `REPRODUCIBILITY.md` — substrate + commit pins, §R schema,
+  seeds + exact run commands, the packaged benchmark, ROM SHA-256 provenance, figure regeneration.
+- **E9-4 final build:** `latexmk` exit 0 → `paper/main.pdf`, **31 pp, 0 undefined refs/cites, all
+  6 figures embedded**.
+
+**PO-only remaining (cannot be done from the repo):** final author list/order; Nature Reporting
+Summary form; venue + article-type call (NMI Article vs Analysis); cover letter + suggested
+reviewers + ORCID; optional abstract trim (~205→200 w) + explicit CI/dispersion bands; one
+index-dependent page range (Bastani 2018); optional E3-9 (Visual6502 head-to-head).
