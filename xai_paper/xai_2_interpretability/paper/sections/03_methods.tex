@@ -1,1 +1,406 @@
-% 03_methods.tex — Methods (emulator, oracle, F-and-S-and-M triad, metrics). Drafted by item P2-E8-3. STUB: empty until then.
+% 03_methods.tex — Methods (emulator, oracle, F-and-S-and-M triad, metrics).
+% Drafted by item P2-E8-4. Voice: ../STYLE.md (Andreas Maier). Numbers: committed
+% leaderboard/faithful_demo + experiment_design.md §0–§3. Figure: \ref{fig:platform}.
+
+\section{Methods}\label{sec:methods}
+
+Our method has a single organizing idea: we study an interpretability question on
+a machine whose answer we can compute exactly. Everything below serves that idea.
+We first describe the substrate that makes the ground truth obtainable, then the
+oracle that delivers it, then the tiered semantics we attach to it, and finally the
+correctness triad that turns ``do we understand?'' into a set of numbers. The full
+per-method setups live in the Supplementary Information; here we give the measurement
+instrument and the scoring, which are shared by all three phases. Figure~\ref{fig:platform}
+sketches the whole pipeline --- substrate, oracle, and triad --- in one schematic.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{fig1_platform_oracle.pdf}
+  \caption{\textbf{The measurement platform and its ground-truth oracle.} A
+  differentiable, bit-exact port of the Atari VCS (left) gives four capabilities no
+  neural network grants for free --- exact forward, exact interventions $\mathrm{do}(u)$,
+  full state observability, and content-path gradients. On it we build the oracle
+  (centre): the primary \emph{exact intervention oracle}, $\mathrm{do}(u{:=}v')\!\to\!\Delta y(u)$
+  by bit-exact re-run, and a \emph{content-path gradient} companion $\partial y/\partial u$.
+  Any explanation $\hat{E}$ is then scored by the correctness triad (right),
+  $\text{right}=\mathrm{F}\wedge\mathrm{S}\wedge\mathrm{M}$, on the two reporting axes
+  (faithfulness vs.\ human plausibility). \emph{Note that} a discrete index --- a sprite's
+  position, set by strobe timing --- has zero naive gradient; for such
+  position/index/event outputs the intervention oracle is the \emph{sole} ground truth and
+  gradient methods are scored as methods under test. The schematic draws no experiment data.}
+  \label{fig:platform}
+\end{figure}
+
+\subsection{The differentiable, bit-exact VCS substrate}\label{sec:substrate}
+
+The subject of this study is the Atari Video Computer System (VCS) itself --- its chip,
+its program, and its game logic --- not a learned agent. We require a complex, real
+artifact that was never designed to be interpretable, yet whose every causal dependency
+we can read off exactly. Paper~1 built precisely this: a bit-exact, differentiable port
+of the 1977 VCS, validated bit-for-bit against the \texttt{xitari} C++ reference on all
+64 games of the Paper-1 roster, in both random-access memory and rendered screen, within
+the validated conformance window~\cite{maier2025vcs,xitari}. We use that port in two
+interchangeable realizations --- \texttt{jutari} (Julia) and \texttt{jaxtari}
+(JAX/Python) --- which are themselves cross-checked to be identical.
+
+The substrate grants four capabilities that no neural network offers for free, and on
+which the rest of the method rests. \emph{First}, an exact forward map. We write the
+machine's behavior as
+\begin{equation}
+  y \;=\; \mathrm{VCS}\big(\mathrm{ROM},\, \mathrm{inputs}[0{:}t],\, s_0\big),
+  \label{eq:vcs}
+\end{equation}
+that is, the output $y$ at step $t$ --- a pixel, a score, or a game event --- is a
+deterministic function of the cartridge bytes, the joystick and switch inputs up to $t$,
+and the initial state $s_0$. Re-running with the same arguments reproduces $y$ to the
+bit. \emph{Second}, exact interventions. We can set any cause $u$ --- a ROM byte, a RAM
+cell, a CPU/TIA/RIOT register, an opcode, or a joystick input --- to any value and re-run
+Eq.~\eqref{eq:vcs} deterministically, which realizes the causal operator $\mathrm{do}(u)$
+on a real machine rather than on an assumed world model. \emph{Third}, full state
+observability: every bit of RAM and every register is recorded along the trajectory, so
+the ``activations'' we interpret are the program's own variables. \emph{Fourth}, a
+content-path gradient $\partial y / \partial u$ through a straight-through estimator (STE)
+formulation whose forward pass is bit-exact to the hard machine at any finite
+temperature~\cite{bengio2013estimating,jang2017gumbel}, and which we batch on the GPU by
+vectorized mapping. The three observable faces of Eq.~\eqref{eq:vcs} --- inputs we drive,
+internal state we read and clamp, and outputs we explain --- are the same three faces a
+neural interpretability study works with, which is what lets one substrate carry the
+neuroscience, attribution, and mechanistic-interpretability batteries at once.
+
+We honor one boundary throughout. Paper-1 bit-exactness holds within a bounded frame
+window on a fixed action stream (on the order of 30 frames of RAM and 60 frames of
+screen); every scored claim is taken inside that validated horizon, or the conformance is
+re-established before scoring. Long-horizon end-to-end gradients are not needed for the
+single-step metrics we report, so we do not assume them.
+
+\subsection{The ground-truth oracle}\label{sec:oracle}
+
+The oracle is the heart of the method. For any output $y$ and any candidate cause $u$ it
+returns the \emph{true} effect of $u$ on $y$, against which every interpretability method
+is then scored.
+
+The primary construction is the \emph{exact intervention oracle}. We intervene on $u$ ---
+occlude, clamp, replace, or resample it --- re-run the machine deterministically, and
+record the change in the output,
+\begin{equation}
+  \Delta y(u) \;=\; \mathrm{VCS}\big(\dots,\, \mathrm{do}(u{:=}v'),\, \dots\big) \;-\; y .
+  \label{eq:doy}
+\end{equation}
+In words: the true causal effect of a cause is the bit-exact difference its surgical
+edit makes to the output, measured by actually running the altered machine. No
+world-model and no smoothness are assumed; each $\Delta y$ is a real re-run, and the
+collection $\{\Delta y(u)\}$ over all causes is the true causal map of $y$. This is the
+reference for the faithfulness axis of every method in the paper.
+
+The companion construction is the \emph{content-path gradient}, $\partial y / \partial u$,
+read through the differentiable substrate. It is fast and dense, and it agrees with the
+intervention oracle on the content path --- the register, color, and graphics-bit values
+that flow smoothly into the pixel. \emph{Yet,} a single, decisive caveat carries through
+the entire study and we state it plainly. The STE gradient routes to the content path
+only; a \emph{discrete index} --- a sprite's screen position, which the VCS sets by the
+timing of a strobe write --- has \emph{zero naive gradient}, because an infinitesimal
+change of the cause never crosses the integer boundary that moves the sprite. Recovering
+a position gradient at all requires the bilinear sampler of Paper~1~\cite{jaderberg2015spatial}.
+\emph{Hence,} for content outputs the gradient is a legitimate companion oracle, while
+for \emph{position, index, and event} outputs the intervention oracle of
+Eq.~\eqref{eq:doy} is the \emph{sole} ground truth, and every gradient-based method is
+scored \emph{as a method under test}, not promoted to oracle. This single distinction ---
+the \emph{position regime} --- is where the sharpest separations in our results appear.
+Where the two constructions overlap on the content path we report their correlation and
+flag, rather than hide, the non-smooth and saturated points at which they disagree.
+
+\subsection{Tiered ground truth and how we obtain it}\label{sec:tiers}
+
+The ground truth comes in three tiers, and the tiering is not bookkeeping --- it carries
+the central argument of the paper. \emph{Tier~1 (T1)} is the exact causal map of
+Eq.~\eqref{eq:doy}, derived internally from the substrate and available for all 64 games.
+\emph{Tier~2 (T2)} is the hardware roles and the read/write data-flow graph --- which
+register does what, which cell feeds which routine --- also exact and internal, also all
+64 games. T1 and T2 are everything the machine \emph{is}; they need no external label.
+
+\emph{Tier~3 (T3)} is different in kind, and that difference is the point. T3 attaches a
+\emph{game-concept} name to a cell or feature --- ``the ball's $x$ position,'' ``the
+score'' --- and such names are \emph{not} computable from the substrate alone, because
+they are facts about what the program \emph{means}, not about what it \emph{does}. We
+import T3 from two public sources and then make them causal. AtariARI provides labels for
+22 games, read from commented disassemblies and served one label per
+frame~\cite{anand2019unsupervised}; its raw RAM coordinates are not aligned to the
+rendered position. OCAtari covers more than 40 games and, in its RAM mode, applies the
+render-time offsets that fix that misalignment~\cite{delfosse2023ocatari}. Our procedure
+is then: (1) import both as \emph{candidate} labels; (2) \emph{verify each causally} by
+setting the byte, re-rendering, and confirming on the bit-exact framebuffer that the
+named object moves to the predicted place --- which upgrades a correlational label to a
+verified-causal one and auto-corrects the offsets; and (3) \emph{discover} further labels
+by RAM-to-framebuffer correlation followed by an intervention sweep. The headline
+\emph{core set} is six games --- Pong, Breakout, Space Invaders, Seaquest, Ms.\ Pac-Man,
+and Q*bert --- chosen because each carries \emph{both} AtariARI and OCAtari candidate
+sources, all six lie in the Paper-1 bit-exact roster, and together they span paddle-and-ball,
+shooter-with-shields, resource-meter, multi-agent-pursuit, and discrete-grid game logic.
+Remaining games of the roster form a breadth set scored on T1/T2 only.
+
+We are deliberate about what this buys us, and what it does not. \emph{All} T3 labels are
+external and only \emph{verified}, never \emph{discovered from scratch}; a method that
+matches a supplied concept has \emph{aligned} to a given meaning, not recovered it. This
+is exactly why a probe can show that information is \emph{present} without showing it is
+\emph{used}~\cite{hewitt2019designing}, and why our intervention test --- which asks
+whether the byte \emph{causes} the named object to move --- is strictly stronger than
+decoding it. Recovering the program's documentation and design from the bare machine is a
+separate problem, and it is the subject of the companion paper, not this one.
+
+\subsection{When is an explanation right? The F\,$\wedge$\,S\,$\wedge$\,M triad}\label{sec:triad}
+
+A faithful attribution is not yet an understanding, and to make that statement a
+measurement rather than an opinion we need an operational criterion for correctness. We
+adopt one in the spirit of Marr's levels of analysis~\cite{marr1982vision} and of Jonas
+and Kording's warning that finding structure is not the same as
+explaining it~\cite{jonas2017could}. We call an explanation $\hat{E}$ of how an output
+$y$ arises \emph{right} if and only if it is Faithful, Sufficient, and Minimal,
+\begin{equation}
+  \text{right} \;=\; \mathrm{F} \,\wedge\, \mathrm{S} \,\wedge\, \mathrm{M},
+  \label{eq:triad}
+\end{equation}
+which reads: an explanation must name the true causes, must be able to regenerate the
+behavior, and must do so at the right level with no spurious parts. The three axes are
+defined against the oracle, not against any method under test, which is what keeps the
+criterion non-circular.
+
+\paragraph{Faithfulness (F).}
+The claimed causes are the \emph{true} causes. We score $\hat{E}$ against the intervention
+oracle of Eq.~\eqref{eq:doy} by correlation, sign and magnitude agreement, deletion and
+insertion area-under-curve, and precision at $k$ against the true causal top-$k$. F is the
+field's usual quality criterion, and on our machine --- uniquely --- it can actually be
+checked.
+
+\paragraph{Sufficiency (S).}
+The explanation could \emph{regenerate} the behavior: it predicts $y$ under interventions
+it has not seen. Crucially, we score S \emph{against the exact intervention oracle},
+applying a held-out $\mathrm{do}(u)$, predicting $y$ from $\hat{E}$, and comparing to the
+true $y$ on the bit-exact re-run. We deliberately do \emph{not} define S through
+interchange interventions or scrubbing, which are themselves mechanistic-interpretability
+methods under test in Phase~C; using them to score S would make the criterion circular.
+
+\paragraph{Minimality (M).}
+The explanation is parsimonious, has no spurious parts, and lives at the algorithmic
+level --- the registers, RAM cells, opcodes, and program variables that constitute the
+machine's own module decomposition. M asks whether $\hat{E}$ matches the known structure
+of the computation, not merely whether it is small.
+
+Two reporting axes carry the headline comparison: \emph{faithfulness} (F, against the
+ground truth) on the horizontal, and \emph{human plausibility} on the vertical. The
+plausibility axis is a documented method-tradition proxy, not a human-subjects
+measurement, and we report it as such; its only job is to expose the \emph{danger zone} ---
+explanations with high plausibility but low faithfulness, which look convincing and are
+wrong. The separation of F (which the wiring satisfies) from S and M (which the
+\emph{computation} must satisfy) is what lets us name, later, the residual that
+faithfulness alone leaves behind.
+
+\subsection{Methods under test, games, and aggregation}\label{sec:scoring}
+
+We turn the toolkit of three traditions onto the same machine and score every method by
+the triad of Eq.~\eqref{eq:triad}. The \emph{neuroscience battery} (Phase~A) runs the
+classical operators --- connectomics and data-flow recovery, single-unit lesions, tuning
+curves, pairwise and global correlation structure, pooled-activity spectra, Granger
+causality, dimensionality reduction, and whole-state recording --- and scores each
+against the known mechanism, quantifying Kording's lesson and fixing the
+low-faithfulness baseline~\cite{jonas2017could}. The \emph{attribution/XAI battery}
+(Phase~B) explains a chosen output from its causes with gradient saliency and its
+variants, integrated gradients, occlusion, perturbation masks, randomized masking, LIME,
+and Shapley-style attribution~\cite{simonyan2014deep,sundararajan2017axiomatic,zeiler2014visualizing,fong2017interpretable,petsiuk2018rise,ribeiro2016why,lundberg2017unified};
+several popular methods --- Grad-CAM and its variants, attention
+rollout~\cite{selvaraju2017gradcam,chattopadhyay2018gradcampp,abnar2020quantifying} ---
+require neural layers or a learned policy and are recorded as \emph{not applicable} to a
+non-neural machine. The \emph{mechanistic-interpretability battery} (Phase~C) runs
+activation patching and causal mediation, interchange interventions and distributed
+alignment search, attribution and path patching, automatic circuit discovery, sparse
+autoencoders, causal scrubbing, linear probing with control tasks, and the logit/tuned
+lens~\cite{vig2020investigating,meng2022locating,geiger2021causal,geiger2023finding,nanda2023attribution,wang2022interpretability,conmy2023towards,cunningham2023sparse,chan2022causal,alain2017understanding,hewitt2019designing,belrose2023eliciting}.
+
+All faithfulness scoring runs on the six core games of Section~\ref{sec:tiers}; the
+oracle's re-runs are exact on every one of them. Cell- and pixel-level scores (correlation,
+deletion/insertion area-under-curve, precision at $k$) are taken against T1 and need no
+T3; only object- and concept-level scores --- pointing games, object-level
+counterfactuals, feature-to-variable matching --- draw on the external T3 labels, and we
+flag every such score as alignment-to-given, not discovery. For the cross-tradition
+comparison we aggregate the committed per-game records into one row per method and place
+all methods on the shared faithfulness-versus-plausibility axes (Fig.~\ref{fig:platform}
+gives the schematic; the populated leaderboard is reported in the Results). The headline
+contrast is computed on the position regime, where the naive gradient is provably zero: in
+that regime causal and intervention methods average a faithfulness of $0.41$ against
+$0.07$ for gradient and correlational methods, a gap of $0.34$, while the per-method
+extreme places an exact causal method (activation patching) at faithfulness $1.000$ and
+the field's default saliency at $0.000$ on all six games --- with the popular method
+nonetheless carrying the higher plausibility proxy ($0.9$ versus $0.5$). These are the
+numbers against which the semantic gap is then measured.
+
+% =====================================================================
+% BIBTEX-NEEDED: full entries for the keys cited above that are NOT yet
+% in references.bib. The keys already present in references.bib that this
+% section reuses are: xitari, jonas2017could, sundararajan2017axiomatic,
+% selvaraju2017gradcam, chattopadhyay2018gradcampp, jaderberg2015spatial,
+% jang2017gumbel, bengio2013estimating, delfosse2023ocatari.
+% Please MERGE the following NEW entries (SM-only edit to references.bib):
+% =====================================================================
+%
+% @article{maier2025vcs,
+%   title   = {A bit-exact, differentiable port of the Atari 2600 Video Computer System},
+%   author  = {Maier, Andreas and Bayer, Stefan and Krauss, Patrick},
+%   journal = {(Paper 1; manuscript / preprint)},
+%   year    = {2025},
+%   note    = {jutari and jaxtari: 64/64 games bit-exact vs the xitari reference in RAM and screen}
+% }
+%
+% @inproceedings{anand2019unsupervised,
+%   title     = {Unsupervised State Representation Learning in Atari},
+%   author    = {Anand, Ankesh and Racah, Evan and Ozair, Sherjil and Bengio, Yoshua and C{\^o}t{\'e}, Marc-Alexandre and Hjelm, R. Devon},
+%   booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+%   year      = {2019}
+% }
+%
+% @book{marr1982vision,
+%   title     = {Vision: A Computational Investigation into the Human Representation and Processing of Visual Information},
+%   author    = {Marr, David},
+%   year      = {1982},
+%   publisher = {W. H. Freeman and Company}
+% }
+%
+% @inproceedings{simonyan2014deep,
+%   title     = {Deep Inside Convolutional Networks: Visualising Image Classification Models and Saliency Maps},
+%   author    = {Simonyan, Karen and Vedaldi, Andrea and Zisserman, Andrew},
+%   booktitle = {International Conference on Learning Representations (ICLR) Workshop},
+%   year      = {2014}
+% }
+%
+% @inproceedings{zeiler2014visualizing,
+%   title     = {Visualizing and Understanding Convolutional Networks},
+%   author    = {Zeiler, Matthew D. and Fergus, Rob},
+%   booktitle = {European Conference on Computer Vision (ECCV)},
+%   year      = {2014},
+%   pages     = {818--833}
+% }
+%
+% @inproceedings{fong2017interpretable,
+%   title     = {Interpretable Explanations of Black Boxes by Meaningful Perturbation},
+%   author    = {Fong, Ruth C. and Vedaldi, Andrea},
+%   booktitle = {IEEE International Conference on Computer Vision (ICCV)},
+%   year      = {2017},
+%   pages     = {3429--3437}
+% }
+%
+% @inproceedings{petsiuk2018rise,
+%   title     = {{RISE}: Randomized Input Sampling for Explanation of Black-box Models},
+%   author    = {Petsiuk, Vitali and Das, Abir and Saenko, Kate},
+%   booktitle = {British Machine Vision Conference (BMVC)},
+%   year      = {2018}
+% }
+%
+% @inproceedings{ribeiro2016why,
+%   title     = {``Why Should I Trust You?'': Explaining the Predictions of Any Classifier},
+%   author    = {Ribeiro, Marco Tulio and Singh, Sameer and Guestrin, Carlos},
+%   booktitle = {Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining},
+%   year      = {2016},
+%   pages     = {1135--1144}
+% }
+%
+% @inproceedings{lundberg2017unified,
+%   title     = {A Unified Approach to Interpreting Model Predictions},
+%   author    = {Lundberg, Scott M. and Lee, Su-In},
+%   booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+%   year      = {2017}
+% }
+%
+% @inproceedings{abnar2020quantifying,
+%   title     = {Quantifying Attention Flow in Transformers},
+%   author    = {Abnar, Samira and Zuidema, Willem},
+%   booktitle = {Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics (ACL)},
+%   year      = {2020},
+%   pages     = {4190--4197}
+% }
+%
+% @inproceedings{vig2020investigating,
+%   title     = {Investigating Gender Bias in Language Models Using Causal Mediation Analysis},
+%   author    = {Vig, Jesse and Gehrmann, Sebastian and Belinkov, Yonatan and Qian, Sharon and Nevo, Daniel and Singer, Yaron and Shieber, Stuart},
+%   booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+%   year      = {2020}
+% }
+%
+% @inproceedings{meng2022locating,
+%   title     = {Locating and Editing Factual Associations in {GPT}},
+%   author    = {Meng, Kevin and Bau, David and Andonian, Alex and Belinkov, Yonatan},
+%   booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+%   year      = {2022}
+% }
+%
+% @inproceedings{geiger2021causal,
+%   title     = {Causal Abstractions of Neural Networks},
+%   author    = {Geiger, Atticus and Lu, Hanson and Icard, Thomas and Potts, Christopher},
+%   booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+%   year      = {2021}
+% }
+%
+% @inproceedings{geiger2023finding,
+%   title     = {Finding Alignments Between Interpretable Causal Variables and Distributed Neural Representations},
+%   author    = {Geiger, Atticus and Wu, Zhengxuan and Potts, Christopher and Icard, Thomas and Goodman, Noah D.},
+%   booktitle = {Proceedings of the Third Conference on Causal Learning and Reasoning (CLeaR)},
+%   year      = {2024}
+% }
+%
+% @misc{nanda2023attribution,
+%   title        = {Attribution Patching: Activation Patching at Industrial Scale},
+%   author       = {Nanda, Neel},
+%   year         = {2023},
+%   howpublished = {\url{https://www.neelnanda.io/mechanistic-interpretability/attribution-patching}}
+% }
+%
+% @inproceedings{wang2022interpretability,
+%   title     = {Interpretability in the Wild: A Circuit for Indirect Object Identification in {GPT-2} Small},
+%   author    = {Wang, Kevin and Variengien, Alexandre and Conmy, Arthur and Shlegeris, Buck and Steinhardt, Jacob},
+%   booktitle = {International Conference on Learning Representations (ICLR)},
+%   year      = {2023}
+% }
+%
+% @inproceedings{conmy2023towards,
+%   title     = {Towards Automated Circuit Discovery for Mechanistic Interpretability},
+%   author    = {Conmy, Arthur and Mavor-Parker, Augustine N. and Lynch, Aengus and Heimersheim, Stefan and Garriga-Alonso, Adri{\`a}},
+%   booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+%   year      = {2023}
+% }
+%
+% @misc{cunningham2023sparse,
+%   title         = {Sparse Autoencoders Find Highly Interpretable Features in Language Models},
+%   author        = {Cunningham, Hoagy and Ewart, Aidan and Riggs, Logan and Huben, Robert and Sharkey, Lee},
+%   year          = {2023},
+%   eprint        = {2309.08600},
+%   archivePrefix = {arXiv},
+%   primaryClass  = {cs.LG}
+% }
+%
+% @misc{chan2022causal,
+%   title        = {Causal Scrubbing: A Method for Rigorously Testing Interpretability Hypotheses},
+%   author       = {Chan, Lawrence and Garriga-Alonso, Adri{\`a} and Goldowsky-Dill, Nicholas and Greenblatt, Ryan and Nitishinskaya, Jenny and Radhakrishnan, Ansh and Shlegeris, Buck and Thomas, Nate},
+%   year         = {2022},
+%   howpublished = {AI Alignment Forum}
+% }
+%
+% @inproceedings{alain2017understanding,
+%   title     = {Understanding Intermediate Layers Using Linear Classifier Probes},
+%   author    = {Alain, Guillaume and Bengio, Yoshua},
+%   booktitle = {International Conference on Learning Representations (ICLR) Workshop},
+%   year      = {2017}
+% }
+%
+% @inproceedings{hewitt2019designing,
+%   title     = {Designing and Interpreting Probes with Control Tasks},
+%   author    = {Hewitt, John and Liang, Percy},
+%   booktitle = {Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing (EMNLP)},
+%   year      = {2019},
+%   pages     = {2733--2743}
+% }
+%
+% @misc{belrose2023eliciting,
+%   title         = {Eliciting Latent Predictions from Transformers with the Tuned Lens},
+%   author        = {Belrose, Nora and Furman, Zach and Smith, Logan and Halawi, Danny and Ostrovsky, Igor and McKinney, Lev and Biderman, Stella and Steinhardt, Jacob},
+%   year          = {2023},
+%   eprint        = {2303.08112},
+%   archivePrefix = {arXiv},
+%   primaryClass  = {cs.LG}
+% }
