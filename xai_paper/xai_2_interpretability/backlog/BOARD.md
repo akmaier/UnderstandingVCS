@@ -82,7 +82,7 @@
 | P2-R-F6 | Redraw Fig 6 (VCS->NN map) — pink-callout overlap, "no business" wording, §1 refs, analogy labels | RV | 10 | — | local | done |  | `paper/figures/fig6_failure_taxonomy.py` |
 | P2-R-REF | Fix references.bib — Paper 1 arXiv + code URL, MIB/SAEBench/M4, Fig-6 refs, [35] title | RV | 9 | — | local | done |  | `paper/references.bib` |
 | P2-R-REPRO | Reproducibility doc — review-time artifact, ROM SHA-256 + retrieval, action-stream hashes | RV | 9 | — | local | done |  | `xai_paper/xai_2_interpretability/REPRODUCIBILITY.md`<br>`tools/xai_study/repro/rom_hash_table.csv`<br>`tools/xai_study/repro/action_stream_hashes.csv`<br>`tools/xai_study/repro/make_hash_tables.py` |
-| P2-R-S00-abstract | Revise abstract — reframe, exact method count, plausibility-proxy, drop rhetorical heat | RV | 14 | — | local | todo | P2-R-UNC, P2-R-S07-compare | `paper/sections/00_abstract.tex` |
+| P2-R-S00-abstract | Revise abstract — reframe, exact method count, plausibility-proxy, drop rhetorical heat | RV | 14 | — | local | done | P2-R-UNC, P2-R-S07-compare | `paper/sections/00_abstract.tex` |
 | P2-R-S01-intro | Revise intro — cut 25-35%, tone down, scope NN-transfer claim, fix oracle/section refs | RV | 13 | — | local | done |  | `paper/sections/01_intro.tex` |
 | P2-R-S02-related | Revise related work — add MIB/SAEBench/M4 + substrate-adjacent Atari, reorganize, tone "first" | RV | 12 | — | local | done | P2-R-REF | `paper/sections/02_related.tex` |
 | P2-R-S03-methods | Revise methods — formalize F/S/M + metrics, predicates-vs-scores, proxy, "provably zero", Fig1 caption | RV | 11 | — | local | done | P2-R-F1 | `paper/sections/03_methods.tex` |
