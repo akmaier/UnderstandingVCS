@@ -1053,16 +1053,12 @@ FUNCTION {format.booktitle}
   emphasize
 }
 FUNCTION {format.in.ed.booktitle}
-{  duplicate$ empty$ 'skip$
-    { 
-editor "editor" format.names.ed duplicate$ empty$ 'pop$
-        {  
-format.booktitle swap$
-"(" editor num.names$ #1 > 'bbl.in.editors 'bbl.editor if$  * swap$   ") " *
-          * swap$
-          * }
-      if$ 
-    }  
+{ format.booktitle duplicate$ empty$ 'skip$
+    { editor "editor" format.names.ed duplicate$ empty$ 'pop$
+        { "(" editor num.names$ #1 > 'bbl.in.editors 'bbl.editor if$
+          * swap$ ") " * * swap$ * }
+      if$
+    }
   if$
 }
 FUNCTION {empty.misc.check}
