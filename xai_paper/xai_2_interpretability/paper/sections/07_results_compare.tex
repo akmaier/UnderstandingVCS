@@ -6,6 +6,13 @@
 % Numbers: tools/xai_study/compare/out/{leaderboard.json,leaderboard_ci.csv,
 % aggregation_robustness.csv,faithful_demo.json} + the §R per-method records under
 % tools/xai_study/phaseC_mechanistic/out/.
+% Per-GAME exemplar provenance (number_audit §1, §2 U1-U4/M7): ACDC Breakout
+% F=1.0/M=1.0/S=0.4444 ← acdc_breakout.json:extra.triad ("on Breakout", NOT the
+% family mean 0.4452 the figures plot); SAE Pong matched=1.0/F=0.0408/S=-0.3362
+% ← sae_pong.json:extra ("on Pong", NOT the SAE family F=0.195); cell 84
+% decodable=false & not_causally_used=true ← linear_probing_breakout.json:cells
+% (it is in the 25 not-causally-used set, "present-but-unused", NOT the 6
+% decodable-not-causal cells).
 % Canonical method count (revision_plan.md PO decision, R3 contract): "30 interpretability
 % methods + the intervention oracle (§3.2) positive control = 31 rows". Used verbatim.
 % Honesty contract (../plan.md): we DEFINE and MEASURE the semantic gap; we do NOT claim
@@ -165,8 +172,8 @@ oracle is strictly stronger than the probe that walks into it: high probe accura
 selectivity, low intervention effect. Linear probing with control
 tasks~\cite{hewitt2019designing} decodes game concepts from the Breakout state at a
 mean accuracy of $0.72$ with positive selectivity over its control; the information is
-demonstrably \emph{present}. Yet the exact oracle flags a decodable score-related cell
-(cell~$84$) as \emph{not causally used}: re-derived within the horizon, its value has no
+demonstrably \emph{present}. Yet the exact oracle flags a score-related cell that is
+\emph{present but unused} (cell~$84$): re-derived within the horizon, its value has no
 downstream effect on the output~\cite{leaderboardP2}. A concept can be linearly readable
 yet play no part in the computation, exactly Hewitt and Liang's control-task warning;
 decodability is necessary, never sufficient. Probing answers ``is it there,'' the oracle
@@ -177,9 +184,9 @@ is its place in the danger zone, and this cell is the mechanism behind that plac
 Read together, the leaderboard plane of Fig.~\ref{fig:faithfulness} and the failure
 taxonomy of Fig.~\ref{fig:taxonomy} make the same point from three sides, and the
 triad's axes are not redundant: a method can be faithful and minimal yet not sufficient
-(ACDC, $F = M = 1.0$, $S = 0.44$); it can match a named concept perfectly yet be
-causally inert (the SAE on Pong, matched fraction $1.0$, $F = 0.041$); it can decode a
-variable the program never uses (cell~$84$). The claim does not rest on any single low
+(ACDC on Breakout, $F = M = 1.0$, $S = 0.44$); it can match a named concept perfectly yet be
+causally inert (the SAE on Pong, matched fraction $1.0$, $F = 0.041$); it can flag a
+concept the program never uses (cell~$84$, present but unused). The claim does not rest on any single low
 number, since a lone low $S$ could be a tuning artifact, but on the gap appearing where
 tuning \emph{cannot} reach --- an already-exact effect table --- and running in opposite
 directions on the same axis at once. That two-sidedness is what a ``methods are not good
@@ -209,17 +216,18 @@ figures use the per-method aggregation as canonical, so text, table, and figure 
 \includegraphics[width=\textwidth]{fig6_failure_taxonomy.pdf}
 \caption{\textbf{A taxonomy of interpretability failure on the VCS, organised by
 mechanism.} Each leaf is a method exhibiting the branch's failure mode, annotated with
-its faithfulness $F \pm 95\%$ bootstrap CI against the intervention oracle
-(\S\ref{sec:oracle}; $0=$ chance, $1=$ oracle ceiling), read from the committed
-leaderboard. The lower branches confirm the expected failures: the gradient family is
+its \emph{family-mean} faithfulness $F \pm 95\%$ bootstrap-over-games CI against the
+intervention oracle (\S\ref{sec:oracle}; $0=$ chance, $1=$ oracle ceiling), read from
+leaderboard\_ci.csv; the per-game exemplars quoted below carry their own ``on $\langle$game$\rangle$''
+label. The lower branches confirm the expected failures: the gradient family is
 provably zero on the discrete position/index regime, and the architecture-specific
 methods (Grad-CAM, attention, VIPER) do not apply because the VCS lacks the neural
 substrate they require, a property of the subject, not a method failure. The
 higher-order branches are the \emph{semantic gap}: present-but-unused concepts (linear
-probing~\cite{hewitt2019designing} flags a decodable cell the oracle says is inert),
+probing~\cite{hewitt2019designing} flags a present-but-unused cell the oracle says is inert),
 named-but-inert factorisations (the SAE~\cite{cunningham2023sparse} matches every
 variable at fraction $1.0$ yet scores $F=0.041$ on Pong), and graph-correct-but-
-incomplete circuits (ACDC~\cite{conmy2023towards} at $F=M=1.0$, $S=0.44$). The
+incomplete circuits (ACDC~\cite{conmy2023towards} at $F=M=1.0$, $S=0.44$ on Breakout). The
 neural-network parallels shown alongside each branch are documented
 analogues~\cite{balduzzi2017shattered,morcos2018single,leavitt2020falsifiable,elhage2022toy,kindermans2019unreliability,sturmfels2020baselines,jain2019attention},
 evidence transfer rather than proof. Every annotated value reads from a committed
