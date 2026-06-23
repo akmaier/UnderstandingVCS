@@ -2,7 +2,7 @@
 id: P2-R-S00-abstract
 title: Revise abstract — reframe, exact method count, plausibility-proxy, drop rhetorical heat
 epic: RV (Revision — section)
-status: todo
+status: done
 sprint: 14
 owner:
 where: local
@@ -38,3 +38,17 @@ FILE:
 ## Notes / handoff
 Depends on S07 (it fixes the canonical count + the leaderboard numbers) and on P2-R-UNC (CIs).
 Schedule the abstract in a LATER sprint than S07 so the count is settled first.
+
+### R6 done (2026-06-24)
+Reframed to the semantic-gap thesis (faithful attribution recovers the causal wiring, not the
+meaning; faithfulness necessary but not sufficient). Canonical numbers verified against
+`tools/xai_study/compare/out/{leaderboard.json,leaderboard_ci.csv,faithful_demo.json}` +
+the §R exemplar records: 30 methods + oracle control = 31 rows, 257 per-game records; family
+contrast 0.68 [0.59,0.78] vs 0.29 [0.20,0.38] with the honest caveat that the robust
+separation is the position regime (act.patching 1.000 vs vanilla saliency 0.000); ACDC
+sufficiency 0.44 **on Breakout**, SAE matched 1.0 / F=0.04 **on Pong**. Honesty clause added
+(labels imported and only causally verified; plausibility a documented proxy). number_audit §2
+[00] fixes all applied; banned strings ("about~31", "human plausibility", "remove the excuse")
+grep-clean. Cooled "We remove the excuse" → "The VCS makes that ground truth available".
+Build: `latexmk -pdf` exit 0, 36 pages, 0 undefined cites/refs. Only this file + the abstract
+touched (main.tex left to the SM).

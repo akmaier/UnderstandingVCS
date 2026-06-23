@@ -4,22 +4,25 @@
 % Maier/NMI voice per ../STYLE.md; honesty contract per ../plan.md.
 Interpretability methods are judged by their faithfulness, by whether they name
 the true causes of a system's output. Yet on real neural systems there is no
-ground truth against which to check that judgement. We remove the excuse on a
-system whose ground truth is computable: a bit-exact, differentiable port of the
-Atari~2600, never built to be interpretable, in which the cause of any output
-follows from exact intervention. Scoring about~31 methods against this oracle, we
-find causal methods faithful while popular gradient and correlational saliency
-methods are provably zero on discrete position outputs (activation patching
-$1.000$ versus vanilla saliency $0.000$), yet score higher on human plausibility.
-Faithfulness is the smaller half of understanding. An exact method returns a
-causal-effect map or a data-flow graph, not the computation: a graph-correct
-circuit need not reproduce behaviour (sufficiency $0.44$), and a feature matching
-a named variable can be causally inert (matched fraction $1.0$, faithfulness
-$0.04$). We name this measured residual the \emph{semantic gap}, and stress that
-we \emph{measure} it, not \emph{close} it. As such, the machine offers a reusable
-ground-truth benchmark for explainable AI, mechanistic interpretability, AI
-safety, and software verification. We believe it will help redirect the field
-toward recovering meaning, not merely confirming causes.
+ground truth against which to check that judgement. The VCS makes that ground
+truth available: a bit-exact, differentiable port of the Atari~2600, never built
+to be interpretable, in which the cause of any output follows from exact
+intervention. Scoring 30 interpretability methods and an oracle positive control
+(31 rows, 257~per-game records), we find causal and intervention methods more
+faithful than gradient and correlational saliency
+($0.68$ $[0.59,0.78]$ versus $0.29$ $[0.20,0.38]$), the robust separation falling
+on the position regime where naive gradients vanish (activation patching $1.000$
+versus vanilla saliency $0.000$), yet saliency scores higher on a plausibility
+proxy. Faithfulness, once secured, is the smaller half of understanding. An exact
+method returns a causal-effect map or a data-flow graph, not the computation: a
+graph-correct circuit need not reproduce behaviour (sufficiency $0.44$ on
+Breakout), and a feature matching a named variable can be causally inert (matched
+fraction $1.0$, faithfulness $0.04$ on Pong). We name this measured residual the
+\emph{semantic gap}; we measure it, and do not close it. Our semantic labels are
+imported and only causally verified, and plausibility is a documented proxy. As
+such, the machine offers a reusable ground-truth benchmark for explainable AI,
+mechanistic interpretability, AI safety, and software verification, and may help
+redirect the field toward recovering meaning, not merely confirming causes.
 
 % BIBTEX-NEEDED: (none) — the abstract is intentionally citation-free per the NMI
 %   unreferenced-abstract rule (document_check.md C). No \cite keys introduced;
