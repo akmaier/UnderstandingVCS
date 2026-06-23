@@ -4,7 +4,7 @@
 The Phase-A battery (A1 connectomics, A2 single-unit lesions, A3 tuning curves,
 A4 spike-word/pairwise correlations, A5 local field potentials, A6 Granger
 causality, A7 dim-reduction, A8 whole-state recording) run on the bit-exact,
-fully-known Atari VCS and SCORED against the §1 intervention oracle. This is the
+fully-known Atari VCS and SCORED against the §3.2 intervention oracle. This is the
 *quantified* Jonas & Kording (2017): each classical analysis finds rich
 structure, yet most score LOW in faithfulness against the known register-transfer
 mechanism — while the oracle-as-method positive control sits at 1.0 by
@@ -26,10 +26,14 @@ LAYOUT
 
 DATA — every plotted number traces to a committed record (no re-run, no fabrication):
   tools/xai_study/compare/out/leaderboard.json            (E6-1 aggregate per method)
+  tools/xai_study/compare/out/leaderboard_ci.csv          (R-UNC 95% bootstrap CIs)
   tools/xai_study/phaseA_kording/out/A{1..8}_*.json        (per-method §R records)
 The script reads these files at run time; constants below are mirrored ONLY for
 the annotation callouts and are asserted equal to the on-disk records by the
-self-check, so the figure cannot silently drift from the data.
+self-check, so the figure cannot silently drift from the data. The whiskers are
+the asymmetric 95% bootstrap CIs from leaderboard_ci.csv (R-UNC). The exact data
+paths are NOT printed inside the figure (they live in the Supplement provenance
+table); the figure body carries only the takeaway.
 
 Run:
     python fig3_phaseA_battery.py
@@ -40,6 +44,7 @@ Produces:
 
 import os
 import sys
+import csv
 import json
 import argparse
 
@@ -69,6 +74,11 @@ parser.add_argument(
     default=_resolve("tools/xai_study/compare/out/leaderboard.json"),
     help="path to the E6-1 leaderboard.json (the aggregate per-method scores)",
 )
+parser.add_argument(
+    "--leaderboard-ci",
+    default=_resolve("tools/xai_study/compare/out/leaderboard_ci.csv"),
+    help="path to the R-UNC leaderboard_ci.csv (95%% bootstrap CIs per method)",
+)
 args, _ = parser.parse_known_args()
 
 PHASEA_DIR = _resolve("tools/xai_study/phaseA_kording/out")
@@ -82,6 +92,16 @@ LB_BY_METHOD = {r["method"]: r for r in LB["rows"]}
 ORACLE = LB_BY_METHOD["ORACLE"]
 assert ORACLE["is_positive_control"] == 1 and abs(ORACLE["faithfulness"] - 1.0) < 1e-9, \
     "leaderboard positive control must be the oracle at faithfulness=1.0"
+
+# R-UNC: asymmetric 95% bootstrap CIs (ci_lo, ci_hi) keyed by method, from the
+# committed leaderboard_ci.csv. The whiskers below read straight from this record
+# (uncertainty source of truth for the revision); no CI is recomputed here.
+CI_BY_METHOD = {}
+with open(args.leaderboard_ci) as fh:
+    for _row in csv.DictReader(fh):
+        if _row.get("kind") == "method":
+            CI_BY_METHOD[_row["method"]] = (
+                float(_row["ci_lo"]), float(_row["ci_hi"]))
 
 
 def _load_phaseA(name):
@@ -108,7 +128,7 @@ TRAD_LABEL = {
     "intervention": "intervention-based",
     "correlational": "correlational",
     "dim_reduction": "dim-reduction",
-    "descriptive": "descriptive baseline",
+    "descriptive": "descriptive",
 }
 
 # Short, human-readable analysis names (the A# battery in §4 order).
@@ -143,17 +163,27 @@ A_METRIC = {
 bars = []
 for m in A_ORDER:
     r = LB_BY_METHOD[m]
+    faith = r["faithfulness"]
+    # Asymmetric 95% bootstrap CI whiskers from R-UNC's leaderboard_ci.csv,
+    # expressed as (lower, upper) error-bar lengths relative to the bar height.
+    # Clamp to >=0 so a tiny mean/headline mismatch never flips a whisker.
+    ci_lohi = CI_BY_METHOD.get(m)
+    if ci_lohi:
+        lo, hi = ci_lohi
+        yerr = [max(0.0, faith - lo), max(0.0, hi - faith)]
+    else:
+        yerr = None
     bars.append({
         "method": m,
         "short": A_NAMES[m][0],
         "name": A_NAMES[m][1],
         "metric": A_METRIC[m],
         "trad": r["tradition"],
-        "faith": r["faithfulness"],
+        "faith": faith,
         "F": r.get("triad_F"),
         "S": r.get("triad_S"),
         "M": r.get("triad_M"),
-        "ci": r.get("faithfulness_ci95"),
+        "yerr": yerr,            # asymmetric [lo, hi] from leaderboard_ci.csv
     })
 
 # ---------------------------------------------------------------------------
@@ -213,16 +243,18 @@ FIG_W, FIG_H = 12.6, 6.4
 fig = plt.figure(figsize=(FIG_W, FIG_H), facecolor=C_BG)
 
 # Title band
-fig.text(0.012, 0.965,
+fig.text(0.012, 0.967,
          "The neuroscience battery on a known machine — scored against ground truth",
          ha="left", va="center", fontsize=13.0, fontweight="bold", color=C_INK)
-fig.text(0.012, 0.928,
-         "Jonas & Kording's battery, quantified: classical analyses find rich structure yet score low in faithfulness to the "
-         "true register-transfer mechanism; the oracle-as-method control = 1.0.",
+fig.text(0.012, 0.932,
+         "Jonas & Kording's battery, quantified: classical analyses find rich structure yet "
+         "score low in faithfulness to the true mechanism.",
          ha="left", va="center", fontsize=8.6, color=C_MUTE, fontstyle="italic")
 
 # --- Panel (a): grouped scored bars -----------------------------------------
-axA = fig.add_axes([0.060, 0.155, 0.560, 0.720])
+# Top lowered (0.795) to leave a clean legend strip ABOVE the data field, so the
+# tradition + triad legends never sit over the bars (fig_pass: legends outside).
+axA = fig.add_axes([0.062, 0.150, 0.560, 0.645])
 axA.set_facecolor(C_BG)
 
 n = len(bars)
@@ -231,8 +263,10 @@ bw = 0.62
 
 # oracle positive-control reference line at 1.0
 axA.axhline(1.0, color=C_ORACLE, lw=1.4, ls=(0, (5, 3)), zorder=1)
-axA.text(n - 0.42, 1.012, "oracle-as-method (positive control) = 1.0",
-         ha="right", va="bottom", fontsize=7.6, color=C_ORACLE, fontstyle="italic")
+# label sits in the headroom above the line (clears every bar value label, which
+# top out ~1.05) and is left-anchored so it cannot overflow the right edge.
+axA.text(-0.55, 1.115, "oracle-as-method (positive control) = 1.0",
+         ha="left", va="bottom", fontsize=7.8, color=C_ORACLE, fontstyle="italic")
 
 # faint horizontal gridlines
 for yv in (0.25, 0.5, 0.75):
@@ -242,12 +276,15 @@ for i, b in enumerate(bars):
     col = TRAD_COLOR[b["trad"]]
     axA.bar(i, b["faith"], width=bw, color=col, edgecolor=C_INK,
             linewidth=0.7, zorder=3, alpha=0.92)
-    # 95% CI whisker on the headline faithfulness (over the 6 core games)
-    if b["ci"]:
-        axA.errorbar(i, b["faith"], yerr=b["ci"], fmt="none",
+    # asymmetric 95% bootstrap-CI whisker from leaderboard_ci.csv (R-UNC)
+    top = b["faith"]
+    if b["yerr"]:
+        yl, yh = b["yerr"]
+        axA.errorbar(i, b["faith"], yerr=[[yl], [yh]], fmt="none",
                      ecolor=C_INK, elinewidth=0.9, capsize=2.5, zorder=4)
-    # value label above the bar
-    axA.text(i, b["faith"] + (b["ci"] or 0) + 0.028, f"{b['faith']:.2f}",
+        top = b["faith"] + yh
+    # value label above the bar (clears the upper whisker)
+    axA.text(i, top + 0.028, f"{b['faith']:.2f}",
              ha="center", va="bottom", fontsize=8.0, fontweight="bold",
              color=C_INK, zorder=6)
     # overlay the F / S / M triad points where available
@@ -267,9 +304,9 @@ axA.text(ox, 1.012, "1.00", ha="center", va="bottom", fontsize=8.0,
          fontweight="bold", color=C_ORACLE, zorder=6)
 
 axA.set_xlim(-0.7, ox + 0.7)
-axA.set_ylim(0, 1.16)
+axA.set_ylim(0, 1.18)
 axA.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
-axA.set_ylabel("faithfulness to the true mechanism  (vs §1 oracle)",
+axA.set_ylabel("faithfulness to the true mechanism\n(vs §3.2 intervention oracle)",
                fontsize=9.0)
 axA.set_xticks(xs + [ox])
 xtl = [f"{b['short']}\n{b['name']}" for b in bars] + ["GT\noracle"]
@@ -283,11 +320,12 @@ axA.tick_params(axis="both", length=3)
 for sp in ("top", "right"):
     axA.spines[sp].set_visible(False)
 
-# per-analysis metric subcaptions under each bar (what the number measures)
-for i, b in enumerate(bars):
-    axA.text(i, -0.255, b["metric"], ha="center", va="top", rotation=0,
-             fontsize=5.8, color=C_MUTE, transform=axA.get_xaxis_transform(),
-             clip_on=False)
+# NOTE: the per-bar metric microcaptions (what each headline number measures, e.g.
+# "data-flow graph F1 vs oracle") were removed in the R2 redraw — at figure scale
+# they printed below the 7.5 pt floor and added prose the fig_pass flags. The
+# per-analysis metric definitions now live in the caption / Supplement table
+# (handoff to P2-R-S04-resultsA); the A_METRIC dict is kept only so the data
+# provenance stays in the script.
 
 axA.set_title("(a)  the eight analyses, scored", loc="left",
               fontsize=10.0, fontweight="bold", pad=8)
@@ -306,17 +344,22 @@ triad_handles = [
     Line2D([0], [0], marker="^", color="none", markerfacecolor="white",
            markeredgecolor=C_INK, markersize=7, label="M  minimal"),
 ]
-leg1 = axA.legend(handles=trad_handles, loc="upper left",
-                  bbox_to_anchor=(0.002, 0.985), frameon=True, fontsize=7.1,
-                  title="tradition", title_fontsize=7.4, handlelength=1.2,
-                  labelspacing=0.35, borderpad=0.5)
+# Both legends sit OUTSIDE the data field, in the strip above panel (a)
+# (fig_pass: "Move legends outside the panels"). They are laid out horizontally so
+# they never overlap the bars or the triad markers.
+leg1 = axA.legend(handles=trad_handles, loc="lower left",
+                  bbox_to_anchor=(0.0, 1.045), frameon=True, fontsize=7.6,
+                  title="tradition", title_fontsize=7.8, handlelength=1.2,
+                  ncol=4, columnspacing=1.1, handletextpad=0.5,
+                  borderpad=0.45)
 leg1.get_frame().set_edgecolor("#cccccc")
 leg1.get_frame().set_linewidth(0.7)
 axA.add_artist(leg1)
-leg2 = axA.legend(handles=triad_handles, loc="upper left",
-                  bbox_to_anchor=(0.205, 0.985), frameon=True, fontsize=7.1,
-                  title="triad (where scored)", title_fontsize=7.4,
-                  handlelength=1.0, labelspacing=0.35, borderpad=0.5)
+leg2 = axA.legend(handles=triad_handles, loc="lower right",
+                  bbox_to_anchor=(1.0, 1.045), frameon=True, fontsize=7.6,
+                  title="triad (F/S/M, where scored)", title_fontsize=7.8,
+                  ncol=3, columnspacing=1.0, handlelength=1.0,
+                  handletextpad=0.4, borderpad=0.45)
 leg2.get_frame().set_edgecolor("#cccccc")
 leg2.get_frame().set_linewidth(0.7)
 
@@ -347,7 +390,7 @@ def finding(y, h, accent, tag, head, lines):
     ly = y + h - 11.5
     for s, bold in lines:
         axB.text(4.5, ly, s, ha="left", va="top",
-                 fontsize=7.4 if not bold else 7.8,
+                 fontsize=7.5 if not bold else 7.8,  # >= 7.5 pt floor (fig_pass)
                  color=C_INK if bold else C_MUTE,
                  fontweight="bold" if bold else "normal", zorder=4)
         ly -= 5.2
@@ -398,12 +441,12 @@ finding(
      ("PCA — but neither recovers the mechanism.", False)],
 )
 
-# provenance footnote
-fig.text(0.012, 0.018,
-         "Data (no re-run): per-method faithfulness + triad F/S/M from "
-         "tools/xai_study/compare/out/leaderboard.json (E6-1); annotation numbers from "
-         "tools/xai_study/phaseA_kording/out/A{1..8}_*.json. 6 core games; whiskers = 95% CI.",
-         ha="left", va="bottom", fontsize=6.1, color="#9a9a9a", fontstyle="italic")
+# provenance footnote — no data-path microtext in the figure body (fig_pass #6);
+# exact paths live in the Supplement provenance table.
+fig.text(0.012, 0.020,
+         "Data: committed §R records (6 core games); whiskers = 95% bootstrap CI. "
+         "See Supplement provenance table.",
+         ha="left", va="bottom", fontsize=7.5, color=C_MUTE, fontstyle="italic")
 
 # ---------------------------------------------------------------------------
 # Save (vector PDF)
