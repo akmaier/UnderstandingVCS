@@ -2,7 +2,7 @@
 id: P2-R-S01-intro
 title: Revise intro — cut 25-35%, tone down, scope NN-transfer claim, fix oracle/section refs
 epic: RV (Revision — section)
-status: todo
+status: done
 sprint: 13
 owner:
 where: local
