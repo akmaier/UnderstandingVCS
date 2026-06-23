@@ -3,7 +3,7 @@ id: P2-R-SUPP
 title: New Supplementary Information — per-method protocols, schemas, claims/provenance, no-claim box
 epic: RV (Revision — supplement)
 status: todo
-sprint:
+sprint: 11
 owner:
 where: local
 depends_on: [P2-R-UNC]

@@ -3,7 +3,7 @@ id: P2-R-S03-methods
 title: Revise methods — formalize F/S/M + metrics, predicates-vs-scores, proxy, "provably zero", Fig1 caption
 epic: RV (Revision — section)
 status: todo
-sprint:
+sprint: 11
 owner:
 where: local
 depends_on: [P2-R-F1]

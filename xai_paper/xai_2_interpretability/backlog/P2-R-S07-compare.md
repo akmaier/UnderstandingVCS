@@ -3,7 +3,7 @@ id: P2-R-S07-compare
 title: Revise leaderboard section — canonical count, exploratory framing, proxy, "verified:false", Fig2+Fig6 captions
 epic: RV (Revision — section)
 status: todo
-sprint:
+sprint: 11
 owner:
 where: local
 depends_on: [P2-R-UNC, P2-R-F2, P2-R-F6, P2-R-REF]

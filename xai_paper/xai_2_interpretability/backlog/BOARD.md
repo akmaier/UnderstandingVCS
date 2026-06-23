@@ -85,18 +85,18 @@
 | P2-R-S00-abstract | Revise abstract — reframe, exact method count, plausibility-proxy, drop rhetorical heat | RV |  | — | local | todo | P2-R-UNC, P2-R-S07-compare | `paper/sections/00_abstract.tex` |
 | P2-R-S01-intro | Revise intro — cut 25-35%, tone down, scope NN-transfer claim, fix oracle/section refs | RV |  | — | local | todo |  | `paper/sections/01_intro.tex` |
 | P2-R-S02-related | Revise related work — add MIB/SAEBench/M4 + substrate-adjacent Atari, reorganize, tone "first" | RV |  | — | local | todo | P2-R-REF | `paper/sections/02_related.tex` |
-| P2-R-S03-methods | Revise methods — formalize F/S/M + metrics, predicates-vs-scores, proxy, "provably zero", Fig1 caption | RV |  | — | local | todo | P2-R-F1 | `paper/sections/03_methods.tex` |
+| P2-R-S03-methods | Revise methods — formalize F/S/M + metrics, predicates-vs-scores, proxy, "provably zero", Fig1 caption | RV | 11 | — | local | todo | P2-R-F1 | `paper/sections/03_methods.tex` |
 | P2-R-S04-resultsA | Revise Results Phase A — per-game values + CIs, justify analogues, Fig3 caption fixes | RV |  | — | local | todo | P2-R-UNC, P2-R-F3 | `paper/sections/04_results_A.tex` |
 | P2-R-S05-resultsB | Revise Results Phase B — separate regimes, baselines/variance, CIs, drop "default tool", §1→§3.2, Fig4 caption | RV |  | — | local | todo | P2-R-UNC, P2-R-F4 | `paper/sections/05_results_B.tex` |
 | P2-R-S06-resultsC | Revise Results Phase C — oracle-equiv controls, ACDC/SAE/probe rigor + CIs, "verified:false", §refs | RV |  | — | local | todo | P2-R-UNC | `paper/sections/06_results_C.tex` |
-| P2-R-S07-compare | Revise leaderboard section — canonical count, exploratory framing, proxy, "verified:false", Fig2+Fig6 captions | RV |  | — | local | todo | P2-R-UNC, P2-R-F2, P2-R-F6, P2-R-REF | `paper/sections/07_results_compare.tex` |
+| P2-R-S07-compare | Revise leaderboard section — canonical count, exploratory framing, proxy, "verified:false", Fig2+Fig6 captions | RV | 11 | — | local | todo | P2-R-UNC, P2-R-F2, P2-R-F6, P2-R-REF | `paper/sections/07_results_compare.tex` |
 | P2-R-S08-discussion | Revise discussion — tone down NN-transfer/"no business", precise recommendations, Fig5 caption | RV |  | — | local | todo | P2-R-F5 | `paper/sections/08_discussion.tex` |
 | P2-R-S09-endmatter | Revise endmatter — code review-time availability, [33]/[34] as archived artifacts, Paper-1 cite, contributions | RV |  | — | local | todo | P2-R-REPRO, P2-R-REF | `paper/sections/09_endmatter.tex` |
-| P2-R-SUPP | New Supplementary Information — per-method protocols, schemas, claims/provenance, no-claim box | RV |  | — | local | todo | P2-R-UNC | `paper/supplement/supplement.tex`<br>`paper/supplement/S1_per_method_protocols.tex`<br>`paper/supplement/S2_benchmark_schema.tex`<br>`paper/supplement/S3_coverage_applicability.tex`<br>`paper/supplement/S4_claims_evidence.tex`<br>`paper/supplement/S5_number_provenance.tex`<br>`paper/supplement/S6_not_claimed.tex` |
+| P2-R-SUPP | New Supplementary Information — per-method protocols, schemas, claims/provenance, no-claim box | RV | 11 | — | local | todo | P2-R-UNC | `paper/supplement/supplement.tex`<br>`paper/supplement/S1_per_method_protocols.tex`<br>`paper/supplement/S2_benchmark_schema.tex`<br>`paper/supplement/S3_coverage_applicability.tex`<br>`paper/supplement/S4_claims_evidence.tex`<br>`paper/supplement/S5_number_provenance.tex`<br>`paper/supplement/S6_not_claimed.tex` |
 | P2-R-UNC | Bootstrap CIs + threshold/sampling sensitivity over the committed leaderboard | RV | 9 | — | local | done |  | `tools/xai_study/compare/uncertainty.py`<br>`tools/xai_study/compare/out/leaderboard_ci.json`<br>`tools/xai_study/compare/out/leaderboard_ci.csv`<br>`tools/xai_study/compare/out/threshold_sensitivity.csv`<br>`tools/xai_study/compare/out/aggregation_robustness.csv` |
 
 ## Items per sprint
-Sprint 0: 3, Sprint 1: 6, Sprint 10: 6, Sprint 2: 1, Sprint 3: 4, Sprint 4: 8, Sprint 5: 23, Sprint 6: 11, Sprint 7: 10, Sprint 8: 4, Sprint 9: 3, Sprint ?: 11
+Sprint 0: 3, Sprint 1: 6, Sprint 10: 6, Sprint 11: 3, Sprint 2: 1, Sprint 3: 4, Sprint 4: 8, Sprint 5: 23, Sprint 6: 11, Sprint 7: 10, Sprint 8: 4, Sprint 9: 3, Sprint ?: 8
 
 ## Sprint log
 See [`../sprints/`](../sprints/) for per-sprint Planning + Review notes.
