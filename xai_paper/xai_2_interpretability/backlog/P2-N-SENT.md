@@ -2,7 +2,7 @@
 id: P2-N-SENT
 title: Split overly long sentences throughout the paper (style pass)
 epic: RV (Revision)
-status: in-sprint
+status: done
 sprint: 16
 owner: agent-1
 where: local
