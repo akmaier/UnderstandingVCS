@@ -18,9 +18,16 @@ Table~\ref{tab:phaseB}.
 The headline is a split, not a ranking. A content output --- the value of a
 register, a colour, a graphics bit --- is a differentiable function of the state, so
 its gradient flows; a position output --- where a sprite is drawn, set by strobe
-timing on a discrete index --- has provably zero naive gradient (Paper~1, and
-Sec.~\ref{sec:methods}). Hence the entire gradient family inherits this boundary, and
-it cuts the leaderboard cleanly in two.
+timing on a discrete index --- has provably zero naive gradient under the hard forward map (Paper~1,
+Sec.~\ref{sec:methods}). Paper~1 provides three execution modes --- HARD (bit-exact),
+SOFT-STE (forward-exact, content-path gradient), and SOFT (fully relaxed with
+temperature $T$ and steepness $\alpha$ controlling gradient flow through the index
+boundary) --- and the naive-gradient claim is scoped to the hard map. The SOFT-STE
+gradient, though forward-exact, remains content-only and inherits the zero on position;
+the soft gradient at appropriate settings ($T \lesssim 0.14$, $\alpha \gtrsim 6$)
+restores a non-zero signal through the index boundary at the cost of numerical precision
+controlled by the relaxation parameters. Hence the entire gradient family inherits this
+boundary under the hard and SOFT-STE modes, and it cuts the leaderboard cleanly in two.
 
 \begin{figure}[t]
 \centering

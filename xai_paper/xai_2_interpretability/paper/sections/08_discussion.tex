@@ -13,10 +13,15 @@ any output is recoverable by exact intervention, causal and intervention methods
 faithful while the field's familiar gradient and correlational tools are not, and the
 leaderboard separates them along the only axis that admits an exact answer
 (Fig.~\ref{fig:faithfulness}). A faithful causal account scores $1.0$ where the field's
-default scores $0.0$, on a machine whose answer is known exactly. Yet faithfulness is not
-the dividing line. Even a method at the oracle ceiling returns the causal wiring, an effect
-map and a data-flow graph, and not the semantics, the variable's meaning or the routine's
-algorithm. The residual is a number, and we name it the \emph{semantic gap}.
+default scores $0.0$, on a machine whose answer is known exactly. This holds across all
+three execution modes of Paper~1 --- HARD, SOFT-STE, and SOFT with its temperature and
+steepness relaxation --- each providing a different gradient construction: the SOFT-STE
+gradient agrees on content but vanishes on position, while the soft gradient at
+appropriate settings ($T \lesssim 0.14$, $\alpha \gtrsim 6$) flows through the discrete
+index boundary. Yet across all modes, the result is the same. Even a method at the oracle
+ceiling returns the causal wiring, an effect map and a data-flow graph, and not the
+semantics, the variable's meaning or the routine's algorithm.
+The residual is a number, and we name it the \emph{semantic gap}.
 
 Three traditions that rarely share a page, a neuroscience battery, the attribution toolkit,
 and mechanistic interpretability, occupy a single plane once a common oracle scores them.
