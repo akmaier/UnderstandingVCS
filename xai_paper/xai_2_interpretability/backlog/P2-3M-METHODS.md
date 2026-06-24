@@ -2,9 +2,9 @@
 id: P2-3M-METHODS
 title: Update methods section for three Paper-1 execution modes
 epic: 3M (Three Modes)
-status: todo
-sprint:
-owner:
+status: in-sprint
+sprint: 18
+owner: agent-1
 where: local
 depends_on: []
 file_scope:
