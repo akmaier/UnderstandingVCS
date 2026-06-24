@@ -8,13 +8,13 @@
 Interpretability now carries real weight, because neural networks drive cars, read
 scans, and file loans, and before we trust such a decision we ask why. Yet on the
 systems we most want to explain we cannot check whether the answer is correct: a
-saliency map for an Atari agent looks convincing and shifts with the action, but a
-convincing map is not a verified one~\cite{greydanus2018visualizing}. The field has
+saliency map for a deep network may look \emph{convincing} and shifts with the action, but this does 
+not mean it delivers \emph{a correct explanation}~\cite{greydanus2018visualizing}. So far, the field of explainable AI has
 converged on \emph{faithfulness}, whether an explanation names a system's \emph{true}
-causes, as its quality criterion. The criterion is right; the difficulty is that on a
-real network there is nothing to measure it against.
+causes, as its quality criterion. The difficulty, however, is that on a
+real neural network there is nothing to measure it against.
 
-Jonas and Kording made this vivid by turning the neuroscientist's toolkit on a
+Similar short comings were also identified in the field of neuroscience. Jonas and Kording made this vivid by turning the neuroscientist's toolkit on a
 microprocessor whose every transistor is known~\cite{jonas2017could}. Lesions, tuning
 curves, and connectomics produced rich structure, and none of it recovered how the chip
 computes. Without ground truth a method that finds structure cannot be told apart from
@@ -23,19 +23,18 @@ explainable AI, where attribution maps are validated against each other or again
 intuition rather than against the system's mechanism~\cite{atrey2020exploratory}.
 Faithfulness has stood in for understanding without anyone being able to test the proxy.
 
-Paper~1 built the missing reference, a bit-exact, differentiable port of the Atari
-2600 Video Computer System (VCS) that reproduces a real, hand-authored 1977 machine to
+Maier et al. recently built the missing reference, a bit-exact, differentiable port of the Atari
+2600 Video Computer System (VCS) that reproduces a real 1977 machine to
 the byte and pixel~\cite{maier2025vcs,xitari}. The VCS is software with a known
-specification, so the true cause of any output is computable by exact intervention: we
-clamp a RAM cell, re-run deterministically, and read off the change. This
-\emph{intervention oracle} (\S\ref{sec:oracle}) returns, for any candidate cause of any
+specification, so the true cause of any output is computable by exact intervention. This
+\emph{intervention oracle} (cf. \Sectionname\ref{sec:oracle}) returns, for any candidate cause of any
 output, the true causal effect, measured rather than estimated, over the platform
 Fig.~\ref{fig:platform} lays out. On this machine an interpretability claim can be
 scored right or wrong.
 
-We turn the toolkit on this system and score it. Across the neuroscience, attribution,
+Across the neuroscience, attribution,
 and mechanistic-interpretability traditions --- $30$ interpretability methods plus the
-oracle positive control, $31$ rows aggregated from $257$ per-game records --- we place
+oracle positive control, $31$ experiments investigating $257$ per-game records --- we place
 each method on faithfulness against the oracle and on a documented plausibility proxy
 for how convincing it looks. The numbers confirm the causal view: causal and
 intervention methods are faithful, gradient and correlational saliency methods are not.
@@ -55,7 +54,7 @@ map or data-flow graph, not the variable's meaning and not the routine's algorit
 make this precise we call an explanation right only if it is \textbf{F}aithful (its
 claimed causes are the true ones), \textbf{S}ufficient (it regenerates behavior under
 held-out interventions), and \textbf{M}inimal at the algorithmic level
-($\mathrm{right} = \mathbf{F}\wedge\mathbf{S}\wedge\mathbf{M}$, \S\ref{sec:triad}). The
+($\mathrm{right} = \mathbf{F}\wedge\mathbf{S}\wedge\mathbf{M}$, \Sectionname\ref{sec:triad}). The
 committed data show the gap in both directions. An automatically discovered circuit on
 Breakout is graph-correct and minimal yet does not reproduce the behavior it explains
 ($\mathbf{F}=1.0$, $\mathbf{M}=1.0$, $\mathbf{S}=0.44$ on Breakout): a correct wiring

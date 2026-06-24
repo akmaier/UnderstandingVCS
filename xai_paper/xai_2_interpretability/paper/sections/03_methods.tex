@@ -18,18 +18,18 @@ setups live in the Supplementary Information; Fig.~\ref{fig:platform} sketches t
   \texttt{jutari} (Julia) $\cdot$ \texttt{jaxtari} (JAX), gives four capabilities no neural
   network grants for free: exact forward, exact interventions $\mathrm{do}(u)$, full state
   observability, and content-path gradients. On it we build the oracle (centre): the primary
-  intervention oracle of \S\ref{sec:oracle} (\S3.2), $\mathrm{do}(u{:=}v')\!\to\!\Delta y(u)$
+  intervention oracle of \Sectionname\ref{sec:oracle} (\Sectionname3.2), $\mathrm{do}(u{:=}v')\!\to\!\Delta y(u)$
   by bit-exact re-run, with a content-path gradient $\partial y/\partial u$ as a companion on
   the content path only. Any explanation $\hat{E}$ is scored by the correctness triad (right),
   $\text{right}=\mathrm{F}\wedge\mathrm{S}\wedge\mathrm{M}$, and reported on two axes,
   faithfulness against the oracle versus a plausibility proxy. Faithfulness aggregates
   correlation, sign and magnitude agreement, deletion/insertion area-under-curve, and
-  precision at $k$ against the true causal top-$k$ (\S\ref{sec:triad}). A discrete index --- a
+  precision at $k$ against the true causal top-$k$ (\Sectionname\ref{sec:triad}). A discrete index --- a
   sprite's position, set by strobe timing --- has a naive gradient that is zero under the hard
   forward map (Prop.~\ref{prop:zero}); for position, index, and event outputs the intervention
   oracle is the \emph{sole} ground truth and gradient methods are scored as methods under test.
   The schematic draws no experiment data. Data and oracle: see Supplement; oracle defined in
-  \S\ref{sec:oracle} (\S3.2).}
+  \Sectionname\ref{sec:oracle} (\Sectionname3.2).}
   \label{fig:platform}
 \end{figure}
 
@@ -232,7 +232,7 @@ edges, and for Phase~C patching and mediation the causal-effect-agreement correl
 the true $\{\Delta y(u)\}$. The final $\mathrm{F}_{\mathrm{score}}$ is the per-record primary
 metric averaged first within a game over its output records, then with equal weight across the
 six core games, so no game-rich method dominates; confidence intervals are 95\% bootstrap over
-games (\S\ref{sec:scoring}). The three Phases differ only in which primitive is primary: Phase~A
+games (\Sectionname\ref{sec:scoring}). The three Phases differ only in which primitive is primary: Phase~A
 uses graph $F_1$ for the data-flow methods and the clip-at-zero mean correlation for the
 single-unit and tuning analyses, Phase~B uses the raw effect-agreement correlation $\rho$ with
 deletion/insertion AUC and $\mathrm{P@}k$ as the attribution map's quality measures, and Phase~C
@@ -252,7 +252,7 @@ explanation predicts no better than the unperturbed output. We deliberately do n
 through interchange interventions or scrubbing, which are themselves
 mechanistic-interpretability methods under test in Phase~C, since that would make the
 criterion circular; only Phase~B and Phase~C report $\mathrm{S}$, and its bootstrap intervals
-follow \S\ref{sec:scoring}.
+follow \Sectionname\ref{sec:scoring}.
 
 Minimality asks whether the explanation is parsimonious and lives at the algorithmic level of
 the machine's own module decomposition. We define

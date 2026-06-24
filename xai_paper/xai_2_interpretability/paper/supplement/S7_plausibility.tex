@@ -3,7 +3,7 @@
 The plausibility axis of the leaderboard is a documented, tradition-level proxy, not a
 human-subjects measurement, and this section records how each value was assigned and shows
 that the headline contrast does not depend on the particular numbers chosen. The Methods
-(\S3.4) name two reporting axes: faithfulness against the intervention oracle of \S3.2,
+(\Sectionname3.4) name two reporting axes: faithfulness against the intervention oracle of \Sectionname3.2,
 which is measured on the machine, and a plausibility proxy, which stands in for how
 convincing a tradition's explanations are usually taken to be. We assign the proxy once per
 method tradition, before any faithfulness score on our machine is computed, so it cannot be
@@ -34,7 +34,7 @@ with the documented rationale. Values are the \jkey{plausibility_proxy} field of
 leaderboard rows (\texttt{compare/out/leaderboard.json}); they are tradition-level and fixed
 before any faithfulness score is computed, so the proxy cannot be tuned to the measured
 faithfulness. Higher means an explanation that the field tends to find more convincing, not
-one that is more faithful. The oracle (\S3.2) is the positive control and is not a method
+one that is more faithful. The oracle (\Sectionname3.2) is the positive control and is not a method
 under test.}
 \label{supp:tab:plausrubric}
 \begin{tabular}{@{}llp{6.4cm}@{}}
@@ -58,7 +58,7 @@ causal          & $0.50$ & Circuit edge lists and patching results are austere a
 descriptive     & $0.30$ & Whole-state recording is an explicit non-explanation: it withholds
                             nothing and reads as a dump, not an account. \\
 \midrule
-oracle (control)& $1.00$ & The \S3.2 ground truth by construction; positive control, not a
+oracle (control)& $1.00$ & The \Sectionname3.2 ground truth by construction; positive control, not a
                             method under test. \\
 \bottomrule
 \end{tabular}

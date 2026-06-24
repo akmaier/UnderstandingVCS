@@ -7,7 +7,7 @@
 
 Attribution hands back a map of which inputs mattered, and we turn the toolkit on the
 VCS to ask the one question a real network never lets us ask, whether the map is true.
-Every attribution is scored against the same intervention oracle (\S\ref{sec:oracle})
+Every attribution is scored against the same intervention oracle (\Sectionname\ref{sec:oracle})
 that defines ground truth, so for each chosen output $y$, a pixel, a score,
 a game event, we know the exact set of causes it should have named. We ran twelve
 attribution methods across six core games (Pong, Breakout, Space~Invaders, Seaquest,
@@ -26,7 +26,7 @@ it cuts the leaderboard cleanly in two.
 \centering
 \includegraphics[width=\textwidth]{fig4_attribution_vs_mechanistic.pdf}
 \caption{\textbf{Attribution (Phase~B) and mechanistic interpretability
-(Phase~C) scored against the same intervention oracle (\S\ref{sec:oracle}).} The
+(Phase~C) scored against the same intervention oracle (\Sectionname\ref{sec:oracle}).} The
 Phase-B half (a) splits each method's faithfulness by output regime: on a
 \emph{content} output the gradient family lands on the true cause, but on a
 \emph{position}/index output the entire gradient family \emph{collapses to $0.00$},
@@ -150,7 +150,7 @@ had, and that the most popular way of seeking it does not deliver it.
 
 \begin{table}[t]
 \caption{\textbf{Phase-B attribution scored against the intervention oracle
-(\S\ref{sec:oracle})}
+(\Sectionname\ref{sec:oracle})}
 (six core games; oracle-as-method positive control $=1.0$ on every non-degenerate
 column). \emph{Faith} is the all-regime faithfulness against ground truth and
 \emph{Faith (pos)} the position/index regime alone, where the naive gradient is

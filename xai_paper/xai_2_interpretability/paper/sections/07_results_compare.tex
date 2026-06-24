@@ -25,7 +25,7 @@ cross}\label{sec:results_compare}
 
 We have now run three traditions on one machine, and their scores live on a single
 axis. Faithfulness asks whether an explanation names the true causes, and on the
-VCS we answer it exactly: the intervention oracle of \S\ref{sec:oracle} re-runs the
+VCS we answer it exactly: the intervention oracle of \Sectionname\ref{sec:oracle} re-runs the
 bit-exact program for every candidate cause and returns the ground truth no real
 network affords. In the following we place all of Phases~A--C on the shared
 faithfulness-versus-plausibility plane, read off the leaderboard and its danger
@@ -35,7 +35,7 @@ half, the variable's meaning and the routine's algorithm, is a separate object, 
 on this machine the distance to it is a number. We name that residual the
 \emph{semantic gap} and measure its symptoms. The correctness triad we apply
 throughout --- \textbf{F}aithful, \textbf{S}ufficient, \textbf{M}inimal --- is
-defined formally in \S\ref{sec:triad}; here we only read its scores.
+defined formally in \Sectionname\ref{sec:triad}; here we only read its scores.
 
 \subsection*{The faithfulness leaderboard}
 
@@ -49,9 +49,9 @@ intervention methods average a faithfulness of $0.681$ against the oracle, while
 gradient and correlational methods average $0.294$, a gap of $0.387$ across all
 output regimes. On the \emph{position} regime, the discrete sprite-position outputs
 whose naive gradient is provably zero under the hard forward map
-(\S\ref{sec:results-b}), the gap holds with the same sign: causal and intervention
+(\Sectionname\ref{sec:results-b}), the gap holds with the same sign: causal and intervention
 $0.412$ versus gradient and correlational $0.068$. The ordering is the one the method
-matrix predicted (\S\ref{sec:methods}), now measured. Activation patching, causal
+matrix predicted (\Sectionname\ref{sec:methods}), now measured. Activation patching, causal
 scrubbing, interchange interventions, and the logit lens sit at the oracle ceiling of
 $1.0$; the single-unit lesion follows at $0.99$; the gradient family and the
 classical correlational analyses, the tuning curves, Granger causality, and
@@ -87,8 +87,8 @@ software artifact rather than a synthetic or pseudo-label.
 \caption{\textbf{Every method, every tradition, on the shared
 faithfulness-versus-plausibility plane.} The plotted set is the canonical 30
 interpretability methods + the oracle = 31 rows, each placed by its faithfulness
-against the intervention oracle (\S\ref{sec:oracle}; X, exact ground truth) and by its
-documented method-tradition \emph{plausibility proxy} (Y; \S\ref{sec:methods}), with a
+against the intervention oracle (\Sectionname\ref{sec:oracle}; X, exact ground truth) and by its
+documented method-tradition \emph{plausibility proxy} (Y; \Sectionname\ref{sec:methods}), with a
 horizontal $95\%$ bootstrap-over-games confidence interval on faithfulness
 (leaderboard\_ci.csv). The plausibility axis is a tradition-level proxy, not a
 human-subjects measurement. The oracle positive control anchors $(1.0,1.0)$. Causal
@@ -102,7 +102,7 @@ from the committed leaderboard, none re-run or estimated.}\label{fig:faithfulnes
 \subsection*{The danger zone}
 
 The faithfulness axis would be unremarkable if it agreed with how convincing a method
-looks, and it does not. Plotted against the plausibility proxy of \S\ref{sec:methods},
+looks, and it does not. Plotted against the plausibility proxy of \Sectionname\ref{sec:methods},
 the cloud separates into a benign diagonal and a hazardous corner: the methods the
 field reaches for first sit near the faithfulness floor while carrying the highest
 proxy tags. Expected Gradients tops the danger list at plausibility $0.9$ against
@@ -127,7 +127,7 @@ here. We claim the bounded thing the oracle can prove: even when a method recove
 true causal structure exactly, what it returns is the \emph{wiring} --- a
 causal-effect map, a data-flow graph --- and not the \emph{semantics}, the variable's
 meaning or the routine's algorithm. The missing object is of a different type, not a
-worse-fit instance of the same one. Following the triad of \S\ref{sec:triad}, we
+worse-fit instance of the same one. Following the triad of \Sectionname\ref{sec:triad}, we
 operationalize the gap through three separations, each adjudicated by the oracle:
 faithful-not-sufficient, named-not-causal, and decodable-not-used. They diagnose
 distinct semantic failure modes; they are not a complete theory of semantics. The
@@ -217,7 +217,7 @@ figures use the per-method aggregation as canonical, so text, table, and figure 
 \caption{\textbf{A taxonomy of interpretability failure on the VCS, organised by
 mechanism.} Each leaf is a method exhibiting the branch's failure mode, annotated with
 its \emph{family-mean} faithfulness $F \pm 95\%$ bootstrap-over-games CI against the
-intervention oracle (\S\ref{sec:oracle}; $0=$ chance, $1=$ oracle ceiling), read from
+intervention oracle (\Sectionname\ref{sec:oracle}; $0=$ chance, $1=$ oracle ceiling), read from
 leaderboard\_ci.csv; the per-game exemplars quoted below carry their own ``on $\langle$game$\rangle$''
 label. The lower branches confirm the expected failures: the gradient family is
 provably zero on the discrete position/index regime, and the architecture-specific

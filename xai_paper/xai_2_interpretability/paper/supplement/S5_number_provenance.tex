@@ -2,7 +2,7 @@
 
 Every headline number traces to a committed record, the script that produced it, and the
 command that re-derives it, and this section is the in-paper copy of that traceability table.
-It mirrors \S6.5 of the reproducibility document
+It mirrors \Sectionname6.5 of the reproducibility document
 (\texttt{xai\_2\_interpretability/REPRODUCIBILITY.md}); the values are the measured,
 committed ones at the current revision, and the confidence intervals are read from
 \texttt{tools/xai\_study/compare/out/leaderboard\_ci.csv} rather than recomputed here. Each
@@ -14,7 +14,7 @@ record additionally carries \texttt{seed}, \texttt{where}, \texttt{commit}, and
 \caption{\textbf{Headline-number provenance.} Each number $\rightarrow$ its committed record
 and JSON key $\rightarrow$ the generating or aggregating script $\rightarrow$ the command
 that reproduces it. Values are the measured, committed numbers at this revision (consistent
-with REPRODUCIBILITY \S6.5); CIs are read from \jkey{leaderboard_ci.csv}. Paths are
+with REPRODUCIBILITY \Sectionname6.5); CIs are read from \jkey{leaderboard_ci.csv}. Paths are
 relative to \texttt{tools/xai\_study/}.}
 \label{supp:tab:provenance}
 \scriptsize
@@ -45,7 +45,7 @@ Exact oracle $\max|\Delta\text{score}|$ (Pong) & $17.0$ & \jkey{oracle_pong_scor
 \noindent\scriptsize Scripts live under \texttt{tools/xai\_study/compare/} (Python) and
 \texttt{tools/xai\_study/ground\_truth/} (Julia); records under the corresponding \texttt{out/}
 trees. JSON keys are abbreviated with ``\texttt{...}'' where nested; the full paths are in
-REPRODUCIBILITY \S6.5.
+REPRODUCIBILITY \Sectionname6.5.
 \end{table}
 
 One number requires a reconciliation, and we record it rather than hide it. The sparse

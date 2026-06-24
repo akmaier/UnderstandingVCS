@@ -9,10 +9,10 @@ one of the six core games (\texttt{breakout}, \texttt{ms\_pacman}, \texttt{pong}
 \texttt{qbert}, \texttt{seaquest}, \texttt{space\_invaders}); the candidate-cause set is the
 machine's own state, that is the 128 RAM bytes together with the CPU registers and the TIA
 and RIOT registers exposed by the substrate; the reference is the intervention oracle of
-\S3.2, evaluated by exact re-runs of the emulator under $\mathrm{do}(u)$; and a method that
+\Sectionname3.2, evaluated by exact re-runs of the emulator under $\mathrm{do}(u)$; and a method that
 cannot be applied to a given output regime is recorded as not-applicable rather than scored
 as zero, so that an empty result never masquerades as a wrong one. Faithfulness is the F
-axis of the main-text triad (\S3.4); we reference that definition and do not restate it.
+axis of the main-text triad (\Sectionname3.4); we reference that definition and do not restate it.
 Records live under \texttt{tools/xai\_study/<phase>/out/}; the aggregate they feed is
 \texttt{tools/xai\_study/compare/out/leaderboard.json}.
 
@@ -27,7 +27,7 @@ Table~\ref{supp:tab:phaseA}.
 \caption{\textbf{Phase~A protocols (neuroscience battery).} One row per method: the input it
 reads, the reference it is scored against, the sampling or intervention budget, the scoring
 metric, and the committed record. All eight run on the six core games; faithfulness is the F
-axis of \S3.4. The whole-state recording (A8) is included as a descriptive upper bound on
+axis of \Sectionname3.4. The whole-state recording (A8) is included as a descriptive upper bound on
 coverage, not as a faithful explanation, and is read for its minimality $M$ rather than its
 trivial $F$.}
 \label{supp:tab:phaseA}
@@ -67,7 +67,7 @@ in Sec.~\ref{supp:provenance}.
 \centering
 \caption{\textbf{Phase~B protocols (attribution battery).} Each method emits a saliency over
 the candidate-cause set and is scored by Pearson correlation against the oracle attribution
-(\S3.2). The reference and the six-game budget are shared; the budget column records the
+(\Sectionname3.2). The reference and the six-game budget are shared; the budget column records the
 sampling or perturbation count that drives each estimator, and the seed column flags which
 methods carry an independent-seed dispersion in \texttt{leaderboard\_ci.csv}.}
 \label{supp:tab:phaseB}
@@ -94,7 +94,7 @@ occlusion & intervention & exhaustive single-cell masking & --- \\
 
 \smallskip
 \noindent\scriptsize Records: \texttt{tools/xai\_study/phaseB\_attribution/out/}; all twelve run
-on the six core games and are scored by Pearson correlation against the oracle (\S3.2). Seed
+on the six core games and are scored by Pearson correlation against the oracle (\Sectionname3.2). Seed
 sd is the independent-seed dispersion from \texttt{leaderboard\_ci.csv}.
 \end{table}
 
@@ -110,7 +110,7 @@ Sec.~\ref{supp:provenance}.
 \begin{table}[t]
 \centering
 \caption{\textbf{Phase~C protocols (mechanistic battery).} Each method is scored against the
-substrate's known circuit or the exact recovered-minus-exact deviation (\S3.2), not against
+substrate's known circuit or the exact recovered-minus-exact deviation (\Sectionname3.2), not against
 another method, which is what keeps the oracle ceiling non-circular. The probing and
 dictionary-learning members are included for comparison with the causal members.}
 \label{supp:tab:phaseC}
@@ -139,7 +139,7 @@ on the six core games.
 \end{table}
 
 The intervention oracle is the positive control, not a method under test. It is the exact
-$\mathrm{do}(u)$ ground truth of \S3.2, evaluated by re-running the bit-exact machine, and it
+$\mathrm{do}(u)$ ground truth of \Sectionname3.2, evaluated by re-running the bit-exact machine, and it
 attains $F=S=M=1.0$ by construction; its record triple is the intervention oracle, the
 content-path gradient oracle, and their cross-check
 (\texttt{tools/xai\_study/ground\_truth/out/}). It anchors the ceiling against which every
