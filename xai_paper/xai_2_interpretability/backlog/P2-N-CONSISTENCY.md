@@ -2,9 +2,9 @@
 id: P2-N-CONSISTENCY
 title: Full-paper consistency scan — main text, figures, tables, captions, supplement
 epic: RV (Revision)
-status: todo
-sprint:
-owner:
+status: in-sprint
+sprint: 15
+owner: agent-1
 where: local
 depends_on: []
 file_scope:
