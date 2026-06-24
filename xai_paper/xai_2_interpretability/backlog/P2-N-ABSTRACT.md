@@ -2,7 +2,7 @@
 id: P2-N-ABSTRACT
 title: Replace abstract with condensed version from most important findings
 epic: RV (Revision)
-status: in-sprint
+status: done
 sprint: 17
 owner: agent-1
 where: local
