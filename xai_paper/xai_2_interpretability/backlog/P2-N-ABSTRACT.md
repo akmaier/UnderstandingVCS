@@ -2,9 +2,9 @@
 id: P2-N-ABSTRACT
 title: Replace abstract with condensed version from most important findings
 epic: RV (Revision)
-status: todo
-sprint:
-owner:
+status: in-sprint
+sprint: 17
+owner: agent-1
 where: local
 depends_on: [P2-N-SENT]
 file_scope:
