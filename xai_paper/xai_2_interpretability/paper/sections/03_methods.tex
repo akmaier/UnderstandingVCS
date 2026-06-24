@@ -15,12 +15,14 @@ setups live in the Supplementary Information; Fig.~\ref{fig:platform} sketches t
   \includegraphics[width=\linewidth]{fig1_platform_oracle.pdf}
   \caption{\textbf{The measurement platform and its ground-truth oracle.} A
   differentiable, bit-exact port of the Atari VCS (left), realized as
-  \texttt{jutari} (Julia) $\cdot$ \texttt{jaxtari} (JAX), gives four capabilities no neural
-  network grants for free: exact forward, exact interventions $\mathrm{do}(u)$, full state
+  \texttt{jutari} (Julia) $\cdot$ \texttt{jaxtari} (JAX), realizes the three execution modes
+  --- HARD, SOFT-STE, and SOFT --- that give four capabilities no neural network grants for
+  free: exact forward, exact interventions $\mathrm{do}(u)$, full state
   observability, and content-path gradients. On it we build the oracle (centre): the primary
   intervention oracle of \Sectionname\ref{sec:oracle} (\Sectionname3.2), $\mathrm{do}(u{:=}v')\!\to\!\Delta y(u)$
-  by bit-exact re-run, with a content-path gradient $\partial y/\partial u$ as a companion on
-  the content path only. Any explanation $\hat{E}$ is scored by the correctness triad (right),
+  by bit-exact re-run, with three companion gradient constructions --- SOFT-STE content-path,
+  SOFT fully relaxed, and bilinear sampler --- available depending on the execution mode. Any
+  explanation $\hat{E}$ is scored by the correctness triad (right),
   $\text{right}=\mathrm{F}\wedge\mathrm{S}\wedge\mathrm{M}$, and reported on two axes,
   faithfulness against the oracle versus a plausibility proxy. Faithfulness aggregates
   correlation, sign and magnitude agreement, deletion/insertion area-under-curve, and
@@ -110,8 +112,8 @@ The output $y$ comes in five regimes that fix what a method must predict and whe
 gradient is even meaningful. A \emph{content} output is a register, color, or graphics-bit
 value that flows smoothly into the pixel, where the naive gradient is valid. A
 \emph{position/index} output is a sprite, missile, or ball coordinate set by strobe timing,
-where the naive gradient vanishes by Prop.~\ref{prop:zero} and only the bilinear-sampler
-surrogate or the intervention oracle applies. An \emph{event} output is a discrete state
+where the naive gradient vanishes by Prop.~\ref{prop:zero} and only the relaxed soft
+gradient, the bilinear-sampler surrogate, or the intervention oracle applies. An \emph{event} output is a discrete state
 change, a collision latch or a life lost, also gradient-zero. A \emph{score} output is the
 game's running counter, valid for the gradient only where it varies continuously. A
 \emph{pixel} output is the rendered framebuffer value, content-valid where it tracks a smooth
@@ -340,10 +342,12 @@ per method on the shared faithfulness-versus-plausibility axes of the Results le
 The headline contrast is the position regime, where the naive gradient is zero under the hard
 forward map by Prop.~\ref{prop:zero}.
 There, causal and intervention methods average a faithfulness of $0.41$ against $0.07$ for
-gradient and correlational methods, a gap of $0.34$. The per-method extreme places an
-exact causal method, activation patching, at faithfulness $1.000$ and the field's default
-saliency at $0.000$ on all six games. The popular method nonetheless carries the higher
-plausibility proxy ($0.9$ versus $0.5$). Against these numbers the semantic gap is measured.
+gradient and correlational methods, a gap of $0.34$. Soft-mode gradients, made available through
+the temperature-controlled relaxation of the discrete index boundary, restore non-zero signal on
+position outputs and narrow the gap. The per-method extreme places an exact causal method,
+activation patching, at faithfulness $1.000$ and the field's default saliency at $0.000$ on all
+six games. The popular method nonetheless carries the higher plausibility proxy ($0.9$ versus
+$0.5$). Against these numbers the semantic gap is measured.
 
 % =====================================================================
 % BIBTEX-NEEDED: full entries for the keys cited above that are NOT yet
