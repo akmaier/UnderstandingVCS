@@ -67,46 +67,46 @@ on its own. Note that a concept can be linearly decodable yet play no causal rol
 our intervention test is stronger than probing, and that separation is one of the three
 counted in Fig.~\ref{fig:taxonomy}.
 
-Ours is not the first study to score interpretability against a known answer, yet existing
+Ours is not the first study to score interpretability against a known answer. Yet existing
 benchmarks build the answer into the system. Yang and Kim's BAM~\cite{yang2019bim} grades
-attribution maps against images with known relative feature importance, and
+attribution maps against images with known relative feature importance.
 M4~\cite{m4_2023} extends this idea into a faithfulness benchmark spanning metrics,
-modalities, and models; in both, the feature ground truth is synthetic, installed by the
+modalities, and models. In both, the feature ground truth is synthetic, installed by the
 data-generation or training procedure. Tracr~\cite{lindner2023tracr} compiles programs into
-transformers with circuits known by construction; InterpBench~\cite{gupta2024interpbench}
+transformers with circuits known by construction. InterpBench~\cite{gupta2024interpbench}
 trains semi-synthetic transformers to a specified circuit. The Mechanistic Interpretability
 Benchmark~\cite{mib2025} pushes furthest in our direction, scoring circuit localization and
 causal-variable localization against curated answers in neural language models. Yet each of
-these answers is engineered for the benchmark, whereas our subject is a real, hand-authored
-artifact whose ground truth is independent of it: never designed to be interpretable, the VCS
+these answers is engineered for the benchmark. Our subject is different: a real, hand-authored
+artifact whose ground truth is independent of it. Never designed to be interpretable, the VCS
 yields its causal structure to an exhaustive intervention oracle on a bit-exact,
 differentiable port~\cite{maier2025vcs}, built on the Atari
 substrate~\cite{bellemare2013arcade} and the reference emulator~\cite{xitari}. Our novelty is
-not the Atari environment, which the Arcade Learning Environment and its
-descendants~\cite{bellemare2013arcade,machado2018revisiting} already supply, and which faster
-and object-centric variants such as CuLE~\cite{dalton2020cule}, OCAtari and
-JAXAtari~\cite{delfosse2023ocatari,delfosse2025jaxatari} extend; it is the bit-exact,
+not the Atari environment itself. The Arcade Learning Environment and its
+descendants~\cite{bellemare2013arcade,machado2018revisiting} already supply that, and faster
+object-centric variants such as CuLE~\cite{dalton2020cule}, OCAtari and
+JAXAtari~\cite{delfosse2023ocatari,delfosse2025jaxatari} extend it. What is new is the bit-exact,
 differentiable intervention oracle that turns a known machine into a ground truth for
 interpretability. More importantly, the engineered benchmarks validate faithfulness alone,
-because there the circuit is the meaning by fiat, whereas on a real artifact the meaning is a
+because there the circuit is the meaning by fiat. On a real artifact the meaning is a
 separate object from the causal structure. Hence we can do what they cannot: separate
-faithfulness from understanding, and show that a method which perfectly recovers the true
+faithfulness from understanding. We show that a method which perfectly recovers the true
 wiring has not recovered the semantics (Fig.~\ref{fig:taxonomy}). We measure that residual,
-the semantic gap, and are explicit that closing it --- recovering a program's variables and
+the semantic gap. We are explicit that closing it --- recovering a program's variables and
 design from scratch --- is a different problem, the subject of companion work. To our
 knowledge, this is the first cross-tradition audit of these methods on a real hand-authored
-software artifact with an exact intervention oracle; we claim no unqualified ``first ground-truth
-calibration,'' since synthetic known-answer benchmarks and Jonas and Kording's microprocessor
+software artifact with an exact intervention oracle. We claim no unqualified ``first ground-truth
+calibration.'' Synthetic known-answer benchmarks and Jonas and Kording's microprocessor
 study~\cite{jonas2017could} precede us.
 
 Our use of ``interpretable'' is one of several in circulation. We operationalise it as
 ground-truth recovery: an explanation is interpretable to the degree that its claimed
 structure matches the system's true causal structure, scored by the oracle. Barbiero et
 al.~\cite{barbiero2025neural} instead define it as inference equivariance, a design target
-for new models, while ours audits a system already known. Read against Marr's
+for new models. Ours audits a system already known. Read against Marr's
 levels of analysis~\cite{marr1982vision} and Lazebnik's ``fix-the-radio''
-parable~\cite{lazebnik2002can}, the point that drives this paper holds: a faithful
-description of a system's wiring is not yet an account of the algorithm it runs, and on a
+parable~\cite{lazebnik2002can}, the point that drives this paper holds. A faithful
+description of a system's wiring is not yet an account of the algorithm it runs. On a
 known machine that gap is measured.
 
 % =====================================================================

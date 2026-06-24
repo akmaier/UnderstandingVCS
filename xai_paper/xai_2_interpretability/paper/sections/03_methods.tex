@@ -36,7 +36,7 @@ setups live in the Supplementary Information; Fig.~\ref{fig:platform} sketches t
 \subsection{The differentiable, bit-exact VCS substrate}\label{sec:substrate}
 
 The subject of this study is the Atari Video Computer System (VCS) itself, not a learned
-agent: a complex real artifact never designed to be interpretable, yet whose every causal
+agent. It is a complex real artifact never designed to be interpretable, yet whose every causal
 dependency we can read off exactly. Paper~1 built it, a bit-exact, differentiable port of the
 1977 VCS validated bit-for-bit against the \texttt{xitari} C++ reference on all 64 games of
 the Paper-1 roster, in random-access memory and rendered screen, within the validated
@@ -51,9 +51,9 @@ an exact forward map,
 \end{equation}
 that is, the output $y$ at step $t$, a pixel, a score, or a game event, is a deterministic
 function of the cartridge bytes, the inputs up to $t$, and the initial state $s_0$, and
-re-running reproduces $y$ to the bit. The second is exact interventions: we set any cause
+re-running reproduces $y$ to the bit. The second is exact interventions. We set any cause
 $u$, a ROM byte, a RAM cell, a CPU/TIA/RIOT register, an opcode, or a joystick input, to any
-value and re-run Eq.~\eqref{eq:vcs} deterministically, realizing the causal operator
+value and re-run Eq.~\eqref{eq:vcs} deterministically. This realizes the causal operator
 $\mathrm{do}(u)$ on a real machine rather than an assumed world model. The third is full
 state observability, every bit of RAM and every register recorded along the trajectory, so
 the ``activations'' we interpret are the program's own variables. The fourth is a
@@ -104,7 +104,7 @@ machine actually produced elsewhere. Resampling draws the cause from its own mar
 trajectory, and counterfactual edits are valid under the emulator by construction, since any
 byte assignment yields a well-defined deterministic re-run. Off-manifold interventions are
 acceptable for oracle scoring precisely because the oracle measures a \emph{causal} effect, not
-a likelihood: the question is what the output would be if $u$ were $v'$, and the bit-exact
+a likelihood. The question is what the output would be if $u$ were $v'$. The bit-exact
 machine answers it exactly for any $v'$, on- or off-manifold. Where a method's own claim is
 about typical behavior rather than causal dependence we fall back to the on-manifold donor and
 resampling variants and flag the choice in the Supplement.
@@ -241,17 +241,17 @@ circuit discovery. The leaderboard score is therefore a single scalar per method
 multi-metric in origin, and the per-method choice is recorded in the Supplement.
 
 Sufficiency asks whether the explanation could regenerate the behavior under interventions it
-has not seen. We treat $\mathrm{S}_{\mathrm{score}}$ as a held-out predictive estimator:
-$\hat{E}$ is fit (or its causal sites read off) on a calibration set of interventions and then
-asked to predict the true output $y'$ under a disjoint test set of held-out $\mathrm{do}(u)$
+has not seen. We treat $\mathrm{S}_{\mathrm{score}}$ as a held-out predictive estimator.
+$\hat{E}$ is fit (or its causal sites read off) on a calibration set of interventions. It is
+then asked to predict the true output $y'$ under a disjoint test set of held-out $\mathrm{do}(u)$
 edits, with the prediction compared to the bit-exact re-run. The score is the fraction of
 held-out interventions whose predicted $y'$ matches the true $y'$ within a fixed
-output-type tolerance (exact for discrete indices and events, a small $\varepsilon$ band for
-continuous scores), so $\mathrm{S}_{\mathrm{score}}\in[0,1]$ and a value near zero means the
-explanation predicts no better than the unperturbed output. We deliberately do not define it
-through interchange interventions or scrubbing, which are themselves
-mechanistic-interpretability methods under test in Phase~C, since that would make the
-criterion circular; only Phase~B and Phase~C report $\mathrm{S}$, and its bootstrap intervals
+output-type tolerance. The match is exact for discrete indices and events, and within a small
+$\varepsilon$ band for continuous scores. Hence $\mathrm{S}_{\mathrm{score}}\in[0,1]$; a value
+near zero means the explanation predicts no better than the unperturbed output. We deliberately
+do not define it through interchange interventions or scrubbing. Those are themselves
+mechanistic-interpretability methods under test in Phase~C, and using them would make the
+criterion circular. Only Phase~B and Phase~C report $\mathrm{S}$. Its bootstrap intervals
 follow \Sectionname\ref{sec:scoring}.
 
 Minimality asks whether the explanation is parsimonious and lives at the algorithmic level of
@@ -303,16 +303,16 @@ lens~\cite{vig2020investigating,meng2022locating,geiger2021causal,geiger2023find
 
 All faithfulness scoring runs on the six core games of Section~\ref{sec:tiers}, where the
 oracle's re-runs are exact. Cell- and pixel-level scores, correlation, deletion and insertion
-area-under-curve, and precision at $k$, are taken against T1 and need no T3; only object- and
+area-under-curve, and precision at $k$, are taken against T1 and need no T3. Only object- and
 concept-level scores draw on the external T3 labels, and we flag every such score as
 alignment-to-given, not discovery. We aggregate the committed per-game records into one row
 per method on the shared faithfulness-versus-plausibility axes of the Results leaderboard.
 The headline contrast is the position regime, where the naive gradient is zero under the hard
 forward map by Prop.~\ref{prop:zero}.
 There, causal and intervention methods average a faithfulness of $0.41$ against $0.07$ for
-gradient and correlational methods, a gap of $0.34$, while the per-method extreme places an
+gradient and correlational methods, a gap of $0.34$. The per-method extreme places an
 exact causal method, activation patching, at faithfulness $1.000$ and the field's default
-saliency at $0.000$ on all six games, the popular method nonetheless carrying the higher
+saliency at $0.000$ on all six games. The popular method nonetheless carries the higher
 plausibility proxy ($0.9$ versus $0.5$). Against these numbers the semantic gap is measured.
 
 % =====================================================================

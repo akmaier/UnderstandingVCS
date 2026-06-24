@@ -1,14 +1,14 @@
 \section{Coverage and applicability}\label{supp:coverage}
 
-The benchmark scores methods on a six-game core drawn from a larger bit-exact substrate, and
-the coverage table makes the scope of that choice explicit. Paper~1 validates the
+The benchmark scores methods on a six-game core drawn from a larger bit-exact substrate. The
+coverage table makes the scope of that choice explicit. Paper~1 validates the
 differentiable VCS ports bit-for-bit against the \texttt{xitari} reference on all 64 Arcade
-Learning Environment games, within a 30-frame RAM and 60-frame screen window; the
+Learning Environment games, within a 30-frame RAM and 60-frame screen window. The
 interpretability study reported here runs on the six games for which all three tiers of
 ground truth (\Sectionname3.3) are available and the oracle is exact, listed in
 Table~\ref{supp:tab:coverage}. The remaining 58 games are bit-exact substrate but are not
-scored here, either because they fall outside the validated horizon for the analyses we run
-or because the tiered labels they would need are not yet produced; they are candidates for
+scored here. Some fall outside the validated horizon for the analyses we run. Others lack the
+tiered labels they would need. They are candidates for
 the larger sweep rather than excluded for any methodological reason. The horizon column
 records the validated window, and the tier column records which of the three ground-truth
 tiers (T1 exact intervention, T2 data-flow, T3 externally-supplied semantic labels) is

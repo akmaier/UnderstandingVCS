@@ -14,21 +14,21 @@ converged on \emph{faithfulness}, whether an explanation names a system's \emph{
 causes, as its quality criterion. The difficulty, however, is that on a
 real neural network there is nothing to measure it against.
 
-Similar short comings were also identified in the field of neuroscience. Jonas and Kording made this vivid by turning the neuroscientist's toolkit on a
+Similar short comings were also identified in neuroscience. Jonas and Kording made this vivid by turning the neuroscientist's toolkit on a
 microprocessor whose every transistor is known~\cite{jonas2017could}. Lesions, tuning
-curves, and connectomics produced rich structure, and none of it recovered how the chip
+curves, and connectomics produced rich structure. None of it recovered how the chip
 computes. Without ground truth a method that finds structure cannot be told apart from
-one that finds the \emph{right} structure, and the same blind spot recurs across
-explainable AI, where attribution maps are validated against each other or against human
+one that finds the \emph{right} structure. The same blind spot recurs across
+explainable AI. There, attribution maps are validated against each other or against human
 intuition rather than against the system's mechanism~\cite{atrey2020exploratory}.
 Faithfulness has stood in for understanding without anyone being able to test the proxy.
 
-Maier et al. recently built the missing reference, a bit-exact, differentiable port of the Atari
+Maier et al. recently built the missing reference: a bit-exact, differentiable port of the Atari
 2600 Video Computer System (VCS) that reproduces a real 1977 machine to
 the byte and pixel~\cite{maier2025vcs,xitari}. The VCS is software with a known
-specification, so the true cause of any output is computable by exact intervention. This
+specification. The true cause of any output is therefore computable by exact intervention. This
 \emph{intervention oracle} (cf. \Sectionname\ref{sec:oracle}) returns, for any candidate cause of any
-output, the true causal effect, measured rather than estimated, over the platform
+output, the true causal effect. The measurement is made rather than estimated, over the platform
 Fig.~\ref{fig:platform} lays out. On this machine an interpretability claim can be
 scored right or wrong.
 
@@ -76,19 +76,19 @@ does not capture we leave to later work on learned agents.
 Because the central claim is sharp, we are deliberate about what we do not claim. We do
 \emph{not} claim that any method recovered the program's meaning, algorithm, or design
 from scratch. Every semantic label we use is imported from external annotation
-sets~\cite{anand2019unsupervised,delfosse2023ocatari} and only \emph{causally verified}
-on our substrate, never \emph{discovered} by a method under test, so an alignment method
-that reports perfect accuracy is right by construction, checking a variable we supplied.
+sets~\cite{anand2019unsupervised,delfosse2023ocatari}. These labels are only \emph{causally verified}
+on our substrate, never \emph{discovered} by a method under test. Hence an alignment method
+that reports perfect accuracy is right by construction: it checks a variable we supplied.
 Probing shows that information is present, not that it is
-used~\cite{hewitt2019designing}; our oracle is the strictly stronger test. The
+used~\cite{hewitt2019designing}. Our oracle is the strictly stronger test. The
 plausibility axis is a documented proxy, not a measured human study. As such, this paper
-\emph{defines and measures} the semantic gap; \emph{closing} it, recovering a system's
-documentation and design from the system alone, is companion work, not this paper.
+\emph{defines and measures} the semantic gap. \emph{Closing} it --- recovering a system's
+documentation and design from the system alone --- is companion work, not this paper.
 
 The study thus offers a reusable ground-truth benchmark for explainable AI, mechanistic
-interpretability, AI safety, and software verification, and it reframes the open
-problem. Faithfulness is not the dividing line; the universal gap between mechanism and
-meaning is what remains once faithfulness is secured, and we believe that naming and
+interpretability, AI safety, and software verification. It also reframes the open
+problem. Faithfulness is not the dividing line. The universal gap between mechanism and
+meaning is what remains once faithfulness is secured. We believe that naming and
 measuring that residual is a first step toward closing it.
 
 

@@ -28,8 +28,8 @@ axis. Faithfulness asks whether an explanation names the true causes, and on the
 VCS we answer it exactly: the intervention oracle of \Sectionname\ref{sec:oracle} re-runs the
 bit-exact program for every candidate cause and returns the ground truth no real
 network affords. In the following we place all of Phases~A--C on the shared
-faithfulness-versus-plausibility plane, read off the leaderboard and its danger
-zone, and then mark, with the same oracle, the boundary that no method, faithful or
+faithfulness-versus-plausibility plane and read off the leaderboard and its danger
+zone. We then mark, with the same oracle, the boundary that no method, faithful or
 not, can cross. Faithfulness is not the dividing line. The variable's meaning and the
 routine's algorithm is a separate object, and on this machine the distance to it is a
 number. We name that residual the \emph{semantic gap} and measure its symptoms. The
@@ -39,13 +39,13 @@ read its scores.
 
 \subsection*{The faithfulness leaderboard}
 
-The leaderboard separates cleanly along the axis that matters, and we read it as an
+The leaderboard separates cleanly along the axis that matters. We read it as an
 exploratory cross-tradition ranking rather than a single commensurable score: the
 traditions measure different objects, and we report the ranking together with its
 robustness. Aggregating the 257 committed per-game records into the canonical 30
 interpretability methods plus the intervention oracle as a positive control, 31 rows
 in all~\cite{leaderboardP2} (Fig.~\ref{fig:faithfulness}), the causal and
-intervention methods average a faithfulness of $0.681$ against the oracle, while the
+intervention methods average a faithfulness of $0.681$ against the oracle. The
 gradient and correlational methods average $0.294$, a gap of $0.387$ across all
 output regimes. On the \emph{position} regime, the discrete sprite-position outputs
 whose naive gradient is provably zero under the hard forward map
@@ -53,11 +53,11 @@ whose naive gradient is provably zero under the hard forward map
 $0.412$ versus gradient and correlational $0.068$. The ordering is the one the method
 matrix predicted (\Sectionname\ref{sec:methods}), now measured. Activation patching, causal
 scrubbing, interchange interventions, and the logit lens sit at the oracle ceiling of
-$1.0$; the single-unit lesion follows at $0.99$; the gradient family and the
-classical correlational analyses, the tuning curves, Granger causality, and
-spike-word correlations, fall toward the floor. The starkest pair is bit-exact on
-every game: on the position regime activation patching reaches faithfulness $1.000$,
-the oracle ceiling, on all six core games, while vanilla saliency, a widely used
+$1.0$. The single-unit lesion follows at $0.99$. The gradient family and the
+classical correlational analyses --- tuning curves, Granger causality, and
+spike-word correlations --- fall toward the floor. The starkest pair is bit-exact on
+every game. On the position regime activation patching reaches faithfulness $1.000$,
+the oracle ceiling, on all six core games. Vanilla saliency, a widely used
 attribution baseline, collapses to $0.000$ on all six, a per-method gap of
 $1.000$~\cite{faithfuldemoP2}. Hence, on a system where the answer is known exactly,
 an everyday attribution tool scores near chance where a causal method scores near the
@@ -65,20 +65,20 @@ ceiling.
 
 The separation survives reweighting, and where it does not we say so. Reading the
 robustness record~\cite{leaderboardP2}, the causal-versus-gradient gap stays at
-$0.387$ under both equal weighting by method and equal weighting by game, and its
+$0.387$ under both equal weighting by method and equal weighting by game. Its
 $95\%$ bootstrap interval excludes zero in each case ($[0.32,0.45]$). Yet two
 qualifications belong in the same breath. When the oracle-equivalent intervention
 methods are removed, leaving only coarser approximations, the gap shrinks to $0.123$
-and its interval includes zero, so the leaderboard's headline contrast is carried in
-part by methods that approach the oracle operation itself. And the gap is
-regime-specific: on content outputs, where the naive gradient is valid, it falls to
-$0.045$ with an interval spanning zero, while on the position regime it holds at
+and its interval includes zero. Hence the leaderboard's headline contrast is carried in
+part by methods that approach the oracle operation itself. The gap is also
+regime-specific. On content outputs, where the naive gradient is valid, it falls to
+$0.045$ with an interval spanning zero. On the position regime it holds at
 $0.344$ with an interval that excludes it. The conclusion that survives every
 reweighting is the narrow one: on the discrete position/index outputs, causal and
-intervention methods recover the true causes and gradient-and-correlational methods
+intervention methods recover the true causes. Gradient-and-correlational methods
 do not. This is the cross-tradition analogue of what neural-network benchmarks report
-when faithfulness is scored against a constructed ground truth~\cite{mib2025,m4_2023},
-with the difference that here the ground truth is an exact intervention on a real
+when faithfulness is scored against a constructed ground truth~\cite{mib2025,m4_2023}.
+The difference is that here the ground truth is an exact intervention on a real
 software artifact rather than a synthetic or pseudo-label.
 
 \begin{figure}[t]
@@ -188,17 +188,17 @@ triad's axes are not redundant: a method can be faithful and minimal yet not suf
 (ACDC on Breakout, $F = M = 1.0$, $S = 0.44$); it can match a named concept perfectly yet be
 causally inert (the SAE on Pong, matched fraction $1.0$, $F = 0.041$); it can flag a
 concept the program never uses (cell~$84$, present but unused). The claim does not rest on any single low
-number, since a lone low $S$ could be a tuning artifact, but on the gap appearing where
+number, since a lone low $S$ could be a tuning artifact. It rests on the gap appearing where
 tuning \emph{cannot} reach --- an already-exact effect table --- and running in opposite
 directions on the same axis at once. That two-sidedness is what a ``methods are not good
 enough yet'' account cannot generate. We restate the honesty contract here, where the
 temptation to overread is greatest. We have \emph{not} recovered the program's meaning,
 algorithm, variables, or design from scratch. Every semantic label we used is external,
 imported from AtariARI~\cite{anand2019unsupervised} and
-OCAtari~\cite{delfosse2023ocatari}: the substrate only \emph{causally verifies} a
-supplied label, it does not \emph{discover} the concept, and the provenance record marks
-each label as imported rather than recovered. Hence, the faithful methods recover the
-wiring; the meaning is a separate object, and the distance to it is what we have
+OCAtari~\cite{delfosse2023ocatari}. The substrate only \emph{causally verifies} a
+supplied label; it does not \emph{discover} the concept. The provenance record marks
+each label as imported rather than recovered. Hence the faithful methods recover the
+wiring. The meaning is a separate object, and the distance to it is what we have
 measured. Recovering that meaning is a different problem, and it is the companion paper's,
 not this one's.
 

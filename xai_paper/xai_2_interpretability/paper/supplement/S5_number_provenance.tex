@@ -1,10 +1,10 @@
 \section{Number provenance}\label{supp:provenance}
 
 Every headline number traces to a committed record, the script that produced it, and the
-command that re-derives it, and this section is the in-paper copy of that traceability table.
+command that re-derives it. This section is the in-paper copy of that traceability table.
 It mirrors \Sectionname6.5 of the reproducibility document
-(\texttt{xai\_2\_interpretability/REPRODUCIBILITY.md}); the values are the measured,
-committed ones at the current revision, and the confidence intervals are read from
+(\texttt{xai\_2\_interpretability/REPRODUCIBILITY.md}). The values are the measured,
+committed ones at the current revision. The confidence intervals are read from
 \texttt{tools/xai\_study/compare/out/leaderboard\_ci.csv} rather than recomputed here. Each
 record additionally carries \texttt{seed}, \texttt{where}, \texttt{commit}, and
 \texttt{timestamp}, so the provenance of every value is self-documenting.
@@ -49,12 +49,12 @@ REPRODUCIBILITY \Sectionname6.5.
 \end{table}
 
 One number requires a reconciliation, and we record it rather than hide it. The sparse
-autoencoder is the only method whose two aggregations disagree: the over-games mean is
-$F=0.1404$ with a $95\%$ bootstrap CI of $[0.0,\,0.3139]$, while the over-records mean is
+autoencoder is the only method whose two aggregations disagree. The over-games mean is
+$F=0.1404$ with a $95\%$ bootstrap CI of $[0.0,\,0.3139]$. The over-records mean is
 $0.1947$ with CI $[0.0058,\,0.4804]$, both read from \jkey{leaderboard_ci.csv}. The
 figures and the main-text leaderboard plot the over-records value $0.1947$, which lies inside
-the over-games interval; we treat the over-games mean as the canonical row value for the
-aggregation rule of Sec.~\ref{supp:schema} and report the over-records figure alongside it,
-so that text, table, and figure agree on which aggregation each cites. No headline claim
+the over-games interval. We treat the over-games mean as the canonical row value for the
+aggregation rule of Sec.~\ref{supp:schema} and report the over-records figure alongside it.
+This way text, table, and figure agree on which aggregation each cites. No headline claim
 depends on which of the two is read, since the sparse autoencoder sits near the floor under
 both.

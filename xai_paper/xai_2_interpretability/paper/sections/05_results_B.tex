@@ -91,12 +91,12 @@ once. The map lands on the right cause yet stays blind to the model that produce
 
 Replace the gradient with an actual intervention and the position blind spot
 disappears. Occlusion~\cite{zeiler2014visualizing} sets a candidate cause and re-runs
-the bit-exact program, the coarse twin of the oracle; on the Pong position output,
+the bit-exact program, the coarse twin of the oracle. On the Pong position output,
 where every gradient method scores $0.0$, it recovers the true causal bytes at
-correlation $0.837$, its all-regime faithfulness of $0.482$ the highest in Phase~B. The black-box perturb-and-re-run methods follow the same logic and result:
-RISE~\cite{petsiuk2018rise} ($0.375$), LIME~\cite{ribeiro2016why} ($0.382$), and
+correlation $0.837$, its all-regime faithfulness of $0.482$ the highest in Phase~B. The black-box perturb-and-re-run methods follow the same logic and yield the same
+result. RISE~\cite{petsiuk2018rise} ($0.375$), LIME~\cite{ribeiro2016why} ($0.382$), and
 KernelSHAP / Shapley sampling~\cite{lundberg2017unified,strumbelj2014explaining}
-($0.446$) each draw masked coalitions and average over the genuine responses, so each
+($0.446$) each draw masked coalitions and average over the genuine responses. Hence each
 works on position outputs where the gradient is dead, and each reports its own
 completeness ($\Sigma\phi = y(\text{intact}) - y(\text{all-masked})$ for KernelSHAP,
 the surrogate $R^2$ for LIME).
@@ -110,9 +110,9 @@ genuine alternative VCS state, the RAM of another frame of the same ROM. Both st
 the data manifold by construction and both work on position outputs (position-regime
 faithfulness $0.202$ and $0.139$, all-regime $0.346$ and $0.350$). As such, the
 cross-phase intervention family averages $0.681$ faithfulness [95\% CI $0.59$--$0.78$,
-$n=11$] against the oracle, more than double the cross-phase gradient family's $0.294$
-[$0.20$--$0.38$, $n=14$] (Fig.~\ref{fig:fig4}); restricted to the three Phase-B
-intervention methods alone the mean is $0.393$ against the Phase-B gradient family's
+$n=11$] against the oracle. This is more than double the cross-phase gradient family's $0.294$
+[$0.20$--$0.38$, $n=14$] (Fig.~\ref{fig:fig4}). Restricted to the three Phase-B
+intervention methods alone the mean is $0.393$, against the Phase-B gradient family's
 $0.298$. A perturbation is faithful exactly when it is a valid intervention.
 
 A part of the popular toolkit returns no answer at all, because it has nothing on
@@ -120,23 +120,23 @@ the VCS to attach to. Grad-CAM and Grad-CAM++~\cite{selvaraju2017gradcam,%
 chattopadhyay2018gradcampp} need a final convolutional layer to weight; attention
 rollout~\cite{abnar2020quantifying} needs attention matrices;
 VIPER~\cite{bastani2018verifiable} needs a learned policy to distil. The VCS is a
-6502 CPU with a TIA and a RIOT executing a fixed ROM, so across all six games the
+6502 CPU with a TIA and a RIOT executing a fixed ROM. Across all six games the
 count of each required substrate is exactly zero, against $\geq 16$ genuine candidate
 causes per game for the applicable methods. We record this as a measured finding,
-$\mathtt{applies = false}$, not a poor score: the absence is structural and the same
-in every game, and re-targeting Grad-CAM's pooling onto raw register state would only
+$\mathtt{applies = false}$, not a poor score. The absence is structural and the same
+in every game. Re-targeting Grad-CAM's pooling onto raw register state would only
 be the content-path gradient renamed. That a slice of the field's headline methods is
 silent on a real, deployed artifact is itself part of the audit.
 
 Across the twelve methods the leaderboard separates along the axis that matters and
-crosses the axis the field actually optimizes. The starkest pair makes it concrete: on
+crosses the axis the field actually optimizes. The starkest pair makes it concrete. On
 the position regime the causal method activation patching (Phase~C) reaches
-faithfulness $1.000$, the oracle ceiling, on all six games, while vanilla saliency, a
-widely used baseline, collapses to $0.000$ on all six, a per-method gap of $1.000$,
-bit-exact on every game. Yet, on the plausibility proxy of Sec.~\ref{sec:methods}
-the popular method carries the higher score ($0.9$ versus $0.5$): the provably empty
+faithfulness $1.000$, the oracle ceiling, on all six games. Vanilla saliency, a
+widely used baseline, collapses to $0.000$ on all six. This is a per-method gap of $1.000$,
+bit-exact on every game. Yet on the plausibility proxy of Sec.~\ref{sec:methods}
+the popular method carries the higher score ($0.9$ versus $0.5$). The provably empty
 map looks more convincing than the one that is exactly right. That inversion of low
-faithfulness paired with high plausibility is the danger zone, and on the VCS it is not
+faithfulness paired with high plausibility is the danger zone. On the VCS it is not
 a worry but a measurement.
 
 We claim no more than the faithfulness of these maps. A correct occlusion map names
