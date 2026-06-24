@@ -6,7 +6,7 @@ status: todo
 sprint:
 owner:
 where: local
-depends_on: []
+depends_on: [P2-N-CONSISTENCY]
 file_scope:
   - paper/sections/00_abstract.tex
   - paper/sections/01_intro.tex
@@ -47,4 +47,5 @@ only syntactic structure.
 ## Notes / handoff
 - Work section by section. Read each file, identify run-on / multi-clause sentences,
   split them. Preserve all \ref{}, \cite{}, and LaTeX commands intact.
-- Follow STYLE.md voice: concise, declarative, Maier register.
+- Follow STYLE.md voice exactly: concise, declarative, Maier register.
+- Run the STYLE.md §7 self-check before marking done.

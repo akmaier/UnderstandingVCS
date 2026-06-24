@@ -32,5 +32,8 @@ Nature Machine Intelligence style.
 
 ## Notes / handoff
 - The current abstract is in `paper/sections/00_abstract.tex`. Replace its content entirely.
-- Use condensed, punchy prose. Maier voice per STYLE.md.
+- Use condensed, punchy prose. Maier voice per STYLE.md exactly.
+- Run the STYLE.md §7 self-check before marking done.
 - The new plan.md has the latest abstract sketch — use it as the template.
+- Abstract must be ~150-200 words, Nature Machine Intelligence format, flowing prose
+  (no labels, no \paragraph{}, plain topic sentences per STYLE.md).

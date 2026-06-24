@@ -6,7 +6,7 @@ status: todo
 sprint:
 owner:
 where: local
-depends_on: [P2-N-SENT, P2-N-ABSTRACT, P2-N-BILINEAR]
+depends_on: [P2-N-BILINEAR]
 file_scope:
   - paper/main.tex
   - paper/sections/00_abstract.tex
