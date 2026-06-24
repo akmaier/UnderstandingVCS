@@ -40,8 +40,29 @@ agent. It is a complex real artifact never designed to be interpretable, yet who
 dependency we can read off exactly. Paper~1 built it, a bit-exact, differentiable port of the
 1977 VCS validated bit-for-bit against the \texttt{xitari} C++ reference on all 64 games of
 the Paper-1 roster, in random-access memory and rendered screen, within the validated
-conformance window~\cite{maier2025vcs,xitari}. We use it in two interchangeable, mutually
-cross-checked realizations, \texttt{jutari} (Julia) and \texttt{jaxtari} (JAX/Python).
+conformance window~\cite{maier2025vcs,xitari}. Paper~1 is a technical companion that supplies
+the mathematical proofs and experimental validation of the constructions we use here; no other
+reference system like it exists anywhere, and no prior study has had the opportunity to
+examine interpretability methods against this level of ground truth. We use the port in two
+interchangeable, mutually cross-checked realizations, \texttt{jutari} (Julia) and
+\texttt{jaxtari} (JAX/Python).
+
+Paper~1 provides three execution modes. The \textbf{hard} mode is the bit-exact integer
+machine, identical to the \texttt{xitari} C++ reference at every RAM byte and every screen
+pixel. The \textbf{SOFT-STE} (straight-through estimator) mode keeps the forward pass
+bit-identical to the hard mode at any finite temperature while routing a surrogate gradient
+along the content path during the backward pass, a formulation whose forward equivalence
+Paper~1 proves theoretically and validates experimentally across all 64 games. The
+\textbf{soft} (fully relaxed) mode relaxes every discrete decision --- opcode dispatch via
+a temperature-parameterised softmax, conditional branches via a sigmoid with steepness
+$\alpha$, memory reads via a distance-weighted soft read --- into a fully differentiable
+form. Paper~1 proves that the soft forward pass reproduces the hard machine bit-for-bit in
+the limit $T \to 0^+$, $\alpha \to \infty$, and provides the temperature-limit error bound
+$\|\Phi_{\mathrm{H}} - \Phi_{\mathrm{S}}\| \le (K-1)e^{-\Delta_{\min}/T} +
+e^{-\alpha m_{\min}} + \rho e^{-1/T}$. At practical settings ($T \lesssim 0.14$, $\alpha
+\gtrsim 6$), the soft mode remains forward-exact within machine precision for the validated
+frame window; beyond those settings the forward pass diverges and the gradient quality
+degrades.
 
 The substrate grants four capabilities that no neural network offers for free. The first is
 an exact forward map,
@@ -56,10 +77,11 @@ $u$, a ROM byte, a RAM cell, a CPU/TIA/RIOT register, an opcode, or a joystick i
 value and re-run Eq.~\eqref{eq:vcs} deterministically. This realizes the causal operator
 $\mathrm{do}(u)$ on a real machine rather than an assumed world model. The third is full
 state observability, every bit of RAM and every register recorded along the trajectory, so
-the ``activations'' we interpret are the program's own variables. The fourth is a
-content-path gradient $\partial y / \partial u$ through a straight-through estimator (STE)
-formulation whose forward pass is bit-exact to the hard machine at any finite
-temperature~\cite{bengio2013estimating,jang2017gumbel}, batched on the GPU. The inputs we
+the ``activations'' we interpret are the program's own variables. The fourth is a gradient
+$\partial y / \partial u$ that exists in all three modes. In SOFT-STE mode the gradient
+routes through the content path via the straight-through estimator, while in soft mode the
+gradient flows through every discrete decision, including the index boundary, at a cost of
+numerical precision controlled by $T$ and $\alpha$. The inputs we
 drive, the state we read and clamp, and the outputs we explain are the three faces a neural
 interpretability study works with, so one substrate carries all three batteries.
 
@@ -109,17 +131,22 @@ machine answers it exactly for any $v'$, on- or off-manifold. Where a method's o
 about typical behavior rather than causal dependence we fall back to the on-manifold donor and
 resampling variants and flag the choice in the Supplement.
 
-The content-path gradient $\partial y / \partial u$, read through the differentiable
-substrate, is its companion construction. It is fast and dense, and it agrees with the
-intervention oracle on the content path, the register, color, and graphics-bit values that
-flow smoothly into the pixel. Yet, a single decisive caveat carries through the whole study.
-The straight-through gradient routes to the content path only, so a discrete index, a
-sprite's screen position the VCS sets by the timing of a strobe write, has a naive gradient
-that vanishes under the hard forward map. We make this precise.
+The gradient $\partial y / \partial u$ through the differentiable substrate is a companion
+construction. Its behaviour depends on the execution mode. In \textbf{SOFT-STE} mode, the
+straight-through gradient routes to the content path only: register, colour, and graphics-bit
+values that flow smoothly into the pixel agree with the intervention oracle, but a discrete
+index --- a sprite's screen position set by the timing of a strobe write --- has a naive
+gradient that vanishes under the hard forward map. In \textbf{soft} mode, the relaxation of
+every discrete decision allows the gradient to flow through the index boundary as well, at a
+cost controlled by the temperature $T$ and branch steepness $\alpha$. At the recommended
+operating point ($T \approx 0.14$, $\alpha \gtrsim 6$), the soft gradient provides a
+non-zero signal on position outputs while the forward pass remains bit-exact. As $T$ grows
+or $\alpha$ shrinks, the forward pass diverges and the gradient becomes a looser surrogate.
+We make the hard-map limit precise.
 
 \begin{proposition}[Zero naive gradient for discrete-index outputs]\label{prop:zero}
 Let an output $y$ depend on a cause $u$ only through a discrete index
-$n(u)=\lfloor g(u)\rfloor\in\mathbb{Z}$, the integer count of color clocks between a strobe
+$n(u)=\lfloor g(u)\rfloor\in\mathbb{Z}$, the integer count of colour clocks between a strobe
 write and the position-counter reset that the VCS uses to place a sprite, missile, or ball,
 with $g$ continuous, piecewise linear, and non-constant (strictly monotone on each linear
 piece). Under the hard (bit-exact) forward map the rendered output is $y=h(n(u))$ for a fixed
@@ -128,28 +155,31 @@ $\partial y/\partial u=0$ at every such point, and $y$ is discontinuous on the s
 $\{u:g(u)\in\mathbb{Z}\}$, which is measure zero precisely because $g$ is strictly monotone on
 each piece, and there the gradient is undefined. Hence the naive gradient is zero wherever the
 derivative exists: an infinitesimal change in $u$ cannot move the sprite by a fractional
-pixel. Any method that
-reduces to this naive gradient inherits the failure on position, index, and event outputs.
+pixel. Any method that reduces to this naive gradient inherits the failure on position, index,
+and event outputs.
 \end{proposition}
 
 The proposition states only the hard-map limit; it does not say that no useful gradient
-exists. Two surrogate constructions of Paper~1~\cite{maier2025vcs} are explicit exceptions and
-are \emph{not} covered by it: the straight-through estimator, whose forward pass stays
-bit-exact to the hard machine at any finite temperature while routing a non-zero
-gradient along the content path~\cite{bengio2013estimating,jang2017gumbel}, and the bilinear
-sampler that interpolates the index boundary to recover a usable position
-gradient~\cite{jaderberg2015spatial}. The companion paper constructs both and validates the
-bit-exactness this proposition assumes; we import that construction and prove the vanishing
-inline so the present paper stands alone. We therefore replace any blanket ``gradients are
-provably zero'' with the scoped claim of Prop.~\ref{prop:zero}: the \emph{naive} gradient for
-discrete position/index outputs is zero under the hard forward map, and methods that reduce to
-it inherit that failure, while surrogate and bilinear-sampler gradients are exceptions.
+exists. Paper~1~\cite{maier2025vcs} provides three constructions that escape it, each
+corresponding to an execution mode. The \textbf{SOFT-STE} mode, through the straight-through
+estimator, keeps the forward pass bit-exact at any finite temperature while routing a
+non-zero gradient along the content path~\cite{bengio2013estimating,jang2017gumbel}; on
+position outputs this gradient remains content-only and therefore zero. The \textbf{soft}
+mode relaxes the discrete index boundary via a temperature-parameterised softmax, allowing
+the gradient to flow through the index itself; the bilinear sampler is a special case of
+this relaxation for spatial coordinates~\cite{jaderberg2015spatial}. The \textbf{bilinear
+sampler} interpolates the index boundary to recover a usable position gradient without
+relaxing the full machine~\cite{jaderberg2015spatial}. Paper~1 constructs and validates all
+three, and proves the forward equivalence and temperature-limit bounds we assume.
 
-Hence, for content outputs the gradient is a legitimate companion oracle, while for position,
-index, and event outputs the intervention oracle of Eq.~\eqref{eq:doy} is the sole ground
-truth and every gradient-based method is scored as a method under test. This position regime
-is where the sharpest separations in our results appear. Where the two overlap we report their
-correlation and flag, rather than hide, the points at which they disagree.
+Hence we have three companion gradient constructions, not one. The intervention oracle of
+Eq.~\eqref{eq:doy} remains the primary ground truth across all modes. The SOFT-STE gradient
+agrees with it on the content path but vanishes on position outputs; the soft gradient can
+cover position outputs at the cost of temperature-dependent precision; and the bilinear
+sampler provides a position gradient without relaxing the full machine. We score every
+gradient-based method under all applicable modes and report the results separately. Where
+the modes agree we report the common value; where they disagree the divergence itself is
+informative about the method's reliance on gradient quality.
 
 \subsection{Tiered ground truth and how we obtain it}\label{sec:tiers}
 
