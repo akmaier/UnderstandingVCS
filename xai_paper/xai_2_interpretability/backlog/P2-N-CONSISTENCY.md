@@ -2,7 +2,7 @@
 id: P2-N-CONSISTENCY
 title: Full-paper consistency scan — main text, figures, tables, captions, supplement
 epic: RV (Revision)
-status: in-sprint
+status: done
 sprint: 15
 owner: agent-1
 where: local
