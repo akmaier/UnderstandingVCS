@@ -29,13 +29,13 @@ VCS we answer it exactly: the intervention oracle of \Sectionname\ref{sec:oracle
 bit-exact program for every candidate cause and returns the ground truth no real
 network affords. In the following we place all of Phases~A--C on the shared
 faithfulness-versus-plausibility plane, read off the leaderboard and its danger
-zone, and then mark, with the same oracle, the boundary where even a perfectly
-faithful method stops. Faithfulness is the easier half of the problem. The harder
-half, the variable's meaning and the routine's algorithm, is a separate object, and
-on this machine the distance to it is a number. We name that residual the
-\emph{semantic gap} and measure its symptoms. The correctness triad we apply
-throughout --- \textbf{F}aithful, \textbf{S}ufficient, \textbf{M}inimal --- is
-defined formally in \Sectionname\ref{sec:triad}; here we only read its scores.
+zone, and then mark, with the same oracle, the boundary that no method, faithful or
+not, can cross. Faithfulness is not the dividing line. The variable's meaning and the
+routine's algorithm is a separate object, and on this machine the distance to it is a
+number. We name that residual the \emph{semantic gap} and measure its symptoms. The
+correctness triad we apply throughout --- \textbf{F}aithful, \textbf{S}ufficient,
+\textbf{M}inimal --- is defined formally in \Sectionname\ref{sec:triad}; here we only
+read its scores.
 
 \subsection*{The faithfulness leaderboard}
 
@@ -116,7 +116,7 @@ zone. Still, the faithfulness axis is exact, and the ranking it inverts is the f
 own habit of trust, so the hazard is real even at the proxy's coarse resolution. The
 danger zone is a measurement, not a worry.
 
-\subsection*{Where the leaderboard stops --- the semantic gap}
+\subsection*{The universal semantic gap}
 
 Here the paper turns. Hand the audit its best case, a method that scores $1.0$
 against the oracle, and ask whether it has given us an understanding of what the
@@ -126,7 +126,8 @@ statement, the subject of the companion design-recovery work, which we have not 
 here. We claim the bounded thing the oracle can prove: even when a method recovers the
 true causal structure exactly, what it returns is the \emph{wiring} --- a
 causal-effect map, a data-flow graph --- and not the \emph{semantics}, the variable's
-meaning or the routine's algorithm. The missing object is of a different type, not a
+meaning or the routine's algorithm. The gap is universal: it is not a methods-underperformance
+problem. The missing object is of a different type, not a
 worse-fit instance of the same one. Following the triad of \Sectionname\ref{sec:triad}, we
 operationalize the gap through three separations, each adjudicated by the oracle:
 faithful-not-sufficient, named-not-causal, and decodable-not-used. They diagnose

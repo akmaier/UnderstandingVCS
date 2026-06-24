@@ -13,10 +13,10 @@ any output is recoverable by exact intervention, causal and intervention methods
 faithful while the field's familiar gradient and correlational tools are not, and the
 leaderboard separates them along the only axis that admits an exact answer
 (Fig.~\ref{fig:faithfulness}). A faithful causal account scores $1.0$ where the field's
-default scores $0.0$, on a machine whose answer is known exactly. Yet this is the easier
-half. Even a method at the oracle ceiling returns the causal wiring, an effect map and a
-data-flow graph, and not the semantics, the variable's meaning or the routine's algorithm.
-The residual is a number, and we name it the \emph{semantic gap}.
+default scores $0.0$, on a machine whose answer is known exactly. Yet faithfulness is not
+the dividing line. Even a method at the oracle ceiling returns the causal wiring, an effect
+map and a data-flow graph, and not the semantics, the variable's meaning or the routine's
+algorithm. The residual is a number, and we name it the \emph{semantic gap}.
 
 Three traditions that rarely share a page, a neuroscience battery, the attribution toolkit,
 and mechanistic interpretability, occupy a single plane once a common oracle scores them.
@@ -45,7 +45,7 @@ used in the computation. The gap runs in both directions on the same axis at onc
 correct-but-incomplete and named-but-wrong, which is precisely what a ``methods are not good
 enough yet'' story cannot produce.
 
-\subsection*{What understanding would require}
+\subsection*{IEEE~610.12 and what understanding requires}
 
 Faithfulness stops short for a reason that Marr's levels of analysis make
 clear~\cite{marr1982vision}. A faithful attribution lives at the implementational level, in
@@ -60,12 +60,14 @@ closed by a better hyperparameter.
 
 The bar is sharpest when borrowed from software engineering. IEEE~610.12 defines software as
 programs plus their documentation, the specification, the design, the intent~\cite{ieee610}.
-A faithful circuit recovers part of the program; understanding the system means recovering its
-documentation, what each variable is for and what each routine is meant to do. Our causal
-oracle cannot reach that object, because the meaning of a variable is not a causal fact about
-the variable but a fact about the design it serves. Hence the gap is not an artifact of weak
-methods but a property of the question: faithfulness is necessary for understanding, and not
-sufficient. We are deliberate that this paper defines and measures the gap. Closing it,
+Interpretability recovers code-level mechanism. A faithful circuit recovers part of the
+program; understanding the system means recovering its documentation, what each variable is
+for and what each routine is meant to do. Our causal oracle cannot reach that object, because
+the meaning of a variable is not a causal fact about the variable but a fact about the design
+it serves. The documentation and data (the semantics) are a separate object --- unreachable
+from mechanism alone. Hence the gap is not an artifact of weak methods but a universal
+property of the question: faithfulness is not the dividing line. We are deliberate that this
+paper defines and measures the gap. Closing it,
 recovering the program's documentation and design from the bare machine, is the
 reverse-engineering bar and the charge of the companion design-recovery paper (Paper~4), which
 measures the distance to that bar rather than clearing it. Whether a recovered concept matches
@@ -139,8 +141,8 @@ looks more convincing than the map that is exactly right. It should validate on 
 before trusting on unknown ones, since a method that cannot pass where the answer is computable
 cannot be audited where it is not. Most important, it should stop treating faithfulness as
 understanding. The open problem for explainable AI is not a better saliency map; it is the
-semantic gap. Faithfulness is the half we now know how to measure and, on causal methods, how to
-win; meaning is the half that remains.
+semantic gap. Faithfulness is not the dividing line; meaning is the object that mechanism
+cannot reach.
 
 We have measured a gap, not closed it, and several limits bound what we may conclude. We did not
 run semantic recovery, as Phase~E, documentation and design recovery, is specified but not

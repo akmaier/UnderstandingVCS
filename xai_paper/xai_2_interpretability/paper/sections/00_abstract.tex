@@ -13,16 +13,22 @@ faithful than gradient and correlational saliency
 ($0.68$ $[0.59,0.78]$ versus $0.29$ $[0.20,0.38]$), the robust separation falling
 on the position regime where naive gradients vanish (activation patching $1.000$
 versus vanilla saliency $0.000$), yet saliency scores higher on a plausibility
-proxy. Faithfulness, once secured, is the smaller half of understanding. An exact
-method returns a causal-effect map or a data-flow graph, not the computation: a
-graph-correct circuit need not reproduce behaviour (sufficiency $0.44$ on
-Breakout), and a feature matching a named variable can be causally inert (matched
-fraction $1.0$, faithfulness $0.04$ on Pong). We name this measured residual the
-\emph{semantic gap}; we measure it, and do not close it. Our semantic labels are
-imported and only causally verified, and plausibility is a documented proxy. As
-such, the machine offers a reusable ground-truth benchmark for explainable AI,
-mechanistic interpretability, AI safety, and software verification, and may help
-redirect the field toward recovering meaning, not merely confirming causes.
+proxy. Yet faithfulness is not the dividing line. Even if every method were faithful
+--- and we make this concrete by turning on the bilinear sampler so that gradient
+methods become faithful too --- the result is uniform: every method delivers
+causal/mechanical relations, not semantics. An exact method returns a causal-effect
+map or a data-flow graph, not the computation: a graph-correct circuit need not
+reproduce behaviour (sufficiency $0.44$ on Breakout), and a feature matching a
+named variable can be causally inert (matched fraction $1.0$, faithfulness $0.04$
+on Pong). The gap is universal: meaning is not recoverable from the mechanism
+at all. IEEE~610.12 defines software as code, documentation, and data.
+Interpretability recovers code-level mechanism; the documentation and data (the
+semantics) are a separate object, unreachable from mechanism alone. We name this
+measured residual the \emph{semantic gap}; we measure it, and do not close it.
+Our semantic labels are imported and only causally verified, and plausibility is a
+documented proxy. As such, the machine offers a reusable ground-truth benchmark
+for explainable AI, mechanistic interpretability, AI safety, and software
+verification. Explainable AI does not understand a thing.
 
 % BIBTEX-NEEDED: (none) — the abstract is intentionally citation-free per the NMI
 %   unreferenced-abstract rule (document_check.md C). No \cite keys introduced;

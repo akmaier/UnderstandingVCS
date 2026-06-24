@@ -35,8 +35,9 @@ alignment search (DAS) verify the supplied alignment at interchange accuracy $1.
 mis-aligned control at $0.0$, and the logit lens reproduces the true intermediate value at
 fidelity $1.0$ on every game. Four of the five causal methods sit at faithfulness $1.0$,
 level with the oracle positive control (Fig.~\ref{fig:fig4}b). Where a method's operation
-\emph{is} an intervention, faithfulness is not hard to earn on a fully observable machine;
-it is automatic. That is the easy half of the problem, and it is genuinely solved here.
+\emph{is} an intervention, faithfulness is automatic on a fully observable machine.
+Yet faithfulness is not the dividing line, and the result below shows that even an
+exact effect table is not an account of what the program does.
 
 \subsection*{Approximate and search-based recovery}
 
@@ -105,7 +106,7 @@ accuracy of $1.0$ holds ``by construction'' because it confirms a supplied varia
 probe tells us a concept is in the representation; only the intervention tells us the program
 uses it.
 
-\subsection*{Exactness as the necessary half}
+\subsection*{Exactness is not the destination}
 
 Phase~C is the cleanest demonstration of the paper's claim. The mechanistic toolkit, run
 against a known real circuit, separates into a causal core that is faithful by construction
@@ -122,9 +123,8 @@ regime ($0.34$, 95\% CI $[0.02,0.50]$, excluding zero), and it collapses when th
 content rather than position or when the oracle-equivalent controls are excluded ($0.12$ and
 $0.04$, both with confidence intervals crossing zero). The separations above survive that
 caveat because each is a within-method contradiction on a single game, not a cross-family
-mean. Faithfulness, on a
-machine that grants it for free, is therefore the necessary half of understanding and not
-the sufficient one. The residual, the wiring recovered and the meaning withheld, is the
+mean. Yet faithfulness is not the dividing line: the
+residual, the wiring recovered and the meaning withheld, is the
 semantic gap, which §\ref{sec:results_compare} places on the shared axes and the Discussion
 names as the field's open problem.
 
