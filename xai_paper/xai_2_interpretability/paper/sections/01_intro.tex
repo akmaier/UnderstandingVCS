@@ -1,7 +1,8 @@
-% 01_intro.tex — Introduction (item P2-E8-2). Maier voice per ../STYLE.md.
-% Arc: gap -> opportunity -> confirm -> the deeper move -> payoff.
-% Central thread: faithfulness vs understanding / the semantic gap.
-% Numbers cited from leaderboard.md / faithful_demo.md (committed §R) and figs 1,2.
+% 01_intro.tex — Introduction (item P2-R7-S01-intro). Maier voice per ../STYLE.md.
+% Sharpened arc: gap -> opportunity -> confirm (way-station) -> remove the faithfulness
+% escape (sampler on) -> the gap survives -> meaning's reference is behavior (docs+data).
+% Central thread: faithfulness is NOT the dividing line; meaning lives outside the mechanism.
+% Sampler numbers from compare/out/sampler_faithfulness.csv (R7-1); rest from number_audit §1.
 
 \section{Introduction}\label{sec:intro}
 
@@ -36,22 +37,43 @@ Across the neuroscience, attribution,
 and mechanistic-interpretability traditions --- $30$ interpretability methods plus the
 oracle positive control, $31$ experiments investigating $257$ per-game records --- we place
 each method on faithfulness against the oracle and on a documented plausibility proxy
-for how convincing it looks. The numbers confirm the causal view: causal and
+for how convincing it looks. The first result is the expected one: causal and
 intervention methods are faithful, gradient and correlational saliency methods are not.
 The contrast is sharpest on discrete sprite-position outputs, where the naive gradient
 is provably zero because position is set by strobe timing, not by a value it can flow
 through. In that position regime activation patching reaches faithfulness $1.000$ while
-vanilla saliency collapses to $0.000$ on all six core games, and causal and intervention
-methods average $0.412$ against $0.068$ for the gradient and correlational family, a gap
-of $0.344$. The saliency method nonetheless carries the higher plausibility ($0.9$
-versus $0.5$), looking most convincing where it is least correct, the region
-Fig.~\ref{fig:faithfulness} marks as conviction without correctness.
+vanilla saliency collapses to $0.000$ on all six core games. The saliency method
+nonetheless carries the higher plausibility ($0.9$ versus $0.5$), looking most convincing
+where it is least correct, the region Fig.~\ref{fig:faithfulness} marks as conviction
+without correctness. This is the result the field would predict, and we read it as a
+way-station, not the headline.
 
-Securing faithfulness is the smaller half of the problem. Faithfulness is necessary for
-understanding but not sufficient, and with the same oracle we ask not only \emph{which}
-methods are faithful but \emph{what} a faithful method delivers: a true causal-effect
-map or data-flow graph, not the variable's meaning and not the routine's algorithm. To
-make this precise we call an explanation right only if it is \textbf{F}aithful (its
+The dividing line, it turns out, is not faithfulness. A reader could dismiss the zero of
+the gradient methods as a fixable artifact of a discrete index, so we put the question in
+its strongest form and remove the escape. We turn the differentiable port's bilinear
+sampler on, which interpolates the position read and restores a non-zero gradient through
+it, and the gradient methods become faithful too. On the games with a moving tracked
+sprite their faithfulness rises off the provable zero: vanilla saliency, grad$\times$input,
+smoothgrad, and expected gradients reach $0.791$ on Pong, and the same family reaches
+$0.529$ on Q*bert (committed record \texttt{sampler\_faithfulness.csv},
+Fig.~\ref{fig:sampler}). The rise is honest rather than universal; integrated gradients
+with a zeros baseline still vanishes on Pong, a static-sprite game offers no position to
+restore, and where the tracked cell is not the active one nothing moves. Yet on every game
+where the gradient becomes faithful the semantic recovery stays exactly $0$, the same $0$
+every other method scores, faithful or not. The restored gradient concentrates on the
+position RAM byte that drives the sprite, \texttt{ram[54]} on Pong: it finds the right
+cause and names no meaning.
+
+Securing faithfulness, then, is not the smaller half of the problem but the wrong half.
+Faithfulness is necessary for understanding but radically insufficient, and making it
+universal does not close the gap, because the gap is not a faithfulness deficit. With the
+same oracle we ask not only \emph{which} methods are faithful but \emph{what} a faithful
+method delivers, and the answer is always the same kind of object: a true causal-effect
+map or data-flow graph, never the variable's meaning and never the routine's algorithm. No
+method on this fully observable, fully differentiable machine names ``missile,''
+``collision,'' or ``game restart''; every method returns the same ``wiggle $X$ and $Y$
+moves'' wiring. To make this precise we call an explanation right only if it is
+\textbf{F}aithful (its
 claimed causes are the true ones), \textbf{S}ufficient (it regenerates behavior under
 held-out interventions), and \textbf{M}inimal at the algorithmic level
 ($\mathrm{right} = \mathbf{F}\wedge\mathbf{S}\wedge\mathbf{M}$, \Sectionname\ref{sec:triad}). The
@@ -64,7 +86,20 @@ inert ($\mathbf{F}=0.04$ on Pong): looking like a known variable is not being ho
 program computes it. A concept can also be linearly decodable yet provably unused,
 since what is \emph{present} need not be \emph{used}. On this machine the residual
 between a faithful attribution and an account of the computation is not philosophy but a
-number, which we name the \emph{semantic gap}.
+number, which we name the \emph{semantic gap}, and it does not shrink when faithfulness is
+made universal.
+
+The reference for meaning, then, lies outside the mechanism. Every semantic label in the
+study entered from outside the system: it was imported from external annotation
+sets~\cite{anand2019unsupervised,delfosse2023ocatari} and only \emph{causally verified} on
+our substrate, never \emph{discovered} by a method under test, so an alignment method that
+reports perfect accuracy is right by construction, checking a variable we supplied. Probing
+shows that information is present, not that it is used~\cite{hewitt2019designing}; our
+oracle is the strictly stronger test. What fixes the meaning is the system's
+\emph{behavior}, and for software that behavior is set down in its documentation and data,
+the manuals, the specification, the design, which IEEE~610.12 makes part of the definition
+of software itself~\cite{ieee610}. The wiring is in the mechanism for any faithful method to
+recover; the meaning is not, and no method we tested supplied it.
 
 A 1977 chip may seem the wrong place to judge methods built for learned networks. We
 read the VCS as a \emph{necessary-condition screen}, not a predictor of success.
@@ -76,15 +111,10 @@ does not capture we leave to later work on learned agents.
 
 Because the central claim is sharp, we are deliberate about what we do not claim. We do
 \emph{not} claim that any method recovered the program's meaning, algorithm, or design
-from scratch. Every semantic label we use is imported from external annotation
-sets~\cite{anand2019unsupervised,delfosse2023ocatari} and only \emph{causally verified}
-on our substrate, never \emph{discovered} by a method under test, so an alignment method
-that reports perfect accuracy is right by construction, checking a variable we supplied.
-Probing shows that information is present, not that it is
-used~\cite{hewitt2019designing}; our oracle is the strictly stronger test. The
-plausibility axis is a documented proxy, not a measured human study. As such, this paper
-\emph{defines and measures} the semantic gap; \emph{closing} it, recovering a system's
-documentation and design from the system alone, is companion work, not this paper.
+from scratch, and the plausibility axis is a documented proxy, not a measured human study.
+As such, this paper \emph{defines and measures} the semantic gap and locates its reference
+in the system's behavior; \emph{closing} it, recovering a system's documentation and design
+from the system alone, is companion work, not this paper.
 
 The study thus offers a reusable ground-truth benchmark for explainable AI, mechanistic
 interpretability, AI safety, and software verification, and it reframes the open
