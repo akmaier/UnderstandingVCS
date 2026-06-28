@@ -1,35 +1,35 @@
 \section{Per-method protocols}\label{supp:protocols}
 
-This section records, for each method under test, the exact objects it consumes and
-produces, the reference it is scored against, its sampling or optimization budget, the
-metric that turns its output into a faithfulness score, and the committed record file that
-holds the per-game results. All methods share one evaluation contract, which we state once
-and then specialize per method. Every method receives the same bit-exact VCS trajectory on
-one of the six core games (\texttt{breakout}, \texttt{ms\_pacman}, \texttt{pong},
+This section records five things for each method under test. It records the exact objects the
+method consumes and produces, the reference it is scored against, its sampling or optimization
+budget, the metric that turns its output into a faithfulness score, and the committed record
+file that holds the per-game results. All methods share one evaluation contract. We state that
+contract once and then specialize it per method. Every method receives the same bit-exact VCS
+trajectory on one of the six core games (\texttt{breakout}, \texttt{ms\_pacman}, \texttt{pong},
 \texttt{qbert}, \texttt{seaquest}, \texttt{space\_invaders}). The candidate-cause set is the
-machine's own state, that is the 128 RAM bytes together with the CPU registers and the TIA
+machine's own state. This set is the 128 RAM bytes together with the CPU registers and the TIA
 and RIOT registers exposed by the substrate. The reference is the intervention oracle of
 \Sectionname3.2, evaluated by exact re-runs of the emulator under $\mathrm{do}(u)$. A method that
 cannot be applied to a given output regime is recorded as not-applicable rather than scored
-as zero, so that an empty result never masquerades as a wrong one. Faithfulness is the F
+as zero. An empty result is therefore never read as a wrong one. Faithfulness is the F
 axis of the main-text triad (\Sectionname3.4); we reference that definition and do not restate it.
 Records live under \texttt{tools/xai\_study/<phase>/out/}; the aggregate they feed is
 \texttt{tools/xai\_study/compare/out/leaderboard.json}.
 
-The neuroscience battery (Phase~A) treats the running machine as a brain and asks how far
+The neuroscience battery (Phase~A) treats the running machine as a brain. It asks how far
 each classical analysis recovers the known mechanism. Each method's baseline is the exact
-data-flow graph or causal role that the substrate makes available, its budget is the
+data-flow graph or causal role that the substrate makes available. Its budget is the
 six-game core unless noted, and its scoring metric is named in
 Table~\ref{supp:tab:phaseA}.
 
 \begin{table}[t]
 \centering
-\caption{\textbf{Phase~A protocols (neuroscience battery).} One row per method: the input it
-reads, the reference it is scored against, the sampling or intervention budget, the scoring
-metric, and the committed record. All eight run on the six core games; faithfulness is the F
-axis of \Sectionname3.4. The whole-state recording (A8) is included as a descriptive upper bound on
-coverage, not as a faithful explanation, and is read for its minimality $M$ rather than its
-trivial $F$.}
+\caption{\textbf{Phase~A protocols (neuroscience battery).} One row per method. The columns
+give the input it reads, the reference it is scored against, the sampling or intervention
+budget, the scoring metric, and the committed record. All eight run on the six core games;
+faithfulness is the F axis of \Sectionname3.4. The whole-state recording (A8) is included as a
+descriptive upper bound on coverage. Its faithfulness $F$ is trivial, so we read it for its
+minimality $M$.}
 \label{supp:tab:phaseA}
 \scriptsize
 \setlength{\tabcolsep}{4pt}
@@ -54,11 +54,11 @@ eight run on the six core games.
 \end{table}
 
 The attribution battery (Phase~B) runs the everyday XAI toolbox over the same trajectories.
-These methods produce a real-valued saliency or attribution over the candidate-cause set,
-which we score by Pearson correlation against the oracle attribution; the gradient-based
-members additionally inherit the gradient-vanishing failure of the discrete position regime
-(Prop.~\ref{prop:zero}). The sampling budgets that matter are the Monte-Carlo or perturbation counts of the
-sampling estimators, recorded per method in Table~\ref{supp:tab:phaseB}; the
+These methods produce a real-valued saliency or attribution over the candidate-cause set.
+We score that output by Pearson correlation against the oracle attribution. The gradient-based
+members also inherit the gradient-vanishing failure of the discrete position regime
+(Prop.~\ref{prop:zero}). The budgets that matter are the Monte-Carlo or perturbation counts of
+the sampling estimators, recorded per method in Table~\ref{supp:tab:phaseB}. The
 seed-dispersion of the stochastic members is carried in
 \texttt{leaderboard\_ci.csv} (\texttt{seed\_sd}, \texttt{seed\_sd\_source}) and reproduced
 in Sec.~\ref{supp:provenance}.
@@ -66,9 +66,9 @@ in Sec.~\ref{supp:provenance}.
 \begin{table}[t]
 \centering
 \caption{\textbf{Phase~B protocols (attribution battery).} Each method emits a saliency over
-the candidate-cause set and is scored by Pearson correlation against the oracle attribution
-(\Sectionname3.2). The reference and the six-game budget are shared; the budget column records the
-sampling or perturbation count that drives each estimator, and the seed column flags which
+the candidate-cause set. We score it by Pearson correlation against the oracle attribution
+(\Sectionname3.2). The reference and the six-game budget are shared. The budget column records the
+sampling or perturbation count that drives each estimator. The seed column flags which
 methods carry an independent-seed dispersion in \texttt{leaderboard\_ci.csv}.}
 \label{supp:tab:phaseB}
 \scriptsize
@@ -98,20 +98,20 @@ on the six core games and are scored by Pearson correlation against the oracle (
 sd is the independent-seed dispersion from \texttt{leaderboard\_ci.csv}.
 \end{table}
 
-The mechanistic battery (Phase~C) runs the methods built to recover circuits, scoring each
+The mechanistic battery (Phase~C) runs the methods built to recover circuits. Each is scored
 against the true data-flow or the exact recovered-minus-exact deviation. The causal members
-of this phase are the ones that reach the oracle ceiling, and we list their exact scoring
-metric so that the ceiling is not mistaken for a tautology: each is scored against the
-substrate's known routine, not against another method. Two members (NMF/PCA dictionaries and
-the sparse autoencoder) are dimensionality-reduction methods carried here for comparison, and
-the sparse autoencoder is the one whose two aggregations differ, which we reconcile in
+of this phase are the ones that reach the oracle ceiling. We list their exact scoring metric
+so that the ceiling is not read as a tautology. Each member is scored against the substrate's
+known routine, and not against another method. Two members (NMF/PCA dictionaries and the
+sparse autoencoder) are dimensionality-reduction methods carried here for comparison. The
+sparse autoencoder has two aggregations that differ, which we reconcile in
 Sec.~\ref{supp:provenance}.
 
 \begin{table}[t]
 \centering
 \caption{\textbf{Phase~C protocols (mechanistic battery).} Each method is scored against the
-substrate's known circuit or the exact recovered-minus-exact deviation (\Sectionname3.2), not against
-another method, which is what keeps the oracle ceiling non-circular. The probing and
+substrate's known circuit or the exact recovered-minus-exact deviation (\Sectionname3.2), and not
+against another method. This is what keeps the oracle ceiling non-circular. The probing and
 dictionary-learning members are included for comparison with the causal members.}
 \label{supp:tab:phaseC}
 \scriptsize
@@ -139,8 +139,8 @@ on the six core games.
 \end{table}
 
 The intervention oracle is the positive control, not a method under test. It is the exact
-$\mathrm{do}(u)$ ground truth of \Sectionname3.2, evaluated by re-running the bit-exact machine, and it
-attains $F=S=M=1.0$ by construction; its record triple is the intervention oracle, the
+$\mathrm{do}(u)$ ground truth of \Sectionname3.2, evaluated by re-running the bit-exact machine. It
+attains $F=S=M=1.0$ by construction. Its record triple is the intervention oracle, the
 content-path gradient oracle, and their cross-check
 (\texttt{tools/xai\_study/ground\_truth/out/}). It anchors the ceiling against which every
 other row is read, which is why it occupies the thirty-first leaderboard row.

@@ -1,12 +1,12 @@
 \section{Benchmark schema and glossary}\label{supp:schema}
 
-The leaderboard is built from a flat record schema, and stating it removes the ambiguity
+The leaderboard is built from a flat record schema. Stating it removes the ambiguity
 about what a single number on the benchmark counts. Each method is run per game and writes a
-per-game record under its phase's \texttt{out/} tree; the leaderboard aggregates those
+per-game record under its phase's \texttt{out/} tree. The leaderboard aggregates those
 records into one row per method by averaging over games. The schema columns of a leaderboard
-row are given in Table~\ref{supp:tab:schema}; the aggregation rule is a mean over the
-$n_{\text{games}}$ games (with the per-game records first reduced within a game when a method
-emits several output records), and the faithfulness, sufficiency, and minimality columns
+row are given in Table~\ref{supp:tab:schema}. The aggregation rule is a mean over the
+$n_{\text{games}}$ games. When a method emits several output records on one game, those records
+are first reduced within that game. The faithfulness, sufficiency, and minimality columns
 report the F, S, and M axes defined in \Sectionname3.4. We do not re-derive those definitions here.
 
 \begin{table}[t]
@@ -41,17 +41,17 @@ Column & Meaning \\
 \end{tabular}
 \end{table}
 
-The vocabulary that the schema implies is worth fixing precisely, because the review asked
-for a single unambiguous method count. We distinguish a \emph{method} (one interpretability
-technique, e.g.\ \texttt{vanilla\_saliency}), a \emph{method row} (its single aggregated line
-on the leaderboard), a \emph{per-game record} (one method scored on one game, written under a
-phase \texttt{out/} tree), an \emph{output record} (a per-game record for one output regime,
-several of which a method may emit on one game), a \emph{family mean} (the average over the
-members of a tradition family, e.g.\ causal/intervention), the \emph{oracle positive
-control} (the exact $\mathrm{do}(u)$ ground truth of \Sectionname3.2, scored as a method to anchor the
-ceiling), and a \emph{not-applicable method} (one that does not apply to a given output
-regime and is recorded as N/A rather than as a zero). With this vocabulary the count is
-unambiguous. The benchmark scores 30 interpretability methods together with the intervention
+We fix the vocabulary that the schema implies, because the review asked for a single
+unambiguous method count. A \emph{method} is one interpretability technique, e.g.\
+\texttt{vanilla\_saliency}. A \emph{method row} is its single aggregated line on the
+leaderboard. A \emph{per-game record} is one method scored on one game, written under a phase
+\texttt{out/} tree. An \emph{output record} is a per-game record for one output regime; a
+method may emit several of these on one game. A \emph{family mean} is the average over the
+members of a tradition family, e.g.\ causal/intervention. The \emph{oracle positive control}
+is the exact $\mathrm{do}(u)$ ground truth of \Sectionname3.2, scored as a method to anchor the
+ceiling. A \emph{not-applicable method} is one that does not apply to a given output regime;
+it is recorded as N/A rather than as a zero. With this vocabulary the count is unambiguous.
+The benchmark scores 30 interpretability methods together with the intervention
 oracle as a positive control, for 31 leaderboard rows in total
 (\texttt{leaderboard.json.n\_methods}~$=31$), aggregating 257 per-game records
 (\texttt{n\_per\_game\_records\_aggregated}~$=257$): 8 methods in Phase~A, 12 in Phase~B, 10
