@@ -7,141 +7,140 @@
 
 \section{Discussion}\label{sec:discussion}
 
-We have turned the interpretability toolkit onto a machine whose ground truth is
-computable, and that let us measure two things at once. On a system where the true cause of
-any output is recoverable by exact intervention, causal and intervention methods are
-faithful while the field's familiar gradient and correlational tools are not, and the
-leaderboard separates them along the only axis that admits an exact answer
-(Fig.~\ref{fig:faithfulness}). A faithful causal account scores $1.0$ where the field's
-default scores $0.0$, on a machine whose answer is known exactly. Yet this is the easier
-half. Even a method at the oracle ceiling returns the causal wiring, an effect map and a
-data-flow graph, and not the semantics, the variable's meaning or the routine's algorithm.
-The residual is a number, and we name it the \emph{semantic gap}.
+We applied the interpretability toolkit to a machine whose ground truth is computable. This
+let us measure two things at once. On this system the true cause of any output is recoverable
+by exact intervention. The causal and intervention methods are faithful, while the field's
+familiar gradient and correlational tools are not. The leaderboard separates them by
+faithfulness, the one axis we can score exactly (Fig.~\ref{fig:faithfulness}). A faithful
+causal account scores $1.0$ where the field's default scores $0.0$, on a machine whose answer
+is known exactly. Yet faithfulness is the easier of the two measurements. Even a method at the
+oracle ceiling returns only the causal wiring: an effect map and a data-flow graph. It does
+not return the semantics: the meaning of a variable or the algorithm of a routine. We call
+this residual the \emph{semantic gap}, and it is a number we can measure.
 
-Three traditions that rarely share a page, a neuroscience battery, the attribution toolkit,
-and mechanistic interpretability, occupy a single plane once a common oracle scores them.
-Jonas and Kording warned that an analyst armed with systems neuroscience could fail to
-understand even a microprocessor, because finding structure is not the same as explaining
-it~\cite{jonas2017could}. We make that a measurement. The classical battery recovers rich
-structure yet scores low against the known mechanism, the gradient family collapses to the
-floor on the discrete position regime, and only the causal operators reach the ceiling.
-Mechanistic interpretability has until now been calibrated against synthetic or compiled
-ground truth, transformers with a planted circuit by
+We score three traditions with one common oracle: a neuroscience battery, the attribution
+toolkit, and mechanistic interpretability. These traditions are rarely studied together, but
+the oracle places them on one scale. Jonas and Kording warned that an analyst armed with
+systems neuroscience could fail to understand even a microprocessor, because describing
+structure is not the same as explaining how it works~\cite{jonas2017could}. We make that a
+measurement. The classical battery recovers rich structure yet scores low against the known
+mechanism. The gradient methods score zero on the discrete position regime, and only the
+causal operators reach the ceiling. Mechanistic interpretability has until now been calibrated
+against synthetic or compiled ground truth, transformers with a planted circuit by
 construction~\cite{lindner2023tracr,gupta2024interpbench}, and ground-truth attribution
-benchmarks likewise plant the important features~\cite{yang2019bim}. We add the missing
-case, a real, hand-authored, deployed artifact never designed to be interpretable, whose
-ground truth is independent of the artifact rather than built into it. Hence the leaderboard
-calibrates these methods against ground truth on a system the field did not get to
-plant.
+benchmarks likewise plant the important features~\cite{yang2019bim}. We add the missing case:
+a real, hand-written, deployed artifact that was never designed to be interpretable. Its
+ground truth is independent of the artifact, not built into it. So the leaderboard calibrates
+these methods against ground truth on a system the field did not design to be interpretable.
 
-Yet the same oracle marks a boundary the leaderboard cannot cross, and that boundary is the
-subject of this paper. A perfect faithfulness score certifies that a method named the true
-causes, not that it recovered what the program means. We saw the boundary three times, from
-three sides (Fig.~\ref{fig:taxonomy}): on Breakout a circuit that is graph-correct and minimal
-($F=M=1.0$) yet reproduces behavior only $44\%$ of the time ($S=0.44$); on Pong a feature
-dictionary that matches every named variable (matched fraction $1.0$) while being nearly causally
-inert ($F=0.041$, $S=-0.336$); and a concept that is linearly decodable yet, by the oracle, never
-used in the computation. The gap runs in both directions on the same axis at once,
-correct-but-incomplete and named-but-wrong, which is precisely what a ``methods are not good
-enough yet'' story cannot produce.
+The same oracle also reveals a limit: a high leaderboard score cannot show meaning. This limit
+is the subject of this paper. A perfect faithfulness score certifies that a method named the
+true causes. It does not certify that the method recovered what the program means. We observed
+this limit in three cases (Fig.~\ref{fig:taxonomy}). On Breakout a circuit is graph-correct and
+minimal ($F=M=1.0$) yet reproduces behavior only $44\%$ of the time ($S=0.44$). On Pong a
+feature dictionary matches every named variable (matched fraction $1.0$) while being nearly
+causally inert ($F=0.041$, $S=-0.336$). And a concept is linearly decodable yet, by the oracle,
+never used in the computation. The gap appears in two opposite forms: correct-but-incomplete,
+and named-but-wrong. A simple ``the methods are not good enough yet'' story cannot produce
+both.
 
-We pressed the most natural version of that story until it broke. The faithfulness gap could be
-read as an artifact of one design choice. The discrete position read-out makes the naive gradient
-vanish by Prop.~\ref{prop:zero}, so the gradient family scores a provable zero on the position
-regime and the danger zone could be dismissed as a fixable technical accident. We removed the
-accident. Turning the port's bilinear sampler on restores a usable gradient through the position
-index, and on the games with a moving tracked sprite the gradient methods become faithful: their
-position-regime faithfulness rises off the floor to $0.791$ on Pong for vanilla saliency,
-grad\(\times\)input, smoothgrad, and expected gradients, and to $0.529$ on Q*bert for vanilla
-saliency, grad\(\times\)input, smoothgrad, and integrated gradients
-(Fig.~\ref{fig:sampler}). The restored gradient concentrates on the position byte that drives the
-sprite, \texttt{ram[54]} on Pong; it finds the right cause. Still, the semantic recovery of every
-one of these methods stays $0$, exactly as before and exactly like every other method in the
-study. We engineered the faithfulness deficit away and the meaning did not appear. Hence the
-shortfall is not a faithfulness deficit waiting for a better gradient. When the gradient is made
-honest it names the cause and names no meaning, so the meaning was never in the wiring for a method
+We tested the strongest version of that story and it failed. The faithfulness gap could be read
+as an artifact of one design choice. The discrete position read-out makes the naive gradient
+vanish by Prop.~\ref{prop:zero}. So the gradient family scores a provable zero on the position
+regime, and the failure could be dismissed as a fixable technical artifact. We removed that
+artifact. Turning the port's bilinear sampler on restores a usable gradient through the position
+index. On the games with a moving tracked sprite, the gradient methods become faithful. Their
+position-regime faithfulness rises above zero. On Pong it reaches $0.791$ for vanilla saliency,
+grad\(\times\)input, smoothgrad, and expected gradients. On Q*bert it reaches $0.529$ for vanilla
+saliency, grad\(\times\)input, smoothgrad, and integrated gradients (Fig.~\ref{fig:sampler}). The
+restored gradient concentrates on the position byte that drives the sprite, \texttt{ram[54]} on
+Pong; it finds the right cause. Still, the semantic recovery of every one of these methods stays
+$0$, exactly as before and exactly like every other method in the study. We removed the
+faithfulness deficit, but the meaning still did not appear. Hence the shortfall is not a
+faithfulness deficit waiting for a better gradient. Even when the gradient is corrected, it
+identifies the cause but no meaning. So the meaning was never present in the wiring for a method
 to recover.
 
-The rise is honest about where it does and does not occur, which is itself part of the evidence. It
-is not a universal lift but a lift on the games with a moving tracked sprite the gradient can flow
-to: integrated gradients with a zeros baseline still vanishes on Pong, and the static-sprite games,
-together with the case where the restored gradient lands on a cell the program does not currently
-read, show no rise at all. Where the position byte exists and moves, the sampler makes the gradient
-faithful; everywhere the faithfulness story permitted, we let it win. None of it bought a single
+The improvement occurs only in specific cases, and that pattern is itself evidence. It is not a
+universal rise. It rises only on the games with a moving tracked sprite the gradient can flow to.
+Integrated gradients with a zeros baseline still vanishes on Pong. The static-sprite games show no
+rise, and so does the case where the restored gradient falls on a cell the program does not
+currently read. Where a position byte exists and moves, the sampler makes the gradient faithful.
+We gave the faithfulness explanation every case it could win. None of it produced a single
 semantic label (Fig.~\ref{fig:sampler}).
 
 \subsection*{What understanding would require}
 
 Faithfulness stops short for a reason that Marr's levels of analysis make
-clear~\cite{marr1982vision}. A faithful attribution lives at the implementational level, in
-which cells and registers carry the signal; understanding lives one level up, at the
-algorithmic level, in what function the program computes. A correct data-flow graph is an
-implementational fact; the bounce algorithm it implements is an algorithmic one, and the two
-are objects of a different type. This is Lazebnik's lament, that one can characterize a system
-in exhaustive mechanistic detail and still not understand it~\cite{lazebnik2002can}. We turn
-that lament into a measured quantity: the distance from a faithful effect table to the
-algorithm is the sufficiency gap $1-S$, and on an already-exact effect table it cannot be
-closed by a better hyperparameter.
+clear~\cite{marr1982vision}. A faithful attribution lives at the implementational level, where
+cells and registers carry the signal. Understanding lives one level up, at the algorithmic
+level, in what function the program computes. A correct data-flow graph is an implementational
+fact. The bounce algorithm it implements is an algorithmic fact, and the two are objects of a
+different type. Lazebnik made the same point: one can describe a system in complete mechanistic
+detail and still not understand it~\cite{lazebnik2002can}. We turn that observation into a
+measured quantity. The distance from a faithful effect table to the algorithm is the
+sufficiency gap $1-S$, and on an already-exact effect table it cannot be closed by a better
+hyperparameter.
 
-The bar is sharpest when borrowed from software engineering. IEEE~610.12 defines software as
-programs plus their documentation and data, the specification, the design, the intent~\cite{ieee610}.
-A faithful circuit recovers part of the program; understanding the system means recovering its
-documentation, what each variable is for and what each routine is meant to do. The sampler-on
-result tells us why no internal method can reach that object. The meaning of a variable is not a
-causal fact about the variable but a fact about the behavior the design serves, and behavior is
-fixed for software outside the wiring, in the manuals and the data the program was written
-against. A method that reads only the mechanism, however faithful, reads only causes. The
-reference against which a cause becomes a meaning lives in the system's documented behavior, where
-no perturbation of the chip can find it. In this study the only semantics present entered from
-outside: every T3 label was imported from AtariARI and OCAtari and then merely verified to be
-causally live, never discovered by a method. Hence the gap is not an artifact of weak methods but a
-property of the question: faithfulness is necessary for understanding, and not sufficient, because
-understanding needs an external behavioral reference that an internal method does not carry. We are
-deliberate that this paper defines and measures the gap. Closing it, recovering the program's
-documentation and design from the bare machine, is the reverse-engineering bar and the charge of
-the companion design-recovery paper (Paper~4). That paper measures the distance to that bar rather than
-clearing it. Whether a recovered concept matches how the system is used is the companion behavior
-paper (Paper~3), and the learned agent, where there is no disassembly to check against, is
-Paper~5.
+Software engineering gives the clearest version of this requirement. IEEE~610.12 defines
+software as programs plus their documentation and data, the specification, the design, the
+intent~\cite{ieee610}. A faithful circuit recovers part of the program. To understand the system
+you must also recover its documentation: what each variable is for and what each routine should
+do. The sampler-on result tells us why no internal method can reach that object. The meaning of a
+variable is not a causal fact about the variable. It is a fact about the behavior the design
+serves, and that behavior is fixed outside the program code, in the manuals and the data the
+program was written against. A method that reads only the mechanism, however faithful, reads only
+causes. A cause becomes a meaning only against an external reference: the system's documented
+behavior. No perturbation of the chip can reach that reference. In this study the only semantics
+present entered from outside: every T3 label was imported from AtariARI and OCAtari and then
+merely verified to be causally live, never discovered by a method. Hence the gap is not an
+artifact of weak methods but a property of the question. Faithfulness is necessary for
+understanding but not sufficient, because understanding needs an external behavioral reference
+that an internal method does not carry. We state clearly that this paper defines and measures the
+gap. Closing the gap means recovering the program's documentation and design from the bare
+machine. That is the reverse-engineering goal, and the task of the companion design-recovery
+paper (Paper~4). That paper measures the distance to that goal rather than clearing it. Whether a
+recovered concept matches how the system is used is the companion behavior paper (Paper~3). The
+learned agent, where there is no disassembly to check against, is Paper~5.
 
-Probing reads the same result from the data side: it shows that a concept is present in the
-state, not that it is used, the control-task warning of Hewitt and
-Liang~\cite{hewitt2019designing}. Our intervention oracle is strictly stronger, asking whether
-the byte causes the output, and it found a present-but-unused score cell the program never reads.
-Decodability is presence; use is an algorithmic fact; understanding needs the second, and only
-the oracle supplies it. Note that the three traditions are, at bottom, one toolkit under
-different names, as tuning curves are feature visualization, lesions are ablations, and Granger
-causality is the correlational ancestor of causal attribution. Each pair shares a failure mode,
-so a result measured on one transfers as a caution to the others. A benchmark built on an
-Atari chip thus speaks to systems neuroscience, explainable AI, mechanistic interpretability, and
-software verification at once.
+Probing reads the same result from the data side. It shows that a concept is present in the
+state, but not that the concept is used. This is the control-task warning of Hewitt and
+Liang~\cite{hewitt2019designing}. Our intervention oracle is strictly stronger, because it asks
+whether the byte causes the output, and it found a present-but-unused score cell the program
+never reads. Decodability is presence; use is an algorithmic fact. Understanding needs use, and
+only the oracle supplies it. At base, the three traditions are one toolkit under different names.
+Tuning curves match feature visualization, lesions match ablations, and Granger causality is the
+correlational predecessor of causal attribution. Each pair shares a failure mode, so a result
+measured on one transfers as a caution to the others. A benchmark built on an Atari chip thus
+speaks to systems neuroscience, explainable AI, mechanistic interpretability, and software
+verification at once.
 
 \subsection*{Why a 1977 chip is a fair screen}
 
-The obvious objection deserves a hearing. The VCS is deterministic, hand-coded, and small,
-while the systems these methods target are learned, distributed, stochastic, and large. We do
-not ask a score here to predict a transformer. The benchmark is a necessary-condition stress
-test, not a sufficiency predictor. When a method fails here, with perfect ground truth, full
-observability, exact interventions, and no learning to muddy the picture, that failure is
-strong negative evidence for any claim that the same method reliably recovers causal mechanisms
-in harder, less observable systems. Passing here is necessary, not sufficient; failing here is
-telling. The same logic suggests, rather than proves, a reading of the semantic gap. If even
+We address the obvious objection. The VCS is deterministic, hand-coded, and small, while the
+systems these methods target are learned, distributed, stochastic, and large. We do not ask a
+score here to predict a transformer. The benchmark is a necessary-condition stress test, not a
+sufficiency predictor. Here a method has perfect ground truth, full observability, exact
+interventions, and no learning to complicate the result. If it still fails, that failure is
+strong evidence against any claim that the same method reliably recovers causal mechanisms in
+harder, less observable systems. Passing here is necessary but not sufficient; failing here is
+informative. The same logic suggests, rather than proves, a reading of the semantic gap. If even
 the strongest causal account a fully observable machine permits stops short of meaning, the
-result suggests that faithfulness alone should not be treated as understanding in less
-observable neural systems, where the circuit itself is uncertain and no clean ground truth is
-on hand. We measure $1-S=0.56$ on an exactly recovered circuit on Breakout
+result suggests that faithfulness alone should not be treated as understanding in less observable
+neural systems, where the circuit itself is uncertain and no clean ground truth is on hand. We
+measure $1-S=0.56$ on an exactly recovered circuit on Breakout
 ($1-0.4444$; the ACDC family mean is $1-0.32=0.68$), and we do not extend that number to neural
 networks as a proven floor; the precise scope, and what this paper does not claim, are set out
 in the Supplementary box on what we do and do not measure (S6).
 
 The chip also exhibits the properties that make real systems hard to interpret. There are
-aliased, polysemantic RAM cells reused across routines, a hand-coded echo of superposition;
-computation by racing the electron beam, distributed and temporal; and registers that mean
-different things in different contexts. Figure~\ref{fig:representativeness} maps each VCS property to the
-neural-network difficulty it does and does not capture, so that a property provable here is one
-suspected there. What the chip does not capture we state without hedging: learned features,
-scale, and stochasticity are absent, and the learned agent that folds all three back in is
-Paper~5.
+aliased, polysemantic RAM cells reused across routines, a hand-coded analogue of superposition.
+There is computation by racing the electron beam, which is distributed and temporal. And there
+are registers that mean different things in different contexts. Figure~\ref{fig:representativeness}
+maps each VCS property to the neural-network difficulty it does and does not capture, so that a
+property we can prove on the VCS is one to suspect in neural networks. We state plainly what the
+chip does not capture: learned features, scale, and stochasticity are absent. The learned agent
+that adds all three back is Paper~5.
 
 \begin{figure}[t]
 \centering
@@ -164,52 +163,52 @@ map (\texttt{fig5\_representativeness\_map\_full.pdf}) are in the Supplementary 
 
 \subsection*{What interpretability needs}
 
-Three recommendations follow, and we state them flatly. The field should prefer causal over
-correlational evidence, because the methods it reaches for first carry the highest plausibility
-proxy and the lowest measured faithfulness, and a map provably empty on the position regime
-looks more convincing than the map that is exactly right. It should validate on known systems
-before trusting on unknown ones, since a method that cannot pass where the answer is computable
-cannot be audited where it is not. Most important, it should stop treating faithfulness as
-understanding. The open problem for explainable AI is not a better saliency map; it is the
-semantic gap. We learned this the hard way, by closing the faithfulness side on the gradient
-methods and watching the meaning stay absent. The problem is not an instrument that reads the
-mechanism more sharply but one that supplies the reference the mechanism does not contain: the
-system's behavior, documented for software in its manuals and data. Faithfulness is the half we now
-know how to measure and, on causal methods, how to win; meaning is the half that remains, and it
-remains because no internal method carries the external reference it needs.
+Three recommendations follow. The field should prefer causal over correlational evidence,
+because the methods it reaches for first carry the highest plausibility proxy and the lowest
+measured faithfulness, and a saliency map provably empty on the position regime can look more
+convincing than the exactly correct map. It should validate on known systems before trusting on
+unknown ones, since a method that cannot pass where the answer is computable cannot be audited
+where it is not. Most important, it should stop treating faithfulness as understanding. The open
+problem for explainable AI is not a better saliency map; it is the semantic gap. We confirmed
+this directly: we closed the faithfulness gap for the gradient methods, and the meaning still did
+not appear. The field does not need an instrument that reads the mechanism more sharply. It needs
+one that supplies the reference the mechanism does not contain: the system's behavior, documented
+for software in its manuals and data. Faithfulness is the part we can now measure, and on causal
+methods we can achieve it. Meaning remains unsolved, because no internal method carries the
+external reference it needs.
 
 We have measured a gap, not closed it, and several limits bound what we may conclude. We did not
-run semantic recovery, as Phase~E, documentation and design recovery, is specified but not
-executed; our claim is therefore the bounded one, that on exact ground truth faithfulness
-certifies the wiring and the wiring alone is not the semantics, and not the unbounded ``no method
-can recover meaning,'' which is Paper~4's charge. The sufficiency and minimality axes are defined
-against the oracle, and the T3 semantic labels are external, imported from
-AtariARI~\cite{anand2019unsupervised} and OCAtari~\cite{delfosse2023ocatari} and only causally
-verified, never discovered. A single low sufficiency could be a tuning artifact, so the claim
-rests not on any one number but on the gap appearing where tuning cannot reach, running in
-both directions at once, and surviving the sampler-on test that makes the gradient methods
-faithful on the games where a moving tracked sprite gives the gradient something to flow to. We
-do not read that test as universal. The rise is honest, on Pong and Q*bert and not on the
-static-sprite games, on a zeros-baseline integrated gradient, or where the restored gradient lands
-on a cell the program does not read, and we report it as such rather than as a law over all
-methods and games. The plausibility axis is a documented method-tradition proxy, not a
-human-subjects measurement, reported at that proxy's coarse resolution. Our scores hold within
-Paper~1's validated conformance window; outside that horizon the substrate is not certified
-bit-exact, and we keep every scored claim inside it. The subject is one old machine with no
-learning, which is the necessary-condition framing once more: a stress test, not a forecast.
+run semantic recovery, because Phase~E, documentation and design recovery, is specified but not
+executed. Our claim is therefore the bounded one: on exact ground truth, faithfulness certifies
+the causal structure, and that structure alone is not the semantics. We do not make the unbounded
+claim that ``no method can recover meaning,'' which is Paper~4's charge. The sufficiency and
+minimality axes are defined against the oracle, and the T3 semantic labels are external, imported
+from AtariARI~\cite{anand2019unsupervised} and OCAtari~\cite{delfosse2023ocatari} and only
+causally verified, never discovered. A single low sufficiency could be a tuning artifact. So the
+claim does not rest on any single number. It rests on three facts: the gap appears where tuning
+cannot reach it; it runs in both directions; and it survives the sampler-on test that makes the
+gradient methods faithful on games with a moving tracked sprite. We do not read that test as
+universal. The rise occurs on Pong and Q*bert, but not on the static-sprite games, not on a
+zeros-baseline integrated gradient, and not where the restored gradient falls on a cell the
+program does not read. We report it as such, not as a law over all methods and games. The
+plausibility axis is a documented method-tradition proxy, not a human-subjects measurement, and
+we report it at that proxy's coarse resolution. Our scores hold within Paper~1's validated
+conformance window. Outside that horizon the substrate is not certified bit-exact, and we keep
+every scored claim inside it. The subject is one old machine with no learning, which is the
+necessary-condition framing once more: a stress test, not a forecast.
 
-We close by reaching past the present result. Because the substrate is differentiable, it tells
-us which gradient explanations are trustworthy and where they vanish. The content path carries
-an honest gradient while the discrete index does not, so a saliency map over sprite position is
-empty by construction, not by accident. That statement about gradients as a class travels to any
-system where a discrete decision sits downstream of a continuous one. We believe the value of a
-fully known, differentiable testbed is exactly this, that it lets the community calibrate its
-instruments before deploying them where calibration is impossible. The hard case remains the
-learned agent, where there is no disassembly, no specification, and no engineer's intent to
-recover, and where the semantic gap can only widen. It is foreseeable that closing it will be the
-work of the next decade of interpretability, turning a faithful account of a learned system into
-an understanding of what it has learned. We have not solved it. We have made it a number, and
-a number is where understanding begins.
+We end with the broader implication. Because the substrate is differentiable, it tells us which
+gradient explanations are trustworthy and where they vanish. The content path carries an honest
+gradient while the discrete index does not. So a saliency map over sprite position is empty for a
+structural reason, not by chance. This statement about gradients generalizes to any system where
+a discrete decision follows a continuous one. We believe a fully known, differentiable testbed is
+valuable for exactly this reason: it lets the community calibrate its instruments before deploying
+them where calibration is impossible. The hard case remains the learned agent, where there is no
+disassembly, no specification, and no engineer's intent to recover, and where the semantic gap is
+likely to be larger. Closing this gap may take the next decade of interpretability research. The
+goal is to turn a faithful account of a learned system into an understanding of what it has
+learned. We have not solved this problem. We have defined and measured it, which is the necessary
+first step.
 
 % =====================================================================
 % BIBTEX-NEEDED: full entries for the keys THIS section introduces that are NOT
