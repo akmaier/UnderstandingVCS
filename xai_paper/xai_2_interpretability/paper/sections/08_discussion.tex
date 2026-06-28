@@ -68,22 +68,7 @@ to: integrated gradients with a zeros baseline still vanishes on Pong, and the s
 together with the case where the restored gradient lands on a cell the program does not currently
 read, show no rise at all. Where the position byte exists and moves, the sampler makes the gradient
 faithful; everywhere the faithfulness story permitted, we let it win. None of it bought a single
-semantic label.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.92\textwidth]{fig7_sampler_faithful_no_semantics.pdf}
-\caption{\textbf{Faithful, still no meaning.} Turning the differentiable port's bilinear sampler on
-restores a usable gradient through the discrete position index, so on the games with a moving
-tracked sprite the gradient methods rise off the provable zero of Prop.~\ref{prop:zero}~--- to
-$0.791$ on Pong and $0.529$ on Q*bert (left, blue). Their semantic recovery stays $0$ in both
-conditions, exactly like every other method (right, vermillion). Note that the restored gradient
-concentrates on the position byte that drives the sprite (\texttt{ram[54]} on Pong): it finds the
-right cause and names no meaning. The honest non-rises~--- integrated gradients with a zeros
-baseline, the static-sprite games, the cell the program does not read~--- are shown as such. Values
-trace to \texttt{sampler\_faithfulness.csv}; per-method records are in the Supplementary
-Information.}\label{fig:sampler}
-\end{figure}
+semantic label (Fig.~\ref{fig:sampler}).
 
 \subsection*{What understanding would require}
 
