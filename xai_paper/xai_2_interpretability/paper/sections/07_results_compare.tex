@@ -94,14 +94,14 @@ interpretability methods + the oracle = 31 rows, each placed by its faithfulness
 against the intervention oracle (\Sectionname\ref{sec:oracle}; X, exact ground truth) and by its
 documented method-tradition \emph{plausibility proxy} (Y; \Sectionname\ref{sec:methods}). The
 plausibility axis is a tradition-level proxy, not a human-subjects measurement. The
-dashed curve traces the offset between the faithful and the plausible clusters, and
-the oracle positive control anchors $(1.0,1.0)$, a ceiling no interpretability method
+oracle positive control anchors $(1.0,1.0)$, a ceiling no interpretability method
 reaches. Causal and intervention methods cluster at high faithfulness while the
 gradient and correlational methods cluster low yet \emph{higher} on the proxy --- the
-\emph{danger zone} of high apparent plausibility at low faithfulness. The key
-findings and per-method values are in the in-figure table; every plotted value reads
-from the committed leaderboard, none re-run or estimated. Per-method uncertainty is
-reported in Fig.~\ref{fig:taxonomy} and the supplement.}\label{fig:faithfulness}
+\emph{danger zone} of high apparent plausibility at low faithfulness. The clearest
+contrast, the field's default tool against a faithful one, is discussed in the text. Every
+plotted value reads from the committed leaderboard, none re-run or estimated; per-method
+values with $95\%$ confidence intervals are in Tables~\ref{tab:phaseA}--\ref{tab:phaseC} and
+the supplement.}\label{fig:faithfulness}
 \end{figure}
 
 \subsubsection*{The danger zone}
@@ -166,20 +166,19 @@ unfaithful methods' deficit, because making them faithful does not close it
 \centering
 \includegraphics[width=\textwidth]{fig7_sampler_faithful_no_semantics.pdf}
 \caption{\textbf{Faithful, still no meaning: turning the sampler on lifts
-faithfulness off the floor, yet no method names a game concept.} On the position
-regime the naive gradient is provably zero (Prop.~\ref{prop:zero}), so the saliency
-methods reach faithfulness $0$ (left bars). Turning the differentiable port's
-bilinear sampler on restores the gradient through the position read and lifts
-faithfulness to $0.791$ on Pong and $0.529$ on Q*bert for the methods with a moving
-tracked sprite (centre bars), with the restored gradient concentrating on the true
-position byte (\texttt{ram[54]} on Pong, oracle-confirmed). Semantic recovery is a
-yes/no question, and the answer is no in both conditions and for every method (right):
-an attribution map names a cause but emits no game concept; the only semantic labels are
-imported (\Sectionname\ref{sec:oracle}) and used to check localization, never
-produced. Note that the rise is reported only where a tracked sprite exists:
-integrated gradients with a zeros baseline vanishes on Pong, static-sprite games have
-no position to restore, and Space Invaders' restored gradient lands on a non-active
-cell. Values read from the committed sampler record; none re-run.}\label{fig:sampler}
+faithfulness off the floor, yet no method names a game concept.} \textbf{Top:} on the
+position regime the naive gradient is provably zero (Prop.~\ref{prop:zero}), so the saliency
+methods reach faithfulness $0$ (naive bars); turning the differentiable port's bilinear
+sampler on restores the gradient through the position read and lifts faithfulness to $0.791$
+on Pong and $0.529$ on Q*bert for the methods with a moving tracked sprite (sampler bars),
+the restored gradient concentrating on the true position byte (\texttt{ram[54]} on Pong,
+oracle-confirmed). \textbf{Bottom:} semantic recovery is a yes/no question, and the answer
+is no in both conditions and for every method: an attribution map names a cause but emits no
+game concept; the only semantic labels are imported (\Sectionname\ref{sec:oracle}) and used
+to check localization, never produced. The rise is reported only where a tracked sprite
+exists: integrated gradients with a zeros baseline vanishes on Pong, static-sprite games have
+no position to restore, and Space Invaders' restored gradient lands on a non-active cell.
+Values read from the committed sampler record; none re-run.}\label{fig:sampler}
 \end{figure}
 
 \subsubsection*{Where the leaderboard stops --- the semantic gap}
@@ -299,8 +298,10 @@ variable at fraction $1.0$ yet scores $F=0.041$ on Pong), and graph-correct-but-
 incomplete circuits (ACDC~\cite{conmy2023towards} at $F=M=1.0$, $S=0.44$ on Breakout). The
 neural-network parallels shown alongside each branch are documented
 analogues~\cite{balduzzi2017shattered,morcos2018single,leavitt2020falsifiable,elhage2022toy,kindermans2019unreliability,sturmfels2020baselines,jain2019attention},
-evidence transfer rather than proof. Every annotated value reads from a committed
-record.}\label{fig:taxonomy}
+evidence transfer rather than proof. $F$ is a point estimate and the whisker a $95\%$
+bootstrap CI over games; only the failure-exhibiting subset is drawn here, out of the full
+$31$-row leaderboard (30 methods plus the oracle). Every annotated value reads from a
+committed record.}\label{fig:taxonomy}
 \end{figure}
 
 % =====================================================================

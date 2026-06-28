@@ -231,7 +231,7 @@ def build_rows(lb, demo, gbp, igsw, sae, prb, ci):
                       "a strobe-timed argmax); whole\n"
                       f"gradient bucket {grad_bucket_pos:.3f}."),
             vcs_full=("Vanilla saliency & IG faithfulness =\n"
-                      f"{sal_pos:.3f} on the position regime; the whole\n"
+                      f"{sal_pos:.3f} on the position regime; whole\n"
                       f"gradient/correlational bucket = {grad_bucket_pos:.3f}\n"
                       "(n=9). Provably 0 at a strobe-timed\n"
                       "argmax readout (§3.2 oracle)."),
@@ -272,8 +272,8 @@ def build_rows(lb, demo, gbp, igsw, sae, prb, ci):
                       f"game-variable tuning = {tuning:.3f}."),
             vcs_full=("Granger-edge faithfulness = "
                       f"{granger:.3f}\n(false edges vs the true data-flow);\n"
-                      f"game-variable tuning = {tuning:.3f} (spurious\n"
-                      "tuning) -- both vs the exact §3.2 oracle."),
+                      f"game-variable tuning = {tuning:.3f}\n"
+                      "(spurious) -- vs the exact §3.2 oracle."),
             vcs_score=granger,
             score_label="Granger F",
             score_ci=cifor("A6_granger"),
@@ -290,9 +290,9 @@ def build_rows(lb, demo, gbp, igsw, sae, prb, ci):
                       f"({lesion:.3f})\nyet misses the wiring: connectome\n"
                       f"recovered at only {connect:.3f}."),
             vcs_full=("Single-unit lesion importance is\n"
-                      f"faithful ({lesion:.3f}) yet MISSES the wiring:\n"
+                      f"faithful ({lesion:.3f}) yet MISSES wiring:\n"
                       f"the connectome graph is recovered at\n"
-                      f"only {connect:.3f}; SAE-feature ablations move y\n"
+                      f"only {connect:.3f}; SAE ablations move y\n"
                       f"in {sae_moved} of the audited cells."),
             vcs_score=connect,
             score_label="connectome F",
@@ -305,11 +305,11 @@ def build_rows(lb, demo, gbp, igsw, sae, prb, ci):
         ),
         dict(
             n=5,
-            mode="SAE / probe: present-not-used\n+ polysemanticity",
-            vcs_main=("SAEs match a known variable yet score\n"
+            mode="SAE/probe:\npresent-not-used",
+            vcs_main=("SAEs match a variable, yet score\n"
                       f"{sae_F:.3f} on causal use; probes decode at\n"
                       f"{probe_acc:.3f} acc but {probe_notcausal} cells are not causal."),
-            vcs_full=("SAEs match a known variable (100% of\n"
+            vcs_full=("SAEs match a variable (100% of\n"
                       f"candidates in {sae_match_games_full}/6 games, min "
                       f"{sae_match_min*100:.0f}%)\nyet score {sae_F:.3f} on causal use; "
                       "probes\n"
@@ -326,13 +326,13 @@ def build_rows(lb, demo, gbp, igsw, sae, prb, ci):
         ),
         dict(
             n=6,
-            mode="Baseline-sensitivity of\nIntegrated / Expected Gradients",
+            mode="IG/EG baseline\nsensitivity",
             vcs_main=("IG magnitude is baseline-sensitive\n"
-                      f"(up to {bl_sens_max:.3f} across games); a content-byte\n"
-                      f"baseline kills IG; EG lands at {eg_F:.3f}."),
+                      f"(up to {bl_sens_max:.3f} across games);\n"
+                      f"a content-byte baseline kills IG;\nEG lands at {eg_F:.3f}."),
             vcs_full=("IG magnitude is baseline-sensitive\n"
-                      f"(corr_sensitivity up to {bl_sens_max:.3f} across\n"
-                      "games); a baseline equal to the content\n"
+                      f"(corr. sens. up to {bl_sens_max:.3f} across\n"
+                      "games); a baseline = the content\n"
                       "byte kills IG entirely; Expected\n"
                       f"Gradients lands at {eg_F:.3f}."),
             vcs_score=eg_F,
@@ -358,7 +358,9 @@ def draw(data, hc, full=False):
     n_rows = len(data)
 
     # Landscape canvas; the supplement is a touch taller for the extra text.
-    fig = plt.figure(figsize=(11.6, 6.9 if not full else 8.4))
+    # Heights trimmed after the footer legend/headline-gap block was removed,
+    # so no large empty band remains under the row block.
+    fig = plt.figure(figsize=(11.6, 6.0 if not full else 7.6))
     ax = fig.add_axes([0.0, 0.0, 1.0, 1.0])
     ax.set_xlim(0, 100)
     ax.set_ylim(0, 100)
@@ -379,7 +381,10 @@ def draw(data, hc, full=False):
     # caption); the row block top is raised to fill that band, leaving only a
     # small margin above the column headers.
     TOP = 92.5 if not full else 93.5       # top of the row block
-    BOT = 12.0 if not full else 17.5       # bottom of the row block
+    # Bottom of the row block lowered after the footer block was removed: the
+    # main figure now has no below-table text, and the supplement keeps only the
+    # analogue-reference key + provenance line just under the rows.
+    BOT = 5.0 if not full else 14.0        # bottom of the row block
     row_h = (TOP - BOT) / n_rows
 
     # =====================================================================
@@ -511,52 +516,19 @@ def draw(data, hc, full=False):
                 color=C_SUSPECT, zorder=4)
 
     # =====================================================================
-    # Footer.  Vertical layout (top -> bottom, all outside the table):
-    #   band 1  legend (left)            + headline gap (right)
-    #   band 2  [supplement] analogue reference key
-    #   band 3  [supplement] full provenance line
-    # The legend/headline band sits just under the row block; the supplement
-    # bands sit below it with clear separation so nothing overlaps.
+    # Footer.  The legend/explainer line(s) + the headline faithfulness-gap
+    # sentence that used to sit just under the row block were REMOVED for
+    # decluttering — that content now lives in the LaTeX caption.  The
+    # supplement-only analogue reference key + full provenance line are kept
+    # (they carry the citation NAMES) and anchored just under the row block.
     # =====================================================================
-    legend_y = (BOT - 1.4)          # top of the legend/headline band
-    legend_handles = [
-        Patch(facecolor=C_VCS_FILL, edgecolor=C_VCS,
-              label="VCS evidence: proven in this benchmark "
-                    "(vs the exact §3.2 intervention oracle)"),
-        Patch(facecolor=C_NN_FILL, edgecolor=C_NN,
-              label="NN analogue: documented in the literature, "
-                    "not proven by this benchmark"),
-    ]
-    ax.legend(
-        handles=legend_handles, loc="upper left",
-        bbox_to_anchor=(X0 / 100.0, legend_y / 100.0),
-        ncol=1, frameon=False, fontsize=MIN_FONT, handlelength=1.4,
-        columnspacing=1.6, handletextpad=0.6, labelspacing=0.6,
-    )
-
-    gap = hc["gap"]
-    cm = hc["causal_intervention_faithfulness_mean"]
-    gm = hc["gradient_correlational_faithfulness_mean"]
-    c_ci = hc.get("causal_intervention_ci95")
-    g_ci = hc.get("gradient_correlational_ci95")
-    ci_note = ""
-    if c_ci is not None and g_ci is not None:
-        ci_note = f"  (95% CI {c_ci:.3f} / {g_ci:.3f})"
-    ax.text(
-        X1, legend_y,
-        "Headline (position regime): causal/intervention "
-        f"{cm:.3f} vs gradient/correlational {gm:.3f}{ci_note}\n"
-        f"— a {gap:.3f} faithfulness gap; activation patching = 1.000 "
-        "(oracle ceiling) where vanilla saliency = 0.000 (naive-gradient floor).",
-        ha="right", va="top", fontsize=MIN_FONT - 0.6, color=C_MUTE,
-        linespacing=1.3,
-    )
+    legend_y = (BOT - 1.4)          # anchor just under the row block
 
     # Supplement-only: the analogue reference key (citation NAMES live here,
-    # not in the table cells) + a full provenance line, BELOW the legend band.
+    # not in the table cells) + a full provenance line, under the row block.
     if full:
         ax.text(
-            X0, (legend_y - 6.2),
+            X0, (legend_y - 1.0),
             "Analogue references (documented in the literature, not measured "
             "here):\n"
             "G1 Balduzzi et al. 2017; G2 Sundararajan et al. 2017 (IG). "

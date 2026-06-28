@@ -473,20 +473,19 @@ def build(lb, demo, ci, out_path, variant="simple"):
         Line2D([0], [0], color=C_INK, lw=1.0, marker="|", markersize=8,
                label="95% bootstrap CI (whisker)"),
     ]
-    fig.legend(handles=leg_handles, loc="upper right",
-               bbox_to_anchor=(0.998, 0.992), ncol=3, fontsize=8.0,
+    # Legend moved to the BOTTOM-RIGHT corner so it no longer overlaps the
+    # column headings at the top of the tree.  (In the FULL variant the
+    # provenance line is left-anchored at the very bottom, so a right-anchored
+    # legend clears it.)
+    fig.legend(handles=leg_handles, loc="lower right",
+               bbox_to_anchor=(0.998, 0.010), ncol=3, fontsize=8.0,
                frameon=True, framealpha=0.97, edgecolor=C_GRID,
                handlelength=1.4, columnspacing=1.1, borderpad=0.55)
 
-    # --- provenance pointer (FULL variant only; no data paths in figure) ------
-    if full:
-        prov = ("F = point estimate; whisker = 95% bootstrap CI over games. "
-                "All numbers read from committed records; full data provenance "
-                "in the Supplement. The full benchmark is 30 interpretability "
-                "methods + the intervention oracle positive control = 31 rows; "
-                "only the failure-exhibiting subset is drawn here.")
-        fig.text(0.012, 0.006, _wrap(prov, 168), ha="left", va="bottom",
-                 fontsize=8.0, color=C_MUTE, linespacing=1.3)
+    # --- provenance pointer removed for decluttering -------------------------
+    # The footer provenance block ("F = point estimate; whisker = 95% bootstrap
+    # CI over games. ...  only the failure-exhibiting subset is drawn here.")
+    # was moved into the LaTeX caption.
 
     fig.savefig(out_path, format="pdf", facecolor=C_BG)
     plt.close(fig)

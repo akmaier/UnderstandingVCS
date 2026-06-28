@@ -171,13 +171,14 @@ def main():
     # =======================================================================
     # FIGURE
     # =======================================================================
-    fig = plt.figure(figsize=(11.6, 6.2), facecolor=C_BG)
+    fig = plt.figure(figsize=(11.6, 5.9), facecolor=C_BG)
     # In-image title + headline banner removed (they duplicated the LaTeX
-    # caption); the panel block top is raised to fill that band, leaving room
-    # only for the panel (a)/(b) sub-titles.
+    # caption).  The two panel (a)/(b) sub-titles were also removed for
+    # decluttering — the panel meaning now lives in the LaTeX caption — so the
+    # panel block top is raised and the inter-panel gap tightened.
     gs = fig.add_gridspec(
         2, 1, height_ratios=[3.0, 0.62], left=0.115, right=0.965,
-        top=0.910, bottom=0.130, hspace=0.34,
+        top=0.965, bottom=0.135, hspace=0.22,
     )
     axF = fig.add_subplot(gs[0, 0])
     axS = fig.add_subplot(gs[1, 0])
@@ -226,11 +227,7 @@ def main():
              "naive-gradient floor = 0  (Prop. prop:zero — the position gradient vanishes)",
              ha="left", va="bottom", fontsize=FS_MIN, color=C_MUTE, style="italic")
 
-    axF.set_title(
-        "(a)  Position/index regime: the sampler RESTORES faithfulness "
-        "(0 → off the floor) for the gradient family",
-        fontsize=10.2, fontweight="bold", loc="left", pad=8,
-    )
+    # (Panel (a) sub-title removed for decluttering — meaning lives in caption.)
 
     # ---------------- Panel (b): semantic recovery is a yes/no question -------------
     # Categorical, NOT a number. For every method, in BOTH conditions, no concept is
@@ -248,11 +245,7 @@ def main():
     axS.set_ylabel("names a\nconcept?", fontsize=9.0)
     for s in ("top", "right", "left"):
         axS.spines[s].set_visible(False)
-    axS.set_title(
-        "(b)  Semantic recovery is a yes/no question — the answer is “no” "
-        "for every method, in both conditions (the gap survives the fix)",
-        fontsize=10.2, fontweight="bold", loc="left", pad=6,
-    )
+    # (Panel (b) sub-title removed for decluttering — meaning lives in caption.)
 
     # =======================================================================
     # (In-image title + headline banner removed — the LaTeX caption owns that

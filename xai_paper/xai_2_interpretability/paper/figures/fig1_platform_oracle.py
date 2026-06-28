@@ -180,10 +180,8 @@ for i, (h, sub) in enumerate(caps):
     txt(7.6, y + 0.9, h, ha="left", size=9.2, col=C_INK, weight="bold")
     txt(7.6, y - 1.1, sub, ha="left", size=8.0, col=C_MUTE)
 
-# substrate -> oracle arrow (clean lane, single short label)
+# substrate -> oracle arrow (clean lane)
 arrow(32.2, 35.0, 34.3, 35.0, col=C_INK, lw=2.4, mut=18)
-txt(33.25, 37.2, "outputs y", size=8.0, col=C_MUTE)
-txt(33.25, 32.8, "+ causes u", size=8.0, col=C_MUTE)
 
 # ===========================================================================
 # STAGE 2 — the ground-truth oracle (primary + companion + single caveat)
@@ -233,9 +231,8 @@ txt(51.0, 10.4, "→ the intervention oracle is the SOLE", size=8.0, col=C_INK)
 txt(51.0, 8.6, "ground truth there; gradient methods", size=8.0, col=C_INK)
 txt(51.0, 6.8, "are scored AS methods under test.", size=8.0, col=C_INK)
 
-# oracle -> score arrow (clean lane, single short label)
+# oracle -> score arrow (clean lane)
 arrow(66.2, 42.3, 69.8, 42.3, col=C_INK, lw=2.4, mut=18)
-txt(68.0, 44.3, "ground truth", size=8.0, col=C_MUTE)
 
 # ===========================================================================
 # STAGE 3 — scoring any XAI method by F ∧ S ∧ M

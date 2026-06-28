@@ -343,35 +343,10 @@ label("activation_patching",           dx=-0.075, dy=0.095, ha="right", va="bott
 # (6 method anchors + the oracle = 7 labelled points — within the <=8 budget.)
 
 # ---------------------------------------------------------------------------
-# The E6-3 contrast arrow: the field's DEFAULT tool (vanilla saliency, near
-# chance) vs the FAITHFUL causal method (activation patching, near ceiling) —
-# the same per-method gap the paper headlines (faithful_demo.json). Drawn as a
-# dashed offset arc — the gap, made a picture.
-# ---------------------------------------------------------------------------
-pc = DEMO["pair_contrast"]
-fa = DEMO["faithful_method"]   # activation_patching
-po = DEMO["popular_method"]    # vanilla_saliency
-ax_i = idx_of(fa["method"])
-po_i = idx_of(po["method"])
-fx, fy = plotted[ax_i]
-ppx, ppy = plotted[po_i]
-ax.add_patch(FancyArrowPatch(
-    (ppx, ppy), (fx, fy),
-    connectionstyle="arc3,rad=-0.22", arrowstyle="-|>", mutation_scale=16,
-    linewidth=1.6, color=C_MUTE, linestyle=(0, (4, 2)), zorder=4, alpha=0.9))
-midx, midy = (ppx + fx) / 2 + 0.10, (ppy + fy) / 2 + 0.085
-ax.text(midx, midy,
-        f"the field's DEFAULT tool → a FAITHFUL one\n"
-        f"vanilla saliency  F={po['faithfulness_all_regimes']:.3f}  "
-        f"→  activation patching  F={fa['faithfulness_all_regimes']:.3f}\n"
-        f"(position/index regime: {pc['popular_faithfulness_position']:.0f} → "
-        f"{pc['faithful_faithfulness_position']:.0f}, gap {pc['position_gap']:.0f})",
-        ha="center", va="center", fontsize=8.0, color=C_MUTE, style="italic",
-        linespacing=1.15, zorder=9,
-        bbox=dict(boxstyle="round,pad=0.4", facecolor="#fbfbfb",
-                  edgecolor="#d8d8d8", linewidth=0.8))
-
-# ---------------------------------------------------------------------------
+# (The E6-3 contrast annotation + connecting arc were removed for decluttering:
+# the vanilla-saliency -> activation-patching contrast is discussed in the body
+# text. The data points themselves are untouched; the E6-3 records are still
+# cross-checked against the leaderboard in the self-check block below.)
 # (In-image title/subtitle removed — the LaTeX caption owns that prose.)
 # ---------------------------------------------------------------------------
 
