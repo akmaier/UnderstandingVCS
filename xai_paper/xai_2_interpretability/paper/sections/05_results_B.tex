@@ -5,22 +5,22 @@
 
 \section{Results B --- attributing a VCS output to its causes}\label{sec:results-b}
 
-Attribution hands back a map of which inputs mattered, and we turn the toolkit on the
-VCS to ask the one question a real network never lets us ask, whether the map is true.
+Attribution returns a map of which inputs mattered. We apply these methods to the VCS
+to ask a question a real network cannot answer: is the map true?
 Every attribution is scored against the same intervention oracle (\Sectionname\ref{sec:oracle})
-that defines ground truth, so for each chosen output $y$, a pixel, a score,
-a game event, we know the exact set of causes it should have named. We ran twelve
+that defines ground truth. For each chosen output $y$, a pixel, a score,
+or a game event, we know the exact set of causes it should have named. We ran twelve
 attribution methods across six core games (Pong, Breakout, Space~Invaders, Seaquest,
 Ms.~Pac-Man, Q*bert) and an oracle-as-method positive control, placed on the shared
 faithfulness axis in Figure~\ref{fig:fig4} (Phase-B half) and scored per method in
 Table~\ref{tab:phaseB}.
 
-The headline is a split, not a ranking. A content output --- the value of a
-register, a colour, a graphics bit --- is a differentiable function of the state, so
-its gradient flows; a position output --- where a sprite is drawn, set by strobe
-timing on a discrete index --- has provably zero naive gradient (Paper~1, and
-Sec.~\ref{sec:methods}). Hence the entire gradient family inherits this boundary, and
-it cuts the leaderboard cleanly in two.
+The main result is a split between two output types, not a ranking of methods. A
+content output is the value of a register, a colour, or a graphics bit. It is a
+differentiable function of the state, so its gradient flows. A position output is where
+a sprite is drawn, set by strobe timing on a discrete index. It has provably zero naive
+gradient (Paper~1, and Sec.~\ref{sec:methods}). Hence the whole gradient family hits this
+limit, and it splits the leaderboard into two clear groups.
 
 \begin{figure}[t]
 \centering
@@ -28,11 +28,11 @@ it cuts the leaderboard cleanly in two.
 \caption{\textbf{Attribution (Phase~B) and mechanistic interpretability
 (Phase~C) scored against the same intervention oracle (\Sectionname\ref{sec:oracle}).} The
 Phase-B half (a) splits each method's faithfulness by output regime: on a
-\emph{content} output the gradient family lands on the true cause, but on a
-\emph{position}/index output the entire gradient family \emph{collapses to $0.00$},
-while the intervention methods hold up because each probe is a real re-run of the
+\emph{content} output the gradient family identifies the true cause, but on a
+\emph{position}/index output the entire gradient family \emph{collapses to $0.00$}.
+The intervention methods still work, because each probe is a real re-run of the
 bit-exact program. Note that the popular gradient methods, which fail on position,
-carry the higher plausibility proxy, the danger zone of Sec.~\ref{sec:results_compare}
+have the higher plausibility proxy, the danger zone of Sec.~\ref{sec:results_compare}
 in numbers. The Phase-C half (b) is discussed in Sec.~\ref{sec:results-c}. The figure
 shows the 22 Phase-B and Phase-C method rows, a subset of the 30 methods plus the
 oracle positive control ($31$ rows) of the full leaderboard. Uncertainty bands are
@@ -42,8 +42,8 @@ position-regime means (causal $0.412$ [$0.04$--$0.59$] vs.\ gradient $0.068$
 leaderboard.}\label{fig:fig4}
 \end{figure}
 
-On the content path the gradient is faithful and unremarkable. Vanilla
-saliency~\cite{simonyan2014deep} lands its mass on the true causal byte: on
+On the content path the gradient is faithful, as expected. Vanilla
+saliency~\cite{simonyan2014deep} puts most of its attribution on the true causal byte: on
 Q*bert its attribution of a content read correlates with the oracle at Pearson
 $0.999$ with precision@3 of $1.0$, on Ms.~Pac-Man at $0.811$ / $1.0$, on Breakout
 at $0.750$ / $1.0$. Integrated Gradients~\cite{sundararajan2017axiomatic},
@@ -51,31 +51,31 @@ Grad$\times$Input/DeepLIFT~\cite{shrikumar2017learning},
 SmoothGrad~\cite{smilkov2017smoothgrad}, and guided
 backpropagation~\cite{springenberg2015striving} all reproduce this, because the
 output we explain is a one-hot read whose Jacobian $\partial y/\partial u$ is a
-constant pointing at the read index. Smoothing leaves the score put
-($\Delta\,\mathrm{corr}\approx 0$) and guided backprop degenerates to vanilla
-saliency; on this path there is nothing for the methods to disagree about.
+constant pointing at the read index. Smoothing does not change the score
+($\Delta\,\mathrm{corr}\approx 0$), and guided backprop reduces to vanilla
+saliency. On this path all methods give the same answer.
 
-The position output is where the family fails, and it fails by vanishing. The naive
+The gradient family fails on the position output. Its attribution goes to zero. The naive
 gradient is identically zero on every game, so saliency, Grad$\times$Input,
 SmoothGrad, guided backprop, and Integrated Gradients all collapse to a faithfulness
 of $0.0$ in the position regime --- the ``Fail / zero on index outputs'' prediction
 of Sec.~\ref{sec:methods}, now a measured number. Averaged over all output regimes
 the cross-phase gradient family scores only $0.294$ faithfulness against the oracle
 (Fig.~\ref{fig:fig4}; Phase-B gradient methods alone $0.298$); on the position regime
-alone, $0.068$. Returning the empty map
-for half a game's outputs is not a partial success but a structural blind spot, exactly
-where the discrete game logic lives.
+alone, $0.068$. Returning an empty map
+for half of a game's outputs is not partial success. It is a structural failure, exactly
+where the discrete game logic is.
 
-Two finer results sharpen the warning. The baseline choice, the perennial worry about
-Integrated Gradients, is a magnitude effect here, not a faithfulness one. The
+Two further results make this point stronger. The baseline choice is the perennial
+worry about Integrated Gradients. Here it changes magnitude, not faithfulness. The
 $(x-x_0)$ factor moves $\max|\mathrm{IG}|$, yet the ranking and the oracle correlation
-hold, because the constant one-hot Jacobian keeps the mass on the same byte; only the
+hold, because the constant one-hot Jacobian keeps the mass on the same byte. Only the
 degenerate baseline equal to the content byte breaks it.
-Expected Gradients~\cite{erion2021improving}, averaging IG over a distribution of
-recorded VCS states, removes that degeneracy and is provably stable across reference
+Expected Gradients~\cite{erion2021improving} averages IG over a distribution of
+recorded VCS states. It removes that degeneracy and is provably stable across reference
 draws (mean pairwise cosine $\approx 1$). Yet, on the content path it scores the same
-faithfulness as a well-chosen single-baseline IG at $M\times$ the compute and still
-vanishes on position; the more careful method buys stability, not truth, and its
+faithfulness as a well-chosen single-baseline IG at $M\times$ the compute, and it still
+vanishes on position. The more careful method gives stability but not accuracy. Its
 all-regime faithfulness of $0.034$ is the lowest in the study.
 
 Guided backprop and vanilla saliency fail the program-randomization sanity check of
@@ -83,15 +83,15 @@ Adebayo et al.~\cite{adebayo2018sanity} on the system itself. We scramble the RO
 the program boots to a completely different state ($\sim$69--127 of 128 RAM bytes
 change, lowest on Seaquest), and the content-path saliency map stays byte-identical
 (cosine $\approx 1.0$ on all six games). The Jacobian $\partial y/\partial u = e_{\mathrm{idx}}$ is a
-constant one-hot, independent of what the program computes, so the map points at the
-read index no matter which program produced the output, i.e.\ a saliency that is
-provably model-invariant. A faithful explanation must change when the model changes,
-and this one cannot. The intervention oracle, by contrast, distinguishes the two programs at
-once. The map lands on the right cause yet stays blind to the model that produced it.
+constant one-hot, independent of what the program computes. So the map points at the
+read index no matter which program produced the output. The saliency is therefore
+provably model-invariant. A faithful explanation must change when the model changes.
+This one does not. The intervention oracle, by contrast, distinguishes the two programs at
+once. The map identifies the right cause but does not depend on the model that produced it.
 
-Replace the gradient with an actual intervention and the position blind spot
+When we replace the gradient with a real intervention, the position failure
 disappears. Occlusion~\cite{zeiler2014visualizing} sets a candidate cause and re-runs
-the bit-exact program, the coarse twin of the oracle. On the Pong position output,
+the bit-exact program, a coarse version of the oracle. On the Pong position output,
 where every gradient method scores $0.0$, it recovers the true causal bytes at
 correlation $0.837$, its all-regime faithfulness of $0.482$ the highest in Phase~B. The black-box perturb-and-re-run methods follow the same logic and result:
 RISE~\cite{petsiuk2018rise} ($0.375$), LIME~\cite{ribeiro2016why} ($0.382$), and
@@ -113,10 +113,10 @@ cross-phase intervention family averages $0.681$ faithfulness [95\% CI $0.59$--$
 $n=11$] against the oracle, more than double the cross-phase gradient family's $0.294$
 [$0.20$--$0.38$, $n=14$] (Fig.~\ref{fig:fig4}). Restricted to the three Phase-B
 intervention methods alone the mean is $0.393$ against the Phase-B gradient family's
-$0.298$. A perturbation is faithful exactly when it is a valid intervention.
+$0.298$. A perturbation is faithful only when it is a valid intervention.
 
-A part of the popular toolkit returns no answer at all, because it has nothing on
-the VCS to attach to. Grad-CAM and Grad-CAM++~\cite{selvaraju2017gradcam,%
+Some popular methods return no answer at all, because the VCS has no structure for
+them to use. Grad-CAM and Grad-CAM++~\cite{selvaraju2017gradcam,%
 chattopadhyay2018gradcampp} need a final convolutional layer to weight; attention
 rollout~\cite{abnar2020quantifying} needs attention matrices;
 VIPER~\cite{bastani2018verifiable} needs a learned policy to distil. The VCS is a
@@ -125,28 +125,27 @@ count of each required substrate is exactly zero, against $\geq 16$ genuine cand
 causes per game for the applicable methods. We record this as a measured finding,
 $\mathtt{applies = false}$, not a poor score: the absence is structural and the same
 in every game, and re-targeting Grad-CAM's pooling onto raw register state would only
-be the content-path gradient renamed. That a slice of the field's headline methods is
-silent on a real, deployed artifact is itself part of the audit.
+be the content-path gradient renamed. Several well-known methods produce no result on
+a real artifact. This absence is itself a finding of the audit.
 
-Across the twelve methods the leaderboard separates along the axis that matters and
-crosses the axis the field actually optimizes. The starkest pair makes it concrete. On
-the position regime the causal method activation patching (Phase~C) reaches
+Across the twelve methods, faithfulness and plausibility move in opposite directions:
+methods rank high on plausibility but low on faithfulness. The clearest pair makes it
+concrete. On the position regime the causal method activation patching (Phase~C) reaches
 faithfulness $1.000$, the oracle ceiling, on all six games, while vanilla saliency, a
-widely used baseline, collapses to $0.000$ on all six, a per-method gap of $1.000$,
-bit-exact on every game. Yet, on the plausibility proxy of Sec.~\ref{sec:methods}
-the popular method carries the higher score ($0.9$ versus $0.5$): the provably empty
-map looks more convincing than the one that is exactly right. That inversion of low
-faithfulness paired with high plausibility is the danger zone, and on the VCS it is not
-a worry but a measurement.
+widely used baseline, collapses to $0.000$ on all six. This is a per-method gap of
+$1.000$, bit-exact on every game. Yet, on the plausibility proxy of Sec.~\ref{sec:methods}
+the popular method has the higher score ($0.9$ versus $0.5$): the empty map has a higher
+plausibility score than the exactly correct one. Low faithfulness with high plausibility
+is the danger zone. On the VCS we can measure it directly, not just warn about it.
 
-We claim no more than the faithfulness of these maps. A correct occlusion map names
-the true causal bytes; it does not tell us what those bytes mean, that a cell is the
+We claim only that these maps are faithful, nothing more. A correct occlusion map names
+the true causal bytes. It does not tell us what those bytes mean, that a cell is the
 ball's $x$ or that a routine is the bounce. Object-level semantics enter only through
 the external T3 labels (AtariARI, OCAtari; Sec.~\ref{sec:methods}), and even there we
 verify a supplied label by intervention rather than discover it. Whether a faithful
 attribution amounts to understanding the computation we take up in
-Sec.~\ref{sec:results_compare}; here we have established only that faithfulness can be
-had, and that the most popular way of seeking it does not deliver it.
+Sec.~\ref{sec:results_compare}. Here we have established only that faithfulness is
+achievable, and that the most popular methods do not achieve it.
 
 \begin{table}[t]
 \caption{\textbf{Phase-B attribution scored against the intervention oracle
