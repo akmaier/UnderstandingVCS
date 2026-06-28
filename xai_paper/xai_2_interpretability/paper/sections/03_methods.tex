@@ -4,11 +4,11 @@
 
 \section{Methods}\label{sec:methods}
 
-Our method rests on a single idea: we study an interpretability question on a machine whose
+Our method rests on a single idea. We study an interpretability question on a machine whose
 answer we can compute exactly. We describe in turn the substrate that makes the ground truth
 obtainable, the oracle that delivers it, the tiered semantics we attach to it, and the
-correctness triad that turns ``do we understand?'' into a set of numbers. The per-method
-setups live in the Supplementary Information; Fig.~\ref{fig:platform} sketches the pipeline.
+correctness triad that scores understanding as numbers. The per-method
+setups live in the Supplementary Information. Fig.~\ref{fig:platform} sketches the pipeline.
 
 \begin{figure}[t]
   \centering
@@ -36,12 +36,13 @@ setups live in the Supplementary Information; Fig.~\ref{fig:platform} sketches t
 \subsection{The differentiable, bit-exact VCS substrate}\label{sec:substrate}
 
 The subject of this study is the Atari Video Computer System (VCS) itself, not a learned
-agent: a complex real artifact never designed to be interpretable, yet whose every causal
-dependency we can read off exactly. Paper~1 built it, a bit-exact, differentiable port of the
-1977 VCS validated bit-for-bit against the \texttt{xitari} C++ reference on all 64 games of
-the Paper-1 roster, in random-access memory and rendered screen, within the validated
-conformance window~\cite{maier2025vcs,xitari}. We use it in two interchangeable, mutually
-cross-checked realizations, \texttt{jutari} (Julia) and \texttt{jaxtari} (JAX/Python).
+agent. It is a real, complex artifact never designed to be interpretable. Yet we can
+measure its every causal dependency exactly. Paper~1 built it, a bit-exact, differentiable
+port of the 1977 VCS. The port is validated bit-for-bit against the \texttt{xitari} C++
+reference on all 64 games of the Paper-1 roster, in random-access memory and rendered screen,
+within the validated conformance window~\cite{maier2025vcs,xitari}. We use it in two
+interchangeable, cross-checked realizations, \texttt{jutari} (Julia) and \texttt{jaxtari}
+(JAX/Python).
 
 The substrate grants four capabilities that no neural network offers for free. The first is
 an exact forward map,
@@ -50,70 +51,68 @@ an exact forward map,
   \label{eq:vcs}
 \end{equation}
 that is, the output $y$ at step $t$, a pixel, a score, or a game event, is a deterministic
-function of the cartridge bytes, the inputs up to $t$, and the initial state $s_0$, and
-re-running reproduces $y$ to the bit. The second is exact interventions. We set any cause
+function of the cartridge bytes, the inputs up to $t$, and the initial state $s_0$. Re-running
+reproduces $y$ to the bit. The second is exact interventions. We set any cause
 $u$, a ROM byte, a RAM cell, a CPU/TIA/RIOT register, an opcode, or a joystick input, to any
-value and re-run Eq.~\eqref{eq:vcs} deterministically, realizing the causal operator
+value and re-run Eq.~\eqref{eq:vcs} deterministically. This realizes the causal operator
 $\mathrm{do}(u)$ on a real machine rather than an assumed world model. The third is full
-state observability, every bit of RAM and every register recorded along the trajectory, so
+state observability. We record every bit of RAM and every register along the trajectory, so
 the ``activations'' we interpret are the program's own variables. The fourth is a
 content-path gradient $\partial y / \partial u$ through a straight-through estimator (STE)
 formulation whose forward pass is bit-exact to the hard machine at any finite
-temperature~\cite{bengio2013estimating,jang2017gumbel}, batched on the GPU. The inputs we
-drive, the state we read and clamp, and the outputs we explain are the three faces a neural
-interpretability study works with, so one substrate carries all three batteries.
+temperature~\cite{bengio2013estimating,jang2017gumbel}, batched on the GPU. A neural
+interpretability study works with three things: the inputs, the state, and the outputs. Our
+substrate gives us all three.
 
-We honor one boundary throughout. Paper-1 bit-exactness holds within a bounded frame window
-on a fixed action stream, on the order of 30 frames of RAM and 60 frames of screen, and
-every scored claim is taken inside that validated horizon. Long-horizon end-to-end gradients
+We respect one limit throughout. Paper-1 bit-exactness holds within a bounded frame window
+on a fixed action stream, on the order of 30 frames of RAM and 60 frames of screen. Every
+scored claim is taken inside that validated horizon. Long-horizon end-to-end gradients
 are not needed for our single-step metrics, so we do not assume them.
 
 \subsection{The ground-truth oracle}\label{sec:oracle}
 
-The oracle is the heart of the method: for any output $y$ and any candidate cause $u$ it
-returns the true effect of $u$ on $y$, against which every method is then scored. Its
-primary construction is the exact intervention oracle: we intervene on $u$ by occlusion,
-clamping, replacement, or resampling, re-run the machine deterministically, and record the
-change in the output,
+The oracle is central to the method. For any output $y$ and cause $u$, it returns the true
+effect of $u$ on $y$. We score every method against it. Its primary construction is the exact
+intervention oracle: we intervene on $u$ by occlusion, clamping, replacement, or resampling,
+re-run the machine deterministically, and record the change in the output,
 \begin{equation}
   \Delta y(u) \;=\; \mathrm{VCS}\big(\dots,\, \mathrm{do}(u{:=}v'),\, \dots\big) \;-\; y .
   \label{eq:doy}
 \end{equation}
-The true causal effect of a cause is thus the bit-exact difference its surgical edit makes
-to the output, measured by actually running the altered machine, with no world model or
-smoothness assumed. The collection $\{\Delta y(u)\}$ over all causes is the true causal map
-of $y$, the reference for the faithfulness axis of every method.
+The true causal effect of a cause is the difference its edit makes to the output. We measure
+it by running the altered machine. We assume no world model and no smoothness. The collection
+$\{\Delta y(u)\}$ over all causes is the true causal map of $y$, the reference for the
+faithfulness axis of every method.
 
-The output $y$ comes in five regimes that fix what a method must predict and whether a
-gradient is even meaningful. A \emph{content} output is a register, color, or graphics-bit
+The output $y$ comes in five regimes. The regime fixes what a method must predict and whether
+a gradient is even meaningful. A \emph{content} output is a register, color, or graphics-bit
 value that flows smoothly into the pixel, where the naive gradient is valid. A
-\emph{position/index} output is a sprite, missile, or ball coordinate set by strobe timing,
-where the naive gradient vanishes by Prop.~\ref{prop:zero} and only the bilinear-sampler
+\emph{position/index} output is a sprite, missile, or ball coordinate set by strobe timing.
+Here the naive gradient vanishes by Prop.~\ref{prop:zero}, and only the bilinear-sampler
 surrogate or the intervention oracle applies. An \emph{event} output is a discrete state
 change, a collision latch or a life lost, also gradient-zero. A \emph{score} output is the
 game's running counter, valid for the gradient only where it varies continuously. A
-\emph{pixel} output is the rendered framebuffer value, content-valid where it tracks a smooth
-cause and index-zero where it tracks a position. The Supplement lists, per game, which outputs
-each method is scored on and the per-output gradient verdict.
+\emph{pixel} output is the rendered framebuffer value. It is content-valid where it tracks a
+smooth cause and index-zero where it tracks a position. The Supplement lists, per game, which
+outputs each method is scored on and the per-output gradient verdict.
 
-The interventions that build the oracle are of distinct manifold kinds, and we state each
-because the kind bounds what a score means. Occlusion and clamping are surgical but
-\emph{off-manifold}: they can set a byte to a value the running program would never write.
-Replacement from a donor trajectory is \emph{on-manifold}: the substituted value is one the
-machine actually produced elsewhere. Resampling draws the cause from its own marginal over the
-trajectory. Counterfactual edits are valid under the emulator by construction, since any
-byte assignment yields a well-defined deterministic re-run. Off-manifold interventions are
-acceptable for oracle scoring precisely because the oracle measures a \emph{causal} effect, not
-a likelihood: the question is what the output would be if $u$ were $v'$, and the bit-exact
-machine answers it exactly for any $v'$, on- or off-manifold. Where a method's own claim is
-about typical behavior rather than causal dependence we fall back to the on-manifold donor and
-resampling variants and flag the choice in the Supplement.
+The oracle uses several kinds of intervention. We list each one, because the kind limits what
+a score means. Occlusion and clamping are surgical but \emph{off-manifold}: they can set a
+byte to a value the running program would never write. Replacement from a donor trajectory is
+\emph{on-manifold}: the substituted value is one the machine actually produced elsewhere.
+Resampling draws the cause from its own marginal over the trajectory. Counterfactual edits are
+valid under the emulator by construction, since any byte assignment yields a well-defined
+deterministic re-run. Off-manifold interventions are still valid for oracle scoring. The
+oracle measures a causal effect, not a likelihood. We ask what the output would be if $u$ were
+$v'$. The bit-exact machine answers this exactly for any $v'$, on- or off-manifold. Where a
+method's own claim is about typical behavior rather than causal dependence we fall back to the
+on-manifold donor and resampling variants and flag the choice in the Supplement.
 
-The content-path gradient $\partial y / \partial u$, read through the differentiable
-substrate, is its companion construction. It is fast and dense, and it agrees with the
+The content-path gradient $\partial y / \partial u$ is the second way to build the oracle. We
+read it through the differentiable substrate. It is fast and dense, and it agrees with the
 intervention oracle on the content path, the register, color, and graphics-bit values that
-flow smoothly into the pixel. Yet, a single decisive caveat carries through the whole study.
-The straight-through gradient routes to the content path only, so a discrete index, a
+flow smoothly into the pixel. Yet, one important limit applies to the whole study.
+The straight-through gradient routes to the content path only. So a discrete index, a
 sprite's screen position the VCS sets by the timing of a strobe write, has a naive gradient
 that vanishes under the hard forward map. We make this precise.
 
@@ -127,9 +126,8 @@ render function $h$. Then $n(\cdot)$ is locally constant wherever $g(u)\notin\ma
 $\partial y/\partial u=0$ at every such point, and $y$ is discontinuous on the set
 $\{u:g(u)\in\mathbb{Z}\}$, which is measure zero precisely because $g$ is strictly monotone on
 each piece, and there the gradient is undefined. Hence the naive gradient is zero wherever the
-derivative exists: an infinitesimal change in $u$ cannot move the sprite by a fractional
-pixel. Any method that
-reduces to this naive gradient inherits the failure on position, index, and event outputs.
+derivative exists: a tiny change in $u$ cannot move the sprite by part of a pixel. Any method
+that reduces to this naive gradient inherits the failure on position, index, and event outputs.
 \end{proposition}
 
 The proposition states only the hard-map limit; it does not say that no useful gradient
@@ -139,30 +137,32 @@ bit-exact to the hard machine at any finite temperature while routing a non-zero
 gradient along the content path~\cite{bengio2013estimating,jang2017gumbel}, and the bilinear
 sampler that interpolates the index boundary to recover a usable position
 gradient~\cite{jaderberg2015spatial}. The companion paper constructs both and validates the
-bit-exactness this proposition assumes; we import that construction and prove the vanishing
-inline so the present paper stands alone. We therefore replace any blanket ``gradients are
-provably zero'' with the scoped claim of Prop.~\ref{prop:zero}: the \emph{naive} gradient for
-discrete position/index outputs is zero under the hard forward map, and methods that reduce to
-it inherit that failure, while surrogate and bilinear-sampler gradients are exceptions.
+bit-exactness this proposition assumes. We import that construction and prove the vanishing
+inline, so the present paper stands alone. We therefore avoid any blanket claim that
+``gradients are provably zero.'' We use instead the scoped claim of Prop.~\ref{prop:zero}: the
+\emph{naive} gradient for discrete position/index outputs is zero under the hard forward map,
+and methods that reduce to it inherit that failure. Surrogate and bilinear-sampler gradients
+are exceptions.
 
-We push the faithfulness audit to its strongest form by removing the one escape the position
-regime leaves open. The naive zero of Prop.~\ref{prop:zero} could be read as a fixable
-artifact, so we fix it: we turn the Paper-1 bilinear sampler on. The sampler interpolates the
-index boundary of Prop.~\ref{prop:zero} in the spatial-transformer manner. This makes the
-discrete position output a continuous function of the position RAM byte rather than a step,
-so the gradient methods receive a non-zero surrogate position gradient where the hard map gave
-them nothing~\cite{jaderberg2015spatial}. We score both conditions, the naive forward and the
-sampler-on forward, against the same intervention oracle of Eq.~\eqref{eq:doy}. For each
-candidate cause the per-cause attribution is correlated, by the raw Pearson $\rho$ of
-\Sectionname\ref{sec:triad}, against the oracle's true $|\Delta\,\text{position-pixel}|$, so the
-two conditions differ only in the surrogate the method is handed and not in how it is judged.
+We make the faithfulness audit as strict as possible. The position regime leaves one
+objection open, and we close it. A reader might object that the naive zero of
+Prop.~\ref{prop:zero} is just a fixable artifact. So we fix it: we turn on the Paper-1
+bilinear sampler. The sampler interpolates the index boundary of Prop.~\ref{prop:zero} in the
+spatial-transformer manner. This makes the discrete position output a continuous function of
+the position RAM byte rather than a step. So the gradient methods receive a non-zero surrogate
+position gradient where the hard map gave them nothing~\cite{jaderberg2015spatial}. We score
+both conditions, the naive forward and the sampler-on forward, against the same intervention
+oracle of Eq.~\eqref{eq:doy}. For each candidate cause the per-cause attribution is
+correlated, by the raw Pearson $\rho$ of \Sectionname\ref{sec:triad}, against the oracle's true
+$|\Delta\,\text{position-pixel}|$. So the two conditions differ only in the surrogate the
+method is handed, not in how it is judged.
 Alongside faithfulness we record a second, deliberately stricter measure. The
 \emph{semantic recovery} of a method asks whether the method emits a Tier-3 game-concept name
 on its own, the word ``ball'' or ``missile'' attached to the byte it points at, rather than a
-cause that an external label later christens. An attribution map, which returns weights over
+cause that an external label only names later. An attribution map, which returns weights over
 causes and never a name, scores semantic recovery $0$ by construction. Faithfulness and
-semantic recovery are thus orthogonal axes, the one measuring whether the method names the
-right cause and the other whether it names any meaning. The keystone experiment of
+semantic recovery are two independent axes. Faithfulness asks whether the method names the
+right cause. Semantic recovery asks whether it names any meaning. The keystone experiment of
 \Sectionname\ref{sec:results_compare} reports both for the naive and sampler-on conditions on the
 position regime.
 
@@ -174,17 +174,17 @@ correlation and flag, rather than hide, the points at which they disagree.
 
 \subsection{Tiered ground truth and how we obtain it}\label{sec:tiers}
 
-The ground truth comes in three tiers, and the tiering is not bookkeeping; it carries the
-central argument of the paper. Tier~1 (T1) is the exact causal map of Eq.~\eqref{eq:doy},
+The ground truth comes in three tiers. The tiers are not just bookkeeping; they support the
+paper's central argument. Tier~1 (T1) is the exact causal map of Eq.~\eqref{eq:doy},
 derived internally from the substrate and available for all 64 games. Tier~2 (T2) is the
 hardware roles and the read/write data-flow graph, also exact and internal across all 64
-games. T1 and T2 are everything the machine \emph{is} and need no external label.
+games. T1 and T2 describe what the machine does internally, and need no external label.
 
-Tier~3 (T3) is different in kind, and that difference is the point. It attaches a
-game-concept name to a cell or feature, ``the ball's $x$ position'' or ``the score,'' names
-not computable from the substrate alone, because they are facts about what the program
-\emph{means}, not what it \emph{does}. We import T3 from two public sources and make it
-causal. AtariARI provides labels for 22 games, read from commented
+Tier~3 (T3) is different in kind. This difference matters for our argument. It attaches a
+game-concept name to a cell or feature, ``the ball's $x$ position'' or ``the score.'' These
+names cannot be computed from the substrate alone. They are facts about what the program
+\emph{means}, which is separate from what it \emph{computes}. We import T3 from two public
+sources and make it causal. AtariARI provides labels for 22 games, read from commented
 disassemblies, with raw RAM coordinates not aligned to the rendered
 position~\cite{anand2019unsupervised}; OCAtari covers more than 40 games and, in its RAM
 mode, applies the render-time offsets that fix that misalignment~\cite{delfosse2023ocatari}.
@@ -197,17 +197,17 @@ each carrying both sources, all in the Paper-1 bit-exact roster. Together they s
 paddle-and-ball, shooter-with-shields, resource-meter, multi-agent-pursuit, and discrete-grid
 logic. The remaining games form a breadth set scored on T1 and T2 only.
 
-We are deliberate about what this buys us. All T3 labels are external and only verified,
-never discovered from scratch, so a method that matches a supplied concept has aligned to a
+We are careful about what this gives us. All T3 labels are external and only verified,
+never discovered from scratch. So a method that matches a supplied concept has aligned to a
 given meaning, not recovered it. This is exactly why a probe can show that information is
-\emph{present} without showing it is \emph{used}~\cite{hewitt2019designing}, and why our
-intervention test, which asks whether the byte \emph{causes} the named object to move, is
-strictly stronger than decoding it. Recovering the program's documentation and design from
-the bare machine is a separate problem, the subject of the companion paper.
+\emph{present} without showing it is \emph{used}~\cite{hewitt2019designing}. Our intervention
+test asks whether the byte \emph{causes} the named object to move, so it is strictly stronger
+than decoding it. Recovering the program's documentation and design from the bare machine is a
+separate problem, the subject of the companion paper.
 
 \subsection{The F\,$\wedge$\,S\,$\wedge$\,M correctness triad}\label{sec:triad}
 
-A faithful attribution is not yet an understanding, and to make that a measurement we need an
+A faithful attribution is not yet an understanding. To measure understanding, we need an
 operational criterion. We adopt one in the spirit of Marr's levels of
 analysis~\cite{marr1982vision} and of Jonas and Kording's warning that finding structure is
 not the same as explaining it~\cite{jonas2017could}: each axis is first a continuous score in
@@ -232,17 +232,17 @@ Faithfulness asks whether the claimed causes are the \emph{true} causes, scored 
 intervention oracle of Eq.~\eqref{eq:doy}. The per-record metric depends on the explanation's
 output type, so $\mathrm{F}_{\mathrm{score}}$ is a single number assembled from three
 type-matched primitives. The committed score is the bare effect-agreement primitive, not a
-rescaled one: for a real-valued attribution map we report the Pearson (or Spearman, for ranked
+rescaled one. For a real-valued attribution map we report the Pearson (or Spearman, for ranked
 outputs) correlation $\rho(\hat{E},\{\Delta y(u)\})$ between the attribution and the true causal
-effects, scored \emph{raw}, so that a method whose attribution carries no causal signal lands at
-$\rho=0$ rather than at the $0.5$ of an affine $\tfrac{1}{2}(1+\rho)$ remap. This is what makes
-the position regime informative: under Prop.~\ref{prop:zero} the naive gradient is identically
-zero there, its correlation with the oracle is $0$, and the reported faithfulness is therefore
+effects, scored \emph{raw}. A method whose attribution carries no causal signal therefore lands
+at $\rho=0$, not at the $0.5$ of an affine $\tfrac{1}{2}(1+\rho)$ remap. This is what makes
+the position regime informative. Under Prop.~\ref{prop:zero} the naive gradient is identically
+zero there, and its correlation with the oracle is $0$. The reported faithfulness is therefore
 $0.00$ and not a $0.5$ floor. The two committed estimators differ only in how the raw
 correlation is summarized across the six core games. Phase~B reports the raw correlation
 directly (e.g.\ occlusion at $\rho=0.482$), so a negative correlation is recorded as a negative
-number; Phase~A's single-unit and tuning analyses, where per-game correlations can be negative,
-report the per-game correlation clipped at $0$ and then averaged across games (e.g.\ the tuning
+number. In Phase~A's single-unit and tuning analyses the per-game correlations can be negative,
+so we clip each per-game correlation at $0$ and then average across games (e.g.\ the tuning
 analysis A3, lowest in Phase~A at $0.116$, the clip-at-zero mean of six per-game correlations
 that include negatives). For the same attribution map we also report, as quality measures,
 deletion/insertion area-under-curve and precision at $k$ against the true causal top-$k$,
@@ -270,9 +270,9 @@ held-out interventions whose predicted $y'$ matches the true $y'$ within a fixed
 output-type tolerance (exact for discrete indices and events, a small $\varepsilon$ band for
 continuous scores), so $\mathrm{S}_{\mathrm{score}}\in[0,1]$ and a value near zero means the
 explanation predicts no better than the unperturbed output. We deliberately do not define it
-through interchange interventions or scrubbing, which are themselves
-mechanistic-interpretability methods under test in Phase~C, since that would make the
-criterion circular; only Phase~B and Phase~C report $\mathrm{S}$, and its bootstrap intervals
+through interchange interventions or scrubbing. Those are themselves
+mechanistic-interpretability methods under test in Phase~C, so using them would make the
+criterion circular. Only Phase~B and Phase~C report $\mathrm{S}$, and its bootstrap intervals
 follow \Sectionname\ref{sec:scoring}.
 
 Minimality asks whether the explanation is parsimonious and lives at the algorithmic level of
@@ -283,9 +283,9 @@ program variables whose intervention reproduces $y$, to the size $|U_{\hat{E}}|$
 set the explanation actually names. An explanation that names exactly the minimal set scores
 $1$; one that records the whole machine state pays for every spurious cell. The target level
 is the algorithmic unit, the register, RAM cell, opcode, module, or program variable, not the
-pixel. This is why whole-state recording, which names all $128$ RAM cells where the true cause
-set averages a handful, scores $\mathrm{M}_{\mathrm{score}}=0.07$ across the six core games:
-its faithfulness is perfect because it withholds nothing, but it is maximally non-minimal.
+pixel. Whole-state recording names all $128$ RAM cells, where the true cause set averages a
+handful. It therefore scores $\mathrm{M}_{\mathrm{score}}=0.07$ across the six core games. Its
+faithfulness is perfect because it withholds nothing, but it is maximally non-minimal.
 
 Two reporting axes carry the headline comparison, faithfulness against the ground truth and a
 plausibility proxy. The plausibility proxy is a documented, tradition-level value, not a
@@ -295,16 +295,16 @@ explanations are taken to be, before any faithfulness score on our machine is co
 proxy cannot be tuned to the result. The per-tradition assignment, its rubric, and its
 sources are tabulated in the Supplement (Sec.~\ref{supp:plausibility}). There a sensitivity
 analysis perturbs the proxy under additive, rank-preserving, rank-jittering, and
-leave-one-tradition-out schemes and finds the faithfulness-versus-proxy rank correlation
+leave-one-tradition-out schemes. It finds the faithfulness-versus-proxy rank correlation
 stays negative throughout (from $-0.79$ to $-0.40$), so the headline contrast survives every
-alternative proxy assignment we tried. Its job is to expose the danger zone of explanations with high
-plausibility but low faithfulness, convincing yet wrong. Separating F, which the wiring
-satisfies, from S and M, which the \emph{computation} must satisfy, is what lets us name,
-later, the residual that faithfulness alone leaves behind.
+alternative proxy assignment we tried. The proxy lets us find explanations with high
+plausibility but low faithfulness: explanations that convince but are wrong. F is satisfied by
+the wiring; S and M must be satisfied by the \emph{computation}. Separating them lets us
+measure, later, what faithfulness alone leaves out.
 
 \subsection{Methods under test, games, and aggregation}\label{sec:scoring}
 
-We turn three traditions onto the machine and score each by the triad of
+We apply three traditions to the machine and score each by the triad of
 Eq.~\eqref{eq:triad}. The neuroscience battery (Phase~A) runs connectomics and data-flow
 recovery, single-unit lesions, tuning curves, pairwise and global correlation structure,
 pooled-activity spectra, Granger causality, dimensionality reduction, and whole-state
@@ -334,7 +334,7 @@ There, causal and intervention methods average a faithfulness of $0.41$ against 
 gradient and correlational methods, a gap of $0.34$. The per-method extreme places an
 exact causal method, activation patching, at faithfulness $1.000$ and the field's default
 saliency at $0.000$ on all six games, the popular method nonetheless carrying the higher
-plausibility proxy ($0.9$ versus $0.5$). Against these numbers the semantic gap is measured.
+plausibility proxy ($0.9$ versus $0.5$). We measure the semantic gap relative to these numbers.
 
 % =====================================================================
 % BIBTEX-NEEDED: full entries for the keys cited above that are NOT yet
