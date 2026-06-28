@@ -192,26 +192,29 @@ best of our knowledge, the first…"* only where true. End the body on a vision 
 with calibrated optimism, never on a metric. Keep the non-specialist able to follow the
 motivation and the consequence even if they skip the proofs.
 
-## 6b. Stakes and vividness (this paper earns it)
+## 6b. Clarity first — precision over vividness (corrected 2026-06-24)
 
-This paper identifies and *quantifies* an important problem, the way Jonas and Kording asked
-whether a neuroscientist could understand a microprocessor. Write so the reader feels that
-weight — this is not a dry methods report. But the vividness must come from the **problem and
-the numbers, not from ornament**: no hype, no marketing adjectives (§3 still holds).
+An earlier version of this section asked for "vividness" and a recurring throughline. **That was
+wrong and is overridden.** It produced literary ornament, aphoristic refrains, and long sentences
+that a careful reader — especially a non-native English speaker — cannot parse. A whole-paper audit
+found 227 such defects. The paper's job is to be **understood exactly, on first read, by a
+non-native speaker.** Importance is carried by the result and the numbers stated plainly — never by
+phrasing.
 
-- **Open on the stakes.** State the real, slightly provocative problem plainly and early: the
-  field trusts explanations it cannot check, because real models offer no ground truth; we
-  built the one complex system where the explanation *can* be checked, and the verdict is
-  sharp. A flat declarative sentence carrying a big idea is more striking than any flourish.
-- **Carry one throughline** the reader remembers — *the wiring, not the meaning* — and let it
-  recur naturally at the section level, never as a slogan repeated verbatim.
-- **Let the result be the drama.** The strongest sentences are the plainest: a faithful causal
-  method scores 1.0 where the field's default scores 0.0, on a machine whose answer is known
-  exactly. Anchor every vivid claim to an exact number; concrete imagery (an "empty saliency
-  map," a "wiring diagram that is not an account of the computation") over abstraction.
-- **One or two grounded rhetorical reaches** are allowed in the introduction and discussion —
-  as Maier does (*"may be key to gaining a better understanding of deep networks"*) — each
-  tied to evidence and kept calibrated. Energy, not exaggeration.
+- **One idea per sentence; keep sentences short.** Aim ≤ ~25 words; split any sentence over ~35
+  words. Long, multi-clause, em-dash-chained sentences are the main defect — several past ones
+  inverted their own meaning.
+- **No aphoristic refrains, no antithesis as a slogan.** Do NOT repeat "the wiring, not the meaning"
+  or any "the X, not the Y" cadence. State the point once, plainly: *a faithful method recovers the
+  causal structure but not the meaning of the variables.*
+- **No fraction/halving rhetoric** ("the smaller half of understanding", "the easier half"); no
+  journey metaphors ("way-station / destination"); no figurative "buys / lands / carries"; no
+  dramatic openers. They say nothing precise.
+- **Let the result speak, plainly.** "A causal method scores 1.0 where standard saliency scores 0.0,
+  on a machine whose answer is known exactly." That is enough — add no flourish.
+- **Write so it could be translated literally.** If a competent non-native reader would stumble, or
+  the sentence would not survive literal translation, rewrite it. Prefer common words over rare
+  ones; avoid idiom and inverted word order. When in doubt, choose the plainer sentence.
 
 ---
 
@@ -227,6 +230,9 @@ the numbers, not from ornament**: no hype, no marketing adjectives (§3 still ho
       lead sentences and do logical work.
 - [ ] No "Moreover/Furthermore/Notably" pile-ups; no "It is worth noting"; no triadic
       First/Second/Third scaffolding; em-dashes rare; no bulleted prose where prose belongs.
+- [ ] **Clarity (§6b):** sentences ≤ ~25 words (none over ~35), one idea each; no aphoristic
+      refrains ("the X, not the Y"), no halving/journey metaphors, no figurative "buys/lands";
+      a non-native reader can parse every sentence on first read.
 - [ ] Every equation glossed before and after with an "i.e."-style plain reading and mapped
       back to meaning; no symbols read aloud; theorems named in plain English.
 - [ ] Numbers sparse and inline as figures-of-merit; detail deferred to supplementary;
