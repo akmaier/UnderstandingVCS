@@ -12,9 +12,9 @@ against itself, because the true wiring is unknown. The VCS removes that limitat
 data-flow is the program's data-flow, known exactly from the disassembly. Every
 intermediate value is a RAM cell or a register we can read, clamp, and re-run bit-exactly.
 We therefore run ten mechanistic-interpretability methods on a circuit whose answer we
-already know. We score each against the same §\ref{sec:results-a}~oracle: the exact
+already know. We score each against the same \Sectionname\ref{sec:results-a}~oracle: the exact
 intervention table, the true read/write graph, and the F\,$\wedge$\,S\,$\wedge$\,M triad of
-§\ref{sec:methods}. This calibrates the
+\Sectionname\ref{sec:methods}. This calibrates the
 toolkit against a \emph{known} circuit inside a real, hand-authored artifact rather than a
 synthetic or compiled one. Figure~\ref{fig:fig4}b places the Phase-C methods on the shared
 faithfulness axis. The result splits cleanly. The causal methods are exact, but their
@@ -86,7 +86,7 @@ and re-running the real ROM gives causal faithfulness F$=0.041$, with S$=-0.336$
 remove the matched feature, the computation it is supposed to name does not change. Across
 the six
 games the SAE's mean leaderboard faithfulness is $0.19$ against a method-tradition
-plausibility proxy of $0.75$, squarely in the §\ref{sec:methods} danger zone. The
+plausibility proxy of $0.75$, squarely in the \Sectionname\ref{sec:methods} danger zone. The
 NMF/PCA dictionary contrast repeats the pattern at lower resolution (matched-component
 fractions up to $0.75$ beside near-zero causal use). This separation is the reverse of the
 first. The circuit was causal but behaviourally incomplete; the feature is perfectly
@@ -130,7 +130,7 @@ $0.04$, both with confidence intervals crossing zero). The separations above sur
 caveat because each is a within-method contradiction on a single game, not a cross-family
 mean. On a machine that gives faithfulness for free, faithfulness is necessary for
 understanding but not sufficient. The residual is the semantic gap: the wiring is recovered,
-but the meaning is not. §\ref{sec:results_compare} places this gap on the shared axes, and
+but the meaning is not. \Sectionname\ref{sec:results_compare} places this gap on the shared axes, and
 the Discussion treats it as the field's open problem.
 
 % =====================================================================

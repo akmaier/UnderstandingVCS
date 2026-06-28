@@ -13,7 +13,7 @@ directed influence. Jonas and Kording~\cite{jonas2017could} applied these method
 microprocessor running classic games. They found that it produces rich, publishable
 structure while missing how the chip computes. Their study reported what the analyses found,
 but not how much each analysis deviated from the true mechanism. We supply that number
-(Sec.~\ref{sec:results-a}).
+(\Sectionname\ref{sec:results-a}).
 
 The attribution tradition asks, for a single decision, which inputs mattered. Gradient and
 saliency maps~\cite{simonyan2014deep,sundararajan2017axiomatic,smilkov2017smoothgrad,springenberg2015striving},
@@ -25,7 +25,7 @@ attends~\cite{greydanus2018visualizing,such2019atarizoo}. Yet a counterfactual a
 same maps found them exploratory, not explanatory~\cite{atrey2020exploratory}: the
 highlighted regions need not be the causes. On a learned policy the true cause is unknown,
 so this doubt can only be argued. We resolve it on a system where the true cause is
-computable (Sec.~\ref{sec:results-b}).
+computable (\Sectionname\ref{sec:results-b}).
 
 Mechanistic interpretability, the youngest tradition, aims past attribution at the circuit,
 the subgraph that implements a behaviour. Path patching, causal mediation, and scrubbing
@@ -35,13 +35,13 @@ alignment search and interchange interventions test whether a hypothesised varia
 causally realised~\cite{geiger2021causal,geiger2023finding}; sparse dictionaries and probes
 read features off the
 state~\cite{cunningham2023sparse,alain2017understanding,hewitt2019designing,belrose2023eliciting,nanda2023attribution}.
-On a real artifact these prove the most faithful (Sec.~\ref{sec:results-c}). Yet the same
+On a real artifact these prove the most faithful (\Sectionname\ref{sec:results-c}). Yet the same
 oracle shows that a recovered circuit is a correct data-flow graph. It does not give the
 function the circuit computes. The sparse-dictionary branch is itself under scrutiny.
 SAEBench~\cite{saebench2025} reports that gains on the proxy metrics used to tune sparse
 autoencoders do not reliably translate into practical interpretability. We probe the same concern from a different side, asking on a known
 system whether a recovered feature is causally used rather than only decodable
-(Sec.~\ref{sec:results-c}).
+(\Sectionname\ref{sec:results-c}).
 
 The agreed criterion across these traditions is faithfulness: claimed causes should be the
 true causes. Jacovi and Goldberg~\cite{jacovi2020towards} make it precise, yet its
@@ -52,8 +52,9 @@ checks are only negative. With no reference map, they cannot certify that a meth
 correct. So the field optimises a proxy it cannot directly score. Our oracle supplies that
 map and converts faithfulness into a measured quantity: on the discrete sprite-position
 regime
-\texttt{activation\_patching} reaches faithfulness $1.000$ while the popular
-\texttt{vanilla\_saliency} collapses to $0.000$ on all six core
+activation patching~\cite{vig2020investigating,meng2022locating} reaches faithfulness
+$1.000$ while the popular vanilla saliency~\cite{simonyan2014deep} collapses to $0.000$ on
+all six core
 games~\cite{faithfuldemoP2}, and the leaderboard plots all $31$ methods against the same
 ground truth (Fig.~\ref{fig:faithfulness})~\cite{leaderboardP2}.
 

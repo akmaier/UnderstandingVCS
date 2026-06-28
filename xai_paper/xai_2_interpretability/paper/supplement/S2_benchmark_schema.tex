@@ -14,7 +14,7 @@ report the F, S, and M axes defined in \Sectionname3.4. We do not re-derive thos
 \caption{\textbf{Leaderboard row schema.} The columns of one row in
 \texttt{compare/out/leaderboard.json} (\texttt{rows[\,]}) and its uncertainty companion
 \texttt{leaderboard\_ci.csv}. The metric column names the per-method scoring function from
-Sec.~\ref{supp:protocols}; F, S, and M are the triad axes of \Sectionname3.4. Aggregation is a mean
+\Sectionname\ref{supp:protocols}; F, S, and M are the triad axes of \Sectionname3.4. Aggregation is a mean
 over $n_{\text{games}}$, with bootstrap confidence intervals over games (and, where present,
 over records).}
 \label{supp:tab:schema}
@@ -35,7 +35,7 @@ Column & Meaning \\
 \texttt{triad\_S} / \texttt{triad\_M} & sufficiency / minimality axes (\Sectionname3.4), where applicable \\
 \jkey{plausibility_proxy} & documented method-tradition proxy, $[0,1]$ --- not a human-subjects measurement \\
 \jkey{is_positive_control} & 1 for the oracle row, 0 otherwise \\
-\jkey{metric_names} & the per-method scoring function (Sec.~\ref{supp:protocols}) \\
+\jkey{metric_names} & the per-method scoring function (\Sectionname\ref{supp:protocols}) \\
 \texttt{commits} & the commit(s) at which the per-game records were produced \\
 \bottomrule
 \end{tabular}

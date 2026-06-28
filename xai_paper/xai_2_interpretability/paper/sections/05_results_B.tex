@@ -19,7 +19,7 @@ The main result is a split between two output types, not a ranking of methods. A
 content output is the value of a register, a colour, or a graphics bit. It is a
 differentiable function of the state, so its gradient flows. A position output is where
 a sprite is drawn, set by strobe timing on a discrete index. It has provably zero naive
-gradient (Paper~1, and Sec.~\ref{sec:methods}). Hence the whole gradient family hits this
+gradient (Paper~1, and \Sectionname\ref{sec:methods}). Hence the whole gradient family hits this
 limit, and it splits the leaderboard into two clear groups.
 
 \begin{figure}[t]
@@ -32,8 +32,8 @@ Phase-B half (a) splits each method's faithfulness by output regime: on a
 \emph{position}/index output the entire gradient family \emph{collapses to $0.00$}.
 The intervention methods still work, because each probe is a real re-run of the
 bit-exact program. Note that the popular gradient methods, which fail on position,
-have the higher plausibility proxy, the danger zone of Sec.~\ref{sec:results_compare}
-in numbers. The Phase-C half (b) is discussed in Sec.~\ref{sec:results-c}. The figure
+have the higher plausibility proxy, the danger zone of \Sectionname\ref{sec:results_compare}
+in numbers. The Phase-C half (b) is discussed in \Sectionname\ref{sec:results-c}. The figure
 shows the 22 Phase-B and Phase-C method rows, a subset of the 30 methods plus the
 oracle positive control ($31$ rows) of the full leaderboard. Uncertainty bands are
 $95\%$ bootstrap CIs: per method in Phase~C, and at the family level for the Phase-B
@@ -59,7 +59,7 @@ The gradient family fails on the position output. Its attribution goes to zero. 
 gradient is identically zero on every game, so saliency, Grad$\times$Input,
 SmoothGrad, guided backprop, and Integrated Gradients all collapse to a faithfulness
 of $0.0$ in the position regime --- the ``Fail / zero on index outputs'' prediction
-of Sec.~\ref{sec:methods}, now a measured number. Averaged over all output regimes
+of \Sectionname\ref{sec:methods}, now a measured number. Averaged over all output regimes
 the cross-phase gradient family scores only $0.294$ faithfulness against the oracle
 (Fig.~\ref{fig:fig4}; Phase-B gradient methods alone $0.298$); on the position regime
 alone, $0.068$. Returning an empty map
@@ -133,7 +133,7 @@ methods rank high on plausibility but low on faithfulness. The clearest pair mak
 concrete. On the position regime the causal method activation patching (Phase~C) reaches
 faithfulness $1.000$, the oracle ceiling, on all six games, while vanilla saliency, a
 widely used baseline, collapses to $0.000$ on all six. This is a per-method gap of
-$1.000$, bit-exact on every game. Yet, on the plausibility proxy of Sec.~\ref{sec:methods}
+$1.000$, bit-exact on every game. Yet, on the plausibility proxy of \Sectionname\ref{sec:methods}
 the popular method has the higher score ($0.9$ versus $0.5$): the empty map has a higher
 plausibility score than the exactly correct one. Low faithfulness with high plausibility
 is the danger zone. On the VCS we can measure it directly, not just warn about it.
@@ -141,10 +141,10 @@ is the danger zone. On the VCS we can measure it directly, not just warn about i
 We claim only that these maps are faithful, nothing more. A correct occlusion map names
 the true causal bytes. It does not tell us what those bytes mean, that a cell is the
 ball's $x$ or that a routine is the bounce. Object-level semantics enter only through
-the external T3 labels (AtariARI, OCAtari; Sec.~\ref{sec:methods}), and even there we
+the external T3 labels (AtariARI, OCAtari; \Sectionname\ref{sec:methods}), and even there we
 verify a supplied label by intervention rather than discover it. Whether a faithful
 attribution amounts to understanding the computation we take up in
-Sec.~\ref{sec:results_compare}. Here we have established only that faithfulness is
+\Sectionname\ref{sec:results_compare}. Here we have established only that faithfulness is
 achievable, and that the most popular methods do not achieve it.
 
 \begin{table}[t]
@@ -154,7 +154,7 @@ achievable, and that the most popular methods do not achieve it.
 column). \emph{Faith} is the all-regime faithfulness against ground truth and
 \emph{Faith (pos)} the position/index regime alone, where the naive gradient is
 provably zero; \emph{Plaus} is the documented method-tradition plausibility
-\emph{proxy} (Sec.~\ref{sec:methods}), \emph{not} a human measurement.
+\emph{proxy} (\Sectionname\ref{sec:methods}), \emph{not} a human measurement.
 \emph{Note that} the entire gradient family scores $0.000$ on position while the
 intervention family does not, and that the popular gradient methods carry the
 \emph{higher} plausibility tag --- the danger zone, measured. The two family-mean rows
