@@ -43,7 +43,7 @@ it is automatic. That is the easy half of the problem, and it is genuinely solve
 The causal account weakens the moment a method trades exact re-runs for an approximation or
 a search. Attribution patching, the gradient-linear surrogate for activation patching,
 correlates with the exact patch at only $0.50$ and matches it inside the linear regime in
-just $0.19$ of cases; yet its recovered edges stay precise (edge precision $0.95$, recall
+just $0.19$ of cases. Yet its recovered edges stay precise (edge precision $0.95$, recall
 $0.70$) because the linearisation errs in magnitude, not in sign of presence. Path patching,
 run in the IOI style as a single directed do-operation, recovers the directed edge set of
 the true routine at mean $F1=0.46$: on Q*bert it matches the empty direct circuit perfectly
@@ -53,8 +53,8 @@ signal. ACDC, discovering the circuit automatically by resample-ablation edge pr
 threshold sweep, reaches mean $F1=0.45$ (ROC-AUC $0.70$). A positive control re-runs the
 identical edge-restricted procedure under the exhaustive do-set and scores $F1=1.0$ on every
 game, so the deficit is a real measurement of single-shot recovery, not a broken scorer.
-These are the methods the field reaches for when the exact intervention is too expensive,
-and on a machine where it is cheap they leave structure on the table: precise about what
+These are the methods the field reaches for when the exact intervention is too expensive.
+On a machine where it is cheap they leave structure on the table: precise about what
 they find, silent about transitively re-derived dependencies, a recall ceiling rather than a
 precision failure. The gap to the positive control is the quantified cost of approximation
 against a circuit that is known.
@@ -92,7 +92,7 @@ Liang's selectivity), probes decode game-concept cells well above chance (mean p
 $0.89$, mean selectivity $0.16$), confirming that the information is present in the state.
 Yet presence is not use. Cross-referenced against the exact intervention oracle, the oracle
 flags $25$ concept cells across the core games that the program never causally uses within the
-window; of those, $6$ are also decodable above chance, so a probe would have nominated them as
+window. Of those, $6$ are also decodable above chance, so a probe would have nominated them as
 encoded concepts. Breakout's score cell~84 sits in the larger set: it is present in the state
 and linearly associated with the displayed score, yet provably inert under intervention within
 the window.
@@ -117,8 +117,8 @@ preference, and they appear exactly where the field's success metrics report vic
 graph-correct yet behaviour-incomplete (ACDC on Breakout F$=1.0$/M$=1.0$, S$=0.44$), named yet
 causally inert (SAE on Pong matched $1.0$, F$=0.041$), present yet unused (cell~84). The
 faithfulness advantage that the causal core holds over the gradient methods is itself
-regime-dependent, and we state that plainly: the gap is robust only on the position-output
-regime ($0.34$, 95\% CI $[0.02,0.50]$, excluding zero), and it collapses when the output is
+regime-dependent, and we state that plainly. The gap is robust only on the position-output
+regime ($0.34$, 95\% CI $[0.02,0.50]$, excluding zero). It collapses when the output is
 content rather than position or when the oracle-equivalent controls are excluded ($0.12$ and
 $0.04$, both with confidence intervals crossing zero). The separations above survive that
 caveat because each is a within-method contradiction on a single game, not a cross-family

@@ -26,7 +26,7 @@ We have now run three traditions on one machine, and the result that organizes t
 section is not the ranking among them but the boundary they all share: every method,
 faithful or not, returns the system's causal wiring and not its meaning. Faithfulness
 asks whether an explanation names the true causes, and on the VCS we answer it
-exactly --- the intervention oracle of \Sectionname\ref{sec:oracle} re-runs the
+exactly. The intervention oracle of \Sectionname\ref{sec:oracle} re-runs the
 bit-exact program for every candidate cause and returns the ground truth no real
 network affords. That exact answer lets us do two things in sequence. First we place
 all of Phases~A--C on the shared faithfulness-versus-plausibility plane and read off
@@ -46,9 +46,9 @@ defined formally in \Sectionname\ref{sec:triad}; here we only read its scores.
 The leaderboard separates cleanly along the axis that matters, and we read it as an
 exploratory cross-tradition ranking rather than a single commensurable score: the
 traditions measure different objects, and we report the ranking together with its
-robustness. Aggregating the 257 committed per-game records into the canonical 30
+robustness. We aggregate the 257 committed per-game records into the canonical 30
 interpretability methods plus the intervention oracle as a positive control, 31 rows
-in all~\cite{leaderboardP2} (Fig.~\ref{fig:faithfulness}), the causal and
+in all~\cite{leaderboardP2} (Fig.~\ref{fig:faithfulness}). The causal and
 intervention methods average a faithfulness of $0.681$ against the oracle, while the
 gradient and correlational methods average $0.294$, a gap of $0.387$ across all
 output regimes. On the \emph{position} regime, the discrete sprite-position outputs
@@ -60,7 +60,7 @@ scrubbing, interchange interventions, and the logit lens sit at the oracle ceili
 $1.0$; the single-unit lesion follows at $0.99$; the gradient family and the
 classical correlational analyses, the tuning curves, Granger causality, and
 spike-word correlations, fall toward the floor. The starkest pair is bit-exact on
-every game: on the position regime activation patching reaches faithfulness $1.000$,
+every game. On the position regime activation patching reaches faithfulness $1.000$,
 the oracle ceiling, on all six core games, while vanilla saliency, a widely used
 attribution baseline, collapses to $0.000$ on all six, a per-method gap of
 $1.000$~\cite{faithfuldemoP2}. Hence, on a system where the answer is known exactly,
@@ -74,7 +74,7 @@ $95\%$ bootstrap interval excludes zero in each case ($[0.32,0.45]$). Yet two
 qualifications belong in the same breath. When the oracle-equivalent intervention
 methods are removed, leaving only coarser approximations, the gap shrinks to $0.123$
 and its interval includes zero, so the leaderboard's headline contrast is carried in
-part by methods that approach the oracle operation itself. And the gap is
+part by methods that approach the oracle operation itself. The gap is also
 regime-specific: on content outputs, where the naive gradient is valid, it falls to
 $0.045$ with an interval spanning zero, while on the position regime it holds at
 $0.344$ with an interval that excludes it. The conclusion that survives every
@@ -126,13 +126,13 @@ danger zone is a measurement, not a worry.
 A reader could grant the danger zone and still escape its lesson by blaming the
 gradient. The saliency methods score zero on the position regime because the hard
 forward map reads a sprite's position through an integer index, so the gradient is
-zero almost everywhere (\Sectionname\ref{sec:results-b}, Prop.~\ref{prop:zero}); on
+zero almost everywhere (\Sectionname\ref{sec:results-b}, Prop.~\ref{prop:zero}). On
 this reading the danger zone is a technical artifact, repairable by a smoother
 forward pass, and once repaired the gradient methods would become faithful and the
 worry would dissolve. The differentiable port lets us run exactly that repair and
 test the claim. We turn its bilinear sampler on, replacing the integer index read by
 a triangular-kernel occupancy whose sprite column is a continuous function of the
-position byte, which restores a non-zero gradient through the position computation
+position byte. This restores a non-zero gradient through the position computation
 without altering the forward output. The same surrogate that recovers the joystick
 gradient in \Sectionname\ref{sec:results-b} now flows through the position read.
 
@@ -146,12 +146,12 @@ report it as it is: integrated gradients with a zeros baseline still vanishes on
 Pong, the static-sprite games offer no position to restore, and on Space Invaders the
 restored gradient lands on a non-active cell, so it does not move. Where a sprite's
 position is genuinely tracked, however, the formerly empty saliency map becomes a
-faithful one, and the faithfulness escape is closed: the danger-zone methods are no
+faithful one, and the faithfulness escape is closed. The danger-zone methods are no
 longer unfaithful by construction.
 
 It buys no understanding. The restored gradient on Pong concentrates entirely on the
 single RAM byte that holds the paddle's position, \texttt{ram[54]}, which the oracle
-independently confirms is a true cause; the method now finds the right cause and
+independently confirms is a true cause. The method now finds the right cause and
 attributes nothing to the wrong ones. Yet its semantic-recovery score is $0$, exactly
 as it was when the map was empty and exactly as it is for every other method in the
 study (same committed record). A faithful attribution to \texttt{ram[54]} names a byte
@@ -208,7 +208,7 @@ perfectly parsimonious, $F = 1.0$ and $M = 1.0$~\cite{leaderboardP2}. Yet the
 discovered circuit alone, with its non-circuit parents scrubbed, reproduces the clean
 candidate-cell readouts only $44\%$ of the time, $S = 0.44$. A correct graph of which
 cells feed which is not the function those cells compute. The faithful side shows the
-same: activation patching~\cite{vig2020investigating} recovers the exact per-site
+same. Activation patching~\cite{vig2020investigating} recovers the exact per-site
 causal-effect table on every one of the six games~\cite{leaderboardP2}, and a table of
 effects, however exact, is not the bounce algorithm that produced them. No tuning
 budget is left to spend here, because the effect table is \emph{already} exact, so the
@@ -228,7 +228,7 @@ the dictionary is named yet wrong; the gap runs the other way on the same axis, 
 story of methods scoring too low cannot produce. Recent SAE evaluations report the same
 proxy-versus-use gap on neural language models~\cite{saebench2025}; the oracle here
 turns that observation into an exact causal-use test on a known system. We guard
-against reading semantic success into an aligned variable: the interchange-intervention
+against reading semantic success into an aligned variable. The interchange-intervention
 alignment (DAS)~\cite{geiger2023finding} reports an aligned-variable accuracy of $1.0$,
 but that $1.0$ is true \emph{by construction}, verifying a \emph{supplied} variable
 rather than discovering one. A method that confirms a given concept is not a method that
@@ -261,7 +261,7 @@ enough yet'' account cannot generate. We restate the honesty contract here, wher
 temptation to overread is greatest. We have \emph{not} recovered the program's meaning,
 algorithm, variables, or design from scratch. Every semantic label we used is external,
 imported from AtariARI~\cite{anand2019unsupervised} and
-OCAtari~\cite{delfosse2023ocatari}: the substrate only \emph{causally verifies} a
+OCAtari~\cite{delfosse2023ocatari}. The substrate only \emph{causally verifies} a
 supplied label, it does not \emph{discover} the concept, and the provenance record marks
 each label as imported rather than recovered. Hence, the faithful methods recover the
 wiring; the meaning is a separate object, and the distance to it is what we have
@@ -274,7 +274,7 @@ score~\cite{leaderboardP2} aggregates over the per-method records, which for the
 gives faithfulness $0.195$ with a $95\%$ bootstrap-over-games interval of $[0.00,0.31]$
 that brackets it; the figures plot this value. The per-game Pong record used in the
 named-not-causal separation above is a different, finer object, $F = 0.041$ on that one
-game, and we keep the two distinct: the $0.195$ is the leaderboard aggregate, the
+game. We keep the two distinct: the $0.195$ is the leaderboard aggregate, the
 $0.041$ is the single-game illustration. Throughout the paper, the leaderboard and its
 figures use the per-method aggregation as canonical, so text, table, and figure agree.
 

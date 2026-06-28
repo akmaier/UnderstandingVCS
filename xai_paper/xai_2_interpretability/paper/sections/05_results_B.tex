@@ -67,7 +67,7 @@ for half a game's outputs is not a partial success but a structural blind spot, 
 where the discrete game logic lives.
 
 Two finer results sharpen the warning. The baseline choice, the perennial worry about
-Integrated Gradients, is a magnitude effect here, not a faithfulness one: the
+Integrated Gradients, is a magnitude effect here, not a faithfulness one. The
 $(x-x_0)$ factor moves $\max|\mathrm{IG}|$, yet the ranking and the oracle correlation
 hold, because the constant one-hot Jacobian keeps the mass on the same byte; only the
 degenerate baseline equal to the content byte breaks it.
@@ -85,13 +85,13 @@ change, lowest on Seaquest), and the content-path saliency map stays byte-identi
 (cosine $\approx 1.0$ on all six games). The Jacobian $\partial y/\partial u = e_{\mathrm{idx}}$ is a
 constant one-hot, independent of what the program computes, so the map points at the
 read index no matter which program produced the output, i.e.\ a saliency that is
-provably model-invariant. A faithful explanation must change when the model changes;
-this one cannot, whereas the intervention oracle distinguishes the two programs at
+provably model-invariant. A faithful explanation must change when the model changes,
+and this one cannot. The intervention oracle, by contrast, distinguishes the two programs at
 once. The map lands on the right cause yet stays blind to the model that produced it.
 
 Replace the gradient with an actual intervention and the position blind spot
 disappears. Occlusion~\cite{zeiler2014visualizing} sets a candidate cause and re-runs
-the bit-exact program, the coarse twin of the oracle; on the Pong position output,
+the bit-exact program, the coarse twin of the oracle. On the Pong position output,
 where every gradient method scores $0.0$, it recovers the true causal bytes at
 correlation $0.837$, its all-regime faithfulness of $0.482$ the highest in Phase~B. The black-box perturb-and-re-run methods follow the same logic and result:
 RISE~\cite{petsiuk2018rise} ($0.375$), LIME~\cite{ribeiro2016why} ($0.382$), and
@@ -111,7 +111,7 @@ the data manifold by construction and both work on position outputs (position-re
 faithfulness $0.202$ and $0.139$, all-regime $0.346$ and $0.350$). As such, the
 cross-phase intervention family averages $0.681$ faithfulness [95\% CI $0.59$--$0.78$,
 $n=11$] against the oracle, more than double the cross-phase gradient family's $0.294$
-[$0.20$--$0.38$, $n=14$] (Fig.~\ref{fig:fig4}); restricted to the three Phase-B
+[$0.20$--$0.38$, $n=14$] (Fig.~\ref{fig:fig4}). Restricted to the three Phase-B
 intervention methods alone the mean is $0.393$ against the Phase-B gradient family's
 $0.298$. A perturbation is faithful exactly when it is a valid intervention.
 
@@ -120,7 +120,7 @@ the VCS to attach to. Grad-CAM and Grad-CAM++~\cite{selvaraju2017gradcam,%
 chattopadhyay2018gradcampp} need a final convolutional layer to weight; attention
 rollout~\cite{abnar2020quantifying} needs attention matrices;
 VIPER~\cite{bastani2018verifiable} needs a learned policy to distil. The VCS is a
-6502 CPU with a TIA and a RIOT executing a fixed ROM, so across all six games the
+6502 CPU with a TIA and a RIOT executing a fixed ROM. Across all six games the
 count of each required substrate is exactly zero, against $\geq 16$ genuine candidate
 causes per game for the applicable methods. We record this as a measured finding,
 $\mathtt{applies = false}$, not a poor score: the absence is structural and the same
@@ -129,7 +129,7 @@ be the content-path gradient renamed. That a slice of the field's headline metho
 silent on a real, deployed artifact is itself part of the audit.
 
 Across the twelve methods the leaderboard separates along the axis that matters and
-crosses the axis the field actually optimizes. The starkest pair makes it concrete: on
+crosses the axis the field actually optimizes. The starkest pair makes it concrete. On
 the position regime the causal method activation patching (Phase~C) reaches
 faithfulness $1.000$, the oracle ceiling, on all six games, while vanilla saliency, a
 widely used baseline, collapses to $0.000$ on all six, a per-method gap of $1.000$,

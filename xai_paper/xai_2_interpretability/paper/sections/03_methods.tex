@@ -51,7 +51,7 @@ an exact forward map,
 \end{equation}
 that is, the output $y$ at step $t$, a pixel, a score, or a game event, is a deterministic
 function of the cartridge bytes, the inputs up to $t$, and the initial state $s_0$, and
-re-running reproduces $y$ to the bit. The second is exact interventions: we set any cause
+re-running reproduces $y$ to the bit. The second is exact interventions. We set any cause
 $u$, a ROM byte, a RAM cell, a CPU/TIA/RIOT register, an opcode, or a joystick input, to any
 value and re-run Eq.~\eqref{eq:vcs} deterministically, realizing the causal operator
 $\mathrm{do}(u)$ on a real machine rather than an assumed world model. The third is full
@@ -101,7 +101,7 @@ because the kind bounds what a score means. Occlusion and clamping are surgical 
 \emph{off-manifold}: they can set a byte to a value the running program would never write.
 Replacement from a donor trajectory is \emph{on-manifold}: the substituted value is one the
 machine actually produced elsewhere. Resampling draws the cause from its own marginal over the
-trajectory, and counterfactual edits are valid under the emulator by construction, since any
+trajectory. Counterfactual edits are valid under the emulator by construction, since any
 byte assignment yields a well-defined deterministic re-run. Off-manifold interventions are
 acceptable for oracle scoring precisely because the oracle measures a \emph{causal} effect, not
 a likelihood: the question is what the output would be if $u$ were $v'$, and the bit-exact
@@ -148,21 +148,21 @@ it inherit that failure, while surrogate and bilinear-sampler gradients are exce
 We push the faithfulness audit to its strongest form by removing the one escape the position
 regime leaves open. The naive zero of Prop.~\ref{prop:zero} could be read as a fixable
 artifact, so we fix it: we turn the Paper-1 bilinear sampler on. The sampler interpolates the
-index boundary of Prop.~\ref{prop:zero} in the spatial-transformer manner, which makes the
+index boundary of Prop.~\ref{prop:zero} in the spatial-transformer manner. This makes the
 discrete position output a continuous function of the position RAM byte rather than a step,
 so the gradient methods receive a non-zero surrogate position gradient where the hard map gave
 them nothing~\cite{jaderberg2015spatial}. We score both conditions, the naive forward and the
-sampler-on forward, against the same intervention oracle of Eq.~\eqref{eq:doy}: for each
+sampler-on forward, against the same intervention oracle of Eq.~\eqref{eq:doy}. For each
 candidate cause the per-cause attribution is correlated, by the raw Pearson $\rho$ of
 \Sectionname\ref{sec:triad}, against the oracle's true $|\Delta\,\text{position-pixel}|$, so the
 two conditions differ only in the surrogate the method is handed and not in how it is judged.
 Alongside faithfulness we record a second, deliberately stricter measure. The
 \emph{semantic recovery} of a method asks whether the method emits a Tier-3 game-concept name
 on its own, the word ``ball'' or ``missile'' attached to the byte it points at, rather than a
-cause that an external label later christens; an attribution map, which returns weights over
+cause that an external label later christens. An attribution map, which returns weights over
 causes and never a name, scores semantic recovery $0$ by construction. Faithfulness and
 semantic recovery are thus orthogonal axes, the one measuring whether the method names the
-right cause and the other whether it names any meaning, and the keystone experiment of
+right cause and the other whether it names any meaning. The keystone experiment of
 \Sectionname\ref{sec:results_compare} reports both for the naive and sampler-on conditions on the
 position regime.
 
@@ -189,11 +189,11 @@ disassemblies, with raw RAM coordinates not aligned to the rendered
 position~\cite{anand2019unsupervised}; OCAtari covers more than 40 games and, in its RAM
 mode, applies the render-time offsets that fix that misalignment~\cite{delfosse2023ocatari}.
 We import both as candidates and verify each causally by setting the byte, re-rendering, and
-confirming on the bit-exact framebuffer that the named object moves to the predicted place,
-which upgrades a correlational label to a verified-causal one and auto-corrects the offsets;
+confirming on the bit-exact framebuffer that the named object moves to the predicted place.
+This upgrades a correlational label to a verified-causal one and auto-corrects the offsets;
 further labels we discover by RAM-to-framebuffer correlation and intervention. The headline
 core set is six games, Pong, Breakout, Space Invaders, Seaquest, Ms.\ Pac-Man, and Q*bert,
-each carrying both sources, all in the Paper-1 bit-exact roster, together spanning
+each carrying both sources, all in the Paper-1 bit-exact roster. Together they span
 paddle-and-ball, shooter-with-shields, resource-meter, multi-agent-pursuit, and discrete-grid
 logic. The remaining games form a breadth set scored on T1 and T2 only.
 
@@ -249,7 +249,7 @@ deletion/insertion area-under-curve and precision at $k$ against the true causal
 $\mathrm{P@}k=|\,\mathrm{top}_k(\hat{E})\cap\mathrm{top}_k(\{\Delta y(u)\})\,|/k$. For a
 graph-valued explanation (Phase~A connectomics, Phase~C circuit discovery) we use the edge
 $F_1$ against the true data-flow graph, the harmonic mean of precision and recall over recovered
-edges, and for Phase~C patching and mediation the causal-effect-agreement correlation against
+edges. For Phase~C patching and mediation we use the causal-effect-agreement correlation against
 the true $\{\Delta y(u)\}$. The final $\mathrm{F}_{\mathrm{score}}$ is the per-record primary
 metric averaged first within a game over its output records, then with equal weight across the
 six core games, so no game-rich method dominates; confidence intervals are 95\% bootstrap over
@@ -292,8 +292,8 @@ plausibility proxy. The plausibility proxy is a documented, tradition-level valu
 human-subjects measurement, and we report it as such. It is assigned per method tradition, not
 per method instance, from the published evidence on how convincing each tradition's
 explanations are taken to be, before any faithfulness score on our machine is computed, so the
-proxy cannot be tuned to the result; the per-tradition assignment, its rubric, and its
-sources are tabulated in the Supplement (Sec.~\ref{supp:plausibility}), where a sensitivity
+proxy cannot be tuned to the result. The per-tradition assignment, its rubric, and its
+sources are tabulated in the Supplement (Sec.~\ref{supp:plausibility}). There a sensitivity
 analysis perturbs the proxy under additive, rank-preserving, rank-jittering, and
 leave-one-tradition-out schemes and finds the faithfulness-versus-proxy rank correlation
 stays negative throughout (from $-0.79$ to $-0.40$), so the headline contrast survives every
@@ -331,7 +331,7 @@ per method on the shared faithfulness-versus-plausibility axes of the Results le
 The headline contrast is the position regime, where the naive gradient is zero under the hard
 forward map by Prop.~\ref{prop:zero}.
 There, causal and intervention methods average a faithfulness of $0.41$ against $0.07$ for
-gradient and correlational methods, a gap of $0.34$, while the per-method extreme places an
+gradient and correlational methods, a gap of $0.34$. The per-method extreme places an
 exact causal method, activation patching, at faithfulness $1.000$ and the field's default
 saliency at $0.000$ on all six games, the popular method nonetheless carrying the higher
 plausibility proxy ($0.9$ versus $0.5$). Against these numbers the semantic gap is measured.

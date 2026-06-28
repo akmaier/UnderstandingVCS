@@ -42,9 +42,9 @@ space\_invaders & bit-exact & 30/60 fr & T1,T2,T3 & 30 + oracle & per-game \\
 
 Whether a method applies at all depends on what the method needs from its target, and the
 applicability matrix records that for every method family. The Phase~A neuroscience analyses
-read the raw machine state and need neither a learned policy nor gradients; the Phase~B
+read the raw machine state and need neither a learned policy nor gradients. The Phase~B
 attribution methods split into gradient members, which need a differentiable forward pass,
-and intervention members, which need only the ability to set state; the Phase~C mechanistic
+and intervention members, which need only the ability to set state. The Phase~C mechanistic
 methods need access to internal activations and, for the causal members, the ability to
 intervene. Table~\ref{supp:tab:applic} records, per family, whether the method operates on
 the raw VCS, whether it requires a learned policy, gradients, internal layers or attention,

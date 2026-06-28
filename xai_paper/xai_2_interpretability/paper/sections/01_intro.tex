@@ -19,7 +19,7 @@ Similar short comings were also identified in the field of neuroscience. Jonas a
 microprocessor whose every transistor is known~\cite{jonas2017could}. Lesions, tuning
 curves, and connectomics produced rich structure, and none of it recovered how the chip
 computes. Without ground truth a method that finds structure cannot be told apart from
-one that finds the \emph{right} structure, and the same blind spot recurs across
+one that finds the \emph{right} structure. The same blind spot recurs across
 explainable AI, where attribution maps are validated against each other or against human
 intuition rather than against the system's mechanism~\cite{atrey2020exploratory}.
 Faithfulness has stood in for understanding without anyone being able to test the proxy.
@@ -29,8 +29,8 @@ Maier et al. recently built the missing reference, a bit-exact, differentiable p
 the byte and pixel~\cite{maier2025vcs,xitari}. The VCS is software with a known
 specification, so the true cause of any output is computable by exact intervention. This
 \emph{intervention oracle} (cf. \Sectionname\ref{sec:oracle}) returns, for any candidate cause of any
-output, the true causal effect, measured rather than estimated, over the platform
-Fig.~\ref{fig:platform} lays out. On this machine an interpretability claim can be
+output, the true causal effect, measured rather than estimated. It operates over the
+platform Fig.~\ref{fig:platform} lays out. On this machine an interpretability claim can be
 scored right or wrong.
 
 Across the neuroscience, attribution,
@@ -44,7 +44,7 @@ is provably zero because position is set by strobe timing, not by a value it can
 through. In that position regime activation patching reaches faithfulness $1.000$ while
 vanilla saliency collapses to $0.000$ on all six core games. The saliency method
 nonetheless carries the higher plausibility ($0.9$ versus $0.5$), looking most convincing
-where it is least correct, the region Fig.~\ref{fig:faithfulness} marks as conviction
+where it is least correct. This is the region Fig.~\ref{fig:faithfulness} marks as conviction
 without correctness. This is the result the field would predict, and we read it as a
 way-station, not the headline.
 
@@ -56,7 +56,7 @@ it, and the gradient methods become faithful too. On the games with a moving tra
 sprite their faithfulness rises off the provable zero: vanilla saliency, grad$\times$input,
 smoothgrad, and expected gradients reach $0.791$ on Pong, and the same family reaches
 $0.529$ on Q*bert (committed record \texttt{sampler\_faithfulness.csv},
-Fig.~\ref{fig:sampler}). The rise is honest rather than universal; integrated gradients
+Fig.~\ref{fig:sampler}). The rise is honest rather than universal. Integrated gradients
 with a zeros baseline still vanishes on Pong, a static-sprite game offers no position to
 restore, and where the tracked cell is not the active one nothing moves. Yet on every game
 where the gradient becomes faithful the semantic recovery stays exactly $0$, the same $0$
@@ -68,7 +68,7 @@ Securing faithfulness, then, is not the smaller half of the problem but the wron
 Faithfulness is necessary for understanding but radically insufficient, and making it
 universal does not close the gap, because the gap is not a faithfulness deficit. With the
 same oracle we ask not only \emph{which} methods are faithful but \emph{what} a faithful
-method delivers, and the answer is always the same kind of object: a true causal-effect
+method delivers. The answer is always the same kind of object: a true causal-effect
 map or data-flow graph, never the variable's meaning and never the routine's algorithm. No
 method on this fully observable, fully differentiable machine names ``missile,''
 ``collision,'' or ``game restart''; every method returns the same ``wiggle $X$ and $Y$
@@ -92,11 +92,11 @@ made universal.
 The reference for meaning, then, lies outside the mechanism. Every semantic label in the
 study entered from outside the system: it was imported from external annotation
 sets~\cite{anand2019unsupervised,delfosse2023ocatari} and only \emph{causally verified} on
-our substrate, never \emph{discovered} by a method under test, so an alignment method that
-reports perfect accuracy is right by construction, checking a variable we supplied. Probing
+our substrate, never \emph{discovered} by a method under test. An alignment method that
+reports perfect accuracy is therefore right by construction, checking a variable we supplied. Probing
 shows that information is present, not that it is used~\cite{hewitt2019designing}; our
 oracle is the strictly stronger test. What fixes the meaning is the system's
-\emph{behavior}, and for software that behavior is set down in its documentation and data,
+\emph{behavior}. For software that behavior is set down in its documentation and data,
 the manuals, the specification, the design, which IEEE~610.12 makes part of the definition
 of software itself~\cite{ieee610}. The wiring is in the mechanism for any faithful method to
 recover; the meaning is not, and no method we tested supplied it.
