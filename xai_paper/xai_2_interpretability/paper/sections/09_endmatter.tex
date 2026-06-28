@@ -23,33 +23,33 @@
 \backmatter
 
 \bmhead{Data availability}
-The interpretability scores reported here are derived from the committed analysis
-records under \texttt{tools/xai\_study/} (the per-method, per-game §R records and the
-aggregated cross-tradition leaderboard~\cite{leaderboardP2,faithfuldemoP2}); every
-quantitative claim in the Article reads from one of these committed artifacts, and no
+The interpretability scores reported here come from the committed analysis
+records under \texttt{tools/xai\_study/}. These records hold the per-method, per-game §R
+results and the aggregated cross-tradition leaderboard~\cite{leaderboardP2,faithfuldemoP2}.
+Every quantitative claim in the Article reads from one of these committed artifacts. No
 number is re-run or estimated. The game cartridges used as the subject are
-third-party Atari~2600 ROMs that we do \emph{not} redistribute. Following the
-practice of the underlying emulator port~\cite{maier2025vcs}, we acquire them through
-the \texttt{AutoROM} retrieval procedure and report a SHA-256 hash table for each ROM
-in the Supplementary Information, so that the exact binaries can be reproduced and
-verified independently. The recorded state trajectories used to
+third-party Atari~2600 ROMs that we do \emph{not} redistribute. We follow the
+practice of the underlying emulator port~\cite{maier2025vcs}. We acquire the ROMs through
+the \texttt{AutoROM} retrieval procedure and report a SHA-256 hash for each ROM
+in the Supplementary Information. This lets others reproduce and verify the exact binaries
+independently. The recorded state trajectories used to
 train the sparse autoencoders and to run the patching and probing experiments are
 regenerated deterministically from those ROMs and the published action streams.
 
 \bmhead{Code availability}
-The interpretability benchmark introduced here---the scoring suite, the
+The interpretability benchmark introduced here is available for review at
+\url{https://github.com/akmaier/UnderstandingVCS}. It comprises the scoring suite, the
 F\,$\wedge$\,S\,$\wedge$\,M triad metrics, the intervention oracle, and the per-phase
-method implementations (\texttt{tools/xai\_study/})---is available for review at
-\url{https://github.com/akmaier/UnderstandingVCS}, together with the reproducibility
-appendix that maps every reported number to its committed record and run command. A
-versioned snapshot will be archived on Zenodo with a minted DOI, and an optional Code
-Ocean capsule reproduces the leaderboard and the figures from the committed result
-records alone. The differentiable, bit-exact emulator that the benchmark rests on, in
-its two interchangeable realizations (\texttt{jutari}, Julia; \texttt{jaxtari},
-JAX/Python), is already public. It is described in the companion port
-paper~\cite{maier2025vcs} (arXiv:2606.22447) and its source is openly available at the
+method implementations (\texttt{tools/xai\_study/}). The repository also holds the
+reproducibility appendix that maps every reported number to its committed record and run
+command. A versioned snapshot will be archived on Zenodo with a minted DOI. An optional
+Code Ocean capsule reproduces the leaderboard and the figures from the committed result
+records alone. The benchmark rests on a differentiable, bit-exact emulator. It has two
+interchangeable versions (\texttt{jutari} in Julia, \texttt{jaxtari} in JAX/Python), and
+both are already public. The emulator is described in the companion port
+paper~\cite{maier2025vcs} (arXiv:2606.22447), and its source is openly available at the
 same repository. The companion paper supplies the bit-exactness validation and the
-gradient caveat that the present work imports; what is new here is the interpretability
+gradient caveat that the present work imports. What is new here is the interpretability
 benchmark, the oracle scoring, and the semantic-gap diagnosis. We release the code
 under a permissive open-source licence so that a third party can score a new method
 against the same ground-truth oracle.
@@ -70,9 +70,9 @@ The authors declare no competing interests.
 This study uses no human-subjects data; the plausibility axis is a documented
 plausibility proxy by method tradition rather than a measurement, and we report it as
 such. The subject is a fully deterministic, hand-coded program with no learned policy, so no
-agent is trained. Interpretability methods are dual-use, in that a tool that audits a
-system can also be used to probe it; our contribution is a calibration that makes
-explanation claims more, not less, trustworthy, and we release it openly to that end.
+agent is trained. Interpretability methods are dual-use: a tool that audits a
+system can also be used to probe it. Our contribution is a calibration that makes
+explanation claims more trustworthy, and we release it openly to that end.
 The game cartridges are not redistributed.
 
 \bmhead{Acknowledgements}
