@@ -1,10 +1,10 @@
 \section{Plausibility-proxy rubric and its sensitivity}\label{supp:plausibility}
 
 The plausibility axis of the leaderboard is a documented, tradition-level proxy, not a
-human-subjects measurement. This section records how each value was assigned and shows
+human-subjects measurement, and this section records how each value was assigned and shows
 that the headline contrast does not depend on the particular numbers chosen. The Methods
-(\Sectionname3.4) name two reporting axes. One is faithfulness against the intervention oracle of \Sectionname3.2,
-which is measured on the machine. The other is a plausibility proxy, which stands in for how
+(\Sectionname3.4) name two reporting axes: faithfulness against the intervention oracle of \Sectionname3.2,
+which is measured on the machine, and a plausibility proxy, which stands in for how
 convincing a tradition's explanations are usually taken to be. We assign the proxy once per
 method tradition, before any faithfulness score on our machine is computed, so it cannot be
 tuned to the result. Its only job is to expose the danger zone of explanations that look
@@ -14,10 +14,10 @@ sourced rather than precise.
 The rubric assigns one proxy per tradition on a fixed five-step scale, scoring two
 documented properties of each tradition's typical output and taking their average. The first
 property is whether the explanation produces a dense, picture-like artifact that a reader
-sees as an account of the computation. Heatmaps and saliency-style maps over the input
-are read as convincing by construction. This is the perceptual-immediacy axis. The second is
+sees as an account of the computation, since heatmaps and saliency-style maps over the input
+are read as convincing by construction; this is the perceptual-immediacy axis. The second is
 whether the field has historically treated the tradition's output as a self-evident
-explanation rather than a hypothesis to be tested. This is the adoption-as-explanation axis.
+explanation rather than a hypothesis to be tested, which is the adoption-as-explanation axis.
 A tradition that scores high on both, such as gradient saliency, receives a high proxy; a
 tradition whose output is an austere intervention table or a circuit edge list, which is
 rarely mistaken for a finished story, receives a low one. The scale is deliberately blunt,
@@ -64,16 +64,16 @@ oracle (control)& $1.00$ & The \Sectionname3.2 ground truth by construction; pos
 \end{tabular}
 \end{table}
 
-The contrast the paper draws is between this proxy and measured faithfulness. On the
+The contrast the paper draws is between this proxy and measured faithfulness, and on the
 committed records the two move in opposite directions. Across the thirty methods under test
 the Spearman rank correlation between faithfulness and the proxy is $-0.64$, a strong
-negative association. The traditions the field finds most convincing are, on this machine,
+negative association: the traditions the field finds most convincing are, on this machine,
 among the least faithful. Fourteen methods fall in the danger zone, defined here as a proxy
-of at least $0.70$ together with a faithfulness below $0.40$. These include the entire
+of at least $0.70$ together with a faithfulness below $0.40$, and they include the entire
 gradient battery, the correlational neuroscience methods, linear probing, and the sparse
-autoencoder. The per-method extreme makes the point sharply. Vanilla saliency carries the
-highest proxy, $0.9$, yet scores faithfulness $0.0$ on the position regime. Activation
-patching carries a lower proxy, $0.5$, and scores $1.0$. The less faithful method is the more
+autoencoder. The per-method extreme makes the point sharply: vanilla saliency carries the
+highest proxy, $0.9$, yet scores faithfulness $0.0$ on the position regime, while activation
+patching carries a lower proxy, $0.5$, and scores $1.0$; the less faithful method is the more
 plausible one. These figures are produced by
 \texttt{tools/xai\_study/compare/plausibility\_sensitivity.py} from the leaderboard and
 recorded in \texttt{compare/out/plausibility\_sensitivity.csv}.
@@ -87,11 +87,10 @@ by row. The second compresses every proxy toward the common mean by a fraction $
 which preserves the rank order of traditions. The third uses the same index-keyed offsets at
 $\sigma\in\{0.1,0.2\}$, large enough to swap neighbouring traditions' ranks. The fourth drops
 one whole tradition at a time and recomputes on the remainder. Across all fourteen
-perturbations the rank correlation between faithfulness and proxy stays
-negative, ranging from $-0.79$ to $-0.40$ and never approaching zero.
-The danger zone stays populated, between six and fifteen methods.
-The per-method anchor sign holds in every scheme in which both anchor methods are present:
-the more plausible saliency remains the less faithful. The
+perturbations the rank correlation between faithfulness and proxy stays negative, ranging
+from $-0.79$ to $-0.40$ and never approaching zero; the danger zone stays populated, between
+six and fifteen methods; and the per-method anchor sign holds in every scheme in which both
+anchor methods are present, the more plausible saliency remaining the less faithful. The
 worst case is the leave-the-gradient-tradition-out run, which removes the most plausible and
 least faithful block at once and still leaves six danger-zone methods and a rank correlation
 of $-0.79$. Table~\ref{supp:tab:plaussens} reports the full sweep. The headline contrast,

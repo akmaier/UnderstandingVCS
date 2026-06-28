@@ -15,14 +15,12 @@ setups live in the Supplementary Information; Fig.~\ref{fig:platform} sketches t
   \includegraphics[width=\linewidth]{fig1_platform_oracle.pdf}
   \caption{\textbf{The measurement platform and its ground-truth oracle.} A
   differentiable, bit-exact port of the Atari VCS (left), realized as
-  \texttt{jutari} (Julia) $\cdot$ \texttt{jaxtari} (JAX), realizes the three execution modes
-  --- HARD, SOFT-STE, and SOFT --- that give four capabilities no neural network grants for
-  free: exact forward, exact interventions $\mathrm{do}(u)$, full state
+  \texttt{jutari} (Julia) $\cdot$ \texttt{jaxtari} (JAX), gives four capabilities no neural
+  network grants for free: exact forward, exact interventions $\mathrm{do}(u)$, full state
   observability, and content-path gradients. On it we build the oracle (centre): the primary
   intervention oracle of \Sectionname\ref{sec:oracle} (\Sectionname3.2), $\mathrm{do}(u{:=}v')\!\to\!\Delta y(u)$
-  by bit-exact re-run, with three companion gradient constructions --- SOFT-STE content-path,
-  SOFT fully relaxed, and bilinear sampler --- available depending on the execution mode. Any
-  explanation $\hat{E}$ is scored by the correctness triad (right),
+  by bit-exact re-run, with a content-path gradient $\partial y/\partial u$ as a companion on
+  the content path only. Any explanation $\hat{E}$ is scored by the correctness triad (right),
   $\text{right}=\mathrm{F}\wedge\mathrm{S}\wedge\mathrm{M}$, and reported on two axes,
   faithfulness against the oracle versus a plausibility proxy. Faithfulness aggregates
   correlation, sign and magnitude agreement, deletion/insertion area-under-curve, and
@@ -38,33 +36,12 @@ setups live in the Supplementary Information; Fig.~\ref{fig:platform} sketches t
 \subsection{The differentiable, bit-exact VCS substrate}\label{sec:substrate}
 
 The subject of this study is the Atari Video Computer System (VCS) itself, not a learned
-agent. It is a complex real artifact never designed to be interpretable, yet whose every causal
+agent: a complex real artifact never designed to be interpretable, yet whose every causal
 dependency we can read off exactly. Paper~1 built it, a bit-exact, differentiable port of the
 1977 VCS validated bit-for-bit against the \texttt{xitari} C++ reference on all 64 games of
 the Paper-1 roster, in random-access memory and rendered screen, within the validated
-conformance window~\cite{maier2025vcs,xitari}. Paper~1 is a technical companion that supplies
-the mathematical proofs and experimental validation of the constructions we use here; no other
-reference system like it exists anywhere, and no prior study has had the opportunity to
-examine interpretability methods against this level of ground truth. We use the port in two
-interchangeable, mutually cross-checked realizations, \texttt{jutari} (Julia) and
-\texttt{jaxtari} (JAX/Python).
-
-Paper~1 provides three execution modes. The \textbf{hard} mode is the bit-exact integer
-machine, identical to the \texttt{xitari} C++ reference at every RAM byte and every screen
-pixel. The \textbf{SOFT-STE} (straight-through estimator) mode keeps the forward pass
-bit-identical to the hard mode at any finite temperature while routing a surrogate gradient
-along the content path during the backward pass, a formulation whose forward equivalence
-Paper~1 proves theoretically and validates experimentally across all 64 games. The
-\textbf{soft} (fully relaxed) mode relaxes every discrete decision --- opcode dispatch via
-a temperature-parameterised softmax, conditional branches via a sigmoid with steepness
-$\alpha$, memory reads via a distance-weighted soft read --- into a fully differentiable
-form. Paper~1 proves that the soft forward pass reproduces the hard machine bit-for-bit in
-the limit $T \to 0^+$, $\alpha \to \infty$, and provides the temperature-limit error bound
-$\|\Phi_{\mathrm{H}} - \Phi_{\mathrm{S}}\| \le (K-1)e^{-\Delta_{\min}/T} +
-e^{-\alpha m_{\min}} + \rho e^{-1/T}$. At practical settings ($T \lesssim 0.14$, $\alpha
-\gtrsim 6$), the soft mode remains forward-exact within machine precision for the validated
-frame window; beyond those settings the forward pass diverges and the gradient quality
-degrades.
+conformance window~\cite{maier2025vcs,xitari}. We use it in two interchangeable, mutually
+cross-checked realizations, \texttt{jutari} (Julia) and \texttt{jaxtari} (JAX/Python).
 
 The substrate grants four capabilities that no neural network offers for free. The first is
 an exact forward map,
@@ -74,16 +51,15 @@ an exact forward map,
 \end{equation}
 that is, the output $y$ at step $t$, a pixel, a score, or a game event, is a deterministic
 function of the cartridge bytes, the inputs up to $t$, and the initial state $s_0$, and
-re-running reproduces $y$ to the bit. The second is exact interventions. We set any cause
+re-running reproduces $y$ to the bit. The second is exact interventions: we set any cause
 $u$, a ROM byte, a RAM cell, a CPU/TIA/RIOT register, an opcode, or a joystick input, to any
-value and re-run Eq.~\eqref{eq:vcs} deterministically. This realizes the causal operator
+value and re-run Eq.~\eqref{eq:vcs} deterministically, realizing the causal operator
 $\mathrm{do}(u)$ on a real machine rather than an assumed world model. The third is full
 state observability, every bit of RAM and every register recorded along the trajectory, so
-the ``activations'' we interpret are the program's own variables. The fourth is a gradient
-$\partial y / \partial u$ that exists in all three modes. In SOFT-STE mode the gradient
-routes through the content path via the straight-through estimator, while in soft mode the
-gradient flows through every discrete decision, including the index boundary, at a cost of
-numerical precision controlled by $T$ and $\alpha$. The inputs we
+the ``activations'' we interpret are the program's own variables. The fourth is a
+content-path gradient $\partial y / \partial u$ through a straight-through estimator (STE)
+formulation whose forward pass is bit-exact to the hard machine at any finite
+temperature~\cite{bengio2013estimating,jang2017gumbel}, batched on the GPU. The inputs we
 drive, the state we read and clamp, and the outputs we explain are the three faces a neural
 interpretability study works with, so one substrate carries all three batteries.
 
@@ -112,8 +88,8 @@ The output $y$ comes in five regimes that fix what a method must predict and whe
 gradient is even meaningful. A \emph{content} output is a register, color, or graphics-bit
 value that flows smoothly into the pixel, where the naive gradient is valid. A
 \emph{position/index} output is a sprite, missile, or ball coordinate set by strobe timing,
-where the naive gradient vanishes by Prop.~\ref{prop:zero} and only the relaxed soft
-gradient, the bilinear-sampler surrogate, or the intervention oracle applies. An \emph{event} output is a discrete state
+where the naive gradient vanishes by Prop.~\ref{prop:zero} and only the bilinear-sampler
+surrogate or the intervention oracle applies. An \emph{event} output is a discrete state
 change, a collision latch or a life lost, also gradient-zero. A \emph{score} output is the
 game's running counter, valid for the gradient only where it varies continuously. A
 \emph{pixel} output is the rendered framebuffer value, content-valid where it tracks a smooth
@@ -128,27 +104,22 @@ machine actually produced elsewhere. Resampling draws the cause from its own mar
 trajectory, and counterfactual edits are valid under the emulator by construction, since any
 byte assignment yields a well-defined deterministic re-run. Off-manifold interventions are
 acceptable for oracle scoring precisely because the oracle measures a \emph{causal} effect, not
-a likelihood. The question is what the output would be if $u$ were $v'$. The bit-exact
+a likelihood: the question is what the output would be if $u$ were $v'$, and the bit-exact
 machine answers it exactly for any $v'$, on- or off-manifold. Where a method's own claim is
 about typical behavior rather than causal dependence we fall back to the on-manifold donor and
 resampling variants and flag the choice in the Supplement.
 
-The gradient $\partial y / \partial u$ through the differentiable substrate is a companion
-construction. Its behaviour depends on the execution mode. In \textbf{SOFT-STE} mode, the
-straight-through gradient routes to the content path only: register, colour, and graphics-bit
-values that flow smoothly into the pixel agree with the intervention oracle, but a discrete
-index --- a sprite's screen position set by the timing of a strobe write --- has a naive
-gradient that vanishes under the hard forward map. In \textbf{soft} mode, the relaxation of
-every discrete decision allows the gradient to flow through the index boundary as well, at a
-cost controlled by the temperature $T$ and branch steepness $\alpha$. At the recommended
-operating point ($T \approx 0.14$, $\alpha \gtrsim 6$), the soft gradient provides a
-non-zero signal on position outputs while the forward pass remains bit-exact. As $T$ grows
-or $\alpha$ shrinks, the forward pass diverges and the gradient becomes a looser surrogate.
-We make the hard-map limit precise.
+The content-path gradient $\partial y / \partial u$, read through the differentiable
+substrate, is its companion construction. It is fast and dense, and it agrees with the
+intervention oracle on the content path, the register, color, and graphics-bit values that
+flow smoothly into the pixel. Yet, a single decisive caveat carries through the whole study.
+The straight-through gradient routes to the content path only, so a discrete index, a
+sprite's screen position the VCS sets by the timing of a strobe write, has a naive gradient
+that vanishes under the hard forward map. We make this precise.
 
 \begin{proposition}[Zero naive gradient for discrete-index outputs]\label{prop:zero}
 Let an output $y$ depend on a cause $u$ only through a discrete index
-$n(u)=\lfloor g(u)\rfloor\in\mathbb{Z}$, the integer count of colour clocks between a strobe
+$n(u)=\lfloor g(u)\rfloor\in\mathbb{Z}$, the integer count of color clocks between a strobe
 write and the position-counter reset that the VCS uses to place a sprite, missile, or ball,
 with $g$ continuous, piecewise linear, and non-constant (strictly monotone on each linear
 piece). Under the hard (bit-exact) forward map the rendered output is $y=h(n(u))$ for a fixed
@@ -157,31 +128,28 @@ $\partial y/\partial u=0$ at every such point, and $y$ is discontinuous on the s
 $\{u:g(u)\in\mathbb{Z}\}$, which is measure zero precisely because $g$ is strictly monotone on
 each piece, and there the gradient is undefined. Hence the naive gradient is zero wherever the
 derivative exists: an infinitesimal change in $u$ cannot move the sprite by a fractional
-pixel. Any method that reduces to this naive gradient inherits the failure on position, index,
-and event outputs.
+pixel. Any method that
+reduces to this naive gradient inherits the failure on position, index, and event outputs.
 \end{proposition}
 
 The proposition states only the hard-map limit; it does not say that no useful gradient
-exists. Paper~1~\cite{maier2025vcs} provides three constructions that escape it, each
-corresponding to an execution mode. The \textbf{SOFT-STE} mode, through the straight-through
-estimator, keeps the forward pass bit-exact at any finite temperature while routing a
-non-zero gradient along the content path~\cite{bengio2013estimating,jang2017gumbel}; on
-position outputs this gradient remains content-only and therefore zero. The \textbf{soft}
-mode relaxes the discrete index boundary via a temperature-parameterised softmax, allowing
-the gradient to flow through the index itself; the bilinear sampler is a special case of
-this relaxation for spatial coordinates~\cite{jaderberg2015spatial}. The \textbf{bilinear
-sampler} interpolates the index boundary to recover a usable position gradient without
-relaxing the full machine~\cite{jaderberg2015spatial}. Paper~1 constructs and validates all
-three, and proves the forward equivalence and temperature-limit bounds we assume.
+exists. Two surrogate constructions of Paper~1~\cite{maier2025vcs} are explicit exceptions and
+are \emph{not} covered by it: the straight-through estimator, whose forward pass stays
+bit-exact to the hard machine at any finite temperature while routing a non-zero
+gradient along the content path~\cite{bengio2013estimating,jang2017gumbel}, and the bilinear
+sampler that interpolates the index boundary to recover a usable position
+gradient~\cite{jaderberg2015spatial}. The companion paper constructs both and validates the
+bit-exactness this proposition assumes; we import that construction and prove the vanishing
+inline so the present paper stands alone. We therefore replace any blanket ``gradients are
+provably zero'' with the scoped claim of Prop.~\ref{prop:zero}: the \emph{naive} gradient for
+discrete position/index outputs is zero under the hard forward map, and methods that reduce to
+it inherit that failure, while surrogate and bilinear-sampler gradients are exceptions.
 
-Hence we have three companion gradient constructions, not one. The intervention oracle of
-Eq.~\eqref{eq:doy} remains the primary ground truth across all modes. The SOFT-STE gradient
-agrees with it on the content path but vanishes on position outputs; the soft gradient can
-cover position outputs at the cost of temperature-dependent precision; and the bilinear
-sampler provides a position gradient without relaxing the full machine. We score every
-gradient-based method under all applicable modes and report the results separately. Where
-the modes agree we report the common value; where they disagree the divergence itself is
-informative about the method's reliance on gradient quality.
+Hence, for content outputs the gradient is a legitimate companion oracle, while for position,
+index, and event outputs the intervention oracle of Eq.~\eqref{eq:doy} is the sole ground
+truth and every gradient-based method is scored as a method under test. This position regime
+is where the sharpest separations in our results appear. Where the two overlap we report their
+correlation and flag, rather than hide, the points at which they disagree.
 
 \subsection{Tiered ground truth and how we obtain it}\label{sec:tiers}
 
@@ -273,17 +241,17 @@ circuit discovery. The leaderboard score is therefore a single scalar per method
 multi-metric in origin, and the per-method choice is recorded in the Supplement.
 
 Sufficiency asks whether the explanation could regenerate the behavior under interventions it
-has not seen. We treat $\mathrm{S}_{\mathrm{score}}$ as a held-out predictive estimator.
-$\hat{E}$ is fit (or its causal sites read off) on a calibration set of interventions. It is
-then asked to predict the true output $y'$ under a disjoint test set of held-out $\mathrm{do}(u)$
+has not seen. We treat $\mathrm{S}_{\mathrm{score}}$ as a held-out predictive estimator:
+$\hat{E}$ is fit (or its causal sites read off) on a calibration set of interventions and then
+asked to predict the true output $y'$ under a disjoint test set of held-out $\mathrm{do}(u)$
 edits, with the prediction compared to the bit-exact re-run. The score is the fraction of
 held-out interventions whose predicted $y'$ matches the true $y'$ within a fixed
-output-type tolerance. The match is exact for discrete indices and events, and within a small
-$\varepsilon$ band for continuous scores. Hence $\mathrm{S}_{\mathrm{score}}\in[0,1]$; a value
-near zero means the explanation predicts no better than the unperturbed output. We deliberately
-do not define it through interchange interventions or scrubbing. Those are themselves
-mechanistic-interpretability methods under test in Phase~C, and using them would make the
-criterion circular. Only Phase~B and Phase~C report $\mathrm{S}$. Its bootstrap intervals
+output-type tolerance (exact for discrete indices and events, a small $\varepsilon$ band for
+continuous scores), so $\mathrm{S}_{\mathrm{score}}\in[0,1]$ and a value near zero means the
+explanation predicts no better than the unperturbed output. We deliberately do not define it
+through interchange interventions or scrubbing, which are themselves
+mechanistic-interpretability methods under test in Phase~C, since that would make the
+criterion circular; only Phase~B and Phase~C report $\mathrm{S}$, and its bootstrap intervals
 follow \Sectionname\ref{sec:scoring}.
 
 Minimality asks whether the explanation is parsimonious and lives at the algorithmic level of
@@ -335,19 +303,17 @@ lens~\cite{vig2020investigating,meng2022locating,geiger2021causal,geiger2023find
 
 All faithfulness scoring runs on the six core games of Section~\ref{sec:tiers}, where the
 oracle's re-runs are exact. Cell- and pixel-level scores, correlation, deletion and insertion
-area-under-curve, and precision at $k$, are taken against T1 and need no T3. Only object- and
+area-under-curve, and precision at $k$, are taken against T1 and need no T3; only object- and
 concept-level scores draw on the external T3 labels, and we flag every such score as
 alignment-to-given, not discovery. We aggregate the committed per-game records into one row
 per method on the shared faithfulness-versus-plausibility axes of the Results leaderboard.
 The headline contrast is the position regime, where the naive gradient is zero under the hard
 forward map by Prop.~\ref{prop:zero}.
 There, causal and intervention methods average a faithfulness of $0.41$ against $0.07$ for
-gradient and correlational methods, a gap of $0.34$. Soft-mode gradients, made available through
-the temperature-controlled relaxation of the discrete index boundary, restore non-zero signal on
-position outputs and narrow the gap. The per-method extreme places an exact causal method,
-activation patching, at faithfulness $1.000$ and the field's default saliency at $0.000$ on all
-six games. The popular method nonetheless carries the higher plausibility proxy ($0.9$ versus
-$0.5$). Against these numbers the semantic gap is measured.
+gradient and correlational methods, a gap of $0.34$, while the per-method extreme places an
+exact causal method, activation patching, at faithfulness $1.000$ and the field's default
+saliency at $0.000$ on all six games, the popular method nonetheless carrying the higher
+plausibility proxy ($0.9$ versus $0.5$). Against these numbers the semantic gap is measured.
 
 % =====================================================================
 % BIBTEX-NEEDED: full entries for the keys cited above that are NOT yet

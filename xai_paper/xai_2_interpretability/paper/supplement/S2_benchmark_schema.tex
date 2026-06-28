@@ -2,11 +2,11 @@
 
 The leaderboard is built from a flat record schema, and stating it removes the ambiguity
 about what a single number on the benchmark counts. Each method is run per game and writes a
-per-game record under its phase's \texttt{out/} tree. The leaderboard aggregates those
+per-game record under its phase's \texttt{out/} tree; the leaderboard aggregates those
 records into one row per method by averaging over games. The schema columns of a leaderboard
-row are given in Table~\ref{supp:tab:schema}. The aggregation rule is a mean over the
-$n_{\text{games}}$ games, with the per-game records first reduced within a game when a method
-emits several output records. The faithfulness, sufficiency, and minimality columns
+row are given in Table~\ref{supp:tab:schema}; the aggregation rule is a mean over the
+$n_{\text{games}}$ games (with the per-game records first reduced within a game when a method
+emits several output records), and the faithfulness, sufficiency, and minimality columns
 report the F, S, and M axes defined in \Sectionname3.4. We do not re-derive those definitions here.
 
 \begin{table}[t]

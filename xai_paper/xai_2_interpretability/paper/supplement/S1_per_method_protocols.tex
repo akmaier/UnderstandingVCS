@@ -6,10 +6,10 @@ metric that turns its output into a faithfulness score, and the committed record
 holds the per-game results. All methods share one evaluation contract, which we state once
 and then specialize per method. Every method receives the same bit-exact VCS trajectory on
 one of the six core games (\texttt{breakout}, \texttt{ms\_pacman}, \texttt{pong},
-\texttt{qbert}, \texttt{seaquest}, \texttt{space\_invaders}). The candidate-cause set is the
-machine's own state: the 128 RAM bytes together with the CPU registers and the TIA
-and RIOT registers exposed by the substrate. The reference is the intervention oracle of
-\Sectionname3.2, evaluated by exact re-runs of the emulator under $\mathrm{do}(u)$. A method that
+\texttt{qbert}, \texttt{seaquest}, \texttt{space\_invaders}); the candidate-cause set is the
+machine's own state, that is the 128 RAM bytes together with the CPU registers and the TIA
+and RIOT registers exposed by the substrate; the reference is the intervention oracle of
+\Sectionname3.2, evaluated by exact re-runs of the emulator under $\mathrm{do}(u)$; and a method that
 cannot be applied to a given output regime is recorded as not-applicable rather than scored
 as zero, so that an empty result never masquerades as a wrong one. Faithfulness is the F
 axis of the main-text triad (\Sectionname3.4); we reference that definition and do not restate it.

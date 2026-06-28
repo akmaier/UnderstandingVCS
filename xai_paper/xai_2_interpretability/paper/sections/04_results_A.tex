@@ -24,11 +24,11 @@ these methods report is real; yet structure is not cause, and the gap is what
 the score measures.
 
 The wiring itself is largely recoverable. A1 reconstructs the dependency graph
-over state variables, a connectome of read/write edges. It scores this against the
+over state variables, a connectome of read/write edges, and scores it against the
 true data-flow graph at a faithfulness of $0.41$~\cite{leaderboardP2}, half
-spurious. The single-unit lesion A2 fares best. Clamping each RAM cell
-in turn and ranking it by the behavioral damage it does yields an importance map.
-Its Spearman correlation with the unit's true causal role is $0.99$ (mean
+spurious. The single-unit lesion A2 fares best: clamping each RAM cell
+in turn and ranking it by the behavioral damage it does yields an importance map
+whose Spearman correlation with the unit's true causal role is $0.99$ (mean
 $0.987$ over the six core games)~\cite{leaderboardP2}. Lesioning is causal, and
 the one classical number near the ceiling proves it.
 
@@ -90,11 +90,13 @@ into the paper's centre of gravity.
 Taken together, the battery confirms the expected result and puts a number on
 it. The advance over Jonas and Kording is that we grade the \emph{architectural}
 register-transfer level with a \emph{quantitative} $F$ against an exact oracle,
-not a qualitative verdict on the transistor. Yet even the battery's best members
-recover a ranking, a graph, or a record, never the algorithm the program runs.
-That residual is the universal gap the paper measures. We mean this strictly
-as calibration: even with perfect ground truth, the classical toolkit finds
-mechanism, not meaning.
+not a qualitative verdict on the transistor. The contrast is sharp,
+because the causal operators we turn on the same machine in
+Sections~\ref{sec:results-b}--\ref{sec:results-c} reach the ceiling this battery
+cannot. As such, the gap is the method, not the machine. We mean this strictly
+as calibration: even the battery's best members recover a ranking, a graph, or a
+record, never the algorithm the program runs. That residual is the problem the
+paper measures.
 
 \begin{figure}[t]
   \centering

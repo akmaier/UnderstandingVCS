@@ -25,13 +25,13 @@
 \bmhead{Data availability}
 The interpretability scores reported here are derived from the committed analysis
 records under \texttt{tools/xai\_study/} (the per-method, per-game §R records and the
-aggregated cross-tradition leaderboard~\cite{leaderboardP2,faithfuldemoP2}). Every
-quantitative claim in the Article reads from one of these committed artifacts. No
+aggregated cross-tradition leaderboard~\cite{leaderboardP2,faithfuldemoP2}); every
+quantitative claim in the Article reads from one of these committed artifacts, and no
 number is re-run or estimated. The game cartridges used as the subject are
-third-party Atari~2600 ROMs that we do \emph{not} redistribute. Following the
+third-party Atari~2600 ROMs that we do \emph{not} redistribute; following the
 practice of the underlying emulator port~\cite{maier2025vcs}, we acquire them through
 the \texttt{AutoROM} retrieval procedure and report a SHA-256 hash table for each ROM
-in the Supplementary Information. This way the exact binaries can be reproduced and
+in the Supplementary Information, so that the exact binaries can be reproduced and
 verified independently. The recorded state trajectories used to
 train the sparse autoencoders and to run the patching and probing experiments are
 regenerated deterministically from those ROMs and the published action streams.
@@ -44,10 +44,10 @@ method implementations (\texttt{tools/xai\_study/})---is available for review at
 appendix that maps every reported number to its committed record and run command. A
 versioned snapshot will be archived on Zenodo with a minted DOI, and an optional Code
 Ocean capsule reproduces the leaderboard and the figures from the committed result
-records alone. The differentiable, bit-exact emulator that the benchmark rests on is already public. It has
-two interchangeable realizations (\texttt{jutari}, Julia; \texttt{jaxtari},
-JAX/Python). It is described in the companion port
-paper~\cite{maier2025vcs} (arXiv:2606.22447), and its source is openly available at the
+records alone. The differentiable, bit-exact emulator that the benchmark rests on, in
+its two interchangeable realizations (\texttt{jutari}, Julia; \texttt{jaxtari},
+JAX/Python), is already public: it is described in the companion port
+paper~\cite{maier2025vcs} (arXiv:2606.22447) and its source is openly available at the
 same repository. The companion paper supplies the bit-exactness validation and the
 gradient caveat that the present work imports; what is new here is the interpretability
 benchmark, the oracle scoring, and the semantic-gap diagnosis. We release the code
