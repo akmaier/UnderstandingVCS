@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Figure 7 — the keystone: the bilinear sampler makes the gradient methods FAITHFUL
-on the position/index regime, yet leaves their SEMANTIC recovery at zero.
+on the position/index regime, yet none of them names a game concept (semantic recovery is yes/no; the answer is no).
 
 This is the sharpened thesis's foreclosing experiment (plan.md storyline step 4;
 honesty-contract claim 4; backlog P2-R7-EXP-sampler). On the discrete position/index
@@ -12,7 +12,7 @@ gradient/correlational attribution methods then become FAITHFUL: their per-cause
 correlates with the intervention oracle's true |Δ position-pixel|, off the zero floor.
 
 The point the figure makes in one image: faithfulness is REPAIRABLE (0 -> >0) but
-SEMANTICS is NOT (0 -> 0). Repairing the gradient does not make an attribution map
+SEMANTICS is NOT (semantic recovery is yes/no; the answer stays no). Repairing the gradient does not make an attribution map
 emit or name a single T3 game concept (missile, collision, score, restart); the only
 semantic label in play is the imported T3 annotation, used to CHECK localization,
 never PRODUCED by the method. So the universal semantic gap is not a fixable technical
@@ -23,8 +23,8 @@ Two panels:
        the five gradient methods we plot the naive bar (== 0, the §1 floor) and the
        sampler bar (the mean over the games where the sampler restored a gradient),
        with the per-game sampler points overlaid so the rise is not a single number.
-  (b)  The semantics row: semantic_recovery stays flat at 0 for every method in BOTH
-       conditions — a single dead-flat line at 0, the foreclosure.
+  (b)  The semantics row: no method names a game concept (yes/no; "no" for every method) in BOTH
+       conditions — a row of "no" markers, the foreclosure.
 
 ALL numbers are READ from the committed keystone record — no experiment is re-run:
   * tools/xai_study/compare/out/sampler_faithfulness.csv   (P2-R7-EXP-sampler aggregate)
@@ -229,27 +229,25 @@ def main():
         fontsize=10.2, fontweight="bold", loc="left", pad=8,
     )
 
-    # ---------------- Panel (b): semantics flat at 0 ------------------------
-    axS.bar(x - w / 2 - 0.02, [0] * nM, width=w, color=C_NAIVE,
-            edgecolor=C_INK, linewidth=0.4, zorder=3)
-    axS.bar(x + w / 2 + 0.02, [0] * nM, width=w, color=C_SAMPLER,
-            edgecolor=C_INK, linewidth=0.4, zorder=3)
-    # the dead-flat semantics line at 0 (vermillion), the foreclosure
-    axS.axhline(0.0, color=C_SEM, linewidth=2.2, zorder=4)
+    # ---------------- Panel (b): semantic recovery is a yes/no question -------------
+    # Categorical, NOT a number. For every method, in BOTH conditions, no concept is
+    # named, so the answer is "no". We render "no" markers, not a value on a scale.
+    axS.set_xlim(axF.get_xlim())
     for xi in x:
-        axS.text(xi, 0.16, "0", ha="center", va="bottom", fontsize=FS_MIN,
-                 color=C_SEM, fontweight="bold")
+        axS.text(xi - w / 2 - 0.02, 0.5, "no", ha="center", va="center",
+                 fontsize=8.8, color=C_SEM, fontweight="bold")
+        axS.text(xi + w / 2 + 0.02, 0.5, "no", ha="center", va="center",
+                 fontsize=8.8, color=C_SEM, fontweight="bold")
     axS.set_xticks(x)
     axS.set_xticklabels(labels, fontsize=8.4)
     axS.set_ylim(0, 1.0)
-    axS.set_yticks([0, 1])
-    axS.set_ylabel("semantic\nrecovery", fontsize=9.0)
-    axS.set_axisbelow(True)
-    for s in ("top", "right"):
+    axS.set_yticks([])
+    axS.set_ylabel("names a\nconcept?", fontsize=9.0)
+    for s in ("top", "right", "left"):
         axS.spines[s].set_visible(False)
     axS.set_title(
-        "(b)  …but semantic recovery stays flat at 0 — in BOTH conditions, "
-        "for every method (the gap survives the fix)",
+        "(b)  Semantic recovery is a yes/no question — the answer is “no” "
+        "for every method, in both conditions (the gap survives the fix)",
         fontsize=10.2, fontweight="bold", loc="left", pad=6,
     )
 
@@ -267,10 +265,10 @@ def main():
         "Paper-1's bilinear index-boundary sampler ON (same surrogate as the SI "
         "joystick tool) restores a real position gradient and the methods become "
         f"FAITHFUL — up to {best[2]:.3f} ({PRETTY.get(best[0], best[0])} on {best[1]}). "
-        "Yet semantic_recovery stays 0 for all "
-        f"{n_records} (method × game) records in BOTH conditions: an attribution map "
-        "names no game concept on its own. Faithfulness is repairable; the semantic "
-        "gap is not — the danger zone is not a fixable artifact of the vanishing gradient."
+        "Yet no method names a game concept: semantic recovery is a yes/no question, and "
+        f"the answer is no for all {n_records} (method × game) records in BOTH conditions. "
+        "Faithfulness is repairable; the semantic gap is not — the danger zone is not a "
+        "fixable artifact of the vanishing gradient."
     )
     headline_wrapped = "\n".join(textwrap.wrap(headline, width=150))
     fig.text(
@@ -291,8 +289,9 @@ def main():
         plt.Line2D([0], [0], marker="o", color="none",
                    markerfacecolor=C_POINT, markeredgecolor="white",
                    markersize=6, label="per-game sampler faithfulness"),
-        plt.Line2D([0], [0], color=C_SEM, linewidth=2.2,
-                   label="semantic recovery = 0 (flat, both conditions)"),
+        plt.Line2D([0], [0], marker="$\\mathsf{no}$", color="none",
+                   markerfacecolor=C_SEM, markeredgecolor=C_SEM, markersize=12,
+                   label="names no game concept (every method, both conditions)"),
     ]
     leg = fig.legend(
         handles=handles, loc="lower left", bbox_to_anchor=(0.115, 0.012),
@@ -339,7 +338,7 @@ def main():
           all(r["faithfulness_naive"] == 0.0 for r in rows))
     check(">=1 method rose under the sampler", len(rose_pairs) >= 1,
           f"{len(rose_pairs)} (method,game) pair(s)")
-    check("semantic recovery flat at 0 (all records, both conditions)",
+    check("semantic recovery is 'no' for all records, both conditions",
           all_sem_zero)
     check("min in-figure font >= 7.5 pt", FS_MIN >= 7.5, f"FS_MIN={FS_MIN}")
 

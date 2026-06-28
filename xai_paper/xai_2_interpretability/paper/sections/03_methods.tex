@@ -156,13 +156,14 @@ oracle of Eq.~\eqref{eq:doy}. For each candidate cause the per-cause attribution
 correlated, by the raw Pearson $\rho$ of \Sectionname\ref{sec:triad}, against the oracle's true
 $|\Delta\,\text{position-pixel}|$. So the two conditions differ only in the surrogate the
 method is handed, not in how it is judged.
-Alongside faithfulness we record a second, deliberately stricter measure. The
-\emph{semantic recovery} of a method asks whether the method emits a Tier-3 game-concept name
-on its own, the word ``ball'' or ``missile'' attached to the byte it points at, rather than a
-cause that an external label only names later. An attribution map, which returns weights over
-causes and never a name, scores semantic recovery $0$ by construction. Faithfulness and
-semantic recovery are two independent axes. Faithfulness asks whether the method names the
-right cause. Semantic recovery asks whether it names any meaning. The keystone experiment of
+Alongside faithfulness we record a second, deliberately stricter property. The
+\emph{semantic recovery} of a method is a yes/no question: does the method, on its own, emit a
+Tier-3 game-concept name, the word ``ball'' or ``missile'' attached to the byte it points at,
+rather than a cause that an external label only names later? An attribution map returns weights
+over causes and never a name, so for it the answer is no by construction: it recovers no meaning.
+Faithfulness and semantic recovery are independent, and they are of different kinds. Faithfulness
+is a graded score for whether the method names the right cause. Semantic recovery is a yes/no
+property: whether it names any meaning at all. The keystone experiment of
 \Sectionname\ref{sec:results_compare} reports both for the naive and sampler-on conditions on the
 position regime.
 

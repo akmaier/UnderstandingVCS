@@ -151,9 +151,9 @@ longer unfaithful by construction.
 But this does not give understanding. The restored gradient on Pong concentrates entirely on the
 single RAM byte that holds the paddle's position, \texttt{ram[54]}, which the oracle
 independently confirms is a true cause. The method now finds the right cause and
-attributes nothing to the wrong ones. Yet its semantic-recovery score is $0$, exactly
-as it was when the map was empty and exactly as it is for every other method in the
-study (same committed record). A faithful attribution to \texttt{ram[54]} names a byte
+attributes nothing to the wrong ones. Yet it still recovers no meaning, exactly as when
+the map was empty, and exactly as no other method in the study recovers any (same
+committed record). A faithful attribution to \texttt{ram[54]} names a byte
 the program reads. It does not say that the byte \emph{is} the paddle, that reading it
 \emph{is} tracking, or that the routine computes a bounce. The only semantic label in
 play is the imported annotation we use to \emph{check} where the attribution landed,
@@ -166,15 +166,15 @@ unfaithful methods' deficit, because making them faithful does not close it
 \centering
 \includegraphics[width=\textwidth]{fig7_sampler_faithful_no_semantics.pdf}
 \caption{\textbf{Faithful, still no meaning: turning the sampler on lifts
-faithfulness off the floor and leaves semantic recovery at zero.} On the position
+faithfulness off the floor, yet no method names a game concept.} On the position
 regime the naive gradient is provably zero (Prop.~\ref{prop:zero}), so the saliency
-methods score faithfulness $0$ (left bars). Turning the differentiable port's
+methods reach faithfulness $0$ (left bars). Turning the differentiable port's
 bilinear sampler on restores the gradient through the position read and lifts
 faithfulness to $0.791$ on Pong and $0.529$ on Q*bert for the methods with a moving
 tracked sprite (centre bars), with the restored gradient concentrating on the true
-position byte (\texttt{ram[54]} on Pong, oracle-confirmed). The semantic-recovery
-score stays $0$ in both conditions and for every method (right), because an
-attribution map names a cause but emits no game concept; the only semantic labels are
+position byte (\texttt{ram[54]} on Pong, oracle-confirmed). Semantic recovery is a
+yes/no question, and the answer is no in both conditions and for every method (right):
+an attribution map names a cause but emits no game concept; the only semantic labels are
 imported (\Sectionname\ref{sec:oracle}) and used to check localization, never
 produced. Note that the rise is reported only where a tracked sprite exists:
 integrated gradients with a zeros baseline vanishes on Pong, static-sprite games have

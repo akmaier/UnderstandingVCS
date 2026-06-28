@@ -59,10 +59,10 @@ saliency, grad$\times$input, smoothgrad, and expected gradients reach $0.791$ on
 the same family reaches $0.529$ on Q*bert (Fig.~\ref{fig:sampler}). The increase is real but does
 not occur on every game. Integrated gradients with a zeros baseline still vanishes on Pong.
 A static-sprite game offers no position to restore, and where the tracked cell is not the
-active one nothing moves. Yet on every game where the gradient becomes faithful the semantic
-recovery stays exactly $0$, the same $0$ every other method scores, faithful or not. The
+active one nothing moves. Yet on every game where the gradient becomes faithful, the method
+still recovers no meaning, just as no other method does, faithful or not. The
 restored gradient concentrates on the position RAM byte that drives the sprite,
-\texttt{ram[54]} on Pong. It identifies the correct cause but gives no meaning for it.
+\texttt{ram[54]} on Pong. It identifies the correct cause but supplies no meaning for it.
 
 Securing faithfulness is necessary, but it does not solve the main problem. Faithfulness is
 necessary for understanding but far from sufficient. Making it universal does not close the
