@@ -2,7 +2,7 @@
 id: P2-R7-S08-discussion
 title: Discussion — meaning is not in the mechanism; its reference is behavior (docs + data)
 epic: R7 (universal semantic gap)
-status: todo
+status: done
 sprint: 16
 owner:
 where: local

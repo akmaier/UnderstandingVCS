@@ -45,6 +45,46 @@ used in the computation. The gap runs in both directions on the same axis at onc
 correct-but-incomplete and named-but-wrong, which is precisely what a ``methods are not good
 enough yet'' story cannot produce.
 
+We pressed the most natural version of that story until it broke. The faithfulness gap could be
+read as an artifact of one design choice: the discrete position read-out makes the naive gradient
+vanish by Prop.~\ref{prop:zero}, so the gradient family scores a provable zero on the position
+regime and the danger zone could be dismissed as a fixable technical accident. We removed the
+accident. Turning the port's bilinear sampler on restores a usable gradient through the position
+index, and on the games with a moving tracked sprite the gradient methods become faithful: their
+position-regime faithfulness rises off the floor to $0.791$ on Pong for vanilla saliency,
+grad\(\times\)input, smoothgrad, and expected gradients, and to $0.529$ on Q*bert for vanilla
+saliency, grad\(\times\)input, smoothgrad, and integrated gradients
+(Fig.~\ref{fig:sampler}). The restored gradient concentrates on the position byte that drives the
+sprite, \texttt{ram[54]} on Pong; it finds the right cause. Still, the semantic recovery of every
+one of these methods stays $0$, exactly as before and exactly like every other method in the
+study. We engineered the faithfulness deficit away and the meaning did not appear. Hence the
+shortfall is not a faithfulness deficit waiting for a better gradient: when the gradient is made
+honest it names the cause and names no meaning, so the meaning was never in the wiring for a method
+to recover.
+
+The rise is honest about where it does and does not occur, which is itself part of the evidence. It
+is not a universal lift but a lift on the games with a moving tracked sprite the gradient can flow
+to: integrated gradients with a zeros baseline still vanishes on Pong, and the static-sprite games,
+together with the case where the restored gradient lands on a cell the program does not currently
+read, show no rise at all. Where the position byte exists and moves, the sampler makes the gradient
+faithful; everywhere the faithfulness story permitted, we let it win. None of it bought a single
+semantic label.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{fig7_sampler_faithful_no_semantics.pdf}
+\caption{\textbf{Faithful, still no meaning.} Turning the differentiable port's bilinear sampler on
+restores a usable gradient through the discrete position index, so on the games with a moving
+tracked sprite the gradient methods rise off the provable zero of Prop.~\ref{prop:zero}~--- to
+$0.791$ on Pong and $0.529$ on Q*bert (left, blue). Their semantic recovery stays $0$ in both
+conditions, exactly like every other method (right, vermillion). Note that the restored gradient
+concentrates on the position byte that drives the sprite (\texttt{ram[54]} on Pong): it finds the
+right cause and names no meaning. The honest non-rises~--- integrated gradients with a zeros
+baseline, the static-sprite games, the cell the program does not read~--- are shown as such. Values
+trace to \texttt{sampler\_faithfulness.csv}; per-method records are in the Supplementary
+Information.}\label{fig:sampler}
+\end{figure}
+
 \subsection*{What understanding would require}
 
 Faithfulness stops short for a reason that Marr's levels of analysis make
@@ -59,18 +99,25 @@ algorithm is the sufficiency gap $1-S$, and on an already-exact effect table it 
 closed by a better hyperparameter.
 
 The bar is sharpest when borrowed from software engineering. IEEE~610.12 defines software as
-programs plus their documentation, the specification, the design, the intent~\cite{ieee610}.
+programs plus their documentation and data, the specification, the design, the intent~\cite{ieee610}.
 A faithful circuit recovers part of the program; understanding the system means recovering its
-documentation, what each variable is for and what each routine is meant to do. Our causal
-oracle cannot reach that object, because the meaning of a variable is not a causal fact about
-the variable but a fact about the design it serves. Hence the gap is not an artifact of weak
-methods but a property of the question: faithfulness is necessary for understanding, and not
-sufficient. We are deliberate that this paper defines and measures the gap. Closing it,
-recovering the program's documentation and design from the bare machine, is the
-reverse-engineering bar and the charge of the companion design-recovery paper (Paper~4), which
-measures the distance to that bar rather than clearing it. Whether a recovered concept matches
-how the system is used is the companion behavior paper (Paper~3), and the learned agent, where
-there is no disassembly to check against, is Paper~5.
+documentation, what each variable is for and what each routine is meant to do. The sampler-on
+result tells us why no internal method can reach that object. The meaning of a variable is not a
+causal fact about the variable but a fact about the behavior the design serves, and behavior is
+fixed for software outside the wiring, in the manuals and the data the program was written
+against. A method that reads only the mechanism, however faithful, reads only causes; the
+reference against which a cause becomes a meaning lives in the system's documented behavior, where
+no perturbation of the chip can find it. In this study the only semantics present entered from
+outside: every T3 label was imported from AtariARI and OCAtari and then merely verified to be
+causally live, never discovered by a method. Hence the gap is not an artifact of weak methods but a
+property of the question: faithfulness is necessary for understanding, and not sufficient, because
+understanding needs an external behavioral reference that an internal method does not carry. We are
+deliberate that this paper defines and measures the gap. Closing it, recovering the program's
+documentation and design from the bare machine, is the reverse-engineering bar and the charge of
+the companion design-recovery paper (Paper~4), which measures the distance to that bar rather than
+clearing it. Whether a recovered concept matches how the system is used is the companion behavior
+paper (Paper~3), and the learned agent, where there is no disassembly to check against, is
+Paper~5.
 
 Probing reads the same result from the data side: it shows that a concept is present in the
 state, not that it is used, the control-task warning of Hewitt and
@@ -139,8 +186,12 @@ looks more convincing than the map that is exactly right. It should validate on 
 before trusting on unknown ones, since a method that cannot pass where the answer is computable
 cannot be audited where it is not. Most important, it should stop treating faithfulness as
 understanding. The open problem for explainable AI is not a better saliency map; it is the
-semantic gap. Faithfulness is the half we now know how to measure and, on causal methods, how to
-win; meaning is the half that remains.
+semantic gap. We learned this the hard way, by closing the faithfulness side on the gradient
+methods and watching the meaning stay absent, so the problem is not an instrument that reads the
+mechanism more sharply but one that supplies the reference the mechanism does not contain: the
+system's behavior, documented for software in its manuals and data. Faithfulness is the half we now
+know how to measure and, on causal methods, how to win; meaning is the half that remains, and it
+remains because no internal method carries the external reference it needs.
 
 We have measured a gap, not closed it, and several limits bound what we may conclude. We did not
 run semantic recovery, as Phase~E, documentation and design recovery, is specified but not
@@ -150,8 +201,13 @@ can recover meaning,'' which is Paper~4's charge. The sufficiency and minimality
 against the oracle, and the T3 semantic labels are external, imported from
 AtariARI~\cite{anand2019unsupervised} and OCAtari~\cite{delfosse2023ocatari} and only causally
 verified, never discovered. A single low sufficiency could be a tuning artifact, so the claim
-rests not on any one number but on the gap appearing where tuning cannot reach and running in
-both directions at once. The plausibility axis is a documented method-tradition proxy, not a
+rests not on any one number but on the gap appearing where tuning cannot reach, running in
+both directions at once, and surviving the sampler-on test that makes the gradient methods
+faithful on the games where a moving tracked sprite gives the gradient something to flow to. We
+do not read that test as universal: the rise is honest, on Pong and Q*bert and not on the
+static-sprite games, on a zeros-baseline integrated gradient, or where the restored gradient lands
+on a cell the program does not read, and we report it as such rather than as a law over all
+methods and games. The plausibility axis is a documented method-tradition proxy, not a
 human-subjects measurement, reported at that proxy's coarse resolution. Our scores hold within
 Paper~1's validated conformance window; outside that horizon the substrate is not certified
 bit-exact, and we keep every scored claim inside it. The subject is one old machine with no
