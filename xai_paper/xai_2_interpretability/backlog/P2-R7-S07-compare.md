@@ -2,7 +2,7 @@
 id: P2-R7-S07-compare
 title: Present the sampler-on result + reframe the comparison to the universal gap
 epic: R7 (universal semantic gap)
-status: todo
+status: done
 sprint: 16
 owner:
 where: local

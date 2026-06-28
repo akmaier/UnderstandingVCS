@@ -20,21 +20,25 @@
 % semantic labels are external (AtariARI/OCAtari) and only causally VERIFIED, not discovered.
 % The formal F/S/M definitions are authoritative in §3 (sec:triad); we reference them here.
 
-\section{Across the traditions --- and the boundary the leaderboard cannot
-cross}\label{sec:results_compare}
+\section{Across the traditions --- the wiring, not the meaning}\label{sec:results_compare}
 
-We have now run three traditions on one machine, and their scores live on a single
-axis. Faithfulness asks whether an explanation names the true causes, and on the
-VCS we answer it exactly: the intervention oracle of \Sectionname\ref{sec:oracle} re-runs the
+We have now run three traditions on one machine, and the result that organizes this
+section is not the ranking among them but the boundary they all share: every method,
+faithful or not, returns the system's causal wiring and not its meaning. Faithfulness
+asks whether an explanation names the true causes, and on the VCS we answer it
+exactly --- the intervention oracle of \Sectionname\ref{sec:oracle} re-runs the
 bit-exact program for every candidate cause and returns the ground truth no real
-network affords. In the following we place all of Phases~A--C on the shared
-faithfulness-versus-plausibility plane, read off the leaderboard and its danger
-zone, and then mark, with the same oracle, the boundary where even a perfectly
-faithful method stops. Faithfulness is the easier half of the problem. The harder
-half, the variable's meaning and the routine's algorithm, is a separate object, and
-on this machine the distance to it is a number. We name that residual the
-\emph{semantic gap} and measure its symptoms. The correctness triad we apply
-throughout --- \textbf{F}aithful, \textbf{S}ufficient, \textbf{M}inimal --- is
+network affords. That exact answer lets us do two things in sequence. First we place
+all of Phases~A--C on the shared faithfulness-versus-plausibility plane and read off
+the leaderboard and its danger zone, the familiar story that faithful and convincing
+are not the same. Then we press past it: we make the unfaithful methods faithful by
+turning the differentiable port's bilinear sampler on, and show that universal
+faithfulness leaves the picture unchanged, because faithfulness was never the
+dividing line. The harder half of the problem, the variable's meaning and the
+routine's algorithm, is a separate object that no method on this fully known machine
+recovers, and the distance to it is a number we name the \emph{semantic gap}. The
+leaderboard is the way-station; the gap is the destination. The correctness triad we
+apply throughout --- \textbf{F}aithful, \textbf{S}ufficient, \textbf{M}inimal --- is
 defined formally in \Sectionname\ref{sec:triad}; here we only read its scores.
 
 \subsection*{The faithfulness leaderboard}
@@ -88,15 +92,16 @@ software artifact rather than a synthetic or pseudo-label.
 faithfulness-versus-plausibility plane.} The plotted set is the canonical 30
 interpretability methods + the oracle = 31 rows, each placed by its faithfulness
 against the intervention oracle (\Sectionname\ref{sec:oracle}; X, exact ground truth) and by its
-documented method-tradition \emph{plausibility proxy} (Y; \Sectionname\ref{sec:methods}), with a
-horizontal $95\%$ bootstrap-over-games confidence interval on faithfulness
-(leaderboard\_ci.csv). The plausibility axis is a tradition-level proxy, not a
-human-subjects measurement. The oracle positive control anchors $(1.0,1.0)$. Causal
-and intervention methods cluster at high faithfulness while the gradient and
-correlational methods cluster low yet \emph{higher} on the proxy --- the
+documented method-tradition \emph{plausibility proxy} (Y; \Sectionname\ref{sec:methods}). The
+plausibility axis is a tradition-level proxy, not a human-subjects measurement. The
+dashed curve traces the offset between the faithful and the plausible clusters, and
+the oracle positive control anchors $(1.0,1.0)$, a ceiling no interpretability method
+reaches. Causal and intervention methods cluster at high faithfulness while the
+gradient and correlational methods cluster low yet \emph{higher} on the proxy --- the
 \emph{danger zone} of high apparent plausibility at low faithfulness. The key
 findings and per-method values are in the in-figure table; every plotted value reads
-from the committed leaderboard, none re-run or estimated.}\label{fig:faithfulness}
+from the committed leaderboard, none re-run or estimated. Per-method uncertainty is
+reported in Fig.~\ref{fig:taxonomy} and the supplement.}\label{fig:faithfulness}
 \end{figure}
 
 \subsection*{The danger zone}
@@ -115,6 +120,68 @@ human-subjects measurement, and we report it as such to avoid overclaiming the d
 zone. Still, the faithfulness axis is exact, and the ranking it inverts is the field's
 own habit of trust, so the hazard is real even at the proxy's coarse resolution. The
 danger zone is a measurement, not a worry.
+
+\subsection*{Making the unfaithful faithful}
+
+A reader could grant the danger zone and still escape its lesson by blaming the
+gradient. The saliency methods score zero on the position regime because the hard
+forward map reads a sprite's position through an integer index, so the gradient is
+zero almost everywhere (\Sectionname\ref{sec:results-b}, Prop.~\ref{prop:zero}); on
+this reading the danger zone is a technical artifact, repairable by a smoother
+forward pass, and once repaired the gradient methods would become faithful and the
+worry would dissolve. The differentiable port lets us run exactly that repair and
+test the claim. We turn its bilinear sampler on, replacing the integer index read by
+a triangular-kernel occupancy whose sprite column is a continuous function of the
+position byte, which restores a non-zero gradient through the position computation
+without altering the forward output. The same surrogate that recovers the joystick
+gradient in \Sectionname\ref{sec:results-b} now flows through the position read.
+
+The repair works, on the games where there is a moving tracked sprite to repair.
+On Pong, vanilla saliency, gradient $\times$ input, SmoothGrad, and expected
+gradients all rise from the provable zero to faithfulness $0.791$ against the oracle;
+on Q*bert vanilla saliency, gradient $\times$ input, SmoothGrad, and integrated
+gradients rise to $0.529$ (committed sampler record,
+\texttt{compare/out/sampler\_faithfulness.csv}). The rise is not universal, and we
+report it as it is: integrated gradients with a zeros baseline still vanishes on
+Pong, the static-sprite games offer no position to restore, and on Space Invaders the
+restored gradient lands on a non-active cell, so it does not move. Where a sprite's
+position is genuinely tracked, however, the formerly empty saliency map becomes a
+faithful one, and the faithfulness escape is closed: the danger-zone methods are no
+longer unfaithful by construction.
+
+It buys no understanding. The restored gradient on Pong concentrates entirely on the
+single RAM byte that holds the paddle's position, \texttt{ram[54]}, which the oracle
+independently confirms is a true cause; the method now finds the right cause and
+attributes nothing to the wrong ones. Yet its semantic-recovery score is $0$, exactly
+as it was when the map was empty and exactly as it is for every other method in the
+study (same committed record). A faithful attribution to \texttt{ram[54]} names a byte
+the program reads; it does not say that the byte \emph{is} the paddle, that the read
+\emph{is} tracking, or that the routine computes a bounce. The only semantic label in
+play is the imported annotation we use to \emph{check} where the attribution landed,
+never one the method \emph{produced}. Faithfulness was repairable; meaning was not.
+This is the keystone for the rest of the section: the gap we measure next is not the
+unfaithful methods' deficit, because making them faithful does not close it
+(Fig.~\ref{fig:sampler}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig7_sampler_faithful_no_semantics.pdf}
+\caption{\textbf{Faithful, still no meaning: turning the sampler on lifts
+faithfulness off the floor and leaves semantic recovery at zero.} On the position
+regime the naive gradient is provably zero (Prop.~\ref{prop:zero}), so the saliency
+methods score faithfulness $0$ (left bars). Turning the differentiable port's
+bilinear sampler on restores the gradient through the position read and lifts
+faithfulness to $0.791$ on Pong and $0.529$ on Q*bert for the methods with a moving
+tracked sprite (centre bars), with the restored gradient concentrating on the true
+position byte (\texttt{ram[54]} on Pong, oracle-confirmed). The semantic-recovery
+score stays $0$ in both conditions and for every method (right), because an
+attribution map names a cause but emits no game concept; the only semantic labels are
+imported (\Sectionname\ref{sec:oracle}) and used to check localization, never
+produced. Note that the rise is reported only where a tracked sprite exists:
+integrated gradients with a zeros baseline vanishes on Pong, static-sprite games have
+no position to restore, and Space Invaders' restored gradient lands on a non-active
+cell. Values read from the committed sampler record; none re-run.}\label{fig:sampler}
+\end{figure}
 
 \subsection*{Where the leaderboard stops --- the semantic gap}
 
