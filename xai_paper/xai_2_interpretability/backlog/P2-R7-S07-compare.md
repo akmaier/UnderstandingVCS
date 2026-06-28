@@ -32,3 +32,7 @@ ONLY from the committed `sampler_faithfulness.csv` + the existing records (numbe
 ## Notes / handoff
 - HARD dependency on P2-R7-EXP-sampler (needs its CSV). Do not write sampler numbers before the
   experiment has produced them.
+- **Fig 4 caption coupling with P2-R7-FIG-plane:** that item restores the clean dashed-curve plane
+  and REMOVES the per-method CI whiskers. When it lands, this item's Fig 4 caption must drop the
+  "95% bootstrap CI whiskers" sentence and instead lean on the dashed offset curve + the unreached
+  oracle ceiling as the visual of the gap (uncertainty still reported in Fig 2/3 + the supplement).

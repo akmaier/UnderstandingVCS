@@ -345,12 +345,17 @@ setups in `experiment_design.md`.
 
 ### Display items (~6 figures)
 (1) the VCS platform & ground-truth oracle (the three faces; T1/T2 exact, T3 external);
-(2) A–C scored on the shared faithfulness-vs-plausibility axes with the **danger zone**
-(headline, *confirm* half); (3) **the semantic gap** — the F∧S∧M triad with the three
+(2) A–C on the shared faithfulness-vs-plausibility plane — the **clean dashed-curve version**:
+the dashed offset curve between faithful and plausible, and the **oracle ceiling at (1,1) that no
+method reaches** (restore the `8b919764` composition, declutter the CI whiskers — P2-R7-FIG-plane);
+(3) **the semantic gap** — the F∧S∧M triad with the three
 counted separations (ACDC S=0.44; SAE matched=1.0 vs F=0.04; decodable-but-unused cell 84)
 (the *new-result* headline); (4) Kording battery scored / attribution vs mechanistic-interp
 faithfulness; (5) the VCS↔NN failure-mode / representativeness map; (6) what to do instead +
 the road to closing the gap (P3 grounding, P4 design recovery — the IEEE-software bar).
+(7) **the sampler-on keystone** — turning the bilinear sampler on lifts the gradient methods'
+faithfulness off zero on the position regime, yet their semantic recovery stays $0$: faithful, still
+no meaning (fig7; P2-R7-EXP-sampler).
 
 ### End matter
 Data/Code availability, Author contributions, Competing interests, Reporting Summary,
