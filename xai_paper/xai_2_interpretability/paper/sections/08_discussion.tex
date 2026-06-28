@@ -27,11 +27,17 @@ measurement. The classical battery recovers rich structure yet scores low agains
 mechanism. The gradient methods score zero on the discrete position regime, and only the
 causal operators reach the ceiling. Mechanistic interpretability has until now been calibrated
 against synthetic or compiled ground truth, transformers with a planted circuit by
-construction~\cite{lindner2023tracr,gupta2024interpbench}, and ground-truth attribution
-benchmarks likewise plant the important features~\cite{yang2019bim}. We add the missing case:
-a real, hand-written, deployed artifact that was never designed to be interpretable. Its
-ground truth is independent of the artifact, not built into it. So the leaderboard calibrates
-these methods against ground truth on a system the field did not design to be interpretable.
+construction~\cite{lindner2023tracr,gupta2024interpbench}, ground-truth attribution
+benchmarks that plant the important features~\cite{yang2019bim,m4_2023}, and circuit- and
+variable-localization benchmarks that curate their answers in neural language
+models~\cite{mib2025}. We add the missing case: a real, human-written, deployed artifact that
+was never designed to be interpretable. Its ground truth is independent of the artifact, not
+built into it. Our subject is not the Atari environment itself, which the Arcade Learning
+Environment and its faster and object-centric descendants already
+supply~\cite{bellemare2013arcade,machado2018revisiting,dalton2020cule,delfosse2025jaxatari};
+it is the bit-exact, differentiable intervention oracle layered on it. So the leaderboard
+calibrates these methods against ground truth on a system the field did not design to be
+interpretable.
 
 The same oracle also reveals a limit: a high leaderboard score cannot show meaning. This limit
 is the subject of this paper. A perfect faithfulness score certifies that a method named the
@@ -80,7 +86,9 @@ different type. Lazebnik made the same point: one can describe a system in compl
 detail and still not understand it~\cite{lazebnik2002can}. We turn that observation into a
 measured quantity. The distance from a faithful effect table to the algorithm is the
 sufficiency gap $1-S$, and on an already-exact effect table it cannot be closed by a better
-hyperparameter.
+hyperparameter. Our operational definition of interpretability, ground-truth recovery scored
+by the oracle, is one of several in circulation; others set it as a design target for new
+models rather than an audit of a system already built~\cite{barbiero2025neural}.
 
 Software engineering gives the clearest version of this requirement. IEEE~610.12 defines
 software as programs plus their documentation and data, the specification, the design, the
@@ -146,7 +154,7 @@ that adds all three back is Paper~5.
 \centering
 \includegraphics[width=\textwidth]{fig5_representativeness_map.pdf}
 \caption{\textbf{The VCS$\leftrightarrow$neural-network failure-mode map.} Each row pairs a
-failure mode we measured on the VCS against the oracle (§3.2)~--- left, blue~--- with the
+failure mode we measured on the VCS against the oracle (\Sectionname\ref{sec:oracle})~--- left, blue~--- with the
 neural-network behavior it is a documented analogue of~--- right, vermillion. On the VCS the
 failure is provable because we hold the exact ground truth; the neural-network column is a
 documented analogue, not proven by this benchmark, and reads the attribution and probing

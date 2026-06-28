@@ -9,10 +9,10 @@ trajectory on one of the six core games (\texttt{breakout}, \texttt{ms\_pacman},
 \texttt{qbert}, \texttt{seaquest}, \texttt{space\_invaders}). The candidate-cause set is the
 machine's own state. This set is the 128 RAM bytes together with the CPU registers and the TIA
 and RIOT registers exposed by the substrate. The reference is the intervention oracle of
-\Sectionname3.2, evaluated by exact re-runs of the emulator under $\mathrm{do}(u)$. A method that
+\Sectionname\ref{sec:oracle}, evaluated by exact re-runs of the emulator under $\mathrm{do}(u)$. A method that
 cannot be applied to a given output regime is recorded as not-applicable rather than scored
 as zero. An empty result is therefore never read as a wrong one. Faithfulness is the F
-axis of the main-text triad (\Sectionname3.4); we reference that definition and do not restate it.
+axis of the main-text triad (\Sectionname\ref{sec:triad}); we reference that definition and do not restate it.
 Records live under \texttt{tools/xai\_study/<phase>/out/}; the aggregate they feed is
 \texttt{tools/xai\_study/compare/out/leaderboard.json}.
 
@@ -27,7 +27,7 @@ Table~\ref{supp:tab:phaseA}.
 \caption{\textbf{Phase~A protocols (neuroscience battery).} One row per method. The columns
 give the input it reads, the reference it is scored against, the sampling or intervention
 budget, the scoring metric, and the committed record. All eight run on the six core games;
-faithfulness is the F axis of \Sectionname3.4. The whole-state recording (A8) is included as a
+faithfulness is the F axis of \Sectionname\ref{sec:triad}. The whole-state recording (A8) is included as a
 descriptive upper bound on coverage. Its faithfulness $F$ is trivial, so we read it for its
 minimality $M$.}
 \label{supp:tab:phaseA}
@@ -67,7 +67,7 @@ in \Sectionname\ref{supp:provenance}.
 \centering
 \caption{\textbf{Phase~B protocols (attribution battery).} Each method emits a saliency over
 the candidate-cause set. We score it by Pearson correlation against the oracle attribution
-(\Sectionname3.2). The reference and the six-game budget are shared. The budget column records the
+(\Sectionname\ref{sec:oracle}). The reference and the six-game budget are shared. The budget column records the
 sampling or perturbation count that drives each estimator. The seed column flags which
 methods carry an independent-seed dispersion in \texttt{leaderboard\_ci.csv}.}
 \label{supp:tab:phaseB}
@@ -94,7 +94,7 @@ On-distribution counterfactual & intervention & on-manifold $\mathrm{do}(u)$ res
 
 \smallskip
 \noindent\scriptsize Records: \texttt{tools/xai\_study/phaseB\_attribution/out/}; all twelve run
-on the six core games and are scored by Pearson correlation against the oracle (\Sectionname3.2). Seed
+on the six core games and are scored by Pearson correlation against the oracle (\Sectionname\ref{sec:oracle}). Seed
 sd is the independent-seed dispersion from \texttt{leaderboard\_ci.csv}.
 \end{table}
 
@@ -110,7 +110,7 @@ sparse autoencoder has two aggregations that differ, which we reconcile in
 \begin{table}[t]
 \centering
 \caption{\textbf{Phase~C protocols (mechanistic battery).} Each method is scored against the
-substrate's known circuit or the exact recovered-minus-exact deviation (\Sectionname3.2), and not
+substrate's known circuit or the exact recovered-minus-exact deviation (\Sectionname\ref{sec:oracle}), and not
 against another method. This is what keeps the oracle ceiling non-circular. The probing and
 dictionary-learning members are included for comparison with the causal members.}
 \label{supp:tab:phaseC}
@@ -139,7 +139,7 @@ on the six core games.
 \end{table}
 
 The intervention oracle is the positive control, not a method under test. It is the exact
-$\mathrm{do}(u)$ ground truth of \Sectionname3.2, evaluated by re-running the bit-exact machine. It
+$\mathrm{do}(u)$ ground truth of \Sectionname\ref{sec:oracle}, evaluated by re-running the bit-exact machine. It
 attains $F=S=M=1.0$ by construction. Its record triple is the intervention oracle, the
 content-path gradient oracle, and their cross-check
 (\texttt{tools/xai\_study/ground\_truth/out/}). It anchors the ceiling against which every

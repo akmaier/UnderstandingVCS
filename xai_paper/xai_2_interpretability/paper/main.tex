@@ -47,6 +47,13 @@
 
 \raggedbottom
 
+%% sn-jnl + hyperref emit each float's PDF destination twice at its own location
+%% (pdftex "destination with the same identifier (figure.N)"). hypertexnames=false makes
+%% hyperref name anchors by an internal serial counter, so the doubled emission cannot
+%% collide. Cross-references and citation links are unaffected. Set after the class has
+%% loaded hyperref.
+\AtBeginDocument{\hypersetup{hypertexnames=false}}
+
 \begin{document}
 
 %%=============================================================%%

@@ -7,14 +7,14 @@ records into one row per method by averaging over games. The schema columns of a
 row are given in Table~\ref{supp:tab:schema}. The aggregation rule is a mean over the
 $n_{\text{games}}$ games. When a method emits several output records on one game, those records
 are first reduced within that game. The faithfulness, sufficiency, and minimality columns
-report the F, S, and M axes defined in \Sectionname3.4. We do not re-derive those definitions here.
+report the F, S, and M axes defined in \Sectionname\ref{sec:triad}. We do not re-derive those definitions here.
 
 \begin{table}[t]
 \centering
 \caption{\textbf{Leaderboard row schema.} The columns of one row in
 \texttt{compare/out/leaderboard.json} (\texttt{rows[\,]}) and its uncertainty companion
 \texttt{leaderboard\_ci.csv}. The metric column names the per-method scoring function from
-\Sectionname\ref{supp:protocols}; F, S, and M are the triad axes of \Sectionname3.4. Aggregation is a mean
+\Sectionname\ref{supp:protocols}; F, S, and M are the triad axes of \Sectionname\ref{sec:triad}. Aggregation is a mean
 over $n_{\text{games}}$, with bootstrap confidence intervals over games (and, where present,
 over records).}
 \label{supp:tab:schema}
@@ -28,11 +28,11 @@ Column & Meaning \\
 \texttt{tradition} & intervention, causal, gradient, correlational, \jkey{dim_reduction}, probing, descriptive, oracle \\
 \jkey{n_games} & number of games the method was scored on (6 for the core set; 1 for the oracle) \\
 \jkey{n_records} & number of per-game output records aggregated into the row \\
-\texttt{faithfulness} (F) & faithfulness vs.\ the intervention oracle (\Sectionname3.2), $[0,1]$, higher better \\
+\texttt{faithfulness} (F) & faithfulness vs.\ the intervention oracle (\Sectionname\ref{sec:oracle}), $[0,1]$, higher better \\
 \jkey{faithfulness_ci95} & $95\%$ bootstrap CI half-width over games \\
 \jkey{faithfulness_position_regime} & F restricted to the discrete sprite-position/index regime \\
 \jkey{faithfulness_content_regime} & F restricted to the continuous content regime \\
-\texttt{triad\_S} / \texttt{triad\_M} & sufficiency / minimality axes (\Sectionname3.4), where applicable \\
+\texttt{triad\_S} / \texttt{triad\_M} & sufficiency / minimality axes (\Sectionname\ref{sec:triad}), where applicable \\
 \jkey{plausibility_proxy} & documented method-tradition proxy, $[0,1]$ --- not a human-subjects measurement \\
 \jkey{is_positive_control} & 1 for the oracle row, 0 otherwise \\
 \jkey{metric_names} & the per-method scoring function (\Sectionname\ref{supp:protocols}) \\
@@ -48,7 +48,7 @@ leaderboard. A \emph{per-game record} is one method scored on one game, written 
 \texttt{out/} tree. An \emph{output record} is a per-game record for one output regime; a
 method may emit several of these on one game. A \emph{family mean} is the average over the
 members of a tradition family, e.g.\ causal/intervention. The \emph{oracle positive control}
-is the exact $\mathrm{do}(u)$ ground truth of \Sectionname3.2, scored as a method to anchor the
+is the exact $\mathrm{do}(u)$ ground truth of \Sectionname\ref{sec:oracle}, scored as a method to anchor the
 ceiling. A \emph{not-applicable method} is one that does not apply to a given output regime;
 it is recorded as N/A rather than as a zero. With this vocabulary the count is unambiguous.
 The benchmark scores 30 interpretability methods together with the intervention
