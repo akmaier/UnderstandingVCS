@@ -3,7 +3,7 @@ id: P2-R7-FIG-plane
 title: Restore the clean dashed-curve faithfulness-vs-plausibility plane (Fig 4), declutter the error bars
 epic: R7 (universal semantic gap)
 status: todo
-sprint:
+sprint: 15
 owner:
 where: local
 depends_on: []

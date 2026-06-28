@@ -3,7 +3,7 @@ id: P2-R7-EXP-sampler
 title: Keystone experiment — sampler ON makes gradient methods faithful, yet no semantics
 epic: R7 (universal semantic gap)
 status: todo
-sprint:
+sprint: 15
 owner:
 where: local
 depends_on: []
