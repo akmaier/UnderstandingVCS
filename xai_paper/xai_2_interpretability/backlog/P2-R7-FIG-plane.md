@@ -2,7 +2,7 @@
 id: P2-R7-FIG-plane
 title: Restore the clean dashed-curve faithfulness-vs-plausibility plane (Fig 4), declutter the error bars
 epic: R7 (universal semantic gap)
-status: todo
+status: done
 sprint: 15
 owner:
 where: local
@@ -43,13 +43,13 @@ oracle — i.e. faithful yet still short of understanding. Skip if it re-clutter
 the priority.
 
 ## Definition of Done
-- [ ] `fig2_faithfulness_vs_plausibility.py` regenerated as the dashed-curve clean layout (no CI
+- [x] `fig2_faithfulness_vs_plausibility.py` regenerated as the dashed-curve clean layout (no CI
       whiskers, no in-panel table); dashed offset curve + oracle-ceiling star both present
-- [ ] R2/R6 labeling fixes applied (§3.2 oracle, plausibility proxy, count, no drawn source paths,
-      8 pt, Okabe-Ito); ≤~8 labeled points; render-checked (no overlap/clipping)
-- [ ] every plotted value traces to the committed leaderboard.json / faithful_demo.json
-- [ ] PDF regenerated; paper still compiles (`latexmk -pdf` exit 0, 0 undefined)
-- [ ] committed + pushed (rebase-before-push); primary pulled ff-only; `status: done`
+- [x] R2/R6 labeling fixes applied (§3.2 oracle, plausibility proxy, count, no drawn source paths,
+      8 pt, Okabe-Ito); ≤~8 labeled points (6 method anchors + oracle); render-checked (no overlap/clipping)
+- [x] every plotted value traces to the committed leaderboard.json / faithful_demo.json
+- [x] PDF regenerated; paper still compiles (`latexmk -pdf` exit 0, 0 undefined refs/cites, 50 pp)
+- [x] committed + pushed (rebase-before-push); primary pulled ff-only; `status: done`
 
 ## Notes / handoff
 - **Caption coupling:** the Fig 4 caption lives in `07_results_compare.tex` (owned by
