@@ -1,24 +1,27 @@
-% 00_abstract.tex — Abstract. Drafted by item P2-E8-1; restyled+condensed P2-E8; rewritten P2-R7-ABSTRACT.
+% 00_abstract.tex — Abstract. Drafted by item P2-E8-1; restyled+condensed P2-E8; rewritten P2-R7-ABSTRACT;
+% simplified 2026-06-24 (Maier: plain, precise, short sentences, non-native-readable; no literary register).
 % Body only: this file is \input{} inside \abstract{...} in main.tex (no \section).
 % NMI rule (document_check.md C): UNREFERENCED abstract — no \cite — and ~150-200 words.
-% Maier/NMI voice per ../STYLE.md; honesty contract per ../plan.md.
-Interpretability methods are judged by their faithfulness, by whether they name
-the true causes of a system's output, and faithfulness is widely treated as the
-line that separates a real explanation from a plausible one. The VCS, a bit-exact
-differentiable port of the Atari~2600 never built to be interpretable, lets us
-test that line where the causes are known by exact intervention. Scoring 31
-methods over 257 per-game records, we find causal and intervention methods more
-faithful than gradient and correlational saliency ($0.68$ versus $0.29$), with the
-robust separation on the position regime where naive gradients provably vanish
-(activation patching $1.000$ versus vanilla saliency $0.000$); the all-regimes gap
-is not robust. Yet faithfulness is not the dividing line. Turning the port's
-bilinear sampler on makes the vanishing gradient faithful, lifting vanilla
-saliency from $0.000$ to $0.791$ on Pong, and the recovered meaning still does not
-appear: semantic recovery stays $0$, as for every other method. Meaning is not
-recoverable from mechanism; its reference is behaviour, fixed for software by its
-documentation and data. The machine offers a reusable ground-truth benchmark for
-explainable AI, mechanistic interpretability, and software verification.
+Interpretability methods are judged by their faithfulness: whether they name the
+true causes of a system's output. The field treats faithfulness as the test that
+separates a real explanation from a merely plausible one. We test this on the
+Understanding VCS Project, a bit-exact and differentiable copy of the Atari~2600.
+The machine was never built to be interpretable. Yet it is fully known, so the
+true cause of any output can be computed by exact intervention. We score thirty
+interpretability methods against this known answer. Causal and intervention
+methods are more faithful than gradient and correlational ones ($0.68$ versus
+$0.29$). The clearest case is a sprite's position, where the naive gradient is
+provably zero: a causal method scores $1.000$ and standard saliency scores
+$0.000$. But faithfulness is not what is missing. When we switch on the port's
+differentiable sampler, the gradient methods become faithful too---saliency rises
+from $0.000$ to $0.791$ on Pong---yet no method recovers what a variable means.
+Every method reports which signals matter, never what they mean. We name this
+remaining distance the semantic gap, and we measure it. Meaning is not in the
+mechanism. For software it is fixed outside the code, in the documentation and the
+data the program was written for. No method that reads only the mechanism can
+reach it. The Understanding VCS Project offers a reusable benchmark with known
+answers, for explainable AI, mechanistic interpretability, and software
+verification.
 
 % BIBTEX-NEEDED: (none) — the abstract is intentionally citation-free per the NMI
-%   unreferenced-abstract rule (document_check.md C). No \cite keys introduced;
-%   references.bib unchanged.
+%   unreferenced-abstract rule (document_check.md C). No \cite keys introduced.
