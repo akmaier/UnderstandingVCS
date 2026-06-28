@@ -56,8 +56,7 @@ port's bilinear sampler on. The sampler interpolates the position read and resto
 non-zero gradient through it, and the gradient methods become faithful too. On the games
 with a moving tracked sprite their faithfulness rises off the provable zero. Vanilla
 saliency, grad$\times$input, smoothgrad, and expected gradients reach $0.791$ on Pong, and
-the same family reaches $0.529$ on Q*bert (committed record
-\texttt{sampler\_faithfulness.csv}, Fig.~\ref{fig:sampler}). The increase is real but does
+the same family reaches $0.529$ on Q*bert (Fig.~\ref{fig:sampler}). The increase is real but does
 not occur on every game. Integrated gradients with a zeros baseline still vanishes on Pong.
 A static-sprite game offers no position to restore, and where the tracked cell is not the
 active one nothing moves. Yet on every game where the gradient becomes faithful the semantic

@@ -140,8 +140,7 @@ The repair works on the games that have a moving, tracked sprite.
 On Pong, vanilla saliency, gradient $\times$ input, SmoothGrad, and expected
 gradients all rise from the provable zero to faithfulness $0.791$ against the oracle;
 on Q*bert vanilla saliency, gradient $\times$ input, SmoothGrad, and integrated
-gradients rise to $0.529$ (committed sampler record,
-\texttt{compare/out/sampler\_faithfulness.csv}). The rise is not universal, and we
+gradients rise to $0.529$ (committed sampler record). The rise is not universal, and we
 report it as it is: integrated gradients with a zeros baseline still vanishes on
 Pong, the static-sprite games offer no position to restore, and on Space Invaders the
 restored gradient lands on a non-active cell, so it does not move. Where a sprite's
@@ -287,8 +286,7 @@ figures use the per-method aggregation as canonical, so text, table, and figure 
 \caption{\textbf{A taxonomy of interpretability failure on the VCS, organised by
 mechanism.} Each leaf is a method exhibiting the branch's failure mode, annotated with
 its \emph{family-mean} faithfulness $F \pm 95\%$ bootstrap-over-games CI against the
-intervention oracle (\Sectionname\ref{sec:oracle}; $0=$ chance, $1=$ oracle ceiling), read from
-leaderboard\_ci.csv; the per-game exemplars quoted below carry their own ``on $\langle$game$\rangle$''
+intervention oracle (\Sectionname\ref{sec:oracle}; $0=$ chance, $1=$ oracle ceiling); the per-game exemplars quoted below carry their own ``on $\langle$game$\rangle$''
 label. The lower branches confirm the expected failures: the gradient family is
 provably zero on the discrete position/index regime, and the architecture-specific
 methods (Grad-CAM, attention, VIPER) do not apply because the VCS lacks the neural
