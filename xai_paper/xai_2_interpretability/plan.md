@@ -27,40 +27,52 @@ learned agents are P5.
   (shared template); decide after pilots. Article (or Analysis).
 
 ## The central question (the spine of the paper)
-**Do our interpretability methods explain the *semantics* of a system — do we actually
-*understand* what it is doing — or do they, even when perfectly faithful, recover only the
-causal wiring and stop short of the meaning?** The field optimizes *faithfulness* (does the
-explanation name the true causes?) as if it were the target, because on real neural systems
-there is no ground truth against which anything stronger can be checked. We remove that
-excuse and ask, on a system whose ground truth is exactly known, whether faithfulness is
-*sufficient* for understanding — and we find that it is **necessary but not**.
+**Even when every interpretability method is faithful, do we *understand* the system — or do
+all of them, faithful or not, recover only the causal wiring ("wiggle $X$, $Y$ moves") and
+never the meaning?** The field optimizes *faithfulness* (does the explanation name the true
+causes?) as if it were the target, because on real neural systems there is no ground truth
+against which anything stronger can be checked. On the fully known VCS there is, so we put the
+question in its strongest form: we even turn the differentiable port's **bilinear sampler on**,
+restoring a non-zero gradient so the gradient methods become faithful too, and ask whether
+*universal* faithfulness buys understanding. It does not. No method — on a fully known, fully
+**differentiable** machine — recovers a single semantic concept ("missile", "collision",
+"game restarts"); every method returns the same engineering object, a perturbation-response
+map, and the only meaning in the study is *imported*, never discovered. Faithfulness is
+**necessary but radically insufficient**, and the reference for meaning is not in the mechanism
+at all: it is the system's **behavior**, which for software is fixed by its **documentation and
+data** (IEEE-610.12: software = programs *and* documentation).
 
 ## Thesis (one paragraph)
-Interpretability research has converged on *faithfulness* as its quality criterion, and on
-real systems faithfulness cannot even be checked, because there is no ground truth (Jonas &
-Kording's "fix-the-radio"). We remove that excuse: the differentiable, bit-exact VCS port
-(Paper 1) is software with a known specification, so the true cause of any output is
-recoverable by exact intervention. Turning ~31 interpretability methods — a neuroscience
-battery, the attribution/XAI toolkit, and mechanistic interpretability — onto this one
-machine, we **confirm the expected, important result** that causal/intervention methods are
-faithful while popular gradient and correlational saliency methods are plausible-but-wrong,
-sometimes provably zero on discrete position outputs (a quantified "danger zone" of
-conviction without correctness). **But faithfulness, once secured, is the smaller part of
-understanding.** A faithful method returns a true causal-effect map or a true data-flow
-graph; it does not return the variable's *meaning* or the routine's *algorithm*. Our
-correctness triad makes this precise — an explanation is *right* only if it is **F**aithful
-∧ **S**ufficient (it regenerates behavior) ∧ **M**inimal (at the algorithmic level) — and
-the committed data show circuits that are graph-correct (F=1.0, M=1.0) yet do not reproduce
-behavior (S=0.44), feature dictionaries that match a named variable perfectly (matched
-fraction 1.0) while being causally unfaithful (F=0.04), and concepts that are linearly
-decodable yet provably unused. The gap between a faithful attribution and an understanding
-of the computation is therefore not philosophy; on this machine it is a number. We name it
-the **semantic gap**, measure its symptoms, and are deliberate that Paper 2 *defines and
-measures* the gap while *closing* it — recovering the program's documentation and design
-from scratch — is the companion Paper 4.
+Interpretability has converged on *faithfulness* as its quality criterion, and on real
+systems faithfulness cannot even be checked, because there is no ground truth (Jonas &
+Kording's "fix-the-radio"). The differentiable, bit-exact VCS port (Maier et al.) is software
+with a known specification, so the true cause of any output is recoverable by exact
+intervention. Turning ~31 interpretability methods — a neuroscience battery, the
+attribution/XAI toolkit, and mechanistic interpretability — onto this one machine, we first
+confirm the expected result that causal/intervention methods are faithful while popular
+gradient and correlational saliency methods are not, sometimes provably zero on discrete
+position outputs. **But the dividing line is not faithfulness.** We turn the port's bilinear
+sampler on, which restores a non-zero gradient and makes the previously-vanishing gradient
+methods faithful too — and the picture does not change: every method, faithful or not, returns
+the same kind of object, a "wiggle $X$ and $Y$ moves" causal map, and not one returns the
+variable's *meaning* or the routine's *algorithm*. No method names "missile", "collision", or
+"game restart"; the only semantics in the study are *imported* from external annotation
+(OCAtari/AtariARI) and merely causally *verified*, never *discovered* — and this holds on a
+machine that is fully observable and fully differentiable, where every excuse of access has
+been removed. Our correctness triad makes the shortfall precise — *right* = **F**aithful ∧
+**S**ufficient ∧ **M**inimal — and the committed data show graph-correct circuits that fail
+sufficiency (F=1.0, M=1.0, S=0.44 on Breakout), feature dictionaries that match a named
+variable perfectly yet are causally inert (matched 1.0, F=0.04 on Pong), and concepts
+decodable yet provably unused. The gap between a faithful attribution and an understanding of
+the computation is therefore not philosophy; on this machine it is a number, and it does not
+close when faithfulness is made universal. We name it the **semantic gap**, and we locate its
+reference *outside* the mechanism: meaning is fixed by the system's **behavior**, which for
+software is documented in its manuals and data. Paper 2 *defines and measures* the gap and
+names where its reference lives; *closing* it — recovering the program's documentation and
+design from scratch — is the companion Paper 4.
 
 ## What we claim about semantics / understanding (the honesty contract — do not drift)
-We claim exactly three things, and no more:
+We claim exactly four things, and no more:
 1. **We give an operational, measurable definition** of where faithfulness stops short of
    understanding: `right = F ∧ S ∧ M` (faithful ∧ sufficient — regenerates behavior /
    predicts held-out interventions ∧ minimal at the algorithmic level — RAM/registers/
@@ -77,6 +89,17 @@ We claim exactly three things, and no more:
    is true *"by construction"* because it verifies a **supplied** variable; and a concept can
    be linearly decodable yet causally inert (the "present ≠ used" trap, counted on breakout,
    score cell 84).
+
+4. **The reference for meaning is behavior, not mechanism — and faithfulness does not change
+   that.** Every semantic label in the study entered from *outside* (T1/T2 are mechanism,
+   derived internally; **T3 is meaning, imported** from OCAtari/AtariARI — the system's
+   documented behavior), and no method produced one. We make the claim adversarially robust
+   with the **sampler-on experiment**: turning the bilinear sampler on makes the gradient
+   methods faithful on the position regime (faithfulness rises off the provable zero), yet
+   their *semantic recovery stays zero*, exactly like every other method's. So the shortfall
+   is not a faithfulness deficit to be engineered away; meaning is fixed by what the software
+   *does* (its behavior, documented in manuals and data, IEEE-610.12), not present in the
+   wiring for any method to recover.
 
 **What we do NOT claim:** that any method recovered the program's meaning, algorithm,
 variables, or design *from scratch*. **All T3 semantic labels are imported externally**
@@ -107,15 +130,25 @@ alignment-to-given-labels, not discovery.
    differentiable, so the *true* causal structure of any output is computable.
 3. **The move (half 1 — confirm).** Turn the toolkit on this one system and **score every
    method against ground truth**. Result: faithful = causal; popular saliency is
-   plausible-but-wrong; the danger zone is quantified.
-4. **The deeper move (half 2 — the new contribution).** Mark the boundary the leaderboard
-   *cannot cross*. With the same oracle, show that even a perfectly faithful method recovers
-   the *wiring*, not the *meaning or the algorithm*: graph-correct circuits that fail S,
-   semantic matches that are causally inert, decodable-but-unused concepts. **Faithfulness
-   is necessary, not sufficient.** Name and measure the **semantic gap**.
-5. **The payoff.** A reusable ground-truth benchmark *and* the first measurable definition
-   of the residual that interpretability must close to claim *understanding* — with the
-   constructive companion work (P3 behavioral, P4 recovery) explicitly deferred.
+   plausible-but-wrong (provably zero on discrete position outputs).
+4. **The move (half 2 — remove the faithfulness escape, the keystone experiment).** Turn the
+   bilinear sampler ON so the gradient methods become faithful too. The danger-zone story could
+   otherwise be dismissed as a fixable technical artifact (the vanishing gradient); we fix it,
+   their faithfulness rises off the floor — and nothing about understanding changes.
+5. **The deeper move (the contribution).** With the same oracle, show that even a *universally
+   faithful* toolkit recovers the *wiring*, not the *meaning or the algorithm*: graph-correct
+   circuits that fail S, semantic matches that are causally inert, decodable-but-unused
+   concepts. No method names "missile", "collision", or "restart". **Faithfulness is necessary,
+   not sufficient.** Name and measure the **semantic gap**.
+6. **Where meaning lives.** The only semantics in the study were *imported* (T3 / OCAtari /
+   AtariARI) and merely verified, never discovered. Meaning is not in the mechanism; its
+   reference is the system's *behavior*, documented for software in its manuals and data
+   (IEEE-610.12). That reframes the open problem: understanding needs an external behavioral
+   reference, which no internal interpretability method supplies.
+7. **The payoff.** A reusable ground-truth benchmark *and* the first measurable definition
+   of the residual that interpretability must close to claim *understanding*, plus the
+   demonstration that the residual survives universal faithfulness — with the constructive
+   companion work (P3 behavioral, P4 recovery) explicitly deferred.
 
 ## Why a 1977 chip is a fair test (the representativeness argument — front and centre)
 The obvious objection: *"you study deterministic hand-coded software to judge methods built
@@ -123,11 +156,11 @@ for learned, distributed, stochastic neural nets — why does a score here predi
 about a transformer?"* Our answer, stated explicitly in the Introduction and Discussion:
 - **It is a *necessary-condition screen*, not a sufficiency predictor.** A method that
   fails *here* — perfect ground truth, full observability, exact interventions, **no
-  learning** — has no business being trusted on a neural network. Passing here is
-  necessary, not sufficient. **The same logic upgrades the semantic-gap claim:** if even the
-  *strongest* causal account a fully-observable machine permits stops short of meaning, then
-  on a neural net — less observable, no clean ground truth — faithfulness is *a fortiori*
-  not understanding. Failing here is decisive; the gap here is a floor on the gap there.
+  learning** — is strong negative evidence against trusting it on a less observable neural
+  network. Passing here is necessary, not sufficient. **The same logic carries the
+  semantic-gap claim:** if even the *strongest* causal account a fully-observable machine
+  permits stops short of meaning, that is evidence — not proof — that on a neural net, less
+  observable and without clean ground truth, faithfulness is no closer to understanding.
 - **The VCS *does* exhibit the failure modes that make interpretation hard:** aliased /
   polysemantic RAM cells reused across routines (superposition-like), race-the-beam timing
   (distributed temporal computation), floating-bus reads, and registers whose meaning is
