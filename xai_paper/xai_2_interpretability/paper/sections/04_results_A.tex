@@ -73,13 +73,12 @@ the intervention oracle separates them.
 Dimensionality reduction scores in the middle, with NMF and PCA tied. A7
 decomposes the state tensor into latent components and matches them to the known
 clock, read/write, and vsync signals. Non-negative matrix factorization and PCA
-both recover a matched-component fraction of $0.60$ on average (best $0.80$ on a
-single game), so neither factorization is the more faithful at this
+both match about 60 percent of the known components on average (at best 80 percent
+on a single game), so neither factorization is the more faithful at this
 analogue~\cite{leaderboardP2}. NMF leads only on the secondary recon-error/FSM
 composite, where its non-negativity better fits the additive register basis.
-A7's $0.60$ is the second-highest score, behind only the causal lesion. It
-recovers about $60$ percent of the known components and leaves the rest
-unexplained.
+This makes A7 the second-highest score, behind only the causal lesion. It still
+leaves 40 percent of the components unmatched.
 
 A complete record is still not an explanation. A8 records the full RAM and
 register state, faithful and sufficient by definition ($F = 1.0$, $S = 1.0$).
