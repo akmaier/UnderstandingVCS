@@ -7,96 +7,98 @@
 
 \section{The neuroscience battery, quantified}\label{sec:results-a}
 
-We begin where the field's doubt began. Jonas and Kording asked whether a
-neuroscientist with the standard toolkit could understand a microprocessor, and
-found that the toolkit yields rich structure that misses the
-mechanism~\cite{jonas2017could}. They could diagnose the failure but not grade
-it, because on the 6502 they had no causal ground truth to score each method
-against. We supply that number. Running the same battery on the bit-exact, fully
-known VCS, where the true causal role of every register and RAM cell is
-recoverable by exact intervention (\Sectionname\ref{sec:methods}), turns Kording's
-qualitative lesson into a measured one. Across the eight analyses A1--A8,
+We begin with a known concern in the field. Jonas and Kording asked whether a
+neuroscientist with the standard toolkit could understand a microprocessor. They
+found that the toolkit yields rich structure but misses the
+mechanism~\cite{jonas2017could}. They could show the failure but not measure it.
+On the 6502 they had no causal ground truth to score each method against. We
+supply that missing number. We run the same battery on the bit-exact, fully
+known VCS, where exact intervention recovers the true causal role of every
+register and RAM cell (\Sectionname\ref{sec:methods}). This makes Kording's
+qualitative lesson quantitative. Across the eight analyses A1--A8,
 faithfulness against the oracle ranges from $0.116$ to $1.0$ and averages
 $0.49$ (95\% bootstrap CI $\pm 0.24$)~\cite{leaderboardP2}. The
 oracle-as-method positive
 control sits at $1.0$ by construction (Fig.~\ref{fig:phaseA}). The structure
-these methods report is real; yet structure is not cause, and the gap is what
-the score measures.
+these methods report is real. But structure is not the same as cause. The score
+measures the difference.
 
-The wiring itself is largely recoverable. A1 reconstructs the dependency graph
-over state variables, a connectome of read/write edges, and scores it against the
-true data-flow graph at a faithfulness of $0.41$~\cite{leaderboardP2}, half
-spurious. The single-unit lesion A2 fares best: clamping each RAM cell
-in turn and ranking it by the behavioral damage it does yields an importance map
-whose Spearman correlation with the unit's true causal role is $0.99$ (mean
-$0.987$ over the six core games)~\cite{leaderboardP2}. Lesioning is causal, and
-the one classical number near the ceiling proves it.
+The dependency structure is largely recoverable. A1 reconstructs the dependency
+graph over state variables, a connectome of read/write edges, and scores it
+against the true data-flow graph at a faithfulness of
+$0.41$~\cite{leaderboardP2}: about half its edges are spurious. The single-unit
+lesion A2 fares best. It clamps each RAM cell in turn and ranks it by the
+behavioral damage it does. The resulting importance map has a Spearman
+correlation of $0.99$ with the unit's true causal role (mean $0.987$ over the
+six core games)~\cite{leaderboardP2}. Lesioning is causal, which is why A2 is
+the one classical method that scores near the top.
 
-Yet a near-perfect rank order hides an interaction blind-spot. A single-unit
-lesion changes one cell at a time, so it is blind to causes that act only in
-concert. On Space Invaders the per-unit ranking misses $40\%$ of the
-interactions the oracle records, and one super-additive pair swings behavior by
-up to $1044$ screen-pixels beyond the sum of its parts~\cite{leaderboardP2}. The
-map of which units matter is right, the model of how they combine absent. Hence
-even the strongest classical method recovers a ranking, not the computation: an
-effect map is not the algorithm that produces it.
+Yet a near-perfect rank order still misses interactions. A single-unit lesion
+changes one cell at a time, so it is blind to causes that act only together. On
+Space Invaders the per-unit ranking misses $40\%$ of the interactions the oracle
+records. One super-additive pair swings behavior by up to $1044$ screen-pixels
+beyond the sum of its parts~\cite{leaderboardP2}. The ranking of which units
+matter is correct, but the model of how they combine is missing. So even the
+strongest classical method recovers a ranking, not the computation. An effect
+map does not show the algorithm behind it.
 
-Tuning curves report structure that points the wrong way. A3 fits per-unit
-tuning to a game variable, the workhorse of systems neuroscience, and on the VCS
-it actively misleads. Its \emph{spurious-tuning rate}, the fraction of
-strongly-tuned units whose tuning does not match their true causal role, is
-$1.0$ on Pong, and its faithfulness collapses to $0.12$, the lowest in the
-battery~\cite{leaderboardP2}. Tuning is correlational; on a machine where many
-cells co-vary with the beam clock, apparent tuning is cheap, which foreshadows
-the present-versus-used distinction we return to for linear probing.
+Tuning curves report structure that does not match the true cause. A3 fits
+per-unit tuning to a game variable, the workhorse of systems neuroscience. On the
+VCS it actively misleads. Its \emph{spurious-tuning rate} is the fraction of
+strongly-tuned units whose tuning does not match their true causal role. That
+rate is $1.0$ on Pong, and its faithfulness falls to $0.12$, the lowest in the
+battery~\cite{leaderboardP2}. Tuning is correlational. On a machine where many
+cells co-vary with the beam clock, apparent tuning is cheap. This is the same
+present-versus-used distinction we discuss later for linear probing.
 
-Correlation structure and field potentials are real and largely epiphenomenal.
-A4, the spike-word analysis of pairwise and global correlation, reproduces the
-familiar weak-pairwise/strong-global signature, yet against the true coupling its
-faithfulness is only $0.29$ with sufficiency near zero ($S =
-0.018$)~\cite{leaderboardP2}. A5, the local-field-potential analogue pooling
-regional activity into power spectra, scores $0.40$, much of that variance being
-the known frame and scanline clocks~\cite{leaderboardP2}. Both see the machine
-breathe without seeing it compute.
+Correlation structure and field potentials are real, but they are mostly side
+effects, not causes. A4, the spike-word analysis of pairwise and global
+correlation, reproduces the familiar weak-pairwise/strong-global signature. Yet
+against the true coupling its faithfulness is only $0.29$, with sufficiency near
+zero ($S = 0.018$)~\cite{leaderboardP2}. A5 is the local-field-potential
+analogue that pools regional activity into power spectra. It scores $0.40$, and
+much of that variance is the known frame and scanline
+clocks~\cite{leaderboardP2}. Both methods detect the machine's activity but not
+its computation.
 
-Granger causality mistakes temporal precedence for cause. A6 infers directed
-CPU/TIA/RIOT edges and scores them against the true data-flow; on Pong its
-faithfulness is $0.0$, with false-edge and missed-edge rates both at
-$1.0$~\cite{leaderboardP2}. The VCS is clock-locked, nearly everything
-predictable from everything else one cycle earlier, so equating precedence with
-causation infers spurious edges everywhere. No longer lag or stricter threshold
-repairs that; precedence and causation come apart here, and only the
-intervention oracle tells them apart.
+Granger causality treats ``happens earlier'' as ``is the cause.'' A6 infers
+directed CPU/TIA/RIOT edges and scores them against the true data-flow. On Pong
+its faithfulness is $0.0$, with false-edge and missed-edge rates both at
+$1.0$~\cite{leaderboardP2}. The VCS is clock-locked, so nearly everything is
+predictable from everything else one cycle earlier. Equating precedence with
+causation therefore infers spurious edges everywhere. Neither a longer lag nor a
+stricter threshold fixes this. Precedence and causation differ here, and only
+the intervention oracle separates them.
 
-Dimensionality reduction lands in the middle, with NMF and PCA tied. A7
+Dimensionality reduction scores in the middle, with NMF and PCA tied. A7
 decomposes the state tensor into latent components and matches them to the known
-clock, read/write, and vsync signals; non-negative matrix factorization and PCA
+clock, read/write, and vsync signals. Non-negative matrix factorization and PCA
 both recover a matched-component fraction of $0.60$ on average (best $0.80$ on a
 single game), so neither factorization is the more faithful at this
 analogue~\cite{leaderboardP2}. NMF leads only on the secondary recon-error/FSM
 composite, where its non-negativity better fits the additive register basis.
-Neither clears two-thirds of the known components, so A7's $0.60$,
-second-strongest behind only the causal lesion, leaves the latent space half
-interpretable and half opaque.
+A7's $0.60$ is the second-highest score, behind only the causal lesion. It
+recovers about $60$ percent of the known components and leaves the rest
+unexplained.
 
-A perfect record is still not an explanation. A8 records the full RAM and
-register state, faithful and sufficient by definition ($F = 1.0$, $S = 1.0$), and
-yet its minimality is $0.07$~\cite{leaderboardP2}: a recording of everything is,
-at the algorithmic level, an explanation of nothing. Faithfulness and sufficiency
-without minimality is a log file, not an account of the computation, the first
-hint that the three axes pull apart, which the semantic-gap result later turns
-into the paper's centre of gravity.
+A complete record is still not an explanation. A8 records the full RAM and
+register state, faithful and sufficient by definition ($F = 1.0$, $S = 1.0$).
+Yet its minimality is only $0.07$~\cite{leaderboardP2}. At the algorithmic level,
+a recording of every cell explains nothing. Faithfulness and sufficiency without
+minimality give a log file, not an account of the computation. This is the first
+sign that the three axes are independent. The semantic-gap result makes that
+point central later.
 
 Taken together, the battery confirms the expected result and puts a number on
 it. The advance over Jonas and Kording is that we grade the \emph{architectural}
 register-transfer level with a \emph{quantitative} $F$ against an exact oracle,
-not a qualitative verdict on the transistor. The contrast is sharp,
-because the causal operators we turn on the same machine in
+rather than giving a qualitative verdict on the transistor. The contrast is
+clear, because the causal operators we apply to the same machine in
 Sections~\ref{sec:results-b}--\ref{sec:results-c} reach the ceiling this battery
-cannot. As such, the gap is the method, not the machine. We mean this strictly
-as calibration: even the battery's best members recover a ranking, a graph, or a
-record, never the algorithm the program runs. That residual is the problem the
-paper measures.
+cannot. So the limitation lies in the analysis methods, not in the machine. We
+mean this strictly as calibration. Even the battery's best members recover a
+ranking, a graph, or a record, never the algorithm the program runs. This
+remaining gap is what the paper measures.
 
 \begin{figure}[t]
   \centering
