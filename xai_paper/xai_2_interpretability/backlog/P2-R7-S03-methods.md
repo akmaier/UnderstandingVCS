@@ -2,7 +2,7 @@
 id: P2-R7-S03-methods
 title: Methods — document the sampler-on protocol (bilinear surrogate for the position regime)
 epic: R7 (universal semantic gap)
-status: todo
+status: done
 sprint: 16
 owner:
 where: local

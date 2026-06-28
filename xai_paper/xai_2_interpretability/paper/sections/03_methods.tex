@@ -145,6 +145,27 @@ provably zero'' with the scoped claim of Prop.~\ref{prop:zero}: the \emph{naive}
 discrete position/index outputs is zero under the hard forward map, and methods that reduce to
 it inherit that failure, while surrogate and bilinear-sampler gradients are exceptions.
 
+We push the faithfulness audit to its strongest form by removing the one escape the position
+regime leaves open. The naive zero of Prop.~\ref{prop:zero} could be read as a fixable
+artifact, so we fix it: we turn the Paper-1 bilinear sampler on. The sampler interpolates the
+index boundary of Prop.~\ref{prop:zero} in the spatial-transformer manner, which makes the
+discrete position output a continuous function of the position RAM byte rather than a step,
+so the gradient methods receive a non-zero surrogate position gradient where the hard map gave
+them nothing~\cite{jaderberg2015spatial}. We score both conditions, the naive forward and the
+sampler-on forward, against the same intervention oracle of Eq.~\eqref{eq:doy}: for each
+candidate cause the per-cause attribution is correlated, by the raw Pearson $\rho$ of
+\Sectionname\ref{sec:triad}, against the oracle's true $|\Delta\,\text{position-pixel}|$, so the
+two conditions differ only in the surrogate the method is handed and not in how it is judged.
+Alongside faithfulness we record a second, deliberately stricter measure. The
+\emph{semantic recovery} of a method asks whether the method emits a Tier-3 game-concept name
+on its own, the word ``ball'' or ``missile'' attached to the byte it points at, rather than a
+cause that an external label later christens; an attribution map, which returns weights over
+causes and never a name, scores semantic recovery $0$ by construction. Faithfulness and
+semantic recovery are thus orthogonal axes, the one measuring whether the method names the
+right cause and the other whether it names any meaning, and the keystone experiment of
+\Sectionname\ref{sec:results_compare} reports both for the naive and sampler-on conditions on the
+position regime.
+
 Hence, for content outputs the gradient is a legitimate companion oracle, while for position,
 index, and event outputs the intervention oracle of Eq.~\eqref{eq:doy} is the sole ground
 truth and every gradient-based method is scored as a method under test. This position regime
