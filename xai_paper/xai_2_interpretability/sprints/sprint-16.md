@@ -28,5 +28,22 @@ Canonical sampler numbers (from `tools/xai_study/compare/out/sampler_faithfulnes
 Every sampler number traces to sampler_faithfulness.csv; no fabrication; paper recompiles (latexmk
 exit 0, 0 undefined); fig7 embedded resolves; Fig 4 caption no longer mentions CI whiskers.
 
-## Review
-_(to be filled at the R7-2 barrier)_
+## Review — R7-2 closed 2026-06-24 (4/4; one SM fix; recompiles 54 pp, 0 undefined, 0 multiply-defined)
+
+- **S07-compare** (`a0442595`): retitled "Across the traditions — the wiring, not the meaning";
+  new "Making the unfaithful faithful" subsection (0.000→0.791 pong / 0.529 qbert, semantics 0,
+  ram[54] mechanism, honest non-rises); **owns fig7** (`\label{fig:sampler}`); dropped the CI-whisker
+  line from the Fig 4 caption. Numbers traced to sampler_faithfulness.csv.
+- **S08-discussion** (`f0bd4d3d`): behavior-as-reference thesis anchored to the sampler result
+  ("we engineered faithfulness in, the meaning still did not appear"); IEEE-610.12; S6 pointer.
+- **S03-methods** (`89208b00` range): sampler-on protocol (bilinear index-boundary surrogate,
+  Pearson vs oracle |Δ position-pixel|) + the semantic_recovery measure; prop:zero scoping kept.
+- **S01-intro** (`188c79d9`): reframed to the universal gap + behavior-as-reference; sampler cited
+  qualitatively; faithful-vs-causal kept as the way-station.
+
+**SM fix (strict verification caught it):** S08 had re-embedded fig7 with a duplicate
+`\label{fig:sampler}` → multiply-defined-label warning (hidden behind a clean latexmk exit). Removed
+the duplicate float from S08; it now `\ref`s S07's figure (`89208b00`). Rebuilt: 0 multiply-defined,
+0 undefined, 54 pp.
+
+**Next:** R7-3 — SENT (whole-paper sentence split, runs ALONE), then ABSTRACT (final, condense).

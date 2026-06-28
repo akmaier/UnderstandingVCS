@@ -3,7 +3,7 @@ id: P2-R7-SENT
 title: Split overly long sentences throughout the paper (copy-edit pass, LAST but before abstract)
 epic: R7 (universal semantic gap)
 status: todo
-sprint:
+sprint: 17
 owner:
 where: local
 depends_on: [P2-R7-S01-intro, P2-R7-S03-methods, P2-R7-S07-compare, P2-R7-S08-discussion]
