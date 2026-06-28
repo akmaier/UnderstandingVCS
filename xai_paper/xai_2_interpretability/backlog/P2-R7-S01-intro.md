@@ -3,7 +3,7 @@ id: P2-R7-S01-intro
 title: Reframe intro to the universal semantic gap + behavior-as-reference
 epic: R7 (universal semantic gap)
 status: todo
-sprint:
+sprint: 16
 owner:
 where: local
 depends_on: []

@@ -31,5 +31,24 @@ Produce the two verifiable artifacts the reframe rests on. Disjoint file_scopes,
 - FIG-plane: PDF regenerated + render-checked (dashed curve + oracle star present, no clutter); paper compiles.
 - Neither item is "done" on a status flip alone — confirm the artifact.
 
-## Review
-_(to be filled at the R7-1 barrier)_
+## Review — R7-1 closed 2026-06-24 (2/2; keystone VERIFIED real, figure restored)
+
+- **P2-R7-EXP-sampler** (`771635dc`) — VERIFIED by the SM (not trusted on the flag). Artifacts real:
+  `run_sampler_faithfulness.jl` (27 KB, not hardcoded — red-flag scan empty, 101 oracle/sampler/
+  Pearson refs), 30 JSON records, `compare/out/sampler_faithfulness.csv` (30 rows), `fig7` PDF.
+  Inspected `sampler_vanilla_saliency_pong.json`: 18 candidate causes; **naive attribution = all 0**
+  (Prop. prop:zero floor); **sampler attribution concentrates on `ram[54]`** (pong's position byte) =
+  1.0, all else 0; faithfulness = Pearson(attr, oracle |Δ position-pixel|). Result:
+  **naive 0.000 everywhere → sampler 0.791 on pong (4 methods) / 0.529 on qbert (4 methods);
+  semantic_recovery = 0 for all 30.** Honest game-specific non-rises recorded (IG zeros-baseline
+  vanishes on pong; SI lands on a non-active cell; static-sprite games have no position to restore)
+  — the texture of a real run, not a uniform fake. The thesis holds with real data: the sampler makes
+  the gradient find the right byte, yet names no meaning.
+- **P2-R7-FIG-plane** (`187fed2c`) — restored the `8b919764` dashed-curve plane (offset boundary +
+  dashed contrast arc + oracle ceiling at (1,1) unreached), CI whiskers + in-panel table removed;
+  R2/R6 fixes kept (§3.2 oracle, plausibility-proxy axis, "30+oracle=31", no source paths, 8 pt,
+  Okabe-Ito). Render-checked; `latexmk` exit 0, 0 undefined, 50 pp. Caption coupling flagged: S07
+  must drop the "95% CI whiskers" line from the Fig 4 caption (now in R7-2).
+
+**Next:** R7-2 reframe — S07-compare + S08-discussion + S03-methods (consume sampler_faithfulness.csv),
+then S01-intro.
