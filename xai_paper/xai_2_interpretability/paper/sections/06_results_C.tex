@@ -12,10 +12,10 @@ against itself, because the true wiring is unknown. The VCS removes that limitat
 data-flow is the program's data-flow, known exactly from the disassembly. Every
 intermediate value is a RAM cell or a register we can read, clamp, and re-run bit-exactly.
 We therefore run ten mechanistic-interpretability methods on a circuit whose answer we
-already know. We score each against the same \Sectionname\ref{sec:results-a}~oracle: the exact
+already know. We score each against the same \Sectionname\ref{sec:oracle}~oracle: the exact
 intervention table, the true read/write graph, and the F\,$\wedge$\,S\,$\wedge$\,M triad of
 \Sectionname\ref{sec:methods}. This calibrates the
-toolkit against a \emph{known} circuit inside a real, hand-authored artifact rather than a
+toolkit against a \emph{known} circuit inside a real, human-written artifact rather than a
 synthetic or compiled one. Figure~\ref{fig:fig4}b places the Phase-C methods on the shared
 faithfulness axis. The result splits cleanly. The causal methods are exact, but their
 exactness recovers the wiring of the circuit without recovering what the variables mean.
@@ -24,7 +24,7 @@ exactness recovers the wiring of the circuit without recovering what the variabl
 
 The main result is simple. Activation patching recovers the true causal-effect table
 exactly. Across all six core games the recovered per-site effect equals the exact
-intervention oracle to the last bit (\texttt{recovered\_equals\_exact}: true; maximum
+intervention oracle to the last bit (maximum
 absolute deviation $0.0$), with site precision and recall both $1.0$. On this machine,
 clamping a RAM cell to a donor value and re-running the real ROM is literally the oracle's
 own operation. So it cannot disagree with the oracle. Causal scrubbing inherits the same

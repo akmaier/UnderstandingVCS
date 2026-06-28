@@ -64,7 +64,7 @@ OCAtari adds offset corrections so the coordinates align with the
 render~\cite{delfosse2023ocatari}. These labels are imported, not discovered. We verify
 them causally by intervention: set the byte, re-render, confirm the object moves to its
 predicted place on the bit-exact framebuffer. This step states our honesty contract. Every
-concept-level (T3) score measures alignment to a supplied label. It does not measure a
+concept-level score measures alignment to a supplied label. It does not measure a
 meaning the method found on its own. Note that a concept can be linearly decodable yet play
 no causal role. Control tasks were built to catch this ``present $\neq$ used''
 trap~\cite{hewitt2019designing}. Our intervention test is stronger than probing, and that
@@ -80,7 +80,7 @@ transformers with circuits known by construction; InterpBench~\cite{gupta2024int
 trains semi-synthetic transformers to a specified circuit. The Mechanistic Interpretability
 Benchmark~\cite{mib2025} pushes furthest in our direction, scoring circuit localization and
 causal-variable localization against curated answers in neural language models. Yet each of
-these answers is engineered for the benchmark, whereas our subject is a real, hand-authored
+these answers is engineered for the benchmark, whereas our subject is a real, human-written
 artifact whose ground truth is independent of it. The VCS was never designed to be
 interpretable. Even so, an exhaustive intervention oracle can recover its full causal
 structure, on a bit-exact, differentiable port~\cite{maier2025vcs}, built on the Atari
@@ -97,7 +97,7 @@ understanding. We can show that a method which perfectly recovers the true wirin
 not recovered the semantics (Fig.~\ref{fig:taxonomy}). We measure that remaining gap, which we
 call the semantic gap. Closing it means recovering a program's variables and design from
 scratch. We are explicit that this is a different problem, the subject of companion work. To our
-knowledge, this is the first cross-tradition audit of these methods on a real hand-authored
+knowledge, this is the first cross-tradition audit of these methods on a real human-written
 software artifact with an exact intervention oracle; we claim no unqualified ``first ground-truth
 calibration,'' since synthetic known-answer benchmarks and Jonas and Kording's microprocessor
 study~\cite{jonas2017could} precede us.

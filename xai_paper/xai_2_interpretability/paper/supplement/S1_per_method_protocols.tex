@@ -77,18 +77,18 @@ methods carry an independent-seed dispersion in \texttt{leaderboard\_ci.csv}.}
 \toprule
 Method & Tradition & Budget / hyperparameters & Seed sd \\
 \midrule
-\jkey{vanilla_saliency} & gradient & single backward pass & --- \\
+Vanilla saliency & gradient & single backward pass & --- \\
 smoothgrad & gradient & noise-averaged gradient; $\sigma$-robustness committed & 0.0 \\
-\jkey{guided_backprop} & gradient & single guided pass & --- \\
-\jkey{gradxinput_deeplift} & gradient & DeepLIFT reference-difference & --- \\
-\jkey{integrated_gradients} & gradient & path integral, baseline = zero state & --- \\
-\jkey{expected_gradients} & gradient & expectation over baselines (refits) & yes \\
+Guided backprop & gradient & single guided pass & --- \\
+Grad$\times$Input / DeepLIFT & gradient & DeepLIFT reference-difference & --- \\
+Integrated Gradients & gradient & path integral, baseline = zero state & --- \\
+Expected Gradients & gradient & expectation over baselines (refits) & yes \\
 kernelshap & gradient & Monte-Carlo coalition sampling ($\propto 1/\sqrt{N}$) & 0.017 \\
 lime & gradient & local linear fit, perturbation refits & 0.029 \\
 rise & gradient & random-mask Monte-Carlo ($\propto 1/\sqrt{N}$) & 0.051 \\
 occlusion & intervention & exhaustive single-cell masking & --- \\
-\jkey{extremal_perturbation} & intervention & optimized mask, area-constrained & --- \\
-\jkey{on_distribution_counterfactual} & intervention & on-manifold $\mathrm{do}(u)$ resampling & --- \\
+Extremal perturbation & intervention & optimized mask, area-constrained & --- \\
+On-distribution counterfactual & intervention & on-manifold $\mathrm{do}(u)$ resampling & --- \\
 \bottomrule
 \end{tabular}
 
@@ -120,16 +120,16 @@ dictionary-learning members are included for comparison with the causal members.
 \toprule
 Method & Tradition & Scoring metric \\
 \midrule
-\jkey{activation_patching} & causal & $\max|\text{recovered}-\text{exact}|$ vs.\ oracle \\
-\jkey{causal_scrubbing} & causal & scrubbing-preserved performance \\
-\jkey{interchange_interventions_das} & causal & aligned interchange accuracy \\
-\jkey{logit_tuned_lens} & causal & logit-lens fidelity to true intermediate \\
-\jkey{path_patching} & causal & path-circuit $F_1$ vs.\ true routine \\
+Activation patching & causal & $\max|\text{recovered}-\text{exact}|$ vs.\ oracle \\
+Causal scrubbing & causal & scrubbing-preserved performance \\
+Interchange interventions (DAS) & causal & aligned interchange accuracy \\
+Logit / tuned lens & causal & logit-lens fidelity to true intermediate \\
+Path patching & causal & path-circuit $F_1$ vs.\ true routine \\
 ACDC & causal & discovered-circuit best $F_1$ vs.\ data-flow \\
-\jkey{attribution_patching} & gradient & corr.\ of approximation vs.\ exact patch \\
-\jkey{linear_probing_control_tasks} & probing & selectivity vs.\ control task \\
-\jkey{nmf_pca_dictionaries} & dim.\ red. & matched-component fraction vs.\ vars \\
-\jkey{sparse_autoencoder} & dim.\ red. & feature-variable matched fraction \\
+Attribution patching & gradient & corr.\ of approximation vs.\ exact patch \\
+Linear probing (+ control) & probing & selectivity vs.\ control task \\
+NMF / PCA dictionaries & dim.\ red. & matched-component fraction vs.\ vars \\
+Sparse autoencoder & dim.\ red. & feature-variable matched fraction \\
 \bottomrule
 \end{tabular}
 
