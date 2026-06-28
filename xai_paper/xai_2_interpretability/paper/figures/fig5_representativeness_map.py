@@ -375,34 +375,15 @@ def draw(data, hc, full=False):
     # ---- vertical band for rows ----
     # The supplement needs extra room under the table for the analogue
     # reference key + full provenance line, so its row block stops higher.
-    TOP = 79.0 if not full else 81.5       # top of the row block
+    # The in-image title/subtitle were removed (they duplicated the LaTeX
+    # caption); the row block top is raised to fill that band, leaving only a
+    # small margin above the column headers.
+    TOP = 92.5 if not full else 93.5       # top of the row block
     BOT = 12.0 if not full else 17.5       # bottom of the row block
     row_h = (TOP - BOT) / n_rows
 
     # =====================================================================
-    # Header: ONE calm title line + one boundary-of-inference line.
-    # No subtitle-over-callout overlap (the pink callout is gone); no
-    # combative wording; no hard-coded figure number.
-    # =====================================================================
-    ax.text(X0, 96.0,
-            "Every failure mode measured on the VCS has a documented "
-            "neural-network analogue",
-            ha="left", va="top", fontsize=13.0, fontweight="bold", color=C_INK)
-    ax.text(X0, 91.6,
-            "The map reads as a necessary-condition screen: on the VCS each "
-            "failure is proven against the exact §3.2 intervention oracle "
-            "(full observability, no",
-            ha="left", va="top", fontsize=MIN_FONT + 0.4, color=C_MUTE)
-    ax.text(X0, 88.6,
-            "learning); on neural networks the same failure is a documented "
-            "analogue, not proven here.  A method that fails the screen should "
-            "not be trusted for",
-            ha="left", va="top", fontsize=MIN_FONT + 0.4, color=C_MUTE)
-    ax.text(X0, 85.6,
-            "stronger claims without further evidence (necessary, not "
-            "sufficient).",
-            ha="left", va="top", fontsize=MIN_FONT + 0.4, color=C_MUTE)
-
+    # (In-image title + subtitle removed — the LaTeX caption owns that prose.)
     # =====================================================================
     # Column headers — the single status relation lives HERE (header),
     # replacing the six repeated per-row green/orange badges.

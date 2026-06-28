@@ -172,9 +172,12 @@ def main():
     # FIGURE
     # =======================================================================
     fig = plt.figure(figsize=(11.6, 6.2), facecolor=C_BG)
+    # In-image title + headline banner removed (they duplicated the LaTeX
+    # caption); the panel block top is raised to fill that band, leaving room
+    # only for the panel (a)/(b) sub-titles.
     gs = fig.add_gridspec(
         2, 1, height_ratios=[3.0, 0.62], left=0.115, right=0.965,
-        top=0.760, bottom=0.130, hspace=0.34,
+        top=0.910, bottom=0.130, hspace=0.34,
     )
     axF = fig.add_subplot(gs[0, 0])
     axS = fig.add_subplot(gs[1, 0])
@@ -252,31 +255,9 @@ def main():
     )
 
     # =======================================================================
-    # Title + headline banner
+    # (In-image title + headline banner removed — the LaTeX caption owns that
+    #  prose.  `best`/`n_records` are still computed above for the self-check.)
     # =======================================================================
-    fig.suptitle(
-        "Keystone: the bilinear sampler makes gradient attribution faithful on the "
-        "position regime — yet recovers no semantics",
-        fontsize=11.6, fontweight="bold", x=0.045, ha="left", y=0.975,
-    )
-    headline = (
-        "On the discrete position/index regime the naive gradient is provably zero "
-        "(Prop. prop:zero), so every gradient method scores faithfulness 0. Turning "
-        "Paper-1's bilinear index-boundary sampler ON (same surrogate as the SI "
-        "joystick tool) restores a real position gradient and the methods become "
-        f"FAITHFUL — up to {best[2]:.3f} ({PRETTY.get(best[0], best[0])} on {best[1]}). "
-        "Yet no method names a game concept: semantic recovery is a yes/no question, and "
-        f"the answer is no for all {n_records} (method × game) records in BOTH conditions. "
-        "Faithfulness is repairable; the semantic gap is not — the danger zone is not a "
-        "fixable artifact of the vanishing gradient."
-    )
-    headline_wrapped = "\n".join(textwrap.wrap(headline, width=150))
-    fig.text(
-        0.045, 0.930, headline_wrapped, fontsize=8.0, color=C_INK,
-        ha="left", va="top",
-        bbox=dict(boxstyle="round,pad=0.5", facecolor="#f5f7fa",
-                  edgecolor=C_GRID, linewidth=0.7),
-    )
 
     # =======================================================================
     # Legend — beneath the panels.

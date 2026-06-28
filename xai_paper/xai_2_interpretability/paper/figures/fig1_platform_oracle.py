@@ -83,13 +83,16 @@ plt.rcParams.update(
 )
 
 # ---------------------------------------------------------------------------
-# Canvas (data coords 0..100 x, 0..62 y; landscape figure, full text width)
+# Canvas (data coords 0..100 x, 0..56 y; landscape figure, full text width)
+# The in-image title/subtitle were removed (they duplicated the LaTeX caption);
+# the canvas top is tightened to the panel block (top edge at y=54.5) so there
+# is no empty band where the headline used to be.
 # ---------------------------------------------------------------------------
-FIG_W, FIG_H = 11.4, 6.4
+FIG_W, FIG_H = 11.4, 5.8
 fig = plt.figure(figsize=(FIG_W, FIG_H), facecolor=C_BG)
 ax = fig.add_axes([0, 0, 1, 1])
 ax.set_xlim(0, 100)
-ax.set_ylim(0, 62)
+ax.set_ylim(0, 56)
 ax.axis("off")
 
 
@@ -141,18 +144,9 @@ def arrow(x0, y0, x1, y1, col=C_INK, lw=1.8, rad=0.0, ls="-", z=4,
     )
 
 
-# ===========================================================================
-# Title
-# ===========================================================================
-txt(50, 60.6,
-    "A differentiable, bit-exact game console as a ground-truth testbed for interpretability",
-    size=12.0, weight="bold")
-txt(50, 57.9,
-    "The subject IS the substrate — a fully known program — so every explanation can be scored against the true causes.",
-    size=9.0, col=C_MUTE, style="italic")
-
 # ---------------------------------------------------------------------------
 # Three column backplates. Tabs carry the colour key (no separate legend).
+# (In-image title/subtitle removed — the LaTeX caption owns that prose.)
 # ---------------------------------------------------------------------------
 panel(1.0, 3.5, 31.0, 51.0, "1  SUBSTRATE", C_SUBSTRATE)
 panel(34.5, 3.5, 33.0, 51.0, "2  ORACLE  (§3.2)", C_ORACLE)

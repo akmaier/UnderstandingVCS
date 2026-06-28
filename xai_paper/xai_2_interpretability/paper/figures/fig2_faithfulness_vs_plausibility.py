@@ -213,7 +213,9 @@ assert oracle is not None, "leaderboard has no oracle (ground_truth) row"
 # ---------------------------------------------------------------------------
 FIG_W, FIG_H = 10.4, 7.4
 fig = plt.figure(figsize=(FIG_W, FIG_H), facecolor=C_BG)
-ax = fig.add_axes([0.082, 0.085, 0.895, 0.80])
+# In-image title/subtitle removed (they duplicated the LaTeX caption); the axes
+# top is raised to fill the band the headline used to occupy.
+ax = fig.add_axes([0.082, 0.085, 0.895, 0.875])
 ax.set_xlim(-0.02, 1.06)
 ax.set_ylim(0.20, 1.04)
 ax.set_xlabel("FAITHFULNESS  →  recovers the TRUE causes\n"
@@ -370,18 +372,8 @@ ax.text(midx, midy,
                   edgecolor="#d8d8d8", linewidth=0.8))
 
 # ---------------------------------------------------------------------------
-# Title + subtitle
+# (In-image title/subtitle removed — the LaTeX caption owns that prose.)
 # ---------------------------------------------------------------------------
-fig.text(0.082, 0.966,
-         "Plausible ≠ faithful: every interpretability method scored where the "
-         "truth is known exactly",
-         ha="left", fontsize=12.2, fontweight="bold", color=C_INK)
-fig.text(0.082, 0.930,
-         "30 methods + oracle = 31 rows across the three traditions on the bit-exact VCS, "
-         "vs the intervention oracle (§3.2).\nThe most plausible-looking methods are the "
-         "least faithful; none reach the oracle ceiling.",
-         ha="left", va="top", fontsize=8.8, color=C_MUTE, style="italic",
-         linespacing=1.25)
 
 # ---------------------------------------------------------------------------
 # Legend — two groups: tradition (colour) and phase (marker shape). Both sit

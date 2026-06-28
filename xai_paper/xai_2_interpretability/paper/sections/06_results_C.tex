@@ -3,7 +3,7 @@
 % scrubbing oracle, on a known real circuit. Maier voice (../STYLE.md). Numbers are
 % committed §R values (leaderboard.md + phaseC_mechanistic/out/*_core_summary.json).
 
-\section{Mechanistic interpretability on a known circuit}\label{sec:results-c}
+\subsection{Mechanistic interpretability on a known circuit}\label{sec:results-c}
 
 Mechanistic interpretability makes the strongest claim in the field. It tries to explain how
 a system computes, not just where it attends. Its methods read internal activations as a circuit and
@@ -16,11 +16,42 @@ already know. We score each against the same \Sectionname\ref{sec:oracle}~oracle
 intervention table, the true read/write graph, and the F\,$\wedge$\,S\,$\wedge$\,M triad of
 \Sectionname\ref{sec:methods}. This calibrates the
 toolkit against a \emph{known} circuit inside a real, human-written artifact rather than a
-synthetic or compiled one. Figure~\ref{fig:fig4}b places the Phase-C methods on the shared
-faithfulness axis. The result splits cleanly. The causal methods are exact, but their
+synthetic or compiled one. Table~\ref{tab:phaseC} places the mechanistic methods against the
+oracle. The result splits cleanly. The causal methods are exact, but their
 exactness recovers the wiring of the circuit without recovering what the variables mean.
 
-\subsection*{Exact recovery of the wiring}
+\begin{table}[t]
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{\textbf{Mechanistic interpretability scored against the intervention oracle
+(\Sectionname\ref{sec:oracle}).} Ten methods on the six core games (oracle-as-method positive
+control $=1.0$): faithfulness $F$ with its $95\%$ bootstrap CI, the plausibility proxy
+(\Sectionname\ref{sec:methods}), and the kind of recovery the oracle certifies. The causal core is
+exact by construction; the approximate and search-based methods lose recall; and the
+named-but-inert and present-but-unused methods sit in the danger zone (high plausibility, low
+faithfulness). Values read from the committed leaderboard~\cite{leaderboardP2}.}
+\label{tab:phaseC}
+\begin{tabular}{@{}p{3.5cm}lcp{3.3cm}@{}}
+\toprule
+Method & $F$ ($95\%$ CI) & Plaus & Recovery \\
+\midrule
+Activation patching~\cite{vig2020investigating}          & $1.00$ $[1.00,1.00]$ & $0.50$ & exact effect table \\
+Causal scrubbing~\cite{chan2022causal}                   & $1.00$ $[1.00,1.00]$ & $0.50$ & exact data-flow preserved \\
+Interchange interventions (DAS)~\cite{geiger2023finding} & $1.00$ $[1.00,1.00]$ & $0.50$ & verifies a supplied alignment \\
+Logit / tuned lens~\cite{belrose2023eliciting}           & $1.00$ $[1.00,1.00]$ & $0.50$ & exact intermediate value \\
+NMF/PCA dictionaries                                     & $0.54$ $[0.42,0.63]$ & $0.75$ & named, partly inert \\
+Attribution patching~\cite{nanda2023attribution}         & $0.50$ $[0.24,0.75]$ & $0.90$ & approximate (linear surrogate) \\
+Path patching~\cite{wang2022interpretability}            & $0.46$ $[0.13,0.83]$ & $0.50$ & search (single-shot edges) \\
+ACDC~\cite{conmy2023towards}                              & $0.45$ $[0.11,0.79]$ & $0.50$ & search (graph-correct, $S{=}0.44$) \\
+Sparse autoencoder~\cite{cunningham2023sparse}           & $0.19$ $[0.01,0.48]$ & $0.75$ & named yet inert ($F{=}0.04$ on Pong) \\
+Linear probing ($+$ control)~\cite{hewitt2019designing}  & $0.16$ $[0.08,0.24]$ & $0.85$ & present, not used \\
+\midrule
+Oracle (positive control)                               & $1.00$ $[1.00,1.00]$ & $1.00$ & exact intervention ground truth \\
+\botrule
+\end{tabular}
+\end{table}
+
+\subsubsection*{Exact recovery of the wiring}
 
 The main result is simple. Activation patching recovers the true causal-effect table
 exactly. Across all six core games the recovered per-site effect equals the exact
@@ -35,11 +66,11 @@ interventions with distributed alignment search (DAS) verify the supplied alignm
 interchange accuracy $1.0$ against a mis-aligned control at $0.0$. The logit lens
 reproduces the true intermediate value at fidelity $1.0$ on every game. Four of the five
 causal methods sit at faithfulness $1.0$, level with the oracle positive control
-(Fig.~\ref{fig:fig4}b). Where a method's operation \emph{is} an intervention, faithfulness
+(Table~\ref{tab:phaseC}). Where a method's operation \emph{is} an intervention, faithfulness
 is automatic on a fully observable machine. This is the first part of the problem, and it is
 solved here.
 
-\subsection*{Approximate and search-based recovery}
+\subsubsection*{Approximate and search-based recovery}
 
 The causal account weakens as soon as a method replaces exact re-runs with an approximation
 or a search. Attribution patching, the gradient-linear surrogate for activation patching,
@@ -61,7 +92,7 @@ are precise about what they find but silent about dependencies re-derived throug
 cells. The limit is recall, not precision. The gap to the positive control is the quantified
 cost of approximation against a circuit that is known.
 
-\subsection*{Three separations from the oracle}
+\subsubsection*{Three separations from the oracle}
 
 This subsection presents the central result. ACDC on Breakout recovers the data-flow circuit
 at perfect $F1$
@@ -105,18 +136,18 @@ and linearly associated with the displayed score, yet provably inert under inter
 the window.
 The oracle is strictly stronger than the probe. The probe asks whether a value can be read
 out. The oracle asks whether changing that value changes the output. Probing earns a high plausibility proxy ($0.85$)
-on a faithfulness of $0.16$, the second-worst entry in the danger zone (Fig.~\ref{fig:fig4}b).
+on a faithfulness of $0.16$, the second-worst entry in the danger zone (Table~\ref{tab:phaseC}).
 We state the caveat directly: these labels are imported externally (AtariARI,
 OCAtari) and only \emph{verified} causally, never \emph{discovered}. So DAS's alignment
 accuracy of $1.0$ is guaranteed in advance, because it only confirms a variable we supplied.
 The probe tells us a concept is present. Only the intervention tells us the program uses it.
 
-\subsection*{Exactness is necessary but not sufficient}
+\subsubsection*{Exactness is necessary but not sufficient}
 
-Phase~C is the clearest test of the paper's claim. Run against a known real circuit, the
+Mechanistic interpretability is the clearest test of the paper's claim. Run against a known real circuit, the
 mechanistic toolkit splits into two groups. The first is a causal core that is faithful by
 construction: activation patching, causal scrubbing, DAS, and the logit lens, all at $1.0$
-(phase mean faithfulness $0.63$, the highest of the three phases). The second is a recovery
+(mean faithfulness $0.63$, the highest of the three traditions). The second is a recovery
 layer that is either precise but partial (attribution and path patching, ACDC) or present but
 inert (SAEs, dictionaries, probing). The oracle, not our judgement, decides the three
 separations. They appear exactly where the field's success metrics report success:

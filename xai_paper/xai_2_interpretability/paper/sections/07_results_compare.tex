@@ -20,7 +20,7 @@
 % semantic labels are external (AtariARI/OCAtari) and only causally VERIFIED, not discovered.
 % The formal F/S/M definitions are authoritative in §3 (sec:triad); we reference them here.
 
-\section{Across the traditions --- causal structure without meaning}\label{sec:results_compare}
+\subsection{Across the traditions: causal structure without meaning}\label{sec:results_compare}
 
 We have now run three traditions on one machine. This section is organized not by the
 ranking among them, but by a boundary they share. Every method, faithful or not,
@@ -29,7 +29,7 @@ Faithfulness is whether an explanation names the true causes. On the VCS we can
 measure it exactly. The intervention oracle of \Sectionname\ref{sec:oracle} re-runs
 the bit-exact program for every candidate cause. It returns ground truth that no real
 network can provide. That exact answer lets us do two things in sequence. First, we
-place all of Phases~A--C on the shared faithfulness-versus-plausibility plane. We read
+place all three traditions on the shared faithfulness-versus-plausibility plane. We read
 off the leaderboard and its danger zone, the known result that faithful and convincing
 are not the same. Second, we go further. We make the unfaithful methods faithful by
 turning on the differentiable port's bilinear sampler. Making every method faithful
@@ -41,7 +41,7 @@ the semantic gap is the main result. The correctness triad we apply throughout -
 \textbf{F}aithful, \textbf{S}ufficient, \textbf{M}inimal --- is defined formally in
 \Sectionname\ref{sec:triad}; here we only read its scores.
 
-\subsection*{The faithfulness leaderboard}
+\subsubsection*{The faithfulness leaderboard}
 
 The leaderboard separates cleanly along the faithfulness axis. We read it as an
 exploratory cross-tradition ranking, not a single commensurable score, because the
@@ -104,7 +104,7 @@ from the committed leaderboard, none re-run or estimated. Per-method uncertainty
 reported in Fig.~\ref{fig:taxonomy} and the supplement.}\label{fig:faithfulness}
 \end{figure}
 
-\subsection*{The danger zone}
+\subsubsection*{The danger zone}
 
 If the faithfulness axis matched how convincing a method looks, it would tell us
 nothing new. It does not match. Plotted against the plausibility proxy of \Sectionname\ref{sec:methods},
@@ -121,7 +121,7 @@ zone. Still, the faithfulness axis is exact, and the ranking it inverts is what 
 field tends to trust, so the hazard is real even at the proxy's coarse resolution. The
 danger zone is a quantitative result, not a speculation.
 
-\subsection*{Making the unfaithful faithful}
+\subsubsection*{Making the unfaithful faithful}
 
 A reader could accept the danger zone and still dismiss it by blaming the
 gradient. The saliency methods score zero on the position regime because the hard
@@ -136,8 +136,8 @@ position byte. This restores a non-zero gradient through the position computatio
 without altering the forward output. The same surrogate that recovers the joystick
 gradient in \Sectionname\ref{sec:results-b} now flows through the position read.
 
-The repair works on the games that have a moving, tracked sprite.
-On Pong, vanilla saliency, gradient $\times$ input, SmoothGrad, and expected
+The repair works on the games that have a moving, tracked sprite
+(Fig.~\ref{fig:sampler}). On Pong, vanilla saliency, gradient $\times$ input, SmoothGrad, and expected
 gradients all rise from the provable zero to faithfulness $0.791$ against the oracle;
 on Q*bert vanilla saliency, gradient $\times$ input, SmoothGrad, and integrated
 gradients rise to $0.529$ (committed sampler record). The rise is not universal, and we
@@ -182,7 +182,7 @@ no position to restore, and Space Invaders' restored gradient lands on a non-act
 cell. Values read from the committed sampler record; none re-run.}\label{fig:sampler}
 \end{figure}
 
-\subsection*{Where the leaderboard stops --- the semantic gap}
+\subsubsection*{Where the leaderboard stops --- the semantic gap}
 
 Here the paper turns. Take the best case for the audit: a method that scores $1.0$
 against the oracle. We ask whether it gives an understanding of what the
@@ -273,7 +273,7 @@ not this one's.
 A note on aggregation closes the section, because two committed records report the
 sparse autoencoder differently and a careful reader will see both. The leaderboard
 score~\cite{leaderboardP2} aggregates over the per-method records, which for the SAE
-gives faithfulness $0.195$ with a $95\%$ bootstrap-over-games interval of $[0.00,0.31]$
+gives faithfulness $0.195$ with a $95\%$ bootstrap-over-games interval of $[0.01,0.48]$
 that brackets it; the figures plot this value. The per-game Pong record used in the
 named-not-causal separation above is a different, finer object, $F = 0.041$ on that one
 game. We keep the two distinct: the $0.195$ is the leaderboard aggregate, the

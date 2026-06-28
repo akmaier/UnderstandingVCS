@@ -287,8 +287,10 @@ def build(lb, demo, ci, out_path, variant="simple"):
     # Taller rows so every glyph clears 8 pt without overlap.
     fig_h = 0.52 * n_leaf + (3.1 if full else 2.4)
     fig = plt.figure(figsize=(12.6, fig_h))
+    # In-image title removed (it duplicated the LaTeX caption); the axes top is
+    # raised to fill the band the headline used to occupy.
     bottom = 0.045 if full else 0.035
-    top = 0.885 if full else 0.905
+    top = 0.945 if full else 0.955
     ax = fig.add_axes([0.005, bottom, 0.99, top])
     ax.set_xlim(0, 13.2)
     ax.set_ylim(-1.4, total_h + 0.4)
@@ -440,12 +442,7 @@ def build(lb, demo, ci, out_path, variant="simple"):
                 fontsize=8.0, color=C_FAINT)
 
     # --- title ----------------------------------------------------------------
-    sup = ("A taxonomy of interpretability failure modes on the VCS, by "
-           "underlying mechanism")
-    if full:
-        sup += "  (full version — Supplement)"
-    fig.suptitle(sup, x=0.005, y=0.992, ha="left", fontsize=11.6,
-                 fontweight="bold", color=C_INK)
+    # (In-image title removed — the LaTeX caption owns that prose.)
 
     # --- legend (outside the axes, top-right) ---------------------------------
     leg_handles = [
@@ -477,7 +474,7 @@ def build(lb, demo, ci, out_path, variant="simple"):
                label="95% bootstrap CI (whisker)"),
     ]
     fig.legend(handles=leg_handles, loc="upper right",
-               bbox_to_anchor=(0.998, 0.965), ncol=3, fontsize=8.0,
+               bbox_to_anchor=(0.998, 0.992), ncol=3, fontsize=8.0,
                frameon=True, framealpha=0.97, edgecolor=C_GRID,
                handlelength=1.4, columnspacing=1.1, borderpad=0.55)
 

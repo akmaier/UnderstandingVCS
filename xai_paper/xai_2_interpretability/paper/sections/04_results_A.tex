@@ -5,7 +5,7 @@
 % headline; we report what the methods recover against the KNOWN mechanism, and we do
 % NOT claim any of them recovered meaning or algorithm.
 
-\section{The neuroscience battery, quantified}\label{sec:results-a}
+\subsection{The neuroscience battery}\label{sec:results-a}
 
 We begin with a known concern in the field. Jonas and Kording asked whether a
 neuroscientist with the standard toolkit could understand a microprocessor. They
@@ -19,7 +19,7 @@ qualitative lesson quantitative. Across the eight analyses A1--A8,
 faithfulness against the oracle ranges from $0.116$ to $1.0$ and averages
 $0.49$ (95\% bootstrap CI $\pm 0.24$)~\cite{leaderboardP2}. The
 oracle-as-method positive
-control sits at $1.0$ by construction (Fig.~\ref{fig:phaseA}). The structure
+control sits at $1.0$ by construction (Table~\ref{tab:phaseA}). The structure
 these methods report is real. But structure is not the same as cause. The score
 measures the difference.
 
@@ -93,37 +93,42 @@ it. The advance over Jonas and Kording is that we grade the \emph{architectural}
 register-transfer level with a \emph{quantitative} $F$ against an exact oracle,
 rather than giving a qualitative verdict on the transistor. The contrast is
 clear, because the causal operators we apply to the same machine in
-Sections~\ref{sec:results-b}--\ref{sec:results-c} reach the ceiling this battery
+\Sectionname\ref{sec:results-b} and~\Sectionname\ref{sec:results-c} reach the ceiling this battery
 cannot. So the limitation lies in the analysis methods, not in the machine. We
 mean this strictly as calibration. Even the battery's best members recover a
 ranking, a graph, or a record, never the algorithm the program runs. This
 remaining gap is what the paper measures.
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\textwidth]{fig3_phaseA_battery.pdf}
-  \caption{\textbf{The Kording neuroscience battery scores well below the
-  intervention oracle.} Faithfulness of each classical analysis A1--A8 against
-  the intervention oracle (\Sectionname\ref{sec:oracle}); the battery averages $0.49$, and
-  only the causal single-unit lesion (A2) and dimensionality reduction (A7) sit
-  clearly above chance, while the oracle-as-method positive control reaches
-  $1.0$ (dashed reference). Per-metric meanings: A1 = data-flow-graph $F_1$ vs
-  oracle; A2 = lesion-importance $\rho$ vs true role; A3 = $1-$spurious-tuning
-  rate; A4 = coupling correlation vs true coupling; A5 = $1-$clock-explained
-  variance; A6 = $1-$false-edge rate vs true data-flow; A7 = NMF
-  matched-component fraction; A8 = minimality $M$. Bars are coloured by method
-  tradition; whiskers are asymmetric 95\% bootstrap CIs,
-  present on all eight Phase-A bars. Panel~(b) is
-  a key-results table isolating the mechanism behind the low scores: A6 Granger
-  causality reaches $F=0$ on Pong (temporal precedence read as causation on a
-  clock-locked machine); A3 tuning shows a spurious-tuning rate of $1.0$ on Pong;
-  A2 attains $\rho=0.99$ yet misses $40\%$ of interactions, one super-additive
-  pair swinging up to $1044$ pixels; and A7 NMF and PCA tie at $0.60$ on matched
-  components, both below two-thirds. The figure is the calibration baseline that
-  the causal contrast of Fig.~\ref{fig:faithfulness} sharpens. Every plotted
-  value reads from a committed per-game record; no number is re-run or estimated.}
-  \label{fig:phaseA}
-\end{figure}
+\begin{table}[t]
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{\textbf{The neuroscience battery scored against the intervention oracle.}
+Faithfulness $F$ of each classical analysis A1--A8 against the exact intervention oracle
+(\Sectionname\ref{sec:oracle}), with its $95\%$ bootstrap confidence interval over the six
+core games and the documented plausibility proxy (\Sectionname\ref{sec:methods}). The battery
+averages $0.49$; the oracle-as-method positive control is $1.0$ by construction. Only the
+causal single-unit lesion (A2) reaches the ceiling on a non-trivial metric. The whole-state
+recording (A8) is at $1.0$ only because recording everything is faithful, yet its minimality
+is $0.07$ --- a log file, not an account. Every value reads from a committed per-game record
+via the leaderboard~\cite{leaderboardP2}; none is re-run or estimated.}
+\label{tab:phaseA}
+\begin{tabular}{@{}lccl@{}}
+\toprule
+Analysis & $F$ ($95\%$ CI) & Plaus & What $F$ scores \\
+\midrule
+A1 connectomics             & $0.41$ $[0.08,0.78]$ & $0.55$ & data-flow-graph $F_1$ vs.\ oracle \\
+A2 single-unit lesions      & $0.99$ $[0.98,1.00]$ & $0.55$ & lesion-importance $\rho$ vs.\ true role \\
+A3 tuning curves            & $0.12$ $[0.00,0.27]$ & $0.80$ & $1-$spurious-tuning rate \\
+A4 spike-word correlations  & $0.29$ $[0.08,0.50]$ & $0.80$ & coupling vs.\ true coupling \\
+A5 local field potentials   & $0.40$ $[0.30,0.51]$ & $0.80$ & $1-$clock-explained variance \\
+A6 Granger causality        & $0.14$ $[0.02,0.29]$ & $0.80$ & $1-$false-edge rate vs.\ data-flow \\
+A7 dimensionality reduction & $0.60$ $[0.47,0.73]$ & $0.75$ & NMF/PCA matched-component fraction \\
+A8 whole-state recording    & $1.00$ $[1.00,1.00]$ & $0.30$ & complete record (minimality $M=0.07$) \\
+\midrule
+Oracle (positive control)   & $1.00$ $[1.00,1.00]$ & $1.00$ & exact intervention ground truth \\
+\botrule
+\end{tabular}
+\end{table}
 
 % BIBTEX-NEEDED: full entries for keys cited above that are NOT already in
 % references.bib. (jonas2017could and sundararajan2017axiomatic already exist.)
