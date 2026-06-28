@@ -10,29 +10,6 @@ obtainable, the oracle that delivers it, the tiered semantics we attach to it, a
 correctness triad that scores understanding as numbers. The per-method
 setups live in the Supplementary Information. Fig.~\ref{fig:platform} sketches the pipeline.
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\linewidth]{fig1_platform_oracle.pdf}
-  \caption{\textbf{The measurement platform and its ground-truth oracle.} A
-  differentiable, bit-exact port of the Atari VCS (left), realized as
-  \texttt{jutari} (Julia) $\cdot$ \texttt{jaxtari} (JAX), gives four capabilities no neural
-  network grants for free: exact forward, exact interventions $\mathrm{do}(u)$, full state
-  observability, and content-path gradients. On it we build the oracle (centre): the primary
-  intervention oracle of \Sectionname\ref{sec:oracle} (\Sectionname3.2), $\mathrm{do}(u{:=}v')\!\to\!\Delta y(u)$
-  by bit-exact re-run, with a content-path gradient $\partial y/\partial u$ as a companion on
-  the content path only. Any explanation $\hat{E}$ is scored by the correctness triad (right),
-  $\text{right}=\mathrm{F}\wedge\mathrm{S}\wedge\mathrm{M}$, and reported on two axes,
-  faithfulness against the oracle versus a plausibility proxy. Faithfulness aggregates
-  correlation, sign and magnitude agreement, deletion/insertion area-under-curve, and
-  precision at $k$ against the true causal top-$k$ (\Sectionname\ref{sec:triad}). A discrete index --- a
-  sprite's position, set by strobe timing --- has a naive gradient that is zero under the hard
-  forward map (Prop.~\ref{prop:zero}); for position, index, and event outputs the intervention
-  oracle is the \emph{sole} ground truth and gradient methods are scored as methods under test.
-  The schematic draws no experiment data. Data and oracle: see Supplement; oracle defined in
-  \Sectionname\ref{sec:oracle} (\Sectionname3.2).}
-  \label{fig:platform}
-\end{figure}
-
 \subsection{The differentiable, bit-exact VCS substrate}\label{sec:substrate}
 
 The subject of this study is the Atari Video Computer System (VCS) itself, not a learned

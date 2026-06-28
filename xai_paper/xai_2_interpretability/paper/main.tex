@@ -76,16 +76,19 @@
 \maketitle
 
 %%=============================================================%%
-%% Body — one \input per section (SCRUM §6 ordering).
+%% Body — one \input per section (Nature Article order):
+%% Introduction (unnumbered lead, with Related work folded in) ->
+%% Results (A, B, C, comparison) -> Discussion -> Methods -> End-matter.
+%% Related work (02_related) is folded into the Introduction (01_intro)
+%% and is no longer \input here.
 %%=============================================================%%
 \input{sections/01_intro}
-\input{sections/02_related}
-\input{sections/03_methods}
 \input{sections/04_results_A}
 \input{sections/05_results_B}
 \input{sections/06_results_C}
 \input{sections/07_results_compare}
 \input{sections/08_discussion}
+\input{sections/03_methods}
 \input{sections/09_endmatter}
 
 %%=============================================================%%
