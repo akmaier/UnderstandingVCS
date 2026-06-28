@@ -31,7 +31,7 @@ exact by construction; the approximate and search-based methods lose recall; and
 named-but-inert and present-but-unused methods sit in the danger zone (high plausibility, low
 faithfulness). Values read from the committed leaderboard~\cite{leaderboardP2}.}
 \label{tab:phaseC}
-\begin{tabular}{@{}p{3.5cm}lcp{3.3cm}@{}}
+\begin{tabularx}{\textwidth}{@{}X l c >{\raggedright\arraybackslash}X@{}}
 \toprule
 Method & $F$ ($95\%$ CI) & Plaus & Recovery \\
 \midrule
@@ -48,7 +48,7 @@ Linear probing ($+$ control)~\cite{hewitt2019designing}  & $0.16$ $[0.08,0.24]$ 
 \midrule
 Oracle (positive control)                               & $1.00$ $[1.00,1.00]$ & $1.00$ & exact intervention ground truth \\
 \botrule
-\end{tabular}
+\end{tabularx}
 \end{table}
 
 \subsubsection*{Exact recovery of the wiring}

@@ -79,50 +79,29 @@ structure, scored by the oracle.
   \label{fig:platform}
 \end{figure}
 
-We audit $30$ interpretability methods plus the oracle positive control, across $31$
-experiments and $257$ per-game records, scoring each on two axes: faithfulness against the
-oracle, and a documented plausibility proxy for how convincing it looks. The first result is
-the expected one. Causal and intervention methods are faithful; gradient and correlational
-saliency methods are not. The contrast is sharpest on discrete sprite-position outputs, where
-the naive gradient is provably zero because position is set by strobe timing rather than by a
-value it can flow through. There activation patching~\cite{vig2020investigating,meng2022locating}
-reaches faithfulness $1.000$ while vanilla saliency~\cite{simonyan2014deep} collapses to
-$0.000$ on all six core games~\cite{faithfuldemoP2}, and the leaderboard plots all $31$ methods
-against the same ground truth (Fig.~\ref{fig:faithfulness})~\cite{leaderboardP2}. The saliency
-method nonetheless carries the higher plausibility score ($0.9$ versus $0.5$): it looks most
-convincing exactly where it is least correct. This is the result the field would predict, and
-we treat it as an intermediate step, not the main finding.
+We audit $30$ interpretability methods, plus the oracle as a positive control, on two axes:
+faithfulness against the oracle, and a documented plausibility proxy for how convincing a
+method looks. The first result is the expected one, and we treat it as a step rather than the
+finding: causal and intervention methods are faithful, while gradient and correlational
+methods are not, most sharply on the discrete sprite-position outputs whose naive gradient is
+provably zero. A reader could dismiss that zero as an artifact of a discrete index, so we
+remove it: turning the differentiable port's bilinear sampler on restores the position
+gradient, and the gradient methods become faithful too on the games with a moving tracked
+sprite. Making them faithful does not change the conclusion, because faithfulness was never the
+dividing line.
 
-Faithfulness is not what separates good explanations from bad ones. A reader could dismiss the
-zero of the gradient methods as a fixable artifact of a discrete index, so we test the
-strongest version of the question and close that objection. We turn the differentiable port's
-bilinear sampler on. The sampler interpolates the position read and restores a non-zero
-gradient through it, and the gradient methods become faithful too. Vanilla saliency,
-grad$\times$input, smoothgrad, and expected gradients reach $0.791$ on Pong, and the same
-family reaches $0.529$ on Q*bert (Fig.~\ref{fig:sampler}). The rise is real but not universal:
-integrated gradients with a zeros baseline still vanishes on Pong, and a static-sprite game
-offers no position to restore. Yet on every game where the gradient becomes faithful, the
-method still recovers no meaning, just as no other method does, faithful or not. The restored
-gradient concentrates on the position RAM byte that drives the sprite, \texttt{ram[54]} on
-Pong. It identifies the correct cause but supplies no meaning for it.
-
-Securing faithfulness is necessary, but it does not solve the main problem. With the same
-oracle we ask not only \emph{which} methods are faithful but \emph{what} a faithful method
-delivers, and the answer is always the same kind of object: a true causal-effect map or
-data-flow graph, never the variable's meaning and never the routine's algorithm. To make this
-precise we call an explanation right only if it is \textbf{F}aithful (its claimed causes are
-the true ones), \textbf{S}ufficient (it regenerates behavior under held-out interventions),
-and \textbf{M}inimal at the algorithmic level
+With the same oracle we ask what a faithful method \emph{delivers}, and the answer is always
+the same kind of object: a causal-effect map or a data-flow graph, never the variable's meaning
+or the routine's algorithm. We call an explanation right only if it is \textbf{F}aithful (its
+claimed causes are the true ones), \textbf{S}ufficient (it regenerates behavior under held-out
+interventions), and \textbf{M}inimal at the algorithmic level
 ($\mathrm{right} = \mathbf{F}\wedge\mathbf{S}\wedge\mathbf{M}$, \Sectionname\ref{sec:triad}).
-The committed data show the gap in both directions (Fig.~\ref{fig:taxonomy}). An automatically
-discovered circuit on Breakout is graph-correct and minimal yet reproduces the behavior it
-explains only part of the time ($\mathbf{F}=1.0$, $\mathbf{M}=1.0$, $\mathbf{S}=0.44$): a
-correct wiring diagram is not the computed function. A learned feature dictionary on Pong
-matches a named game variable perfectly (matched fraction $1.0$) while being causally almost
-inert ($\mathbf{F}=0.04$): looking like a known variable is not computing it the way the
-program does. A concept can be linearly decodable yet provably unused; being present in the
-state is not being used. We name this residual the \emph{semantic gap}, and it does not shrink
-when faithfulness is made universal.
+The data then show a gap in both directions: a circuit that is graph-correct and minimal yet
+does not reproduce the behavior it explains, and a learned feature that matches a named game
+variable perfectly yet is causally inert. We name this residual the \emph{semantic gap}, and
+it does not shrink when faithfulness is made universal. The per-method scores are reported in
+\Sectionname\ref{sec:results} (Tables~\ref{tab:phaseA}--\ref{tab:phaseC} and
+Figs.~\ref{fig:faithfulness} and~\ref{fig:sampler}).
 
 The reference for meaning lies outside the mechanism. Every semantic label in the study entered
 from outside the system, imported from external annotation
@@ -138,26 +117,19 @@ recover it. The meaning is not, and no method we tested supplied it.
 
 To our knowledge this is the first cross-tradition audit of interpretability methods on a real,
 human-written software artifact whose ground truth is independent of it, scored by an exact
-intervention oracle. We claim no unqualified ``first ground-truth calibration,'' since
-synthetic known-answer benchmarks and Jonas and Kording's microprocessor
-study~\cite{jonas2017could} precede us; the Discussion places our oracle against those
-benchmarks and against the competing senses of ``interpretable.'' We read a 1977 chip as a
-\emph{necessary-condition screen}, not a predictor of success on learned networks. Here we hold
-perfect ground truth and no learning obscures the mechanism, so failure under these conditions
-is strong negative evidence that the same method would recover causal mechanisms in harder,
-less observable systems. The chip still exhibits the properties that make interpretation hard,
-from aliased RAM cells to race-the-beam timing.
-
-We are deliberate about what we do not claim. No method recovered the program's meaning,
-algorithm, or design from scratch, and the plausibility axis is a documented proxy, not a
-human study. This paper \emph{defines and measures} the semantic gap and locates its reference
-in the system's behavior. \emph{Closing} the gap means recovering a system's documentation and
-design from the system alone. That is future work, hopefully inspired by this paper. The study
-thus offers a reusable ground-truth benchmark for explainable AI, mechanistic interpretability,
-AI safety, and software verification, and it reframes the open problem. The hard part of
-interpretability is not faithfulness. It is recovering meaning, which remains unsolved even when
-faithfulness is achieved. We believe that naming and demonstrating the existence of this gap is
-a first step toward closing it.
+intervention oracle; we claim no unqualified ``first,'' since synthetic known-answer benchmarks
+and Jonas and Kording's microprocessor study~\cite{jonas2017could} precede us. We read a 1977
+chip as a necessary-condition screen, not a predictor of success on learned networks: under
+perfect ground truth and no learning, failure here is strong negative evidence for harder, less
+observable systems, and the chip still shows the properties that make interpretation hard, from
+aliased RAM cells to race-the-beam timing (\Sectionname\ref{sec:discussion}). We are explicit
+about the limits: no method recovered the program's meaning, algorithm, or design from scratch,
+and the plausibility axis is a documented proxy, not a human study. This paper \emph{defines and
+measures} the semantic gap and locates its reference in the system's behavior; \emph{closing} it
+is future work, hopefully inspired by this paper. The hard part of interpretability is not
+faithfulness but recovering meaning, which remains unsolved even when faithfulness is achieved.
+We believe that naming and demonstrating the existence of this gap is a first step toward
+closing it.
 
 
 % BIBTEX-NEEDED manifest (provenance for the SM merge; comments only, no typeset effect).
