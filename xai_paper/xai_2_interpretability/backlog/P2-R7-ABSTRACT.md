@@ -2,7 +2,7 @@
 id: P2-R7-ABSTRACT
 title: Replace the abstract with a condensed version from the most important findings (FINAL step)
 epic: R7 (universal semantic gap)
-status: todo
+status: done
 sprint: 17
 owner:
 where: local
