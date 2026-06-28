@@ -5,115 +5,121 @@
 
 \section{Mechanistic interpretability on a known circuit}\label{sec:results-c}
 
-Mechanistic interpretability makes the strongest claim in the field: not where a system
-attends, but how it computes. Its methods read internal activations as a circuit and try
-to recover that circuit, and on a neural network the recovered circuit can only be checked
+Mechanistic interpretability makes the strongest claim in the field. It tries to explain how
+a system computes, not just where it attends. Its methods read internal activations as a circuit and
+try to recover that circuit. On a neural network the recovered circuit can only be checked
 against itself, because the true wiring is unknown. The VCS removes that limitation. Its
-data-flow is the program's data-flow, known exactly from the disassembly, and every
+data-flow is the program's data-flow, known exactly from the disassembly. Every
 intermediate value is a RAM cell or a register we can read, clamp, and re-run bit-exactly.
-We therefore turn ten mechanistic-interpretability methods onto a circuit whose answer is
-already on the page, and score each against the same §\ref{sec:results-a}~oracle: the exact
+We therefore run ten mechanistic-interpretability methods on a circuit whose answer we
+already know. We score each against the same §\ref{sec:results-a}~oracle: the exact
 intervention table, the true read/write graph, and the F\,$\wedge$\,S\,$\wedge$\,M triad of
 §\ref{sec:methods}. This calibrates the
 toolkit against a \emph{known} circuit inside a real, hand-authored artifact rather than a
 synthetic or compiled one. Figure~\ref{fig:fig4}b places the Phase-C methods on the shared
-faithfulness axis. The result splits cleanly, and the split is the point of the paper:
-the causal methods are exact, yet exactness buys the wiring, not the meaning.
+faithfulness axis. The result splits cleanly. The causal methods are exact, but their
+exactness recovers the wiring of the circuit without recovering what the variables mean.
 
 \subsection*{Exact recovery of the wiring}
 
-The headline is bare. Activation patching recovers the true causal-effect table exactly:
-across all six core games the recovered per-site effect equals the exact intervention oracle
-to the last bit (\texttt{recovered\_equals\_exact}: true; maximum absolute deviation $0.0$),
-with site precision and recall both $1.0$. Clamping a RAM cell to a donor value and
-re-running the real ROM is, on this machine, literally the oracle's own operation, so it
-cannot disagree with it. Causal scrubbing inherits the same strength: the true data-flow
-hypothesis preserves behaviour under resample-ablation of everything outside it on all six
-games (preserved performance $1.0$), a deliberately wrong hypothesis does not ($0.52$), and
-the two are discriminated on every game. Interchange interventions with distributed
-alignment search (DAS) verify the supplied alignment at interchange accuracy $1.0$ against a
-mis-aligned control at $0.0$, and the logit lens reproduces the true intermediate value at
-fidelity $1.0$ on every game. Four of the five causal methods sit at faithfulness $1.0$,
-level with the oracle positive control (Fig.~\ref{fig:fig4}b). Where a method's operation
-\emph{is} an intervention, faithfulness is not hard to earn on a fully observable machine;
-it is automatic. That is the easy half of the problem, and it is genuinely solved here.
+The main result is simple. Activation patching recovers the true causal-effect table
+exactly. Across all six core games the recovered per-site effect equals the exact
+intervention oracle to the last bit (\texttt{recovered\_equals\_exact}: true; maximum
+absolute deviation $0.0$), with site precision and recall both $1.0$. On this machine,
+clamping a RAM cell to a donor value and re-running the real ROM is literally the oracle's
+own operation. So it cannot disagree with the oracle. Causal scrubbing inherits the same
+strength. The true data-flow hypothesis preserves behaviour under resample-ablation of
+everything outside it on all six games (preserved performance $1.0$). A deliberately wrong
+hypothesis does not ($0.52$), and the two are discriminated on every game. Interchange
+interventions with distributed alignment search (DAS) verify the supplied alignment at
+interchange accuracy $1.0$ against a mis-aligned control at $0.0$. The logit lens
+reproduces the true intermediate value at fidelity $1.0$ on every game. Four of the five
+causal methods sit at faithfulness $1.0$, level with the oracle positive control
+(Fig.~\ref{fig:fig4}b). Where a method's operation \emph{is} an intervention, faithfulness
+is automatic on a fully observable machine. This is the first part of the problem, and it is
+solved here.
 
 \subsection*{Approximate and search-based recovery}
 
-The causal account weakens the moment a method trades exact re-runs for an approximation or
-a search. Attribution patching, the gradient-linear surrogate for activation patching,
+The causal account weakens as soon as a method replaces exact re-runs with an approximation
+or a search. Attribution patching, the gradient-linear surrogate for activation patching,
 correlates with the exact patch at only $0.50$ and matches it inside the linear regime in
 just $0.19$ of cases. Yet its recovered edges stay precise (edge precision $0.95$, recall
-$0.70$) because the linearisation errs in magnitude, not in sign of presence. Path patching,
+$0.70$) because the linearisation is wrong about the size of an edge, not about whether the
+edge exists. Path patching,
 run in the IOI style as a single directed do-operation, recovers the directed edge set of
-the true routine at mean $F1=0.46$: on Q*bert it matches the empty direct circuit perfectly
-($F1=1.0$), while on Pong it recovers none of the six true edges ($F1=0.0$) because each
+the true routine at mean $F1=0.46$. On Q*bert it matches the empty direct circuit perfectly
+($F1=1.0$). On Pong it recovers none of the six true edges ($F1=0.0$), because each
 receiver's value is re-derived within the horizon, so no one-step path carries a surviving
-signal. ACDC, discovering the circuit automatically by resample-ablation edge pruning over a
-threshold sweep, reaches mean $F1=0.45$ (ROC-AUC $0.70$). A positive control re-runs the
+signal. ACDC discovers the circuit automatically by resample-ablation edge pruning over a
+threshold sweep. It reaches mean $F1=0.45$ (ROC-AUC $0.70$). A positive control re-runs the
 identical edge-restricted procedure under the exhaustive do-set and scores $F1=1.0$ on every
 game, so the deficit is a real measurement of single-shot recovery, not a broken scorer.
 These are the methods the field reaches for when the exact intervention is too expensive.
-On a machine where it is cheap they leave structure on the table: precise about what
-they find, silent about transitively re-derived dependencies, a recall ceiling rather than a
-precision failure. The gap to the positive control is the quantified cost of approximation
-against a circuit that is known.
+On a machine where the exact intervention is cheap, these methods miss real structure. They
+are precise about what they find but silent about dependencies re-derived through other
+cells. The limit is recall, not precision. The gap to the positive control is the quantified
+cost of approximation against a circuit that is known.
 
 \subsection*{Three separations from the oracle}
 
-Here the paper turns. ACDC on Breakout recovers the data-flow circuit at perfect $F1$
+This subsection presents the central result. ACDC on Breakout recovers the data-flow circuit
+at perfect $F1$
 against the true routine, and the recovered graph is minimal at the algorithmic level
 (F$=1.0$, M$=1.0$). Yet that same graph, scrubbed and asked to regenerate the behaviour
 under held-out interventions, preserves only S$=0.44$ of it (mean scrub-preserved
-performance $0.32$ across games). A circuit can be the right graph and still not be the
-computed function. The missing object is not a denser or cleaner graph of the same type,
-because activation patching has already recovered the effect table exactly, with no tuning
-budget left to spend: a table of per-site effects is not the bounce algorithm. One method is
-exact and the other is graph-perfect, and between them the behaviour still escapes. This is
-the separation a ``methods underperform'' story can never produce, because nothing here
-underperformed.
+performance $0.32$ across games). A circuit can have the correct graph and still not
+reproduce the computed function. The missing object is not a denser or cleaner graph of the
+same type. Activation patching has already recovered the effect table exactly, with
+no tuning budget left to spend. A table of per-site effects is still not the bounce algorithm. One
+method is exact and the other recovers a perfect graph. Even so, neither reproduces the
+behaviour. A ``methods underperform'' explanation cannot account for this separation, because
+no method underperformed here.
 
-The dictionary methods sharpen the gap from the other side. A sparse autoencoder trained on
+The dictionary methods show the same gap from the opposite direction. A sparse autoencoder
+trained on
 the recorded RAM trajectory reconstructs the state almost perfectly (fraction of variance
 explained $>0.99$ on Pong) and matches every verified game-variable cell it was asked to
 (matched fraction $1.0$). By the metric the field uses to claim a feature ``is'' a concept,
-the SAE has succeeded outright. By the oracle it has not: ablating the matched Pong feature
-and re-running the real ROM gives causal faithfulness F$=0.041$, with S$=-0.336$. The
-matched feature, removed, does not change the computation it supposedly names. Across the six
+the SAE succeeds. By the oracle, it does not: ablating the matched Pong feature
+and re-running the real ROM gives causal faithfulness F$=0.041$, with S$=-0.336$. When we
+remove the matched feature, the computation it is supposed to name does not change. Across
+the six
 games the SAE's mean leaderboard faithfulness is $0.19$ against a method-tradition
-plausibility proxy of $0.75$, squarely in the §\ref{sec:methods} danger zone, and the
+plausibility proxy of $0.75$, squarely in the §\ref{sec:methods} danger zone. The
 NMF/PCA dictionary contrast repeats the pattern at lower resolution (matched-component
-fractions up to $0.75$ beside near-zero causal use). Note that this separation runs opposite
-to the first: the circuit was causal but behaviourally incomplete, the feature is perfectly
-named but causally inert. The gap runs in both directions at once.
+fractions up to $0.75$ beside near-zero causal use). This separation is the reverse of the
+first. The circuit was causal but behaviourally incomplete; the feature is perfectly
+named but causally inert. The two failures point in opposite directions.
 
-Linear probing closes the triptych with the classic trap. With control tasks (Hewitt \&
+Linear probing shows a third version of the same gap, the well-known probing trap. With
+control tasks (Hewitt \&
 Liang's selectivity), probes decode game-concept cells well above chance (mean probe accuracy
 $0.89$, mean selectivity $0.16$), confirming that the information is present in the state.
-Yet presence is not use. Cross-referenced against the exact intervention oracle, the oracle
+Yet the program does not necessarily use that information. Cross-referenced against the exact
+intervention oracle, the oracle
 flags $25$ concept cells across the core games that the program never causally uses within the
 window. Of those, $6$ are also decodable above chance, so a probe would have nominated them as
 encoded concepts. Breakout's score cell~84 sits in the larger set: it is present in the state
 and linearly associated with the displayed score, yet provably inert under intervention within
 the window.
-The oracle is strictly stronger than the probe: it asks not whether a value can be read out,
-but whether changing it changes the output. Probing earns a high plausibility proxy ($0.85$)
+The oracle is strictly stronger than the probe. The probe asks whether a value can be read
+out. The oracle asks whether changing that value changes the output. Probing earns a high plausibility proxy ($0.85$)
 on a faithfulness of $0.16$, the second-worst entry in the danger zone (Fig.~\ref{fig:fig4}b).
-We state the caveat in the same breath: these labels are imported externally (AtariARI,
-OCAtari) and only \emph{verified} causally, never \emph{discovered}, so DAS's alignment
-accuracy of $1.0$ holds ``by construction'' because it confirms a supplied variable. The
-probe tells us a concept is in the representation; only the intervention tells us the program
-uses it.
+We state the caveat directly: these labels are imported externally (AtariARI,
+OCAtari) and only \emph{verified} causally, never \emph{discovered}. So DAS's alignment
+accuracy of $1.0$ is guaranteed in advance, because it only confirms a variable we supplied.
+The probe tells us a concept is present. Only the intervention tells us the program uses it.
 
-\subsection*{Exactness as the necessary half}
+\subsection*{Exactness is necessary but not sufficient}
 
-Phase~C is the cleanest demonstration of the paper's claim. The mechanistic toolkit, run
-against a known real circuit, separates into a causal core that is faithful by construction
-(activation patching, causal scrubbing, DAS, the logit lens, all at $1.0$; phase mean
-faithfulness $0.63$, the highest of the three phases) and a recovery layer that is
-precise-but-partial (attribution and path patching, ACDC) or present-but-inert (SAEs,
-dictionaries, probing). The three separations are adjudicated by the oracle, not by our
-preference, and they appear exactly where the field's success metrics report victory:
+Phase~C is the clearest test of the paper's claim. Run against a known real circuit, the
+mechanistic toolkit splits into two groups. The first is a causal core that is faithful by
+construction: activation patching, causal scrubbing, DAS, and the logit lens, all at $1.0$
+(phase mean faithfulness $0.63$, the highest of the three phases). The second is a recovery
+layer that is either precise but partial (attribution and path patching, ACDC) or present but
+inert (SAEs, dictionaries, probing). The oracle, not our judgement, decides the three
+separations. They appear exactly where the field's success metrics report success:
 graph-correct yet behaviour-incomplete (ACDC on Breakout F$=1.0$/M$=1.0$, S$=0.44$), named yet
 causally inert (SAE on Pong matched $1.0$, F$=0.041$), present yet unused (cell~84). The
 faithfulness advantage that the causal core holds over the gradient methods is itself
@@ -122,11 +128,10 @@ regime ($0.34$, 95\% CI $[0.02,0.50]$, excluding zero). It collapses when the ou
 content rather than position or when the oracle-equivalent controls are excluded ($0.12$ and
 $0.04$, both with confidence intervals crossing zero). The separations above survive that
 caveat because each is a within-method contradiction on a single game, not a cross-family
-mean. Faithfulness, on a
-machine that grants it for free, is therefore the necessary half of understanding and not
-the sufficient one. The residual, the wiring recovered and the meaning withheld, is the
-semantic gap, which §\ref{sec:results_compare} places on the shared axes and the Discussion
-names as the field's open problem.
+mean. On a machine that gives faithfulness for free, faithfulness is necessary for
+understanding but not sufficient. The residual is the semantic gap: the wiring is recovered,
+but the meaning is not. §\ref{sec:results_compare} places this gap on the shared axes, and
+the Discussion treats it as the field's open problem.
 
 % =====================================================================
 % BIBTEX-NEEDED: new keys cited above, for the SM to merge into references.bib.
