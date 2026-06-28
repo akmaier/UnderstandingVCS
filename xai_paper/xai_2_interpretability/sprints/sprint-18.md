@@ -24,5 +24,20 @@ For each section: the multiset of decimals + `\cite` + `\label`/`\ref` is byte-i
 (I will diff it); `latexmk` exit 0, 0 undefined, 0 multiply-defined; sentences read plainly. Any
 section that changed a number/cite/label is reverted and re-run.
 
-## Review
-_(to be filled at the barrier)_
+## Review — closed 2026-06-24 (9/9 sections; VERIFIED meaning-preserving; build clean)
+
+All nine sections rewritten under the corrected STYLE.md (commits dc64c0d3, 3704d4e3, 4f3aa297,
+a87b1a9b, … 57306e8e). Insertions per section: 01=94, 02=43, 03=108, 04=71, 05=54, 06=77, 07=78,
+08=155 (heaviest), 09=23 — the line growth is from splitting long sentences into short ones.
+
+**SM verification (whole paper, PRE 03f58d5d vs HEAD):**
+- **Meaning-preserved.** The multiset of decimals, `\cite`, `\label`/`\ref`, `$int$`, and `ram[..]`
+  is byte-identical across all 9 sections, with ONE benign exception: `04_results_A` restates A7's
+  matched-component fraction `$0.60$` as "about $60$ percent" (same value; the data sentences keep
+  `$0.60$`). No claim, citation, label, or figure changed. The 2 meaning-inverting bugs are fixed.
+- **Refrains removed from prose:** "wiring, not the meaning" 2→0; "smaller/easier/wrong half" 1→0;
+  "breathe" 1→0; "way-station/destination" now 0 (the last was a non-rendered planning comment, tidied).
+- **Build:** `latexmk` exit 0, 0 undefined, 0 multiply-defined, 54 pp.
+
+Root cause already fixed (STYLE.md §6b → clarity-first). Open for the PO: the lone decimal-vs-percent
+restatement in 04 (keep "60 percent" for plainness, or normalize to `$0.60$`).
