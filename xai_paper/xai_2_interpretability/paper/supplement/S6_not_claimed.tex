@@ -11,7 +11,7 @@ the point rather than a result to be explained away.
 We do not evaluate learned agents. The subject throughout is the bit-exact VCS itself. The
 candidate causes are its registers, RAM cells, and program variables, not the weights of a
 trained policy. The neural-network parallels drawn in the discussion and in
-Fig.~\ref{supp:fig:repmap} are documented analogues from the literature, not claims proven on
+Fig.~\ref{fig:representativeness} are documented analogues from the literature, not claims proven on
 this benchmark. We label them as such, so that a reader does not take a mapped failure mode
 for a demonstrated one.
 
@@ -29,28 +29,7 @@ The substrate is validated against an external reference, and the records are re
 committed artifacts without the ROMs. The ROM provenance is given as hashes, so a third party
 supplies their own legally obtained copies.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{../figures/fig5_representativeness_map_full.pdf}
-\caption{\textbf{Full VCS-to-NN representativeness map.} The full-density version of the
-main-text map (Fig.~\ref{fig:representativeness}). Each VCS failure mode is placed against its documented
-neural-network analogue from the literature. The neural-network column records documented
-analogues, not parallels proven by this benchmark. The oracle is the intervention oracle of
-\Sectionname\ref{sec:oracle}, and the underlying per-method values trace to
-\texttt{compare/out/leaderboard.json} via \Sectionname\ref{supp:provenance}. Note that the
-simplified main-text version condenses this full map.}
-\label{supp:fig:repmap}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{../figures/fig6_failure_taxonomy_full.pdf}
-\caption{\textbf{Full failure taxonomy.} The full-density version of the main-text taxonomy
-(Fig.~\ref{fig:taxonomy}). It shows the families of interpretability failure observed on the machine, each
-annotated with its faithfulness against the intervention oracle (\Sectionname\ref{sec:oracle}), reported as $F$ with its
-$95\%$ bootstrap confidence interval. The leaf values trace to
-\texttt{compare/out/leaderboard.json} and \texttt{leaderboard\_ci.csv} via
-\Sectionname\ref{supp:provenance}. Note that the gradient and correlational branches collapse on
-the discrete position regime, where the naive gradient is provably zero (Prop.~\ref{prop:zero}).}
-\label{supp:fig:taxonomy}
-\end{figure}
+% The two full-resolution figures (representativeness map, failure taxonomy) are not
+% reproduced here: they duplicated the main-text Fig.~\ref{fig:representativeness} and
+% Fig.~\ref{fig:taxonomy}, whose captions carry the analogue citations and provenance. The
+% Supplement refers to those main-text figures directly.

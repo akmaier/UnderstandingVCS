@@ -343,12 +343,26 @@ label("activation_patching",           dx=-0.075, dy=0.095, ha="right", va="bott
 # (6 method anchors + the oracle = 7 labelled points — within the <=8 budget.)
 
 # ---------------------------------------------------------------------------
-# (The E6-3 contrast annotation + connecting arc were removed for decluttering:
-# the vanilla-saliency -> activation-patching contrast is discussed in the body
-# text. The data points themselves are untouched; the E6-3 records are still
-# cross-checked against the leaderboard in the self-check block below.)
+# The E6-3 contrast arc: the field's DEFAULT tool (vanilla saliency, near
+# chance) -> the FAITHFUL causal method (activation patching, near ceiling) —
+# the same per-method gap the paper headlines (faithful_demo.json). Drawn as a
+# dashed offset arc — the gap, made a picture. (The wordy boxed text label was
+# removed for decluttering; the vanilla-saliency -> activation-patching contrast
+# is discussed in the body text. The E6-3 records are still cross-checked against
+# the leaderboard in the self-check block below.)
 # (In-image title/subtitle removed — the LaTeX caption owns that prose.)
 # ---------------------------------------------------------------------------
+pc = DEMO["pair_contrast"]
+fa = DEMO["faithful_method"]   # activation_patching
+po = DEMO["popular_method"]    # vanilla_saliency
+ax_i = idx_of(fa["method"])
+po_i = idx_of(po["method"])
+fx, fy = plotted[ax_i]
+ppx, ppy = plotted[po_i]
+ax.add_patch(FancyArrowPatch(
+    (ppx, ppy), (fx, fy),
+    connectionstyle="arc3,rad=-0.22", arrowstyle="-|>", mutation_scale=16,
+    linewidth=1.6, color=C_MUTE, linestyle=(0, (4, 2)), zorder=4, alpha=0.9))
 
 # ---------------------------------------------------------------------------
 # Legend — two groups: tradition (colour) and phase (marker shape). Both sit
