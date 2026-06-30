@@ -59,12 +59,12 @@
 <div class="row">
   <div class="head">
     <span class="claim">SOFT forward is bit-exact to HARD (Theorem 1)</span>
-    <span class="value">0 px divergence</span>
+    <span class="value">byte-identical</span>
     <span class="badge measured">measured</span>
   </div>
   <div class="body">
-    <p class="detail">The straight-through SOFT path renders the Space Invaders scene identically to HARD; a relaxed (α,T) path is shown diverging for contrast.</p>
-    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/relaxation_study/dump_divergence_frames.jl"><code>tools/relaxation_study/dump_divergence_frames.jl</code></a></dd><dt>Command</dt><dd><code class="cmd">julia --project=jutari tools/relaxation_study/dump_divergence_frames.jl</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/relaxation_study/video_out/divergence_si.mp4"><code>tools/relaxation_study/video_out/divergence_si.mp4</code></a></dd><dt>Runtime</dt><dd>scene-length render</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>4-panel divergence video (HARD | SOFT-STE | relaxed | diff)</dd></dl>
+    <p class="detail">The executed straight-through SOFT path is byte-identical to HARD: with relaxation off (the default), <code>soft_rom_peek</code> / <code>soft_ram_peek</code> equal the original one-hot dot product over 5,000 random peeks, and toggling a relaxed run on and back off leaves RAM and the rendered frame unchanged (no state leak). The 4-panel video only <i>illustrates</i> HARD ≡ SOFT-STE while a relaxed (α,T) path drifts — the proof is the regression check, not the video.</p>
+    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/relaxation_study/verify_soft_ste.jl"><code>tools/relaxation_study/verify_soft_ste.jl</code></a></dd><dt>Command</dt><dd><code class="cmd">cd jutari &amp;&amp; julia --project=. ../tools/relaxation_study/verify_soft_ste.jl</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/assets/video/divergence_si.mp4"><code>docs/assets/video/divergence_si.mp4</code></a></dd><dt>Runtime</dt><dd>seconds (check)</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>verify_soft_ste.jl (RAM + frame byte-identical) + the 64/64 screen sweep</dd></dl>
   </div>
 </div>
 <div class="row">
@@ -96,19 +96,30 @@
     <span class="badge measured">measured</span>
   </div>
   <div class="body">
-    <p class="detail">Per-step likelihood heatmap over the relaxation plane; the recommended operating point (α=6, T=0.14) sits inside the bit-exact corner.</p>
-    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/relaxation_study/make_relax_heatmap.py"><code>tools/relaxation_study/make_relax_heatmap.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 tools/relaxation_study/make_relax_heatmap.py</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari_paper/paper/figures/fig_relax_heatmap.pdf"><code>jutari_paper/paper/figures/fig_relax_heatmap.pdf</code></a></dd><dt>Runtime</dt><dd>seconds</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>tools/relaxation_study/relax_profiles.txt</dd></dl>
+    <p class="detail">The heatmap is a per-step likelihood model, P<sub>step</sub>(α,T) = p_read(T)<sup>ρ</sup> · p_branch(α)<sup>f_b</sup>. Its inputs are <b>measured</b> by running the real soft simulator (<code>soft_step</code>) on the Space Invaders ROM for 3,000 steps: ρ (mean instruction length), f_b (branch fraction), the actual branch-offset set and the fetched-address histogram. <code>dump_profiles.jl</code> writes those profiles; <code>make_relax_heatmap.py</code> renders the outer combination. The operating point α=6, T=0.14 is independently bit-exact-verified by verify_soft_ste.jl.</p>
+    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/relaxation_study/dump_profiles.jl"><code>tools/relaxation_study/dump_profiles.jl</code></a></dd><dt>Command</dt><dd><code class="cmd">cd jutari &amp;&amp; julia --project=. ../tools/relaxation_study/dump_profiles.jl</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/relaxation_study/relax_profiles.txt"><code>tools/relaxation_study/relax_profiles.txt</code></a></dd><dt>Runtime</dt><dd>seconds</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>relax_profiles.txt (measured); plotted by make_relax_heatmap.py</dd></dl>
   </div>
 </div>
 <div class="row">
   <div class="head">
-    <span class="claim">XAI demo — joystick gradient finds the cannon edges</span>
-    <span class="value">edges (sampler) / 0 (naive)</span>
+    <span class="claim">XAI demo — joystick gradient recovers “push RIGHT”</span>
+    <span class="value">±35.7 L/R · 0 up/down</span>
     <span class="badge measured">measured</span>
   </div>
   <div class="body">
-    <p class="detail">∂screen/∂RIGHT through the differentiable sampler highlights the cannon edges; the naive integer-dispatch gradient is identically zero on the discrete output. Identical across all three soft variants.</p>
-    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_si_gradient/si_joystick_fig.py"><code>tools/xai_si_gradient/si_joystick_fig.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 tools/xai_si_gradient/si_joystick_fig.py</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_si_gradient/out/si_joystick_gradient.pdf"><code>tools/xai_si_gradient/out/si_joystick_gradient.pdf</code></a></dd><dt>Runtime</dt><dd>seconds</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>tools/xai_si_gradient/si_joystick_gradient.jl</dd></dl>
+    <p class="detail">The inverse ∂(move-right)/∂joystick is computed by <b>Zygote autodiff</b> through the paper's bilinear sampler: −35.73 for left, +35.73 for right, 0 for up/down — identical across all three soft variants (Theorem 1), while the naive integer-index path gives 0 in every direction. The forward ∂screen/∂RIGHT is a finite-difference directional derivative through the sampler and lights up the cannon edges. The values live in the committed <code>ji_grad.txt</code>; <code>si_joystick_fig.py</code> only plots them — it computes nothing.</p>
+    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_si_gradient/si_joystick_gradient.jl"><code>tools/xai_si_gradient/si_joystick_gradient.jl</code></a></dd><dt>Command</dt><dd><code class="cmd">cd jutari &amp;&amp; julia --project=. ../tools/xai_si_gradient/si_joystick_gradient.jl</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_si_gradient/out/ji_grad.txt"><code>tools/xai_si_gradient/out/ji_grad.txt</code></a></dd><dt>Runtime</dt><dd>seconds</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>ji_grad.txt identical across the 3 soft variants; figure si_joystick_gradient.pdf</dd></dl>
+  </div>
+</div>
+<div class="row">
+  <div class="head">
+    <span class="claim">XAI joystick figure (plot of the computed gradients)</span>
+    <span class="value">2×2 panel</span>
+    <span class="badge measured">measured</span>
+  </div>
+  <div class="body">
+    <p class="detail">Reads the committed gradient fields/values from <code>tools/xai_si_gradient/out/</code> and draws the 2×2 figure (scene, sampler saliency, naive≡0, inverse bar chart). A plotting step only — no computation. Listed separately so the figure script is not mistaken for the source of the numbers.</p>
+    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_si_gradient/si_joystick_fig.py"><code>tools/xai_si_gradient/si_joystick_fig.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 tools/xai_si_gradient/si_joystick_fig.py</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_si_gradient/out/si_joystick_gradient.pdf"><code>tools/xai_si_gradient/out/si_joystick_gradient.pdf</code></a></dd><dt>Runtime</dt><dd>seconds</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>inputs from si_joystick_gradient.jl (ji_grad.txt, ji_*.raw)</dd></dl>
   </div>
 </div>
 <div class="row">
@@ -257,7 +268,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/4d95a9d3cd03f8d7afadd1b14b2f7be6bc2ebd62"><code>4d95a9d3</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2c30aae6fea23eac079d4c3f821800674093bc04"><code>2c30aae6</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

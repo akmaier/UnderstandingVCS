@@ -121,7 +121,7 @@ def render_ledger(claims):
     <p class="detail">%s</p>
     <dl class="meta">%s</dl>
   </div>
-</div>""" % (esc(c["claim"]), esc(c["value"]), st, st, esc(c["detail"]), meta))
+</div>""" % (esc(c["claim"]), esc(c["value"]), st, st, c["detail"], meta))
     return '<div class="ledger">%s</div>' % "".join(rows)
 
 

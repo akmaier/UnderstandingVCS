@@ -206,15 +206,20 @@ PAPER1 = {
         },
         {
             "claim": "SOFT forward is bit-exact to HARD (Theorem 1)",
-            "value": "0 px divergence",
-            "detail": "The straight-through SOFT path renders the Space Invaders scene identically "
-                      "to HARD; a relaxed (α,T) path is shown diverging for contrast.",
-            "script": "tools/relaxation_study/dump_divergence_frames.jl",
-            "command": "julia --project=jutari tools/relaxation_study/dump_divergence_frames.jl",
-            "artifact": "tools/relaxation_study/video_out/divergence_si.mp4",
-            "runtime": "scene-length render",
+            "value": "byte-identical",
+            "detail": "The executed straight-through SOFT path is byte-identical to HARD: with "
+                      "relaxation off (the default), <code>soft_rom_peek</code> / "
+                      "<code>soft_ram_peek</code> equal the original one-hot dot product over "
+                      "5,000 random peeks, and toggling a relaxed run on and back off leaves RAM "
+                      "and the rendered frame unchanged (no state leak). The 4-panel video only "
+                      "<i>illustrates</i> HARD ≡ SOFT-STE while a relaxed (α,T) path drifts — the "
+                      "proof is the regression check, not the video.",
+            "script": "tools/relaxation_study/verify_soft_ste.jl",
+            "command": "cd jutari && julia --project=. ../tools/relaxation_study/verify_soft_ste.jl",
+            "artifact": "docs/assets/video/divergence_si.mp4",
+            "runtime": "seconds (check)",
             "hardware": "M1 Max (CPU)",
-            "verified_by": "4-panel divergence video (HARD | SOFT-STE | relaxed | diff)",
+            "verified_by": "verify_soft_ste.jl (RAM + frame byte-identical) + the 64/64 screen sweep",
             "status": "measured",
         },
         {
@@ -247,28 +252,56 @@ PAPER1 = {
         {
             "claim": "Exact-forward region in the (α, T) relaxation plane",
             "value": "α≥6, T≤0.14",
-            "detail": "Per-step likelihood heatmap over the relaxation plane; the recommended "
-                      "operating point (α=6, T=0.14) sits inside the bit-exact corner.",
-            "script": "tools/relaxation_study/make_relax_heatmap.py",
-            "command": "python3 tools/relaxation_study/make_relax_heatmap.py",
-            "artifact": "jutari_paper/paper/figures/fig_relax_heatmap.pdf",
+            "detail": "The heatmap is a per-step likelihood model, "
+                      "P<sub>step</sub>(α,T) = p_read(T)<sup>ρ</sup> · p_branch(α)<sup>f_b</sup>. "
+                      "Its inputs are <b>measured</b> by running the real soft simulator "
+                      "(<code>soft_step</code>) on the Space Invaders ROM for 3,000 steps: ρ (mean "
+                      "instruction length), f_b (branch fraction), the actual branch-offset set and "
+                      "the fetched-address histogram. <code>dump_profiles.jl</code> writes those "
+                      "profiles; <code>make_relax_heatmap.py</code> renders the outer combination. "
+                      "The operating point α=6, T=0.14 is independently bit-exact-verified by "
+                      "verify_soft_ste.jl.",
+            "script": "tools/relaxation_study/dump_profiles.jl",
+            "command": "cd jutari && julia --project=. ../tools/relaxation_study/dump_profiles.jl",
+            "artifact": "tools/relaxation_study/relax_profiles.txt",
             "runtime": "seconds",
             "hardware": "M1 Max (CPU)",
-            "verified_by": "tools/relaxation_study/relax_profiles.txt",
+            "verified_by": "relax_profiles.txt (measured); plotted by make_relax_heatmap.py",
             "status": "measured",
         },
         {
-            "claim": "XAI demo — joystick gradient finds the cannon edges",
-            "value": "edges (sampler) / 0 (naive)",
-            "detail": "∂screen/∂RIGHT through the differentiable sampler highlights the "
-                      "cannon edges; the naive integer-dispatch gradient is identically zero on the "
-                      "discrete output. Identical across all three soft variants.",
+            "claim": "XAI demo — joystick gradient recovers “push RIGHT”",
+            "value": "±35.7 L/R · 0 up/down",
+            "detail": "The inverse ∂(move-right)/∂joystick is computed by <b>Zygote autodiff</b> "
+                      "through the paper's bilinear sampler: −35.73 for left, +35.73 for right, 0 "
+                      "for up/down — identical across all three soft variants (Theorem 1), while "
+                      "the naive integer-index path gives 0 in every direction. The forward "
+                      "∂screen/∂RIGHT is a finite-difference directional derivative through the "
+                      "sampler and lights up the cannon edges. The values live in the committed "
+                      "<code>ji_grad.txt</code>; <code>si_joystick_fig.py</code> only plots them — "
+                      "it computes nothing.",
+            "script": "tools/xai_si_gradient/si_joystick_gradient.jl",
+            "command": "cd jutari && julia --project=. ../tools/xai_si_gradient/si_joystick_gradient.jl",
+            "artifact": "tools/xai_si_gradient/out/ji_grad.txt",
+            "runtime": "seconds",
+            "hardware": "M1 Max (CPU)",
+            "verified_by": "ji_grad.txt identical across the 3 soft variants; figure si_joystick_gradient.pdf",
+            "status": "measured",
+        },
+        {
+            "claim": "XAI joystick figure (plot of the computed gradients)",
+            "value": "2×2 panel",
+            "detail": "Reads the committed gradient fields/values from "
+                      "<code>tools/xai_si_gradient/out/</code> and draws the 2×2 figure (scene, "
+                      "sampler saliency, naive≡0, inverse bar chart). A plotting step only — no "
+                      "computation. Listed separately so the figure script is not mistaken for the "
+                      "source of the numbers.",
             "script": "tools/xai_si_gradient/si_joystick_fig.py",
             "command": "python3 tools/xai_si_gradient/si_joystick_fig.py",
             "artifact": "tools/xai_si_gradient/out/si_joystick_gradient.pdf",
             "runtime": "seconds",
             "hardware": "M1 Max (CPU)",
-            "verified_by": "tools/xai_si_gradient/si_joystick_gradient.jl",
+            "verified_by": "inputs from si_joystick_gradient.jl (ji_grad.txt, ji_*.raw)",
             "status": "measured",
         },
         {
