@@ -551,3 +551,171 @@ PAPER2 = {
     ],
     "videos": [],
 }
+
+# ---------------------------------------------------------------------------
+# Paper 2 — per-method explanatory sub-pages (catalogue rows link to these).
+# Each method gets m_<key>.html with an explanation + a figure generated from
+# its committed record (.json/.npz) paired with a rendered game screenshot.
+# (key, phase, title, ref, script, game, record-basename, what-it-does)
+# ---------------------------------------------------------------------------
+P2_METHODS = [
+    # ---- Phase A — Jonas & Kording battery -------------------------------
+    dict(key="A1_connectomics", phase="A", title="A1 · Connectomics / data-flow graph",
+         ref="cf. Jonas & Kording 2017", script="tools/xai_study/phaseA_kording/A1_connectomics.jl",
+         game="pong", record="A1_pong",
+         what="Reconstructs the inter-cell data-flow graph by perturbing each RAM cell and "
+              "recording which other cells change — the program's 'connectome'. Scored by graph "
+              "F1 against the true read/write graph from the disassembly."),
+    dict(key="A2_lesions", phase="A", title="A2 · Single-unit lesions",
+         ref="cf. Jonas & Kording 2017", script="tools/xai_study/phaseA_kording/A2_lesions.jl",
+         game="pong", record="A2_lesions_pong",
+         what="Lesions each RAM cell in turn and measures the behavioural change, building a "
+              "per-unit importance map. Scored by rank-correlation with each cell's true causal role."),
+    dict(key="A3_tuning", phase="A", title="A3 · Tuning curves",
+         ref="cf. Jonas & Kording 2017", script="tools/xai_study/phaseA_kording/A3_tuning.jl",
+         game="pong", record="A3_tuning_pong",
+         what="Builds tuning curves of each cell to luminance and to a game variable, then flags "
+              "'spuriously tuned' cells whose tuning does not match their true causal role."),
+    dict(key="A4_correlations", phase="A", title="A4 · Pairwise correlations",
+         ref="cf. Jonas & Kording 2017", script="tools/xai_study/phaseA_kording/A4_correlations.jl",
+         game="pong", record="A4_pong",
+         what="Measures the pairwise and global correlation structure across cells and compares "
+              "it to the true coupling — weak-pairwise / strong-global, as in the neuroscience original."),
+    dict(key="A5_lfp", phase="A", title="A5 · Local field potentials",
+         ref="cf. Jonas & Kording 2017", script="tools/xai_study/phaseA_kording/A5_lfp.jl",
+         game="pong", record="A5_pong",
+         what="Treats pooled regional activity as a local field potential and asks how much of its "
+              "power spectrum is just the known clocks (frame/scanline) — i.e. epiphenomenal."),
+    dict(key="A6_granger", phase="A", title="A6 · Granger causality",
+         ref="cf. Jonas & Kording 2017", script="tools/xai_study/phaseA_kording/A6_granger.jl",
+         game="pong", record="A6_pong",
+         what="Infers Granger-causal edges between CPU / TIA / RIOT activity and scores its "
+              "false-edge and missed-edge rate against the true data-flow."),
+    dict(key="A7_dimred", phase="A", title="A7 · Dimensionality reduction (NMF/PCA)",
+         ref="cf. Jonas & Kording 2017", script="tools/xai_study/phaseA_kording/A7_dimred.jl",
+         game="pong", record="A7_pong",
+         what="Runs NMF/PCA on the state tensor and matches the latent components to known "
+              "signals (clock, read/write, vsync)."),
+    dict(key="A8_wholestate", phase="A", title="A8 · Whole-state recording",
+         ref="cf. Jonas & Kording 2017", script="tools/xai_study/phaseA_kording/A8_wholestate.jl",
+         game="pong", record="A8_pong",
+         what="Records the full RAM + register state over time as a descriptive baseline — the raw "
+              "material every other method works from."),
+    # ---- Phase B — attribution / XAI -------------------------------------
+    dict(key="saliency", phase="B", title="Vanilla gradient (saliency)",
+         ref="Simonyan et al. 2014", script="tools/xai_study/phaseB_attribution/saliency.jl",
+         game="pong", record="saliency_pong_content",
+         what="The input-space gradient of the output with respect to each cause. Scored by "
+              "correlation with the oracle's true causal map and by deletion/insertion AUC."),
+    dict(key="gradxinput", phase="B", title="Grad×Input / DeepLIFT",
+         ref="Shrikumar et al. 2017", script="tools/xai_study/phaseB_attribution/gradxinput.jl",
+         game="pong", record="gradxinput_deeplift_pong_content",
+         what="Gradient multiplied by input — a DeepLIFT-style attribution with a completeness "
+              "property. Scored against the oracle."),
+    dict(key="guided_backprop", phase="B", title="Guided Backprop",
+         ref="Springenberg et al. 2015", script="tools/xai_study/phaseB_attribution/guided_backprop.jl",
+         game="pong", record="guided_backprop_pong_ball_pixel",
+         what="Backpropagation that suppresses negative signals, sharpening the saliency map. "
+              "Includes the Adebayo et al. 2018 sanity check; scored against the oracle."),
+    dict(key="smoothgrad", phase="B", title="SmoothGrad",
+         ref="Smilkov et al. 2017", script="tools/xai_study/phaseB_attribution/smoothgrad.jl",
+         game="pong", record="smoothgrad_pong_ball_pixel",
+         what="Averages the gradient over input noise to denoise the saliency map."),
+    dict(key="ig_baseline_sweep", phase="B", title="Integrated Gradients",
+         ref="Sundararajan et al. 2017", script="tools/xai_study/phaseB_attribution/ig_baseline_sweep.jl",
+         game="pong", record="ig_baseline_sweep_pong_ball_pixel",
+         what="Integrates the gradient along a path from a baseline to the input (completeness-"
+              "satisfying). We sweep the baseline because the attribution depends on it."),
+    dict(key="expected_gradients", phase="B", title="Expected Gradients",
+         ref="Erion et al. 2021 (NMI)", script="tools/xai_study/phaseB_attribution/expected_gradients.jl",
+         game="pong", record="expected_gradients_pong_ball_pixel",
+         what="Integrated Gradients averaged over a distribution of baselines, removing the "
+              "single-baseline sensitivity."),
+    dict(key="occlusion", phase="B", title="Occlusion",
+         ref="Zeiler & Fergus 2014", script="tools/xai_study/phaseB_attribution/occlusion.jl",
+         game="pong", record="occlusion_pong_content",
+         what="Slides an occluder and measures the output change per region — effectively a coarse "
+              "intervention, so it tracks the oracle closely."),
+    dict(key="perturbation", phase="B", title="Extremal / meaningful perturbation",
+         ref="Fong & Vedaldi 2017; Fong et al. 2019", script="tools/xai_study/phaseB_attribution/perturbation.jl",
+         game="pong", record="perturbation_pong_content",
+         what="Learns the minimal mask that most changes the output; scored by IoU with the true "
+              "causal set."),
+    dict(key="rise", phase="B", title="RISE",
+         ref="Petsiuk et al. 2018", script="tools/xai_study/phaseB_attribution/rise.jl",
+         game="pong", record="rise_pong_ball_pixel",
+         what="Averages the output over many random masks (N=500) to estimate per-region importance."),
+    dict(key="lime", phase="B", title="LIME",
+         ref="Ribeiro et al. 2016", script="tools/xai_study/phaseB_attribution/lime.jl",
+         game="pong", record="lime_pong_ball_pixel",
+         what="Fits a local linear surrogate around the input and reads off the weights; scored for "
+              "correlation and stability."),
+    dict(key="kernelshap", phase="B", title="KernelSHAP / Shapley",
+         ref="Lundberg & Lee 2017", script="tools/xai_study/phaseB_attribution/kernelshap.jl",
+         game="pong", record="kernelshap_pong_ball_pixel",
+         what="Estimates Shapley values via weighted least squares; scored against the true causal "
+              "contributions and for convergence vs compute."),
+    dict(key="counterfactual", phase="B", title="On-distribution counterfactual",
+         ref="cf. Olson 2021; Atrey 2020", script="tools/xai_study/phaseB_attribution/counterfactual.jl",
+         game="pong", record="counterfactual_pong_ball_pixel",
+         what="Finds the minimal valid on-distribution edit that flips the output — set-state-and-"
+              "re-render removes the off-manifold objection."),
+    dict(key="na_audit", phase="NA", title="N/A audit: Grad-CAM, attention rollout, VIPER",
+         ref="Selvaraju 2017; Abnar & Zuidema 2020; Bastani 2018",
+         script="tools/xai_study/phaseB_attribution/na_audit.jl",
+         game="pong", record="na_audit_pong",
+         what="Grad-CAM, attention rollout and VIPER need convolutional/attention layers or a "
+              "learned policy that the VCS does not have. Recorded honestly as 'does not apply' "
+              "rather than forced."),
+    # ---- Phase C — mechanistic interpretability --------------------------
+    dict(key="activation_patching", phase="C", title="Activation patching / causal mediation",
+         ref="Vig et al. 2020; ROME, Meng et al. 2022", script="tools/xai_study/phaseC_mechanistic/activation_patching.jl",
+         game="pong", record="activation_patching_pong",
+         what="Patches a recorded state value from one run into another and measures the causal "
+              "effect, comparing it to the exact patch effect from the oracle."),
+    dict(key="das", phase="C", title="Interchange interventions / DAS",
+         ref="Geiger et al. 2021, 2023", script="tools/xai_study/phaseC_mechanistic/das.jl",
+         game="pong", record="das_pong",
+         what="Distributed Alignment Search aligns a learned subspace to a causal variable and "
+              "measures interchange accuracy against the true variable."),
+    dict(key="attribution_patching", phase="C", title="Attribution / edge patching",
+         ref="Nanda 2023; Syed et al. 2023", script="tools/xai_study/phaseC_mechanistic/attribution_patching.jl",
+         game="pong", record="attribution_patching_pong",
+         what="A gradient approximation to activation patching; scored by its approximation error "
+              "vs true patching and by edge precision/recall."),
+    dict(key="path_patching", phase="C", title="Path patching / IOI circuit",
+         ref="Wang et al. 2022; Goldowsky-Dill et al. 2023", script="tools/xai_study/phaseC_mechanistic/path_patching.jl",
+         game="pong", record="path_patching_pong",
+         what="Patches along specific paths to recover the circuit; scored by circuit "
+              "precision/recall against the true routine."),
+    dict(key="acdc", phase="C", title="ACDC — automatic circuit discovery",
+         ref="Conmy et al. 2023", script="tools/xai_study/phaseC_mechanistic/acdc.jl",
+         game="pong", record="acdc_pong",
+         what="Prunes edges to find a minimal circuit; scored by edge precision/recall and "
+              "scrubbing-preserved performance against the true data-flow."),
+    dict(key="sae", phase="C", title="Sparse autoencoders",
+         ref="Cunningham et al. 2023; Bricken et al. 2023; Templeton et al. 2024",
+         script="tools/xai_study/phaseC_mechanistic/sae.jl", game="pong", record="sae_pong",
+         what="Trains a sparse autoencoder on the state and matches its features to known "
+              "variables; scored by match rate, causal use and monosemanticity."),
+    dict(key="dictionaries", phase="C", title="NMF/PCA dictionaries",
+         ref="—", script="tools/xai_study/phaseC_mechanistic/dictionaries.jl", game="pong", record="dictionaries_pong",
+         what="NMF/PCA dictionary learning over the state; matched-component fraction against the "
+              "known variables."),
+    dict(key="causal_scrubbing", phase="C", title="Causal scrubbing",
+         ref="Chan et al. 2022", script="tools/xai_study/phaseC_mechanistic/causal_scrubbing.jl",
+         game="pong", record="causal_scrubbing_pong",
+         what="Resamples activations consistent with a hypothesised circuit and checks behaviour "
+              "is preserved — a hypothesis pass/fail against the true routine."),
+    dict(key="linear_probing", phase="C", title="Linear probing + control tasks",
+         ref="Alain & Bengio 2017; Hewitt & Liang 2019", script="tools/xai_study/phaseC_mechanistic/linear_probing.jl",
+         game="pong", record="linear_probing_pong",
+         what="Trains linear probes for concepts and subtracts a control-task baseline "
+              "(selectivity) to expose the present-vs-used gap — information can be decodable "
+              "without being causally used."),
+    dict(key="logit_lens", phase="C", title="Logit / tuned lens",
+         ref="nostalgebraist 2020; Belrose et al. 2023", script="tools/xai_study/phaseC_mechanistic/logit_lens.jl",
+         game="pong", record="logit_lens_pong",
+         what="Reads intermediate state through the output decoder to see what is represented at "
+              "each stage; scored by readout fidelity against the true intermediate value."),
+]

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RISE — Paper 2 method</title>
+<meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+
+<header class="hero"><div class="wrap">
+  <span class="venue" style="color:var(--accent-2);font-weight:600">Phase B · attribution / XAI</span>
+  <h1>RISE</h1>
+  <p class="lead">Petsiuk et al. 2018</p>
+  <p style="margin-top:10px"><a href="methods.html#phaseB">← back to the method catalogue</a></p>
+</div></header>
+
+<section><div class="wrap">
+  <div class="fig" style="max-width:1040px;margin:0 auto">
+    <a href="assets/methods/rise.png" target="_blank"><img src="assets/methods/rise.png" alt="RISE result"></a>
+  </div>
+  <p class="caption">Left: the game frame analysed. Middle: this method's attribution (<span style='color:var(--accent)'>blue</span>) against the oracle's true causal effect (<span style='color:var(--accent-2)'>green</span>) for the most causal RAM cells. Right: deletion / insertion faithfulness curves. A faithful method's blue bars match the green ones. <b>pearson_corr_with_oracle = -0.390</b> (game: pong, state f120+30)</p>
+</div></section>
+
+<section><div class="wrap">
+  <h2>What it does</h2>
+  <p>Averages the output over many random masks (N=500) to estimate per-region importance.</p>
+  <dl class="meta" style="margin-top:18px"><dt>Implementation</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/rise.jl"><code>tools/xai_study/phaseB_attribution/rise.jl</code></a></dd><dt>Reference</dt><dd>Petsiuk et al. 2018</dd><dt>Record</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/out/rise_pong_ball_pixel.json"><code>rise_pong_ball_pixel.json</code></a></dd><dt>All records</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/out"><code>phaseB_attribution/out</code></a></dd></dl>
+  <p class="caption" style="margin-top:14px">The figure is generated from the committed record by
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/gen_method_figures.py"><code>docs/gen_method_figures.py</code></a>; the game frame
+  is rendered by <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/render_scenes.jl"><code>docs/render_scenes.jl</code></a>.</p>
+</div></section>
+
+<footer><div class="wrap">
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/083b6aea09e00a46ca96d2fc9abf586b083f180d"><code>083b6aea</code></a> ·
+source of truth: <code>docs/manifest.py</code> ·
+regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
+<a href="https://github.com/akmaier/UnderstandingVCS">repository</a>
+</div></footer>
+</body>
+</html>

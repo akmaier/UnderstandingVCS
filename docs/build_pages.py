@@ -724,11 +724,15 @@ def build_methods():
 
     def catalogue(rows, recdir, reccount):
         # rows: (method_html, script_basename, score_html)
+        def page(s):
+            key = s.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+            return '<a href="m_%s.html">explain &amp; figure →</a>' % key
         body = "".join(
-            "<tr><td>%s</td><td>%s</td><td>%s</td></tr>"
-            % (m, srcln_or_src(XS + s), sc) for m, s, sc in rows)
+            "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>"
+            % (m, srcln_or_src(XS + s), sc, page(s)) for m, s, sc in rows)
         head = ('<table class="tbl"><tr><th>Method (reference)</th>'
-                '<th>Implementation</th><th>Measured score (vs the §1 oracle)</th></tr>'
+                '<th>Implementation</th><th>Measured score (vs the §1 oracle)</th>'
+                '<th>Page</th></tr>'
                 '%s</table>' % body)
         rec = ('<p class="caption">Records: %s — <b>%d</b> committed §R JSON+npz.</p>'
                % (src(XS + recdir, recdir), reccount))
@@ -960,6 +964,86 @@ python3 tools/xai_study/compare/benchmark/run.py --method magnitude_proxy</code>
     return page("methods.html", "Paper 2 — method catalogue", body)
 
 
+import json as _json
+
+_PHASE_LABEL = {"A": "Phase A · neuroscience battery", "B": "Phase B · attribution / XAI",
+                "C": "Phase C · mechanistic interpretability", "NA": "recorded as not-applicable"}
+_PHASE_ANCHOR = {"A": "phaseA", "B": "phaseB", "C": "phaseC", "NA": "phaseB"}
+_RECDIR = {"A": "phaseA_kording", "B": "phaseB_attribution", "NA": "phaseB_attribution",
+           "C": "phaseC_mechanistic"}
+
+
+def _method_caption(meth):
+    ph = meth["phase"]
+    if ph == "B":
+        return ("Left: the game frame analysed. Middle: this method's attribution "
+                "(<span style='color:var(--accent)'>blue</span>) against the oracle's true causal "
+                "effect (<span style='color:var(--accent-2)'>green</span>) for the most causal RAM "
+                "cells. Right: deletion / insertion faithfulness curves. A faithful method's blue "
+                "bars match the green ones.")
+    if ph == "A":
+        if meth["key"] == "A1_connectomics":
+            return ("Left: the frame. Middle vs right: the true data-flow graph and the graph this "
+                    "method recovered — the gap is the method's error.")
+        return ("Left: the frame. Right: the method's per-cell result against the ground-truth "
+                "causal role/importance.")
+    if ph == "C":
+        return ("Left: the frame. Right: the recovered effect vs the exact causal effect — points "
+                "on the dashed diagonal mean the method recovered the truth (or, where shown, the "
+                "recovered structure against the ground truth).")
+    return "Left: a game frame for context. Right: why these methods do not apply to the VCS."
+
+
+def build_method_page(meth):
+    rec = {}
+    rpath = os.path.join(REPO, "tools", "xai_study", _RECDIR[meth["phase"]], "out",
+                         meth["record"] + ".json")
+    try:
+        rec = _json.load(open(rpath))
+    except Exception:
+        pass
+    v = rec.get("value")
+    vs = ("%.3f" % v) if isinstance(v, (int, float)) else str(v)
+    score = ("<b>%s = %s</b> (game: %s, state %s)"
+             % (esc(rec.get("metric_name", "score")), esc(vs), esc(meth["game"]),
+                esc(rec.get("state", "—")))) if rec else ""
+    recdir = "tools/xai_study/%s/out" % _RECDIR[meth["phase"]]
+    meta = [
+        ("Implementation", src(meth["script"])),
+        ("Reference", esc(meth["ref"])),
+        ("Record", src(recdir + "/" + meth["record"] + ".json", meth["record"] + ".json")),
+        ("All records", src(recdir, _RECDIR[meth["phase"]] + "/out")),
+    ]
+    metahtml = "".join("<dt>%s</dt><dd>%s</dd>" % (k, val) for k, val in meta)
+    body = """
+<header class="hero"><div class="wrap">
+  <span class="venue" style="color:var(--accent-2);font-weight:600">%s</span>
+  <h1>%s</h1>
+  <p class="lead">%s</p>
+  <p style="margin-top:10px"><a href="methods.html#%s">← back to the method catalogue</a></p>
+</div></header>
+
+<section><div class="wrap">
+  <div class="fig" style="max-width:1040px;margin:0 auto">
+    <a href="assets/methods/%s.png" target="_blank"><img src="assets/methods/%s.png" alt="%s result"></a>
+  </div>
+  <p class="caption">%s %s</p>
+</div></section>
+
+<section><div class="wrap">
+  <h2>What it does</h2>
+  <p>%s</p>
+  <dl class="meta" style="margin-top:18px">%s</dl>
+  <p class="caption" style="margin-top:14px">The figure is generated from the committed record by
+  <a href="%sdocs/gen_method_figures.py"><code>docs/gen_method_figures.py</code></a>; the game frame
+  is rendered by <a href="%sdocs/render_scenes.jl"><code>docs/render_scenes.jl</code></a>.</p>
+</div></section>
+""" % (esc(_PHASE_LABEL[meth["phase"]]), esc(meth["title"]), esc(meth["ref"]),
+       _PHASE_ANCHOR[meth["phase"]], meth["key"], meth["key"], esc(meth["title"]),
+       _method_caption(meth), score, esc(meth["what"]), metahtml, BLOB, BLOB)
+    return page("m_%s.html" % meth["key"], meth["title"] + " — Paper 2 method", body)
+
+
 def main():
     outputs = {
         "index.html": build_index(),
@@ -971,6 +1055,8 @@ def main():
         "environment.html": build_environment(),
         "reproduce.html": build_reproduce(),
     }
+    for meth in M.P2_METHODS:
+        outputs["m_%s.html" % meth["key"]] = build_method_page(meth)
     for name, content in outputs.items():
         with open(os.path.join(HERE, name), "w") as f:
             f.write(content)
