@@ -729,11 +729,12 @@ reference, without eliminating it.
 \bibliography{references}
 }
 
-% AAAI reproducibility checklist: included in the paper PDF after the references, per
-% AAAI submission policy (no separate submission; does not count toward the page
-% limit). The flag makes it render inline; the file still compiles stand-alone without it.
-\def\isChecklistMainFile{}
-\clearpage
-\input{ReproducibilityChecklist}
+% AAAI reproducibility checklist: now submitted as a SEPARATE PDF. Build
+% ReproducibilityChecklist.tex stand-alone (it supplies its own \documentclass when not
+% \input) to produce ReproducibilityChecklist.pdf. It is therefore NOT embedded in the
+% paper PDF. To re-embed it inline, uncomment the three lines below.
+%\def\isChecklistMainFile{}
+%\clearpage
+%\input{ReproducibilityChecklist}
 
 \end{document}
