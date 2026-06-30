@@ -719,3 +719,39 @@ P2_METHODS = [
          what="Reads intermediate state through the output decoder to see what is represented at "
               "each stage; scored by readout fidelity against the true intermediate value."),
 ]
+
+# How each method's headline number is computed and compared to the oracle.
+# Keyed by method key; rendered as the "How it's scored" section of m_<key>.html.
+P2_METHOD_SCORED = {
+ "A1_connectomics": "F1 of the recovered data-flow graph against the true read/write graph from the disassembly (an edge = perturbing one RAM cell changes another). <b>0.0</b> — single-shot perturbation recovers none of the true edges.",
+ "A2_lesions": "Spearman correlation between each cell's lesion importance (screen change when the cell is frozen) and its true causal role from the oracle. <b>1.0</b> — lesioning ranks the cells exactly as the oracle does.",
+ "A3_tuning": "Spurious-tuning rate: the fraction of cells that are strongly tuned to a game variable yet are NOT among the oracle's causal cells. <b>1.0</b> — every strongly-tuned cell is non-causal, so tuning curves are misleading here.",
+ "A4_correlations": "Spearman correlation between the measured cell–cell correlation structure and the oracle's true coupling matrix. <b>0.63</b> — correlation partly tracks coupling but conflates it with shared drivers.",
+ "A5_lfp": "Fraction of the pooled-activity power spectrum explained by the known clocks (frame / scanline). <b>0.69</b> — most 'LFP' structure is epiphenomenal timing, not computation.",
+ "A6_granger": "False-edge rate of the Granger-inferred causal graph against the true data-flow. <b>1.0</b> — every inferred edge is spurious (Granger sees correlation through shared clocks).",
+ "A7_dimred": "Fraction of NMF components that match a known signal/variable (vs the oracle's importance). <b>0.8</b> — recovers most known factors, adds some mixed ones.",
+ "A8_wholestate": "Minimality M of the whole-state dump vs the oracle's causal set — how much smaller the true causal set is than 'record everything'. <b>0.016</b> — the raw dump is almost entirely non-minimal.",
+ "saliency": "Pearson correlation of the saliency map with the oracle's exact causal map |Δy(u)| over the candidate causes, plus deletion/insertion AUC. <b>0.41</b> — partially faithful: it finds the paddle region but under-weights it.",
+ "gradxinput": "Pearson correlation of the Grad×Input / DeepLIFT attribution with the oracle. <b>0.80</b> — multiplying by the input sharpens the gradient toward the true causes.",
+ "guided_backprop": "Pearson correlation with the oracle. <b>0.00</b> — guided backprop fails the Adebayo et al. 2018 sanity check on this discrete substrate.",
+ "smoothgrad": "Pearson correlation with the oracle. <b>0.00</b> — averaging input noise around a discrete-index output cannot recover a gradient that is not there.",
+ "ig_baseline_sweep": "Pearson correlation with the oracle at the headline baseline (we sweep baselines). <b>0.00</b> on the sprite-position output whose naive gradient is exactly zero — completeness does not rescue faithfulness.",
+ "expected_gradients": "Pearson correlation with the oracle. <b>0.00</b> — baseline-averaged IG inherits the vanishing-gradient problem on index outputs.",
+ "occlusion": "Pearson correlation with the oracle (occlusion is itself a coarse intervention). <b>0.71</b> — among the most faithful methods, precisely because it perturbs the real system.",
+ "perturbation": "Pearson correlation / mask-IoU with the oracle's true causal set. <b>0.45</b> — the learned minimal mask partly overlaps the true causes.",
+ "rise": "Pearson correlation with the oracle from random-mask averaging. <b>−0.39</b> — anti-correlated here; random masks over discrete causes mislead.",
+ "lime": "Pearson correlation of the local linear surrogate's weights with the oracle. <b>−0.02</b> — the surrogate does not fit the discrete causal structure and is unstable across seeds.",
+ "kernelshap": "Pearson correlation of the Shapley values with the oracle. <b>0.67</b> — Shapley recovers much of the true contribution given enough coalitions.",
+ "counterfactual": "Pearson correlation / minimality of the minimal valid counterfactual edit against the oracle's minimal causal set. <b>0.84</b> — set-state-and-re-render finds nearly the true causes (its attributed region matches the oracle's).",
+ "na_audit": "Count of audited methods that cannot run on the VCS at all (they need conv/attention layers or a learned policy). <b>6</b> — recorded honestly, not forced into a number.",
+ "activation_patching": "Maximum absolute difference between the recovered patch effect and the EXACT patch effect from the oracle. <b>0.00</b> — activation patching is exact by construction, because it <i>is</i> an intervention.",
+ "das": "Interchange accuracy of the aligned subspace against the true variable. <b>1.00</b> — DAS aligns to the causal variable exactly on this known circuit.",
+ "attribution_patching": "Pearson correlation between the gradient-approximate effect and the exact patch effect. <b>0.84</b> — a good cheap approximation, with a measurable gap from the truth.",
+ "path_patching": "F1 of the recovered path/circuit against the true routine's data-flow. <b>0.00</b> — the single-frame path search recovers none of the true routine at this state.",
+ "acdc": "Best F1 of the auto-discovered circuit vs the true data-flow over a threshold sweep. <b>0.00</b> — the pruned graph does not match the true edges here.",
+ "sae": "Fraction of SAE features that match a known variable (probe F1) plus a causal-use check. <b>1.00</b> — every feature maps to a known variable on this small state.",
+ "dictionaries": "Fraction of NMF/PCA dictionary components matching known variables. <b>0.63</b> — partial; PCA mixes variables while NMF separates more.",
+ "causal_scrubbing": "Behaviour preserved when resampling activations consistent with the TRUE circuit (should stay ~1) vs a wrong circuit (should drop). <b>1.00</b> — the true-circuit hypothesis passes the scrub.",
+ "linear_probing": "Mean selectivity = probe accuracy minus control-task accuracy, averaged over labelled cells. <b>0.30</b> — concepts are decodable above the control, but some decodable cells are not causally used (the present-vs-used gap).",
+ "logit_lens": "Readout fidelity (R²) of the lens-decoded intermediate against the true intermediate value. <b>1.00</b> — the state is linearly readable at the right site, as expected on a transparent machine.",
+}

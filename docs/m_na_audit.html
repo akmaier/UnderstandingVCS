@@ -27,14 +27,24 @@
 <section><div class="wrap">
   <h2>What it does</h2>
   <p>Grad-CAM, attention rollout and VIPER need convolutional/attention layers or a learned policy that the VCS does not have. Recorded honestly as &#x27;does not apply&#x27; rather than forced.</p>
+</div></section>
+
+<section><div class="wrap">
+  <h2>How it's scored</h2>
+  <p>Count of audited methods that cannot run on the VCS at all (they need conv/attention layers or a learned policy). <b>6</b> — recorded honestly, not forced into a number.</p>
+  <p class="caption">The score is measured against the §1 intervention oracle — never against
+  another interpretability method. F (faithful) is always vs the oracle; see the
+  <a href="methods.html#stack">execution stack</a>.</p>
   <dl class="meta" style="margin-top:18px"><dt>Implementation</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/na_audit.jl"><code>tools/xai_study/phaseB_attribution/na_audit.jl</code></a></dd><dt>Reference</dt><dd>Selvaraju 2017; Abnar &amp; Zuidema 2020; Bastani 2018</dd><dt>Record</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/out/na_audit_pong.json"><code>na_audit_pong.json</code></a></dd><dt>All records</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/out"><code>phaseB_attribution/out</code></a></dd></dl>
   <p class="caption" style="margin-top:14px">The figure is generated from the committed record by
   <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/gen_method_figures.py"><code>docs/gen_method_figures.py</code></a>; the game frame
-  is rendered by <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/render_scenes.jl"><code>docs/render_scenes.jl</code></a>.</p>
+  and each RAM cell's screen footprint are produced by
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/render_scenes.jl"><code>render_scenes.jl</code></a> /
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/cell_footprints.jl"><code>cell_footprints.jl</code></a>.</p>
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/083b6aea09e00a46ca96d2fc9abf586b083f180d"><code>083b6aea</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/96a898fe3c83d061e56e638c2ad4cf7b7174ef13"><code>96a898fe</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

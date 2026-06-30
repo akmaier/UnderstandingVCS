@@ -973,24 +973,47 @@ _RECDIR = {"A": "phaseA_kording", "B": "phaseB_attribution", "NA": "phaseB_attri
            "C": "phaseC_mechanistic"}
 
 
+_MATRIX = {"A1_connectomics", "A4_correlations", "A6_granger", "path_patching", "acdc"}
+_SCATTER = {"activation_patching", "attribution_patching", "das"}
+
+
 def _method_caption(meth):
-    ph = meth["phase"]
+    ph, k = meth["phase"], meth["key"]
     if ph == "B":
-        return ("Left: the game frame analysed. Middle: this method's attribution "
-                "(<span style='color:var(--accent)'>blue</span>) against the oracle's true causal "
-                "effect (<span style='color:var(--accent-2)'>green</span>) for the most causal RAM "
-                "cells. Right: deletion / insertion faithfulness curves. A faithful method's blue "
-                "bars match the green ones.")
+        return ("<b>Top row</b> (image domain, as in Paper 1): the game frame, then the oracle's "
+                "<b>true causal region</b> and this method's <b>attributed region</b> — each painted "
+                "onto the frame through the screen footprint of the RAM cells it implicates "
+                "(brighter = more important). A faithful method's heat matches the oracle's. "
+                "<b>Bottom</b>: per-cell importance — oracle "
+                "(<span style='color:var(--accent-2)'>green</span>) vs method "
+                "(<span style='color:var(--accent)'>blue</span>) — and the deletion/insertion "
+                "faithfulness curves (perturb the ranked causes and watch the output move).")
+    if k in _MATRIX:
+        return ("Two adjacency matrices over the candidate RAM cells: the <b>true</b> data-flow "
+                "graph and the graph this method <b>recovered</b>. A bright cell (row = cause, "
+                "column = effect) is an edge; the difference between the two panels is the error.")
+    if k in _SCATTER:
+        return ("Each point is one intervention site: its <b>exact causal effect</b> from the "
+                "oracle (x) against the method's <b>recovered/approximate effect</b> (y). Points on "
+                "the dashed diagonal mean the method recovered the true effect.")
+    if k == "A3_tuning":
+        return ("Each point is a RAM cell: its <b>true causal importance</b> (x) against its "
+                "<b>tuning strength</b> to a game variable (y). "
+                "<span style='color:var(--bad)'>Red</span> points are strongly tuned yet not "
+                "causal — the trap the metric measures.")
+    if k == "A2_lesions":
+        return ("Left: the frame. Middle: each cell's lesion importance painted on the screen via "
+                "its footprint. Right: lesion importance vs the cell's true causal role.")
+    if k == "linear_probing":
+        return ("Per labelled RAM cell, the probe's <b>selectivity</b> (accuracy minus a control "
+                "task). <span style='color:var(--bad)'>Red</span> bars are cells that are "
+                "decodable but <i>not causally used</i> — present ≠ used.")
     if ph == "A":
-        if meth["key"] == "A1_connectomics":
-            return ("Left: the frame. Middle vs right: the true data-flow graph and the graph this "
-                    "method recovered — the gap is the method's error.")
-        return ("Left: the frame. Right: the method's per-cell result against the ground-truth "
-                "causal role/importance.")
+        return ("Left: the frame. Right: this method's per-cell/per-component result against the "
+                "ground-truth importance, with the RAM cells labelled.")
     if ph == "C":
-        return ("Left: the frame. Right: the recovered effect vs the exact causal effect — points "
-                "on the dashed diagonal mean the method recovered the truth (or, where shown, the "
-                "recovered structure against the ground truth).")
+        return ("Left: the frame. Right: the recovered structure/effect against the ground truth "
+                "(matched components or preserved behaviour), with the RAM cells labelled.")
     return "Left: a game frame for context. Right: why these methods do not apply to the VCS."
 
 
@@ -1033,14 +1056,25 @@ def build_method_page(meth):
 <section><div class="wrap">
   <h2>What it does</h2>
   <p>%s</p>
+</div></section>
+
+<section><div class="wrap">
+  <h2>How it's scored</h2>
+  <p>%s</p>
+  <p class="caption">The score is measured against the §1 intervention oracle — never against
+  another interpretability method. F (faithful) is always vs the oracle; see the
+  <a href="methods.html#stack">execution stack</a>.</p>
   <dl class="meta" style="margin-top:18px">%s</dl>
   <p class="caption" style="margin-top:14px">The figure is generated from the committed record by
   <a href="%sdocs/gen_method_figures.py"><code>docs/gen_method_figures.py</code></a>; the game frame
-  is rendered by <a href="%sdocs/render_scenes.jl"><code>docs/render_scenes.jl</code></a>.</p>
+  and each RAM cell's screen footprint are produced by
+  <a href="%sdocs/render_scenes.jl"><code>render_scenes.jl</code></a> /
+  <a href="%sdocs/cell_footprints.jl"><code>cell_footprints.jl</code></a>.</p>
 </div></section>
 """ % (esc(_PHASE_LABEL[meth["phase"]]), esc(meth["title"]), esc(meth["ref"]),
        _PHASE_ANCHOR[meth["phase"]], meth["key"], meth["key"], esc(meth["title"]),
-       _method_caption(meth), score, esc(meth["what"]), metahtml, BLOB, BLOB)
+       _method_caption(meth), score, esc(meth["what"]),
+       M.P2_METHOD_SCORED.get(meth["key"], ""), metahtml, BLOB, BLOB, BLOB)
     return page("m_%s.html" % meth["key"], meth["title"] + " — Paper 2 method", body)
 
 
