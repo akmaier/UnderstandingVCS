@@ -84,6 +84,12 @@ section .sub { color: var(--fg-dim); margin: 0 0 22px; }
 .meta dt { color: var(--fg-dim); }
 .meta dd { margin: 0; }
 .meta code.cmd { display: inline-block; white-space: pre-wrap; word-break: break-all; }
+.meta ul.inputs { margin: 0; padding-left: 18px; }
+.meta ul.inputs li { margin: 2px 0; }
+.rownote { margin: 12px 0 0; padding: 10px 14px; font-size: 0.86rem; color: var(--fg-dim);
+  background: var(--bg-soft); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+  border-radius: 8px; }
+.rownote b { color: var(--fg); }
 
 /* figures */
 .figrid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }

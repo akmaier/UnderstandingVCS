@@ -105,11 +105,20 @@ def render_ledger(claims):
             ("Script", src(c["script"])),
             ("Command", '<code class="cmd">%s</code>' % esc(c["command"])),
             ("Artifact", src(c["artifact"])),
+        ]
+        # optional: the upstream scripts that produce this row's input data
+        if c.get("inputs"):
+            items = "".join(
+                "<li>%s — %s</li>" % (src(p), desc) for p, desc in c["inputs"])
+            meta_rows.append(("Input data", '<ul class="inputs">%s</ul>' % items))
+        meta_rows += [
             ("Runtime", esc(c["runtime"])),
             ("Hardware", esc(c["hardware"])),
             ("Verified by", c["verified_by"]),  # may contain inline html/code refs
         ]
         meta = "".join("<dt>%s</dt><dd>%s</dd>" % (k, v) for k, v in meta_rows)
+        # optional: a short "where this comes from" comment under the meta
+        note = '<p class="rownote">%s</p>' % c["note"] if c.get("note") else ""
         rows.append("""
 <div class="row">
   <div class="head">
@@ -120,8 +129,9 @@ def render_ledger(claims):
   <div class="body">
     <p class="detail">%s</p>
     <dl class="meta">%s</dl>
+    %s
   </div>
-</div>""" % (esc(c["claim"]), esc(c["value"]), st, st, c["detail"], meta))
+</div>""" % (esc(c["claim"]), esc(c["value"]), st, st, c["detail"], meta, note))
     return '<div class="ledger">%s</div>' % "".join(rows)
 
 

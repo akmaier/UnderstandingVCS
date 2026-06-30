@@ -46,6 +46,7 @@
   <div class="body">
     <p class="detail">Exact causal map |Δy(u)| via clamp/resample-and-rerun; content-path gradient ∂y/∂u via the SOFT-STE substrate; a cross-check confirming the two agree. bit_exact_rerun flag set on the records.</p>
     <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/ground_truth/oracle_intervene.jl"><code>tools/xai_study/ground_truth/oracle_intervene.jl</code></a></dd><dt>Command</dt><dd><code class="cmd">julia --project=jutari tools/xai_study/ground_truth/oracle_intervene.jl --game pong</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/ground_truth/out/"><code>tools/xai_study/ground_truth/out/</code></a></dd><dt>Runtime</dt><dd>minutes / game (cluster)</dd><dt>Hardware</dt><dd>LME cluster / local · seed 0</dd><dt>Verified by</dt><dd>oracle_xcheck.jl (intervention↔gradient correlation)</dd></dl>
+    
   </div>
 </div>
 <div class="row">
@@ -57,6 +58,7 @@
   <div class="body">
     <p class="detail">Candidate RAM→concept maps from OCAtari/AtariARI, upgraded to causal by verify-by-intervention (does the byte actually move the framebuffer?).</p>
     <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/t3/verify_labels.jl"><code>tools/xai_study/t3/verify_labels.jl</code></a></dd><dt>Command</dt><dd><code class="cmd">julia --project=jutari tools/xai_study/t3/verify_labels.jl</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/t3/out/"><code>tools/xai_study/t3/out/</code></a></dd><dt>Runtime</dt><dd>minutes (cluster)</dd><dt>Hardware</dt><dd>LME cluster / local · seed 0</dd><dt>Verified by</dt><dd>intervention check per label</dd></dl>
+    
   </div>
 </div>
 <div class="row">
@@ -68,6 +70,7 @@
   <div class="body">
     <p class="detail">Connectomics, single-unit lesions, tuning curves, pairwise correlations, LFP spectra, Granger causality, NMF/PCA, whole-state — each scored against the true read/write graph over 6 core games.</p>
     <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A1_connectomics.jl"><code>tools/xai_study/phaseA_kording/A1_connectomics.jl</code></a></dd><dt>Command</dt><dd><code class="cmd">julia --project=jutari tools/xai_study/phaseA_kording/A2_lesions.jl --games core</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/out/"><code>tools/xai_study/phaseA_kording/out/</code></a></dd><dt>Runtime</dt><dd>4 h walltime / array task</dd><dt>Hardware</dt><dd>LME cluster (CPU array) · seed 0</dd><dt>Verified by</dt><dd>scored vs oracle data-flow graph; A6+A7 spot-re-run bit-exact</dd></dl>
+    
   </div>
 </div>
 <div class="row">
@@ -79,6 +82,7 @@
   <div class="body">
     <p class="detail">Optional circuit-level (transistor) battery; product-owner-gated after the pilot. Not run for this submission — listed for honesty.</p>
     <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/xai_paper/xai_2_interpretability/experiment_design.md"><code>xai_paper/xai_2_interpretability/experiment_design.md</code></a></dd><dt>Command</dt><dd><code class="cmd">—</code></dd><dt>Artifact</dt><dd>—</dd><dt>Runtime</dt><dd>—</dd><dt>Hardware</dt><dd>—</dd><dt>Verified by</dt><dd>experiment_design.md (PO-gated)</dd></dl>
+    
   </div>
 </div>
 <div class="row">
@@ -90,6 +94,7 @@
   <div class="body">
     <p class="detail">Vanilla gradient, Grad×Input, Guided Backprop, SmoothGrad, Integrated Gradients, Expected Gradients, Occlusion, extremal perturbation, RISE, LIME, KernelSHAP, counterfactual + the N/A audit — each scored by correlation and deletion/insertion AUC vs the oracle.</p>
     <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/ig_baseline_sweep.jl"><code>tools/xai_study/phaseB_attribution/ig_baseline_sweep.jl</code></a></dd><dt>Command</dt><dd><code class="cmd">julia --project=jutari tools/xai_study/phaseB_attribution/saliency.jl --games core</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/out/"><code>tools/xai_study/phaseB_attribution/out/</code></a></dd><dt>Runtime</dt><dd>up to ~15 min / method / game</dd><dt>Hardware</dt><dd>LME cluster (CPU array) · seed 0</dd><dt>Verified by</dt><dd>scored vs E1 oracle</dd></dl>
+    
   </div>
 </div>
 <div class="row">
@@ -101,6 +106,7 @@
   <div class="body">
     <p class="detail">Activation patching / causal tracing, interchange/DAS, attribution patching, path patching, ACDC, sparse autoencoders, NMF/PCA dictionaries, causal scrubbing, linear probing + control tasks, logit/tuned lens.</p>
     <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/activation_patching.jl"><code>tools/xai_study/phaseC_mechanistic/activation_patching.jl</code></a></dd><dt>Command</dt><dd><code class="cmd">julia --project=jutari tools/xai_study/phaseC_mechanistic/sae.jl --games core</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/out/"><code>tools/xai_study/phaseC_mechanistic/out/</code></a></dd><dt>Runtime</dt><dd>4 h walltime / array task</dd><dt>Hardware</dt><dd>LME cluster (CPU array) · seed 0</dd><dt>Verified by</dt><dd>scored vs exact patch / true circuit</dd></dl>
+    
   </div>
 </div>
 <div class="row">
@@ -112,6 +118,7 @@
   <div class="body">
     <p class="detail">Faithfulness-vs-plausibility leaderboard aggregated from every committed per-game record. Headline contrast: position-regime causal faithfulness 0.4118 vs gradient/correlational 0.0683 (gap 0.3435).</p>
     <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/leaderboard.py"><code>tools/xai_study/compare/leaderboard.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 tools/xai_study/compare/leaderboard.py</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/out/leaderboard.json"><code>tools/xai_study/compare/out/leaderboard.json</code></a></dd><dt>Runtime</dt><dd>seconds (pure read)</dd><dt>Hardware</dt><dd>any · embedded self-check</dd><dt>Verified by</dt><dd>self-check asserts oracle_copy F=1, uniform at floor</dd></dl>
+    
   </div>
 </div>
 <div class="row">
@@ -123,6 +130,7 @@
   <div class="body">
     <p class="detail">A self-contained scoring harness (magnitude_proxy demonstration) that an auditor can run with no ROM, against the committed oracle records.</p>
     <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/benchmark/run.py"><code>tools/xai_study/compare/benchmark/run.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 tools/xai_study/compare/benchmark/run.py --method magnitude_proxy</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/benchmark/out/"><code>tools/xai_study/compare/benchmark/out/</code></a></dd><dt>Runtime</dt><dd>seconds</dd><dt>Hardware</dt><dd>any</dd><dt>Verified by</dt><dd>self-test (oracle_copy F=1, magnitude_proxy≈0.271 pong/content)</dd></dl>
+    
   </div>
 </div></div>
 </div></section>
@@ -165,7 +173,7 @@
 
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/04060d24ec6aa0ff75180f89eba33edef1ad89ba"><code>04060d24</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/5ff9425d881670def446455caa5b8663c6df3fcd"><code>5ff9425d</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

@@ -32,6 +32,7 @@
   <div class="body">
     <p class="detail">128 B RIOT RAM, per frame, 30 frames of NOOP from the standard ALE boot (60 NOOP + 4 RESET). Max diff 0 bytes/frame on all 64 games.</p>
     <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/rom_sweep/sweep_jutari_ram.py"><code>tools/rom_sweep/sweep_jutari_ram.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 tools/rom_sweep/sweep_jutari_ram.py</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/rom_sweep/results_jutari_ram.md"><code>tools/rom_sweep/results_jutari_ram.md</code></a></dd><dt>Runtime</dt><dd>~9–10 s / game</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>PXC1 + jutari Pkg.test()</dd></dl>
+    
   </div>
 </div>
 <div class="row">
@@ -43,6 +44,7 @@
   <div class="body">
     <p class="detail">210×160 palette-index framebuffer, per frame, 60 frames of breakout_random_actions after the standard boot. Max diff 0 px/frame.</p>
     <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/rom_sweep/sweep_jutari_screen.py"><code>tools/rom_sweep/sweep_jutari_screen.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 tools/rom_sweep/sweep_jutari_screen.py</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/rom_sweep/results_jutari_screen.md"><code>tools/rom_sweep/results_jutari_screen.md</code></a></dd><dt>Runtime</dt><dd>~10 s / game</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>PXC-S screen conformance</dd></dl>
+    
   </div>
 </div>
 <div class="row">
@@ -54,6 +56,7 @@
   <div class="body">
     <p class="detail">The JAX port is swept against xitari with the same paradigm; PXC2 then asserts jaxtari ≡ jutari frame-by-frame.</p>
     <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/rom_sweep/sweep_jaxtari.py"><code>tools/rom_sweep/sweep_jaxtari.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 tools/rom_sweep/sweep_jaxtari.py</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/rom_sweep/results_jaxtari_ram.md"><code>tools/rom_sweep/results_jaxtari_ram.md</code></a></dd><dt>Runtime</dt><dd>minutes / game (JAX eager)</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>PXC2 cross-check</dd></dl>
+    
   </div>
 </div>
 <div class="row">
@@ -64,7 +67,8 @@
   </div>
   <div class="body">
     <p class="detail">The executed straight-through SOFT path is byte-identical to HARD: with relaxation off (the default), <code>soft_rom_peek</code> / <code>soft_ram_peek</code> equal the original one-hot dot product over 5,000 random peeks, and toggling a relaxed run on and back off leaves RAM and the rendered frame unchanged (no state leak). The 4-panel video only <i>illustrates</i> HARD ≡ SOFT-STE while a relaxed (α,T) path drifts — the proof is the regression check, not the video.</p>
-    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/relaxation_study/verify_soft_ste.jl"><code>tools/relaxation_study/verify_soft_ste.jl</code></a></dd><dt>Command</dt><dd><code class="cmd">cd jutari &amp;&amp; julia --project=. ../tools/relaxation_study/verify_soft_ste.jl</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/relaxation_study/video_out/divergence_si.mp4"><code>tools/relaxation_study/video_out/divergence_si.mp4</code></a></dd><dt>Runtime</dt><dd>seconds (check)</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>verify_soft_ste.jl (RAM + frame byte-identical) + the 64/64 screen sweep</dd></dl>
+    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/relaxation_study/verify_soft_ste.jl"><code>tools/relaxation_study/verify_soft_ste.jl</code></a></dd><dt>Command</dt><dd><code class="cmd">cd jutari &amp;&amp; julia --project=. ../tools/relaxation_study/verify_soft_ste.jl</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/relaxation_study/video_out/divergence_si.mp4"><code>tools/relaxation_study/video_out/divergence_si.mp4</code></a></dd><dt>Input data</dt><dd><ul class="inputs"><li><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/relaxation_study/dump_divergence_frames.jl"><code>tools/relaxation_study/dump_divergence_frames.jl</code></a> — renders HARD / SOFT-STE / relaxed scanlines to raw frame streams</li><li><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/relaxation_study/make_divergence_video.py"><code>tools/relaxation_study/make_divergence_video.py</code></a> — encodes those frames into the 4-panel mp4</li></ul></dd><dt>Runtime</dt><dd>seconds (check)</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>verify_soft_ste.jl (RAM + frame byte-identical) + the 64/64 screen sweep</dd></dl>
+    <p class="rownote">The mp4 is an <b>illustration</b>, generated by the two input scripts. The bit-exactness is proved by the script in this row (<code>verify_soft_ste.jl</code>), not by the video.</p>
   </div>
 </div>
 <div class="row">
@@ -76,6 +80,7 @@
   <div class="body">
     <p class="detail">Peak forward throughput: 2,947,553 env-steps/s on GTX 1080 Ti (batch 4096) and 3,119,115 on Quadro RTX 5000. 3000 CPU instructions/rollout, 10 repeats, batch sweep 1→65536.</p>
     <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/bench_jaxtari_gpu.py"><code>tools/bench_jaxtari_gpu.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 tools/bench_jaxtari_gpu.py --rom pong.bin</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/results/gpu/gtx1080ti.json"><code>results/gpu/gtx1080ti.json</code></a></dd><dt>Runtime</dt><dd>~10–80 s / batch config</dd><dt>Hardware</dt><dd>GTX 1080 Ti / Quadro RTX 5000 · JAX 0.10.1</dd><dt>Verified by</dt><dd>raw JSON env block (device, jax version, per-batch wall time)</dd></dl>
+    
   </div>
 </div>
 <div class="row">
@@ -86,7 +91,8 @@
   </div>
   <div class="body">
     <p class="detail">Peak forward+backward (jax.grad) throughput: 2,799,870 env-steps/s on GTX 1080 Ti and 2,911,069 on Quadro RTX 5000 (batch 4096).</p>
-    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/plot_gpu_throughput.py"><code>tools/plot_gpu_throughput.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 tools/plot_gpu_throughput.py</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari_paper/paper/figures/gpu_throughput.pdf"><code>jutari_paper/paper/figures/gpu_throughput.pdf</code></a></dd><dt>Runtime</dt><dd>plot from cached JSON</dd><dt>Hardware</dt><dd>GTX 1080 Ti / Quadro RTX 5000</dd><dt>Verified by</dt><dd>results/gpu/{gtx1080ti,q5000}.json</dd></dl>
+    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/plot_gpu_throughput.py"><code>tools/plot_gpu_throughput.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 tools/plot_gpu_throughput.py</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari_paper/paper/figures/gpu_throughput.pdf"><code>jutari_paper/paper/figures/gpu_throughput.pdf</code></a></dd><dt>Input data</dt><dd><ul class="inputs"><li><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/bench_jaxtari_gpu.py"><code>tools/bench_jaxtari_gpu.py</code></a> — runs the batched soft-mode benchmark on the GPU → results/gpu/*.json</li><li><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/results/gpu/gtx1080ti.json"><code>results/gpu/gtx1080ti.json</code></a> — raw per-batch wall times (GTX 1080 Ti)</li><li><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/results/gpu/q5000.json"><code>results/gpu/q5000.json</code></a> — raw per-batch wall times (Quadro RTX 5000)</li></ul></dd><dt>Runtime</dt><dd>plot from cached JSON</dd><dt>Hardware</dt><dd>GTX 1080 Ti / Quadro RTX 5000</dd><dt>Verified by</dt><dd>results/gpu/{gtx1080ti,q5000}.json</dd></dl>
+    <p class="rownote"><code>plot_gpu_throughput.py</code> only reads the committed JSON and draws the curve — every plotted number traces to a measured wall time in <code>results/gpu/*.json</code>.</p>
   </div>
 </div>
 <div class="row">
@@ -97,7 +103,8 @@
   </div>
   <div class="body">
     <p class="detail">The heatmap is a per-step likelihood model, P<sub>step</sub>(α,T) = p_read(T)<sup>ρ</sup> · p_branch(α)<sup>f_b</sup>. Its inputs are <b>measured</b> by running the real soft simulator (<code>soft_step</code>) on the Space Invaders ROM for 3,000 steps: ρ (mean instruction length), f_b (branch fraction), the actual branch-offset set and the fetched-address histogram. <code>dump_profiles.jl</code> writes those profiles; <code>make_relax_heatmap.py</code> renders the outer combination. The operating point α=6, T=0.14 is independently bit-exact-verified by verify_soft_ste.jl.</p>
-    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/relaxation_study/dump_profiles.jl"><code>tools/relaxation_study/dump_profiles.jl</code></a></dd><dt>Command</dt><dd><code class="cmd">cd jutari &amp;&amp; julia --project=. ../tools/relaxation_study/dump_profiles.jl</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/relaxation_study/relax_profiles.txt"><code>tools/relaxation_study/relax_profiles.txt</code></a></dd><dt>Runtime</dt><dd>seconds</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>relax_profiles.txt (measured); plotted by make_relax_heatmap.py</dd></dl>
+    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/relaxation_study/dump_profiles.jl"><code>tools/relaxation_study/dump_profiles.jl</code></a></dd><dt>Command</dt><dd><code class="cmd">cd jutari &amp;&amp; julia --project=. ../tools/relaxation_study/dump_profiles.jl</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/relaxation_study/relax_profiles.txt"><code>tools/relaxation_study/relax_profiles.txt</code></a></dd><dt>Input data</dt><dd><ul class="inputs"><li><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/relaxation_study/make_relax_heatmap.py"><code>tools/relaxation_study/make_relax_heatmap.py</code></a> — reads relax_profiles.txt → renders fig_relax_heatmap.pdf</li><li><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari_paper/paper/figures/fig_relax_heatmap.pdf"><code>jutari_paper/paper/figures/fig_relax_heatmap.pdf</code></a> — the rendered figure</li></ul></dd><dt>Runtime</dt><dd>seconds</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>relax_profiles.txt (measured); plotted by make_relax_heatmap.py</dd></dl>
+    <p class="rownote">The heatmap is a <b>model</b>, not a per-cell brute-force scan: the closed-form <code>p_read</code>/<code>p_branch</code> are evaluated over statistics <i>measured</i> from a real 3,000-step soft run on the SI ROM (<code>dump_profiles.jl</code>). The operating point α=6, T=0.14 is separately bit-exact-verified by <code>verify_soft_ste.jl</code>.</p>
   </div>
 </div>
 <div class="row">
@@ -109,6 +116,7 @@
   <div class="body">
     <p class="detail">The inverse ∂(move-right)/∂joystick is computed by <b>Zygote autodiff</b> through the paper's bilinear sampler: −35.73 for left, +35.73 for right, 0 for up/down — identical across all three soft variants (Theorem 1), while the naive integer-index path gives 0 in every direction. The forward ∂screen/∂RIGHT is a finite-difference directional derivative through the sampler and lights up the cannon edges. The values live in the committed <code>ji_grad.txt</code>; <code>si_joystick_fig.py</code> only plots them — it computes nothing.</p>
     <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_si_gradient/si_joystick_gradient.jl"><code>tools/xai_si_gradient/si_joystick_gradient.jl</code></a></dd><dt>Command</dt><dd><code class="cmd">cd jutari &amp;&amp; julia --project=. ../tools/xai_si_gradient/si_joystick_gradient.jl</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_si_gradient/out/ji_grad.txt"><code>tools/xai_si_gradient/out/ji_grad.txt</code></a></dd><dt>Runtime</dt><dd>seconds</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>ji_grad.txt identical across the 3 soft variants; figure si_joystick_gradient.pdf</dd></dl>
+    <p class="rownote">The gradients are computed here, not in the figure script. Input is the real <code>space_invaders.bin</code> ROM (not redistributed; obtained via AutoROM), stepped to the 35 s scene for the cannon footprint. <code>Zygote.gradient</code> differentiates the sampler objective; the forward saliency is a central finite difference on the joystick. Outputs land in <code>out/ji_grad.txt</code> (committed) and <code>out/ji_*.raw</code> (regenerable).</p>
   </div>
 </div>
 <div class="row">
@@ -119,7 +127,8 @@
   </div>
   <div class="body">
     <p class="detail">Reads the committed gradient fields/values from <code>tools/xai_si_gradient/out/</code> and draws the 2×2 figure (scene, sampler saliency, naive≡0, inverse bar chart). A plotting step only — no computation. Listed separately so the figure script is not mistaken for the source of the numbers.</p>
-    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_si_gradient/si_joystick_fig.py"><code>tools/xai_si_gradient/si_joystick_fig.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 tools/xai_si_gradient/si_joystick_fig.py</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_si_gradient/out/si_joystick_gradient.pdf"><code>tools/xai_si_gradient/out/si_joystick_gradient.pdf</code></a></dd><dt>Runtime</dt><dd>seconds</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>inputs from si_joystick_gradient.jl (ji_grad.txt, ji_*.raw)</dd></dl>
+    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_si_gradient/si_joystick_fig.py"><code>tools/xai_si_gradient/si_joystick_fig.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 tools/xai_si_gradient/si_joystick_fig.py</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_si_gradient/out/si_joystick_gradient.pdf"><code>tools/xai_si_gradient/out/si_joystick_gradient.pdf</code></a></dd><dt>Input data</dt><dd><ul class="inputs"><li><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_si_gradient/si_joystick_gradient.jl"><code>tools/xai_si_gradient/si_joystick_gradient.jl</code></a> — computes the gradient fields/values → out/ji_grad.txt + out/ji_*.raw</li><li><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_si_gradient/out/ji_grad.txt"><code>tools/xai_si_gradient/out/ji_grad.txt</code></a> — the committed inverse-gradient values plotted in panel (d)</li></ul></dd><dt>Runtime</dt><dd>seconds</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>inputs from si_joystick_gradient.jl (ji_grad.txt, ji_*.raw)</dd></dl>
+    <p class="rownote">Pure plotting — no data is computed here. The bar <i>heights</i> in panel (d) are read from <code>ji_grad.txt</code>; the constant <code>wbar = 0.26</code> (<code>si_joystick_fig.py:73</code>) is only the matplotlib <b>bar width</b> / side-by-side offset (3 bars × 0.26 ≈ 0.78 of the unit spacing), not a data value.</p>
   </div>
 </div>
 <div class="row">
@@ -131,6 +140,7 @@
   <div class="body">
     <p class="detail">Cumulative commits / active sessions / calendar days computed directly from the repo git log up to the implementation cutoff.</p>
     <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari_paper/paper/make_figures.py"><code>jutari_paper/paper/make_figures.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 jutari_paper/paper/make_figures.py</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari_paper/paper/figures/fig_timeline.pdf"><code>jutari_paper/paper/figures/fig_timeline.pdf</code></a></dd><dt>Runtime</dt><dd>seconds</dd><dt>Hardware</dt><dd>any</dd><dt>Verified by</dt><dd>git log (public history)</dd></dl>
+    
   </div>
 </div></div>
 </div></section>
@@ -268,7 +278,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/04060d24ec6aa0ff75180f89eba33edef1ad89ba"><code>04060d24</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/5ff9425d881670def446455caa5b8663c6df3fcd"><code>5ff9425d</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>
