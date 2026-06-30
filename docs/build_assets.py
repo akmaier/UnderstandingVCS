@@ -77,14 +77,17 @@ def build_figures():
 
 
 # --- 2. comparison MP4 -> looping GIF ------------------------------------
+# Source: the current 64-game render set in tools/comparison_videos/output/
+# (these MP4s are gitignored generated artifacts; the GIFs/MP4s we emit into
+# docs/assets/ are what gets committed and served). Each video is a 3-panel
+# xitari | jutari | per-pixel-difference clip; the difference panel is black
+# (only the "DIFFERENCE" header label is lit) because jutari is pixel-exact.
 # (src_mp4, out_gif, start_s, dur_s, width)
+CMP = "tools/comparison_videos/output"
 GIFS = [
-    ("tools/breakout_video/output/space_invaders_xitari_vs_jutari.mp4",
-     "si_compare", 2, 8, 640),
-    ("tools/breakout_video/output/enduro_xitari_vs_jutari.mp4",
-     "enduro_compare", 1, 8, 640),
-    ("tools/breakout_video/output/seaquest_xitari_vs_jutari.mp4",
-     "seaquest_compare", 1, 6, 640),
+    ("%s/space_invaders_xitari_vs_jutari.mp4" % CMP, "si_compare", 2, 8, 640),
+    ("%s/enduro_xitari_vs_jutari.mp4" % CMP, "enduro_compare", 1, 8, 640),
+    ("%s/seaquest_xitari_vs_jutari.mp4" % CMP, "seaquest_compare", 1, 6, 640),
 ]
 
 
@@ -127,13 +130,14 @@ def build_videos():
     if not have("ffmpeg"):
         print("  !! ffmpeg not found, skipping videos")
         return
-    # small comparison clips: copy as-is (already web-sized, h264)
+    # small comparison clips: re-encode for web (faststart). The comparison
+    # clips come from the current 64-game set (tools/comparison_videos/output/).
     for src, base in [
         ("tools/relaxation_study/video_out/divergence_si.mp4", "divergence_si"),
-        ("tools/breakout_video/output/space_invaders_xitari_vs_jutari.mp4", "si_compare"),
-        ("tools/breakout_video/output/enduro_xitari_vs_jutari.mp4", "enduro_compare"),
-        ("tools/breakout_video/output/seaquest_xitari_vs_jutari.mp4", "seaquest_compare"),
-        ("tools/breakout_video/output/pitfall_xitari_vs_jutari.mp4", "pitfall_compare"),
+        ("%s/space_invaders_xitari_vs_jutari.mp4" % CMP, "si_compare"),
+        ("%s/enduro_xitari_vs_jutari.mp4" % CMP, "enduro_compare"),
+        ("%s/seaquest_xitari_vs_jutari.mp4" % CMP, "seaquest_compare"),
+        ("%s/pitfall_xitari_vs_jutari.mp4" % CMP, "pitfall_compare"),
     ]:
         s = os.path.join(REPO, src)
         out = os.path.join(VID, base + ".mp4")
