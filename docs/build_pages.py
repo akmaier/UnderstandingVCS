@@ -40,10 +40,25 @@ def esc(s):
     return html.escape(str(s))
 
 
+def srcln(path, line, label=None):
+    """A GitHub blob link to a specific line of a source file (verified line no)."""
+    label = label or ("%s:%d" % (path.rsplit("/", 1)[-1], line))
+    return '<a href="%s%s#L%d"><code>%s</code></a>' % (BLOB, path, line, esc(label))
+
+
+def link(href, label):
+    """A link that is external (http), an internal page/anchor, or a repo path."""
+    if href.startswith("http") or href.endswith(".html") or href.startswith("#") \
+            or ".html#" in href:
+        return '<a href="%s">%s</a>' % (href, label)
+    return src(href, label)
+
+
 PAGES = [
     ("index.html", "Overview"),
     ("paper1.html", "Paper 1"),
     ("paper2.html", "Paper 2"),
+    ("conformance.html", "Conformance"),
     ("provenance.html", "Provenance"),
     ("environment.html", "Environment"),
     ("reproduce.html", "Reproduce"),
@@ -139,7 +154,7 @@ def build_index():
     o = M.ORACLE
     pillars = "".join(
         '<div class="pillar"><b>%s</b><small>%s — %s</small></div>'
-        % (esc(t), d, src(p)) for t, d, p, _ in o["pillars"])
+        % (esc(t), d, link(href, lbl)) for t, d, lbl, href in o["pillars"])
     cards = ""
     for P in (M.PAPER1, M.PAPER2):
         cards += """
@@ -315,6 +330,8 @@ def build_provenance():
 
 <section><div class="wrap">
   <h2>Conformance harnesses</h2>
+  <p class="sub">For a line-by-line walk of each harness's call stack, see the
+  <a href="conformance.html">conformance code tour</a>.</p>
   <table class="tbl"><tr><th>Harness</th><th>What it asserts</th><th>Source</th></tr>%s</table>
 </div></section>
 
@@ -432,11 +449,267 @@ python3 docs/build_pages.py    # manifest.py -> docs/*.html</code></pre>
     return page("reproduce.html", "Reproduce", body)
 
 
+def _stack(rows):
+    """rows: list of (step_html, computes_html) -> a 2-col call-stack table."""
+    body = "".join("<tr><td>%s</td><td>%s</td></tr>" % (s, c) for s, c in rows)
+    return ('<table class="tbl"><tr><th>Step in the call stack</th>'
+            '<th>What is actually computed</th></tr>%s</table>' % body)
+
+
+def build_conformance():
+    # Every link below points at a line number verified against the source.
+    T_PXC1 = "jaxtari/tests/test_pxc1_conformance.py"
+    CHK = "tools/check_trace.py"
+    CHKJL = "tools/check_trace.jl"
+    ENV = "jaxtari/jaxtari/env/stella_environment.py"
+    CON = "jaxtari/jaxtari/console.py"
+    CPU = "jaxtari/jaxtari/cpu/m6502.py"
+    T_PXC2 = "jaxtari/tests/test_pxc2_jaxtari_vs_jutari.py"
+    T_SCR = "jaxtari/tests/test_screen_conformance.py"
+    T_K = "jaxtari/tests/test_pxc4_klaus_dormann.py"
+    TD = "tools/trace_dump.cpp"
+    JDUMP = "tools/jutari_trace_dump.jl"
+
+    intro = """
+<header class="hero"><div class="wrap">
+  <h1>Conformance harness — a guided code tour</h1>
+  <p class="lead">A reviewer should be able to confirm what every conformance test computes
+  without reading the whole codebase. This page walks the function stack of each harness —
+  from the test assertion, through the replay driver, down into the emulator core where the
+  compared bytes are produced — with a line-anchored link at every step. The documentation in
+  the code explains <i>how</i> each function works; this page explains <i>what is being
+  checked and why it is evidence</i>.</p>
+  <p style="margin-top:12px"><a href="#oracle">The oracle pipeline</a> ·
+  <a href="#pxc1">PXC1 (RAM/CPU)</a> · <a href="#pxc2">PXC2 (dual-port)</a> ·
+  <a href="#pxcs">PXC-S (screen)</a> · <a href="#pxc4">PXC4 (6502)</a> ·
+  <a href="#core">the emulator core</a></p>
+</div></header>"""
+
+    oracle = """
+<section id="oracle"><div class="wrap">
+  <h2>How conformance is established</h2>
+  <p>Every test compares one of our ports against <b>xitari</b>, the external
+  C&plus;&plus; reference emulator (<a href="https://github.com/google-deepmind/xitari">google-deepmind/xitari</a>).
+  The comparison runs in two stages. First, xitari is driven by a fixed action stream and its
+  per-frame state is dumped to a JSONL trace. Then a port is driven by the <i>same</i> action
+  stream and its state is diffed against that trace, frame by frame.</p>
+  <pre><code>  fixed action stream
+        │
+        ▼
+  %s  ──▶  JSONL trace (per frame: ram, optional cpu / screen)
+   (drives the real xitari C++ emulator: ale.act, ale.getRAM, ale.getScreen)
+        │                                         committed under tools/fixtures/
+        ▼
+  %s  ──▶  steps a port with the same actions, diffs each frame
+        │
+        ▼
+  PXC1 (RAM+CPU)   PXC2 (port≡port)   PXC-S (screen)   PXC4 (6502 ISA)</code></pre>
+  <p>The JSONL record for one frame holds the absolute frame index, the action applied, the
+  128 B of RIOT RAM as 256 hex chars, and — when the relevant flag is set — the six CPU
+  registers and the 210&times;160 framebuffer. The RAM bytes are read out of xitari at
+  %s and hex-encoded at %s; the CPU registers are tapped through a
+  <code>friend class CpuDebug</code> at %s so xitari's headers are never modified.</p>
+</div></section>""" % (
+        srcln(TD, 132, "trace_dump.cpp · main"),
+        srcln(CHK, 123, "check_trace.py · check_trace"),
+        srcln(TD, 256, "trace_dump.cpp:256 · ale.getRAM()"),
+        srcln(TD, 67, "trace_dump.cpp:67 · hex_encode"),
+        srcln(TD, 54, "trace_dump.cpp:54 · CpuDebug"),
+    )
+
+    pxc1 = """
+<section id="pxc1"><div class="wrap">
+  <h2>PXC1 — RAM &amp; CPU trace replay</h2>
+  <p class="sub">Does a port reproduce xitari's RAM (and CPU registers) frame-for-frame?</p>
+  <p>The test loads an xitari trace, replays the same actions through the port, and asserts the
+  port's 128 B RIOT RAM hex-matches the trace at every frame. A mismatch raises at the first
+  diverging frame with a byte-level diff.</p>
+  %s
+  <p><b>How to read it.</b> The assertion that matters is the hex-string compare at
+  %s: the port's RAM is read at %s, hex-encoded, and compared to the trace's
+  <code>ram</code> field. If they differ the harness reports the frame and the differing byte
+  addresses, then raises. The Julia port is checked by the mirror harness %s.</p>
+</div></section>""" % (
+        _stack([
+            (srcln(T_PXC1, 61, "test_pxc1_conformance.py:61 · test_jaxtari_matches_xitari…"),
+             "Entry point. Builds the port from the ROM, replays the trace, asserts all 10 "
+             "frames matched (%s)." % srcln(T_PXC1, 80, "L80 · assert matched == 10")),
+            (srcln(CHK, 123, "check_trace.py:123 · check_trace(rom, trace)"),
+             "Constructs the environment, boots it the same way xitari boots (60 NOOP + 4 RESET), "
+             "then loops the trace's actions."),
+            (srcln(CHK, 175, "check_trace.py:175 · ram_hex != ref['ram']"),
+             "<b>The core check.</b> Per frame: encode the port RAM, compare to the reference hex; "
+             "on mismatch emit a byte diff and raise <code>ConformanceError</code>."),
+            (srcln(ENV, 375, "stella_environment.py:375 · step(action)"),
+             "Applies the action and runs one frame to the next VSYNC — the port advance."),
+            (srcln(ENV, 492, "stella_environment.py:492 · get_ram()"),
+             "Returns the 128 B RIOT RAM (<code>console.bus.ram</code>) — the exact bytes compared."),
+        ]),
+        srcln(CHK, 175, "check_trace.py:175"),
+        srcln(ENV, 492, "get_ram()"),
+        srcln(CHKJL, 61, "check_trace.jl:61 · check_trace"),
+    )
+
+    pxc2 = """
+<section id="pxc2"><div class="wrap">
+  <h2>PXC2 — dual-port cross-check</h2>
+  <p class="sub">Do the JAX port and the Julia port diverge from xitari <i>identically</i>?</p>
+  <p>This is the claim featured on the front page. Two independently written ports — one in
+  JAX, one in Julia — are required to produce <b>byte-identical RIOT RAM at every frame</b>.
+  Where they still differ from xitari, they must differ in the <i>same</i> bytes by the
+  <i>same</i> amount. Two separate implementations agreeing to the bit is strong evidence of a
+  shared, correct mechanism rather than two coincidental bugs.</p>
+  %s
+  <p><b>How to read it.</b> The headline test runs jaxtari <i>live</i> and loads the jutari
+  result from a committed fixture trace (produced by %s). The compare at
+  %s is a plain byte-equality of the two ports' RAM per frame; on any mismatch it
+  fails at %s with the frame index and differing addresses. A third test
+  (%s) locks in the residual divergence-from-xitari count per ROM, so a real
+  emulation fix must move <i>both</i> ports in the same commit — they can never drift apart
+  silently.</p>
+</div></section>""" % (
+        _stack([
+            (srcln(T_PXC2, 281, "test_pxc2…py:281 · test_jaxtari_matches_jutari_per_frame_ram"),
+             "The headline cross-check. Steps jaxtari live; loads the jutari fixture; compares "
+             "RAM per frame."),
+            (srcln(T_PXC2, 240, "test_pxc2…py:240 · _jaxtari_ram_per_frame"),
+             "Boots jaxtari (60 NOOP + 4 RESET) and records the 128 B RAM after every action — "
+             "the live side of the comparison."),
+            (srcln(T_PXC2, 299, "test_pxc2…py:299 · if jax_ram != jul_ram"),
+             "<b>The core check.</b> Byte-equality of the two ports' RAM at frame <code>i</code>; "
+             "on mismatch builds a per-address diff and fails (%s)."
+             % srcln(T_PXC2, 306, "L306")),
+            (srcln(T_PXC2, 310, "test_pxc2…py:310 · …divergence_pattern_unchanged"),
+             "Regression guard: the count of bytes still differing from xitari must equal the "
+             "value pinned per ROM (all 0 today)."),
+            (srcln(JDUMP, 132, "jutari_trace_dump.jl:132 · main"),
+             "Produces the jutari fixture: same boot, same actions, records RAM per frame — the "
+             "Julia side, generated once and committed."),
+        ]),
+        srcln(JDUMP, 132, "jutari_trace_dump.jl"),
+        srcln(T_PXC2, 299, "L299"),
+        srcln(T_PXC2, 306, "L306"),
+        srcln(T_PXC2, 310, "the third test"),
+    )
+
+    pxcs = """
+<section id="pxcs"><div class="wrap">
+  <h2>PXC-S — screen conformance</h2>
+  <p class="sub">Does the rendered 210&times;160 framebuffer match, pixel for pixel?</p>
+  <p>RAM equality does not imply screen equality — the TIA renders pixels from register writes
+  whose timing must be exact. PXC-S diffs the framebuffer per frame, both xitari↔jutari (from
+  fixtures) and xitari↔jaxtari (rendered live), counting differing pixels.</p>
+  %s
+  <p><b>How to read it.</b> %s counts differing pixels per frame; each test asserts
+  the worst frame is within a pinned threshold (%s — set to 0 once a game is
+  pixel-exact). The live framebuffer comes from %s, which crops the TIA's internal
+  buffer to the visible window.</p>
+</div></section>""" % (
+        _stack([
+            (srcln(T_SCR, 219, "test_screen_conformance.py:219 · test_jutari_screen_matches_xitari"),
+             "xitari fixture vs jutari fixture, per frame."),
+            (srcln(T_SCR, 235, "test_screen_conformance.py:235 · test_jaxtari_screen_matches_xitari"),
+             "xitari fixture vs jaxtari rendered live."),
+            (srcln(T_SCR, 213, "test_screen_conformance.py:213 · _per_frame_diffs"),
+             "<b>The core check.</b> Per frame: <code>(a[i] != b[i]).sum()</code> — the count of "
+             "differing palette-index pixels; the test asserts the worst is ≤ the pin (%s)."
+             % srcln(T_SCR, 227, "L227")),
+            (srcln(ENV, 473, "stella_environment.py:473 · get_screen()"),
+             "Crops <code>console.bus.tia.framebuffer</code> to the visible rows — the rendered "
+             "output being diffed."),
+        ]),
+        srcln(T_SCR, 213, "_per_frame_diffs"),
+        srcln(T_SCR, 75, "max_screen_diff"),
+        srcln(ENV, 473, "get_screen()"),
+    )
+
+    pxc4 = """
+<section id="pxc4"><div class="wrap">
+  <h2>PXC4 — 6502 functional test</h2>
+  <p class="sub">Is the CPU core a correct 6502, independent of any game?</p>
+  <p>This runs Klaus Dormann's widely used 6502 functional test — an external ROM that
+  exercises every opcode, addressing mode and flag — on a flat 64 KB memory, bypassing the TIA,
+  RIOT and cartridge entirely. Success is a hard, unambiguous signal: the program only reaches
+  its success address if every sub-test passed.</p>
+  %s
+  <p><b>How to read it.</b> The loop steps the CPU at %s and watches the program
+  counter: reaching <code>KLAUS_SUCCESS_PC = 0x3469</code> (%s) means every sub-test
+  passed; a PC stuck on a trap loop means a specific opcode is wrong, and the failure names the
+  address to disassemble.</p>
+</div></section>""" % (
+        _stack([
+            (srcln(T_K, 80, "test_pxc4_klaus_dormann.py · test_klaus_dormann…passes"),
+             "Loads the ROM into flat 64 KB memory, sets PC to 0x0400, steps until success or stuck."),
+            (srcln(T_K, 99, "test_pxc4_klaus_dormann.py:99 · _step_inner(state, memory)"),
+             "Executes one 6502 instruction with no TIA/RIOT side effects — pure ISA."),
+            (srcln(T_K, 102, "test_pxc4_klaus_dormann.py:102 · cur_pc == KLAUS_SUCCESS_PC"),
+             "<b>The pass condition.</b> PC reaches 0x3469 (%s) ⇒ all opcodes/flags correct."
+             % srcln(T_K, 49, "L49")),
+            (srcln(CPU, 410, "m6502.py:410 · _step_inner"),
+             "The shared instruction decoder/executor used by both the game path and this test."),
+        ]),
+        srcln(T_K, 99, "L99"),
+        srcln(T_K, 49, "test_pxc4_klaus_dormann.py:49"),
+    )
+
+    core = """
+<section id="core"><div class="wrap">
+  <h2>Where the compared bytes come from — the emulator core</h2>
+  <p>Each harness above bottoms out in the same port internals. This is the stack a single
+  <code>step()</code> runs through, so a reviewer can follow a compared byte back to the CPU
+  instruction and TIA tick that produced it.</p>
+  %s
+  <p>The Julia port mirrors this structure (<code>env_step!</code> / <code>get_ram</code> /
+  <code>run_until_frame</code>); its fixtures are produced by %s. Because the two ports
+  share neither code nor language, PXC2 agreement is independent corroboration of this stack.</p>
+</div></section>""" % (
+        _stack([
+            (srcln(ENV, 87, "stella_environment.py:87 · reset(...)") + " → "
+             + srcln(ENV, 191, "_boot_burn"),
+             "Resets the console and burns the boot frames (60 NOOP + 4 RESET + any per-game "
+             "starting actions) so the port starts where xitari starts."),
+            (srcln(ENV, 375, "stella_environment.py:375 · step(action)"),
+             "Applies the action to the bus, then runs one video frame."),
+            (srcln(CON, 97, "console.py:97 · run_until_frame"),
+             "Steps the CPU (up to a 25,000-instruction budget) until the TIA frame counter "
+             "advances — one frame, including the partial/grey-frame case."),
+            (srcln(CPU, 365, "m6502.py:365 · step") + " → "
+             + srcln(CPU, 410, "_step_inner") + " + " + srcln(CPU, 382, "_tia_post_step"),
+             "Fetch/decode/execute one 6502 instruction, then advance the TIA and RIOT by the "
+             "cycles it consumed and resolve any WSYNC stall."),
+            (srcln(CON, 49, "console.py:49 · console_reset"),
+             "Reads the reset vector at $FFFC/$FFFD into PC — the boot entry the whole run hangs off."),
+        ]),
+        srcln(JDUMP, 132, "jutari_trace_dump.jl"),
+    )
+
+    reproduce = """
+<section><div class="wrap">
+  <h2>Reproduce</h2>
+  <pre><code># regenerate an xitari reference trace
+./tools/trace_dump --rom xitari/roms/pong.bin \\
+  --actions tools/fixtures/actions/pong_noop_10.txt &gt; /tmp/pong.jsonl
+
+# replay it against each port
+python tools/check_trace.py --rom xitari/roms/pong.bin --trace /tmp/pong.jsonl
+julia --project=jutari tools/check_trace.jl --rom xitari/roms/pong.bin --trace /tmp/pong.jsonl
+
+# run the gates (PXC1/PXC2/PXC-S/PXC4 live)
+cd jaxtari &amp;&amp; .venv/bin/python -m pytest -q tests/test_pxc1_conformance.py \\
+  tests/test_pxc2_jaxtari_vs_jutari.py tests/test_pxc4_klaus_dormann.py
+jaxtari/.venv/bin/pytest jaxtari/tests/test_screen_conformance.py   # ~23 min</code></pre>
+</div></section>"""
+
+    body = (intro + oracle + pxc1 + pxc2 + pxcs + pxc4 + core + reproduce)
+    return page("conformance.html", "Conformance harness — code tour", body)
+
+
 def main():
     outputs = {
         "index.html": build_index(),
         "paper1.html": build_paper(M.PAPER1),
         "paper2.html": build_paper(M.PAPER2),
+        "conformance.html": build_conformance(),
         "provenance.html": build_provenance(),
         "environment.html": build_environment(),
         "reproduce.html": build_reproduce(),

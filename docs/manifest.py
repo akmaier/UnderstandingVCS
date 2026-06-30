@@ -28,16 +28,18 @@ ORACLE = {
         "<b>byte-for-byte</b> and its 210×160 framebuffer <b>pixel-for-pixel</b>. "
         "Hallucinated code does not accidentally match an external reference to the bit."
     ),
+    # (title, desc, link_label, href). href: external URL, an internal page/anchor,
+    # or a repo path (rendered as a GitHub blob link).
     "pillars": [
         ("External oracle", "xitari C++ — 64/64 RAM byte-exact + 64/64 screen pixel-exact",
-         "xitari/", None),
+         "google-deepmind/xitari ↗", "https://github.com/google-deepmind/xitari"),
         ("Dual-port cross-check", "PXC2: the JAX port and the Julia port diverge from xitari "
          "<i>identically</i>, in lock-step — a shared root cause, not two coincidences",
-         "jaxtari/tests/test_pxc2_jaxtari_vs_jutari.py", None),
+         "Read the PXC2 code tour →", "conformance.html#pxc2"),
         ("Conformance harness", "PXC1 / PXC-S / PXC4 replay xitari traces and diff RAM, screen "
-         "and a full 6502 functional test", "jaxtari/tests/test_pxc1_conformance.py", None),
+         "and a full 6502 functional test", "Read the harness code tour →", "conformance.html"),
         ("Open dev log", "769 commits on <code>main</code> with the prompt→code chain; a "
-         "7,525-line running bug-fix log", "bug_fix_log.md", None),
+         "7,525-line running bug-fix log", "bug_fix_log.md", "bug_fix_log.md"),
     ],
 }
 

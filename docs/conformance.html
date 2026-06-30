@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conformance harness — code tour</title>
+<meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="paper2.html">Paper 2</a><a href="conformance.html" class="active">Conformance</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+
+<header class="hero"><div class="wrap">
+  <h1>Conformance harness — a guided code tour</h1>
+  <p class="lead">A reviewer should be able to confirm what every conformance test computes
+  without reading the whole codebase. This page walks the function stack of each harness —
+  from the test assertion, through the replay driver, down into the emulator core where the
+  compared bytes are produced — with a line-anchored link at every step. The documentation in
+  the code explains <i>how</i> each function works; this page explains <i>what is being
+  checked and why it is evidence</i>.</p>
+  <p style="margin-top:12px"><a href="#oracle">The oracle pipeline</a> ·
+  <a href="#pxc1">PXC1 (RAM/CPU)</a> · <a href="#pxc2">PXC2 (dual-port)</a> ·
+  <a href="#pxcs">PXC-S (screen)</a> · <a href="#pxc4">PXC4 (6502)</a> ·
+  <a href="#core">the emulator core</a></p>
+</div></header>
+<section id="oracle"><div class="wrap">
+  <h2>How conformance is established</h2>
+  <p>Every test compares one of our ports against <b>xitari</b>, the external
+  C&plus;&plus; reference emulator (<a href="https://github.com/google-deepmind/xitari">google-deepmind/xitari</a>).
+  The comparison runs in two stages. First, xitari is driven by a fixed action stream and its
+  per-frame state is dumped to a JSONL trace. Then a port is driven by the <i>same</i> action
+  stream and its state is diffed against that trace, frame by frame.</p>
+  <pre><code>  fixed action stream
+        │
+        ▼
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/trace_dump.cpp#L132"><code>trace_dump.cpp · main</code></a>  ──▶  JSONL trace (per frame: ram, optional cpu / screen)
+   (drives the real xitari C++ emulator: ale.act, ale.getRAM, ale.getScreen)
+        │                                         committed under tools/fixtures/
+        ▼
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/check_trace.py#L123"><code>check_trace.py · check_trace</code></a>  ──▶  steps a port with the same actions, diffs each frame
+        │
+        ▼
+  PXC1 (RAM+CPU)   PXC2 (port≡port)   PXC-S (screen)   PXC4 (6502 ISA)</code></pre>
+  <p>The JSONL record for one frame holds the absolute frame index, the action applied, the
+  128 B of RIOT RAM as 256 hex chars, and — when the relevant flag is set — the six CPU
+  registers and the 210&times;160 framebuffer. The RAM bytes are read out of xitari at
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/trace_dump.cpp#L256"><code>trace_dump.cpp:256 · ale.getRAM()</code></a> and hex-encoded at <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/trace_dump.cpp#L67"><code>trace_dump.cpp:67 · hex_encode</code></a>; the CPU registers are tapped through a
+  <code>friend class CpuDebug</code> at <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/trace_dump.cpp#L54"><code>trace_dump.cpp:54 · CpuDebug</code></a> so xitari's headers are never modified.</p>
+</div></section>
+<section id="pxc1"><div class="wrap">
+  <h2>PXC1 — RAM &amp; CPU trace replay</h2>
+  <p class="sub">Does a port reproduce xitari's RAM (and CPU registers) frame-for-frame?</p>
+  <p>The test loads an xitari trace, replays the same actions through the port, and asserts the
+  port's 128 B RIOT RAM hex-matches the trace at every frame. A mismatch raises at the first
+  diverging frame with a byte-level diff.</p>
+  <table class="tbl"><tr><th>Step in the call stack</th><th>What is actually computed</th></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_pxc1_conformance.py#L61"><code>test_pxc1_conformance.py:61 · test_jaxtari_matches_xitari…</code></a></td><td>Entry point. Builds the port from the ROM, replays the trace, asserts all 10 frames matched (<a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_pxc1_conformance.py#L80"><code>L80 · assert matched == 10</code></a>).</td></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/check_trace.py#L123"><code>check_trace.py:123 · check_trace(rom, trace)</code></a></td><td>Constructs the environment, boots it the same way xitari boots (60 NOOP + 4 RESET), then loops the trace's actions.</td></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/check_trace.py#L175"><code>check_trace.py:175 · ram_hex != ref[&#x27;ram&#x27;]</code></a></td><td><b>The core check.</b> Per frame: encode the port RAM, compare to the reference hex; on mismatch emit a byte diff and raise <code>ConformanceError</code>.</td></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/jaxtari/env/stella_environment.py#L375"><code>stella_environment.py:375 · step(action)</code></a></td><td>Applies the action and runs one frame to the next VSYNC — the port advance.</td></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/jaxtari/env/stella_environment.py#L492"><code>stella_environment.py:492 · get_ram()</code></a></td><td>Returns the 128 B RIOT RAM (<code>console.bus.ram</code>) — the exact bytes compared.</td></tr></table>
+  <p><b>How to read it.</b> The assertion that matters is the hex-string compare at
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/check_trace.py#L175"><code>check_trace.py:175</code></a>: the port's RAM is read at <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/jaxtari/env/stella_environment.py#L492"><code>get_ram()</code></a>, hex-encoded, and compared to the trace's
+  <code>ram</code> field. If they differ the harness reports the frame and the differing byte
+  addresses, then raises. The Julia port is checked by the mirror harness <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/check_trace.jl#L61"><code>check_trace.jl:61 · check_trace</code></a>.</p>
+</div></section>
+<section id="pxc2"><div class="wrap">
+  <h2>PXC2 — dual-port cross-check</h2>
+  <p class="sub">Do the JAX port and the Julia port diverge from xitari <i>identically</i>?</p>
+  <p>This is the claim featured on the front page. Two independently written ports — one in
+  JAX, one in Julia — are required to produce <b>byte-identical RIOT RAM at every frame</b>.
+  Where they still differ from xitari, they must differ in the <i>same</i> bytes by the
+  <i>same</i> amount. Two separate implementations agreeing to the bit is strong evidence of a
+  shared, correct mechanism rather than two coincidental bugs.</p>
+  <table class="tbl"><tr><th>Step in the call stack</th><th>What is actually computed</th></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_pxc2_jaxtari_vs_jutari.py#L281"><code>test_pxc2…py:281 · test_jaxtari_matches_jutari_per_frame_ram</code></a></td><td>The headline cross-check. Steps jaxtari live; loads the jutari fixture; compares RAM per frame.</td></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_pxc2_jaxtari_vs_jutari.py#L240"><code>test_pxc2…py:240 · _jaxtari_ram_per_frame</code></a></td><td>Boots jaxtari (60 NOOP + 4 RESET) and records the 128 B RAM after every action — the live side of the comparison.</td></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_pxc2_jaxtari_vs_jutari.py#L299"><code>test_pxc2…py:299 · if jax_ram != jul_ram</code></a></td><td><b>The core check.</b> Byte-equality of the two ports' RAM at frame <code>i</code>; on mismatch builds a per-address diff and fails (<a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_pxc2_jaxtari_vs_jutari.py#L306"><code>L306</code></a>).</td></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_pxc2_jaxtari_vs_jutari.py#L310"><code>test_pxc2…py:310 · …divergence_pattern_unchanged</code></a></td><td>Regression guard: the count of bytes still differing from xitari must equal the value pinned per ROM (all 0 today).</td></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/jutari_trace_dump.jl#L132"><code>jutari_trace_dump.jl:132 · main</code></a></td><td>Produces the jutari fixture: same boot, same actions, records RAM per frame — the Julia side, generated once and committed.</td></tr></table>
+  <p><b>How to read it.</b> The headline test runs jaxtari <i>live</i> and loads the jutari
+  result from a committed fixture trace (produced by <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/jutari_trace_dump.jl#L132"><code>jutari_trace_dump.jl</code></a>). The compare at
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_pxc2_jaxtari_vs_jutari.py#L299"><code>L299</code></a> is a plain byte-equality of the two ports' RAM per frame; on any mismatch it
+  fails at <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_pxc2_jaxtari_vs_jutari.py#L306"><code>L306</code></a> with the frame index and differing addresses. A third test
+  (<a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_pxc2_jaxtari_vs_jutari.py#L310"><code>the third test</code></a>) locks in the residual divergence-from-xitari count per ROM, so a real
+  emulation fix must move <i>both</i> ports in the same commit — they can never drift apart
+  silently.</p>
+</div></section>
+<section id="pxcs"><div class="wrap">
+  <h2>PXC-S — screen conformance</h2>
+  <p class="sub">Does the rendered 210&times;160 framebuffer match, pixel for pixel?</p>
+  <p>RAM equality does not imply screen equality — the TIA renders pixels from register writes
+  whose timing must be exact. PXC-S diffs the framebuffer per frame, both xitari↔jutari (from
+  fixtures) and xitari↔jaxtari (rendered live), counting differing pixels.</p>
+  <table class="tbl"><tr><th>Step in the call stack</th><th>What is actually computed</th></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_screen_conformance.py#L219"><code>test_screen_conformance.py:219 · test_jutari_screen_matches_xitari</code></a></td><td>xitari fixture vs jutari fixture, per frame.</td></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_screen_conformance.py#L235"><code>test_screen_conformance.py:235 · test_jaxtari_screen_matches_xitari</code></a></td><td>xitari fixture vs jaxtari rendered live.</td></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_screen_conformance.py#L213"><code>test_screen_conformance.py:213 · _per_frame_diffs</code></a></td><td><b>The core check.</b> Per frame: <code>(a[i] != b[i]).sum()</code> — the count of differing palette-index pixels; the test asserts the worst is ≤ the pin (<a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_screen_conformance.py#L227"><code>L227</code></a>).</td></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/jaxtari/env/stella_environment.py#L473"><code>stella_environment.py:473 · get_screen()</code></a></td><td>Crops <code>console.bus.tia.framebuffer</code> to the visible rows — the rendered output being diffed.</td></tr></table>
+  <p><b>How to read it.</b> <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_screen_conformance.py#L213"><code>_per_frame_diffs</code></a> counts differing pixels per frame; each test asserts
+  the worst frame is within a pinned threshold (<a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_screen_conformance.py#L75"><code>max_screen_diff</code></a> — set to 0 once a game is
+  pixel-exact). The live framebuffer comes from <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/jaxtari/env/stella_environment.py#L473"><code>get_screen()</code></a>, which crops the TIA's internal
+  buffer to the visible window.</p>
+</div></section>
+<section id="pxc4"><div class="wrap">
+  <h2>PXC4 — 6502 functional test</h2>
+  <p class="sub">Is the CPU core a correct 6502, independent of any game?</p>
+  <p>This runs Klaus Dormann's widely used 6502 functional test — an external ROM that
+  exercises every opcode, addressing mode and flag — on a flat 64 KB memory, bypassing the TIA,
+  RIOT and cartridge entirely. Success is a hard, unambiguous signal: the program only reaches
+  its success address if every sub-test passed.</p>
+  <table class="tbl"><tr><th>Step in the call stack</th><th>What is actually computed</th></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_pxc4_klaus_dormann.py#L80"><code>test_pxc4_klaus_dormann.py · test_klaus_dormann…passes</code></a></td><td>Loads the ROM into flat 64 KB memory, sets PC to 0x0400, steps until success or stuck.</td></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_pxc4_klaus_dormann.py#L99"><code>test_pxc4_klaus_dormann.py:99 · _step_inner(state, memory)</code></a></td><td>Executes one 6502 instruction with no TIA/RIOT side effects — pure ISA.</td></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_pxc4_klaus_dormann.py#L102"><code>test_pxc4_klaus_dormann.py:102 · cur_pc == KLAUS_SUCCESS_PC</code></a></td><td><b>The pass condition.</b> PC reaches 0x3469 (<a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_pxc4_klaus_dormann.py#L49"><code>L49</code></a>) ⇒ all opcodes/flags correct.</td></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/jaxtari/cpu/m6502.py#L410"><code>m6502.py:410 · _step_inner</code></a></td><td>The shared instruction decoder/executor used by both the game path and this test.</td></tr></table>
+  <p><b>How to read it.</b> The loop steps the CPU at <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_pxc4_klaus_dormann.py#L99"><code>L99</code></a> and watches the program
+  counter: reaching <code>KLAUS_SUCCESS_PC = 0x3469</code> (<a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_pxc4_klaus_dormann.py#L49"><code>test_pxc4_klaus_dormann.py:49</code></a>) means every sub-test
+  passed; a PC stuck on a trap loop means a specific opcode is wrong, and the failure names the
+  address to disassemble.</p>
+</div></section>
+<section id="core"><div class="wrap">
+  <h2>Where the compared bytes come from — the emulator core</h2>
+  <p>Each harness above bottoms out in the same port internals. This is the stack a single
+  <code>step()</code> runs through, so a reviewer can follow a compared byte back to the CPU
+  instruction and TIA tick that produced it.</p>
+  <table class="tbl"><tr><th>Step in the call stack</th><th>What is actually computed</th></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/jaxtari/env/stella_environment.py#L87"><code>stella_environment.py:87 · reset(...)</code></a> → <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/jaxtari/env/stella_environment.py#L191"><code>_boot_burn</code></a></td><td>Resets the console and burns the boot frames (60 NOOP + 4 RESET + any per-game starting actions) so the port starts where xitari starts.</td></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/jaxtari/env/stella_environment.py#L375"><code>stella_environment.py:375 · step(action)</code></a></td><td>Applies the action to the bus, then runs one video frame.</td></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/jaxtari/console.py#L97"><code>console.py:97 · run_until_frame</code></a></td><td>Steps the CPU (up to a 25,000-instruction budget) until the TIA frame counter advances — one frame, including the partial/grey-frame case.</td></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/jaxtari/cpu/m6502.py#L365"><code>m6502.py:365 · step</code></a> → <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/jaxtari/cpu/m6502.py#L410"><code>_step_inner</code></a> + <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/jaxtari/cpu/m6502.py#L382"><code>_tia_post_step</code></a></td><td>Fetch/decode/execute one 6502 instruction, then advance the TIA and RIOT by the cycles it consumed and resolve any WSYNC stall.</td></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/jaxtari/console.py#L49"><code>console.py:49 · console_reset</code></a></td><td>Reads the reset vector at $FFFC/$FFFD into PC — the boot entry the whole run hangs off.</td></tr></table>
+  <p>The Julia port mirrors this structure (<code>env_step!</code> / <code>get_ram</code> /
+  <code>run_until_frame</code>); its fixtures are produced by <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/jutari_trace_dump.jl#L132"><code>jutari_trace_dump.jl</code></a>. Because the two ports
+  share neither code nor language, PXC2 agreement is independent corroboration of this stack.</p>
+</div></section>
+<section><div class="wrap">
+  <h2>Reproduce</h2>
+  <pre><code># regenerate an xitari reference trace
+./tools/trace_dump --rom xitari/roms/pong.bin \
+  --actions tools/fixtures/actions/pong_noop_10.txt &gt; /tmp/pong.jsonl
+
+# replay it against each port
+python tools/check_trace.py --rom xitari/roms/pong.bin --trace /tmp/pong.jsonl
+julia --project=jutari tools/check_trace.jl --rom xitari/roms/pong.bin --trace /tmp/pong.jsonl
+
+# run the gates (PXC1/PXC2/PXC-S/PXC4 live)
+cd jaxtari &amp;&amp; .venv/bin/python -m pytest -q tests/test_pxc1_conformance.py \
+  tests/test_pxc2_jaxtari_vs_jutari.py tests/test_pxc4_klaus_dormann.py
+jaxtari/.venv/bin/pytest jaxtari/tests/test_screen_conformance.py   # ~23 min</code></pre>
+</div></section>
+<footer><div class="wrap">
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/4d95a9d3cd03f8d7afadd1b14b2f7be6bc2ebd62"><code>4d95a9d3</code></a> ·
+source of truth: <code>docs/manifest.py</code> ·
+regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
+<a href="https://github.com/akmaier/UnderstandingVCS">repository</a>
+</div></footer>
+</body>
+</html>

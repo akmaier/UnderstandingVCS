@@ -14,7 +14,10 @@ Live at **https://akmaier.github.io/UnderstandingVCS/** (GitHub Pages, source = 
 - `build_assets.py` — regenerates `assets/{img,gif,video}/` from the source PDFs and MP4s
   (needs `ffmpeg` + `pdftoppm`).
 - `build_pages.py` — renders `manifest.py` into `index.html`, `paper1.html`, `paper2.html`,
-  `provenance.html`, `environment.html`, `reproduce.html`.
+  `conformance.html`, `provenance.html`, `environment.html`, `reproduce.html`.
+  `conformance.html` is the guided code tour of the PXC1/PXC2/PXC-S/PXC4 harnesses; its
+  GitHub blob links carry verified line numbers — re-check them with the snippet at the
+  bottom of `build_pages.py`'s history if the harness files move.
 - `assets/` — generated PNG figures, looping GIFs, web MP4s, and the hand-written `css/style.css`.
 - `.nojekyll` — serve paths verbatim (no Jekyll processing).
 

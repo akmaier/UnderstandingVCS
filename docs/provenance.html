@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="paper2.html">Paper 2</a><a href="provenance.html" class="active">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="paper2.html">Paper 2</a><a href="conformance.html">Conformance</a><a href="provenance.html" class="active">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
 
 <header class="hero"><div class="wrap">
   <h1>Provenance &amp; reproducibility</h1>
@@ -24,6 +24,8 @@
 
 <section><div class="wrap">
   <h2>Conformance harnesses</h2>
+  <p class="sub">For a line-by-line walk of each harness's call stack, see the
+  <a href="conformance.html">conformance code tour</a>.</p>
   <table class="tbl"><tr><th>Harness</th><th>What it asserts</th><th>Source</th></tr><tr><td><b>PXC1</b></td><td>Replay an xitari JSONL trace against a port; assert per-frame RAM byte-identity.</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_pxc1_conformance.py"><code>jaxtari/tests/test_pxc1_conformance.py</code></a></td></tr><tr><td><b>PXC2</b></td><td>Drive jaxtari live + load a jutari fixture trace; assert the two ports diverge from xitari identically.</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_pxc2_jaxtari_vs_jutari.py"><code>jaxtari/tests/test_pxc2_jaxtari_vs_jutari.py</code></a></td></tr><tr><td><b>PXC-S</b></td><td>Per-frame 210×160 framebuffer diff, xitari vs both ports (~23 min).</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_screen_conformance.py"><code>jaxtari/tests/test_screen_conformance.py</code></a></td></tr><tr><td><b>PXC4</b></td><td>Klaus Dormann 6502 functional test on flat 64K memory (CPU-core validator).</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_pxc4_klaus_dormann.py"><code>jaxtari/tests/test_pxc4_klaus_dormann.py</code></a></td></tr></table>
 </div></section>
 
@@ -54,7 +56,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/bd555a04326b0752888e620832c9855f1ecb6a09"><code>bd555a04</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/4d95a9d3cd03f8d7afadd1b14b2f7be6bc2ebd62"><code>4d95a9d3</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>
