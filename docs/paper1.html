@@ -64,7 +64,7 @@
   </div>
   <div class="body">
     <p class="detail">The executed straight-through SOFT path is byte-identical to HARD: with relaxation off (the default), <code>soft_rom_peek</code> / <code>soft_ram_peek</code> equal the original one-hot dot product over 5,000 random peeks, and toggling a relaxed run on and back off leaves RAM and the rendered frame unchanged (no state leak). The 4-panel video only <i>illustrates</i> HARD ≡ SOFT-STE while a relaxed (α,T) path drifts — the proof is the regression check, not the video.</p>
-    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/relaxation_study/verify_soft_ste.jl"><code>tools/relaxation_study/verify_soft_ste.jl</code></a></dd><dt>Command</dt><dd><code class="cmd">cd jutari &amp;&amp; julia --project=. ../tools/relaxation_study/verify_soft_ste.jl</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/assets/video/divergence_si.mp4"><code>docs/assets/video/divergence_si.mp4</code></a></dd><dt>Runtime</dt><dd>seconds (check)</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>verify_soft_ste.jl (RAM + frame byte-identical) + the 64/64 screen sweep</dd></dl>
+    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/relaxation_study/verify_soft_ste.jl"><code>tools/relaxation_study/verify_soft_ste.jl</code></a></dd><dt>Command</dt><dd><code class="cmd">cd jutari &amp;&amp; julia --project=. ../tools/relaxation_study/verify_soft_ste.jl</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/relaxation_study/video_out/divergence_si.mp4"><code>tools/relaxation_study/video_out/divergence_si.mp4</code></a></dd><dt>Runtime</dt><dd>seconds (check)</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>verify_soft_ste.jl (RAM + frame byte-identical) + the 64/64 screen sweep</dd></dl>
   </div>
 </div>
 <div class="row">
@@ -268,7 +268,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2c30aae6fea23eac079d4c3f821800674093bc04"><code>2c30aae6</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/04060d24ec6aa0ff75180f89eba33edef1ad89ba"><code>04060d24</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

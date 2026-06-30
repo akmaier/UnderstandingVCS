@@ -37,8 +37,10 @@ tools/fixtures/cycle_traces/
 .claude/
 tools/fixtures/cache/
 
-# Divergence-video frame dumps + mp4 (regenerable via dump_divergence_frames.jl + make_divergence_video.py)
-tools/relaxation_study/video_out/
+# Divergence-video frame dumps + mp4 (regenerable via dump_divergence_frames.jl + make_divergence_video.py).
+# Keep the featured divergence_si.mp4 tracked (it is a Paper-1 ledger artifact); ignore the rest.
+tools/relaxation_study/video_out/*
+!tools/relaxation_study/video_out/divergence_si.mp4
 
 # Local cluster/LLM config — secrets + private LME server names.
 # The *.example.toml / *.template.md siblings stay tracked; these two do NOT.

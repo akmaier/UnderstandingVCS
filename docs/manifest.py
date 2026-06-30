@@ -216,7 +216,7 @@ PAPER1 = {
                       "proof is the regression check, not the video.",
             "script": "tools/relaxation_study/verify_soft_ste.jl",
             "command": "cd jutari && julia --project=. ../tools/relaxation_study/verify_soft_ste.jl",
-            "artifact": "docs/assets/video/divergence_si.mp4",
+            "artifact": "tools/relaxation_study/video_out/divergence_si.mp4",
             "runtime": "seconds (check)",
             "hardware": "M1 Max (CPU)",
             "verified_by": "verify_soft_ste.jl (RAM + frame byte-identical) + the 64/64 screen sweep",
