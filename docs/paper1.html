@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paper 1 — A Differentiable Atari 2600</title>
+<meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html" class="active">Paper 1</a><a href="paper2.html">Paper 2</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+
+<header class="hero"><div class="wrap">
+  <span class="venue" style="color:var(--accent-2);font-weight:600">AAAI 2027 (submitted) · arXiv preview</span>
+  <h1>Paper 1 — A Differentiable Atari 2600</h1>
+  <p class="lead">Two differentiable ports of the Atari 2600 — <b>jaxtari</b> (JAX/Python) and <b>jutari</b> (Julia) — run a full VCS (6507 CPU + TIA + RIOT + cartridge banking) in a bit-exact HARD mode and a differentiable SOFT mode. The SOFT forward is straight-through, so it stays bit-identical to HARD while letting gradients flow.</p>
+  <p style="margin-top:14px"><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari_paper/paper/paper.pdf">paper PDF</a> · <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari_paper/paper/supplementary.pdf">supplement PDF</a> · Two end-to-end differentiable ports of the xitari VCS, validated bit-for-bit</p>
+</div></header>
+
+
+
+<section><div class="wrap">
+  <h2>Evidence ledger</h2>
+  <p class="sub">Every claim → script → command → artifact → runtime → hardware → verifying gate.</p>
+  <div class="ledger">
+<div class="row">
+  <div class="head">
+    <span class="claim">RAM byte-identical to xitari on every game</span>
+    <span class="value">64 / 64</span>
+    <span class="badge measured">measured</span>
+  </div>
+  <div class="body">
+    <p class="detail">128 B RIOT RAM, per frame, 30 frames of NOOP from the standard ALE boot (60 NOOP + 4 RESET). Max diff 0 bytes/frame on all 64 games.</p>
+    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/rom_sweep/sweep_jutari_ram.py"><code>tools/rom_sweep/sweep_jutari_ram.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 tools/rom_sweep/sweep_jutari_ram.py</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/rom_sweep/results_jutari_ram.md"><code>tools/rom_sweep/results_jutari_ram.md</code></a></dd><dt>Runtime</dt><dd>~9–10 s / game</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>PXC1 + jutari Pkg.test()</dd></dl>
+  </div>
+</div>
+<div class="row">
+  <div class="head">
+    <span class="claim">Screen pixel-identical to xitari on every game</span>
+    <span class="value">64 / 64</span>
+    <span class="badge measured">measured</span>
+  </div>
+  <div class="body">
+    <p class="detail">210×160 palette-index framebuffer, per frame, 60 frames of breakout_random_actions after the standard boot. Max diff 0 px/frame.</p>
+    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/rom_sweep/sweep_jutari_screen.py"><code>tools/rom_sweep/sweep_jutari_screen.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 tools/rom_sweep/sweep_jutari_screen.py</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/rom_sweep/results_jutari_screen.md"><code>tools/rom_sweep/results_jutari_screen.md</code></a></dd><dt>Runtime</dt><dd>~10 s / game</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>PXC-S screen conformance</dd></dl>
+  </div>
+</div>
+<div class="row">
+  <div class="head">
+    <span class="claim">Second independent port (jaxtari) also matches</span>
+    <span class="value">64 / 64 RAM + screen</span>
+    <span class="badge measured">measured</span>
+  </div>
+  <div class="body">
+    <p class="detail">The JAX port is swept against xitari with the same paradigm; PXC2 then asserts jaxtari ≡ jutari frame-by-frame.</p>
+    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/rom_sweep/sweep_jaxtari.py"><code>tools/rom_sweep/sweep_jaxtari.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 tools/rom_sweep/sweep_jaxtari.py</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/rom_sweep/results_jaxtari_ram.md"><code>tools/rom_sweep/results_jaxtari_ram.md</code></a></dd><dt>Runtime</dt><dd>minutes / game (JAX eager)</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>PXC2 cross-check</dd></dl>
+  </div>
+</div>
+<div class="row">
+  <div class="head">
+    <span class="claim">SOFT forward is bit-exact to HARD (Theorem 1)</span>
+    <span class="value">0 px divergence</span>
+    <span class="badge measured">measured</span>
+  </div>
+  <div class="body">
+    <p class="detail">The straight-through SOFT path renders the Space Invaders scene identically to HARD; a relaxed (α,T) path is shown diverging for contrast.</p>
+    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/relaxation_study/dump_divergence_frames.jl"><code>tools/relaxation_study/dump_divergence_frames.jl</code></a></dd><dt>Command</dt><dd><code class="cmd">julia --project=jutari tools/relaxation_study/dump_divergence_frames.jl</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/relaxation_study/video_out/divergence_si.mp4"><code>tools/relaxation_study/video_out/divergence_si.mp4</code></a></dd><dt>Runtime</dt><dd>scene-length render</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>4-panel divergence video (HARD | SOFT-STE | relaxed | diff)</dd></dl>
+  </div>
+</div>
+<div class="row">
+  <div class="head">
+    <span class="claim">GPU throughput — forward, soft mode (Pong, batched)</span>
+    <span class="value">2.95M / 3.12M env-steps/s</span>
+    <span class="badge measured">measured</span>
+  </div>
+  <div class="body">
+    <p class="detail">Peak forward throughput: 2,947,553 env-steps/s on GTX 1080 Ti (batch 4096) and 3,119,115 on Quadro RTX 5000. 3000 CPU instructions/rollout, 10 repeats, batch sweep 1→65536.</p>
+    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/bench_jaxtari_gpu.py"><code>tools/bench_jaxtari_gpu.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 tools/bench_jaxtari_gpu.py --rom pong.bin</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/results/gpu/gtx1080ti.json"><code>results/gpu/gtx1080ti.json</code></a></dd><dt>Runtime</dt><dd>~10–80 s / batch config</dd><dt>Hardware</dt><dd>GTX 1080 Ti / Quadro RTX 5000 · JAX 0.10.1</dd><dt>Verified by</dt><dd>raw JSON env block (device, jax version, per-batch wall time)</dd></dl>
+  </div>
+</div>
+<div class="row">
+  <div class="head">
+    <span class="claim">GPU throughput — forward + gradient</span>
+    <span class="value">2.80M / 2.91M env-steps/s</span>
+    <span class="badge measured">measured</span>
+  </div>
+  <div class="body">
+    <p class="detail">Peak forward+backward (jax.grad) throughput: 2,799,870 env-steps/s on GTX 1080 Ti and 2,911,069 on Quadro RTX 5000 (batch 4096).</p>
+    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/plot_gpu_throughput.py"><code>tools/plot_gpu_throughput.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 tools/plot_gpu_throughput.py</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari_paper/paper/figures/gpu_throughput.pdf"><code>jutari_paper/paper/figures/gpu_throughput.pdf</code></a></dd><dt>Runtime</dt><dd>plot from cached JSON</dd><dt>Hardware</dt><dd>GTX 1080 Ti / Quadro RTX 5000</dd><dt>Verified by</dt><dd>results/gpu/{gtx1080ti,q5000}.json</dd></dl>
+  </div>
+</div>
+<div class="row">
+  <div class="head">
+    <span class="claim">Exact-forward region in the (α, T) relaxation plane</span>
+    <span class="value">α≥6, T≤0.14</span>
+    <span class="badge measured">measured</span>
+  </div>
+  <div class="body">
+    <p class="detail">Per-step likelihood heatmap over the relaxation plane; the recommended operating point (α=6, T=0.14) sits inside the bit-exact corner.</p>
+    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/relaxation_study/make_relax_heatmap.py"><code>tools/relaxation_study/make_relax_heatmap.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 tools/relaxation_study/make_relax_heatmap.py</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari_paper/paper/figures/fig_relax_heatmap.pdf"><code>jutari_paper/paper/figures/fig_relax_heatmap.pdf</code></a></dd><dt>Runtime</dt><dd>seconds</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>tools/relaxation_study/relax_profiles.txt</dd></dl>
+  </div>
+</div>
+<div class="row">
+  <div class="head">
+    <span class="claim">XAI demo — joystick gradient finds the cannon edges</span>
+    <span class="value">edges (sampler) / 0 (naive)</span>
+    <span class="badge measured">measured</span>
+  </div>
+  <div class="body">
+    <p class="detail">∂screen/∂RIGHT through the differentiable sampler highlights the cannon edges; the naive integer-dispatch gradient is identically zero on the discrete output. Identical across all three soft variants.</p>
+    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_si_gradient/si_joystick_fig.py"><code>tools/xai_si_gradient/si_joystick_fig.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 tools/xai_si_gradient/si_joystick_fig.py</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_si_gradient/out/si_joystick_gradient.pdf"><code>tools/xai_si_gradient/out/si_joystick_gradient.pdf</code></a></dd><dt>Runtime</dt><dd>seconds</dd><dt>Hardware</dt><dd>M1 Max (CPU)</dd><dt>Verified by</dt><dd>tools/xai_si_gradient/si_joystick_gradient.jl</dd></dl>
+  </div>
+</div>
+<div class="row">
+  <div class="head">
+    <span class="claim">Implementation-effort timeline (from git history)</span>
+    <span class="value">769 commits on main</span>
+    <span class="badge measured">measured</span>
+  </div>
+  <div class="body">
+    <p class="detail">Cumulative commits / active sessions / calendar days computed directly from the repo git log up to the implementation cutoff.</p>
+    <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari_paper/paper/make_figures.py"><code>jutari_paper/paper/make_figures.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 jutari_paper/paper/make_figures.py</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari_paper/paper/figures/fig_timeline.pdf"><code>jutari_paper/paper/figures/fig_timeline.pdf</code></a></dd><dt>Runtime</dt><dd>seconds</dd><dt>Hardware</dt><dd>any</dd><dt>Verified by</dt><dd>git log (public history)</dd></dl>
+  </div>
+</div></div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Figures</h2>
+  <p class="sub">Rasterised from the paper’s committed PDFs; click to enlarge.</p>
+  <div class="figrid">
+<div class="fig">
+  <a href="assets/img/p1_architecture.png" target="_blank"><img src="assets/img/p1_architecture.png" alt="VCS architecture"></a>
+  <h4>VCS architecture</h4><p>CPU / TIA / RIOT / cartridge block diagram (schematic).</p>
+</div>
+<div class="fig">
+  <a href="assets/img/p1_pipeline.png" target="_blank"><img src="assets/img/p1_pipeline.png" alt="HARD / SOFT / STE pipeline"></a>
+  <h4>HARD / SOFT / STE pipeline</h4><p>Dual execution paths joined by the straight-through estimator.</p>
+</div>
+<div class="fig">
+  <a href="assets/img/p1_gpu_throughput.png" target="_blank"><img src="assets/img/p1_gpu_throughput.png" alt="GPU throughput scaling"></a>
+  <h4>GPU throughput scaling</h4><p>Env-steps/s vs batch size, two GPUs, forward &amp; forward+grad. Built from results/gpu/*.json.</p>
+</div>
+<div class="fig">
+  <a href="assets/img/p1_relax_heatmap.png" target="_blank"><img src="assets/img/p1_relax_heatmap.png" alt="Relaxation (α, T) heatmap"></a>
+  <h4>Relaxation (α, T) heatmap</h4><p>Per-step likelihood; the bit-exact corner and operating point marked.</p>
+</div>
+<div class="fig">
+  <a href="assets/img/p1_si_joystick.png" target="_blank"><img src="assets/img/p1_si_joystick.png" alt="XAI joystick gradient"></a>
+  <h4>XAI joystick gradient</h4><p>Real scene, sampler ∂screen/∂RIGHT, naive≡0, inverse bar chart.</p>
+</div>
+<div class="fig">
+  <a href="assets/img/p1_timeline.png" target="_blank"><img src="assets/img/p1_timeline.png" alt="Effort timeline"></a>
+  <h4>Effort timeline</h4><p>Cumulative commits &amp; active sessions from git history.</p>
+</div></div>
+</div></section>
+
+
+<section><div class="wrap">
+  <h2>Videos</h2>
+  <p class="sub">Beam-timed comparisons and the supplement clip.</p>
+  <div class="vidgrid">
+<div class="vid">
+  <video controls preload="metadata" playsinline>
+    <source src="assets/video/divergence_si.mp4" type="video/mp4">
+  </video>
+  <h4>Supplement: HARD vs SOFT-STE vs relaxed (4-panel)</h4><p>HARD | SOFT-STE | SOFT-relaxed(α,T) | diff. The HARD and SOFT-STE panels are pixel-identical (Theorem 1); the relaxed panel drifts.</p>
+</div>
+<div class="vid">
+  <video controls preload="metadata" playsinline>
+    <source src="assets/video/si_compare.mp4" type="video/mp4">
+  </video>
+  <h4>Space Invaders — xitari vs jutari vs diff</h4><p>Left: xitari reference. Middle: jutari. Right: per-pixel difference (solid black = exact match).</p>
+</div>
+<div class="vid">
+  <video controls preload="metadata" playsinline>
+    <source src="assets/video/presentation.mp4" type="video/mp4">
+  </video>
+  <h4>Paper 1 — narrated overview</h4><p>Project talk (transcoded for web).</p>
+</div></div>
+</div></section>
+
+<footer><div class="wrap">
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/55282ec86bf10853768a2896ae119b1d2684a033"><code>55282ec8</code></a> ·
+source of truth: <code>docs/manifest.py</code> ·
+regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
+<a href="https://github.com/akmaier/UnderstandingVCS">repository</a>
+</div></footer>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Provenance</title>
+<meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="paper2.html">Paper 2</a><a href="provenance.html" class="active">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+
+<header class="hero"><div class="wrap">
+  <h1>Provenance &amp; reproducibility</h1>
+  <p class="lead">The infrastructure a skeptical reviewer can use to confirm the code and
+  experiments are real: an external oracle, conformance harnesses, a large test suite,
+  continuous integration, and an open development log.</p>
+</div></header>
+
+<section><div class="wrap">
+  <h2>The external oracle</h2>
+  <p>The strongest defence against “the AI hallucinated it” is that the two differentiable ports are checked against <b>xitari</b> — a separately written, pre-existing C++ Atari 2600 emulator that is <i>not</i> part of this project. On all <b>64</b> ALE-supported games the ports reproduce xitari’s 128 B of RAM <b>byte-for-byte</b> and its 210×160 framebuffer <b>pixel-for-pixel</b>. Hallucinated code does not accidentally match an external reference to the bit. The reference emulator lives at <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/xitari/"><code>xitari/</code></a> with its determinism patch at <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xitari_conformance_seed.patch"><code>tools/xitari_conformance_seed.patch</code></a>.</p>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Conformance harnesses</h2>
+  <table class="tbl"><tr><th>Harness</th><th>What it asserts</th><th>Source</th></tr><tr><td><b>PXC1</b></td><td>Replay an xitari JSONL trace against a port; assert per-frame RAM byte-identity.</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_pxc1_conformance.py"><code>jaxtari/tests/test_pxc1_conformance.py</code></a></td></tr><tr><td><b>PXC2</b></td><td>Drive jaxtari live + load a jutari fixture trace; assert the two ports diverge from xitari identically.</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_pxc2_jaxtari_vs_jutari.py"><code>jaxtari/tests/test_pxc2_jaxtari_vs_jutari.py</code></a></td></tr><tr><td><b>PXC-S</b></td><td>Per-frame 210×160 framebuffer diff, xitari vs both ports (~23 min).</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_screen_conformance.py"><code>jaxtari/tests/test_screen_conformance.py</code></a></td></tr><tr><td><b>PXC4</b></td><td>Klaus Dormann 6502 functional test on flat 64K memory (CPU-core validator).</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/test_pxc4_klaus_dormann.py"><code>jaxtari/tests/test_pxc4_klaus_dormann.py</code></a></td></tr></table>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Comparison tooling</h2>
+  <table class="tbl"><tr><th>Tool</th><th>Purpose</th><th>Source</th></tr><tr><td><b>trace_dump</b></td><td>C++ driver over xitari — emits deterministic JSONL frame traces (RAM, optional screen + CPU state).</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/trace_dump.cpp"><code>tools/trace_dump.cpp</code></a></td></tr><tr><td><b>check_trace</b></td><td>Replay a trace against a port and diff byte-by-byte (Python + Julia).</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/check_trace.py"><code>tools/check_trace.py</code></a></td></tr><tr><td><b>ram_diff</b></td><td>Per-frame RAM divergence, jutari vs xitari.</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/jutari_xitari_ram_diff.py"><code>tools/jutari_xitari_ram_diff.py</code></a></td></tr><tr><td><b>conformance seed patch</b></td><td>Pins xitari’s RNG seed for reproducible replay.</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xitari_conformance_seed.patch"><code>tools/xitari_conformance_seed.patch</code></a></td></tr></table>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Test suite</h2>
+  <table class="tbl"><tr><th>Port</th><th>Count</th><th>Location</th></tr><tr><td><b>jaxtari (pytest)</b></td><td>837 <code>def test_*</code> functions across 60 files</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jaxtari/tests/"><code>jaxtari/tests/</code></a></td></tr><tr><td><b>jutari (Julia)</b></td><td>1,215 <code>@test</code> assertions</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/test/runtests.jl"><code>jutari/test/runtests.jl</code></a></td></tr></table>
+  <div class="note">Counts above are grepped from source at build time. Project docs report <b>~1,950 effective</b> tests (some parametrised cases expand at run time); STATUS.md and RESULTS.md give slightly different roll-ups — we show the raw source count rather than pick a number.</div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Continuous integration</h2>
+  <table class="tbl"><tr><th>Workflow</th><th>Runs</th><th>Source</th></tr><tr><td><b>test.yml</b></td><td>Fast PR gate on every push/PR: full jaxtari pytest + jutari Pkg.test() + PXC2 cross-check.</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/.github/workflows/test.yml"><code>.github/workflows/test.yml</code></a></td></tr><tr><td><b>heavy.yml</b></td><td>Nightly (04:00 UTC) + manual: JAX-autodiff and slow ROM/screen groups on fresh runners.</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/.github/workflows/heavy.yml"><code>.github/workflows/heavy.yml</code></a></td></tr></table>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Development log</h2>
+  <table class="tbl"><tr><th>Document</th><th>Role</th><th>Source</th></tr><tr><td><b>bug_fix_log.md</b></td><td>7,525 lines — newest-on-top history of every bug, patch and ruled-out hypothesis.</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/bug_fix_log.md"><code>bug_fix_log.md</code></a></td></tr><tr><td><b>STATUS.md</b></td><td>Per-phase commit/test/deferral ledger.</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/STATUS.md"><code>STATUS.md</code></a></td></tr><tr><td><b>RESULTS.md</b></td><td>Milestone write-up + reproducibility section.</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/RESULTS.md"><code>RESULTS.md</code></a></td></tr></table>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Reproduce the conformance numbers</h2>
+  <p><b>jutari conformance (~20 s)</b></p><pre><code>cd jutari &amp;&amp; julia --project=. -e &#x27;using Pkg; Pkg.test()&#x27;</code></pre><p><b>jaxtari full suite (long)</b></p><pre><code>cd jaxtari &amp;&amp; .venv/bin/python -m pytest -q</code></pre><p><b>screen conformance (~23 min)</b></p><pre><code>jaxtari/.venv/bin/pytest jaxtari/tests/test_screen_conformance.py</code></pre><p><b>regenerate an xitari reference trace</b></p><pre><code>./tools/trace_dump --rom xitari/roms/pong.bin --actions tools/fixtures/actions/pong_noop_10.txt &gt; /tmp/pong.jsonl</code></pre>
+</div></section>
+
+<footer><div class="wrap">
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/55282ec86bf10853768a2896ae119b1d2684a033"><code>55282ec8</code></a> ·
+source of truth: <code>docs/manifest.py</code> ·
+regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
+<a href="https://github.com/akmaier/UnderstandingVCS">repository</a>
+</div></footer>
+</body>
+</html>

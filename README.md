@@ -1,5 +1,15 @@
 # Understanding VCS: XAI for the Atari Simulator via Differentiable Emulation
 
+![Space Invaders — xitari (reference C++) vs jutari (our port) vs pixel difference. The difference panel is solid black: byte-for-byte identical output.](docs/assets/gif/si_compare.gif)
+
+> **Space Invaders:** `xitari` (reference C++) · `jutari` (our Julia port) · **pixel difference**. The difference panel is solid black — the port reproduces the reference frame-for-frame.
+
+### 📊 [Browse the results audit →](https://akmaier.github.io/UnderstandingVCS/)
+
+A reproducibility and provenance dashboard for Papers 1 & 2: every claim traces to the exact
+script, command, artifact, runtime, hardware, and the verifying conformance gate — so a reviewer
+can confirm nothing is hand-waved. Built from [`docs/`](docs/) (`python3 docs/build_pages.py`).
+
 ## Project Overview
 
 This project asks: **can modern XAI methods produce a hierarchical, mechanistic understanding of the Atari 2600 VCS — a system whose ground truth we fully possess?** It is directly inspired by Jonas & Kording's "Could a Neuroscientist Understand a Microprocessor?" (2017), but inverts the usual XAI experiment.
