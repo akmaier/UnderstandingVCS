@@ -57,8 +57,9 @@ def link(href, label):
 PAGES = [
     ("index.html", "Overview"),
     ("paper1.html", "Paper 1"),
-    ("paper2.html", "Paper 2"),
     ("conformance.html", "Conformance"),
+    ("paper2.html", "Paper 2"),
+    ("methods.html", "P2 Methods"),
     ("provenance.html", "Provenance"),
     ("environment.html", "Environment"),
     ("reproduce.html", "Reproduce"),
@@ -244,6 +245,10 @@ def build_paper(P):
     links = '<a href="%s%s">paper PDF</a>' % (BLOB, P["pdf"])
     if P.get("supplement_pdf"):
         links += ' · <a href="%s%s">supplement PDF</a>' % (BLOB, P["supplement_pdf"])
+    tour = {"paper1": ('conformance.html', "Conformance code tour"),
+            "paper2": ('methods.html', "Method catalogue &amp; execution stack")}.get(P["id"])
+    if tour:
+        links += ' · <a href="%s"><b>%s →</b></a>' % tour
 
     vids = ""
     if P["videos"]:
@@ -714,12 +719,254 @@ jaxtari/.venv/bin/pytest jaxtari/tests/test_screen_conformance.py   # ~23 min</c
     return page("conformance.html", "Conformance harness — code tour", body)
 
 
+def build_methods():
+    XS = "tools/xai_study/"
+
+    def catalogue(rows, recdir, reccount):
+        # rows: (method_html, script_basename, score_html)
+        body = "".join(
+            "<tr><td>%s</td><td>%s</td><td>%s</td></tr>"
+            % (m, srcln_or_src(XS + s), sc) for m, s, sc in rows)
+        head = ('<table class="tbl"><tr><th>Method (reference)</th>'
+                '<th>Implementation</th><th>Measured score (vs the §1 oracle)</th></tr>'
+                '%s</table>' % body)
+        rec = ('<p class="caption">Records: %s — <b>%d</b> committed §R JSON+npz.</p>'
+               % (src(XS + recdir, recdir), reccount))
+        return head + rec
+
+    def srcln_or_src(path):  # link a file by its basename label
+        return src(path, path.rsplit("/", 1)[-1])
+
+    PHASE_A = [
+        ("<b>A1</b> connectomics / data-flow graph", "phaseA_kording/A1_connectomics.jl",
+         "precision/recall + graph-edit-distance vs the true read/write graph"),
+        ("<b>A2</b> single-unit lesions", "phaseA_kording/A2_lesions.jl",
+         "rank-correlation of importance with the unit's true role; spurious-specific count"),
+        ("<b>A3</b> tuning curves", "phaseA_kording/A3_tuning.jl",
+         "spurious-tuning rate (strongly-tuned units whose tuning ≠ true role)"),
+        ("<b>A4</b> spike-word / pairwise correlations", "phaseA_kording/A4_correlations.jl",
+         "weak-pairwise / strong-global structure reproduced vs true coupling"),
+        ("<b>A5</b> local field potentials", "phaseA_kording/A5_lfp.jl",
+         "%-variance that is the known clocks (frame/scanline) → epiphenomenal"),
+        ("<b>A6</b> Granger causality", "phaseA_kording/A6_granger.jl",
+         "false-edge / missed-edge rate vs the true data-flow"),
+        ("<b>A7</b> dim-reduction (NMF/PCA)", "phaseA_kording/A7_dimred.jl",
+         "matched-component fraction vs known signals (clock, R/W, vsync)"),
+        ("<b>A8</b> whole-state recording", "phaseA_kording/A8_wholestate.jl",
+         "descriptive baseline"),
+    ]
+    PHASE_B = [
+        ("Vanilla gradient <span class='cite'>Simonyan et al. 2014</span>",
+         "phaseB_attribution/saliency.jl",
+         "corr + deletion/insertion AUC + precision@k vs true causal top-k"),
+        ("Grad×Input / DeepLIFT <span class='cite'>Shrikumar et al. 2017</span>",
+         "phaseB_attribution/gradxinput.jl", "as above + completeness where defined"),
+        ("Guided Backprop <span class='cite'>Springenberg et al. 2015</span>",
+         "phaseB_attribution/guided_backprop.jl", "as above + the Adebayo et al. 2018 sanity check"),
+        ("SmoothGrad <span class='cite'>Smilkov et al. 2017</span>",
+         "phaseB_attribution/smoothgrad.jl", "noise-averaged saliency; corr + del/ins"),
+        ("<b>Integrated Gradients</b> <span class='cite'>Sundararajan et al. 2017</span>",
+         "phaseB_attribution/ig_baseline_sweep.jl", "corr + del/ins + completeness; baseline sweep"),
+        ("Expected Gradients <span class='cite'>Erion et al. 2021 (NMI)</span>",
+         "phaseB_attribution/expected_gradients.jl", "baseline-averaged IG; as above"),
+        ("Occlusion <span class='cite'>Zeiler &amp; Fergus 2014</span>",
+         "phaseB_attribution/occlusion.jl", "del/ins AUC ≈ coarse intervention oracle"),
+        ("Extremal / meaningful perturbation <span class='cite'>Fong &amp; Vedaldi 2017; Fong et al. 2019</span>",
+         "phaseB_attribution/perturbation.jl", "learned minimal mask; IoU vs true causal set"),
+        ("RISE <span class='cite'>Petsiuk et al. 2018</span>",
+         "phaseB_attribution/rise.jl", "randomized-mask saliency (N=500 masks); corr + del/ins"),
+        ("LIME <span class='cite'>Ribeiro et al. 2016</span>",
+         "phaseB_attribution/lime.jl", "local linear weights; corr vs true; stability"),
+        ("KernelSHAP / Shapley <span class='cite'>Lundberg &amp; Lee 2017; Štrumbelj &amp; Kononenko 2014</span>",
+         "phaseB_attribution/kernelshap.jl", "Shapley values; corr vs true; convergence vs compute"),
+        ("On-distribution counterfactual <span class='cite'>cf. Olson 2021; Atrey 2020</span>",
+         "phaseB_attribution/counterfactual.jl", "minimal valid edit: validity + minimality vs true minimal set"),
+        ("<b>N/A audit</b>: Grad-CAM/++, attention rollout, VIPER "
+         "<span class='cite'>Selvaraju 2017; Abnar &amp; Zuidema 2020; Bastani 2018</span>",
+         "phaseB_attribution/na_audit.jl", "recorded as <i>does not apply</i> (needs NN layers / a policy)"),
+    ]
+    PHASE_C = [
+        ("Activation patching / causal mediation <span class='cite'>Vig et al. 2020; ROME, Meng et al. 2022</span>",
+         "phaseC_mechanistic/activation_patching.jl", "recovered effect vs the exact patch; site P/R vs true data-flow"),
+        ("Interchange interventions / DAS <span class='cite'>Geiger et al. 2021, 2023</span>",
+         "phaseC_mechanistic/das.jl", "interchange accuracy; alignment vs the true variable"),
+        ("Attribution / edge patching <span class='cite'>Nanda 2023; Syed et al. 2023</span>",
+         "phaseC_mechanistic/attribution_patching.jl", "approx error vs true patching; edge P/R"),
+        ("Path patching / IOI circuit <span class='cite'>Wang et al. 2022; Goldowsky-Dill et al. 2023</span>",
+         "phaseC_mechanistic/path_patching.jl", "circuit precision/recall vs the true routine"),
+        ("ACDC — automatic circuit discovery <span class='cite'>Conmy et al. 2023</span>",
+         "phaseC_mechanistic/acdc.jl", "edge P/R + scrubbing-preserved performance vs true data-flow"),
+        ("Sparse autoencoders <span class='cite'>Cunningham et al. 2023; Bricken et al. 2023; Templeton et al. 2024</span>",
+         "phaseC_mechanistic/sae.jl", "feature↔known-variable match (F1/MI) + causal use + monosemanticity"),
+        ("NMF/PCA dictionaries", "phaseC_mechanistic/dictionaries.jl",
+         "matched-component fraction vs known variables"),
+        ("Causal scrubbing <span class='cite'>Chan et al. 2022</span>",
+         "phaseC_mechanistic/causal_scrubbing.jl", "scrubbing-preserved performance vs the true routine"),
+        ("Linear probing + control tasks <span class='cite'>Alain &amp; Bengio 2017; Hewitt &amp; Liang 2019</span>",
+         "phaseC_mechanistic/linear_probing.jl", "accuracy <b>and</b> selectivity (probe − control) → present-vs-used gap"),
+        ("Logit / tuned lens <span class='cite'>nostalgebraist 2020; Belrose et al. 2023</span>",
+         "phaseC_mechanistic/logit_lens.jl", "readout fidelity vs the true intermediate value"),
+    ]
+    ORACLE = [
+        ("Intervention oracle — the primary ground truth", "ground_truth/oracle_intervene.jl",
+         "occlude/clamp/resample a cause <code>u</code>, re-run bit-exact, record exact |Δy(u)|"),
+        ("Gradient oracle (content path)", "ground_truth/oracle_grad.jl",
+         "∂y/∂u + Integrated Gradients through the differentiable substrate (content outputs only)"),
+        ("Cross-check", "ground_truth/oracle_xcheck.jl",
+         "correlation of intervention vs gradient; disagreement is reported, not hidden"),
+    ]
+    T3 = [
+        ("Import candidate labels", "t3/import_labels.py",
+         "OCAtari / AtariARI RAM→concept candidates"),
+        ("Verify by intervention", "t3/verify_labels.jl",
+         "set the byte, re-render, confirm the object moves → upgrades to verified-causal"),
+        ("Discover new labels", "t3/discover_labels.jl",
+         "RAM↔framebuffer correlation + intervention sweeps"),
+    ]
+    INFRA = [
+        ("common/results.py", "tools/xai_study/common/results.py", "writes/reads the §R record schema"),
+        ("common/jutari_oracle.jl", "tools/xai_study/common/jutari_oracle.jl", "the intervention/gradient oracle on the jutari substrate"),
+        ("common/replay.py", "tools/xai_study/common/replay.py", "deterministic replay-to-state (the <code>f&lt;start&gt;+&lt;window&gt;</code> encoding)"),
+        ("common/seeds.py", "tools/xai_study/common/seeds.py", "the single seed=0 source"),
+        ("common/game_set.json", "tools/xai_study/common/game_set.json", "the fixed 6-game core set"),
+        ("repro/make_hash_tables.py", "tools/xai_study/repro/make_hash_tables.py", "SHA-256 ROM + action-stream hashes (verify with --verify)"),
+    ]
+
+    diagram = """  ROM  (AutoROM, SHA-256 verified — not redistributed)
+    │   jutari substrate · seed 0 · state f120+30 · games: core (6)
+    ▼
+  ground_truth/oracle_intervene.jl ── exact |Δy(u)| ──▶  the §1 oracle  (T1 causal truth)
+    │
+    ├─ phaseA_kording/A1..A8.jl       neuroscience battery
+    ├─ phaseB_attribution/*.jl        12 XAI methods + N/A audit
+    └─ phaseC_mechanistic/*.jl        10 mechanistic-interp methods
+         each runner scores its output vs the oracle on the triad  F ∧ S ∧ M
+         └─▶ writes a §R record   out/<phase>/<exp>_<game>.json  (+ .npz)
+    ▼
+  compare/leaderboard.py    ── pure read of every record ──▶  faithfulness × plausibility
+  compare/benchmark/run.py  ── ROM-free scoring of a new method against the committed oracle"""
+
+    body = """
+<header class="hero"><div class="wrap">
+  <h1>Paper 2 — method catalogue &amp; execution stack</h1>
+  <p class="lead">Every interpretability method in the benchmark, with a link to its
+  implementation, its reference, and the score it is graded on — plus how a run executes,
+  what it writes, and where the records live. This is the Paper-2 counterpart of the
+  <a href="conformance.html">conformance code tour</a>.</p>
+  <p style="margin-top:12px"><a href="#stack">Execution stack</a> ·
+  <a href="#oracle">Oracle &amp; T3</a> · <a href="#phaseA">Phase A</a> ·
+  <a href="#phaseB">Phase B (attribution)</a> · <a href="#phaseC">Phase C (mechanistic)</a> ·
+  <a href="#e6">Leaderboard &amp; benchmark</a></p>
+</div></header>
+
+<section id="stack"><div class="wrap">
+  <h2>How a measurement runs</h2>
+  <p>Because the VCS is fully known and exactly intervenable, every explanation is scored
+  against the truth. The <b>intervention oracle</b> records the exact causal effect
+  |Δy(u)| of each candidate cause by clamping it and re-running bit-exact. Each method
+  runner then produces its own attribution/circuit and is graded against that oracle on the
+  correctness triad — <b>F</b> faithful (true causes), <b>S</b> sufficient (predicts held-out
+  interventions), <b>M</b> minimal/right-level. Runners are Julia on the jutari substrate
+  (jaxtari eager is ≈205× slower), <code>seed = 0</code>, on the fixed 6-game core set,
+  inside the Paper-1 bit-exact horizon.</p>
+  <pre><code>%s</code></pre>
+  <p>Every runner writes a self-describing <b>§R record</b> per game/regime —
+  <code>{paper, phase, method, game, state, target_output, metric_name, value, ci, n,
+  seed, where, commit, oracle_ref, timestamp}</code> plus an <code>extra{}</code> block
+  carrying the exact <code>oracle_abs_delta_per_cause</code> map and the triad
+  <code>{F,S,M}</code>. That is what makes the leaderboard a <i>pure read</i> and the
+  benchmark ROM-free.</p>
+  <h3>Shared infrastructure</h3>
+  <table class="tbl"><tr><th>Module</th><th>Role</th></tr>%s</table>
+</div></section>
+
+<section id="oracle"><div class="wrap">
+  <h2>E1 · the ground-truth oracle &amp; E2 · T3 labels</h2>
+  <p class="sub">The instrument everything is scored against, and the game-concept labels.</p>
+  %s
+  <p class="caption">Oracle records: %s — <b>3</b>. T3 records: %s — <b>17</b>.</p>
+</div></section>
+
+<section id="phaseA"><div class="wrap">
+  <h2>Phase A — the Jonas &amp; Kording battery (quantified)</h2>
+  <p class="sub">Classical neuroscience methods, scored against the true register-transfer
+  account. The calibration baseline: rich structure, low faithfulness.</p>
+  %s
+</div></section>
+
+<section id="phaseB"><div class="wrap">
+  <h2>Phase B — attribution / XAI methods</h2>
+  <p class="sub">One runner per method; each saliency/attribution map scored against the
+  oracle. References are the methods' original papers.</p>
+  %s
+</div></section>
+
+<section id="phaseC"><div class="wrap">
+  <h2>Phase C — mechanistic interpretability</h2>
+  <p class="sub">The state trajectory is the “activations”, the program's data-flow is the
+  “circuit” — both known exactly, so recovered structure is scored against the truth.</p>
+  %s
+</div></section>
+
+<section id="e6"><div class="wrap">
+  <h2>E6 — leaderboard &amp; the ROM-free benchmark</h2>
+  <table class="tbl"><tr><th>Step</th><th>Implementation</th><th>Output</th></tr>
+    <tr><td>Cross-tradition leaderboard (pure read of all records)</td><td>%s</td>
+      <td>%s</td></tr>
+    <tr><td>Headline faithful-vs-plausible demo</td><td>%s</td><td>%s</td></tr>
+    <tr><td>Packaged benchmark — score a new method, no ROM needed</td><td>%s</td>
+      <td>%s</td></tr>
+  </table>
+  <p>The leaderboard re-orients each record's faithfulness onto the headline plot
+  (faithfulness X vs a transparent plausibility proxy Y) and runs an embedded self-check;
+  it never re-runs an experiment. The benchmark scores one method end-to-end against the
+  committed oracle records — a third party needs no ROM.</p>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Reproduce</h2>
+  <pre><code># the oracle, then any method runner (Julia on the jutari substrate, seed 0)
+julia --project=jutari tools/xai_study/ground_truth/oracle_intervene.jl --game pong
+julia --project=jutari tools/xai_study/phaseB_attribution/ig_baseline_sweep.jl --games core
+julia --project=jutari tools/xai_study/phaseC_mechanistic/activation_patching.jl --games core
+
+# aggregate (pure reads — no ROM) and score a new method
+python3 tools/xai_study/compare/leaderboard.py
+python3 tools/xai_study/compare/benchmark/run.py --method magnitude_proxy</code></pre>
+  <p class="caption">Full per-phase command list:
+  %s.</p>
+</div></section>
+""" % (
+        diagram,
+        "".join("<tr><td>%s</td><td>%s</td></tr>" % (src(p, n), d) for n, p, d in INFRA),
+        ('<table class="tbl"><tr><th>Step</th><th>Implementation</th><th>What it computes</th></tr>'
+         + "".join("<tr><td>%s</td><td>%s</td><td>%s</td></tr>"
+                   % (n, src(XS + s, s.rsplit("/", 1)[-1]), d) for n, s, d in (ORACLE + T3))
+         + "</table>"),
+        src(XS + "ground_truth/out", "ground_truth/out"),
+        src(XS + "t3/out", "t3/out"),
+        catalogue(PHASE_A, "phaseA_kording/out", 54),
+        catalogue(PHASE_B, "phaseB_attribution/out", 166),
+        catalogue(PHASE_C, "phaseC_mechanistic/out", 72),
+        src(XS + "compare/leaderboard.py", "compare/leaderboard.py"),
+        src(XS + "compare/out/leaderboard.json", "compare/out/leaderboard.json"),
+        src(XS + "compare/faithful_demo.py", "compare/faithful_demo.py"),
+        src(XS + "compare/out/faithful_demo.json", "compare/out/faithful_demo.json"),
+        src(XS + "compare/benchmark/run.py", "compare/benchmark/run.py"),
+        src(XS + "compare/benchmark/out", "compare/benchmark/out (14)"),
+        link("https://github.com/akmaier/UnderstandingVCS/blob/main/xai_paper/xai_2_interpretability/REPRODUCIBILITY.md",
+             "REPRODUCIBILITY.md §3"),
+    )
+    return page("methods.html", "Paper 2 — method catalogue", body)
+
+
 def main():
     outputs = {
         "index.html": build_index(),
         "paper1.html": build_paper(M.PAPER1),
         "paper2.html": build_paper(M.PAPER2),
         "conformance.html": build_conformance(),
+        "methods.html": build_methods(),
         "provenance.html": build_provenance(),
         "environment.html": build_environment(),
         "reproduce.html": build_reproduce(),

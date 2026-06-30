@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paper 2 — method catalogue</title>
+<meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html" class="active">P2 Methods</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+
+<header class="hero"><div class="wrap">
+  <h1>Paper 2 — method catalogue &amp; execution stack</h1>
+  <p class="lead">Every interpretability method in the benchmark, with a link to its
+  implementation, its reference, and the score it is graded on — plus how a run executes,
+  what it writes, and where the records live. This is the Paper-2 counterpart of the
+  <a href="conformance.html">conformance code tour</a>.</p>
+  <p style="margin-top:12px"><a href="#stack">Execution stack</a> ·
+  <a href="#oracle">Oracle &amp; T3</a> · <a href="#phaseA">Phase A</a> ·
+  <a href="#phaseB">Phase B (attribution)</a> · <a href="#phaseC">Phase C (mechanistic)</a> ·
+  <a href="#e6">Leaderboard &amp; benchmark</a></p>
+</div></header>
+
+<section id="stack"><div class="wrap">
+  <h2>How a measurement runs</h2>
+  <p>Because the VCS is fully known and exactly intervenable, every explanation is scored
+  against the truth. The <b>intervention oracle</b> records the exact causal effect
+  |Δy(u)| of each candidate cause by clamping it and re-running bit-exact. Each method
+  runner then produces its own attribution/circuit and is graded against that oracle on the
+  correctness triad — <b>F</b> faithful (true causes), <b>S</b> sufficient (predicts held-out
+  interventions), <b>M</b> minimal/right-level. Runners are Julia on the jutari substrate
+  (jaxtari eager is ≈205× slower), <code>seed = 0</code>, on the fixed 6-game core set,
+  inside the Paper-1 bit-exact horizon.</p>
+  <pre><code>  ROM  (AutoROM, SHA-256 verified — not redistributed)
+    │   jutari substrate · seed 0 · state f120+30 · games: core (6)
+    ▼
+  ground_truth/oracle_intervene.jl ── exact |Δy(u)| ──▶  the §1 oracle  (T1 causal truth)
+    │
+    ├─ phaseA_kording/A1..A8.jl       neuroscience battery
+    ├─ phaseB_attribution/*.jl        12 XAI methods + N/A audit
+    └─ phaseC_mechanistic/*.jl        10 mechanistic-interp methods
+         each runner scores its output vs the oracle on the triad  F ∧ S ∧ M
+         └─▶ writes a §R record   out/<phase>/<exp>_<game>.json  (+ .npz)
+    ▼
+  compare/leaderboard.py    ── pure read of every record ──▶  faithfulness × plausibility
+  compare/benchmark/run.py  ── ROM-free scoring of a new method against the committed oracle</code></pre>
+  <p>Every runner writes a self-describing <b>§R record</b> per game/regime —
+  <code>{paper, phase, method, game, state, target_output, metric_name, value, ci, n,
+  seed, where, commit, oracle_ref, timestamp}</code> plus an <code>extra{}</code> block
+  carrying the exact <code>oracle_abs_delta_per_cause</code> map and the triad
+  <code>{F,S,M}</code>. That is what makes the leaderboard a <i>pure read</i> and the
+  benchmark ROM-free.</p>
+  <h3>Shared infrastructure</h3>
+  <table class="tbl"><tr><th>Module</th><th>Role</th></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/results.py"><code>common/results.py</code></a></td><td>writes/reads the §R record schema</td></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/jutari_oracle.jl"><code>common/jutari_oracle.jl</code></a></td><td>the intervention/gradient oracle on the jutari substrate</td></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/replay.py"><code>common/replay.py</code></a></td><td>deterministic replay-to-state (the <code>f&lt;start&gt;+&lt;window&gt;</code> encoding)</td></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/seeds.py"><code>common/seeds.py</code></a></td><td>the single seed=0 source</td></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/game_set.json"><code>common/game_set.json</code></a></td><td>the fixed 6-game core set</td></tr><tr><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/repro/make_hash_tables.py"><code>repro/make_hash_tables.py</code></a></td><td>SHA-256 ROM + action-stream hashes (verify with --verify)</td></tr></table>
+</div></section>
+
+<section id="oracle"><div class="wrap">
+  <h2>E1 · the ground-truth oracle &amp; E2 · T3 labels</h2>
+  <p class="sub">The instrument everything is scored against, and the game-concept labels.</p>
+  <table class="tbl"><tr><th>Step</th><th>Implementation</th><th>What it computes</th></tr><tr><td>Intervention oracle — the primary ground truth</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/ground_truth/oracle_intervene.jl"><code>oracle_intervene.jl</code></a></td><td>occlude/clamp/resample a cause <code>u</code>, re-run bit-exact, record exact |Δy(u)|</td></tr><tr><td>Gradient oracle (content path)</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/ground_truth/oracle_grad.jl"><code>oracle_grad.jl</code></a></td><td>∂y/∂u + Integrated Gradients through the differentiable substrate (content outputs only)</td></tr><tr><td>Cross-check</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/ground_truth/oracle_xcheck.jl"><code>oracle_xcheck.jl</code></a></td><td>correlation of intervention vs gradient; disagreement is reported, not hidden</td></tr><tr><td>Import candidate labels</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/t3/import_labels.py"><code>import_labels.py</code></a></td><td>OCAtari / AtariARI RAM→concept candidates</td></tr><tr><td>Verify by intervention</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/t3/verify_labels.jl"><code>verify_labels.jl</code></a></td><td>set the byte, re-render, confirm the object moves → upgrades to verified-causal</td></tr><tr><td>Discover new labels</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/t3/discover_labels.jl"><code>discover_labels.jl</code></a></td><td>RAM↔framebuffer correlation + intervention sweeps</td></tr></table>
+  <p class="caption">Oracle records: <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/ground_truth/out"><code>ground_truth/out</code></a> — <b>3</b>. T3 records: <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/t3/out"><code>t3/out</code></a> — <b>17</b>.</p>
+</div></section>
+
+<section id="phaseA"><div class="wrap">
+  <h2>Phase A — the Jonas &amp; Kording battery (quantified)</h2>
+  <p class="sub">Classical neuroscience methods, scored against the true register-transfer
+  account. The calibration baseline: rich structure, low faithfulness.</p>
+  <table class="tbl"><tr><th>Method (reference)</th><th>Implementation</th><th>Measured score (vs the §1 oracle)</th></tr><tr><td><b>A1</b> connectomics / data-flow graph</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A1_connectomics.jl"><code>A1_connectomics.jl</code></a></td><td>precision/recall + graph-edit-distance vs the true read/write graph</td></tr><tr><td><b>A2</b> single-unit lesions</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A2_lesions.jl"><code>A2_lesions.jl</code></a></td><td>rank-correlation of importance with the unit's true role; spurious-specific count</td></tr><tr><td><b>A3</b> tuning curves</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A3_tuning.jl"><code>A3_tuning.jl</code></a></td><td>spurious-tuning rate (strongly-tuned units whose tuning ≠ true role)</td></tr><tr><td><b>A4</b> spike-word / pairwise correlations</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A4_correlations.jl"><code>A4_correlations.jl</code></a></td><td>weak-pairwise / strong-global structure reproduced vs true coupling</td></tr><tr><td><b>A5</b> local field potentials</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A5_lfp.jl"><code>A5_lfp.jl</code></a></td><td>%-variance that is the known clocks (frame/scanline) → epiphenomenal</td></tr><tr><td><b>A6</b> Granger causality</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A6_granger.jl"><code>A6_granger.jl</code></a></td><td>false-edge / missed-edge rate vs the true data-flow</td></tr><tr><td><b>A7</b> dim-reduction (NMF/PCA)</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A7_dimred.jl"><code>A7_dimred.jl</code></a></td><td>matched-component fraction vs known signals (clock, R/W, vsync)</td></tr><tr><td><b>A8</b> whole-state recording</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A8_wholestate.jl"><code>A8_wholestate.jl</code></a></td><td>descriptive baseline</td></tr></table><p class="caption">Records: <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/out"><code>phaseA_kording/out</code></a> — <b>54</b> committed §R JSON+npz.</p>
+</div></section>
+
+<section id="phaseB"><div class="wrap">
+  <h2>Phase B — attribution / XAI methods</h2>
+  <p class="sub">One runner per method; each saliency/attribution map scored against the
+  oracle. References are the methods' original papers.</p>
+  <table class="tbl"><tr><th>Method (reference)</th><th>Implementation</th><th>Measured score (vs the §1 oracle)</th></tr><tr><td>Vanilla gradient <span class='cite'>Simonyan et al. 2014</span></td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/saliency.jl"><code>saliency.jl</code></a></td><td>corr + deletion/insertion AUC + precision@k vs true causal top-k</td></tr><tr><td>Grad×Input / DeepLIFT <span class='cite'>Shrikumar et al. 2017</span></td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/gradxinput.jl"><code>gradxinput.jl</code></a></td><td>as above + completeness where defined</td></tr><tr><td>Guided Backprop <span class='cite'>Springenberg et al. 2015</span></td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/guided_backprop.jl"><code>guided_backprop.jl</code></a></td><td>as above + the Adebayo et al. 2018 sanity check</td></tr><tr><td>SmoothGrad <span class='cite'>Smilkov et al. 2017</span></td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/smoothgrad.jl"><code>smoothgrad.jl</code></a></td><td>noise-averaged saliency; corr + del/ins</td></tr><tr><td><b>Integrated Gradients</b> <span class='cite'>Sundararajan et al. 2017</span></td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/ig_baseline_sweep.jl"><code>ig_baseline_sweep.jl</code></a></td><td>corr + del/ins + completeness; baseline sweep</td></tr><tr><td>Expected Gradients <span class='cite'>Erion et al. 2021 (NMI)</span></td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/expected_gradients.jl"><code>expected_gradients.jl</code></a></td><td>baseline-averaged IG; as above</td></tr><tr><td>Occlusion <span class='cite'>Zeiler &amp; Fergus 2014</span></td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/occlusion.jl"><code>occlusion.jl</code></a></td><td>del/ins AUC ≈ coarse intervention oracle</td></tr><tr><td>Extremal / meaningful perturbation <span class='cite'>Fong &amp; Vedaldi 2017; Fong et al. 2019</span></td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/perturbation.jl"><code>perturbation.jl</code></a></td><td>learned minimal mask; IoU vs true causal set</td></tr><tr><td>RISE <span class='cite'>Petsiuk et al. 2018</span></td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/rise.jl"><code>rise.jl</code></a></td><td>randomized-mask saliency (N=500 masks); corr + del/ins</td></tr><tr><td>LIME <span class='cite'>Ribeiro et al. 2016</span></td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/lime.jl"><code>lime.jl</code></a></td><td>local linear weights; corr vs true; stability</td></tr><tr><td>KernelSHAP / Shapley <span class='cite'>Lundberg &amp; Lee 2017; Štrumbelj &amp; Kononenko 2014</span></td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/kernelshap.jl"><code>kernelshap.jl</code></a></td><td>Shapley values; corr vs true; convergence vs compute</td></tr><tr><td>On-distribution counterfactual <span class='cite'>cf. Olson 2021; Atrey 2020</span></td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/counterfactual.jl"><code>counterfactual.jl</code></a></td><td>minimal valid edit: validity + minimality vs true minimal set</td></tr><tr><td><b>N/A audit</b>: Grad-CAM/++, attention rollout, VIPER <span class='cite'>Selvaraju 2017; Abnar &amp; Zuidema 2020; Bastani 2018</span></td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/na_audit.jl"><code>na_audit.jl</code></a></td><td>recorded as <i>does not apply</i> (needs NN layers / a policy)</td></tr></table><p class="caption">Records: <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/out"><code>phaseB_attribution/out</code></a> — <b>166</b> committed §R JSON+npz.</p>
+</div></section>
+
+<section id="phaseC"><div class="wrap">
+  <h2>Phase C — mechanistic interpretability</h2>
+  <p class="sub">The state trajectory is the “activations”, the program's data-flow is the
+  “circuit” — both known exactly, so recovered structure is scored against the truth.</p>
+  <table class="tbl"><tr><th>Method (reference)</th><th>Implementation</th><th>Measured score (vs the §1 oracle)</th></tr><tr><td>Activation patching / causal mediation <span class='cite'>Vig et al. 2020; ROME, Meng et al. 2022</span></td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/activation_patching.jl"><code>activation_patching.jl</code></a></td><td>recovered effect vs the exact patch; site P/R vs true data-flow</td></tr><tr><td>Interchange interventions / DAS <span class='cite'>Geiger et al. 2021, 2023</span></td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/das.jl"><code>das.jl</code></a></td><td>interchange accuracy; alignment vs the true variable</td></tr><tr><td>Attribution / edge patching <span class='cite'>Nanda 2023; Syed et al. 2023</span></td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/attribution_patching.jl"><code>attribution_patching.jl</code></a></td><td>approx error vs true patching; edge P/R</td></tr><tr><td>Path patching / IOI circuit <span class='cite'>Wang et al. 2022; Goldowsky-Dill et al. 2023</span></td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/path_patching.jl"><code>path_patching.jl</code></a></td><td>circuit precision/recall vs the true routine</td></tr><tr><td>ACDC — automatic circuit discovery <span class='cite'>Conmy et al. 2023</span></td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/acdc.jl"><code>acdc.jl</code></a></td><td>edge P/R + scrubbing-preserved performance vs true data-flow</td></tr><tr><td>Sparse autoencoders <span class='cite'>Cunningham et al. 2023; Bricken et al. 2023; Templeton et al. 2024</span></td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/sae.jl"><code>sae.jl</code></a></td><td>feature↔known-variable match (F1/MI) + causal use + monosemanticity</td></tr><tr><td>NMF/PCA dictionaries</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/dictionaries.jl"><code>dictionaries.jl</code></a></td><td>matched-component fraction vs known variables</td></tr><tr><td>Causal scrubbing <span class='cite'>Chan et al. 2022</span></td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/causal_scrubbing.jl"><code>causal_scrubbing.jl</code></a></td><td>scrubbing-preserved performance vs the true routine</td></tr><tr><td>Linear probing + control tasks <span class='cite'>Alain &amp; Bengio 2017; Hewitt &amp; Liang 2019</span></td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/linear_probing.jl"><code>linear_probing.jl</code></a></td><td>accuracy <b>and</b> selectivity (probe − control) → present-vs-used gap</td></tr><tr><td>Logit / tuned lens <span class='cite'>nostalgebraist 2020; Belrose et al. 2023</span></td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/logit_lens.jl"><code>logit_lens.jl</code></a></td><td>readout fidelity vs the true intermediate value</td></tr></table><p class="caption">Records: <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/out"><code>phaseC_mechanistic/out</code></a> — <b>72</b> committed §R JSON+npz.</p>
+</div></section>
+
+<section id="e6"><div class="wrap">
+  <h2>E6 — leaderboard &amp; the ROM-free benchmark</h2>
+  <table class="tbl"><tr><th>Step</th><th>Implementation</th><th>Output</th></tr>
+    <tr><td>Cross-tradition leaderboard (pure read of all records)</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/leaderboard.py"><code>compare/leaderboard.py</code></a></td>
+      <td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/out/leaderboard.json"><code>compare/out/leaderboard.json</code></a></td></tr>
+    <tr><td>Headline faithful-vs-plausible demo</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/faithful_demo.py"><code>compare/faithful_demo.py</code></a></td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/out/faithful_demo.json"><code>compare/out/faithful_demo.json</code></a></td></tr>
+    <tr><td>Packaged benchmark — score a new method, no ROM needed</td><td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/benchmark/run.py"><code>compare/benchmark/run.py</code></a></td>
+      <td><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/benchmark/out"><code>compare/benchmark/out (14)</code></a></td></tr>
+  </table>
+  <p>The leaderboard re-orients each record's faithfulness onto the headline plot
+  (faithfulness X vs a transparent plausibility proxy Y) and runs an embedded self-check;
+  it never re-runs an experiment. The benchmark scores one method end-to-end against the
+  committed oracle records — a third party needs no ROM.</p>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Reproduce</h2>
+  <pre><code># the oracle, then any method runner (Julia on the jutari substrate, seed 0)
+julia --project=jutari tools/xai_study/ground_truth/oracle_intervene.jl --game pong
+julia --project=jutari tools/xai_study/phaseB_attribution/ig_baseline_sweep.jl --games core
+julia --project=jutari tools/xai_study/phaseC_mechanistic/activation_patching.jl --games core
+
+# aggregate (pure reads — no ROM) and score a new method
+python3 tools/xai_study/compare/leaderboard.py
+python3 tools/xai_study/compare/benchmark/run.py --method magnitude_proxy</code></pre>
+  <p class="caption">Full per-phase command list:
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/xai_paper/xai_2_interpretability/REPRODUCIBILITY.md">REPRODUCIBILITY.md §3</a>.</p>
+</div></section>
+
+<footer><div class="wrap">
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/e3ef42a6cf77a754755f3c632c7be034a7c3c5c4"><code>e3ef42a6</code></a> ·
+source of truth: <code>docs/manifest.py</code> ·
+regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
+<a href="https://github.com/akmaier/UnderstandingVCS">repository</a>
+</div></footer>
+</body>
+</html>

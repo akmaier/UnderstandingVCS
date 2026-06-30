@@ -8,13 +8,13 @@
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="paper2.html" class="active">Paper 2</a><a href="conformance.html">Conformance</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html" class="active">Paper 2</a><a href="methods.html">P2 Methods</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
 
 <header class="hero"><div class="wrap">
   <span class="venue" style="color:var(--accent-2);font-weight:600">Nature Machine Intelligence (in preparation)</span>
   <h1>Paper 2 — An Interpretability Ground-Truth Benchmark</h1>
   <p class="lead">Because the VCS is fully known and exactly intervenable, every explanation can be scored against ground truth. An oracle measures the true causal effect of each state variable; XAI and mechanistic-interpretability methods are then graded by how well they recover it. Headline finding: causal/intervention methods stay near-ceiling while gradient and correlational methods collapse on the discrete sprite-position outputs whose naive gradient is exactly zero.</p>
-  <p style="margin-top:14px"><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/xai_paper/xai_2_interpretability/paper/main.pdf">paper PDF</a> · Scoring XAI / mechanistic-interpretability methods against the exact causal truth of a known machine</p>
+  <p style="margin-top:14px"><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/xai_paper/xai_2_interpretability/paper/main.pdf">paper PDF</a> · <a href="methods.html"><b>Method catalogue &amp; execution stack →</b></a> · Scoring XAI / mechanistic-interpretability methods against the exact causal truth of a known machine</p>
 </div></header>
 
 
@@ -94,7 +94,7 @@
   <div class="body">
     <p class="detail">Vanilla gradient, Grad×Input, Guided Backprop, SmoothGrad, Integrated Gradients, Expected Gradients, Occlusion, extremal perturbation, RISE, LIME, KernelSHAP, counterfactual + the N/A audit — each scored by correlation and deletion/insertion AUC vs the oracle.</p>
     <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/ig_baseline_sweep.jl"><code>tools/xai_study/phaseB_attribution/ig_baseline_sweep.jl</code></a></dd><dt>Command</dt><dd><code class="cmd">julia --project=jutari tools/xai_study/phaseB_attribution/saliency.jl --games core</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/out/"><code>tools/xai_study/phaseB_attribution/out/</code></a></dd><dt>Runtime</dt><dd>up to ~15 min / method / game</dd><dt>Hardware</dt><dd>LME cluster (CPU array) · seed 0</dd><dt>Verified by</dt><dd>scored vs E1 oracle</dd></dl>
-    
+    <p class="rownote">Every method, its reference and its implementation script are catalogued in the <a href="methods.html#phaseB">method &amp; execution tour</a>.</p>
   </div>
 </div>
 <div class="row">
@@ -106,7 +106,7 @@
   <div class="body">
     <p class="detail">Activation patching / causal tracing, interchange/DAS, attribution patching, path patching, ACDC, sparse autoencoders, NMF/PCA dictionaries, causal scrubbing, linear probing + control tasks, logit/tuned lens.</p>
     <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/activation_patching.jl"><code>tools/xai_study/phaseC_mechanistic/activation_patching.jl</code></a></dd><dt>Command</dt><dd><code class="cmd">julia --project=jutari tools/xai_study/phaseC_mechanistic/sae.jl --games core</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/out/"><code>tools/xai_study/phaseC_mechanistic/out/</code></a></dd><dt>Runtime</dt><dd>4 h walltime / array task</dd><dt>Hardware</dt><dd>LME cluster (CPU array) · seed 0</dd><dt>Verified by</dt><dd>scored vs exact patch / true circuit</dd></dl>
-    
+    <p class="rownote">Every method, its reference and its implementation script are catalogued in the <a href="methods.html#phaseC">method &amp; execution tour</a>.</p>
   </div>
 </div>
 <div class="row">
@@ -173,7 +173,7 @@
 
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/5ff9425d881670def446455caa5b8663c6df3fcd"><code>5ff9425d</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/e3ef42a6cf77a754755f3c632c7be034a7c3c5c4"><code>e3ef42a6</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

@@ -105,6 +105,9 @@ section .sub { color: var(--fg-dim); margin: 0 0 22px; }
 .vid h4 { margin: 12px 0 4px; font-size: 1rem; }
 .vid p { color: var(--fg-dim); font-size: 0.86rem; margin: 0; }
 
+/* citations in the method catalogue */
+.cite { color: var(--fg-dim); font-size: 0.82em; font-style: italic; white-space: nowrap; }
+
 /* tables */
 table.tbl { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 table.tbl th, table.tbl td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }

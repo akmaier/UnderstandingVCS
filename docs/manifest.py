@@ -492,6 +492,8 @@ PAPER2 = {
             "runtime": "up to ~15 min / method / game",
             "hardware": "LME cluster (CPU array) · seed 0",
             "verified_by": "scored vs E1 oracle",
+            "note": "Every method, its reference and its implementation script are catalogued in "
+                    "the <a href=\"methods.html#phaseB\">method &amp; execution tour</a>.",
             "status": "measured",
         },
         {
@@ -506,6 +508,8 @@ PAPER2 = {
             "runtime": "4 h walltime / array task",
             "hardware": "LME cluster (CPU array) · seed 0",
             "verified_by": "scored vs exact patch / true circuit",
+            "note": "Every method, its reference and its implementation script are catalogued in "
+                    "the <a href=\"methods.html#phaseC\">method &amp; execution tour</a>.",
             "status": "measured",
         },
         {
