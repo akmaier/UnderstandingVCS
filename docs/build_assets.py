@@ -13,7 +13,10 @@ import shutil
 import subprocess
 import sys
 
-REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+HERE = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.dirname(HERE)
+sys.path.insert(0, HERE)
+import manifest as M  # noqa: E402
 ASSETS = os.path.join(REPO, "docs", "assets")
 IMG = os.path.join(ASSETS, "img")
 GIF = os.path.join(ASSETS, "gif")
@@ -85,9 +88,8 @@ def build_figures():
 # (src_mp4, out_gif, start_s, dur_s, width)
 CMP = "tools/comparison_videos/output"
 GIFS = [
+    # the featured hero / README GIF (autoplaying, looping)
     ("%s/space_invaders_xitari_vs_jutari.mp4" % CMP, "si_compare", 2, 8, 640),
-    ("%s/enduro_xitari_vs_jutari.mp4" % CMP, "enduro_compare", 1, 8, 640),
-    ("%s/seaquest_xitari_vs_jutari.mp4" % CMP, "seaquest_compare", 1, 6, 640),
 ]
 
 
@@ -130,15 +132,14 @@ def build_videos():
     if not have("ffmpeg"):
         print("  !! ffmpeg not found, skipping videos")
         return
-    # small comparison clips: re-encode for web (faststart). The comparison
-    # clips come from the current 64-game set (tools/comparison_videos/output/).
-    for src, base in [
+    # Conformance gallery + special clips. Comparison clips come from the
+    # current 64-game set (tools/comparison_videos/output/); re-encode for web.
+    clips = [
         ("tools/relaxation_study/video_out/divergence_si.mp4", "divergence_si"),
-        ("%s/space_invaders_xitari_vs_jutari.mp4" % CMP, "si_compare"),
-        ("%s/enduro_xitari_vs_jutari.mp4" % CMP, "enduro_compare"),
-        ("%s/seaquest_xitari_vs_jutari.mp4" % CMP, "seaquest_compare"),
-        ("%s/pitfall_xitari_vs_jutari.mp4" % CMP, "pitfall_compare"),
-    ]:
+    ]
+    for game, _title in M.PAPER1["gallery"]:
+        clips.append(("%s/%s_xitari_vs_jutari.mp4" % (CMP, game), "cmp_%s" % game))
+    for src, base in clips:
         s = os.path.join(REPO, src)
         out = os.path.join(VID, base + ".mp4")
         if not os.path.exists(s):
@@ -159,11 +160,28 @@ def build_videos():
         print("     presentation.mp4  (%.2f MB)" % sizemb(out))
 
 
+def build_posters():
+    print("[posters] gallery thumbnails")
+    if not have("ffmpeg"):
+        print("  !! ffmpeg not found, skipping posters")
+        return
+    for game, _title in M.PAPER1["gallery"]:
+        s = os.path.join(REPO, CMP, "%s_xitari_vs_jutari.mp4" % game)
+        out = os.path.join(IMG, "poster_%s.jpg" % game)
+        if not os.path.exists(s):
+            print("  -- missing:", s)
+            continue
+        run(["ffmpeg", "-y", "-ss", "4", "-i", s, "-vf", "scale=720:-2",
+             "-frames:v", "1", "-q:v", "4", out])
+        print("     poster_%s.jpg  (%.2f MB)" % (game, sizemb(out)))
+
+
 def main():
     print("== build_assets.py ==  repo:", REPO)
     build_figures()
     build_gifs()
     build_videos()
+    build_posters()
     print("done.")
 
 

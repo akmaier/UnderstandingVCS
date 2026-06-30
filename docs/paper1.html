@@ -156,20 +156,97 @@
 
 
 <section><div class="wrap">
+  <h2>Conformance gallery</h2>
+  <p class="sub">Each clip is three panels — <b>xitari</b> (reference C++) ·
+  <b>jutari</b> (our port) · <b>per-pixel difference</b>. The difference panel stays black
+  for the whole clip (only the “DIFFERENCE” header label is lit): byte-for-byte identical
+  output. Verified across the full length of all 64 games; a representative selection follows.</p>
+  <div class="vidgrid">
+<div class="vid">
+  <video controls preload="none" playsinline poster="assets/img/poster_space_invaders.jpg">
+    <source src="assets/video/cmp_space_invaders.mp4" type="video/mp4">
+  </video>
+  <h4>Space Invaders</h4>
+</div>
+<div class="vid">
+  <video controls preload="none" playsinline poster="assets/img/poster_pong.jpg">
+    <source src="assets/video/cmp_pong.mp4" type="video/mp4">
+  </video>
+  <h4>Pong</h4>
+</div>
+<div class="vid">
+  <video controls preload="none" playsinline poster="assets/img/poster_breakout.jpg">
+    <source src="assets/video/cmp_breakout.mp4" type="video/mp4">
+  </video>
+  <h4>Breakout</h4>
+</div>
+<div class="vid">
+  <video controls preload="none" playsinline poster="assets/img/poster_ms_pacman.jpg">
+    <source src="assets/video/cmp_ms_pacman.mp4" type="video/mp4">
+  </video>
+  <h4>Ms. Pac-Man</h4>
+</div>
+<div class="vid">
+  <video controls preload="none" playsinline poster="assets/img/poster_qbert.jpg">
+    <source src="assets/video/cmp_qbert.mp4" type="video/mp4">
+  </video>
+  <h4>Q*bert</h4>
+</div>
+<div class="vid">
+  <video controls preload="none" playsinline poster="assets/img/poster_seaquest.jpg">
+    <source src="assets/video/cmp_seaquest.mp4" type="video/mp4">
+  </video>
+  <h4>Seaquest</h4>
+</div>
+<div class="vid">
+  <video controls preload="none" playsinline poster="assets/img/poster_enduro.jpg">
+    <source src="assets/video/cmp_enduro.mp4" type="video/mp4">
+  </video>
+  <h4>Enduro</h4>
+</div>
+<div class="vid">
+  <video controls preload="none" playsinline poster="assets/img/poster_pitfall.jpg">
+    <source src="assets/video/cmp_pitfall.mp4" type="video/mp4">
+  </video>
+  <h4>Pitfall!</h4>
+</div>
+<div class="vid">
+  <video controls preload="none" playsinline poster="assets/img/poster_montezuma_revenge.jpg">
+    <source src="assets/video/cmp_montezuma_revenge.mp4" type="video/mp4">
+  </video>
+  <h4>Montezuma&#x27;s Revenge</h4>
+</div>
+<div class="vid">
+  <video controls preload="none" playsinline poster="assets/img/poster_riverraid.jpg">
+    <source src="assets/video/cmp_riverraid.mp4" type="video/mp4">
+  </video>
+  <h4>River Raid</h4>
+</div>
+<div class="vid">
+  <video controls preload="none" playsinline poster="assets/img/poster_beam_rider.jpg">
+    <source src="assets/video/cmp_beam_rider.mp4" type="video/mp4">
+  </video>
+  <h4>Beam Rider</h4>
+</div>
+<div class="vid">
+  <video controls preload="none" playsinline poster="assets/img/poster_kangaroo.jpg">
+    <source src="assets/video/cmp_kangaroo.mp4" type="video/mp4">
+  </video>
+  <h4>Kangaroo</h4>
+</div></div>
+  <p class="caption">All 64 games render pixel-exact — see the
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/rom_sweep/results_jutari_screen.md">screen sweep</a>.</p>
+</div></section>
+
+<section><div class="wrap">
   <h2>Videos</h2>
-  <p class="sub">Beam-timed comparisons and the supplement clip.</p>
+  <p class="sub">The supplement divergence clip and the narrated overview.</p>
   <div class="vidgrid">
 <div class="vid">
   <video controls preload="metadata" playsinline>
     <source src="assets/video/divergence_si.mp4" type="video/mp4">
   </video>
   <h4>Supplement: HARD vs SOFT-STE vs relaxed (4-panel)</h4><p>HARD | SOFT-STE | SOFT-relaxed(α,T) | diff. The HARD and SOFT-STE panels are pixel-identical (Theorem 1); the relaxed panel drifts.</p>
-</div>
-<div class="vid">
-  <video controls preload="metadata" playsinline>
-    <source src="assets/video/si_compare.mp4" type="video/mp4">
-  </video>
-  <h4>Space Invaders — xitari vs jutari vs diff</h4><p>Left: xitari reference. Middle: jutari. Right: per-pixel difference (solid black = exact match).</p>
 </div>
 <div class="vid">
   <video controls preload="metadata" playsinline>
@@ -180,7 +257,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/55282ec86bf10853768a2896ae119b1d2684a033"><code>55282ec8</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/bd555a04326b0752888e620832c9855f1ecb6a09"><code>bd555a04</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

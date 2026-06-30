@@ -225,9 +225,32 @@ def build_paper(P):
         vids = """
 <section><div class="wrap">
   <h2>Videos</h2>
-  <p class="sub">Beam-timed comparisons and the supplement clip.</p>
+  <p class="sub">The supplement divergence clip and the narrated overview.</p>
   %s
 </div></section>""" % render_videos(P["videos"])
+
+    gallery = ""
+    if P.get("gallery"):
+        cells = []
+        for game, title in P["gallery"]:
+            cells.append("""
+<div class="vid">
+  <video controls preload="none" playsinline poster="assets/img/poster_%s.jpg">
+    <source src="assets/video/cmp_%s.mp4" type="video/mp4">
+  </video>
+  <h4>%s</h4>
+</div>""" % (game, game, esc(title)))
+        gallery = """
+<section><div class="wrap">
+  <h2>Conformance gallery</h2>
+  <p class="sub">Each clip is three panels — <b>xitari</b> (reference C++) ·
+  <b>jutari</b> (our port) · <b>per-pixel difference</b>. The difference panel stays black
+  for the whole clip (only the “DIFFERENCE” header label is lit): byte-for-byte identical
+  output. Verified across the full length of all 64 games; a representative selection follows.</p>
+  <div class="vidgrid">%s</div>
+  <p class="caption">All 64 games render pixel-exact — see the
+  <a href="%stools/rom_sweep/results_jutari_screen.md">screen sweep</a>.</p>
+</div></section>""" % ("".join(cells), BLOB)
 
     body = """
 <header class="hero"><div class="wrap">
@@ -252,8 +275,9 @@ def build_paper(P):
 </div></section>
 
 %s
+%s
 """ % (esc(P["venue"]), esc(P["title"]), P["blurb"], links, esc(P["subtitle"]),
-       extra, render_ledger(P["claims"]), render_figures(P["figures"]), vids)
+       extra, render_ledger(P["claims"]), render_figures(P["figures"]), gallery, vids)
     return page(P["id"] + ".html", P["title"], body)
 
 

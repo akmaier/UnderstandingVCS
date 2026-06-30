@@ -294,9 +294,25 @@ PAPER1 = {
     "videos": [
         ("divergence_si", "Supplement: HARD vs SOFT-STE vs relaxed (4-panel)",
          "HARD | SOFT-STE | SOFT-relaxed(α,T) | diff. The HARD and SOFT-STE panels are pixel-identical (Theorem 1); the relaxed panel drifts."),
-        ("si_compare", "Space Invaders — xitari vs jutari vs diff",
-         "Left: xitari reference. Middle: jutari. Right: per-pixel difference (solid black = exact match)."),
         ("presentation", "Paper 1 — narrated overview", "Project talk (transcoded for web)."),
+    ],
+    # Conformance gallery: every clip is xitari | jutari | per-pixel-difference.
+    # The difference panel is black on all of them (only the "DIFFERENCE" header
+    # label is lit) — verified across the full clip for all 64 games before
+    # featuring. (game id, display title)
+    "gallery": [
+        ("space_invaders", "Space Invaders"),
+        ("pong", "Pong"),
+        ("breakout", "Breakout"),
+        ("ms_pacman", "Ms. Pac-Man"),
+        ("qbert", "Q*bert"),
+        ("seaquest", "Seaquest"),
+        ("enduro", "Enduro"),
+        ("pitfall", "Pitfall!"),
+        ("montezuma_revenge", "Montezuma's Revenge"),
+        ("riverraid", "River Raid"),
+        ("beam_rider", "Beam Rider"),
+        ("kangaroo", "Kangaroo"),
     ],
 }
 
