@@ -724,14 +724,21 @@ def build_methods():
 
     def catalogue(rows, recdir, reccount):
         # rows: (method_html, script_basename, score_html)
-        def page(s):
-            key = s.rsplit("/", 1)[-1].rsplit(".", 1)[0]
-            return '<a href="m_%s.html">explain &amp; figure →</a>' % key
+        def key_of(s):
+            return s.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+        def audit(s):
+            af = audit_faith(key_of(s))
+            if not af:
+                return "<span class='cite'>excluded</span>"
+            faith, ci, ng, nr = af
+            return ("<b>%.3f</b> <span class='cite'>±%.3f · %s games</span>" % (faith, ci, ng))
         body = "".join(
-            "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>"
-            % (m, srcln_or_src(XS + s), sc, page(s)) for m, s, sc in rows)
+            "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>"
+            % (m, srcln_or_src(XS + s), sc, audit(s),
+               '<a href="m_%s.html">explain &amp; figure →</a>' % key_of(s)) for m, s, sc in rows)
         head = ('<table class="tbl"><tr><th>Method (reference)</th>'
-                '<th>Implementation</th><th>Measured score (vs the §1 oracle)</th>'
+                '<th>Implementation</th><th>Score description</th>'
+                '<th><a href="#e6">Audit faithfulness</a></th>'
                 '<th>Page</th></tr>'
                 '%s</table>' % body)
         rec = ('<p class="caption">Records: %s — <b>%d</b> committed §R JSON+npz.</p>'
@@ -966,6 +973,29 @@ python3 tools/xai_study/compare/benchmark/run.py --method magnitude_proxy</code>
 
 import json as _json
 
+# Load the actual cross-method audit (leaderboard.json) once, keyed by method name.
+_LEADER = {}
+try:
+    _lb = _json.load(open(os.path.join(REPO, "tools", "xai_study", "compare", "out",
+                                        "leaderboard.json")))
+    _LEADER = {r["method"]: r for r in _lb.get("rows", [])}
+except Exception:
+    pass
+
+
+def audit_row(key):
+    return _LEADER.get(M.P2_LEADER.get(key, ""), None)
+
+
+def audit_faith(key):
+    """(faithfulness, ci95, n_games, n_records) from the leaderboard, or None."""
+    r = audit_row(key)
+    if not r or r.get("faithfulness") is None:
+        return None
+    return (r["faithfulness"], r.get("faithfulness_ci95") or 0.0,
+            r.get("n_games"), r.get("n_records"))
+
+
 _PHASE_LABEL = {"A": "Phase A · neuroscience battery", "B": "Phase B · attribution / XAI",
                 "C": "Phase C · mechanistic interpretability", "NA": "recorded as not-applicable"}
 _PHASE_ANCHOR = {"A": "phaseA", "B": "phaseB", "C": "phaseC", "NA": "phaseB"}
@@ -1027,7 +1057,7 @@ def build_method_page(meth):
         pass
     v = rec.get("value")
     vs = ("%.3f" % v) if isinstance(v, (int, float)) else str(v)
-    score = ("<b>%s = %s</b> (game: %s, state %s)"
+    score = ("<b>%s = %s</b> — this example only (%s, state %s); the audit aggregate is below."
              % (esc(rec.get("metric_name", "score")), esc(vs), esc(meth["game"]),
                 esc(rec.get("state", "—")))) if rec else ""
     recdir = "tools/xai_study/%s/out" % _RECDIR[meth["phase"]]
@@ -1038,6 +1068,40 @@ def build_method_page(meth):
         ("All records", src(recdir, _RECDIR[meth["phase"]] + "/out")),
     ]
     metahtml = "".join("<dt>%s</dt><dd>%s</dd>" % (k, val) for k, val in meta)
+
+    # "In the audit" — the method's real entry in the cross-method leaderboard
+    af = audit_faith(meth["key"])
+    ar = audit_row(meth["key"])
+    lb = "tools/xai_study/compare/out/leaderboard.json"
+    if af:
+        faith, ci, ng, nr = af
+        plaus = ar.get("plausibility_proxy")
+        trad = ar.get("tradition")
+        bign = ('<div class="bignum"><div class="b"><strong>%.3f</strong>'
+                '<small>faithfulness vs oracle (mean over %s games, ±%.3f CI95)</small></div>'
+                '<div class="b"><strong>%s</strong><small>committed records aggregated</small></div>'
+                '<div class="b"><strong>%.2f</strong><small>human-plausibility proxy</small></div>'
+                '</div>' % (faith, ng, ci, nr, plaus if plaus is not None else 0))
+        audit_html = """
+<section><div class="wrap">
+  <h2>In the audit</h2>
+  <p>This is the method's entry in the actual cross-method audit — its faithfulness is the
+  <b>mean over all %s core games</b> (%s committed §R records), not the single example shown above.
+  Tradition: <b>%s</b>. The example figure (Pong) is one of those records.</p>
+  %s
+  <p class="caption">Source: %s · the whole leaderboard is on the
+  <a href="methods.html#e6">methods page</a> and the
+  <a href="paper2.html">Paper&nbsp;2 audit</a>.</p>
+</div></section>""" % (ng, nr, esc(str(trad)), bign, src(lb, "leaderboard.json"))
+    else:
+        audit_html = """
+<section><div class="wrap">
+  <h2>In the audit</h2>
+  <p>Recorded but <b>excluded from the faithfulness leaderboard</b>: these methods have no
+  applicable causes on the VCS, so a faithfulness score would be meaningless. See the
+  <a href="methods.html#e6">leaderboard</a> and the <a href="paper2.html">Paper&nbsp;2 audit</a>.</p>
+  <p class="caption">Source: %s.</p>
+</div></section>""" % src(lb, "leaderboard.json")
     body = """
 <header class="hero"><div class="wrap">
   <span class="venue" style="color:var(--accent-2);font-weight:600">%s</span>
@@ -1064,7 +1128,12 @@ def build_method_page(meth):
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
   <a href="methods.html#stack">execution stack</a>.</p>
-  <dl class="meta" style="margin-top:18px">%s</dl>
+</div></section>
+
+%s
+
+<section><div class="wrap">
+  <dl class="meta" style="margin-top:0">%s</dl>
   <p class="caption" style="margin-top:14px">The figure is generated from the committed record by
   <a href="%sdocs/gen_method_figures.py"><code>docs/gen_method_figures.py</code></a>; the game frame
   and each RAM cell's screen footprint are produced by
@@ -1074,7 +1143,7 @@ def build_method_page(meth):
 """ % (esc(_PHASE_LABEL[meth["phase"]]), esc(meth["title"]), esc(meth["ref"]),
        _PHASE_ANCHOR[meth["phase"]], meth["key"], meth["key"], esc(meth["title"]),
        _method_caption(meth), score, esc(meth["what"]),
-       M.P2_METHOD_SCORED.get(meth["key"], ""), metahtml, BLOB, BLOB, BLOB)
+       M.P2_METHOD_SCORED.get(meth["key"], ""), audit_html, metahtml, BLOB, BLOB, BLOB)
     return page("m_%s.html" % meth["key"], meth["title"] + " — Paper 2 method", body)
 
 

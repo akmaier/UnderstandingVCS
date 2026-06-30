@@ -755,3 +755,21 @@ P2_METHOD_SCORED = {
  "linear_probing": "Mean selectivity = probe accuracy minus control-task accuracy, averaged over labelled cells. <b>0.30</b> — concepts are decodable above the control, but some decodable cells are not causally used (the present-vs-used gap).",
  "logit_lens": "Readout fidelity (R²) of the lens-decoded intermediate against the true intermediate value. <b>1.00</b> — the state is linearly readable at the right site, as expected on a transparent machine.",
 }
+
+# Map each method key -> its row name in the actual audit (leaderboard.json).
+# na_audit is intentionally excluded from the leaderboard (no applicable causes).
+P2_LEADER = {
+    "A1_connectomics": "A1_connectomics", "A2_lesions": "A2_lesions", "A3_tuning": "A3_tuning",
+    "A4_correlations": "A4_spike_word", "A5_lfp": "A5_local_field_potentials",
+    "A6_granger": "A6_granger", "A7_dimred": "A7_dim_reduction", "A8_wholestate": "A8_wholestate",
+    "saliency": "vanilla_saliency", "gradxinput": "gradxinput_deeplift",
+    "guided_backprop": "guided_backprop", "smoothgrad": "smoothgrad",
+    "ig_baseline_sweep": "integrated_gradients", "expected_gradients": "expected_gradients",
+    "occlusion": "occlusion", "perturbation": "extremal_perturbation", "rise": "rise",
+    "lime": "lime", "kernelshap": "kernelshap", "counterfactual": "on_distribution_counterfactual",
+    "activation_patching": "activation_patching", "das": "interchange_interventions_das",
+    "attribution_patching": "attribution_patching", "path_patching": "path_patching",
+    "acdc": "ACDC", "sae": "sparse_autoencoder", "dictionaries": "nmf_pca_dictionaries",
+    "causal_scrubbing": "causal_scrubbing", "linear_probing": "linear_probing_control_tasks",
+    "logit_lens": "logit_tuned_lens",
+}
