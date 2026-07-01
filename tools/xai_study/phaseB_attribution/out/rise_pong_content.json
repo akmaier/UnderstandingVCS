@@ -1,15 +1,15 @@
 {
   "arrays": "rise_pong_content.npz",
   "ci": null,
-  "commit": "3b9c5a2",
+  "commit": "6f4df476",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-RISE causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
       "keep_prob": 0.5,
       "n_candidate_cells": 8,
-      "n_masks": 500,
-      "n_real_reruns": 500,
-      "note": "N=500 masks at keep_prob=0.5 (Petsiuk's default mask density). Each mask = ONE real emulator re-run, so the cost is exactly N re-runs per output. RISE variance ∝ 1/N — see convergence_sweep.",
+      "n_masks": 64,
+      "n_real_reruns": 64,
+      "note": "N=64 masks at keep_prob=0.5 (Petsiuk's default mask density). Each mask = ONE real emulator re-run, so the cost is exactly N re-runs per output. RISE variance ∝ 1/N — see convergence_sweep.",
       "rng": "MersenneTwister(seed*1_000_003 + 7919), seed=0"
     },
     "cause_names": [
@@ -37,34 +37,34 @@
       "interpretation": "faithfulness (corr / precision@k / del-ins) recomputed from N/8, N/4, N/2, N masks of the SAME pool (no extra re-runs). RISE's Monte-Carlo variance is ∝ 1/N, so corr/p@k STABILISE as N grows; the spread between the smallest and full budget quantifies how many masks RISE needs on this output.",
       "points": [
         {
-          "deletion_auc": 0.01648059542796385,
-          "insertion_auc": 0.6342371079213184,
-          "n_masks": 62,
-          "pearson_corr": 0.5201266171517229,
+          "deletion_auc": 0.3611111111111111,
+          "insertion_auc": 0.17698412698412697,
+          "n_masks": 8,
+          "pearson_corr": -0.04846929010007301,
+          "precision_at_k": 0.0,
+          "spearman_corr": -0.21010857337403038
+        },
+        {
+          "deletion_auc": 0.1388888888888889,
+          "insertion_auc": 0.7039682539682539,
+          "n_masks": 16,
+          "pearson_corr": 0.4304005868678778,
+          "precision_at_k": 0.0,
+          "spearman_corr": 0.4102606248226097
+        },
+        {
+          "deletion_auc": 0.027777777777777776,
+          "insertion_auc": 0.7134920634920634,
+          "n_masks": 32,
+          "pearson_corr": 0.3946622880765492,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.47238319643122223
         },
         {
-          "deletion_auc": 0.01648059542796385,
-          "insertion_auc": 0.5890483785220628,
-          "n_masks": 125,
-          "pearson_corr": 0.5881889690316849,
-          "precision_at_k": 0.6666666666666666,
-          "spearman_corr": 0.5809036604762328
-        },
-        {
-          "deletion_auc": 0.01648059542796385,
-          "insertion_auc": 0.5890483785220628,
-          "n_masks": 250,
-          "pearson_corr": 0.6471059892864395,
-          "precision_at_k": 0.6666666666666666,
-          "spearman_corr": 0.5809036604762328
-        },
-        {
-          "deletion_auc": 0.01648059542796385,
-          "insertion_auc": 0.5890483785220628,
-          "n_masks": 500,
-          "pearson_corr": 0.6414166511648568,
+          "deletion_auc": 0.027777777777777776,
+          "insertion_auc": 0.8150793650793651,
+          "n_masks": 64,
+          "pearson_corr": 0.4875354246709912,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.5809036604762328
         }
@@ -80,9 +80,9 @@
       "precision_at_k": 1.0
     },
     "headline_metrics": {
-      "deletion_auc": 0.01648059542796385,
-      "insertion_auc": 0.5890483785220628,
-      "pearson_corr": 0.6414166511648568,
+      "deletion_auc": 0.027777777777777776,
+      "insertion_auc": 0.8150793650793651,
+      "pearson_corr": 0.4875354246709912,
       "precision_at_k": 0.6666666666666666,
       "spearman_corr": 0.5809036604762328,
       "topk": 3
@@ -97,41 +97,41 @@
       "ram[45]:set": 0.0,
       "ram[46]:occlude": 0.0,
       "ram[46]:set": 0.0,
-      "ram[49]:occlude": 124.0,
+      "ram[49]:occlude": 175.0,
       "ram[49]:set": 0.0,
       "ram[50]:occlude": 0.0,
       "ram[50]:set": 0.0,
       "ram[51]:occlude": 0.0,
       "ram[51]:set": 0.0,
-      "ram[54]:occlude": 85.0,
+      "ram[54]:occlude": 160.0,
       "ram[54]:set": 17.0,
       "tia[COLUBK]:set": 0.0
     },
     "output_kind": "content",
-    "output_note": "CONTENT output: RAM byte 54 (the most causally-active candidate concept byte — SAME pick as the IG/EG/saliency/CF siblings). RISE (Petsiuk 2018) draws 500 RANDOM BINARY MASKS (keep_prob=0.5) over the candidate cells, masks the dropped cells to 0, RE-RUNS the real ROM, and weights each mask by the masked output: importance(i)=(1/(N·p))·Σ y·m[i]. Faithfulness corr=0.641 @N=500; convergence corr grows 0.52→0.641 as N goes 62→500 (RISE variance ∝ 1/N). Every probe is a genuine emulator re-run (RAM→0 = the oracle's own occlude!), so RISE is apples-to-apples with the del/ins curves.",
+    "output_note": "CONTENT output: RAM byte 54 (the most causally-active candidate concept byte — SAME pick as the IG/EG/saliency/CF siblings). RISE (Petsiuk 2018) draws 64 RANDOM BINARY MASKS (keep_prob=0.5) over the candidate cells, masks the dropped cells to 0, RE-RUNS the real ROM, and weights each mask by the masked output: importance(i)=(1/(N·p))·Σ y·m[i]. Faithfulness corr=0.488 @N=64; convergence corr grows -0.048→0.488 as N goes 8→64 (RISE variance ∝ 1/N). Every probe is a genuine emulator re-run (RAM→0 = the oracle's own occlude!), so RISE is apples-to-apples with the del/ins curves.",
     "rise_attr_per_cause": {
       "joystick:RIGHT": 0.0,
-      "ram[13]:occlude": 12.980499999999992,
-      "ram[13]:set": 12.980499999999992,
-      "ram[14]:occlude": 1.984499999999997,
-      "ram[14]:set": 1.984499999999997,
-      "ram[45]:occlude": 0.3404999999999916,
-      "ram[45]:set": 0.3404999999999916,
-      "ram[46]:occlude": 7.624499999999998,
-      "ram[46]:set": 7.624499999999998,
-      "ram[49]:occlude": 72.4235,
-      "ram[49]:set": 72.4235,
-      "ram[50]:occlude": 1.3044999999999902,
-      "ram[50]:set": 1.3044999999999902,
-      "ram[51]:occlude": 16.948499999999996,
-      "ram[51]:set": 16.948499999999996,
-      "ram[54]:occlude": 31.24049999999999,
-      "ram[54]:set": 31.24049999999999,
+      "ram[13]:occlude": 8.4375,
+      "ram[13]:set": 8.4375,
+      "ram[14]:occlude": 12.96875,
+      "ram[14]:set": 12.96875,
+      "ram[45]:occlude": 19.375,
+      "ram[45]:set": 19.375,
+      "ram[46]:occlude": 24.84375,
+      "ram[46]:set": 24.84375,
+      "ram[49]:occlude": 39.53125,
+      "ram[49]:set": 39.53125,
+      "ram[50]:occlude": 14.375,
+      "ram[50]:set": 14.375,
+      "ram[51]:occlude": 30.78125,
+      "ram[51]:set": 30.78125,
+      "ram[54]:occlude": 32.5,
+      "ram[54]:set": 32.5,
       "tia[COLUBK]:set": 0.0
     },
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard i --nshards n --shard-kind game): one Slurm array task per core game; or batched SOFT-STE masked re-runs over masks×cells×games on GPU (the forward is bit-exact to this HARD map).",
     "substrate": "jutari (Julia, HARD) — RISE (Petsiuk 2018) randomized-mask saliency: draw N random binary masks over the candidate RAM cells, mask the dropped cells to 0, RE-RUN the real ROM (bit-exact oracle machinery), weight each mask by the masked output. Every probe is a genuine emulator re-run; no gradient, no surrogate.",
-    "y_intact": 124.0
+    "y_intact": 175.0
   },
   "game": "pong",
   "method": "rise",
@@ -141,10 +141,10 @@
   "paper": "P2",
   "phase": "phaseB_attribution",
   "seed": 0,
-  "state": "f120+30",
+  "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@54)",
-  "timestamp": "1782159220",
-  "value": 0.6414166511648568,
+  "timestamp": "1782918668",
+  "value": 0.4875354246709912,
   "where": "local"
 }

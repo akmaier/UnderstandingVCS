@@ -94,7 +94,12 @@ using .SaliencyAttr: CORE_GAMES, rom_path_for, settings_for, candidates_path_for
                      load_env, boot_replay, continue_from, fresh_baseline,
                      assert_bit_exact, run_intervention, occlude!,
                      deletion_insertion_auc, oracle_abs_delta,
-                     position_pixel_cell, pick_content_idx
+                     position_pixel_cell, pick_content_idx,
+                     build_shared_testbed, SHARED_TESTBED,
+                     ST_PREFIX, ST_HORIZON, ST_SEED, ST_GATE_K, ST_FLOOR
+# the injected oracle fns build_shared_testbed needs (OUR own type identity —
+# reached through the single SaliencyAttr include chain).
+using .SaliencyAttr: intervene_ram!, env_step!, soft_ram_peek
 
 # the IG pilot's faithfulness SCORER + §R writer helpers (the validated Phase-B
 # contract) — reached through the single saliency include chain.
@@ -169,14 +174,20 @@ end
 
 function compute_one(; game, output_kind, content_idx = -1, position_cell = nothing,
                      checkpoint, actions, target_frame, horizon, causes,
-                     topk, seed, verbose)
-    # reader for the oracle / occlusion / del-ins (reads the TRUE VCS state)
-    read_y = output_kind == "content" ?
-        (s -> Float64(Int(s.ram[content_idx + 1]))) :
-        (s -> Float64(Int(s.screen[position_cell[1], position_cell[2]])))
-    output_name = output_kind == "content" ?
-        "content(ram_self@$content_idx)" :
-        "position@r$(position_cell[1])c$(position_cell[2])"
+                     topk, seed, verbose,
+                     read_y_override = nothing, output_name_override = nothing)
+    # reader for the oracle / occlusion / del-ins (reads the TRUE VCS state). In the
+    # SHARED TESTBED the position output is the screen-buffer REGION (n_changed_px)
+    # supplied by read_y_override (redesign Problem 4 — one shared output all methods
+    # explain). Occlusion is intervention-based, so no gradient path changes.
+    read_y = read_y_override !== nothing ? read_y_override :
+        (output_kind == "content" ?
+            (s -> Float64(Int(s.ram[content_idx + 1]))) :
+            (s -> Float64(Int(s.screen[position_cell[1], position_cell[2]]))))
+    output_name = output_name_override !== nothing ? output_name_override :
+        (output_kind == "content" ?
+            "content(ram_self@$content_idx)" :
+            "position@r$(position_cell[1])c$(position_cell[2])")
 
     # 1) oracle |Δy| per cause (real re-runs on the TRUE VCS) — the ground truth
     odelta = oracle_abs_delta(checkpoint, actions, target_frame, horizon, causes, read_y)
@@ -235,6 +246,41 @@ end
 content byte, score the content output + the POSITION output (where occlusion
 SUCCEEDS while the gradient methods vanish — the §7 headline contrast)."""
 function compute_game(; game, target_frame, horizon, topk, seed, verbose)
+    if SHARED_TESTBED
+        st = build_shared_testbed(game;
+            settings_for = settings_for, rom_path_for = rom_path_for,
+            candidates_path_for = candidates_path_for,
+            build_causes = build_pong_causes, candidate_ram_indices = candidate_ram_indices,
+            continue_from = continue_from, snapshot = snapshot, env_step = env_step!,
+            intervene_ram = intervene_ram!, boot_replay = boot_replay,
+            run_intervention = run_intervention, soft_ram_peek = soft_ram_peek,
+            prefix = ST_PREFIX, horizon = ST_HORIZON, seed = ST_SEED,
+            k = ST_GATE_K, floor = ST_FLOOR, verbose = verbose,
+            assert_bit_exact = assert_bit_exact)
+        verbose && println("[occlusion] $game SHARED gameplay state: " *
+            "cause_density=$(st.cause_density)/$(length(st.causes)) accepted=$(st.accepted) cell=$(st.cell)")
+
+        actions = st.actions; checkpoint = st.checkpoint; causes = st.causes
+        tf = st.prefix; hz = st.horizon; cand_indices = st.cand_indices
+        content_idx, content_mv = pick_content_idx(checkpoint, actions, tf, hz, causes, cand_indices)
+        verbose && println("[occlusion] $game content byte = RAM[$content_idx] (max oracle |Δself|=$(round(content_mv,digits=2)))")
+
+        f_content, content_degen = compute_one(; game = game, output_kind = "content",
+            content_idx = content_idx, checkpoint = checkpoint, actions = actions,
+            target_frame = tf, horizon = hz, causes = causes,
+            topk = topk, seed = seed, verbose = verbose)
+        f_pos, pos_degen = compute_one(; game = game, output_kind = "position",
+            position_cell = st.cell, checkpoint = checkpoint, actions = actions,
+            target_frame = tf, horizon = hz, causes = causes,
+            topk = topk, seed = seed, verbose = verbose,
+            read_y_override = st.read_y,
+            output_name_override = "screen_region(n_changed_px)@r$(st.cell[1])c$(st.cell[2])")
+        st_extra = (cause_density = st.cause_density, accepted = st.accepted,
+                    n_causes = length(st.causes), cell = st.cell,
+                    prefix = st.prefix, horizon = st.horizon, seed = st.seed)
+        return f_content, content_degen, f_pos, pos_degen, st_extra
+    end
+
     total = target_frame + horizon
     actions = fill(0, total)
     verbose && println("[occlusion] $game: asserting bit-exactness (2 fresh boots+replays to f$total)...")
@@ -259,7 +305,7 @@ function compute_game(; game, target_frame, horizon, topk, seed, verbose)
         position_cell = pcell, checkpoint = checkpoint, actions = actions,
         target_frame = target_frame, horizon = horizon, causes = causes,
         topk = topk, seed = seed, verbose = verbose)
-    return f_content, content_degen, f_pos, pos_degen
+    return f_content, content_degen, f_pos, pos_degen, nothing
 end
 
 # ============================================================================
@@ -349,7 +395,7 @@ function _output_note(f::Faithfulness)
     end
 end
 
-function write_faithfulness(f::Faithfulness; out_dir)
+function write_faithfulness(f::Faithfulness; out_dir, st_extra = nothing)
     isdir(out_dir) || mkpath(out_dir)
     tag = f.output_kind == "content" ? "content" : "position"
     stem = "occlusion_$(f.game)_$(tag)"
@@ -418,6 +464,17 @@ function write_faithfulness(f::Faithfulness; out_dir)
                 "(--shard i --shard-kind game); each task re-runs the real ROM, no GPU needed.",
         ),
     )
+    # SHARED-TESTBED provenance (redesign protocol) on the position/region record.
+    if st_extra !== nothing
+        rec["state"] = "gameplay(seed=$(st_extra.seed),prefix=$(st_extra.prefix))+$(st_extra.horizon)"
+        rec["extra"]["testbed"] = Dict{String,Any}(
+            "state_kind" => "seeded_random_action_gameplay",
+            "prefix" => st_extra.prefix, "horizon" => st_extra.horizon, "seed" => st_extra.seed,
+            "shared_output" => "screen_region(n_changed_px)@r$(st_extra.cell[1])c$(st_extra.cell[2])",
+            "cause_density_above_floor" => st_extra.cause_density,
+            "cause_density_floor" => ST_FLOOR, "cause_density_gate_k" => ST_GATE_K,
+            "cause_density_accepted" => st_extra.accepted, "n_causes" => st_extra.n_causes)
+    end
     open(json_path, "w") do io; JSON.print(io, rec, 2); end
 
     write_npz(npz_path, Dict(
@@ -491,7 +548,7 @@ function main(args = ARGS)
     summary = Dict{String,Any}[]
     for game in games
         println("\n[occlusion] ===== $game =====")
-        f_content, content_degen, f_pos, pos_degen = compute_game(; game = game,
+        f_content, content_degen, f_pos, pos_degen, st_extra = compute_game(; game = game,
             target_frame = target_frame, horizon = horizon, topk = topk,
             seed = seed, verbose = true)
         # the content headline must have a non-degenerate oracle column (else the
@@ -503,9 +560,15 @@ function main(args = ARGS)
         # non-degenerate (a sprite the ball/paddle byte moves). If flat (truly static
         # cell), we still self-check (it asserts the honest null).
         selftest(f_pos; require_nondegenerate = !pos_degen)
+        if st_extra !== nothing
+            println("[occlusion] $game SHARED region output: gate " *
+                "$(st_extra.cause_density)/$(st_extra.n_causes) accepted=$(st_extra.accepted) " *
+                "cell=$(st_extra.cell)")
+        end
         if !selftest_only
             for f in (f_content, f_pos)
-                jp, np = write_faithfulness(f; out_dir = out_dir)
+                jp, np = write_faithfulness(f; out_dir = out_dir,
+                    st_extra = (f === f_pos ? st_extra : nothing))
                 println("[occlusion] wrote $jp"); println("[occlusion] arrays  $np")
             end
         end

@@ -84,6 +84,16 @@ using .IGBaselineSweep.PilotIGvsOracle.OracleIntervene: build_pong_causes, Cause
 using .IGBaselineSweep.PilotIGvsOracle.OracleIntervene.JutariOracle: Snapshot, snapshot,
                                                         intervene_ram!, write_npz, RAM_SIZE
 
+# The P2 SHARED TESTBED (experiment_redesign.md): ig_baseline_sweep.jl ALREADY
+# includes common/shared_testbed_impl.jl into ITS module (ONE reachable include of
+# the fragment — we do NOT re-include it here, that would create a second Cause/
+# Snapshot type). Reach build_shared_testbed + the switch/params THROUGH the
+# IGBaselineSweep namespace so they operate on the SAME oracle types this runner
+# already uses. env_step!/soft_ram_peek are the injected fns the testbed needs.
+using .IGBaselineSweep: build_shared_testbed, SHARED_TESTBED,
+                        ST_PREFIX, ST_HORIZON, ST_SEED, ST_GATE_K, ST_FLOOR,
+                        env_step!, soft_ram_peek
+
 const OUT_DIR = joinpath(@__DIR__, "out")
 
 # ============================================================================
@@ -108,7 +118,7 @@ function cf_read_y(checkpoint, actions, tf, hz, sub_idx, alt_ram, read_y)
         intervene_ram!(env, i, Int(alt_ram[i + 1]))
     end
     tail = Int.(actions[tf + 1 : tf + hz])
-    for a in tail; IGBaselineSweep.env_step!(env, a); end
+    for a in tail; env_step!(env, a); end
     return read_y(snapshot(env, length(tail)))
 end
 
@@ -236,13 +246,22 @@ game. `read_y` reads the chosen output off a Snapshot; `output_kind` is
 function compute_one(; game, output_kind, content_idx = -1, content_varies = false,
                      position_cell = nothing,
                      checkpoint, actions, target_frame, horizon, alt_candidates,
-                     causes, candidate_cells, topk, tau, seed, verbose)
-    read_y = output_kind == "content" ?
-        (s -> Float64(Int(s.ram[content_idx + 1]))) :
-        (s -> Float64(Int(s.screen[position_cell[1], position_cell[2]])))
-    output_name = output_kind == "content" ?
-        "content(ram_self@$content_idx)" :
-        "ball_pixel@r$(position_cell[1])c$(position_cell[2])"
+                     causes, candidate_cells, topk, tau, seed, verbose,
+                     read_y_override = nothing, output_name_override = nothing)
+    # reader for the position output. In the SHARED TESTBED the position output is
+    # the screen-buffer REGION (n_changed_px) supplied by read_y_override (redesign
+    # Problem 4 — the ONE shared output every method explains). The counterfactual is
+    # intervention-based (re-run the real ROM), so NO gradient path changes: the
+    # override simply swaps which real-VCS scalar y the CF search reads. The content
+    # path is unchanged.
+    read_y = read_y_override !== nothing ? read_y_override :
+        (output_kind == "content" ?
+            (s -> Float64(Int(s.ram[content_idx + 1]))) :
+            (s -> Float64(Int(s.screen[position_cell[1], position_cell[2]]))))
+    output_name = output_name_override !== nothing ? output_name_override :
+        (output_kind == "content" ?
+            "content(ram_self@$content_idx)" :
+            "ball_pixel@r$(position_cell[1])c$(position_cell[2])")
 
     # 1) the oracle |Δy| per CAUSE (real re-runs on the TRUE VCS) — the ground truth
     odelta = oracle_abs_delta(checkpoint, actions, target_frame, horizon, causes, read_y)
@@ -380,6 +399,71 @@ end
 cells, build the REAL on-distribution alternative state x', pick the content byte,
 locate the position pixel, run the CF for content + position."""
 function compute_game(; game, target_frame, horizon, topk, tau, seed, verbose)
+    if SHARED_TESTBED
+        # (redesign) the ONE shared gameplay state + shared screen-buffer REGION
+        # output. build_shared_testbed fixes the checkpoint/actions/causes/candidate
+        # cells + the shared region read_y; the counterfactual is intervention-based
+        # so it simply searches over the SAME candidate cells, substituting toward a
+        # REAL alternative state and reading the shared region on the true ROM.
+        st = build_shared_testbed(game;
+            settings_for = settings_for, rom_path_for = rom_path_for,
+            candidates_path_for = candidates_path_for,
+            build_causes = build_pong_causes, candidate_ram_indices = candidate_ram_indices,
+            continue_from = continue_from, snapshot = snapshot, env_step = env_step!,
+            intervene_ram = intervene_ram!, boot_replay = boot_replay,
+            run_intervention = run_intervention, soft_ram_peek = soft_ram_peek,
+            prefix = ST_PREFIX, horizon = ST_HORIZON, seed = ST_SEED,
+            k = ST_GATE_K, floor = ST_FLOOR, verbose = verbose,
+            assert_bit_exact = assert_bit_exact)
+        verbose && println("[cf] $game SHARED gameplay state: " *
+            "cause_density=$(st.cause_density)/$(length(st.causes)) accepted=$(st.accepted) cell=$(st.cell)")
+
+        actions = st.actions; checkpoint = st.checkpoint; causes = st.causes
+        tf = st.prefix; hz = st.horizon
+        candidate_cells = sort(unique(st.cand_indices))
+
+        # the REAL, ON-DISTRIBUTION ALTERNATIVE-state POOL built along the SHARED
+        # gameplay trajectory (genuine RAM at earlier/later frames of the SAME seeded
+        # stream — true counterfactual worlds the system visits, on-distribution). We
+        # do NOT re-derive the analysis frame from a NOOP content_varies search here
+        # (the shared state is fixed by build_shared_testbed): we only sample the pool
+        # of alternative RAM values to substitute INTO the shared checkpoint. Frames
+        # sampled along the shared stream so substituted cells stay on-distribution.
+        pool_frames = sort(unique(filter(f -> 1 <= f && f != tf,
+            vcat([tf ÷ 4, tf ÷ 2, (3 * tf) ÷ 4, max(1, tf - 30), max(1, tf - 10)],
+                 collect(15:15:tf)))))
+        isempty(pool_frames) && (pool_frames = [max(1, tf ÷ 2)])
+        alt_candidates = [(fr, collect(boot_replay(actions, fr; game = game).console.bus.ram))
+                          for fr in pool_frames]
+        verbose && println("[cf] $game on-distribution alternative pool = $(length(pool_frames)) genuine reachable frames of the shared stream (max f$(maximum(pool_frames)))")
+
+        # content byte = a candidate concept byte that is BOTH causally active AND
+        # genuinely VARIES across the shared-stream pool (so a real counterfactual
+        # world exists). Same picker as the legacy path, on the SHARED state; falls
+        # back to the most-causal byte (varies=false) if nothing varies — recorded
+        # honestly, valid=false downstream.
+        content_idx, content_mv, content_varies =
+            pick_cf_content_idx(checkpoint, actions, tf, hz, causes, candidate_cells, alt_candidates)
+        verbose && println("[cf] $game content byte = RAM[$content_idx] " *
+            "(max oracle |Δself|=$(round(content_mv,digits=2)), varies on-distribution=$content_varies)")
+
+        f_content = compute_one(; game = game, output_kind = "content", content_idx = content_idx,
+            content_varies = content_varies,
+            checkpoint = checkpoint, actions = actions, target_frame = tf, horizon = hz,
+            alt_candidates = alt_candidates, causes = causes, candidate_cells = candidate_cells,
+            topk = topk, tau = tau, seed = seed, verbose = verbose)
+        f_pos = compute_one(; game = game, output_kind = "position",
+            checkpoint = checkpoint, actions = actions, target_frame = tf, horizon = hz,
+            alt_candidates = alt_candidates, causes = causes, candidate_cells = candidate_cells,
+            topk = topk, tau = tau, seed = seed, verbose = verbose,
+            read_y_override = st.read_y,
+            output_name_override = "screen_region(n_changed_px)@r$(st.cell[1])c$(st.cell[2])")
+        st_extra = (cause_density = st.cause_density, accepted = st.accepted,
+                    n_causes = length(st.causes), cell = st.cell,
+                    prefix = st.prefix, horizon = st.horizon, seed = st.seed)
+        return f_content, f_pos, st_extra
+    end
+
     total = target_frame + horizon
     actions = fill(0, total)
     verbose && println("[cf] $game: asserting bit-exactness (2 fresh boots+replays to f$total)...")
@@ -445,7 +529,7 @@ function compute_game(; game, target_frame, horizon, topk, tau, seed, verbose)
         checkpoint = checkpoint, actions = actions, target_frame = target_frame, horizon = horizon,
         alt_candidates = alt_candidates, causes = causes, candidate_cells = candidate_cells,
         topk = topk, tau = tau, seed = seed, verbose = verbose)
-    return f_content, f_pos
+    return f_content, f_pos, nothing
 end
 
 # ============================================================================
@@ -565,7 +649,7 @@ function _output_note(f::CFResult)
     end
 end
 
-function write_result(f::CFResult; out_dir = OUT_DIR)
+function write_result(f::CFResult; out_dir = OUT_DIR, st_extra = nothing)
     isdir(out_dir) || mkpath(out_dir)
     tag = f.output_kind == "content" ? "content" : "ball_pixel"
     stem = "counterfactual_$(f.game)_$(tag)"
@@ -643,6 +727,17 @@ function write_result(f::CFResult; out_dir = OUT_DIR)
                 "outputs×cells×games on GPU; the forward is bit-exact to this HARD map.",
         ),
     )
+    # SHARED-TESTBED provenance (redesign protocol) on the position/region record.
+    if st_extra !== nothing
+        rec["state"] = "gameplay(seed=$(st_extra.seed),prefix=$(st_extra.prefix))+$(st_extra.horizon)"
+        rec["extra"]["testbed"] = Dict{String,Any}(
+            "state_kind" => "seeded_random_action_gameplay",
+            "prefix" => st_extra.prefix, "horizon" => st_extra.horizon, "seed" => st_extra.seed,
+            "shared_output" => "screen_region(n_changed_px)@r$(st_extra.cell[1])c$(st_extra.cell[2])",
+            "cause_density_above_floor" => st_extra.cause_density,
+            "cause_density_floor" => ST_FLOOR, "cause_density_gate_k" => ST_GATE_K,
+            "cause_density_accepted" => st_extra.accepted, "n_causes" => st_extra.n_causes)
+    end
     open(json_path, "w") do io; JSON.print(io, rec, 2); end
 
     write_npz(npz_path, Dict(
@@ -693,15 +788,20 @@ function main(args = ARGS)
     summary = Dict{String,Any}[]
     for game in games
         println("\n[cf] ===== $game =====")
-        f_content, f_pos = compute_game(; game = game, target_frame = target_frame,
+        f_content, f_pos, st_extra = compute_game(; game = game, target_frame = target_frame,
             horizon = horizon, topk = topk, tau = tau, seed = seed, verbose = true)
         @assert !f_content.oracle_column_degenerate "content oracle column is degenerate for $game " *
             "at f$target_frame — pick_content_idx failed to find a causally-active concept byte"
         selftest(f_content; require_nondegenerate = true)
         selftest(f_pos)
+        if st_extra !== nothing
+            println("[cf] $game SHARED region output: gate " *
+                "$(st_extra.cause_density)/$(st_extra.n_causes) accepted=$(st_extra.accepted) " *
+                "cell=$(st_extra.cell)")
+        end
         if !selftest_only
             for f in (f_content, f_pos)
-                jp, np = write_result(f)
+                jp, np = write_result(f; st_extra = (f === f_pos ? st_extra : nothing))
                 println("[cf] wrote $jp"); println("[cf] arrays  $np")
             end
         end

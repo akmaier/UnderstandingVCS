@@ -1,9 +1,9 @@
 {
   "arrays": "counterfactual_pong_content.npz",
   "ci": null,
-  "commit": "e2f8226",
+  "commit": "6f4df476",
   "extra": {
-    "alt_frame": 30,
+    "alt_frame": 15,
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-CF causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "cause_names": [
       "ram[13]:set",
@@ -35,20 +35,20 @@
       "ram[45]:set": 0.0,
       "ram[46]:occlude": 0.0,
       "ram[46]:set": 0.0,
-      "ram[49]:occlude": 124.0,
-      "ram[49]:set": 124.0,
+      "ram[49]:occlude": 175.0,
+      "ram[49]:set": 175.0,
       "ram[50]:occlude": 0.0,
       "ram[50]:set": 0.0,
       "ram[51]:occlude": 0.0,
       "ram[51]:set": 0.0,
-      "ram[54]:occlude": 85.0,
-      "ram[54]:set": 85.0,
+      "ram[54]:occlude": 160.0,
+      "ram[54]:set": 160.0,
       "tia[COLUBK]:set": 0.0
     },
     "content_byte_varies_on_distribution": true,
     "content_ram_index": 54,
     "counterfactual": {
-      "alternative_state": "genuine RAM at frame 30 of the same ROM (on-distribution reachable state — NOT a synthetic edit)",
+      "alternative_state": "genuine RAM at frame 15 of the same ROM (on-distribution reachable state — NOT a synthetic edit)",
       "candidate_cells": [
         13,
         14,
@@ -68,10 +68,10 @@
       "n_real_reruns": 8,
       "n_true_causal_cells": 2,
       "valid": true,
-      "validity_threshold_abs": 62.0,
+      "validity_threshold_abs": 87.5,
       "y_S": 0.0,
       "y_alt": 0.0,
-      "y_x": 124.0
+      "y_x": 175.0
     },
     "harness_positive_control": {
       "deletion_auc": 0.027777777777777776,
@@ -83,9 +83,9 @@
       "precision_at_k": 1.0
     },
     "headline_metrics": {
-      "deletion_auc": 0.01648059542796385,
-      "insertion_auc": 0.5890483785220628,
-      "pearson_corr": 0.7045934154245487,
+      "deletion_auc": 0.027777777777777776,
+      "insertion_auc": 0.8150793650793651,
+      "pearson_corr": 0.6956090826799544,
       "precision_at_k": 0.6666666666666666,
       "spearman_corr": 0.7954350964503871,
       "topk": 3
@@ -100,18 +100,18 @@
       "ram[45]:set": 0.0,
       "ram[46]:occlude": 0.0,
       "ram[46]:set": 0.0,
-      "ram[49]:occlude": 124.0,
+      "ram[49]:occlude": 175.0,
       "ram[49]:set": 0.0,
       "ram[50]:occlude": 0.0,
       "ram[50]:set": 0.0,
       "ram[51]:occlude": 0.0,
       "ram[51]:set": 0.0,
-      "ram[54]:occlude": 85.0,
+      "ram[54]:occlude": 160.0,
       "ram[54]:set": 17.0,
       "tia[COLUBK]:set": 0.0
     },
     "output_kind": "content",
-    "output_note": "CONTENT output: RAM byte 54 (the most causally-active candidate concept byte — SAME pick as the IG/EG/saliency siblings). The ON-DISTRIBUTION COUNTERFACTUAL substitutes candidate RAM cells toward a REAL alternative state x' (genuine RAM at frame 30 of the same ROM — on-distribution, not a synthetic vector) and RE-RUNS the real ROM. y(x)=124.0, y(x')=0.0; minimal valid set S=[49] (|S|=1 vs 2 true-causal cells, minimality=0.5). Set-state-and-re-render keeps every edit on-distribution ⇒ removes Atrey 2020's off-manifold objection (method matrix §7: Partial→Succeed).",
+    "output_note": "CONTENT output: RAM byte 54 (the most causally-active candidate concept byte — SAME pick as the IG/EG/saliency siblings). The ON-DISTRIBUTION COUNTERFACTUAL substitutes candidate RAM cells toward a REAL alternative state x' (genuine RAM at frame 15 of the same ROM — on-distribution, not a synthetic vector) and RE-RUNS the real ROM. y(x)=175.0, y(x')=0.0; minimal valid set S=[49] (|S|=1 vs 2 true-causal cells, minimality=0.5). Set-state-and-re-render keeps every edit on-distribution ⇒ removes Atrey 2020's off-manifold objection (method matrix §7: Partial→Succeed).",
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE counterfactual search over outputs×cells×games on GPU; the forward is bit-exact to this HARD map.",
     "substrate": "jutari (Julia, HARD) — on-distribution counterfactual: set the real alternative state + re-run the real ROM (bit-exact oracle machinery); every validity test + del/ins curve point is a genuine emulator re-run, no surrogate.",
     "tau": 0.5
@@ -124,10 +124,10 @@
   "paper": "P2",
   "phase": "phaseB_attribution",
   "seed": 0,
-  "state": "f120+30",
+  "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@54)",
-  "timestamp": "1782156505",
-  "value": 0.7045934154245487,
+  "timestamp": "1782918739",
+  "value": 0.6956090826799544,
   "where": "local"
 }

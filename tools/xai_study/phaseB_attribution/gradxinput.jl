@@ -102,6 +102,13 @@ end
 # content-path ∂y/∂u (the same primitive the IG pilot / oracle_grad use).
 using JuTari.Diff: soft_ram_peek
 
+# The P2 SHARED TESTBED (experiment_redesign.md): seeded random-action gameplay
+# state + oracle cause-density gate + shared screen-buffer REGION output + the
+# bilinear-sampler position path. Included as a fragment (see the file header for
+# why not a module) so build_shared_testbed operates on OUR own Cause/Snapshot
+# types. Opt in with XAI_SHARED_TESTBED=1 (default on for the redesign re-run).
+include(joinpath(HERE, "..", "common", "shared_testbed_impl.jl"))
+
 # Game-aware boot: JutariOracle.load_pong_env only knows pong/breakout/SI and
 # resolves the ROM as `<game>.bin`, falling back to Generic settings otherwise.
 # To stay faithful to the screen scoreboard (CLAUDE.md rule #2 — the settings maps
@@ -121,6 +128,14 @@ const _PRIMARY_REPO = "/Users/maier/Documents/code/UnderstandingVCS"
 
 const CORE_GAMES = ["pong", "breakout", "space_invaders",
                     "seaquest", "ms_pacman", "qbert"]
+
+# shared-testbed switch + params (redesign protocol: prefix=90 gameplay, horizon=15).
+const SHARED_TESTBED = get(ENV, "XAI_SHARED_TESTBED", "1") == "1"
+const ST_PREFIX  = parse(Int, get(ENV, "XAI_ST_PREFIX", "90"))
+const ST_HORIZON = parse(Int, get(ENV, "XAI_ST_HORIZON", "15"))
+const ST_SEED    = parse(Int, get(ENV, "XAI_ST_SEED", "0"))
+const ST_GATE_K  = parse(Int, get(ENV, "XAI_ST_GATE_K", "4"))
+const ST_FLOOR   = parse(Float64, get(ENV, "XAI_ST_FLOOR", "0.5"))
 
 # game -> (rom basename, RomSettings constructor). Mirrors jutari_screen_dump.jl's
 # _SETTINGS_BY_BASENAME so this experiment boots the exact xitari-parity state.
@@ -168,6 +183,19 @@ function fresh_baseline_game(actions::AbstractVector{<:Integer}, total::Integer;
     env = load_env(game)
     for i in 1:total; env_step!(env, Int(actions[i])); end
     return snapshot(env, Int(total))
+end
+
+"""Assert two fresh boots+replays are byte-identical (the load-bearing oracle
+correctness guarantee) using OUR game-specific boot (real RomSettings), so the
+shared testbed's bit-exact gate matches the screen scoreboard's settings."""
+function assert_bit_exact(actions, total; game)
+    a = fresh_baseline_game(actions, total; game = game)
+    b = fresh_baseline_game(actions, total; game = game)
+    a.ram == b.ram || error("bit-exact RAM re-run FAILED for $game: " *
+        "$(count(a.ram .!= b.ram))/$(length(a.ram)) bytes differ to f$total")
+    a.screen == b.screen || error("bit-exact SCREEN re-run FAILED for $game: " *
+        "$(count(a.screen .!= b.screen)) px differ to f$total")
+    return true
 end
 
 # ============================================================================
@@ -368,29 +396,48 @@ struct CausalMapLite
     output_label::String
     pixel_cell::Union{Nothing,Tuple{Int,Int}}
     bit_exact::Bool
+    read_y::Function               # Snapshot -> Float64 (the SHARED explained output reader)
 end
 
 function compute_causal_map_lite(; game, output, target_frame, horizon, seed,
-                                 candidates_path, score_idx, verbose = true)
+                                 candidates_path, score_idx, verbose = true,
+                                 st = nothing)
     total = target_frame + horizon
-    actions = fill(0, total)                      # NOOP trace (deterministic)
 
-    # bit-exact guarantee: two fresh boots+replays byte-identical (RAM+screen)
-    a = fresh_baseline_game(actions, total; game = game)
-    b = fresh_baseline_game(actions, total; game = game)
-    bit_exact = (a.ram == b.ram) && (a.screen == b.screen)
-    @assert bit_exact "bit-exact re-run FAILED for $game (refusing to score)"
+    if st === nothing
+        actions = fill(0, total)                  # NOOP trace (deterministic)
+        # bit-exact guarantee: two fresh boots+replays byte-identical (RAM+screen)
+        a = fresh_baseline_game(actions, total; game = game)
+        b = fresh_baseline_game(actions, total; game = game)
+        bit_exact = (a.ram == b.ram) && (a.screen == b.screen)
+        @assert bit_exact "bit-exact re-run FAILED for $game (refusing to score)"
 
-    checkpoint = boot_replay_game(actions, target_frame; game = game)
-    at_target  = continue_from(checkpoint, Int[])
-    causes     = build_pong_causes(candidates_path, at_target)   # candidate RAM±TIA±joystick
+        checkpoint = boot_replay_game(actions, target_frame; game = game)
+        at_target  = continue_from(checkpoint, Int[])
+        causes     = build_pong_causes(candidates_path, at_target)   # candidate RAM±TIA±joystick
+    else
+        # SHARED TESTBED: reuse the ONE shared gameplay checkpoint/actions/causes
+        # (already bit-exact-asserted inside build_shared_testbed).
+        actions    = st.actions
+        checkpoint = st.checkpoint
+        causes     = st.causes
+        bit_exact  = true
+    end
 
-    # choose output + its y-reader
-    pixel_cell = output == "position" ?
-        position_pixel_cell(checkpoint, actions, target_frame, horizon, causes) : nothing
-    read_y = make_y_reader(output, score_idx, pixel_cell)
-    output_label = output == "content" ?
-        "score@ram[$score_idx]" : "pixel@r$(pixel_cell[1])c$(pixel_cell[2])"
+    # choose output + its y-reader. In the SHARED TESTBED the position output is
+    # the shared screen-buffer REGION (n_changed_px = st.read_y), NOT a single
+    # pixel — the SHARED explained output every method scores (redesign Problem 4).
+    if output == "position" && st !== nothing
+        pixel_cell   = st.cell
+        read_y       = st.read_y
+        output_label = "screen_region(n_changed_px)@r$(st.cell[1])c$(st.cell[2])"
+    else
+        pixel_cell = output == "position" ?
+            position_pixel_cell(checkpoint, actions, target_frame, horizon, causes) : nothing
+        read_y = make_y_reader(output, score_idx, pixel_cell)
+        output_label = output == "content" ?
+            "score@ram[$score_idx]" : "pixel@r$(pixel_cell[1])c$(pixel_cell[2])"
+    end
 
     # baseline continuation + y_full
     base_snap = continue_from(checkpoint, Int.(actions[target_frame + 1 : total]))
@@ -407,7 +454,7 @@ function compute_causal_map_lite(; game, output, target_frame, horizon, seed,
         "top cause=$(causes[argmax(abs_delta)].name)")
 
     return CausalMapLite([c.name for c in causes], causes, abs_delta, y_full,
-                         output_label, pixel_cell, bit_exact)
+                         output_label, pixel_cell, bit_exact, read_y)
 end
 
 # ============================================================================
@@ -451,9 +498,9 @@ curve. Every point is a genuine emulator re-run."""
 function deletion_insertion_truevcs(checkpoint, actions, target_frame, horizon,
                                     cmap::CausalMapLite, order; output)
     tail = Int.(actions[target_frame + 1 : target_frame + horizon])
-    read_y = output == "content" ?
-        (snap -> Float64(Int(snap.ram[_score_idx_of(cmap) + 1]))) :
-        (snap -> Float64(Int(snap.screen[cmap.pixel_cell[1], cmap.pixel_cell[2]])))
+    # Read y via the SHARED explained-output reader stored on the map (the content
+    # score cell, the legacy position pixel, or the shared n_changed_px region).
+    read_y = cmap.read_y
 
     intact = continue_from(checkpoint, tail)
     y_full = read_y(intact)
@@ -528,6 +575,22 @@ struct GameRecord
     bit_exact::Bool
 end
 
+"""Build the SHARED testbed for `game` (redesign protocol), injecting gradxinput's
+OWN oracle fns so every returned handle is typed in THIS module. Returns the
+NamedTuple from build_shared_testbed."""
+function _shared_testbed(game; verbose)
+    return build_shared_testbed(game;
+        settings_for = _settings, rom_path_for = _rom_path,
+        candidates_path_for = candidates_path_for,
+        build_causes = build_pong_causes, candidate_ram_indices = candidate_ram_indices,
+        continue_from = continue_from, snapshot = snapshot, env_step = env_step!,
+        intervene_ram = intervene_ram!, boot_replay = boot_replay_game,
+        run_intervention = run_intervention, soft_ram_peek = soft_ram_peek,
+        prefix = ST_PREFIX, horizon = ST_HORIZON, seed = ST_SEED,
+        k = ST_GATE_K, floor = ST_FLOOR, verbose = verbose,
+        assert_bit_exact = assert_bit_exact)
+end
+
 function compute_game(; game, output = "content", target_frame = -1, horizon = 30,
                       topk = 3, seed = 0, verbose = true)
     cand = candidates_path_for(game)
@@ -536,12 +599,29 @@ function compute_game(; game, output = "content", target_frame = -1, horizon = 3
     # inside the Paper-1 conformance window for all 6 core games).
     tf = target_frame < 0 ? 120 : target_frame
 
-    # boot ONCE here (reused for cell selection, the gradient, and the curves);
-    # read the LIVE RAM at the frame to pick a non-zero content cell.
-    actions = fill(0, tf + horizon)
-    checkpoint = boot_replay_game(actions, tf; game = game)
-    at_target  = continue_from(checkpoint, Int[])
-    ram_now    = Float32.(collect(at_target.ram))
+    # SHARED TESTBED (redesign): ONE seeded random-action gameplay state, the shared
+    # screen-buffer REGION output, the SAMPLER-ON position gradient. Opt in with
+    # XAI_SHARED_TESTBED=1. The st_extra provenance is threaded out for the record.
+    st = SHARED_TESTBED ? _shared_testbed(game; verbose = verbose) : nothing
+    st_extra = nothing
+    if st !== nothing
+        # in the shared testbed the state IS the gameplay checkpoint (prefix/horizon)
+        tf         = st.prefix
+        horizon    = st.horizon
+        actions    = st.actions
+        checkpoint = st.checkpoint
+        ram_now    = st.ram_now
+        verbose && println("[gxi] $game SHARED gameplay state: " *
+            "cause_density=$(st.cause_density)/$(length(st.causes)) accepted=$(st.accepted) " *
+            "cell=$(st.cell) geom=$(st.geom === nothing ? "static" : "RAM[$(st.geom[1])]")")
+    else
+        # boot ONCE here (reused for cell selection, the gradient, and the curves);
+        # read the LIVE RAM at the frame to pick a non-zero content cell.
+        actions = fill(0, tf + horizon)
+        checkpoint = boot_replay_game(actions, tf; game = game)
+        at_target  = continue_from(checkpoint, Int[])
+        ram_now    = Float32.(collect(at_target.ram))
+    end
 
     (score_idx, score_concept) = select_content_cell(cand, ram_now, checkpoint,
                                                      actions, tf, horizon)
@@ -551,11 +631,20 @@ function compute_game(; game, output = "content", target_frame = -1, horizon = 3
     cmap = compute_causal_map_lite(; game = game, output = output, target_frame = tf,
                                    horizon = horizon, seed = seed,
                                    candidates_path = cand, score_idx = score_idx,
-                                   verbose = verbose)
+                                   verbose = verbose, st = st)
 
-    # the content-path gradient (alive for content, vanishing for position)
-    grad = output == "content" ? content_grad_over_ram(ram_now, score_idx) :
-                                 position_grad_over_ram(ram_now)
+    # the content-path gradient. CONTENT: the one-hot RAM read (alive). POSITION:
+    # naive vanishing in the legacy path; in the SHARED TESTBED with a moving sprite
+    # (geom !== nothing) the bilinear SAMPLER RESTORES a real ∂region/∂ram gradient
+    # (redesign Problem 2) so Grad×Input/DeepLIFT/saliency all inherit it.
+    grad = if output == "content"
+        content_grad_over_ram(ram_now, score_idx)
+    elseif st !== nothing && st.geom !== nothing
+        g = Zygote.gradient(st.sampler_read, ram_now)[1]
+        g === nothing ? zeros(Float32, length(ram_now)) : Float32.(g)
+    else
+        position_grad_over_ram(ram_now)
+    end
     grad_l1 = Float64(sum(abs.(grad)))
 
     gxi_ram, dl_ram, sal_ram = attributions_over_ram(ram_now, grad)
@@ -581,12 +670,19 @@ function compute_game(; game, output = "content", target_frame = -1, horizon = 3
         println("[gxi]   [control] oracle: ", fmt(s_or), "  (faithful ⇒ corr=1, p@k=1)")
     end
 
-    return GameRecord(game, output, cmap.output_label, tf, horizon, topk, seed,
-                      score_idx, score_concept, cmap.cause_names, cmap.abs_delta,
-                      cmap.y_full, grad_l1, dl_comp_err,
-                      s_gxi, s_dl, s_sal, s_or,
-                      Float64.(gxi_ram), Float64.(dl_ram), Float64.(sal_ram),
-                      cmap.bit_exact)
+    if st !== nothing
+        st_extra = (cause_density = st.cause_density, accepted = st.accepted,
+                    n_causes = length(st.causes), cell = st.cell, geom = st.geom,
+                    prefix = st.prefix, horizon = st.horizon, seed = st.seed)
+    end
+
+    rec = GameRecord(game, output, cmap.output_label, tf, horizon, topk, seed,
+                     score_idx, score_concept, cmap.cause_names, cmap.abs_delta,
+                     cmap.y_full, grad_l1, dl_comp_err,
+                     s_gxi, s_dl, s_sal, s_or,
+                     Float64.(gxi_ram), Float64.(dl_ram), Float64.(sal_ram),
+                     cmap.bit_exact)
+    return rec, st_extra
 end
 
 # ============================================================================
@@ -614,7 +710,7 @@ Asserts the load-bearing claims:
       faithfulness (the §1 'plausible ≠ faithful' contrast).
   All AUCs are in [0,1] or NaN (a genuinely flat experiment); all attribution
   finite. Throws on a contract violation."""
-function selftest(r::GameRecord)
+function selftest(r::GameRecord; sampler_on = false)
     for s in (r.gradxinput, r.deeplift, r.saliency, r.oracle_self)
         @assert all(isfinite, s.attr_per_cause) "non-finite attribution in $(s.name)"
         for (nm, v) in (("del", s.deletion_auc), ("ins", s.insertion_auc))
@@ -666,10 +762,25 @@ function selftest(r::GameRecord)
                     "corr_gxi=$(round(r.gradxinput.pearson,digits=3)); control corr=$(round(r.oracle_self.pearson,digits=3)).")
         end
     else  # position
-        @assert gxi_max < 1e-6 "expected the gradient to vanish on a position output, got max|attr|=$gxi_max [$(r.game)]"
-        println("[gxi] SELF-CHECK PASS ($(r.game) position): the content-path gradient VANISHES " *
-                "(max|attr|=$(round(gxi_max,sigdigits=3))) — the §1 index failure; " *
-                "control corr=$(round(r.oracle_self.pearson,digits=3)), p@$(r.topk)=$(r.oracle_self.precision_at_k).")
+        if sampler_on
+            # SHARED TESTBED, sampler-on: the bilinear sampler RESTORES the position
+            # gradient, so it is NON-VANISHING (the redesign keystone). The keystone
+            # claim is on the FULL 128-byte grad×input vector (attr_gradxinput_over_ram)
+            # — the sampler's position byte may fall OUTSIDE this game's candidate cause
+            # set, in which case the per-CAUSE attribution is legitimately null while the
+            # raw gradient is alive. We assert on the FULL gradient, not per-cause.
+            @assert gxi_max > 1e-6 "SAMPLER-ON position gradient (full 128-byte grad×input) should be NONZERO [$(r.game)]"
+            per_cause_scored = maximum(abs.(r.gradxinput.attr_per_cause)) > 1e-6
+            println("[gxi] SELF-CHECK PASS ($(r.game) position/sampler): the SAMPLER RESTORES a nonzero " *
+                    "position gradient (full max|attr|=$(round(gxi_max,sigdigits=3))" *
+                    (per_cause_scored ? "" : "; position byte OUTSIDE this game's cause set ⇒ per-cause corr null") *
+                    "); control corr=$(round(r.oracle_self.pearson,digits=3)), p@$(r.topk)=$(r.oracle_self.precision_at_k).")
+        else
+            @assert gxi_max < 1e-6 "expected the gradient to vanish on a position output, got max|attr|=$gxi_max [$(r.game)]"
+            println("[gxi] SELF-CHECK PASS ($(r.game) position): the content-path gradient VANISHES " *
+                    "(max|attr|=$(round(gxi_max,sigdigits=3))) — the §1 index failure; " *
+                    "control corr=$(round(r.oracle_self.pearson,digits=3)), p@$(r.topk)=$(r.oracle_self.precision_at_k).")
+        end
     end
     return true
 end
@@ -720,7 +831,7 @@ function _output_note(r::GameRecord)
     end
 end
 
-function write_game(r::GameRecord; out_dir = OUT_DIR)
+function write_game(r::GameRecord; out_dir = OUT_DIR, st_extra = nothing)
     isdir(out_dir) || mkpath(out_dir)
     safe_out = r.output
     stem = "gradxinput_deeplift_$(r.game)_$(safe_out)"
@@ -782,6 +893,36 @@ function write_game(r::GameRecord; out_dir = OUT_DIR)
                 "outputs×causes×games on GPU; the forward is bit-exact to this map.",
         ),
     )
+    # SHARED-TESTBED provenance + the sampler-on side-by-side (redesign protocol).
+    # Only attached to the POSITION record (the shared screen-buffer REGION output).
+    if st_extra !== nothing && r.output == "position"
+        rec["state"] = "gameplay(seed=$(st_extra.seed),prefix=$(st_extra.prefix))+$(st_extra.horizon)"
+        rec["extra"]["testbed"] = Dict{String,Any}(
+            "state_kind" => "seeded_random_action_gameplay",
+            "prefix" => st_extra.prefix, "horizon" => st_extra.horizon, "seed" => st_extra.seed,
+            "shared_output" => "screen_region(n_changed_px)@r$(st_extra.cell[1])c$(st_extra.cell[2])",
+            "cause_density_above_floor" => st_extra.cause_density,
+            "cause_density_floor" => ST_FLOOR, "cause_density_gate_k" => ST_GATE_K,
+            "cause_density_accepted" => st_extra.accepted, "n_causes" => st_extra.n_causes,
+            "position_byte_ram_index" => st_extra.geom === nothing ? -1 : st_extra.geom[1])
+        # per-cause faithfulness is NULL (not 0) when the sampler's position byte
+        # falls OUTSIDE this game's candidate cause set: the raw 128-byte gradient is
+        # alive (max|grad×input over ram|>0) but no scored cause carries it, so the
+        # per-cause corr is undefined (recorded 0.0 by the shared convention).
+        per_cause_null = maximum(abs.(r.gradxinput.attr_per_cause)) < 1e-9
+        rec["extra"]["sampler_on"] = Dict{String,Any}(
+            "position_gradient_restored" => st_extra.geom !== nothing,
+            "position_byte_in_cause_set" => !per_cause_null,
+            "per_cause_faithfulness_null" => per_cause_null,
+            "note" => "naive ∂pixel/∂ram ≡ 0 (Prop. prop:zero); the bilinear sampler " *
+                "(tools/xai_si_gradient/si_joystick_gradient.jl) restores a real " *
+                "∂region/∂ram[position_byte], so Grad×Input/DeepLIFT/saliency all inherit a " *
+                "non-vanishing position gradient. per_cause_faithfulness_null=true ⇒ the " *
+                "sampler's position byte is not among this game's scored candidate causes, so " *
+                "the per-cause Pearson is null (recorded 0.0 by the shared convention), NOT a " *
+                "genuine zero corr — the keystone (a non-vanishing gradient) still holds on the " *
+                "full 128-byte map.")
+    end
     open(json_path, "w") do io; JSON.print(io, rec, 2); end
 
     write_npz(npz_path, Dict(
@@ -848,7 +989,7 @@ end
 # ============================================================================
 function main(args = ARGS)
     games = CORE_GAMES
-    output = "content"
+    output = nothing               # nothing ⇒ BOTH content + position
     target_frame = -1; horizon = 30; topk = 3; seed = 0
     selftest_only = false
     i = 1
@@ -867,17 +1008,27 @@ function main(args = ARGS)
         else; i += 1
         end
     end
+    outputs = output === nothing ? ["content", "position"] : [output]
     println("[gxi] Grad×Input / DeepLIFT vs oracle — games=$(join(games, ",")) " *
-            "output=$output horizon=$horizon topk=$topk seed=$seed (jutari/Julia)")
+            "output=$(join(outputs, "+")) horizon=$horizon topk=$topk seed=$seed (jutari/Julia)")
 
     records = GameRecord[]
-    for g in games
-        r = compute_game(; game = g, output = output, target_frame = target_frame,
+    for out in outputs, g in games
+        r, st_extra = compute_game(; game = g, output = out, target_frame = target_frame,
                          horizon = horizon, topk = topk, seed = seed, verbose = true)
-        selftest(r)
+        # SHARED-TESTBED: the position gradient runs through the SAMPLER, so it is
+        # NON-VANISHING when a moving sprite exists (geom !== nothing) — the redesign
+        # keystone. Only assert the §1 vanishing in the legacy (non-shared) path.
+        sampler_on = (r.output == "position") && st_extra !== nothing && st_extra.geom !== nothing
+        selftest(r; sampler_on = sampler_on)
         push!(records, r)
+        if st_extra !== nothing && r.output == "position"
+            println("[gxi] $g SAMPLER-ON position gradient: max|grad×input over ram|=" *
+                "$(round(maximum(abs.(r.attr_gradxinput_over_ram)), sigdigits=3)) " *
+                "(gate: $(st_extra.cause_density)/$(st_extra.n_causes) accepted=$(st_extra.accepted))")
+        end
         if !selftest_only
-            jp, np = write_game(r)
+            jp, np = write_game(r; st_extra = st_extra)
             println("[gxi]   wrote $jp")
             println("[gxi]   arrays  $np")
         end
@@ -886,14 +1037,17 @@ function main(args = ARGS)
         println("[gxi] --selftest: all $(length(records)) game(s) passed, not writing artifacts.")
         return 0
     end
-    sp = write_summary(records, output)
-    println("[gxi] wrote summary $sp")
+    for out in outputs
+        recs_out = [r for r in records if r.output == out]
+        sp = write_summary(recs_out, out)
+        println("[gxi] wrote summary $sp")
+    end
 
     # headline table
-    println("\n[gxi] ===== HEADLINE faithfulness ($output output) =====")
-    println("[gxi] game            | DeepLIFT corr | DL p@$topk | DL del | DL ins | saliency corr | oracle-ctrl corr")
+    println("\n[gxi] ===== HEADLINE faithfulness =====")
+    println("[gxi] game            | out      | DeepLIFT corr | DL p@$topk | DL del | DL ins | saliency corr | oracle-ctrl corr")
     for r in records
-        println("[gxi] ", rpad(r.game, 15), " | ",
+        println("[gxi] ", rpad(r.game, 15), " | ", rpad(r.output, 8), " | ",
                 rpad(round(r.deeplift.pearson, digits=3), 13), " | ",
                 rpad(round(r.deeplift.precision_at_k, digits=2), 6), " | ",
                 rpad(round(r.deeplift.deletion_auc, digits=3), 6), " | ",

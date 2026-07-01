@@ -116,6 +116,17 @@ using .IGBaselineSweep: CORE_GAMES, load_env, boot_replay, continue_from,
                         fresh_baseline, assert_bit_exact, occlude!,
                         oracle_abs_delta, deletion_insertion_auc, position_pixel_cell,
                         pick_content_idx, candidates_path_for
+# the P2 SHARED TESTBED (experiment_redesign.md): reached through the SAME single
+# ig_baseline_sweep include chain (which already includes shared_testbed_impl.jl —
+# so there is exactly ONE reachable include of the fragment, ONE Cause/Snapshot
+# identity; we do NOT re-include it). build_shared_testbed operates on OUR own
+# Cause/Snapshot types because it was included into IGBaselineSweep alongside them.
+using .IGBaselineSweep: build_shared_testbed, SHARED_TESTBED,
+                        ST_PREFIX, ST_HORIZON, ST_SEED, ST_GATE_K, ST_FLOOR
+# the injected fns build_shared_testbed needs + the env/oracle plumbing it drives
+# (OUR type identity, same single include chain).
+using .IGBaselineSweep: env_step!, soft_ram_peek, run_intervention,
+                        settings_for, rom_path_for
 using .IGBaselineSweep.PilotIGvsOracle: pearson, spearman, precision_at_k,
                                         _git_commit, _json_num, _trapz_unit
 using .IGBaselineSweep.PilotIGvsOracle.OracleIntervene: build_pong_causes, Cause,
@@ -356,13 +367,21 @@ output of one game. `read_y` reads the chosen output off a Snapshot; `output_kin
 "content"/"position"; `cells` is the candidate RAM-cell universe (0-based)."""
 function compute_one(; game, output_kind, content_idx = -1, position_cell = nothing,
                      checkpoint, actions, target_frame, horizon, causes, candidate_cells,
-                     n_coalitions, topk, seed, verbose)
-    read_y = output_kind == "content" ?
-        (s -> Float64(Int(s.ram[content_idx + 1]))) :
-        (s -> Float64(Int(s.screen[position_cell[1], position_cell[2]])))
-    output_name = output_kind == "content" ?
-        "content(ram_self@$content_idx)" :
-        "ball_pixel@r$(position_cell[1])c$(position_cell[2])"
+                     n_coalitions, topk, seed, verbose,
+                     read_y_override = nothing, output_name_override = nothing)
+    # reader for the oracle / coalition re-runs / del-ins (reads the TRUE VCS). In the
+    # SHARED TESTBED the position output is the screen-buffer REGION (n_changed_px)
+    # supplied by read_y_override (redesign Problem 4 — one shared output all methods
+    # explain). KernelSHAP is intervention/coalition-based, so NO gradient path
+    # changes — it just re-runs the real ROM and reads the shared region output.
+    read_y = read_y_override !== nothing ? read_y_override :
+        (output_kind == "content" ?
+            (s -> Float64(Int(s.ram[content_idx + 1]))) :
+            (s -> Float64(Int(s.screen[position_cell[1], position_cell[2]]))))
+    output_name = output_name_override !== nothing ? output_name_override :
+        (output_kind == "content" ?
+            "content(ram_self@$content_idx)" :
+            "ball_pixel@r$(position_cell[1])c$(position_cell[2])")
 
     C = length(candidate_cells)
 
@@ -443,6 +462,48 @@ end
 """Drive both outputs for one game: assert bit-exact, build causes + candidate cells,
 pick the content byte, locate the position pixel, run KernelSHAP for content + position."""
 function compute_game(; game, target_frame, horizon, n_coalitions, topk, seed, verbose)
+    if SHARED_TESTBED
+        # the P2 SHARED gameplay state + shared REGION output (redesign protocol):
+        # seeded random-action prefix → bit-exact checkpoint → oracle cause-density
+        # gate → screen-buffer n_changed_px REGION as the position output that ALL
+        # methods explain. KernelSHAP re-runs the real ROM on the shared state and
+        # reads st.read_y (no gradient / no sampler needed).
+        st = build_shared_testbed(game;
+            settings_for = settings_for, rom_path_for = rom_path_for,
+            candidates_path_for = candidates_path_for,
+            build_causes = build_pong_causes, candidate_ram_indices = candidate_ram_indices,
+            continue_from = continue_from, snapshot = snapshot, env_step = env_step!,
+            intervene_ram = intervene_ram!, boot_replay = boot_replay,
+            run_intervention = run_intervention, soft_ram_peek = soft_ram_peek,
+            prefix = ST_PREFIX, horizon = ST_HORIZON, seed = ST_SEED,
+            k = ST_GATE_K, floor = ST_FLOOR, verbose = verbose,
+            assert_bit_exact = assert_bit_exact)
+        verbose && println("[kernelshap] $game SHARED gameplay state: " *
+            "cause_density=$(st.cause_density)/$(length(st.causes)) accepted=$(st.accepted) cell=$(st.cell)")
+
+        actions = st.actions; checkpoint = st.checkpoint; causes = st.causes
+        tf = st.prefix; hz = st.horizon; cand_indices = st.cand_indices
+        candidate_cells = sort(unique(cand_indices))
+
+        content_idx, content_mv = pick_content_idx(checkpoint, actions, tf, hz, causes, cand_indices)
+        verbose && println("[kernelshap] $game content byte = RAM[$content_idx] (max oracle |Δself|=$(round(content_mv,digits=2)))")
+
+        f_content = compute_one(; game = game, output_kind = "content", content_idx = content_idx,
+            checkpoint = checkpoint, actions = actions, target_frame = tf, horizon = hz,
+            causes = causes, candidate_cells = candidate_cells, n_coalitions = n_coalitions,
+            topk = topk, seed = seed, verbose = verbose)
+        f_pos = compute_one(; game = game, output_kind = "position", position_cell = st.cell,
+            checkpoint = checkpoint, actions = actions, target_frame = tf, horizon = hz,
+            causes = causes, candidate_cells = candidate_cells, n_coalitions = n_coalitions,
+            topk = topk, seed = seed, verbose = verbose,
+            read_y_override = st.read_y,
+            output_name_override = "screen_region(n_changed_px)@r$(st.cell[1])c$(st.cell[2])")
+        st_extra = (cause_density = st.cause_density, accepted = st.accepted,
+                    n_causes = length(st.causes), cell = st.cell,
+                    prefix = st.prefix, horizon = st.horizon, seed = st.seed)
+        return f_content, f_pos, st_extra
+    end
+
     total = target_frame + horizon
     actions = fill(0, total)
     verbose && println("[kernelshap] $game: asserting bit-exactness (2 fresh boots+replays to f$total)...")
@@ -471,7 +532,7 @@ function compute_game(; game, target_frame, horizon, n_coalitions, topk, seed, v
         checkpoint = checkpoint, actions = actions, target_frame = target_frame, horizon = horizon,
         causes = causes, candidate_cells = candidate_cells, n_coalitions = n_coalitions,
         topk = topk, seed = seed, verbose = verbose)
-    return f_content, f_pos
+    return f_content, f_pos, nothing
 end
 
 # ============================================================================
@@ -578,7 +639,7 @@ function _output_note(f::SHAPResult)
     end
 end
 
-function write_result(f::SHAPResult; out_dir = OUT_DIR, where = "local")
+function write_result(f::SHAPResult; out_dir = OUT_DIR, where = "local", st_extra = nothing)
     isdir(out_dir) || mkpath(out_dir)
     tag = f.output_kind == "content" ? "content" : "ball_pixel"
     stem = "kernelshap_$(f.game)_$(tag)"
@@ -690,6 +751,19 @@ function write_result(f::SHAPResult; out_dir = OUT_DIR, where = "local")
                 "GPU (the forward is bit-exact to this HARD map).",
         ),
     )
+    # SHARED-TESTBED provenance (redesign protocol) on the position/region record —
+    # same §R schema + per-method fields preserved; only add rec["state"] + the
+    # testbed sub-dict recording the shared gameplay state + shared output + gate.
+    if st_extra !== nothing
+        rec["state"] = "gameplay(seed=$(st_extra.seed),prefix=$(st_extra.prefix))+$(st_extra.horizon)"
+        rec["extra"]["testbed"] = Dict{String,Any}(
+            "state_kind" => "seeded_random_action_gameplay",
+            "prefix" => st_extra.prefix, "horizon" => st_extra.horizon, "seed" => st_extra.seed,
+            "shared_output" => "screen_region(n_changed_px)@r$(st_extra.cell[1])c$(st_extra.cell[2])",
+            "cause_density_above_floor" => st_extra.cause_density,
+            "cause_density_floor" => ST_FLOOR, "cause_density_gate_k" => ST_GATE_K,
+            "cause_density_accepted" => st_extra.accepted, "n_causes" => st_extra.n_causes)
+    end
     open(json_path, "w") do io; JSON.print(io, rec, 2); end
 
     write_npz(npz_path, Dict(
@@ -779,16 +853,25 @@ function main(args = ARGS)
     summary = Dict{String,Any}[]
     for game in games
         println("\n[kernelshap] ===== $game =====")
-        f_content, f_pos = compute_game(; game = game, target_frame = target_frame,
+        f_content, f_pos, st_extra = compute_game(; game = game, target_frame = target_frame,
             horizon = horizon, n_coalitions = n_coalitions,
             topk = topk, seed = seed, verbose = true)
         @assert !f_content.oracle_column_degenerate "content oracle column is degenerate for $game " *
             "at f$target_frame — pick_content_idx failed to find a causally-active concept byte"
         selftest(f_content; require_nondegenerate = true)
+        # position output: KernelSHAP re-runs the real ROM so it produces a real
+        # attribution on the shared region output — the §7 contrast; NOT asserted to
+        # be large (require_nondegenerate stays false, no gradient-vanishing claim).
         selftest(f_pos)
+        if st_extra !== nothing
+            println("[kernelshap] $game SHARED region output: gate " *
+                "$(st_extra.cause_density)/$(st_extra.n_causes) accepted=$(st_extra.accepted) " *
+                "cell=$(st_extra.cell)")
+        end
         if !selftest_only
             for f in (f_content, f_pos)
-                jp, np = write_result(f; out_dir = out_dir, where = where)
+                jp, np = write_result(f; out_dir = out_dir, where = where,
+                    st_extra = (f === f_pos ? st_extra : nothing))
                 println("[kernelshap] wrote $jp"); println("[kernelshap] arrays  $np")
             end
         end

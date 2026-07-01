@@ -104,7 +104,21 @@ using .PilotIGvsOracle.OracleIntervene.JutariOracle: Snapshot, snapshot,
                                                      intervene_ram!, intervene_tia!,
                                                      write_npz, RAM_SIZE
 
+# The P2 SHARED TESTBED (experiment_redesign.md): seeded random-action gameplay
+# state + oracle cause-density gate + shared screen-buffer REGION output + the
+# bilinear-sampler position path. Included as a fragment (see the file header for
+# why not a module) so build_shared_testbed operates on OUR own Cause/Snapshot
+# types. Opt in with XAI_SHARED_TESTBED=1 (default on for the redesign re-run).
+include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
+
 const OUT_DIR = joinpath(@__DIR__, "out")
+# shared-testbed switch + params (redesign protocol: prefix=90 gameplay, horizon=15).
+const SHARED_TESTBED = get(ENV, "XAI_SHARED_TESTBED", "1") == "1"
+const ST_PREFIX  = parse(Int, get(ENV, "XAI_ST_PREFIX", "90"))
+const ST_HORIZON = parse(Int, get(ENV, "XAI_ST_HORIZON", "15"))
+const ST_SEED    = parse(Int, get(ENV, "XAI_ST_SEED", "0"))
+const ST_GATE_K  = parse(Int, get(ENV, "XAI_ST_GATE_K", "4"))
+const ST_FLOOR   = parse(Float64, get(ENV, "XAI_ST_FLOOR", "0.5"))
 const CORE_GAMES = ["pong", "breakout", "space_invaders", "seaquest", "ms_pacman", "qbert"]
 
 # ============================================================================
@@ -389,6 +403,7 @@ struct Faithfulness
     ins_curve::Vector{Float64}
     y_full::Float64
     gbp_full::Vector{Float64}            # raw Guided-BP over the 128 RAM bytes
+    vanilla_full::Vector{Float64}        # un-rectified |∂y/∂u| over the 128 RAM bytes
     oracle_self_pearson::Float64
     oracle_self_precision_at_k::Float64
     oracle_self_deletion_auc::Float64
@@ -548,17 +563,25 @@ end
 
 function compute_one(; game, output_kind, content_idx = -1, position_cell = nothing,
                      checkpoint, actions, target_frame, horizon, causes,
-                     topk, seed, run_sanity, verbose)
-    # reader for the oracle / del-ins (reads the TRUE VCS state)
-    read_y = output_kind == "content" ?
-        (s -> Float64(Int(s.ram[content_idx + 1]))) :
-        (s -> Float64(Int(s.screen[position_cell[1], position_cell[2]])))
+                     topk, seed, run_sanity, verbose,
+                     read_y_override = nothing, readf_override = nothing,
+                     output_name_override = nothing)
+    # reader for the oracle / del-ins (reads the TRUE VCS state). In the SHARED
+    # TESTBED the position output is a screen-buffer REGION (n_changed_px) supplied
+    # by read_y_override (redesign Problem 4); its differentiable handle is the
+    # bilinear SAMPLER (readf_override, redesign Problem 2 — the real, non-vanishing
+    # position gradient), reported side-by-side with the naive vanishing gradient.
+    read_y = read_y_override !== nothing ? read_y_override :
+        (output_kind == "content" ?
+            (s -> Float64(Int(s.ram[content_idx + 1]))) :
+            (s -> Float64(Int(s.screen[position_cell[1], position_cell[2]]))))
     # differentiable handle for Guided BP
-    readf = output_kind == "content" ?
-        (r -> content_read(r, content_idx)) : position_read_zero
-    output_name = output_kind == "content" ?
-        "content(ram_self@$content_idx)" :
-        "ball_pixel@r$(position_cell[1])c$(position_cell[2])"
+    readf = readf_override !== nothing ? readf_override :
+        (output_kind == "content" ? (r -> content_read(r, content_idx)) : position_read_zero)
+    output_name = output_name_override !== nothing ? output_name_override :
+        (output_kind == "content" ?
+            "content(ram_self@$content_idx)" :
+            "ball_pixel@r$(position_cell[1])c$(position_cell[2])")
 
     # 1) oracle |Δy| per cause (real re-runs on the TRUE VCS)
     odelta = oracle_abs_delta(checkpoint, actions, target_frame, horizon, causes, read_y)
@@ -629,13 +652,66 @@ function compute_one(; game, output_kind, content_idx = -1, position_cell = noth
                         seed, content_idx, [c.name for c in causes], odelta,
                         gbp_attr, vanilla_attr, pr, sp, del_auc, ins_auc, pak,
                         v_pr, v_pak, guided_equals_vanilla,
-                        del_curve, ins_curve, y_full, Float64.(gbp_full),
+                        del_curve, ins_curve, y_full, Float64.(gbp_full), Float64.(vanilla_full),
                         or_pr, or_pak, or_del, or_ins, sanity), odelta_degenerate
 end
 
 """Drive both outputs for one game: assert bit-exact, build causes, pick the
-content byte, score the content headline + the position contrast."""
+content byte, score the content headline + the position contrast.
+
+SHARED-TESTBED mode (redesign): the state is a seeded random-action GAMEPLAY state
+(prefix=ST_PREFIX, horizon=ST_HORIZON) gated by the oracle cause-density gate; the
+position output is the SHARED screen-buffer REGION (n_changed_px), and its gradient
+runs through the bilinear SAMPLER (non-vanishing) with the naive vanishing gradient
+reported side-by-side. `st_extra` (the NamedTuple) is threaded out for the record."""
 function compute_game(; game, target_frame, horizon, topk, seed, run_sanity, verbose)
+    if SHARED_TESTBED
+        st = build_shared_testbed(game;
+            settings_for = settings_for, rom_path_for = rom_path_for,
+            candidates_path_for = candidates_path_for,
+            build_causes = build_pong_causes, candidate_ram_indices = candidate_ram_indices,
+            continue_from = continue_from, snapshot = snapshot, env_step = env_step!,
+            intervene_ram = intervene_ram!, boot_replay = boot_replay,
+            run_intervention = run_intervention, soft_ram_peek = soft_ram_peek,
+            prefix = ST_PREFIX, horizon = ST_HORIZON, seed = ST_SEED,
+            k = ST_GATE_K, floor = ST_FLOOR, verbose = verbose,
+            assert_bit_exact = assert_bit_exact)
+        verbose && println("[gbp] $game SHARED gameplay state: " *
+            "cause_density=$(st.cause_density)/$(length(st.causes)) accepted=$(st.accepted) " *
+            "cell=$(st.cell) geom=$(st.geom === nothing ? "static" : "RAM[$(st.geom[1])]")")
+
+        actions = st.actions; checkpoint = st.checkpoint; causes = st.causes
+        tf = st.prefix; hz = st.horizon; cand_indices = st.cand_indices
+        content_idx, content_mv = pick_content_idx(checkpoint, actions, tf, hz, causes, cand_indices)
+        verbose && println("[gbp] $game content byte = RAM[$content_idx] (max oracle |Δself|=$(round(content_mv,digits=2)))")
+
+        f_content, content_degen = compute_one(; game = game, output_kind = "content",
+            content_idx = content_idx, checkpoint = checkpoint, actions = actions,
+            target_frame = tf, horizon = hz, causes = causes,
+            topk = topk, seed = seed, run_sanity = run_sanity, verbose = verbose)
+
+        # POSITION output on the SHARED screen-buffer REGION, gradient via the SAMPLER.
+        f_pos, _ = compute_one(; game = game, output_kind = "position",
+            checkpoint = checkpoint, actions = actions,
+            target_frame = tf, horizon = hz, causes = causes,
+            topk = topk, seed = seed, run_sanity = run_sanity, verbose = verbose,
+            read_y_override = st.read_y, readf_override = st.sampler_read,
+            output_name_override = "screen_region(n_changed_px)@r$(st.cell[1])c$(st.cell[2])")
+
+        # naive (vanishing) side-by-side: max |∂(naive/sampler position read)/∂ram|.
+        # Report the RAW (un-rectified) gradient max — the keystone is the restored
+        # position gradient; Guided BP's rectification is a separate, per-record fact.
+        _, naive_v = guided_backprop_over_ram(st.position_read_zero, st.ram_now)
+        _, sampler_v = guided_backprop_over_ram(st.sampler_read, st.ram_now)
+        st_extra = (cause_density = st.cause_density, accepted = st.accepted,
+                    n_causes = length(st.causes), cell = st.cell,
+                    geom = st.geom,
+                    naive_pos_grad_max = Float64(maximum(abs.(naive_v))),
+                    sampler_pos_grad_max = Float64(maximum(abs.(sampler_v))),
+                    prefix = st.prefix, horizon = st.horizon, seed = st.seed)
+        return f_content, content_degen, f_pos, st_extra
+    end
+
     total = target_frame + horizon
     actions = fill(0, total)
     verbose && println("[gbp] $game: asserting bit-exactness (2 fresh boots+replays to f$total)...")
@@ -661,7 +737,7 @@ function compute_game(; game, target_frame, horizon, topk, seed, run_sanity, ver
         position_cell = pcell, checkpoint = checkpoint, actions = actions,
         target_frame = target_frame, horizon = horizon, causes = causes,
         topk = topk, seed = seed, run_sanity = run_sanity, verbose = verbose)
-    return f_content, content_degen, f_pos
+    return f_content, content_degen, f_pos, nothing
 end
 
 # ============================================================================
@@ -673,7 +749,7 @@ function _cause_ram_index(name::AbstractString)
     return m === nothing ? -1 : parse(Int, m.captures[1])
 end
 
-function selftest(f::Faithfulness; require_nondegenerate = false)
+function selftest(f::Faithfulness; require_nondegenerate = false, sampler_on = false)
     # (0) the guided rule is genuinely wired — it rectifies a mixed-sign surrogate.
     graw, gguided, n_sup = guided_demo_rectifies()
     @assert n_sup > 0 "guided-rule demo has no negative gradients to suppress (bad surrogate)"
@@ -688,11 +764,37 @@ function selftest(f::Faithfulness; require_nondegenerate = false)
     end
     gbp_max = maximum(abs.(f.gbp_attr))
     if f.output_kind == "position"
+        if sampler_on
+            # SHARED TESTBED, sampler-on: the bilinear sampler RESTORES the position
+            # gradient, so it is NON-VANISHING (the redesign keystone). The keystone
+            # claim is on the FULL 128-byte RAW gradient (vanilla_full) — Guided BP's
+            # negative-suppression may legitimately zero the guided gradient when the
+            # sampler's ∂occupancy/∂ram[pidx] is NEGATIVE (the honest guided-BP
+            # degeneracy: it suppresses a real but negative position gradient), so we
+            # assert the keystone on the un-rectified vanilla gradient. The sampler's
+            # position byte may also fall OUTSIDE this game's candidate cause set, in
+            # which case the per-cause attribution is null while the raw gradient is
+            # alive. The naive zero is reported side-by-side. We assert on the FULL
+            # RAW gradient, not per-cause and not the rectified one.
+            van_full_max = maximum(abs.(f.vanilla_full))
+            gbp_full_max = maximum(abs.(f.gbp_full))
+            @assert van_full_max > 1e-6 "SAMPLER-ON position gradient (full 128-byte, raw ∂y/∂u) should be NONZERO [$(f.game)]"
+            pidx_scored = gbp_max > 1e-6
+            guided_suppressed = gbp_full_max < 1e-6
+            println("[gbp] SELF-CHECK PASS (position/sampler '$(f.output)', $(f.game)): " *
+                    "sampler RESTORES a nonzero position gradient (raw full max|∂y/∂u|=$(round(van_full_max,sigdigits=3)); " *
+                    "guided full max|g|=$(round(gbp_full_max,sigdigits=3))" *
+                    (guided_suppressed ? " — Guided BP SUPPRESSES it: ∂occupancy/∂ram[pidx]<0, the honest guided-BP degeneracy" : "") *
+                    "; per-cause max|attr|=$(round(gbp_max,sigdigits=3))" *
+                    (pidx_scored ? "" : " — position byte OUTSIDE this game's cause set ⇒ per-cause corr null") *
+                    "); corr=$(round(f.pearson,digits=3)) p@$(f.topk)=$(round(f.precision_at_k,digits=3)).")
+        else
         # POSITION/INDEX output — Guided BP VANISHES (the §1 index failure).
         @assert gbp_max < 1e-6 "expected Guided BP to vanish on a position output, got max|attr|=$gbp_max"
         println("[gbp] SELF-CHECK PASS (position '$(f.output)', $(f.game)): " *
                 "Guided BP vanishes (max|attr|=$(round(gbp_max,sigdigits=3))) — §1 index failure; " *
                 "corr=$(round(f.pearson,digits=3)) p@$(f.topk)=$(round(f.precision_at_k,digits=3)) (near chance).")
+        end
     else
         # CONTENT output — the one-hot RAM read keeps the STE gradient alive, so
         # Guided BP is NONZERO. On this LINEAR read ∂y/∂u ≥ 0, so the guided
@@ -748,7 +850,7 @@ function _output_note(f::Faithfulness)
     end
 end
 
-function write_faithfulness(f::Faithfulness; out_dir = OUT_DIR)
+function write_faithfulness(f::Faithfulness; out_dir = OUT_DIR, st_extra = nothing)
     isdir(out_dir) || mkpath(out_dir)
     tag = f.output_kind == "content" ? "content" : "ball_pixel"
     stem = "guided_backprop_$(f.game)_$(tag)"
@@ -816,6 +918,38 @@ function write_faithfulness(f::Faithfulness; out_dir = OUT_DIR)
                 "outputs×causes×games on GPU; the forward is bit-exact to this map.",
         ),
     )
+    # SHARED-TESTBED provenance + the sampler-on side-by-side (redesign protocol).
+    if st_extra !== nothing
+        rec["state"] = "gameplay(seed=$(st_extra.seed),prefix=$(st_extra.prefix))+$(st_extra.horizon)"
+        rec["extra"]["testbed"] = Dict{String,Any}(
+            "state_kind" => "seeded_random_action_gameplay",
+            "prefix" => st_extra.prefix, "horizon" => st_extra.horizon, "seed" => st_extra.seed,
+            "shared_output" => "screen_region(n_changed_px)@r$(st_extra.cell[1])c$(st_extra.cell[2])",
+            "cause_density_above_floor" => st_extra.cause_density,
+            "cause_density_floor" => ST_FLOOR, "cause_density_gate_k" => ST_GATE_K,
+            "cause_density_accepted" => st_extra.accepted, "n_causes" => st_extra.n_causes,
+            "position_byte_ram_index" => st_extra.geom === nothing ? -1 : st_extra.geom[1])
+        # per-cause faithfulness is NULL (not 0) when the sampler's position byte
+        # falls OUTSIDE this game's candidate cause set: the raw gradient is alive
+        # (sampler_position_grad_max>0) but no scored cause carries it, so the
+        # per-cause corr is undefined. The shared PilotIGvsOracle.pearson returns 0.0
+        # for a flat column by convention; we flag the true semantics here so the
+        # leaderboard treats it as null, not a genuine zero-correlation.
+        per_cause_null = maximum(abs.(f.gbp_attr)) < 1e-9
+        rec["extra"]["sampler_on"] = Dict{String,Any}(
+            "naive_position_grad_max" => st_extra.naive_pos_grad_max,
+            "sampler_position_grad_max" => st_extra.sampler_pos_grad_max,
+            "position_byte_in_cause_set" => !per_cause_null,
+            "per_cause_faithfulness_null" => per_cause_null,
+            "note" => "naive ∂pixel/∂ram ≡ 0 (Prop. prop:zero); the bilinear sampler " *
+                "(tools/xai_si_gradient/si_joystick_gradient.jl) restores a real " *
+                "∂pixel/∂ram[position_byte], to which the guided rule is applied. Reported " *
+                "naive-vs-sampler side by side. per_cause_faithfulness_null=true ⇒ the " *
+                "sampler's position byte is not among this game's scored candidate causes, so " *
+                "the per-cause Pearson is null (recorded 0.0 by the shared convention), NOT a " *
+                "genuine zero corr — the keystone (a non-vanishing gradient) still holds on the " *
+                "full 128-byte map.")
+    end
     open(json_path, "w") do io; JSON.print(io, rec, 2); end
 
     write_npz(npz_path, Dict(
@@ -863,16 +997,26 @@ function main(args = ARGS)
     summary = Dict{String,Any}[]
     for game in games
         println("\n[gbp] ===== $game =====")
-        f_content, content_degen, f_pos = compute_game(; game = game,
+        f_content, content_degen, f_pos, st_extra = compute_game(; game = game,
             target_frame = target_frame, horizon = horizon, topk = topk,
             seed = seed, run_sanity = run_sanity, verbose = true)
         @assert !content_degen "content oracle column is degenerate for $game at f$target_frame " *
             "— pick_content_idx failed to find a causally-active concept byte"
         selftest(f_content; require_nondegenerate = true)
-        selftest(f_pos)
+        # SHARED-TESTBED: the position gradient runs through the SAMPLER, so it is
+        # NON-VANISHING when a moving sprite exists (geom !== nothing) — the redesign
+        # keystone. Only assert the §1 vanishing in the legacy (non-shared) path.
+        sampler_on = st_extra !== nothing && st_extra.geom !== nothing
+        selftest(f_pos; sampler_on = sampler_on)
+        if st_extra !== nothing
+            println("[gbp] $game SAMPLER-ON position gradient: naive max|g|=" *
+                "$(round(st_extra.naive_pos_grad_max, sigdigits=3)) → sampler max|g|=" *
+                "$(round(st_extra.sampler_pos_grad_max, sigdigits=3)) " *
+                "(gate: $(st_extra.cause_density)/$(st_extra.n_causes) accepted=$(st_extra.accepted))")
+        end
         if !selftest_only
             for f in (f_content, f_pos)
-                jp, np = write_faithfulness(f)
+                jp, np = write_faithfulness(f; st_extra = (f === f_pos ? st_extra : nothing))
                 println("[gbp] wrote $jp"); println("[gbp] arrays  $np")
             end
         end

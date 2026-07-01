@@ -1,7 +1,7 @@
 {
   "arrays": "saliency_pong_content.npz",
   "ci": null,
-  "commit": "90bf6f1",
+  "commit": "6f4df476",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-saliency causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment (e.g. the vanishing position output).",
     "baseline": "none (vanilla saliency uses no baseline and no input weighting)",
@@ -38,9 +38,9 @@
     },
     "method_ref": "vanilla gradient / saliency (Simonyan et al. 2014): attribution = |∂y/∂u|",
     "metrics": {
-      "deletion_auc": 0.5720361509835193,
-      "insertion_auc": 0.21424774056353002,
-      "pearson_corr": 0.4072313345164495,
+      "deletion_auc": 0.07539682539682538,
+      "insertion_auc": 0.3611111111111111,
+      "pearson_corr": 0.46421209661041496,
       "precision_at_k": 0.6666666666666666,
       "spearman_corr": 0.7342477813388187,
       "topk": 3
@@ -55,18 +55,18 @@
       "ram[45]:set": 0.0,
       "ram[46]:occlude": 0.0,
       "ram[46]:set": 0.0,
-      "ram[49]:occlude": 124.0,
+      "ram[49]:occlude": 175.0,
       "ram[49]:set": 0.0,
       "ram[50]:occlude": 0.0,
       "ram[50]:set": 0.0,
       "ram[51]:occlude": 0.0,
       "ram[51]:set": 0.0,
-      "ram[54]:occlude": 85.0,
+      "ram[54]:occlude": 160.0,
       "ram[54]:set": 17.0,
       "tia[COLUBK]:set": 0.0
     },
     "output_kind": "content",
-    "output_note": "CONTENT output: RAM byte 54 read one-hot through soft_ram_peek (∂y/∂ram[54]=1) — the most causally-active candidate concept byte the oracle found at this state. The STE gradient is ALIVE (grad L1=1.0), so vanilla saliency puts its mass on this self-byte (precision@1 vs the self-byte=1). Whether that equals the ORACLE's top cause is the FAITHFULNESS question: saliency answers 'what is y a function of NOW' (the self-byte), the oracle 'what CAUSES y over the horizon' (possibly an upstream byte) — measured corr=0.407, precision@3=0.667. Vanilla saliency has NO input weighting and NO completeness (unlike Grad×Input/DeepLIFT) — the bare gradient baseline.",
+    "output_note": "CONTENT output: RAM byte 54 read one-hot through soft_ram_peek (∂y/∂ram[54]=1) — the most causally-active candidate concept byte the oracle found at this state. The STE gradient is ALIVE (grad L1=1.0), so vanilla saliency puts its mass on this self-byte (precision@1 vs the self-byte=1). Whether that equals the ORACLE's top cause is the FAITHFULNESS question: saliency answers 'what is y a function of NOW' (the self-byte), the oracle 'what CAUSES y over the horizon' (possibly an upstream byte) — measured corr=0.464, precision@3=0.667. Vanilla saliency has NO input weighting and NO completeness (unlike Grad×Input/DeepLIFT) — the bare gradient baseline.",
     "sal_max_abs": 1.0,
     "saliency_attr_per_cause": {
       "joystick:RIGHT": 0.0,
@@ -90,7 +90,7 @@
     },
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE saliency over outputs×causes×games on GPU; the forward is bit-exact to this map.",
     "substrate": "jutari (Julia) — Zygote content-path |∂y/∂u| over the RAM tape + TRUE-VCS deletion/insertion re-runs (real-ROM, bit-exact oracle machinery).",
-    "y_full": 124.0
+    "y_full": 175.0
   },
   "game": "pong",
   "method": "vanilla_saliency",
@@ -100,10 +100,10 @@
   "paper": "P2",
   "phase": "phaseB_attribution",
   "seed": 0,
-  "state": "f120+30",
+  "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@54)",
-  "timestamp": "1782148491",
-  "value": 0.4072313345164495,
+  "timestamp": "1782918689",
+  "value": 0.46421209661041496,
   "where": "local"
 }

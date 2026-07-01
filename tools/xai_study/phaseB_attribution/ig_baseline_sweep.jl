@@ -103,8 +103,19 @@ using .PilotIGvsOracle.OracleIntervene.JutariOracle: Snapshot, snapshot,
                                                      intervene_ram!, intervene_tia!,
                                                      write_npz, RAM_SIZE
 
+# The P2 SHARED TESTBED (experiment_redesign.md) — included as a fragment so
+# build_shared_testbed operates on OUR own Cause/Snapshot types (see the fragment
+# header). Opt in with XAI_SHARED_TESTBED=1 (default on for the redesign re-run).
+include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
+
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders", "seaquest", "ms_pacman", "qbert"]
+const SHARED_TESTBED = get(ENV, "XAI_SHARED_TESTBED", "1") == "1"
+const ST_PREFIX  = parse(Int, get(ENV, "XAI_ST_PREFIX", "90"))
+const ST_HORIZON = parse(Int, get(ENV, "XAI_ST_HORIZON", "15"))
+const ST_SEED    = parse(Int, get(ENV, "XAI_ST_SEED", "0"))
+const ST_GATE_K  = parse(Int, get(ENV, "XAI_ST_GATE_K", "4"))
+const ST_FLOOR   = parse(Float64, get(ENV, "XAI_ST_FLOOR", "0.5"))
 # the baseline sweep — the IG-specific robustness study (the §5 "baseline sweep").
 const BASELINES = ["zeros", "mean_ram", "random", "real_alt"]
 
@@ -458,15 +469,22 @@ end
 
 function compute_one(; game, output_kind, content_idx = -1, position_cell = nothing,
                      checkpoint, actions, target_frame, horizon, causes,
-                     ig_steps, topk, seed, baselines, headline_baseline, alt_ram, verbose)
-    read_y = output_kind == "content" ?
-        (s -> Float64(Int(s.ram[content_idx + 1]))) :
-        (s -> Float64(Int(s.screen[position_cell[1], position_cell[2]])))
-    readf = output_kind == "content" ?
-        (r -> content_read(r, content_idx)) : position_read_zero
-    output_name = output_kind == "content" ?
-        "content(ram_self@$content_idx)" :
-        "ball_pixel@r$(position_cell[1])c$(position_cell[2])"
+                     ig_steps, topk, seed, baselines, headline_baseline, alt_ram, verbose,
+                     read_y_override = nothing, readf_override = nothing,
+                     output_name_override = nothing)
+    # SHARED TESTBED: the position output is a screen-buffer REGION (read_y_override)
+    # and its IG runs through the bilinear SAMPLER (readf_override) — the real,
+    # non-vanishing position gradient (redesign Problems 2+4).
+    read_y = read_y_override !== nothing ? read_y_override :
+        (output_kind == "content" ?
+            (s -> Float64(Int(s.ram[content_idx + 1]))) :
+            (s -> Float64(Int(s.screen[position_cell[1], position_cell[2]]))))
+    readf = readf_override !== nothing ? readf_override :
+        (output_kind == "content" ? (r -> content_read(r, content_idx)) : position_read_zero)
+    output_name = output_name_override !== nothing ? output_name_override :
+        (output_kind == "content" ?
+            "content(ram_self@$content_idx)" :
+            "ball_pixel@r$(position_cell[1])c$(position_cell[2])")
 
     # 1) oracle |Δy| per cause (real re-runs on the TRUE VCS)
     odelta = oracle_abs_delta(checkpoint, actions, target_frame, horizon, causes, read_y)
@@ -521,6 +539,43 @@ content byte, build the real-alt baseline, score the content headline + the
 position contrast — each over the full baseline sweep."""
 function compute_game(; game, target_frame, horizon, ig_steps, topk, seed,
                       baselines, headline_baseline, verbose)
+    if SHARED_TESTBED
+        st = build_shared_testbed(game;
+            settings_for = settings_for, rom_path_for = rom_path_for,
+            candidates_path_for = candidates_path_for,
+            build_causes = build_pong_causes, candidate_ram_indices = candidate_ram_indices,
+            continue_from = continue_from, snapshot = snapshot, env_step = env_step!,
+            intervene_ram = intervene_ram!, boot_replay = boot_replay,
+            run_intervention = run_intervention, soft_ram_peek = soft_ram_peek,
+            prefix = ST_PREFIX, horizon = ST_HORIZON, seed = ST_SEED,
+            k = ST_GATE_K, floor = ST_FLOOR, verbose = verbose,
+            assert_bit_exact = assert_bit_exact)
+        verbose && println("[ig] $game SHARED gameplay state: cause_density=$(st.cause_density)/" *
+            "$(length(st.causes)) accepted=$(st.accepted) cell=$(st.cell) " *
+            "geom=$(st.geom === nothing ? "static" : "RAM[$(st.geom[1])]")")
+
+        actions = st.actions; checkpoint = st.checkpoint; causes = st.causes
+        tf = st.prefix; hz = st.horizon; cand_indices = st.cand_indices
+        content_idx, content_mv = pick_content_idx(checkpoint, actions, tf, hz, causes, cand_indices)
+        alt_frame = max(1, tf ÷ 2)
+        alt_ram = collect(fresh_baseline(actions, alt_frame; game = game).ram)
+
+        f_content = compute_one(; game = game, output_kind = "content", content_idx = content_idx,
+            checkpoint = checkpoint, actions = actions, target_frame = tf,
+            horizon = hz, causes = causes, ig_steps = ig_steps, topk = topk, seed = seed,
+            baselines = baselines, headline_baseline = headline_baseline, alt_ram = alt_ram, verbose = verbose)
+        f_pos = compute_one(; game = game, output_kind = "position", position_cell = st.cell,
+            checkpoint = checkpoint, actions = actions, target_frame = tf,
+            horizon = hz, causes = causes, ig_steps = ig_steps, topk = topk, seed = seed,
+            baselines = baselines, headline_baseline = headline_baseline, alt_ram = alt_ram, verbose = verbose,
+            read_y_override = st.read_y, readf_override = st.sampler_read,
+            output_name_override = "screen_region(n_changed_px)@r$(st.cell[1])c$(st.cell[2])")
+        return f_content, f_pos, alt_frame,
+               (cause_density = st.cause_density, accepted = st.accepted,
+                n_causes = length(st.causes), cell = st.cell, geom = st.geom,
+                prefix = st.prefix, horizon = st.horizon, seed = st.seed)
+    end
+
     total = target_frame + horizon
     actions = fill(0, total)
     verbose && println("[ig] $game: asserting bit-exactness (2 fresh boots+replays to f$total)...")
@@ -555,7 +610,7 @@ function compute_game(; game, target_frame, horizon, ig_steps, topk, seed,
         checkpoint = checkpoint, actions = actions, target_frame = target_frame,
         horizon = horizon, causes = causes, ig_steps = ig_steps, topk = topk, seed = seed,
         baselines = baselines, headline_baseline = headline_baseline, alt_ram = alt_ram, verbose = verbose)
-    return f_content, f_pos, alt_frame
+    return f_content, f_pos, alt_frame, nothing
 end
 
 # ============================================================================
@@ -590,7 +645,7 @@ Asserts the load-bearing claims (the contract every E4 method reuses):
       headline finding is its spread; reported, not asserted to be large).
 
 All AUCs are in [0,1] or NaN; all attribution finite. Throws on a violation."""
-function selftest(f::Faithfulness; require_nondegenerate = false)
+function selftest(f::Faithfulness; require_nondegenerate = false, sampler_on = false)
     for s in f.sweep
         @assert all(isfinite, s.attr_per_cause) "non-finite IG attribution (baseline=$(s.baseline), $(f.game))"
         for (nm, v) in (("deletion", s.deletion_auc), ("insertion", s.insertion_auc))
@@ -603,14 +658,29 @@ function selftest(f::Faithfulness; require_nondegenerate = false)
     end
 
     if f.output_kind == "position"
-        for s in f.sweep
-            @assert s.ig_max_abs < 1e-6 "expected IG to vanish on a position output for EVERY baseline, " *
-                "got max|attr|=$(s.ig_max_abs) (baseline=$(s.baseline), $(f.game))"
+        if sampler_on
+            # SHARED TESTBED sampler-on: the sampler restores a nonzero position IG on
+            # the FULL 128-byte gradient for at least one baseline (the keystone). The
+            # sampler's position byte may fall outside this game's cause set, in which
+            # case attr_per_cause is null (recorded 0.0 by convention) while the raw
+            # gradient is alive — so we assert on ig_max_abs (the full-gradient max),
+            # not per-cause. (The zeros baseline can still vanish if x0==x on the byte;
+            # we require ≥1 alive baseline, as on the content path.)
+            alive = [s for s in f.sweep if s.ig_max_abs > 1e-6]
+            @assert !isempty(alive) "SAMPLER-ON: expected ≥1 baseline with a nonzero position IG [$(f.game)]"
+            println("[ig] SELF-CHECK PASS (position/sampler '$(f.output)', $(f.game)): sampler RESTORES " *
+                    "a nonzero position IG ($(length(alive))/$(length(f.sweep)) baselines alive); " *
+                    "headline corr=$(round(headline_score(f).pearson,digits=3)).")
+        else
+            for s in f.sweep
+                @assert s.ig_max_abs < 1e-6 "expected IG to vanish on a position output for EVERY baseline, " *
+                    "got max|attr|=$(s.ig_max_abs) (baseline=$(s.baseline), $(f.game))"
+            end
+            println("[ig] SELF-CHECK PASS (position '$(f.output)', $(f.game)): IG vanishes for ALL " *
+                    "$(length(f.sweep)) baselines (max|attr|<1e-6) — the §1 index failure; no baseline can " *
+                    "manufacture a missing gradient. Headline corr=$(round(headline_score(f).pearson,digits=3)) " *
+                    "(near chance); oracle-as-method corr=$(round(f.oracle_self_pearson,digits=3)).")
         end
-        println("[ig] SELF-CHECK PASS (position '$(f.output)', $(f.game)): IG vanishes for ALL " *
-                "$(length(f.sweep)) baselines (max|attr|<1e-6) — the §1 index failure; no baseline can " *
-                "manufacture a missing gradient. Headline corr=$(round(headline_score(f).pearson,digits=3)) " *
-                "(near chance); oracle-as-method corr=$(round(f.oracle_self_pearson,digits=3)).")
         return true
     end
 
@@ -695,7 +765,7 @@ function _output_note(f::Faithfulness)
     end
 end
 
-function write_faithfulness(f::Faithfulness, alt_frame; out_dir = OUT_DIR)
+function write_faithfulness(f::Faithfulness, alt_frame; out_dir = OUT_DIR, st_extra = nothing)
     isdir(out_dir) || mkpath(out_dir)
     tag = f.output_kind == "content" ? "content" : "ball_pixel"
     stem = "ig_baseline_sweep_$(f.game)_$(tag)"
@@ -793,6 +863,30 @@ function write_faithfulness(f::Faithfulness, alt_frame; out_dir = OUT_DIR)
                 "baselines on GPU; the forward is bit-exact to this map.",
         ),
     )
+    # SHARED-TESTBED provenance + the sampler-on side-by-side (redesign protocol).
+    if st_extra !== nothing
+        rec["state"] = "gameplay(seed=$(st_extra.seed),prefix=$(st_extra.prefix))+$(st_extra.horizon)"
+        rec["extra"]["testbed"] = Dict{String,Any}(
+            "state_kind" => "seeded_random_action_gameplay",
+            "prefix" => st_extra.prefix, "horizon" => st_extra.horizon, "seed" => st_extra.seed,
+            "shared_output" => "screen_region(n_changed_px)@r$(st_extra.cell[1])c$(st_extra.cell[2])",
+            "cause_density_above_floor" => st_extra.cause_density,
+            "cause_density_floor" => ST_FLOOR, "cause_density_gate_k" => ST_GATE_K,
+            "cause_density_accepted" => st_extra.accepted, "n_causes" => st_extra.n_causes,
+            "position_byte_ram_index" => st_extra.geom === nothing ? -1 : st_extra.geom[1])
+        if f.output_kind == "position"
+            per_cause_null = maximum(s.ig_max_abs for s in f.sweep) > 1e-6 &&
+                             all(maximum(abs.(s.attr_per_cause); init = 0.0) < 1e-9 for s in f.sweep)
+            rec["extra"]["sampler_on"] = Dict{String,Any}(
+                "position_gradient_restored" => st_extra.geom !== nothing,
+                "per_cause_faithfulness_null" => per_cause_null,
+                "note" => "naive index IG ≡ 0 (Prop. prop:zero); the bilinear sampler restores a " *
+                    "real ∂pixel/∂ram[position_byte] IG. per_cause_faithfulness_null=true ⇒ the " *
+                    "sampler's position byte is not among this game's scored candidate causes, so " *
+                    "the per-cause corr is null (0.0 by convention), NOT a genuine zero — the " *
+                    "keystone (a non-vanishing gradient) holds on the full 128-byte map.")
+        end
+    end
     open(json_path, "w") do io; JSON.print(io, rec, 2); end
 
     # npz: per-baseline corr/p@k/completeness rows + the headline arrays.
@@ -854,7 +948,7 @@ function main(args = ARGS)
     summary = Dict{String,Any}[]
     for game in games
         println("\n[ig] ===== $game =====")
-        f_content, f_pos, alt_frame = compute_game(; game = game, target_frame = target_frame,
+        f_content, f_pos, alt_frame, st_extra = compute_game(; game = game, target_frame = target_frame,
             horizon = horizon, ig_steps = ig_steps, topk = topk, seed = seed,
             baselines = baselines, headline_baseline = headline_baseline, verbose = true)
         # the content headline must have a non-degenerate oracle column (else the
@@ -862,10 +956,13 @@ function main(args = ARGS)
         @assert !f_content.oracle_column_degenerate "content oracle column is degenerate for $game " *
             "at f$target_frame — pick_content_idx failed to find a causally-active concept byte"
         selftest(f_content; require_nondegenerate = true)
-        selftest(f_pos)
+        # SHARED TESTBED sampler-on: IG's position gradient is NON-VANISHING when a
+        # moving sprite exists (geom !== nothing) — the redesign keystone.
+        sampler_on = st_extra !== nothing && st_extra.geom !== nothing
+        selftest(f_pos; sampler_on = sampler_on)
         if !selftest_only
             for f in (f_content, f_pos)
-                jp, np = write_faithfulness(f, alt_frame)
+                jp, np = write_faithfulness(f, alt_frame; st_extra = (f === f_pos ? st_extra : nothing))
                 println("[ig] wrote $jp"); println("[ig] arrays  $np")
             end
         end

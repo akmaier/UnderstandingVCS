@@ -105,7 +105,15 @@ include(joinpath(@__DIR__, "ig_baseline_sweep.jl"))
 using .IGBaselineSweep: CORE_GAMES, load_env, boot_replay, continue_from,
                         assert_bit_exact, occlude!,
                         oracle_abs_delta, deletion_insertion_auc, position_pixel_cell,
-                        pick_content_idx, candidates_path_for, env_step!
+                        pick_content_idx, candidates_path_for, env_step!,
+                        # the P2 SHARED TESTBED — a fragment already reached ONCE through the
+                        # ig_baseline_sweep.jl include chain (which includes shared_testbed_impl.jl),
+                        # so we REUSE it here (NO second top-level include ⇒ ONE Cause/Snapshot type).
+                        build_shared_testbed, SHARED_TESTBED,
+                        ST_PREFIX, ST_HORIZON, ST_SEED, ST_GATE_K, ST_FLOOR,
+                        # the injected oracle/env fns build_shared_testbed needs (OUR own type
+                        # identity, reached through the SAME single include chain).
+                        settings_for, rom_path_for, run_intervention, soft_ram_peek
 using .IGBaselineSweep.PilotIGvsOracle: pearson, spearman, precision_at_k,
                                         _git_commit, _json_num, _trapz_unit
 using .IGBaselineSweep.PilotIGvsOracle.OracleIntervene: build_pong_causes, Cause,
@@ -334,13 +342,20 @@ one game. `read_y` reads the chosen output off a Snapshot; `output_kind` is
 "content"/"position"; `cells` is the candidate RAM-cell universe (0-based)."""
 function compute_one(; game, output_kind, content_idx = -1, position_cell = nothing,
                      checkpoint, actions, target_frame, horizon, causes, candidate_cells,
-                     n_samples, keep_prob, kernel_width, stability_seeds, topk, seed, verbose)
-    read_y = output_kind == "content" ?
-        (s -> Float64(Int(s.ram[content_idx + 1]))) :
-        (s -> Float64(Int(s.screen[position_cell[1], position_cell[2]])))
-    output_name = output_kind == "content" ?
-        "content(ram_self@$content_idx)" :
-        "ball_pixel@r$(position_cell[1])c$(position_cell[2])"
+                     n_samples, keep_prob, kernel_width, stability_seeds, topk, seed, verbose,
+                     read_y_override = nothing, output_name_override = nothing)
+    # In the SHARED TESTBED the position output is the screen-buffer REGION
+    # (n_changed_px) supplied by read_y_override (redesign Problem 4 — one shared output
+    # all methods explain). LIME is a perturb-and-re-run surrogate (no gradient), so the
+    # content path is unchanged; only the position reader/name are swapped.
+    read_y = read_y_override !== nothing ? read_y_override :
+        (output_kind == "content" ?
+            (s -> Float64(Int(s.ram[content_idx + 1]))) :
+            (s -> Float64(Int(s.screen[position_cell[1], position_cell[2]]))))
+    output_name = output_name_override !== nothing ? output_name_override :
+        (output_kind == "content" ?
+            "content(ram_self@$content_idx)" :
+            "ball_pixel@r$(position_cell[1])c$(position_cell[2])")
 
     # 1) the oracle |Δy| per CAUSE (real re-runs on the TRUE VCS) — the ground truth
     odelta = oracle_abs_delta(checkpoint, actions, target_frame, horizon, causes, read_y)
@@ -425,6 +440,47 @@ cells, pick the content byte, locate the position pixel, run LIME for content +
 position."""
 function compute_game(; game, target_frame, horizon, n_samples, keep_prob, kernel_width,
                       stability_seeds, topk, seed, verbose)
+    if SHARED_TESTBED
+        # the P2 shared gameplay STATE + shared REGION read_y (redesign) — reuse the
+        # SAME testbed the IG/occlusion siblings use, so LIME explains the SAME output.
+        st = build_shared_testbed(game;
+            settings_for = settings_for, rom_path_for = rom_path_for,
+            candidates_path_for = candidates_path_for,
+            build_causes = build_pong_causes, candidate_ram_indices = candidate_ram_indices,
+            continue_from = continue_from, snapshot = snapshot, env_step = env_step!,
+            intervene_ram = intervene_ram!, boot_replay = boot_replay,
+            run_intervention = run_intervention, soft_ram_peek = soft_ram_peek,
+            prefix = ST_PREFIX, horizon = ST_HORIZON, seed = ST_SEED,
+            k = ST_GATE_K, floor = ST_FLOOR, verbose = verbose,
+            assert_bit_exact = assert_bit_exact)
+        verbose && println("[lime] $game SHARED gameplay state: " *
+            "cause_density=$(st.cause_density)/$(length(st.causes)) accepted=$(st.accepted) cell=$(st.cell)")
+
+        actions = st.actions; checkpoint = st.checkpoint; causes = st.causes
+        tf = st.prefix; hz = st.horizon
+        candidate_cells = sort(unique(st.cand_indices))
+
+        content_idx, content_mv = pick_content_idx(checkpoint, actions, tf, hz, causes, st.cand_indices)
+        verbose && println("[lime] $game content byte = RAM[$content_idx] (max oracle |Δself|=$(round(content_mv,digits=2)))")
+
+        f_content = compute_one(; game = game, output_kind = "content", content_idx = content_idx,
+            checkpoint = checkpoint, actions = actions, target_frame = tf, horizon = hz,
+            causes = causes, candidate_cells = candidate_cells, n_samples = n_samples, keep_prob = keep_prob,
+            kernel_width = kernel_width, stability_seeds = stability_seeds, topk = topk, seed = seed,
+            verbose = verbose)
+        f_pos = compute_one(; game = game, output_kind = "position",
+            checkpoint = checkpoint, actions = actions, target_frame = tf, horizon = hz,
+            causes = causes, candidate_cells = candidate_cells, n_samples = n_samples, keep_prob = keep_prob,
+            kernel_width = kernel_width, stability_seeds = stability_seeds, topk = topk, seed = seed,
+            verbose = verbose,
+            read_y_override = st.read_y,
+            output_name_override = "screen_region(n_changed_px)@r$(st.cell[1])c$(st.cell[2])")
+        st_extra = (cause_density = st.cause_density, accepted = st.accepted,
+                    n_causes = length(st.causes), cell = st.cell,
+                    prefix = st.prefix, horizon = st.horizon, seed = st.seed)
+        return f_content, f_pos, st_extra
+    end
+
     total = target_frame + horizon
     actions = fill(0, total)
     verbose && println("[lime] $game: asserting bit-exactness (2 fresh boots+replays to f$total)...")
@@ -455,7 +511,7 @@ function compute_game(; game, target_frame, horizon, n_samples, keep_prob, kerne
         causes = causes, candidate_cells = candidate_cells, n_samples = n_samples, keep_prob = keep_prob,
         kernel_width = kernel_width, stability_seeds = stability_seeds, topk = topk, seed = seed,
         verbose = verbose)
-    return f_content, f_pos
+    return f_content, f_pos, nothing
 end
 
 # ============================================================================
@@ -552,7 +608,7 @@ function _output_note(f::LIMEResult)
     end
 end
 
-function write_result(f::LIMEResult; out_dir = OUT_DIR)
+function write_result(f::LIMEResult; out_dir = OUT_DIR, st_extra = nothing)
     isdir(out_dir) || mkpath(out_dir)
     tag = f.output_kind == "content" ? "content" : "ball_pixel"
     stem = "lime_$(f.game)_$(tag)"
@@ -652,6 +708,17 @@ function write_result(f::LIMEResult; out_dir = OUT_DIR)
                 "on GPU (the forward is bit-exact to this HARD map), the linear fit done on the host.",
         ),
     )
+    # SHARED-TESTBED provenance (redesign protocol) on the position/region record.
+    if st_extra !== nothing
+        rec["state"] = "gameplay(seed=$(st_extra.seed),prefix=$(st_extra.prefix))+$(st_extra.horizon)"
+        rec["extra"]["testbed"] = Dict{String,Any}(
+            "state_kind" => "seeded_random_action_gameplay",
+            "prefix" => st_extra.prefix, "horizon" => st_extra.horizon, "seed" => st_extra.seed,
+            "shared_output" => "screen_region(n_changed_px)@r$(st_extra.cell[1])c$(st_extra.cell[2])",
+            "cause_density_above_floor" => st_extra.cause_density,
+            "cause_density_floor" => ST_FLOOR, "cause_density_gate_k" => ST_GATE_K,
+            "cause_density_accepted" => st_extra.accepted, "n_causes" => st_extra.n_causes)
+    end
     open(json_path, "w") do io; JSON.print(io, rec, 2); end
 
     write_npz(npz_path, Dict(
@@ -752,16 +819,22 @@ function main(args = ARGS)
         cand = candidates_path_for(game)
         n_cells = length(unique(idx for (idx, _) in candidate_ram_indices(cand)))
         kw = _resolve_kernel_width(kernel_width, n_cells)
-        f_content, f_pos = compute_game(; game = game, target_frame = target_frame,
+        f_content, f_pos, st_extra = compute_game(; game = game, target_frame = target_frame,
             horizon = horizon, n_samples = n_samples, keep_prob = keep_prob, kernel_width = kw,
             stability_seeds = stability_seeds, topk = topk, seed = seed, verbose = true)
         @assert !f_content.oracle_column_degenerate "content oracle column is degenerate for $game " *
             "at f$target_frame — pick_content_idx failed to find a causally-active concept byte"
         selftest(f_content; require_nondegenerate = true)
         selftest(f_pos)
+        if st_extra !== nothing
+            println("[lime] $game SHARED region output: gate " *
+                "$(st_extra.cause_density)/$(st_extra.n_causes) accepted=$(st_extra.accepted) " *
+                "cell=$(st_extra.cell)")
+        end
         if !selftest_only
             for f in (f_content, f_pos)
-                jp, np = write_result(f; out_dir = out_dir)
+                jp, np = write_result(f; out_dir = out_dir,
+                    st_extra = (f === f_pos ? st_extra : nothing))
                 println("[lime] wrote $jp"); println("[lime] arrays  $np")
             end
         end

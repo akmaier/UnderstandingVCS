@@ -39,16 +39,31 @@ const RAM_SIZE = 128
 # xitari/roms is absent.
 const _PRIMARY_REPO = "/Users/maier/Documents/code/UnderstandingVCS"
 
+# HARNESS PARITY (CLAUDE.md rule #2): this is the LOWEST-level shared boot helper
+# — every P2 oracle/Phase-B path (oracle_intervene.jl, common/gameplay_state.jl,
+# and each phaseB runner via its own map) resolves ROMs+settings the same way.
+# We therefore carry the FULL core-6 map HERE so `assert_bit_exact` (which routes
+# through `load_pong_env` → `settings_for`/`rom_path_for`) boots ms_pacman/qbert
+# under the SAME MsPacman/Qbert joystick settings the checkpoint uses, not the
+# Generic fallback (which diverges bit-exactness). The ROM-basename alias
+# (ms_pacman → mspacman.bin) MUST live here too, or the ROM lookup fails.
+const ROM_BASENAME = Dict(
+    "pong" => "pong", "breakout" => "breakout",
+    "space_invaders" => "space_invaders", "seaquest" => "seaquest",
+    "ms_pacman" => "mspacman", "qbert" => "qbert")
+
 """
     rom_path_for(game) -> String
 
-Absolute path to the real ROM for `game` (e.g. "pong"). Searches the repo root
-that contains this file first, then the known primary checkout.
+Absolute path to the real ROM for `game` (e.g. "pong"). Applies the core-6
+ROM-basename alias (ms_pacman → mspacman.bin) then searches the repo root that
+contains this file first, then the known primary checkout.
 """
 function rom_path_for(game::AbstractString)
+    stem = get(ROM_BASENAME, lowercase(string(game)), lowercase(string(game)))
     here = normpath(joinpath(@__DIR__, "..", "..", ".."))   # repo root of this worktree
     for base in (here, _PRIMARY_REPO)
-        p = joinpath(base, "xitari", "roms", string(game) * ".bin")
+        p = joinpath(base, "xitari", "roms", stem * ".bin")
         isfile(p) && return p
     end
     error("ROM not found for game=$game (looked under $(here) and $(_PRIMARY_REPO))")
@@ -58,14 +73,20 @@ end
     settings_for(game) -> RomSettings
 
 The per-game RomSettings (so paddle/joystick routing, scoring, terminal logic
-match xitari). Defaults to the documented pilot games; falls back to Generic.
-"""
+match xitari). Carries the full core-6 map — pong/breakout (paddles),
+space_invaders (terminal), ms_pacman/qbert (joystick); seaquest has no
+registered settings yet → Generic (boots fine; matches the screen scoreboard's
+Generic fallback for seaquest). This map MUST agree with
+common/gameplay_state.jl and every phaseB runner's local `settings_for`
+(CLAUDE.md rule #2)."""
 function settings_for(game::AbstractString)
     g = lowercase(string(game))
     g == "pong"           && return JuTari.PaddleGames.PongRomSettings()
     g == "breakout"       && return JuTari.PaddleGames.BreakoutRomSettings()
     g == "space_invaders" && return JuTari.SpaceInvadersRomSettings()
-    return JuTari.GenericRomSettings()
+    g == "ms_pacman"      && return JuTari.JoystickGames.MsPacmanRomSettings()
+    g == "qbert"          && return JuTari.JoystickGames.QbertRomSettings()
+    return JuTari.GenericRomSettings()   # seaquest (no registered settings yet)
 end
 
 # --- env construction + boot ------------------------------------------------

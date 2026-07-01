@@ -134,7 +134,17 @@ using .IGBaselineSweep: CORE_GAMES, candidates_path_for,
                         load_env, boot_replay, continue_from, fresh_baseline,
                         assert_bit_exact, occlude!,
                         oracle_abs_delta, deletion_insertion_auc, position_pixel_cell,
-                        pick_content_idx
+                        pick_content_idx,
+                        # the P2 SHARED TESTBED (redesign): one shared gameplay state +
+                        # shared screen-buffer REGION output, built on OUR own Cause/
+                        # Snapshot types (the fragment is already included INSIDE
+                        # ig_baseline_sweep.jl — reuse it here, do NOT re-include).
+                        build_shared_testbed, SHARED_TESTBED,
+                        ST_PREFIX, ST_HORIZON, ST_SEED, ST_GATE_K, ST_FLOOR,
+                        # the injected oracle fns build_shared_testbed needs + the
+                        # per-game env map (all reached through the SAME single include
+                        # chain, so they carry the runner's own type identity).
+                        settings_for, rom_path_for, run_intervention, soft_ram_peek
 # env_step! is brought into IGBaselineSweep from JuTari.Env (not re-exported), so we
 # import it straight from the package — the SAME function the sweep uses, and the
 # RISE sibling reaches it the same way (IGBaselineSweep.env_step!).
@@ -327,13 +337,22 @@ end
 
 function compute_one(; game, output_kind, content_idx = -1, position_cell = nothing,
                      checkpoint, actions, target_frame, horizon, causes,
-                     area, topk, seed, verbose)
-    read_y = output_kind == "content" ?
-        (s -> Float64(Int(s.ram[content_idx + 1]))) :
-        (s -> Float64(Int(s.screen[position_cell[1], position_cell[2]])))
-    output_name = output_kind == "content" ?
-        "content(ram_self@$content_idx)" :
-        "position@r$(position_cell[1])c$(position_cell[2])"
+                     area, topk, seed, verbose,
+                     read_y_override = nothing, output_name_override = nothing)
+    # reader for the oracle / extremal mask / del-ins (reads the TRUE VCS state). In
+    # the SHARED TESTBED the position output is the screen-buffer REGION (n_changed_px)
+    # supplied by read_y_override (redesign Problem 4 — one shared output all methods
+    # explain). Extremal perturbation is intervention-based, so nothing else changes:
+    # the mask still re-runs the real ROM and reads this shared region output, and the
+    # true-causal set for the mask-IoU is derived from odelta = oracle_abs_delta(read_y).
+    read_y = read_y_override !== nothing ? read_y_override :
+        (output_kind == "content" ?
+            (s -> Float64(Int(s.ram[content_idx + 1]))) :
+            (s -> Float64(Int(s.screen[position_cell[1], position_cell[2]]))))
+    output_name = output_name_override !== nothing ? output_name_override :
+        (output_kind == "content" ?
+            "content(ram_self@$content_idx)" :
+            "position@r$(position_cell[1])c$(position_cell[2])")
 
     C = length(causes)
     max_cells = max(1, ceil(Int, area * C))
@@ -402,6 +421,46 @@ end
 content byte, score the content headline + the POSITION output (where extremal
 perturbation SUCCEEDS while the gradient methods vanish — the §7 contrast)."""
 function compute_game(; game, target_frame, horizon, area, topk, seed, verbose)
+    if SHARED_TESTBED
+        st = build_shared_testbed(game;
+            settings_for = settings_for, rom_path_for = rom_path_for,
+            candidates_path_for = candidates_path_for,
+            build_causes = build_pong_causes, candidate_ram_indices = candidate_ram_indices,
+            continue_from = continue_from, snapshot = snapshot, env_step = env_step!,
+            intervene_ram = intervene_ram!, boot_replay = boot_replay,
+            run_intervention = run_intervention, soft_ram_peek = soft_ram_peek,
+            prefix = ST_PREFIX, horizon = ST_HORIZON, seed = ST_SEED,
+            k = ST_GATE_K, floor = ST_FLOOR, verbose = verbose,
+            assert_bit_exact = assert_bit_exact)
+        verbose && println("[perturbation] $game SHARED gameplay state: " *
+            "cause_density=$(st.cause_density)/$(length(st.causes)) accepted=$(st.accepted) cell=$(st.cell)")
+
+        actions = st.actions; checkpoint = st.checkpoint; causes = st.causes
+        tf = st.prefix; hz = st.horizon; cand_indices = st.cand_indices
+        content_idx, content_mv = pick_content_idx(checkpoint, actions, tf, hz, causes, cand_indices)
+        verbose && println("[perturbation] $game content byte = RAM[$content_idx] (max oracle |Δself|=$(round(content_mv,digits=2)))")
+
+        f_content, content_degen = compute_one(; game = game, output_kind = "content",
+            content_idx = content_idx, checkpoint = checkpoint, actions = actions,
+            target_frame = tf, horizon = hz, causes = causes,
+            area = area, topk = topk, seed = seed, verbose = verbose)
+        # POSITION output → the SHARED screen-buffer REGION (n_changed_px). The mask-IoU
+        # true-causal set is computed from odelta = oracle_abs_delta(read_y), so passing
+        # st.read_y here makes the whole oracle column (and hence the true-causal set)
+        # the SHARED region oracle automatically. No gradient path exists (extremal
+        # perturbation is intervention-based) — only the read_y + name are swapped.
+        f_pos, pos_degen = compute_one(; game = game, output_kind = "position",
+            position_cell = st.cell, checkpoint = checkpoint, actions = actions,
+            target_frame = tf, horizon = hz, causes = causes,
+            area = area, topk = topk, seed = seed, verbose = verbose,
+            read_y_override = st.read_y,
+            output_name_override = "screen_region(n_changed_px)@r$(st.cell[1])c$(st.cell[2])")
+        st_extra = (cause_density = st.cause_density, accepted = st.accepted,
+                    n_causes = length(st.causes), cell = st.cell,
+                    prefix = st.prefix, horizon = st.horizon, seed = st.seed)
+        return f_content, content_degen, f_pos, pos_degen, st_extra
+    end
+
     total = target_frame + horizon
     actions = fill(0, total)
     verbose && println("[perturbation] $game: asserting bit-exactness (2 fresh boots+replays to f$total)...")
@@ -426,7 +485,7 @@ function compute_game(; game, target_frame, horizon, area, topk, seed, verbose)
         position_cell = pcell, checkpoint = checkpoint, actions = actions,
         target_frame = target_frame, horizon = horizon, causes = causes,
         area = area, topk = topk, seed = seed, verbose = verbose)
-    return f_content, content_degen, f_pos, pos_degen
+    return f_content, content_degen, f_pos, pos_degen, nothing
 end
 
 # ============================================================================
@@ -521,7 +580,7 @@ function _output_note(f::Faithfulness)
     end
 end
 
-function write_faithfulness(f::Faithfulness; out_dir)
+function write_faithfulness(f::Faithfulness; out_dir, st_extra = nothing)
     isdir(out_dir) || mkpath(out_dir)
     tag = f.output_kind == "content" ? "content" : "position"
     stem = "perturbation_$(f.game)_$(tag)"
@@ -611,6 +670,17 @@ function write_faithfulness(f::Faithfulness; out_dir)
                 "(--shard i --shard-kind game); each task re-runs the real ROM, no GPU needed.",
         ),
     )
+    # SHARED-TESTBED provenance (redesign protocol) on the position/region record.
+    if st_extra !== nothing
+        rec["state"] = "gameplay(seed=$(st_extra.seed),prefix=$(st_extra.prefix))+$(st_extra.horizon)"
+        rec["extra"]["testbed"] = Dict{String,Any}(
+            "state_kind" => "seeded_random_action_gameplay",
+            "prefix" => st_extra.prefix, "horizon" => st_extra.horizon, "seed" => st_extra.seed,
+            "shared_output" => "screen_region(n_changed_px)@r$(st_extra.cell[1])c$(st_extra.cell[2])",
+            "cause_density_above_floor" => st_extra.cause_density,
+            "cause_density_floor" => ST_FLOOR, "cause_density_gate_k" => ST_GATE_K,
+            "cause_density_accepted" => st_extra.accepted, "n_causes" => st_extra.n_causes)
+    end
     open(json_path, "w") do io; JSON.print(io, rec, 2); end
 
     write_npz(npz_path, Dict(
@@ -683,16 +753,22 @@ function main(args = ARGS)
     summary = Dict{String,Any}[]
     for game in games
         println("\n[perturbation] ===== $game =====")
-        f_content, content_degen, f_pos, pos_degen = compute_game(; game = game,
+        f_content, content_degen, f_pos, pos_degen, st_extra = compute_game(; game = game,
             target_frame = target_frame, horizon = horizon, area = area,
             topk = topk, seed = seed, verbose = true)
         @assert !content_degen "content oracle column is degenerate for $game at f$target_frame " *
             "— pick_content_idx failed to find a causally-active concept byte"
         selftest(f_content; require_nondegenerate = true)
         selftest(f_pos; require_nondegenerate = !pos_degen)
+        if st_extra !== nothing
+            println("[perturbation] $game SHARED region output: gate " *
+                "$(st_extra.cause_density)/$(st_extra.n_causes) accepted=$(st_extra.accepted) " *
+                "cell=$(st_extra.cell)")
+        end
         if !selftest_only
             for f in (f_content, f_pos)
-                jp, np = write_faithfulness(f; out_dir = out_dir)
+                jp, np = write_faithfulness(f; out_dir = out_dir,
+                    st_extra = (f === f_pos ? st_extra : nothing))
                 println("[perturbation] wrote $jp"); println("[perturbation] arrays  $np")
             end
         end

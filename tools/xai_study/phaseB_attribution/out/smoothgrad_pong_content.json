@@ -1,7 +1,7 @@
 {
   "arrays": "smoothgrad_pong_content.npz",
   "ci": null,
-  "commit": "ee649d4",
+  "commit": "6f4df476",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-SmoothGrad causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run. NaN = a genuinely flat experiment.",
     "cause_names": [
@@ -34,9 +34,9 @@
       "precision_at_k": 1.0
     },
     "metrics": {
-      "deletion_auc": 0.5720361509835193,
-      "insertion_auc": 0.21424774056353002,
-      "pearson_corr": 0.4072313345164495,
+      "deletion_auc": 0.07539682539682538,
+      "insertion_auc": 0.3611111111111111,
+      "pearson_corr": 0.46421209661041496,
       "precision_at_k": 0.6666666666666666,
       "spearman_corr": 0.7342477813388187,
       "topk": 3
@@ -51,13 +51,13 @@
       "ram[45]:set": 0.0,
       "ram[46]:occlude": 0.0,
       "ram[46]:set": 0.0,
-      "ram[49]:occlude": 124.0,
+      "ram[49]:occlude": 175.0,
       "ram[49]:set": 0.0,
       "ram[50]:occlude": 0.0,
       "ram[50]:set": 0.0,
       "ram[51]:occlude": 0.0,
       "ram[51]:set": 0.0,
-      "ram[54]:occlude": 85.0,
+      "ram[54]:occlude": 160.0,
       "ram[54]:set": 17.0,
       "tia[COLUBK]:set": 0.0
     },
@@ -85,17 +85,17 @@
       "tia[COLUBK]:set": 0.0
     },
     "sg_max_abs": 1.0,
-    "smoothgrad_n_samples": 50,
+    "smoothgrad_n_samples": 8,
     "smoothgrad_sigma": 8.0,
     "smoothgrad_sigma_units": "raw RAM-byte units (byte∈0..255; σ=8.0 ≈ 3.1% of full scale)",
     "substrate": "jutari (Julia) — Zygote SmoothGrad over the RAM tape + TRUE-VCS deletion/insertion re-runs (real-ROM, bit-exact oracle machinery).",
     "vanilla_gradient_reference": {
       "interpretation": "Δpearson = SmoothGrad − vanilla |grad|. ≈0 ⇒ smoothing did NOT change FAITHFULNESS (it denoises the visual map; on a one-hot content read the map is already on the true cause, nothing to denoise; on the vanishing position output both are 0 — smoothing cannot create a gradient).",
-      "pearson_corr": 0.4072313345164495,
+      "pearson_corr": 0.46421209661041496,
       "precision_at_k": 0.6666666666666666,
       "smoothing_delta_pearson": 0.0
     },
-    "y_full": 124.0
+    "y_full": 175.0
   },
   "game": "pong",
   "method": "smoothgrad",
@@ -105,10 +105,10 @@
   "paper": "P2",
   "phase": "phaseB_attribution",
   "seed": 0,
-  "state": "f120+30",
+  "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@54)",
-  "timestamp": "1782146654",
-  "value": 0.4072313345164495,
+  "timestamp": "1782918839",
+  "value": 0.46421209661041496,
   "where": "local"
 }
