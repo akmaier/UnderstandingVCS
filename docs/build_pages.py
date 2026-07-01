@@ -1093,17 +1093,6 @@ def _phaseB_reading(meth):
 <section><div class="wrap">
   <h2>Reading this example's causal region</h2>
   <p>This example explains %s. Its strongest true-cause%s: %s.%s%s</p>
-  <div class="rownote">
-    <b>Two caveats this figure exposes (being fixed in the experimental redesign).</b>
-    (1) The methods do <b>not</b> all explain the <i>same</i> output — vanilla saliency explains a
-    content byte, Grad×Input explains the score — so their "true causal regions" differ and are
-    <b>not directly comparable</b>; the plan needs a shared, well-defined output per game.
-    (2) This overlay is a <b>footprint proxy</b>: it maps a RAM cell's importance onto every screen
-    pixel that cell changes over a 30-frame window, so it conflates <i>direct</i> pixel control with
-    <i>downstream</i> game-outcome effects (the score bleed above). Direct
-    <b>screen-buffer soft-gradients</b> — which the emulator supports and the redesign adds — remove
-    this proxy entirely.
-  </div>
 </div></section>""" % (outdesc, "s are" if len(top) != 1 else " is", tops, bleed, missing)
 
 
