@@ -2,6 +2,19 @@
 
 > **Role of this file:** the experiments and how each is scored. Storyline → `plan.md`;
 > program map → [`../general_paper_plan.md`](../general_paper_plan.md).
+>
+> **⚠ Testbed redesign (READ BEFORE RE-RUNNING).** The committed Phase-A/B/C runners
+> analyse **boot/attract NOOP states** at a fixed `target_frame=120, horizon=30` with an
+> all-NOOP action stream, route gradient methods through the **naive** (vanishing) path,
+> attribute over **RAM cells only**, and let different methods explain **different outputs**
+> — five design flaws that break comparability and starve the oracle. The corrected
+> protocol (shared **random-action gameplay** states with boot < 10%, an oracle
+> **cause-density gate**, a single **shared screen-buffer output** per game, **soft-mode /
+> bilinear-sampler** gradients for position, and direct **screen-buffer gradient maps**),
+> the confirmation of each flaw against the code/paper, and the full "experiments to repeat"
+> table live in [`experiment_redesign.md`](experiment_redesign.md). The **§0 triad, §1
+> oracle, §2 T3, the 6 core games, seed=0 determinism, and the shared-testbed principle
+> below are unchanged** — only the *states* and the *shared explained output* change.
 > **§0–§3 are the SHARED foundation** (correctness triad, ground-truth oracle, T3
 > procedure, substrate audit) — P3 (`../xai_3_psychology/`) and P4
 > (`../xai_4_recovery/`) **reference these rather than repeating them.** Subject: the
@@ -103,7 +116,12 @@ content-path gradients, GPU-batched SOFT-STE). The subject *is* the substrate.
 (≈30-frame RAM / 60-frame screen on a fixed action stream); scored claims must stay
 inside the validated horizon or re-validate. (iii) **Long-horizon end-to-end gradients**
 (credit through many steps) could stress the substrate — single-step metrics don't need
-them; pilot before assuming.
+them; pilot before assuming. (iv) **Analysis state must be input-driven gameplay, not the
+NOOP attract loop** — see [`experiment_redesign.md`](experiment_redesign.md) Problem 1; the
+current runners violate this and must move to seed=0 random-action states with an oracle
+cause-density gate before scoring. (v) **Position/index outputs must use the bilinear
+sampler** (soft-mode), not the naive integer path which is provably zero (Paper 1
+Fig. `fig:xai`(c); redesign Problem 2).
 
 ---
 
@@ -160,6 +178,16 @@ inputs). Score every map against the §1 oracle.
 **Ideal:** the minimal true-causal causes of `y`. **Right when:** top-k = true causal
 top-k (F); deletion behaves as predicted (S); sparse (M). **Best case:** a faithfulness
 leaderboard — plausible ≠ faithful, in numbers, on the system itself.
+
+> **Shared-output requirement (redesign Problem 4).** `y` must be **one shared,
+> well-specified output per game**, fixed before any method runs, and preferably a
+> **screen-buffer target** — not a per-method most-causally-active byte. In the committed
+> records the methods drift: vanilla saliency explains `content_ram_index=54` while
+> Grad×Input/DeepLIFT explains `score@ram[49]`, so the "true causal region" differs by
+> method and the leaderboard is not apples-to-apples. All gradient methods must run through
+> the **soft-mode content path** (content targets) and the **bilinear sampler** (position/
+> index targets); add **screen-buffer gradient maps** (∂y/∂pixel, ∂pixel/∂cause) as
+> first-class outputs. See [`experiment_redesign.md`](experiment_redesign.md).
 
 ## 6. Phase C — mechanistic interpretability on the VCS (known-circuit testbed)
 

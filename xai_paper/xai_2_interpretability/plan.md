@@ -4,6 +4,15 @@
 > write the paper from. Experiments, oracle, T3, scoring tables, compute → `experiment_
 > design.md`. The program map + shared invariants → [`../general_paper_plan.md`](../general_paper_plan.md);
 > doc rules → [`../README.md`](../README.md).
+>
+> **Testbed note (no storyline change).** A testbed redesign
+> ([`experiment_redesign.md`](experiment_redesign.md)) moves the analysis states from the
+> boot/attract NOOP window to **shared random-action gameplay** states, fixes a single
+> **shared screen-buffer output** per game, and routes gradient methods through the
+> **bilinear sampler** so their position gradient is real. This *strengthens* the
+> storyline as written — the "sampler-on keystone" (§the move (half 2); Display item 7) now
+> runs on genuine gameplay — and does **not** alter the thesis, the F∧S∧M claims, or the
+> semantic-gap argument. It changes *where* we measure, not *what* we claim.
 
 ## P2 in one line
 *A faithful explanation is not yet an understanding.* On the fully-known, bit-exact,
