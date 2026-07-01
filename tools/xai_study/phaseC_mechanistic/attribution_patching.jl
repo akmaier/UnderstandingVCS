@@ -69,6 +69,7 @@ module AttributionPatching
 
 using JuTari
 using JuTari.Env: StellaEnvironment, env_reset!, env_step!, get_screen, get_ram
+import Zygote
 
 # Reuse the EXACT (true) activation-patching harness verbatim (P2-E5-1): its
 # run_patch is the single-site write + real re-run we linearise against, and it
@@ -79,13 +80,33 @@ include(joinpath(@__DIR__, "activation_patching.jl"))
 using .ActivationPatching: load_env, boot_replay, continue_from, fresh_baseline,
                            assert_bit_exact, run_patch, pick_active_cells,
                            build_outputs, Output, Patch, CORE_GAMES,
+                           settings_for, rom_path_for,
                            candidates_path_for, ACT_NOOP, ACT_LEFT, ACT_RIGHT,
                            COLUBK_REG
 using .ActivationPatching.OracleIntervene: build_pong_causes,
-                                           candidate_ram_indices, Cause
+                                           candidate_ram_indices, Cause,
+                                           run_intervention
 using .ActivationPatching.OracleIntervene.JutariOracle: Snapshot, snapshot,
                                            intervene_ram!, intervene_tia!,
                                            write_npz, RAM_SIZE
+using JuTari.Diff: soft_ram_peek
+
+# The P2 SHARED TESTBED (experiment_redesign.md): seeded random-action GAMEPLAY
+# state + oracle cause-density gate + shared screen-buffer REGION output + the
+# bilinear-sampler position path. build_shared_testbed + the shared_testbed_impl
+# fragment + the SHARED_TESTBED/ST_* consts are ALREADY defined inside the included
+# ActivationPatching module (P2-E5-1) — we REUSE them via `ActivationPatching.*`
+# rather than re-including the fragment (which would double-define its consts/fns).
+# Attribution patching IS a gradient approximation (Nanda 2023), so — unlike the
+# other Phase-C methods — it USES the sampler-aware gradient: the position/index
+# output's ∂y/∂ram runs through st.sampler_read (the bilinear sampler at st.geom,
+# evaluated at st.ram_now), reported side-by-side with the naive vanishing gradient.
+const SHARED_TESTBED = ActivationPatching.SHARED_TESTBED
+const ST_PREFIX  = ActivationPatching.ST_PREFIX
+const ST_HORIZON = ActivationPatching.ST_HORIZON
+const ST_SEED    = ActivationPatching.ST_SEED
+const ST_GATE_K  = ActivationPatching.ST_GATE_K
+const ST_FLOOR   = ActivationPatching.ST_FLOOR
 
 const OUT_DIR = joinpath(@__DIR__, "out")
 
@@ -153,6 +174,19 @@ struct AttrResult
     linear_probe_corr::Float64     # positive control: corr on the linear probe
     linear_probe_err::Float64      # positive control: |err| on the linear probe
     bit_exact::Bool
+    # SHARED-TESTBED provenance (redesign); all "noop"/-1/false in the legacy path.
+    state_kind::String             # "seeded_random_action_gameplay" | "noop"
+    st_seed::Int
+    st_prefix::Int
+    cause_density::Int             # #causes above the floor at the shared output
+    cause_density_accepted::Bool   # passed the cause-density gate?
+    n_causes::Int
+    shared_cell::Tuple{Int,Int}    # the shared screen-buffer output cell
+    # SAMPLER-AWARE position gradient (redesign Problem 2): the ∂(screen position)/
+    # ∂ram routed through the bilinear sampler vs the naive vanishing gradient.
+    position_byte_ram_index::Int   # the sampler's position byte (or -1 if static)
+    naive_pos_grad_max::Float64    # max|∂(naive position read)/∂ram| (≡ 0)
+    sampler_pos_grad_max::Float64  # max|∂(sampler position read)/∂ram| (nonzero ⇒ restored)
 end
 
 """Pearson correlation of two vectors (0 if either is constant)."""
@@ -166,7 +200,55 @@ function _pearson(x::Vector{Float64}, y::Vector{Float64})
     return sum(sx .* sy) / denom
 end
 
+"""Build the P2 SHARED gameplay state + cause-density gate + sampler geometry for
+`game`, reusing the substrate defined inside the included ActivationPatching module
+(so build_shared_testbed operates on OUR Cause/Snapshot types). Returns the
+NamedTuple with .actions/.checkpoint/.causes/.cand_indices + the cause-density gate
+AND the sampler .geom/.sampler_read/.ram_now used for the sampler-aware position
+gradient."""
+function build_attr_shared_state(game::AbstractString; verbose = false)
+    return ActivationPatching.build_shared_testbed(game;
+        settings_for = settings_for, rom_path_for = rom_path_for,
+        candidates_path_for = candidates_path_for,
+        build_causes = build_pong_causes, candidate_ram_indices = candidate_ram_indices,
+        continue_from = continue_from, snapshot = snapshot, env_step = env_step!,
+        intervene_ram = intervene_ram!, boot_replay = boot_replay,
+        run_intervention = run_intervention, soft_ram_peek = soft_ram_peek,
+        prefix = ST_PREFIX, horizon = ST_HORIZON, seed = ST_SEED,
+        k = ST_GATE_K, floor = ST_FLOOR, verbose = verbose,
+        assert_bit_exact = assert_bit_exact)
+end
+
 function run_game(; game, target_frame = 120, horizon = 30, verbose = true)
+    # SHARED-TESTBED (redesign): replace the all-NOOP boot/attract tape with a
+    # seeded random-action GAMEPLAY state at f*=ST_PREFIX, gated by the oracle
+    # cause-density gate. The clean trace, checkpoint, causes, candidate set and
+    # baseline all come from the shared substrate; the attribution-patching
+    # algorithm is UNCHANGED. Because attribution patching IS a gradient method, we
+    # additionally route the position/index output's gradient through the bilinear
+    # SAMPLER (st.sampler_read at st.geom), reported side-by-side with the naive
+    # vanishing gradient — the redesign keystone for the gradient family.
+    st = nothing
+    if SHARED_TESTBED
+        st = build_attr_shared_state(game; verbose = verbose)
+        target_frame = st.prefix; horizon = st.horizon
+        total = st.total
+        clean_actions = st.actions
+        tail = Int.(clean_actions[target_frame + 1 : total])
+        clean_ckpt = st.checkpoint
+        base_snap = st.base
+        at_target = st.at_target
+        cand_indices = st.cand_indices
+        causes = st.causes
+        verbose && println("[$game] SHARED gameplay state: cause_density=$(st.cause_density)/" *
+            "$(length(st.causes)) accepted=$(st.accepted) cell=$(st.cell) " *
+            "geom=$(st.geom === nothing ? "static" : "RAM[$(st.geom[1])]")")
+        return _run_game_body(; game = game, target_frame = target_frame, horizon = horizon,
+            total = total, clean_actions = clean_actions, tail = tail, clean_ckpt = clean_ckpt,
+            base_snap = base_snap, at_target = at_target, cand_indices = cand_indices,
+            causes = causes, st = st, verbose = verbose)
+    end
+
     total = target_frame + horizon
     clean_actions = fill(ACT_NOOP, total)
 
@@ -186,6 +268,20 @@ function run_game(; game, target_frame = 120, horizon = 30, verbose = true)
     cand = candidates_path_for(game)
     cand_indices = [idx for (idx, _) in candidate_ram_indices(cand)]
     causes = build_pong_causes(cand, at_target)
+    return _run_game_body(; game = game, target_frame = target_frame, horizon = horizon,
+        total = total, clean_actions = clean_actions, tail = tail, clean_ckpt = clean_ckpt,
+        base_snap = base_snap, at_target = at_target, cand_indices = cand_indices,
+        causes = causes, st = nothing, verbose = verbose)
+end
+
+"""The per-game body, shared by the legacy NOOP path and the SHARED gameplay-state
+path (the ONLY difference is which state/action-stream/checkpoint the attribution-
+patching algorithm sits on — the algorithm is unchanged). `st` carries the shared-
+testbed provenance (cause-density gate, sampler geometry) for the record, or
+`nothing` in the legacy path. When `st !== nothing` the position/index output's
+gradient is additionally routed through the bilinear sampler (redesign Problem 2)."""
+function _run_game_body(; game, target_frame, horizon, total, clean_actions, tail,
+                        clean_ckpt, base_snap, at_target, cand_indices, causes, st, verbose)
     score_cells, _mv = pick_active_cells(clean_ckpt, tail, base_snap,
                                          cand_indices, causes; k = 2)
     outputs = build_outputs(base_snap, score_cells)
@@ -193,8 +289,19 @@ function run_game(; game, target_frame = 120, horizon = 30, verbose = true)
     site2out = Dict(c => o.name for o in outputs for c in o.true_sites)
 
     # ---- 4) donor runs (genuinely different state at frame t) ----------------
-    donor_left  = continue_from(boot_replay(fill(ACT_LEFT,  target_frame), target_frame; game = game), Int[])
-    donor_right = continue_from(boot_replay(fill(ACT_RIGHT, target_frame), target_frame; game = game), Int[])
+    # In the SHARED gameplay testbed an on-distribution donor shares the gameplay
+    # prefix up to t-1 and diverges only at the analysis frame with a LEFT/RIGHT
+    # joystick action (a genuinely different, reachable state). In the legacy path
+    # the donor is a pure LEFT/RIGHT context booted from frame 0.
+    donor_left, donor_right = if st !== nothing
+        pre = target_frame > 0 ? Int.(clean_actions[1:target_frame - 1]) : Int[]
+        dl = continue_from(boot_replay(vcat(pre, ACT_LEFT),  target_frame; game = game), Int[])
+        dr = continue_from(boot_replay(vcat(pre, ACT_RIGHT), target_frame; game = game), Int[])
+        dl, dr
+    else
+        (continue_from(boot_replay(fill(ACT_LEFT,  target_frame), target_frame; game = game), Int[]),
+         continue_from(boot_replay(fill(ACT_RIGHT, target_frame), target_frame; game = game), Int[]))
+    end
 
     # ---- 5) build the patch set (same families as E5-1: donor + directed) ----
     patches = Patch[]
@@ -293,12 +400,37 @@ function run_game(; game, target_frame = 120, horizon = 30, verbose = true)
     probe_corr, probe_err = linear_probe(clean_ckpt, tail, outputs, y_base,
                                          score_cells, at_target)
 
+    # ---- 11) SAMPLER-AWARE position gradient (redesign Problem 2) -------------
+    # Attribution patching IS a gradient approximation, so — like the Phase-B
+    # gradient family — the position/index output (the shared screen-buffer region,
+    # a discrete sprite column via round/argmax) has a NAIVE ∂pixel/∂ram ≡ 0
+    # (vanishing). The bilinear SAMPLER (st.sampler_read at st.geom, evaluated at
+    # st.ram_now) RESTORES a real ∂pixel/∂ram[position_byte]. We report the naive
+    # (vanishing) vs sampler gradient side-by-side, exactly as saliency.jl does; the
+    # attribution linear model above (finite-difference slope on the RAM cell) is
+    # unchanged — this is the differentiable position handle for the gradient family.
+    naive_pos_grad_max = 0.0; sampler_pos_grad_max = 0.0; pos_byte = -1
+    if st !== nothing
+        gz(readf) = begin
+            x = Float32.(st.ram_now)
+            g = Zygote.gradient(readf, x)[1]
+            g === nothing ? zeros(Float32, length(x)) : Float32.(g)
+        end
+        naive_pos_grad_max   = Float64(maximum(abs.(gz(st.position_read_zero))))
+        sampler_pos_grad_max = Float64(maximum(abs.(gz(st.sampler_read))))
+        pos_byte = st.geom === nothing ? -1 : st.geom[1]
+    end
+
     bit_exact = true
     verbose && println("[$game] corr(approx,exact)=$(round(corr,digits=4)) " *
                        "mean|err|=$(round(mean_abs_err,digits=3)) relL2=$(round(rel_l2,digits=3)) " *
                        "edgeP=$(round(precision,digits=3)) edgeR=$(round(recall,digits=3)) " *
                        "linear_match=$(round(linear_regime_match,digits=3)) " *
                        "probe(corr=$(round(probe_corr,digits=3)),err=$(round(probe_err,digits=4)))")
+    st !== nothing && verbose && println("[$game] SAMPLER-ON position gradient: " *
+        "naive max|g|=$(round(naive_pos_grad_max,sigdigits=3)) → " *
+        "sampler max|g|=$(round(sampler_pos_grad_max,sigdigits=3)) " *
+        "(position byte RAM[$pos_byte])")
 
     return AttrResult(game, target_frame, horizon,
                       [o.name for o in outputs],
@@ -307,7 +439,15 @@ function run_game(; game, target_frame = 120, horizon = 30, verbose = true)
                       corr, mean_abs_err, max_abs_err, rel_l2,
                       precision, recall,
                       n_active_true, n_linear_exact, linear_regime_match,
-                      probe_corr, probe_err, bit_exact)
+                      probe_corr, probe_err, bit_exact,
+                      st === nothing ? "noop" : "seeded_random_action_gameplay",
+                      st === nothing ? -1 : st.seed,
+                      st === nothing ? -1 : st.prefix,
+                      st === nothing ? -1 : st.cause_density,
+                      st === nothing ? false : st.accepted,
+                      st === nothing ? length(causes) : length(st.causes),
+                      st === nothing ? (-1, -1) : st.cell,
+                      pos_byte, naive_pos_grad_max, sampler_pos_grad_max)
 end
 
 """Read a clean TIA register value at the checkpoint (for the directed COLUBK
@@ -411,7 +551,8 @@ function write_game_result(r::AttrResult; out_dir = OUT_DIR)
         "phase" => "phaseC_mechanistic",
         "method" => "attribution_patching",
         "game" => r.game,
-        "state" => "f$(r.target_frame)+$(r.horizon)",
+        "state" => r.state_kind == "noop" ? "f$(r.target_frame)+$(r.horizon)" :
+                   "gameplay(seed=$(r.st_seed),prefix=$(r.st_prefix))+$(r.horizon)",
         "target_output" => "state(ram concept cells)+screen_px",
         # headline §R scalar: corr(attribution-patching approx, true patching).
         "metric_name" => "corr_approx_vs_exact",
@@ -447,6 +588,31 @@ function write_game_result(r::AttrResult; out_dir = OUT_DIR)
             "linear_probe_corr" => r.linear_probe_corr,
             "linear_probe_max_abs_err" => r.linear_probe_err,
             "bit_exact_rerun" => r.bit_exact,
+            "testbed" => Dict{String,Any}(
+                "state_kind" => r.state_kind,
+                "seed" => r.st_seed, "prefix" => r.st_prefix, "horizon" => r.horizon,
+                "shared_output" => r.shared_cell == (-1, -1) ? "n/a" :
+                    "screen_region(n_changed_px)@r$(r.shared_cell[1])c$(r.shared_cell[2])",
+                "cause_density_above_floor" => r.cause_density,
+                "cause_density_floor" => ST_FLOOR, "cause_density_gate_k" => ST_GATE_K,
+                "cause_density_accepted" => r.cause_density_accepted, "n_causes" => r.n_causes,
+                "note" => "P2 redesign: attribution patching sits on a seeded random-action " *
+                    "GAMEPLAY state (not the boot/attract NOOP tape), gated by the oracle " *
+                    "cause-density gate (accept iff #causes above the floor >= k). The " *
+                    "attribution-patching algorithm is unchanged; only the state moves."),
+            "sampler_on" => Dict{String,Any}(
+                # attribution patching IS a gradient method, so — like the Phase-B
+                # gradient family — the position/index output's gradient runs through
+                # the bilinear sampler (nonzero) with the naive vanishing gradient
+                # reported side-by-side. NOT applicable in the legacy NOOP path (-1).
+                "position_byte_ram_index" => r.position_byte_ram_index,
+                "naive_position_grad_max" => r.naive_pos_grad_max,
+                "sampler_position_grad_max" => r.sampler_pos_grad_max,
+                "note" => "naive ∂pixel/∂ram ≡ 0 (Prop. prop:zero); the bilinear sampler " *
+                    "restores a real ∂pixel/∂ram[position_byte] (redesign Problem 2), " *
+                    "the differentiable position handle for the gradient family. The " *
+                    "attribution linear model (finite-difference slope on the RAM cell) " *
+                    "is unchanged; this is reported side-by-side as the position gradient."),
             "approx_delta" => approx_map,
             "exact_patch_delta" => exact_map,
             "note" =>

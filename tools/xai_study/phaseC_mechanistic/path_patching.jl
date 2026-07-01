@@ -102,14 +102,31 @@ using JuTari.Env: StellaEnvironment, env_reset!, env_step!, get_screen, get_ram
 # the oracle's candidate cause set (game-agnostic) + the verified jutari run helper
 # (boot/replay/snapshot/intervene + the dependency-free §R NPZ writer).
 include(joinpath(@__DIR__, "..", "ground_truth", "oracle_intervene.jl"))
-using .OracleIntervene: candidate_ram_indices
+using .OracleIntervene: candidate_ram_indices, build_pong_causes, run_intervention
 using .OracleIntervene.JutariOracle: Snapshot, snapshot, intervene_ram!,
                                      intervene_tia!, write_npz, RAM_SIZE
+using JuTari.Diff: soft_ram_peek
+
+# The P2 SHARED TESTBED (xai_paper/xai_2_interpretability/experiment_redesign.md):
+# seeded random-action GAMEPLAY state + oracle cause-density gate + shared
+# screen-buffer REGION output. Included as a fragment (see its header) so
+# build_shared_testbed operates on OUR own Cause/Snapshot types. Opt in with
+# XAI_SHARED_TESTBED=1 (default on for the redesign re-run). Phase C is not a
+# gradient method, so the sampler-on path does not apply — we consume the shared
+# STATE + cause-density GATE + shared screen-buffer output only.
+include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
 
 const DEFAULT_OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders", "seaquest", "ms_pacman", "qbert"]
 
 const ACT_NOOP = 0
+# shared-testbed switch + params (redesign protocol: prefix=90 gameplay, horizon=15).
+const SHARED_TESTBED = get(ENV, "XAI_SHARED_TESTBED", "1") == "1"
+const ST_PREFIX  = parse(Int, get(ENV, "XAI_ST_PREFIX", "90"))
+const ST_HORIZON = parse(Int, get(ENV, "XAI_ST_HORIZON", "15"))
+const ST_SEED    = parse(Int, get(ENV, "XAI_ST_SEED", "0"))
+const ST_GATE_K  = parse(Int, get(ENV, "XAI_ST_GATE_K", "4"))
+const ST_FLOOR   = parse(Float64, get(ENV, "XAI_ST_FLOOR", "0.5"))
 
 # ============================================================================
 # Per-game ROM + RomSettings + candidates resolution (mirrors activation_patching.jl
@@ -285,10 +302,11 @@ Steps (Goldowsky-Dill §3 path patch):
      receiver j — so only j carries the sender's signal forward;
   4. step `rest_tail`, snapshot."""
 function path_patch(checkpoint, clean_next::Snapshot, nodes::Vector{Node},
-                    sender_i::Int, receiver_j::Int, sender_value::Int, rest_tail)
+                    sender_i::Int, receiver_j::Int, sender_value::Int, rest_tail;
+                    hop_action::Int = ACT_NOOP)
     env = deepcopy(checkpoint)
     intervene_ram!(env, nodes[sender_i].ram_index, sender_value)   # corrupt the sender
-    env_step!(env, ACT_NOOP)                                       # one frame: i -> t+1
+    env_step!(env, hop_action)                                     # one frame: i -> t+1
     # freeze-restore: pin every candidate cell at t+1 to its CLEAN value, except j.
     for (k, c) in enumerate(nodes)
         k == receiver_j && continue
@@ -316,8 +334,9 @@ end
 """Path-patch edge i->j with a GIVEN sender value; return whether receiver j's
 downstream readout diverges from clean (the edge fires)."""
 @inline function edge_fires(checkpoint, clean_next, nodes, clean_final, rest_tail,
-                            i::Int, j::Int, sender_value::Int)
-    patched = path_patch(checkpoint, clean_next, nodes, i, j, sender_value, rest_tail)
+                            i::Int, j::Int, sender_value::Int; hop_action::Int = ACT_NOOP)
+    patched = path_patch(checkpoint, clean_next, nodes, i, j, sender_value, rest_tail;
+                         hop_action = hop_action)
     return read_cell(patched, nodes[j].ram_index) !=
            read_cell(clean_final, nodes[j].ram_index)
 end
@@ -326,7 +345,8 @@ end
 edge-restricted path patch fires for ANY exhaustive sender value (0/base+17/
 base+37). The faithful direct circuit the IOI path patch targets."""
 function true_routine_graph(checkpoint, clean_next::Snapshot, nodes::Vector{Node},
-                            at_target::Snapshot, clean_final::Snapshot, rest_tail)
+                            at_target::Snapshot, clean_final::Snapshot, rest_tail;
+                            hop_action::Int = ACT_NOOP)
     n = length(nodes)
     A = falses(n, n)
     for i in 1:n
@@ -335,7 +355,8 @@ function true_routine_graph(checkpoint, clean_next::Snapshot, nodes::Vector{Node
             v == bval && continue
             for j in 1:n
                 (i == j || A[i, j]) && continue        # self-edge / already fired
-                edge_fires(checkpoint, clean_next, nodes, clean_final, rest_tail, i, j, v) &&
+                edge_fires(checkpoint, clean_next, nodes, clean_final, rest_tail, i, j, v;
+                           hop_action = hop_action) &&
                     (A[i, j] = true)
             end
         end
@@ -349,7 +370,7 @@ moves receiver j's OWN downstream readout. Thin (one value, one-step hop) — sc
 against the true routine. Misses sign-dependent edges a single value can't trip."""
 function recovered_path_circuit(checkpoint, clean_next::Snapshot, nodes::Vector{Node},
                                 at_target::Snapshot, clean_final::Snapshot, rest_tail;
-                                delta::Int = 17)
+                                delta::Int = 17, hop_action::Int = ACT_NOOP)
     n = length(nodes)
     A = falses(n, n)
     for i in 1:n
@@ -358,7 +379,8 @@ function recovered_path_circuit(checkpoint, clean_next::Snapshot, nodes::Vector{
         sv == bval && continue        # degenerate sender perturbation
         for j in 1:n
             i == j && continue        # self-edge excluded (tautological)
-            edge_fires(checkpoint, clean_next, nodes, clean_final, rest_tail, i, j, sv) &&
+            edge_fires(checkpoint, clean_next, nodes, clean_final, rest_tail, i, j, sv;
+                       hop_action = hop_action) &&
                 (A[i, j] = true)
         end
     end
@@ -371,8 +393,10 @@ IDENTICAL procedure as the true routine. It must reproduce the true routine exac
 F1<1 is a real measurement, not a broken scorer. (A separate call, so the equality
 is a re-derivation, not a shared-array artefact.)"""
 function oracle_path_circuit(checkpoint, clean_next::Snapshot, nodes::Vector{Node},
-                             at_target::Snapshot, clean_final::Snapshot, rest_tail)
-    return true_routine_graph(checkpoint, clean_next, nodes, at_target, clean_final, rest_tail)
+                             at_target::Snapshot, clean_final::Snapshot, rest_tail;
+                             hop_action::Int = ACT_NOOP)
+    return true_routine_graph(checkpoint, clean_next, nodes, at_target, clean_final, rest_tail;
+                              hop_action = hop_action)
 end
 
 # ============================================================================
@@ -425,14 +449,61 @@ struct PathResult
     oracle_control::CircuitScore # positive control vs true routine (must be F1=1)
     n_transient_receivers::Int   # receivers re-derived within the horizon (present≠used)
     budget::Dict{String,Any}     # the recorded compute budget (re-runs etc.)
+    # SHARED-TESTBED provenance (redesign); all NaN/-1/"" in the legacy NOOP path.
+    state_kind::String           # "seeded_random_action_gameplay" | "noop"
+    st_seed::Int
+    st_prefix::Int
+    cause_density::Int           # #causes above the floor at the shared output
+    cause_density_accepted::Bool # passed the cause-density gate?
+    n_causes::Int
+    shared_cell::Tuple{Int,Int}  # the shared screen-buffer output cell
 end
 
 function run_game(; game, target_frame = 30, horizon = 30, verbose = true)
+    # SHARED-TESTBED (redesign): replace the all-NOOP boot/attract tape with a
+    # seeded random-action GAMEPLAY state at f*=ST_PREFIX, gated by the oracle
+    # cause-density gate. The checkpoint + action stream come from the shared
+    # substrate so every method sits on the SAME state (P1, P4). The path-patch
+    # algorithm is unchanged; the one-step sender->receiver hop takes the gameplay
+    # stream's next action (hop_action) instead of the hardcoded NOOP.
+    st = nothing
+    if SHARED_TESTBED
+        st = build_shared_testbed(game;
+            settings_for = settings_for, rom_path_for = rom_path_for,
+            candidates_path_for = candidates_path_for,
+            build_causes = build_pong_causes, candidate_ram_indices = candidate_ram_indices,
+            continue_from = continue_from, snapshot = snapshot, env_step = env_step!,
+            intervene_ram = intervene_ram!, boot_replay = boot_replay,
+            run_intervention = run_intervention, soft_ram_peek = soft_ram_peek,
+            prefix = ST_PREFIX, horizon = ST_HORIZON, seed = ST_SEED,
+            k = ST_GATE_K, floor = ST_FLOOR, verbose = verbose,
+            assert_bit_exact = assert_bit_exact)
+        target_frame = st.prefix; horizon = st.horizon
+        total = st.total
+        actions = st.actions
+        tail = Int.(actions[target_frame + 1 : total])
+        @assert horizon >= 1 "path patching needs horizon >= 1 (a sender->receiver step + rest)"
+        rest_tail = Int.(tail[2:end])
+        hop_action = Int(tail[1])                             # gameplay stream's t->t+1 action
+        bit_exact = true
+        checkpoint = st.checkpoint
+        at_target = st.at_target
+        clean_next = continue_from(checkpoint, [hop_action])
+        clean_final = st.base
+        verbose && println("[$game] SHARED gameplay state: cause_density=$(st.cause_density)/" *
+            "$(length(st.causes)) accepted=$(st.accepted) cell=$(st.cell)")
+        return _run_game_body(; game = game, target_frame = target_frame, horizon = horizon,
+            total = total, tail = tail, rest_tail = rest_tail, hop_action = hop_action,
+            bit_exact = bit_exact, checkpoint = checkpoint, at_target = at_target,
+            clean_next = clean_next, clean_final = clean_final, st = st, verbose = verbose)
+    end
+
     total = target_frame + horizon
     actions = fill(ACT_NOOP, total)
     tail = Int.(actions[target_frame + 1 : total])
     @assert horizon >= 1 "path patching needs horizon >= 1 (a sender->receiver step + rest)"
     rest_tail = Int.(tail[2:end])   # the horizon AFTER the one sender->receiver step
+    hop_action = ACT_NOOP
 
     # ---- 1) bit-exact guarantee (two fresh boots+replays, RAM AND screen) ----
     verbose && println("[$game] asserting bit-exactness (2 fresh replays to f$total)...")
@@ -443,9 +514,20 @@ function run_game(; game, target_frame = 30, horizon = 30, verbose = true)
     # ---- 2) ONE clean checkpoint at frame t (boot+to-target paid once) -------
     checkpoint = boot_replay(actions, target_frame; game = game)
     at_target   = continue_from(checkpoint, Int[])            # state AT frame t
-    clean_next  = continue_from(checkpoint, [ACT_NOOP])       # CLEAN state at t+1 (freeze src)
+    clean_next  = continue_from(checkpoint, [hop_action])     # CLEAN state at t+1 (freeze src)
     clean_final = continue_from(checkpoint, tail)             # CLEAN post-horizon readout
+    return _run_game_body(; game = game, target_frame = target_frame, horizon = horizon,
+        total = total, tail = tail, rest_tail = rest_tail, hop_action = hop_action,
+        bit_exact = bit_exact, checkpoint = checkpoint, at_target = at_target,
+        clean_next = clean_next, clean_final = clean_final, st = nothing, verbose = verbose)
+end
 
+"""The per-game body, shared by the legacy NOOP path and the SHARED gameplay-state
+path (the ONLY difference is which state/action-stream/checkpoint the path-patch
+algorithm sits on, and that the one-step hop uses the gameplay stream's next action
+— the algorithm itself is unchanged). `st` carries the shared-testbed provenance."""
+function _run_game_body(; game, target_frame, horizon, total, tail, rest_tail, hop_action,
+                        bit_exact, checkpoint, at_target, clean_next, clean_final, st, verbose)
     nodes = load_nodes(game)
     isempty(nodes) && error("[$game] no candidate cells (candidates_$(game).json missing/empty)")
     n = length(nodes)
@@ -454,7 +536,8 @@ function run_game(; game, target_frame = 30, horizon = 30, verbose = true)
     # ---- 3) the TRUE routine = the DIRECT path circuit (exhaustive do-set, edge-
     #         restricted) — the faithful direct circuit the IOI path patch targets. -
     verbose && println("[$game] true routine graph (direct path circuit, exhaustive do-set, $n cells)...")
-    true_graph = true_routine_graph(checkpoint, clean_next, nodes, at_target, clean_final, rest_tail)
+    true_graph = true_routine_graph(checkpoint, clean_next, nodes, at_target, clean_final, rest_tail;
+                                    hop_action = hop_action)
 
     # ---- 3b) node-level transitive data-flow (A1_connectomics; full horizon, NO
     #          edge restriction) — recorded for context (the program's reachability). -
@@ -464,12 +547,12 @@ function run_game(; game, target_frame = 30, horizon = 30, verbose = true)
     # ---- 4) the RECOVERED path-circuit (classical IOI single-shot path patch) --
     verbose && println("[$game] recovered path-circuit (IOI single-shot path patch)...")
     rec_graph = recovered_path_circuit(checkpoint, clean_next, nodes, at_target,
-                                       clean_final, rest_tail; delta = 17)
+                                       clean_final, rest_tail; delta = 17, hop_action = hop_action)
 
     # ---- 5) POSITIVE CONTROL: re-derive the faithful circuit (exhaustive do-set) -
     verbose && println("[$game] positive control (faithful path recovery, exhaustive do-set)...")
     oracle_graph = oracle_path_circuit(checkpoint, clean_next, nodes, at_target,
-                                       clean_final, rest_tail)
+                                       clean_final, rest_tail; hop_action = hop_action)
 
     score = score_circuit(rec_graph, true_graph)
     oracle_control = score_circuit(oracle_graph, true_graph)
@@ -515,7 +598,14 @@ function run_game(; game, target_frame = 30, horizon = 30, verbose = true)
 
     return PathResult(game, target_frame, horizon, bit_exact, nodes,
                       true_graph, rec_graph, oracle_graph, node_graph, score, oracle_control,
-                      n_transient, budget)
+                      n_transient, budget,
+                      st === nothing ? "noop" : "seeded_random_action_gameplay",
+                      st === nothing ? -1 : st.seed,
+                      st === nothing ? -1 : st.prefix,
+                      st === nothing ? -1 : st.cause_density,
+                      st === nothing ? false : st.accepted,
+                      st === nothing ? 0 : length(st.causes),
+                      st === nothing ? (-1, -1) : st.cell)
 end
 
 # ============================================================================
@@ -567,7 +657,8 @@ function write_game_result(r::PathResult; out_dir = DEFAULT_OUT_DIR, where_ = "l
         "phase" => "phaseC_mechanistic",
         "method" => "path_patching (IOI-style circuit recovery; Wang 2022 / Goldowsky-Dill 2023)",
         "game" => r.game,
-        "state" => "f$(r.target_frame)+$(r.horizon)",
+        "state" => r.state_kind == "noop" ? "f$(r.target_frame)+$(r.horizon)" :
+                   "gameplay(seed=$(r.st_seed),prefix=$(r.st_prefix))+$(r.horizon)",
         "target_output" => "inter-cell data-flow circuit (candidate RAM cells; path/edge set)",
         # headline §R scalar (value/metric_name): the recovered path-circuit F1 vs
         # the true routine.
@@ -638,6 +729,18 @@ function write_game_result(r::PathResult; out_dir = DEFAULT_OUT_DIR, where_ = "l
                 "re-derived within the horizon, so no one-step path patch carries a surviving " *
                 "signal (experiment_design.md §6 present≠used; recorded, not hidden).",
             "budget" => r.budget,
+            "testbed" => Dict{String,Any}(
+                "state_kind" => r.state_kind,
+                "seed" => r.st_seed, "prefix" => r.st_prefix, "horizon" => r.horizon,
+                "shared_output" => "screen_region(n_changed_px)@r$(r.shared_cell[1])c$(r.shared_cell[2])",
+                "cause_density_above_floor" => r.cause_density,
+                "cause_density_floor" => ST_FLOOR, "cause_density_gate_k" => ST_GATE_K,
+                "cause_density_accepted" => r.cause_density_accepted, "n_causes" => r.n_causes,
+                "note" => "P2 redesign: methods sit on a seeded random-action GAMEPLAY " *
+                    "state (not the boot/attract NOOP tape), gated by the oracle " *
+                    "cause-density gate (accept iff #causes above the floor >= k). The " *
+                    "path-patching algorithm is unchanged; the state moves and the one-step " *
+                    "sender->receiver hop takes the gameplay stream's next action."),
             "interpretation" =>
                 "Path patching (IOI; Goldowsky-Dill) isolates EDGES of the circuit, not " *
                 "just nodes: the freeze-restore lets only the sender->receiver edge carry a " *

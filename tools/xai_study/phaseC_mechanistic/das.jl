@@ -82,12 +82,29 @@ using JuTari.Env: StellaEnvironment, env_reset!, env_step!, get_screen, get_ram
 # the oracle's candidate cause set + Cause type (game-agnostic), and the verified
 # jutari run helper (boot/replay/snapshot/intervene + NPZ writer).
 include(joinpath(@__DIR__, "..", "ground_truth", "oracle_intervene.jl"))
-using .OracleIntervene: candidate_ram_indices
+using .OracleIntervene: candidate_ram_indices, build_pong_causes, run_intervention
 using .OracleIntervene.JutariOracle: Snapshot, snapshot, intervene_ram!,
                                      intervene_tia!, write_npz, RAM_SIZE
+using JuTari.Diff: soft_ram_peek
+
+# The P2 SHARED TESTBED (xai_paper/xai_2_interpretability/experiment_redesign.md):
+# seeded random-action GAMEPLAY state + oracle cause-density gate + shared
+# screen-buffer REGION output. Included as a fragment (see its header) so
+# build_shared_testbed operates on OUR own Cause/Snapshot types. Opt in with
+# XAI_SHARED_TESTBED=1 (default on for the redesign re-run). Phase C is not a
+# gradient method, so the sampler-on path does not apply — we consume the shared
+# STATE + cause-density GATE + shared screen-buffer output only.
+include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
 
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders", "seaquest", "ms_pacman", "qbert"]
+# shared-testbed switch + params (redesign protocol: prefix=90 gameplay, horizon=15).
+const SHARED_TESTBED = get(ENV, "XAI_SHARED_TESTBED", "1") == "1"
+const ST_PREFIX  = parse(Int, get(ENV, "XAI_ST_PREFIX", "90"))
+const ST_HORIZON = parse(Int, get(ENV, "XAI_ST_HORIZON", "15"))
+const ST_SEED    = parse(Int, get(ENV, "XAI_ST_SEED", "0"))
+const ST_GATE_K  = parse(Int, get(ENV, "XAI_ST_GATE_K", "4"))
+const ST_FLOOR   = parse(Float64, get(ENV, "XAI_ST_FLOOR", "0.5"))
 
 # joystick action codes (oracle_intervene.jl: RIGHT=3; LEFT=4). NOOP=0 is BASE.
 const ACT_NOOP  = 0
@@ -266,9 +283,58 @@ struct DASResult
     transient_downstream::Vector{String}  # cells whose interchange is clobbered within the horizon
     n_vars::Int
     n_source_diverged::Int           # candidate cells where the NATURAL source differs from BASE
+    # SHARED-TESTBED provenance (redesign); all NaN/-1/"" in the legacy NOOP path.
+    state_kind::String               # "seeded_random_action_gameplay" | "noop"
+    st_seed::Int
+    st_prefix::Int
+    cause_density::Int               # #causes above the floor at the shared output
+    cause_density_accepted::Bool     # passed the cause-density gate?
+    n_causes::Int
+    shared_cell::Tuple{Int,Int}      # the shared screen-buffer output cell
 end
 
 function run_game(; game, target_frame = 120, horizon = 30, verbose = true)
+    # SHARED-TESTBED (redesign): replace the all-NOOP boot/attract tape with a
+    # seeded random-action GAMEPLAY state at f*=ST_PREFIX, gated by the oracle
+    # cause-density gate. BASE, SOURCE, causes, candidate set all come from the
+    # shared substrate so every method sits on the SAME state (P1, P4).
+    st = nothing
+    if SHARED_TESTBED
+        st = build_shared_testbed(game;
+            settings_for = settings_for, rom_path_for = rom_path_for,
+            candidates_path_for = candidates_path_for,
+            build_causes = build_pong_causes, candidate_ram_indices = candidate_ram_indices,
+            continue_from = continue_from, snapshot = snapshot, env_step = env_step!,
+            intervene_ram = intervene_ram!, boot_replay = boot_replay,
+            run_intervention = run_intervention, soft_ram_peek = soft_ram_peek,
+            prefix = ST_PREFIX, horizon = ST_HORIZON, seed = ST_SEED,
+            k = ST_GATE_K, floor = ST_FLOOR, verbose = verbose,
+            assert_bit_exact = assert_bit_exact)
+        target_frame = st.prefix; horizon = st.horizon
+        total = st.total
+        base_actions = st.actions
+        bit_exact = true
+        base_ckpt = st.checkpoint
+        tail = base_actions[target_frame + 1 : total]
+        base_snap = st.base
+        base_at_t = st.at_target
+        cand = candidates_path_for(game)
+        cand_indices = st.cand_indices
+        # SOURCE run: share the gameplay prefix, diverge only at the analysis frame
+        # with a RIGHT joystick action (an on-distribution genuinely different state).
+        pre = target_frame > 0 ? Int.(base_actions[1:target_frame - 1]) : Int[]
+        src_at_t = continue_from(boot_replay(vcat(pre, ACT_RIGHT), target_frame; game = game), Int[])
+        cand_ic = candidate_ram_indices(cand)
+        vars = build_variables(cand_ic)
+        verbose && println("[$game] SHARED gameplay state: cause_density=$(st.cause_density)/" *
+            "$(length(st.causes)) accepted=$(st.accepted) cell=$(st.cell)")
+        return _run_game_body(; game = game, target_frame = target_frame, horizon = horizon,
+            total = total, base_ckpt = base_ckpt, base_actions = base_actions, tail = tail,
+            base_snap = base_snap, base_at_t = base_at_t, src_at_t = src_at_t,
+            cand_indices = cand_indices, vars = vars, bit_exact = bit_exact, st = st,
+            verbose = verbose)
+    end
+
     total = target_frame + horizon
     base_actions = fill(ACT_NOOP, total)
 
@@ -295,6 +361,20 @@ function run_game(; game, target_frame = 120, horizon = 30, verbose = true)
     cand_ic = candidate_ram_indices(cand)                # [(idx, concept), ...]
     cand_indices = [idx for (idx, _) in cand_ic]
     vars = build_variables(cand_ic)
+    return _run_game_body(; game = game, target_frame = target_frame, horizon = horizon,
+        total = total, base_ckpt = base_ckpt, base_actions = base_actions, tail = tail,
+        base_snap = base_snap, base_at_t = base_at_t, src_at_t = src_at_t,
+        cand_indices = cand_indices, vars = vars, bit_exact = bit_exact, st = nothing,
+        verbose = verbose)
+end
+
+"""The per-game body, shared by the legacy NOOP path and the SHARED gameplay-state
+path (the ONLY difference is which state/action-stream/checkpoint/SOURCE the
+interchange algorithm sits on — the algorithm itself is unchanged). `st` carries the
+shared-testbed provenance for the record, or `nothing` in the legacy path."""
+function _run_game_body(; game, target_frame, horizon, total, base_ckpt, base_actions,
+                        tail, base_snap, base_at_t, src_at_t, cand_indices, vars,
+                        bit_exact, st, verbose)
     nvar = length(vars)
 
     # the candidate ALIGNMENT cells we search over: each candidate RAM cell as a
@@ -472,7 +552,14 @@ function run_game(; game, target_frame = 120, horizon = 30, verbose = true)
                      iia_aligned, iia_misaligned, iia_aligned_natural,
                      alignment_accuracy, alignment_accuracy_all,
                      recovered_aligned, true_aligned,
-                     transient_downstream, nvar, n_source_diverged)
+                     transient_downstream, nvar, n_source_diverged,
+                     st === nothing ? "noop" : "seeded_random_action_gameplay",
+                     st === nothing ? -1 : st.seed,
+                     st === nothing ? -1 : st.prefix,
+                     st === nothing ? -1 : st.cause_density,
+                     st === nothing ? false : st.accepted,
+                     st === nothing ? nvar : length(st.causes),
+                     st === nothing ? (-1, -1) : st.cell)
 end
 
 # ============================================================================
@@ -516,7 +603,8 @@ function write_game_result(r::DASResult; out_dir = OUT_DIR)
         "phase" => "phaseC_mechanistic",
         "method" => "interchange_interventions_das",
         "game" => r.game,
-        "state" => "f$(r.target_frame)+$(r.horizon)",
+        "state" => r.state_kind == "noop" ? "f$(r.target_frame)+$(r.horizon)" :
+                   "gameplay(seed=$(r.st_seed),prefix=$(r.st_prefix))+$(r.horizon)",
         "target_output" => "aligned causal variables (RAM concept cells + bg-colour)",
         # headline §R scalar: interchange accuracy of the TRUE alignment (1.0 = the
         # abstraction is realised exactly by the oracle alignment).
@@ -547,6 +635,18 @@ function write_game_result(r::DASResult; out_dir = OUT_DIR)
             "n_variables" => r.n_vars,
             "n_source_diverged_natural" => r.n_source_diverged,
             "interchange_effect" => eff_map,
+            "testbed" => Dict{String,Any}(
+                "state_kind" => r.state_kind,
+                "seed" => r.st_seed, "prefix" => r.st_prefix, "horizon" => r.horizon,
+                "shared_output" => "screen_region(n_changed_px)@r$(r.shared_cell[1])c$(r.shared_cell[2])",
+                "cause_density_above_floor" => r.cause_density,
+                "cause_density_floor" => ST_FLOOR, "cause_density_gate_k" => ST_GATE_K,
+                "cause_density_accepted" => r.cause_density_accepted, "n_causes" => r.n_causes,
+                "note" => "P2 redesign: methods sit on a seeded random-action GAMEPLAY " *
+                    "state (not the boot/attract NOOP tape), gated by the oracle " *
+                    "cause-density gate (accept iff #causes above the floor >= k). The " *
+                    "interchange/DAS algorithm is unchanged; only the state (BASE + " *
+                    "SOURCE, both on the shared gameplay prefix) moves."),
             "note" =>
                 "Interchange interventions / DAS (Geiger et al. 2021/2023): for each " *
                 "candidate alignment (a RAM cell / TIA register realising a high-level " *

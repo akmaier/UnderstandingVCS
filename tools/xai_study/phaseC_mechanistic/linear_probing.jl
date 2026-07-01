@@ -86,10 +86,29 @@ using JuTari.Env: StellaEnvironment, env_reset!, env_step!, get_ram
 include(joinpath(@__DIR__, "..", "ground_truth", "oracle_intervene.jl"))
 using .OracleIntervene: candidate_ram_indices
 using .OracleIntervene.JutariOracle: write_npz, RAM_SIZE
+using JuTari.Diff: soft_ram_peek
+
+# The P2 SHARED TESTBED (xai_paper/xai_2_interpretability/experiment_redesign.md):
+# seeded random-action GAMEPLAY state + oracle cause-density gate. Included as a
+# fragment (see its header for why not a module) so build_shared_testbed operates
+# on OUR own Cause/Snapshot types. Probing is not a gradient method, so the
+# sampler-on path does not apply — we consume the shared action STREAM + the
+# cause-density GATE, and SEED the recorded RAM trajectory from that gameplay
+# stream (feed st.actions for the first prefix+horizon frames, then NOOP-continue
+# if more frames are needed) so the probe algorithm is UNCHANGED — only the state
+# the trajectory sits on moves. Opt in with XAI_SHARED_TESTBED=1 (default on).
+include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
 
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders", "seaquest", "ms_pacman", "qbert"]
 const _PRIMARY_REPO = get(ENV, "XAI_PRIMARY_REPO", "/Users/maier/Documents/code/UnderstandingVCS")
+# shared-testbed switch + params (redesign protocol: prefix=90 gameplay, horizon=15).
+const SHARED_TESTBED = get(ENV, "XAI_SHARED_TESTBED", "1") == "1"
+const ST_PREFIX  = parse(Int, get(ENV, "XAI_ST_PREFIX", "90"))
+const ST_HORIZON = parse(Int, get(ENV, "XAI_ST_HORIZON", "15"))
+const ST_SEED    = parse(Int, get(ENV, "XAI_ST_SEED", "0"))
+const ST_GATE_K  = parse(Int, get(ENV, "XAI_ST_GATE_K", "4"))
+const ST_FLOOR   = parse(Float64, get(ENV, "XAI_ST_FLOOR", "0.5"))
 
 # ============================================================================
 # Per-game ROM + RomSettings resolution — mirrors das.jl / activation_patching.jl
@@ -286,6 +305,15 @@ struct GameProbeResult
     n_not_causally_used::Int       # cells the oracle flags transient (present≠used)
     n_decodable_not_causal::Int    # THE present-vs-used count
     oracle_xref_available::Bool    # das_<game>.json found?
+    # SHARED-TESTBED provenance (redesign); all "noop"/-1/false in the legacy path.
+    state_kind::String             # "seeded_random_action_gameplay" | "varied_action"
+    st_seed::Int
+    st_prefix::Int
+    st_horizon::Int
+    cause_density::Int             # #causes above the floor at the shared output
+    cause_density_accepted::Bool   # passed the cause-density gate?
+    n_causes::Int
+    shared_cell::Tuple{Int,Int}    # the shared screen-buffer output cell
 end
 
 # decodability thresholds: a concept is "present/decodable" if the linear probe
@@ -299,14 +327,56 @@ const DECODE_SELECTIVITY_MIN = 0.1 # and show real structure over the control
 # in which selectivity (probe − control) is meaningful (Hewitt & Liang 2019).
 # Stays well inside the Paper-1 conformance horizon (the core games are 64/64
 # long-horizon bit-exact; the recorder replays deterministically).
+"""Build the P2 SHARED gameplay state + cause-density gate for `game` using the §1
+oracle machinery (oracle_intervene.jl). Returns the substrate NamedTuple; probing
+uses its `.actions` gameplay stream to SEED the recorded trajectory and threads its
+`.cause_density`/`.accepted`/`.cell` gate into the record. The probe algorithm is
+unchanged — only the state the trajectory sits on moves."""
+function build_linear_probing_shared_state(game::AbstractString; verbose = false)
+    O = OracleIntervene; J = OracleIntervene.JutariOracle
+    return build_shared_testbed(game;
+        settings_for = J.settings_for, rom_path_for = J.rom_path_for,
+        candidates_path_for = candidates_path_for,
+        build_causes = O.build_pong_causes, candidate_ram_indices = O.candidate_ram_indices,
+        continue_from = J.continue_from, snapshot = J.snapshot, env_step = J.env_step!,
+        intervene_ram = J.intervene_ram!, boot_replay = J.boot_replay,
+        run_intervention = O.run_intervention, soft_ram_peek = soft_ram_peek,
+        prefix = ST_PREFIX, horizon = ST_HORIZON, seed = ST_SEED,
+        k = ST_GATE_K, floor = ST_FLOOR, verbose = verbose,
+        assert_bit_exact = O.assert_bit_exact)
+end
+
 function run_game(; game::AbstractString, frames::Integer = 600,
                   train_frac = 0.7, seed::Integer = 0, verbose = true)
-    # ---- 1) record the state trajectory under a varied action stream ----------
+    # ---- 0) SHARED-TESTBED (redesign): seed the recorded trajectory from the
+    # seeded random-action GAMEPLAY stream (gated by the oracle cause-density gate)
+    # instead of the local varied-action stream. We feed st.actions for the first
+    # prefix+horizon frames, then NOOP-continue to reach `frames` if the probe needs
+    # MORE samples than the gameplay window (the probe needs many samples ≫ features;
+    # the tail is a NOOP continuation FROM the gameplay state, still on-distribution
+    # and deterministic). The probe algorithm below is unchanged.
+    st = nothing
+    if SHARED_TESTBED
+        st = build_linear_probing_shared_state(game; verbose = verbose)
+        verbose && println("[$game] SHARED gameplay state: cause_density=$(st.cause_density)/" *
+            "$(length(st.causes)) accepted=$(st.accepted) cell=$(st.cell)")
+    end
+
+    # ---- 1) record the state trajectory under the (shared or varied) action stream
     # record_ram_tape mirrors the common recorder's deterministic per-frame RAM
     # stacking (jutari_record), with the per-game ROM alias so ms_pacman et al.
     # resolve (the common recorder resolves names verbatim).
-    acts = varied_actions(frames; seed = seed)
-    verbose && println("[$game] recording $frames-frame RAM trajectory (seeded varied actions)...")
+    acts = if st !== nothing
+        # gameplay stream (prefix+horizon) then NOOP-continued to `frames`.
+        gp = Int.(st.actions)
+        Int(frames) <= length(gp) ? gp[1:Int(frames)] :
+            vcat(gp, fill(ACT_NOOP, Int(frames) - length(gp)))
+    else
+        varied_actions(frames; seed = seed)
+    end
+    verbose && println("[$game] recording $frames-frame RAM trajectory " *
+        (st === nothing ? "(seeded varied actions)..." :
+         "(gameplay seed=$(st.seed) prefix=$(st.prefix)+$(st.horizon), NOOP-continued)..."))
     tape = Float64.(record_ram_tape(game, acts))    # (T, 128)
     T, ncell = size(tape)
     @assert ncell == RAM_SIZE "expected $(RAM_SIZE)-cell RAM tape, got $ncell"
@@ -425,7 +495,15 @@ function run_game(; game::AbstractString, frames::Integer = 600,
 
     return GameProbeResult(game, Int(frames), ncell - 1, cells,
                            mean_probe, mean_ctrl, mean_sel,
-                           np, n_decodable, n_not_used, n_dnc, xref_available)
+                           np, n_decodable, n_not_used, n_dnc, xref_available,
+                           st === nothing ? "varied_action" : "seeded_random_action_gameplay",
+                           st === nothing ? -1 : st.seed,
+                           st === nothing ? -1 : st.prefix,
+                           st === nothing ? -1 : st.horizon,
+                           st === nothing ? -1 : st.cause_density,
+                           st === nothing ? false : st.accepted,
+                           st === nothing ? -1 : length(st.causes),
+                           st === nothing ? (-1, -1) : st.cell)
 end
 
 # ============================================================================
@@ -474,7 +552,10 @@ function write_game_result(r::GameProbeResult; out_dir = OUT_DIR)
         "phase" => "phaseC_mechanistic",
         "method" => "linear_probing_control_tasks",
         "game" => r.game,
-        "state" => "f1..f$(r.frames) (varied-action trajectory)",
+        "state" => r.state_kind == "varied_action" ?
+                   "f1..f$(r.frames) (varied-action trajectory)" :
+                   "gameplay(seed=$(r.st_seed),prefix=$(r.st_prefix))+$(r.st_horizon), " *
+                   "NOOP-continued to f$(r.frames)",
         "target_output" => "concept decodability from VCS state (labelled RAM cells)",
         # headline §R scalar: mean selectivity (probe − control) over probeable
         # concept cells — the honest decodability signal (Hewitt & Liang 2019).
@@ -506,6 +587,21 @@ function write_game_result(r::GameProbeResult; out_dir = OUT_DIR)
             # not-causally-used by the exact intervention oracle.
             "n_decodable_not_causal" => r.n_decodable_not_causal,
             "oracle_xref_available" => r.oracle_xref_available,
+            "testbed" => Dict{String,Any}(
+                "state_kind" => r.state_kind,
+                "seed" => r.st_seed, "prefix" => r.st_prefix, "horizon" => r.st_horizon,
+                "frames" => r.frames,
+                "shared_output" => r.shared_cell == (-1, -1) ? "n/a" :
+                    "screen_region(n_changed_px)@r$(r.shared_cell[1])c$(r.shared_cell[2])",
+                "cause_density_above_floor" => r.cause_density,
+                "cause_density_floor" => ST_FLOOR, "cause_density_gate_k" => ST_GATE_K,
+                "cause_density_accepted" => r.cause_density_accepted, "n_causes" => r.n_causes,
+                "note" => "P2 redesign: the recorded state trajectory is SEEDED from a " *
+                    "seeded random-action GAMEPLAY stream (not the local varied-action " *
+                    "tape), gated by the oracle cause-density gate (accept iff #causes " *
+                    "above the floor >= k). st.actions supplies the first prefix+horizon " *
+                    "frames, then the trajectory is NOOP-continued to `frames` (the probe " *
+                    "needs many samples ≫ features). The probing algorithm is unchanged."),
             "cells" => [_cell_dict(c) for c in r.cells],
             "note" =>
                 "Linear probing + control tasks (Alain & Bengio 2017; Hewitt & " *

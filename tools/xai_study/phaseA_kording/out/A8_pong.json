@@ -1,7 +1,7 @@
 {
   "arrays": "A8_pong.npz",
   "ci": null,
-  "commit": "2845cf9",
+  "commit": "c157ec63",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -24,7 +24,7 @@
       51,
       54
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/.claude/worktrees/wf_d845c9bf-d97-7/tools/xai_study/t3/out/candidates_pong.json",
+    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_pong.json",
     "oracle_causal_ram_indices": [
       13,
       14
@@ -50,6 +50,19 @@
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
     "settings": "PongRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
+    "testbed": {
+      "cause_density_above_floor": -1,
+      "cause_density_accepted": false,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 30,
+      "n_causes": 0,
+      "note": "P2 redesign: BOTH the scored oracle prefix (causal importance) AND the whole-state recording run on a seeded random-action GAMEPLAY state (not the FIRE×4-then-NOOP oracle tape / synthetic active tape), gated by the §1 oracle cause-density gate. The recorded tape is the gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A8's recording + oracle-importance algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
+      "prefix": -1,
+      "seed": -1,
+      "shared_output": "screen_region(n_changed_px)@r-1c-1",
+      "state_kind": "noop"
+    },
     "triad": {
       "F": 1.0,
       "F_note": "recall of oracle-causal candidate cells under the whole-state map = 1.0 (the recorded whole state contains every cell, so it misses no causal cell)",
@@ -88,7 +101,7 @@
   "state": "f30+30",
   "stderr": null,
   "target_output": "full RAM+register state map over time (whole-state record)",
-  "timestamp": "1782143572",
+  "timestamp": "1782923202",
   "value": 0.015625,
   "where": "local"
 }

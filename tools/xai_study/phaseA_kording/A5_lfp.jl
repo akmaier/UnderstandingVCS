@@ -90,7 +90,34 @@ using .JutariOracle.JuTari.Env: env_reset!, env_step!, get_ram
 # the trajectory recorder lineage (A5 re-implements its loop with per-game settings).
 include(joinpath(@__DIR__, "..", "common", "jutari_record.jl"))
 
+# The §1 exact-intervention oracle (Cause / build_pong_causes / candidate_ram_indices /
+# run_intervention / assert_bit_exact) — used ONLY to build the P2 SHARED gameplay
+# state + its cause-density gate (below). A5 keeps its OWN recording/spectral
+# machinery; the oracle here supplies the shared action STREAM + the gate, not the
+# spectrum. Referenced as OracleIntervene.X (NOT alias-imported — its internal
+# JutariOracle submodule is a separate instance from the one included above; keeping
+# it qualified avoids mixing the two).
+include(joinpath(@__DIR__, "..", "ground_truth", "oracle_intervene.jl"))
+using JuTari.Diff: soft_ram_peek
+
+# The P2 SHARED TESTBED (xai_paper/xai_2_interpretability/experiment_redesign.md):
+# seeded random-action GAMEPLAY state + oracle cause-density gate. Included as a
+# fragment. Phase A is not a gradient method, so the sampler-on path does not apply —
+# we consume the shared action STREAM + cause-density GATE only, and drive A5's OWN
+# trajectory recording from that stream so the spectral algorithm is unchanged.
+# Opt in with XAI_SHARED_TESTBED=1 (default on).
+include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
+
 const OUT_DIR = joinpath(@__DIR__, "out")
+const PRIMARY_REPO = get(ENV, "XAI_PRIMARY_REPO",
+                         "/Users/maier/Documents/code/UnderstandingVCS")
+# shared-testbed switch + params (redesign protocol: prefix=90 gameplay, horizon=15).
+const SHARED_TESTBED = get(ENV, "XAI_SHARED_TESTBED", "1") == "1"
+const ST_PREFIX  = parse(Int, get(ENV, "XAI_ST_PREFIX", "90"))
+const ST_HORIZON = parse(Int, get(ENV, "XAI_ST_HORIZON", "15"))
+const ST_SEED    = parse(Int, get(ENV, "XAI_ST_SEED", "0"))
+const ST_GATE_K  = parse(Int, get(ENV, "XAI_ST_GATE_K", "4"))
+const ST_FLOOR   = parse(Float64, get(ENV, "XAI_ST_FLOOR", "0.5"))
 const CORE_GAMES = ["pong", "breakout", "space_invaders",
                     "seaquest", "ms_pacman", "qbert"]
 
@@ -547,6 +574,44 @@ struct GameResult
     regions::Vector{Region}                 # [1] is always "global"
     top_peak_periods::Vector{Float64}       # global pool: top-K dominant periods (frames)
     top_peak_power::Vector{Float64}
+    # SHARED-TESTBED provenance (redesign); "noop"/-1/false in the legacy path.
+    state_kind::String             # "seeded_random_action_gameplay" | "noop"
+    st_seed::Int
+    st_prefix::Int
+    cause_density::Int             # #causes above the floor at the shared output
+    cause_density_accepted::Bool   # passed the cause-density gate?
+    n_causes::Int
+    shared_cell::Tuple{Int,Int}    # the shared screen-buffer output cell
+end
+
+# A5's candidates-path resolver in the shape the shared testbed injects (a
+# String->path-or-nothing map). Mirrors resolve_candidates' search.
+function _st_candidates_path_for(game::AbstractString)
+    rel = joinpath("tools", "xai_study", "t3", "out", "candidates_$(game).json")
+    here = normpath(joinpath(@__DIR__, "..", "..", ".."))
+    for base in (here, PRIMARY_REPO)
+        p = joinpath(base, rel)
+        isfile(p) && return p
+    end
+    return nothing
+end
+
+"""Build the P2 SHARED gameplay state + cause-density gate for `game` using the §1
+oracle machinery (oracle_intervene.jl). Returns the substrate NamedTuple (we use its
+`.actions` stream + `.cause_density`/`.accepted`/`.cell` gate). A5 then drives its OWN
+trajectory recording from `st.actions` so the spectral algorithm is unchanged."""
+function build_a5_shared_state(game::AbstractString; verbose = false)
+    O = OracleIntervene; J = OracleIntervene.JutariOracle
+    return build_shared_testbed(game;
+        settings_for = J.settings_for, rom_path_for = J.rom_path_for,
+        candidates_path_for = _st_candidates_path_for,
+        build_causes = O.build_pong_causes, candidate_ram_indices = O.candidate_ram_indices,
+        continue_from = J.continue_from, snapshot = J.snapshot, env_step = J.env_step!,
+        intervene_ram = J.intervene_ram!, boot_replay = J.boot_replay,
+        run_intervention = O.run_intervention, soft_ram_peek = soft_ram_peek,
+        prefix = ST_PREFIX, horizon = ST_HORIZON, seed = ST_SEED,
+        k = ST_GATE_K, floor = ST_FLOOR, verbose = verbose,
+        assert_bit_exact = O.assert_bit_exact)
 end
 
 function compute_game(game::AbstractString; traj_frames = nothing, trace = nothing,
@@ -554,7 +619,27 @@ function compute_game(game::AbstractString; traj_frames = nothing, trace = nothi
     cfg = game_cfg(game)
     traj_frames = traj_frames === nothing ? cfg.traj_frames : traj_frames
     trace       = trace === nothing ? cfg.trace : trace
-    acts = trace_actions(trace, traj_frames)
+
+    # SHARED-TESTBED (redesign): replace the synthetic active/dir trajectory tape with
+    # the seeded random-action GAMEPLAY stream, gated by the oracle cause-density gate.
+    # A5 is a TRAJECTORY runner needing traj_frames (>> prefix+horizon) frames; we drive
+    # the FIRST prefix+horizon frames from the gameplay stream and NOOP-continue the tail
+    # (keeping the default window; the spectral/clock algorithm is UNCHANGED — only the
+    # driving action stream moves onto genuine input-driven gameplay).
+    st = nothing
+    if SHARED_TESTBED
+        st = build_a5_shared_state(game; verbose = verbose)
+        gp = Int.(st.actions)
+        acts = Vector{Int}(undef, traj_frames)
+        for t in 1:traj_frames
+            acts[t] = t <= length(gp) ? gp[t] : 0     # gameplay prefix+horizon, then NOOP
+        end
+        verbose && println("[A5:$game] SHARED gameplay state: cause_density=$(st.cause_density)/" *
+            "$(length(st.causes)) accepted=$(st.accepted) cell=$(st.cell); " *
+            "trajectory = gameplay($(length(gp)) frames)+NOOP tail to f$traj_frames")
+    else
+        acts = trace_actions(trace, traj_frames)
+    end
 
     # 1) bit-exact baseline — two fresh boots+replays must be byte-identical. A5 is
     #    descriptive, but the trajectory it analyses must be a deterministic jutari
@@ -624,7 +709,14 @@ function compute_game(game::AbstractString; traj_frames = nothing, trace = nothi
     end
 
     return GameResult(game, traj_frames, trace, seed, bit_exact, n_harmonics, top_peaks,
-                      clocks, size(B, 2), regions, top_periods, top_power)
+                      clocks, size(B, 2), regions, top_periods, top_power,
+                      st === nothing ? "noop" : "seeded_random_action_gameplay",
+                      st === nothing ? -1 : st.seed,
+                      st === nothing ? -1 : st.prefix,
+                      st === nothing ? -1 : st.cause_density,
+                      st === nothing ? false : st.accepted,
+                      st === nothing ? 0 : length(st.causes),
+                      st === nothing ? (-1, -1) : st.cell)
 end
 
 # ============================================================================
@@ -777,7 +869,8 @@ function write_game(r::GameResult; out_dir = OUT_DIR)
         "phase" => "phaseA_kording",
         "method" => "A5_local_field_potentials(pooled_activity_spectra)",
         "game" => r.game,
-        "state" => "f0+$(r.traj_frames)",
+        "state" => r.state_kind == "noop" ? "f0+$(r.traj_frames)" :
+                   "gameplay(seed=$(r.st_seed),prefix=$(r.st_prefix))+$(r.traj_frames)",
         "target_output" => "pooled-activity-power-spectrum",
         # headline scalar (SPEC §R value/metric_name): the GLOBAL pool's clock-explained
         # variance fraction — the %-variance attributable to the KNOWN clocks (frame/
@@ -798,6 +891,19 @@ function write_game(r::GameResult; out_dir = OUT_DIR)
             "substrate" => "jutari (Julia, HARD) — real-ROM bit-exact path; the " *
                 "analysed RAM trajectory is a deterministic re-run (asserted).",
             "bit_exact_rerun" => r.bit_exact,
+            "testbed" => Dict{String,Any}(
+                "state_kind" => r.state_kind,
+                "seed" => r.st_seed, "prefix" => r.st_prefix, "horizon" => ST_HORIZON,
+                "shared_output" => "screen_region(n_changed_px)@r$(r.shared_cell[1])c$(r.shared_cell[2])",
+                "cause_density_above_floor" => r.cause_density,
+                "cause_density_floor" => ST_FLOOR, "cause_density_gate_k" => ST_GATE_K,
+                "cause_density_accepted" => r.cause_density_accepted, "n_causes" => r.n_causes,
+                "note" => "P2 redesign: the pooled-activity spectrum runs on a seeded " *
+                    "random-action GAMEPLAY trajectory (not the synthetic active/dir " *
+                    "action tape), driven by the §1 oracle-gated gameplay stream for the " *
+                    "first prefix+horizon frames then NOOP-continued to traj_frames. A5's " *
+                    "spectral/clock algorithm is unchanged; only the driving action stream " *
+                    "moves onto genuine input-driven gameplay."),
             "method_kind" => "descriptive (no oracle F/S/M; A5 reports the pooled " *
                 "spectral structure it REVEALS vs the causal map it MISSES — the " *
                 "clock-explained fraction quantifies how much of the headline " *

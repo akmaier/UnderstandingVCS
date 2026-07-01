@@ -119,10 +119,33 @@ using .JutariOracle: write_npz, RAM_SIZE
 include(joinpath(@__DIR__, "..", "common", "jutari_record.jl"))
 using .JutariRecord: Trajectory
 
+# The §1 exact-intervention oracle — used ONLY to build the P2 SHARED gameplay state
+# + its cause-density gate (below). A8 keeps its OWN whole-state-recording + oracle
+# causal-importance machinery; the oracle here supplies the shared action STREAM + the
+# gate. Referenced as OracleIntervene.X (NOT alias-imported — its internal JutariOracle
+# submodule is a separate instance from the one included above; qualifying it avoids
+# mixing the two).
+include(joinpath(@__DIR__, "..", "ground_truth", "oracle_intervene.jl"))
+using JuTari.Diff: soft_ram_peek
+
+# The P2 SHARED TESTBED: seeded random-action GAMEPLAY state + oracle cause-density
+# gate. Included as a fragment. Phase A is not a gradient method, so the sampler-on
+# path does not apply — we consume the shared action STREAM + GATE only, and drive
+# A8's OWN checkpoint + whole-state recording from that stream so the recording +
+# oracle-importance algorithm is unchanged. Opt in with XAI_SHARED_TESTBED=1 (default on).
+include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
+
 import JSON
 import Statistics
 
 const OUT_DIR = joinpath(@__DIR__, "out")
+# shared-testbed switch + params (redesign protocol: prefix=90 gameplay, horizon=15).
+const SHARED_TESTBED = get(ENV, "XAI_SHARED_TESTBED", "1") == "1"
+const ST_PREFIX  = parse(Int, get(ENV, "XAI_ST_PREFIX", "90"))
+const ST_HORIZON = parse(Int, get(ENV, "XAI_ST_HORIZON", "15"))
+const ST_SEED    = parse(Int, get(ENV, "XAI_ST_SEED", "0"))
+const ST_GATE_K  = parse(Int, get(ENV, "XAI_ST_GATE_K", "4"))
+const ST_FLOOR   = parse(Float64, get(ENV, "XAI_ST_FLOOR", "0.5"))
 const CORE_GAMES = ["pong", "breakout", "space_invaders",
                     "seaquest", "ms_pacman", "qbert"]
 const TIA_SIZE = 64
@@ -413,12 +436,71 @@ struct GameResult
     wholestate_sufficient::Bool
     minimal_sufficient::Bool
     overrecording_factor::Float64  # wholestate_size / n_causal
+    # SHARED-TESTBED provenance (redesign); "noop"/-1/false in the legacy path.
+    state_kind::String             # "seeded_random_action_gameplay" | "noop"
+    st_seed::Int
+    st_prefix::Int
+    cause_density::Int
+    cause_density_accepted::Bool
+    n_causes::Int
+    shared_cell::Tuple{Int,Int}
+end
+
+# A8's candidates-path resolver in the shape the shared testbed injects. Mirrors
+# load_candidates' search.
+function _st_candidates_path_for(game::AbstractString)
+    rel = joinpath("tools", "xai_study", "t3", "out", "candidates_$(game).json")
+    here = normpath(joinpath(@__DIR__, "..", "..", ".."))
+    for base in (here, _PRIMARY_REPO)
+        p = joinpath(base, rel)
+        isfile(p) && return p
+    end
+    return nothing
+end
+
+"""Build the P2 SHARED gameplay state + cause-density gate for `game` using the §1
+oracle machinery (oracle_intervene.jl). Returns the substrate NamedTuple (we use its
+`.actions` stream + `.cause_density`/`.accepted`/`.cell` gate). A8 then boots its OWN
+checkpoint + drives its whole-state recording from `st.actions` so the recording +
+oracle-importance algorithm is unchanged."""
+function build_a8_shared_state(game::AbstractString; verbose = false)
+    O = OracleIntervene; J = OracleIntervene.JutariOracle
+    return build_shared_testbed(game;
+        settings_for = J.settings_for, rom_path_for = J.rom_path_for,
+        candidates_path_for = _st_candidates_path_for,
+        build_causes = O.build_pong_causes, candidate_ram_indices = O.candidate_ram_indices,
+        continue_from = J.continue_from, snapshot = J.snapshot, env_step = J.env_step!,
+        intervene_ram = J.intervene_ram!, boot_replay = J.boot_replay,
+        run_intervention = O.run_intervention, soft_ram_peek = soft_ram_peek,
+        prefix = ST_PREFIX, horizon = ST_HORIZON, seed = ST_SEED,
+        k = ST_GATE_K, floor = ST_FLOOR, verbose = verbose,
+        assert_bit_exact = O.assert_bit_exact)
 end
 
 function run_game(game::AbstractString; target_frame = 30, horizon = 30,
                   traj_frames = 150, verbose = true)
+    # SHARED-TESTBED (redesign): replace the FIRE×4-then-NOOP oracle tape with the
+    # seeded random-action GAMEPLAY stream (oracle cause-density gated). target_frame/
+    # horizon become the shared prefix/horizon; the scored action stream = st.actions;
+    # the whole-state recording is driven by st.actions for the first prefix+horizon
+    # frames then NOOP-continued to traj_frames. A8's recording + oracle-importance
+    # algorithm is UNCHANGED — only the driving action streams move.
+    st = nothing
+    traj_acts = nothing
+    if SHARED_TESTBED
+        st = build_a8_shared_state(game; verbose = verbose)
+        target_frame = st.prefix; horizon = st.horizon
+        gp = Int.(st.actions)
+        traj_acts = Vector{Int}(undef, traj_frames)
+        for t in 1:traj_frames
+            traj_acts[t] = t <= length(gp) ? gp[t] : 0     # gameplay window, then NOOP
+        end
+        verbose && println("[A8:$game] SHARED gameplay state: cause_density=$(st.cause_density)/" *
+            "$(length(st.causes)) accepted=$(st.accepted) cell=$(st.cell); " *
+            "trajectory = gameplay($(length(gp)) frames)+NOOP tail to f$traj_frames")
+    end
     total = target_frame + horizon
-    actions = oracle_actions(total)              # FIRE×4 then NOOP (scored path)
+    actions = SHARED_TESTBED ? Int.(st.actions) : oracle_actions(total)  # scored path
     tail = Int.(actions[target_frame + 1 : total])
 
     # 1) bit-exact baseline guarantee — two fresh boots+replays must be identical.
@@ -446,8 +528,10 @@ function run_game(game::AbstractString; target_frame = 30, horizon = 30,
     # 4) the WHOLE-STATE recording (the descriptive map over time) — RAM + TIA per
     #    frame on the active trace (so the tape MOVES; descriptive, not a bit-exact
     #    claim). This is "record everything, every frame".
-    verbose && println("[A8:$game] whole-state recording: $(traj_frames)-frame (active) RAM+TIA tape...")
-    traj = record_whole_state(game, active_actions(traj_frames))
+    traj_stream = SHARED_TESTBED ? traj_acts : active_actions(traj_frames)
+    verbose && println("[A8:$game] whole-state recording: $(traj_frames)-frame " *
+                       (SHARED_TESTBED ? "gameplay+NOOP" : "(active)") * " RAM+TIA tape...")
+    traj = record_whole_state(game, traj_stream)
     nram = RAM_SIZE
     ram_tape = @view traj.tape[:, 1:nram]
     cell_min = UInt8[minimum(@view ram_tape[:, j]) for j in 1:nram]
@@ -501,7 +585,14 @@ function run_game(game::AbstractString; target_frame = 30, horizon = 30,
                       traj_frames, bit_exact, cands, oracle_importance, n_causal,
                       RAM_SIZE, TIA_SIZE, RAM_SIZE + TIA_SIZE, size(traj.tape),
                       n_varying, cell_min, cell_max, cell_var, triad,
-                      ctrl_F, ctrl_S, ctrl_M, ws_suff, min_suff, overrec)
+                      ctrl_F, ctrl_S, ctrl_M, ws_suff, min_suff, overrec,
+                      st === nothing ? "noop" : "seeded_random_action_gameplay",
+                      st === nothing ? -1 : st.seed,
+                      st === nothing ? -1 : st.prefix,
+                      st === nothing ? -1 : st.cause_density,
+                      st === nothing ? false : st.accepted,
+                      st === nothing ? 0 : length(st.causes),
+                      st === nothing ? (-1, -1) : st.cell)
 end
 
 # ===========================================================================
@@ -523,7 +614,8 @@ function _game_record(r::GameResult)
         "phase" => "phaseA_kording",
         "method" => "A8_wholestate(record-everything descriptive baseline)",
         "game" => r.game,
-        "state" => "f$(r.target_frame)+$(r.horizon)",
+        "state" => r.state_kind == "noop" ? "f$(r.target_frame)+$(r.horizon)" :
+                   "gameplay(seed=$(r.st_seed),prefix=$(r.st_prefix))+$(r.horizon)",
         "target_output" => "full RAM+register state map over time (whole-state record)",
         # headline scalar (SPEC §R value/metric_name): the whole-state minimality M
         # — deliberately at the FLOOR (the lower bound the other A-methods beat).
@@ -544,6 +636,20 @@ function _game_record(r::GameResult)
             "settings" => r.settings_name,
             "candidates_file" => r.candidates_path,
             "bit_exact_rerun" => r.bit_exact,
+            "testbed" => Dict{String,Any}(
+                "state_kind" => r.state_kind,
+                "seed" => r.st_seed, "prefix" => r.st_prefix, "horizon" => r.horizon,
+                "shared_output" => "screen_region(n_changed_px)@r$(r.shared_cell[1])c$(r.shared_cell[2])",
+                "cause_density_above_floor" => r.cause_density,
+                "cause_density_floor" => ST_FLOOR, "cause_density_gate_k" => ST_GATE_K,
+                "cause_density_accepted" => r.cause_density_accepted, "n_causes" => r.n_causes,
+                "note" => "P2 redesign: BOTH the scored oracle prefix (causal importance) " *
+                    "AND the whole-state recording run on a seeded random-action GAMEPLAY " *
+                    "state (not the FIRE×4-then-NOOP oracle tape / synthetic active tape), " *
+                    "gated by the §1 oracle cause-density gate. The recorded tape is the " *
+                    "gameplay stream for the first prefix+horizon frames then NOOP-continued " *
+                    "to traj_frames. A8's recording + oracle-importance algorithm is unchanged; " *
+                    "only the analysis state moves onto genuine input-driven gameplay."),
             "candidate_cells" => cell_names,
             "candidate_ram_indices" => [c.ram_index for c in r.cands],
             "wholestate" => Dict{String,Any}(
@@ -551,7 +657,9 @@ function _game_record(r::GameResult)
                 "tia_size" => r.tia_size,
                 "wholestate_size" => r.wholestate_size,
                 "trajectory_frames" => r.traj_frames,
-                "trajectory_trace" => "active (FIRE×4 + periodic RIGHTFIRE/LEFTFIRE)",
+                "trajectory_trace" => r.state_kind == "noop" ?
+                    "active (FIRE×4 + periodic RIGHTFIRE/LEFTFIRE)" :
+                    "seeded random-action GAMEPLAY (prefix+horizon) then NOOP tail",
                 "tape_shape" => collect(r.traj_shape),
                 "n_varying_ram_cells" => r.n_varying_cells,
                 "n_oracle_causal_cells" => r.n_causal,

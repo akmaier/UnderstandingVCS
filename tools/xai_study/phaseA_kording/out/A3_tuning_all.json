@@ -1,85 +1,25 @@
 {
-  "commit": "39cd1d3",
+  "commit": "c157ec63",
   "games": [
-    "pong",
-    "breakout",
-    "space_invaders",
-    "seaquest",
-    "ms_pacman",
-    "qbert"
+    "pong"
   ],
   "method": "A3_tuning_curves+spurious_tuning_rate",
   "metric_name": "A3_game_variable_spurious_tuning_rate",
   "paper": "P2",
   "per_game": {
-    "breakout": {
-      "F": 0.2239570043823417,
-      "M": 1.0,
-      "S": 0.4990554755706752,
-      "game_variable_spurious_tuning_rate": 0.0,
-      "luminance_spurious_tuning_rate": 0.0,
-      "n_candidates": 9,
-      "n_oracle_causal": 6,
-      "n_strongly_tuned_gvar": 2,
-      "oracle_as_method_F": 1.0
-    },
-    "ms_pacman": {
-      "F": 0.0,
-      "M": 1.0,
-      "S": 0.0,
-      "game_variable_spurious_tuning_rate": 0.0,
-      "luminance_spurious_tuning_rate": 0.0,
-      "n_candidates": 19,
-      "n_oracle_causal": 14,
-      "n_strongly_tuned_gvar": 0,
-      "oracle_as_method_F": 1.0
-    },
     "pong": {
-      "F": -0.5405899027195887,
-      "M": 0.0,
-      "S": -0.5006018078414689,
-      "game_variable_spurious_tuning_rate": 1.0,
+      "F": -0.00684931506849315,
+      "M": 0.5,
+      "S": -0.4123124924684856,
+      "game_variable_spurious_tuning_rate": 0.5,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 8,
-      "n_oracle_causal": 2,
-      "n_strongly_tuned_gvar": 3,
-      "oracle_as_method_F": 1.0
-    },
-    "qbert": {
-      "F": 0.4670040692672171,
-      "M": 0.4666666666666667,
-      "S": 0.1867641792316972,
-      "game_variable_spurious_tuning_rate": 0.5333333333333333,
-      "luminance_spurious_tuning_rate": 0.5,
-      "n_candidates": 20,
-      "n_oracle_causal": 7,
-      "n_strongly_tuned_gvar": 15,
-      "oracle_as_method_F": 1.0
-    },
-    "seaquest": {
-      "F": 0.005551846995194944,
-      "M": 0.6363636363636364,
-      "S": 0.15123211356916907,
-      "game_variable_spurious_tuning_rate": 0.36363636363636365,
-      "luminance_spurious_tuning_rate": 0.0,
-      "n_candidates": 23,
-      "n_oracle_causal": 15,
-      "n_strongly_tuned_gvar": 11,
-      "oracle_as_method_F": 1.0
-    },
-    "space_invaders": {
-      "F": -0.3433790590624394,
-      "M": 0.33333333333333337,
-      "S": -0.14974117764522946,
-      "game_variable_spurious_tuning_rate": 0.6666666666666666,
-      "luminance_spurious_tuning_rate": 0.6666666666666666,
-      "n_candidates": 17,
-      "n_oracle_causal": 10,
-      "n_strongly_tuned_gvar": 6,
+      "n_oracle_causal": 4,
+      "n_strongly_tuned_gvar": 4,
       "oracle_as_method_F": 1.0
     }
   },
   "phase": "phaseA_kording",
   "problems": {},
-  "timestamp": "1782141187"
+  "timestamp": "1782922845"
 }

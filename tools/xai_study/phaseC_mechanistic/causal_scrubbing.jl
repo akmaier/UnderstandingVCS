@@ -83,12 +83,29 @@ using JuTari.Env: StellaEnvironment, env_reset!, env_step!, get_screen, get_ram
 # the oracle's candidate cause set (game-agnostic) + the verified jutari run helper
 # (boot/replay/snapshot/intervene + the dependency-free NPZ writer). NO core touched.
 include(joinpath(@__DIR__, "..", "ground_truth", "oracle_intervene.jl"))
-using .OracleIntervene: candidate_ram_indices
+using .OracleIntervene: candidate_ram_indices, build_pong_causes, run_intervention
 using .OracleIntervene.JutariOracle: Snapshot, snapshot, intervene_ram!,
                                      intervene_tia!, write_npz, RAM_SIZE
+using JuTari.Diff: soft_ram_peek
+
+# The P2 SHARED TESTBED (xai_paper/xai_2_interpretability/experiment_redesign.md):
+# seeded random-action GAMEPLAY state + oracle cause-density gate + shared
+# screen-buffer REGION output. Included as a fragment (see its header) so
+# build_shared_testbed operates on OUR own Cause/Snapshot types. Opt in with
+# XAI_SHARED_TESTBED=1 (default on for the redesign re-run). Phase C is not a
+# gradient method, so the sampler-on path does not apply — we consume the shared
+# STATE + cause-density GATE + shared screen-buffer output only.
+include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
 
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders", "seaquest", "ms_pacman", "qbert"]
+# shared-testbed switch + params (redesign protocol: prefix=90 gameplay, horizon=15).
+const SHARED_TESTBED = get(ENV, "XAI_SHARED_TESTBED", "1") == "1"
+const ST_PREFIX  = parse(Int, get(ENV, "XAI_ST_PREFIX", "90"))
+const ST_HORIZON = parse(Int, get(ENV, "XAI_ST_HORIZON", "15"))
+const ST_SEED    = parse(Int, get(ENV, "XAI_ST_SEED", "0"))
+const ST_GATE_K  = parse(Int, get(ENV, "XAI_ST_GATE_K", "4"))
+const ST_FLOOR   = parse(Float64, get(ENV, "XAI_ST_FLOOR", "0.5"))
 
 # joystick action codes (oracle_intervene.jl: RIGHT=3; LEFT=4; FIRE=1). NOOP=0 = BASE.
 const ACT_NOOP  = 0
@@ -310,6 +327,14 @@ struct CSResult
     # the per-output preservation matrices (outputs × sources), for the npz
     true_preserve_mat::Matrix{Float64}
     wrong_preserve_mat::Matrix{Float64}
+    # SHARED-TESTBED provenance (redesign); all NaN/-1/"" in the legacy NOOP path.
+    state_kind::String               # "seeded_random_action_gameplay" | "noop"
+    st_seed::Int
+    st_prefix::Int
+    cause_density::Int               # #causes above the floor at the shared output
+    cause_density_accepted::Bool     # passed the cause-density gate?
+    n_causes::Int
+    shared_cell::Tuple{Int,Int}      # the shared screen-buffer output cell
 end
 
 """Pick the BEHAVIOUR output cells: the SINKS of the true graph that HAVE at least
@@ -334,6 +359,39 @@ end
 
 function run_game(; game, target_frame = 30, horizon = 30, n_sources = 3,
                   roms_dir = nothing, verbose = true)
+    # SHARED-TESTBED (redesign): replace the all-NOOP boot/attract tape with a
+    # seeded random-action GAMEPLAY state at f*=ST_PREFIX, gated by the oracle
+    # cause-density gate. The checkpoint + action stream come from the shared
+    # substrate so every method sits on the SAME state (P1, P4). The scrubbing
+    # algorithm (hypotheses, resample ablation, scoring) is unchanged; only the
+    # BASE state/action-stream/checkpoint it sits on moves.
+    st = nothing
+    if SHARED_TESTBED
+        st = build_shared_testbed(game;
+            settings_for = settings_for, rom_path_for = rom_path_for,
+            candidates_path_for = candidates_path_for,
+            build_causes = build_pong_causes, candidate_ram_indices = candidate_ram_indices,
+            continue_from = continue_from, snapshot = snapshot, env_step = env_step!,
+            intervene_ram = intervene_ram!, boot_replay = boot_replay,
+            run_intervention = run_intervention, soft_ram_peek = soft_ram_peek,
+            prefix = ST_PREFIX, horizon = ST_HORIZON, seed = ST_SEED,
+            k = ST_GATE_K, floor = ST_FLOOR, verbose = verbose,
+            assert_bit_exact = assert_bit_exact)
+        target_frame = st.prefix; horizon = st.horizon
+        total = st.total
+        base_actions = st.actions
+        bit_exact = true
+        base_ckpt = st.checkpoint
+        tail = base_actions[target_frame + 1 : total]
+        clean = st.base                                   # the un-scrubbed behaviour
+        at_target = st.at_target                          # state AT frame t
+        verbose && println("[$game] SHARED gameplay state: cause_density=$(st.cause_density)/" *
+            "$(length(st.causes)) accepted=$(st.accepted) cell=$(st.cell)")
+        return _run_game_body(; game = game, target_frame = target_frame, horizon = horizon,
+            total = total, base_actions = base_actions, base_ckpt = base_ckpt, tail = tail,
+            clean = clean, at_target = at_target, bit_exact = bit_exact, st = st, verbose = verbose)
+    end
+
     total = target_frame + horizon
     base_actions = fill(ACT_NOOP, total)
 
@@ -348,6 +406,17 @@ function run_game(; game, target_frame = 30, horizon = 30, n_sources = 3,
     tail = base_actions[target_frame + 1 : total]
     clean = continue_from(base_ckpt, Int.(tail))          # the un-scrubbed behaviour
     at_target = continue_from(base_ckpt, Int[])           # state AT frame t
+    return _run_game_body(; game = game, target_frame = target_frame, horizon = horizon,
+        total = total, base_actions = base_actions, base_ckpt = base_ckpt, tail = tail,
+        clean = clean, at_target = at_target, bit_exact = bit_exact, st = nothing, verbose = verbose)
+end
+
+"""The per-game body, shared by the legacy NOOP path and the SHARED gameplay-state
+path (the ONLY difference is which BASE state/action-stream/checkpoint the scrubbing
+algorithm sits on — the algorithm itself is unchanged). `st` carries the
+shared-testbed provenance for the record, or `nothing` in the legacy path."""
+function _run_game_body(; game, target_frame, horizon, total, base_actions, base_ckpt,
+                        tail, clean, at_target, bit_exact, st, verbose)
 
     # ---- 3) candidate cells (the units the hypothesis is over) ----------------
     cand = candidates_path_for(game)
@@ -483,7 +552,14 @@ function run_game(; game, target_frame = 30, horizon = 30, n_sources = 3,
                     sort(collect(wrong_circuit)), size(true_mat, 2), size(wrong_mat, 2),
                     bit_exact, true_preserved, wrong_preserved, true_pass, wrong_pass,
                     discriminates, true_cell_sim, wrong_cell_sim, true_scr_sim,
-                    wrong_scr_sim, n_true_edges, true_mat, wrong_mat)
+                    wrong_scr_sim, n_true_edges, true_mat, wrong_mat,
+                    st === nothing ? "noop" : "seeded_random_action_gameplay",
+                    st === nothing ? -1 : st.seed,
+                    st === nothing ? -1 : st.prefix,
+                    st === nothing ? -1 : st.cause_density,
+                    st === nothing ? false : st.accepted,
+                    st === nothing ? 0 : length(st.causes),
+                    st === nothing ? (-1, -1) : st.cell)
 end
 
 # tiny mean (no Statistics dep needed for these small vectors)
@@ -551,7 +627,8 @@ function write_game_result(r::CSResult; out_dir = OUT_DIR, where_str = "local")
         "phase" => "phaseC_mechanistic",
         "method" => "causal_scrubbing",
         "game" => r.game,
-        "state" => "f$(r.target_frame)+$(r.horizon)",
+        "state" => r.state_kind == "noop" ? "f$(r.target_frame)+$(r.horizon)" :
+                   "gameplay(seed=$(r.st_seed),prefix=$(r.st_prefix))+$(r.horizon)",
         "target_output" => "behaviour = the true-graph sink cell(s): " * join(out_names, ", "),
         # headline §R scalar: scrubbing-preserved performance of the TRUE hypothesis
         # (1.0 = the ground-truth circuit's hypothesis PASSES — behaviour preserved).
@@ -596,6 +673,17 @@ function write_game_result(r::CSResult; out_dir = OUT_DIR, where_str = "local")
             "n_scrub_trials_true" => r.n_true_trials,
             "n_scrub_trials_wrong" => r.n_wrong_trials,
             "budget" => _budget(r),
+            "testbed" => Dict{String,Any}(
+                "state_kind" => r.state_kind,
+                "seed" => r.st_seed, "prefix" => r.st_prefix, "horizon" => r.horizon,
+                "shared_output" => "screen_region(n_changed_px)@r$(r.shared_cell[1])c$(r.shared_cell[2])",
+                "cause_density_above_floor" => r.cause_density,
+                "cause_density_floor" => ST_FLOOR, "cause_density_gate_k" => ST_GATE_K,
+                "cause_density_accepted" => r.cause_density_accepted, "n_causes" => r.n_causes,
+                "note" => "P2 redesign: methods sit on a seeded random-action GAMEPLAY " *
+                    "state (not the boot/attract NOOP tape), gated by the oracle " *
+                    "cause-density gate (accept iff #causes above the floor >= k). The " *
+                    "causal-scrubbing algorithm is unchanged; only the BASE state moves."),
             "note" =>
                 "Causal scrubbing (Chan et al. 2022): given a HYPOTHESIZED CIRCUIT, " *
                 "RESAMPLE-ABLATE every candidate cell OUTSIDE it (write a value it takes " *

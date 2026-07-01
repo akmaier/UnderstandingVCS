@@ -77,6 +77,7 @@ module A3Tuning
 
 using JSON
 import Statistics
+using JuTari
 
 # --- the validated foundation (NO core touched) ----------------------------
 include(joinpath(@__DIR__, "..", "common", "jutari_oracle.jl"))
@@ -96,9 +97,33 @@ using .JutariOracle.JuTari.Env: StellaEnvironment, env_reset!, env_step!,
 include(joinpath(@__DIR__, "..", "common", "jutari_record.jl"))
 using .JutariRecord: Trajectory
 
+# The §1 exact-intervention oracle — used ONLY to build the P2 SHARED gameplay
+# state + its cause-density gate (below). A3 keeps its OWN GameSpec/recorder/oracle
+# machinery; the oracle here supplies the shared action stream + gate. Referenced
+# as OracleIntervene.X / OracleIntervene.JutariOracle.X (NOT alias-imported, so its
+# internal JutariOracle instance never clashes with the .JutariOracle already
+# imported above — separate module instances; no type mixed across them).
+include(joinpath(@__DIR__, "..", "ground_truth", "oracle_intervene.jl"))
+using JuTari.Diff: soft_ram_peek
+
+# The P2 SHARED TESTBED (experiment_redesign.md): seeded random-action GAMEPLAY
+# state + oracle cause-density gate. Included as a fragment (see its header). Phase
+# A is not a gradient method, so we consume the shared action STREAM + cause-density
+# GATE only, and boot A3's OWN checkpoint + record its OWN trajectory from that
+# stream. Opt in with XAI_SHARED_TESTBED=1 (default on).
+include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
+
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders",
                     "seaquest", "ms_pacman", "qbert"]
+
+# shared-testbed switch + params (redesign protocol: prefix=90 gameplay, horizon=15).
+const SHARED_TESTBED = get(ENV, "XAI_SHARED_TESTBED", "1") == "1"
+const ST_PREFIX  = parse(Int, get(ENV, "XAI_ST_PREFIX", "90"))
+const ST_HORIZON = parse(Int, get(ENV, "XAI_ST_HORIZON", "15"))
+const ST_SEED    = parse(Int, get(ENV, "XAI_ST_SEED", "0"))
+const ST_GATE_K  = parse(Int, get(ENV, "XAI_ST_GATE_K", "4"))
+const ST_FLOOR   = parse(Float64, get(ENV, "XAI_ST_FLOOR", "0.5"))
 
 # ROM filename aliases: the game key (game_set.json / candidates_<game>.json) vs
 # the actual `xitari/roms/<file>.bin` basename. Only ms_pacman differs (the ROM
@@ -479,15 +504,67 @@ struct GameA3
     self_F::Float64                     # oracle-as-method positive control
     tuning::TuningResult
     triad::Triad
+    # SHARED-TESTBED provenance (redesign); "noop"/-1/false in the legacy path.
+    state_kind::String             # "seeded_random_action_gameplay" | "noop"
+    st_seed::Int
+    st_prefix::Int
+    cause_density::Int             # #causes above the floor at the shared output
+    cause_density_accepted::Bool   # passed the cause-density gate?
+    n_causes::Int
+    shared_cell::Tuple{Int,Int}    # the shared screen-buffer output cell
+end
+
+# A3's candidates-path resolver, in the shape the shared testbed injects (a
+# String->path-or-nothing map). Mirrors candidates_path' file search.
+function _st_candidates_path_for(game::AbstractString)
+    rel = joinpath("tools", "xai_study", "t3", "out", "candidates_$(game).json")
+    here = normpath(joinpath(@__DIR__, "..", "..", ".."))
+    for base in (here, "/Users/maier/Documents/code/UnderstandingVCS")
+        p = joinpath(base, rel)
+        isfile(p) && return p
+    end
+    return nothing
+end
+
+"""Build the P2 SHARED gameplay state + cause-density gate for `game` using the §1
+oracle machinery (oracle_intervene.jl). Returns the substrate NamedTuple (we use
+its `.actions` stream + `.cause_density`/`.accepted`/`.cell` gate). A3 then boots
+its OWN checkpoint + records its OWN trajectory from `st.actions` so the tuning
+algorithm is unchanged."""
+function build_a3_shared_state(game::AbstractString; verbose = false)
+    O = OracleIntervene; J = OracleIntervene.JutariOracle
+    return build_shared_testbed(game;
+        settings_for = J.settings_for, rom_path_for = J.rom_path_for,
+        candidates_path_for = _st_candidates_path_for,
+        build_causes = O.build_pong_causes, candidate_ram_indices = O.candidate_ram_indices,
+        continue_from = J.continue_from, snapshot = J.snapshot, env_step = J.env_step!,
+        intervene_ram = J.intervene_ram!, boot_replay = J.boot_replay,
+        run_intervention = O.run_intervention, soft_ram_peek = soft_ram_peek,
+        prefix = ST_PREFIX, horizon = ST_HORIZON, seed = ST_SEED,
+        k = ST_GATE_K, floor = ST_FLOOR, verbose = verbose,
+        assert_bit_exact = O.assert_bit_exact)
 end
 
 function compute_game(game::AbstractString; target_frame = 30, horizon = 30,
                       traj_frames = 150, tau = 0.7, verbose = true)
+    # SHARED-TESTBED (redesign): replace the FIRE×4+NOOP oracle/attract tape with a
+    # seeded random-action GAMEPLAY state at f*=ST_PREFIX, gated by the oracle
+    # cause-density gate. A3's tuning needs the game VARIABLE to VARY, so we record
+    # the descriptive trajectory along the SAME gameplay stream (extended with NOOP
+    # if traj_frames exceeds prefix+horizon). A3's oracle/tuning machinery is
+    # UNCHANGED — only the state moves.
+    st = nothing
+    if SHARED_TESTBED
+        st = build_a3_shared_state(game; verbose = verbose)
+        target_frame = st.prefix; horizon = st.horizon
+        verbose && println("[A3:$game] SHARED gameplay state: cause_density=$(st.cause_density)/" *
+            "$(length(st.causes)) accepted=$(st.accepted) cell=$(st.cell)")
+    end
     total = target_frame + horizon
-    oacts = oracle_actions(total)
+    oacts = SHARED_TESTBED ? Int.(st.actions) : oracle_actions(total)
     tail = Int.(oacts[target_frame + 1 : target_frame + horizon])
 
-    # 1) bit-exact baseline guarantee on the oracle trace (every Δ is causal).
+    # 1) bit-exact baseline guarantee on the (gameplay/oracle) trace (every Δ causal).
     verbose && println("[A3:$game] bit-exact assert (2 fresh boots+replays to f$total)...")
     a = fresh_parity_snapshot(game, oacts, total)
     b = fresh_parity_snapshot(game, oacts, total)
@@ -510,10 +587,24 @@ function compute_game(game::AbstractString; target_frame = 30, horizon = 30,
                                                        at_target, base_snap)
     self_F = spearman(oracle_importance, oracle_importance)   # positive control
 
-    # 4) A3 tuning curves over a DESCRIPTIVE active trajectory (RAM+screen),
-    #    recorded with the game's PARITY RomSettings (settings_for_game).
-    verbose && println("[A3:$game] tuning curves over a $(traj_frames)-frame (active) RAM+screen trajectory...")
-    traj = record_parity_trajectory(game, active_actions(traj_frames))
+    # 4) A3 tuning curves over a DESCRIPTIVE trajectory (RAM+screen), recorded with
+    #    the game's PARITY RomSettings (settings_for_game). Under the shared testbed
+    #    the trajectory is stepped along the SAME seeded gameplay stream (so the game
+    #    variable VARIES on genuine input-driven play); if traj_frames exceeds the
+    #    gameplay window (prefix+horizon), the tail is NOOP-continued.
+    if SHARED_TESTBED
+        traj_acts = Vector{Int}(undef, max(0, traj_frames))
+        for t in 1:length(traj_acts)
+            traj_acts[t] = t <= total ? Int(st.actions[t]) : 0    # gameplay then NOOP
+        end
+        verbose && println("[A3:$game] tuning curves over a $(traj_frames)-frame gameplay " *
+            "RAM+screen trajectory (seed=$(st.seed) prefix=$(st.prefix)+$(st.horizon), " *
+            "NOOP-continued past f$total)...")
+    else
+        traj_acts = active_actions(traj_frames)
+        verbose && println("[A3:$game] tuning curves over a $(traj_frames)-frame (active) RAM+screen trajectory...")
+    end
+    traj = record_parity_trajectory(game, traj_acts)
     tuning = run_a3_tuning(traj, cands, oracle_importance; tau = tau)
 
     # 5) F/S/M triad (A3 selectivity vs the oracle).
@@ -532,7 +623,14 @@ function compute_game(game::AbstractString; target_frame = 30, horizon = 30,
     end
 
     return GameA3(string(game), target_frame, horizon, traj_frames, tau, bit_exact,
-                  cands, cfile, oracle_importance, held, self_F, tuning, triad)
+                  cands, cfile, oracle_importance, held, self_F, tuning, triad,
+                  st === nothing ? "noop" : "seeded_random_action_gameplay",
+                  st === nothing ? -1 : st.seed,
+                  st === nothing ? -1 : st.prefix,
+                  st === nothing ? -1 : st.cause_density,
+                  st === nothing ? false : st.accepted,
+                  st === nothing ? 0 : length(st.causes),
+                  st === nothing ? (-1, -1) : st.cell)
 end
 
 # ============================================================================
@@ -580,7 +678,8 @@ function write_game(g::GameA3; out_dir = OUT_DIR)
         "phase" => "phaseA_kording",
         "method" => "A3_tuning_curves(luminance+game_variable)+spurious_tuning_rate",
         "game" => g.game,
-        "state" => "f$(g.target_frame)+$(g.horizon)",
+        "state" => g.state_kind == "noop" ? "f$(g.target_frame)+$(g.horizon)" :
+                   "gameplay(seed=$(g.st_seed),prefix=$(g.st_prefix))+$(g.horizon)",
         "target_output" => "screen-break (oracle causal importance) vs tuning selectivity",
         # headline scalar (§R value/metric_name): the GAME-VARIABLE spurious-tuning
         # rate — A3's named score (the tuning-curve trap, quantified).
@@ -606,6 +705,19 @@ function write_game(g::GameA3; out_dir = OUT_DIR)
             "candidate_ram_indices" => [c.ram_index for c in g.cands],
             "candidates_file" => g.candidates_file === nothing ? nothing :
                 basename(g.candidates_file),
+            "testbed" => Dict{String,Any}(
+                "state_kind" => g.state_kind,
+                "seed" => g.st_seed, "prefix" => g.st_prefix, "horizon" => g.horizon,
+                "shared_output" => "screen_region(n_changed_px)@r$(g.shared_cell[1])c$(g.shared_cell[2])",
+                "cause_density_above_floor" => g.cause_density,
+                "cause_density_floor" => ST_FLOOR, "cause_density_gate_k" => ST_GATE_K,
+                "cause_density_accepted" => g.cause_density_accepted, "n_causes" => g.n_causes,
+                "note" => "P2 redesign: the tuning study runs on a seeded random-action " *
+                    "GAMEPLAY state (not the FIRE×4/attract tape), gated by the §1 oracle " *
+                    "cause-density gate. Both the oracle causal map AND the descriptive " *
+                    "tuning trajectory are stepped along the SAME gameplay stream so the " *
+                    "game variable VARIES on genuine input-driven play. A3's tuning " *
+                    "algorithm is unchanged; only the analysis state moves."),
             "oracle_importance_per_cell" =>
                 Dict(cell_names[i] => g.oracle_importance[i] for i in 1:length(cell_names)),
             "n_oracle_causal" => count(>(0.0), g.oracle_importance),
@@ -613,7 +725,9 @@ function write_game(g::GameA3; out_dir = OUT_DIR)
             "A3_tuning" => Dict{String,Any}(
                 "tau" => g.tau,
                 "trajectory_frames" => g.traj_frames,
-                "trajectory_trace" => "active (FIRE×4 + periodic RIGHTFIRE/LEFTFIRE)",
+                "trajectory_trace" => g.state_kind == "noop" ?
+                    "active (FIRE×4 + periodic RIGHTFIRE/LEFTFIRE)" :
+                    "seeded random-action GAMEPLAY (seed=$(g.st_seed), prefix=$(g.st_prefix)+$(g.horizon), NOOP-continued past the window)",
                 "epiphenomenal_control" => "frame_clock",
                 "game_variable_signals" => g.tuning.gvar_names,
                 "gvar_selectivity_per_cell" =>

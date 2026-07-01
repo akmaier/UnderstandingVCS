@@ -134,11 +134,35 @@ using JuTari.JoystickGames: MsPacmanRomSettings, QbertRomSettings
 include(joinpath(@__DIR__, "..", "common", "jutari_oracle.jl"))
 using .JutariOracle: write_npz, RAM_SIZE
 
+# The §1 exact-intervention oracle (Cause / build_pong_causes / candidate_ram_indices /
+# run_intervention / assert_bit_exact) — used ONLY to build the P2 SHARED gameplay
+# state + its cause-density gate (below). A2's lesion algorithm keeps its OWN
+# GameSpec/Snap/Candidate machinery; the oracle here supplies the shared action
+# stream + the gate, not the lesion map. (Its internal JutariOracle submodule is a
+# separate instance from the one included above — no type is mixed across them.)
+include(joinpath(@__DIR__, "..", "ground_truth", "oracle_intervene.jl"))
+using JuTari.Diff: soft_ram_peek
+
+# The P2 SHARED TESTBED (xai_paper/xai_2_interpretability/experiment_redesign.md):
+# seeded random-action GAMEPLAY state + oracle cause-density gate. Included as a
+# fragment (see its header for why not a module). Phase A is not a gradient method,
+# so the sampler-on path does not apply — we consume the shared action STREAM +
+# cause-density GATE only, and boot A2's OWN checkpoint from that stream so the
+# lesion machinery is unchanged. Opt in with XAI_SHARED_TESTBED=1 (default on).
+include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
+
 import JSON
 
 const DEFAULT_OUT_DIR = joinpath(@__DIR__, "out")
 const PRIMARY_REPO = get(ENV, "XAI_PRIMARY_REPO",
                          "/Users/maier/Documents/code/UnderstandingVCS")
+# shared-testbed switch + params (redesign protocol: prefix=90 gameplay, horizon=15).
+const SHARED_TESTBED = get(ENV, "XAI_SHARED_TESTBED", "1") == "1"
+const ST_PREFIX  = parse(Int, get(ENV, "XAI_ST_PREFIX", "90"))
+const ST_HORIZON = parse(Int, get(ENV, "XAI_ST_HORIZON", "15"))
+const ST_SEED    = parse(Int, get(ENV, "XAI_ST_SEED", "0"))
+const ST_GATE_K  = parse(Int, get(ENV, "XAI_ST_GATE_K", "4"))
+const ST_FLOOR   = parse(Float64, get(ENV, "XAI_ST_FLOOR", "0.5"))
 
 # ===========================================================================
 # Per-game ROM-basename + RomSettings map (self-contained; mirrors A1 /
@@ -482,14 +506,67 @@ struct GameResult
     triad_F::Float64
     triad_S::Float64
     triad_M::Float64
+    # SHARED-TESTBED provenance (redesign); "noop"/-1/false in the legacy path.
+    state_kind::String             # "seeded_random_action_gameplay" | "noop"
+    st_seed::Int
+    st_prefix::Int
+    cause_density::Int             # #causes above the floor at the shared output
+    cause_density_accepted::Bool   # passed the cause-density gate?
+    n_causes::Int
+    shared_cell::Tuple{Int,Int}    # the shared screen-buffer output cell
+end
+
+# A2's candidates-path resolver, in the shape the shared testbed injects (a
+# String->path-or-nothing map). Mirrors load_candidates' file search.
+function _st_candidates_path_for(game::AbstractString)
+    rel = joinpath("tools", "xai_study", "t3", "out", "candidates_$(game).json")
+    here = normpath(joinpath(@__DIR__, "..", "..", ".."))
+    for base in (here, PRIMARY_REPO)
+        p = joinpath(base, rel)
+        isfile(p) && return p
+    end
+    return nothing
+end
+
+"""Build the P2 SHARED gameplay state + cause-density gate for `game` using the §1
+oracle machinery (oracle_intervene.jl). Returns the substrate NamedTuple (we use
+its `.actions` stream + `.cause_density`/`.accepted`/`.cell` gate). A2 then boots
+its OWN checkpoint from `st.actions` so the lesion algorithm is unchanged."""
+function build_a2_shared_state(game::AbstractString; verbose = false)
+    O = OracleIntervene; J = OracleIntervene.JutariOracle
+    return build_shared_testbed(game;
+        settings_for = J.settings_for, rom_path_for = J.rom_path_for,
+        candidates_path_for = _st_candidates_path_for,
+        build_causes = O.build_pong_causes, candidate_ram_indices = O.candidate_ram_indices,
+        continue_from = J.continue_from, snapshot = J.snapshot, env_step = J.env_step!,
+        intervene_ram = J.intervene_ram!, boot_replay = J.boot_replay,
+        run_intervention = O.run_intervention, soft_ram_peek = soft_ram_peek,
+        prefix = ST_PREFIX, horizon = ST_HORIZON, seed = ST_SEED,
+        k = ST_GATE_K, floor = ST_FLOOR, verbose = verbose,
+        assert_bit_exact = O.assert_bit_exact)
 end
 
 function run_game(game::AbstractString; target_frame = 30, horizon = 30,
                   max_pairs = 60, roms_dir = nothing, verbose = true)
     haskey(GAME_SPECS, game) || error("unknown game $game (have $(keys(GAME_SPECS)))")
     spec = GAME_SPECS[game]
+
+    # SHARED-TESTBED (redesign): replace the all-NOOP boot/attract tape with a
+    # seeded random-action GAMEPLAY state at f*=ST_PREFIX, gated by the oracle
+    # cause-density gate. We take the shared action STREAM + the gate from the
+    # substrate, then boot A2's OWN checkpoint from that stream so the lesion
+    # machinery (GameSpec/Snap/Candidate) is UNCHANGED — only the state moves.
+    st = nothing
+    if SHARED_TESTBED
+        st = build_a2_shared_state(game; verbose = verbose)
+        target_frame = st.prefix; horizon = st.horizon
+        actions = st.actions
+        verbose && println("[A2:$game] SHARED gameplay state: cause_density=$(st.cause_density)/" *
+            "$(length(st.causes)) accepted=$(st.accepted) cell=$(st.cell)")
+    else
+        actions = fill(0, target_frame + horizon)   # all-NOOP deterministic trace
+    end
     total = target_frame + horizon
-    actions = fill(0, total)                 # all-NOOP deterministic trace
     tail = Int.(actions[target_frame + 1 : total])
 
     # 1) bit-exact baseline guarantee — two fresh boots+replays must be identical.
@@ -566,7 +643,14 @@ function run_game(game::AbstractString; target_frame = 30, horizon = 30,
                       lesion_imp, lesion_fps, lesion_scr, lesion_works,
                       oracle_role, oracle_fps, oracle_scr, heldout_role,
                       rho, rho_control, n_flagged, n_false, false_rate,
-                      interaction, F, S, M)
+                      interaction, F, S, M,
+                      st === nothing ? "noop" : "seeded_random_action_gameplay",
+                      st === nothing ? -1 : st.seed,
+                      st === nothing ? -1 : st.prefix,
+                      st === nothing ? -1 : st.cause_density,
+                      st === nothing ? false : st.accepted,
+                      st === nothing ? 0 : length(st.causes),
+                      st === nothing ? (-1, -1) : st.cell)
 end
 
 """Interaction analysis: over a budgeted set of unit pairs, the joint-lesion effect
@@ -663,7 +747,8 @@ function _game_record(r::GameResult; where_str = "local", budget = Dict{String,A
         "method" => "A2_lesions(exhaustive single-unit lesion importance map)",
         "game" => r.game,
         "frame" => r.target_frame,
-        "state" => "f$(r.target_frame)+$(r.horizon)",
+        "state" => r.state_kind == "noop" ? "f$(r.target_frame)+$(r.horizon)" :
+                   "gameplay(seed=$(r.st_seed),prefix=$(r.st_prefix))+$(r.horizon)",
         "target_output" => "per-unit behavioural-importance map (candidate RAM cells)",
         # headline scalar (SPEC §R value/metric_name): Spearman ρ of the single-unit
         # lesion importance map vs the exact-oracle per-unit role (F / faithfulness).
@@ -687,6 +772,17 @@ function _game_record(r::GameResult; where_str = "local", budget = Dict{String,A
             "candidate_cells" => cell_names,
             "candidate_ram_indices" => [c.ram_index for c in r.cands],
             "budget" => budget,
+            "testbed" => Dict{String,Any}(
+                "state_kind" => r.state_kind,
+                "seed" => r.st_seed, "prefix" => r.st_prefix, "horizon" => r.horizon,
+                "shared_output" => "screen_region(n_changed_px)@r$(r.shared_cell[1])c$(r.shared_cell[2])",
+                "cause_density_above_floor" => r.cause_density,
+                "cause_density_floor" => ST_FLOOR, "cause_density_gate_k" => ST_GATE_K,
+                "cause_density_accepted" => r.cause_density_accepted, "n_causes" => r.n_causes,
+                "note" => "P2 redesign: the lesion study runs on a seeded random-action " *
+                    "GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 " *
+                    "oracle cause-density gate. A2's lesion algorithm is unchanged; only " *
+                    "the analysis state moves onto genuine input-driven gameplay."),
             "lesion_doset" => "single-unit {clamp→0, clamp→alt=base⊻0xFF}; per-unit " *
                 "effect = MAX importance over the do-set",
             "oracle_doset" => "exhaustive {occlude→0, set→base+17, set→base+37, " *
@@ -957,7 +1053,9 @@ function main(args = ARGS)
         "oracle_doses_per_unit" => 4,           # {0, +17, +37, alt}
         "heldout_doses_per_unit" => 1,          # {+37}
         "max_interaction_pairs" => max_pairs,
-        "action_trace" => "all-NOOP (deterministic)",
+        "action_trace" => SHARED_TESTBED ?
+            "seeded random-action GAMEPLAY (seed=$ST_SEED, prefix=$ST_PREFIX, horizon=$ST_HORIZON)" :
+            "all-NOOP (deterministic)",
         "rationale" => "paper-reasonable single-step lesion budget; each Δ re-runs " *
             "the real ROM for `horizon` frames from a cached boot+replay checkpoint, " *
             "so re-runs are incremental (boot paid once per game).",

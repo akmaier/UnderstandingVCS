@@ -107,7 +107,31 @@ using .JutariOracle.JuTari.Env: env_reset!, env_step!, get_ram
 # recorder hard-codes settings_for). The include keeps the dependency explicit.
 include(joinpath(@__DIR__, "..", "common", "jutari_record.jl"))
 
+# The §1 exact-intervention oracle — used ONLY to build the P2 SHARED gameplay state
+# + its cause-density gate (below). A7 keeps its OWN PCA/NMF/oracle-importance
+# machinery; the oracle here supplies the shared action STREAM + the gate. Referenced
+# as OracleIntervene.X (NOT alias-imported — its internal JutariOracle submodule is a
+# separate instance from the one included above; qualifying it avoids mixing the two).
+include(joinpath(@__DIR__, "..", "ground_truth", "oracle_intervene.jl"))
+using JuTari.Diff: soft_ram_peek
+
+# The P2 SHARED TESTBED: seeded random-action GAMEPLAY state + oracle cause-density
+# gate. Included as a fragment. Phase A is not a gradient method, so the sampler-on
+# path does not apply — we consume the shared action STREAM + GATE only, and drive
+# A7's OWN trajectory recording (and its scored oracle prefix) from that stream so the
+# PCA/NMF algorithm is unchanged. Opt in with XAI_SHARED_TESTBED=1 (default on).
+include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
+
 const OUT_DIR = joinpath(@__DIR__, "out")
+const PRIMARY_REPO = get(ENV, "XAI_PRIMARY_REPO",
+                         "/Users/maier/Documents/code/UnderstandingVCS")
+# shared-testbed switch + params (redesign protocol: prefix=90 gameplay, horizon=15).
+const SHARED_TESTBED = get(ENV, "XAI_SHARED_TESTBED", "1") == "1"
+const ST_PREFIX  = parse(Int, get(ENV, "XAI_ST_PREFIX", "90"))
+const ST_HORIZON = parse(Int, get(ENV, "XAI_ST_HORIZON", "15"))
+const ST_SEED    = parse(Int, get(ENV, "XAI_ST_SEED", "0"))
+const ST_GATE_K  = parse(Int, get(ENV, "XAI_ST_GATE_K", "4"))
+const ST_FLOOR   = parse(Float64, get(ENV, "XAI_ST_FLOOR", "0.5"))
 const CORE_GAMES = ["pong", "breakout", "space_invaders",
                     "seaquest", "ms_pacman", "qbert"]
 
@@ -759,6 +783,45 @@ struct GameResult
     nmf_triad::Triad
     topk::Int
     purity::Float64
+    # SHARED-TESTBED provenance (redesign); "noop"/-1/false in the legacy path.
+    state_kind::String             # "seeded_random_action_gameplay" | "noop"
+    st_seed::Int
+    st_prefix::Int
+    cause_density::Int
+    cause_density_accepted::Bool
+    n_causes::Int
+    shared_cell::Tuple{Int,Int}
+end
+
+# A7's candidates-path resolver in the shape the shared testbed injects. Mirrors
+# resolve_candidates' search.
+function _st_candidates_path_for(game::AbstractString)
+    rel = joinpath("tools", "xai_study", "t3", "out", "candidates_$(game).json")
+    here = normpath(joinpath(@__DIR__, "..", "..", ".."))
+    for base in (here, PRIMARY_REPO)
+        p = joinpath(base, rel)
+        isfile(p) && return p
+    end
+    return nothing
+end
+
+"""Build the P2 SHARED gameplay state + cause-density gate for `game` using the §1
+oracle machinery (oracle_intervene.jl). Returns the substrate NamedTuple (we use its
+`.actions` stream + `.cause_density`/`.accepted`/`.cell` gate). A7 then drives BOTH
+its scored oracle prefix AND its descriptive trajectory recording from `st.actions`
+so the PCA/NMF + oracle-importance algorithm is unchanged."""
+function build_a7_shared_state(game::AbstractString; verbose = false)
+    O = OracleIntervene; J = OracleIntervene.JutariOracle
+    return build_shared_testbed(game;
+        settings_for = J.settings_for, rom_path_for = J.rom_path_for,
+        candidates_path_for = _st_candidates_path_for,
+        build_causes = O.build_pong_causes, candidate_ram_indices = O.candidate_ram_indices,
+        continue_from = J.continue_from, snapshot = J.snapshot, env_step = J.env_step!,
+        intervene_ram = J.intervene_ram!, boot_replay = J.boot_replay,
+        run_intervention = O.run_intervention, soft_ram_peek = soft_ram_peek,
+        prefix = ST_PREFIX, horizon = ST_HORIZON, seed = ST_SEED,
+        k = ST_GATE_K, floor = ST_FLOOR, verbose = verbose,
+        assert_bit_exact = O.assert_bit_exact)
 end
 
 function compute_game(game::AbstractString; target_frame = nothing, horizon = nothing,
@@ -770,8 +833,29 @@ function compute_game(game::AbstractString; target_frame = nothing, horizon = no
     traj_frames  = traj_frames  === nothing ? cfg.traj_frames  : traj_frames
     trace        = cfg.trace
     in_window    = cfg.in_window
+
+    # SHARED-TESTBED (redesign): the scored oracle prefix + the descriptive trajectory
+    # both move onto the seeded random-action GAMEPLAY stream (oracle cause-density
+    # gated). target_frame/horizon become the shared prefix/horizon; the oracle action
+    # stream = st.actions (scored, bit-exact inside prefix+horizon); the descriptive
+    # trajectory is driven by st.actions for the first prefix+horizon frames then
+    # NOOP-continued to traj_frames. The PCA/NMF + oracle-importance algorithm is
+    # UNCHANGED — only the driving action streams move.
+    st = nothing
+    if SHARED_TESTBED
+        st = build_a7_shared_state(game; verbose = verbose)
+        target_frame = st.prefix; horizon = st.horizon
+        gp = Int.(st.actions)
+        traj_acts = Vector{Int}(undef, traj_frames)
+        for t in 1:traj_frames
+            traj_acts[t] = t <= length(gp) ? gp[t] : 0     # gameplay window, then NOOP
+        end
+        verbose && println("[A7:$game] SHARED gameplay state: cause_density=$(st.cause_density)/" *
+            "$(length(st.causes)) accepted=$(st.accepted) cell=$(st.cell); " *
+            "trajectory = gameplay($(length(gp)) frames)+NOOP tail to f$traj_frames")
+    end
     total = target_frame + horizon
-    oacts = oracle_actions(total)
+    oacts = SHARED_TESTBED ? Int.(st.actions) : oracle_actions(total)
     tail = Int.(oacts[target_frame + 1 : target_frame + horizon])
 
     # 1) bit-exact baseline — two fresh boots+replays must be byte-identical.
@@ -793,9 +877,13 @@ function compute_game(game::AbstractString; target_frame = nothing, horizon = no
     verbose && println("[A7:$game] candidates: $(cand_path) ($(length(cands)) cells, " *
                        "$(length(unique([c.family for c in cands]))) known game variables)")
 
-    # 3) descriptive dim-reduction over an ACTIVE trajectory (cells must move).
-    verbose && println("[A7:$game] recording $(traj_frames)-frame active ($(trace)) RAM trajectory...")
-    tape = a7_record_ram(game, traj_frames, trace_actions(trace, traj_frames))
+    # 3) descriptive dim-reduction over an ACTIVE trajectory (cells must move). Under the
+    #    shared testbed this is the gameplay stream (prefix+horizon) then NOOP-continued.
+    traj_stream = SHARED_TESTBED ? traj_acts : trace_actions(trace, traj_frames)
+    verbose && println("[A7:$game] recording $(traj_frames)-frame " *
+                       (SHARED_TESTBED ? "gameplay+NOOP" : "active ($(trace))") *
+                       " RAM trajectory...")
+    tape = a7_record_ram(game, traj_frames, traj_stream)
 
     verbose && println("[A7:$game] PCA (SVD) + NMF (rank $(nmf_rank), $(nmf_iters) iters) of the (T,128) tape...")
     pca = run_pca(tape)
@@ -834,7 +922,14 @@ function compute_game(game::AbstractString; target_frame = nothing, horizon = no
     return GameResult(game, target_frame, horizon, traj_frames, trace, in_window,
                       seed, bit_exact, cands, pca, nmf, pca_match, nmf_match,
                       pca_recovery, nmf_recovery, oracle, pca_triad, nmf_triad,
-                      topk, purity)
+                      topk, purity,
+                      st === nothing ? "noop" : "seeded_random_action_gameplay",
+                      st === nothing ? -1 : st.seed,
+                      st === nothing ? -1 : st.prefix,
+                      st === nothing ? -1 : st.cause_density,
+                      st === nothing ? false : st.accepted,
+                      st === nothing ? 0 : length(st.causes),
+                      st === nothing ? (-1, -1) : st.cell)
 end
 
 # ============================================================================
@@ -950,7 +1045,8 @@ function write_game(r::GameResult; out_dir = OUT_DIR)
         "phase" => "phaseA_kording",
         "method" => "A7_dim_reduction(NMF+PCA)",
         "game" => r.game,
-        "state" => "f$(r.target_frame)+$(r.horizon)",
+        "state" => r.state_kind == "noop" ? "f$(r.target_frame)+$(r.horizon)" :
+                   "gameplay(seed=$(r.st_seed),prefix=$(r.st_prefix))+$(r.horizon)",
         "target_output" => "latent-components",
         # headline scalar (SPEC §R value/metric_name): the NMF matched-component
         # fraction (the prompt's question — does NMF beat the pilot's PCA ≈0?).
@@ -969,6 +1065,20 @@ function write_game(r::GameResult; out_dir = OUT_DIR)
             "substrate" => "jutari (Julia, HARD) — real-ROM bit-exact path; the " *
                 "importance oracle uses EXACT interventions re-run on the true ROM.",
             "bit_exact_rerun" => r.bit_exact,
+            "testbed" => Dict{String,Any}(
+                "state_kind" => r.state_kind,
+                "seed" => r.st_seed, "prefix" => r.st_prefix, "horizon" => r.horizon,
+                "shared_output" => "screen_region(n_changed_px)@r$(r.shared_cell[1])c$(r.shared_cell[2])",
+                "cause_density_above_floor" => r.cause_density,
+                "cause_density_floor" => ST_FLOOR, "cause_density_gate_k" => ST_GATE_K,
+                "cause_density_accepted" => r.cause_density_accepted, "n_causes" => r.n_causes,
+                "note" => "P2 redesign: BOTH the scored oracle prefix AND the descriptive " *
+                    "PCA/NMF trajectory run on a seeded random-action GAMEPLAY state (not " *
+                    "the FIRE-then-NOOP oracle tape / synthetic active tape), gated by the " *
+                    "§1 oracle cause-density gate. The trajectory is the gameplay stream for " *
+                    "the first prefix+horizon frames then NOOP-continued to traj_frames. A7's " *
+                    "dim-reduction + oracle-importance algorithm is unchanged; only the " *
+                    "analysis state moves onto genuine input-driven gameplay."),
             "trajectory_trace" => r.trace == "dir" ?
                 "directional maze trace (FIRE warmup + cyclic UP/DOWN/LEFT/RIGHT)" :
                 "active trace (4×FIRE + periodic RIGHTFIRE/LEFTFIRE)",

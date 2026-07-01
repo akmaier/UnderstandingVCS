@@ -1,11 +1,11 @@
 {
   "arrays": "A2_lesions_qbert.npz",
   "ci": null,
-  "commit": "3b9c5a2",
+  "commit": "c157ec63",
   "extra": {
     "bit_exact_rerun": true,
     "budget": {
-      "action_trace": "all-NOOP (deterministic)",
+      "action_trace": "seeded random-action GAMEPLAY (seed=0, prefix=90, horizon=15)",
       "heldout_doses_per_unit": 1,
       "horizon": 30,
       "lesion_clamps_per_unit": 2,
@@ -58,7 +58,7 @@
       74,
       103
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/.claude/worktrees/wf_bdd2b372-582-1/tools/xai_study/t3/out/candidates_qbert.json",
+    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_qbert.json",
     "importance_def": "Σ|Δ(candidate-cell value at final frame)| + (#framebuffer cells changed vs baseline) — state + render channels",
     "importance_map": {
       "boot_run_still_works": [
@@ -165,7 +165,7 @@
         253.0,
         251.0,
         0.0,
-        6059.0,
+        7751.0,
         125.0,
         149.0,
         255.0,
@@ -205,6 +205,19 @@
     },
     "settings": "QbertRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every lesion is an EXACT clamp + deterministic re-run on the true ROM.",
+    "testbed": {
+      "cause_density_above_floor": 13,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 42,
+      "note": "P2 redesign: the lesion study runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. A2's lesion algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r19c1",
+      "state_kind": "seeded_random_action_gameplay"
+    },
     "triad": {
       "F": 0.9984051036682614,
       "F_note": "Spearman ρ of the single-unit lesion importance map vs the exact-oracle per-unit causal role (20 units).",
@@ -215,7 +228,7 @@
       "interpretation": "Phase A calibration baseline (experiment_design.md §4): the single-unit lesion is a RELATIVELY FAITHFUL classical method (high F) BUT structurally blind to interaction effects (the interaction_blind_spot) and prone to spurious specificity (M<1). 'Right but incomplete' — the quantified-Kording lesson for ablation."
     }
   },
-  "frame": 30,
+  "frame": 90,
   "game": "qbert",
   "method": "A2_lesions(exhaustive single-unit lesion importance map)",
   "metric_name": "lesion_importance_spearman_vs_oracle_role",
@@ -224,10 +237,10 @@
   "paper": "P2",
   "phase": "phaseA_kording",
   "seed": 0,
-  "state": "f30+30",
+  "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "per-unit behavioural-importance map (candidate RAM cells)",
-  "timestamp": "1782159345",
+  "timestamp": "1782922661",
   "value": 0.9984051036682614,
   "where": "local"
 }

@@ -1,7 +1,7 @@
 {
   "arrays": "A1_pong.npz",
   "ci": null,
-  "commit": "39cd1d3",
+  "commit": "c157ec63",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -24,7 +24,7 @@
       51,
       54
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/.claude/worktrees/wf_d845c9bf-d97-1/tools/xai_study/t3/out/candidates_pong.json",
+    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_pong.json",
     "graph": {
       "f1": 0.0,
       "fn": 6,
@@ -78,6 +78,19 @@
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
     "settings": "PongRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
+    "testbed": {
+      "cause_density_above_floor": -1,
+      "cause_density_accepted": false,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 30,
+      "n_causes": 0,
+      "note": "P2 redesign: the connectomics recovery runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. A1's graph algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
+      "prefix": -1,
+      "seed": -1,
+      "shared_output": "screen_region(n_changed_px)@r-1c-1",
+      "state_kind": "noop"
+    },
     "triad": {
       "F": 0.0,
       "F_note": "F1 of recovered data-flow edges vs the exact-oracle true edges (8 candidate cells)",
@@ -99,7 +112,7 @@
   "state": "f30+30",
   "stderr": null,
   "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-  "timestamp": "1782141096",
+  "timestamp": "1782923032",
   "value": 0.0,
   "where": "local"
 }

@@ -71,12 +71,30 @@ using JuTari.Env: StellaEnvironment, env_reset!, env_step!, get_screen, get_ram
 # the oracle's candidate cause set + Cause type (game-agnostic), and the verified
 # jutari run helper (boot/replay/snapshot/intervene + NPZ writer).
 include(joinpath(@__DIR__, "..", "ground_truth", "oracle_intervene.jl"))
-using .OracleIntervene: build_pong_causes, candidate_ram_indices, Cause
+using .OracleIntervene: build_pong_causes, candidate_ram_indices, Cause,
+                        run_intervention
 using .OracleIntervene.JutariOracle: Snapshot, snapshot, intervene_ram!,
                                      intervene_tia!, write_npz, RAM_SIZE
+using JuTari.Diff: soft_ram_peek
+
+# The P2 SHARED TESTBED (xai_paper/xai_2_interpretability/experiment_redesign.md):
+# seeded random-action GAMEPLAY state + oracle cause-density gate + shared
+# screen-buffer REGION output. Included as a fragment (see its header for why not a
+# module) so build_shared_testbed operates on OUR own Cause/Snapshot types. Opt in
+# with XAI_SHARED_TESTBED=1 (default on for the redesign re-run). Phase C is not a
+# gradient method, so the sampler-on path does not apply here — we consume the
+# shared STATE + cause-density GATE + shared screen-buffer output only.
+include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
 
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders", "seaquest", "ms_pacman", "qbert"]
+# shared-testbed switch + params (redesign protocol: prefix=90 gameplay, horizon=15).
+const SHARED_TESTBED = get(ENV, "XAI_SHARED_TESTBED", "1") == "1"
+const ST_PREFIX  = parse(Int, get(ENV, "XAI_ST_PREFIX", "90"))
+const ST_HORIZON = parse(Int, get(ENV, "XAI_ST_HORIZON", "15"))
+const ST_SEED    = parse(Int, get(ENV, "XAI_ST_SEED", "0"))
+const ST_GATE_K  = parse(Int, get(ENV, "XAI_ST_GATE_K", "4"))
+const ST_FLOOR   = parse(Float64, get(ENV, "XAI_ST_FLOOR", "0.5"))
 
 # joystick action codes (oracle_intervene.jl: RIGHT=3; LEFT=4) — the two donor
 # contexts. NOOP=0 is the clean trace.
@@ -289,9 +307,54 @@ struct PatchResult
     transient_sites::Vector{String}
     n_donor_real::Int              # donor patches whose donor actually diverged
     n_active_patches::Int          # patches with any nonzero recovered effect
+    # SHARED-TESTBED provenance (redesign); all NaN/-1/"" in the legacy NOOP path.
+    state_kind::String             # "seeded_random_action_gameplay" | "noop"
+    st_seed::Int
+    st_prefix::Int
+    cause_density::Int             # #causes above the floor at the shared output
+    cause_density_accepted::Bool   # passed the cause-density gate?
+    n_causes::Int
+    shared_cell::Tuple{Int,Int}    # the shared screen-buffer output cell
 end
 
 function run_game(; game, target_frame = 120, horizon = 30, verbose = true)
+    # SHARED-TESTBED (redesign): replace the all-NOOP boot/attract tape with a
+    # seeded random-action GAMEPLAY state at f*=ST_PREFIX, gated by the oracle
+    # cause-density gate (accept only causally-live states). The clean trace is the
+    # gameplay stream; the checkpoint, causes, candidate set and baseline all come
+    # from the shared substrate so every method sits on the SAME state (P1, P4).
+    st = nothing
+    if SHARED_TESTBED
+        st = build_shared_testbed(game;
+            settings_for = settings_for, rom_path_for = rom_path_for,
+            candidates_path_for = candidates_path_for,
+            build_causes = build_pong_causes, candidate_ram_indices = candidate_ram_indices,
+            continue_from = continue_from, snapshot = snapshot, env_step = env_step!,
+            intervene_ram = intervene_ram!, boot_replay = boot_replay,
+            run_intervention = run_intervention, soft_ram_peek = soft_ram_peek,
+            prefix = ST_PREFIX, horizon = ST_HORIZON, seed = ST_SEED,
+            k = ST_GATE_K, floor = ST_FLOOR, verbose = verbose,
+            assert_bit_exact = assert_bit_exact)
+        target_frame = st.prefix; horizon = st.horizon
+        total = st.total
+        clean_actions = st.actions
+        bit_exact = true
+        clean_ckpt = st.checkpoint
+        clean_tail = clean_actions[target_frame + 1 : total]
+        base_snap = st.base
+        at_target = st.at_target
+        cand = candidates_path_for(game)
+        cand_indices = st.cand_indices
+        causes = st.causes
+        verbose && println("[$game] SHARED gameplay state: cause_density=$(st.cause_density)/" *
+            "$(length(st.causes)) accepted=$(st.accepted) cell=$(st.cell)")
+        return _run_game_body(; game = game, target_frame = target_frame, horizon = horizon,
+            total = total, clean_actions = clean_actions, bit_exact = bit_exact,
+            clean_ckpt = clean_ckpt, clean_tail = clean_tail, base_snap = base_snap,
+            at_target = at_target, cand = cand, cand_indices = cand_indices, causes = causes,
+            st = st, verbose = verbose)
+    end
+
     total = target_frame + horizon
     clean_actions = fill(ACT_NOOP, total)
 
@@ -311,6 +374,21 @@ function run_game(; game, target_frame = 120, horizon = 30, verbose = true)
     cand = candidates_path_for(game)
     cand_indices = [idx for (idx, _) in candidate_ram_indices(cand)]
     causes = build_pong_causes(cand, at_target)
+    return _run_game_body(; game = game, target_frame = target_frame, horizon = horizon,
+        total = total, clean_actions = clean_actions, bit_exact = bit_exact,
+        clean_ckpt = clean_ckpt, clean_tail = clean_tail, base_snap = base_snap,
+        at_target = at_target, cand = cand, cand_indices = cand_indices, causes = causes,
+        st = nothing, verbose = verbose)
+end
+
+"""The per-game body, shared by the legacy NOOP path and the SHARED gameplay-state
+path (the ONLY difference between them is which state/action-stream/checkpoint the
+patch algorithm sits on — the algorithm itself is unchanged). `st` carries the
+shared-testbed provenance (cause-density gate, shared output cell) for the record,
+or `nothing` in the legacy path."""
+function _run_game_body(; game, target_frame, horizon, total, clean_actions, bit_exact,
+                        clean_ckpt, clean_tail, base_snap, at_target, cand, cand_indices,
+                        causes, st, verbose)
 
     # outputs: the 2 most causally-active candidate cells + whole-screen px
     score_cells, _mv = pick_active_cells(clean_ckpt, Int.(clean_tail), base_snap,
@@ -322,8 +400,20 @@ function run_game(; game, target_frame = 120, horizon = 30, verbose = true)
     site2out = Dict(c => o.name for o in outputs for c in o.true_sites)
 
     # ---- 4) donor runs (genuinely different state at frame t) ----------------
-    donor_left  = continue_from(boot_replay(fill(ACT_LEFT,  target_frame), target_frame; game = game), Int[])
-    donor_right = continue_from(boot_replay(fill(ACT_RIGHT, target_frame), target_frame; game = game), Int[])
+    # A donor = the state at frame t under a DIFFERENT run. In the SHARED gameplay
+    # testbed the clean run is the seeded random-action stream, so an on-distribution
+    # donor shares the gameplay prefix up to t-1 and diverges only at the analysis
+    # frame with a LEFT/RIGHT joystick action (a genuinely different, reachable state
+    # — the donor concept is unchanged, only the base state moves off boot/attract).
+    donor_left, donor_right = if st !== nothing
+        pre = target_frame > 0 ? Int.(clean_actions[1:target_frame - 1]) : Int[]
+        dl = continue_from(boot_replay(vcat(pre, ACT_LEFT),  target_frame; game = game), Int[])
+        dr = continue_from(boot_replay(vcat(pre, ACT_RIGHT), target_frame; game = game), Int[])
+        dl, dr
+    else
+        (continue_from(boot_replay(fill(ACT_LEFT,  target_frame), target_frame; game = game), Int[]),
+         continue_from(boot_replay(fill(ACT_RIGHT, target_frame), target_frame; game = game), Int[]))
+    end
 
     # ---- 5) build the patch set ----------------------------------------------
     patches = Patch[]
@@ -424,7 +514,14 @@ function run_game(; game, target_frame = 120, horizon = 30, verbose = true)
                        [p.name for p in patches], patch_meta,
                        y_base, recovered, exact, bit_exact,
                        recovered_eq_exact, max_diff, precision, recall,
-                       apriori_recall, transient_sites, n_donor_real, n_active)
+                       apriori_recall, transient_sites, n_donor_real, n_active,
+                       st === nothing ? "noop" : "seeded_random_action_gameplay",
+                       st === nothing ? -1 : st.seed,
+                       st === nothing ? -1 : st.prefix,
+                       st === nothing ? -1 : st.cause_density,
+                       st === nothing ? false : st.accepted,
+                       st === nothing ? length(causes) : length(st.causes),
+                       st === nothing ? (-1, -1) : st.cell)
 end
 
 # ============================================================================
@@ -471,7 +568,8 @@ function write_game_result(r::PatchResult; out_dir = OUT_DIR)
         "phase" => "phaseC_mechanistic",
         "method" => "activation_patching",
         "game" => r.game,
-        "state" => "f$(r.target_frame)+$(r.horizon)",
+        "state" => r.state_kind == "noop" ? "f$(r.target_frame)+$(r.horizon)" :
+                   "gameplay(seed=$(r.st_seed),prefix=$(r.st_prefix))+$(r.horizon)",
         "target_output" => "state(ram concept cells)+screen_px",
         # headline §R scalar: max |recovered − exact| (0.0 = perfect causal recovery).
         "metric_name" => "max_abs_recovered_minus_exact",
@@ -500,6 +598,17 @@ function write_game_result(r::PatchResult; out_dir = OUT_DIR)
             "n_donor_real" => r.n_donor_real,
             "n_active_patches" => r.n_active_patches,
             "n_patches" => length(r.patch_names),
+            "testbed" => Dict{String,Any}(
+                "state_kind" => r.state_kind,
+                "seed" => r.st_seed, "prefix" => r.st_prefix, "horizon" => r.horizon,
+                "shared_output" => "screen_region(n_changed_px)@r$(r.shared_cell[1])c$(r.shared_cell[2])",
+                "cause_density_above_floor" => r.cause_density,
+                "cause_density_floor" => ST_FLOOR, "cause_density_gate_k" => ST_GATE_K,
+                "cause_density_accepted" => r.cause_density_accepted, "n_causes" => r.n_causes,
+                "note" => "P2 redesign: methods sit on a seeded random-action GAMEPLAY " *
+                    "state (not the boot/attract NOOP tape), gated by the oracle " *
+                    "cause-density gate (accept iff #causes above the floor >= k). The " *
+                    "activation-patching algorithm is unchanged; only the state moves."),
             "recovered_delta" => rec_map,
             "exact_patch_delta" => ex_map,
             "note" =>

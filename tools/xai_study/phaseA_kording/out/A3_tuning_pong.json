@@ -1,7 +1,7 @@
 {
   "arrays": "A3_tuning_pong.npz",
   "ci": null,
-  "commit": "39cd1d3",
+  "commit": "c157ec63",
   "extra": {
     "A3_tuning": {
       "clock_corr_per_cell": {
@@ -11,7 +11,7 @@
         "RAM[46]:player_x": 0.0,
         "RAM[49]:ball_x": 0.7212574394804699,
         "RAM[50]:enemy_y": 0.8568255891326826,
-        "RAM[51]:player_y": 0.3111420547291364,
+        "RAM[51]:player_y": 0.5127521817047626,
         "RAM[54]:ball_y": 0.8480176440340074
       },
       "epiphenomenal_control": "frame_clock",
@@ -26,7 +26,7 @@
         "ball_y@54",
         "score_raw@13"
       ],
-      "game_variable_spurious_tuning_rate": 1.0,
+      "game_variable_spurious_tuning_rate": 0.5,
       "gvar_selectivity_per_cell": {
         "RAM[13]:enemy_score": 0.0,
         "RAM[14]:player_score": 0.0,
@@ -34,7 +34,7 @@
         "RAM[46]:player_x": 0.0,
         "RAM[49]:ball_x": 0.9077073777618376,
         "RAM[50]:enemy_y": 0.9996666606414486,
-        "RAM[51]:player_y": 0.23670882456697048,
+        "RAM[51]:player_y": 0.8112380021790925,
         "RAM[54]:ball_y": 0.9996666606414486
       },
       "luminance_corr_per_cell": {
@@ -44,28 +44,28 @@
         "RAM[46]:player_x": 0.0,
         "RAM[49]:ball_x": 0.09823451101693634,
         "RAM[50]:enemy_y": 0.0946251061903271,
-        "RAM[51]:player_y": 0.263570732078899,
+        "RAM[51]:player_y": 0.023702797771057698,
         "RAM[54]:ball_y": 0.10038539711976503
       },
       "luminance_spurious_tuning_rate": 0.0,
-      "n_spurious_gvar": 3,
+      "n_spurious_gvar": 2,
       "n_spurious_luminance": 0,
-      "n_strongly_tuned_gvar": 3,
+      "n_strongly_tuned_gvar": 4,
       "n_strongly_tuned_luminance": 0,
       "note": "selectivity = max |corr| to a GAME variable (the cell's own self-column excluded; frame clock excluded — it is the epiphenomenal control). spurious = strongly-tuned (selectivity≥τ) but NOT causal by the oracle — the present≠used tuning-curve trap (experiment_design.md §4 A3, Phase-A's headline failure). The luminance family is the HARDWARE (no-T3) version of the same trap.",
       "spurious_gvar_cells": [
-        "RAM[49]:ball_x",
         "RAM[50]:enemy_y",
-        "RAM[54]:ball_y"
+        "RAM[51]:player_y"
       ],
       "strongly_tuned_gvar_cells": [
         "RAM[49]:ball_x",
         "RAM[50]:enemy_y",
+        "RAM[51]:player_y",
         "RAM[54]:ball_y"
       ],
       "tau": 0.7,
       "trajectory_frames": 150,
-      "trajectory_trace": "active (FIRE×4 + periodic RIGHTFIRE/LEFTFIRE)"
+      "trajectory_trace": "seeded random-action GAMEPLAY (seed=0, prefix=90+15, NOOP-continued past the window)"
     },
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -89,27 +89,40 @@
       54
     ],
     "candidates_file": "candidates_pong.json",
-    "n_oracle_causal": 2,
+    "n_oracle_causal": 4,
     "oracle_importance_per_cell": {
-      "RAM[13]:enemy_score": 160.0,
-      "RAM[14]:player_score": 160.0,
+      "RAM[13]:enemy_score": 240.0,
+      "RAM[14]:player_score": 240.0,
       "RAM[45]:enemy_x": 0.0,
       "RAM[46]:player_x": 0.0,
-      "RAM[49]:ball_x": 0.0,
+      "RAM[49]:ball_x": 344.0,
       "RAM[50]:enemy_y": 0.0,
       "RAM[51]:player_y": 0.0,
-      "RAM[54]:ball_y": 0.0
+      "RAM[54]:ball_y": 136.0
     },
     "positive_control_oracle_as_method_F": 1.0,
     "rom_settings": "JuTari.PaddleGames.PongRomSettings",
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the oracle causal map is EXACT interventions re-run on the true ROM; the tuning curves are a DESCRIPTIVE active-trace recording (the recorder's documented purpose), not a bit-exact-vs-xitari claim.",
+    "testbed": {
+      "cause_density_above_floor": 6,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 18,
+      "note": "P2 redesign: the tuning study runs on a seeded random-action GAMEPLAY state (not the FIRE×4/attract tape), gated by the §1 oracle cause-density gate. Both the oracle causal map AND the descriptive tuning trajectory are stepped along the SAME gameplay stream so the game variable VARIES on genuine input-driven play. A3's tuning algorithm is unchanged; only the analysis state moves.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r162c17",
+      "state_kind": "seeded_random_action_gameplay"
+    },
     "triad": {
-      "F": -0.5405899027195887,
+      "F": -0.00684931506849315,
       "F_note": "Spearman(A3 game-variable selectivity, oracle causal importance) over 8 candidate cells",
-      "M": 0.0,
+      "M": 0.5,
       "M_note": "1 − over-claim rate: fraction of strongly-tuned cells the oracle says are generic (non-causal)",
-      "S": -0.5006018078414689,
+      "S": -0.4123124924684856,
       "S_note": "Pearson(A3 selectivity, held-out do(base+37) screen break) — sufficiency on a bit-exact re-run",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): a tuning-curve importance map scores LOW faithfulness despite fully-known structure. F<1 / spurious-tuning>0 quantify where the classical analysis departs from the ground truth. The oracle-as-method positive control (F=1.0) confirms the harness rewards a perfectly-faithful map."
     }
@@ -122,10 +135,10 @@
   "paper": "P2",
   "phase": "phaseA_kording",
   "seed": 0,
-  "state": "f30+30",
+  "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen-break (oracle causal importance) vs tuning selectivity",
-  "timestamp": "1782141159",
-  "value": 1.0,
+  "timestamp": "1782922844",
+  "value": 0.5,
   "where": "local"
 }

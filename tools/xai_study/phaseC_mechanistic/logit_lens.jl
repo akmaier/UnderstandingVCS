@@ -103,12 +103,29 @@ using JuTari.Env: StellaEnvironment, env_reset!, env_step!, get_screen, get_ram
 # (boot/replay/snapshot/intervene + NPZ writer). We reuse the SAME resolution path
 # as das.jl so the candidates/RomSettings/ROM-alias map is shared, not re-derived.
 include(joinpath(@__DIR__, "..", "ground_truth", "oracle_intervene.jl"))
-using .OracleIntervene: candidate_ram_indices
+using .OracleIntervene: candidate_ram_indices, build_pong_causes, run_intervention
 using .OracleIntervene.JutariOracle: Snapshot, snapshot, intervene_ram!,
                                      intervene_tia!, write_npz, RAM_SIZE
+using JuTari.Diff: soft_ram_peek
+
+# The P2 SHARED TESTBED (xai_paper/xai_2_interpretability/experiment_redesign.md):
+# seeded random-action GAMEPLAY state + oracle cause-density gate + shared
+# screen-buffer REGION output. Included as a fragment (see its header) so
+# build_shared_testbed operates on OUR own Cause/Snapshot types. Opt in with
+# XAI_SHARED_TESTBED=1 (default on for the redesign re-run). Phase C is not a
+# gradient method, so the sampler-on path does not apply — we consume the shared
+# STATE + cause-density GATE + shared screen-buffer output only.
+include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
 
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders", "seaquest", "ms_pacman", "qbert"]
+# shared-testbed switch + params (redesign protocol: prefix=90 gameplay, horizon=15).
+const SHARED_TESTBED = get(ENV, "XAI_SHARED_TESTBED", "1") == "1"
+const ST_PREFIX  = parse(Int, get(ENV, "XAI_ST_PREFIX", "90"))
+const ST_HORIZON = parse(Int, get(ENV, "XAI_ST_HORIZON", "15"))
+const ST_SEED    = parse(Int, get(ENV, "XAI_ST_SEED", "0"))
+const ST_GATE_K  = parse(Int, get(ENV, "XAI_ST_GATE_K", "4"))
+const ST_FLOOR   = parse(Float64, get(ENV, "XAI_ST_FLOOR", "0.5"))
 
 # joystick action codes (oracle_intervene.jl: RIGHT=3; LEFT=4). NOOP=0 is BASE.
 const ACT_NOOP  = 0
@@ -174,6 +191,14 @@ function boot_replay(actions, target_frame; game)
     env = load_env(; game = game)
     for i in 1:target_frame; env_step!(env, Int(actions[i])); end
     return env
+end
+
+# a Snapshot-returning continuation (mirrors das.jl / activation_patching.jl) — used
+# by the shared-testbed substrate; not part of the lens algorithm proper.
+function continue_from(checkpoint::StellaEnvironment, tail)
+    env = deepcopy(checkpoint)
+    for a in tail; env_step!(env, Int(a)); end
+    return snapshot(env, length(tail))
 end
 
 """Record the full RAM tape over `horizon` steps starting from a deepcopy of the
@@ -317,6 +342,14 @@ struct LensResult
     tuned_beats_logit_earlier::Float64 # frac of vars the tuned lens decodes strictly earlier
     n_vars::Int
     decode_threshold::Float64
+    # SHARED-TESTBED provenance (redesign); all NaN/-1/"" in the legacy NOOP path.
+    state_kind::String                 # "seeded_random_action_gameplay" | "noop"
+    st_seed::Int
+    st_prefix::Int
+    cause_density::Int                 # #causes above the floor at the shared output
+    cause_density_accepted::Bool       # passed the cause-density gate?
+    n_causes::Int
+    shared_cell::Tuple{Int,Int}        # the shared screen-buffer output cell
 end
 
 """Build the oracle CAUSAL MASK: for each candidate variable V (its site) and each
@@ -347,6 +380,42 @@ end
 
 function run_game(; game, target_frame = 120, horizon = 30, n_traj = 48,
                   decode_threshold = 0.9, train_frac = 0.7, seed = 0, verbose = true)
+    # SHARED-TESTBED (redesign): replace the all-NOOP boot/attract tape with a
+    # seeded random-action GAMEPLAY state at f*=ST_PREFIX, gated by the oracle
+    # cause-density gate. BASE + SOURCE checkpoints, the tail, and the trajectory
+    # set all come from the shared substrate so every method sits on the SAME state
+    # (P1, P4). The lens algorithm (trajectory set, causal mask, ridge fits) is
+    # unchanged; only the state/action-stream it sits on moves.
+    st = nothing
+    if SHARED_TESTBED
+        st = build_shared_testbed(game;
+            settings_for = settings_for, rom_path_for = rom_path_for,
+            candidates_path_for = candidates_path_for,
+            build_causes = build_pong_causes, candidate_ram_indices = candidate_ram_indices,
+            continue_from = continue_from, snapshot = snapshot, env_step = env_step!,
+            intervene_ram = intervene_ram!, boot_replay = boot_replay,
+            run_intervention = run_intervention, soft_ram_peek = soft_ram_peek,
+            prefix = ST_PREFIX, horizon = ST_HORIZON, seed = ST_SEED,
+            k = ST_GATE_K, floor = ST_FLOOR, verbose = verbose,
+            assert_bit_exact = assert_bit_exact)
+        target_frame = st.prefix; horizon = st.horizon
+        total = st.total
+        base_actions = st.actions
+        bit_exact = true
+        base_ckpt = st.checkpoint
+        tail = base_actions[target_frame + 1 : total]
+        # SOURCE run: share the gameplay prefix, diverge only at the analysis frame
+        # with a RIGHT joystick action (an on-distribution genuinely different state).
+        pre = target_frame > 0 ? Int.(base_actions[1:target_frame - 1]) : Int[]
+        src_ckpt = boot_replay(vcat(pre, ACT_RIGHT), target_frame; game = game)
+        verbose && println("[$game] SHARED gameplay state: cause_density=$(st.cause_density)/" *
+            "$(length(st.causes)) accepted=$(st.accepted) cell=$(st.cell)")
+        return _run_game_body(; game = game, target_frame = target_frame, horizon = horizon,
+            base_ckpt = base_ckpt, src_ckpt = src_ckpt, tail = tail, n_traj = n_traj,
+            decode_threshold = decode_threshold, train_frac = train_frac, seed = seed,
+            bit_exact = bit_exact, st = st, verbose = verbose)
+    end
+
     total = target_frame + horizon
     base_actions = fill(ACT_NOOP, total)
 
@@ -361,6 +430,18 @@ function run_game(; game, target_frame = 120, horizon = 30, n_traj = 48,
     src_actions = fill(ACT_RIGHT, total)
     src_ckpt = boot_replay(src_actions, target_frame; game = game)
     tail = base_actions[target_frame + 1 : total]   # H NOOPs
+    return _run_game_body(; game = game, target_frame = target_frame, horizon = horizon,
+        base_ckpt = base_ckpt, src_ckpt = src_ckpt, tail = tail, n_traj = n_traj,
+        decode_threshold = decode_threshold, train_frac = train_frac, seed = seed,
+        bit_exact = bit_exact, st = nothing, verbose = verbose)
+end
+
+"""The per-game body, shared by the legacy NOOP path and the SHARED gameplay-state
+path (the ONLY difference is which state/action-stream/checkpoints the lens
+algorithm sits on — the algorithm itself is unchanged). `st` carries the
+shared-testbed provenance for the record, or `nothing` in the legacy path."""
+function _run_game_body(; game, target_frame, horizon, base_ckpt, src_ckpt, tail,
+                        n_traj, decode_threshold, train_frac, seed, bit_exact, st, verbose)
 
     # ---- 3) candidate sites + their T3 concept labels (the target variables) ---
     cand = candidates_path_for(game)
@@ -497,7 +578,14 @@ function run_game(; game, target_frame = 120, horizon = 30, n_traj = 48,
                       logit_true_fidelity, mean_tuned_final_r2,
                       median_tuned_final_r2, mean_best_tuned_r2,
                       mean_faithful_weight_frac, tuned_beats_logit_earlier,
-                      nvar, decode_threshold)
+                      nvar, decode_threshold,
+                      st === nothing ? "noop" : "seeded_random_action_gameplay",
+                      st === nothing ? -1 : st.seed,
+                      st === nothing ? -1 : st.prefix,
+                      st === nothing ? -1 : st.cause_density,
+                      st === nothing ? false : st.accepted,
+                      st === nothing ? 0 : length(st.causes),
+                      st === nothing ? (-1, -1) : st.cell)
 end
 
 # ============================================================================
@@ -553,7 +641,8 @@ function write_game_result(r::LensResult; out_dir = OUT_DIR)
         "phase" => "phaseC_mechanistic",
         "method" => "logit_tuned_lens",
         "game" => r.game,
-        "state" => "f$(r.target_frame)+$(r.horizon)",
+        "state" => r.state_kind == "noop" ? "f$(r.target_frame)+$(r.horizon)" :
+                   "gameplay(seed=$(r.st_seed),prefix=$(r.st_prefix))+$(r.horizon)",
         "target_output" => "per-stage readout of intermediate VCS state -> a variable's final value",
         # headline §R scalar: logit-lens fidelity to the TRUE intermediate value
         # (the DoD metric). =1.0 by construction on the VCS (the readout IS the
@@ -591,6 +680,18 @@ function write_game_result(r::LensResult; out_dir = OUT_DIR)
             "mean_faithful_weight_fraction" => (isfinite(r.mean_faithful_weight_frac) ?
                                                 r.mean_faithful_weight_frac : nothing),
             "tuned_decodes_earlier_than_logit_fraction" => r.tuned_beats_logit_earlier,
+            "testbed" => Dict{String,Any}(
+                "state_kind" => r.state_kind,
+                "seed" => r.st_seed, "prefix" => r.st_prefix, "horizon" => r.horizon,
+                "shared_output" => "screen_region(n_changed_px)@r$(r.shared_cell[1])c$(r.shared_cell[2])",
+                "cause_density_above_floor" => r.cause_density,
+                "cause_density_floor" => ST_FLOOR, "cause_density_gate_k" => ST_GATE_K,
+                "cause_density_accepted" => r.cause_density_accepted, "n_causes" => r.n_causes,
+                "note" => "P2 redesign: methods sit on a seeded random-action GAMEPLAY " *
+                    "state (not the boot/attract NOOP tape), gated by the oracle " *
+                    "cause-density gate (accept iff #causes above the floor >= k). The " *
+                    "logit/tuned-lens algorithm is unchanged; only the BASE + SOURCE " *
+                    "state (both on the shared gameplay prefix) moves."),
             "note" =>
                 "Logit / tuned lens (nostalgebraist 2020; Belrose et al. 2023) over the " *
                 "VCS RAM trajectory: the residual stream = the 128-byte RAM tape, the " *

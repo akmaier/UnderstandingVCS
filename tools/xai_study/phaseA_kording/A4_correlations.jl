@@ -75,6 +75,7 @@ module A4Correlations
 using JSON
 using LinearAlgebra: eigen, Symmetric
 import Statistics
+using JuTari
 
 # --- the verified foundation (NO core touched) -----------------------------
 include(joinpath(@__DIR__, "..", "common", "jutari_oracle.jl"))
@@ -90,9 +91,33 @@ using .JutariOracle.JuTari.Env: env_reset!, env_step!, get_ram
 # include keeps the dependency lineage explicit.
 include(joinpath(@__DIR__, "..", "common", "jutari_record.jl"))
 
+# The §1 exact-intervention oracle — used ONLY to build the P2 SHARED gameplay
+# state + its cause-density gate (below). A4 keeps its OWN a4_* + coupling-oracle
+# machinery; the oracle here supplies the shared action stream + gate. Referenced
+# as OracleIntervene.X / OracleIntervene.JutariOracle.X (NOT alias-imported, so its
+# internal JutariOracle instance never clashes with the .JutariOracle already
+# imported above — separate module instances; no type mixed across them).
+include(joinpath(@__DIR__, "..", "ground_truth", "oracle_intervene.jl"))
+using JuTari.Diff: soft_ram_peek
+
+# The P2 SHARED TESTBED (experiment_redesign.md): seeded random-action GAMEPLAY
+# state + oracle cause-density gate. Included as a fragment (see its header). Phase
+# A is not a gradient method, so we consume the shared action STREAM + cause-density
+# GATE only, and boot A4's OWN checkpoint + record its OWN trajectory from that
+# stream. Opt in with XAI_SHARED_TESTBED=1 (default on).
+include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
+
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders",
                     "seaquest", "ms_pacman", "qbert"]
+
+# shared-testbed switch + params (redesign protocol: prefix=90 gameplay, horizon=15).
+const SHARED_TESTBED = get(ENV, "XAI_SHARED_TESTBED", "1") == "1"
+const ST_PREFIX  = parse(Int, get(ENV, "XAI_ST_PREFIX", "90"))
+const ST_HORIZON = parse(Int, get(ENV, "XAI_ST_HORIZON", "15"))
+const ST_SEED    = parse(Int, get(ENV, "XAI_ST_SEED", "0"))
+const ST_GATE_K  = parse(Int, get(ENV, "XAI_ST_GATE_K", "4"))
+const ST_FLOOR   = parse(Float64, get(ENV, "XAI_ST_FLOOR", "0.5"))
 
 # Per-game live-play configuration. The candidate cells must actually MOVE for the
 # correlation / coupling to carry signal; each game reaches live play at a different
@@ -647,6 +672,33 @@ struct GameResult
     global_s::GlobalStructure
     oracle::CouplingOracle
     triad::Triad
+    # SHARED-TESTBED provenance (redesign); "noop"/-1/false in the legacy path.
+    state_kind::String             # "seeded_random_action_gameplay" | "noop"
+    st_seed::Int
+    st_prefix::Int
+    cause_density::Int             # #causes above the floor at the shared output
+    cause_density_accepted::Bool   # passed the cause-density gate?
+    n_causes::Int
+    shared_cell::Tuple{Int,Int}    # the shared screen-buffer output cell
+end
+
+"""Build the P2 SHARED gameplay state + cause-density gate for `game` using the §1
+oracle machinery (oracle_intervene.jl). Returns the substrate NamedTuple (we use
+its `.actions` stream + `.cause_density`/`.accepted`/`.cell` gate). A4 then boots
+its OWN checkpoint + records its OWN trajectory from `st.actions` so the coupling /
+correlation algorithm is unchanged."""
+function build_a4_shared_state(game::AbstractString; verbose = false)
+    O = OracleIntervene; J = OracleIntervene.JutariOracle
+    return build_shared_testbed(game;
+        settings_for = J.settings_for, rom_path_for = J.rom_path_for,
+        candidates_path_for = resolve_candidates,
+        build_causes = O.build_pong_causes, candidate_ram_indices = O.candidate_ram_indices,
+        continue_from = J.continue_from, snapshot = J.snapshot, env_step = J.env_step!,
+        intervene_ram = J.intervene_ram!, boot_replay = J.boot_replay,
+        run_intervention = O.run_intervention, soft_ram_peek = soft_ram_peek,
+        prefix = ST_PREFIX, horizon = ST_HORIZON, seed = ST_SEED,
+        k = ST_GATE_K, floor = ST_FLOOR, verbose = verbose,
+        assert_bit_exact = O.assert_bit_exact)
 end
 
 function compute_game(game::AbstractString; target_frame = nothing, horizon = nothing,
@@ -657,8 +709,23 @@ function compute_game(game::AbstractString; target_frame = nothing, horizon = no
     traj_frames  = traj_frames  === nothing ? cfg.traj_frames  : traj_frames
     trace        = cfg.trace
     in_window    = cfg.in_window
+
+    # SHARED-TESTBED (redesign): replace the per-game FIRE/attract oracle tape with a
+    # seeded random-action GAMEPLAY state at f*=ST_PREFIX, gated by the oracle
+    # cause-density gate. The candidate cells must MOVE for the correlation/coupling
+    # to carry signal, so both the coupling oracle AND the descriptive correlation
+    # trajectory are stepped along the SAME gameplay stream. A4's a4_*/coupling
+    # machinery is UNCHANGED — only the state moves.
+    st = nothing
+    if SHARED_TESTBED
+        st = build_a4_shared_state(game; verbose = verbose)
+        target_frame = st.prefix; horizon = st.horizon
+        seed = st.seed; in_window = false      # gameplay window may exceed 60-frame screen conf.
+        verbose && println("[A4:$game] SHARED gameplay state: cause_density=$(st.cause_density)/" *
+            "$(length(st.causes)) accepted=$(st.accepted) cell=$(st.cell)")
+    end
     total = target_frame + horizon
-    oacts = oracle_actions(total)
+    oacts = SHARED_TESTBED ? Int.(st.actions) : oracle_actions(total)
     tail = Int.(oacts[target_frame + 1 : target_frame + horizon])
 
     # 1) bit-exact baseline — two fresh boots+replays must be byte-identical.
@@ -680,9 +747,22 @@ function compute_game(game::AbstractString; target_frame = nothing, horizon = no
     verbose && println("[A4:$game] candidates: $(cand_path) ($(length(cands)) cells, " *
                        "$(length(unique([c.family for c in cands]))) true variable groups)")
 
-    # 3) descriptive correlation over an ACTIVE trajectory (cells must move).
-    verbose && println("[A4:$game] recording $(traj_frames)-frame active ($(trace)) RAM trajectory + pairwise corr...")
-    tape = a4_record_ram(game, traj_frames, trace_actions(trace, traj_frames))
+    # 3) descriptive correlation over a trajectory (cells must move). Under the
+    #    shared testbed the trajectory is stepped along the SAME seeded gameplay
+    #    stream; if traj_frames exceeds the gameplay window (prefix+horizon), the
+    #    tail is NOOP-continued.
+    if SHARED_TESTBED
+        traj_acts = Vector{Int}(undef, max(0, traj_frames))
+        for t in 1:length(traj_acts)
+            traj_acts[t] = t <= total ? Int(st.actions[t]) : 0    # gameplay then NOOP
+        end
+        verbose && println("[A4:$game] recording $(traj_frames)-frame gameplay RAM trajectory " *
+            "(seed=$(st.seed) prefix=$(st.prefix)+$(st.horizon), NOOP-continued past f$total) + pairwise corr...")
+    else
+        traj_acts = trace_actions(trace, traj_frames)
+        verbose && println("[A4:$game] recording $(traj_frames)-frame active ($(trace)) RAM trajectory + pairwise corr...")
+    end
+    tape = a4_record_ram(game, traj_frames, traj_acts)
     C, varying = pairwise_corr(tape, cands)
 
     # 4) co-activation clusters + true-grouping agreement (the over-grouping result).
@@ -714,7 +794,14 @@ function compute_game(game::AbstractString; target_frame = nothing, horizon = no
 
     return GameResult(game, target_frame, horizon, traj_frames, trace, in_window,
                       seed, bit_exact, cands, C, varying, clabel, tau_corr,
-                      grouping, global_s, oracle, triad)
+                      grouping, global_s, oracle, triad,
+                      st === nothing ? "noop" : "seeded_random_action_gameplay",
+                      st === nothing ? -1 : st.seed,
+                      st === nothing ? -1 : st.prefix,
+                      st === nothing ? -1 : st.cause_density,
+                      st === nothing ? false : st.accepted,
+                      st === nothing ? 0 : length(st.causes),
+                      st === nothing ? (-1, -1) : st.cell)
 end
 
 # ============================================================================
@@ -821,7 +908,8 @@ function write_game(r::GameResult; out_dir = OUT_DIR)
         "phase" => "phaseA_kording",
         "method" => "A4_spike_word_pairwise_correlation",
         "game" => r.game,
-        "state" => "f$(r.target_frame)+$(r.horizon)",
+        "state" => r.state_kind == "noop" ? "f$(r.target_frame)+$(r.horizon)" :
+                   "gameplay(seed=$(r.st_seed),prefix=$(r.st_prefix))+$(r.horizon)",
         "target_output" => "cell-cell-coupling",
         # headline scalar (SPEC §R value/metric_name): the A4 faithfulness F — how
         # well the pairwise-correlation structure tracks the TRUE causal coupling.
@@ -840,10 +928,26 @@ function write_game(r::GameResult; out_dir = OUT_DIR)
             "substrate" => "jutari (Julia, HARD) — real-ROM bit-exact path; the " *
                 "coupling oracle uses EXACT interventions re-run on the true ROM.",
             "bit_exact_rerun" => r.bit_exact,
-            "trajectory_trace" => r.trace == "dir" ?
-                "directional maze trace (FIRE warmup + cyclic UP/DOWN/LEFT/RIGHT)" :
-                "active trace (4×FIRE + periodic RIGHTFIRE/LEFTFIRE)",
+            "trajectory_trace" => r.state_kind != "noop" ?
+                "seeded random-action GAMEPLAY (seed=$(r.st_seed), prefix=$(r.st_prefix)+$(r.horizon), NOOP-continued past the window)" :
+                (r.trace == "dir" ?
+                    "directional maze trace (FIRE warmup + cyclic UP/DOWN/LEFT/RIGHT)" :
+                    "active trace (4×FIRE + periodic RIGHTFIRE/LEFTFIRE)"),
             "trajectory_frames" => r.traj_frames,
+            "testbed" => Dict{String,Any}(
+                "state_kind" => r.state_kind,
+                "seed" => r.st_seed, "prefix" => r.st_prefix, "horizon" => r.horizon,
+                "shared_output" => "screen_region(n_changed_px)@r$(r.shared_cell[1])c$(r.shared_cell[2])",
+                "cause_density_above_floor" => r.cause_density,
+                "cause_density_floor" => ST_FLOOR, "cause_density_gate_k" => ST_GATE_K,
+                "cause_density_accepted" => r.cause_density_accepted, "n_causes" => r.n_causes,
+                "note" => "P2 redesign: the correlation/coupling study runs on a seeded " *
+                    "random-action GAMEPLAY state (not the per-game FIRE/attract tape), " *
+                    "gated by the §1 oracle cause-density gate. Both the coupling oracle " *
+                    "AND the descriptive correlation trajectory are stepped along the SAME " *
+                    "gameplay stream so the candidate cells VARY on genuine input-driven " *
+                    "play. A4's correlation/coupling algorithm is unchanged; only the " *
+                    "analysis state moves."),
             "scored_in_conformance_window" => r.in_window,
             "conformance_note" => r.in_window ?
                 "scored oracle frame f$(r.target_frame)+$(r.horizon) is inside the " *

@@ -1,5 +1,5 @@
 {
-  "commit": "68b6ba6",
+  "commit": "c157ec63",
   "games": [
     {
       "game": "pong",
@@ -9,147 +9,27 @@
       "n_oracle_causal": 4,
       "nmf_FSM": [
         -0.3854080473098308,
-        -0.04437013088857085,
+        -0.2910862615529313,
         0.33333333333333337
       ],
-      "nmf_matched_frac": 0.8,
+      "nmf_matched_frac": 0.6,
       "nmf_rank": 8,
-      "nmf_recon_rel_err": 0.03956234334558974,
+      "nmf_recon_rel_err": 0.03958651883483822,
       "pca_FSM": [
         -0.04081727099225389,
-        0.07082867416447225,
+        -0.1916408936406495,
         0.5
       ],
-      "pca_cum_var_top5": 0.9995493661703483,
+      "pca_cum_var_top5": 0.9944015251966448,
       "pca_matched_frac": 0.6,
-      "pca_top1_var": 0.7379409350098765,
-      "state": "f60+30"
-    },
-    {
-      "game": "breakout",
-      "in_window": true,
-      "n_cands": 9,
-      "n_known_game_vars": 7,
-      "n_oracle_causal": 7,
-      "nmf_FSM": [
-        -0.36598727043590507,
-        -0.5618093587806344,
-        0.6666666666666667
-      ],
-      "nmf_matched_frac": 0.8,
-      "nmf_rank": 8,
-      "nmf_recon_rel_err": 0.018659923106732763,
-      "pca_FSM": [
-        -0.46761018155572276,
-        -0.30707728259700784,
-        0.6666666666666667
-      ],
-      "pca_cum_var_top5": 0.9975553041420897,
-      "pca_matched_frac": 0.6,
-      "pca_top1_var": 0.7455089795644427,
-      "state": "f60+30"
-    },
-    {
-      "game": "space_invaders",
-      "in_window": false,
-      "n_cands": 17,
-      "n_known_game_vars": 13,
-      "n_oracle_causal": 10,
-      "nmf_FSM": [
-        -0.621614189427135,
-        -0.16047327801541406,
-        0.1428571428571429
-      ],
-      "nmf_matched_frac": 0.4,
-      "nmf_rank": 8,
-      "nmf_recon_rel_err": 0.04013474758034645,
-      "pca_FSM": [
-        -0.658672616842242,
-        -0.17876059251594112,
-        0.0
-      ],
-      "pca_cum_var_top5": 0.9434388771824632,
-      "pca_matched_frac": 0.8,
-      "pca_top1_var": 0.5237725450972545,
-      "state": "f120+30"
-    },
-    {
-      "game": "seaquest",
-      "in_window": false,
-      "n_cands": 23,
-      "n_known_game_vars": 15,
-      "n_oracle_causal": 12,
-      "nmf_FSM": [
-        0.03998075312621053,
-        -0.09570376597066167,
-        0.4444444444444444
-      ],
-      "nmf_matched_frac": 0.6,
-      "nmf_rank": 8,
-      "nmf_recon_rel_err": 0.03390411447115896,
-      "pca_FSM": [
-        -0.20699675508288648,
-        -0.007440223777104433,
-        0.33333333333333337
-      ],
-      "pca_cum_var_top5": 0.9941792046165498,
-      "pca_matched_frac": 0.6,
-      "pca_top1_var": 0.7397308127857921,
-      "state": "f120+30"
-    },
-    {
-      "game": "ms_pacman",
-      "in_window": false,
-      "n_cands": 19,
-      "n_known_game_vars": 6,
-      "n_oracle_causal": 14,
-      "nmf_FSM": [
-        0.2722458717441216,
-        -0.24357496929747324,
-        0.875
-      ],
-      "nmf_matched_frac": 0.6,
-      "nmf_rank": 8,
-      "nmf_recon_rel_err": 0.06060971183005967,
-      "pca_FSM": [
-        0.18083979940901232,
-        -0.13000589083264683,
-        1.0
-      ],
-      "pca_cum_var_top5": 0.8608340890697289,
-      "pca_matched_frac": 0.2,
-      "pca_top1_var": 0.5405399096046352,
-      "state": "f330+30"
-    },
-    {
-      "game": "qbert",
-      "in_window": true,
-      "n_cands": 20,
-      "n_known_game_vars": 10,
-      "n_oracle_causal": 7,
-      "nmf_FSM": [
-        0.7176981627595937,
-        0.703852275756116,
-        0.875
-      ],
-      "nmf_matched_frac": 0.4,
-      "nmf_rank": 8,
-      "nmf_recon_rel_err": 0.06157637468616055,
-      "pca_FSM": [
-        0.539242284149527,
-        -0.05093431035726036,
-        0.7
-      ],
-      "pca_cum_var_top5": 0.9326089601138614,
-      "pca_matched_frac": 0.8,
-      "pca_top1_var": 0.46320714374462973,
-      "state": "f60+30"
+      "pca_top1_var": 0.6829132023139927,
+      "state": "f90+15"
     }
   ],
   "headline": "PCA vs NMF matched-component fraction (does NMF beat the pilot's PCA ≈ 0?) + per-cell recovery F/S/M vs the exact intervention oracle.",
   "method": "A7_dim_reduction(NMF+PCA)",
-  "n_games": 6,
+  "n_games": 1,
   "paper": "P2",
   "phase": "phaseA_kording",
-  "timestamp": "1782142677"
+  "timestamp": "1782922865"
 }
