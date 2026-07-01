@@ -84,21 +84,34 @@ def scene_ax(ax, game="pong"):
     ax.set_title("game frame (%s)" % game); ax.set_xticks([]); ax.set_yticks([])
 
 
-def overlay_ax(ax, weights, title):
-    """Paint per-cell weights onto the pong frame via screen footprints."""
+def overlay_ax(ax, cells, weights, title):
+    """Paint per-cell weights onto the pong frame via screen footprints.
+    `cells` are the RAM indices `weights` is indexed by; we match them to the
+    footprint cells by VALUE (not position)."""
     F = footprints()
     if not F:
         ax.axis("off"); ax.text(0.5, 0.5, "(no footprints)", ha="center", color=DIM); return
-    cells, fp, rgb = F["cells"], F["fp"], F["rgb"]
+    fcells, fp, rgb = F["cells"], F["fp"], F["rgb"]
+    w = {int(c): float(weights[i]) for i, c in enumerate(cells) if i < len(weights)}
     heat = np.zeros((H, W))
-    for ci in range(len(cells)):
-        heat += float(weights[ci]) * fp[ci]
+    for fi, fc in enumerate(fcells):
+        heat += w.get(int(fc), 0.0) * fp[fi]
     if heat.max() > 0:
         heat /= heat.max()
     ax.imshow((rgb * 0.45).astype(np.uint8))
     rgba = cm.get_cmap("inferno")(heat); rgba[..., 3] = np.clip(heat, 0, 1)
     ax.imshow(rgba)
     ax.set_title(title); ax.set_xticks([]); ax.set_yticks([])
+
+
+def parse_cells(cause_names):
+    """Unique RAM cell indices appearing in the cause names, in order."""
+    out = []
+    for nm in cause_names or []:
+        m = re.search(r"ram\[(\d+)\]", str(nm))
+        if m and int(m.group(1)) not in out:
+            out.append(int(m.group(1)))
+    return out
 
 
 def cells_of(npz):
@@ -173,8 +186,8 @@ B_ALIAS = {"saliency": "saliency", "gradxinput": "gradxinput", "guided_backprop"
 
 # ===========================================================================
 def render_B(meth, rec, npz):
-    cells = cells_of(npz)
     cause_names = (rec.get("extra") or {}).get("cause_names")
+    cells = parse_cells(cause_names) or cells_of(npz)
     oracle_v = npz.get("oracle_abs_delta")
     ak = B_ALIAS.get(meth["key"], "") + "_attr_per_cause"
     if ak not in npz:
@@ -188,8 +201,8 @@ def render_B(meth, rec, npz):
     fig = plt.figure(figsize=(11, 6.0))
     gs = fig.add_gridspec(2, 3, height_ratios=[1.25, 1.0])
     scene_ax(fig.add_subplot(gs[0, 0]))
-    overlay_ax(fig.add_subplot(gs[0, 1]), o_cell, "ORACLE: true causal region")
-    overlay_ax(fig.add_subplot(gs[0, 2]), m_cell, "%s: attributed region" % meth["title"][:22])
+    overlay_ax(fig.add_subplot(gs[0, 1]), cells, o_cell, "ORACLE: true causal region")
+    overlay_ax(fig.add_subplot(gs[0, 2]), cells, m_cell, "%s: attributed region" % meth["title"][:22])
     paired_cell_bars(fig.add_subplot(gs[1, 0:2]), o_cell, m_cell, cells, ml=meth["title"][:18])
     axc = fig.add_subplot(gs[1, 2])
     if not curves(axc, npz):
@@ -223,7 +236,7 @@ def render_A(meth, rec, npz):
                                      ("true data-flow graph", "recovered graph"))
     elif k == "A2_lesions":
         fig, ax = plt.subplots(1, 3, figsize=(11, 3.6), gridspec_kw={"width_ratios": [1, 1, 1.4]})
-        scene_ax(ax[0]); overlay_ax(ax[1], np.abs(npz["lesion_importance"]), "lesion importance on the frame")
+        scene_ax(ax[0]); overlay_ax(ax[1], cells_of(npz), np.abs(npz["lesion_importance"]), "lesion importance on the frame")
         paired_cell_bars(ax[2], npz["oracle_role"], npz["lesion_importance"], cells,
                          tl="true causal role", ml="lesion importance")
         ax[2].set_title("recovered importance vs true role")

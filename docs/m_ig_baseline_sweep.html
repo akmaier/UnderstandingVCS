@@ -21,7 +21,7 @@
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/ig_baseline_sweep.png" target="_blank"><img src="assets/methods/ig_baseline_sweep.png" alt="Integrated Gradients result"></a>
   </div>
-  <p class="caption"><b>Top row</b> (image domain, as in Paper 1): the game frame, then the oracle's <b>true causal region</b> and this method's <b>attributed region</b> — each painted onto the frame through the screen footprint of the RAM cells it implicates (brighter = more important). A faithful method's heat matches the oracle's. <b>Bottom</b>: per-cell importance — oracle (<span style='color:var(--accent-2)'>green</span>) vs method (<span style='color:var(--accent)'>blue</span>) — and the deletion/insertion faithfulness curves (perturb the ranked causes and watch the output move). <b>pearson_corr_with_oracle = 0.000</b> — this example only (pong, state f120+30); the audit aggregate is below.</p>
+  <p class="caption"><b>Top row</b> (image domain, as in Paper 1): the game frame, then the oracle's <b>true causal region</b> and this method's <b>attributed region</b> — each painted onto the frame through the screen footprint of the RAM cells it implicates (brighter = more important). A faithful method's heat matches the oracle's. <b>Bottom</b>: per-cell importance — oracle (<span style='color:var(--accent-2)'>green</span>) vs method (<span style='color:var(--accent)'>blue</span>) — and the deletion/insertion faithfulness curves (perturb the ranked causes and watch the output move). <b>pearson_corr_with_oracle = 0.407</b> — this example only (pong, state f120+30); the audit aggregate is below.</p>
 </div></section>
 
 <section><div class="wrap">
@@ -31,7 +31,7 @@
 
 <section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Pearson correlation with the oracle at the headline baseline (we sweep baselines). <b>0.00</b> on the sprite-position output whose naive gradient is exactly zero — completeness does not rescue faithfulness.</p>
+  <p>Pearson correlation with the oracle at the headline baseline (baselines are swept). Nonzero and moderate on <b>content</b> outputs (the example), but exactly <b>0 on the sprite-position output</b> whose naive gradient vanishes — completeness does not rescue faithfulness on discrete outputs.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
   <a href="methods.html#stack">execution stack</a>.</p>
@@ -50,7 +50,7 @@
 </div></section>
 
 <section><div class="wrap">
-  <dl class="meta" style="margin-top:0"><dt>Implementation</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/ig_baseline_sweep.jl"><code>tools/xai_study/phaseB_attribution/ig_baseline_sweep.jl</code></a></dd><dt>Reference</dt><dd>Sundararajan et al. 2017</dd><dt>Record</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/out/ig_baseline_sweep_pong_ball_pixel.json"><code>ig_baseline_sweep_pong_ball_pixel.json</code></a></dd><dt>All records</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/out"><code>phaseB_attribution/out</code></a></dd></dl>
+  <dl class="meta" style="margin-top:0"><dt>Implementation</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/ig_baseline_sweep.jl"><code>tools/xai_study/phaseB_attribution/ig_baseline_sweep.jl</code></a></dd><dt>Reference</dt><dd>Sundararajan et al. 2017</dd><dt>Record</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/out/ig_baseline_sweep_pong_content.json"><code>ig_baseline_sweep_pong_content.json</code></a></dd><dt>All records</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/out"><code>phaseB_attribution/out</code></a></dd></dl>
   <p class="caption" style="margin-top:14px">The figure is generated from the committed record by
   <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/gen_method_figures.py"><code>docs/gen_method_figures.py</code></a>; the game frame
   and each RAM cell's screen footprint are produced by
@@ -59,7 +59,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/63f1870b60d3c34b6698c230e46e2e07e13d907f"><code>63f1870b</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/d252d5b6c06f238c4ec28220506649d8d7812a95"><code>d252d5b6</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>
