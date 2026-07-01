@@ -299,3 +299,53 @@ soft/sampler + screen-buffer map); **New** = additional artifact not previously 
 **first** (they define ground truth for everyone); then Phase B/A/C methods on the shared
 states; then the leaderboard aggregation; then the audit-website regeneration
 (`cell_footprints.jl` → `gen_method_figures.py` → `build_pages.py`).
+
+---
+
+## Paper & supplement artifacts to update (downstream of the re-runs)
+
+Once the oracle + Phase A/B/C are re-run on the shared gameplay testbed with the
+sampler on (and the screen-buffer maps added), the following figures, tables and
+prose must be regenerated/rewritten. "Data" = number/plot changes only;
+"Text" = a written claim changes; "New" = a new artifact.
+
+### Main paper — figures
+| Fig | File / where | Depends on | Change | Action |
+|---|---|---|---|---|
+| Fig 1 platform & oracle | `fig1_platform_oracle.pdf` · 01_intro | schematic + oracle def | oracle now also targets the screen buffer | Data-none; minor **Text** (caption: add screen-buffer target) |
+| Fig 2 faithfulness vs plausibility | `fig2_faithfulness_vs_plausibility.pdf` · 07 | `leaderboard.json` | re-aggregated from gameplay records | **Data** — regenerate |
+| Fig 5 representativeness map | `fig5_representativeness_map.pdf` · 08 | Phase B/C records + leaderboard | re-run | **Data** — regenerate |
+| Fig 6 failure taxonomy | `fig6_failure_taxonomy.pdf` · 07 | leaderboard + faithful_demo | re-run | **Data** — regenerate |
+| Fig 7 sampler-faithful/no-semantics | `fig7_sampler_faithful_no_semantics.pdf` · 07 | sampler record | **keystone**: gameplay state + sampler-on; position gradient now non-zero | **Data + Text** (re-frame) — regenerate |
+| Fig 3 Phase-A battery | `fig3_phaseA_battery.pdf` | Phase A records | not `\includegraphics`-ed in main.tex (site-only today) | **Data** — regenerate for the site; add to paper if wanted |
+| Fig 4 attribution vs mechanistic | `fig4_attribution_vs_mechanistic.pdf` | Phase B/C records | site-only today | **Data** — regenerate |
+| (new) screen-buffer gradient map | — | new ∂screen/∂cause experiment | image-domain saliency, direct (no footprint proxy) | **New** figure |
+
+### Main paper — tables
+| Table | Where | Depends on | Change |
+|---|---|---|---|
+| `tab:phaseA` | 04_results_A | Phase A records | **Data** — all scores re-run at gameplay states |
+| `tab:phaseB` | 05_results_B | `leaderboard.json` | **Data + Text** — `F` and especially `F_pos` change; the caption's claim "the entire gradient family scores 0.00 on position" must be **rewritten** (sampler-on → non-zero position faithfulness); the family means (0.298 / 0.393) and the danger-zone sentence change |
+| `tab:phaseC` | 06_results_C | Phase C records | **Data** — re-run |
+
+### Supplement
+| Section | Change |
+|---|---|
+| S1 per-method protocols | **Text + Data** — gameplay state, sampler-on, shared per-game output; every per-method protocol line changes |
+| S2 benchmark schema | minor — add the shared screen-buffer output target if adopted |
+| S3 coverage & applicability | **Data** — cause-density gate may change which (game, output, state) cells are in-scope |
+| S4 claims ↔ evidence | **Data** — every headline number re-mapped to the new records |
+| S5 number provenance | **Data** — every number re-derived; new commit hashes |
+| S6 not-claimed | review (the position-vanishing "limitation" flips to a strength) |
+| S7 plausibility | **unchanged** — documented tradition proxy, not a re-run quantity |
+
+### Prose / claims (both papers)
+- The headline framing **"gradient methods vanish on the position/index regime"** becomes **"the *naive* gradient vanishes; the emulator's bilinear sampler restores a faithful position gradient — yet the semantic gap persists."** This *strengthens* the thesis; revisit §5 (results-compare) and §8 (discussion), and S6.
+- **Paper 1 (`jutari_paper`)**: **no change** — the sampler and screen-buffer differentiability are already established there; the redesign only *uses* those capabilities.
+
+### Website (`docs/`) — regenerate after the re-runs
+`cell_footprints.jl` (gameplay analysis frame + emit the screen-buffer gradient) →
+`gen_method_figures.py` (new records + screen-buffer maps; drop the score-bleed proxy) →
+`manifest.py` numbers + `build_pages.py`. The per-method "Audit faithfulness",
+"In the audit", and "Reading this example's causal region" sections all re-derive
+automatically from the re-run records.
