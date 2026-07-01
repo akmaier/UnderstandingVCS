@@ -1007,6 +1007,106 @@ _MATRIX = {"A1_connectomics", "A4_correlations", "A6_granger", "path_patching", 
 _SCATTER = {"activation_patching", "attribution_patching", "das"}
 
 
+def _hexlab(i):
+    return "$%02X" % int(i)
+
+
+_FP_BAND = {}
+def _fp_band():
+    """Per pong cell: (% of footprint pixels in the top score band, total px)."""
+    if _FP_BAND:
+        return _FP_BAND
+    try:
+        import numpy as np
+        A = os.path.join(HERE, "assets", "methods")
+        cells = [int(x) for x in open(os.path.join(A, "fp_pong_cells.txt"))]
+        fp = np.frombuffer(open(os.path.join(A, "fp_pong.raw"), "rb").read(),
+                           np.float32).reshape(len(cells), 210, 160)
+        for i, c in enumerate(cells):
+            tot = int((fp[i] > 0).sum())
+            _FP_BAND[c] = (round(100 * int((fp[i][:33] > 0).sum()) / max(tot, 1)), tot)
+    except Exception:
+        pass
+    return _FP_BAND
+
+
+def _phaseB_reading(meth):
+    """A per-method, data-driven explanation of what its example figure's causal
+    region shows (which output, which cells, why the score/paddle appear), plus
+    the shared footprint-proxy caveat. Returns '' for non-Phase-B methods."""
+    if meth["phase"] != "B":
+        return ""
+    import numpy as np
+    import re as _re
+    b = os.path.join(REPO, "tools", "xai_study", "phaseB_attribution", "out", meth["record"])
+    try:
+        rec = _json.load(open(b + ".json"))
+        npz = dict(np.load(b + ".npz", allow_pickle=True))
+    except Exception:
+        return ""
+    ex = rec.get("extra", {})
+    note = ex.get("output_note", "")
+    ci = ex.get("content_ram_index")
+    is_score = "score@" in note
+    if is_score:
+        mm = _re.search(r"score@ram\[(\d+)\]", note)
+        oc = int(mm.group(1)) if mm else None
+        outdesc = ("the <b>score</b> (score@RAM&nbsp;%s)" % _hexlab(oc)) if oc else "the <b>score</b>"
+    elif ci is not None:
+        outdesc = ("the content of <b>RAM&nbsp;%s</b> (byte&nbsp;%d) — the most causally-active "
+                   "concept byte at this state" % (_hexlab(ci), ci))
+    else:
+        outdesc = "a single content byte"
+    orac = np.abs(np.asarray(npz.get("oracle_abs_delta", []), float))
+    names = ex.get("cause_names", [])
+    per = {}
+    for k, nm in enumerate(names):
+        m = _re.search(r"ram\[(\d+)\]", str(nm))
+        if m and k < len(orac):
+            per[int(m.group(1))] = per.get(int(m.group(1)), 0.0) + float(orac[k])
+    top = [c for c, v in sorted(per.items(), key=lambda x: -x[1]) if v > 0][:3]
+    band = _fp_band()
+
+    def phrase(c):
+        s = band.get(c, (0, 0))[0]
+        if s >= 5:
+            return ("RAM&nbsp;%s (%d%% of its footprint sits in the score band, the rest in the "
+                    "play area)" % (_hexlab(c), s))
+        return "RAM&nbsp;%s (the play area — ball / paddles)" % _hexlab(c)
+
+    tops = "; ".join(phrase(c) for c in top) if top else "no candidate cell"
+    score_cells = [c for c in top if band.get(c, (0, 0))[0] >= 5]
+    bleed = ""
+    if score_cells and not is_score:
+        who = "RAM&nbsp;" + "/".join(_hexlab(c) for c in score_cells)
+        bleed = (" The <b>score digits</b> appear in the region because %s reach%s them: perturbing "
+                 "%s over the 30-frame NOOP window changes the game outcome, and hence the score — a "
+                 "<i>downstream</i> effect, not direct rendering." %
+                 (who, "es" if len(score_cells) == 1 else "", "it" if len(score_cells) == 1 else "them"))
+    missing = ""
+    if is_score:
+        missing = (" Because it explains the score, its only true-cause is %s, so the region covers "
+                   "the score and the ball but <b>not the paddle</b>: the paddle cell (RAM&nbsp;$36) "
+                   "is not causal for the score, so it is legitimately absent." %
+                   ("RAM&nbsp;" + "/".join(_hexlab(c) for c in top)))
+    return """
+<section><div class="wrap">
+  <h2>Reading this example's causal region</h2>
+  <p>This example explains %s. Its strongest true-cause%s: %s.%s%s</p>
+  <div class="rownote">
+    <b>Two caveats this figure exposes (being fixed in the experimental redesign).</b>
+    (1) The methods do <b>not</b> all explain the <i>same</i> output — vanilla saliency explains a
+    content byte, Grad×Input explains the score — so their "true causal regions" differ and are
+    <b>not directly comparable</b>; the plan needs a shared, well-defined output per game.
+    (2) This overlay is a <b>footprint proxy</b>: it maps a RAM cell's importance onto every screen
+    pixel that cell changes over a 30-frame window, so it conflates <i>direct</i> pixel control with
+    <i>downstream</i> game-outcome effects (the score bleed above). Direct
+    <b>screen-buffer soft-gradients</b> — which the emulator supports and the redesign adds — remove
+    this proxy entirely.
+  </div>
+</div></section>""" % (outdesc, "s are" if len(top) != 1 else " is", tops, bleed, missing)
+
+
 def _method_caption(meth):
     ph, k = meth["phase"], meth["key"]
     if ph == "B":
@@ -1117,6 +1217,8 @@ def build_method_page(meth):
   <p class="caption">%s %s</p>
 </div></section>
 
+%s
+
 <section><div class="wrap">
   <h2>What it does</h2>
   <p>%s</p>
@@ -1142,7 +1244,7 @@ def build_method_page(meth):
 </div></section>
 """ % (esc(_PHASE_LABEL[meth["phase"]]), esc(meth["title"]), esc(meth["ref"]),
        _PHASE_ANCHOR[meth["phase"]], meth["key"], meth["key"], esc(meth["title"]),
-       _method_caption(meth), score, esc(meth["what"]),
+       _method_caption(meth), score, _phaseB_reading(meth), esc(meth["what"]),
        M.P2_METHOD_SCORED.get(meth["key"], ""), audit_html, metahtml, BLOB, BLOB, BLOB)
     return page("m_%s.html" % meth["key"], meth["title"] + " — Paper 2 method", body)
 

@@ -24,6 +24,23 @@
   <p class="caption"><b>Top row</b> (image domain, as in Paper 1): the game frame, then the oracle's <b>true causal region</b> and this method's <b>attributed region</b> — each painted onto the frame through the screen footprint of the RAM cells it implicates (brighter = more important). A faithful method's heat matches the oracle's. <b>Bottom</b>: per-cell importance — oracle (<span style='color:var(--accent-2)'>green</span>) vs method (<span style='color:var(--accent)'>blue</span>) — and the deletion/insertion faithfulness curves (perturb the ranked causes and watch the output move). <b>pearson_corr_with_oracle = 0.705</b> — this example only (pong, state f120+30); the audit aggregate is below.</p>
 </div></section>
 
+
+<section><div class="wrap">
+  <h2>Reading this example's causal region</h2>
+  <p>This example explains the content of <b>RAM&nbsp;$36</b> (byte&nbsp;54) — the most causally-active concept byte at this state. Its strongest true-causes are: RAM&nbsp;$31 (17% of its footprint sits in the score band, the rest in the play area); RAM&nbsp;$36 (the play area — ball / paddles). The <b>score digits</b> appear in the region because RAM&nbsp;$31 reaches them: perturbing it over the 30-frame NOOP window changes the game outcome, and hence the score — a <i>downstream</i> effect, not direct rendering.</p>
+  <div class="rownote">
+    <b>Two caveats this figure exposes (being fixed in the experimental redesign).</b>
+    (1) The methods do <b>not</b> all explain the <i>same</i> output — vanilla saliency explains a
+    content byte, Grad×Input explains the score — so their "true causal regions" differ and are
+    <b>not directly comparable</b>; the plan needs a shared, well-defined output per game.
+    (2) This overlay is a <b>footprint proxy</b>: it maps a RAM cell's importance onto every screen
+    pixel that cell changes over a 30-frame window, so it conflates <i>direct</i> pixel control with
+    <i>downstream</i> game-outcome effects (the score bleed above). Direct
+    <b>screen-buffer soft-gradients</b> — which the emulator supports and the redesign adds — remove
+    this proxy entirely.
+  </div>
+</div></section>
+
 <section><div class="wrap">
   <h2>What it does</h2>
   <p>Slides an occluder and measures the output change per region — effectively a coarse intervention, so it tracks the oracle closely.</p>
@@ -59,7 +76,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/d252d5b6c06f238c4ec28220506649d8d7812a95"><code>d252d5b6</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/35d254c44ae0c08c6b9511679ba03f253adb9d7e"><code>35d254c4</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

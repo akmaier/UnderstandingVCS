@@ -24,6 +24,8 @@
   <p class="caption">Two adjacency matrices over the candidate RAM cells: the <b>true</b> data-flow graph and the graph this method <b>recovered</b>. A bright cell (row = cause, column = effect) is an edge; the difference between the two panels is the error. <b>dataflow_graph_F1_vs_oracle = 0.000</b> — this example only (pong, state f30+30); the audit aggregate is below.</p>
 </div></section>
 
+
+
 <section><div class="wrap">
   <h2>What it does</h2>
   <p>Reconstructs the inter-cell data-flow graph by perturbing each RAM cell and recording which other cells change — the program&#x27;s &#x27;connectome&#x27;. Scored by graph F1 against the true read/write graph from the disassembly.</p>
@@ -59,7 +61,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/d252d5b6c06f238c4ec28220506649d8d7812a95"><code>d252d5b6</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/35d254c44ae0c08c6b9511679ba03f253adb9d7e"><code>35d254c4</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>
