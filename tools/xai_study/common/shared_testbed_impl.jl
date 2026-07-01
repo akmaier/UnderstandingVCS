@@ -32,11 +32,37 @@
 
 import Random as _ST_Random
 
-# generic sprite-position RAM bytes used to LOCATE the moving-sprite output cell
-# and the sampler position byte (Pong ball_x/ball_y; used generically as a
-# sprite-x/sprite-y poke — the same constants oracle_intervene.jl exports).
+# generic sprite-position RAM bytes — the LAST-RESORT fallback to locate a
+# moving-sprite output cell when NO scored per-game position candidate qualifies
+# (Pong ball_x/ball_y; used generically as a sprite-x/sprite-y poke — the same
+# constants oracle_intervene.jl exports). The PRIMARY path now locates the sampler
+# position byte + its cell from the game's OWN scored candidate cause set (see
+# `_st_pick_position_cause`), so the sampler gradient is BOTH nonzero AND scorable
+# against the oracle on all 6 core games — the P2-redesign fix.
 const _ST_BALL_X_IDX = 49      # RAM[$31]
 const _ST_BALL_Y_IDX = 54      # RAM[$36]
+
+# candidate-cause selection knobs for the sampler position byte (P2-redesign fix):
+#   * a candidate must be a POSITION concept (an x/y coordinate / column / direction
+#     byte, i.e. a byte that TRANSLATES a sprite the bilinear sampler can slide);
+#   * its motion must be LOCALIZED — the full-screen footprint at most
+#     `_ST_LOCAL_RATIO`× the local-window footprint — so we pick a coherent sliding
+#     sprite, not a byte that triggers a global repaint (a level/state change the
+#     translate-sampler does NOT model, e.g. qbert coil_prev_y, SI enemies_x).
+const _ST_LOCAL_RATIO = 8.0
+
+"""Is `concept` a sprite-POSITION concept (an x/y coordinate the sampler can
+slide)? Matches the candidate-file concept vocabulary (…_x / …_y / .xy / column /
+direction). Score/count/colour/lives bytes are NOT position concepts — their
+footprint is repainted digits/tiles, not a translating sprite."""
+function _st_is_position_concept(concept::AbstractString)
+    c = lowercase(strip(String(concept)))
+    isempty(c) && return false
+    for pat in ("_x", "_y", ".xy", "._xy", ".x", ".y", "position", "column", "direction")
+        occursin(pat, c) && return true
+    end
+    return false
+end
 
 _st_tri(t) = max(0f0, 1f0 - abs(t))
 
@@ -116,22 +142,21 @@ function build_shared_testbed(game::AbstractString;
     base = continue_from(checkpoint, Int.(actions[prefix + 1 : total]))
     base_screen = base.screen
 
-    # --- (3) shared screen-buffer output: the moving-sprite cell + region read ---
-    function _perturbed_screen(idx, d)
-        env = deepcopy(checkpoint)
-        b = Int(env.console.bus.ram[idx + 1])
-        intervene_ram(env, idx, (b + d) & 0xFF)
-        for _ in 1:horizon; env_step(env, 0); end
-        snapshot(env, Int(horizon)).screen
+    # --- (3+4) shared screen-buffer output CELL + sampler position byte, both from
+    # the game's OWN scored candidate cause set (P2-redesign fix). We pick the
+    # position CAUSE first (a scored + position-concept + moving + localized byte)
+    # and locate the shared cell ON its moving sprite, so the sampler gradient is
+    # both nonzero AND scorable against the oracle on all 6 core games. Falls back
+    # to the generic ball_x/ball_y poke ONLY if no candidate qualifies (the honest
+    # static-frame outcome). `cand_concepts` maps each scored candidate index to its
+    # concept name (from the candidates file).
+    cand_concepts = Dict{Int,String}()
+    for (idx, concept) in candidate_ram_indices(cand)
+        haskey(cand_concepts, idx) || (cand_concepts[idx] = string(concept))
     end
-    sx = _perturbed_screen(_ST_BALL_X_IDX, 24)
-    sy = _perturbed_screen(_ST_BALL_Y_IDX, 24)
-    changed = (base_screen .!= sx) .| (base_screen .!= sy)
-    cell = if any(changed)
-        ci = findfirst(changed); (ci[1], ci[2])
-    else
-        h, w = size(base_screen); (max(1, h ÷ 2), max(1, w ÷ 2))
-    end
+    geom, cell = _st_pick_position_cause(checkpoint, base_screen, causes, cand_concepts;
+                                         horizon = horizon, env_step = env_step,
+                                         intervene_ram = intervene_ram, snapshot = snapshot)
     # the SHARED oracle output: n_changed_px region vs the baseline frame.
     read_y = s -> Float64(count(s.screen .!= base_screen))
 
@@ -144,11 +169,6 @@ function build_shared_testbed(game::AbstractString;
     end
     cause_density = count(>(Float64(floor)), deltas)
     accepted = cause_density >= Int(k)
-
-    # --- (4) sampler geometry: the sprite-position byte + its local footprint ----
-    geom = _st_find_position_byte(checkpoint, base_screen, cell;
-                                  horizon = horizon, env_step = env_step,
-                                  intervene_ram = intervene_ram, snapshot = snapshot)
 
     ram_now = Float32.(collect(at_target.ram))
     sampler_read = geom === nothing ? shared_position_read_zero :
@@ -176,9 +196,127 @@ function build_shared_testbed(game::AbstractString;
             position_read_zero = shared_position_read_zero, ref_pool = ref_pool)
 end
 
+"""
+    _st_pick_position_cause(checkpoint, base_screen, causes, cand_concepts; ...)
+      -> (geom, cell)
+
+THE P2-redesign fix. Select the sampler position byte from the OVERLAP of
+(a) the oracle's SCORED candidate cause set (so the sampler gradient is scorable
+against the oracle) AND (b) bytes that control a MOVING sprite the bilinear
+sampler can slide (∂occupancy/∂byte ≠ 0), and locate the shared-output cell ON
+that sprite.
+
+Selection (documented choice rule):
+  1. Consider each SCORED ram cause index that is a POSITION concept
+     (`_st_is_position_concept`) — a coordinate byte that TRANSLATES a sprite.
+  2. Poke it (+24) at the checkpoint, run the horizon, and require nonzero motion;
+     locate the byte's own cell = the first changed framebuffer pixel, and its
+     LOCAL footprint (the |r±8, c±16| window the sampler builds).
+  3. Keep only LOCALIZED bytes (full-screen footprint ≤ `_ST_LOCAL_RATIO`× local),
+     rejecting global-repaint bytes (level/state changes the translate-sampler does
+     not model).
+  4. Pick the survivor with the LARGEST local footprint (the biggest coherent
+     sliding sprite); ties broken by candidate order (deterministic).
+
+Returns `(geom, cell)` with `geom = (pidx, base_val, offs, py0, px0)` and the cell
+ON the sprite. If NO candidate qualifies, falls back to the generic ball_x/ball_y
+poke to locate a cell, then `_st_find_position_byte` over the generic bytes — and
+if THAT is empty too, `geom === nothing` (the honest static-frame outcome) with a
+centre cell."""
+function _st_pick_position_cause(checkpoint, base_screen::AbstractMatrix,
+                                 causes, cand_concepts::AbstractDict;
+                                 horizon::Integer, env_step, intervene_ram, snapshot)
+    function perturbed_screen(idx, d)
+        env = deepcopy(checkpoint)
+        b = Int(env.console.bus.ram[idx + 1])
+        intervene_ram(env, idx, (b + d) & 0xFF)
+        for _ in 1:horizon; env_step(env, 0); end
+        snapshot(env, Int(horizon)).screen
+    end
+    H, W = size(base_screen)
+    function local_fp(changed, cell)
+        r0 = max(1, cell[1] - 8);  r1 = min(H, cell[1] + 8)
+        c0 = max(1, cell[2] - 16); c1 = min(W, cell[2] + 16)
+        n = 0
+        for r in r0:r1, c in c0:c1; changed[r, c] && (n += 1); end
+        return n
+    end
+    # scored ram cause indices, in cause order, de-duplicated
+    scored_idx = Int[]
+    for c in causes
+        c.kind == "ram" || continue
+        c.index in scored_idx || push!(scored_idx, c.index)
+    end
+    # collect qualifying (scored + position-concept + moving + localized) candidates
+    best = nothing            # (pidx, cell, local_fp)
+    for idx in scored_idx
+        _st_is_position_concept(get(cand_concepts, idx, "")) || continue
+        sp = perturbed_screen(idx, 24)
+        changed = base_screen .!= sp
+        full = count(changed)
+        full == 0 && continue
+        ci = findfirst(changed)
+        cell = (ci[1], ci[2])
+        lf = local_fp(changed, cell)
+        lf == 0 && continue
+        full <= _ST_LOCAL_RATIO * lf || continue     # localized sliding sprite only
+        if best === nothing || lf > best[3]
+            best = (idx, cell, lf)
+        end
+    end
+    if best !== nothing
+        pidx, cell, _ = best
+        geom = _st_geom_at(checkpoint, base_screen, pidx, cell;
+                           horizon = horizon, env_step = env_step,
+                           intervene_ram = intervene_ram, snapshot = snapshot)
+        geom !== nothing && return geom, cell
+    end
+    # fallback: generic ball_x/ball_y cell + generic-byte geometry
+    sx = perturbed_screen(_ST_BALL_X_IDX, 24)
+    sy = perturbed_screen(_ST_BALL_Y_IDX, 24)
+    changed = (base_screen .!= sx) .| (base_screen .!= sy)
+    cell = if any(changed)
+        ci = findfirst(changed); (ci[1], ci[2])
+    else
+        (max(1, H ÷ 2), max(1, W ÷ 2))
+    end
+    geom = _st_find_position_byte(checkpoint, base_screen, cell;
+                                  horizon = horizon, env_step = env_step,
+                                  intervene_ram = intervene_ram, snapshot = snapshot)
+    return geom, cell
+end
+
+"""Build the sampler geometry (pidx, base_val, offs, py0, px0) for a KNOWN position
+byte `pidx` and its `cell`: poke +24, take the local changed footprint around the
+cell, and record the sprite offsets. Returns `nothing` if the local window is empty
+(no coherent sprite to slide)."""
+function _st_geom_at(checkpoint, base_screen::AbstractMatrix, pidx::Integer, cell;
+                     horizon::Integer, env_step, intervene_ram, snapshot)
+    env = deepcopy(checkpoint)
+    base_val = Int(env.console.bus.ram[pidx + 1])
+    env2 = deepcopy(checkpoint)
+    intervene_ram(env2, pidx, (base_val + 24) & 0xFF)
+    for _ in 1:horizon; env_step(env2, 0); end
+    sp = snapshot(env2, Int(horizon)).screen
+    changed = base_screen .!= sp
+    H, W = size(base_screen)
+    r0 = max(1, cell[1] - 8);  r1 = min(H, cell[1] + 8)
+    c0 = max(1, cell[2] - 16); c1 = min(W, cell[2] + 16)
+    footprint = Tuple{Int,Int}[]
+    for r in r0:r1, c in c0:c1
+        changed[r, c] && push!(footprint, (r, c))
+    end
+    isempty(footprint) && return nothing
+    py0 = minimum(first.(footprint)); px0 = minimum(last.(footprint))
+    offs = Tuple((r - py0, c - px0) for (r, c) in footprint)
+    return (pidx, base_val, offs, py0, px0)
+end
+
 """Find the sprite-position RAM byte driving the shared-output cell + its local
-footprint (redesign protocol 4). Returns (pidx,base_val,offs,py0,px0) or nothing
-(static frame ⇒ sampler gradient stays 0, the honest outcome)."""
+footprint (redesign protocol 4), over the GENERIC ball_x/ball_y bytes — the
+FALLBACK locator when no scored per-game position candidate qualifies. Returns
+(pidx,base_val,offs,py0,px0) or nothing (static frame ⇒ sampler gradient stays 0,
+the honest outcome)."""
 function _st_find_position_byte(checkpoint, base_screen::AbstractMatrix, cell;
                                 horizon::Integer, env_step, intervene_ram, snapshot)
     function perturbed_screen(idx, d)
