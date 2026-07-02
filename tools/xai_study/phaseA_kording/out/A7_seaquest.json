@@ -1,7 +1,7 @@
 {
   "arrays": "A7_seaquest.npz",
   "ci": null,
-  "commit": "68b6ba6",
+  "commit": "19022dc7",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -79,18 +79,18 @@
       89,
       118
     ],
-    "conformance_note": "scored oracle frame f120+30 is BEYOND the strict 60-frame screen conformance window — the game only reaches live play later. HONEST descriptive jutari result (the bit-exact jutari re-run IS asserted), not an xitari-parity claim; A is the calibration baseline.",
+    "conformance_note": "scored oracle frame f90+15 is BEYOND the strict 60-frame screen conformance window — the game only reaches live play later. HONEST descriptive jutari result (the bit-exact jutari re-run IS asserted), not an xitari-parity claim; A is the calibration baseline.",
     "n_known_game_variables": 15,
     "nmf": {
       "component_energy_share": [
-        0.16445435153538351,
-        0.16336705767793597,
-        0.1539686478792355,
-        0.11068548093219926,
-        0.10895263933486482,
-        0.10856538628831378,
-        0.09723403112533446,
-        0.09277240522673275
+        0.16449907002215544,
+        0.16359362098849595,
+        0.15392789176432742,
+        0.11052831151759993,
+        0.10892946767278898,
+        0.10862693078902005,
+        0.09729049335575252,
+        0.09260421388985977
       ],
       "matched_components": {
         "matched_component_fraction": 0.6,
@@ -107,16 +107,16 @@
         "per_component_matched_label": [
           "(none; closest=clock@0.16)",
           "clock",
-          "rw_activity",
-          "(none; closest=rw_activity@0.22)",
+          "clock",
+          "(none; closest=rw_activity@0.16)",
           "rw_activity"
         ],
         "per_component_matched_purity": [
-          0.15992465374165912,
-          0.7476437122004124,
-          0.6840680583569303,
-          0.2243270191786391,
-          0.5206199655098513
+          0.1597469433521922,
+          0.7492117563777968,
+          0.6302171884353118,
+          0.1630164123989955,
+          0.5215394533630809
         ],
         "topk": 5
       },
@@ -124,122 +124,135 @@
       "note": "NMF (Lee & Seung multiplicative updates; RAM bytes are non-negative). matched-component fraction tests whether the non-negative PARTS align with single known variables better than PCA's signed components do — the prompt's NMF-vs-PCA question.",
       "rank": 8,
       "recon_rel_err_by_rank": [
-        0.8450682289671643,
-        0.6703582092410236,
-        0.6020123217247921,
-        0.47876679060911936,
-        0.34648261929494983,
-        0.23835428776877646,
-        0.1277522529598025,
-        0.03390411447115895
+        0.8450356467708552,
+        0.6701013838355424,
+        0.6017478713697644,
+        0.4787388508165949,
+        0.346444053201584,
+        0.23822055535928663,
+        0.1274939728738661,
+        0.0337634199828445
       ],
-      "recon_rel_frobenius_err": 0.03390411447115896
+      "recon_rel_frobenius_err": 0.0337634199828445
     },
     "oracle_importance": {
       "importance_per_cell": {
-        "RAM[102]:oxygen_meter_value": 366.0,
+        "RAM[102]:oxygen_meter_value": 225.0,
         "RAM[103]:player_missile_x": 0.0,
         "RAM[118]:enemy5_x": 23.0,
-        "RAM[1]:offset": 618.0,
+        "RAM[1]:offset": 5.0,
         "RAM[30]:enemy_obstacle_x": 0.0,
-        "RAM[36]:enemy_variations": 0.0,
-        "RAM[37]:enemy_variations": 0.0,
-        "RAM[38]:enemy_variations": 0.0,
-        "RAM[39]:enemy_variations": 0.0,
+        "RAM[36]:enemy_variations": 29.0,
+        "RAM[37]:enemy_variations": 29.0,
+        "RAM[38]:enemy_variations": 29.0,
+        "RAM[39]:enemy_variations": 29.0,
         "RAM[44]:enemy_colors": 0.0,
         "RAM[56]:score_value": 134.0,
         "RAM[57]:score": 70.0,
         "RAM[58]:score": 56.0,
         "RAM[59]:num_lives": 128.0,
         "RAM[60]:top_enemy_enabled": 0.0,
-        "RAM[61]:level": 60.0,
+        "RAM[61]:level": 0.0,
         "RAM[62]:divers_collected_count": 85.0,
-        "RAM[70]:player_x": 2656.0,
+        "RAM[70]:player_x": 3220.0,
         "RAM[71]:diver_or_enemy_missile_x": 20.0,
         "RAM[86]:player_direction": 0.0,
         "RAM[87]:player_missile_direction": 0.0,
         "RAM[89]:enemy_directions": 0.0,
         "RAM[97]:player_y": 136.0
       },
-      "n_causal_cells": 12,
+      "n_causal_cells": 15,
       "note": "oracle importance(i) = max whole-screen break of an EXACT do(cell_i:=0)/do(cell_i:=base+17) intervention re-run on the real ROM (the §1 oracle restricted to the candidate cell + screen). The SAME map A2 / pilot_si.jl score against — the TRUE causal role."
     },
     "pca": {
       "cum_var_top": [
-        0.7397308127857921,
-        0.9032493739310794,
-        0.9417082624432077,
-        0.9751280587909981,
-        0.9941792046165498,
-        0.9978568931284402,
-        0.9990492492779712,
-        0.9994535959677395
+        0.7399654781477876,
+        0.9035957802527491,
+        0.9420908537026899,
+        0.9755364797814112,
+        0.994585491438863,
+        0.9982681797106947,
+        0.9994557853775988,
+        0.9997382501118572
       ],
       "matched_components": {
-        "matched_component_fraction": 0.6,
+        "matched_component_fraction": 0.8,
         "method": "pca",
         "n_matched_game_var": 2,
-        "n_matched_known_signal": 1,
+        "n_matched_known_signal": 2,
         "per_component_matched_kind": [
           "known_signal",
           "(none)",
           "game_var",
           "game_var",
-          "(none)"
+          "known_signal"
         ],
         "per_component_matched_label": [
-          "rw_activity",
+          "clock",
           "(none; closest=clock@0.24)",
           "offset",
           "offset",
-          "(none; closest=rw_activity@0.44)"
+          "rw_activity"
         ],
         "per_component_matched_purity": [
-          0.6829048078401281,
-          0.23960743088268485,
-          0.7842920662332077,
-          0.7712979360965138,
-          0.4387183960463135
+          0.6532378363551036,
+          0.2396178155378101,
+          0.7844076009400539,
+          0.7711352671048388,
+          0.51674415264631
         ],
         "topk": 5
       },
       "n_cells": 128,
       "n_frames": 150,
-      "n_varying_cells": 37,
+      "n_varying_cells": 33,
       "note": "PCA (SVD of the centred (T,128) tape). matched-component fraction = #top-k PCs concentrated on ONE known variable (a concept family, OR clock/R-W/vsync) / k. The pilot found ≈0 — PCs mix epiphenomenal high-variance structure across cells.",
       "var_explained_top": [
-        0.7397308127857921,
-        0.16351856114528726,
-        0.038458888512128364,
-        0.03341979634779035,
-        0.01905114582555183,
-        0.003677688511890316,
-        0.0011923561495310432,
-        0.0004043466897681865
+        0.7399654781477876,
+        0.16363030210496157,
+        0.03849507344994074,
+        0.03344562607872135,
+        0.019049011657451684,
+        0.003682688271831695,
+        0.0011876056669041784,
+        0.0002824647342584525
       ]
     },
     "purity_threshold": 0.5,
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
     "scored_in_conformance_window": false,
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the importance oracle uses EXACT interventions re-run on the true ROM.",
+    "testbed": {
+      "cause_density_above_floor": 19,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 48,
+      "note": "P2 redesign: BOTH the scored oracle prefix AND the descriptive PCA/NMF trajectory run on a seeded random-action GAMEPLAY state (not the FIRE-then-NOOP oracle tape / synthetic active tape), gated by the §1 oracle cause-density gate. The trajectory is the gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A7's dim-reduction + oracle-importance algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r52c77",
+      "state_kind": "seeded_random_action_gameplay"
+    },
     "topk_components": 5,
     "trajectory_frames": 150,
     "trajectory_trace": "active trace (4×FIRE + periodic RIGHTFIRE/LEFTFIRE)",
     "triad_nmf": {
-      "F": 0.03998075312621053,
+      "F": 0.17329563161118924,
       "F_note": "Spearman(nmf per-cell recovery score, oracle causal importance) over candidate cells",
-      "M": 0.4444444444444444,
+      "M": 0.6666666666666667,
       "M_note": "1 − over-claim rate: fraction of nmf-surfaced cells (recovery ≥ q0.5) the oracle says are non-causal (variance≠causal trap)",
-      "S": -0.09570376597066167,
+      "S": 0.44893594460678865,
       "S_note": "Pearson(nmf recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): dim-reduction surfaces high-VARIANCE axes, which are NOT the causal cells (variance ≠ causal role — present ≠ used). F<1 + low matched-component fraction quantify the departure from the true causal structure."
     },
     "triad_pca": {
-      "F": -0.20699675508288648,
+      "F": -0.03633914899572959,
       "F_note": "Spearman(pca per-cell recovery score, oracle causal importance) over candidate cells",
-      "M": 0.33333333333333337,
+      "M": 0.8333333333333334,
       "M_note": "1 − over-claim rate: fraction of pca-surfaced cells (recovery ≥ q0.5) the oracle says are non-causal (variance≠causal trap)",
-      "S": -0.007440223777104433,
+      "S": 0.3065487430441167,
       "S_note": "Pearson(pca recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run"
     }
   },
@@ -251,10 +264,10 @@
   "paper": "P2",
   "phase": "phaseA_kording",
   "seed": 0,
-  "state": "f120+30",
+  "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "latent-components",
-  "timestamp": "1782142661",
+  "timestamp": "1782971069",
   "value": 0.6,
   "where": "local"
 }

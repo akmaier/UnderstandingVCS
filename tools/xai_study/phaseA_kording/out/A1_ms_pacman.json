@@ -1,7 +1,7 @@
 {
   "arrays": "A1_ms_pacman.npz",
   "ci": null,
-  "commit": "39cd1d3",
+  "commit": "19022dc7",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -46,7 +46,7 @@
       121,
       122
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/.claude/worktrees/wf_d845c9bf-d97-1/tools/xai_study/t3/out/candidates_ms_pacman.json",
+    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_ms_pacman.json",
     "graph": {
       "f1": 0.0,
       "fn": 18,
@@ -148,6 +148,19 @@
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
     "settings": "MsPacmanRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
+    "testbed": {
+      "cause_density_above_floor": 24,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 40,
+      "note": "P2 redesign: the connectomics recovery runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. A1's graph algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r84c77",
+      "state_kind": "seeded_random_action_gameplay"
+    },
     "triad": {
       "F": 0.0,
       "F_note": "F1 of recovered data-flow edges vs the exact-oracle true edges (19 candidate cells)",
@@ -166,10 +179,10 @@
   "paper": "P2",
   "phase": "phaseA_kording",
   "seed": 0,
-  "state": "f30+30",
+  "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-  "timestamp": "1782141097",
+  "timestamp": "1782969596",
   "value": 0.0,
   "where": "local"
 }

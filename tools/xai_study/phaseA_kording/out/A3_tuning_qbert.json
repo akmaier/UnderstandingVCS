@@ -1,7 +1,7 @@
 {
   "arrays": "A3_tuning_qbert.npz",
   "ci": null,
-  "commit": "39cd1d3",
+  "commit": "19022dc7",
   "extra": {
     "A3_tuning": {
       "clock_corr_per_cell": {
@@ -130,7 +130,7 @@
       ],
       "tau": 0.7,
       "trajectory_frames": 150,
-      "trajectory_trace": "active (FIRE×4 + periodic RIGHTFIRE/LEFTFIRE)"
+      "trajectory_trace": "seeded random-action GAMEPLAY (seed=0, prefix=90+15, NOOP-continued past the window)"
     },
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -185,7 +185,7 @@
       "RAM[21]:tile_color_1": 52.0,
       "RAM[33]:player.xy": 0.0,
       "RAM[35]:player_column": 0.0,
-      "RAM[39]:coil_prev_y": 5820.0,
+      "RAM[39]:coil_prev_y": 7512.0,
       "RAM[43]:player_x": 0.0,
       "RAM[46]:enemy": 0.0,
       "RAM[47]:enemy": 0.0,
@@ -205,12 +205,25 @@
     "rom_settings": "JuTari.JoystickGames.QbertRomSettings",
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the oracle causal map is EXACT interventions re-run on the true ROM; the tuning curves are a DESCRIPTIVE active-trace recording (the recorder's documented purpose), not a bit-exact-vs-xitari claim.",
+    "testbed": {
+      "cause_density_above_floor": 13,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 42,
+      "note": "P2 redesign: the tuning study runs on a seeded random-action GAMEPLAY state (not the FIRE×4/attract tape), gated by the §1 oracle cause-density gate. Both the oracle causal map AND the descriptive tuning trajectory are stepped along the SAME gameplay stream so the game variable VARIES on genuine input-driven play. A3's tuning algorithm is unchanged; only the analysis state moves.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r19c1",
+      "state_kind": "seeded_random_action_gameplay"
+    },
     "triad": {
       "F": 0.4670040692672171,
       "F_note": "Spearman(A3 game-variable selectivity, oracle causal importance) over 20 candidate cells",
       "M": 0.4666666666666667,
       "M_note": "1 − over-claim rate: fraction of strongly-tuned cells the oracle says are generic (non-causal)",
-      "S": 0.1867641792316972,
+      "S": 0.18328210425224595,
       "S_note": "Pearson(A3 selectivity, held-out do(base+37) screen break) — sufficiency on a bit-exact re-run",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): a tuning-curve importance map scores LOW faithfulness despite fully-known structure. F<1 / spurious-tuning>0 quantify where the classical analysis departs from the ground truth. The oracle-as-method positive control (F=1.0) confirms the harness rewards a perfectly-faithful map."
     }
@@ -223,10 +236,10 @@
   "paper": "P2",
   "phase": "phaseA_kording",
   "seed": 0,
-  "state": "f30+30",
+  "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen-break (oracle causal importance) vs tuning selectivity",
-  "timestamp": "1782141187",
+  "timestamp": "1782969910",
   "value": 0.5333333333333333,
   "where": "local"
 }

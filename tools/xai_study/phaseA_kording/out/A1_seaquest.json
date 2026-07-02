@@ -1,7 +1,7 @@
 {
   "arrays": "A1_seaquest.npz",
   "ci": null,
-  "commit": "39cd1d3",
+  "commit": "19022dc7",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -54,19 +54,19 @@
       89,
       118
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/.claude/worktrees/wf_d845c9bf-d97-1/tools/xai_study/t3/out/candidates_seaquest.json",
+    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_seaquest.json",
     "graph": {
-      "f1": 0.15384615384615385,
-      "fn": 10,
-      "fp": 1,
-      "graph_edit_distance": 11,
-      "graph_edit_distance_normalised": 0.021739130434782608,
+      "f1": 0.25,
+      "fn": 12,
+      "fp": 0,
+      "graph_edit_distance": 12,
+      "graph_edit_distance_normalised": 0.023715415019762844,
       "n_nodes": 23,
       "n_recovered_edges": 2,
-      "n_true_edges": 11,
+      "n_true_edges": 14,
       "note": "edges are 0-based candidate ordinals [i,j] meaning cell i -> cell j. TRUE = exhaustive oracle (do 0/base+17/base+37, full horizon, any value changes j); RECOVERED = classical single do(base+17), 1-step latency. GED = symmetric edge difference (fp+fn) over off-diagonal edges.",
-      "precision": 0.5,
-      "recall": 0.09090909090909091,
+      "precision": 1.0,
+      "recall": 0.14285714285714285,
       "recovered_edges": [
         [
           11,
@@ -77,7 +77,7 @@
           16
         ]
       ],
-      "tp": 1,
+      "tp": 2,
       "true_edges": [
         [
           4,
@@ -90,6 +90,14 @@
         [
           9,
           0
+        ],
+        [
+          9,
+          4
+        ],
+        [
+          9,
+          8
         ],
         [
           9,
@@ -110,6 +118,10 @@
         [
           9,
           21
+        ],
+        [
+          11,
+          9
         ],
         [
           19,
@@ -137,12 +149,25 @@
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
     "settings": "GenericRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
+    "testbed": {
+      "cause_density_above_floor": 19,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 48,
+      "note": "P2 redesign: the connectomics recovery runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. A1's graph algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r52c77",
+      "state_kind": "seeded_random_action_gameplay"
+    },
     "triad": {
-      "F": 0.15384615384615385,
+      "F": 0.25,
       "F_note": "F1 of recovered data-flow edges vs the exact-oracle true edges (23 candidate cells)",
-      "M": 0.5,
+      "M": 1.0,
       "M_note": "1 − over-claim rate: fraction of recovered edges the oracle says are spurious (false wiring)",
-      "S": 0.9822134387351779,
+      "S": 0.9841897233201581,
       "S_note": "off-diagonal edge-agreement between the base+17 recovered graph and the HELD-OUT base+37 true edge set (generalisation to an unseen intervention value, bit-exact re-run)",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): classical connectomics scores LOW-to-PARTIAL faithfulness despite fully-known data-flow — the quantified-Kording lesson. A thin single-shot/short-latency perturbation misses long-latency / sign-dependent edges (recall deficit) and can over-claim transient ones (precision deficit)."
     }
@@ -155,10 +180,10 @@
   "paper": "P2",
   "phase": "phaseA_kording",
   "seed": 0,
-  "state": "f30+30",
+  "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-  "timestamp": "1782141097",
-  "value": 0.15384615384615385,
+  "timestamp": "1782969596",
+  "value": 0.25,
   "where": "local"
 }

@@ -1,7 +1,7 @@
 {
   "arrays": "A1_breakout.npz",
   "ci": null,
-  "commit": "39cd1d3",
+  "commit": "19022dc7",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -26,19 +26,19 @@
       57,
       76
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/.claude/worktrees/wf_d845c9bf-d97-1/tools/xai_study/t3/out/candidates_breakout.json",
+    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_breakout.json",
     "graph": {
-      "f1": 1.0,
-      "fn": 0,
+      "f1": 0.2857142857142857,
+      "fn": 5,
       "fp": 0,
-      "graph_edit_distance": 0,
-      "graph_edit_distance_normalised": 0.0,
+      "graph_edit_distance": 5,
+      "graph_edit_distance_normalised": 0.06944444444444445,
       "n_nodes": 9,
       "n_recovered_edges": 1,
-      "n_true_edges": 1,
+      "n_true_edges": 6,
       "note": "edges are 0-based candidate ordinals [i,j] meaning cell i -> cell j. TRUE = exhaustive oracle (do 0/base+17/base+37, full horizon, any value changes j); RECOVERED = classical single do(base+17), 1-step latency. GED = symmetric edge difference (fp+fn) over off-diagonal edges.",
       "precision": 1.0,
-      "recall": 1.0,
+      "recall": 0.16666666666666666,
       "recovered_edges": [
         [
           2,
@@ -50,6 +50,26 @@
         [
           2,
           3
+        ],
+        [
+          5,
+          4
+        ],
+        [
+          5,
+          7
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          7,
+          4
+        ],
+        [
+          7,
+          5
         ]
       ]
     },
@@ -65,8 +85,21 @@
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
     "settings": "BreakoutRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
+    "testbed": {
+      "cause_density_above_floor": 11,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 20,
+      "note": "P2 redesign: the connectomics recovery runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. A1's graph algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r190c103",
+      "state_kind": "seeded_random_action_gameplay"
+    },
     "triad": {
-      "F": 1.0,
+      "F": 0.2857142857142857,
       "F_note": "F1 of recovered data-flow edges vs the exact-oracle true edges (9 candidate cells)",
       "M": 1.0,
       "M_note": "1 − over-claim rate: fraction of recovered edges the oracle says are spurious (false wiring)",
@@ -83,10 +116,10 @@
   "paper": "P2",
   "phase": "phaseA_kording",
   "seed": 0,
-  "state": "f30+30",
+  "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-  "timestamp": "1782141097",
-  "value": 1.0,
+  "timestamp": "1782969596",
+  "value": 0.2857142857142857,
   "where": "local"
 }

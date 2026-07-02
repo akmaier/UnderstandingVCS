@@ -1,7 +1,7 @@
 {
   "arrays": "A3_tuning_ms_pacman.npz",
   "ci": null,
-  "commit": "39cd1d3",
+  "commit": "19022dc7",
   "extra": {
     "A3_tuning": {
       "clock_corr_per_cell": {
@@ -101,7 +101,7 @@
       "strongly_tuned_gvar_cells": [],
       "tau": 0.7,
       "trajectory_frames": 150,
-      "trajectory_trace": "active (FIRE×4 + periodic RIGHTFIRE/LEFTFIRE)"
+      "trajectory_trace": "seeded random-action GAMEPLAY (seed=0, prefix=90+15, NOOP-continued past the window)"
     },
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -149,7 +149,7 @@
     "candidates_file": "candidates_ms_pacman.json",
     "n_oracle_causal": 14,
     "oracle_importance_per_cell": {
-      "RAM[10]:player_x": 118.0,
+      "RAM[10]:player_x": 82.0,
       "RAM[119]:dots_eaten_count": 0.0,
       "RAM[11]:fruit_x": 30.0,
       "RAM[120]:player_score": 27.0,
@@ -158,21 +158,34 @@
       "RAM[123]:num_lives": 110.0,
       "RAM[12]:enemy_sue_y": 120.0,
       "RAM[13]:enemy_inky_y": 120.0,
-      "RAM[14]:enemy_pinky_y": 60.0,
-      "RAM[15]:enemy_blinky_y": 120.0,
-      "RAM[16]:player_y": 118.0,
+      "RAM[14]:enemy_pinky_y": 120.0,
+      "RAM[15]:enemy_blinky_y": 180.0,
+      "RAM[16]:player_y": 82.0,
       "RAM[17]:fruit_y": 0.0,
-      "RAM[19]:ghosts_count": 33440.0,
+      "RAM[19]:ghosts_count": 27773.0,
       "RAM[56]:player_direction": 0.0,
       "RAM[6]:enemy_sue_x": 0.0,
-      "RAM[7]:enemy_inky_x": 120.0,
-      "RAM[8]:enemy_pinky_x": 0.0,
+      "RAM[7]:enemy_inky_x": 0.0,
+      "RAM[8]:enemy_pinky_x": 120.0,
       "RAM[9]:enemy_blinky_x": 120.0
     },
     "positive_control_oracle_as_method_F": 1.0,
     "rom_settings": "JuTari.JoystickGames.MsPacmanRomSettings",
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the oracle causal map is EXACT interventions re-run on the true ROM; the tuning curves are a DESCRIPTIVE active-trace recording (the recorder's documented purpose), not a bit-exact-vs-xitari claim.",
+    "testbed": {
+      "cause_density_above_floor": 24,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 40,
+      "note": "P2 redesign: the tuning study runs on a seeded random-action GAMEPLAY state (not the FIRE×4/attract tape), gated by the §1 oracle cause-density gate. Both the oracle causal map AND the descriptive tuning trajectory are stepped along the SAME gameplay stream so the game variable VARIES on genuine input-driven play. A3's tuning algorithm is unchanged; only the analysis state moves.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r84c77",
+      "state_kind": "seeded_random_action_gameplay"
+    },
     "triad": {
       "F": 0.0,
       "F_note": "Spearman(A3 game-variable selectivity, oracle causal importance) over 19 candidate cells",
@@ -191,10 +204,10 @@
   "paper": "P2",
   "phase": "phaseA_kording",
   "seed": 0,
-  "state": "f30+30",
+  "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen-break (oracle causal importance) vs tuning selectivity",
-  "timestamp": "1782141180",
+  "timestamp": "1782969850",
   "value": 0.0,
   "where": "local"
 }

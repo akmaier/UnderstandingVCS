@@ -1,7 +1,7 @@
 {
   "arrays": "A3_tuning_seaquest.npz",
   "ci": null,
-  "commit": "39cd1d3",
+  "commit": "19022dc7",
   "extra": {
     "A3_tuning": {
       "clock_corr_per_cell": {
@@ -22,10 +22,10 @@
         "RAM[60]:top_enemy_enabled": 0.0,
         "RAM[61]:level": 0.0,
         "RAM[62]:divers_collected_count": 0.0,
-        "RAM[70]:player_x": 0.4160890337795982,
+        "RAM[70]:player_x": 0.0,
         "RAM[71]:diver_or_enemy_missile_x": 0.0,
-        "RAM[86]:player_direction": 0.4160890337795983,
-        "RAM[87]:player_missile_direction": 0.4160890337795983,
+        "RAM[86]:player_direction": 0.0,
+        "RAM[87]:player_missile_direction": 0.0,
         "RAM[89]:enemy_directions": 0.4565733409758199,
         "RAM[97]:player_y": 0.0
       },
@@ -56,7 +56,7 @@
         "enemy5_x@118",
         "score_raw@57"
       ],
-      "game_variable_spurious_tuning_rate": 0.36363636363636365,
+      "game_variable_spurious_tuning_rate": 0.25,
       "gvar_selectivity_per_cell": {
         "RAM[102]:oxygen_meter_value": 0.9955420069145828,
         "RAM[103]:player_missile_x": 0.0,
@@ -75,10 +75,10 @@
         "RAM[60]:top_enemy_enabled": 0.0,
         "RAM[61]:level": 0.0,
         "RAM[62]:divers_collected_count": 0.0,
-        "RAM[70]:player_x": 1.0,
+        "RAM[70]:player_x": 0.0,
         "RAM[71]:diver_or_enemy_missile_x": 0.0,
-        "RAM[86]:player_direction": 1.0,
-        "RAM[87]:player_missile_direction": 1.0,
+        "RAM[86]:player_direction": 0.0,
+        "RAM[87]:player_missile_direction": 0.0,
         "RAM[89]:enemy_directions": 0.7657541228640825,
         "RAM[97]:player_y": 0.0
       },
@@ -100,30 +100,25 @@
         "RAM[60]:top_enemy_enabled": 0.0,
         "RAM[61]:level": 0.0,
         "RAM[62]:divers_collected_count": 0.0,
-        "RAM[70]:player_x": 0.32579105105390666,
+        "RAM[70]:player_x": 0.0,
         "RAM[71]:diver_or_enemy_missile_x": 0.0,
-        "RAM[86]:player_direction": 0.32579105105390666,
-        "RAM[87]:player_missile_direction": 0.32579105105390666,
+        "RAM[86]:player_direction": 0.0,
+        "RAM[87]:player_missile_direction": 0.0,
         "RAM[89]:enemy_directions": 0.38743935392959705,
         "RAM[97]:player_y": 0.0
       },
       "luminance_spurious_tuning_rate": 0.0,
-      "n_spurious_gvar": 4,
+      "n_spurious_gvar": 2,
       "n_spurious_luminance": 0,
-      "n_strongly_tuned_gvar": 11,
+      "n_strongly_tuned_gvar": 8,
       "n_strongly_tuned_luminance": 2,
       "note": "selectivity = max |corr| to a GAME variable (the cell's own self-column excluded; frame clock excluded — it is the epiphenomenal control). spurious = strongly-tuned (selectivity≥τ) but NOT causal by the oracle — the present≠used tuning-curve trap (experiment_design.md §4 A3, Phase-A's headline failure). The luminance family is the HARDWARE (no-T3) version of the same trap.",
       "spurious_gvar_cells": [
         "RAM[30]:enemy_obstacle_x",
-        "RAM[86]:player_direction",
-        "RAM[87]:player_missile_direction",
         "RAM[89]:enemy_directions"
       ],
       "strongly_tuned_gvar_cells": [
         "RAM[30]:enemy_obstacle_x",
-        "RAM[70]:player_x",
-        "RAM[86]:player_direction",
-        "RAM[87]:player_missile_direction",
         "RAM[102]:oxygen_meter_value",
         "RAM[1]:offset",
         "RAM[36]:enemy_variations",
@@ -134,7 +129,7 @@
       ],
       "tau": 0.7,
       "trajectory_frames": 150,
-      "trajectory_trace": "active (FIRE×4 + periodic RIGHTFIRE/LEFTFIRE)"
+      "trajectory_trace": "seeded random-action GAMEPLAY (seed=0, prefix=90+15, NOOP-continued past the window)"
     },
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -190,10 +185,10 @@
     "candidates_file": "candidates_seaquest.json",
     "n_oracle_causal": 15,
     "oracle_importance_per_cell": {
-      "RAM[102]:oxygen_meter_value": 166.0,
+      "RAM[102]:oxygen_meter_value": 291.0,
       "RAM[103]:player_missile_x": 0.0,
-      "RAM[118]:enemy5_x": 24.0,
-      "RAM[1]:offset": 452.0,
+      "RAM[118]:enemy5_x": 23.0,
+      "RAM[1]:offset": 577.0,
       "RAM[30]:enemy_obstacle_x": 0.0,
       "RAM[36]:enemy_variations": 29.0,
       "RAM[37]:enemy_variations": 29.0,
@@ -207,23 +202,36 @@
       "RAM[60]:top_enemy_enabled": 0.0,
       "RAM[61]:level": 0.0,
       "RAM[62]:divers_collected_count": 97.0,
-      "RAM[70]:player_x": 3688.0,
+      "RAM[70]:player_x": 3220.0,
       "RAM[71]:diver_or_enemy_missile_x": 20.0,
       "RAM[86]:player_direction": 0.0,
       "RAM[87]:player_missile_direction": 0.0,
       "RAM[89]:enemy_directions": 0.0,
-      "RAM[97]:player_y": 138.0
+      "RAM[97]:player_y": 136.0
     },
     "positive_control_oracle_as_method_F": 1.0,
     "rom_settings": "JuTari.RomSettingsModule.GenericRomSettings",
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the oracle causal map is EXACT interventions re-run on the true ROM; the tuning curves are a DESCRIPTIVE active-trace recording (the recorder's documented purpose), not a bit-exact-vs-xitari claim.",
+    "testbed": {
+      "cause_density_above_floor": 19,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 48,
+      "note": "P2 redesign: the tuning study runs on a seeded random-action GAMEPLAY state (not the FIRE×4/attract tape), gated by the §1 oracle cause-density gate. Both the oracle causal map AND the descriptive tuning trajectory are stepped along the SAME gameplay stream so the game variable VARIES on genuine input-driven play. A3's tuning algorithm is unchanged; only the analysis state moves.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r52c77",
+      "state_kind": "seeded_random_action_gameplay"
+    },
     "triad": {
-      "F": 0.005551846995194944,
+      "F": 0.0776304119280381,
       "F_note": "Spearman(A3 game-variable selectivity, oracle causal importance) over 23 candidate cells",
-      "M": 0.6363636363636364,
+      "M": 0.75,
       "M_note": "1 − over-claim rate: fraction of strongly-tuned cells the oracle says are generic (non-causal)",
-      "S": 0.15123211356916907,
+      "S": 0.31122486209001726,
       "S_note": "Pearson(A3 selectivity, held-out do(base+37) screen break) — sufficiency on a bit-exact re-run",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): a tuning-curve importance map scores LOW faithfulness despite fully-known structure. F<1 / spurious-tuning>0 quantify where the classical analysis departs from the ground truth. The oracle-as-method positive control (F=1.0) confirms the harness rewards a perfectly-faithful map."
     }
@@ -236,10 +244,10 @@
   "paper": "P2",
   "phase": "phaseA_kording",
   "seed": 0,
-  "state": "f30+30",
+  "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen-break (oracle causal importance) vs tuning selectivity",
-  "timestamp": "1782141174",
-  "value": 0.36363636363636365,
+  "timestamp": "1782969798",
+  "value": 0.25,
   "where": "local"
 }

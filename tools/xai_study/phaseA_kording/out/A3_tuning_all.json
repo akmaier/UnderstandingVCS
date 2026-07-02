@@ -1,12 +1,39 @@
 {
-  "commit": "c157ec63",
+  "commit": "19022dc7",
   "games": [
-    "pong"
+    "pong",
+    "breakout",
+    "space_invaders",
+    "seaquest",
+    "ms_pacman",
+    "qbert"
   ],
   "method": "A3_tuning_curves+spurious_tuning_rate",
   "metric_name": "A3_game_variable_spurious_tuning_rate",
   "paper": "P2",
   "per_game": {
+    "breakout": {
+      "F": -0.499312714451762,
+      "M": 1.0,
+      "S": -0.38090805388569804,
+      "game_variable_spurious_tuning_rate": 0.0,
+      "luminance_spurious_tuning_rate": 0.0,
+      "n_candidates": 9,
+      "n_oracle_causal": 7,
+      "n_strongly_tuned_gvar": 2,
+      "oracle_as_method_F": 1.0
+    },
+    "ms_pacman": {
+      "F": 0.0,
+      "M": 1.0,
+      "S": 0.0,
+      "game_variable_spurious_tuning_rate": 0.0,
+      "luminance_spurious_tuning_rate": 0.0,
+      "n_candidates": 19,
+      "n_oracle_causal": 14,
+      "n_strongly_tuned_gvar": 0,
+      "oracle_as_method_F": 1.0
+    },
     "pong": {
       "F": -0.00684931506849315,
       "M": 0.5,
@@ -17,9 +44,42 @@
       "n_oracle_causal": 4,
       "n_strongly_tuned_gvar": 4,
       "oracle_as_method_F": 1.0
+    },
+    "qbert": {
+      "F": 0.4670040692672171,
+      "M": 0.4666666666666667,
+      "S": 0.18328210425224595,
+      "game_variable_spurious_tuning_rate": 0.5333333333333333,
+      "luminance_spurious_tuning_rate": 0.5,
+      "n_candidates": 20,
+      "n_oracle_causal": 7,
+      "n_strongly_tuned_gvar": 15,
+      "oracle_as_method_F": 1.0
+    },
+    "seaquest": {
+      "F": 0.0776304119280381,
+      "M": 0.75,
+      "S": 0.31122486209001726,
+      "game_variable_spurious_tuning_rate": 0.25,
+      "luminance_spurious_tuning_rate": 0.0,
+      "n_candidates": 23,
+      "n_oracle_causal": 15,
+      "n_strongly_tuned_gvar": 8,
+      "oracle_as_method_F": 1.0
+    },
+    "space_invaders": {
+      "F": -0.3068609859222822,
+      "M": 0.6666666666666667,
+      "S": -0.0696423913562301,
+      "game_variable_spurious_tuning_rate": 0.3333333333333333,
+      "luminance_spurious_tuning_rate": 0.3333333333333333,
+      "n_candidates": 17,
+      "n_oracle_causal": 12,
+      "n_strongly_tuned_gvar": 3,
+      "oracle_as_method_F": 1.0
     }
   },
   "phase": "phaseA_kording",
   "problems": {},
-  "timestamp": "1782922845"
+  "timestamp": "1782969910"
 }

@@ -1,7 +1,7 @@
 {
   "arrays": "A8_qbert.npz",
   "ci": null,
-  "commit": "2845cf9",
+  "commit": "19022dc7",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -48,7 +48,7 @@
       74,
       103
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/.claude/worktrees/wf_d845c9bf-d97-7/tools/xai_study/t3/out/candidates_qbert.json",
+    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_qbert.json",
     "oracle_causal_ram_indices": [
       21,
       52,
@@ -64,7 +64,7 @@
       "RAM[21]:tile_color_1": 52.0,
       "RAM[33]:player.xy": 0.0,
       "RAM[35]:player_column": 0.0,
-      "RAM[39]:coil_prev_y": 5820.0,
+      "RAM[39]:coil_prev_y": 7512.0,
       "RAM[43]:player_x": 0.0,
       "RAM[46]:enemy": 0.0,
       "RAM[47]:enemy": 0.0,
@@ -91,6 +91,19 @@
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
     "settings": "QbertRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
+    "testbed": {
+      "cause_density_above_floor": 13,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 42,
+      "note": "P2 redesign: BOTH the scored oracle prefix (causal importance) AND the whole-state recording run on a seeded random-action GAMEPLAY state (not the FIRE×4-then-NOOP oracle tape / synthetic active tape), gated by the §1 oracle cause-density gate. The recorded tape is the gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A8's recording + oracle-importance algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r19c1",
+      "state_kind": "seeded_random_action_gameplay"
+    },
     "triad": {
       "F": 1.0,
       "F_note": "recall of oracle-causal candidate cells under the whole-state map = 1.0 (the recorded whole state contains every cell, so it misses no causal cell)",
@@ -113,7 +126,7 @@
       ],
       "tia_size": 64,
       "trajectory_frames": 150,
-      "trajectory_trace": "active (FIRE×4 + periodic RIGHTFIRE/LEFTFIRE)",
+      "trajectory_trace": "seeded random-action GAMEPLAY (prefix+horizon) then NOOP tail",
       "wholestate_restore_lossless": true,
       "wholestate_size": 192
     }
@@ -126,10 +139,10 @@
   "paper": "P2",
   "phase": "phaseA_kording",
   "seed": 0,
-  "state": "f30+30",
+  "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "full RAM+register state map over time (whole-state record)",
-  "timestamp": "1782143573",
+  "timestamp": "1782971517",
   "value": 0.0546875,
   "where": "local"
 }
