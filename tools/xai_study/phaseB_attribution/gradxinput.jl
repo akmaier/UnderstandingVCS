@@ -108,6 +108,8 @@ using JuTari.Diff: soft_ram_peek
 # why not a module) so build_shared_testbed operates on OUR own Cause/Snapshot
 # types. Opt in with XAI_SHARED_TESTBED=1 (default on for the redesign re-run).
 include(joinpath(HERE, "..", "common", "shared_testbed_impl.jl"))
+# the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
+include(joinpath(HERE, "..", "common", "game_sets.jl"))
 
 # Game-aware boot: JutariOracle.load_pong_env only knows pong/breakout/SI and
 # resolves the ROM as `<game>.bin`, falling back to Generic settings otherwise.
@@ -151,13 +153,11 @@ const _SETTINGS_CTOR = Dict{String,Any}(
     "ms_pacman" => MsPacmanRomSettings, "qbert" => QbertRomSettings)
 
 function _rom_path(game::AbstractString)
-    base = get(_ROM_BASENAME, game, game)
-    here = normpath(joinpath(HERE, "..", "..", ".."))
-    for root in (here, _PRIMARY_REPO)
-        p = joinpath(root, "xitari", "roms", base * ".bin")
-        isfile(p) && return p
-    end
-    error("ROM not found for game=$game (basename=$base.bin)")
+    g = lowercase(string(game))
+    base = get(_ROM_BASENAME, g, g)
+    # search xitari/roms + the 54-ROM store tools/rom_sweep/roms (ALE names), trying
+    # the mapped basename AND the raw ALE name, so all labeled games resolve uniformly.
+    return xai_find_rom(unique([base, g]), xai_rom_roots(; primary_repo = _PRIMARY_REPO))
 end
 _settings(game::AbstractString) = get(_SETTINGS_CTOR, game, GenericRomSettings)()
 
@@ -1004,7 +1004,7 @@ function main(args = ARGS)
         a = args[i]
         if     a == "--games"
             v = args[i+1]
-            games = v == "core" ? CORE_GAMES : String.(split(v, ","))
+            games = xai_resolve_games(v, CORE_GAMES)
             i += 2
         elseif a == "--output";       output = args[i+1]; i += 2
         elseif a == "--target-frame"; target_frame = parse(Int, args[i+1]); i += 2

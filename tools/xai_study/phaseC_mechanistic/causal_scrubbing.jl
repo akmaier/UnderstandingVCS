@@ -96,6 +96,8 @@ using JuTari.Diff: soft_ram_peek
 # gradient method, so the sampler-on path does not apply — we consume the shared
 # STATE + cause-density GATE + shared screen-buffer output only.
 include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
+# the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
+include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders", "seaquest", "ms_pacman", "qbert"]
@@ -125,24 +127,19 @@ const ROM_BASENAME = Dict(
     "space_invaders" => "space_invaders", "seaquest" => "seaquest",
     "ms_pacman" => "mspacman", "qbert" => "qbert")
 
+# the shared ROM-root set (this worktree + primary xitari/roms + the 54-ROM store
+# tools/rom_sweep/roms + the collection), with an optional explicit --roms-dir
+# prepended (cluster flat ROM dir), so all 54 labeled games resolve uniformly.
 function _rom_roots(roms_dir)
-    roots = String[]
-    roms_dir !== nothing && push!(roots, roms_dir)
-    here = normpath(joinpath(@__DIR__, "..", "..", ".."))
-    push!(roots, joinpath(here, "xitari", "roms"))
-    push!(roots, joinpath(_PRIMARY_REPO, "xitari", "roms"))
-    push!(roots, joinpath(_PRIMARY_REPO, "xitari", "games",
-                          "Atari-2600-VCS-ROM-Collection", "ROMS"))
-    return roots
+    extra = roms_dir === nothing ? String[] : String[roms_dir]
+    return xai_rom_roots(; primary_repo = _PRIMARY_REPO, extra = extra)
 end
 
 function rom_path_for(game::AbstractString; roms_dir = nothing)
-    stem = get(ROM_BASENAME, lowercase(string(game)), lowercase(string(game)))
-    for base in _rom_roots(roms_dir)
-        p = joinpath(base, stem * ".bin")
-        isfile(p) && return p
-    end
-    error("ROM not found for game=$game (stem=$stem) under " * join(_rom_roots(roms_dir), ", "))
+    g = lowercase(string(game))
+    stem = get(ROM_BASENAME, g, g)
+    # try the mapped stem AND the raw ALE name across all roots.
+    return xai_find_rom(unique([stem, g]), _rom_roots(roms_dir))
 end
 
 function settings_for(game::AbstractString)
@@ -830,8 +827,7 @@ function main(args = ARGS)
     while i <= length(args)
         a = args[i]
         if     a == "--games"
-            v = args[i+1]; i += 2
-            games = lowercase(v) == "core" ? copy(CORE_GAMES) : String.(split(v, ","))
+            games = xai_resolve_games(args[i+1], CORE_GAMES); i += 2
         elseif a == "--game";         games = [args[i+1]]; i += 2
         elseif a == "--target-frame"; target_frame = parse(Int, args[i+1]); i += 2
         elseif a == "--horizon";      horizon = parse(Int, args[i+1]); i += 2

@@ -98,6 +98,8 @@ using JuTari.Diff: soft_ram_peek
 # if more frames are needed) so the probe algorithm is UNCHANGED — only the state
 # the trajectory sits on moves. Opt in with XAI_SHARED_TESTBED=1 (default on).
 include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
+# the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
+include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders", "seaquest", "ms_pacman", "qbert"]
@@ -124,13 +126,11 @@ const ROM_BASENAME = Dict(
     "ms_pacman" => "mspacman", "qbert" => "qbert")
 
 function rom_path_for(game::AbstractString)
-    stem = get(ROM_BASENAME, lowercase(string(game)), lowercase(string(game)))
-    here = normpath(joinpath(@__DIR__, "..", "..", ".."))
-    for base in (here, _PRIMARY_REPO)
-        p = joinpath(base, "xitari", "roms", stem * ".bin")
-        isfile(p) && return p
-    end
-    error("ROM not found for game=$game (looked under $here and $_PRIMARY_REPO)")
+    g = lowercase(string(game))
+    stem = get(ROM_BASENAME, g, g)
+    # search xitari/roms + the 54-ROM store tools/rom_sweep/roms (ALE names), trying
+    # the mapped stem AND the raw ALE name, so all labeled games resolve uniformly.
+    return xai_find_rom(unique([stem, g]), xai_rom_roots(; primary_repo = _PRIMARY_REPO))
 end
 
 function settings_for(game::AbstractString)
@@ -305,6 +305,10 @@ struct GameProbeResult
     n_not_causally_used::Int       # cells the oracle flags transient (present≠used)
     n_decodable_not_causal::Int    # THE present-vs-used count
     oracle_xref_available::Bool    # das_<game>.json found?
+    # T3 concept-label provenance: true iff a verified candidates_<game>.json exists.
+    # false ⇒ the concept↔cell labels are the generic fallback set (the probe still
+    # runs — it decodes each fallback cell — but the concept SEMANTICS are unverified).
+    concepts_verified::Bool
     # SHARED-TESTBED provenance (redesign); all "noop"/-1/false in the legacy path.
     state_kind::String             # "seeded_random_action_gameplay" | "varied_action"
     st_seed::Int
@@ -496,6 +500,7 @@ function run_game(; game::AbstractString, frames::Integer = 600,
     return GameProbeResult(game, Int(frames), ncell - 1, cells,
                            mean_probe, mean_ctrl, mean_sel,
                            np, n_decodable, n_not_used, n_dnc, xref_available,
+                           cand !== nothing,
                            st === nothing ? "varied_action" : "seeded_random_action_gameplay",
                            st === nothing ? -1 : st.seed,
                            st === nothing ? -1 : st.prefix,
@@ -587,6 +592,12 @@ function write_game_result(r::GameProbeResult; out_dir = OUT_DIR)
             # not-causally-used by the exact intervention oracle.
             "n_decodable_not_causal" => r.n_decodable_not_causal,
             "oracle_xref_available" => r.oracle_xref_available,
+            # T3 concept-label provenance. On a non-core game with no verified
+            # candidates_<game>.json the concept↔cell labels are the generic fallback
+            # set: the probe still runs, but the concept semantics are unverified, so
+            # the concept-alignment reading is recorded n/a-flagged rather than crashing.
+            "concepts_verified" => r.concepts_verified,
+            "concept_alignment_metric" => r.concepts_verified ? "verified_T3" : "n/a (generic fallback labels)",
             "testbed" => Dict{String,Any}(
                 "state_kind" => r.state_kind,
                 "seed" => r.st_seed, "prefix" => r.st_prefix, "horizon" => r.st_horizon,
@@ -745,8 +756,7 @@ function main(args = ARGS)
     while i <= length(args)
         a = args[i]
         if a == "--games"
-            v = args[i + 1]; i += 2
-            games = lowercase(v) == "core" ? CORE_GAMES : String.(split(v, ","))
+            games = xai_resolve_games(args[i + 1], CORE_GAMES); i += 2
         elseif a == "--game"; games = [args[i + 1]]; i += 2
         elseif a == "--frames"; frames = parse(Int, args[i + 1]); i += 2
         elseif a == "--selftest" || a == "--self-check"; do_self_check = true; i += 1
@@ -761,17 +771,30 @@ function main(args = ARGS)
 
     println("[linear_probing] games=$(join(games, ",")) frames=$frames (jutari/Julia)")
     results = GameProbeResult[]
+    na_records = Tuple{String,String}[]
     for g in games
         println("\n========== $g ==========")
-        r = run_game(; game = g, frames = frames, verbose = true)
-        jp, np = write_game_result(r)
-        println("[$g] mean_selectivity=$(round(r.mean_selectivity, digits = 3)) " *
-                "decodable=$(r.n_decodable) not_used=$(r.n_not_causally_used) " *
-                "DECODABLE_NOT_CAUSAL=$(r.n_decodable_not_causal)")
-        println("[$g] wrote $jp")
-        println("[$g] arrays  $np")
-        push!(results, r)
+        try
+            r = run_game(; game = g, frames = frames, verbose = true)
+            jp, np = write_game_result(r)
+            println("[$g] mean_selectivity=$(round(r.mean_selectivity, digits = 3)) " *
+                    "decodable=$(r.n_decodable) not_used=$(r.n_not_causally_used) " *
+                    "DECODABLE_NOT_CAUSAL=$(r.n_decodable_not_causal)")
+            println("[$g] wrote $jp")
+            println("[$g] arrays  $np")
+            push!(results, r)
+        catch e
+            # A game DEGENERATE/STATIC at the shared gameplay state (or a bit-exact
+            # re-run failure) records an n/a and is SKIPPED — it does NOT abort the
+            # whole battery. Many non-core games are static at prefix=90; flag for a
+            # per-game livelier prefix later.
+            msg = first(split(sprint(showerror, e), '\n'))
+            println("[linear_probing] !! $g SKIPPED (n/a): $msg")
+            push!(na_records, (g, msg))
+        end
     end
+    isempty(na_records) || println("\n[linear_probing] $(length(na_records)) game(s) n/a " *
+        "(degenerate/static at the shared state): $(join([g for (g, _) in na_records], ", "))")
 
     if length(results) > 1
         sp = write_summary(results)

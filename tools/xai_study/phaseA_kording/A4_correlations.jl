@@ -106,6 +106,8 @@ using JuTari.Diff: soft_ram_peek
 # GATE only, and boot A4's OWN checkpoint + record its OWN trajectory from that
 # stream. Opt in with XAI_SHARED_TESTBED=1 (default on).
 include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
+# the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
+include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders",
@@ -350,6 +352,16 @@ function load_candidates(candidates_path)
             idx in seen && continue
             push!(seen, idx)
             concept = c["concept"] === nothing ? "(unnamed)" : string(c["concept"])
+            push!(out, Candidate(idx, concept, concept_family(concept)))
+        end
+    end
+    # non-core games have no T3 candidate file — fall back to the SAME generic
+    # RAM-byte cause set A1/A2 + the shared testbed's candidate_ram_indices(nothing)
+    # use, so all 54 labeled games get a bounded, uniform candidate cell set.
+    if isempty(out)
+        for (idx, concept) in ((13, "enemy_score"), (14, "player_score"),
+                               (49, "ball_x"), (54, "ball_y"),
+                               (51, "player_y"), (50, "enemy_y"))
             push!(out, Candidate(idx, concept, concept_family(concept)))
         end
     end
@@ -1066,7 +1078,7 @@ function main(args = ARGS)
     i = 1
     while i <= length(args)
         a = args[i]
-        if     a == "--games";        games = String.(split(args[i+1], ",")); i += 2
+        if     a == "--games";        games = xai_resolve_games(args[i+1], CORE_GAMES); i += 2
         elseif a == "--game";         games = [args[i+1]]; i += 2
         elseif a == "--target-frame"; target_frame = parse(Int, args[i+1]); i += 2
         elseif a == "--horizon";      horizon = parse(Int, args[i+1]); i += 2

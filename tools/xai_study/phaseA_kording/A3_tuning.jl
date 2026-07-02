@@ -112,6 +112,8 @@ using JuTari.Diff: soft_ram_peek
 # GATE only, and boot A3's OWN checkpoint + record its OWN trajectory from that
 # stream. Opt in with XAI_SHARED_TESTBED=1 (default on).
 include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
+# the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
+include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders",
@@ -134,13 +136,12 @@ const _PRIMARY_REPO = "/Users/maier/Documents/code/UnderstandingVCS"
 """Absolute path to the real ROM for `game`, honouring the filename alias and the
 worktree→primary fallback (same search order as jutari_oracle.rom_path_for)."""
 function resolve_rom(game::AbstractString)
-    stem = get(ROM_ALIAS, lowercase(string(game)), lowercase(string(game)))
-    here = normpath(joinpath(@__DIR__, "..", "..", ".."))
-    for base in (here, _PRIMARY_REPO)
-        p = joinpath(base, "xitari", "roms", stem * ".bin")
-        isfile(p) && return p
-    end
-    error("ROM not found for game=$game (stem=$stem) under $(here) and $(_PRIMARY_REPO)")
+    g = lowercase(string(game))
+    stem = get(ROM_ALIAS, g, g)
+    # search the shared ROM roots (xitari/roms + the 64-ROM store tools/rom_sweep/roms
+    # + cluster), trying the aliased stem AND the raw ALE name so all 54 labeled
+    # games resolve uniformly (non-core games live under rom_sweep as `<game>.bin`).
+    return xai_find_rom(unique([stem, g]), xai_rom_roots(; primary_repo = _PRIMARY_REPO))
 end
 
 # ============================================================================
@@ -270,16 +271,28 @@ Each kept cell carries the FIRST concept name seen for that index."""
 function load_candidates(game::AbstractString)
     p = candidates_path(game)
     out = Candidate[]
-    p === nothing && return out, nothing
-    data = JSON.parsefile(p)
-    seen = Set{Int}()
-    for c in get(data, "candidates", [])
-        idx = Int(c["ram_index"])
-        (idx < 0 || idx >= RAM_SIZE) && continue       # only RIOT-RAM cells
-        idx in seen && continue
-        push!(seen, idx)
-        concept = c["concept"] === nothing ? "(unnamed)" : string(c["concept"])
-        push!(out, Candidate(idx, concept))
+    if p !== nothing
+        data = JSON.parsefile(p)
+        seen = Set{Int}()
+        for c in get(data, "candidates", [])
+            idx = Int(c["ram_index"])
+            (idx < 0 || idx >= RAM_SIZE) && continue       # only RIOT-RAM cells
+            idx in seen && continue
+            push!(seen, idx)
+            concept = c["concept"] === nothing ? "(unnamed)" : string(c["concept"])
+            push!(out, Candidate(idx, concept))
+        end
+    end
+    # non-core games have no T3 candidate file — fall back to the SAME generic
+    # RAM-byte cause set A1/A2 + the shared testbed's candidate_ram_indices(nothing)
+    # use, so all 54 labeled games get a bounded, uniform candidate cell set.
+    if isempty(out)
+        for (idx, concept) in ((13, "enemy_score"), (14, "player_score"),
+                               (49, "ball_x"), (54, "ball_y"),
+                               (51, "player_y"), (50, "enemy_y"))
+            push!(out, Candidate(idx, concept))
+        end
+        p = p === nothing ? "(generic fallback: no candidates_$(game).json)" : p
     end
     return out, p
 end
@@ -791,13 +804,14 @@ end
 # CLI — run A3 over the core set; one record per game + a combined index.
 # ============================================================================
 function main(args = ARGS)
-    games = CORE_GAMES
+    games = copy(CORE_GAMES)
     target_frame = 30; horizon = 30; traj_frames = 150; tau = 0.7
     selftest_only = false
     i = 1
     while i <= length(args)
         a = args[i]
-        if     a == "--games";        games = String.(split(args[i+1], ",")); i += 2
+        if     a == "--games";        games = xai_resolve_games(args[i+1], CORE_GAMES); i += 2
+        elseif a == "--game";         games = [args[i+1]]; i += 2
         elseif a == "--target-frame"; target_frame = parse(Int, args[i+1]); i += 2
         elseif a == "--horizon";      horizon = parse(Int, args[i+1]); i += 2
         elseif a == "--traj-frames";  traj_frames = parse(Int, args[i+1]); i += 2

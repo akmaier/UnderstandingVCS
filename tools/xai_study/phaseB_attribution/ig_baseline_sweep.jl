@@ -107,6 +107,8 @@ using .PilotIGvsOracle.OracleIntervene.JutariOracle: Snapshot, snapshot,
 # build_shared_testbed operates on OUR own Cause/Snapshot types (see the fragment
 # header). Opt in with XAI_SHARED_TESTBED=1 (default on for the redesign re-run).
 include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
+# the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
+include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders", "seaquest", "ms_pacman", "qbert"]
@@ -132,13 +134,11 @@ const ROM_BASENAME = Dict(
 const _PRIMARY_REPO = get(ENV, "XAI_PRIMARY_REPO", "/Users/maier/Documents/code/UnderstandingVCS")
 
 function rom_path_for(game::AbstractString)
-    stem = get(ROM_BASENAME, lowercase(string(game)), lowercase(string(game)))
-    here = normpath(joinpath(@__DIR__, "..", "..", ".."))
-    for base in (here, _PRIMARY_REPO)
-        p = joinpath(base, "xitari", "roms", stem * ".bin")
-        isfile(p) && return p
-    end
-    error("ROM not found for game=$game (looked under $here and $_PRIMARY_REPO)")
+    g = lowercase(string(game))
+    stem = get(ROM_BASENAME, g, g)
+    # search xitari/roms + the 54-ROM store tools/rom_sweep/roms (ALE names), trying
+    # the mapped stem AND the raw ALE name, so all labeled games resolve uniformly.
+    return xai_find_rom(unique([stem, g]), xai_rom_roots(; primary_repo = _PRIMARY_REPO))
 end
 
 function settings_for(game::AbstractString)
@@ -923,7 +923,7 @@ function main(args = ARGS)
     while i <= length(args)
         a = args[i]
         if     a == "--games"
-            v = args[i+1]; games = (v == "core") ? CORE_GAMES : String.(split(v, ",")); i += 2
+            games = xai_resolve_games(args[i+1], CORE_GAMES); i += 2
         elseif a == "--game";          single_game = args[i+1]; i += 2
         elseif a == "--target-frame";  target_frame = parse(Int, args[i+1]); i += 2
         elseif a == "--horizon";       horizon = parse(Int, args[i+1]); i += 2
@@ -946,8 +946,10 @@ function main(args = ARGS)
             "baselines=[$(join(baselines, ","))] headline=$headline_baseline (jutari/Julia)")
 
     summary = Dict{String,Any}[]
+    na_records = Dict{String,Any}[]
     for game in games
         println("\n[ig] ===== $game =====")
+        try
         f_content, f_pos, alt_frame, st_extra = compute_game(; game = game, target_frame = target_frame,
             horizon = horizon, ig_steps = ig_steps, topk = topk, seed = seed,
             baselines = baselines, headline_baseline = headline_baseline, verbose = true)
@@ -990,12 +992,25 @@ function main(args = ARGS)
                 "oracle_self_precision_at_k" => f.oracle_self_precision_at_k,
                 "is_content_path" => f.output_kind == "content"))
         end
+        catch e
+            # A game DEGENERATE/STATIC at the shared gameplay state (empty cause set,
+            # degenerate oracle column, empty sampler footprint, or a bit-exact
+            # re-run failure) records an n/a row and is SKIPPED — it does NOT abort
+            # the whole battery. (Many non-core games are static at prefix=90; flag
+            # for a per-game livelier prefix later.)
+            msg = sprint(showerror, e)
+            println("[ig] !! $game SKIPPED (n/a): $(first(split(msg, '\n')))")
+            push!(na_records, Dict{String,Any}("game" => game, "status" => "n/a",
+                "reason" => first(split(msg, '\n'))))
+        end
     end
 
     if selftest_only
         println("\n[ig] --selftest: all passed, not writing artifacts.")
         return 0
     end
+    isempty(na_records) || println("\n[ig] $(length(na_records)) game(s) n/a " *
+        "(degenerate/static at the shared state): $(join([r["game"] for r in na_records], ", "))")
 
     isdir(OUT_DIR) || mkpath(OUT_DIR)
     summary_path = joinpath(OUT_DIR, "ig_baseline_sweep_core_summary.json")
@@ -1025,6 +1040,8 @@ function main(args = ARGS)
             "finding" => "IG faithfulness is baseline-dependent (corr_sensitivity = max−min corr over " *
                 "the four baselines, per game); the position output is invariant (always 0 — no gradient " *
                 "to move). Quantified per game in `results`."),
+        "n_games_scored" => length(games) - length(na_records),
+        "na_games" => na_records,
         "results" => summary)
     open(summary_path, "w") do io; JSON.print(io, rec, 2); end
     println("\n[ig] wrote summary $summary_path")

@@ -134,6 +134,8 @@ using JuTari.Diff: soft_ram_peek
 # A8's OWN checkpoint + whole-state recording from that stream so the recording +
 # oracle-importance algorithm is unchanged. Opt in with XAI_SHARED_TESTBED=1 (default on).
 include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
+# the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
+include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
 import JSON
 import Statistics
@@ -163,13 +165,12 @@ const _PRIMARY_REPO = get(ENV, "XAI_PRIMARY_REPO",
 """Absolute path to the real ROM for `game`, honouring the filename alias and the
 worktree→primary fallback (same search order as A1/A3)."""
 function resolve_rom(game::AbstractString)
-    stem = get(ROM_ALIAS, lowercase(string(game)), lowercase(string(game)))
-    here = normpath(joinpath(@__DIR__, "..", "..", ".."))
-    for base in (here, _PRIMARY_REPO)
-        p = joinpath(base, "xitari", "roms", stem * ".bin")
-        isfile(p) && return p
-    end
-    error("ROM not found for game=$game (stem=$stem) under $(here) and $(_PRIMARY_REPO)")
+    g = lowercase(string(game))
+    stem = get(ROM_ALIAS, g, g)
+    # search the shared ROM roots (xitari/roms + the 64-ROM store tools/rom_sweep/roms
+    # + cluster), trying the aliased stem AND the raw ALE name so all 54 labeled
+    # games resolve uniformly (non-core games live under rom_sweep as `<game>.bin`).
+    return xai_find_rom(unique([stem, g]), xai_rom_roots(; primary_repo = _PRIMARY_REPO))
 end
 
 function settings_for_game(game::AbstractString)
@@ -334,6 +335,17 @@ function load_candidates(game::AbstractString)
             concept = get(c, "concept", nothing)
             push!(out, Candidate(idx, concept === nothing ? "(unnamed)" : string(concept)))
         end
+    end
+    # non-core games have no T3 candidate file — fall back to the SAME generic
+    # RAM-byte cause set A1/A2 + the shared testbed's candidate_ram_indices(nothing)
+    # use, so all 54 labeled games get a bounded, uniform candidate cell set.
+    if isempty(out)
+        for (idx, concept) in ((13, "enemy_score"), (14, "player_score"),
+                               (49, "ball_x"), (54, "ball_y"),
+                               (51, "player_y"), (50, "enemy_y"))
+            push!(out, Candidate(idx, concept))
+        end
+        path = path === nothing ? "(generic fallback: no candidates_$(game).json)" : path
     end
     return out, path
 end
@@ -869,7 +881,7 @@ function main(args = ARGS)
     i = 1
     while i <= length(args)
         a = args[i]
-        if     a == "--games";        games = String.(split(args[i+1], ",")); i += 2
+        if     a == "--games";        games = xai_resolve_games(args[i+1], CORE_GAMES); i += 2
         elseif a == "--game";         games = [args[i+1]]; i += 2
         elseif a == "--target-frame"; target_frame = parse(Int, args[i+1]); i += 2
         elseif a == "--horizon";      horizon = parse(Int, args[i+1]); i += 2

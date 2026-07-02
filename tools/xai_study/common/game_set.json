@@ -5,6 +5,23 @@
     "pool": "the Paper-1 bit-exact roster (jutari ≡ xitari 64/64 screen+RAM) minus the 6 core games; loader.resolve_rom() resolves any ALE name on demand.",
     "t3_required": false
   },
+  "labeled_set": [
+    "air_raid", "alien", "amidar", "assault", "asterix", "asteroids", "atlantis",
+    "bank_heist", "battle_zone", "beam_rider", "berzerk", "bowling", "boxing",
+    "breakout", "carnival", "centipede", "chopper_command", "crazy_climber",
+    "demon_attack", "double_dunk", "enduro", "fishing_derby", "freeway",
+    "frostbite", "gopher", "hero", "ice_hockey", "jamesbond", "kangaroo", "krull",
+    "kung_fu_master", "montezuma_revenge", "ms_pacman", "name_this_game", "pacman",
+    "phoenix", "pitfall", "pong", "pooyan", "private_eye", "qbert", "riverraid",
+    "road_runner", "robotank", "seaquest", "skiing", "space_invaders",
+    "star_gunner", "tennis", "time_pilot", "up_n_down", "venture", "video_pinball",
+    "yars_revenge"
+  ],
+  "labeled_set_excluded": [
+    "defender", "elevator_action", "gravitar", "journey_escape", "solaris",
+    "surround", "tutankham", "videochess", "wizard_of_wor", "zaxxon"
+  ],
+  "labeled_set_note": "The 54 T3-LABELED games covered by OCAtari (offset-corrected, render-aligned RAM position labels; a strict superset of the 22 AtariARI games). The position-regime study needs verified render-aligned labels, so the 10 unlabeled games (labeled_set_excluded) are dropped. == the Paper-1 bit-exact roster minus those 10. ALE-canonical names (== tools/rom_sweep/roms/<name>.bin). Consumed by every A/B/C runner via `--games labeled`; the Julia twin is tools/xai_study/common/game_sets.jl XAI_LABELED. Default remains core.",
   "commit": "5353731",
   "core_set": [
     "pong",

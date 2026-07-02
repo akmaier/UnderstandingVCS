@@ -738,8 +738,12 @@ function main(args = ARGS)
     while i <= length(args)
         a = args[i]
         if a == "--games"
-            v = args[i + 1]; i += 2
-            games = lowercase(v) == "core" ? CORE_GAMES : String.(split(v, ","))
+            # the shared --games expander (core|labeled|comma-list) — reused from the
+            # included ActivationPatching module (which includes common/game_sets.jl),
+            # so `--games labeled` runs the 54 T3-labeled games here too. rom_path_for
+            # and candidates_path_for (with the generic candidate fallback) are also
+            # inherited from ActivationPatching, so non-core labeled games resolve.
+            games = ActivationPatching.xai_resolve_games(args[i + 1], CORE_GAMES); i += 2
         elseif a == "--game"; games = [args[i + 1]]; i += 2
         elseif a == "--target-frame"; target_frame = parse(Int, args[i + 1]); i += 2
         elseif a == "--horizon"; horizon = parse(Int, args[i + 1]); i += 2
@@ -756,19 +760,32 @@ function main(args = ARGS)
     println("[attribution_patching] games=$(join(games, ",")) " *
             "target_frame=$target_frame horizon=$horizon (jutari/Julia)")
     results = AttrResult[]
+    na_records = Tuple{String,String}[]
     for g in games
         println("\n========== $g ==========")
-        r = run_game(; game = g, target_frame = target_frame, horizon = horizon, verbose = true)
-        jp, np = write_game_result(r)
-        println("[$g] corr(approx,exact)=$(round(r.corr,digits=4)); " *
-                "mean|err|=$(round(r.mean_abs_err,digits=3)); relL2=$(round(r.rel_l2_err,digits=3)); " *
-                "edgeP=$(round(r.edge_precision,digits=3)) edgeR=$(round(r.edge_recall,digits=3)); " *
-                "linear_match=$(round(r.linear_regime_match,digits=3)); " *
-                "probe(corr=$(round(r.linear_probe_corr,digits=4)),err=$(r.linear_probe_err))")
-        println("[$g] wrote $jp")
-        println("[$g] arrays  $np")
-        push!(results, r)
+        try
+            r = run_game(; game = g, target_frame = target_frame, horizon = horizon, verbose = true)
+            jp, np = write_game_result(r)
+            println("[$g] corr(approx,exact)=$(round(r.corr,digits=4)); " *
+                    "mean|err|=$(round(r.mean_abs_err,digits=3)); relL2=$(round(r.rel_l2_err,digits=3)); " *
+                    "edgeP=$(round(r.edge_precision,digits=3)) edgeR=$(round(r.edge_recall,digits=3)); " *
+                    "linear_match=$(round(r.linear_regime_match,digits=3)); " *
+                    "probe(corr=$(round(r.linear_probe_corr,digits=4)),err=$(r.linear_probe_err))")
+            println("[$g] wrote $jp")
+            println("[$g] arrays  $np")
+            push!(results, r)
+        catch e
+            # A game DEGENERATE/STATIC at the shared gameplay state (or a bit-exact
+            # re-run failure) records an n/a and is SKIPPED — it does NOT abort the
+            # whole battery. Many non-core games are static at prefix=90; flag for a
+            # per-game livelier prefix later.
+            msg = first(split(sprint(showerror, e), '\n'))
+            println("[attribution_patching] !! $g SKIPPED (n/a): $msg")
+            push!(na_records, (g, msg))
+        end
     end
+    isempty(na_records) || println("\n[attribution_patching] $(length(na_records)) game(s) n/a " *
+        "(degenerate/static at the shared state): $(join([g for (g, _) in na_records], ", "))")
 
     if length(results) > 1
         sp = write_summary(results)

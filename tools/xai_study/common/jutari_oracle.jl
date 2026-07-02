@@ -60,13 +60,24 @@ ROM-basename alias (ms_pacman → mspacman.bin) then searches the repo root that
 contains this file first, then the known primary checkout.
 """
 function rom_path_for(game::AbstractString)
-    stem = get(ROM_BASENAME, lowercase(string(game)), lowercase(string(game)))
+    g = lowercase(string(game))
+    stem = get(ROM_BASENAME, g, g)
     here = normpath(joinpath(@__DIR__, "..", "..", ".."))   # repo root of this worktree
+    # Search xitari/roms (curated core names, e.g. mspacman.bin) AND the canonical
+    # 64-ROM store tools/rom_sweep/roms (ALE-canonical names, e.g. ms_pacman.bin) so
+    # all 64 games resolve; try both the mapped stem and the raw ALE name. rom_sweep
+    # is where loader.resolve_rom and the cluster keep the full 64-game roster.
+    names = unique([stem, g])
     for base in (here, _PRIMARY_REPO)
-        p = joinpath(base, "xitari", "roms", stem * ".bin")
-        isfile(p) && return p
+        for dir in ("xitari/roms", joinpath("tools", "rom_sweep", "roms"))
+            for nm in names
+                p = joinpath(base, dir, nm * ".bin")
+                isfile(p) && return p
+            end
+        end
     end
-    error("ROM not found for game=$game (looked under $(here) and $(_PRIMARY_REPO))")
+    error("ROM not found for game=$game (tried $(names) under xitari/roms + " *
+          "tools/rom_sweep/roms at $(here) and $(_PRIMARY_REPO))")
 end
 
 """

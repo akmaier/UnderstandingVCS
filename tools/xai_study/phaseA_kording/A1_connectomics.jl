@@ -136,6 +136,8 @@ const PRIMARY_REPO = get(ENV, "XAI_PRIMARY_REPO",
 # OWN checkpoint from that stream so the graph machinery is unchanged. Opt in with
 # XAI_SHARED_TESTBED=1 (default on).
 include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
+# the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
+include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
 # shared-testbed switch + params (redesign protocol: prefix=90 gameplay, horizon=15).
 const SHARED_TESTBED = get(ENV, "XAI_SHARED_TESTBED", "1") == "1"
@@ -180,14 +182,19 @@ const CORE_GAMES = ["pong", "breakout", "space_invaders", "seaquest", "ms_pacman
 """Absolute ROM path for a game, searching this worktree's xitari/roms then the
 primary repo (ROMs are gitignored — used in place)."""
 function rom_path_for(spec::GameSpec)
-    here = normpath(joinpath(@__DIR__, "..", "..", ".."))
-    for base in (here, PRIMARY_REPO)
-        p = joinpath(base, "xitari", "roms", spec.rom_basename)
-        isfile(p) && return p
-    end
-    error("ROM not found for $(spec.name) (looked for $(spec.rom_basename) under " *
-          "$(here) and $(PRIMARY_REPO))")
+    # search the shared ROM roots (xitari/roms + the 64-ROM store tools/rom_sweep/roms
+    # + cluster), trying the mapped basename (e.g. mspacman.bin) AND the raw ALE name
+    # (e.g. ms_pacman.bin) so all 64 games resolve uniformly.
+    stem = replace(spec.rom_basename, r"\.bin$" => "")
+    return xai_find_rom(unique([stem, spec.name]), xai_rom_roots(; primary_repo = PRIMARY_REPO))
 end
+
+"""GameSpec for any game: the curated core map when present, else a generic spec
+(GenericRomSettings + `<game>.bin`) so all 64 ALE games run uniformly. Non-core
+games use Generic settings (recorded honestly), matching the Phase-B/C fallback."""
+spec_for(game::AbstractString) = get(GAME_SPECS, lowercase(String(game)),
+    GameSpec(String(game), String(game) * ".bin",
+             () -> JuTari.GenericRomSettings(), "GenericRomSettings"))
 
 """A freshly-reset env with the xitari-parity boot (60 NOOP + 4 RESET) and the
 game's RomSettings."""
@@ -269,6 +276,17 @@ function load_candidates(game::AbstractString)
             concept = get(c, "concept", nothing)
             push!(out, Candidate(idx, concept === nothing ? "(unnamed)" : string(concept)))
         end
+    end
+    # non-core games have no T3 candidate file — fall back to the SAME generic
+    # RAM-byte cause set the shared testbed's candidate_ram_indices(nothing) uses,
+    # so all 64 games get a bounded, uniform candidate cell set.
+    if isempty(out)
+        for (idx, concept) in ((13, "enemy_score"), (14, "player_score"),
+                               (49, "ball_x"), (54, "ball_y"),
+                               (51, "player_y"), (50, "enemy_y"))
+            push!(out, Candidate(idx, concept))
+        end
+        path = path === nothing ? "(generic fallback: no candidates_$(game).json)" : path
     end
     return out, path
 end
@@ -464,8 +482,7 @@ function build_a1_shared_state(game::AbstractString; verbose = false)
 end
 
 function run_game(game::AbstractString; target_frame = 30, horizon = 30, verbose = true)
-    haskey(GAME_SPECS, game) || error("unknown game $game (have $(keys(GAME_SPECS)))")
-    spec = GAME_SPECS[game]
+    spec = spec_for(game)
 
     # SHARED-TESTBED (redesign): replace the all-NOOP boot/attract tape with a
     # seeded random-action GAMEPLAY state at f*=ST_PREFIX, gated by the oracle
@@ -818,7 +835,7 @@ function main(args = ARGS)
     i = 1
     while i <= length(args)
         a = args[i]
-        if     a == "--games";        games = String.(split(args[i+1], ",")); i += 2
+        if     a == "--games";        games = xai_resolve_games(args[i+1], CORE_GAMES); i += 2
         elseif a == "--game";         games = [args[i+1]]; i += 2
         elseif a == "--target-frame"; target_frame = parse(Int, args[i+1]); i += 2
         elseif a == "--horizon";      horizon = parse(Int, args[i+1]); i += 2

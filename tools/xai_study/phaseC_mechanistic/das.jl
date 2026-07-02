@@ -95,6 +95,8 @@ using JuTari.Diff: soft_ram_peek
 # gradient method, so the sampler-on path does not apply — we consume the shared
 # STATE + cause-density GATE + shared screen-buffer output only.
 include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
+# the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
+include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders", "seaquest", "ms_pacman", "qbert"]
@@ -128,13 +130,11 @@ const ROM_BASENAME = Dict(
 const _PRIMARY_REPO = get(ENV, "XAI_PRIMARY_REPO", "/Users/maier/Documents/code/UnderstandingVCS")
 
 function rom_path_for(game::AbstractString)
-    stem = get(ROM_BASENAME, lowercase(string(game)), lowercase(string(game)))
-    here = normpath(joinpath(@__DIR__, "..", "..", ".."))
-    for base in (here, _PRIMARY_REPO)
-        p = joinpath(base, "xitari", "roms", stem * ".bin")
-        isfile(p) && return p
-    end
-    error("ROM not found for game=$game (looked under $here and $_PRIMARY_REPO)")
+    g = lowercase(string(game))
+    stem = get(ROM_BASENAME, g, g)
+    # search xitari/roms + the 54-ROM store tools/rom_sweep/roms (ALE names), trying
+    # the mapped stem AND the raw ALE name, so all labeled games resolve uniformly.
+    return xai_find_rom(unique([stem, g]), xai_rom_roots(; primary_repo = _PRIMARY_REPO))
 end
 
 function settings_for(game::AbstractString)
@@ -283,6 +283,10 @@ struct DASResult
     transient_downstream::Vector{String}  # cells whose interchange is clobbered within the horizon
     n_vars::Int
     n_source_diverged::Int           # candidate cells where the NATURAL source differs from BASE
+    # T3 concept-label provenance: true iff a verified candidates_<game>.json exists;
+    # false ⇒ the variable/concept labels are the generic fallback set (structural
+    # alignment still exact, but the concept↔cell semantics are UNVERIFIED for this game).
+    concepts_verified::Bool
     # SHARED-TESTBED provenance (redesign); all NaN/-1/"" in the legacy NOOP path.
     state_kind::String               # "seeded_random_action_gameplay" | "noop"
     st_seed::Int
@@ -332,7 +336,7 @@ function run_game(; game, target_frame = 120, horizon = 30, verbose = true)
             total = total, base_ckpt = base_ckpt, base_actions = base_actions, tail = tail,
             base_snap = base_snap, base_at_t = base_at_t, src_at_t = src_at_t,
             cand_indices = cand_indices, vars = vars, bit_exact = bit_exact, st = st,
-            verbose = verbose)
+            verbose = verbose, concepts_verified = cand !== nothing)
     end
 
     total = target_frame + horizon
@@ -365,7 +369,7 @@ function run_game(; game, target_frame = 120, horizon = 30, verbose = true)
         total = total, base_ckpt = base_ckpt, base_actions = base_actions, tail = tail,
         base_snap = base_snap, base_at_t = base_at_t, src_at_t = src_at_t,
         cand_indices = cand_indices, vars = vars, bit_exact = bit_exact, st = nothing,
-        verbose = verbose)
+        verbose = verbose, concepts_verified = cand !== nothing)
 end
 
 """The per-game body, shared by the legacy NOOP path and the SHARED gameplay-state
@@ -374,7 +378,7 @@ interchange algorithm sits on — the algorithm itself is unchanged). `st` carri
 shared-testbed provenance for the record, or `nothing` in the legacy path."""
 function _run_game_body(; game, target_frame, horizon, total, base_ckpt, base_actions,
                         tail, base_snap, base_at_t, src_at_t, cand_indices, vars,
-                        bit_exact, st, verbose)
+                        bit_exact, st, verbose, concepts_verified = true)
     nvar = length(vars)
 
     # the candidate ALIGNMENT cells we search over: each candidate RAM cell as a
@@ -553,6 +557,7 @@ function _run_game_body(; game, target_frame, horizon, total, base_ckpt, base_ac
                      alignment_accuracy, alignment_accuracy_all,
                      recovered_aligned, true_aligned,
                      transient_downstream, nvar, n_source_diverged,
+                     concepts_verified,
                      st === nothing ? "noop" : "seeded_random_action_gameplay",
                      st === nothing ? -1 : st.seed,
                      st === nothing ? -1 : st.prefix,
@@ -634,6 +639,13 @@ function write_game_result(r::DASResult; out_dir = OUT_DIR)
             "transient_downstream_cells" => r.transient_downstream,
             "n_variables" => r.n_vars,
             "n_source_diverged_natural" => r.n_source_diverged,
+            # T3 concept-label provenance. On a non-core game with no verified
+            # candidates_<game>.json we fall back to the generic RAM-byte concept set:
+            # the STRUCTURAL alignment (recovered cell == true cell) is still exact, but
+            # the concept↔cell SEMANTICS are unverified — the concept-alignment metric is
+            # recorded n/a-flagged (concepts_verified=false) rather than crashing.
+            "concepts_verified" => r.concepts_verified,
+            "concept_alignment_metric" => r.concepts_verified ? "verified_T3" : "n/a (generic fallback labels)",
             "interchange_effect" => eff_map,
             "testbed" => Dict{String,Any}(
                 "state_kind" => r.state_kind,
@@ -776,8 +788,7 @@ function main(args = ARGS)
     while i <= length(args)
         a = args[i]
         if a == "--games"
-            v = args[i + 1]; i += 2
-            games = lowercase(v) == "core" ? CORE_GAMES : String.(split(v, ","))
+            games = xai_resolve_games(args[i + 1], CORE_GAMES); i += 2
         elseif a == "--game"; games = [args[i + 1]]; i += 2
         elseif a == "--target-frame"; target_frame = parse(Int, args[i + 1]); i += 2
         elseif a == "--horizon"; horizon = parse(Int, args[i + 1]); i += 2
@@ -794,20 +805,33 @@ function main(args = ARGS)
     println("[das] games=$(join(games, ",")) " *
             "target_frame=$target_frame horizon=$horizon (jutari/Julia)")
     results = DASResult[]
+    na_records = Tuple{String,String}[]
     for g in games
         println("\n========== $g ==========")
-        r = run_game(; game = g, target_frame = target_frame, horizon = horizon, verbose = true)
-        jp, np = write_game_result(r)
-        println("[$g] interchange==exact: $(r.interchange_eq_exact) " *
-                "(max|Δ|=$(r.max_abs_interchange_minus_exact)); " *
-                "IIA_aligned=$(round(r.iia_aligned,digits=3)) " *
-                "IIA_misaligned=$(round(r.iia_misaligned,digits=3)) " *
-                "alignment_acc(nt)=$(round(r.alignment_accuracy,digits=3)) " *
-                "alignment_acc(all)=$(round(r.alignment_accuracy_all,digits=3))")
-        println("[$g] wrote $jp")
-        println("[$g] arrays  $np")
-        push!(results, r)
+        try
+            r = run_game(; game = g, target_frame = target_frame, horizon = horizon, verbose = true)
+            jp, np = write_game_result(r)
+            println("[$g] interchange==exact: $(r.interchange_eq_exact) " *
+                    "(max|Δ|=$(r.max_abs_interchange_minus_exact)); " *
+                    "IIA_aligned=$(round(r.iia_aligned,digits=3)) " *
+                    "IIA_misaligned=$(round(r.iia_misaligned,digits=3)) " *
+                    "alignment_acc(nt)=$(round(r.alignment_accuracy,digits=3)) " *
+                    "alignment_acc(all)=$(round(r.alignment_accuracy_all,digits=3))")
+            println("[$g] wrote $jp")
+            println("[$g] arrays  $np")
+            push!(results, r)
+        catch e
+            # A game DEGENERATE/STATIC at the shared gameplay state (or a bit-exact
+            # re-run failure) records an n/a and is SKIPPED — it does NOT abort the
+            # whole battery. Many non-core games are static at prefix=90; flag for a
+            # per-game livelier prefix later.
+            msg = first(split(sprint(showerror, e), '\n'))
+            println("[das] !! $g SKIPPED (n/a): $msg")
+            push!(na_records, (g, msg))
+        end
     end
+    isempty(na_records) || println("\n[das] $(length(na_records)) game(s) n/a " *
+        "(degenerate/static at the shared state): $(join([g for (g, _) in na_records], ", "))")
 
     if length(results) > 1
         sp = write_summary(results)

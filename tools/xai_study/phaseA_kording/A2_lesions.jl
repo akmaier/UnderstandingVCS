@@ -150,6 +150,8 @@ using JuTari.Diff: soft_ram_peek
 # cause-density GATE only, and boot A2's OWN checkpoint from that stream so the
 # lesion machinery is unchanged. Opt in with XAI_SHARED_TESTBED=1 (default on).
 include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
+# the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
+include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
 import JSON
 
@@ -199,23 +201,28 @@ const CORE_GAMES = ["pong", "breakout", "space_invaders", "seaquest", "ms_pacman
 function _rom_roots(roms_dir)
     roots = String[]
     roms_dir !== nothing && push!(roots, roms_dir)
-    here = normpath(joinpath(@__DIR__, "..", "..", ".."))
-    push!(roots, joinpath(here, "xitari", "roms"))
-    push!(roots, joinpath(PRIMARY_REPO, "xitari", "roms"))
-    # the raw ROM collection (cluster / fallback)
-    push!(roots, joinpath(PRIMARY_REPO, "xitari", "games",
-                          "Atari-2600-VCS-ROM-Collection", "ROMS"))
+    # the shared roots: xitari/roms + the 64-ROM store tools/rom_sweep/roms + cluster.
+    append!(roots, xai_rom_roots(; primary_repo = PRIMARY_REPO))
     return roots
 end
 
 function rom_path_for(spec::GameSpec; roms_dir = nothing)
-    for base in _rom_roots(roms_dir)
-        p = joinpath(base, spec.rom_basename)
+    # try the mapped basename (e.g. mspacman.bin) AND the raw ALE name (ms_pacman.bin)
+    # so all labeled games resolve from tools/rom_sweep/roms uniformly.
+    stem = replace(spec.rom_basename, r"\.bin$" => "")
+    for base in _rom_roots(roms_dir), nm in unique([stem, spec.name])
+        p = joinpath(base, nm * ".bin")
         isfile(p) && return p
     end
-    error("ROM not found for $(spec.name) ($(spec.rom_basename)) under " *
+    error("ROM not found for $(spec.name) (tried $(unique([stem, spec.name]))) under " *
           join(_rom_roots(roms_dir), ", "))
 end
+
+"""GameSpec for any game: the curated core map when present, else a generic spec
+(GenericRomSettings + `<game>.bin`), so all 54 labeled games run uniformly."""
+spec_for(game::AbstractString) = get(GAME_SPECS, lowercase(String(game)),
+    GameSpec(String(game), String(game) * ".bin",
+             () -> JuTari.GenericRomSettings(), "GenericRomSettings"))
 
 """A freshly-reset env with the xitari-parity boot (60 NOOP + 4 RESET) and the
 game's RomSettings."""
@@ -300,6 +307,16 @@ function load_candidates(game::AbstractString)
             concept = get(c, "concept", nothing)
             push!(out, Candidate(idx, concept === nothing ? "(unnamed)" : string(concept)))
         end
+    end
+    # non-core games have no T3 candidate file — fall back to the SAME generic
+    # RAM-byte cause set the shared testbed's candidate_ram_indices(nothing) uses.
+    if isempty(out)
+        for (idx, concept) in ((13, "enemy_score"), (14, "player_score"),
+                               (49, "ball_x"), (54, "ball_y"),
+                               (51, "player_y"), (50, "enemy_y"))
+            push!(out, Candidate(idx, concept))
+        end
+        path = path === nothing ? "(generic fallback: no candidates_$(game).json)" : path
     end
     return out, path
 end
@@ -548,8 +565,7 @@ end
 
 function run_game(game::AbstractString; target_frame = 30, horizon = 30,
                   max_pairs = 60, roms_dir = nothing, verbose = true)
-    haskey(GAME_SPECS, game) || error("unknown game $game (have $(keys(GAME_SPECS)))")
-    spec = GAME_SPECS[game]
+    spec = spec_for(game)
 
     # SHARED-TESTBED (redesign): replace the all-NOOP boot/attract tape with a
     # seeded random-action GAMEPLAY state at f*=ST_PREFIX, gated by the oracle
@@ -1028,7 +1044,7 @@ function main(args = ARGS)
     i = 1
     while i <= length(args)
         a = args[i]
-        if     a == "--games";        games = String.(split(args[i+1], ",")); i += 2
+        if     a == "--games";        games = xai_resolve_games(args[i+1], CORE_GAMES); i += 2
         elseif a == "--game";         games = [args[i+1]]; i += 2
         elseif a == "--target-frame"; target_frame = parse(Int, args[i+1]); i += 2
         elseif a == "--horizon";      horizon = parse(Int, args[i+1]); i += 2

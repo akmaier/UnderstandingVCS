@@ -130,7 +130,7 @@ import Statistics
 # include chain (ig_baseline_sweep → pilot_ig_vs_oracle → oracle_intervene →
 # jutari_oracle) ⇒ ONE Cause/Snapshot type identity.
 include(joinpath(@__DIR__, "ig_baseline_sweep.jl"))
-using .IGBaselineSweep: CORE_GAMES, candidates_path_for,
+using .IGBaselineSweep: CORE_GAMES, xai_resolve_games, candidates_path_for,
                         load_env, boot_replay, continue_from, fresh_baseline,
                         assert_bit_exact, occlude!,
                         oracle_abs_delta, deletion_insertion_auc, position_pixel_cell,
@@ -704,7 +704,7 @@ end
 all 6 core games."""
 function resolve_games(; single_game, games_arg, shard, nshards, shard_kind)
     single_game !== nothing && return [single_game]
-    games_arg !== nothing && return games_arg == "core" ? CORE_GAMES : String.(split(games_arg, ","))
+    games_arg !== nothing && return xai_resolve_games(games_arg, CORE_GAMES)
     if shard !== nothing && nshards !== nothing && nshards > 1 && shard_kind == "game"
         return [CORE_GAMES[(i % length(CORE_GAMES)) + 1]
                 for i in (shard:nshards:length(CORE_GAMES)-1)]

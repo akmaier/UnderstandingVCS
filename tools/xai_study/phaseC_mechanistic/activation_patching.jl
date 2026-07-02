@@ -85,6 +85,8 @@ using JuTari.Diff: soft_ram_peek
 # gradient method, so the sampler-on path does not apply here — we consume the
 # shared STATE + cause-density GATE + shared screen-buffer output only.
 include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
+# the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
+include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders", "seaquest", "ms_pacman", "qbert"]
@@ -119,13 +121,11 @@ const ROM_BASENAME = Dict(
 const _PRIMARY_REPO = get(ENV, "XAI_PRIMARY_REPO", "/Users/maier/Documents/code/UnderstandingVCS")
 
 function rom_path_for(game::AbstractString)
-    stem = get(ROM_BASENAME, lowercase(string(game)), lowercase(string(game)))
-    here = normpath(joinpath(@__DIR__, "..", "..", ".."))
-    for base in (here, _PRIMARY_REPO)
-        p = joinpath(base, "xitari", "roms", stem * ".bin")
-        isfile(p) && return p
-    end
-    error("ROM not found for game=$game (looked under $here and $_PRIMARY_REPO)")
+    g = lowercase(string(game))
+    stem = get(ROM_BASENAME, g, g)
+    # search xitari/roms + the 54-ROM store tools/rom_sweep/roms (ALE names), trying
+    # the mapped stem AND the raw ALE name, so all labeled games resolve uniformly.
+    return xai_find_rom(unique([stem, g]), xai_rom_roots(; primary_repo = _PRIMARY_REPO))
 end
 
 function settings_for(game::AbstractString)
@@ -726,8 +726,7 @@ function main(args = ARGS)
     while i <= length(args)
         a = args[i]
         if a == "--games"
-            v = args[i + 1]; i += 2
-            games = lowercase(v) == "core" ? CORE_GAMES : String.(split(v, ","))
+            games = xai_resolve_games(args[i + 1], CORE_GAMES); i += 2
         elseif a == "--game"; games = [args[i + 1]]; i += 2
         elseif a == "--target-frame"; target_frame = parse(Int, args[i + 1]); i += 2
         elseif a == "--horizon"; horizon = parse(Int, args[i + 1]); i += 2
@@ -744,18 +743,31 @@ function main(args = ARGS)
     println("[activation_patching] games=$(join(games, ",")) " *
             "target_frame=$target_frame horizon=$horizon (jutari/Julia)")
     results = PatchResult[]
+    na_records = Tuple{String,String}[]
     for g in games
         println("\n========== $g ==========")
-        r = run_game(; game = g, target_frame = target_frame, horizon = horizon, verbose = true)
-        jp, np = write_game_result(r)
-        println("[$g] recovered==exact: $(r.recovered_eq_exact) " *
-                "(max|rec-exact|=$(r.max_abs_recovered_minus_exact)); " *
-                "data-flow P=$(round(r.site_precision,digits=3)) R=$(round(r.site_recall,digits=3)); " *
-                "a-priori recall=$(round(r.apriori_recall,digits=3))")
-        println("[$g] wrote $jp")
-        println("[$g] arrays  $np")
-        push!(results, r)
+        try
+            r = run_game(; game = g, target_frame = target_frame, horizon = horizon, verbose = true)
+            jp, np = write_game_result(r)
+            println("[$g] recovered==exact: $(r.recovered_eq_exact) " *
+                    "(max|rec-exact|=$(r.max_abs_recovered_minus_exact)); " *
+                    "data-flow P=$(round(r.site_precision,digits=3)) R=$(round(r.site_recall,digits=3)); " *
+                    "a-priori recall=$(round(r.apriori_recall,digits=3))")
+            println("[$g] wrote $jp")
+            println("[$g] arrays  $np")
+            push!(results, r)
+        catch e
+            # A game DEGENERATE/STATIC at the shared gameplay state (or a bit-exact
+            # re-run failure) records an n/a and is SKIPPED — it does NOT abort the
+            # whole battery. Many non-core games are static at prefix=90; flag for a
+            # per-game livelier prefix later.
+            msg = first(split(sprint(showerror, e), '\n'))
+            println("[activation_patching] !! $g SKIPPED (n/a): $msg")
+            push!(na_records, (g, msg))
+        end
     end
+    isempty(na_records) || println("\n[activation_patching] $(length(na_records)) game(s) n/a " *
+        "(degenerate/static at the shared state): $(join([g for (g, _) in na_records], ", "))")
 
     if length(results) > 1
         sp = write_summary(results)

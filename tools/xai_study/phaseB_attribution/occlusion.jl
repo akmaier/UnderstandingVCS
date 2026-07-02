@@ -90,7 +90,7 @@ using JuTari.Env: StellaEnvironment, env_reset!, env_step!, get_screen, get_ram
 # distinct Cause/Snapshot type and break method dispatch). We reach the pilot's
 # scorers + the oracle's cause types THROUGH the SaliencyAttr namespace.
 include(joinpath(@__DIR__, "saliency.jl"))
-using .SaliencyAttr: CORE_GAMES, rom_path_for, settings_for, candidates_path_for,
+using .SaliencyAttr: CORE_GAMES, xai_resolve_games, rom_path_for, settings_for, candidates_path_for,
                      load_env, boot_replay, continue_from, fresh_baseline,
                      assert_bit_exact, run_intervention, occlude!,
                      deletion_insertion_auc, oracle_abs_delta,
@@ -497,7 +497,7 @@ plain `--array=0-5` run picks one game per task; `--nshards 1` (or no shard) =
 the full local sweep."""
 function resolve_games(; single_game, games_arg, shard, nshards, shard_kind)
     single_game !== nothing && return [single_game]
-    games_arg !== nothing && return games_arg == "core" ? CORE_GAMES : String.(split(games_arg, ","))
+    games_arg !== nothing && return xai_resolve_games(games_arg, CORE_GAMES)
     # sharding: shard-kind "game" with nshards>1 → the shard-th core game (round-robin
     # so any nshards splits the 6 games across tasks).
     if shard !== nothing && nshards !== nothing && nshards > 1 && shard_kind == "game"

@@ -102,7 +102,7 @@ using JuTari.Env: env_step!, get_ram
 # bit-exact assertion, oracle |Δy|, deletion/insertion AUC, the content/position
 # readers, pick_content_idx, and the single-baseline IG primitive for the contrast.
 include(joinpath(@__DIR__, "ig_baseline_sweep.jl"))
-using .IGBaselineSweep: CORE_GAMES, load_env, boot_replay, continue_from,
+using .IGBaselineSweep: CORE_GAMES, xai_resolve_games, load_env, boot_replay, continue_from,
                         fresh_baseline, assert_bit_exact, oracle_abs_delta,
                         deletion_insertion_auc, content_read, position_read_zero,
                         position_pixel_cell, pick_content_idx, ig_over_ram
@@ -934,7 +934,7 @@ function main(args = ARGS)
     while i <= length(args)
         a = args[i]
         if     a == "--games"
-            v = args[i+1]; games = (v == "core") ? CORE_GAMES : String.(split(v, ",")); i += 2
+            v = args[i+1]; games = xai_resolve_games(v, CORE_GAMES); i += 2
         elseif a == "--game";               single_game = args[i+1]; i += 2
         elseif a == "--target-frame";       target_frame = parse(Int, args[i+1]); i += 2
         elseif a == "--horizon";            horizon = parse(Int, args[i+1]); i += 2

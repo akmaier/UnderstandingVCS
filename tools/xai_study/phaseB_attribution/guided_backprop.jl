@@ -110,6 +110,8 @@ using .PilotIGvsOracle.OracleIntervene.JutariOracle: Snapshot, snapshot,
 # why not a module) so build_shared_testbed operates on OUR own Cause/Snapshot
 # types. Opt in with XAI_SHARED_TESTBED=1 (default on for the redesign re-run).
 include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
+# the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
+include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
 const OUT_DIR = joinpath(@__DIR__, "out")
 # shared-testbed switch + params (redesign protocol: prefix=90 gameplay, horizon=15).
@@ -133,13 +135,11 @@ const ROM_BASENAME = Dict(
 const _PRIMARY_REPO = get(ENV, "XAI_PRIMARY_REPO", "/Users/maier/Documents/code/UnderstandingVCS")
 
 function rom_path_for(game::AbstractString)
-    stem = get(ROM_BASENAME, lowercase(string(game)), lowercase(string(game)))
-    here = normpath(joinpath(@__DIR__, "..", "..", ".."))
-    for base in (here, _PRIMARY_REPO)
-        p = joinpath(base, "xitari", "roms", stem * ".bin")
-        isfile(p) && return p
-    end
-    error("ROM not found for game=$game (looked under $here and $_PRIMARY_REPO)")
+    g = lowercase(string(game))
+    stem = get(ROM_BASENAME, g, g)
+    # search xitari/roms + the 54-ROM store tools/rom_sweep/roms (ALE names), trying
+    # the mapped stem AND the raw ALE name, so all labeled games resolve uniformly.
+    return xai_find_rom(unique([stem, g]), xai_rom_roots(; primary_repo = _PRIMARY_REPO))
 end
 
 function settings_for(game::AbstractString)
@@ -977,7 +977,7 @@ function main(args = ARGS)
     while i <= length(args)
         a = args[i]
         if     a == "--games"
-            v = args[i+1]; games = (v == "core") ? CORE_GAMES : String.(split(v, ",")); i += 2
+            v = args[i+1]; games = xai_resolve_games(v, CORE_GAMES); i += 2
         elseif a == "--game";         single_game = args[i+1]; i += 2
         elseif a == "--target-frame"; target_frame = parse(Int, args[i+1]); i += 2
         elseif a == "--horizon";      horizon = parse(Int, args[i+1]); i += 2

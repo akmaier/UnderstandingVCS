@@ -49,6 +49,9 @@ using JSON
 # Reuse the verified foundation's §R .npz/.npy writer (NO emulator core touched).
 include(joinpath(@__DIR__, "..", "common", "jutari_oracle.jl"))
 using .JutariOracle: write_npz
+# the shared game-set resolver (XAI_LABELED / xai_resolve_games) — so --games labeled
+# grounds the 54 OCAtari-labeled games, uniform with the other Phase-B runners.
+include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
 const OUT_DIR = joinpath(@__DIR__, "out")
 const REPO_ROOT = normpath(joinpath(@__DIR__, "..", "..", ".."))
@@ -502,10 +505,19 @@ function selftest(groundings::Vector{GameGrounding})
 
     @assert !isempty(APPLICABLE_CONTRAST) "the applicable-method contrast must be non-empty"
 
-    @assert length(groundings) == length(CORE_GAMES) "must ground all 6 core games"
+    @assert !isempty(groundings) "must ground ≥1 game"
     for g in groundings
-        @assert g.candidates_file !== nothing "$(g.game): candidates file not found (grounding)"
-        @assert g.n_candidate_causes >= 1 "$(g.game): expected ≥1 candidate cause for applicable methods"
+        # CORE games have a verified candidates file with ≥1 candidate cause (the
+        # applicable-method contrast is grounded). A NON-core labeled game may lack a
+        # candidates_<game>.json — the audit's finding is game-INDEPENDENT (the VCS has
+        # no NN/policy in ANY game), so it grounds cleanly with a 0 candidate count
+        # (n/a contrast) rather than aborting.
+        if g.game in CORE_GAMES
+            @assert g.candidates_file !== nothing "$(g.game): candidates file not found (grounding)"
+            @assert g.n_candidate_causes >= 1 "$(g.game): expected ≥1 candidate cause for applicable methods"
+        else
+            @assert g.n_candidate_causes >= 0 "$(g.game): candidate-cause count must be ≥0"
+        end
         # the structural absence — the heart of the finding
         @assert g.n_conv_feature_maps == 0 "$(g.game): VCS must have 0 conv feature maps"
         @assert g.n_attention_heads == 0 "$(g.game): VCS must have 0 attention heads"
@@ -546,16 +558,18 @@ end
 function main(args = ARGS)
     selftest_only = false
     write_markdown = false
+    games = CORE_GAMES
     i = 1
     while i <= length(args)
         a = args[i]
         if     a == "--selftest"; selftest_only = true; i += 1
         elseif a == "--md";       write_markdown = true; i += 1
+        elseif a == "--games";    games = xai_resolve_games(args[i+1], CORE_GAMES); i += 2
         else; i += 1
         end
     end
-    println("[na_audit] grounding $(length(CORE_GAMES)) core games (jutari/Julia path) …")
-    groundings = GameGrounding[ground_game(g) for g in CORE_GAMES]
+    println("[na_audit] grounding $(length(games)) game(s) (jutari/Julia path) …")
+    groundings = GameGrounding[ground_game(g) for g in games]
     selftest(groundings)
     if selftest_only
         println("[na_audit] --selftest: passed, not writing artifacts.")

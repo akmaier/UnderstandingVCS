@@ -112,7 +112,7 @@ import LinearAlgebra
 # identity for Snapshot/Cause (a second top-level include would create a distinct
 # Cause/Snapshot type and break dispatch).
 include(joinpath(@__DIR__, "ig_baseline_sweep.jl"))
-using .IGBaselineSweep: CORE_GAMES, load_env, boot_replay, continue_from,
+using .IGBaselineSweep: CORE_GAMES, xai_resolve_games, load_env, boot_replay, continue_from,
                         fresh_baseline, assert_bit_exact, occlude!,
                         oracle_abs_delta, deletion_insertion_auc, position_pixel_cell,
                         pick_content_idx, candidates_path_for
@@ -822,7 +822,7 @@ function main(args = ARGS)
     while i <= length(args)
         a = args[i]
         if     a == "--games"
-            v = args[i+1]; games_arg = (v == "core") ? CORE_GAMES : String.(split(v, ",")); i += 2
+            v = args[i+1]; games_arg = xai_resolve_games(v, CORE_GAMES); i += 2
         elseif a == "--game";          single_game = args[i+1]; i += 2
         elseif a == "--target-frame";  target_frame = parse(Int, args[i+1]); i += 2
         elseif a == "--horizon";       horizon = parse(Int, args[i+1]); i += 2

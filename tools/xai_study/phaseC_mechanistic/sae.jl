@@ -121,6 +121,8 @@ include(joinpath(@__DIR__, "..", "ground_truth", "oracle_intervene.jl"))
 # — we consume the shared action STREAM + cause-density GATE only, and boot SAE's OWN
 # checkpoint/trajectory from that stream. Opt in with XAI_SHARED_TESTBED=1 (default on).
 include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
+# the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
+include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders",
@@ -336,6 +338,16 @@ function load_candidates(candidates_path)
             idx in seen && continue
             push!(seen, idx)
             concept = c["concept"] === nothing ? "(unnamed)" : string(c["concept"])
+            push!(out, Candidate(idx, concept, concept_family(concept)))
+        end
+    end
+    # non-core games have no T3 candidate file — fall back to the SAME generic
+    # RAM-byte cause set the shared testbed's candidate_ram_indices(nothing) uses,
+    # so all 54 labeled games get a bounded, uniform candidate cell set.
+    if isempty(out)
+        for (idx, concept) in ((13, "enemy_score"), (14, "player_score"),
+                               (49, "ball_x"), (54, "ball_y"),
+                               (51, "player_y"), (50, "enemy_y"))
             push!(out, Candidate(idx, concept, concept_family(concept)))
         end
     end
@@ -1297,16 +1309,19 @@ end
 # ============================================================================
 function _resolve_games(; single_game, games_arg, shard, nshards, shard_kind)
     single_game !== nothing && return [single_game]
-    games_arg !== nothing && return games_arg
+    # the game POOL to (optionally) shard: an explicit --games list (e.g. `labeled`)
+    # if given, else the core set. Sharding then selects every N-th game of the pool,
+    # so `--games labeled --shard i --nshards N` shards the 54 across the cluster.
+    pool = games_arg !== nothing ? games_arg : CORE_GAMES
     if shard !== nothing
         kind = shard_kind === nothing ? "game" : shard_kind
         kind == "game" || error("sae.jl only shards by game (--shard-kind game), got $kind")
-        n = nshards === nothing ? length(CORE_GAMES) : nshards
-        sel = [CORE_GAMES[j] for j in (shard + 1):n:length(CORE_GAMES)]
-        isempty(sel) && error("shard $shard of $n selects no core game (|core|=$(length(CORE_GAMES)))")
+        n = nshards === nothing ? length(pool) : nshards
+        sel = [pool[j] for j in (shard + 1):n:length(pool)]
+        isempty(sel) && error("shard $shard of $n selects no game (|pool|=$(length(pool)))")
         return sel
     end
-    return CORE_GAMES
+    return pool
 end
 
 function main(args = ARGS)
@@ -1321,7 +1336,7 @@ function main(args = ARGS)
     while i <= length(args)
         a = args[i]
         if     a == "--games"
-            v = args[i+1]; games_arg = (v == "core") ? CORE_GAMES : String.(split(v, ",")); i += 2
+            games_arg = xai_resolve_games(args[i+1], CORE_GAMES); i += 2
         elseif a == "--game";           single_game = args[i+1]; i += 2
         elseif a == "--target-frame";   target_frame = parse(Int, args[i+1]); i += 2
         elseif a == "--horizon";        horizon = parse(Int, args[i+1]); i += 2

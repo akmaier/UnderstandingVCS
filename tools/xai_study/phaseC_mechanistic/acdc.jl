@@ -150,6 +150,8 @@ using JuTari.Diff: soft_ram_peek
 # cause-density GATE only, and boot ACDC's OWN checkpoint from that stream so the
 # discovery machinery is unchanged. Opt in with XAI_SHARED_TESTBED=1 (default on).
 include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
+# the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
+include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
 import JSON
 
@@ -202,23 +204,40 @@ const GAME_SPECS = Dict{String,GameSpec}(
 # extra ROM search roots set at runtime by --roms-dir (cluster contract).
 const _EXTRA_ROM_DIRS = String[]
 
+# curated core aliases (xitari/roms uses e.g. mspacman.bin); every other labeled
+# game's ROM basename IS its ALE-canonical name (== tools/rom_sweep/roms/<name>.bin).
+const ROM_BASENAME = Dict(
+    "pong" => "pong", "breakout" => "breakout",
+    "space_invaders" => "space_invaders", "seaquest" => "seaquest",
+    "ms_pacman" => "mspacman", "qbert" => "qbert")
+
+"""The GameSpec for a game: the curated core spec if present, else a generic one for
+any T3-labeled game (GenericRomSettings — boots fine; the screen scoreboard's Generic
+fallback), so all 54 labeled games run. The ROM alias maps ms_pacman → mspacman."""
+function spec_for(game::AbstractString)
+    g = lowercase(string(game))
+    haskey(GAME_SPECS, g) && return GAME_SPECS[g]
+    stem = get(ROM_BASENAME, g, g)
+    return GameSpec(g, stem * ".bin",
+                    () -> JuTari.GenericRomSettings(), "GenericRomSettings")
+end
+
 """Absolute ROM path for a game: search this worktree's xitari/roms, the primary
 repo's xitari/roms, then any --roms-dir roots (the cluster ROM collection layout).
 ROMs are gitignored — used in place, never committed."""
 function rom_path_for(spec::GameSpec)
-    here = normpath(joinpath(@__DIR__, "..", "..", ".."))
-    for base in (here, _PRIMARY_REPO)
-        p = joinpath(base, "xitari", "roms", spec.rom_basename)
-        isfile(p) && return p
-    end
-    # --roms-dir roots: try the basename directly (collection may use the same
-    # filename) under the supplied dir.
+    # --roms-dir roots first (cluster ROM collection layout): try the spec basename
+    # directly there. Then delegate to the shared root set (this worktree + primary
+    # xitari/roms + the 54-ROM store tools/rom_sweep/roms + the collection), trying
+    # BOTH the spec basename stem AND the raw ALE name, so all 54 labeled games resolve.
     for d in _EXTRA_ROM_DIRS
         p = joinpath(d, spec.rom_basename)
         isfile(p) && return p
     end
-    error("ROM not found for $(spec.name) (looked for $(spec.rom_basename) under " *
-          "$(here), $(_PRIMARY_REPO), and $(_EXTRA_ROM_DIRS))")
+    stem = replace(spec.rom_basename, r"\.bin$" => "")
+    names = unique([stem, lowercase(spec.name)])
+    return xai_find_rom(names, xai_rom_roots(; primary_repo = _PRIMARY_REPO,
+                                             extra = _EXTRA_ROM_DIRS))
 end
 
 """A freshly-reset env with the xitari-parity boot (60 NOOP + 4 RESET)."""
@@ -312,6 +331,16 @@ function load_candidates(game::AbstractString)
             push!(seen, idx)
             concept = get(c, "concept", nothing)
             push!(out, Candidate(idx, concept === nothing ? "(unnamed)" : string(concept)))
+        end
+    end
+    # non-core games have no T3 candidate file — fall back to the SAME generic
+    # RAM-byte cause set the shared testbed's candidate_ram_indices(nothing) uses,
+    # so all 54 labeled games get a bounded, uniform candidate cell set.
+    if isempty(out)
+        for (idx, concept) in ((13, "enemy_score"), (14, "player_score"),
+                               (49, "ball_x"), (54, "ball_y"),
+                               (51, "player_y"), (50, "enemy_y"))
+            push!(out, Candidate(idx, concept))
         end
     end
     return out, path
@@ -1027,8 +1056,7 @@ function main(args = ARGS)
     while i <= length(args)
         a = args[i]
         if     a == "--games"
-            v = args[i+1]; i += 2
-            games = lowercase(v) == "core" ? copy(CORE_GAMES) : String.(split(v, ","))
+            games = xai_resolve_games(args[i+1], CORE_GAMES); i += 2
         elseif a == "--game";         games = [args[i+1]]; i += 2
         elseif a == "--target-frame"; target_frame = parse(Int, args[i+1]); i += 2
         elseif a == "--horizon";      horizon = parse(Int, args[i+1]); i += 2
@@ -1045,9 +1073,8 @@ function main(args = ARGS)
 
     if selftest_only
         g = "space_invaders" in games ? "space_invaders" : games[1]
-        haskey(GAME_SPECS, g) || error("unknown game $g (have $(collect(keys(GAME_SPECS))))")
         println("[acdc] --selftest on $g (target_frame=$target_frame horizon=$horizon)")
-        r = run_game(GAME_SPECS[g]; target_frame = target_frame, horizon = horizon, verbose = true)
+        r = run_game(spec_for(g); target_frame = target_frame, horizon = horizon, verbose = true)
         selftest(r)
         println("[acdc] --selftest: passed, not writing artifacts.")
         return 0
@@ -1061,14 +1088,9 @@ function main(args = ARGS)
     results = GameResult[]
     blockers = String[]
     for g in games
-        if !haskey(GAME_SPECS, g)
-            push!(blockers, "$g: unknown game (have $(collect(keys(GAME_SPECS))))")
-            println("[acdc] !! $g unknown, skipping")
-            continue
-        end
         println("\n========== $g ==========")
         try
-            r = run_game(GAME_SPECS[g]; target_frame = target_frame, horizon = horizon, verbose = true)
+            r = run_game(spec_for(g); target_frame = target_frame, horizon = horizon, verbose = true)
             selftest(r)
             jp, np = write_game_result(r; out_dir = out_dir, where_str = where_str)
             println("[$g] wrote $jp")
