@@ -10,7 +10,7 @@ Pure read over every committed §R record under `phaseA_kording/` · `phaseB_att
 - **Plausibility (Y)** — DOCUMENTED METHOD-TRADITION PROXY (PLAUSIBILITY_BY_TRADITION), NOT a measurement — exposes the §0 danger zone. [0,1] higher=looks-more-convincing.
 
 ## Headline contrast
-On the **position/index regime** (discrete sprite-position outputs, naive gradient = 0): causal/intervention methods average **1.0** (±0.0, n=1) faithfulness vs gradient/correlational methods at **0.0823** (±0.1613, n=2) — a gap of **0.9177**.
+On the **position/index regime** (discrete sprite-position outputs, naive gradient = 0): causal/intervention methods average **0.4859** (±0.3859, n=4) faithfulness vs gradient/correlational methods at **0.2476** (±0.1395, n=9) — a gap of **0.2383**.
 
 Across **all output regimes**, causal/intervention average **0.6642** (n=11) vs gradient/correlational **0.3668** (n=14), gap **0.2974**.
 
@@ -18,7 +18,7 @@ Across **all output regimes**, causal/intervention average **0.6642** (n=11) vs 
 | Phase | n methods | Faithfulness | Plausibility (proxy) | F∧S∧M | Faith (position regime) |
 |---|---|---|---|---|---|
 | phaseA_kording | 8 | 0.4479 ± 0.262 | 0.6688 | 0.3928 | None (n=0) |
-| phaseB_attribution | 12 | 0.4367 ± 0.0996 | 0.8125 | None | 0.0823 (n=2) |
+| phaseB_attribution | 12 | 0.4367 ± 0.0996 | 0.8125 | None | 0.2644 (n=12) |
 | phaseC_mechanistic | 10 | 0.6075 ± 0.2254 | 0.625 | 0.3038 | 1.0 (n=1) |
 
 ## Leaderboard (sorted by faithfulness, desc)
@@ -31,29 +31,29 @@ Across **all output regimes**, causal/intervention average **0.6642** (n=11) vs 
 | phaseC_mechanistic | logit_tuned_lens | causal | 1.0 | None | 0.5 | None | None | None | None |  |
 | ground_truth | ORACLE | oracle | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | ✔ |
 | phaseA_kording | A2_lesions | intervention | 0.9923 | None | 0.55 | 0.9923 | 0.6395 | 0.8891 | 0.8263 |  |
-| phaseB_attribution | kernelshap | gradient | 0.6454 | None | 0.9 | None | None | None | None |  |
-| phaseB_attribution | occlusion | intervention | 0.6387 | None | 0.55 | None | None | None | None |  |
-| phaseB_attribution | lime | gradient | 0.627 | None | 0.9 | None | None | None | None |  |
+| phaseB_attribution | kernelshap | gradient | 0.6454 | 0.5825 | 0.9 | None | None | None | None |  |
+| phaseB_attribution | occlusion | intervention | 0.6387 | 0.5681 | 0.55 | None | None | None | None |  |
+| phaseB_attribution | lime | gradient | 0.627 | 0.5464 | 0.9 | None | None | None | None |  |
 | phaseA_kording | A7_dim_reduction | dim_reduction | 0.6 | None | 0.75 | None | None | None | None |  |
-| phaseB_attribution | rise | gradient | 0.5483 | None | 0.9 | None | None | None | None |  |
+| phaseB_attribution | rise | gradient | 0.5483 | 0.4186 | 0.9 | None | None | None | None |  |
 | phaseC_mechanistic | nmf_pca_dictionaries | dim_reduction | 0.5417 | None | 0.75 | None | None | None | None |  |
 | phaseB_attribution | gradxinput_deeplift | gradient | 0.5162 | 0.1646 | 0.9 | None | None | None | None |  |
 | phaseC_mechanistic | attribution_patching | gradient | 0.5002 | None | 0.9 | None | None | None | None |  |
 | phaseC_mechanistic | ACDC | causal | 0.4699 | None | 0.5 | 0.4699 | 0.3096 | 1.0 | 0.526 |  |
-| phaseB_attribution | smoothgrad | gradient | 0.4191 | None | 0.9 | None | None | None | None |  |
-| phaseB_attribution | vanilla_saliency | gradient | 0.4191 | None | 0.9 | None | None | None | None |  |
-| phaseB_attribution | integrated_gradients | gradient | 0.4099 | 0.0 | 0.9 | None | None | None | None |  |
-| phaseB_attribution | extremal_perturbation | intervention | 0.4013 | None | 0.55 | None | None | None | None |  |
+| phaseB_attribution | smoothgrad | gradient | 0.4191 | 0.1646 | 0.9 | None | None | None | None |  |
+| phaseB_attribution | vanilla_saliency | gradient | 0.4191 | 0.1646 | 0.9 | None | None | None | None |  |
+| phaseB_attribution | integrated_gradients | gradient | 0.4099 | 0.1411 | 0.9 | None | None | None | None |  |
+| phaseB_attribution | extremal_perturbation | intervention | 0.4013 | 0.2779 | 0.55 | None | None | None | None |  |
 | phaseA_kording | A1_connectomics | intervention | 0.3393 | None | 0.55 | 0.3393 | 0.9587 | 1.0 | 0.6877 |  |
-| phaseB_attribution | guided_backprop | gradient | 0.3368 | None | 0.9 | None | None | None | None |  |
+| phaseB_attribution | guided_backprop | gradient | 0.3368 | 0.0 | 0.9 | None | None | None | None |  |
 | phaseA_kording | A5_local_field_potentials | correlational | 0.295 | None | 0.8 | None | None | None | None |  |
 | phaseC_mechanistic | path_patching | causal | 0.2476 | None | 0.5 | None | None | None | None |  |
 | phaseA_kording | A4_spike_word | correlational | 0.2203 | None | 0.8 | 0.2203 | 0.0264 | 0.276 | 0.117 |  |
-| phaseB_attribution | on_distribution_counterfactual | intervention | 0.2167 | None | 0.55 | None | None | None | None |  |
+| phaseB_attribution | on_distribution_counterfactual | intervention | 0.2167 | 0.0976 | 0.55 | None | None | None | None |  |
 | phaseC_mechanistic | sparse_autoencoder | dim_reduction | 0.2088 | None | 0.75 | 0.0769 | 0.1176 | 0.0599 | 0.0815 |  |
 | phaseC_mechanistic | linear_probing_control_tasks | probing | 0.1066 | None | 0.85 | None | None | None | None |  |
 | phaseA_kording | A3_tuning | correlational | 0.0908 | None | 0.8 | 0.0908 | 0.0824 | 0.7306 | 0.1761 |  |
-| phaseB_attribution | expected_gradients | gradient | 0.0618 | None | 0.9 | None | None | None | None |  |
+| phaseB_attribution | expected_gradients | gradient | 0.0618 | 0.0463 | 0.9 | None | None | None | None |  |
 | phaseA_kording | A6_granger | correlational | 0.0454 | None | 0.8 | 0.0454 | 0.8268 | 0.0514 | 0.1245 |  |
 
 ## Danger zone — high plausibility, low faithfulness (top 10)
@@ -74,5 +74,5 @@ Across **all output regimes**, causal/intervention average **0.6642** (n=11) vs 
 - [x] every expected method present — ok
 - [x] no method with null faithfulness — ok
 - [x] positive control present and == 1 — n_pc=1 faith=1.0
-- [x] position-regime gap (causal − gradient) > 0 — gap=0.9177
+- [x] position-regime gap (causal − gradient) > 0 — gap=0.2383
 - [x] plausibility proxy in [0,1] — ok

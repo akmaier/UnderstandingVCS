@@ -845,11 +845,11 @@
       "phase": "regime:position",
       "method": "family_causal_intervention_position",
       "tradition": "causal+intervention",
-      "n_games": 1,
-      "n_records": 1,
-      "mean": 1.0,
-      "ci_lo": 1.0,
-      "ci_hi": 1.0,
+      "n_games": 6,
+      "n_records": 4,
+      "mean": 0.4859,
+      "ci_lo": 0.2273,
+      "ci_hi": 0.5595,
       "mean_over_records": "",
       "ci_lo_over_records": "",
       "ci_hi_over_records": "",
@@ -863,7 +863,7 @@
       "seed_sd": "",
       "seed_sd_source": "",
       "seed_sd_n_records": "",
-      "commits": "members=activation_patching"
+      "commits": "members=activation_patching;extremal_perturbation;occlusion;on_distribution_counterfactual"
     },
     {
       "kind": "family",
@@ -871,10 +871,10 @@
       "method": "family_gradient_correlational_position",
       "tradition": "correlational+gradient",
       "n_games": 6,
-      "n_records": 2,
-      "mean": 0.0823,
-      "ci_lo": 0.0,
-      "ci_hi": 0.3549,
+      "n_records": 9,
+      "mean": 0.2477,
+      "ci_lo": 0.142,
+      "ci_hi": 0.3857,
       "mean_over_records": "",
       "ci_lo_over_records": "",
       "ci_hi_over_records": "",
@@ -888,7 +888,7 @@
       "seed_sd": "",
       "seed_sd_source": "",
       "seed_sd_n_records": "",
-      "commits": "members=gradxinput_deeplift;integrated_gradients"
+      "commits": "members=expected_gradients;gradxinput_deeplift;guided_backprop;integrated_gradients;kernelshap;lime;rise;smoothgrad;vanilla_saliency"
     },
     {
       "kind": "family",
@@ -898,8 +898,8 @@
       "n_games": 6,
       "n_records": 3,
       "mean": 0.5232,
-      "ci_lo": 0.4089,
-      "ci_hi": 0.6123,
+      "ci_lo": 0.4028,
+      "ci_hi": 0.6139,
       "mean_over_records": "",
       "ci_lo_over_records": "",
       "ci_hi_over_records": "",
@@ -923,7 +923,7 @@
       "n_games": 6,
       "n_records": 9,
       "mean": 0.6367,
-      "ci_lo": 0.4105,
+      "ci_lo": 0.4012,
       "ci_hi": 0.8208,
       "mean_over_records": "",
       "ci_lo_over_records": "",
@@ -949,7 +949,7 @@
       "n_records": "",
       "mean": 0.3096,
       "ci_lo": 0.1427,
-      "ci_hi": 0.473,
+      "ci_hi": 0.4766,
       "mean_over_records": "",
       "ci_lo_over_records": "",
       "ci_hi_over_records": "",
@@ -974,7 +974,7 @@
       "n_records": "",
       "mean": 0.4699,
       "ci_lo": 0.1822,
-      "ci_hi": 0.7776,
+      "ci_hi": 0.7733,
       "mean_over_records": "",
       "ci_lo_over_records": "",
       "ci_hi_over_records": "",
@@ -1023,7 +1023,7 @@
       "n_games": 6,
       "n_records": "",
       "mean": 0.0768,
-      "ci_lo": 0.0508,
+      "ci_lo": 0.0521,
       "ci_hi": 0.1016,
       "mean_over_records": "",
       "ci_lo_over_records": "",
@@ -1047,9 +1047,9 @@
       "tradition": "causal_intervention \u2212 gradient_correlational",
       "n_games": 6,
       "n_records": "",
-      "mean": 0.9177,
-      "ci_lo": NaN,
-      "ci_hi": NaN,
+      "mean": 0.2382,
+      "ci_lo": -0.0488,
+      "ci_hi": 0.3153,
       "mean_over_records": "",
       "ci_lo_over_records": "",
       "ci_hi_over_records": "",
@@ -1119,13 +1119,13 @@
     {
       "variant": "equal_by_output_regime_position",
       "regime": "position",
-      "causal_intervention_mean": 1.0,
-      "gradient_correlational_mean": 0.0823,
-      "gap": 0.9177,
-      "gap_ci_lo": NaN,
-      "gap_ci_hi": NaN,
-      "n_causal_methods": 1,
-      "n_gradient_methods": 2,
+      "causal_intervention_mean": 0.4859,
+      "gradient_correlational_mean": 0.2477,
+      "gap": 0.2382,
+      "gap_ci_lo": -0.0462,
+      "gap_ci_hi": 0.3153,
+      "n_causal_methods": 4,
+      "n_gradient_methods": 9,
       "gap_excludes_zero": false
     },
     {
@@ -1155,13 +1155,13 @@
     {
       "variant": "position_only",
       "regime": "position",
-      "causal_intervention_mean": 1.0,
-      "gradient_correlational_mean": 0.0823,
-      "gap": 0.9177,
-      "gap_ci_lo": NaN,
-      "gap_ci_hi": NaN,
-      "n_causal_methods": 1,
-      "n_gradient_methods": 2,
+      "causal_intervention_mean": 0.4859,
+      "gradient_correlational_mean": 0.2477,
+      "gap": 0.2382,
+      "gap_ci_lo": -0.0488,
+      "gap_ci_hi": 0.3153,
+      "n_causal_methods": 4,
+      "n_gradient_methods": 9,
       "gap_excludes_zero": false
     }
   ],
@@ -1170,8 +1170,8 @@
     "checks": [
       {
         "name": "ci_lo <= mean <= ci_hi for every row",
-        "pass": false,
-        "detail": "violations=[('position_regime_gap', nan, 0.9177, nan)]"
+        "pass": true,
+        "detail": "ok"
       },
       {
         "name": "every row has a finite CI",
@@ -1181,7 +1181,7 @@
       {
         "name": "position-regime gap CI excludes 0",
         "pass": false,
-        "detail": "gap=0.9177 ci=[nan,nan]"
+        "detail": "gap=0.2382 ci=[-0.0488,0.3153]"
       },
       {
         "name": "causal>gradient gap positive under all aggregation variants",

@@ -236,7 +236,28 @@ def method_key(rec):
 
 
 def output_regime(rec):
-    """content | position | other — from target_output / filename token."""
+    """content | position | other.
+
+    Keys on the record's OWN committed regime signals, in this order:
+      1. ``extra.output_kind`` — the canonical regime tag written by the shared
+         gameplay-testbed runners ("position" | "content"). This is the robust
+         source: the P2 redesign left the OLDER runners (saliency, occlusion,
+         perturbation, rise, lime, kernelshap, smoothgrad, guided_backprop,
+         expected_gradients, ig_baseline_sweep, counterfactual) emitting a BARE
+         ``target_output`` = "screen_region(...)@rNcM" / "content(ram_self@N)"
+         with NO "position" token, while tagging the regime in extra.output_kind;
+         the NEWER runners (gradxinput_deeplift) moved the tag into a
+         "position:" / "content:" ``target_output`` prefix instead. Reading
+         output_kind first unifies both variants (and is why every Phase-B
+         method's position/content records now contribute, not just gradxinput/IG).
+      2. ``target_output`` string token — "position:"/"ball_pixel" ⇒ position,
+         "content"-prefix/"content(" ⇒ content (covers the newer prefix runners
+         and the pilot records whose only regime signal is the target string).
+    Nothing is invented: each branch reads a committed field verbatim.
+    """
+    ok = ((rec.get("extra") or {}).get("output_kind") or "").strip().lower()
+    if ok in ("position", "content"):
+        return ok
     t = (rec.get("target_output") or "").lower()
     st = (rec.get("state") or "")
     blob = (t + " " + str(st)).lower()

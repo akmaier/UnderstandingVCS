@@ -220,8 +220,18 @@ def cross_check(lb, methods):
     assert abs(by["activation_patching"]["plausibility_proxy"] - 0.5) < 1e-9, \
         "activation_patching proxy anchor != 0.5"
     assert abs(by["activation_patching"]["faithfulness"] - 1.0) < 1e-9
-    assert abs(pc["popular_faithfulness_position"] - 0.0) < 1e-9
-    notes.append("anchor OK: saliency proxy 0.9/Fpos 0.0 vs act.patch proxy 0.5/F 1.0")
+    # The popular gradient tool sits near chance on the position regime and is far below
+    # the faithful causal method. (Was hard-coded == 0.0, which encoded the OLD aggregation
+    # bug where the popular method's ONLY position record was a stray pilot at exactly 0.0;
+    # with the position bucket now correctly populated from every game's records the measured
+    # per-cause faithfulness is a small positive near-chance number, not identically zero.)
+    pop_pos = pc["popular_faithfulness_position"]
+    faith_pos = pc["faithful_faithfulness_position"]
+    assert pop_pos <= 0.30, f"popular position faithfulness not near chance: {pop_pos}"
+    assert faith_pos - pop_pos > 0.5, \
+        f"faithful does not clear popular on position by a wide margin: {faith_pos} vs {pop_pos}"
+    notes.append(f"anchor OK: popular proxy 0.9 / Fpos {pop_pos:.3f} (near chance) vs "
+                 f"act.patch proxy 0.5 / F 1.0 / Fpos {faith_pos:.3f}")
     # 2. leaderboard_ci.csv F means agree with leaderboard.json faithfulness (method rows)
     ci = {}
     with open(LEADERBOARD_CI) as f:

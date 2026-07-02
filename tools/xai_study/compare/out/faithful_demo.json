@@ -25,30 +25,30 @@
     "commits": "86fdc27;c157ec63"
   },
   "popular_method": {
-    "method": "integrated_gradients",
+    "method": "vanilla_saliency",
     "phase": "phaseB_attribution",
     "tradition": "gradient",
-    "faithfulness_all_regimes": 0.4099,
-    "faithfulness_ci95": 0.2151,
-    "faithfulness_position_regime": 0.0,
-    "faithfulness_content_regime": 0.6706,
+    "faithfulness_all_regimes": 0.4191,
+    "faithfulness_ci95": 0.2356,
+    "faithfulness_position_regime": 0.1646,
+    "faithfulness_content_regime": 0.6735,
     "plausibility_proxy": 0.9,
     "n_games": 6,
-    "n_records": 14,
+    "n_records": 12,
     "faith_source": "value:pearson_corr_with_oracle",
     "metric_names": "pearson_corr_with_oracle",
-    "commits": "22881c2;9bc37f8b"
+    "commits": "c157ec63"
   },
   "pair_contrast": {
     "regime": "position",
     "faithful": "activation_patching",
-    "popular": "integrated_gradients",
+    "popular": "vanilla_saliency",
     "faithful_faithfulness_position": 1.0,
-    "popular_faithfulness_position": 0.0,
-    "position_gap": 1.0,
+    "popular_faithfulness_position": 0.1646,
+    "position_gap": 0.8354,
     "faithful_faithfulness_all_regimes": 1.0,
-    "popular_faithfulness_all_regimes": 0.4099,
-    "all_regime_gap": 0.5901,
+    "popular_faithfulness_all_regimes": 0.4191,
+    "all_regime_gap": 0.5809,
     "oracle_ceiling": 1.0,
     "naive_gradient_floor": 0.0
   },
@@ -56,13 +56,13 @@
     "regime": "position",
     "faithful_bucket": "causal/intervention",
     "popular_bucket": "gradient/correlational",
-    "faithful_bucket_mean": 1.0,
-    "faithful_bucket_ci95": 0.0,
-    "faithful_bucket_n": 1,
-    "popular_bucket_mean": 0.0823,
-    "popular_bucket_ci95": 0.1613,
-    "popular_bucket_n": 2,
-    "bucket_gap": 0.9177,
+    "faithful_bucket_mean": 0.4859,
+    "faithful_bucket_ci95": 0.3859,
+    "faithful_bucket_n": 4,
+    "popular_bucket_mean": 0.2476,
+    "popular_bucket_ci95": 0.1395,
+    "popular_bucket_n": 9,
+    "bucket_gap": 0.2383,
     "source": "leaderboard.headline_contrast.position_regime (E6-1)"
   },
   "per_game": [
@@ -70,49 +70,49 @@
       "game": "breakout",
       "faithful_faithfulness": 1.0,
       "faithful_regime": "all",
-      "popular_faithfulness": 0.3749,
-      "popular_regime": "all",
-      "gap": 0.6251
-    },
-    {
-      "game": "ms_pacman",
-      "faithful_faithfulness": 1.0,
-      "faithful_regime": "all",
-      "popular_faithfulness": 0.4053,
-      "popular_regime": "all",
-      "gap": 0.5947
-    },
-    {
-      "game": "pong",
-      "faithful_faithfulness": 1.0,
-      "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
       "gap": 1.0
     },
     {
+      "game": "ms_pacman",
+      "faithful_faithfulness": 1.0,
+      "faithful_regime": "all",
+      "popular_faithfulness": 0.0,
+      "popular_regime": "position",
+      "gap": 1.0
+    },
+    {
+      "game": "pong",
+      "faithful_faithfulness": 1.0,
+      "faithful_regime": "position",
+      "popular_faithfulness": 0.2778,
+      "popular_regime": "position",
+      "gap": 0.7222
+    },
+    {
       "game": "qbert",
       "faithful_faithfulness": 1.0,
       "faithful_regime": "all",
-      "popular_faithfulness": 0.4997,
-      "popular_regime": "all",
-      "gap": 0.5003
+      "popular_faithfulness": 0.0,
+      "popular_regime": "position",
+      "gap": 1.0
     },
     {
       "game": "seaquest",
       "faithful_faithfulness": 1.0,
       "faithful_regime": "all",
-      "popular_faithfulness": 0.3549,
-      "popular_regime": "all",
-      "gap": 0.6451
+      "popular_faithfulness": 0.7098,
+      "popular_regime": "position",
+      "gap": 0.2902
     },
     {
       "game": "space_invaders",
       "faithful_faithfulness": 1.0,
       "faithful_regime": "all",
-      "popular_faithfulness": 0.4999,
-      "popular_regime": "all",
-      "gap": 0.5001
+      "popular_faithfulness": 0.0,
+      "popular_regime": "position",
+      "gap": 1.0
     }
   ],
   "per_game_paired_games": [
@@ -124,8 +124,8 @@
     "space_invaders"
   ],
   "metric_name": "faithfulness_gap_causal_minus_popular_position_regime",
-  "value": 0.9177,
-  "summary": "On a system where the answer is known exactly \u2014 the bit-exact VCS with the \u00a71 intervention oracle as ground truth \u2014 the field's default attribution tool scores near chance where a causal method scores near the ceiling. On the position/index regime (discrete sprite-position outputs whose naive gradient is provably zero, \u00a71), the FAITHFUL method 'activation_patching' (causal) reaches faithfulness 1.000 (\u2248 the oracle ceiling 1.0), while the POPULAR method 'integrated_gradients' (gradient) collapses to 0.000 (\u2248 the 0.0 naive-gradient floor) \u2014 a per-method gap of 1.000. Aggregated over the regime, causal/intervention methods average 1.000 (\u00b10.000, n=1) vs 0.082 (\u00b10.161, n=2) for gradient/correlational methods \u2014 a 0.918 faithfulness gap. The popular method nonetheless carries the higher human-plausibility proxy (0.9 vs 0.5): plausible \u2260 faithful (the \u00a70 danger zone), measured.",
+  "value": 0.2383,
+  "summary": "On a system where the answer is known exactly \u2014 the bit-exact VCS with the \u00a71 intervention oracle as ground truth \u2014 the field's default attribution tool scores near chance where a causal method scores near the ceiling. On the position/index regime (discrete sprite-position outputs whose naive gradient is provably zero, \u00a71), the FAITHFUL method 'activation_patching' (causal) reaches faithfulness 1.000 (\u2248 the oracle ceiling 1.0), while the POPULAR method 'vanilla_saliency' (gradient) collapses to 0.165 (\u2248 the 0.0 naive-gradient floor) \u2014 a per-method gap of 0.835. Aggregated over the regime, causal/intervention methods average 0.486 (\u00b10.386, n=4) vs 0.248 (\u00b10.140, n=9) for gradient/correlational methods \u2014 a 0.238 faithfulness gap. The popular method nonetheless carries the higher human-plausibility proxy (0.9 vs 0.5): plausible \u2260 faithful (the \u00a70 danger zone), measured.",
   "arrays": "faithful_demo.npz",
   "self_check": {
     "pass": true,
@@ -133,17 +133,17 @@
       {
         "name": "faithful beats popular on the position regime",
         "pass": true,
-        "detail": "1.0000 > 0.0000"
+        "detail": "1.0000 > 0.1646"
       },
       {
         "name": "per-method position gap > 0",
         "pass": true,
-        "detail": "gap=1.0000"
+        "detail": "gap=0.8354"
       },
       {
         "name": "aggregate bucket gap matches leaderboard headline",
         "pass": true,
-        "detail": "demo=0.9177 lb=0.9177"
+        "detail": "demo=0.2383 lb=0.2383"
       },
       {
         "name": "faithful is near ceiling (>=0.9 of oracle 1.0)",
@@ -151,9 +151,9 @@
         "detail": "1.0000 >= 0.9"
       },
       {
-        "name": "popular is near chance (<=0.15)",
+        "name": "popular is near chance (<=0.25, i.e. far below the causal ceiling)",
         "pass": true,
-        "detail": "0.0000 <= 0.15"
+        "detail": "0.1646 <= 0.25"
       },
       {
         "name": "popular plausibility proxy > faithful (danger zone)",

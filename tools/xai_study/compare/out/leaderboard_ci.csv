@@ -32,13 +32,13 @@ method,phaseC_mechanistic,sparse_autoencoder,dim_reduction,6,7,0.1568,0.0282,0.3
 method,ground_truth,ORACLE,oracle,1,1,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.0,construction (exact oracle),0,
 family,ALL,family_causal_intervention,causal+intervention,6,11,0.6644,0.5985,0.7414,,,,,,,,,,,,,,members=A1_connectomics;A2_lesions;ACDC;activation_patching;causal_scrubbing;extremal_perturbation;interchange_interventions_das;logit_tuned_lens;occlusion;on_distribution_counterfactual;path_patching
 family,ALL,family_gradient_correlational,correlational+gradient,6,14,0.3673,0.3244,0.4111,,,,,,,,,,,,,,members=A3_tuning;A4_spike_word;A5_local_field_potentials;A6_granger;attribution_patching;expected_gradients;gradxinput_deeplift;guided_backprop;integrated_gradients;kernelshap;lime;rise;smoothgrad;vanilla_saliency
-family,regime:position,family_causal_intervention_position,causal+intervention,1,1,1.0,1.0,1.0,,,,,,,,,,,,,,members=activation_patching
-family,regime:position,family_gradient_correlational_position,correlational+gradient,6,2,0.0823,0.0,0.3549,,,,,,,,,,,,,,members=gradxinput_deeplift;integrated_gradients
-family,regime:content,family_causal_intervention_content,causal+intervention,6,3,0.5232,0.4089,0.6123,,,,,,,,,,,,,,members=extremal_perturbation;occlusion;on_distribution_counterfactual
-family,regime:content,family_gradient_correlational_content,correlational+gradient,6,9,0.6367,0.4105,0.8208,,,,,,,,,,,,,,members=expected_gradients;gradxinput_deeplift;guided_backprop;integrated_gradients;kernelshap;lime;rise;smoothgrad;vanilla_saliency
-headline,headline,ACDC_S,,6,,0.3096,0.1427,0.473,,,,,,,,,,,,,,
-headline,headline,ACDC_F_faithfulness,,6,,0.4699,0.1822,0.7776,,,,,,,,,,,,,,
+family,regime:position,family_causal_intervention_position,causal+intervention,6,4,0.4859,0.2273,0.5595,,,,,,,,,,,,,,members=activation_patching;extremal_perturbation;occlusion;on_distribution_counterfactual
+family,regime:position,family_gradient_correlational_position,correlational+gradient,6,9,0.2477,0.142,0.3857,,,,,,,,,,,,,,members=expected_gradients;gradxinput_deeplift;guided_backprop;integrated_gradients;kernelshap;lime;rise;smoothgrad;vanilla_saliency
+family,regime:content,family_causal_intervention_content,causal+intervention,6,3,0.5232,0.4028,0.6139,,,,,,,,,,,,,,members=extremal_perturbation;occlusion;on_distribution_counterfactual
+family,regime:content,family_gradient_correlational_content,correlational+gradient,6,9,0.6367,0.4012,0.8208,,,,,,,,,,,,,,members=expected_gradients;gradxinput_deeplift;guided_backprop;integrated_gradients;kernelshap;lime;rise;smoothgrad;vanilla_saliency
+headline,headline,ACDC_S,,6,,0.3096,0.1427,0.4766,,,,,,,,,,,,,,
+headline,headline,ACDC_F_faithfulness,,6,,0.4699,0.1822,0.7733,,,,,,,,,,,,,,
 headline,headline,SAE_matched_feature_S,,6,,0.1176,0.0,0.3528,,,,,,,,,,,,,,
-headline,headline,wholestate_M,,6,,0.0768,0.0508,0.1016,,,,,,,,,,,,,,
-headline,headline,position_regime_gap,causal_intervention − gradient_correlational,6,,0.9177,nan,nan,,,,,,,,,,,,,,excludes_zero=False
+headline,headline,wholestate_M,,6,,0.0768,0.0521,0.1016,,,,,,,,,,,,,,
+headline,headline,position_regime_gap,causal_intervention − gradient_correlational,6,,0.2382,-0.0488,0.3153,,,,,,,,,,,,,,excludes_zero=False
 headline,headline,all_regime_gap,causal_intervention − gradient_correlational,6,,0.2971,0.2317,0.3755,,,,,,,,,,,,,,excludes_zero=True
