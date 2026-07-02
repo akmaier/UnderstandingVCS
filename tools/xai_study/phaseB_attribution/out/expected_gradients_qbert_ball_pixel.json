@@ -1,7 +1,7 @@
 {
   "arrays": "expected_gradients_qbert_ball_pixel.npz",
   "ci": null,
-  "commit": "9e3cdfd",
+  "commit": "9bc37f8b",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-EG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "cause_names": [
@@ -98,8 +98,8 @@
     "eg_samples": 64,
     "eg_self_baseline_invariant": false,
     "harness_positive_control": {
-      "deletion_auc": 0.011904761904761904,
-      "insertion_auc": 0.9404761904761905,
+      "deletion_auc": 0.8595096792426171,
+      "insertion_auc": 0.16429984456690688,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the EG numbers above are a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "oracle_column_degenerate": false,
@@ -108,16 +108,16 @@
     },
     "headline_metrics": {
       "completeness_err": 0.0,
-      "deletion_auc": 0.20238095238095238,
+      "deletion_auc": 0.674120389995761,
       "eg_max_abs": 0.0,
-      "insertion_auc": 0.7738095238095238,
+      "insertion_auc": 0.3496891338137629,
       "pearson_corr": 0.0,
       "precision_at_k": 0.0,
       "spearman_corr": 0.0,
       "topk": 3,
-      "y_ref_mean": 0.0
+      "y_ref_mean": 1.0
     },
-    "method_definition": "EG_i(x) = E_{x'~D, α~U(0,1)}[(x_i−x'_i)·∂y/∂x_i|_{x'+α(x−x')}], Monte-Carlo over 64 reference draws per run; D = 120 genuine VCS RAM states (E0-2 recorder, frames 1..120).",
+    "method_definition": "EG_i(x) = E_{x'~D, α~U(0,1)}[(x_i−x'_i)·∂y/∂x_i|_{x'+α(x−x')}], Monte-Carlo over 64 reference draws per run; D = 90 genuine VCS RAM states (E0-2 recorder, frames 1..90).",
     "n_refs_self_differs": -1,
     "oracle_abs_delta_per_cause": {
       "joystick:RIGHT": 0.0,
@@ -125,36 +125,36 @@
       "ram[103]:set": 0.0,
       "ram[105]:occlude": 0.0,
       "ram[105]:set": 0.0,
-      "ram[21]:occlude": 0.0,
-      "ram[21]:set": 0.0,
+      "ram[21]:occlude": 52.0,
+      "ram[21]:set": 52.0,
       "ram[33]:occlude": 0.0,
       "ram[33]:set": 0.0,
       "ram[35]:occlude": 0.0,
       "ram[35]:set": 0.0,
-      "ram[39]:occlude": 0.0,
-      "ram[39]:set": 148.0,
+      "ram[39]:occlude": 77.0,
+      "ram[39]:set": 7512.0,
       "ram[43]:occlude": 0.0,
       "ram[43]:set": 0.0,
       "ram[46]:occlude": 0.0,
       "ram[46]:set": 0.0,
       "ram[47]:occlude": 0.0,
       "ram[47]:set": 0.0,
-      "ram[52]:occlude": 0.0,
-      "ram[52]:set": 0.0,
-      "ram[54]:occlude": 148.0,
-      "ram[54]:set": 16.0,
+      "ram[52]:occlude": 52.0,
+      "ram[52]:set": 52.0,
+      "ram[54]:occlude": 52.0,
+      "ram[54]:set": 52.0,
       "ram[67]:occlude": 0.0,
-      "ram[67]:set": 0.0,
+      "ram[67]:set": 72.0,
       "ram[69]:occlude": 0.0,
       "ram[69]:set": 0.0,
       "ram[71]:occlude": 0.0,
       "ram[71]:set": 0.0,
       "ram[74]:occlude": 0.0,
       "ram[74]:set": 0.0,
-      "ram[83]:occlude": 0.0,
-      "ram[83]:set": 0.0,
-      "ram[85]:occlude": 0.0,
-      "ram[85]:set": 0.0,
+      "ram[83]:occlude": 52.0,
+      "ram[83]:set": 52.0,
+      "ram[85]:occlude": 52.0,
+      "ram[85]:set": 52.0,
       "ram[86]:occlude": 0.0,
       "ram[86]:set": 0.0,
       "ram[89]:occlude": 0.0,
@@ -165,9 +165,15 @@
     },
     "output_kind": "position",
     "output_note": "POSITION/INDEX output — the §1 caveat: the pixel value comes from a discrete sprite column (round/argmax), so there is no differentiable RAM read and Expected Gradients VANISHES (max|attr|<1e-6) for EVERY reference-sample seed. Averaging the path-integrated gradient over a DISTRIBUTION of REAL reference states cannot manufacture a gradient that does not exist (same failure as single-baseline IG, max|attr|=0.0), so EG scores near chance regardless of the reference distribution — the 'plausible ≠ faithful' contrast; the intervention oracle is the sole truth here.",
-    "ref_pool_size": 120,
+    "ref_pool_size": 90,
     "ref_self_byte_max": -1,
     "ref_self_byte_min": -1,
+    "sampler_on": {
+      "note": "naive index EG ≡ 0 (Prop. prop:zero); the bilinear sampler restores a real ∂pixel/∂ram[position_byte] EG. per_cause_faithfulness_null=true ⇒ the sampler's position byte is not among this game's scored candidate causes, so the per-cause corr is null (0.0 by convention), NOT a genuine zero — the keystone (a non-vanishing gradient on the full 128-byte map) holds.",
+      "per_cause_faithfulness_null": false,
+      "position_gradient_restored": true,
+      "restored_grad_l1": 1.0
+    },
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE Expected Gradients over outputs×causes×games×references on GPU; the forward is bit-exact to this map.",
     "stability": {
       "corr_max": 0.0,
@@ -225,15 +231,15 @@
             "tia[COLUBK]:set": 0.0
           },
           "completeness_err": 0.0,
-          "deletion_auc": 0.20238095238095238,
+          "deletion_auc": 0.674120389995761,
           "eg_max_abs": 0.0,
-          "insertion_auc": 0.7738095238095238,
+          "insertion_auc": 0.3496891338137629,
           "pearson_corr": 0.0,
           "precision_at_k": 0.0,
           "seed": 0,
           "spearman_corr": 0.0,
           "topk": 3,
-          "y_ref_mean": 0.0
+          "y_ref_mean": 1.0
         },
         {
           "attr_per_cause": {
@@ -281,15 +287,15 @@
             "tia[COLUBK]:set": 0.0
           },
           "completeness_err": 0.0,
-          "deletion_auc": 0.20238095238095238,
+          "deletion_auc": 0.674120389995761,
           "eg_max_abs": 0.0,
-          "insertion_auc": 0.7738095238095238,
+          "insertion_auc": 0.3496891338137629,
           "pearson_corr": 0.0,
           "precision_at_k": 0.0,
           "seed": 1,
           "spearman_corr": 0.0,
           "topk": 3,
-          "y_ref_mean": 0.0
+          "y_ref_mean": 1.0
         },
         {
           "attr_per_cause": {
@@ -337,15 +343,15 @@
             "tia[COLUBK]:set": 0.0
           },
           "completeness_err": 0.0,
-          "deletion_auc": 0.20238095238095238,
+          "deletion_auc": 0.674120389995761,
           "eg_max_abs": 0.0,
-          "insertion_auc": 0.7738095238095238,
+          "insertion_auc": 0.3496891338137629,
           "pearson_corr": 0.0,
           "precision_at_k": 0.0,
           "seed": 2,
           "spearman_corr": 0.0,
           "topk": 3,
-          "y_ref_mean": 0.0
+          "y_ref_mean": 1.0
         },
         {
           "attr_per_cause": {
@@ -393,15 +399,15 @@
             "tia[COLUBK]:set": 0.0
           },
           "completeness_err": 0.0,
-          "deletion_auc": 0.20238095238095238,
+          "deletion_auc": 0.674120389995761,
           "eg_max_abs": 0.0,
-          "insertion_auc": 0.7738095238095238,
+          "insertion_auc": 0.3496891338137629,
           "pearson_corr": 0.0,
           "precision_at_k": 0.0,
           "seed": 3,
           "spearman_corr": 0.0,
           "topk": 3,
-          "y_ref_mean": 0.0
+          "y_ref_mean": 1.0
         },
         {
           "attr_per_cause": {
@@ -449,49 +455,64 @@
             "tia[COLUBK]:set": 0.0
           },
           "completeness_err": 0.0,
-          "deletion_auc": 0.20238095238095238,
+          "deletion_auc": 0.674120389995761,
           "eg_max_abs": 0.0,
-          "insertion_auc": 0.7738095238095238,
+          "insertion_auc": 0.3496891338137629,
           "pearson_corr": 0.0,
           "precision_at_k": 0.0,
           "seed": 4,
           "spearman_corr": 0.0,
           "topk": 3,
-          "y_ref_mean": 0.0
+          "y_ref_mean": 1.0
         }
       ],
       "precision_at_k_max": 0.0,
       "precision_at_k_min": 0.0
     },
     "substrate": "jutari (Julia) — Zygote Expected Gradients (Erion 2021) over the RAM tape with a reference distribution of real states + TRUE-VCS deletion/insertion re-runs.",
+    "testbed": {
+      "cause_density_above_floor": 13,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 42,
+      "position_byte_ram_index": 67,
+      "prefix": 90,
+      "reference_pool": "gameplay_trajectory(seed=0,prefix=90)",
+      "reference_pool_note": "EG's background distribution D is the RAM tape along the SAME seeded random-action gameplay trajectory (frames 1..90), so the causal byte VARIES across references ((x−x0)≠0) — the fix for the NOOP-tape degeneracy where a constant byte zeroed EG. This REPLACES the old NOOP reference pool.",
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r19c1",
+      "state_kind": "seeded_random_action_gameplay"
+    },
     "vs_single_baseline_ig": {
       "delta_deletion_auc": 0.0,
       "delta_pearson": 0.0,
       "delta_precision_at_k": 0.0,
       "ig_baseline": "zeros",
       "ig_completeness_err": 0.0,
-      "ig_deletion_auc": 0.20238095238095238,
-      "ig_insertion_auc": 0.7738095238095238,
+      "ig_deletion_auc": 0.674120389995761,
+      "ig_insertion_auc": 0.3496891338137629,
       "ig_max_abs": 0.0,
       "ig_pearson": 0.0,
       "ig_precision_at_k": 0.0,
       "ig_spearman": 0.0,
       "interpretation": "EG (Erion 2021) was proposed to remove IG's sensitive single-baseline choice (P2-E4-5 measured that sensitivity). On the VCS content path the head-to-head is decisive: the ranking is baseline-INVARIANT (∂y/∂u constant), so EG and IG score the SAME corr/precision@k (Δcorr=0.0) — EG buys robustness (it avoids the IG degeneracy where a `zeros` baseline byte equals a 0-valued content byte) at M× the gradient compute, NOT a faithfulness gain. The position output: both VANISH."
     },
-    "y_full": 148.0
+    "y_full": 0.0
   },
   "game": "qbert",
   "method": "expected_gradients",
   "metric_name": "pearson_corr_with_oracle",
   "n": 42,
-  "oracle_ref": "oracle_intervene@qbert#ball_pixel@r65c85",
+  "oracle_ref": "oracle_intervene@qbert#screen_region(n_changed_px)@r19c1",
   "paper": "P2",
   "phase": "phaseB_attribution",
   "seed": 0,
-  "state": "f120+30",
+  "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": 0.0,
-  "target_output": "ball_pixel@r65c85",
-  "timestamp": "1782152445",
+  "target_output": "screen_region(n_changed_px)@r19c1",
+  "timestamp": "1782942759",
   "value": 0.0,
   "where": "local"
 }

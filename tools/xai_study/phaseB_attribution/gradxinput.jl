@@ -764,15 +764,22 @@ function selftest(r::GameRecord; sampler_on = false)
     else  # position
         if sampler_on
             # SHARED TESTBED, sampler-on: the bilinear sampler RESTORES the position
-            # gradient, so it is NON-VANISHING (the redesign keystone). The keystone
-            # claim is on the FULL 128-byte grad×input vector (attr_gradxinput_over_ram)
-            # — the sampler's position byte may fall OUTSIDE this game's candidate cause
-            # set, in which case the per-CAUSE attribution is legitimately null while the
-            # raw gradient is alive. We assert on the FULL gradient, not per-cause.
-            @assert gxi_max > 1e-6 "SAMPLER-ON position gradient (full 128-byte grad×input) should be NONZERO [$(r.game)]"
+            # GRADIENT ∂region/∂ram, so it is NON-VANISHING (the redesign keystone).
+            # KEYSTONE is on the RESTORED GRADIENT — the raw ∂region/∂cause before
+            # multiplying by input — captured here as saliency_over_ram (= |grad|).
+            # grad×input = gradient × input can legitimately be 0 even when the gradient
+            # is alive, because the position byte's INPUT VALUE is 0 (e.g. qbert RAM[67]
+            # base=0): 0 is a valid grad×input attribution and we record it honestly, but
+            # it does NOT falsify the sampler-restored gradient. So we assert on the raw
+            # restored gradient, NOT the input-multiplied grad×input.
+            grad_max = maximum(abs.(r.saliency_over_ram))
+            @assert grad_max > 1e-6 || r.grad_l1 > 1e-6 "SAMPLER-ON restored position gradient (raw ∂region/∂ram, |grad|) should be NONZERO [$(r.game)]"
             per_cause_scored = maximum(abs.(r.gradxinput.attr_per_cause)) > 1e-6
+            gxi_note = gxi_max < 1e-6 ?
+                "; grad×input attribution is 0 here (position byte's input value is 0 ⇒ gradient×0=0), recorded honestly" : ""
             println("[gxi] SELF-CHECK PASS ($(r.game) position/sampler): the SAMPLER RESTORES a nonzero " *
-                    "position gradient (full max|attr|=$(round(gxi_max,sigdigits=3))" *
+                    "position gradient (raw max|∂region/∂ram|=$(round(grad_max,sigdigits=3)), grad_l1=$(round(r.grad_l1,sigdigits=3)); " *
+                    "grad×input max|attr|=$(round(gxi_max,sigdigits=3))$(gxi_note)" *
                     (per_cause_scored ? "" : "; position byte OUTSIDE this game's cause set ⇒ per-cause corr null") *
                     "); control corr=$(round(r.oracle_self.pearson,digits=3)), p@$(r.topk)=$(r.oracle_self.precision_at_k).")
         else

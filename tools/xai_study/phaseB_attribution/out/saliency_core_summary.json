@@ -1,5 +1,5 @@
 {
-  "commit": "6f4df476",
+  "commit": "c157ec63",
   "games": [
     "pong",
     "breakout",
@@ -66,19 +66,19 @@
     },
     {
       "content_ram_index": -1,
-      "deletion_auc": 0.45304878048780484,
+      "deletion_auc": 0.4384146341463414,
       "game": "breakout",
       "grad_l1": 1.0,
-      "insertion_auc": 0.6335365853658537,
+      "insertion_auc": 0.6481707317073171,
       "is_content_path": false,
       "oracle_self_pearson": 1.0,
       "oracle_self_precision_at_k": 1.0,
       "output": "screen_region(n_changed_px)@r190c103",
       "output_kind": "position",
-      "pearson": 0.0,
+      "pearson": -0.2363870162780866,
       "precision_at_k": 0.0,
-      "sal_max_abs": 0.0,
-      "spearman": 0.0
+      "sal_max_abs": 1.0,
+      "spearman": -0.33374732645500127
     },
     {
       "content_ram_index": 81,
@@ -98,19 +98,19 @@
     },
     {
       "content_ram_index": -1,
-      "deletion_auc": 0.7962731191767487,
+      "deletion_auc": 0.8094840773188707,
       "game": "space_invaders",
       "grad_l1": 1.0,
-      "insertion_auc": 0.3998922263941037,
+      "insertion_auc": 0.3884890835766931,
       "is_content_path": false,
       "oracle_self_pearson": 1.0,
       "oracle_self_precision_at_k": 1.0,
-      "output": "screen_region(n_changed_px)@r170c43",
+      "output": "screen_region(n_changed_px)@r192c35",
       "output_kind": "position",
-      "pearson": 0.0,
+      "pearson": -0.03339178677267661,
       "precision_at_k": 0.0,
-      "sal_max_abs": 0.0,
-      "spearman": 0.0
+      "sal_max_abs": 1.0,
+      "spearman": 0.24965890248221642
     },
     {
       "content_ram_index": 118,
@@ -130,19 +130,19 @@
     },
     {
       "content_ram_index": -1,
-      "deletion_auc": 0.8146885763490243,
+      "deletion_auc": 0.96757797550708,
       "game": "seaquest",
-      "grad_l1": 0.0,
-      "insertion_auc": 0.212949674703406,
+      "grad_l1": 1.0,
+      "insertion_auc": 0.06666188289322618,
       "is_content_path": false,
       "oracle_self_pearson": 1.0,
       "oracle_self_precision_at_k": 1.0,
-      "output": "screen_region(n_changed_px)@r105c80",
+      "output": "screen_region(n_changed_px)@r52c77",
       "output_kind": "position",
-      "pearson": 0.0,
-      "precision_at_k": 0.0,
-      "sal_max_abs": 0.0,
-      "spearman": 0.0
+      "pearson": 0.7097972052076026,
+      "precision_at_k": 0.3333333333333333,
+      "sal_max_abs": 1.0,
+      "spearman": 0.3410477771148741
     },
     {
       "content_ram_index": 16,
@@ -162,19 +162,19 @@
     },
     {
       "content_ram_index": -1,
-      "deletion_auc": 0.6582541567695963,
+      "deletion_auc": 0.6867577197149646,
       "game": "ms_pacman",
-      "grad_l1": 0.0,
-      "insertion_auc": 0.6119358669833729,
+      "grad_l1": 1.0,
+      "insertion_auc": 0.6092042755344418,
       "is_content_path": false,
       "oracle_self_pearson": 1.0,
       "oracle_self_precision_at_k": 1.0,
-      "output": "screen_region(n_changed_px)@r105c80",
+      "output": "screen_region(n_changed_px)@r84c77",
       "output_kind": "position",
-      "pearson": 0.0,
+      "pearson": -0.033516269419250996,
       "precision_at_k": 0.0,
-      "sal_max_abs": 0.0,
-      "spearman": 0.0
+      "sal_max_abs": 1.0,
+      "spearman": 0.3087831979082573
     },
     {
       "content_ram_index": 39,
@@ -194,24 +194,24 @@
     },
     {
       "content_ram_index": -1,
-      "deletion_auc": 0.6888158824360605,
+      "deletion_auc": 0.6520771513353115,
       "game": "qbert",
       "grad_l1": 1.0,
-      "insertion_auc": 0.3349936413734633,
+      "insertion_auc": 0.3717323724742123,
       "is_content_path": false,
       "oracle_self_pearson": 1.0,
       "oracle_self_precision_at_k": 1.0,
-      "output": "screen_region(n_changed_px)@r65c85",
+      "output": "screen_region(n_changed_px)@r19c1",
       "output_kind": "position",
-      "pearson": -0.027932390723055926,
-      "precision_at_k": 0.0,
+      "pearson": -0.03106238348041688,
+      "precision_at_k": 0.3333333333333333,
       "sal_max_abs": 1.0,
-      "spearman": 0.29573108613744603
+      "spearman": 0.1364912705249751
     }
   ],
   "seed": 0,
   "target_frame": 120,
-  "timestamp": "1782919105",
+  "timestamp": "1782922226",
   "topk": 3,
   "where": "local"
 }

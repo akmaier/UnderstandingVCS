@@ -1,15 +1,15 @@
 {
   "arrays": "rise_pong_ball_pixel.npz",
   "ci": null,
-  "commit": "6f4df476",
+  "commit": "9bc37f8b",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-RISE causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
       "keep_prob": 0.5,
       "n_candidate_cells": 8,
-      "n_masks": 64,
-      "n_real_reruns": 64,
-      "note": "N=64 masks at keep_prob=0.5 (Petsiuk's default mask density). Each mask = ONE real emulator re-run, so the cost is exactly N re-runs per output. RISE variance ∝ 1/N — see convergence_sweep.",
+      "n_masks": 500,
+      "n_real_reruns": 500,
+      "note": "N=500 masks at keep_prob=0.5 (Petsiuk's default mask density). Each mask = ONE real emulator re-run, so the cost is exactly N re-runs per output. RISE variance ∝ 1/N — see convergence_sweep.",
       "rng": "MersenneTwister(seed*1_000_003 + 7919), seed=0"
     },
     "cause_names": [
@@ -37,36 +37,36 @@
       "interpretation": "faithfulness (corr / precision@k / del-ins) recomputed from N/8, N/4, N/2, N masks of the SAME pool (no extra re-runs). RISE's Monte-Carlo variance is ∝ 1/N, so corr/p@k STABILISE as N grows; the spread between the smallest and full budget quantifies how many masks RISE needs on this output.",
       "points": [
         {
-          "deletion_auc": 0.8611111111111112,
-          "insertion_auc": 0.28229974160206717,
-          "n_masks": 8,
-          "pearson_corr": 0.3958647482547716,
-          "precision_at_k": 0.3333333333333333,
-          "spearman_corr": 0.42195705787783666
-        },
-        {
           "deletion_auc": 0.9722222222222222,
-          "insertion_auc": 0.21511627906976738,
-          "n_masks": 16,
-          "pearson_corr": 0.5202919507824681,
+          "insertion_auc": 0.3468992248062015,
+          "n_masks": 62,
+          "pearson_corr": 0.5229382141728636,
           "precision_at_k": 0.6666666666666666,
-          "spearman_corr": 0.583329842190363
+          "spearman_corr": 0.44491259150112433
         },
         {
           "deletion_auc": 0.9722222222222222,
           "insertion_auc": 0.3908268733850129,
-          "n_masks": 32,
-          "pearson_corr": 0.42402028647014617,
+          "n_masks": 125,
+          "pearson_corr": 0.4844708200004427,
           "precision_at_k": 0.6666666666666666,
-          "spearman_corr": 0.16878282315113466
+          "spearman_corr": 0.3163822872896884
         },
         {
           "deletion_auc": 0.9722222222222222,
-          "insertion_auc": 0.3029715762273901,
-          "n_masks": 64,
-          "pearson_corr": 0.525037736607956,
-          "precision_at_k": 0.6666666666666666,
-          "spearman_corr": 0.47457343093453264
+          "insertion_auc": 0.3908268733850129,
+          "n_masks": 250,
+          "pearson_corr": 0.43746778238219797,
+          "precision_at_k": 0.3333333333333333,
+          "spearman_corr": 0.11864335773363316
+        },
+        {
+          "deletion_auc": 0.9722222222222222,
+          "insertion_auc": 0.3468992248062015,
+          "n_masks": 500,
+          "pearson_corr": 0.4579731276832916,
+          "precision_at_k": 0.3333333333333333,
+          "spearman_corr": 0.14830419716704143
         }
       ]
     },
@@ -81,10 +81,10 @@
     },
     "headline_metrics": {
       "deletion_auc": 0.9722222222222222,
-      "insertion_auc": 0.3029715762273901,
-      "pearson_corr": 0.525037736607956,
-      "precision_at_k": 0.6666666666666666,
-      "spearman_corr": 0.47457343093453264,
+      "insertion_auc": 0.3468992248062015,
+      "pearson_corr": 0.4579731276832916,
+      "precision_at_k": 0.3333333333333333,
+      "spearman_corr": 0.14830419716704143,
       "topk": 3
     },
     "oracle_abs_delta_per_cause": {
@@ -111,22 +111,22 @@
     "output_note": "POSITION/INDEX output (ball_pixel) — the §7 CONTRAST: unlike IG/saliency (which VANISH on position outputs because the pixel is a round/argmax sprite column with no differentiable RAM path), RISE — a BLACK-BOX perturb-and-re-run method — STILL produces a real attribution here. It masks candidate RAM cells to 0 and RE-RUNS the real ROM, reading the real pixel; no differentiation needed. Reported, not asserted to be large; the intervention oracle remains the sole truth.",
     "rise_attr_per_cause": {
       "joystick:RIGHT": 0.0,
-      "ram[13]:occlude": 57.0,
-      "ram[13]:set": 57.0,
-      "ram[14]:occlude": 33.25,
-      "ram[14]:set": 33.25,
-      "ram[45]:occlude": 7.5,
-      "ram[45]:set": 7.5,
-      "ram[46]:occlude": 35.5,
-      "ram[46]:set": 35.5,
-      "ram[49]:occlude": 141.25,
-      "ram[49]:set": 141.25,
-      "ram[50]:occlude": 11.75,
-      "ram[50]:set": 11.75,
-      "ram[51]:occlude": 9.75,
-      "ram[51]:set": 9.75,
-      "ram[54]:occlude": 10.0,
-      "ram[54]:set": 10.0,
+      "ram[13]:occlude": 9.00800000000001,
+      "ram[13]:set": 9.00800000000001,
+      "ram[14]:occlude": 35.920000000000016,
+      "ram[14]:set": 35.920000000000016,
+      "ram[45]:occlude": 22.99200000000002,
+      "ram[45]:set": 22.99200000000002,
+      "ram[46]:occlude": 36.20800000000003,
+      "ram[46]:set": 36.20800000000003,
+      "ram[49]:occlude": 117.71199999999997,
+      "ram[49]:set": 117.71199999999997,
+      "ram[50]:occlude": 12.240000000000009,
+      "ram[50]:set": 12.240000000000009,
+      "ram[51]:occlude": 10.384000000000015,
+      "ram[51]:set": 10.384000000000015,
+      "ram[54]:occlude": 9.039999999999992,
+      "ram[54]:set": 9.039999999999992,
       "tia[COLUBK]:set": 0.0
     },
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard i --nshards n --shard-kind game): one Slurm array task per core game; or batched SOFT-STE masked re-runs over masks×cells×games on GPU (the forward is bit-exact to this HARD map).",
@@ -156,7 +156,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r162c17",
-  "timestamp": "1782918669",
-  "value": 0.525037736607956,
+  "timestamp": "1782967925",
+  "value": 0.4579731276832916,
   "where": "local"
 }

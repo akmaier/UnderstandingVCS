@@ -1,7 +1,7 @@
 {
   "arrays": "ig_baseline_sweep_seaquest_content.npz",
   "ci": null,
-  "commit": "90bf6f1",
+  "commit": "9bc37f8b",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-IG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline_sweep": {
@@ -75,8 +75,8 @@
             "ram[102]:set": 0.0,
             "ram[103]:occlude": 0.0,
             "ram[103]:set": 0.0,
-            "ram[118]:occlude": 54.2734375,
-            "ram[118]:set": 54.2734375,
+            "ram[118]:occlude": 54.6328125,
+            "ram[118]:set": 54.6328125,
             "ram[1]:occlude": 0.0,
             "ram[1]:set": 0.0,
             "ram[30]:occlude": 0.0,
@@ -122,13 +122,13 @@
           "baseline": "mean_ram",
           "completeness_err": 0.0,
           "deletion_auc": null,
-          "ig_max_abs": 54.2734375,
+          "ig_max_abs": 54.6328125,
           "insertion_auc": null,
-          "pearson_corr": 0.018911810813714233,
+          "pearson_corr": 0.01732986498163012,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.467285499863313,
           "topk": 3,
-          "y_baseline": 54.2734375
+          "y_baseline": 54.6328125
         },
         {
           "attr_per_cause": {
@@ -186,7 +186,7 @@
           "deletion_auc": null,
           "ig_max_abs": 19.0,
           "insertion_auc": null,
-          "pearson_corr": 0.018911810813714222,
+          "pearson_corr": 0.017329864981630118,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.467285499863313,
           "topk": 3,
@@ -256,23 +256,23 @@
         }
       ],
       "completeness_err_max": 0.0,
-      "corr_max": 0.018911810813714233,
+      "corr_max": 0.01732986498163012,
       "corr_min": 0.0,
-      "corr_sensitivity": 0.018911810813714233,
+      "corr_sensitivity": 0.01732986498163012,
       "definitions": {
         "mean_ram": "constant baseline = mean(x) per byte (the 'average input')",
         "random": "one uniform-random RAM draw ∈ 0..255 (seed=0+9973)",
-        "real_alt": "genuine RAM at frame 60 of the same ROM (on-distribution reference)",
+        "real_alt": "genuine RAM at frame 45 of the same ROM (on-distribution reference)",
         "zeros": "all-zeros RAM (Sundararajan 'absent'/black baseline; IG-pilot default)"
       },
-      "ig_magnitude_sensitivity": 54.2734375,
-      "ig_max_abs_max": 54.2734375,
+      "ig_magnitude_sensitivity": 54.6328125,
+      "ig_max_abs_max": 54.6328125,
       "ig_max_abs_min": 0.0,
-      "interpretation": "IG is baseline-sensitive (Sundararajan §3; Kapishnikov 2021; Sturmfels 2020) — and the VCS content path lets us say PRECISELY in what. The raw attribution MAGNITUDE moves a lot: IG_i = (x_i−x0_i)·∂y/∂x_i, so max|IG| ranges 0.0…54.3 across the four baselines (the (x−x0) factor), and the completeness reference y(x0) changes too. BUT the faithfulness CORR/RANKING is INVARIANT here (Δcorr=0.0189): the forward-exact one-hot read makes ∂y/∂x = e_idx a CONSTANT (independent of x and the path), so every baseline puts ALL of IG's nonzero mass on the SAME content byte ⇒ the per-cause ranking, hence corr/precision@k/del-ins, does not move. The ONE way the baseline changes the RANKING is the DEGENERACY: when a baseline byte EQUALS the content byte's value, (x−x0)=0 there and IG VANISHES at the only cell it could rank (the `zeros` baseline on a 0-valued content byte) — `n_baselines_ig_alive` flags it; on-distribution baselines avoid it. Net: on this differentiable substrate IG's faithfulness is robust to the baseline EXCEPT at the degeneracy — a sharper, measured version of the textbook 'IG is baseline-sensitive' caveat.",
+      "interpretation": "IG is baseline-sensitive (Sundararajan §3; Kapishnikov 2021; Sturmfels 2020) — and the VCS content path lets us say PRECISELY in what. The raw attribution MAGNITUDE moves a lot: IG_i = (x_i−x0_i)·∂y/∂x_i, so max|IG| ranges 0.0…54.6 across the four baselines (the (x−x0) factor), and the completeness reference y(x0) changes too. BUT the faithfulness CORR/RANKING is INVARIANT here (Δcorr=0.0173): the forward-exact one-hot read makes ∂y/∂x = e_idx a CONSTANT (independent of x and the path), so every baseline puts ALL of IG's nonzero mass on the SAME content byte ⇒ the per-cause ranking, hence corr/precision@k/del-ins, does not move. The ONE way the baseline changes the RANKING is the DEGENERACY: when a baseline byte EQUALS the content byte's value, (x−x0)=0 there and IG VANISHES at the only cell it could rank (the `zeros` baseline on a 0-valued content byte) — `n_baselines_ig_alive` flags it; on-distribution baselines avoid it. Net: on this differentiable substrate IG's faithfulness is robust to the baseline EXCEPT at the degeneracy — a sharper, measured version of the textbook 'IG is baseline-sensitive' caveat.",
       "n_baselines_ig_alive": 2,
       "precision_at_k_max": 0.6666666666666666,
       "precision_at_k_min": 0.3333333333333333,
-      "y_baseline_max": 54.2734375,
+      "y_baseline_max": 54.6328125,
       "y_baseline_min": 0.0
     },
     "cause_names": [
@@ -377,7 +377,7 @@
       "ram[59]:occlude": 0.0,
       "ram[59]:set": 0.0,
       "ram[60]:occlude": 0.0,
-      "ram[60]:set": 241.0,
+      "ram[60]:set": 249.0,
       "ram[61]:occlude": 0.0,
       "ram[61]:set": 0.0,
       "ram[62]:occlude": 0.0,
@@ -397,7 +397,7 @@
       "tia[COLUBK]:set": 0.0
     },
     "output_kind": "content",
-    "output_note": "CONTENT output: RAM byte 118 read one-hot through soft_ram_peek (∂y/∂ram[118]=1) — the most causally-active candidate concept byte. BASELINE SWEEP (the §5 finding): the raw IG MAGNITUDE is baseline-sensitive (max|IG| ranges 0.0…54.3 via the (x−x0) factor), but the faithfulness CORR/RANKING is INVARIANT (Δcorr=0.0189) because the one-hot read makes ∂y/∂u a CONSTANT ⇒ all mass stays on the same byte for every baseline. The only baseline that changes the ranking is the DEGENERACY: a baseline byte equal to the content byte kills IG there (2/4 baselines keep IG alive). completeness Σ IG ≈ y(x)−y(x0) holds for all baselines (err≈0.0 at the headline).",
+    "output_note": "CONTENT output: RAM byte 118 read one-hot through soft_ram_peek (∂y/∂ram[118]=1) — the most causally-active candidate concept byte. BASELINE SWEEP (the §5 finding): the raw IG MAGNITUDE is baseline-sensitive (max|IG| ranges 0.0…54.6 via the (x−x0) factor), but the faithfulness CORR/RANKING is INVARIANT (Δcorr=0.0173) because the one-hot read makes ∂y/∂u a CONSTANT ⇒ all mass stays on the same byte for every baseline. The only baseline that changes the ranking is the DEGENERACY: a baseline byte equal to the content byte kills IG there (2/4 baselines keep IG alive). completeness Σ IG ≈ y(x)−y(x0) holds for all baselines (err≈0.0 at the headline).",
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE IG over outputs×causes×games×baselines on GPU; the forward is bit-exact to this map.",
     "substrate": "jutari (Julia) — Zygote Integrated Gradients over the RAM tape + TRUE-VCS deletion/insertion re-runs (real-ROM, bit-exact oracle machinery).",
     "y_full": 0.0
@@ -410,10 +410,10 @@
   "paper": "P2",
   "phase": "phaseB_attribution",
   "seed": 0,
-  "state": "f120+30",
+  "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@118)",
-  "timestamp": "1782148925",
+  "timestamp": "1782924317",
   "value": 0.0,
   "where": "local"
 }

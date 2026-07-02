@@ -1,7 +1,7 @@
 {
   "arrays": "saliency_qbert_position.npz",
   "ci": null,
-  "commit": "6f4df476",
+  "commit": "c157ec63",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-saliency causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment (e.g. the vanishing position output).",
     "baseline": "none (vanilla saliency uses no baseline and no input weighting)",
@@ -62,11 +62,11 @@
     },
     "method_ref": "vanilla gradient / saliency (Simonyan et al. 2014): attribution = |∂y/∂u|",
     "metrics": {
-      "deletion_auc": 0.6888158824360605,
-      "insertion_auc": 0.3349936413734633,
-      "pearson_corr": -0.027932390723055926,
-      "precision_at_k": 0.0,
-      "spearman_corr": 0.29573108613744603,
+      "deletion_auc": 0.6520771513353115,
+      "insertion_auc": 0.3717323724742123,
+      "pearson_corr": -0.03106238348041688,
+      "precision_at_k": 0.3333333333333333,
+      "spearman_corr": 0.1364912705249751,
       "topk": 3
     },
     "oracle_abs_delta_per_cause": {
@@ -138,10 +138,10 @@
       "ram[47]:set": 0.0,
       "ram[52]:occlude": 0.0,
       "ram[52]:set": 0.0,
-      "ram[54]:occlude": 1.0,
-      "ram[54]:set": 1.0,
-      "ram[67]:occlude": 0.0,
-      "ram[67]:set": 0.0,
+      "ram[54]:occlude": 0.0,
+      "ram[54]:set": 0.0,
+      "ram[67]:occlude": 1.0,
+      "ram[67]:set": 1.0,
       "ram[69]:occlude": 0.0,
       "ram[69]:set": 0.0,
       "ram[71]:occlude": 0.0,
@@ -176,10 +176,10 @@
       "cause_density_gate_k": 4,
       "horizon": 15,
       "n_causes": 42,
-      "position_byte_ram_index": 54,
+      "position_byte_ram_index": 67,
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r65c85",
+      "shared_output": "screen_region(n_changed_px)@r19c1",
       "state_kind": "seeded_random_action_gameplay"
     },
     "y_full": 0.0
@@ -188,14 +188,14 @@
   "method": "vanilla_saliency",
   "metric_name": "pearson_corr_with_oracle",
   "n": 42,
-  "oracle_ref": "oracle_intervene@qbert#screen_region(n_changed_px)@r65c85",
+  "oracle_ref": "oracle_intervene@qbert#screen_region(n_changed_px)@r19c1",
   "paper": "P2",
   "phase": "phaseB_attribution",
   "seed": 0,
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
-  "target_output": "screen_region(n_changed_px)@r65c85",
-  "timestamp": "1782919105",
-  "value": -0.027932390723055926,
+  "target_output": "screen_region(n_changed_px)@r19c1",
+  "timestamp": "1782922226",
+  "value": -0.03106238348041688,
   "where": "local"
 }

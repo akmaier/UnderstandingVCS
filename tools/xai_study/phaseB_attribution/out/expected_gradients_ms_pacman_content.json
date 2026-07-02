@@ -1,7 +1,7 @@
 {
   "arrays": "expected_gradients_ms_pacman_content.npz",
   "ci": null,
-  "commit": "9e3cdfd",
+  "commit": "9bc37f8b",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-EG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "cause_names": [
@@ -113,7 +113,7 @@
       "topk": 3,
       "y_ref_mean": 98.0
     },
-    "method_definition": "EG_i(x) = E_{x'~D, α~U(0,1)}[(x_i−x'_i)·∂y/∂x_i|_{x'+α(x−x')}], Monte-Carlo over 64 reference draws per run; D = 120 genuine VCS RAM states (E0-2 recorder, frames 1..120).",
+    "method_definition": "EG_i(x) = E_{x'~D, α~U(0,1)}[(x_i−x'_i)·∂y/∂x_i|_{x'+α(x−x')}], Monte-Carlo over 64 reference draws per run; D = 90 genuine VCS RAM states (E0-2 recorder, frames 1..90).",
     "n_refs_self_differs": 0,
     "oracle_abs_delta_per_cause": {
       "joystick:RIGHT": 0.0,
@@ -158,8 +158,8 @@
       "tia[COLUBK]:set": 0.0
     },
     "output_kind": "content",
-    "output_note": "CONTENT output: RAM byte 16 read one-hot through soft_ram_peek — the SAME most-causally-active concept byte the IG sibling (P2-E4-5) scores. EG DEGENERACY (the key EG finding here): the content byte = 98 is CONSTANT across the entire reference distribution D (x'_self∈[98,98] over 120 real states), so EG_self = (x_self−x'_self)·∂y/∂x_self = 0 at the ONLY live cell ⇒ EG VANISHES (max|EG|<1e-6) for every reference draw and scores corr=0.0 (near chance). This is the EXPECTED-GRADIENTS analogue of IG's baseline degeneracy — and on-distribution references make it MORE likely, because nearby real states share the byte value. Single-baseline IG(zeros) STAYS ALIVE here (corr=0.8105, p@3=1.0, max|attr|=98.0) precisely because the zeros baseline (0) ≠ the content byte (98): the EG-vs-IG roles invert vs Pong. Completeness still holds (Σ EG=0=y(x)−ȳ_ref, ȳ_ref=y(x) on a constant byte; err≈0.0). stability cos=0.0 (trivially stable — always 0). The intervention oracle is the reference here (precision@3=0.333 survives because the oracle's true causal byte is still the only candidate, but corr=0).",
-    "ref_pool_size": 120,
+    "output_note": "CONTENT output: RAM byte 16 read one-hot through soft_ram_peek — the SAME most-causally-active concept byte the IG sibling (P2-E4-5) scores. EG DEGENERACY (the key EG finding here): the content byte = 98 is CONSTANT across the entire reference distribution D (x'_self∈[98,98] over 90 real states), so EG_self = (x_self−x'_self)·∂y/∂x_self = 0 at the ONLY live cell ⇒ EG VANISHES (max|EG|<1e-6) for every reference draw and scores corr=0.0 (near chance). This is the EXPECTED-GRADIENTS analogue of IG's baseline degeneracy — and on-distribution references make it MORE likely, because nearby real states share the byte value. Single-baseline IG(zeros) STAYS ALIVE here (corr=0.8105, p@3=1.0, max|attr|=98.0) precisely because the zeros baseline (0) ≠ the content byte (98): the EG-vs-IG roles invert vs Pong. Completeness still holds (Σ EG=0=y(x)−ȳ_ref, ȳ_ref=y(x) on a constant byte; err≈0.0). stability cos=0.0 (trivially stable — always 0). The intervention oracle is the reference here (precision@3=0.333 survives because the oracle's true causal byte is still the only candidate, but corr=0).",
+    "ref_pool_size": 90,
     "ref_self_byte_max": 98,
     "ref_self_byte_min": 98,
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE Expected Gradients over outputs×causes×games×references on GPU; the forward is bit-exact to this map.",
@@ -472,10 +472,10 @@
   "paper": "P2",
   "phase": "phaseB_attribution",
   "seed": 0,
-  "state": "f120+30",
+  "state": "f90+15",
   "stderr": 0.0,
   "target_output": "content(ram_self@16)",
-  "timestamp": "1782152272",
+  "timestamp": "1782942627",
   "value": 0.0,
   "where": "local"
 }

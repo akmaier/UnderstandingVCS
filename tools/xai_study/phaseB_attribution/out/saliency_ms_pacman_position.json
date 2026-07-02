@@ -1,7 +1,7 @@
 {
   "arrays": "saliency_ms_pacman_position.npz",
   "ci": null,
-  "commit": "6f4df476",
+  "commit": "c157ec63",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-saliency causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment (e.g. the vanishing position output).",
     "baseline": "none (vanilla saliency uses no baseline and no input weighting)",
@@ -49,7 +49,7 @@
     ],
     "comparison_note": "Vanilla saliency (|∂y/∂u|, bare gradient) is the baseline of the gradient family: Grad×Input adds u⊙, DeepLIFT adds (u−baseline)⊙ + completeness, SmoothGrad adds noise-averaging. On the one-hot content read all share the same constant ∂y/∂u=e_idx, so saliency already pins the self-byte; the siblings differ only in weighting/completeness, not in WHICH byte they top.",
     "content_ram_index": -1,
-    "grad_l1": 0.0,
+    "grad_l1": 1.0,
     "harness_positive_control": {
       "deletion_auc": 0.7924584323040382,
       "insertion_auc": 0.32001187648456053,
@@ -60,11 +60,11 @@
     },
     "method_ref": "vanilla gradient / saliency (Simonyan et al. 2014): attribution = |∂y/∂u|",
     "metrics": {
-      "deletion_auc": 0.6582541567695963,
-      "insertion_auc": 0.6119358669833729,
-      "pearson_corr": 0.0,
+      "deletion_auc": 0.6867577197149646,
+      "insertion_auc": 0.6092042755344418,
+      "pearson_corr": -0.033516269419250996,
       "precision_at_k": 0.0,
-      "spearman_corr": 0.0,
+      "spearman_corr": 0.3087831979082573,
       "topk": 3
     },
     "oracle_abs_delta_per_cause": {
@@ -110,8 +110,8 @@
       "tia[COLUBK]:set": 0.0
     },
     "output_kind": "position",
-    "output_note": "POSITION/INDEX output — the §1 caveat: the pixel value comes from a discrete sprite column (round/argmax), so there is no differentiable RAM read and the content-path gradient VANISHES (max|attr|=0.0, grad L1=0.0). The oracle has real causal signal here, so vanilla saliency scores near chance — the 'plausible ≠ faithful' contrast; the intervention oracle is the sole truth. This is the §7 'Fail (zero on index outputs)' prediction for vanilla gradient, in numbers.",
-    "sal_max_abs": 0.0,
+    "output_note": "POSITION/INDEX output — the §1 caveat: the pixel value comes from a discrete sprite column (round/argmax), so there is no differentiable RAM read and the content-path gradient VANISHES (max|attr|=1.0, grad L1=1.0). The oracle has real causal signal here, so vanilla saliency scores near chance — the 'plausible ≠ faithful' contrast; the intervention oracle is the sole truth. This is the §7 'Fail (zero on index outputs)' prediction for vanilla gradient, in numbers.",
+    "sal_max_abs": 1.0,
     "saliency_attr_per_cause": {
       "joystick:RIGHT": 0.0,
       "ram[10]:occlude": 0.0,
@@ -148,8 +148,8 @@
       "ram[6]:set": 0.0,
       "ram[7]:occlude": 0.0,
       "ram[7]:set": 0.0,
-      "ram[8]:occlude": 0.0,
-      "ram[8]:set": 0.0,
+      "ram[8]:occlude": 1.0,
+      "ram[8]:set": 1.0,
       "ram[9]:occlude": 0.0,
       "ram[9]:set": 0.0,
       "tia[COLUBK]:set": 0.0
@@ -157,9 +157,9 @@
     "sampler_on": {
       "naive_position_grad_max": 0.0,
       "note": "naive ∂pixel/∂ram ≡ 0 (Prop. prop:zero); the bilinear sampler (tools/xai_si_gradient/si_joystick_gradient.jl) restores a real ∂pixel/∂ram[position_byte]. Reported naive-vs-sampler side by side. per_cause_faithfulness_null=true ⇒ the sampler's position byte is not among this game's scored candidate causes, so the per-cause Pearson is null (recorded 0.0 by the shared convention), NOT a genuine zero corr — the keystone (a non-vanishing gradient) still holds on the full 128-byte map.",
-      "per_cause_faithfulness_null": true,
-      "position_byte_in_cause_set": false,
-      "sampler_position_grad_max": 0.0
+      "per_cause_faithfulness_null": false,
+      "position_byte_in_cause_set": true,
+      "sampler_position_grad_max": 1.0
     },
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE saliency over outputs×causes×games on GPU; the forward is bit-exact to this map.",
     "substrate": "jutari (Julia) — Zygote content-path |∂y/∂u| over the RAM tape + TRUE-VCS deletion/insertion re-runs (real-ROM, bit-exact oracle machinery).",
@@ -170,10 +170,10 @@
       "cause_density_gate_k": 4,
       "horizon": 15,
       "n_causes": 40,
-      "position_byte_ram_index": -1,
+      "position_byte_ram_index": 8,
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r105c80",
+      "shared_output": "screen_region(n_changed_px)@r84c77",
       "state_kind": "seeded_random_action_gameplay"
     },
     "y_full": 0.0
@@ -182,14 +182,14 @@
   "method": "vanilla_saliency",
   "metric_name": "pearson_corr_with_oracle",
   "n": 40,
-  "oracle_ref": "oracle_intervene@ms_pacman#screen_region(n_changed_px)@r105c80",
+  "oracle_ref": "oracle_intervene@ms_pacman#screen_region(n_changed_px)@r84c77",
   "paper": "P2",
   "phase": "phaseB_attribution",
   "seed": 0,
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
-  "target_output": "screen_region(n_changed_px)@r105c80",
-  "timestamp": "1782918997",
-  "value": 0.0,
+  "target_output": "screen_region(n_changed_px)@r84c77",
+  "timestamp": "1782922116",
+  "value": -0.033516269419250996,
   "where": "local"
 }

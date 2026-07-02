@@ -1,15 +1,15 @@
 {
   "arrays": "perturbation_pong_position.npz",
   "ci": null,
-  "commit": "6f4df476",
+  "commit": "9bc37f8b",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-attributed causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
-      "area_fraction": 0.15,
-      "breakdown": "1 intact + N single-cell probes + (greedy steps)·(remaining cells) mask evaluations (≤ ⌈area·C⌉·C, the area budget) + 2·(N+1) deletion/insertion re-runs, per output; N=18 causes, area=0.15 ⇒ ≤3 cells. Every re-run continues from the cached deepcopy CHECKPOINT (boot+replay paid once), so re-runs are incremental and per-game runtime stays modest.",
+      "area_fraction": 0.25,
+      "breakdown": "1 intact + N single-cell probes + (greedy steps)·(remaining cells) mask evaluations (≤ ⌈area·C⌉·C, the area budget) + 2·(N+1) deletion/insertion re-runs, per output; N=18 causes, area=0.25 ⇒ ≤5 cells. Every re-run continues from the cached deepcopy CHECKPOINT (boot+replay paid once), so re-runs are incremental and per-game runtime stays modest.",
       "horizon": 15,
       "kind": "area_constraint",
-      "max_cells": 3,
+      "max_cells": 5,
       "n_causes": 18,
       "n_reruns": 92
     },
@@ -111,7 +111,7 @@
       "ram[14]:set"
     ],
     "output_kind": "position",
-    "output_note": "MEANINGFUL / EXTREMAL PERTURBATION (Fong & Vedaldi 2017; Fong et al. 2019) is INTERVENTION-BASED: the attribution is an OPTIMISED MINIMAL MASK found by greedy forward selection on the TRUE VCS under an area budget — every probe is |y(occlude mask) − y(intact)| from a real-ROM re-run, NOT a surrogate. final mask |M|=1/3 (area≤0.15·C), mask |Δy|=344.0, pert L1=960.0, budget=92 real-ROM re-runs. POSITION/INDEX output (a discrete sprite-column pixel via round/argmax): the gradient methods (vanilla saliency / Grad×Input / IG) VANISH here (∂y/∂u≡0, the §1 caveat) and score near chance — and a SOFT-mask gradient optimiser would vanish too, which is exactly why we optimise the mask by GREEDY selection on the real VCS. The extremal mask RECOVERS the true causal bytes — measured corr=0.335, precision@3=0.333, mask_IoU=0.3333333333333333, del_auc=0.9722222222222222, ins_auc=0.1272609819121447. This is the §7 'Succeed/partial — faithful when the perturbation is a valid intervention' prediction.",
+    "output_note": "MEANINGFUL / EXTREMAL PERTURBATION (Fong & Vedaldi 2017; Fong et al. 2019) is INTERVENTION-BASED: the attribution is an OPTIMISED MINIMAL MASK found by greedy forward selection on the TRUE VCS under an area budget — every probe is |y(occlude mask) − y(intact)| from a real-ROM re-run, NOT a surrogate. final mask |M|=1/5 (area≤0.25·C), mask |Δy|=344.0, pert L1=960.0, budget=92 real-ROM re-runs. POSITION/INDEX output (a discrete sprite-column pixel via round/argmax): the gradient methods (vanilla saliency / Grad×Input / IG) VANISH here (∂y/∂u≡0, the §1 caveat) and score near chance — and a SOFT-mask gradient optimiser would vanish too, which is exactly why we optimise the mask by GREEDY selection on the real VCS. The extremal mask RECOVERS the true causal bytes — measured corr=0.335, precision@3=0.333, mask_IoU=0.3333333333333333, del_auc=0.9722222222222222, ins_auc=0.1272609819121447. This is the §7 'Succeed/partial — faithful when the perturbation is a valid intervention' prediction.",
     "pert_l1": 960.0,
     "perturbation_baseline": "0 (masked RAM cell / TIA register set to 0; joystick masked == NOOP, the baseline trace) — the oracle's occlude! operator",
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (E0-3) — --array=0-5%N over the 6 core games (--shard i --shard-kind game); each task re-runs the real ROM, no GPU needed.",
@@ -141,7 +141,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r162c17",
-  "timestamp": "1782918627",
+  "timestamp": "1782943446",
   "value": 0.33525854332609206,
   "where": "local"
 }

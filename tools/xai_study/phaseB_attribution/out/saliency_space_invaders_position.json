@@ -1,7 +1,7 @@
 {
   "arrays": "saliency_space_invaders_position.npz",
   "ci": null,
-  "commit": "6f4df476",
+  "commit": "c157ec63",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-saliency causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment (e.g. the vanishing position output).",
     "baseline": "none (vanilla saliency uses no baseline and no input weighting)",
@@ -56,11 +56,11 @@
     },
     "method_ref": "vanilla gradient / saliency (Simonyan et al. 2014): attribution = |∂y/∂u|",
     "metrics": {
-      "deletion_auc": 0.7962731191767487,
-      "insertion_auc": 0.3998922263941037,
-      "pearson_corr": 0.0,
+      "deletion_auc": 0.8094840773188707,
+      "insertion_auc": 0.3884890835766931,
+      "pearson_corr": -0.03339178677267661,
       "precision_at_k": 0.0,
-      "spearman_corr": 0.0,
+      "spearman_corr": 0.24965890248221642,
       "topk": 3
     },
     "oracle_abs_delta_per_cause": {
@@ -102,8 +102,8 @@
       "tia[COLUBK]:set": 0.0
     },
     "output_kind": "position",
-    "output_note": "POSITION/INDEX output — the §1 caveat: the pixel value comes from a discrete sprite column (round/argmax), so there is no differentiable RAM read and the content-path gradient VANISHES (max|attr|=0.0, grad L1=1.0). The oracle has real causal signal here, so vanilla saliency scores near chance — the 'plausible ≠ faithful' contrast; the intervention oracle is the sole truth. This is the §7 'Fail (zero on index outputs)' prediction for vanilla gradient, in numbers.",
-    "sal_max_abs": 0.0,
+    "output_note": "POSITION/INDEX output — the §1 caveat: the pixel value comes from a discrete sprite column (round/argmax), so there is no differentiable RAM read and the content-path gradient VANISHES (max|attr|=1.0, grad L1=1.0). The oracle has real causal signal here, so vanilla saliency scores near chance — the 'plausible ≠ faithful' contrast; the intervention oracle is the sole truth. This is the §7 'Fail (zero on index outputs)' prediction for vanilla gradient, in numbers.",
+    "sal_max_abs": 1.0,
     "saliency_attr_per_cause": {
       "joystick:RIGHT": 0.0,
       "ram[102]:occlude": 0.0,
@@ -118,8 +118,8 @@
       "ram[17]:set": 0.0,
       "ram[18]:occlude": 0.0,
       "ram[18]:set": 0.0,
-      "ram[24]:occlude": 0.0,
-      "ram[24]:set": 0.0,
+      "ram[24]:occlude": 1.0,
+      "ram[24]:set": 1.0,
       "ram[26]:occlude": 0.0,
       "ram[26]:set": 0.0,
       "ram[28]:occlude": 0.0,
@@ -145,8 +145,8 @@
     "sampler_on": {
       "naive_position_grad_max": 0.0,
       "note": "naive ∂pixel/∂ram ≡ 0 (Prop. prop:zero); the bilinear sampler (tools/xai_si_gradient/si_joystick_gradient.jl) restores a real ∂pixel/∂ram[position_byte]. Reported naive-vs-sampler side by side. per_cause_faithfulness_null=true ⇒ the sampler's position byte is not among this game's scored candidate causes, so the per-cause Pearson is null (recorded 0.0 by the shared convention), NOT a genuine zero corr — the keystone (a non-vanishing gradient) still holds on the full 128-byte map.",
-      "per_cause_faithfulness_null": true,
-      "position_byte_in_cause_set": false,
+      "per_cause_faithfulness_null": false,
+      "position_byte_in_cause_set": true,
       "sampler_position_grad_max": 1.0
     },
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE saliency over outputs×causes×games on GPU; the forward is bit-exact to this map.",
@@ -158,10 +158,10 @@
       "cause_density_gate_k": 4,
       "horizon": 15,
       "n_causes": 36,
-      "position_byte_ram_index": 49,
+      "position_byte_ram_index": 24,
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r170c43",
+      "shared_output": "screen_region(n_changed_px)@r192c35",
       "state_kind": "seeded_random_action_gameplay"
     },
     "y_full": 0.0
@@ -170,14 +170,14 @@
   "method": "vanilla_saliency",
   "metric_name": "pearson_corr_with_oracle",
   "n": 36,
-  "oracle_ref": "oracle_intervene@space_invaders#screen_region(n_changed_px)@r170c43",
+  "oracle_ref": "oracle_intervene@space_invaders#screen_region(n_changed_px)@r192c35",
   "paper": "P2",
   "phase": "phaseB_attribution",
   "seed": 0,
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
-  "target_output": "screen_region(n_changed_px)@r170c43",
-  "timestamp": "1782918827",
-  "value": 0.0,
+  "target_output": "screen_region(n_changed_px)@r192c35",
+  "timestamp": "1782921942",
+  "value": -0.03339178677267661,
   "where": "local"
 }
