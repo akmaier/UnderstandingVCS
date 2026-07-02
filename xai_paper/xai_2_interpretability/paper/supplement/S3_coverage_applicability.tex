@@ -169,3 +169,69 @@ For traceability we enumerate the sets. The 54 OCAtari-labeled games are:
 are: \texttt{defender}, \texttt{elevator\_action}, \texttt{gravitar}, \texttt{journey\_escape},
 \texttt{solaris}, \texttt{surround}, \texttt{tutankham}, \texttt{videochess},
 \texttt{wizard\_of\_wor}, and \texttt{zaxxon}.
+
+\subsection{Scored battery: the 42-game applicable subset}\label{supp:scoredbattery}
+
+The T3-coverage of \Sectionname\ref{supp:t3coverage} sets the outer breadth of the sweep,
+but not every labeled game can measure faithfulness. The interpretability battery is scored on
+42 games, not on all 54 T3-labeled games of Table~\ref{supp:tab:t3coverage}. We hold out 12
+games for two methodological reasons, decided before scoring. This is a scope decision about
+where the benchmark can measure anything, not a result. The excluded games keep their exact T1
+and T2 ground truth on record; only their score cells are held out.
+
+The first reason is a lack of causal structure at the shared analysis state. Eight games fail
+the oracle cause-density gate: fewer than four candidate causes move the shared output above
+the floor ($|\Delta y|>0.5$). A frame with almost no true causal signal cannot measure
+faithfulness, and running methods there would only add noise to the leaderboard. These eight
+are \texttt{crazy\_climber}, \texttt{enduro}, \texttt{pooyan}, \texttt{skiing},
+\texttt{time\_pilot}, \texttt{asteroids}, \texttt{battle\_zone}, and \texttt{star\_gunner}. The
+second reason is the absence of a moving target for a position method. Seven games carry only
+static verified labels, such as score or life counters, so no sprite moves under intervention
+and a position method has nothing to recover. These seven are \texttt{amidar}, \texttt{asterix},
+\texttt{robotank}, \texttt{up\_n\_down}, \texttt{asteroids}, \texttt{battle\_zone}, and
+\texttt{star\_gunner}. The two criteria overlap for exactly three games, namely
+\texttt{asteroids}, \texttt{battle\_zone}, and \texttt{star\_gunner}, which fail both. Counting
+each excluded game once, the union is 5 gate-only plus 4 static-only plus 3 that fail both,
+which is 12, so the scored battery is $54-12=42$ games. Table~\ref{supp:tab:scoredbattery}
+lists the 12 with their reason.
+
+Each of the 42 scored games both clears the cause-density gate and carries a sprite that moves
+under intervention. Hence every one of them contributes to the all-regime leaderboard and to
+the position regime. The six core games of Table~\ref{supp:tab:coverage} are the subset of
+these 42 that also carry the full tiered ground truth and the exact oracle.
+
+\begin{table}[t]
+\centering
+\caption{\textbf{Games held out from the scored battery.} The 12 games excluded from the
+42-game interpretability battery, with the methodological reason for each. ``Gate'' marks a
+game that fails the oracle cause-density gate (fewer than four causes with $|\Delta y|>0.5$ at
+the shared analysis state). ``Static'' marks a game whose verified labels are all static
+(e.g.\ score or life counters), so no sprite moves under intervention for a position method to
+recover. The two criteria overlap for three games marked ``gate + static'', so counting each
+game once the union is 5 gate-only plus 4 static-only plus 3 both, which is 12, and the scored
+battery is $54-12=42$. These games keep their exact T1/T2 ground truth
+(\Sectionname\ref{supp:t3coverage}); only their score cells are held out.}
+\label{supp:tab:scoredbattery}
+\footnotesize
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{@{}p{2.6cm}p{1.6cm}p{6.0cm}@{}}
+\toprule
+Game & Reason & Why held out \\
+\midrule
+crazy\_climber & gate & too few causes clear the density floor \\
+enduro & gate & too few causes clear the density floor \\
+pooyan & gate & too few causes clear the density floor \\
+skiing & gate & too few causes clear the density floor \\
+time\_pilot & gate & too few causes clear the density floor \\
+\midrule
+amidar & static & verified labels static; no sprite moves under intervention \\
+asterix & static & verified labels static; no sprite moves under intervention \\
+robotank & static & verified labels static; no sprite moves under intervention \\
+up\_n\_down & static & verified labels static; no sprite moves under intervention \\
+\midrule
+asteroids & gate + static & too few causes clear the density floor and no sprite moves under intervention \\
+battle\_zone & gate + static & too few causes clear the density floor and no sprite moves under intervention \\
+star\_gunner & gate + static & too few causes clear the density floor and no sprite moves under intervention \\
+\bottomrule
+\end{tabular}
+\end{table}
