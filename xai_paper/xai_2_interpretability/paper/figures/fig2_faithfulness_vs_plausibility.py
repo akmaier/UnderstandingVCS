@@ -324,14 +324,18 @@ def label(name, dx, dy, ha="left", va="center", col=None, weight="normal",
 
 
 # DANGER-ZONE offenders: expected_gradients, A3 tuning, A6 granger,
-# vanilla saliency, linear probing — the plausible-but-unfaithful cluster.
+# guided backprop, linear probing — the plausible-but-unfaithful cluster.
+# (Under the corrected re-run leaderboard, vanilla_saliency's all-regime
+# faithfulness rose to 0.42, i.e. OUT of the danger zone (F<=0.40) — so the
+# annotated gradient offender is now guided_backprop, F=0.34, which is still
+# inside the zone. vanilla_saliency remains the contrast-arrow ORIGIN below.)
 # Labels fanned around the upper-left cluster with leader lines; each (F) is the
 # committed record. (5 anchors)
 label("expected_gradients",            dx=-0.022, dy=0.092, ha="center", va="bottom",
       weight="bold")
 label("A3_tuning",                      dx=-0.075, dy=0.060, ha="right", va="bottom")
 label("A6_granger",                     dx=-0.060, dy=0.012, ha="right", va="center")
-label("vanilla_saliency",              dx=-0.072, dy=-0.052, ha="right", va="top",
+label("guided_backprop",               dx=-0.072, dy=-0.052, ha="right", va="top",
       weight="bold")
 label("linear_probing_control_tasks",  dx=0.090, dy=-0.052, ha="left",  va="top",
       weight="bold")
@@ -428,9 +432,11 @@ assert abs(ap_rec["faith"] - DEMO["faithful_method"]["faithfulness_all_regimes"]
     "activation_patching faithfulness disagrees between leaderboard and faithful_demo"
 assert abs(vs_rec["faith"] - DEMO["popular_method"]["faithfulness_all_regimes"]) < 1e-9, \
     "vanilla_saliency faithfulness disagrees between leaderboard and faithful_demo"
-# danger zone really contains its named offenders
+# danger zone really contains its named offenders (corrected leaderboard: the
+# gradient offender inside the zone is guided_backprop; vanilla_saliency rose to
+# F=0.42, out of the zone, and is only the contrast-arrow origin).
 for nm in ("expected_gradients", "linear_probing_control_tasks", "A3_tuning",
-           "A6_granger", "vanilla_saliency"):
+           "A6_granger", "guided_backprop"):
     m = next(mm for mm in methods if mm["method"] == nm)
     assert m["plaus"] >= DZ_Y and m["faith"] <= DZ_X, \
         f"{nm} not actually in danger zone (F={m['faith']}, P={m['plaus']})"

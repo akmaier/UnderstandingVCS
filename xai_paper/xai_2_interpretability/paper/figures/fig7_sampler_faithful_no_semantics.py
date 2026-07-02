@@ -116,6 +116,23 @@ def load_rows(csv_path):
     return rows
 
 
+def load_headline_gaps(ci_csv_path):
+    """Read the committed all-regime (robust) + position (directional) gap CIs
+    from leaderboard_ci.csv. Returns {key: (mean, lo, hi)} or {} if absent."""
+    gaps = {}
+    if not os.path.isfile(ci_csv_path):
+        return gaps
+    with open(ci_csv_path) as fh:
+        for r in csv.DictReader(fh):
+            if r.get("kind") == "headline":
+                try:
+                    gaps[r["method"]] = (float(r["mean"]), float(r["ci_lo"]),
+                                         float(r["ci_hi"]))
+                except (KeyError, ValueError):
+                    pass
+    return gaps
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
@@ -134,6 +151,13 @@ def main():
     args = ap.parse_args()
 
     rows = load_rows(args.csv)
+    # The aggregate cross-method contrast this figure references is the ROBUST
+    # all-regime causal-vs-gradient gap (CI excludes 0), NOT a position-regime
+    # win. The position gap is shown honestly (directional, CI includes 0).
+    ci_csv = os.path.join(
+        REPO_ROOT, "tools", "xai_study", "compare", "out", "leaderboard_ci.csv"
+    )
+    headline_gaps = load_headline_gaps(ci_csv)
 
     # per-method aggregates over the position regime ------------------------------
     by_method = {m: [] for m in METHOD_ORDER}
@@ -144,18 +168,24 @@ def main():
     methods = [m for m in METHOD_ORDER if by_method[m]]
     labels = [PRETTY[m] for m in methods]
 
+    # HONEST aggregate: the sampler bar is the mean over ALL position games (not
+    # only the games that rose). Averaging over the rose games alone would inflate
+    # the bar to ~0.53–0.79 and falsely read as "the sampler makes the gradient
+    # faithful"; the corrected message is that the sampler restores a NONZERO
+    # gradient (mechanism) whose faithfulness is LOW/MIXED — nonzero in only a
+    # minority of games, and low on average. The per-game points show that spread.
     naive_mean = []          # the naive floor (== 0)
-    sampler_mean = []        # mean over games where the sampler restored a gradient
-    sampler_pts = []         # per-game sampler points (only the games that rose)
+    sampler_mean = []        # mean over ALL position games (low/mixed, honest)
+    sampler_pts = []         # per-game sampler points (all games, incl. the zeros)
     n_rose = []              # how many games rose, per method
     for m in methods:
         rs = by_method[m]
         naive_mean.append(float(np.mean([r["faithfulness_naive"] for r in rs])))
-        rose = [r["faithfulness_sampler"] for r in rs
-                if r["faithfulness_sampler"] > r["faithfulness_naive"] + 1e-9]
-        sampler_pts.append([r["faithfulness_sampler"] for r in rs])
+        allvals = [r["faithfulness_sampler"] for r in rs]
+        rose = [v for v in allvals if v > 1e-9]
+        sampler_pts.append(allvals)
         n_rose.append(len(rose))
-        sampler_mean.append(float(np.mean(rose)) if rose else 0.0)
+        sampler_mean.append(float(np.mean(allvals)) if allvals else 0.0)
 
     # headline numbers (measured, from the CSV)
     rose_pairs = [
@@ -192,7 +222,8 @@ def main():
             edgecolor=C_INK, linewidth=0.4, label="naive gradient (sampler off)",
             zorder=3)
     axF.bar(x + w / 2 + 0.02, sampler_mean, width=w, color=C_SAMPLER,
-            edgecolor=C_INK, linewidth=0.4, label="bilinear sampler ON",
+            edgecolor=C_INK, linewidth=0.4,
+            label="bilinear sampler ON (mean over all position games)",
             zorder=3)
 
     # per-game sampler points (jittered) so the rise is shown, not just a mean
@@ -207,13 +238,16 @@ def main():
         axF.text(xi, v + 0.018, f"{v:.2f}", ha="center", va="bottom",
                  fontsize=FS_MIN, color=C_INTERV_or_mute(v))
     for xi, v, nr in zip(x + w / 2 + 0.02, sampler_mean, n_rose):
-        txt = f"{v:.2f}" + (f"\n(n={nr})" if nr else "")
+        txt = f"{v:.2f}" + (f"\n(≠0 in {nr}/6)" if nr else "")
         axF.text(xi, v + 0.018, txt, ha="center", va="bottom",
                  fontsize=FS_MIN, color=C_MUTE, linespacing=1.05)
 
     axF.set_xticks(x)
     axF.set_xticklabels(labels, fontsize=8.4)
-    axF.set_ylim(0, 1.0)
+    # Headroom above 1.0 for the honest aggregate-contrast banner (drawn in the
+    # 1.0–1.25 band so it never overlaps the bars or the per-game points).
+    axF.set_ylim(0, 1.25)
+    axF.set_yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
     axF.set_ylabel("faithfulness vs intervention oracle\n(Pearson corr, 0–1)",
                    fontsize=9.0)
     axF.yaxis.grid(True, color=C_GRID, linewidth=0.6, zorder=0)
@@ -223,7 +257,7 @@ def main():
 
     # the §1 floor line at 0 with a label
     axF.axhline(0.0, color=C_NAIVE, linewidth=1.0, zorder=2)
-    axF.text(-0.35, 0.92,
+    axF.text(-0.35, 0.86,
              "naive-gradient floor = 0  (Prop. prop:zero — the position gradient vanishes)",
              ha="left", va="bottom", fontsize=FS_MIN, color=C_MUTE, style="italic")
 
@@ -257,12 +291,13 @@ def main():
     # =======================================================================
     handles = [
         Patch(facecolor=C_NAIVE, edgecolor=C_INK, linewidth=0.4,
-              label="naive gradient (sampler off) — the §1 floor"),
+              label="naive gradient (sampler off) — the §1 floor = 0"),
         Patch(facecolor=C_SAMPLER, edgecolor=C_INK, linewidth=0.4,
-              label="bilinear sampler ON — faithfulness restored"),
+              label="bilinear sampler ON — gradient restored (nonzero), "
+                    "faithfulness low/mixed"),
         plt.Line2D([0], [0], marker="o", color="none",
                    markerfacecolor=C_POINT, markeredgecolor="white",
-                   markersize=6, label="per-game sampler faithfulness"),
+                   markersize=6, label="per-game sampler faithfulness (all 6 games)"),
         plt.Line2D([0], [0], marker="$\\mathsf{no}$", color="none",
                    markerfacecolor=C_SEM, markeredgecolor=C_SEM, markersize=12,
                    label="names no game concept (every method, both conditions)"),
@@ -276,10 +311,33 @@ def main():
     leg.get_frame().set_linewidth(0.7)
     leg._legend_box.align = "left"
 
+    # Honest aggregate-contrast line: lead with the ROBUST all-regime gap (CI
+    # excludes 0); report the position gap as directional (CI includes 0). This
+    # keeps the figure from asserting a large significant position-regime win.
+    ag = headline_gaps.get("all_regime_gap")
+    pg = headline_gaps.get("position_regime_gap")
+    if ag and pg:
+        agg_line = (
+            f"Aggregate contrast (all methods): causal−gradient faithfulness gap "
+            f"{ag[0]:.3f}, 95% CI [{ag[1]:.3f}, {ag[2]:.3f}] over ALL regimes "
+            f"(robust, excludes 0).\n"
+            f"Position regime alone: gap {pg[0]:.3f}, "
+            f"95% CI [{pg[1]:.3f}, {pg[2]:.3f}] (directional, includes 0)."
+        )
+        # Placed in the headroom at the top of panel (a), above the bars, so it
+        # never collides with the bottom legend strip. Two centred lines so the
+        # box stays inside the panel width.
+        axF.text(
+            (nM - 1) / 2.0, 1.235, agg_line, fontsize=FS_MIN, color=C_INK,
+            ha="center", va="top", style="italic", linespacing=1.25,
+            bbox=dict(boxstyle="round,pad=0.35", facecolor="#f5f7fa",
+                      edgecolor=C_GRID, linewidth=0.6),
+        )
+
     fig.text(
-        0.965, 0.060,
-        "Data: committed keystone record sampler_faithfulness.csv; 6 core games, "
-        "120+30-frame state; pure read — no experiment re-run.",
+        0.965, 0.058,
+        "Data: committed keystone record sampler_faithfulness.csv + leaderboard_ci.csv; "
+        "6 core games, 120+30-frame state; pure read — no experiment re-run.",
         fontsize=FS_MIN, color=C_MUTE, ha="right", va="bottom",
     )
 

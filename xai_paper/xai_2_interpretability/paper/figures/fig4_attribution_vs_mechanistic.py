@@ -127,6 +127,7 @@ def load_records(leaderboard_path):
     # R-UNC bootstrap-over-games 95% CIs (P2-R-UNC).
     ci_method = {}      # method -> (mean, lo, hi)  all-regime faithfulness CI
     ci_family = {}      # family key -> (mean, lo, hi)
+    ci_headline = {}    # headline gap key -> (mean, lo, hi)  (all_regime / position)
     ci_path = os.path.join(base, "leaderboard_ci.csv")
     with open(ci_path) as fh:
         for row in csv.DictReader(fh):
@@ -139,7 +140,9 @@ def load_records(leaderboard_path):
                 ci_method[row["method"]] = triple
             elif kind == "family":
                 ci_family[row["method"]] = triple
-    return lb, demo, ci_method, ci_family
+            elif kind == "headline":
+                ci_headline[row["method"]] = triple
+    return lb, demo, ci_method, ci_family, ci_headline
 
 
 # Pretty labels (the records' machine names -> publication labels + citation tags).
@@ -211,7 +214,7 @@ def main():
     )
     args = ap.parse_args()
 
-    lb, demo, ci_method, ci_family = load_records(args.leaderboard)
+    lb, demo, ci_method, ci_family, ci_headline = load_records(args.leaderboard)
     rows = {r["method"]: r for r in lb["rows"]}
 
     # ---- assemble Phase-B regime table (content vs position) ----------------
@@ -413,19 +416,42 @@ def main():
         "oracle = 31-row leaderboard; the cross-tradition scatter is Fig. 2).",
         fontsize=8.4, color=C_MUTE, style="italic", ha="left", va="top",
     )
+    # HEADLINE = the ROBUST all-regime causal-vs-gradient faithfulness gap, whose
+    # bootstrap CI excludes 0 (leaderboard_ci.csv headline row `all_regime_gap`).
+    # The position/index regime is shown HONESTLY as directional-but-not-significant
+    # at 6 games (its CI includes 0), NOT as a large significant win.
+    all_gap = ci_headline.get("all_regime_gap")
+    pos_gap = ci_headline.get("position_regime_gap")
+    fam_all_c = ci_family.get("family_causal_intervention")
+    fam_all_g = ci_family.get("family_gradient_correlational")
     headline = (
-        "On the POSITION/INDEX regime (discrete sprite-position outputs, naive "
-        "gradient provably zero): the whole gradient family collapses toward "
-        "chance while intervention methods hold.  "
-        f"Causal/intervention bucket {agg['faithful_bucket_mean']:.3f} "
-        f"(95% CI ±{agg['faithful_bucket_ci95']:.3f}, n={agg['faithful_bucket_n']}) "
-        f"vs gradient/correlational {agg['popular_bucket_mean']:.3f} "
-        f"(95% CI ±{agg['popular_bucket_ci95']:.3f}, n={agg['popular_bucket_n']}) "
-        f"— a {agg['bucket_gap']:.3f} faithfulness gap.  "
-        f"Activation patching = {pair['faithful_faithfulness_position']:.3f} "
-        f"(oracle ceiling) vs vanilla saliency = "
-        f"{pair['popular_faithfulness_position']:.3f} (naive-gradient floor)."
+        "HEADLINE — across ALL output regimes, intervention/causal methods are more "
+        "faithful to the true mechanism than gradient/correlational ones.  "
     )
+    if fam_all_c and fam_all_g and all_gap:
+        headline += (
+            f"Causal/intervention F̄={fam_all_c[0]:.3f} (95% CI "
+            f"[{fam_all_c[1]:.3f}, {fam_all_c[2]:.3f}]) vs gradient/correlational "
+            f"F̄={fam_all_g[0]:.3f} (95% CI [{fam_all_g[1]:.3f}, {fam_all_g[2]:.3f}]) "
+            f"— a {all_gap[0]:.3f} gap, 95% CI [{all_gap[1]:.3f}, {all_gap[2]:.3f}] "
+            f"(excludes 0: robust).  "
+        )
+    headline += (
+        "On the POSITION/INDEX regime alone (discrete sprite-position outputs), the "
+        "gap is DIRECTIONAL but not significant at 6 games: "
+    )
+    if pos_gap:
+        headline += (
+            f"causal {agg['faithful_bucket_mean']:.3f} (n={agg['faithful_bucket_n']}) "
+            f"vs gradient {agg['popular_bucket_mean']:.3f} (n={agg['popular_bucket_n']}), "
+            f"gap {pos_gap[0]:.3f}, 95% CI [{pos_gap[1]:.3f}, {pos_gap[2]:.3f}] "
+            f"(includes 0)."
+        )
+    else:
+        headline += (
+            f"causal {agg['faithful_bucket_mean']:.3f} vs gradient "
+            f"{agg['popular_bucket_mean']:.3f}, gap {agg['bucket_gap']:.3f}."
+        )
     # Wrap explicitly (robust across matplotlib versions; the figure-text wrap=
     # heuristic changed in 3.x). The banner spans the full usable width.
     headline_wrapped = "\n".join(textwrap.wrap(headline, width=170))
@@ -518,18 +544,29 @@ def main():
     check("10 Phase-C methods plotted", len(c_order) == 10, f"n={len(c_order)}")
     check("22 method rows total (subset of 30+oracle=31)",
           len(b_order) + len(c_order) == 22)
+    # Corrected re-run: the pure-gradient family scores LOW on the position regime
+    # (not exactly 0 in the aggregate — only guided_backprop hits the 0 floor), and
+    # the intervention family averages HIGHER but not uniformly (on-distribution
+    # counterfactual dips below 0.1). So we no longer assert exact-zero / uniform
+    # holds; we assert the honest ordering: the gradient family MEAN stays low and
+    # below the intervention family MEAN on position.
+    grad_pure = [m for m in grad_b
+                 if m in {"vanilla_saliency", "smoothgrad", "guided_backprop",
+                          "gradxinput_deeplift", "integrated_gradients",
+                          "expected_gradients"}]
+    grad_pos_mean = (sum(rows[m]["faithfulness_position_regime"] for m in grad_pure)
+                     / len(grad_pure))
+    interv_pos_mean = (sum(rows[m]["faithfulness_position_regime"] for m in interv_b)
+                       / len(interv_b))
     check(
-        "gradient family vanishes on position (all == 0.0)",
-        all(rows[m]["faithfulness_position_regime"] == 0.0 for m in grad_b
-            if m in {"vanilla_saliency", "smoothgrad", "guided_backprop",
-                     "gradxinput_deeplift", "integrated_gradients",
-                     "expected_gradients"}),
-        "pure-gradient methods",
+        "gradient family scores low on position (mean <= 0.20)",
+        grad_pos_mean <= 0.20,
+        f"grad position mean={grad_pos_mean:.3f}",
     )
     check(
-        "intervention family holds on position (all > 0.1)",
-        all(rows[m]["faithfulness_position_regime"] > 0.1 for m in interv_b),
-        "occlusion/extremal/counterfactual",
+        "intervention family above gradient family on position (mean)",
+        interv_pos_mean > grad_pos_mean,
+        f"interv={interv_pos_mean:.3f} > grad={grad_pos_mean:.3f}",
     )
     check(
         "activation patching exact (==1.0)",
@@ -540,9 +577,23 @@ def main():
         rows["sparse_autoencoder"]["faithfulness"] < 0.25
         and rows["linear_probing_control_tasks"]["faithfulness"] < 0.25,
     )
+    # HEADLINE (robust) = the all-regime gap whose bootstrap CI excludes 0.
     check(
-        "headline bucket gap matches demo (0.344)",
-        abs(agg["bucket_gap"] - 0.3435) < 1e-6,
+        "all-regime gap CI present and excludes 0 (robust headline)",
+        (all_gap is not None) and all_gap[1] > 0.0,
+        f"all_regime_gap={all_gap}",
+    )
+    # The position-regime gap is directional but NOT significant (CI includes 0);
+    # assert that honesty holds so the figure never re-asserts a big position win.
+    check(
+        "position-regime gap CI includes 0 (directional, not significant)",
+        (pos_gap is not None) and pos_gap[1] <= 0.0 <= pos_gap[2],
+        f"position_regime_gap={pos_gap}",
+    )
+    # the drawn position-bucket contrast still traces to the demo record
+    check(
+        "position bucket contrast matches demo",
+        abs(agg["bucket_gap"] - demo["aggregate_contrast"]["bucket_gap"]) < 1e-9,
         f"gap={agg['bucket_gap']}",
     )
     # R-UNC uncertainty: every Phase-C point has a bootstrap CI from the CI file.

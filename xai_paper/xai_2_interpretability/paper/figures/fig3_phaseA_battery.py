@@ -424,12 +424,12 @@ finding_row(
      "invisible to one-unit-at-a-time ablation."],
 )
 
-# Row A7 — NMF = PCA (both mediocre)
+# Row A7 — NMF ~ PCA (both mediocre)
 finding_row(
-    3, TRAD_COLOR["dim_reduction"], "A7", "NMF = PCA (both mediocre)",
-    f"NMF matched frac {FACT_A7['nmf_mean']:.2f} = PCA {FACT_A7['pca_mean']:.2f} (best {FACT_A7['nmf_best']:.1f})",
-    ["Tied on matched components; NMF leads only on the",
-     "recon-error composite — neither recovers the basis."],
+    3, TRAD_COLOR["dim_reduction"], "A7", "NMF ≈ PCA (both mediocre)",
+    f"NMF matched frac {FACT_A7['nmf_mean']:.2f} ≈ PCA {FACT_A7['pca_mean']:.2f} (best {FACT_A7['nmf_best']:.1f})",
+    ["Near-tied on matched components; neither",
+     "recovers the true basis."],
 )
 
 # provenance footnote — no data-path microtext in the figure body (fig_pass #6);
@@ -482,14 +482,23 @@ if abs(_chk_a6["extra"]["triad"]["F"] - FACT_A6["pong_triadF"]) > 1e-9:
     problems.append("A6 Pong triad F drifted from record")
 if FACT_A6["pong_triadF"] != 0.0:
     problems.append("A6 Pong F is not 0 (headline finding broken)")
-if FACT_A3["pong"] != 1.0:
-    problems.append("A3 Pong spurious-tuning is not 1.0 (headline finding broken)")
+# A3: the tuning-curve trap = a nonzero spurious-tuning rate somewhere in the
+# battery. Under the corrected re-run leaderboard the per-game rates dropped
+# (Pong 0.50, not the old 1.0); the finding is now "spurious tuning up to ~0.53"
+# (q*bert), read live into the table cell. Assert the trap is still present, not
+# a stale point value.
+if max(FACT_A3.values()) <= 0.0:
+    problems.append("A3 spurious-tuning absent in every game (tuning-curve trap gone)")
 if not (FACT_A2["rho_mean"] >= 0.98):
     problems.append("A2 mean rho not ~0.99 (headline finding broken)")
 if not (FACT_A2["si_superadd"] > 0):
     problems.append("A2 interaction blind-spot absent (super-additive delta = 0)")
-if not (abs(FACT_A7["nmf_mean"] - FACT_A7["pca_mean"]) < 1e-9):
-    problems.append("A7 NMF != PCA on matched components (headline finding: tied at 0.60)")
+# A7: NMF ~ PCA, both mediocre. Under the corrected re-run they are near-tied
+# (NMF 0.60, PCA 0.57) rather than exactly equal; the finding is the near-tie +
+# mediocrity, not exact equality. Assert both are mediocre and close.
+if not (abs(FACT_A7["nmf_mean"] - FACT_A7["pca_mean"]) < 0.10
+        and FACT_A7["nmf_mean"] < 0.75 and FACT_A7["pca_mean"] < 0.75):
+    problems.append("A7 NMF/PCA no longer near-tied-and-mediocre (headline finding broken)")
 
 if problems:
     print("[FAIL] self-check:")
