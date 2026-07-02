@@ -16,8 +16,8 @@ supply that missing number. We run the same battery on the bit-exact, fully
 known VCS, where exact intervention recovers the true causal role of every
 register and RAM cell (\Sectionname\ref{sec:methods}). This makes Kording's
 qualitative lesson quantitative. Across the eight analyses A1--A8,
-faithfulness against the oracle ranges from $0.116$ to $1.0$ and averages
-$0.49$ (95\% bootstrap CI $\pm 0.24$)~\cite{leaderboardP2}. The
+faithfulness against the oracle ranges from $0.05$ to $1.0$ and averages
+$0.45$~\cite{leaderboardP2}. The
 oracle-as-method positive
 control sits at $1.0$ by construction (Table~\ref{tab:phaseA}). The structure
 these methods report is real. But structure is not the same as cause. The score
@@ -26,10 +26,10 @@ measures the difference.
 The dependency structure is largely recoverable. A1 reconstructs the dependency
 graph over state variables, a connectome of read/write edges, and scores it
 against the true data-flow graph at a faithfulness of
-$0.41$~\cite{leaderboardP2}: about half its edges are spurious. The single-unit
+$0.34$~\cite{leaderboardP2}: most of its edges are spurious. The single-unit
 lesion A2 fares best. It clamps each RAM cell in turn and ranks it by the
 behavioral damage it does. The resulting importance map has a Spearman
-correlation of $0.99$ with the unit's true causal role (mean $0.987$ over the
+correlation of $0.99$ with the unit's true causal role (mean $0.992$ over the
 six core games)~\cite{leaderboardP2}. Lesioning is causal, which is why A2 is
 the one classical method that scores near the top.
 
@@ -46,7 +46,7 @@ Tuning curves report structure that does not match the true cause. A3 fits
 per-unit tuning to a game variable, the workhorse of systems neuroscience. On the
 VCS it actively misleads. Its \emph{spurious-tuning rate} is the fraction of
 strongly-tuned units whose tuning does not match their true causal role. That
-rate is $1.0$ on Pong, and its faithfulness falls to $0.12$, the lowest in the
+rate is $0.50$ on Pong, and its faithfulness averages $0.09$, the lowest in the
 battery~\cite{leaderboardP2}. Tuning is correlational. On a machine where many
 cells co-vary with the beam clock, apparent tuning is cheap. This is the same
 present-versus-used distinction we discuss later for linear probing.
@@ -54,9 +54,9 @@ present-versus-used distinction we discuss later for linear probing.
 Correlation structure and field potentials are real, but they are mostly side
 effects, not causes. A4, the spike-word analysis of pairwise and global
 correlation, reproduces the familiar weak-pairwise/strong-global signature. Yet
-against the true coupling its faithfulness is only $0.29$, with sufficiency near
-zero ($S = 0.018$)~\cite{leaderboardP2}. A5 is the local-field-potential
-analogue that pools regional activity into power spectra. It scores $0.40$, and
+against the true coupling its faithfulness is only $0.22$, with sufficiency near
+zero ($S = 0.026$)~\cite{leaderboardP2}. A5 is the local-field-potential
+analogue that pools regional activity into power spectra. It scores $0.30$, and
 much of that variance is the known frame and scanline
 clocks~\cite{leaderboardP2}. Both methods detect the machine's activity but not
 its computation.
@@ -82,7 +82,7 @@ leaves 40 percent of the components unmatched.
 
 A complete record is still not an explanation. A8 records the full RAM and
 register state, faithful and sufficient by definition ($F = 1.0$, $S = 1.0$).
-Yet its minimality is only $0.07$~\cite{leaderboardP2}. At the algorithmic level,
+Yet its minimality is only $0.08$~\cite{leaderboardP2}. At the algorithmic level,
 a recording of every cell explains nothing. Faithfulness and sufficiency without
 minimality give a log file, not an account of the computation. This is the first
 sign that the three axes are independent. The semantic-gap result makes that
@@ -106,7 +106,7 @@ remaining gap is what the paper measures.
 Faithfulness $F$ of each classical analysis A1--A8 against the exact intervention oracle
 (\Sectionname\ref{sec:oracle}), with its $95\%$ bootstrap confidence interval over the six
 core games and the documented plausibility proxy (\Sectionname\ref{sec:methods}). The battery
-averages $0.49$; the oracle-as-method positive control is $1.0$ by construction. Only the
+averages $0.45$; the oracle-as-method positive control is $1.0$ by construction. Only the
 causal single-unit lesion (A2) reaches the ceiling on a non-trivial metric. The whole-state
 recording (A8) is at $1.0$ only because recording everything is faithful, yet its minimality
 is $0.07$ --- a log file, not an account. Every value reads from a committed per-game record
@@ -116,14 +116,14 @@ via the leaderboard~\cite{leaderboardP2}; none is re-run or estimated.}
 \toprule
 Analysis & $F$ ($95\%$ CI) & Plaus & What $F$ scores \\
 \midrule
-A1 connectomics             & $0.41$ $[0.08,0.78]$ & $0.55$ & data-flow-graph $F_1$ vs.\ oracle \\
-A2 single-unit lesions      & $0.99$ $[0.98,1.00]$ & $0.55$ & lesion-importance $\rho$ vs.\ true role \\
-A3 tuning curves            & $0.12$ $[0.00,0.27]$ & $0.80$ & $1-$spurious-tuning rate \\
-A4 spike-word correlations  & $0.29$ $[0.08,0.50]$ & $0.80$ & coupling vs.\ true coupling \\
-A5 local field potentials   & $0.40$ $[0.30,0.51]$ & $0.80$ & $1-$clock-explained variance \\
-A6 Granger causality        & $0.14$ $[0.02,0.29]$ & $0.80$ & $1-$false-edge rate vs.\ data-flow \\
-A7 dimensionality reduction & $0.60$ $[0.47,0.73]$ & $0.75$ & NMF/PCA matched-component fraction \\
-A8 whole-state recording    & $1.00$ $[1.00,1.00]$ & $0.30$ & complete record (minimality $M=0.07$) \\
+A1 connectomics             & $0.34$ $[0.09,0.67]$ & $0.55$ & data-flow-graph $F_1$ vs.\ oracle \\
+A2 single-unit lesions      & $0.99$ $[0.99,1.00]$ & $0.55$ & lesion-importance $\rho$ vs.\ true role \\
+A3 tuning curves            & $0.09$ $[0.00,0.25]$ & $0.80$ & $1-$spurious-tuning rate \\
+A4 spike-word correlations  & $0.22$ $[0.07,0.41]$ & $0.80$ & coupling vs.\ true coupling \\
+A5 local field potentials   & $0.30$ $[0.22,0.39]$ & $0.80$ & $1-$clock-explained variance \\
+A6 Granger causality        & $0.05$ $[0.00,0.11]$ & $0.80$ & $1-$false-edge rate vs.\ data-flow \\
+A7 dimensionality reduction & $0.60$ $[0.60,0.60]$ & $0.75$ & NMF/PCA matched-component fraction \\
+A8 whole-state recording    & $1.00$ $[1.00,1.00]$ & $0.30$ & complete record (minimality $M=0.08$) \\
 \midrule
 Oracle (positive control)   & $1.00$ $[1.00,1.00]$ & $1.00$ & exact intervention ground truth \\
 \botrule

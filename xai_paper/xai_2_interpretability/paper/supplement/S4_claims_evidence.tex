@@ -5,7 +5,12 @@ makes that dependency checkable. For each claim we list the figure or table that
 the games and methods it uses, the metric, the artifact it traces to, and the limitation that
 bounds it. Faithfulness, sufficiency, and minimality are the three axes of \Sectionname\ref{sec:triad}.
 The numbers themselves are sourced in \Sectionname\ref{supp:provenance}. The table below names which
-evidence supports which claim; it does not repeat the values.
+evidence supports which claim; it does not repeat the values. One split matters for how the
+table is read. The all-regime faithfulness gap between causal/intervention and
+gradient/correlational methods is $0.297$ with a $95\%$ interval of $[0.232,0.375]$ that
+excludes zero, and it is the primary evidence for the headline. The position-only gap is
+$0.238$ with an interval of $[-0.049,0.315]$ that crosses zero at six games. We report the
+position gap as directional support, not as a significant result.
 
 \begin{table}[t]
 \centering
@@ -21,11 +26,11 @@ claim is not read wider than the evidence.}
 \toprule
 Claim & Evidence & Methods / games & Metric & Limitation \\
 \midrule
-Causal/intervention methods beat gradient/correlational on faithfulness across all regimes & Fig.~\ref{fig:faithfulness}; leaderboard & 25 methods, 6 games & F mean (gap $0.387$) & not robust: gap collapses to $0.123$ $[-0.008,0.256]$ excl.\ oracle-like and $0.045$ $[-0.087,0.153]$ content-only (CIs cross zero); only the position-regime gap $0.3435$ is robust \\
-The gap holds with the same sign on the discrete position regime & Fig.~\ref{fig:faithfulness}; \jkey{faithful_demo} & 13 rows, 6 games & F position (gap $0.344$) & position regime only \\
-A faithful causal method reaches the oracle ceiling where the default tool collapses & \jkey{faithful_demo}; Fig.~\ref{fig:faithfulness} & act.\ patching vs.\ vanilla saliency, 6 games & F $1.0$ vs.\ $0.0$ (position regime; all-regimes saliency F $0.267$, plotted in Fig.~\ref{fig:faithfulness}) & one decisive pair, position regime only \\
-The naive gradient of a discrete index output is provably zero & Prop.~\ref{prop:zero} (\Sectionname\ref{sec:oracle}); \jkey{oracle_grad} & all gradient methods & grad@index $=0$ & index path only \\
-High plausibility coexists with low faithfulness (the danger zone) & Fig.~\ref{fig:faithfulness}; \jkey{faithful_demo} & vanilla saliency & proxy $0.9$, F $0.0$ (position regime; all-regimes F $0.267$, plotted in Fig.~\ref{fig:faithfulness}) & proxy, not measured plausibility \\
+Causal/intervention methods beat gradient/correlational on faithfulness across all regimes & Fig.~\ref{fig:faithfulness}; leaderboard & 25 methods, 6 games & F mean (gap $0.297$) & robust: gap $0.297$ $[0.232,0.375]$ excludes zero; this all-regime gap is the primary evidence \\
+The gap holds with the same sign on the discrete position regime & Fig.~\ref{fig:faithfulness}; \jkey{faithful_demo} & 13 rows, 6 games & F position (gap $0.238$) & directional only: gap $0.238$ $[-0.049,0.315]$ crosses zero at 6 games, so it is not significant \\
+A faithful causal method reaches the oracle ceiling where the default tool stays low & \jkey{faithful_demo}; Fig.~\ref{fig:faithfulness} & act.\ patching vs.\ vanilla saliency, 6 games & F $1.0$ vs.\ $0.165$ (position regime; all-regimes saliency F $0.419$, plotted in Fig.~\ref{fig:faithfulness}) & one decisive pair \\
+The naive gradient of a discrete position output is provably zero & Prop.~\ref{prop:zero} (\Sectionname\ref{sec:oracle}); \jkey{oracle_grad} & all gradient methods & grad@position $=0$; sampler restores $166$ & position path only; restored gradient is low/mixed \\
+High plausibility coexists with low faithfulness (the danger zone) & Fig.~\ref{fig:faithfulness}; \jkey{faithful_demo} & vanilla saliency & proxy $0.9$, F $0.165$ (position regime; all-regimes F $0.419$, plotted in Fig.~\ref{fig:faithfulness}) & proxy, not measured plausibility \\
 Faithful attribution recovers the wiring but not the computation's semantics & Fig.~\ref{fig:taxonomy} (\Sectionname\ref{supp:coverage}); discussion & Phase~B vs.\ C & F vs.\ S, M & necessary-condition stress test \\
 The failure modes have documented NN analogues & Fig.~\ref{fig:representativeness} & taxonomy & --- & analogues, not proof \\
 \bottomrule

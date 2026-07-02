@@ -5,11 +5,20 @@ method consumes and produces, the reference it is scored against, its sampling o
 budget, the metric that turns its output into a faithfulness score, and the committed record
 file that holds the per-game results. All methods share one evaluation contract. We state that
 contract once and then specialize it per method. Every method receives the same bit-exact VCS
-trajectory on one of the six core games (\texttt{breakout}, \texttt{ms\_pacman}, \texttt{pong},
-\texttt{qbert}, \texttt{seaquest}, \texttt{space\_invaders}). The candidate-cause set is the
-machine's own state. This set is the 128 RAM bytes together with the CPU registers and the TIA
-and RIOT registers exposed by the substrate. The reference is the intervention oracle of
-\Sectionname\ref{sec:oracle}, evaluated by exact re-runs of the emulator under $\mathrm{do}(u)$. A method that
+state on one of the six core games (\texttt{breakout}, \texttt{ms\_pacman}, \texttt{pong},
+\texttt{qbert}, \texttt{seaquest}, \texttt{space\_invaders}). That state is not the boot screen.
+It is a shared gameplay state, produced by a single seeded random-action stream (seed~$0$) run
+for a $90$-frame prefix and then rolled forward for a $15$-frame analysis horizon. The stream is
+deterministic, so every method sees the identical state on each game, and the run is asserted
+bit-exact per game. An oracle cause-density gate screens the state before any method runs. The
+gate counts how many candidate causes move the output above a floor and rejects states with too
+few, so a near-flat oracle column cannot pass. This gate is what turns a degenerate frame into a
+usable one; on \texttt{seaquest} it raises the count of live candidate causes from $2$ to $19$.
+The candidate-cause set is the machine's own state. This set is the RAM bytes together with the
+CPU registers and the TIA and RIOT registers exposed by the substrate. The output every method
+attributes over is a shared screen-buffer region read at the end of the analysis horizon, not a
+single hand-picked pixel. The reference is the intervention oracle of \Sectionname\ref{sec:oracle},
+evaluated by exact re-runs of the emulator under $\mathrm{do}(u)$. A method that
 cannot be applied to a given output regime is recorded as not-applicable rather than scored
 as zero. An empty result is therefore never read as a wrong one. Faithfulness is the F
 axis of the main-text triad (\Sectionname\ref{sec:triad}); we reference that definition and do not restate it.
@@ -17,10 +26,13 @@ Records live under \texttt{tools/xai\_study/<phase>/out/}; the aggregate they fe
 \texttt{tools/xai\_study/compare/out/leaderboard.json}.
 
 The neuroscience battery (Phase~A) treats the running machine as a brain. It asks how far
-each classical analysis recovers the known mechanism. Each method's baseline is the exact
-data-flow graph or causal role that the substrate makes available. Its budget is the
-six-game core unless noted, and its scoring metric is named in
-Table~\ref{supp:tab:phaseA}.
+each classical analysis recovers the known mechanism on the shared gameplay state. Each
+method's baseline is the exact data-flow graph or causal role that the substrate makes
+available. Its budget is the six-game core unless noted, and its scoring metric is named in
+Table~\ref{supp:tab:phaseA}. One cell is honestly degenerate. On \texttt{ms\_pacman} the
+pairwise analysis (A4) finds no coupled candidate pair to score at that frame, so its
+\texttt{ms\_pacman} value is uninformative rather than a failure; the other five games carry
+it.
 
 \begin{table}[t]
 \centering
@@ -53,13 +65,21 @@ A8 whole-state & full state record & oracle decomp. & minimality $M$ vs.\ oracle
 eight run on the six core games.
 \end{table}
 
-The attribution battery (Phase~B) runs the everyday XAI toolbox over the same trajectories.
+The attribution battery (Phase~B) runs the everyday XAI toolbox over the same gameplay state.
 These methods produce a real-valued saliency or attribution over the candidate-cause set.
-We score that output by Pearson correlation against the oracle attribution. The gradient-based
-members also inherit the gradient-vanishing failure of the discrete position regime
-(Prop.~\ref{prop:zero}). The budgets that matter are the Monte-Carlo or perturbation counts of
-the sampling estimators, recorded per method in Table~\ref{supp:tab:phaseB}. The
-seed-dispersion of the stochastic members is carried in
+We score that output by Pearson correlation against the oracle attribution. The gradient family
+runs with the bilinear sub-pixel sampler turned on, so it is scored on a real position gradient
+and not on the naive one. The naive gradient of the discrete position output is provably zero
+(Prop.~\ref{prop:zero}); the sampler restores a finite gradient, but the restored gradient is
+low and mixed in faithfulness rather than a fix. Expected Gradients draws its reference pool
+from the states of the same seeded gameplay trajectory, not from a synthetic baseline. Two cells
+are honestly degenerate and recorded as such. The on-distribution counterfactual returns a zero
+delta on \texttt{space\_invaders}, \texttt{ms\_pacman}, and \texttt{qbert}, where its perturbation
+does not move the shared output at that frame; those cells are marked not-valid rather than
+scored. Expected Gradients scores low on the content regime of every game except \texttt{pong},
+because the causal byte it should land on is static there. The budgets that matter are the
+Monte-Carlo or perturbation counts of the sampling estimators, recorded per method in
+Table~\ref{supp:tab:phaseB}. The seed-dispersion of the stochastic members is carried in
 \texttt{leaderboard\_ci.csv} (\texttt{seed\_sd}, \texttt{seed\_sd\_source}) and reproduced
 in \Sectionname\ref{supp:provenance}.
 

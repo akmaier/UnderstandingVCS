@@ -11,9 +11,12 @@ We applied the interpretability toolkit to a machine whose ground truth is compu
 let us measure two things at once. On this system the true cause of any output is recoverable
 by exact intervention. The causal and intervention methods are faithful, while the field's
 familiar gradient and correlational tools are not. The leaderboard separates them by
-faithfulness, the one axis we can score exactly (Fig.~\ref{fig:faithfulness}). A faithful
-causal account scores $1.0$ where the field's default scores $0.0$, on a machine whose answer
-is known exactly. Yet faithfulness is the easier of the two measurements. Even a method at the
+faithfulness, the one axis we can score exactly (Fig.~\ref{fig:faithfulness}). Pooled over
+all outputs the causal and intervention methods reach $0.66$ against the gradient and
+correlational methods' $0.37$, a gap of $0.30$ whose $95\%$ interval excludes zero. On the
+discrete position outputs a causal method reaches $1.000$ where standard saliency reaches
+only $0.165$, on a machine whose answer is known exactly. Yet faithfulness is the easier of
+the two measurements. Even a method at the
 oracle ceiling returns only the causal wiring: an effect map and a data-flow graph. It does
 not return the semantics: the meaning of a variable or the algorithm of a routine. We call
 this residual the \emph{semantic gap}, and it is a number we can measure.
@@ -24,7 +27,7 @@ the oracle places them on one scale. Jonas and Kording warned that an analyst ar
 systems neuroscience could fail to understand even a microprocessor, because describing
 structure is not the same as explaining how it works~\cite{jonas2017could}. We make that a
 measurement. The classical battery recovers rich structure yet scores low against the known
-mechanism. The gradient methods score zero on the discrete position regime, and only the
+mechanism. The naive gradient is provably zero on the discrete position regime, and only the
 causal operators reach the ceiling. Mechanistic interpretability has until now been calibrated
 against synthetic or compiled ground truth, transformers with a planted circuit by
 construction~\cite{lindner2023tracr,gupta2024interpbench}, ground-truth attribution
@@ -55,15 +58,17 @@ as an artifact of one design choice. The discrete position read-out makes the na
 vanish by Prop.~\ref{prop:zero}. So the gradient family scores a provable zero on the position
 regime, and the failure could be dismissed as a fixable technical artifact. We removed that
 artifact. Turning the port's bilinear sampler on restores a usable gradient through the position
-index. On the games with a moving tracked sprite, the gradient methods become faithful. Their
-position-regime faithfulness rises above zero. On Pong it reaches $0.791$ for vanilla saliency,
+index. On the games with a moving tracked sprite the restored gradient becomes faithful. On Pong
+it reaches $0.791$ for vanilla saliency,
 grad\(\times\)input, smoothgrad, and expected gradients. On Q*bert it reaches $0.529$ for vanilla
 saliency, grad\(\times\)input, smoothgrad, and integrated gradients (Fig.~\ref{fig:sampler}). The
 restored gradient concentrates on the position byte that drives the sprite, \texttt{ram[54]} on
-Pong; it finds the right cause. Still, none of these methods recovers any meaning, exactly as
-before, and exactly like every other method in the study. We removed the
-faithfulness deficit, but the meaning still did not appear. Hence the shortfall is not a
-faithfulness deficit waiting for a better gradient. Even when the gradient is corrected, it
+Pong; it finds the right cause. Yet the rise is confined to one or two games. Averaged over the
+six position games the restored faithfulness is only about $0.22$ for the SmoothGrad-family
+methods and about $0.09$ for integrated and expected gradients. So a faithful-capable substrate
+does not make the gradient method faithful in general. Where it does become faithful, none of these
+methods recovers any meaning, exactly as
+before, and exactly like every other method in the study. Even where the gradient is corrected, it
 identifies the cause but no meaning. So the meaning was never present in the wiring for a method
 to recover.
 
@@ -71,7 +76,7 @@ The improvement occurs only in specific cases, and that pattern is itself eviden
 universal rise. It rises only on the games with a moving tracked sprite the gradient can flow to.
 Integrated gradients with a zeros baseline still vanishes on Pong. The static-sprite games show no
 rise, and so does the case where the restored gradient falls on a cell the program does not
-currently read. Where a position byte exists and moves, the sampler makes the gradient faithful.
+currently read. Where a position byte exists and moves, the sampler makes that gradient faithful.
 We gave the faithfulness explanation every case it could win. None of it produced a single
 semantic label (Fig.~\ref{fig:sampler}).
 
@@ -137,7 +142,7 @@ the strongest causal account a fully observable machine permits stops short of m
 result suggests that faithfulness alone should not be treated as understanding in less observable
 neural systems, where the circuit itself is uncertain and no clean ground truth is on hand. We
 measure $1-S=0.56$ on an exactly recovered circuit on Breakout
-($1-0.4444$; the ACDC family mean is $1-0.32=0.68$), and we do not extend that number to neural
+($1-0.4444$; the ACDC family mean is $1-0.31=0.69$), and we do not extend that number to neural
 networks as a proven floor; the precise scope, and what this paper does not claim, are set out
 in the Supplementary box on what we do and do not measure (S6).
 
@@ -165,10 +170,13 @@ on use vs.\ presence; \cite{anand2019unsupervised,elhage2022toy,kindermans2019un
 probing, superposition, and reliability). The takeaway is one line: every VCS failure has a named
 counterpart in how interpretability methods are reported to fail on networks, so a property
 provable here is one to suspect there. On the position regime the causal and intervention
-methods open a $0.344$ faithfulness gap over the gradient and correlational methods, and
-activation patching reaches the oracle ceiling ($1.000$) where vanilla saliency sits at the
-naive-gradient floor ($0.000$). Per-row VCS scores, their committed records, and the full
-map are in the Supplementary Information.
+methods open a $0.238$ faithfulness gap over the gradient and correlational methods, in the
+expected direction but not significant at six games; the robust contrast is the all-regime
+gap of $0.30$ whose interval excludes zero. The naive gradient is provably zero on the
+position read, and even after the sampler restores a gradient the position-regime mean stays
+low (about $0.25$ for the gradient family); activation patching, by contrast, reaches the
+oracle ceiling ($1.000$) there where vanilla saliency reaches only $0.165$. Per-row VCS
+scores, their committed records, and the full map are in the Supplementary Information.
 }\label{fig:representativeness}
 \end{figure}
 

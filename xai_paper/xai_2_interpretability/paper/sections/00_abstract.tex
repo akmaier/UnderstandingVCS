@@ -9,12 +9,13 @@ Understanding VCS Project, a bit-exact and differentiable copy of the Atari~2600
 The machine was never built to be interpretable. Yet it is fully known, so the
 true cause of any output can be computed by exact intervention. We score thirty
 interpretability methods against this known answer. Causal and intervention
-methods are more faithful than gradient and correlational ones ($0.68$ versus
-$0.29$). The clearest case is a sprite's position, where the naive gradient is
-provably zero: a causal method scores $1.000$ and standard saliency scores
-$0.000$. But faithfulness is not what is missing. When we switch on the port's
-differentiable sampler, the gradient methods become faithful too---saliency rises
-from $0.000$ to $0.791$ on Pong---yet no method recovers what a variable means.
+methods are more faithful than gradient and correlational ones ($0.66$ versus
+$0.37$; the gap excludes zero). The clearest case is a sprite's position, where the
+naive gradient is provably zero: a causal method scores $1.000$ and standard saliency
+$0.165$. But faithfulness is not what is missing. When we switch on the port's
+differentiable sampler, the naive gradient becomes non-zero---saliency rises
+from $0.000$ to $0.791$ on Pong---yet its faithfulness stays low on most games and no
+method recovers what a variable means.
 Every method reports which signals matter, never what they mean. We name this
 remaining distance the semantic gap, and we explore it in detail. Meaning is not in the
 mechanism. For software it is fixed outside the code, in the documentation and the

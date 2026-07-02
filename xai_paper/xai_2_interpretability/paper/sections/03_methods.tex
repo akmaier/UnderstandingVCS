@@ -218,10 +218,10 @@ the position regime informative. Under Prop.~\ref{prop:zero} the naive gradient 
 zero there, and its correlation with the oracle is $0$. The reported faithfulness is therefore
 $0.00$ and not a $0.5$ floor. The two committed estimators differ only in how the raw
 correlation is summarized across the six core games. Phase~B reports the raw correlation
-directly (e.g.\ occlusion at $\rho=0.482$), so a negative correlation is recorded as a negative
+directly (e.g.\ occlusion at $F=0.639$), so a negative correlation is recorded as a negative
 number. In Phase~A's single-unit and tuning analyses the per-game correlations can be negative,
 so we clip each per-game correlation at $0$ and then average across games (e.g.\ the tuning
-analysis A3, lowest in Phase~A at $0.116$, the clip-at-zero mean of six per-game correlations
+analysis A3, lowest in Phase~A at $0.091$, the clip-at-zero mean of six per-game correlations
 that include negatives). For the same attribution map we also report, as quality measures,
 deletion/insertion area-under-curve and precision at $k$ against the true causal top-$k$,
 $\mathrm{P@}k=|\,\mathrm{top}_k(\hat{E})\cap\mathrm{top}_k(\{\Delta y(u)\})\,|/k$. For a
@@ -306,13 +306,16 @@ area-under-curve, and precision at $k$, are taken against T1 and need no T3; onl
 concept-level scores draw on the external T3 labels, and we flag every such score as
 alignment-to-given, not discovery. We aggregate the committed per-game records into one row
 per method on the shared faithfulness-versus-plausibility axes of the Results leaderboard.
-The headline contrast is the position regime, where the naive gradient is zero under the hard
-forward map by Prop.~\ref{prop:zero}.
-There, causal and intervention methods average a faithfulness of $0.41$ against $0.07$ for
-gradient and correlational methods, a gap of $0.34$. The per-method extreme places an
-exact causal method, activation patching, at faithfulness $1.000$ and the field's default
-saliency at $0.000$ on all six games, the popular method nonetheless carrying the higher
-plausibility proxy ($0.9$ versus $0.5$). We measure the semantic gap relative to these numbers.
+The headline contrast is the all-regime gap. Pooled over every output, causal and
+intervention methods average a faithfulness of $0.66$ against $0.37$ for gradient and
+correlational methods, a gap of $0.30$ whose $95\%$ interval excludes zero. On the position
+regime alone, where the naive gradient is zero under the hard forward map by
+Prop.~\ref{prop:zero}, the two families average $0.49$ against $0.25$; this gap points the
+same way but is not significant at six games. The per-method extreme places an
+exact causal method, activation patching, at faithfulness $1.000$ on all six games and the
+field's default saliency at only $0.165$ on the position regime, the popular method
+nonetheless carrying the higher plausibility proxy ($0.9$ versus $0.5$). We measure the
+semantic gap relative to these numbers.
 
 % =====================================================================
 % BIBTEX-NEEDED: full entries for the keys cited above that are NOT yet

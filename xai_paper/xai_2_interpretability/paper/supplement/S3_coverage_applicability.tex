@@ -5,8 +5,12 @@ coverage table makes the scope of that choice explicit. Paper~1 validates the
 differentiable VCS ports bit-for-bit against the \texttt{xitari} reference on all 64 Arcade
 Learning Environment games, within a 30-frame RAM and 60-frame screen window. The
 interpretability study reported here runs on the six games listed in
-Table~\ref{supp:tab:coverage}. We pick these six because all three tiers of ground truth
-(\Sectionname\ref{sec:tiers}) are available for them and the oracle is exact. The remaining 58 games are
+Table~\ref{supp:tab:coverage}. Every method is scored on a shared gameplay state, produced by
+one seeded random-action stream (seed~$0$, $90$-frame prefix, $15$-frame analysis horizon), not
+on the boot screen. This keeps the analysis inside the Paper~1 bit-exact window while giving the
+oracle a rich, non-degenerate cause set to score against. We pick these six games because all
+three tiers of ground truth (\Sectionname\ref{sec:tiers}) are available for them and the oracle is
+exact. The remaining 58 games are
 bit-exact substrate but are not scored here. Some fall outside the validated horizon for the
 analyses we run. For others, the tiered labels they would need are not yet produced. They are
 candidates for the larger sweep, and are not excluded for any methodological reason. The
@@ -39,6 +43,20 @@ space\_invaders & bit-exact & 30/60 fr & T1,T2,T3 & 30 + oracle & per-game \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+A gameplay state can still be degenerate for a particular method, and the benchmark records
+this rather than scoring it as a failure. The oracle cause-density gate is the first guard. It
+counts how many candidate causes move the shared output above a floor, and rejects a state that
+does not clear a minimum count, so a near-flat oracle column never reaches a method. On
+\texttt{seaquest} the gate raises the count of live candidate causes at the analysis frame from
+$2$ to $19$, which is what makes the game usable. Three residual degenerate cells survive the
+gate and are marked, not scored as zero. On \texttt{ms\_pacman} the pairwise neuroscience
+analysis (A4) finds no coupled candidate pair at that frame, so its cell is uninformative. The
+on-distribution counterfactual returns a zero delta on \texttt{space\_invaders},
+\texttt{ms\_pacman}, and \texttt{qbert}, where its perturbation does not move the shared output;
+those cells are recorded as not-valid. Expected Gradients scores low on the content regime of
+every game but \texttt{pong}, because the causal byte it should attribute to is static there.
+None of these cells is read as a wrong answer.
 
 Whether a method applies at all depends on what the method needs from its target. The
 applicability matrix records that for every method family. The Phase~A neuroscience analyses

@@ -39,12 +39,12 @@ Activation patching~\cite{vig2020investigating}          & $1.00$ $[1.00,1.00]$ 
 Causal scrubbing~\cite{chan2022causal}                   & $1.00$ $[1.00,1.00]$ & $0.50$ & exact data-flow preserved \\
 Interchange interventions (DAS)~\cite{geiger2023finding} & $1.00$ $[1.00,1.00]$ & $0.50$ & verifies a supplied alignment \\
 Logit / tuned lens~\cite{belrose2023eliciting}           & $1.00$ $[1.00,1.00]$ & $0.50$ & exact intermediate value \\
-NMF/PCA dictionaries                                     & $0.54$ $[0.42,0.63]$ & $0.75$ & named, partly inert \\
-Attribution patching~\cite{nanda2023attribution}         & $0.50$ $[0.24,0.75]$ & $0.90$ & approximate (linear surrogate) \\
-Path patching~\cite{wang2022interpretability}            & $0.46$ $[0.13,0.83]$ & $0.50$ & search (single-shot edges) \\
-ACDC~\cite{conmy2023towards}                              & $0.45$ $[0.11,0.79]$ & $0.50$ & search (graph-correct, $S{=}0.44$) \\
-Sparse autoencoder~\cite{cunningham2023sparse}           & $0.19$ $[0.01,0.48]$ & $0.75$ & named yet inert ($F{=}0.04$ on Pong) \\
-Linear probing ($+$ control)~\cite{hewitt2019designing}  & $0.16$ $[0.08,0.24]$ & $0.85$ & present, not used \\
+NMF/PCA dictionaries                                     & $0.54$ $[0.44,0.65]$ & $0.75$ & named, partly inert \\
+Attribution patching~\cite{nanda2023attribution}         & $0.50$ $[0.23,0.78]$ & $0.90$ & approximate (linear surrogate) \\
+ACDC~\cite{conmy2023towards}                              & $0.47$ $[0.18,0.78]$ & $0.50$ & search (graph-correct, $S{=}0.44$) \\
+Path patching~\cite{wang2022interpretability}            & $0.25$ $[0.03,0.58]$ & $0.50$ & search (single-shot edges) \\
+Sparse autoencoder~\cite{cunningham2023sparse}           & $0.21$ $[0.02,0.49]$ & $0.75$ & named yet inert ($F{=}0.04$ on Pong) \\
+Linear probing ($+$ control)~\cite{hewitt2019designing}  & $0.11$ $[0.04,0.17]$ & $0.85$ & present, not used \\
 \midrule
 Oracle (positive control)                               & $1.00$ $[1.00,1.00]$ & $1.00$ & exact intervention ground truth \\
 \botrule
@@ -79,11 +79,11 @@ just $0.19$ of cases. Yet its recovered edges stay precise (edge precision $0.95
 $0.70$) because the linearisation is wrong about the size of an edge, not about whether the
 edge exists. Path patching,
 run in the IOI style as a single directed do-operation, recovers the directed edge set of
-the true routine at mean $F1=0.46$. On Q*bert it matches the empty direct circuit perfectly
+the true routine at mean $F1=0.25$. On Q*bert it matches the empty direct circuit perfectly
 ($F1=1.0$). On Pong it recovers none of the six true edges ($F1=0.0$), because each
 receiver's value is re-derived within the horizon, so no one-step path carries a surviving
 signal. ACDC discovers the circuit automatically by resample-ablation edge pruning over a
-threshold sweep. It reaches mean $F1=0.45$ (ROC-AUC $0.70$). A positive control re-runs the
+threshold sweep. It reaches mean $F1=0.47$ (ROC-AUC $0.70$). A positive control re-runs the
 identical edge-restricted procedure under the exhaustive do-set and scores $F1=1.0$ on every
 game, so the deficit is a real measurement of single-shot recovery, not a broken scorer.
 These are the methods the field reaches for when the exact intervention is too expensive.
@@ -116,7 +116,7 @@ the SAE succeeds. By the oracle, it does not: ablating the matched Pong feature
 and re-running the real ROM gives causal faithfulness F$=0.041$, with S$=-0.336$. When we
 remove the matched feature, the computation it is supposed to name does not change. Across
 the six
-games the SAE's mean leaderboard faithfulness is $0.19$ against a method-tradition
+games the SAE's mean leaderboard faithfulness is $0.21$ against a method-tradition
 plausibility proxy of $0.75$, squarely in the \Sectionname\ref{sec:methods} danger zone. The
 NMF/PCA dictionary contrast repeats the pattern at lower resolution (matched-component
 fractions up to $0.75$ beside near-zero causal use). This separation is the reverse of the
@@ -136,7 +136,7 @@ and linearly associated with the displayed score, yet provably inert under inter
 the window.
 The oracle is strictly stronger than the probe. The probe asks whether a value can be read
 out. The oracle asks whether changing that value changes the output. Probing earns a high plausibility proxy ($0.85$)
-on a faithfulness of $0.16$, the second-worst entry in the danger zone (Table~\ref{tab:phaseC}).
+on a faithfulness of $0.11$, the lowest faithfulness in the danger zone (Table~\ref{tab:phaseC}).
 We state the caveat directly: these labels are imported externally (AtariARI,
 OCAtari) and only \emph{verified} causally, never \emph{discovered}. So DAS's alignment
 accuracy of $1.0$ is guaranteed in advance, because it only confirms a variable we supplied.
@@ -146,20 +146,21 @@ The probe tells us a concept is present. Only the intervention tells us the prog
 
 Mechanistic interpretability is the clearest test of the paper's claim. Run against a known real circuit, the
 mechanistic toolkit splits into two groups. The first is a causal core that is faithful by
-construction: activation patching, causal scrubbing, DAS, and the logit lens, all at $1.0$
-(mean faithfulness $0.63$, the highest of the three traditions). The second is a recovery
+construction: activation patching, causal scrubbing, DAS, and the logit lens, all at $1.0$.
+Together with the intervention methods this causal and intervention family averages $0.66$
+faithfulness, the highest of the three traditions. The second is a recovery
 layer that is either precise but partial (attribution and path patching, ACDC) or present but
 inert (SAEs, dictionaries, probing). The oracle, not our judgement, decides the three
 separations. They appear exactly where the field's success metrics report success:
 graph-correct yet behaviour-incomplete (ACDC on Breakout F$=1.0$/M$=1.0$, S$=0.44$), named yet
 causally inert (SAE on Pong matched $1.0$, F$=0.041$), present yet unused (cell~84). The
-faithfulness advantage that the causal core holds over the gradient methods is itself
-regime-dependent, and we state that plainly. The gap is robust only on the position-output
-regime ($0.34$, 95\% CI $[0.02,0.50]$, excluding zero). It collapses when the output is
-content rather than position or when the oracle-equivalent controls are excluded ($0.12$ and
-$0.04$, both with confidence intervals crossing zero). The separations above survive that
-caveat because each is a within-method contradiction on a single game, not a cross-family
-mean. On a machine that gives faithfulness for free, faithfulness is necessary for
+faithfulness advantage that the causal and intervention family holds over the gradient
+methods is robust across all output regimes. The all-regime gap is $0.30$ (95\% CI
+$[0.23,0.38]$, excluding zero). Restricted to the position-output regime alone the gap is
+$0.24$, in the same direction, but at six games its interval crosses zero
+($[-0.05,0.32]$), so on position we report a directional trend, not a significant win. The
+separations above do not rest on either family mean, because each is a within-method
+contradiction on a single game. On a machine that gives faithfulness for free, faithfulness is necessary for
 understanding but not sufficient. The residual is the semantic gap: the wiring is recovered,
 but the meaning is not. \Sectionname\ref{sec:results_compare} places this gap on the shared axes, and
 the Discussion treats it as the field's open problem.

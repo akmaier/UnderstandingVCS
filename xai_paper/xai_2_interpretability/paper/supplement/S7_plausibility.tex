@@ -66,13 +66,13 @@ oracle (control)& $1.00$ & The \Sectionname\ref{sec:oracle} ground truth by cons
 
 The paper draws a contrast between this proxy and measured faithfulness. On the committed
 records the two move in opposite directions. Across the thirty methods under test the Spearman
-rank correlation between faithfulness and the proxy is $-0.64$, a strong negative association.
+rank correlation between faithfulness and the proxy is $-0.36$, a negative association.
 The traditions the field finds most convincing are, on this machine, among the least faithful.
-Fourteen methods fall in the danger zone, defined here as a proxy of at least $0.70$ together
-with a faithfulness below $0.40$. They include the entire gradient battery, the correlational
-neuroscience methods, linear probing, and the sparse autoencoder. The per-method extreme makes
-the point sharply. Vanilla saliency has the highest proxy, $0.9$, yet scores faithfulness
-$0.0$ on the position regime. Activation patching has a lower proxy, $0.5$, and scores $1.0$.
+Eight methods fall in the danger zone, defined here as a proxy of at least $0.70$ together
+with a faithfulness below $0.40$. They include the correlational neuroscience methods, Expected
+Gradients, guided backprop, linear probing, and the sparse autoencoder. The per-method extreme
+makes the point sharply. Vanilla saliency has the highest proxy, $0.9$, yet scores faithfulness
+$0.165$ on the position regime. Activation patching has a lower proxy, $0.5$, and scores $1.0$.
 Here the less faithful method is the more plausible one. These figures are produced by
 \texttt{tools/xai\_study/compare/plausibility\_sensitivity.py} from the leaderboard and
 recorded in \texttt{compare/out/plausibility\_sensitivity.csv}.
@@ -87,14 +87,17 @@ preserves the rank order of traditions. The third uses the same index-keyed offs
 $\sigma\in\{0.1,0.2\}$, large enough to swap neighbouring traditions' ranks. The fourth drops
 one whole tradition at a time and recomputes on the remainder. Across all fourteen
 perturbations the rank correlation between faithfulness and proxy stays negative. It ranges
-from $-0.79$ to $-0.40$ and never approaches zero. The danger zone stays populated, with
-between six and fifteen methods. The per-method anchor sign holds in every scheme where both
-anchor methods are present, the more plausible saliency remaining the less faithful. The worst
-case is the leave-the-gradient-tradition-out run. It removes the most plausible and least
-faithful block at once, and still leaves six danger-zone methods and a rank correlation of
-$-0.79$. Table~\ref{supp:tab:plaussens} reports the full sweep. The headline contrast survives
-every alternative proxy assignment we tried: plausibility and faithfulness are not the same
-axis, and high plausibility is no guarantee of faithfulness.
+from $-0.76$ to $-0.08$. The danger zone stays populated, with
+between four and ten methods. The per-method anchor sign holds in every scheme where both
+anchor methods are present, the more plausible saliency remaining the less faithful. Two runs
+bound the range. The strongest is the leave-the-gradient-tradition-out run. It removes the most
+plausible and least faithful block at once, and still leaves six danger-zone methods and a rank
+correlation of $-0.76$. The weakest is the leave-the-causal-tradition-out run, where the
+correlation falls to $-0.08$, close to zero; removing the faithful causal block flattens the
+association, so the contrast is carried in part by that block. Table~\ref{supp:tab:plaussens}
+reports the full sweep. The contrast keeps its sign under every alternative proxy assignment we
+tried: plausibility and faithfulness are not the same axis, and high plausibility is no
+guarantee of faithfulness.
 
 \begin{table}[t]
 \centering
@@ -110,21 +113,21 @@ row. Across every scheme the correlation stays negative and the danger zone stay
 \toprule
 Scheme & Param & $n$ & $\rho$ & Danger & Anchor \\
 \midrule
-baseline                & ---           & 30 & $-0.64$ & 14 & 1 \\
-additive jitter         & $\sigma=0.05$ & 30 & $-0.63$ & 14 & 1 \\
-additive jitter         & $\sigma=0.10$ & 30 & $-0.61$ & 14 & 1 \\
-additive jitter         & $\sigma=0.20$ & 30 & $-0.55$ & 15 & 1 \\
-rank-preserving         & $\sigma=0.10$ & 30 & $-0.64$ & 14 & 1 \\
-rank-preserving         & $\sigma=0.20$ & 30 & $-0.64$ & 14 & 1 \\
-rank-jittering          & $\sigma=0.10$ & 30 & $-0.61$ & 14 & 1 \\
-rank-jittering          & $\sigma=0.20$ & 30 & $-0.55$ & 15 & 1 \\
-leave-out causal        & ---           & 24 & $-0.40$ & 14 & \\
-leave-out correlational & ---           & 26 & $-0.67$ & 10 & 1 \\
-leave-out descriptive   & ---           & 29 & $-0.60$ & 14 & 1 \\
-leave-out dim.\ red.    & ---           & 27 & $-0.64$ & 13 & 1 \\
-leave-out gradient      & ---           & 20 & $-0.79$ &  6 & \\
-leave-out intervention  & ---           & 25 & $-0.61$ & 14 & 1 \\
-leave-out probing       & ---           & 29 & $-0.65$ & 13 & 1 \\
+baseline                & ---           & 30 & $-0.36$ &  8 & 1 \\
+additive jitter         & $\sigma=0.05$ & 30 & $-0.40$ &  8 & 1 \\
+additive jitter         & $\sigma=0.10$ & 30 & $-0.41$ &  8 & 1 \\
+additive jitter         & $\sigma=0.20$ & 30 & $-0.42$ & 10 & 1 \\
+rank-preserving         & $\sigma=0.10$ & 30 & $-0.36$ &  8 & 1 \\
+rank-preserving         & $\sigma=0.20$ & 30 & $-0.36$ &  8 & 1 \\
+rank-jittering          & $\sigma=0.10$ & 30 & $-0.41$ &  8 & 1 \\
+rank-jittering          & $\sigma=0.20$ & 30 & $-0.42$ & 10 & 1 \\
+leave-out causal        & ---           & 24 & $-0.08$ &  8 & \\
+leave-out correlational & ---           & 26 & $-0.40$ &  4 & 1 \\
+leave-out descriptive   & ---           & 29 & $-0.29$ &  8 & 1 \\
+leave-out dim.\ red.    & ---           & 27 & $-0.34$ &  7 & 1 \\
+leave-out gradient      & ---           & 20 & $-0.76$ &  6 & \\
+leave-out intervention  & ---           & 25 & $-0.34$ &  8 & 1 \\
+leave-out probing       & ---           & 29 & $-0.36$ &  7 & 1 \\
 \bottomrule
 \end{tabular}
 \end{table}
