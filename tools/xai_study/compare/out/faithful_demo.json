@@ -22,33 +22,33 @@
     "n_records": 7,
     "faith_source": "value:max_abs_recovered_minus_exact",
     "metric_names": "max_abs_recovered_minus_exact",
-    "commits": "86fdc27;9e3cdfd"
+    "commits": "86fdc27;c157ec63"
   },
   "popular_method": {
-    "method": "vanilla_saliency",
+    "method": "integrated_gradients",
     "phase": "phaseB_attribution",
     "tradition": "gradient",
-    "faithfulness_all_regimes": 0.2667,
-    "faithfulness_ci95": 0.2142,
+    "faithfulness_all_regimes": 0.4099,
+    "faithfulness_ci95": 0.2151,
     "faithfulness_position_regime": 0.0,
-    "faithfulness_content_regime": 0.5334,
+    "faithfulness_content_regime": 0.6706,
     "plausibility_proxy": 0.9,
     "n_games": 6,
-    "n_records": 12,
+    "n_records": 14,
     "faith_source": "value:pearson_corr_with_oracle",
     "metric_names": "pearson_corr_with_oracle",
-    "commits": "90bf6f1"
+    "commits": "22881c2;9bc37f8b"
   },
   "pair_contrast": {
     "regime": "position",
     "faithful": "activation_patching",
-    "popular": "vanilla_saliency",
+    "popular": "integrated_gradients",
     "faithful_faithfulness_position": 1.0,
     "popular_faithfulness_position": 0.0,
     "position_gap": 1.0,
     "faithful_faithfulness_all_regimes": 1.0,
-    "popular_faithfulness_all_regimes": 0.2667,
-    "all_regime_gap": 0.7333,
+    "popular_faithfulness_all_regimes": 0.4099,
+    "all_regime_gap": 0.5901,
     "oracle_ceiling": 1.0,
     "naive_gradient_floor": 0.0
   },
@@ -56,13 +56,13 @@
     "regime": "position",
     "faithful_bucket": "causal/intervention",
     "popular_bucket": "gradient/correlational",
-    "faithful_bucket_mean": 0.4118,
-    "faithful_bucket_ci95": 0.3902,
-    "faithful_bucket_n": 4,
-    "popular_bucket_mean": 0.0683,
-    "popular_bucket_ci95": 0.0701,
-    "popular_bucket_n": 9,
-    "bucket_gap": 0.3435,
+    "faithful_bucket_mean": 1.0,
+    "faithful_bucket_ci95": 0.0,
+    "faithful_bucket_n": 1,
+    "popular_bucket_mean": 0.0823,
+    "popular_bucket_ci95": 0.1613,
+    "popular_bucket_n": 2,
+    "bucket_gap": 0.9177,
     "source": "leaderboard.headline_contrast.position_regime (E6-1)"
   },
   "per_game": [
@@ -70,17 +70,17 @@
       "game": "breakout",
       "faithful_faithfulness": 1.0,
       "faithful_regime": "all",
-      "popular_faithfulness": 0.0,
-      "popular_regime": "position",
-      "gap": 1.0
+      "popular_faithfulness": 0.3749,
+      "popular_regime": "all",
+      "gap": 0.6251
     },
     {
       "game": "ms_pacman",
       "faithful_faithfulness": 1.0,
       "faithful_regime": "all",
-      "popular_faithfulness": 0.0,
-      "popular_regime": "position",
-      "gap": 1.0
+      "popular_faithfulness": 0.4053,
+      "popular_regime": "all",
+      "gap": 0.5947
     },
     {
       "game": "pong",
@@ -94,25 +94,25 @@
       "game": "qbert",
       "faithful_faithfulness": 1.0,
       "faithful_regime": "all",
-      "popular_faithfulness": 0.0,
-      "popular_regime": "position",
-      "gap": 1.0
+      "popular_faithfulness": 0.4997,
+      "popular_regime": "all",
+      "gap": 0.5003
     },
     {
       "game": "seaquest",
       "faithful_faithfulness": 1.0,
       "faithful_regime": "all",
-      "popular_faithfulness": 0.0,
-      "popular_regime": "position",
-      "gap": 1.0
+      "popular_faithfulness": 0.3549,
+      "popular_regime": "all",
+      "gap": 0.6451
     },
     {
       "game": "space_invaders",
       "faithful_faithfulness": 1.0,
       "faithful_regime": "all",
-      "popular_faithfulness": 0.0,
-      "popular_regime": "position",
-      "gap": 1.0
+      "popular_faithfulness": 0.4999,
+      "popular_regime": "all",
+      "gap": 0.5001
     }
   ],
   "per_game_paired_games": [
@@ -124,8 +124,8 @@
     "space_invaders"
   ],
   "metric_name": "faithfulness_gap_causal_minus_popular_position_regime",
-  "value": 0.3435,
-  "summary": "On a system where the answer is known exactly \u2014 the bit-exact VCS with the \u00a71 intervention oracle as ground truth \u2014 the field's default attribution tool scores near chance where a causal method scores near the ceiling. On the position/index regime (discrete sprite-position outputs whose naive gradient is provably zero, \u00a71), the FAITHFUL method 'activation_patching' (causal) reaches faithfulness 1.000 (\u2248 the oracle ceiling 1.0), while the POPULAR method 'vanilla_saliency' (gradient) collapses to 0.000 (\u2248 the 0.0 naive-gradient floor) \u2014 a per-method gap of 1.000. Aggregated over the regime, causal/intervention methods average 0.412 (\u00b10.390, n=4) vs 0.068 (\u00b10.070, n=9) for gradient/correlational methods \u2014 a 0.344 faithfulness gap. The popular method nonetheless carries the higher human-plausibility proxy (0.9 vs 0.5): plausible \u2260 faithful (the \u00a70 danger zone), measured.",
+  "value": 0.9177,
+  "summary": "On a system where the answer is known exactly \u2014 the bit-exact VCS with the \u00a71 intervention oracle as ground truth \u2014 the field's default attribution tool scores near chance where a causal method scores near the ceiling. On the position/index regime (discrete sprite-position outputs whose naive gradient is provably zero, \u00a71), the FAITHFUL method 'activation_patching' (causal) reaches faithfulness 1.000 (\u2248 the oracle ceiling 1.0), while the POPULAR method 'integrated_gradients' (gradient) collapses to 0.000 (\u2248 the 0.0 naive-gradient floor) \u2014 a per-method gap of 1.000. Aggregated over the regime, causal/intervention methods average 1.000 (\u00b10.000, n=1) vs 0.082 (\u00b10.161, n=2) for gradient/correlational methods \u2014 a 0.918 faithfulness gap. The popular method nonetheless carries the higher human-plausibility proxy (0.9 vs 0.5): plausible \u2260 faithful (the \u00a70 danger zone), measured.",
   "arrays": "faithful_demo.npz",
   "self_check": {
     "pass": true,
@@ -143,7 +143,7 @@
       {
         "name": "aggregate bucket gap matches leaderboard headline",
         "pass": true,
-        "detail": "demo=0.3435 lb=0.3435"
+        "detail": "demo=0.9177 lb=0.9177"
       },
       {
         "name": "faithful is near ceiling (>=0.9 of oracle 1.0)",

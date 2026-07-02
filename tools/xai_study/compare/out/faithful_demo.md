@@ -4,40 +4,40 @@ Pure read over the committed leaderboard (E6-1, `compare/out/leaderboard.json`) 
 
 ## Headline
 
-> On a system where the answer is known exactly — the bit-exact VCS with the §1 intervention oracle as ground truth — the field's default attribution tool scores near chance where a causal method scores near the ceiling. On the position/index regime (discrete sprite-position outputs whose naive gradient is provably zero, §1), the FAITHFUL method 'activation_patching' (causal) reaches faithfulness 1.000 (≈ the oracle ceiling 1.0), while the POPULAR method 'vanilla_saliency' (gradient) collapses to 0.000 (≈ the 0.0 naive-gradient floor) — a per-method gap of 1.000. Aggregated over the regime, causal/intervention methods average 0.412 (±0.390, n=4) vs 0.068 (±0.070, n=9) for gradient/correlational methods — a 0.344 faithfulness gap. The popular method nonetheless carries the higher human-plausibility proxy (0.9 vs 0.5): plausible ≠ faithful (the §0 danger zone), measured.
+> On a system where the answer is known exactly — the bit-exact VCS with the §1 intervention oracle as ground truth — the field's default attribution tool scores near chance where a causal method scores near the ceiling. On the position/index regime (discrete sprite-position outputs whose naive gradient is provably zero, §1), the FAITHFUL method 'activation_patching' (causal) reaches faithfulness 1.000 (≈ the oracle ceiling 1.0), while the POPULAR method 'integrated_gradients' (gradient) collapses to 0.000 (≈ the 0.0 naive-gradient floor) — a per-method gap of 1.000. Aggregated over the regime, causal/intervention methods average 1.000 (±0.000, n=1) vs 0.082 (±0.161, n=2) for gradient/correlational methods — a 0.918 faithfulness gap. The popular method nonetheless carries the higher human-plausibility proxy (0.9 vs 0.5): plausible ≠ faithful (the §0 danger zone), measured.
 
 ## The pair (on the position/index regime, naive gradient ≡ 0)
 
 | Role | Method | Tradition | Phase | Faith (position) | Faith (all regimes) | Plausibility (proxy) |
 |---|---|---|---|---|---|---|
 | FAITHFUL | `activation_patching` | causal | phaseC_mechanistic | **1.0000** | 1.0000 | 0.5 |
-| POPULAR | `vanilla_saliency` | gradient | phaseB_attribution | **0.0000** | 0.2667 | 0.9 |
-| _gap_ | (faithful − popular) | | | **1.0000** | 0.7333 | |
+| POPULAR | `integrated_gradients` | gradient | phaseB_attribution | **0.0000** | 0.4099 | 0.9 |
+| _gap_ | (faithful − popular) | | | **1.0000** | 0.5901 | |
 | _reference_ | ORACLE ceiling / naive-grad floor | | | 1.0 / 0.0 | | |
 
 ## Aggregate over the regime (leaderboard headline)
 
 | Bucket | Faithfulness (position) | n |
 |---|---|---|
-| causal/intervention (faithful) | 0.4118 ± 0.3902 | 4 |
-| gradient/correlational (popular) | 0.0683 ± 0.0701 | 9 |
-| **gap** | **0.3435** | |
+| causal/intervention (faithful) | 1.0000 ± 0.0000 | 1 |
+| gradient/correlational (popular) | 0.0823 ± 0.1613 | 2 |
+| **gap** | **0.9177** | |
 
 ## Per-game head-to-head
 
 | Game | Faithful | (regime) | Popular | (regime) | Gap |
 |---|---|---|---|---|---|
-| breakout | 1.0000 | all | 0.0000 | position | 1.0000 |
-| ms_pacman | 1.0000 | all | 0.0000 | position | 1.0000 |
+| breakout | 1.0000 | all | 0.3749 | all | 0.6251 |
+| ms_pacman | 1.0000 | all | 0.4053 | all | 0.5947 |
 | pong | 1.0000 | position | 0.0000 | position | 1.0000 |
-| qbert | 1.0000 | all | 0.0000 | position | 1.0000 |
-| seaquest | 1.0000 | all | 0.0000 | position | 1.0000 |
-| space_invaders | 1.0000 | all | 0.0000 | position | 1.0000 |
+| qbert | 1.0000 | all | 0.4997 | all | 0.5003 |
+| seaquest | 1.0000 | all | 0.3549 | all | 0.6451 |
+| space_invaders | 1.0000 | all | 0.4999 | all | 0.5001 |
 
 ## Self-check: PASS
 - [x] faithful beats popular on the position regime — 1.0000 > 0.0000
 - [x] per-method position gap > 0 — gap=1.0000
-- [x] aggregate bucket gap matches leaderboard headline — demo=0.3435 lb=0.3435
+- [x] aggregate bucket gap matches leaderboard headline — demo=0.9177 lb=0.9177
 - [x] faithful is near ceiling (>=0.9 of oracle 1.0) — 1.0000 >= 0.9
 - [x] popular is near chance (<=0.15) — 0.0000 <= 0.15
 - [x] popular plausibility proxy > faithful (danger zone) — 0.9 > 0.5
