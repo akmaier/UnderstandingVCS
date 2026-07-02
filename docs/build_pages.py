@@ -60,6 +60,7 @@ PAGES = [
     ("conformance.html", "Conformance"),
     ("paper2.html", "Paper 2"),
     ("methods.html", "P2 Methods"),
+    ("ground_truth.html", "Ground Truth ROMs"),
     ("provenance.html", "Provenance"),
     ("environment.html", "Environment"),
     ("reproduce.html", "Reproduce"),
@@ -1305,6 +1306,188 @@ def build_method_page(meth):
     return page("m_%s.html" % meth["key"], meth["title"] + " — Paper 2 method", body)
 
 
+def build_ground_truth():
+    """The Ground Truth ROMs page: lay explainers for T1/T2/T3 and F/S/M, plus a
+    per-game card grid driven by docs/groundtruth_data.json + rendered screenshots."""
+    import json
+    data = json.load(open(os.path.join(HERE, "groundtruth_data.json")))
+    NAMES = {"ms_pacman": "Ms. Pac-Man", "qbert": "Q*bert", "up_n_down": "Up'n Down",
+             "space_invaders": "Space Invaders", "beam_rider": "Beam Rider",
+             "video_pinball": "Video Pinball", "private_eye": "Private Eye",
+             "montezuma_revenge": "Montezuma's Revenge", "yars_revenge": "Yars' Revenge",
+             "kung_fu_master": "Kung-Fu Master", "road_runner": "Road Runner",
+             "star_gunner": "Star Gunner", "double_dunk": "Double Dunk",
+             "battle_zone": "Battle Zone", "crazy_climber": "Crazy Climber",
+             "chopper_command": "Chopper Command", "demon_attack": "Demon Attack",
+             "air_raid": "Air Raid", "bank_heist": "Bank Heist", "fishing_derby": "Fishing Derby",
+             "ice_hockey": "Ice Hockey", "name_this_game": "Name This Game",
+             "time_pilot": "Time Pilot"}
+
+    def disp(g):
+        return NAMES.get(g, g.replace("_", " ").title())
+
+    def is_pos(c):
+        c = c.lower()
+        return any(p in c for p in ("_x", "_y", ".xy", "position", "column"))
+
+    labeled = [g for g in data if data[g]["labeled"]]
+    accepted = [g for g in data if data[g].get("accepted")]
+    posreg = [g for g in data if data[g].get("position_regime")]
+
+    def rank(g):
+        d = data[g]
+        tier = 0 if d.get("position_regime") else 1 if d.get("accepted") else 2 if d["labeled"] else 3
+        return (tier, g)
+
+    cards = []
+    for g in sorted(data, key=rank):
+        d = data[g]
+        rel = "assets/groundtruth/%s.png" % g
+        has_img = os.path.exists(os.path.join(HERE, "assets", "groundtruth", g + ".png"))
+        thumb = ('<img src="%s" alt="%s screen" loading="lazy">' % (rel, esc(disp(g)))
+                 if has_img else '<div class="noimg">screenshot pending</div>')
+        obadge = {"both": "AtariARI + OCAtari", "OCAtari": "OCAtari",
+                  "none": "no external label"}[d["origin"]]
+        ocls = {"both": "ok", "OCAtari": "mid", "none": "na"}[d["origin"]]
+        if d["labeled"]:
+            t3 = ("<b>T3:</b> %d of %d imported labels verified causally · %d move a sprite"
+                  % (d["n_verified"], d["n_candidates"], d["n_moving"]))
+        else:
+            t3 = "<b>T3:</b> none — bit-exact T1/T2 only (no external label source)"
+        if d.get("accepted"):
+            state = "<b>Faithfulness (F):</b> %d true causes at the analysis frame — scorable" % (d["n_causes"] or 0)
+            scls = "ok"
+        elif d.get("accepted") is False:
+            state = "<b>Faithfulness (F):</b> too few strong causes at this frame — held out of scoring"
+            scls = "na"
+        else:
+            state = "<b>Faithfulness (F):</b> not in the shared testbed"
+            scls = "na"
+        poslabs = [c for c in d.get("position_labels", []) if is_pos(c)]
+        if d.get("position_regime"):
+            pl = (" — e.g. <code>%s</code>" % esc(poslabs[0])) if poslabs else ""
+            posrow = '<li class="ok"><b>Position regime:</b> yes%s</li>' % pl
+        elif d["labeled"]:
+            posrow = '<li class="mid"><b>Position regime:</b> no moving tracked sprite at this frame</li>'
+        else:
+            posrow = ""
+        cards.append(
+            '<div class="gtcard">'
+            '<div class="gtimg">%s</div>'
+            '<div class="gtbody"><h4>%s <span class="ob %s">%s</span></h4><ul>'
+            '<li class="%s">%s</li><li>%s</li>%s</ul></div></div>'
+            % (thumb, esc(disp(g)), ocls, esc(obadge), scls, state, t3, posrow))
+
+    style = """<style>
+.gtprose{max-width:52rem}
+.gtprose h3{margin-top:1.6rem}
+.gtdefs{display:grid;gap:.7rem;margin:1rem 0}
+.gtdefs .d{border-left:3px solid var(--accent);padding:.5rem .9rem;background:rgba(127,127,127,.06)}
+.gtcounts{display:flex;flex-wrap:wrap;gap:.6rem;margin:1rem 0}
+.gtcounts .c{background:rgba(127,127,127,.10);border-radius:.5rem;padding:.5rem .8rem}
+.gtcounts .c b{font-size:1.3rem;display:block}
+.gtgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;margin-top:1rem}
+.gtcard{border:1px solid rgba(127,127,127,.25);border-radius:.6rem;overflow:hidden;display:flex;flex-direction:column;background:rgba(127,127,127,.04)}
+.gtimg{background:#000;aspect-ratio:16/10;display:flex;align-items:center;justify-content:center}
+.gtimg img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
+.gtimg .noimg{color:#888;font-size:.85rem}
+.gtbody{padding:.6rem .8rem}
+.gtbody h4{margin:.1rem 0 .5rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.gtbody ul{margin:0;padding-left:0;list-style:none;font-size:.86rem;line-height:1.45}
+.gtbody li{padding:.12rem 0}
+.gtbody li.ok{color:var(--ok,#2e7d32)}
+.gtbody li.na{color:var(--bad,#b23b3b)}
+.gtbody li.mid{color:#8a6d1f}
+.ob{font-size:.68rem;font-weight:600;padding:.12rem .45rem;border-radius:.7rem;border:1px solid}
+.ob.ok{color:#2e7d32;border-color:#2e7d3255}
+.ob.mid{color:#8a6d1f;border-color:#8a6d1f55}
+.ob.na{color:#b23b3b;border-color:#b23b3b55}
+</style>"""
+
+    intro = """
+<header class="hero"><div class="wrap">
+  <h1>Ground Truth ROMs</h1>
+  <p class="lead">Explainable-AI methods are usually impossible to check: nobody knows the true
+  inner workings of a deep network, so an explanation can be convincing and wrong with no way to
+  tell. We swap in a 1977 Atari&nbsp;2600 game console instead — a real, complex computer whose
+  every wire and byte is known. For any game we can compute the <em>true</em> cause of any pixel
+  by literally changing a byte and re-running the machine bit-for-bit. That true answer is the
+  ground truth every method is graded against. This page lists, game by game, what ground truth
+  we have and where it comes from.</p>
+</div></header>
+
+<section><div class="wrap gtprose">
+  <h2>Three kinds of ground truth: T1, T2, T3</h2>
+  <p>Not all ground truth is the same. We separate what the machine can tell us by itself from
+  what only a human can supply.</p>
+  <div class="gtdefs">
+    <div class="d"><b>T1 &mdash; the causal map (what actually drives the picture).</b> Take one
+    memory byte, change its value, re-run the console bit-for-bit, and measure how the screen
+    changes. Do that for every candidate byte and you have the exact list of true causes of any
+    output. Nothing external is needed &mdash; the machine answers for itself. <b>Available for all
+    64 games.</b></div>
+    <div class="d"><b>T2 &mdash; the wiring (which part reads or writes which).</b> The program&rsquo;s
+    read/write data-flow graph, read straight off the machine: which registers and memory cells
+    feed which others. Also exact, also <b>all 64 games.</b></div>
+    <div class="d"><b>T3 &mdash; the human meaning (&ldquo;this byte is the ball&rsquo;s x-position&rdquo;).</b>
+    This is different in kind. The <em>name</em> of a byte is not inside the machine; it is a human
+    fact about what the game <em>means</em>. We import names from two public projects and then
+    <b>verify each one causally</b> &mdash; set the byte, re-render, and confirm the named object
+    really moves where predicted. We never invent a meaning; we only confirm a supplied one.
+    <b>T3 exists for 54 of the 64 games.</b></div>
+  </div>
+
+  <h2>How we grade an explanation: F, S, M</h2>
+  <p>An explanation is not &ldquo;right&rdquo; just because it looks convincing. We ask three
+  separate things, and an explanation only counts as right when it clears all three.</p>
+  <div class="gtdefs">
+    <div class="d"><b>F &mdash; Faithfulness: does it name the real causes?</b> We compare what the
+    method highlights against T1&rsquo;s true causal list. High F means it points at the bytes that
+    genuinely drive the output, not at bytes that merely look related.</div>
+    <div class="d"><b>S &mdash; Sufficiency: could you rebuild the behaviour from it?</b> A real
+    explanation should predict what happens under changes it has not seen. We test it on held-out
+    interventions. High S means it captured the mechanism, not just a single snapshot.</div>
+    <div class="d"><b>M &mdash; Minimality: is it the <em>smallest</em> true set?</b> Listing every
+    byte is perfectly faithful but useless. M rewards naming just the handful of bytes that truly
+    matter. &ldquo;Record everything&rdquo; scores near zero on M.</div>
+  </div>
+  <p>On this machine all three are computed against the oracle (T1/T2), never against another
+  method &mdash; which is what keeps the grade honest. The per-method F/S/M scores live on the
+  <a href="methods.html">P2 Methods</a> page; this page shows, per game, what those measures
+  <em>can</em> be computed against.</p>
+
+  <h2>Where the labels come from</h2>
+  <p>The T3 names are external, so we are explicit about their source. We import from
+  <b>AtariARI</b> (Anand et al., 2019 &mdash; RAM annotations for 22 games) and <b>OCAtari</b>
+  (Delfosse et al., 2024 &mdash; 54 games, with the render-time offset correction that aligns a RAM
+  coordinate to where the sprite is actually drawn). Every label is then verified on our bit-exact
+  machine before use, so a name is only kept if changing that byte demonstrably moves the named
+  object. A method that &ldquo;matches&rdquo; a label is therefore aligning to a meaning we supplied
+  &mdash; it did not discover it.</p>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Per-game ground truth</h2>
+  <p class="sub">All 64 bit-exact ROMs (54 carry a T3 label, 10 are T1/T2 only), ordered by how much
+  ground truth the shared analysis frame supports (position-regime games first). Screenshots are the actual analysis frame
+  the ground truth is computed on. Colour: <span style="color:#2e7d32">green</span> = available,
+  <span style="color:#8a6d1f">amber</span> = present but limited at this frame,
+  <span style="color:#b23b3b">red</span> = not available. The 10 games with no external label carry
+  exact T1/T2 ground truth but are held out of the label-dependent (T3) study.</p>
+"""
+
+    counts = (
+        '<div class="gtcounts">'
+        '<div class="c"><b>64</b>bit-exact ROMs (T1/T2)</div>'
+        '<div class="c"><b>%d</b>carry a T3 label</div>'
+        '<div class="c"><b>%d</b>usable at the analysis frame (F)</div>'
+        '<div class="c"><b>%d</b>in the position regime</div>'
+        '</div>' % (len(labeled), len(accepted), len(posreg)))
+
+    body = style + intro + counts + ('<div class="gtgrid">%s</div>' % "".join(cards)) + "</div></section>"
+    return page("ground_truth.html", "Ground Truth ROMs — UnderstandingVCS", body)
+
+
 def main():
     outputs = {
         "index.html": build_index(),
@@ -1312,6 +1495,7 @@ def main():
         "paper2.html": build_paper(M.PAPER2),
         "conformance.html": build_conformance(),
         "methods.html": build_methods(),
+        "ground_truth.html": build_ground_truth(),
         "provenance.html": build_provenance(),
         "environment.html": build_environment(),
         "reproduce.html": build_reproduce(),

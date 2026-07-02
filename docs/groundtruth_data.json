@@ -1,0 +1,941 @@
+{
+ "air_raid": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 13,
+  "n_causes": 14,
+  "n_moving": 8,
+  "n_verified": 9,
+  "origin": "OCAtari",
+  "position_labels": [
+   "a",
+   "b1.damage",
+   "b1.xy",
+   "b2.damage",
+   "b2.xy",
+   "c"
+  ],
+  "position_regime": true
+ },
+ "alien": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 6,
+  "n_causes": 6,
+  "n_moving": 3,
+  "n_verified": 3,
+  "origin": "OCAtari",
+  "position_labels": [
+   "lives_v",
+   "player.xy"
+  ],
+  "position_regime": true
+ },
+ "amidar": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 0,
+  "n_causes": 6,
+  "n_moving": 0,
+  "n_verified": 0,
+  "origin": "OCAtari",
+  "position_labels": [],
+  "position_regime": false
+ },
+ "assault": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 20,
+  "n_causes": 16,
+  "n_moving": 6,
+  "n_verified": 14,
+  "origin": "OCAtari",
+  "position_labels": [
+   "enemy_x_part_1",
+   "enemy_x_part_2",
+   "health",
+   "lives",
+   "mother_ship.xy",
+   "player.xy"
+  ],
+  "position_regime": true
+ },
+ "asterix": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 9,
+  "n_causes": 12,
+  "n_moving": 0,
+  "n_verified": 0,
+  "origin": "OCAtari",
+  "position_labels": [],
+  "position_regime": false
+ },
+ "asteroids": {
+  "accepted": false,
+  "labeled": true,
+  "n_candidates": 47,
+  "n_causes": 1,
+  "n_moving": 0,
+  "n_verified": 0,
+  "origin": "both",
+  "position_labels": [],
+  "position_regime": false
+ },
+ "atlantis": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 9,
+  "n_causes": 12,
+  "n_moving": 3,
+  "n_verified": 3,
+  "origin": "OCAtari",
+  "position_labels": [
+   "score.value"
+  ],
+  "position_regime": true
+ },
+ "bank_heist": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 5,
+  "n_causes": 8,
+  "n_moving": 3,
+  "n_verified": 3,
+  "origin": "OCAtari",
+  "position_labels": [
+   "player.xy",
+   "wh"
+  ],
+  "position_regime": true
+ },
+ "battle_zone": {
+  "accepted": false,
+  "labeled": true,
+  "n_candidates": 6,
+  "n_causes": 1,
+  "n_moving": 0,
+  "n_verified": 1,
+  "origin": "OCAtari",
+  "position_labels": [],
+  "position_regime": false
+ },
+ "beam_rider": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 5,
+  "n_causes": 4,
+  "n_moving": 1,
+  "n_verified": 2,
+  "origin": "OCAtari",
+  "position_labels": [
+   "player.xy"
+  ],
+  "position_regime": true
+ },
+ "berzerk": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 26,
+  "n_causes": 23,
+  "n_moving": 7,
+  "n_verified": 13,
+  "origin": "both",
+  "position_labels": [
+   "enemy_robots_x[0]",
+   "enemy_robots_x[1]",
+   "enemy_robots_x[2]",
+   "enemy_robots_x[3]",
+   "enemy_robots_x[4]",
+   "player_score[2]"
+  ],
+  "position_regime": true
+ },
+ "bowling": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 20,
+  "n_causes": 14,
+  "n_moving": 7,
+  "n_verified": 8,
+  "origin": "both",
+  "position_labels": [
+   "ball_x",
+   "ball_y",
+   "frame_number_display",
+   "player_x",
+   "player_y",
+   "score"
+  ],
+  "position_regime": true
+ },
+ "boxing": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 11,
+  "n_causes": 13,
+  "n_moving": 5,
+  "n_verified": 8,
+  "origin": "both",
+  "position_labels": [
+   "clock",
+   "enemy_x",
+   "enemy_y",
+   "player_x",
+   "player_y"
+  ],
+  "position_regime": true
+ },
+ "breakout": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 9,
+  "n_causes": 11,
+  "n_moving": 3,
+  "n_verified": 7,
+  "origin": "both",
+  "position_labels": [
+   "blocks",
+   "player_x",
+   "score"
+  ],
+  "position_regime": true
+ },
+ "carnival": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 18,
+  "n_causes": 26,
+  "n_moving": 12,
+  "n_verified": 17,
+  "origin": "OCAtari",
+  "position_labels": [
+   "ammo.rgb",
+   "ammo.wh",
+   "bonus_sprites",
+   "missile.xy",
+   "player.xy",
+   "targets_second_row_variation"
+  ],
+  "position_regime": true
+ },
+ "centipede": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 9,
+  "n_causes": 14,
+  "n_moving": 7,
+  "n_verified": 8,
+  "origin": "OCAtari",
+  "position_labels": [
+   "life",
+   "player.xy",
+   "projectile.xy",
+   "relavant_ram_info"
+  ],
+  "position_regime": true
+ },
+ "chopper_command": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 20,
+  "n_causes": 16,
+  "n_moving": 9,
+  "n_verified": 13,
+  "origin": "OCAtari",
+  "position_labels": [
+   "b_shot_line",
+   "player.xy",
+   "shot_lines",
+   "value",
+   "wh"
+  ],
+  "position_regime": true
+ },
+ "crazy_climber": {
+  "accepted": false,
+  "labeled": true,
+  "n_candidates": 9,
+  "n_causes": 3,
+  "n_moving": 2,
+  "n_verified": 2,
+  "origin": "OCAtari",
+  "position_labels": [
+   "enemy.xy",
+   "player.xy"
+  ],
+  "position_regime": false
+ },
+ "defender": {
+  "accepted": null,
+  "labeled": false,
+  "n_candidates": 0,
+  "n_causes": null,
+  "n_moving": 0,
+  "n_verified": 0,
+  "origin": "none",
+  "position_labels": [],
+  "position_regime": false
+ },
+ "demon_attack": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 15,
+  "n_causes": 18,
+  "n_moving": 10,
+  "n_verified": 11,
+  "origin": "both",
+  "position_labels": [
+   "enemy_projectile_y",
+   "enemy_x2",
+   "enemy_x3",
+   "enemy_y2",
+   "enemy_y3",
+   "falling_en.xy"
+  ],
+  "position_regime": true
+ },
+ "double_dunk": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 12,
+  "n_causes": 22,
+  "n_moving": 8,
+  "n_verified": 10,
+  "origin": "OCAtari",
+  "position_labels": [
+   "xy"
+  ],
+  "position_regime": true
+ },
+ "elevator_action": {
+  "accepted": null,
+  "labeled": false,
+  "n_candidates": 0,
+  "n_causes": null,
+  "n_moving": 0,
+  "n_verified": 0,
+  "origin": "none",
+  "position_labels": [],
+  "position_regime": false
+ },
+ "enduro": {
+  "accepted": false,
+  "labeled": true,
+  "n_candidates": 3,
+  "n_causes": 3,
+  "n_moving": 2,
+  "n_verified": 2,
+  "origin": "OCAtari",
+  "position_labels": [
+   "x_drift",
+   "y"
+  ],
+  "position_regime": false
+ },
+ "fishing_derby": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 9,
+  "n_causes": 8,
+  "n_moving": 5,
+  "n_verified": 7,
+  "origin": "OCAtari",
+  "position_labels": [
+   "p1s.hook_position",
+   "p2s.hook_position",
+   "xy"
+  ],
+  "position_regime": true
+ },
+ "freeway": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 14,
+  "n_causes": 26,
+  "n_moving": 7,
+  "n_verified": 14,
+  "origin": "both",
+  "position_labels": [
+   "c2.xy",
+   "enemy_car_x[0]",
+   "enemy_car_x[1]",
+   "enemy_car_x[2]",
+   "enemy_car_x[3]",
+   "enemy_car_x[4]"
+  ],
+  "position_regime": true
+ },
+ "frostbite": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 19,
+  "n_causes": 23,
+  "n_moving": 9,
+  "n_verified": 12,
+  "origin": "both",
+  "position_labels": [
+   "fourth_row_iceflow_x",
+   "num_lives",
+   "player_x",
+   "player_y",
+   "score[0]",
+   "score[1]"
+  ],
+  "position_regime": true
+ },
+ "gopher": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 20,
+  "n_causes": 21,
+  "n_moving": 14,
+  "n_verified": 14,
+  "origin": "OCAtari",
+  "position_labels": [
+   "gopher.xy",
+   "player.xy",
+   "ram_conditions",
+   "ram_conditions_2"
+  ],
+  "position_regime": true
+ },
+ "gravitar": {
+  "accepted": null,
+  "labeled": false,
+  "n_candidates": 0,
+  "n_causes": null,
+  "n_moving": 0,
+  "n_verified": 0,
+  "origin": "none",
+  "position_labels": [],
+  "position_regime": false
+ },
+ "hero": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 17,
+  "n_causes": 17,
+  "n_moving": 8,
+  "n_verified": 11,
+  "origin": "both",
+  "position_labels": [
+   "destructible_wall.xy",
+   "dynamite_count",
+   "level_number",
+   "player_x",
+   "player_y",
+   "power_meter"
+  ],
+  "position_regime": true
+ },
+ "ice_hockey": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 10,
+  "n_causes": 17,
+  "n_moving": 10,
+  "n_verified": 10,
+  "origin": "OCAtari",
+  "position_labels": [
+   "ball.xy",
+   "enemy_1.xy",
+   "enemy_2.xy",
+   "player.xy",
+   "player2.xy"
+  ],
+  "position_regime": true
+ },
+ "jamesbond": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 13,
+  "n_causes": 13,
+  "n_moving": 4,
+  "n_verified": 5,
+  "origin": "OCAtari",
+  "position_labels": [
+   "xy"
+  ],
+  "position_regime": true
+ },
+ "journey_escape": {
+  "accepted": null,
+  "labeled": false,
+  "n_candidates": 0,
+  "n_causes": null,
+  "n_moving": 0,
+  "n_verified": 0,
+  "origin": "none",
+  "position_labels": [],
+  "position_regime": false
+ },
+ "kangaroo": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 15,
+  "n_causes": 16,
+  "n_moving": 5,
+  "n_verified": 9,
+  "origin": "OCAtari",
+  "position_labels": [
+   "child.xy",
+   "current_level",
+   "n_lives",
+   "score_value",
+   "time_value"
+  ],
+  "position_regime": true
+ },
+ "krull": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 25,
+  "n_causes": 17,
+  "n_moving": 5,
+  "n_verified": 11,
+  "origin": "OCAtari",
+  "position_labels": [
+   "player.xy",
+   "value"
+  ],
+  "position_regime": true
+ },
+ "kung_fu_master": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 9,
+  "n_causes": 11,
+  "n_moving": 5,
+  "n_verified": 5,
+  "origin": "OCAtari",
+  "position_labels": [
+   "RAM[74]",
+   "value",
+   "wh",
+   "xy"
+  ],
+  "position_regime": true
+ },
+ "montezuma_revenge": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 15,
+  "n_causes": 22,
+  "n_moving": 9,
+  "n_verified": 15,
+  "origin": "both",
+  "position_labels": [
+   "enemy_skull_x",
+   "enemy_skull_y",
+   "key_monster_x",
+   "key_monster_y",
+   "num_lives",
+   "player_x"
+  ],
+  "position_regime": true
+ },
+ "ms_pacman": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 19,
+  "n_causes": 24,
+  "n_moving": 2,
+  "n_verified": 15,
+  "origin": "both",
+  "position_labels": [
+   "ghosts_count",
+   "score"
+  ],
+  "position_regime": true
+ },
+ "name_this_game": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 5,
+  "n_causes": 7,
+  "n_moving": 4,
+  "n_verified": 4,
+  "origin": "OCAtari",
+  "position_labels": [
+   "xy"
+  ],
+  "position_regime": true
+ },
+ "pacman": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 8,
+  "n_causes": 9,
+  "n_moving": 5,
+  "n_verified": 8,
+  "origin": "OCAtari",
+  "position_labels": [
+   "nblives",
+   "player.xy",
+   "scorev"
+  ],
+  "position_regime": true
+ },
+ "phoenix": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 12,
+  "n_causes": 12,
+  "n_moving": 5,
+  "n_verified": 8,
+  "origin": "OCAtari",
+  "position_labels": [
+   "left1",
+   "left2",
+   "lives",
+   "value"
+  ],
+  "position_regime": true
+ },
+ "pitfall": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 16,
+  "n_causes": 19,
+  "n_moving": 7,
+  "n_verified": 10,
+  "origin": "both",
+  "position_labels": [
+   "enemy_logs_x",
+   "enemy_scorpion_x",
+   "index",
+   "p1.value",
+   "player_x",
+   "player_y"
+  ],
+  "position_regime": true
+ },
+ "pong": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 8,
+  "n_causes": 6,
+  "n_moving": 4,
+  "n_verified": 6,
+  "origin": "both",
+  "position_labels": [
+   "ball_x",
+   "ball_y",
+   "enemy_x",
+   "player_x"
+  ],
+  "position_regime": true
+ },
+ "pooyan": {
+  "accepted": false,
+  "labeled": true,
+  "n_candidates": 11,
+  "n_causes": 2,
+  "n_moving": 2,
+  "n_verified": 4,
+  "origin": "OCAtari",
+  "position_labels": [
+   "lives.lives",
+   "player.xy"
+  ],
+  "position_regime": false
+ },
+ "private_eye": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 24,
+  "n_causes": 20,
+  "n_moving": 9,
+  "n_verified": 12,
+  "origin": "both",
+  "position_labels": [
+   "car.xy",
+   "clock[0]",
+   "player._xy",
+   "player_x",
+   "value",
+   "wh"
+  ],
+  "position_regime": true
+ },
+ "qbert": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 20,
+  "n_causes": 13,
+  "n_moving": 1,
+  "n_verified": 6,
+  "origin": "both",
+  "position_labels": [
+   "player_y"
+  ],
+  "position_regime": true
+ },
+ "riverraid": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 22,
+  "n_causes": 33,
+  "n_moving": 12,
+  "n_verified": 15,
+  "origin": "both",
+  "position_labels": [
+   "lives.value",
+   "obj_type",
+   "orientation",
+   "player._prev11",
+   "player_x",
+   "score"
+  ],
+  "position_regime": true
+ },
+ "road_runner": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 18,
+  "n_causes": 11,
+  "n_moving": 6,
+  "n_verified": 7,
+  "origin": "OCAtari",
+  "position_labels": [
+   "enemy.xy",
+   "l_cac.xy",
+   "player.wh",
+   "player.xy",
+   "rc.xy",
+   "u_cac.xy"
+  ],
+  "position_regime": true
+ },
+ "robotank": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 0,
+  "n_causes": 5,
+  "n_moving": 0,
+  "n_verified": 0,
+  "origin": "OCAtari",
+  "position_labels": [],
+  "position_regime": false
+ },
+ "seaquest": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 23,
+  "n_causes": 19,
+  "n_moving": 9,
+  "n_verified": 11,
+  "origin": "both",
+  "position_labels": [
+   "diver_or_enemy_missile_x",
+   "divers_collected_count",
+   "enemy5_x",
+   "num_lives",
+   "oxygen_meter_value",
+   "player_x"
+  ],
+  "position_regime": true
+ },
+ "skiing": {
+  "accepted": false,
+  "labeled": true,
+  "n_candidates": 9,
+  "n_causes": 0,
+  "n_moving": 4,
+  "n_verified": 8,
+  "origin": "OCAtari",
+  "position_labels": [
+   "player.ram_90",
+   "player.xy",
+   "score"
+  ],
+  "position_regime": false
+ },
+ "solaris": {
+  "accepted": null,
+  "labeled": false,
+  "n_candidates": 0,
+  "n_causes": null,
+  "n_moving": 0,
+  "n_verified": 0,
+  "origin": "none",
+  "position_labels": [],
+  "position_regime": false
+ },
+ "space_invaders": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 17,
+  "n_causes": 18,
+  "n_moving": 7,
+  "n_verified": 8,
+  "origin": "both",
+  "position_labels": [
+   "RAM[18]",
+   "aliens",
+   "enemies_x",
+   "num_lives",
+   "player_score",
+   "score"
+  ],
+  "position_regime": true
+ },
+ "star_gunner": {
+  "accepted": false,
+  "labeled": true,
+  "n_candidates": 7,
+  "n_causes": 1,
+  "n_moving": 0,
+  "n_verified": 0,
+  "origin": "OCAtari",
+  "position_labels": [],
+  "position_regime": false
+ },
+ "surround": {
+  "accepted": null,
+  "labeled": false,
+  "n_candidates": 0,
+  "n_causes": null,
+  "n_moving": 0,
+  "n_verified": 0,
+  "origin": "none",
+  "position_labels": [],
+  "position_regime": false
+ },
+ "tennis": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 15,
+  "n_causes": 19,
+  "n_moving": 11,
+  "n_verified": 11,
+  "origin": "both",
+  "position_labels": [
+   "ball_x",
+   "ball_y",
+   "enemy_score",
+   "enemy_score_sprite",
+   "enemy_x",
+   "enemy_y"
+  ],
+  "position_regime": true
+ },
+ "time_pilot": {
+  "accepted": false,
+  "labeled": true,
+  "n_candidates": 5,
+  "n_causes": 1,
+  "n_moving": 1,
+  "n_verified": 2,
+  "origin": "OCAtari",
+  "position_labels": [
+   "pshot.xy"
+  ],
+  "position_regime": false
+ },
+ "tutankham": {
+  "accepted": null,
+  "labeled": false,
+  "n_candidates": 0,
+  "n_causes": null,
+  "n_moving": 0,
+  "n_verified": 0,
+  "origin": "none",
+  "position_labels": [],
+  "position_regime": false
+ },
+ "up_n_down": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 0,
+  "n_causes": 7,
+  "n_moving": 0,
+  "n_verified": 0,
+  "origin": "OCAtari",
+  "position_labels": [],
+  "position_regime": false
+ },
+ "venture": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 18,
+  "n_causes": 29,
+  "n_moving": 8,
+  "n_verified": 16,
+  "origin": "both",
+  "position_labels": [
+   "num_lives",
+   "player_x",
+   "player_y",
+   "sprite0_x",
+   "sprite1_x",
+   "sprite1_y"
+  ],
+  "position_regime": true
+ },
+ "video_pinball": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 7,
+  "n_causes": 11,
+  "n_moving": 7,
+  "n_verified": 7,
+  "origin": "both",
+  "position_labels": [
+   "ball_x",
+   "ball_y",
+   "lifeu.value",
+   "player_left_paddle_y",
+   "player_right_paddle_y",
+   "score_1"
+  ],
+  "position_regime": true
+ },
+ "videochess": {
+  "accepted": null,
+  "labeled": false,
+  "n_candidates": 0,
+  "n_causes": null,
+  "n_moving": 0,
+  "n_verified": 0,
+  "origin": "none",
+  "position_labels": [],
+  "position_regime": false
+ },
+ "wizard_of_wor": {
+  "accepted": null,
+  "labeled": false,
+  "n_candidates": 0,
+  "n_causes": null,
+  "n_moving": 0,
+  "n_verified": 0,
+  "origin": "none",
+  "position_labels": [],
+  "position_regime": false
+ },
+ "yars_revenge": {
+  "accepted": true,
+  "labeled": true,
+  "n_candidates": 13,
+  "n_causes": 11,
+  "n_moving": 3,
+  "n_verified": 4,
+  "origin": "both",
+  "position_labels": [
+   "value"
+  ],
+  "position_regime": true
+ },
+ "zaxxon": {
+  "accepted": null,
+  "labeled": false,
+  "n_candidates": 0,
+  "n_causes": null,
+  "n_moving": 0,
+  "n_verified": 0,
+  "origin": "none",
+  "position_labels": [],
+  "position_regime": false
+ }
+}
