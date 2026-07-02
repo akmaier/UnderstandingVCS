@@ -21,7 +21,7 @@
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/attribution_patching.png" target="_blank"><img src="assets/methods/attribution_patching.png" alt="Attribution / edge patching result"></a>
   </div>
-  <p class="caption">Each point is one intervention site: its <b>exact causal effect</b> from the oracle (x) against the method's <b>recovered/approximate effect</b> (y). Points on the dashed diagonal mean the method recovered the true effect. <b>corr_approx_vs_exact = 0.835</b> — this example only (pong, state f120+30); the audit aggregate is below.</p>
+  <p class="caption">Each point is one intervention site: its <b>exact causal effect</b> from the oracle (x) against the method's <b>recovered/approximate effect</b> (y). Points on the dashed diagonal mean the method recovered the true effect. <b>corr_approx_vs_exact = 0.876</b> — this example only (pong, state gameplay(seed=0,prefix=90)+15); the audit aggregate is below.</p>
 </div></section>
 
 
@@ -33,7 +33,7 @@
 
 <section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Pearson correlation between the gradient-approximate effect and the exact patch effect. <b>0.84</b> — a good cheap approximation, with a measurable gap from the truth.</p>
+  <p>Pearson correlation between the gradient-approximate effect and the exact patch effect. <b>0.88</b> — a good cheap approximation, with a measurable gap from the truth.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
   <a href="methods.html#stack">execution stack</a>.</p>
@@ -45,7 +45,7 @@
   <p>This is the method's entry in the actual cross-method audit — its faithfulness is the
   <b>mean over all 6 core games</b> (6 committed §R records), not the single example shown above.
   Tradition: <b>gradient</b>. The example figure (Pong) is one of those records.</p>
-  <div class="bignum"><div class="b"><strong>0.496</strong><small>faithfulness vs oracle (mean over 6 games, ±0.287 CI95)</small></div><div class="b"><strong>6</strong><small>committed records aggregated</small></div><div class="b"><strong>0.90</strong><small>human-plausibility proxy</small></div></div>
+  <div class="bignum"><div class="b"><strong>0.500</strong><small>faithfulness vs oracle (mean over 6 games, ±0.304 CI95)</small></div><div class="b"><strong>6</strong><small>committed records aggregated</small></div><div class="b"><strong>0.90</strong><small>human-plausibility proxy</small></div></div>
   <p class="caption">Source: <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/out/leaderboard.json"><code>leaderboard.json</code></a> · the whole leaderboard is on the
   <a href="methods.html#e6">methods page</a> and the
   <a href="paper2.html">Paper&nbsp;2 audit</a>.</p>
@@ -61,7 +61,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2bdf415fc467ef876276497171ea50c308e366f3"><code>2bdf415f</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/16a323ece0db80abea94f6cea633d79144ed572f"><code>16a323ec</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

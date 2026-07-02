@@ -21,7 +21,7 @@
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/A7_dimred.png" target="_blank"><img src="assets/methods/A7_dimred.png" alt="A7 · Dimensionality reduction (NMF/PCA) result"></a>
   </div>
-  <p class="caption">Left: the frame. Right: this method's per-cell/per-component result against the ground-truth importance, with the RAM cells labelled. <b>A7_nmf_matched_component_fraction_vs_known_vars = 0.800</b> — this example only (pong, state f60+30); the audit aggregate is below.</p>
+  <p class="caption">Left: the frame. Right: this method's per-cell/per-component result against the ground-truth importance, with the RAM cells labelled. <b>A7_nmf_matched_component_fraction_vs_known_vars = 0.600</b> — this example only (pong, state gameplay(seed=0,prefix=90)+15); the audit aggregate is below.</p>
 </div></section>
 
 
@@ -33,7 +33,7 @@
 
 <section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Fraction of NMF components that match a known signal/variable (vs the oracle's importance). <b>0.8</b> — recovers most known factors, adds some mixed ones.</p>
+  <p>Fraction of NMF components that match a known signal/variable (vs the oracle's importance). <b>0.6</b> — recovers most known factors, adds some mixed ones.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
   <a href="methods.html#stack">execution stack</a>.</p>
@@ -45,7 +45,7 @@
   <p>This is the method's entry in the actual cross-method audit — its faithfulness is the
   <b>mean over all 6 core games</b> (6 committed §R records), not the single example shown above.
   Tradition: <b>dim_reduction</b>. The example figure (Pong) is one of those records.</p>
-  <div class="bignum"><div class="b"><strong>0.600</strong><small>faithfulness vs oracle (mean over 6 games, ±0.143 CI95)</small></div><div class="b"><strong>6</strong><small>committed records aggregated</small></div><div class="b"><strong>0.75</strong><small>human-plausibility proxy</small></div></div>
+  <div class="bignum"><div class="b"><strong>0.600</strong><small>faithfulness vs oracle (mean over 6 games, ±0.000 CI95)</small></div><div class="b"><strong>6</strong><small>committed records aggregated</small></div><div class="b"><strong>0.75</strong><small>human-plausibility proxy</small></div></div>
   <p class="caption">Source: <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/out/leaderboard.json"><code>leaderboard.json</code></a> · the whole leaderboard is on the
   <a href="methods.html#e6">methods page</a> and the
   <a href="paper2.html">Paper&nbsp;2 audit</a>.</p>
@@ -61,7 +61,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2bdf415fc467ef876276497171ea50c308e366f3"><code>2bdf415f</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/16a323ece0db80abea94f6cea633d79144ed572f"><code>16a323ec</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

@@ -410,17 +410,32 @@ PAPER2 = {
         "Because the VCS is fully known and exactly intervenable, every explanation can be scored "
         "against ground truth. An oracle measures the true causal effect of each state variable; "
         "XAI and mechanistic-interpretability methods are then graded by how well they recover it. "
-        "Headline finding: causal/intervention methods stay near-ceiling while gradient and "
-        "correlational methods collapse on the discrete sprite-position outputs whose naive "
-        "gradient is exactly zero."),
+        "Headline finding: across all regimes, causal/intervention methods stay well above gradient "
+        "and correlational methods — a robust faithfulness gap of 0.297 (CI [0.232, 0.376], excludes "
+        "zero). On the discrete sprite-position outputs the naive gradient is exactly zero; the "
+        "emulator's bilinear sampler restores a non-zero position gradient, but its faithfulness "
+        "stays low, so the position-only gap (0.238) is directional and not significant at six games. "
+        "<br><br>The testbed was <b>redesigned</b> to score every method on the same shared "
+        "random-action gameplay states — see the "
+        "<a href=\"https://github.com/akmaier/UnderstandingVCS/blob/main/xai_paper/xai_2_interpretability/experiment_redesign.md\">"
+        "experiment redesign note</a>."),
     "headline": {
-        "gap": "0.3435",
-        "causal": "0.4118",
-        "causal_ci": "0.3902",
-        "causal_n": "4",
-        "grad": "0.0683",
-        "grad_ci": "0.0701",
-        "grad_n": "9",
+        # Primary (robust): all-regime causal-vs-gradient gap, CI excludes 0.
+        "gap": "0.297",
+        "gap_ci_lo": "0.232",
+        "gap_ci_hi": "0.376",
+        "causal": "0.664",
+        "causal_n": "11",
+        "grad": "0.367",
+        "grad_n": "14",
+        # Secondary (directional, NOT significant at 6 games): position-only gap.
+        "pos_gap": "0.238",
+        "pos_gap_ci_lo": "-0.049",
+        "pos_gap_ci_hi": "0.315",
+        "pos_causal": "0.486",
+        "pos_causal_n": "4",
+        "pos_grad": "0.248",
+        "pos_grad_n": "9",
         "n_methods": "31",
         "n_records": "257",
     },
@@ -516,8 +531,10 @@ PAPER2 = {
             "claim": "E6 · Cross-tradition leaderboard",
             "value": "31 methods, 257 records",
             "detail": "Faithfulness-vs-plausibility leaderboard aggregated from every committed "
-                      "per-game record. Headline contrast: position-regime causal faithfulness "
-                      "0.4118 vs gradient/correlational 0.0683 (gap 0.3435).",
+                      "per-game record. Headline contrast (all regimes): causal/intervention "
+                      "faithfulness 0.664 vs gradient/correlational 0.367 — a robust gap of 0.297 "
+                      "(CI [0.232, 0.376], excludes zero). The position-only gap (0.238, CI "
+                      "[-0.049, 0.315]) is directional but not significant at six games.",
             "script": "tools/xai_study/compare/leaderboard.py",
             "command": "python3 tools/xai_study/compare/leaderboard.py",
             "artifact": "tools/xai_study/compare/out/leaderboard.json",
@@ -725,34 +742,34 @@ P2_METHODS = [
 P2_METHOD_SCORED = {
  "A1_connectomics": "F1 of the recovered data-flow graph against the true read/write graph from the disassembly (an edge = perturbing one RAM cell changes another). <b>0.0</b> — single-shot perturbation recovers none of the true edges.",
  "A2_lesions": "Spearman correlation between each cell's lesion importance (screen change when the cell is frozen) and its true causal role from the oracle. <b>1.0</b> — lesioning ranks the cells exactly as the oracle does.",
- "A3_tuning": "Spurious-tuning rate: the fraction of cells that are strongly tuned to a game variable yet are NOT among the oracle's causal cells. <b>1.0</b> — every strongly-tuned cell is non-causal, so tuning curves are misleading here.",
+ "A3_tuning": "Spurious-tuning rate: the fraction of cells that are strongly tuned to a game variable yet are NOT among the oracle's causal cells. <b>0.5</b> — half of the strongly-tuned cells are non-causal, so tuning curves are misleading here.",
  "A4_correlations": "Spearman correlation between the measured cell–cell correlation structure and the oracle's true coupling matrix. <b>0.63</b> — correlation partly tracks coupling but conflates it with shared drivers.",
- "A5_lfp": "Fraction of the pooled-activity power spectrum explained by the known clocks (frame / scanline). <b>0.69</b> — most 'LFP' structure is epiphenomenal timing, not computation.",
+ "A5_lfp": "Fraction of the pooled-activity power spectrum explained by the known clocks (frame / scanline). <b>0.75</b> — most 'LFP' structure is epiphenomenal timing, not computation.",
  "A6_granger": "False-edge rate of the Granger-inferred causal graph against the true data-flow. <b>1.0</b> — every inferred edge is spurious (Granger sees correlation through shared clocks).",
- "A7_dimred": "Fraction of NMF components that match a known signal/variable (vs the oracle's importance). <b>0.8</b> — recovers most known factors, adds some mixed ones.",
- "A8_wholestate": "Minimality M of the whole-state dump vs the oracle's causal set — how much smaller the true causal set is than 'record everything'. <b>0.016</b> — the raw dump is almost entirely non-minimal.",
- "saliency": "Pearson correlation of the saliency map with the oracle's exact causal map |Δy(u)| over the candidate causes, plus deletion/insertion AUC. <b>0.41</b> — partially faithful: it finds the paddle region but under-weights it.",
- "gradxinput": "Pearson correlation of the Grad×Input / DeepLIFT attribution with the oracle. <b>0.80</b> — multiplying by the input sharpens the gradient toward the true causes.",
- "guided_backprop": "Pearson correlation with the oracle's causal map. It partly tracks the oracle on <b>content</b> (colour) outputs — the example shown — but on discrete <b>sprite-position</b> outputs the naive gradient vanishes to exactly 0, and it fails the Adebayo et al. 2018 sanity check, so its cross-game audit faithfulness stays low.",
- "smoothgrad": "Pearson correlation with the oracle. Averaging input noise sharpens saliency on <b>content</b> outputs a little (the example), but cannot create a gradient where there is none — on discrete <b>position</b> outputs it is exactly 0 — so the aggregate stays low.",
- "ig_baseline_sweep": "Pearson correlation with the oracle at the headline baseline (baselines are swept). Nonzero and moderate on <b>content</b> outputs (the example), but exactly <b>0 on the sprite-position output</b> whose naive gradient vanishes — completeness does not rescue faithfulness on discrete outputs.",
- "expected_gradients": "Pearson correlation with the oracle. Baseline-averaged IG: nonzero on <b>content</b> outputs (the example) but it inherits the <b>vanishing gradient</b> on position/index outputs, giving the lowest faithfulness aggregate of the attribution methods despite high plausibility.",
- "occlusion": "Pearson correlation with the oracle (occlusion is itself a coarse intervention). <b>0.71</b> — among the most faithful methods, precisely because it perturbs the real system.",
- "perturbation": "Pearson correlation / mask-IoU with the oracle's true causal set. <b>0.45</b> — the learned minimal mask partly overlaps the true causes.",
- "rise": "Pearson correlation with the oracle from random-mask averaging. Moderate on <b>content</b> outputs (the example); unstable and sometimes anti-correlated on <b>position</b> outputs, where masking a discrete cause is uninformative.",
- "lime": "Pearson correlation of the local linear surrogate's weights with the oracle. Fits <b>content</b> outputs reasonably (the example) but not the discrete <b>position</b> structure, and is unstable across seeds.",
- "kernelshap": "Pearson correlation of the Shapley values with the oracle. Shapley recovers much of the true contribution on both content and position outputs, given enough coalitions.",
- "counterfactual": "Pearson correlation / minimality of the minimal valid counterfactual edit against the oracle's minimal causal set. Set-state-and-re-render finds nearly the true causes — its attributed region visibly matches the oracle's on the frame.",
+ "A7_dimred": "Fraction of NMF components that match a known signal/variable (vs the oracle's importance). <b>0.6</b> — recovers most known factors, adds some mixed ones.",
+ "A8_wholestate": "Minimality M of the whole-state dump vs the oracle's causal set — how much smaller the true causal set is than 'record everything'. <b>0.031</b> — the raw dump is almost entirely non-minimal.",
+ "saliency": "Pearson correlation of the saliency map with the oracle's exact causal map |Δy(u)| over the candidate causes, plus deletion/insertion AUC. All-regime audit faithfulness <b>0.42</b> (content 0.67, position 0.16). On discrete <b>sprite-position</b> outputs the naive gradient is exactly 0; the emulator's bilinear sampler restores a non-zero position gradient, but its faithfulness stays low — so the aggregate is moderate, not near-ceiling.",
+ "gradxinput": "Pearson correlation of the Grad×Input / DeepLIFT attribution with the oracle. All-regime audit faithfulness <b>0.52</b> (content 0.87, position 0.16) — multiplying by the input sharpens the gradient toward the true causes on content outputs, but the position map still leans on the sampler and stays low.",
+ "guided_backprop": "Pearson correlation with the oracle's causal map. All-regime audit faithfulness <b>0.34</b> (content 0.67, position 0.00). It partly tracks the oracle on <b>content</b> (colour) outputs, but on discrete <b>sprite-position</b> outputs the naive gradient is exactly 0 — the sampler could restore a non-zero gradient, yet guided backprop's rectified path leaves it at 0 here — and it fails the Adebayo et al. 2018 sanity check, so its cross-game audit faithfulness stays low.",
+ "smoothgrad": "Pearson correlation with the oracle. All-regime audit faithfulness <b>0.42</b> (content 0.67, position 0.16). Averaging input noise sharpens saliency on <b>content</b> outputs a little; on discrete <b>position</b> outputs the naive gradient is 0 and the sampler restores only a low-faithfulness gradient, so the aggregate stays moderate.",
+ "ig_baseline_sweep": "Pearson correlation with the oracle at the headline baseline (baselines are swept). All-regime audit faithfulness <b>0.41</b> (content 0.67, position 0.14). Moderate on <b>content</b> outputs; on the sprite-position output the naive gradient is 0, and even with the emulator's sampler restoring a non-zero position gradient the faithfulness stays low — completeness does not rescue it on discrete outputs.",
+ "expected_gradients": "Pearson correlation with the oracle. Baseline-averaged IG: on a NOOP reference pool the constant bytes give <code>(x−x0)=0</code>, zeroing the attribution; even on the redesigned gameplay reference pool (with the sampler on for position) it is the <b>lowest-faithfulness</b> attribution method — all-regime audit faithfulness <b>0.06</b> (content 0.08, position 0.05) despite high plausibility.",
+ "occlusion": "Pearson correlation with the oracle (occlusion is itself a coarse intervention). All-regime audit faithfulness <b>0.64</b> (content 0.71, position 0.57) — among the most faithful methods, precisely because it perturbs the real system.",
+ "perturbation": "Pearson correlation / mask-IoU with the oracle's true causal set. All-regime audit faithfulness <b>0.40</b> (content 0.52, position 0.28) — the learned minimal mask partly overlaps the true causes.",
+ "rise": "Pearson correlation with the oracle from random-mask averaging. All-regime audit faithfulness <b>0.55</b> (content 0.68, position 0.42) — moderate on <b>content</b> outputs, weaker on <b>position</b> outputs where masking a discrete cause is less informative.",
+ "lime": "Pearson correlation of the local linear surrogate's weights with the oracle. All-regime audit faithfulness <b>0.63</b> (content 0.71, position 0.55) — fits both content and position structure reasonably.",
+ "kernelshap": "Pearson correlation of the Shapley values with the oracle. All-regime audit faithfulness <b>0.65</b> (content 0.71, position 0.58) — Shapley recovers much of the true contribution on both content and position outputs, given enough coalitions.",
+ "counterfactual": "Pearson correlation / minimality of the minimal valid counterfactual edit against the oracle's minimal causal set. All-regime audit faithfulness <b>0.22</b> (content 0.34, position 0.10) — set-state-and-re-render is on-distribution, but the single-edit search only partly recovers the true minimal causes here.",
  "na_audit": "Count of audited methods that cannot run on the VCS at all (they need conv/attention layers or a learned policy). <b>6</b> — recorded honestly, not forced into a number.",
  "activation_patching": "Maximum absolute difference between the recovered patch effect and the EXACT patch effect from the oracle. <b>0.00</b> — activation patching is exact by construction, because it <i>is</i> an intervention.",
  "das": "Interchange accuracy of the aligned subspace against the true variable. <b>1.00</b> — DAS aligns to the causal variable exactly on this known circuit.",
- "attribution_patching": "Pearson correlation between the gradient-approximate effect and the exact patch effect. <b>0.84</b> — a good cheap approximation, with a measurable gap from the truth.",
+ "attribution_patching": "Pearson correlation between the gradient-approximate effect and the exact patch effect. <b>0.88</b> — a good cheap approximation, with a measurable gap from the truth.",
  "path_patching": "F1 of the recovered path/circuit against the true routine's data-flow. <b>0.00</b> — the single-frame path search recovers none of the true routine at this state.",
- "acdc": "Best F1 of the auto-discovered circuit vs the true data-flow over a threshold sweep. <b>0.00</b> — the pruned graph does not match the true edges here.",
+ "acdc": "Best F1 of the auto-discovered circuit vs the true data-flow over a threshold sweep. <b>0.15</b> — the pruned graph recovers only a fraction of the true edges here.",
  "sae": "Fraction of SAE features that match a known variable (probe F1) plus a causal-use check. <b>1.00</b> — every feature maps to a known variable on this small state.",
  "dictionaries": "Fraction of NMF/PCA dictionary components matching known variables. <b>0.63</b> — partial; PCA mixes variables while NMF separates more.",
  "causal_scrubbing": "Behaviour preserved when resampling activations consistent with the TRUE circuit (should stay ~1) vs a wrong circuit (should drop). <b>1.00</b> — the true-circuit hypothesis passes the scrub.",
- "linear_probing": "Mean selectivity = probe accuracy minus control-task accuracy, averaged over labelled cells. <b>0.30</b> — concepts are decodable above the control, but some decodable cells are not causally used (the present-vs-used gap).",
+ "linear_probing": "Mean selectivity = probe accuracy minus control-task accuracy, averaged over labelled cells. <b>0.23</b> — concepts are decodable above the control, but some decodable cells are not causally used (the present-vs-used gap).",
  "logit_lens": "Readout fidelity (R²) of the lens-decoded intermediate against the true intermediate value. <b>1.00</b> — the state is linearly readable at the right site, as expected on a transparent machine.",
 }
 

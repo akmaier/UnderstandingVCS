@@ -228,19 +228,36 @@ def build_paper(P):
         extra = """
 <section><div class="wrap">
   <h2>Headline finding</h2>
-  <p class="sub">Causal methods recover the truth; gradient/correlational methods collapse on the
-  discrete sprite-position outputs whose naive gradient is exactly zero.</p>
+  <p class="sub">Across all regimes, causal/intervention methods stay well above gradient and
+  correlational methods — a robust faithfulness gap whose confidence interval excludes zero.
+  On the discrete sprite-position outputs the naive gradient is exactly zero; the emulator's
+  bilinear sampler restores a non-zero position gradient, but its faithfulness stays low, so the
+  position-only gap is directional and not significant at six games.</p>
   <div class="bignum">
-    <div class="b"><strong>%s</strong><small>faithfulness gap (position regime)</small></div>
-    <div class="b"><strong>%s</strong><small>causal / intervention mean (±%s CI95, n=%s)</small></div>
-    <div class="b"><strong>%s</strong><small>gradient / correlational mean (±%s CI95, n=%s)</small></div>
+    <div class="b"><strong>%s</strong><small>all-regime faithfulness gap · CI [%s, %s] (excludes 0)</small></div>
+    <div class="b"><strong>%s</strong><small>causal / intervention mean (all regimes, n=%s)</small></div>
+    <div class="b"><strong>%s</strong><small>gradient / correlational mean (all regimes, n=%s)</small></div>
     <div class="b"><strong>%s</strong><small>methods on the leaderboard</small></div>
     <div class="b"><strong>%s</strong><small>per-game records aggregated</small></div>
   </div>
-  <p class="caption">From <a href="%stools/xai_study/compare/out/leaderboard.json"><code>leaderboard.json</code></a>
-  · <code>headline_contrast.position_regime</code>.</p>
-</div></section>""" % (h["gap"], h["causal"], h["causal_ci"], h["causal_n"],
-                        h["grad"], h["grad_ci"], h["grad_n"], h["n_methods"], h["n_records"], BLOB)
+  <p class="caption">Primary contrast from
+  <a href="%stools/xai_study/compare/out/leaderboard.json"><code>leaderboard.json</code></a>
+  · <code>headline_contrast.all_regimes</code> (CI from <code>leaderboard_ci.csv</code>).</p>
+  <p class="sub" style="margin-top:18px">Position-only regime — shown as directional, <b>not</b>
+  significant at six games:</p>
+  <div class="bignum">
+    <div class="b"><strong>%s</strong><small>position-regime gap · CI [%s, %s] (includes 0)</small></div>
+    <div class="b"><strong>%s</strong><small>causal / intervention mean (position, n=%s)</small></div>
+    <div class="b"><strong>%s</strong><small>gradient / correlational mean (position, n=%s)</small></div>
+  </div>
+  <p class="caption"><code>headline_contrast.position_regime</code>. The testbed was
+  redesigned to score every method on shared random-action gameplay states — see the
+  <a href="%sxai_paper/xai_2_interpretability/experiment_redesign.md">experiment redesign note</a>.</p>
+</div></section>""" % (h["gap"], h["gap_ci_lo"], h["gap_ci_hi"],
+                        h["causal"], h["causal_n"], h["grad"], h["grad_n"],
+                        h["n_methods"], h["n_records"], BLOB,
+                        h["pos_gap"], h["pos_gap_ci_lo"], h["pos_gap_ci_hi"],
+                        h["pos_causal"], h["pos_causal_n"], h["pos_grad"], h["pos_grad_n"], BLOB)
 
     links = '<a href="%s%s">paper PDF</a>' % (BLOB, P["pdf"])
     if P.get("supplement_pdf"):
@@ -1106,7 +1123,10 @@ def _method_caption(meth):
                 "<b>Bottom</b>: per-cell importance — oracle "
                 "(<span style='color:var(--accent-2)'>green</span>) vs method "
                 "(<span style='color:var(--accent)'>blue</span>) — and the deletion/insertion "
-                "faithfulness curves (perturb the ranked causes and watch the output move).")
+                "faithfulness curves (perturb the ranked causes and watch the output move). "
+                "<i>Note:</i> the image-domain overlay footprints are illustrative, computed on the "
+                "pre-redesign boot frame; the bars, curves and all reported numbers come from the "
+                "re-run records on the shared gameplay states.")
     if k in _MATRIX:
         return ("Two adjacency matrices over the candidate RAM cells: the <b>true</b> data-flow "
                 "graph and the graph this method <b>recovered</b>. A bright cell (row = cause, "

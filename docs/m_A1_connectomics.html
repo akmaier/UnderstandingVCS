@@ -21,7 +21,7 @@
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/A1_connectomics.png" target="_blank"><img src="assets/methods/A1_connectomics.png" alt="A1 · Connectomics / data-flow graph result"></a>
   </div>
-  <p class="caption">Two adjacency matrices over the candidate RAM cells: the <b>true</b> data-flow graph and the graph this method <b>recovered</b>. A bright cell (row = cause, column = effect) is an edge; the difference between the two panels is the error. <b>dataflow_graph_F1_vs_oracle = 0.000</b> — this example only (pong, state f30+30); the audit aggregate is below.</p>
+  <p class="caption">Two adjacency matrices over the candidate RAM cells: the <b>true</b> data-flow graph and the graph this method <b>recovered</b>. A bright cell (row = cause, column = effect) is an edge; the difference between the two panels is the error. <b>dataflow_graph_F1_vs_oracle = 0.000</b> — this example only (pong, state gameplay(seed=0,prefix=90)+15); the audit aggregate is below.</p>
 </div></section>
 
 
@@ -45,7 +45,7 @@
   <p>This is the method's entry in the actual cross-method audit — its faithfulness is the
   <b>mean over all 6 core games</b> (6 committed §R records), not the single example shown above.
   Tradition: <b>intervention</b>. The example figure (Pong) is one of those records.</p>
-  <div class="bignum"><div class="b"><strong>0.414</strong><small>faithfulness vs oracle (mean over 6 games, ±0.376 CI95)</small></div><div class="b"><strong>6</strong><small>committed records aggregated</small></div><div class="b"><strong>0.55</strong><small>human-plausibility proxy</small></div></div>
+  <div class="bignum"><div class="b"><strong>0.339</strong><small>faithfulness vs oracle (mean over 6 games, ±0.300 CI95)</small></div><div class="b"><strong>6</strong><small>committed records aggregated</small></div><div class="b"><strong>0.55</strong><small>human-plausibility proxy</small></div></div>
   <p class="caption">Source: <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/out/leaderboard.json"><code>leaderboard.json</code></a> · the whole leaderboard is on the
   <a href="methods.html#e6">methods page</a> and the
   <a href="paper2.html">Paper&nbsp;2 audit</a>.</p>
@@ -61,7 +61,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2bdf415fc467ef876276497171ea50c308e366f3"><code>2bdf415f</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/16a323ece0db80abea94f6cea633d79144ed572f"><code>16a323ec</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

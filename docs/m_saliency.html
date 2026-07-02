@@ -21,13 +21,13 @@
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/saliency.png" target="_blank"><img src="assets/methods/saliency.png" alt="Vanilla gradient (saliency) result"></a>
   </div>
-  <p class="caption"><b>Top row</b> (image domain, as in Paper 1): the game frame, then the oracle's <b>true causal region</b> and this method's <b>attributed region</b> — each painted onto the frame through the screen footprint of the RAM cells it implicates (brighter = more important). A faithful method's heat matches the oracle's. <b>Bottom</b>: per-cell importance — oracle (<span style='color:var(--accent-2)'>green</span>) vs method (<span style='color:var(--accent)'>blue</span>) — and the deletion/insertion faithfulness curves (perturb the ranked causes and watch the output move). <b>pearson_corr_with_oracle = 0.407</b> — this example only (pong, state f120+30); the audit aggregate is below.</p>
+  <p class="caption"><b>Top row</b> (image domain, as in Paper 1): the game frame, then the oracle's <b>true causal region</b> and this method's <b>attributed region</b> — each painted onto the frame through the screen footprint of the RAM cells it implicates (brighter = more important). A faithful method's heat matches the oracle's. <b>Bottom</b>: per-cell importance — oracle (<span style='color:var(--accent-2)'>green</span>) vs method (<span style='color:var(--accent)'>blue</span>) — and the deletion/insertion faithfulness curves (perturb the ranked causes and watch the output move). <i>Note:</i> the image-domain overlay footprints are illustrative, computed on the pre-redesign boot frame; the bars, curves and all reported numbers come from the re-run records on the shared gameplay states. <b>pearson_corr_with_oracle = 0.464</b> — this example only (pong, state f90+15); the audit aggregate is below.</p>
 </div></section>
 
 
 <section><div class="wrap">
   <h2>Reading this example's causal region</h2>
-  <p>This example explains the content of <b>RAM&nbsp;$36</b> (byte&nbsp;54) — the most causally-active concept byte at this state. Its strongest true-causes are: RAM&nbsp;$31 (17% of its footprint sits in the score band, the rest in the play area); RAM&nbsp;$36 (the play area — ball / paddles). The <b>score digits</b> appear in the region because RAM&nbsp;$31 reaches them: perturbing it over the 30-frame NOOP window changes the game outcome, and hence the score — a <i>downstream</i> effect, not direct rendering.</p>
+  <p>This example explains the content of <b>RAM&nbsp;$36</b> (byte&nbsp;54) — the most causally-active concept byte at this state. Its strongest true-causes are: RAM&nbsp;$36 (the play area — ball / paddles); RAM&nbsp;$31 (17% of its footprint sits in the score band, the rest in the play area). The <b>score digits</b> appear in the region because RAM&nbsp;$31 reaches them: perturbing it over the 30-frame NOOP window changes the game outcome, and hence the score — a <i>downstream</i> effect, not direct rendering.</p>
 </div></section>
 
 <section><div class="wrap">
@@ -37,7 +37,7 @@
 
 <section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Pearson correlation of the saliency map with the oracle's exact causal map |Δy(u)| over the candidate causes, plus deletion/insertion AUC. <b>0.41</b> — partially faithful: it finds the paddle region but under-weights it.</p>
+  <p>Pearson correlation of the saliency map with the oracle's exact causal map |Δy(u)| over the candidate causes, plus deletion/insertion AUC. All-regime audit faithfulness <b>0.42</b> (content 0.67, position 0.16). On discrete <b>sprite-position</b> outputs the naive gradient is exactly 0; the emulator's bilinear sampler restores a non-zero position gradient, but its faithfulness stays low — so the aggregate is moderate, not near-ceiling.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
   <a href="methods.html#stack">execution stack</a>.</p>
@@ -49,7 +49,7 @@
   <p>This is the method's entry in the actual cross-method audit — its faithfulness is the
   <b>mean over all 6 core games</b> (12 committed §R records), not the single example shown above.
   Tradition: <b>gradient</b>. The example figure (Pong) is one of those records.</p>
-  <div class="bignum"><div class="b"><strong>0.267</strong><small>faithfulness vs oracle (mean over 6 games, ±0.214 CI95)</small></div><div class="b"><strong>12</strong><small>committed records aggregated</small></div><div class="b"><strong>0.90</strong><small>human-plausibility proxy</small></div></div>
+  <div class="bignum"><div class="b"><strong>0.419</strong><small>faithfulness vs oracle (mean over 6 games, ±0.236 CI95)</small></div><div class="b"><strong>12</strong><small>committed records aggregated</small></div><div class="b"><strong>0.90</strong><small>human-plausibility proxy</small></div></div>
   <p class="caption">Source: <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/out/leaderboard.json"><code>leaderboard.json</code></a> · the whole leaderboard is on the
   <a href="methods.html#e6">methods page</a> and the
   <a href="paper2.html">Paper&nbsp;2 audit</a>.</p>
@@ -65,7 +65,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2bdf415fc467ef876276497171ea50c308e366f3"><code>2bdf415f</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/16a323ece0db80abea94f6cea633d79144ed572f"><code>16a323ec</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>
