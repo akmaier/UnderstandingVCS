@@ -744,23 +744,31 @@ def build_methods():
         def key_of(s):
             return s.rsplit("/", 1)[-1].rsplit(".", 1)[0]
         def audit(s):
-            af = audit_faith(key_of(s))
-            if not af:
+            key = key_of(s)
+            tr = audit_triad(key)
+            if tr is None:
                 return "<span class='cite'>excluded</span>"
-            faith, ci, ng, nr = af
-            return ("<b>%.3f</b> <span class='cite'>±%.3f · %s games</span>" % (faith, ci, ng))
+            F, S, Mm = tr
+            af = audit_faith(key)
+            ci = af[1] if af else 0.0
+            ng = af[2] if af else None
+            fcell = ("<b>%s</b> <span class='cite'>±%.3f</span>" % (_triad_cell(F), ci)
+                     if F is not None else _triad_cell(F))
+            games = (" <span class='cite'>· %s games</span>" % ng) if ng else ""
+            return ("F %s / S %s / M %s%s"
+                    % (fcell, _triad_cell(S), _triad_cell(Mm), games))
         body = "".join(
             "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>"
             % (m, srcln_or_src(XS + s), sc, audit(s),
                '<a href="m_%s.html">explain &amp; figure →</a>' % key_of(s)) for m, s, sc in rows)
         head = ('<table class="tbl"><tr><th>Method (reference)</th>'
                 '<th>Implementation</th><th>Score description</th>'
-                '<th><a href="#e6">Audit faithfulness</a></th>'
+                '<th><a href="#e6">Audit triad (F / S / M)</a></th>'
                 '<th>Page</th></tr>'
                 '%s</table>' % body)
         rec = ('<p class="caption">Records: %s — <b>%d</b> committed §R JSON+npz.</p>'
                % (src(XS + recdir, recdir), reccount))
-        return head + rec
+        return head + TRIAD_LEGEND + rec
 
     def srcln_or_src(path):  # link a file by its basename label
         return src(path, path.rsplit("/", 1)[-1])
@@ -1013,6 +1021,34 @@ def audit_faith(key):
             r.get("n_games"), r.get("n_records"))
 
 
+def audit_triad(key):
+    """(F, S, M) per-method means from the leaderboard, or None per axis where the
+    paper does not define that axis. Returns None if the method has no row at all.
+    F is the canonical, always-populated leaderboard `faithfulness` (the paper's
+    headline F, assembled from triad.F where available and the raw correlation
+    records otherwise — e.g. occlusion 0.64, SAE 0.209); the intermediate
+    `triad_F` is null for the black-box methods, so it must NOT be used for F."""
+    r = audit_row(key)
+    if not r:
+        return None
+    return (r.get("faithfulness"), r.get("triad_S"), r.get("triad_M"))
+
+
+def _triad_cell(val):
+    """Render one triad value as a 3-decimal number, or 'n/a' when the paper does
+    not define that axis for this method (null in leaderboard.json)."""
+    if val is None:
+        return "<span class='cite'>n/a</span>"
+    return "%.3f" % val
+
+
+TRIAD_LEGEND = (
+    "<p class=\"caption\"><b>F</b> faithfulness (scored vs the oracle for every method) · "
+    "<b>S</b> sufficiency (held-out predictive; reported for the predictive Phase-B/C methods) · "
+    "<b>M</b> minimality (true-minimal-set / named-set; where the method names a cause set) — "
+    "<b>n/a</b> otherwise, per the paper's F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad.</p>")
+
+
 _PHASE_LABEL = {"A": "Phase A · neuroscience battery", "B": "Phase B · attribution / XAI",
                 "C": "Phase C · mechanistic interpretability", "NA": "recorded as not-applicable"}
 _PHASE_ANCHOR = {"A": "phaseA", "B": "phaseB", "C": "phaseC", "NA": "phaseB"}
@@ -1180,28 +1216,39 @@ def build_method_page(meth):
 
     # "In the audit" — the method's real entry in the cross-method leaderboard
     af = audit_faith(meth["key"])
+    tr = audit_triad(meth["key"])
     ar = audit_row(meth["key"])
     lb = "tools/xai_study/compare/out/leaderboard.json"
     if af:
         faith, ci, ng, nr = af
+        F, S, Mm = tr
         plaus = ar.get("plausibility_proxy")
         trad = ar.get("tradition")
-        bign = ('<div class="bignum"><div class="b"><strong>%.3f</strong>'
-                '<small>faithfulness vs oracle (mean over %s games, ±%.3f CI95)</small></div>'
+        fsmall = ("faithfulness vs oracle (mean over %s games, &plusmn;%.3f CI95)" % (ng, ci)) \
+            if F is not None else "faithfulness vs oracle"
+        bign = ('<div class="bignum">'
+                '<div class="b"><strong>%s</strong><small>F — %s</small></div>'
+                '<div class="b"><strong>%s</strong><small>S — sufficiency: held-out predictive '
+                '(n/a where the paper does not define this axis)</small></div>'
+                '<div class="b"><strong>%s</strong><small>M — minimality: true-minimal-set / '
+                'named-set (n/a otherwise)</small></div>'
                 '<div class="b"><strong>%s</strong><small>committed records aggregated</small></div>'
                 '<div class="b"><strong>%.2f</strong><small>human-plausibility proxy</small></div>'
-                '</div>' % (faith, ng, ci, nr, plaus if plaus is not None else 0))
+                '</div>' % (_triad_cell(F), fsmall, _triad_cell(S), _triad_cell(Mm), nr,
+                            plaus if plaus is not None else 0))
         audit_html = """
 <section><div class="wrap">
   <h2>In the audit</h2>
-  <p>This is the method's entry in the actual cross-method audit — its faithfulness is the
-  <b>mean over all %s core games</b> (%s committed §R records), not the single example shown above.
-  Tradition: <b>%s</b>. The example figure (Pong) is one of those records.</p>
+  <p>This is the method's entry in the actual cross-method audit — scored on the paper's
+  correctness triad, each axis a <b>mean over all %s core games</b> (%s committed §R records), not
+  the single example shown above. Tradition: <b>%s</b>. The example figure (Pong) is one of those
+  records.</p>
+  %s
   %s
   <p class="caption">Source: %s · the whole leaderboard is on the
   <a href="methods.html#e6">methods page</a> and the
   <a href="paper2.html">Paper&nbsp;2 audit</a>.</p>
-</div></section>""" % (ng, nr, esc(str(trad)), bign, src(lb, "leaderboard.json"))
+</div></section>""" % (ng, nr, esc(str(trad)), bign, TRIAD_LEGEND, src(lb, "leaderboard.json"))
     else:
         audit_html = """
 <section><div class="wrap">

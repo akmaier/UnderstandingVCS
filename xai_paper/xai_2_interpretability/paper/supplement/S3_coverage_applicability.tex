@@ -95,3 +95,73 @@ oracle (control) & yes & no & no & yes & exact & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\subsection{T3 semantic-label coverage across the 64-game roster}\label{supp:t3coverage}
+
+The tier-3 (T3) ground truth is externally supplied: it consists of semantic object and position
+labels imported from AtariARI~\cite{anand2019unsupervised} and OCAtari~\cite{delfosse2023ocatari},
+not derived by our oracle. This subsection documents where such labels \emph{exist}, so that the
+breadth and position analyses can, in principle, scale beyond the six-game core of
+Table~\ref{supp:tab:coverage}. It reports label \emph{availability and provenance} only. It does
+not report any result on the wider battery. The larger sweep is in progress and has produced no
+scores yet; nothing below should be read as a score.
+
+The counts are computed, not estimated. We intersect our bit-exact roster with the games that
+carry a label in the installed source of each project: the OCAtari object-property tables and the
+AtariARI \texttt{atari\_dict}. OCAtari is preferred for render-aligned position labels because its
+RAM mode applies the render-time offsets that correct the raw-RAM misalignment~\cite{delfosse2023ocatari};
+AtariARI labels are cross-checkable but do not carry those offsets. Table~\ref{supp:tab:t3coverage}
+summarizes the intersection. Of the 64 bit-exact games, 54 carry an OCAtari label, which is the
+maximal labeled subset: every one of the 22 AtariARI-labeled games is also in the OCAtari 54, so
+the AtariARI-only count is $0$ and OCAtari alone fixes the ceiling. The 22 games covered by both
+sources are the richest and the only cross-checkable ones. Ten games carry no T3 label from either
+source and are excluded from any label-dependent scoring. In percent of the roster, OCAtari labels
+84\%, both sources cover 34\%, and 16\% have no label at all.
+
+\begin{table}[t]
+\centering
+\caption{\textbf{T3 semantic-label coverage.} Availability of external position/object labels
+across the 64-game bit-exact roster, computed against the installed OCAtari object tables and the
+AtariARI \texttt{atari\_dict}. This is a provenance record of which games \emph{could} enter a
+label-dependent analysis; it reports no result on any of them. Every AtariARI-labeled game is also
+OCAtari-labeled, so OCAtari alone defines the maximal labeled set of 54.}
+\label{supp:tab:t3coverage}
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}p{6.4cm}rp{4.2cm}@{}}
+\toprule
+Set & Count & Note \\
+\midrule
+Our bit-exact roster & 64 & all Paper-1 games \\
+OCAtari-labeled (offset-corrected) & 54 & largest labeled subset \\
+AtariARI-labeled & 22 & all a subset of the OCAtari 54 \\
+Covered by both sources & 22 & richest (cross-checkable) \\
+AtariARI-only & 0 & every AtariARI game is in OCAtari \\
+No T3 label at all & 10 & excluded from label-dependent scoring \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For traceability we enumerate the sets. The 54 OCAtari-labeled games are:
+\texttt{air\_raid}, \texttt{alien}, \texttt{amidar}, \texttt{assault}, \texttt{asterix},
+\texttt{asteroids}, \texttt{atlantis}, \texttt{bank\_heist}, \texttt{battle\_zone},
+\texttt{beam\_rider}, \texttt{berzerk}, \texttt{bowling}, \texttt{boxing}, \texttt{breakout},
+\texttt{carnival}, \texttt{centipede}, \texttt{chopper\_command}, \texttt{crazy\_climber},
+\texttt{demon\_attack}, \texttt{double\_dunk}, \texttt{enduro}, \texttt{fishing\_derby},
+\texttt{freeway}, \texttt{frostbite}, \texttt{gopher}, \texttt{hero}, \texttt{ice\_hockey},
+\texttt{jamesbond}, \texttt{kangaroo}, \texttt{krull}, \texttt{kung\_fu\_master},
+\texttt{montezuma\_revenge}, \texttt{ms\_pacman}, \texttt{name\_this\_game}, \texttt{pacman},
+\texttt{phoenix}, \texttt{pitfall}, \texttt{pong}, \texttt{pooyan}, \texttt{private\_eye},
+\texttt{qbert}, \texttt{riverraid}, \texttt{road\_runner}, \texttt{robotank}, \texttt{seaquest},
+\texttt{skiing}, \texttt{space\_invaders}, \texttt{star\_gunner}, \texttt{tennis},
+\texttt{time\_pilot}, \texttt{up\_n\_down}, \texttt{venture}, \texttt{video\_pinball}, and
+\texttt{yars\_revenge}. The 22 games covered by both sources are:
+\texttt{asteroids}, \texttt{berzerk}, \texttt{bowling}, \texttt{boxing}, \texttt{breakout},
+\texttt{demon\_attack}, \texttt{freeway}, \texttt{frostbite}, \texttt{hero},
+\texttt{montezuma\_revenge}, \texttt{ms\_pacman}, \texttt{pitfall}, \texttt{pong},
+\texttt{private\_eye}, \texttt{qbert}, \texttt{riverraid}, \texttt{seaquest},
+\texttt{space\_invaders}, \texttt{tennis}, \texttt{venture}, \texttt{video\_pinball}, and
+\texttt{yars\_revenge}. The 10 games with no T3 label, dropped from any label-dependent scoring,
+are: \texttt{defender}, \texttt{elevator\_action}, \texttt{gravitar}, \texttt{journey\_escape},
+\texttt{solaris}, \texttt{surround}, \texttt{tutankham}, \texttt{videochess},
+\texttt{wizard\_of\_wor}, and \texttt{zaxxon}.
