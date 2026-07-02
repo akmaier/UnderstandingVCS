@@ -1,5 +1,5 @@
 {
-  "commit": "c157ec63",
+  "commit": "81fc6963",
   "games": [
     {
       "all_ablated_break_px": 192.0,
@@ -30,12 +30,162 @@
         0.6666666666666667
       ],
       "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 48.0,
+      "game": "breakout",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.375,
+      "matched_frac_pca": 0.625,
+      "matched_frac_sae": 0.25,
+      "n_cands": 9,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 6,
+      "n_causal_atoms_sae": 1,
+      "n_known_game_vars": 7,
+      "nmf_FSM": [
+        0.1091089451179962,
+        0.9374110883201968,
+        1.0
+      ],
+      "pca_FSM": [
+        0.7547319081399414,
+        1.0,
+        1.0
+      ],
+      "sae_FSM": [
+        -0.21597969886241555,
+        0.0,
+        0.0
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 1343.0,
+      "game": "space_invaders",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.75,
+      "matched_frac_pca": 0.5,
+      "matched_frac_sae": 0.75,
+      "n_cands": 17,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 5,
+      "n_causal_atoms_sae": 1,
+      "n_known_game_vars": 13,
+      "nmf_FSM": [
+        -0.15569141404872366,
+        0.8806721125777258,
+        1.0
+      ],
+      "pca_FSM": [
+        0.25993762245501817,
+        1.0,
+        0.75
+      ],
+      "sae_FSM": [
+        -0.08297398136450225,
+        -1.0,
+        0.16666666666666663
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 315.0,
+      "game": "seaquest",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.625,
+      "matched_frac_pca": 0.5,
+      "matched_frac_sae": 0.375,
+      "n_cands": 23,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 6,
+      "n_causal_atoms_sae": 4,
+      "n_known_game_vars": 15,
+      "nmf_FSM": [
+        -0.1707825127659933,
+        0.6516525613378172,
+        1.0
+      ],
+      "pca_FSM": [
+        0.7655901625358508,
+        0.999965345175129,
+        1.0
+      ],
+      "sae_FSM": [
+        0.494052464661232,
+        -0.7877214932162487,
+        1.0
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 369.0,
+      "game": "ms_pacman",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.375,
+      "matched_frac_pca": 0.125,
+      "matched_frac_sae": 0.5,
+      "n_cands": 19,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 5,
+      "n_causal_atoms_sae": 2,
+      "n_known_game_vars": 6,
+      "nmf_FSM": [
+        -0.49099025303098287,
+        0.8348204962278161,
+        1.0
+      ],
+      "pca_FSM": [
+        0.4225771273642583,
+        1.0,
+        1.0
+      ],
+      "sae_FSM": [
+        -0.008303402767415664,
+        0.09442659335951278,
+        0.25
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 1794.0,
+      "game": "qbert",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.5,
+      "matched_frac_pca": 0.375,
+      "matched_frac_sae": 0.5,
+      "n_cands": 20,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 5,
+      "n_causal_atoms_sae": 2,
+      "n_known_game_vars": 10,
+      "nmf_FSM": [
+        0.12683657235796025,
+        0.13192848559780224,
+        1.0
+      ],
+      "pca_FSM": [
+        0.6987712429686843,
+        1.0,
+        1.0
+      ],
+      "sae_FSM": [
+        0.7805198601370722,
+        -0.6806877464627069,
+        0.5
+      ],
+      "state": "f90+15"
     }
   ],
   "headline": "PCA vs NMF vs SAE: matched-component fraction vs known variables AND the causal-use test (ablate an atom, re-run via the oracle — does it drive the output?). Generalises A7 with causal scoring.",
   "method": "nmf_pca_dictionaries(+SAE contrast)",
-  "n_games": 1,
+  "n_games": 6,
   "paper": "P2",
   "phase": "phaseC_mechanistic",
-  "timestamp": "1782923009"
+  "timestamp": "1782972727"
 }

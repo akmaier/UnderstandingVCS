@@ -1,14 +1,14 @@
 {
   "arrays": "acdc_space_invaders.npz",
   "budget": {
-    "horizon_frames": 30,
+    "horizon_frames": 15,
     "note": "paper-reasonable: the τ sweep adds zero re-runs (it thresholds the cached effect matrix). Heavy cost is the N resample re-runs + the exhaustive 3N ground-truth re-runs; re-runnable incrementally from the cached deepcopy checkpoint.",
     "rom_reruns_acdc": "N resample-ablations (1 per source) + 1 corrupted boot + 1 scrub re-run + 2 bit-exact baselines",
     "rom_reruns_true_graph": "≤ 3·N exhaustive interventions (N=17 cells × 3 do-values)",
-    "tau_sweep": "3 thresholds (pure thresholding of the cached effect matrix — NO extra re-runs)"
+    "tau_sweep": "4 thresholds (pure thresholding of the cached effect matrix — NO extra re-runs)"
   },
   "ci": null,
-  "commit": "7be1f32",
+  "commit": "19022dc7",
   "extra": {
     "ablation": "resample (parent overwritten with its value from the corrupted RIGHT-action donor run); standard ACDC corruption (Conmy et al. 2023 §3), not zero.",
     "bit_exact_rerun": true,
@@ -50,9 +50,9 @@
       102,
       120
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/.claude/worktrees/wf_6fa7951f-2ea-2/tools/xai_study/t3/out/candidates_space_invaders.json",
+    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_space_invaders.json",
     "circuit": {
-      "best_tau": 32.0,
+      "best_tau": 12.0,
       "discovered_edges_at_best_tau": [
         [
           5,
@@ -61,19 +61,23 @@
         [
           7,
           2
+        ],
+        [
+          11,
+          0
         ]
       ],
-      "f1": 0.3636363636363636,
-      "fn": 7,
+      "f1": 0.5,
+      "fn": 6,
       "fp": 0,
-      "n_discovered_edges_at_best": 2,
+      "n_discovered_edges_at_best": 3,
       "n_nodes": 17,
       "n_true_edges": 9,
       "note": "edges are 0-based candidate ordinals [i,j] = cell i -> cell j. TRUE = exhaustive oracle (do 0/base+17/base+37, full horizon, any value changes j); DISCOVERED = ACDC keep-rule (resample-ablation effect > τ). The τ sweep is the ROC frontier.",
       "precision": 1.0,
-      "recall": 0.2222222222222222,
-      "roc_auc": 0.6111111111111112,
-      "tp": 2,
+      "recall": 0.3333333333333333,
+      "roc_auc": 0.6666666666666666,
+      "tp": 3,
       "true_edges": [
         [
           5,
@@ -100,7 +104,7 @@
           16
         ],
         [
-          12,
+          11,
           0
         ],
         [
@@ -124,13 +128,23 @@
     "rom_basename": "space_invaders.bin",
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard/--nshards/--shard-kind game --out-dir --roms-dir --where) — the full ACDC battery over the core + breadth sets; forward bit-exact to this HARD path.",
     "scrubbing": {
-      "n_scrubbed_parents": 15,
+      "n_scrubbed_parents": 14,
       "note": "causal scrubbing of the best-F1 discovered circuit: resample-ablate every parent NOT in the circuit, re-run, report the fraction of candidate-cell readouts unchanged vs clean.",
-      "preserved_fraction": 0.47058823529411764
+      "preserved_fraction": 0.5294117647058824
     },
     "settings": "SpaceInvadersRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge effect is an EXACT resample-ablation re-run on the true ROM.",
     "tau_sweep": [
+      {
+        "f1": 0.5,
+        "fn": 6,
+        "fp": 0,
+        "n_discovered": 3,
+        "precision": 1.0,
+        "recall": 0.3333333333333333,
+        "tau": 12.0,
+        "tp": 3
+      },
       {
         "f1": 0.3636363636363636,
         "fn": 7,
@@ -138,7 +152,7 @@
         "n_discovered": 2,
         "precision": 1.0,
         "recall": 0.2222222222222222,
-        "tau": 32.0,
+        "tau": 44.0,
         "tp": 2
       },
       {
@@ -162,12 +176,25 @@
         "tp": 0
       }
     ],
+    "testbed": {
+      "cause_density_above_floor": 18,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 36,
+      "note": "P2 redesign: ACDC runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. The clean stream is the shared gameplay tape; the resample donor shares the gameplay prefix and diverges only from f* (a RIGHT action) so it is on-distribution. The ACDC discovery algorithm is unchanged; only the analysis state moves.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r192c35",
+      "state_kind": "seeded_random_action_gameplay"
+    },
     "triad": {
-      "F": 0.3636363636363636,
+      "F": 0.5,
       "F_note": "best-F1 of the ACDC-discovered circuit edges vs the exhaustive-oracle true data-flow (17 candidate cells)",
       "M": 1.0,
       "M_note": "1 − over-claim rate at best-F1 τ: fraction of discovered edges the oracle says are spurious (false wiring kept by the cheap ablation)",
-      "S": 0.47058823529411764,
+      "S": 0.5294117647058824,
       "S_note": "scrubbing-preserved performance: the discovered circuit alone (non-circuit parents resample-scrubbed) reproduces the clean candidate-cell readouts (fraction unchanged, bit-exact re-run)",
       "interpretation": "ACDC's goal state IS our ground truth (experiment_design.md §7: Partial→Succeed). The discovery uses a cheap single-value resample-ablation, so it can miss edges that fire only for a different value (recall deficit) and keep transient ones (precision deficit) vs the exhaustive true data-flow."
     }
@@ -180,10 +207,10 @@
   "paper": "P2",
   "phase": "phaseC_mechanistic",
   "seed": 0,
-  "state": "f30+30",
+  "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "auto-discovered inter-cell data-flow circuit (candidate RAM cells)",
-  "timestamp": "1782163068",
-  "value": 0.3636363636363636,
+  "timestamp": "1782970855",
+  "value": 0.5,
   "where": "local"
 }

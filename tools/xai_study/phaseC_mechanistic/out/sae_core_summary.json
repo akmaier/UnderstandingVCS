@@ -1,5 +1,5 @@
 {
-  "commit": "c157ec63",
+  "commit": "81fc6963",
   "games": [
     {
       "FSM": [
@@ -22,13 +22,123 @@
       "n_oracle_causal": 4,
       "n_varying_known": 4,
       "state": "f90+15"
+    },
+    {
+      "FSM": [
+        -0.6016568375961868,
+        -0.44707697182306805,
+        0.2727272727272727
+      ],
+      "ablate_eq_oracle": true,
+      "best_d_hidden": 64,
+      "best_l1": 0.01,
+      "fve_held": 0.94421341797179,
+      "fve_train": 0.9953831212710692,
+      "game": "breakout",
+      "in_window": false,
+      "matched_fraction": 1.0,
+      "mean_target_share": 0.5,
+      "n_cands": 9,
+      "n_causal_use_features": 2,
+      "n_causal_use_moved": 2,
+      "n_oracle_causal": 7,
+      "n_varying_known": 3,
+      "state": "f90+15"
+    },
+    {
+      "FSM": [
+        -0.31961458557009514,
+        -0.12803011492848929,
+        0.0
+      ],
+      "ablate_eq_oracle": true,
+      "best_d_hidden": 32,
+      "best_l1": 0.01,
+      "fve_held": 0.7815690905705845,
+      "fve_train": 0.9938867708970198,
+      "game": "space_invaders",
+      "in_window": false,
+      "matched_fraction": 1.0,
+      "mean_target_share": 0.0,
+      "n_cands": 17,
+      "n_causal_use_features": 2,
+      "n_causal_use_moved": 0,
+      "n_oracle_causal": 11,
+      "n_varying_known": 5,
+      "state": "f90+15"
+    },
+    {
+      "FSM": [
+        -0.005354184303968214,
+        0.7055132895352106,
+        0.048275353773584904
+      ],
+      "ablate_eq_oracle": true,
+      "best_d_hidden": 64,
+      "best_l1": 0.01,
+      "fve_held": 0.9871436615897373,
+      "fve_train": 0.9970016783691116,
+      "game": "seaquest",
+      "in_window": false,
+      "matched_fraction": 1.0,
+      "mean_target_share": 0.08582285115303984,
+      "n_cands": 23,
+      "n_causal_use_features": 6,
+      "n_causal_use_moved": 2,
+      "n_oracle_causal": 15,
+      "n_varying_known": 8,
+      "state": "f90+15"
+    },
+    {
+      "FSM": [
+        0.16894672235708177,
+        -0.2579207255253286,
+        0.0
+      ],
+      "ablate_eq_oracle": true,
+      "best_d_hidden": 64,
+      "best_l1": 0.01,
+      "fve_held": 0.9856816023092654,
+      "fve_train": 0.9929370997317409,
+      "game": "ms_pacman",
+      "in_window": false,
+      "matched_fraction": 0.8181818181818182,
+      "mean_target_share": 0.0,
+      "n_cands": 19,
+      "n_causal_use_features": 7,
+      "n_causal_use_moved": 0,
+      "n_oracle_causal": 14,
+      "n_varying_known": 11,
+      "state": "f90+15"
+    },
+    {
+      "FSM": [
+        0.25152248510206476,
+        -0.116811257193202,
+        0.0
+      ],
+      "ablate_eq_oracle": true,
+      "best_d_hidden": 16,
+      "best_l1": 0.01,
+      "fve_held": 0.08723026831965142,
+      "fve_train": 0.9946527294721971,
+      "game": "qbert",
+      "in_window": false,
+      "matched_fraction": 1.0,
+      "mean_target_share": 0.0,
+      "n_cands": 20,
+      "n_causal_use_features": 7,
+      "n_causal_use_moved": 0,
+      "n_oracle_causal": 7,
+      "n_varying_known": 15,
+      "state": "f90+15"
     }
   ],
   "headline": "Full L1 SAE over recorded VCS RAM trajectories on the 6 core games: (a) reconstruction FVE (best of a d_hidden×l1 sweep), (b) feature↔variable match-rate vs the verified T3 cells, (c) CAUSAL USE — ablate a matched feature, decode back to RAM, re-run the real ROM (ablate==exact-patch oracle, asserted bit-exact) + specificity/monosemanticity (decode-leakage, target-share). Method-matrix expectation = PARTIAL: recovers features; faithfulness-to-computation debated.",
   "item": "P2-E5-6",
   "method": "sparse_autoencoder",
-  "n_games": 1,
+  "n_games": 6,
   "paper": "P2",
   "phase": "phaseC_mechanistic",
-  "timestamp": "1782922838"
+  "timestamp": "1782972327"
 }
