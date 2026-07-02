@@ -1,0 +1,45 @@
+\section{ROM provenance: SHA-256 hashes}\label{supp:romhashes}
+
+We do not redistribute the Atari~2600 game cartridges. They are third-party ROMs
+acquired through the \texttt{AutoROM} retrieval procedure, following the practice of the
+underlying emulator port~\cite{maier2025vcs}. To let a third party verify that they hold the
+exact binaries we ran against, we report a SHA-256 hash for each ROM in the bit-exact
+roster. The Data-availability statement points here.
+
+Table~\ref{supp:tab:romhashes} lists all 64 games of the Paper-1 bit-exact roster, so the
+hash record covers not only the six-game core that carries the full method battery
+(Table~\ref{supp:tab:coverage}) but also the wider 54-game labeled breadth set
+(Table~\ref{supp:tab:t3coverage}) reserved for the larger sweep. A dagger ($\dagger$) marks the
+six core games scored in this Article. Each hash is computed over the raw cartridge image
+with \texttt{shasum -a 256}; reproducing it requires only the retrieved binary and a standard
+SHA-256 tool. The hashes fingerprint the exact inputs; they are provenance, not a result.
+
+% \hash: typeset a 64-hex-character SHA-256 digest in a narrow column, inserting
+% zero-width discretionary breaks between characters so the string wraps cleanly.
+% Kept local to this S-file so it stays self-contained (mirrors \jkey in supplement.tex).
+\makeatletter
+\def\hash#1{{\ttfamily\footnotesize\@hashaux#1\relax}}
+\def\@hashaux#1{\ifx\relax#1\else#1\discretionary{}{}{}\expandafter\@hashaux\fi}
+\makeatother
+
+\begin{longtable}{@{}p{3.0cm}p{9.0cm}@{}}
+\caption{\textbf{SHA-256 hashes of the 64 bit-exact ROMs.} One row per game of the
+Paper-1 roster. A dagger ($\dagger$) marks the six core games scored in this Article; the
+remaining rows document the wider substrate (including the 54-game labeled breadth set) for
+which the ROM binaries are pinned but no interpretability score is reported here. Hashes are
+computed with \texttt{shasum -a 256} over the retrieved cartridge image and are a provenance
+record only.}
+\label{supp:tab:romhashes} \\
+\toprule
+Game & SHA-256 \\
+\midrule
+\endfirsthead
+\multicolumn{2}{@{}l}{\footnotesize Table~\ref{supp:tab:romhashes} (continued)}\\
+\toprule
+Game & SHA-256 \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\input{supplement/rom_hash_rows}
+\end{longtable}
