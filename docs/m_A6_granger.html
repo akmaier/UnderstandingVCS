@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>Granger causality infers direction from timing. The rule is simple: if the past of signal A helps predict the future of signal B beyond B's own past, then A is said to Granger-cause B. It is widely used in neuroscience and economics to draw directed influence graphs from recorded time series, without any intervention. We apply it to the VCS by treating the CPU, TIA, and RIOT activity as time series and asking which components predict which. The result is a directed graph of inferred influence that we compare to the true data-flow. The appeal is that it turns passive observation into a causal-looking claim. The deep flaw, on this machine, is that it equates 'happens earlier' with 'is the cause'. The VCS is clock-locked, so almost every signal is predictable from almost every other signal one cycle earlier, whether or not there is a real dependency. Granger causality therefore infers edges everywhere. Neither a longer lag nor a stricter threshold repairs this, because the shared clock creates predictability that is not causation. It is the cleanest demonstration in our battery that precedence is not cause, and that only an intervention can tell them apart.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/A6_granger.png" target="_blank"><img src="assets/methods/A6_granger.png" alt="A6 · Granger causality result"></a>
   </div>
@@ -27,16 +32,12 @@
 
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Infers Granger-causal edges between CPU / TIA / RIOT activity and scores its false-edge and missed-edge rate against the true data-flow.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>False-edge rate of the Granger-inferred causal graph against the true data-flow. <b>1.0</b> — every inferred edge is spurious (Granger sees correlation through shared clocks).</p>
+  <p>The score is the false-edge rate of the Granger-inferred graph against the true data-flow. We let Granger causality infer directed edges from the timing of CPU, TIA, and RIOT activity, then compare each inferred edge to the true wiring the oracle certifies. An inferred edge that is not real is a false edge, and the false-edge rate counts them; faithfulness is one minus that rate. On the VCS the rate is at or near one, because the machine is clock-locked and almost every signal is predictable from almost every other one cycle earlier. So Granger causality infers edges everywhere, and nearly all of them are spurious. Neither a longer lag nor a stricter threshold repairs this, because the shared clock, not a real dependency, creates the predictability. The grading is always against the intervention oracle, which is the only thing that separates precedence from causation here. There is no sprite-position hard-case for this method; its output is a directed graph. The audit box reports the measured faithfulness across the core games, and it is among the lowest in the battery, which is the point: timing-based causal inference fails on a machine whose timing is shared.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -63,7 +64,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

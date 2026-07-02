@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>RISE explains a black box by random masking. It generates many random masks, applies each to the input, records the output for each masked version, and then forms an importance map as the output-weighted average of the masks. Inputs that tend to be present when the output is high receive high importance. The method needs no gradients and no access to the model's internals; it only needs to query the output, which is why it is popular for truly opaque systems. The intuition is a Monte-Carlo estimate of each input's marginal effect. We apply it to the VCS by drawing hundreds of random masks over the candidate causes, re-running the program for each, and averaging. Because it perturbs and re-runs the real machine, it works on a sprite's position where gradients are dead, unlike the gradient family. Its accuracy depends on the number of masks and on how informative random masking is for a given output. On smooth content outputs it does reasonably well. On a discrete position output, masking a single discrete cause is less informative, so the estimate is noisier and its faithfulness drops. RISE is a clean example of a perturbation method that is genuinely causal in its mechanism but pays for using random rather than targeted interventions.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/rise.png" target="_blank"><img src="assets/methods/rise.png" alt="RISE result"></a>
   </div>
@@ -31,16 +36,12 @@
 </div></section>
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Averages the output over many random masks (N=500) to estimate per-region importance.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Pearson correlation with the oracle from random-mask averaging. All-regime audit faithfulness <b>0.55</b> (content 0.68, position 0.42) — moderate on <b>content</b> outputs, weaker on <b>position</b> outputs where masking a discrete cause is less informative.</p>
+  <p>The score is the Pearson correlation of the RISE importance map with the oracle's exact causal map, reported raw, and the grading is always against the intervention oracle. RISE forms its map by averaging the output over hundreds of random masks, each a real re-run of the machine, so it is a genuine perturbation method and works on a sprite's position where the gradient family scores zero. That is why it does not collapse on the position regime. Its faithfulness is moderate: on smooth content outputs the random-mask average recovers the true causes reasonably well, but on a discrete position output masking a single discrete cause is less informative, so the estimate is noisier and the position score drops below the content score. The accuracy also depends on how many masks are drawn, since RISE is a Monte-Carlo estimate. The grading is always against the oracle, never against another method. The audit box reports the measured all-regime faithfulness across the six core games, which averages the stronger content result and the weaker position result. RISE shows that a truly perturbation-based method can beat the gradient family on discrete outputs while still paying for using random rather than targeted interventions.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -67,7 +68,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

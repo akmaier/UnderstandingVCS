@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>Integrated Gradients attributes the output to inputs by integrating the gradient along a straight path from a chosen baseline to the actual input. Instead of the gradient at a single point, which can be misleading if the output has saturated, it accumulates the gradient over the whole path. This gives the method its completeness property: the attributions add up exactly to the difference between the output at the input and the output at the baseline. The attribution depends on which baseline is chosen, an all-black image, a mean image, and so on, so we sweep several baselines and report the behaviour. We apply it to the VCS by integrating each cause's gradient from a baseline state to the live state and correlating with the true causal map. On smooth content outputs it behaves like a stronger saliency and concentrates mass on the true causal byte. On a sprite's position the completeness property does not save it: the position is a discrete strobe-timed step, so the naive gradient along the whole path is zero, and the integral of zero is zero. The baseline choice moves the magnitude of the attribution but not its correlation with the truth. Integrated Gradients is an axiomatic, much-cited method, which makes it an important reference point for what completeness can and cannot fix on discrete outputs.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/ig_baseline_sweep.png" target="_blank"><img src="assets/methods/ig_baseline_sweep.png" alt="Integrated Gradients result"></a>
   </div>
@@ -31,16 +36,12 @@
 </div></section>
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Integrates the gradient along a path from a baseline to the input (completeness-satisfying). We sweep the baseline because the attribution depends on it.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Pearson correlation with the oracle at the headline baseline (baselines are swept). All-regime audit faithfulness <b>0.41</b> (content 0.67, position 0.14). Moderate on <b>content</b> outputs; on the sprite-position output the naive gradient is 0, and even with the emulator's sampler restoring a non-zero position gradient the faithfulness stays low — completeness does not rescue it on discrete outputs.</p>
+  <p>The score is the Pearson correlation of the Integrated-Gradients attribution with the oracle's exact causal map, reported raw, at the headline baseline, with the baseline swept to show the dependence. Faithfulness for this method is that correlation, graded always against the intervention oracle. On smooth content outputs it behaves like a stronger saliency and scores well, and sweeping the baseline moves the magnitude of the attribution but not its correlation with the truth, because the constant one-hot Jacobian keeps the mass on the same byte. The hard case is a sprite's position. The position is a discrete strobe-timed step, so the naive gradient along the whole integration path is zero, and the integral of zero is zero; completeness does not rescue it. The audit turns on the differentiable sampler to give the method a fair chance on position, but the restored gradient is faithful on only a minority of games, so the position score stays low. The audit box reports the all-regime faithfulness, which averages the strong content result and the weak position result across the core games. This makes Integrated Gradients a key reference for what the completeness axiom can and cannot fix on discrete outputs.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -67,7 +68,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

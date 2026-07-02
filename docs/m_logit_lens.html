@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>The logit lens reads a system's intermediate state through its own output decoder. In a transformer it takes the hidden state at some middle layer and applies the final output projection to it, as if that intermediate state were the last layer, to see what the model would 'say' at that point. This reveals how the prediction forms across depth, and the tuned-lens variant learns a small correction so the readout is more faithful at each stage. It is a standard, cheap tool for tracing how information develops inside a network. We build the analogue on the VCS by reading an intermediate value through the machine's own decoding, and comparing the decoded value to the true intermediate value at that site. On this transparent machine the readout is exact: the state is linearly readable at the right site, so the lens reproduces the true intermediate value on every game. This is expected, because the VCS keeps its variables in plain, addressable memory rather than in a distorted distributed code. The logit lens is therefore a clean positive result on the machine, and it sits with the exact causal methods. As with those, reading the right value at the right site confirms that the value is represented and readable, but it does not by itself explain how that value is computed or what role it plays.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/logit_lens.png" target="_blank"><img src="assets/methods/logit_lens.png" alt="Logit / tuned lens result"></a>
   </div>
@@ -27,16 +32,12 @@
 
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Reads intermediate state through the output decoder to see what is represented at each stage; scored by readout fidelity against the true intermediate value.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Readout fidelity (R²) of the lens-decoded intermediate against the true intermediate value. <b>1.00</b> — the state is linearly readable at the right site, as expected on a transparent machine.</p>
+  <p>The score is the readout fidelity of the lens-decoded intermediate against the true intermediate value, reported as an R-squared. We read an intermediate value through the machine's own decoding and compare it to the true value at that site. The grading is always against the intervention oracle. On this transparent machine the readout is exact: the state is linearly readable at the right site, so the lens reproduces the true intermediate value on every core game and the fidelity is at the ceiling. Faithfulness for this method is that readout fidelity. There is no sprite-position hard-case here, because the method reads an internal value rather than a rendered position, and it does not rely on a gradient. The result is expected, because the VCS keeps its variables in plain, addressable memory rather than in a distorted distributed code. The important qualification, which the score does not by itself capture, is that reading the right value at the right site confirms the value is represented and readable, but does not explain how the value is computed or what role it plays. The grading is always against the oracle. The audit box reports the measured triad, with fidelity at the ceiling.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -63,7 +64,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

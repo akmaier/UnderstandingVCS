@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>Linear probing asks whether a concept can be read out of the state by a simple classifier. A linear probe is trained to predict a concept, say the ball's position, from the internal state; if it succeeds, the concept is said to be 'encoded' there. The well-known danger is that a probe can succeed just because the concept happens to be linearly recoverable, not because the system uses it. Hewitt and Liang's control-task fix addresses this: train a second probe to predict a random label, and report selectivity, the probe's real accuracy minus its accuracy on the random control. High selectivity means the state genuinely encodes the concept rather than the probe memorising it. We apply this on the VCS, training probes for game concepts and subtracting the control-task baseline. The VCS then adds a test no neural network allows: we check, by intervention, whether the program actually uses each decodable cell. It often does not. A cell can be decodable, and pass the control-task check, yet be provably inert when we clamp it and re-run, because the value is present in the state but never causally used within the window. Linear probing is thus our clearest illustration of the present-versus-used gap: decodability shows information is there, but only the intervention oracle shows whether the program relies on it.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/linear_probing.png" target="_blank"><img src="assets/methods/linear_probing.png" alt="Linear probing + control tasks result"></a>
   </div>
@@ -27,16 +32,12 @@
 
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Trains linear probes for concepts and subtracts a control-task baseline (selectivity) to expose the present-vs-used gap — information can be decodable without being causally used.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Mean selectivity = probe accuracy minus control-task accuracy, averaged over labelled cells. <b>0.23</b> — concepts are decodable above the control, but some decodable cells are not causally used (the present-vs-used gap).</p>
+  <p>The score is the mean selectivity: the probe's accuracy minus the accuracy of a control-task probe trained on a random label, averaged over the labelled cells. The control task follows Hewitt and Liang and guards against a probe succeeding merely because a concept is linearly recoverable. The grading is always against the intervention oracle. Faithfulness for this method is that selectivity, and it is modest, but the deeper finding comes from crossing the probe against the oracle. Concepts are decodable above the control, so the information is present in the state, yet the oracle flags cells that are decodable but never causally used within the window. That is the present-versus-used gap: a value can be read out without the program relying on it. There is no sprite-position hard-case here; the output is a decodability judgement. The grading is always against the oracle, which is strictly stronger than the probe, because the probe asks whether a value can be read while the oracle asks whether changing it changes the output. The audit box reports the measured triad. Linear probing earns a high plausibility proxy on a low faithfulness, which places it in the danger zone and makes it the clearest illustration of decodable-but-unused information.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -63,7 +64,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

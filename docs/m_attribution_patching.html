@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>Attribution patching is a fast, gradient-based approximation to activation patching. Exact patching requires a separate re-run for every internal value tested, which is expensive on a large network. Attribution patching instead uses a first-order, linear estimate: it multiplies the gradient at each site by the change that patching would apply, to predict the patch's effect in a single backward pass. This lets researchers screen thousands of sites at once, at industrial scale, and only re-run the exact patch on the promising ones. We apply it to the VCS by forming the gradient-linear estimate of each site's patch effect and comparing it to the exact effect the oracle measures. The comparison is unusually clean here because we have the exact answer for every site. The linear surrogate keeps the edges precise: it is usually right about which dependencies exist, because a real edge tends to have a non-zero gradient. What it gets wrong is the size of an edge, since the true relationship is not linear, so its numerical agreement with the exact patch is only partial. Attribution patching is therefore a good cheap screen with a measurable error, and the VCS lets us quantify exactly how much accuracy the approximation trades away for its speed.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/attribution_patching.png" target="_blank"><img src="assets/methods/attribution_patching.png" alt="Attribution / edge patching result"></a>
   </div>
@@ -27,16 +32,12 @@
 
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>A gradient approximation to activation patching; scored by its approximation error vs true patching and by edge precision/recall.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Pearson correlation between the gradient-approximate effect and the exact patch effect. <b>0.88</b> — a good cheap approximation, with a measurable gap from the truth.</p>
+  <p>The score is the Pearson correlation between the gradient-approximate patch effect and the exact patch effect from the oracle. The grading is always against the intervention oracle. Attribution patching forms a first-order, linear estimate of each site's patch effect in a single backward pass, so we can compare that estimate directly to the exact effect the oracle measures at the same site. Faithfulness for this method is that correlation, and it is good but not perfect, because the true relationship is not linear. The linear surrogate keeps the edges precise: it is usually right about which dependencies exist, since a real edge tends to have a non-zero gradient, so edge precision and recall stay high. What it gets wrong is the size of an edge, which is why the numerical agreement with the exact patch is only partial. There is no sprite-position collapse framed as such here, because the method is scored on internal patch effects rather than on a rendered position; but its gradient origin is exactly why it approximates rather than matches. The grading is always against the oracle. The audit box reports the measured triad, so the correlation is an average across the core games, quantifying how much accuracy the fast approximation trades away for its speed.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -63,7 +64,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

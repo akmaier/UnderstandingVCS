@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>Dimensionality reduction summarises high-dimensional activity by a few components. Principal component analysis (PCA) finds the directions of largest variance; non-negative matrix factorisation (NMF) finds additive, parts-based factors. Both are standard in neuroscience for turning a large population recording into a handful of interpretable 'latent factors'. We run them on the VCS state tensor, the values of all cells over time, and read off the recovered components. We then match each component to a known signal: the frame or scanline clock, a read/write pattern, the vsync flag, or a game variable. The intuition is that the strongest components should correspond to the machine's real internal signals, so the factorisation recovers the structure without any labels. The method is unsupervised and cheap, which is why it is popular. On the VCS it does moderately well: it recovers most of the known factors, and NMF's non-negativity fits the additive register basis a little better than PCA. But a large fraction of components stay unmatched or mix several true signals into one, so the decomposition is suggestive rather than exact. It finds structure that is genuinely present, without telling us how the program uses it.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/A7_dimred.png" target="_blank"><img src="assets/methods/A7_dimred.png" alt="A7 · Dimensionality reduction (NMF/PCA) result"></a>
   </div>
@@ -27,16 +32,12 @@
 
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Runs NMF/PCA on the state tensor and matches the latent components to known signals (clock, read/write, vsync).</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Fraction of NMF components that match a known signal/variable (vs the oracle's importance). <b>0.6</b> — recovers most known factors, adds some mixed ones.</p>
+  <p>The score is the fraction of NMF or PCA components that match a known signal or variable. We decompose the state tensor into components, then match each to the machine's known internal signals, the frame or scanline clock, a read/write pattern, vsync, or a game variable, and count the matched fraction against what the oracle marks as important. Faithfulness for this method is that matched-component fraction. It is moderate: the decomposition recovers most of the known factors, and NMF's non-negativity fits the additive register basis a little better than PCA, but a substantial fraction of components stay unmatched or mix several signals into one. A secondary reconstruction-error composite gives NMF a small edge, but on the primary matched-fraction metric the two are close. The grading is always against the oracle, not against another method. There is no sprite-position hard-case here; the output is a set of components. The audit box reports the measured matched fraction across the core games, so the number is an average over the core set rather than the best single game.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -63,7 +64,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

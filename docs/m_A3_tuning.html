@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>A tuning curve measures how strongly a unit responds to some variable. In neuroscience one plots a neuron's firing rate against, say, the angle of a bar, and a sharp peak is read as the neuron being 'tuned' to that feature. We build the same curves for RAM cells. For each cell we plot its value against a game variable and against screen luminance, then measure how strongly the cell tracks each one. A cell that closely follows a game variable is called tuned to it. The intuition is that a strongly tuned cell must encode that variable and therefore drive the behaviour. This is one of the workhorses of systems neuroscience. On the VCS it is actively misleading. Many cells co-vary with the beam clock and the frame counter, so apparent tuning is cheap and common. A cell can track a game variable perfectly while playing no causal role in producing it. The method thus flags cells that look meaningful but are not, which is exactly the trap we set out to measure. It is the same present-versus-used problem that also defeats linear probing.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/A3_tuning.png" target="_blank"><img src="assets/methods/A3_tuning.png" alt="A3 · Tuning curves result"></a>
   </div>
@@ -27,16 +32,12 @@
 
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Builds tuning curves of each cell to luminance and to a game variable, then flags &#x27;spuriously tuned&#x27; cells whose tuning does not match their true causal role.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Spurious-tuning rate: the fraction of cells that are strongly tuned to a game variable yet are NOT among the oracle's causal cells. <b>0.5</b> — half of the strongly-tuned cells are non-causal, so tuning curves are misleading here.</p>
+  <p>The score is a spurious-tuning rate: the fraction of cells that are strongly tuned to a game variable yet are not among the oracle's causal cells. We first find the cells whose value tracks a game variable strongly, then ask the intervention oracle which of those cells actually cause the output. A tuned cell that is not causal is a false positive, and the spurious-tuning rate counts them. Faithfulness is one minus that rate, so a method that only flags true causes scores high and a method that flags many non-causal cells scores low. On the VCS the rate is high, because many cells co-vary with the beam clock, so tuning is cheap and often unrelated to causation. This is the same present-versus-used trap that also defeats linear probing: a cell can carry a variable without the program using it. The grading is always against the oracle. There is no sprite-position hard-case here, because the output is a tuning judgement, not a coordinate. Because per-game correlations for this family can go negative, the aggregate clips each per-game value at zero before averaging, so a method with no real signal lands near zero rather than at a spurious floor. The audit box reports the aggregated faithfulness.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -63,7 +64,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

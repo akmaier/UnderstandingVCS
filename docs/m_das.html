@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>Distributed Alignment Search, or DAS, looks for a high-level concept inside the low-level state. It learns a rotation of the internal representation so that a chosen direction, or subspace, lines up with a supplied causal variable. It then tests the alignment by an interchange intervention: swap that subspace between two runs and check whether the output changes exactly as the concept would predict. The method is a leading tool for arguing that a network represents an abstract variable in a specific, possibly distributed, part of its activations. We apply it to the VCS by aligning a learned subspace of the state to a known game variable and measuring interchange accuracy against the true variable. On this transparent machine the alignment is exact: swapping the aligned subspace reproduces the concept's effect perfectly, while a mis-aligned control does not. There is an important caveat that the VCS makes explicit. The concept DAS aligns to is one we supplied from an external label, not one the method discovered. So a perfect interchange accuracy confirms an alignment to a given meaning; it does not show the method found the meaning on its own. DAS is thus a strong test of whether a supplied concept is causally real in the state, and a clean example of the difference between verifying a label and discovering one.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/das.png" target="_blank"><img src="assets/methods/das.png" alt="Interchange interventions / DAS result"></a>
   </div>
@@ -27,16 +32,12 @@
 
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Distributed Alignment Search aligns a learned subspace to a causal variable and measures interchange accuracy against the true variable.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Interchange accuracy of the aligned subspace against the true variable. <b>1.00</b> — DAS aligns to the causal variable exactly on this known circuit.</p>
+  <p>The score is the interchange accuracy of the aligned subspace against the true variable. We align a learned subspace of the state to a supplied concept, then swap that subspace between two runs and check whether the output changes exactly as the concept predicts; the fraction of correct interchanges is the accuracy. The grading is against the intervention oracle, and on this transparent machine the alignment is exact, so interchange accuracy is at the ceiling, while a mis-aligned control scores zero. Faithfulness for this method is that interchange accuracy. There is no sprite-position hard-case here, because DAS operates by intervention rather than by a gradient. The essential caveat the audit makes explicit is that the concept DAS aligns to is one we supplied from an external label, not one the method discovered. So a perfect interchange accuracy is guaranteed in advance: it confirms an alignment to a given meaning, and does not show the method found the meaning on its own. The grading is always against the oracle, never against another method. The audit box reports the measured triad. DAS is thus a clean example of the difference between verifying a supplied concept and discovering one, which only a machine with known ground truth can separate.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -63,7 +64,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

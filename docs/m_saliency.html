@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>Vanilla gradient saliency is the oldest attribution method for neural networks. It computes the gradient of the output with respect to each input, and reads a large gradient as 'this input mattered'. The intuition is a first-order sensitivity: if nudging an input would move the output a lot, that input is important. The result is a heat-map over the inputs, which for images highlights the pixels the network is most sensitive to. We apply the same idea to the VCS. The 'inputs' are the candidate causes, RAM cells and registers, and we take the gradient of a chosen output, a pixel, a score, or a game event, with respect to each one. On outputs that flow smoothly into the picture, a colour or a register value, the gradient is meaningful and points at the true cause. The hard case is a sprite's position. The VCS sets a sprite's screen position by the timing of a strobe write, which is a discrete step, so the naive gradient there is exactly zero: a tiny change in the position byte moves the sprite by no fraction of a pixel. Saliency is fast, model-agnostic in appearance, and everywhere in the literature, which makes it the natural baseline to test against a known answer.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/saliency.png" target="_blank"><img src="assets/methods/saliency.png" alt="Vanilla gradient (saliency) result"></a>
   </div>
@@ -31,16 +36,12 @@
 </div></section>
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>The input-space gradient of the output with respect to each cause. Scored by correlation with the oracle&#x27;s true causal map and by deletion/insertion AUC.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Pearson correlation of the saliency map with the oracle's exact causal map |Δy(u)| over the candidate causes, plus deletion/insertion AUC. All-regime audit faithfulness <b>0.42</b> (content 0.67, position 0.16). On discrete <b>sprite-position</b> outputs the naive gradient is exactly 0; the emulator's bilinear sampler restores a non-zero position gradient, but its faithfulness stays low — so the aggregate is moderate, not near-ceiling.</p>
+  <p>The score is the Pearson correlation of the saliency map with the oracle's exact causal map, the set of true effect sizes over the candidate causes, together with deletion and insertion area-under-curve as quality measures. Faithfulness for this method is that raw correlation, reported without any rescaling, so a map that carries no causal signal lands at zero rather than at a spurious floor. The grading is always against the intervention oracle, never against another method. The decisive hard case is a sprite's position. The VCS sets a sprite's screen position by the timing of a strobe write, a discrete step, so the naive gradient there is provably exactly zero and its correlation with the oracle is zero. To make the audit as strict as possible we also turn on the differentiable bilinear sampler, which interpolates that discrete boundary and restores a non-zero position gradient. Even then the restored gradient is faithful on only a minority of games, so the position score stays low. On smooth content outputs, by contrast, the gradient points at the true causal byte and scores high. The audit box below reports the all-regime faithfulness, which averages the strong content result and the weak position result across the core games.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -67,7 +68,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

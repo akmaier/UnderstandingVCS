@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>Extremal, or meaningful, perturbation learns the smallest mask that most changes the output. Rather than sliding a fixed occluder, it optimises a soft mask over the inputs, searching for the smallest region whose removal most disrupts the output, subject to a bound on the mask's area. The learned mask is read as the explanation: the compact set of inputs the output really depends on. For images this yields a tight, optimised heat-map instead of a brute-force sweep. The method was designed to answer a specific criticism, that hand-placed occluders are arbitrary and can push the input off the data manifold. By optimising a bounded, smooth mask of real occlusion re-runs, it stays closer to valid interventions. We apply it to the VCS by optimising an area-limited mask over the candidate causes, each mask entry a genuine occlude-and-re-run, and comparing the learned mask to the true minimal cause set. Because every step is a real intervention, it works on a sprite's position where gradients fail, and it partly overlaps the true causes. Its faithfulness is moderate: the optimisation finds a compact set that is on the right track but does not exactly match the oracle's minimal set. It is a strong, on-manifold member of the intervention family and a fair test of whether optimising the mask beats simply sliding one.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/perturbation.png" target="_blank"><img src="assets/methods/perturbation.png" alt="Extremal / meaningful perturbation result"></a>
   </div>
@@ -31,16 +36,12 @@
 </div></section>
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Learns the minimal mask that most changes the output; scored by IoU with the true causal set.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Pearson correlation / mask-IoU with the oracle's true causal set. All-regime audit faithfulness <b>0.40</b> (content 0.52, position 0.28) — the learned minimal mask partly overlaps the true causes.</p>
+  <p>The score is the Pearson correlation of the learned mask with the oracle's exact causal map, together with the mask's overlap, measured as intersection-over-union, against the true minimal cause set. The grading is always against the intervention oracle. Every entry of the mask is a real occlude-and-re-run, so the method is a valid intervention and works even on a sprite's position, where the gradient family scores zero. That is why there is no position-collapse here. Its faithfulness is moderate rather than high: the area-bounded optimisation finds a compact set that partly overlaps the true causes but does not exactly match the oracle's minimal set, so both the correlation and the mask overlap are partial. Minimality is central to this method, because it explicitly seeks the smallest disruptive mask, so the score rewards a mask that is both on-target and small. The grading never compares the mask to another method's mask, only to the oracle's minimal set. The audit box reports the measured all-regime faithfulness across the six core games, so the number reflects the whole core set rather than the single game where the optimised mask happens to line up best with the true causes.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -67,7 +68,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

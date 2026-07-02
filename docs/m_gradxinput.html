@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>Grad times Input, in the DeepLIFT family, sharpens plain saliency by multiplying the gradient at each input by the input's own value. The product answers a slightly different question than the bare gradient: not just how sensitive the output is to an input, but how much that input, at its actual value, contributes to the output. DeepLIFT frames this as a difference from a reference, and the multiplication gives the method a completeness-like property, so the attributions sum to the change in the output. For images this tends to produce cleaner, less diffuse maps than raw saliency. We apply it to the VCS by multiplying each cause's gradient by its recorded value and correlating the result with the true causal map. On outputs that flow smoothly into the picture, the input factor concentrates the attribution onto the genuine causal byte and improves on plain saliency. On a sprite's position it inherits the same wall as every gradient method: the position is a discrete step set by strobe timing, so the underlying gradient is zero and multiplying by the input cannot create signal where there is none. The method is popular because it keeps the speed of a gradient while adding a contribution interpretation, so it is a fair, stronger member of the gradient family to test.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/gradxinput.png" target="_blank"><img src="assets/methods/gradxinput.png" alt="Grad×Input / DeepLIFT result"></a>
   </div>
@@ -31,16 +36,12 @@
 </div></section>
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Gradient multiplied by input — a DeepLIFT-style attribution with a completeness property. Scored against the oracle.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Pearson correlation of the Grad×Input / DeepLIFT attribution with the oracle. All-regime audit faithfulness <b>0.52</b> (content 0.87, position 0.16) — multiplying by the input sharpens the gradient toward the true causes on content outputs, but the position map still leans on the sampler and stays low.</p>
+  <p>The score is the Pearson correlation of the Grad-times-Input, DeepLIFT-style attribution with the oracle's exact causal map, reported raw. Faithfulness for this method is that correlation, and the grading is always against the intervention oracle rather than another method. Multiplying the gradient by the input concentrates the attribution onto the genuine causal byte, so on smooth content outputs it improves on plain saliency and scores well. The hard case is the same as for the whole gradient family. A sprite's position is a discrete step set by strobe timing, so the naive gradient there is provably zero, and multiplying a zero gradient by the input is still zero. The audit turns on the differentiable sampler to give the method a fair chance on position, but the restored gradient is faithful on only a minority of games, so the position score stays low while the content score stays high. The completeness property, that attributions sum to the output change, does not rescue the position regime. The audit box reports the all-regime faithfulness, which averages the strong content result and the weak position result across the six core games, so the single number sits between the two.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -67,7 +68,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

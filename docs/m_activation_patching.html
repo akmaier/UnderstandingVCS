@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>Activation patching, also called causal mediation, is a core mechanistic-interpretability method. It runs the system once, records an internal value, and then, on a second run, overwrites, or 'patches', that internal value with the one recorded from a different input. The change in the output measures how much that internal value causally mediates the behaviour. In language-model work this is how researchers localise where a fact or a computation lives inside the network. The idea is genuinely causal: it does not correlate, it substitutes a value and observes the effect. We apply it to the VCS by patching a recorded state value, a RAM cell or register, from one run into another and measuring the causal effect on the output. On this machine the operation is special. Clamping a cell to a donor value and re-running the real ROM is literally the same operation the intervention oracle performs. So activation patching cannot disagree with the oracle: it recovers the exact causal-effect table by construction. This makes it the clearest demonstration that where a method's operation is itself a real intervention on a fully observable machine, faithfulness is automatic. The catch, taken up elsewhere, is that recovering the exact effect table is still not the same as recovering what the patched variables mean.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/activation_patching.png" target="_blank"><img src="assets/methods/activation_patching.png" alt="Activation patching / causal mediation result"></a>
   </div>
@@ -27,16 +32,12 @@
 
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Patches a recorded state value from one run into another and measures the causal effect, comparing it to the exact patch effect from the oracle.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Maximum absolute difference between the recovered patch effect and the EXACT patch effect from the oracle. <b>0.00</b> — activation patching is exact by construction, because it <i>is</i> an intervention.</p>
+  <p>The score is the maximum absolute difference between the recovered patch effect and the exact patch effect from the oracle, taken across every site and every core game. The grading is always against the intervention oracle. This method is exact by construction, so the difference is zero. Clamping a cell to a donor value and re-running the real ROM is literally the same operation the intervention oracle performs, so the recovered effect table cannot disagree with the oracle, and site precision and recall are both perfect. Faithfulness for this method is therefore at the ceiling, level with the oracle-as-method positive control. There is no sprite-position hard-case here: because the method intervenes on the real machine rather than taking a derivative, it works on position outputs exactly as it works on content outputs. The important qualification, which the score does not by itself capture, is that recovering the exact effect table is not the same as recovering what the patched variables mean or how they combine into the computed function. The audit box reports the measured triad. This method is the clearest demonstration that when a method's operation is itself a real intervention on a fully observable machine, faithfulness is automatic.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -63,7 +64,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

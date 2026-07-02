@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>SmoothGrad is a denoising wrapper around gradient saliency. Raw gradients are visually noisy, so SmoothGrad adds a small amount of random noise to the input many times, computes the gradient for each noisy copy, and averages the results. The averaging cancels the high-frequency noise and leaves a cleaner map, on the intuition that the true signal is stable under small perturbations while the noise is not. It is a simple, widely used way to make any gradient method look better. We apply it to the VCS by perturbing each cause, averaging the gradients, and correlating with the true causal map. On smooth content outputs the averaging gives a modest improvement over plain saliency. The important negative result is on a sprite's position. There the naive gradient is exactly zero because the position is a discrete step set by strobe timing, and averaging many zeros is still zero: adding input noise cannot manufacture a gradient that the hard machine does not provide. Only a differentiable surrogate can restore one, and even then its faithfulness stays low. SmoothGrad is a good test of whether the popular 'just denoise the gradient' fix rescues attribution on the discrete game logic. It does not.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/smoothgrad.png" target="_blank"><img src="assets/methods/smoothgrad.png" alt="SmoothGrad result"></a>
   </div>
@@ -31,16 +36,12 @@
 </div></section>
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Averages the gradient over input noise to denoise the saliency map.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Pearson correlation with the oracle. All-regime audit faithfulness <b>0.42</b> (content 0.67, position 0.16). Averaging input noise sharpens saliency on <b>content</b> outputs a little; on discrete <b>position</b> outputs the naive gradient is 0 and the sampler restores only a low-faithfulness gradient, so the aggregate stays moderate.</p>
+  <p>The score is the Pearson correlation of the SmoothGrad map with the oracle's exact causal map, reported raw, and the grading is always against the intervention oracle. Averaging the gradient over input noise denoises the map, so on smooth content outputs it gives a small improvement over plain saliency. The hard case is a sprite's position. The position is a discrete step set by strobe timing, so the naive gradient there is provably exactly zero, and averaging many zeros is still zero: adding input noise cannot create a gradient the hard machine does not provide. To be strict, the audit turns on the differentiable sampler, which restores a non-zero position gradient, but that restored gradient is faithful on only a minority of games, so the position score stays low. The content score stays high. So the all-regime faithfulness sits in the middle, as an average of the strong content result and the weak position result across the six core games. The audit box reports that measured number. SmoothGrad is a clean test of whether the popular denoise-the-gradient fix rescues attribution on discrete game logic, and the score shows that it does not.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -67,7 +68,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

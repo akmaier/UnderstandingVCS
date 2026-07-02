@@ -1259,6 +1259,11 @@ def build_method_page(meth):
   <a href="methods.html#e6">leaderboard</a> and the <a href="paper2.html">Paper&nbsp;2 audit</a>.</p>
   <p class="caption">Source: %s.</p>
 </div></section>""" % src(lb, "leaderboard.json")
+    # Long-form prose (What it does? / How it's scored), with graceful fallback
+    # to the short one-liners if a key is not yet covered.
+    about = M.P2_METHOD_ABOUT.get(meth["key"]) or esc(meth["what"])
+    howscored = M.P2_METHOD_HOWSCORED.get(meth["key"]) or M.P2_METHOD_SCORED.get(meth["key"], "")
+
     body = """
 <header class="hero"><div class="wrap">
   <span class="venue" style="color:var(--accent-2);font-weight:600">%s</span>
@@ -1266,6 +1271,11 @@ def build_method_page(meth):
   <p class="lead">%s</p>
   <p style="margin-top:10px"><a href="methods.html#%s">← back to the method catalogue</a></p>
 </div></header>
+
+<section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>%s</p>
+</div></section>
 
 <section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
@@ -1277,16 +1287,12 @@ def build_method_page(meth):
 %s
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>%s</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
   <p>%s</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 %s
@@ -1300,9 +1306,9 @@ def build_method_page(meth):
   <a href="%sdocs/cell_footprints.jl"><code>cell_footprints.jl</code></a>.</p>
 </div></section>
 """ % (esc(_PHASE_LABEL[meth["phase"]]), esc(meth["title"]), esc(meth["ref"]),
-       _PHASE_ANCHOR[meth["phase"]], meth["key"], meth["key"], esc(meth["title"]),
-       _method_caption(meth), score, _phaseB_reading(meth), esc(meth["what"]),
-       M.P2_METHOD_SCORED.get(meth["key"], ""), audit_html, metahtml, BLOB, BLOB, BLOB)
+       _PHASE_ANCHOR[meth["phase"]], about, meth["key"], meth["key"], esc(meth["title"]),
+       _method_caption(meth), score, _phaseB_reading(meth),
+       howscored, audit_html, metahtml, BLOB, BLOB, BLOB)
     return page("m_%s.html" % meth["key"], meth["title"] + " — Paper 2 method", body)
 
 

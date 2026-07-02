@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>A lesion study asks what breaks when a part is removed. It is the oldest tool in neuroscience: damage one region, see what behaviour is lost, and infer that region's role. We apply the same idea to memory. We freeze one RAM cell at a time, hold it at a fixed value, re-run the program, and measure how much the screen changes. A cell whose freezing wrecks the picture is judged important; a cell whose freezing does nothing is judged irrelevant. Ranking every cell this way gives a per-unit importance map. The appeal is that the test is causal: we do not just watch the cell, we intervene on it and see the effect. This is why the single-unit lesion is the one classical method that scores near the top of our battery. Its weakness is that it changes one cell at a time. It is therefore blind to causes that only act together, where two cells matter jointly but neither matters alone. So it recovers a correct ranking of which units matter, but not the way they combine into the actual computation.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/A2_lesions.png" target="_blank"><img src="assets/methods/A2_lesions.png" alt="A2 · Single-unit lesions result"></a>
   </div>
@@ -27,16 +32,12 @@
 
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Lesions each RAM cell in turn and measures the behavioural change, building a per-unit importance map. Scored by rank-correlation with each cell&#x27;s true causal role.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Spearman correlation between each cell's lesion importance (screen change when the cell is frozen) and its true causal role from the oracle. <b>1.0</b> — lesioning ranks the cells exactly as the oracle does.</p>
+  <p>The score is a rank correlation between each cell's lesion importance and its true causal role. Lesion importance is how much the screen changes when the cell is frozen; the true role comes from the intervention oracle. We rank the cells by each and take the Spearman correlation of the two rankings, so the metric asks whether lesioning orders the cells the same way the oracle does. Faithfulness for this method is that rank correlation, and it is high, because lesioning is itself a real intervention on the machine. The grading is always against the oracle, not against any other method. The important limit the score does not penalise on its own is interactions. A single-unit lesion changes one cell at a time, so it is blind to causes that only act together. On some games the per-unit ranking misses a large fraction of the joint effects the oracle records, where a pair of cells swings the behaviour far beyond the sum of the two single lesions. So a near-perfect ranking still hides the way the cells combine. There is no position hard-case for this method; its output is a ranking, not a sprite coordinate. The audit box reports the measured correlation across the core games.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -63,7 +64,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

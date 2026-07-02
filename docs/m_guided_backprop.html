@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>Guided backpropagation is a variant of saliency that changes how the signal flows backward through the network. At each rectifier it keeps only the positive contributions and zeroes the negative ones, on both the forward activation and the backward gradient. The effect is a much sharper, cleaner-looking saliency map, which is why the method became popular for visualising what a network 'sees'. The intuition is that suppressing the negative evidence isolates the features that positively drive the output. We apply the same rectified-backward rule to the VCS and correlate the resulting map with the true causal map. A well-known concern, raised by Adebayo and colleagues, is that guided backprop can act more like an edge detector than a true explanation, producing similar maps even when the model is randomised. We run exactly that sanity check on the machine itself. On smooth content outputs the method partly tracks the true cause. On a sprite's position it hits the gradient wall: the position is a discrete strobe-timed step, so the underlying gradient is zero, and the rectified backward path leaves it at zero here rather than restoring any signal. Combined with its failure of the randomisation check, this makes guided backprop a revealing case: it looks sharp and convincing yet does not depend on what the program actually computes.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/guided_backprop.png" target="_blank"><img src="assets/methods/guided_backprop.png" alt="Guided Backprop result"></a>
   </div>
@@ -31,16 +36,12 @@
 </div></section>
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Backpropagation that suppresses negative signals, sharpening the saliency map. Includes the Adebayo et al. 2018 sanity check; scored against the oracle.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Pearson correlation with the oracle's causal map. All-regime audit faithfulness <b>0.34</b> (content 0.67, position 0.00). It partly tracks the oracle on <b>content</b> (colour) outputs, but on discrete <b>sprite-position</b> outputs the naive gradient is exactly 0 — the sampler could restore a non-zero gradient, yet guided backprop's rectified path leaves it at 0 here — and it fails the Adebayo et al. 2018 sanity check, so its cross-game audit faithfulness stays low.</p>
+  <p>The score is the Pearson correlation of the guided-backprop map with the oracle's exact causal map, reported raw, and the grading is always against the intervention oracle. On smooth content outputs the rectified backward pass partly tracks the true cause. The hard case is a sprite's position: it is a discrete strobe-timed step, so the naive gradient is provably zero, and here the method's rectified path leaves it at zero rather than restoring any signal. On top of that, guided backprop fails the Adebayo program-randomisation sanity check on the machine itself. We scramble the ROM so the program boots to a completely different state, and the content-path map stays essentially unchanged, because its Jacobian is a constant one-hot pointing at the read index, independent of what the program computes. A faithful explanation must change when the model changes; this one does not. So even where it looks sharp, it is model-invariant, which the intervention oracle exposes at once by distinguishing the two programs. Between the zero position gradient and the failed sanity check, its cross-game faithfulness stays low. The audit box reports the measured all-regime faithfulness across the core games.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -67,7 +68,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

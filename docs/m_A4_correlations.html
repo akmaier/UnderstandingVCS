@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>This method studies the correlation structure across the machine's cells. In neuroscience the 'spike-word' or pairwise-correlation analysis looks at which units fire together, and reads coordinated firing as evidence of shared function or coupling. We compute the same statistics over RAM. For every pair of cells we measure how their values co-vary across the trajectory, and we also measure the global, population-level correlation. The familiar finding in neural data is weak pairwise but strong global correlation, and the VCS reproduces that signature. The idea is that cells which move together are functionally linked, so the correlation matrix should approximate the true coupling. The method is purely observational: it never intervenes, it only watches. That is its limit. On a clock-locked machine almost everything co-varies with almost everything else, driven by shared timing signals rather than by direct influence. So the correlation structure is real but mostly reflects common drivers, not causal links. It detects that the machine is active and coordinated, but it does not separate a true dependency from two cells that merely share a clock.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/A4_correlations.png" target="_blank"><img src="assets/methods/A4_correlations.png" alt="A4 · Pairwise correlations result"></a>
   </div>
@@ -27,16 +32,12 @@
 
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Measures the pairwise and global correlation structure across cells and compares it to the true coupling — weak-pairwise / strong-global, as in the neuroscience original.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Spearman correlation between the measured cell–cell correlation structure and the oracle's true coupling matrix. <b>0.63</b> — correlation partly tracks coupling but conflates it with shared drivers.</p>
+  <p>The score is a rank correlation between the measured cell-to-cell correlation structure and the oracle's true coupling. We compute how each pair of cells co-varies across the trajectory, assemble that into a coupling matrix, and compare it, by Spearman correlation, to the true coupling the oracle certifies. Faithfulness for this method is that correlation. It is only partial, because the method never intervenes; it only watches. On a clock-locked machine two cells can be strongly correlated because they share a driver, not because one influences the other. So the correlation matrix conflates true coupling with common drivers, and the score reflects that confusion. Sufficiency, whether the recovered structure can predict held-out interventions, is near zero for this method, because a correlation matrix carries no mechanism to re-generate behaviour. The grading is always against the oracle, not against another method. There is no sprite-position hard-case here; the output is a coupling matrix. The audit box reports the measured faithfulness and, where the paper defines it, the sufficiency, each aggregated across the core games so no single game dominates the number.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -63,7 +64,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

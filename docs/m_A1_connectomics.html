@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>Connectomics tries to map the wiring of a system by watching how its parts affect each other. In neuroscience it means reconstructing which neurons connect to which. Here we do the same for the machine's memory. We change one RAM cell, re-run the program, and record which other cells change as a result. Each such dependency is drawn as a directed edge from cause to effect. The full set of edges is the program's data-flow graph, its 'connectome'. The idea is that the pattern of who-influences-whom should reveal the computation, without reading the code. This is a classic move in systems neuroscience: infer function from structure. On the VCS we have the true wiring from the disassembly, so we can check whether the recovered graph is right. The method is attractive because it needs no labels and no model of what the program means. It only needs the ability to perturb and observe. In practice it recovers a graph that looks plausible but contains many edges the real program does not have, because a single perturbation ripples through shared clocks and buffers.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/A1_connectomics.png" target="_blank"><img src="assets/methods/A1_connectomics.png" alt="A1 · Connectomics / data-flow graph result"></a>
   </div>
@@ -27,16 +32,12 @@
 
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Reconstructs the inter-cell data-flow graph by perturbing each RAM cell and recording which other cells change — the program&#x27;s &#x27;connectome&#x27;. Scored by graph F1 against the true read/write graph from the disassembly.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>F1 of the recovered data-flow graph against the true read/write graph from the disassembly (an edge = perturbing one RAM cell changes another). <b>0.0</b> — single-shot perturbation recovers none of the true edges.</p>
+  <p>The score is a data-flow-graph F1 against the true read/write graph from the disassembly. An edge means that perturbing one RAM cell changes another. We build the recovered graph by single-shot perturbation and compare its edges to the true edges, taking the harmonic mean of precision, the fraction of recovered edges that are real, and recall, the fraction of real edges recovered. Faithfulness for this method is that edge F1: a graph-valued explanation is graded as a graph, not as a heat-map. The comparison is always against the intervention oracle's true wiring, never against another method. The hard part is that a single perturbation ripples through shared clocks and buffers, so the recovered graph contains many edges the real program does not have. Precision suffers, and the F1 stays low. There is no separate position hard-case here, because the method never claims a sprite position; it claims a wiring diagram. The audit box below reports the actual F1, aggregated across the core games, so no single game dominates. Read the recovered-versus-true graph as the error: every edge in one panel but not the other is a mistake the metric counts.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -63,7 +64,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

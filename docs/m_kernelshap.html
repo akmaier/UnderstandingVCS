@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>KernelSHAP estimates Shapley values, the game-theoretic fair share of each input. The Shapley value asks how much each input contributes to the output on average, over every possible order in which the inputs could be added. It is the unique attribution that satisfies a set of fairness axioms, which is why it is widely trusted. Computing it exactly is exponential, so KernelSHAP approximates it by sampling many coalitions, subsets of inputs that are present, evaluating the output for each, and solving a weighted least-squares problem whose solution approximates the Shapley values. We apply it to the VCS by sampling coalitions of candidate causes, re-running the program for each, and correlating the estimated Shapley values with the true causal contributions. Because every coalition is a real re-run of the machine, the method works on a sprite's position where gradients fail. Given enough coalitions it recovers much of the true contribution on both content and position outputs, so it is among the more faithful attribution methods, and it reports its own completeness as a check. Its cost is the number of coalitions needed to converge. On the VCS we can watch that convergence against the exact answer, which turns a theoretical fairness guarantee into a measured faithfulness number.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/kernelshap.png" target="_blank"><img src="assets/methods/kernelshap.png" alt="KernelSHAP / Shapley result"></a>
   </div>
@@ -31,16 +36,12 @@
 </div></section>
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Estimates Shapley values via weighted least squares; scored against the true causal contributions and for convergence vs compute.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Pearson correlation of the Shapley values with the oracle. All-regime audit faithfulness <b>0.65</b> (content 0.71, position 0.58) — Shapley recovers much of the true contribution on both content and position outputs, given enough coalitions.</p>
+  <p>The score is the Pearson correlation of the estimated Shapley values with the oracle's exact causal map, reported raw, and the grading is always against the intervention oracle. KernelSHAP samples coalitions of candidate causes, re-runs the machine for each, and solves a weighted least-squares problem to approximate each cause's Shapley value, so every coalition is a real intervention and the method works on a sprite's position where the gradient family scores zero. That is why it does not collapse on the position regime. Given enough coalitions it recovers much of the true contribution on both content and position outputs, so it is among the more faithful attribution methods. It also reports its own completeness, that the Shapley values sum to the difference between the intact and fully masked outputs, which is an internal consistency check. The cost the score implicitly reflects is convergence: too few coalitions leave the estimate noisy. The grading is always against the oracle, never against another method. The audit box reports the measured all-regime faithfulness across the six core games. On the VCS the theoretical fairness of the Shapley value becomes a measured faithfulness number, tested against an exact answer the method never sees on a real network.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -67,7 +68,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

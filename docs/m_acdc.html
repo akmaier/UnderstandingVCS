@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>ACDC automates circuit discovery. Instead of a human proposing a circuit and patching it by hand, ACDC starts from the full computational graph and prunes edges one at a time. It removes an edge by resample-ablation, replacing the signal on that edge with a resampled value, and keeps the edge only if removing it hurts performance beyond a threshold. Sweeping the threshold traces out a family of candidate circuits. The output is a minimal subgraph that, in principle, carries the computation, found automatically. This is one of the main tools for scaling mechanistic interpretability beyond hand analysis. We apply it to the VCS by pruning the candidate data-flow graph and comparing the discovered circuit to the true routine over a threshold sweep. The VCS gives ACDC an unusually fair test, because we have the exact wiring and can also run a positive control that prunes under exhaustive exact interventions. Against that control ACDC's shortfall is a real property of single-shot discovery, not a broken scorer. It recovers a fraction of the true edges: its precision is reasonable but its recall is limited, because dependencies re-derived through other cells survive the resample and are pruned away. On one game it recovers a perfect, minimal circuit that nonetheless fails to regenerate the behaviour, which is one of the paper's key separations between a correct graph and a working computation.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/acdc.png" target="_blank"><img src="assets/methods/acdc.png" alt="ACDC — automatic circuit discovery result"></a>
   </div>
@@ -27,16 +32,12 @@
 
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Prunes edges to find a minimal circuit; scored by edge precision/recall and scrubbing-preserved performance against the true data-flow.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Best F1 of the auto-discovered circuit vs the true data-flow over a threshold sweep. <b>0.15</b> — the pruned graph recovers only a fraction of the true edges here.</p>
+  <p>The score is the best F1 of the auto-discovered circuit against the true data-flow over a threshold sweep. ACDC prunes edges by resample-ablation, keeping an edge only if removing it hurts performance beyond the current threshold, and sweeping the threshold traces a family of candidate circuits from which we take the best F1 against the true routine. The grading is always against the intervention oracle's true wiring. Faithfulness for this method is that best F1, and it is partial: precision is reasonable but recall is limited, because dependencies re-derived through other cells survive the resample and get pruned away. A positive control runs the identical pruning under exhaustive exact interventions and reaches a perfect F1 on every game, so the shortfall is a real measurement of single-shot discovery, not a broken scorer. There is no sprite-position hard-case here; the output is a circuit. One of the paper's key separations comes from this method: on one game ACDC recovers a perfect, minimal circuit that nonetheless fails to regenerate the behaviour under held-out interventions, so sufficiency drops well below faithfulness. The grading is always against the oracle. The audit box reports the measured triad, so you can see faithfulness beside a lower sufficiency on the same discovered graph.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -63,7 +64,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

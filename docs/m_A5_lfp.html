@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>The local field potential is a pooled, low-resolution signal. In neuroscience it is the summed electrical activity of many neurons near an electrode, and its power spectrum, the strength of each oscillation frequency, is studied as a marker of brain state. We build the analogue on the VCS by pooling the activity of a region of memory into one aggregate signal and taking its power spectrum. The idea is that rhythms in this pooled signal reflect the computation. The problem we test is whether those rhythms are real computation or just the machine's clocks showing through. The VCS is driven by a frame clock and a scanline clock, and their fixed rhythms dominate any pooled signal. So much of the spectrum is epiphenomenal: it is the timing of the hardware, not the work the program does. This is a known danger for field potentials in neuroscience too, where a strong oscillation can reflect a global pacemaker rather than local processing. The method is easy to compute and produces impressive-looking spectra, but on a machine whose clocks we know exactly we can show how little of that structure is actually computational.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/A5_lfp.png" target="_blank"><img src="assets/methods/A5_lfp.png" alt="A5 · Local field potentials result"></a>
   </div>
@@ -27,16 +32,12 @@
 
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Treats pooled regional activity as a local field potential and asks how much of its power spectrum is just the known clocks (frame/scanline) — i.e. epiphenomenal.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Fraction of the pooled-activity power spectrum explained by the known clocks (frame / scanline). <b>0.75</b> — most 'LFP' structure is epiphenomenal timing, not computation.</p>
+  <p>The score is the fraction of the pooled-activity power spectrum that the known clocks explain. We pool a region of memory into one signal, take its power spectrum, and measure how much of that spectrum is accounted for by the frame clock and the scanline clock, whose frequencies we know exactly. Faithfulness is one minus that clock-explained fraction, because the part of the spectrum that is just the hardware's timing is epiphenomenal, not computation. A high clock-explained fraction means the impressive-looking spectrum is mostly the machine's pacemaker, so the method's faithfulness is low. The grading is always against the intervention oracle, which certifies what is truly computational. There is no sprite-position hard-case here; the output is a spectrum, not a coordinate. This method is a calibration baseline: it shows how a standard neuroscience signal can look rich while carrying little of the real computation. The audit box reports the measured faithfulness across the core games, so the number reflects the whole core set rather than one game where the clocks happen to dominate more or less.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -63,7 +64,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

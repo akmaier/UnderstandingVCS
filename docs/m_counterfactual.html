@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>An on-distribution counterfactual asks the smallest realistic change that flips the output. Instead of occluding with an artificial value, it edits the input toward a genuine alternative the system could actually produce, and finds the smallest such edit that changes the output. The explanation is the edit itself: 'change these cells to these plausible values and the outcome changes'. The point of the on-distribution constraint is to answer the objection that occlusion and clamping can set an input to a value the running system would never create, making the explanation off-manifold. We apply it to the VCS by substituting candidate cells toward a real alternative state, the RAM of another frame of the same ROM, and re-running the bit-exact program. Because the substituted values are ones the machine genuinely produced, the edit stays on the data manifold by construction, and because we re-render the whole machine it is a valid intervention. We compare the minimal edit to the oracle's minimal cause set. The method works on a sprite's position where gradients fail. Its faithfulness here is limited: on some frames no on-distribution content byte varies between frames, so the search finds nothing and the map is flat, and even when it does edit, the single-edit search only partly recovers the true minimal set.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/counterfactual.png" target="_blank"><img src="assets/methods/counterfactual.png" alt="On-distribution counterfactual result"></a>
   </div>
@@ -31,16 +36,12 @@
 </div></section>
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Finds the minimal valid on-distribution edit that flips the output — set-state-and-re-render removes the off-manifold objection.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Pearson correlation / minimality of the minimal valid counterfactual edit against the oracle's minimal causal set. All-regime audit faithfulness <b>0.22</b> (content 0.34, position 0.10) — set-state-and-re-render is on-distribution, but the single-edit search only partly recovers the true minimal causes here.</p>
+  <p>The score is the Pearson correlation of the minimal counterfactual edit with the oracle's exact causal map, together with the edit's minimality against the oracle's minimal cause set, and the grading is always against the intervention oracle. The method substitutes candidate cells toward a real alternative state, another frame of the same ROM, and re-runs the bit-exact program, so the edit is on-distribution and a valid intervention, and it works on a sprite's position where the gradient family scores zero. That is why there is no position collapse here in principle. Its faithfulness is nonetheless low. On some frames no on-distribution content byte varies between frames, so the search finds no valid edit and the map is flat; we mark those cells invalid rather than score them as important. Even when a valid edit exists, the single-edit search only partly recovers the true minimal set, so the correlation stays modest. Minimality is central here, because the method explicitly seeks the smallest flipping edit. The grading is always against the oracle. The audit box reports the measured all-regime faithfulness across the six core games, so the low number reflects both the no-op frames and the partial recovery on the frames where the search does run.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -67,7 +68,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

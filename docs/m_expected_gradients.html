@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>Expected Gradients removes the single-baseline choice from Integrated Gradients by averaging over many baselines. Instead of one reference, it draws references from a distribution of real states and averages the integrated-gradient attribution across them. This makes the result stable: it no longer depends on one arbitrary baseline, and the attributions are provably consistent across reference draws. The method was introduced to fix the perennial worry that Integrated Gradients can be gamed by picking a convenient baseline. We apply it to the VCS by averaging integrated gradients over a pool of recorded machine states. The result is very stable but not more accurate. Each integrated-gradient term contains the factor input-minus-baseline. When the reference pool holds bytes that are constant across states, that factor is zero and the attribution collapses. Even on a varied gameplay reference pool, and with the sampler restoring a position gradient, the method carries almost no true causal signal, and on a sprite's position it still vanishes for the usual reason. It is the clearest case in the study of a method that is more careful and more expensive, yet buys stability without buying faithfulness. That trade-off is exactly what makes it worth measuring here.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/expected_gradients.png" target="_blank"><img src="assets/methods/expected_gradients.png" alt="Expected Gradients result"></a>
   </div>
@@ -31,16 +36,12 @@
 </div></section>
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Integrated Gradients averaged over a distribution of baselines, removing the single-baseline sensitivity.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Pearson correlation with the oracle. Baseline-averaged IG: on a NOOP reference pool the constant bytes give <code>(x−x0)=0</code>, zeroing the attribution; even on the redesigned gameplay reference pool (with the sampler on for position) it is the <b>lowest-faithfulness</b> attribution method — all-regime audit faithfulness <b>0.06</b> (content 0.08, position 0.05) despite high plausibility.</p>
+  <p>The score is the Pearson correlation of the Expected-Gradients attribution with the oracle's exact causal map, reported raw, and the grading is always against the intervention oracle. Expected Gradients averages Integrated Gradients over a distribution of baselines, which makes the attribution provably stable across reference draws, but stability is not accuracy. Each term carries the factor input-minus-baseline, so when the reference pool holds bytes that are constant across states, that factor is zero and the attribution collapses. Even on the redesigned gameplay reference pool, and with the differentiable sampler turned on for the position regime, the method carries almost no true causal signal, and it is the lowest-faithfulness attribution method in the study. On a sprite's position it still vanishes for the usual reason: the naive gradient is zero on a discrete strobe-timed step and averaging baselines does not change that. Its plausibility proxy is high, which places it squarely in the danger zone of high plausibility with low faithfulness. The audit box reports the measured all-regime faithfulness across the six core games, so the low number is an average over the whole core set, not one unlucky game.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -67,7 +68,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

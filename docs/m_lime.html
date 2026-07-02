@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>LIME explains one prediction by fitting a simple model nearby. Around the input of interest it generates many perturbed versions, records the output for each, and then fits a sparse linear surrogate to that local data. The weights of the surrogate are read as the explanation: which inputs, locally, push the output up or down. The idea is that even a complicated system is roughly linear in a small neighbourhood, so a linear fit there is both faithful and easy to read. LIME is model-agnostic and one of the most cited attribution methods. We apply it to the VCS by perturbing the candidate causes around the live state, re-running the program to get outputs, and fitting a local linear model whose weights we correlate with the true causal map. Because the perturbations are real re-runs, LIME works on a sprite's position where gradients fail. It fits both content and position structure reasonably well, so it lands among the more faithful attribution methods. Its main caveats are the usual ones: the explanation depends on how the neighbourhood is sampled and on the surrogate's fit quality, so it can be unstable across runs. On the VCS we can check its surrogate against the exact answer, which is a test the method never gets on a real network.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/lime.png" target="_blank"><img src="assets/methods/lime.png" alt="LIME result"></a>
   </div>
@@ -31,16 +36,12 @@
 </div></section>
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Fits a local linear surrogate around the input and reads off the weights; scored for correlation and stability.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Pearson correlation of the local linear surrogate's weights with the oracle. All-regime audit faithfulness <b>0.63</b> (content 0.71, position 0.55) — fits both content and position structure reasonably.</p>
+  <p>The score is the Pearson correlation of the local linear surrogate's weights with the oracle's exact causal map, reported raw, and the grading is always against the intervention oracle. LIME fits a sparse linear model to real re-runs of the machine around the live state, so its perturbations are valid interventions and it works on a sprite's position where the gradient family scores zero. That is why there is no position collapse here. It fits both content and position structure reasonably well, so it lands among the more faithful attribution methods. The surrogate also reports its own fit quality, the local R-squared, which acts as an internal check on how linear the neighbourhood really is. The main caveats the score reflects are the usual ones for LIME: the explanation depends on how the neighbourhood is sampled and on the surrogate's fit, so it can vary across runs, and we report that stability alongside the correlation. The grading never compares LIME to another method, only to the oracle. The audit box reports the measured all-regime faithfulness across the six core games, so the number reflects the whole core set. On the VCS we can test the surrogate against the exact answer, which a real network never allows.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -67,7 +68,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

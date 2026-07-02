@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>Occlusion is the most direct attribution method. It hides part of the input, re-runs the system, and measures how much the output changes. A region whose removal changes the output a lot is judged important; a region whose removal does nothing is judged irrelevant. Sliding the occluder over the whole input produces an importance map. For images this means graying out a patch and watching the class score drop. The reason occlusion is powerful is that it is really a coarse intervention: it does not model sensitivity, it actually changes the input and observes the real response. We apply it to the VCS by setting each candidate cause, a RAM cell or register, to an occluded value, re-running the bit-exact program, and recording the change in the output. Because this is a genuine do-operation on the real machine, it tracks the intervention oracle closely, and it works even on a sprite's position where every gradient method fails. Its only weakness relative to the exact oracle is that it perturbs at the granularity of the occluder and can miss fine or joint effects. Occlusion is therefore the bridge between the gradient family and the truly causal methods, and it is among the most faithful attribution methods precisely because it perturbs the real system.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/occlusion.png" target="_blank"><img src="assets/methods/occlusion.png" alt="Occlusion result"></a>
   </div>
@@ -31,16 +36,12 @@
 </div></section>
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Slides an occluder and measures the output change per region — effectively a coarse intervention, so it tracks the oracle closely.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Pearson correlation with the oracle (occlusion is itself a coarse intervention). All-regime audit faithfulness <b>0.64</b> (content 0.71, position 0.57) — among the most faithful methods, precisely because it perturbs the real system.</p>
+  <p>The score is the Pearson correlation of the occlusion map with the oracle's exact causal map, reported raw, and the grading is always against the intervention oracle. Occlusion is itself a coarse intervention: we set each candidate cause to an occluded value, re-run the bit-exact program, and record the change in the output. Because that is a genuine do-operation on the real machine, its map tracks the oracle closely, and it is among the most faithful attribution methods. Crucially, there is no sprite-position collapse here. Where the gradient family scores zero on a discrete position output, occlusion still works, because perturbing and re-running does not depend on a derivative. So its position-regime faithfulness stays well above the gradient methods', and its all-regime faithfulness is the highest among the attribution methods. Its only shortfall relative to the exact oracle is granularity: it perturbs at the size of the occluder and can miss fine or joint effects that the oracle captures exactly. The audit box reports the measured all-regime faithfulness across the six core games. Occlusion is the clearest attribution-side evidence that a method is faithful exactly when its mechanism is a valid intervention on the real system.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -67,7 +68,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

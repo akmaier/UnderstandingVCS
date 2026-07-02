@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>Whole-state recording is the simplest possible method: write down everything. At each step we record every bit of RAM and every register, the complete internal state over time. This is the raw material that every other method in the study works from. In neuroscience it is the dream of recording every neuron at once, and it is often treated as the thing that would finally let us understand the system. The intuition is that if we have the full state, we have hidden nothing, so we must have the explanation. We include it as a deliberate baseline to test that intuition. By construction the complete record is perfectly faithful and perfectly sufficient: it contains every cause, so nothing is missing, and it can predict any intervention because it holds the whole machine. The point of including it is to show what such a record still lacks. A dump of all 128 RAM cells is not an account of the computation. It names everything, so it names nothing in particular, and the true cause of any given output is a tiny handful of those cells. Completeness is not understanding, and this method makes that concrete.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/A8_wholestate.png" target="_blank"><img src="assets/methods/A8_wholestate.png" alt="A8 · Whole-state recording result"></a>
   </div>
@@ -27,16 +32,12 @@
 
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>Records the full RAM + register state over time as a descriptive baseline — the raw material every other method works from.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Minimality M of the whole-state dump vs the oracle's causal set — how much smaller the true causal set is than 'record everything'. 6-game mean <b>0.08</b> (0.031 on Pong) — the raw dump is almost entirely non-minimal. The exact per-axis triad (F / S / M) is read from the leaderboard in the audit box below.</p>
+  <p>The score that matters for this method is minimality, not faithfulness. Recording the whole state is perfectly faithful, because it contains every cause, and perfectly sufficient, because it holds the whole machine and can predict any intervention. So F and S are both at the ceiling by construction. Minimality is defined as the size of the true minimal cause set divided by the size of the set the explanation names. The whole-state dump names all 128 RAM cells, while the true cause of any output is a handful of them, so the ratio is tiny and the minimality is very low. That is the whole point of including this baseline: a complete record is faithful and sufficient yet says nothing in particular, because it withholds nothing. The grading is always against the intervention oracle, which supplies the true minimal set. There is no sprite-position hard-case here; the method makes no positional claim. The audit box reports the exact per-axis triad, F, S, and M, read straight from the leaderboard, so you can see faithfulness and sufficiency at the ceiling beside a minimality near the floor.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -63,7 +64,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

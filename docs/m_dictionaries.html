@@ -18,6 +18,11 @@
 </div></header>
 
 <section><div class="wrap">
+  <h2>What it does?</h2>
+  <p>Dictionary learning with NMF or PCA is a simpler cousin of the sparse autoencoder. It decomposes the recorded state into a small dictionary of components: PCA finds orthogonal directions of largest variance, NMF finds additive, non-negative parts. Each component is then matched to a known variable, on the hope that the decomposition recovers the machine's true internal factors without supervision. This is a classic, cheap way to look for structure in high-dimensional activity, and it predates the neural sparse-autoencoder approach. We run it on the VCS state and measure the fraction of dictionary components that match a known, verified variable. It does partially well: NMF's non-negativity separates the additive register basis better than PCA, which tends to mix several variables into one component. So NMF recovers cleaner named components while PCA blurs them. The deeper limit is the same one that defeats the sparse autoencoder. A component can match a variable by correlation while playing little causal role, so a good matched fraction does not guarantee the component is causally used. The VCS lets us check both the match and the causal use, and the two often disagree. Dictionary learning is thus a useful, interpretable baseline whose named components must still be tested by intervention before they can be trusted.</p>
+</div></section>
+
+<section><div class="wrap">
   <div class="fig" style="max-width:1040px;margin:0 auto">
     <a href="assets/methods/dictionaries.png" target="_blank"><img src="assets/methods/dictionaries.png" alt="NMF/PCA dictionaries result"></a>
   </div>
@@ -27,16 +32,12 @@
 
 
 <section><div class="wrap">
-  <h2>What it does</h2>
-  <p>NMF/PCA dictionary learning over the state; matched-component fraction against the known variables.</p>
-</div></section>
-
-<section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>Fraction of NMF/PCA dictionary components matching known variables. <b>0.63</b> — partial; PCA mixes variables while NMF separates more.</p>
+  <p>The score is the fraction of NMF or PCA dictionary components that match a known, verified variable. We decompose the state into a small dictionary, match each component to a known variable, and count the matched fraction. The grading is always against the intervention oracle. Faithfulness for this method is that matched fraction, and it is partial: NMF's non-negativity separates the additive register basis better than PCA, so NMF yields cleaner named components while PCA blurs several variables into one component. The deeper limit, which the matched fraction alone does not expose, is causal use. A component can match a variable by correlation while playing little causal role, so a good matched fraction sits beside near-zero causal use, exactly as it does for the sparse autoencoder. There is no sprite-position hard-case here; the output is a set of components. The grading is always against the oracle, never against another method. The audit box reports the measured triad across the core games, so the matched fraction is an average over the core set. Dictionary learning is a useful interpretable baseline, but its named components must be tested by intervention before they can be trusted, and the score reflects that gap.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>.</p>
+  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
+  are in the <b>In the audit</b> box below.</p>
 </div></section>
 
 
@@ -63,7 +64,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/9391b559f51a36764c4d440517c8bd4660096bfd"><code>9391b559</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>
