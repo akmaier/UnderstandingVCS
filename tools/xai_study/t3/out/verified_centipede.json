@@ -1,0 +1,408 @@
+{
+  "arrays": "verified_centipede.npz",
+  "bit_exact_rerun": true,
+  "ci": null,
+  "commit": "a6514d51",
+  "deltas": [
+    -8,
+    -4,
+    4,
+    8
+  ],
+  "frame": 90,
+  "game": "centipede",
+  "horizons": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "method": "verify_by_intervention",
+  "method_note": "perturb candidate RAM byte by small symmetric deltas, re-render the bit-exact framebuffer over horizons [1, 2, 3, 4]; a byte that changes the frame is verified-causal (strictly stronger than probing: info present vs used). Offset = intercept of robust median-pairwise regression of changed-region centroid vs byte value along the motion axis.",
+  "metric_name": "verified_rate",
+  "n": 9,
+  "n_moving_objects": 7,
+  "n_unverified": 1,
+  "n_verified": 8,
+  "oracle_ref": "verify_labels@centipede (intervention on jutari, common/jutari_oracle.jl intervene_ram!)",
+  "paper": "P2",
+  "phase": "E2-T3",
+  "seed": 0,
+  "state": "f90+{1,2,3,4}",
+  "stderr": null,
+  "substrate": "jutari (Julia, HARD) — Paper-1 64/64 bit-exact real-ROM path",
+  "target_output": "verified_causal_ram_to_concept_map",
+  "timestamp": "1783013780",
+  "upgrades": "tools/xai_study/t3/out/candidates_centipede.json (P2-E2-1)",
+  "value": 0.8888888888888888,
+  "verdicts": [
+    {
+      "base_value": 0,
+      "concepts": [
+        "relavant_ram_info"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 12,
+      "motion_axis": "x",
+      "moves_object": true,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xAD",
+      "ram_index": 45,
+      "recovered_offset": 14.5,
+      "regression_bytes": [
+        4.0,
+        8.0
+      ],
+      "regression_render_pos": [
+        38.5,
+        62.5
+      ],
+      "render_slope_per_byte": 6.0,
+      "resp_per_horizon": [
+        12,
+        12,
+        12,
+        12
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 18,
+      "concepts": [
+        "relavant_ram_info"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 140,
+      "motion_axis": "y",
+      "moves_object": true,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xDB",
+      "ram_index": 91,
+      "recovered_offset": 39.242897727272734,
+      "regression_bytes": [
+        10.0,
+        14.0,
+        22.0,
+        26.0
+      ],
+      "regression_render_pos": [
+        53.5,
+        35.5,
+        89.46875,
+        54.43181818181818
+      ],
+      "render_slope_per_byte": 0.8179450757575756,
+      "resp_per_horizon": [
+        44,
+        132,
+        140,
+        128
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 32,
+      "concepts": [
+        "life",
+        "lvl"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 792,
+      "motion_axis": "y",
+      "moves_object": true,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xED",
+      "ram_index": 109,
+      "recovered_offset": 351.5392670157068,
+      "regression_bytes": [
+        24.0,
+        28.0,
+        36.0
+      ],
+      "regression_render_pos": [
+        191.0,
+        113.56818181818181,
+        110.7303664921466
+      ],
+      "render_slope_per_byte": -6.68913612565445,
+      "resp_per_horizon": [
+        792,
+        792,
+        792,
+        792
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 0,
+      "concepts": [
+        "projectile.xy"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 0,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xEE",
+      "ram_index": 110,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "unverified_inert",
+      "verified": false
+    },
+    {
+      "base_value": 60,
+      "concepts": [
+        "player.xy"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 72,
+      "motion_axis": "x",
+      "moves_object": true,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xEF",
+      "ram_index": 111,
+      "recovered_offset": 48.5,
+      "regression_bytes": [
+        52.0,
+        56.0,
+        64.0,
+        68.0
+      ],
+      "regression_render_pos": [
+        74.5,
+        76.5,
+        80.5,
+        82.5
+      ],
+      "render_slope_per_byte": 0.5,
+      "resp_per_horizon": [
+        72,
+        72,
+        72,
+        72
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 0,
+      "concepts": [
+        "projectile.xy"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 52,
+      "motion_axis": "y",
+      "moves_object": true,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xF0",
+      "ram_index": 112,
+      "recovered_offset": -12.0,
+      "regression_bytes": [
+        4.0,
+        8.0
+      ],
+      "regression_render_pos": [
+        24.0,
+        60.0
+      ],
+      "render_slope_per_byte": 9.0,
+      "resp_per_horizon": [
+        9,
+        9,
+        52,
+        52
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 56,
+      "concepts": [
+        "player.xy"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 72,
+      "motion_axis": "y",
+      "moves_object": true,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xF1",
+      "ram_index": 113,
+      "recovered_offset": 127.65625,
+      "regression_bytes": [
+        48.0,
+        52.0,
+        60.0,
+        64.0
+      ],
+      "regression_render_pos": [
+        164.5,
+        170.5,
+        177.0,
+        177.0
+      ],
+      "render_slope_per_byte": 0.796875,
+      "resp_per_horizon": [
+        72,
+        72,
+        72,
+        72
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 0,
+      "concepts": [
+        "relavant_ram_info",
+        "score"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 83,
+      "motion_axis": "x",
+      "moves_object": true,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xF4",
+      "ram_index": 116,
+      "recovered_offset": 120.76764199655766,
+      "regression_bytes": [
+        4.0,
+        8.0
+      ],
+      "regression_render_pos": [
+        120.14285714285714,
+        119.51807228915662
+      ],
+      "render_slope_per_byte": -0.15619621342512957,
+      "resp_per_horizon": [
+        83,
+        83,
+        83,
+        83
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 0,
+      "concepts": [
+        "score"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 21,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xF6",
+      "ram_index": 118,
+      "recovered_offset": null,
+      "regression_bytes": [
+        4.0,
+        8.0
+      ],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        21,
+        21,
+        21,
+        21
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    }
+  ],
+  "where": "local"
+}

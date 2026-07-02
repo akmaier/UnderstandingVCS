@@ -1,0 +1,600 @@
+{
+  "arrays": "verified_kangaroo.npz",
+  "bit_exact_rerun": true,
+  "ci": null,
+  "commit": "a6514d51",
+  "deltas": [
+    -8,
+    -4,
+    4,
+    8
+  ],
+  "frame": 90,
+  "game": "kangaroo",
+  "horizons": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "method": "verify_by_intervention",
+  "method_note": "perturb candidate RAM byte by small symmetric deltas, re-render the bit-exact framebuffer over horizons [1, 2, 3, 4]; a byte that changes the frame is verified-causal (strictly stronger than probing: info present vs used). Offset = intercept of robust median-pairwise regression of changed-region centroid vs byte value along the motion axis.",
+  "metric_name": "verified_rate",
+  "n": 15,
+  "n_moving_objects": 5,
+  "n_unverified": 6,
+  "n_verified": 9,
+  "oracle_ref": "verify_labels@kangaroo (intervention on jutari, common/jutari_oracle.jl intervene_ram!)",
+  "paper": "P2",
+  "phase": "E2-T3",
+  "seed": 0,
+  "state": "f90+{1,2,3,4}",
+  "stderr": null,
+  "substrate": "jutari (Julia, HARD) — Paper-1 64/64 bit-exact real-ROM path",
+  "target_output": "verified_causal_ram_to_concept_map",
+  "timestamp": "1783013819",
+  "upgrades": "tools/xai_study/t3/out/candidates_kangaroo.json (P2-E2-1)",
+  "value": 0.6,
+  "verdicts": [
+    {
+      "base_value": 0,
+      "concepts": [
+        "ram_slice"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 0,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0x80",
+      "ram_index": 0,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "unverified_inert",
+      "verified": false
+    },
+    {
+      "base_value": 18,
+      "concepts": [
+        "y"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 252,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0x90",
+      "ram_index": 16,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        74,
+        252,
+        74
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 8,
+      "concepts": [
+        "x"
+      ],
+      "declared_offset": 15,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 148,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0x91",
+      "ram_index": 17,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        148,
+        148,
+        148
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 8,
+      "concepts": [
+        "climbing",
+        "orientation"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 90,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0x92",
+      "ram_index": 18,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        90,
+        90,
+        90
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 255,
+      "concepts": [
+        "ram_slice"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 0,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0x99",
+      "ram_index": 25,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "unverified_inert",
+      "verified": false
+    },
+    {
+      "base_value": 255,
+      "concepts": [
+        "ram_slice"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 0,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0x9C",
+      "ram_index": 28,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "unverified_inert",
+      "verified": false
+    },
+    {
+      "base_value": 255,
+      "concepts": [
+        "ram_slice",
+        "y"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 0,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xA1",
+      "ram_index": 33,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "unverified_inert",
+      "verified": false
+    },
+    {
+      "base_value": 0,
+      "concepts": [
+        "x"
+      ],
+      "declared_offset": 14,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 0,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xA2",
+      "ram_index": 34,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "unverified_inert",
+      "verified": false
+    },
+    {
+      "base_value": 0,
+      "concepts": [
+        "current_level",
+        "lvl"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 10671,
+      "motion_axis": "x",
+      "moves_object": true,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xA4",
+      "ram_index": 36,
+      "recovered_offset": 73.83010802828942,
+      "regression_bytes": [
+        4.0,
+        8.0
+      ],
+      "regression_render_pos": [
+        77.58172068081137,
+        81.33333333333333
+      ],
+      "render_slope_per_byte": 0.937903163130489,
+      "resp_per_horizon": [
+        8578,
+        5823,
+        9316,
+        10671
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 0,
+      "concepts": [
+        "score_value"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 83,
+      "motion_axis": "x",
+      "moves_object": true,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xA7",
+      "ram_index": 39,
+      "recovered_offset": 117.76764199655766,
+      "regression_bytes": [
+        4.0,
+        8.0
+      ],
+      "regression_render_pos": [
+        117.14285714285714,
+        116.51807228915662
+      ],
+      "render_slope_per_byte": -0.15619621342512957,
+      "resp_per_horizon": [
+        83,
+        83,
+        83,
+        83
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 0,
+      "concepts": [
+        "score_value"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 31,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xA8",
+      "ram_index": 40,
+      "recovered_offset": null,
+      "regression_bytes": [
+        4.0,
+        8.0
+      ],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        31,
+        31,
+        31,
+        31
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 2,
+      "concepts": [
+        "n_lives"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 140,
+      "motion_axis": "x",
+      "moves_object": true,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xAD",
+      "ram_index": 45,
+      "recovered_offset": 22.5,
+      "regression_bytes": [
+        0.0,
+        0.0,
+        6.0,
+        10.0
+      ],
+      "regression_render_pos": [
+        22.5,
+        22.5,
+        46.5,
+        47.3
+      ],
+      "render_slope_per_byte": 2.4799999999999995,
+      "resp_per_horizon": [
+        140,
+        140,
+        140,
+        140
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 128,
+      "concepts": [
+        "crashed"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 0,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xB6",
+      "ram_index": 54,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "unverified_inert",
+      "verified": false
+    },
+    {
+      "base_value": 32,
+      "concepts": [
+        "time_value"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 19,
+      "motion_axis": "x",
+      "moves_object": true,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xBB",
+      "ram_index": 59,
+      "recovered_offset": 78.1328125,
+      "regression_bytes": [
+        24.0,
+        28.0,
+        36.0,
+        40.0
+      ],
+      "regression_render_pos": [
+        82.375,
+        84.36842105263158,
+        85.83333333333333,
+        86.0
+      ],
+      "render_slope_per_byte": 0.2048382675438596,
+      "resp_per_horizon": [
+        19,
+        19,
+        19,
+        19
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 102,
+      "concepts": [
+        "child.xy",
+        "ram_slice"
+      ],
+      "declared_offset": 15,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 88,
+      "motion_axis": "x",
+      "moves_object": true,
+      "offset_agrees": false,
+      "ram_addr_hex": "0xD3",
+      "ram_index": 83,
+      "recovered_offset": 70.55040792540792,
+      "regression_bytes": [
+        94.0,
+        98.0,
+        106.0,
+        110.0
+      ],
+      "regression_render_pos": [
+        117.61363636363636,
+        119.48717948717949,
+        123.48717948717949,
+        125.61363636363636
+      ],
+      "render_slope_per_byte": 0.5,
+      "resp_per_horizon": [
+        88,
+        0,
+        0,
+        0
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    }
+  ],
+  "where": "local"
+}

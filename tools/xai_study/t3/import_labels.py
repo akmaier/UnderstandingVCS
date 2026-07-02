@@ -64,14 +64,41 @@ CORE_GAMES = [
     "qbert",
 ]
 
-# id -> (AtariARI atari_dict key, ocatari ram module basename)
+# The 54 T3-labeled games (== XAI_LABELED in tools/xai_study/common/game_sets.jl;
+# OCAtari-covered, ALE-canonical ids). This is the full set import_labels now
+# emits candidates for (previously only the 6 core). EXCLUDED (10 unlabeled):
+# defender elevator_action gravitar journey_escape solaris surround tutankham
+# videochess wizard_of_wor zaxxon.
+XAI_LABELED = [
+    "air_raid", "alien", "amidar", "assault", "asterix", "asteroids", "atlantis",
+    "bank_heist", "battle_zone", "beam_rider", "berzerk", "bowling", "boxing",
+    "breakout", "carnival", "centipede", "chopper_command", "crazy_climber",
+    "demon_attack", "double_dunk", "enduro", "fishing_derby", "freeway",
+    "frostbite", "gopher", "hero", "ice_hockey", "jamesbond", "kangaroo", "krull",
+    "kung_fu_master", "montezuma_revenge", "ms_pacman", "name_this_game", "pacman",
+    "phoenix", "pitfall", "pong", "pooyan", "private_eye", "qbert", "riverraid",
+    "road_runner", "robotank", "seaquest", "skiing", "space_invaders",
+    "star_gunner", "tennis", "time_pilot", "up_n_down", "venture", "video_pinball",
+    "yars_revenge",
+]
+
+# The 22 games with an AtariARI atari_dict (verbatim below). AtariARI keys use
+# the same ALE-canonical id we use, so the AtariARI key == our id for these.
+ATARIARI_GAMES = [
+    "asteroids", "berzerk", "bowling", "boxing", "breakout", "demon_attack",
+    "freeway", "frostbite", "hero", "montezuma_revenge", "ms_pacman", "pitfall",
+    "pong", "private_eye", "qbert", "riverraid", "seaquest", "space_invaders",
+    "tennis", "venture", "video_pinball", "yars_revenge",
+]
+
+# id -> (AtariARI atari_dict key, ocatari ram module basename).
+# The ocatari module basename is the id with underscores stripped (verified
+# against jaxtari/.venv/.../ocatari/ram/*.py — all 54 resolve, e.g.
+# space_invaders->spaceinvaders, ms_pacman->mspacman, beam_rider->beamrider,
+# up_n_down->upndown, road_runner->roadrunner, yars_revenge->yarsrevenge).
 GAME_SRC_NAMES = {
-    "pong": ("pong", "pong"),
-    "breakout": ("breakout", "breakout"),
-    "space_invaders": ("space_invaders", "spaceinvaders"),
-    "seaquest": ("seaquest", "seaquest"),
-    "ms_pacman": ("ms_pacman", "mspacman"),
-    "qbert": ("qbert", "qbert"),
+    game: (game if game in ATARIARI_GAMES else None, game.replace("_", ""))
+    for game in XAI_LABELED
 }
 
 ATARIARI_REF = (
@@ -85,10 +112,60 @@ OCATARI_REF = "OCAtari (Delfosse et al. 2024), ocatari/ram/<game>.py RAM-mode ex
 # --------------------------------------------------------------------------- #
 # (1) AtariARI ram_annotations — transcribed verbatim (raw addresses, no offset)
 #     Source: atariari/benchmark/ram_annotations.py  (public, MIT).
-#     Only the 6 core games are kept here; values are RAM byte indices 0..127.
+#     All 22 AtariARI games are transcribed here; values are RAM byte indices
+#     0..127. Games in XAI_LABELED with no AtariARI dict get OCAtari-only
+#     candidates (recorded as AtariARI unavailable — no fabrication).
 # --------------------------------------------------------------------------- #
 
 ATARIARI_DICT: dict[str, dict[str, int]] = {
+    "asteroids": {
+        "player_x": 73,
+        "player_y": 74,
+        "player_missile_x1": 83,
+        "player_missile_x2": 84,
+        "player_missile_y1": 86,
+        "player_missile_y2": 87,
+        "num_lives_direction": 60,
+        "player_score_high": 61,
+        "player_score_low": 62,
+        "player_missile_direction": 89,
+    },
+    "berzerk": {
+        "player_x": 19,
+        "player_y": 11,
+        "player_direction": 14,
+        "player_missile_x": 22,
+        "player_missile_y": 23,
+        "player_missile_direction": 21,
+        "robot_missile_direction": 26,
+        "robot_missile_x": 29,
+        "robot_missile_y": 30,
+        "num_lives": 90,
+        "robots_killed_count": 91,
+        "game_level": 92,
+        "enemy_evilOtto_x": 46,
+        "enemy_evilOtto_y": 89,
+        "enemy_robots_x": range(65, 73),  # 65-72
+        "player_score": range(93, 96),  # 93, 94, 95
+    },
+    "bowling": {
+        "ball_x": 30,
+        "ball_y": 41,
+        "player_x": 29,
+        "player_y": 40,
+        "frame_number_display": 36,
+        "pin_existence": range(57, 67),  # 57-66
+        "score": 33,
+    },
+    "boxing": {
+        "player_x": 32,
+        "player_y": 34,
+        "enemy_x": 33,
+        "enemy_y": 35,
+        "enemy_score": 19,
+        "clock": 17,
+        "player_score": 18,
+    },
     "pong": {
         "player_y": 51,
         "player_x": 46,
@@ -161,6 +238,138 @@ ATARIARI_DICT: dict[str, dict[str, int]] = {
         "tile_color_4": 83,
         "tile_color_5": 85,
         "tile_color_6": 86,
+    },
+    "demon_attack": {
+        "level": 62,
+        "player_x": 22,
+        "enemy_x1": 17,
+        "enemy_x2": 18,
+        "enemy_x3": 19,
+        "missile_y": 21,
+        "enemy_y1": 69,
+        "enemy_y2": 70,
+        "enemy_y3": 71,
+        "num_lives": 114,
+    },
+    "freeway": {
+        "player_y": 14,
+        "score": 103,
+        "enemy_car_x": range(108, 118),  # 108-117
+    },
+    "frostbite": {
+        "top_row_iceflow_x": 34,
+        "second_row_iceflow_x": 33,
+        "third_row_iceflow_x": 32,
+        "fourth_row_iceflow_x": 31,
+        "enemy_bear_x": 104,
+        "num_lives": 76,
+        "igloo_blocks_count": 77,  # 255 is none and 15 is all "
+
+        "enemy_x": range(84, 88),  # 84, 85, 86, 87
+        "player_x": 102,
+        "player_y": 100,
+        "player_direction": 4,
+        "score": range(72, 75),  # 72, 73, 74
+    },
+    "hero": {
+        "player_x": 27,
+        "player_y": 31,
+        "power_meter": 43,
+        "room_number": 28,
+        "level_number": 117,
+        "dynamite_count": 50,
+        "score": range(56, 61),
+    },
+    "montezuma_revenge": {
+        "room_number": 3,
+        "player_x": 42,
+        "player_y": 43,
+        "player_direction": 52,  # 72: facing left, 128: facing right, 0: facing left, 32: facing right ???
+        "enemy_skull_x": 47,
+        "enemy_skull_y": 46,
+        "key_monster_x": 44,
+        "key_monster_y": 45,
+        "level": 57,
+        "num_lives": 58,
+        "items_in_inventory_count": 61,
+        "room_state": 62,
+        "score_0": 19,
+        "score_1": 20,
+        "score_2": 21,
+    },
+    "pitfall": {
+        "player_x": 97,  # 8-148
+        "player_y": 105,  # 21-86 except for when respawning then 0-255 with confusing wraparound
+        "enemy_logs_x": 98,  # 0-160
+        "enemy_scorpion_x": 99,
+        # "player_y_on_ladder": 108, # 0-20
+        # "player_collided_with_rope": 5, #yes if bit 6 is 1
+        "bottom_of_rope_x": 18,  # tells you which section they are in 0-255 it channels 8 sections repeatedly
+    },
+    "private_eye": {
+        "player_x": 63,
+        "player_y": 86,
+        "room_number": 92,
+        "clock": range(67, 69),  # 67, 68
+        "player_direction": 58,
+        "score": range(77, 80),  # 77, 78, 79
+        "dove_x": 48,
+        "dove_y": 39,
+    },
+    "riverraid": {
+        "player_x": 51,
+        "missile_x": 117,
+        "missile_y": 50,
+        "fuel_meter_high": 55,  # high value displayed
+        "fuel_meter_low": 56,  # low value
+    },
+    "tennis": {
+        "enemy_x": 27,
+        "enemy_y": 25,
+        "enemy_score": 70,
+        "ball_x": 16,
+        "ball_y": 17,
+        "player_x": 26,
+        "player_y": 24,
+        "player_score": 69,
+    },
+    "venture": {
+        "sprite0_y": 20,
+        "sprite1_y": 21,
+        "sprite2_y": 22,
+        "sprite3_y": 23,
+        "sprite4_y": 24,
+        "sprite5_y": 25,
+        "sprite0_x": 79,
+        "sprite1_x": 80,
+        "sprite2_x": 81,
+        "sprite3_x": 82,
+        "sprite4_x": 83,
+        "sprite5_x": 84,
+        "player_x": 85,
+        "player_y": 26,
+        "current_room": 90,  # The number of the room the player is currently in 0 to 9_
+        "num_lives": 70,
+        "score_1_2": 71,
+        "score_3_4": 72,
+    },
+    "video_pinball": {
+        "ball_x": 67,
+        "ball_y": 68,
+        "player_left_paddle_y": 98,
+        "player_right_paddle_y": 102,
+        "score_1": 48,
+        "score_2": 50,
+    },
+    "yars_revenge": {
+        "player_x": 32,
+        "player_y": 31,
+        "player_missile_x": 38,
+        "player_missile_y": 37,
+        "enemy_x": 43,
+        "enemy_y": 42,
+        "enemy_missile_x": 47,
+        "enemy_missile_y": 46,
     },
 }
 
@@ -329,8 +538,19 @@ def build_candidates(game_id: str, ocatari_src: Optional[str]) -> dict:
     candidates: list[dict] = []
 
     # --- AtariARI candidates (raw, no offset) ---
-    ari = ATARIARI_DICT.get(ari_key, {})
-    for concept, ram_index in sorted(ari.items(), key=lambda kv: kv[1]):
+    # A concept's value is a single RAM index, OR a range/list of indices for a
+    # multi-byte concept (e.g. berzerk enemy_robots_x = range(65,73)). Multi-byte
+    # concepts are expanded into per-byte candidates concept[k] so each byte gets
+    # its own intervention test. ari_key is None for OCAtari-only games -> no dict.
+    ari = ATARIARI_DICT.get(ari_key, {}) if ari_key is not None else {}
+    ari_flat: list[tuple[str, int]] = []
+    for concept, val in ari.items():
+        if isinstance(val, (range, list, tuple)):
+            for k, idx in enumerate(val):
+                ari_flat.append((f"{concept}[{k}]", int(idx)))
+        else:
+            ari_flat.append((concept, int(val)))
+    for concept, ram_index in sorted(ari_flat, key=lambda kv: (kv[1], kv[0])):
         candidates.append({
             "concept": concept,
             "ram_index": int(ram_index),
@@ -390,9 +610,9 @@ def build_candidates(game_id: str, ocatari_src: Optional[str]) -> dict:
         # --- payload ---
         "sources": {
             "AtariARI": {
-                "available": ari_key in ATARIARI_DICT,
+                "available": ari_key is not None and ari_key in ATARIARI_DICT,
                 "ref": ATARIARI_REF,
-                "n": len(ari),
+                "n": len(ari_flat),   # per-byte count (multi-byte concepts expanded)
                 "offset_corrected": False,
             },
             "OCAtari": {
@@ -426,8 +646,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "out"),
         help="output directory for candidates_<game>.json",
     )
-    ap.add_argument("--games", nargs="*", default=CORE_GAMES,
-                    help="game ids to emit (default: the 6 core games)")
+    ap.add_argument("--games", nargs="*", default=XAI_LABELED,
+                    help="game ids to emit (default: the 54 XAI_LABELED games)")
     args = ap.parse_args(argv)
 
     src = args.ocatari_src

@@ -1,0 +1,481 @@
+{
+  "arrays": "verified_ice_hockey.npz",
+  "bit_exact_rerun": true,
+  "ci": null,
+  "commit": "a6514d51",
+  "deltas": [
+    -8,
+    -4,
+    4,
+    8
+  ],
+  "frame": 90,
+  "game": "ice_hockey",
+  "horizons": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "method": "verify_by_intervention",
+  "method_note": "perturb candidate RAM byte by small symmetric deltas, re-render the bit-exact framebuffer over horizons [1, 2, 3, 4]; a byte that changes the frame is verified-causal (strictly stronger than probing: info present vs used). Offset = intercept of robust median-pairwise regression of changed-region centroid vs byte value along the motion axis.",
+  "metric_name": "verified_rate",
+  "n": 10,
+  "n_moving_objects": 10,
+  "n_unverified": 0,
+  "n_verified": 10,
+  "oracle_ref": "verify_labels@ice_hockey (intervention on jutari, common/jutari_oracle.jl intervene_ram!)",
+  "paper": "P2",
+  "phase": "E2-T3",
+  "seed": 0,
+  "state": "f90+{1,2,3,4}",
+  "stderr": null,
+  "substrate": "jutari (Julia, HARD) — Paper-1 64/64 bit-exact real-ROM path",
+  "target_output": "verified_causal_ram_to_concept_map",
+  "timestamp": "1783013813",
+  "upgrades": "tools/xai_study/t3/out/candidates_ice_hockey.json (P2-E2-1)",
+  "value": 1.0,
+  "verdicts": [
+    {
+      "base_value": 81,
+      "concepts": [
+        "ball.xy"
+      ],
+      "declared_offset": -10,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 8,
+      "motion_axis": "x",
+      "moves_object": true,
+      "offset_agrees": false,
+      "ram_addr_hex": "0xB4",
+      "ram_index": 52,
+      "recovered_offset": 32.0,
+      "regression_bytes": [
+        73.0,
+        77.0,
+        85.0,
+        89.0
+      ],
+      "regression_render_pos": [
+        68.5,
+        70.5,
+        74.5,
+        76.5
+      ],
+      "render_slope_per_byte": 0.5,
+      "resp_per_horizon": [
+        8,
+        8,
+        8,
+        8
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 133,
+      "concepts": [
+        "player2.xy"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 102,
+      "motion_axis": "y",
+      "moves_object": true,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xB5",
+      "ram_index": 53,
+      "recovered_offset": 103.79955257812342,
+      "regression_bytes": [
+        125.0,
+        129.0,
+        137.0,
+        141.0
+      ],
+      "regression_render_pos": [
+        50.285714285714285,
+        48.744680851063826,
+        44.744680851063826,
+        43.53921568627451
+      ],
+      "render_slope_per_byte": -0.42772246309871453,
+      "resp_per_horizon": [
+        102,
+        102,
+        102,
+        102
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 67,
+      "concepts": [
+        "enemy_2.xy"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 130,
+      "motion_axis": "y",
+      "moves_object": true,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xB6",
+      "ram_index": 54,
+      "recovered_offset": 146.30550397877983,
+      "regression_bytes": [
+        59.0,
+        63.0,
+        71.0,
+        75.0
+      ],
+      "regression_render_pos": [
+        116.72307692307692,
+        114.88793103448276,
+        110.88793103448276,
+        108.72307692307692
+      ],
+      "render_slope_per_byte": -0.5,
+      "resp_per_horizon": [
+        130,
+        130,
+        130,
+        130
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 85,
+      "concepts": [
+        "player.xy"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 134,
+      "motion_axis": "y",
+      "moves_object": true,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xB7",
+      "ram_index": 55,
+      "recovered_offset": 132.60837140088594,
+      "regression_bytes": [
+        77.0,
+        81.0,
+        89.0,
+        93.0
+      ],
+      "regression_render_pos": [
+        99.35658914728683,
+        97.71428571428571,
+        93.71428571428571,
+        92.5
+      ],
+      "render_slope_per_byte": -0.43153031561461785,
+      "resp_per_horizon": [
+        134,
+        134,
+        134,
+        134
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 13,
+      "concepts": [
+        "enemy_1.xy"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 99,
+      "motion_axis": "y",
+      "moves_object": true,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xB8",
+      "ram_index": 56,
+      "recovered_offset": 170.9264971139971,
+      "regression_bytes": [
+        5.0,
+        9.0,
+        17.0,
+        21.0
+      ],
+      "regression_render_pos": [
+        167.58585858585857,
+        167.58585858585857,
+        163.58585858585857,
+        161.28571428571428
+      ],
+      "render_slope_per_byte": -0.44687950937950927,
+      "resp_per_horizon": [
+        99,
+        99,
+        99,
+        99
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 80,
+      "concepts": [
+        "player2.xy"
+      ],
+      "declared_offset": -13,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 118,
+      "motion_axis": "x",
+      "moves_object": true,
+      "offset_agrees": false,
+      "ram_addr_hex": "0xB9",
+      "ram_index": 57,
+      "recovered_offset": 34.65898305084746,
+      "regression_bytes": [
+        72.0,
+        76.0,
+        84.0,
+        88.0
+      ],
+      "regression_render_pos": [
+        70.67796610169492,
+        72.64,
+        76.64,
+        78.67796610169492
+      ],
+      "render_slope_per_byte": 0.5,
+      "resp_per_horizon": [
+        118,
+        118,
+        118,
+        118
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 94,
+      "concepts": [
+        "enemy_2.xy"
+      ],
+      "declared_offset": -13,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 144,
+      "motion_axis": "x",
+      "moves_object": true,
+      "offset_agrees": false,
+      "ram_addr_hex": "0xBA",
+      "ram_index": 58,
+      "recovered_offset": 42.16420250896057,
+      "regression_bytes": [
+        86.0,
+        90.0,
+        98.0,
+        102.0
+      ],
+      "regression_render_pos": [
+        85.26388888888889,
+        87.06451612903226,
+        91.06451612903226,
+        93.26388888888889
+      ],
+      "render_slope_per_byte": 0.5,
+      "resp_per_horizon": [
+        144,
+        144,
+        144,
+        144
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 69,
+      "concepts": [
+        "player.xy"
+      ],
+      "declared_offset": -13,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 146,
+      "motion_axis": "x",
+      "moves_object": true,
+      "offset_agrees": false,
+      "ram_addr_hex": "0xBB",
+      "ram_index": 59,
+      "recovered_offset": 30.677745340220046,
+      "regression_bytes": [
+        61.0,
+        65.0,
+        73.0,
+        77.0
+      ],
+      "regression_render_pos": [
+        61.10958904109589,
+        63.24590163934426,
+        67.24590163934427,
+        69.10958904109589
+      ],
+      "render_slope_per_byte": 0.5000000000000004,
+      "resp_per_horizon": [
+        146,
+        146,
+        146,
+        146
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 80,
+      "concepts": [
+        "enemy_1.xy"
+      ],
+      "declared_offset": -13,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 118,
+      "motion_axis": "x",
+      "moves_object": true,
+      "offset_agrees": false,
+      "ram_addr_hex": "0xBC",
+      "ram_index": 60,
+      "recovered_offset": 36.34101694915254,
+      "regression_bytes": [
+        72.0,
+        76.0,
+        84.0,
+        88.0
+      ],
+      "regression_render_pos": [
+        72.32203389830508,
+        74.36,
+        78.36,
+        80.32203389830508
+      ],
+      "render_slope_per_byte": 0.5,
+      "resp_per_horizon": [
+        118,
+        118,
+        118,
+        118
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 64,
+      "concepts": [
+        "ball.xy"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 8,
+      "motion_axis": "y",
+      "moves_object": true,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xDB",
+      "ram_index": 91,
+      "recovered_offset": 157.5,
+      "regression_bytes": [
+        56.0,
+        60.0,
+        68.0,
+        72.0
+      ],
+      "regression_render_pos": [
+        129.5,
+        127.5,
+        123.5,
+        121.5
+      ],
+      "render_slope_per_byte": -0.5,
+      "resp_per_horizon": [
+        8,
+        0,
+        0,
+        0
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    }
+  ],
+  "where": "local"
+}

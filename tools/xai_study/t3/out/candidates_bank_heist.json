@@ -1,0 +1,133 @@
+{
+  "paper": "P2",
+  "phase": "E2-T3",
+  "method": "import_candidate_labels",
+  "game": "bank_heist",
+  "frame": null,
+  "state": null,
+  "target_output": "ram_to_concept_candidate_map",
+  "metric_name": "n_candidate_labels",
+  "value": 6,
+  "ci": null,
+  "stderr": null,
+  "n": 6,
+  "seed": null,
+  "where": "local",
+  "commit": "a6514d51",
+  "oracle_ref": null,
+  "timestamp": "2026-07-02T17:32:58.534855+00:00",
+  "sources": {
+    "AtariARI": {
+      "available": false,
+      "ref": "mila-iqia/atari-representation-learning (AtariARI; Anand et al. NeurIPS 2019), atariari/benchmark/ram_annotations.py :: atari_dict",
+      "n": 0,
+      "offset_corrected": false
+    },
+    "OCAtari": {
+      "available": true,
+      "ref": "OCAtari (Delfosse et al. 2024), ocatari/ram/<game>.py RAM-mode extractors",
+      "src_dir": "jaxtari/.venv/lib/python3.13/site-packages/ocatari",
+      "module": "ram/bankheist.py",
+      "n": 6,
+      "offset_corrected": true
+    }
+  },
+  "ram_space": {
+    "size_bytes": 128,
+    "base_addr": "0x80"
+  },
+  "status": "candidate_correlational",
+  "verify_with": "P2-E2-2 (perturb byte -> object moves on exact framebuffer)",
+  "candidates": [
+    {
+      "concept": "player.xy",
+      "ram_index": 8,
+      "ram_addr_hex": "0x88",
+      "offset": 37,
+      "offset_applied": true,
+      "raw": false,
+      "is_slice": false,
+      "slice_end": null,
+      "source": "OCAtari",
+      "source_ref": "OCAtari (Delfosse et al. 2024), ocatari/ram/<game>.py RAM-mode extractors",
+      "extractor_func": "_detect_objects_ram",
+      "verified": false,
+      "note": "offset-corrected to rendered position"
+    },
+    {
+      "concept": "obj.xy",
+      "ram_index": 12,
+      "ram_addr_hex": "0x8C",
+      "offset": 37,
+      "offset_applied": true,
+      "raw": false,
+      "is_slice": false,
+      "slice_end": null,
+      "source": "OCAtari",
+      "source_ref": "OCAtari (Delfosse et al. 2024), ocatari/ram/<game>.py RAM-mode extractors",
+      "extractor_func": "_detect_objects_ram",
+      "verified": false,
+      "note": "offset-corrected to rendered position"
+    },
+    {
+      "concept": "player.xy",
+      "ram_index": 28,
+      "ram_addr_hex": "0x9C",
+      "offset": null,
+      "offset_applied": false,
+      "raw": true,
+      "is_slice": false,
+      "slice_end": null,
+      "source": "OCAtari",
+      "source_ref": "OCAtari (Delfosse et al. 2024), ocatari/ram/<game>.py RAM-mode extractors",
+      "extractor_func": "_detect_objects_ram",
+      "verified": false,
+      "note": "RAM-mode extractor reference (no additive offset at use site)"
+    },
+    {
+      "concept": "obj.xy",
+      "ram_index": 32,
+      "ram_addr_hex": "0xA0",
+      "offset": -1,
+      "offset_applied": true,
+      "raw": false,
+      "is_slice": false,
+      "slice_end": null,
+      "source": "OCAtari",
+      "source_ref": "OCAtari (Delfosse et al. 2024), ocatari/ram/<game>.py RAM-mode extractors",
+      "extractor_func": "_detect_objects_ram",
+      "verified": false,
+      "note": "offset-corrected to rendered position"
+    },
+    {
+      "concept": "wh",
+      "ram_index": 86,
+      "ram_addr_hex": "0xD6",
+      "offset": null,
+      "offset_applied": false,
+      "raw": true,
+      "is_slice": false,
+      "slice_end": null,
+      "source": "OCAtari",
+      "source_ref": "OCAtari (Delfosse et al. 2024), ocatari/ram/<game>.py RAM-mode extractors",
+      "extractor_func": "_detect_objects_ram",
+      "verified": false,
+      "note": "RAM-mode extractor reference (no additive offset at use site)"
+    },
+    {
+      "concept": "xy",
+      "ram_index": 86,
+      "ram_addr_hex": "0xD6",
+      "offset": null,
+      "offset_applied": false,
+      "raw": true,
+      "is_slice": false,
+      "slice_end": null,
+      "source": "OCAtari",
+      "source_ref": "OCAtari (Delfosse et al. 2024), ocatari/ram/<game>.py RAM-mode extractors",
+      "extractor_func": "_detect_objects_ram",
+      "verified": false,
+      "note": "RAM-mode extractor reference (no additive offset at use site)"
+    }
+  ]
+}

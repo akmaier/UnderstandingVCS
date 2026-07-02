@@ -1,0 +1,1042 @@
+{
+  "arrays": "verified_berzerk.npz",
+  "bit_exact_rerun": true,
+  "ci": null,
+  "commit": "a6514d51",
+  "deltas": [
+    -8,
+    -4,
+    4,
+    8
+  ],
+  "frame": 90,
+  "game": "berzerk",
+  "horizons": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "method": "verify_by_intervention",
+  "method_note": "perturb candidate RAM byte by small symmetric deltas, re-render the bit-exact framebuffer over horizons [1, 2, 3, 4]; a byte that changes the frame is verified-causal (strictly stronger than probing: info present vs used). Offset = intercept of robust median-pairwise regression of changed-region centroid vs byte value along the motion axis.",
+  "metric_name": "verified_rate",
+  "n": 26,
+  "n_moving_objects": 7,
+  "n_unverified": 13,
+  "n_verified": 13,
+  "oracle_ref": "verify_labels@berzerk (intervention on jutari, common/jutari_oracle.jl intervene_ram!)",
+  "paper": "P2",
+  "phase": "E2-T3",
+  "seed": 0,
+  "state": "f90+{1,2,3,4}",
+  "stderr": null,
+  "substrate": "jutari (Julia, HARD) — Paper-1 64/64 bit-exact real-ROM path",
+  "target_output": "verified_causal_ram_to_concept_map",
+  "timestamp": "1783013766",
+  "upgrades": "tools/xai_study/t3/out/candidates_berzerk.json (P2-E2-1)",
+  "value": 0.5,
+  "verdicts": [
+    {
+      "base_value": 74,
+      "concepts": [
+        "player_y",
+        "player",
+        "player.xy"
+      ],
+      "declared_offset": 5,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 60,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0x8B",
+      "ram_index": 11,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        60,
+        60,
+        60
+      ],
+      "sources": [
+        "AtariARI",
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 2,
+      "concepts": [
+        "player_direction"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 4,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0x8E",
+      "ram_index": 14,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        4,
+        4,
+        4
+      ],
+      "sources": [
+        "AtariARI",
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 6,
+      "concepts": [
+        "player_x",
+        "player",
+        "player.xy"
+      ],
+      "declared_offset": 4,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 100,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0x93",
+      "ram_index": 19,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        100,
+        100,
+        100
+      ],
+      "sources": [
+        "AtariARI",
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 0,
+      "concepts": [
+        "player_missile_direction"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 0,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0x95",
+      "ram_index": 21,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sources": [
+        "AtariARI",
+        "OCAtari"
+      ],
+      "status": "unverified_inert",
+      "verified": false
+    },
+    {
+      "base_value": 0,
+      "concepts": [
+        "player_missile_x",
+        "player_missile",
+        "x"
+      ],
+      "declared_offset": 2,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 0,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0x96",
+      "ram_index": 22,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sources": [
+        "AtariARI",
+        "OCAtari"
+      ],
+      "status": "unverified_inert",
+      "verified": false
+    },
+    {
+      "base_value": 0,
+      "concepts": [
+        "player_missile_y",
+        "player_missile",
+        "y"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 0,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0x97",
+      "ram_index": 23,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sources": [
+        "AtariARI",
+        "OCAtari"
+      ],
+      "status": "unverified_inert",
+      "verified": false
+    },
+    {
+      "base_value": 15,
+      "concepts": [
+        "robot_missile_direction"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 0,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0x9A",
+      "ram_index": 26,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sources": [
+        "AtariARI",
+        "OCAtari"
+      ],
+      "status": "unverified_inert",
+      "verified": false
+    },
+    {
+      "base_value": 0,
+      "concepts": [
+        "robot_missile_x",
+        "robot_misile",
+        "x"
+      ],
+      "declared_offset": 2,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 0,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0x9D",
+      "ram_index": 29,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sources": [
+        "AtariARI",
+        "OCAtari"
+      ],
+      "status": "unverified_inert",
+      "verified": false
+    },
+    {
+      "base_value": 0,
+      "concepts": [
+        "robot_missile_y",
+        "robot_misile",
+        "y"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 0,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0x9E",
+      "ram_index": 30,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sources": [
+        "AtariARI",
+        "OCAtari"
+      ],
+      "status": "unverified_inert",
+      "verified": false
+    },
+    {
+      "base_value": 0,
+      "concepts": [
+        "enemy_evilOtto_x",
+        "evil_otto"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 0,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xAE",
+      "ram_index": 46,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sources": [
+        "AtariARI",
+        "OCAtari"
+      ],
+      "status": "unverified_inert",
+      "verified": false
+    },
+    {
+      "base_value": 68,
+      "concepts": [
+        "enemy_robots_x[0]"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 144,
+      "motion_axis": "x",
+      "moves_object": true,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xC1",
+      "ram_index": 65,
+      "recovered_offset": 44.36752136752136,
+      "regression_bytes": [
+        60.0,
+        64.0,
+        72.0,
+        76.0
+      ],
+      "regression_render_pos": [
+        74.38888888888889,
+        76.34615384615384,
+        80.34615384615384,
+        82.38888888888889
+      ],
+      "render_slope_per_byte": 0.5,
+      "resp_per_horizon": [
+        144,
+        144,
+        144,
+        144
+      ],
+      "sources": [
+        "AtariARI"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 81,
+      "concepts": [
+        "enemy_robots_x[1]"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 152,
+      "motion_axis": "x",
+      "moves_object": true,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xC2",
+      "ram_index": 66,
+      "recovered_offset": 51.0,
+      "regression_bytes": [
+        73.0,
+        77.0,
+        85.0,
+        89.0
+      ],
+      "regression_render_pos": [
+        87.5,
+        89.5,
+        93.5,
+        95.5
+      ],
+      "render_slope_per_byte": 0.5,
+      "resp_per_horizon": [
+        152,
+        152,
+        152,
+        152
+      ],
+      "sources": [
+        "AtariARI"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 52,
+      "concepts": [
+        "enemy_robots_x[2]"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 144,
+      "motion_axis": "x",
+      "moves_object": true,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xC3",
+      "ram_index": 67,
+      "recovered_offset": 36.36752136752139,
+      "regression_bytes": [
+        44.0,
+        48.0,
+        56.0,
+        60.0
+      ],
+      "regression_render_pos": [
+        58.388888888888886,
+        60.34615384615385,
+        64.34615384615384,
+        66.38888888888889
+      ],
+      "render_slope_per_byte": 0.49999999999999956,
+      "resp_per_horizon": [
+        144,
+        144,
+        144,
+        144
+      ],
+      "sources": [
+        "AtariARI"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 6,
+      "concepts": [
+        "enemy_robots_x[3]"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 144,
+      "motion_axis": "x",
+      "moves_object": true,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xC4",
+      "ram_index": 68,
+      "recovered_offset": 13.579528478057888,
+      "regression_bytes": [
+        0.0,
+        2.0,
+        10.0,
+        14.0
+      ],
+      "regression_render_pos": [
+        13.558823529411764,
+        14.6,
+        18.6,
+        20.555555555555557
+      ],
+      "render_slope_per_byte": 0.4998832866479927,
+      "resp_per_horizon": [
+        144,
+        144,
+        144,
+        144
+      ],
+      "sources": [
+        "AtariARI"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 120,
+      "concepts": [
+        "enemy_robots_x[4]"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 144,
+      "motion_axis": "x",
+      "moves_object": true,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xC5",
+      "ram_index": 69,
+      "recovered_offset": 70.36752136752136,
+      "regression_bytes": [
+        112.0,
+        116.0,
+        124.0,
+        128.0
+      ],
+      "regression_render_pos": [
+        126.38888888888889,
+        128.34615384615384,
+        132.34615384615384,
+        134.38888888888889
+      ],
+      "render_slope_per_byte": 0.5,
+      "resp_per_horizon": [
+        144,
+        144,
+        144,
+        144
+      ],
+      "sources": [
+        "AtariARI"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 0,
+      "concepts": [
+        "enemy_robots_x[5]"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 0,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xC6",
+      "ram_index": 70,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sources": [
+        "AtariARI"
+      ],
+      "status": "unverified_inert",
+      "verified": false
+    },
+    {
+      "base_value": 0,
+      "concepts": [
+        "enemy_robots_x[6]"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 0,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xC7",
+      "ram_index": 71,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sources": [
+        "AtariARI"
+      ],
+      "status": "unverified_inert",
+      "verified": false
+    },
+    {
+      "base_value": 0,
+      "concepts": [
+        "enemy_robots_x[7]"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 0,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xC8",
+      "ram_index": 72,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sources": [
+        "AtariARI"
+      ],
+      "status": "unverified_inert",
+      "verified": false
+    },
+    {
+      "base_value": 2,
+      "concepts": [
+        "enemy_evilOtto_y",
+        "evil_otto"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 0,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xD9",
+      "ram_index": 89,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sources": [
+        "AtariARI",
+        "OCAtari"
+      ],
+      "status": "unverified_inert",
+      "verified": false
+    },
+    {
+      "base_value": 2,
+      "concepts": [
+        "num_lives",
+        "nb_lives",
+        "number_lives"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 0,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xDA",
+      "ram_index": 90,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sources": [
+        "AtariARI",
+        "OCAtari"
+      ],
+      "status": "unverified_inert",
+      "verified": false
+    },
+    {
+      "base_value": 0,
+      "concepts": [
+        "robots_killed_count",
+        "bonus.value"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 0,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xDB",
+      "ram_index": 91,
+      "recovered_offset": null,
+      "regression_bytes": [],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sources": [
+        "AtariARI",
+        "OCAtari"
+      ],
+      "status": "unverified_inert",
+      "verified": false
+    },
+    {
+      "base_value": 1,
+      "concepts": [
+        "game_level",
+        "enemy.rgb",
+        "missile.rgb"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 364,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xDC",
+      "ram_index": 92,
+      "recovered_offset": null,
+      "regression_bytes": [
+        5.0,
+        9.0
+      ],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        364,
+        364,
+        364,
+        364
+      ],
+      "sources": [
+        "AtariARI",
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 0,
+      "concepts": [
+        "player_score[0]",
+        "player_score",
+        "score_value"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 150,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xDD",
+      "ram_index": 93,
+      "recovered_offset": null,
+      "regression_bytes": [
+        4.0,
+        8.0
+      ],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        150,
+        150,
+        150,
+        150
+      ],
+      "sources": [
+        "AtariARI",
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 0,
+      "concepts": [
+        "player_score[1]",
+        "player_score",
+        "score_value"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 153,
+      "motion_axis": "none",
+      "moves_object": false,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xDE",
+      "ram_index": 94,
+      "recovered_offset": null,
+      "regression_bytes": [
+        4.0,
+        8.0
+      ],
+      "regression_render_pos": [],
+      "render_slope_per_byte": null,
+      "resp_per_horizon": [
+        153,
+        153,
+        153,
+        153
+      ],
+      "sources": [
+        "AtariARI",
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 0,
+      "concepts": [
+        "player_score[2]",
+        "player_score",
+        "score_value"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 136,
+      "motion_axis": "x",
+      "moves_object": true,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xDF",
+      "ram_index": 95,
+      "recovered_offset": 81.29145437702641,
+      "regression_bytes": [
+        4.0,
+        8.0
+      ],
+      "regression_render_pos": [
+        82.53543307086615,
+        83.77941176470588
+      ],
+      "render_slope_per_byte": 0.31099467345993403,
+      "resp_per_horizon": [
+        136,
+        136,
+        136,
+        136
+      ],
+      "sources": [
+        "AtariARI",
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    },
+    {
+      "base_value": 5,
+      "concepts": [
+        "robot"
+      ],
+      "declared_offset": null,
+      "horizons": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "max_changed_px": 260,
+      "motion_axis": "y",
+      "moves_object": true,
+      "offset_agrees": null,
+      "ram_addr_hex": "0xB8",
+      "ram_index": 56,
+      "recovered_offset": 18.57885447885448,
+      "regression_bytes": [
+        0.0,
+        1.0,
+        9.0,
+        13.0
+      ],
+      "regression_render_pos": [
+        18.848484848484848,
+        19.114285714285714,
+        34.8359375,
+        35.246153846153845
+      ],
+      "render_slope_per_byte": 1.302840748994595,
+      "resp_per_horizon": [
+        260,
+        260,
+        260,
+        260
+      ],
+      "sources": [
+        "OCAtari"
+      ],
+      "status": "verified_causal",
+      "verified": true
+    }
+  ],
+  "where": "local"
+}

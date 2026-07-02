@@ -1,0 +1,42 @@
+{
+  "paper": "P2",
+  "phase": "E2-T3",
+  "method": "import_candidate_labels",
+  "game": "amidar",
+  "frame": null,
+  "state": null,
+  "target_output": "ram_to_concept_candidate_map",
+  "metric_name": "n_candidate_labels",
+  "value": 0,
+  "ci": null,
+  "stderr": null,
+  "n": 0,
+  "seed": null,
+  "where": "local",
+  "commit": "a6514d51",
+  "oracle_ref": null,
+  "timestamp": "2026-07-02T17:32:58.461646+00:00",
+  "sources": {
+    "AtariARI": {
+      "available": false,
+      "ref": "mila-iqia/atari-representation-learning (AtariARI; Anand et al. NeurIPS 2019), atariari/benchmark/ram_annotations.py :: atari_dict",
+      "n": 0,
+      "offset_corrected": false
+    },
+    "OCAtari": {
+      "available": false,
+      "ref": "OCAtari (Delfosse et al. 2024), ocatari/ram/<game>.py RAM-mode extractors",
+      "src_dir": "jaxtari/.venv/lib/python3.13/site-packages/ocatari",
+      "module": "ram/amidar.py",
+      "n": 0,
+      "offset_corrected": true
+    }
+  },
+  "ram_space": {
+    "size_bytes": 128,
+    "base_addr": "0x80"
+  },
+  "status": "candidate_correlational",
+  "verify_with": "P2-E2-2 (perturb byte -> object moves on exact framebuffer)",
+  "candidates": []
+}
