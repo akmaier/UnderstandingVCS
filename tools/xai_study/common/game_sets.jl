@@ -42,18 +42,39 @@ const XAI_LABELED = [
     "yars_revenge",
 ]
 
+# The SCORED battery: the 42 games that both (a) pass the cause-density gate at the
+# shared analysis state (seed=0, prefix=90 — >=4 causes with |Δy|>0.5) AND (b) carry
+# >=1 causally-verified label that moves a sprite. Every scored game therefore
+# contributes to BOTH the all-regime and the position regime. The 12 games excluded
+# from XAI_LABELED are documented on the Ground Truth ROMs page and Supplement S3:
+#   gate-rejected (too few strong causes): crazy_climber, enduro, pooyan, skiing,
+#       time_pilot  (+ asteroids, battle_zone, star_gunner, which are also static);
+#   no moving sprite (static at the shared state): amidar, asterix, robotank, up_n_down.
+# Derived deterministically from the verified T3 files + the cause-density census.
+const XAI_SCORED = [
+    "air_raid", "alien", "assault", "atlantis", "bank_heist", "beam_rider", "berzerk",
+    "bowling", "boxing", "breakout", "carnival", "centipede", "chopper_command",
+    "demon_attack", "double_dunk", "fishing_derby", "freeway", "frostbite", "gopher",
+    "hero", "ice_hockey", "jamesbond", "kangaroo", "krull", "kung_fu_master",
+    "montezuma_revenge", "ms_pacman", "name_this_game", "pacman", "phoenix", "pitfall",
+    "pong", "private_eye", "qbert", "riverraid", "road_runner", "seaquest",
+    "space_invaders", "tennis", "venture", "video_pinball", "yars_revenge",
+]
+
 """
     xai_resolve_games(arg, core) -> Vector{String}
 
 The UNIFORM `--games` expander shared by every A/B/C runner:
   * "core"     → `core` (the caller's 6-game core set; default unchanged)
   * "labeled"  → XAI_LABELED (the 54 T3-labeled / OCAtari-covered games)
+  * "scored"   → XAI_SCORED (the 42 non-degenerate, moving-sprite games; the battery scope)
   * anything else → a comma-separated explicit list, lowercased+stripped.
 """
 function xai_resolve_games(arg::AbstractString, core::AbstractVector{<:AbstractString})
     v = lowercase(strip(String(arg)))
     v == "core"    && return collect(String.(core))
     v == "labeled" && return copy(XAI_LABELED)
+    v == "scored"  && return copy(XAI_SCORED)
     return String[strip(String(g)) for g in split(String(arg), ",") if !isempty(strip(String(g)))]
 end
 

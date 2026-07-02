@@ -1333,6 +1333,7 @@ def build_ground_truth():
     labeled = [g for g in data if data[g]["labeled"]]
     accepted = [g for g in data if data[g].get("accepted")]
     posreg = [g for g in data if data[g].get("position_regime")]
+    scored = [g for g in data if data[g].get("scored")]
 
     def rank(g):
         d = data[g]
@@ -1371,12 +1372,18 @@ def build_ground_truth():
             posrow = '<li class="mid"><b>Position regime:</b> no moving tracked sprite at this frame</li>'
         else:
             posrow = ""
+        excluded = d["labeled"] and not d.get("scored", True)
+        exbadge = ('<span class="ob na">excluded</span>' if excluded
+                   else '<span class="ob ok">scored</span>' if d.get("scored") else '')
+        exrow = ('<li class="na"><b>Excluded from the scored battery:</b> %s</li>'
+                 % esc(d.get("excluded_reason", ""))) if excluded else ""
         cards.append(
-            '<div class="gtcard">'
+            '<div class="gtcard%s">'
             '<div class="gtimg">%s</div>'
-            '<div class="gtbody"><h4>%s <span class="ob %s">%s</span></h4><ul>'
-            '<li class="%s">%s</li><li>%s</li>%s</ul></div></div>'
-            % (thumb, esc(disp(g)), ocls, esc(obadge), scls, state, t3, posrow))
+            '<div class="gtbody"><h4>%s <span class="ob %s">%s</span>%s</h4><ul>'
+            '<li class="%s">%s</li><li>%s</li>%s%s</ul></div></div>'
+            % (" excluded" if excluded else "", thumb, esc(disp(g)), ocls, esc(obadge),
+               exbadge, scls, state, t3, posrow, exrow))
 
     style = """<style>
 .gtprose{max-width:52rem}
@@ -1402,6 +1409,7 @@ def build_ground_truth():
 .ob.ok{color:#2e7d32;border-color:#2e7d3255}
 .ob.mid{color:#8a6d1f;border-color:#8a6d1f55}
 .ob.na{color:#b23b3b;border-color:#b23b3b55}
+.gtcard.excluded{opacity:.6;filter:grayscale(.45)}
 </style>"""
 
     intro = """
@@ -1474,15 +1482,26 @@ def build_ground_truth():
   <span style="color:#8a6d1f">amber</span> = present but limited at this frame,
   <span style="color:#b23b3b">red</span> = not available. The 10 games with no external label carry
   exact T1/T2 ground truth but are held out of the label-dependent (T3) study.</p>
+  <p>Of the 54 labelled ROMs, <b>42 make up the scored battery</b>; the other 12 are <b>excluded</b>
+  (dimmed and tagged below). We exclude a game for one of two honest reasons. Eight <b>fail the
+  cause-density gate</b>: at the shared frame the chosen output has almost no true causes, so there is
+  nothing for a method to be right or wrong about. Four have <b>no sprite that moves under
+  intervention</b> &mdash; their verified labels are static things like a score counter, so there is no
+  position for a position method to recover; three games fail both tests. Running interpretability
+  methods on such a frame cannot measure faithfulness &mdash; it would only add noise to the leaderboard
+  &mdash; so we leave those games out of scoring while keeping their exact T1/T2 ground truth on record.
+  Every game in the scored battery, by contrast, both passes the gate and carries a moving sprite, so it
+  contributes to the all-regime and the position regime alike.</p>
 """
 
     counts = (
         '<div class="gtcounts">'
         '<div class="c"><b>64</b>bit-exact ROMs (T1/T2)</div>'
         '<div class="c"><b>%d</b>carry a T3 label</div>'
-        '<div class="c"><b>%d</b>usable at the analysis frame (F)</div>'
+        '<div class="c"><b>%d</b>in the scored battery</div>'
+        '<div class="c"><b>%d</b>excluded (degenerate / static)</div>'
         '<div class="c"><b>%d</b>in the position regime</div>'
-        '</div>' % (len(labeled), len(accepted), len(posreg)))
+        '</div>' % (len(labeled), len(scored), len(labeled) - len(scored), len(posreg)))
 
     body = style + intro + counts + ('<div class="gtgrid">%s</div>' % "".join(cards)) + "</div></section>"
     return page("ground_truth.html", "Ground Truth ROMs — UnderstandingVCS", body)
