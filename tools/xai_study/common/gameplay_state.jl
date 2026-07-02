@@ -91,13 +91,20 @@ const _PRIMARY_REPO = get(ENV, "XAI_PRIMARY_REPO",
                           "/Users/maier/Documents/code/UnderstandingVCS")
 
 function rom_path_for(game::AbstractString)
-    stem = get(ROM_BASENAME, lowercase(string(game)), lowercase(string(game)))
+    raw  = lowercase(string(game))
+    stem = get(ROM_BASENAME, raw, raw)
     here = normpath(joinpath(@__DIR__, "..", "..", ".."))
-    for base in (here, _PRIMARY_REPO)
-        p = joinpath(base, "xitari", "roms", stem * ".bin")
-        isfile(p) && return p
+    # Search both repo roots, both ROM collections (the curated xitari/roms holds
+    # only the core-ish set; the full 64-game ALE collection lives in
+    # tools/rom_sweep/roms), and both the mapped stem and the raw ALE name.
+    for base in (here, _PRIMARY_REPO), sub in (("xitari", "roms"), ("tools", "rom_sweep", "roms"))
+        for name in unique((stem, raw))
+            p = joinpath(base, sub..., name * ".bin")
+            isfile(p) && return p
+        end
     end
-    error("ROM not found for game=$game (looked under $here and $_PRIMARY_REPO)")
+    error("ROM not found for game=$game (looked for $(stem).bin / $(raw).bin under " *
+          "xitari/roms and tools/rom_sweep/roms in $here and $_PRIMARY_REPO)")
 end
 
 function settings_for(game::AbstractString)
