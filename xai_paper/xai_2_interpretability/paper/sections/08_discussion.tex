@@ -12,10 +12,10 @@ let us measure two things at once. On this system the true cause of any output i
 by exact intervention. The causal and intervention methods are faithful, while the field's
 familiar gradient and correlational tools are not. The leaderboard separates them by
 faithfulness, the one axis we can score exactly (Fig.~\ref{fig:faithfulness}). Pooled over
-all outputs the causal and intervention methods reach $0.66$ against the gradient and
-correlational methods' $0.37$, a gap of $0.30$ whose $95\%$ interval excludes zero. On the
+all outputs the causal and intervention methods reach $0.72$ against the gradient and
+correlational methods' $0.38$, a gap of $0.34$ whose $95\%$ interval excludes zero. On the
 discrete position outputs a causal method reaches $1.000$ where standard saliency reaches
-only $0.165$, on a machine whose answer is known exactly. Yet faithfulness is the easier of
+only $0.115$, on a machine whose answer is known exactly. Yet faithfulness is the easier of
 the two measurements. Even a method at the
 oracle ceiling returns only the causal wiring: an effect map and a data-flow graph. It does
 not return the semantics: the meaning of a variable or the algorithm of a routine. We call
@@ -45,10 +45,10 @@ interpretable.
 The same oracle also reveals a limit: a high leaderboard score cannot show meaning. This limit
 is the subject of this paper. A perfect faithfulness score certifies that a method named the
 true causes. It does not certify that the method recovered what the program means. We observed
-this limit in three cases (Fig.~\ref{fig:taxonomy}). On Breakout a circuit is graph-correct and
-minimal ($F=M=1.0$) yet reproduces behavior only $44\%$ of the time ($S=0.44$). On Pong a
+this limit in three cases (Fig.~\ref{fig:taxonomy}). On Q*bert a circuit is graph-correct and
+minimal ($F=M=1.0$) yet reproduces behavior only $10\%$ of the time ($S=0.10$). On Pong a
 feature dictionary matches every named variable (matched fraction $1.0$) while being nearly
-causally inert ($F=0.041$, $S=-0.336$). And a concept is linearly decodable yet, by the oracle,
+causally inert ($F=0.041$, $S=-0.46$). And a concept is linearly decodable yet, by the oracle,
 never used in the computation. The gap appears in two opposite forms: correct-but-incomplete,
 and named-but-wrong. A simple ``the methods are not good enough yet'' story cannot produce
 both.
@@ -141,8 +141,8 @@ informative. The same logic suggests, rather than proves, a reading of the seman
 the strongest causal account a fully observable machine permits stops short of meaning, the
 result suggests that faithfulness alone should not be treated as understanding in less observable
 neural systems, where the circuit itself is uncertain and no clean ground truth is on hand. We
-measure $1-S=0.56$ on an exactly recovered circuit on Breakout
-($1-0.4444$; the ACDC family mean is $1-0.31=0.69$), and we do not extend that number to neural
+measure $1-S=0.90$ on an exactly recovered circuit on Q*bert
+($1-0.10$; the ACDC family mean is $1-0.30=0.70$), and we do not extend that number to neural
 networks as a proven floor; the precise scope, and what this paper does not claim, are set out
 in the Supplementary box on what we do and do not measure (S6).
 
@@ -170,12 +170,13 @@ on use vs.\ presence; \cite{anand2019unsupervised,elhage2022toy,kindermans2019un
 probing, superposition, and reliability). The takeaway is one line: every VCS failure has a named
 counterpart in how interpretability methods are reported to fail on networks, so a property
 provable here is one to suspect there. On the position regime the causal and intervention
-methods open a $0.238$ faithfulness gap over the gradient and correlational methods, in the
-expected direction but not significant at six games; the robust contrast is the all-regime
-gap of $0.30$ whose interval excludes zero. The naive gradient is provably zero on the
+methods open a $0.327$ faithfulness gap over the gradient and correlational methods, whose
+$95\%$ bootstrap interval over the 42 games $[0.13,0.37]$ excludes zero, so the advantage is
+now statistically significant; the all-regime gap of $0.34$ likewise excludes zero. The naive
+gradient is provably zero on the
 position read, and even after the sampler restores a gradient the position-regime mean stays
-low (about $0.25$ for the gradient family); activation patching, by contrast, reaches the
-oracle ceiling ($1.000$) there where vanilla saliency reaches only $0.165$. Per-row VCS
+low (about $0.23$ for the gradient family); activation patching, by contrast, reaches the
+oracle ceiling ($1.000$) there where vanilla saliency reaches only $0.115$. Per-row VCS
 scores, their committed records, and the full map are in the Supplementary Information.
 }\label{fig:representativeness}
 \end{figure}

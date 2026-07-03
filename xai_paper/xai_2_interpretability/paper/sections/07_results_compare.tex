@@ -6,10 +6,10 @@
 % Numbers: tools/xai_study/compare/out/{leaderboard.json,leaderboard_ci.csv,
 % aggregation_robustness.csv,faithful_demo.json} + the §R per-method records under
 % tools/xai_study/phaseC_mechanistic/out/.
-% Per-GAME exemplar provenance (number_audit §1, §2 U1-U4/M7): ACDC Breakout
-% F=1.0/M=1.0/S=0.4444 ← acdc_breakout.json:extra.triad ("on Breakout", NOT the
-% family mean 0.4452 the figures plot); SAE Pong matched=1.0/F=0.0408/S=-0.3362
-% ← sae_pong.json:extra ("on Pong", NOT the SAE family F=0.209); cell 84
+% Per-GAME exemplar provenance (42-game battery): ACDC Q*bert
+% F=1.0/M=1.0/S=0.10 ← acdc_qbert.json:extra.triad ("on Q*bert", NOT the
+% family mean the figures plot); SAE Pong matched=1.0/F=0.0408/S=-0.458
+% ← sae_pong.json:extra ("on Pong", NOT the SAE leaderboard F=0.173); cell 84
 % decodable=false & not_causally_used=true ← linear_probing_breakout.json:cells
 % (it is in the 25 not-causally-used set, "present-but-unused", NOT the 6
 % decodable-not-causal cells).
@@ -46,47 +46,46 @@ the semantic gap is the main result. The correctness triad we apply throughout -
 The leaderboard separates cleanly along the faithfulness axis. We read it as an
 exploratory cross-tradition ranking, not a single commensurable score, because the
 traditions measure different objects. We report the ranking with its robustness. We
-aggregate the 257 committed per-game records into the canonical 30
+aggregate the 1736 committed per-game records into the canonical 30
 interpretability methods plus the intervention oracle as a positive control, 31 rows
-in all~\cite{leaderboardP2} (Fig.~\ref{fig:faithfulness}). The causal and
-intervention methods average a faithfulness of $0.664$ against the oracle, while the
-gradient and correlational methods average $0.367$, a gap of $0.297$ across all
+in all~\cite{leaderboardP2} (Fig.~\ref{fig:faithfulness}). Scored over the 42 games, the
+causal and intervention methods average a faithfulness of $0.722$ against the oracle, while
+the gradient and correlational methods average $0.384$, a gap of $0.337$ across all
 output regimes. This all-regime gap is the robust headline result: its $95\%$
-bootstrap interval is $[0.23,0.38]$ and excludes zero~\cite{leaderboardP2}. The
+bootstrap interval over games is $[0.31,0.36]$ and excludes zero~\cite{leaderboardP2}. The
 position regime is the set of discrete sprite-position outputs
 whose naive gradient is provably zero under the hard forward map
 (\Sectionname\ref{sec:results-b}). On this regime the gap points the same way, causal and
-intervention $0.486$ against gradient and correlational $0.248$, but at six games its
-interval crosses zero ($[-0.05,0.32]$), so on position we report a directional trend and
-not a significant win. The ordering is the one the method
+intervention $0.561$ against gradient and correlational $0.234$, a gap of $0.327$; at 42
+games its bootstrap interval $[0.13,0.37]$ now excludes zero, so on position the causal
+advantage is statistically significant, not merely directional. The ordering is the one the method
 matrix predicted (\Sectionname\ref{sec:methods}), now measured. Activation patching, causal
 scrubbing, interchange interventions, and the logit lens sit at the oracle ceiling of
 $1.0$; the single-unit lesion follows at $0.99$; the classical correlational analyses
 (tuning curves, Granger causality, and spike-word correlations) score near zero. The
 clearest single-method contrast is on the position regime. Activation patching reaches
-faithfulness $1.000$, the oracle ceiling, on all six core games, while vanilla saliency, a
-widely used attribution baseline, reaches only $0.165$, a per-method gap of
-$0.835$~\cite{faithfuldemoP2}. Hence, on a system where the answer is known exactly,
+faithfulness $1.000$, the oracle ceiling, while vanilla saliency, a
+widely used attribution baseline, reaches only $0.115$, a per-method gap of
+$0.885$~\cite{leaderboardP2}. Hence, on a system where the answer is known exactly,
 an everyday attribution tool scores far below a causal method on the discrete outputs.
 
 The all-regime separation survives reweighting, and where it does not we say so. Reading
 the robustness record~\cite{leaderboardP2}, the causal-versus-gradient gap stays at
-$0.297$ under both equal weighting by method and equal weighting by game, and its
-$95\%$ bootstrap interval excludes zero in each case ($[0.23,0.38]$). Yet three
+$0.337$ under both equal weighting by method and equal weighting by game, and its
+$95\%$ bootstrap interval over games excludes zero ($[0.31,0.36]$). Two
 qualifications must be stated alongside this result. When the oracle-equivalent intervention
-methods are removed, leaving only coarser approximations, the gap shrinks to $0.018$
-and its interval includes zero, so much of the leaderboard's main contrast comes from
-methods close to the oracle operation itself. The gap is also
+methods at faithfulness $1.0$ are removed, leaving only coarser approximations, the gap
+shrinks but the causal and intervention family still leads, so part of the leaderboard's
+main contrast comes from methods close to the oracle operation itself. The gap is also
 regime-specific in a way that cuts against a simple ``gradients fail'' reading. On
 content outputs, where the naive gradient is valid, the gradient and correlational family
-is actually the higher of the two ($0.637$ against $0.523$), so the content gap is
-$-0.114$ with an interval spanning zero. On the position regime the gap is $0.238$ in the
-expected direction, but its interval also crosses zero ($[-0.05,0.32]$) at six games. The
-conclusion that survives reweighting is the all-regime one: pooled over every output,
-causal and intervention methods are more faithful than gradient and correlational
-methods, and this holds under both weightings. The position-regime advantage is
-directional and consistent with the mechanism, but not statistically established at this
-sample size, and we do not claim it as significant. This is the cross-tradition analogue
+is level with the causal and intervention family ($0.648$ against $0.639$), so the content
+gap is $-0.01$, essentially zero. On the position regime, by contrast, the gap is $0.327$
+in the expected direction, and at 42 games its bootstrap interval $[0.13,0.37]$ excludes
+zero. The conclusion is now two-sided: pooled over every output, and on the position regime
+alone, causal and intervention methods are more faithful than gradient and correlational
+methods, both with intervals that exclude zero. The position-regime advantage, once only
+directional, is now statistically established at the 42-game sample size. This is the cross-tradition analogue
 of what neural-network benchmarks report
 when faithfulness is scored against a constructed ground truth~\cite{mib2025,m4_2023},
 with the difference that here the ground truth is an exact intervention on a real
@@ -103,12 +102,12 @@ documented method-tradition \emph{plausibility proxy} (Y; \Sectionname\ref{sec:m
 plausibility axis is a tradition-level proxy, not a human-subjects measurement. The
 oracle positive control anchors $(1.0,1.0)$, a ceiling no interpretability method
 reaches. Pooled over all outputs the causal and intervention family is more faithful than
-the gradient and correlational family ($0.66$ against $0.37$, a gap of $0.30$ whose $95\%$
+the gradient and correlational family ($0.72$ against $0.38$, a gap of $0.34$ whose $95\%$
 interval excludes zero). Note that several gradient and correlational methods sit low on
 faithfulness yet \emph{higher} on the proxy --- the \emph{danger zone} of high apparent
 plausibility at low faithfulness. Among the gradient methods the danger-zone offenders are
-expected gradients ($F=0.06$) and guided backprop ($F=0.34$) at plausibility $0.9$;
-vanilla saliency is not one of them, since its all-regime faithfulness is $0.42$. Every
+expected gradients ($F=0.18$) and guided backprop ($F=0.32$) at plausibility $0.9$;
+vanilla saliency is less extreme, since its all-regime faithfulness is $0.38$. Every
 plotted value reads from the committed leaderboard, none re-run or estimated; per-method
 values with $95\%$ confidence intervals are in Tables~\ref{tab:phaseA}--\ref{tab:phaseC} and
 the supplement.}\label{fig:faithfulness}
@@ -120,9 +119,9 @@ If the faithfulness axis matched how convincing a method looks, it would tell us
 nothing new. It does not match. Plotted against the plausibility proxy of \Sectionname\ref{sec:methods},
 the points split into a safe diagonal and a dangerous corner. The methods the
 field uses first sit near zero faithfulness while having the highest plausibility-proxy
-values. Expected Gradients tops the danger list at plausibility $0.9$ against
-faithfulness $0.062$; linear probing follows at $0.85$ against $0.107$; A3 tuning at
-$0.8$ against $0.091$. This inversion is the key finding: a map that is weak or empty on
+values. Linear probing tops the danger list at plausibility $0.85$ against
+faithfulness $0.108$; expected gradients follows at $0.9$ against $0.175$; A3 tuning at
+$0.8$ against $0.213$. This inversion is the key finding: a map that is weak or empty on
 the position regime looks \emph{more} convincing than the exactly correct one.
 We state the caveat plainly. The plausibility axis is a documented method-tradition
 proxy assigned per tradition before the faithfulness scores were read, not a
@@ -217,14 +216,14 @@ three separations show the failures pointing in opposite directions
 (Fig.~\ref{fig:taxonomy}).
 
 The first separation is graph-correct yet behavior-incomplete: high $F$ and $M$, low
-$S$. Automatic circuit discovery (ACDC)~\cite{conmy2023towards} on Breakout recovers a
+$S$. Automatic circuit discovery (ACDC)~\cite{conmy2023towards} on Q*bert recovers a
 data-flow graph that is, by the exact data-flow oracle, perfectly correct and
 perfectly parsimonious, $F = 1.0$ and $M = 1.0$~\cite{leaderboardP2}. Yet the
 discovered circuit alone, with its non-circuit parents scrubbed, reproduces the clean
-candidate-cell readouts only $44\%$ of the time, $S = 0.44$. A correct graph of which
+candidate-cell readouts only $10\%$ of the time, $S = 0.10$. A correct graph of which
 cells feed which other cells is not the function those cells compute. The faithful side shows the
 same. Activation patching~\cite{vig2020investigating} recovers the exact per-site
-causal-effect table on every one of the six games~\cite{leaderboardP2}, and a table of
+causal-effect table on every one of the core games~\cite{leaderboardP2}, and a table of
 effects, however exact, is not the bounce algorithm that produced them. No tuning
 budget is left to spend here, because the effect table is \emph{already} exact, so the
 residual to the algorithm cannot be a worse fit closed by a better hyperparameter. It
@@ -237,7 +236,7 @@ the recorded Pong state matches every one of its candidate game-concept variable
 feature-to-variable matched fraction of $1.0$, a perfect semantic alignment by the
 field's usual yardstick. By the oracle, those same matched features are nearly causally
 inert on Pong: faithfulness $F = 0.041$ and a \emph{negative} sufficiency
-$S = -0.336$~\cite{leaderboardP2}. A feature that looks like the ball's $x$ is not the
+$S = -0.46$~\cite{leaderboardP2}. A feature that looks like the ball's $x$ is not the
 same as the mechanism the program uses to compute with the ball's $x$. The circuit was
 correct but incomplete; the dictionary is named but causally wrong. The gap runs in the
 opposite direction on the same axis. An account of methods simply scoring too low cannot
@@ -254,7 +253,7 @@ The third separation is decodable yet unused, the present-versus-used trap, wher
 oracle is strictly stronger than the probe: high probe accuracy and
 selectivity, low intervention effect. Linear probing with control
 tasks~\cite{hewitt2019designing} decodes game concepts from the Breakout state at a
-mean accuracy of $0.72$ with positive selectivity over its control; the information is
+mean accuracy of $0.96$ with positive selectivity over its control; the information is
 demonstrably \emph{present}. Yet the exact oracle flags a score-related cell that is
 \emph{present but unused} (cell~$84$): re-derived within the horizon, its value has no
 downstream effect on the output~\cite{leaderboardP2}. A concept can be linearly readable
@@ -262,13 +261,13 @@ yet play no part in the computation, exactly Hewitt and Liang's control-task war
 decodability is necessary, never sufficient. Probing answers whether the concept is
 present. The oracle answers whether it is used. Only the second tells us how the
 program works. Linear
-probing's leaderboard faithfulness of $0.107$ paired with a plausibility proxy of $0.85$
+probing's leaderboard faithfulness of $0.108$ paired with a plausibility proxy of $0.85$
 is its place in the danger zone, and this cell is the mechanism behind that placement.
 
 Read together, the leaderboard plane of Fig.~\ref{fig:faithfulness} and the failure
 taxonomy of Fig.~\ref{fig:taxonomy} make the same point from three sides, and the
 triad's axes are not redundant: a method can be faithful and minimal yet not sufficient
-(ACDC on Breakout, $F = M = 1.0$, $S = 0.44$); it can match a named concept perfectly yet be
+(ACDC on Q*bert, $F = M = 1.0$, $S = 0.10$); it can match a named concept perfectly yet be
 causally inert (the SAE on Pong, matched fraction $1.0$, $F = 0.041$); it can flag a
 concept the program never uses (cell~$84$, present but unused). The claim does not rest
 on any single low number; a lone low $S$ could be a tuning artifact. It rests on two
@@ -289,11 +288,11 @@ not this one's.
 A note on aggregation closes the section, because two committed records report the
 sparse autoencoder differently and a careful reader will see both. The leaderboard
 score~\cite{leaderboardP2} aggregates over the per-method records, which for the SAE
-gives faithfulness $0.209$ with a $95\%$ bootstrap interval of $[0.02,0.49]$
+gives faithfulness $0.173$ with a $95\%$ bootstrap interval of $[0.10,0.25]$
 that brackets it; the figures plot this value (Supplement~\ref{supp:provenance} records both
 aggregations). The per-game Pong record used in the
 named-not-causal separation above is a different, finer object, $F = 0.041$ on that one
-game. We keep the two distinct: the $0.209$ is the leaderboard aggregate, the
+game. We keep the two distinct: the $0.173$ is the leaderboard aggregate, the
 $0.041$ is the single-game illustration. Throughout the paper, the leaderboard and its
 figures use the per-method aggregation as canonical, so text, table, and figure agree.
 
@@ -306,14 +305,14 @@ its \emph{family-mean} faithfulness $F \pm 95\%$ bootstrap-over-games CI against
 intervention oracle (\Sectionname\ref{sec:oracle}; $0=$ chance, $1=$ oracle ceiling); the per-game exemplars quoted below carry their own ``on $\langle$game$\rangle$''
 label. The lower branches confirm the expected failures: the naive gradient is
 provably zero on the discrete position/index regime (the family's position-regime mean is
-only $0.25$, and stays low even after the sampler restores a gradient), and the
+only $0.23$, and stays low even after the sampler restores a gradient), and the
 architecture-specific methods (Grad-CAM, attention, VIPER) do not apply because the VCS
 lacks the neural substrate they require, a property of the subject, not a method failure. The
 higher-order branches are the \emph{semantic gap}: present-but-unused concepts (linear
 probing~\cite{hewitt2019designing} flags a present-but-unused cell the oracle says is inert),
 named-but-inert factorisations (the SAE~\cite{cunningham2023sparse} matches every
 variable at fraction $1.0$ yet scores $F=0.041$ on Pong), and graph-correct-but-
-incomplete circuits (ACDC~\cite{conmy2023towards} at $F=M=1.0$, $S=0.44$ on Breakout). The
+incomplete circuits (ACDC~\cite{conmy2023towards} at $F=M=1.0$, $S=0.10$ on Q*bert). The
 neural-network parallels shown alongside each branch are documented
 analogues~\cite{balduzzi2017shattered,morcos2018single,leavitt2020falsifiable,elhage2022toy,kindermans2019unreliability,sturmfels2020baselines,jain2019attention},
 evidence transfer rather than proof. $F$ is a point estimate and the whisker a $95\%$

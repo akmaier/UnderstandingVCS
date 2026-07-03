@@ -29,11 +29,13 @@ measured claims (experiment_design.md §5, §6, §7; plan.md figure 4):
        tasks — score LOW: the representation contains the variable, but the probe
        does not show it is causally USED (Hewitt & Liang's control-task gap).
 
-The headline contrast (the faithful-demonstration banner, P2-E6-3): on the
-POSITION regime the causal/intervention bucket averages 0.412 (±0.390, n=4) vs
-0.068 (±0.070, n=9) for the gradient/correlational bucket — a 0.344 faithfulness
-gap; the exact causal method activation_patching reaches 1.000 (= the oracle
-ceiling) where vanilla saliency collapses to 0.000 (= the naive-gradient floor).
+The headline contrast (42-game scored battery): on the POSITION regime the
+causal/intervention family averages 0.561 (±0.321, n=4) vs 0.234 (±0.156, n=9)
+for the gradient/correlational family — a 0.327 family-mean faithfulness gap,
+whose bootstrap over the 42 games is 95% CI [0.132, 0.370] (EXCLUDES 0:
+significant). The exact causal method activation_patching reaches
+1.000 (= the oracle ceiling) where vanilla saliency's naive position gradient
+collapses to 0.000 (= the naive-gradient floor).
 
 UNCERTAINTY (R-UNC, P2-R-UNC).  Every faithfulness point carries a bootstrap-over-
 games 95% CI read from leaderboard_ci.csv:
@@ -142,7 +144,15 @@ def load_records(leaderboard_path):
                 ci_family[row["method"]] = triple
             elif kind == "headline":
                 ci_headline[row["method"]] = triple
-    return lb, demo, ci_method, ci_family, ci_headline
+    # Position-regime gap SIGNIFICANCE — the paper's headline bootstrap over the
+    # 42 scored games (position_bootstrap.json is the source of truth for this
+    # number, comparable to the original 6-game position CI). Optional.
+    pos_boot = None
+    pb_path = os.path.join(base, "position_bootstrap.json")
+    if os.path.isfile(pb_path):
+        with open(pb_path) as fh:
+            pos_boot = json.load(fh)
+    return lb, demo, ci_method, ci_family, ci_headline, pos_boot
 
 
 # Pretty labels (the records' machine names -> publication labels + citation tags).
@@ -214,7 +224,7 @@ def main():
     )
     args = ap.parse_args()
 
-    lb, demo, ci_method, ci_family, ci_headline = load_records(args.leaderboard)
+    lb, demo, ci_method, ci_family, ci_headline, pos_boot = load_records(args.leaderboard)
     rows = {r["method"]: r for r in lb["rows"]}
 
     # ---- assemble Phase-B regime table (content vs position) ----------------
@@ -418,12 +428,22 @@ def main():
     )
     # HEADLINE = the ROBUST all-regime causal-vs-gradient faithfulness gap, whose
     # bootstrap CI excludes 0 (leaderboard_ci.csv headline row `all_regime_gap`).
-    # The position/index regime is shown HONESTLY as directional-but-not-significant
-    # at 6 games (its CI includes 0), NOT as a large significant win.
-    all_gap = ci_headline.get("all_regime_gap")
-    pos_gap = ci_headline.get("position_regime_gap")
+    # On the 42-game scored battery the POSITION/INDEX-regime gap is now ALSO
+    # SIGNIFICANT — its bootstrap CI over the 42 games EXCLUDES 0 (was directional
+    # only at 6 games). The significance number is the paper's headline
+    # position_bootstrap.json (per-game bootstrap of the causal−gradient gap).
+    # All-regime gap CI: prefer position_bootstrap.json's all_regime block (the
+    # paper's headline convention), fall back to leaderboard_ci.csv.
+    _all_pb = pos_boot.get("all_regime") if pos_boot else None
+    if _all_pb:
+        all_gap = (_all_pb["family_mean_gap"], _all_pb["ci95"][0], _all_pb["ci95"][1])
+    else:
+        all_gap = ci_headline.get("all_regime_gap")
     fam_all_c = ci_family.get("family_causal_intervention")
     fam_all_g = ci_family.get("family_gradient_correlational")
+    # position-regime family means (42-game) + the bootstrap-over-games CI.
+    fam_pos_c_all = ci_family.get("family_causal_intervention_position")
+    fam_pos_g_all = ci_family.get("family_gradient_correlational_position")
     headline = (
         "HEADLINE — across ALL output regimes, intervention/causal methods are more "
         "faithful to the true mechanism than gradient/correlational ones.  "
@@ -438,14 +458,18 @@ def main():
         )
     headline += (
         "On the POSITION/INDEX regime alone (discrete sprite-position outputs), the "
-        "gap is DIRECTIONAL but not significant at 6 games: "
+        "gap is now SIGNIFICANT on the 42-game battery: "
     )
-    if pos_gap:
+    if fam_pos_c_all and fam_pos_g_all:
         headline += (
-            f"causal {agg['faithful_bucket_mean']:.3f} (n={agg['faithful_bucket_n']}) "
-            f"vs gradient {agg['popular_bucket_mean']:.3f} (n={agg['popular_bucket_n']}), "
-            f"gap {pos_gap[0]:.3f}, 95% CI [{pos_gap[1]:.3f}, {pos_gap[2]:.3f}] "
-            f"(includes 0)."
+            f"causal {fam_pos_c_all[0]:.3f} vs gradient {fam_pos_g_all[0]:.3f}; "
+        )
+    pos_pb = pos_boot.get("position") if pos_boot else None
+    if pos_pb:
+        headline += (
+            f"family-mean gap {pos_pb['family_mean_gap']:.3f}, 95% CI "
+            f"[{pos_pb['ci95'][0]:.3f}, {pos_pb['ci95'][1]:.3f}] over "
+            f"{pos_pb['n_games']} games (EXCLUDES 0)."
         )
     else:
         headline += (
@@ -508,8 +532,8 @@ def main():
     # microtext source strings; exact paths live in the Supplement).
     fig.text(
         0.045, 0.004,
-        "Data: committed records (leaderboard + bootstrap CIs + faithful-demo); "
-        "6 core games, 30-frame horizon; pure read — no experiment re-run. "
+        "Data: committed records (leaderboard + bootstrap CIs + position bootstrap); "
+        "42-game scored battery, 30-frame horizon; pure read — no experiment re-run. "
         "Exact paths & per-number provenance in the Supplement.",
         fontsize=FS_MIN, color=C_MUTE, ha="left", va="bottom",
     )
@@ -583,12 +607,16 @@ def main():
         (all_gap is not None) and all_gap[1] > 0.0,
         f"all_regime_gap={all_gap}",
     )
-    # The position-regime gap is directional but NOT significant (CI includes 0);
-    # assert that honesty holds so the figure never re-asserts a big position win.
+    # On the 42-game scored battery the position-regime gap is now SIGNIFICANT:
+    # its bootstrap-over-games CI EXCLUDES 0 (position_bootstrap.json). Assert the
+    # significance so the figure never regresses to the old "not significant" text.
+    _pb = pos_boot.get("position") if pos_boot else None
     check(
-        "position-regime gap CI includes 0 (directional, not significant)",
-        (pos_gap is not None) and pos_gap[1] <= 0.0 <= pos_gap[2],
-        f"position_regime_gap={pos_gap}",
+        "position-regime gap CI EXCLUDES 0 (significant, 42-game bootstrap)",
+        (_pb is not None) and _pb["ci95"][0] > 0.0
+        and _pb.get("excludes_zero", _pb["ci95"][0] > 0.0),
+        f"position_bootstrap={_pb['family_mean_gap'] if _pb else None} "
+        f"CI={_pb['ci95'] if _pb else None}",
     )
     # the drawn position-bucket contrast still traces to the demo record
     check(

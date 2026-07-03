@@ -152,12 +152,21 @@ def main():
 
     rows = load_rows(args.csv)
     # The aggregate cross-method contrast this figure references is the ROBUST
-    # all-regime causal-vs-gradient gap (CI excludes 0), NOT a position-regime
-    # win. The position gap is shown honestly (directional, CI includes 0).
+    # all-regime causal-vs-gradient gap (CI excludes 0). On the 42-game scored
+    # battery the POSITION-regime gap is now ALSO significant (its bootstrap CI
+    # excludes 0) — source of truth = position_bootstrap.json (family-mean gap).
     ci_csv = os.path.join(
         REPO_ROOT, "tools", "xai_study", "compare", "out", "leaderboard_ci.csv"
     )
     headline_gaps = load_headline_gaps(ci_csv)
+    pos_boot = None
+    pb_path = os.path.join(
+        REPO_ROOT, "tools", "xai_study", "compare", "out", "position_bootstrap.json"
+    )
+    if os.path.isfile(pb_path):
+        import json as _json
+        with open(pb_path) as _fh:
+            pos_boot = _json.load(_fh)
 
     # per-method aggregates over the position regime ------------------------------
     by_method = {m: [] for m in METHOD_ORDER}
@@ -311,18 +320,26 @@ def main():
     leg.get_frame().set_linewidth(0.7)
     leg._legend_box.align = "left"
 
-    # Honest aggregate-contrast line: lead with the ROBUST all-regime gap (CI
-    # excludes 0); report the position gap as directional (CI includes 0). This
-    # keeps the figure from asserting a large significant position-regime win.
+    # Honest aggregate-contrast line: the ROBUST all-regime gap (CI excludes 0),
+    # and — on the 42-game battery — the POSITION-regime gap, which is now ALSO
+    # SIGNIFICANT (its bootstrap CI excludes 0). Position numbers come from
+    # position_bootstrap.json (family-mean gap), the paper's headline convention.
     ag = headline_gaps.get("all_regime_gap")
-    pg = headline_gaps.get("position_regime_gap")
-    if ag and pg:
+    pos_pb = pos_boot.get("position") if pos_boot else None
+    all_pb = pos_boot.get("all_regime") if pos_boot else None
+    if pos_pb:
+        ag_txt = None
+        if all_pb:
+            ag_txt = (f"{all_pb['family_mean_gap']:.3f}, 95% CI "
+                      f"[{all_pb['ci95'][0]:.3f}, {all_pb['ci95'][1]:.3f}]")
+        elif ag:
+            ag_txt = f"{ag[0]:.3f}, 95% CI [{ag[1]:.3f}, {ag[2]:.3f}]"
         agg_line = (
             f"Aggregate contrast (all methods): causal−gradient faithfulness gap "
-            f"{ag[0]:.3f}, 95% CI [{ag[1]:.3f}, {ag[2]:.3f}] over ALL regimes "
-            f"(robust, excludes 0).\n"
-            f"Position regime alone: gap {pg[0]:.3f}, "
-            f"95% CI [{pg[1]:.3f}, {pg[2]:.3f}] (directional, includes 0)."
+            f"{ag_txt} over ALL regimes (robust, excludes 0).\n"
+            f"Position regime alone: gap {pos_pb['family_mean_gap']:.3f}, "
+            f"95% CI [{pos_pb['ci95'][0]:.3f}, {pos_pb['ci95'][1]:.3f}] "
+            f"(SIGNIFICANT, excludes 0)."
         )
         # Placed in the headroom at the top of panel (a), above the bars, so it
         # never collides with the bottom legend strip. Two centred lines so the
@@ -336,8 +353,9 @@ def main():
 
     fig.text(
         0.965, 0.058,
-        "Data: committed keystone record sampler_faithfulness.csv + leaderboard_ci.csv; "
-        "6 core games, 120+30-frame state; pure read — no experiment re-run.",
+        "Data: sampler_faithfulness.csv (6 core games, 120+30-frame state) + the "
+        "42-game aggregate contrast (leaderboard_ci.csv + position_bootstrap.json); "
+        "pure read — no experiment re-run.",
         fontsize=FS_MIN, color=C_MUTE, ha="right", va="bottom",
     )
 

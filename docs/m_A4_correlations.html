@@ -33,7 +33,7 @@
 
 <section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>The score is a rank correlation between the measured cell-to-cell correlation structure and the oracle's true coupling. We compute how each pair of cells co-varies across the trajectory, assemble that into a coupling matrix, and compare it, by Spearman correlation, to the true coupling the oracle certifies. Faithfulness for this method is that correlation. It is only partial, because the method never intervenes; it only watches. On a clock-locked machine two cells can be strongly correlated because they share a driver, not because one influences the other. So the correlation matrix conflates true coupling with common drivers, and the score reflects that confusion. Sufficiency, whether the recovered structure can predict held-out interventions, is near zero for this method, because a correlation matrix carries no mechanism to re-generate behaviour. The grading is always against the oracle, not against another method. There is no sprite-position hard-case here; the output is a coupling matrix. The audit box reports the measured faithfulness and, where the paper defines it, the sufficiency, each aggregated across the core games so no single game dominates the number.</p>
+  <p>The score is a rank correlation between the measured cell-to-cell correlation structure and the oracle's true coupling. We compute how each pair of cells co-varies across the trajectory, assemble that into a coupling matrix, and compare it, by Spearman correlation, to the true coupling the oracle certifies. Faithfulness for this method is that correlation. It is only partial, because the method never intervenes; it only watches. On a clock-locked machine two cells can be strongly correlated because they share a driver, not because one influences the other. So the correlation matrix conflates true coupling with common drivers, and the score reflects that confusion. Sufficiency, whether the recovered structure can predict held-out interventions, is near zero for this method, because a correlation matrix carries no mechanism to re-generate behaviour. The grading is always against the oracle, not against another method. There is no sprite-position hard-case here; the output is a coupling matrix. The audit box reports the measured faithfulness and, where the paper defines it, the sufficiency, each aggregated across the scored games so no single game dominates the number.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
   <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
@@ -44,10 +44,10 @@
 <section><div class="wrap">
   <h2>In the audit</h2>
   <p>This is the method's entry in the actual cross-method audit — scored on the paper's
-  correctness triad, each axis a <b>mean over all 6 core games</b> (6 committed §R records), not
+  correctness triad, each axis a <b>mean over all 34 scored games</b> (34 committed §R records), not
   the single example shown above. Tradition: <b>correlational</b>. The example figure (Pong) is one of those
   records.</p>
-  <div class="bignum"><div class="b"><strong>0.220</strong><small>F — faithfulness vs oracle (mean over 6 games, &plusmn;0.185 CI95)</small></div><div class="b"><strong>0.026</strong><small>S — sufficiency: held-out predictive (n/a where the paper does not define this axis)</small></div><div class="b"><strong>0.276</strong><small>M — minimality: true-minimal-set / named-set (n/a otherwise)</small></div><div class="b"><strong>6</strong><small>committed records aggregated</small></div><div class="b"><strong>0.80</strong><small>human-plausibility proxy</small></div></div>
+  <div class="bignum"><div class="b"><strong>0.225</strong><small>F — faithfulness vs oracle (mean over 34 games, &plusmn;0.060 CI95)</small></div><div class="b"><strong>0.133</strong><small>S — sufficiency: held-out predictive (n/a where the paper does not define this axis)</small></div><div class="b"><strong>0.340</strong><small>M — minimality: true-minimal-set / named-set (n/a otherwise)</small></div><div class="b"><strong>34</strong><small>committed records aggregated</small></div><div class="b"><strong>0.80</strong><small>human-plausibility proxy</small></div></div>
   <p class="caption"><b>F</b> faithfulness (scored vs the oracle for every method) · <b>S</b> sufficiency (held-out predictive; reported for the predictive Phase-B/C methods) · <b>M</b> minimality (true-minimal-set / named-set; where the method names a cause set) — <b>n/a</b> otherwise, per the paper's F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad.</p>
   <p class="caption">Source: <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/out/leaderboard.json"><code>leaderboard.json</code></a> · the whole leaderboard is on the
   <a href="methods.html#e6">methods page</a> and the
@@ -64,7 +64,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/a0f3c9e7b1f8155ad27719051ace33c772163d7e"><code>a0f3c9e7</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

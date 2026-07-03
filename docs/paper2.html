@@ -13,37 +13,40 @@
 <header class="hero"><div class="wrap">
   <span class="venue" style="color:var(--accent-2);font-weight:600">Nature Machine Intelligence (in preparation)</span>
   <h1>Paper 2 — An Interpretability Ground-Truth Benchmark</h1>
-  <p class="lead">Because the VCS is fully known and exactly intervenable, every explanation can be scored against ground truth. An oracle measures the true causal effect of each state variable; XAI and mechanistic-interpretability methods are then graded by how well they recover it. Headline finding: across all regimes, causal/intervention methods stay well above gradient and correlational methods — a robust faithfulness gap of 0.297 (CI [0.232, 0.376], excludes zero). On the discrete sprite-position outputs the naive gradient is exactly zero; the emulator's bilinear sampler restores a non-zero position gradient, but its faithfulness stays low, so the position-only gap (0.238) is directional and not significant at six games. <br><br>The testbed was <b>redesigned</b> to score every method on the same shared random-action gameplay states — see the <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/xai_paper/xai_2_interpretability/experiment_redesign.md">experiment redesign note</a>.</p>
+  <p class="lead">Because the VCS is fully known and exactly intervenable, every explanation can be scored against ground truth. An oracle measures the true causal effect of each state variable; XAI and mechanistic-interpretability methods are then graded by how well they recover it. Headline finding: across all regimes, causal/intervention methods stay well above gradient and correlational methods — a robust faithfulness gap of 0.337 (causal/intervention 0.722 vs gradient/correlational 0.384). On the discrete sprite-position outputs the naive gradient is exactly zero; the emulator's bilinear sampler restores a non-zero position gradient, but its faithfulness stays low, so gradient/correlational methods still collapse there while causal/intervention methods do not. Bootstrapped over the 42 scored games, the position gap is now significant (mean 0.327, 95% CI [0.132, 0.370], excludes zero). <br><br>The testbed was <b>redesigned</b> to score every method on the same shared random-action gameplay states — see the <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/xai_paper/xai_2_interpretability/experiment_redesign.md">experiment redesign note</a>.</p>
   <p style="margin-top:14px"><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/xai_paper/xai_2_interpretability/paper/main.pdf">paper PDF</a> · <a href="methods.html"><b>Method catalogue &amp; execution stack →</b></a> · Scoring XAI / mechanistic-interpretability methods against the exact causal truth of a known machine</p>
 </div></header>
 
 
 <section><div class="wrap">
   <h2>Headline finding</h2>
-  <p class="sub">Across all regimes, causal/intervention methods stay well above gradient and
-  correlational methods — a robust faithfulness gap whose confidence interval excludes zero.
-  On the discrete sprite-position outputs the naive gradient is exactly zero; the emulator's
-  bilinear sampler restores a non-zero position gradient, but its faithfulness stays low, so the
-  position-only gap is directional and not significant at six games.</p>
+  <p class="sub">Aggregated over the <b>42 scored games</b>, causal/intervention methods stay well
+  above gradient and correlational methods — a robust faithfulness gap across all regimes. On the
+  discrete sprite-position outputs the naive gradient is exactly zero; the emulator's bilinear
+  sampler restores a non-zero position gradient, but its faithfulness stays low, so gradient and
+  correlational methods still collapse there. Bootstrapped over the 42 games, the position-regime
+  gap is now <b>significant</b> — its 95% confidence interval excludes zero (it crossed zero at the
+  original six games).</p>
   <div class="bignum">
-    <div class="b"><strong>0.297</strong><small>all-regime faithfulness gap · CI [0.232, 0.376] (excludes 0)</small></div>
-    <div class="b"><strong>0.664</strong><small>causal / intervention mean (all regimes, n=11)</small></div>
-    <div class="b"><strong>0.367</strong><small>gradient / correlational mean (all regimes, n=14)</small></div>
+    <div class="b"><strong>0.337</strong><small>all-regime faithfulness gap (42 scored games)</small></div>
+    <div class="b"><strong>0.722</strong><small>causal / intervention mean (all regimes, n=11)</small></div>
+    <div class="b"><strong>0.384</strong><small>gradient / correlational mean (all regimes, n=14)</small></div>
     <div class="b"><strong>31</strong><small>methods on the leaderboard</small></div>
-    <div class="b"><strong>257</strong><small>per-game records aggregated</small></div>
+    <div class="b"><strong>1736</strong><small>per-game records aggregated</small></div>
   </div>
   <p class="caption">Primary contrast from
   <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/out/leaderboard.json"><code>leaderboard.json</code></a>
-  · <code>headline_contrast.all_regimes</code> (CI from <code>leaderboard_ci.csv</code>).</p>
-  <p class="sub" style="margin-top:18px">Position-only regime — shown as directional, <b>not</b>
-  significant at six games:</p>
+  · <code>headline_contrast.all_regimes</code> (42 scored games).</p>
+  <p class="sub" style="margin-top:18px">Position-regime gap — now <b>significant at n&asymp;42</b>
+  (bootstrap over games, 95% CI excludes zero):</p>
   <div class="bignum">
-    <div class="b"><strong>0.238</strong><small>position-regime gap · CI [-0.049, 0.315] (includes 0)</small></div>
-    <div class="b"><strong>0.486</strong><small>causal / intervention mean (position, n=4)</small></div>
-    <div class="b"><strong>0.248</strong><small>gradient / correlational mean (position, n=9)</small></div>
+    <div class="b"><strong>0.327</strong><small>position-regime gap · bootstrap CI [0.132, 0.370] (excludes 0)</small></div>
+    <div class="b"><strong>0.561</strong><small>causal / intervention mean (position, n=4)</small></div>
+    <div class="b"><strong>0.234</strong><small>gradient / correlational mean (position, n=9)</small></div>
   </div>
-  <p class="caption"><code>headline_contrast.position_regime</code>. The testbed was
-  redesigned to score every method on shared random-action gameplay states — see the
+  <p class="caption"><code>headline_contrast.position_regime</code> family means; significance from
+  the game-level bootstrap in <code>position_bootstrap.json</code> (n=42 games, 20&#8239;000 resamples).
+  The testbed was redesigned to score every method on shared random-action gameplay states — see the
   <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/xai_paper/xai_2_interpretability/experiment_redesign.md">experiment redesign note</a>.</p>
 </div></section>
 
@@ -82,7 +85,7 @@
     <span class="badge measured">measured</span>
   </div>
   <div class="body">
-    <p class="detail">Connectomics, single-unit lesions, tuning curves, pairwise correlations, LFP spectra, Granger causality, NMF/PCA, whole-state — each scored against the true read/write graph over 6 core games.</p>
+    <p class="detail">Connectomics, single-unit lesions, tuning curves, pairwise correlations, LFP spectra, Granger causality, NMF/PCA, whole-state — each scored against the true read/write graph over the 42 scored games.</p>
     <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A1_connectomics.jl"><code>tools/xai_study/phaseA_kording/A1_connectomics.jl</code></a></dd><dt>Command</dt><dd><code class="cmd">julia --project=jutari tools/xai_study/phaseA_kording/A2_lesions.jl --games core</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/out/"><code>tools/xai_study/phaseA_kording/out/</code></a></dd><dt>Runtime</dt><dd>4 h walltime / array task</dd><dt>Hardware</dt><dd>LME cluster (CPU array) · seed 0</dd><dt>Verified by</dt><dd>scored vs oracle data-flow graph; A6+A7 spot-re-run bit-exact</dd></dl>
     
   </div>
@@ -126,11 +129,11 @@
 <div class="row">
   <div class="head">
     <span class="claim">E6 · Cross-tradition leaderboard</span>
-    <span class="value">31 methods, 257 records</span>
+    <span class="value">31 methods, 1736 records</span>
     <span class="badge measured">measured</span>
   </div>
   <div class="body">
-    <p class="detail">Faithfulness-vs-plausibility leaderboard aggregated from every committed per-game record. Headline contrast (all regimes): causal/intervention faithfulness 0.664 vs gradient/correlational 0.367 — a robust gap of 0.297 (CI [0.232, 0.376], excludes zero). The position-only gap (0.238, CI [-0.049, 0.315]) is directional but not significant at six games.</p>
+    <p class="detail">Faithfulness-vs-plausibility leaderboard aggregated from every committed per-game record over the 42 scored games. Headline contrast (all regimes): causal/intervention faithfulness 0.722 vs gradient/correlational 0.384 — a robust gap of 0.337. The position-regime gap is now significant: bootstrapped over the 42 games it is 0.327 (95% CI [0.132, 0.370], excludes zero; it crossed zero at six games).</p>
     <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/leaderboard.py"><code>tools/xai_study/compare/leaderboard.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 tools/xai_study/compare/leaderboard.py</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/out/leaderboard.json"><code>tools/xai_study/compare/out/leaderboard.json</code></a></dd><dt>Runtime</dt><dd>seconds (pure read)</dd><dt>Hardware</dt><dd>any · embedded self-check</dd><dt>Verified by</dt><dd>self-check asserts oracle_copy F=1, uniform at floor</dd></dl>
     
   </div>
@@ -187,7 +190,7 @@
 
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/a0f3c9e7b1f8155ad27719051ace33c772163d7e"><code>a0f3c9e7</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

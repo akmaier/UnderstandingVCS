@@ -229,13 +229,15 @@ def build_paper(P):
         extra = """
 <section><div class="wrap">
   <h2>Headline finding</h2>
-  <p class="sub">Across all regimes, causal/intervention methods stay well above gradient and
-  correlational methods — a robust faithfulness gap whose confidence interval excludes zero.
-  On the discrete sprite-position outputs the naive gradient is exactly zero; the emulator's
-  bilinear sampler restores a non-zero position gradient, but its faithfulness stays low, so the
-  position-only gap is directional and not significant at six games.</p>
+  <p class="sub">Aggregated over the <b>42 scored games</b>, causal/intervention methods stay well
+  above gradient and correlational methods — a robust faithfulness gap across all regimes. On the
+  discrete sprite-position outputs the naive gradient is exactly zero; the emulator's bilinear
+  sampler restores a non-zero position gradient, but its faithfulness stays low, so gradient and
+  correlational methods still collapse there. Bootstrapped over the 42 games, the position-regime
+  gap is now <b>significant</b> — its 95%% confidence interval excludes zero (it crossed zero at the
+  original six games).</p>
   <div class="bignum">
-    <div class="b"><strong>%s</strong><small>all-regime faithfulness gap · CI [%s, %s] (excludes 0)</small></div>
+    <div class="b"><strong>%s</strong><small>all-regime faithfulness gap (42 scored games)</small></div>
     <div class="b"><strong>%s</strong><small>causal / intervention mean (all regimes, n=%s)</small></div>
     <div class="b"><strong>%s</strong><small>gradient / correlational mean (all regimes, n=%s)</small></div>
     <div class="b"><strong>%s</strong><small>methods on the leaderboard</small></div>
@@ -243,18 +245,19 @@ def build_paper(P):
   </div>
   <p class="caption">Primary contrast from
   <a href="%stools/xai_study/compare/out/leaderboard.json"><code>leaderboard.json</code></a>
-  · <code>headline_contrast.all_regimes</code> (CI from <code>leaderboard_ci.csv</code>).</p>
-  <p class="sub" style="margin-top:18px">Position-only regime — shown as directional, <b>not</b>
-  significant at six games:</p>
+  · <code>headline_contrast.all_regimes</code> (42 scored games).</p>
+  <p class="sub" style="margin-top:18px">Position-regime gap — now <b>significant at n&asymp;42</b>
+  (bootstrap over games, 95%% CI excludes zero):</p>
   <div class="bignum">
-    <div class="b"><strong>%s</strong><small>position-regime gap · CI [%s, %s] (includes 0)</small></div>
+    <div class="b"><strong>%s</strong><small>position-regime gap · bootstrap CI [%s, %s] (excludes 0)</small></div>
     <div class="b"><strong>%s</strong><small>causal / intervention mean (position, n=%s)</small></div>
     <div class="b"><strong>%s</strong><small>gradient / correlational mean (position, n=%s)</small></div>
   </div>
-  <p class="caption"><code>headline_contrast.position_regime</code>. The testbed was
-  redesigned to score every method on shared random-action gameplay states — see the
+  <p class="caption"><code>headline_contrast.position_regime</code> family means; significance from
+  the game-level bootstrap in <code>position_bootstrap.json</code> (n=42 games, 20&#8239;000 resamples).
+  The testbed was redesigned to score every method on shared random-action gameplay states — see the
   <a href="%sxai_paper/xai_2_interpretability/experiment_redesign.md">experiment redesign note</a>.</p>
-</div></section>""" % (h["gap"], h["gap_ci_lo"], h["gap_ci_hi"],
+</div></section>""" % (h["gap"],
                         h["causal"], h["causal_n"], h["grad"], h["grad_n"],
                         h["n_methods"], h["n_records"], BLOB,
                         h["pos_gap"], h["pos_gap_ci_lo"], h["pos_gap_ci_hi"],
@@ -865,12 +868,12 @@ def build_methods():
         ("common/jutari_oracle.jl", "tools/xai_study/common/jutari_oracle.jl", "the intervention/gradient oracle on the jutari substrate"),
         ("common/replay.py", "tools/xai_study/common/replay.py", "deterministic replay-to-state (the <code>f&lt;start&gt;+&lt;window&gt;</code> encoding)"),
         ("common/seeds.py", "tools/xai_study/common/seeds.py", "the single seed=0 source"),
-        ("common/game_set.json", "tools/xai_study/common/game_set.json", "the fixed 6-game core set"),
+        ("common/game_set.json", "tools/xai_study/common/game_set.json", "the labeled game set (42 scored games; 6-game core is a subset)"),
         ("repro/make_hash_tables.py", "tools/xai_study/repro/make_hash_tables.py", "SHA-256 ROM + action-stream hashes (verify with --verify)"),
     ]
 
     diagram = """  ROM  (AutoROM, SHA-256 verified — not redistributed)
-    │   jutari substrate · seed 0 · state f120+30 · games: core (6)
+    │   jutari substrate · seed 0 · state f120+30 · games: labeled (42 scored)
     ▼
   ground_truth/oracle_intervene.jl ── exact |Δy(u)| ──▶  the §1 oracle  (T1 causal truth)
     │
@@ -904,7 +907,7 @@ def build_methods():
   runner then produces its own attribution/circuit and is graded against that oracle on the
   correctness triad — <b>F</b> faithful (true causes), <b>S</b> sufficient (predicts held-out
   interventions), <b>M</b> minimal/right-level. Runners are Julia on the jutari substrate
-  (jaxtari eager is ≈205× slower), <code>seed = 0</code>, on the fixed 6-game core set,
+  (jaxtari eager is ≈205× slower), <code>seed = 0</code>, on the 42 scored games,
   inside the Paper-1 bit-exact horizon.</p>
   <pre><code>%s</code></pre>
   <p>Every runner writes a self-describing <b>§R record</b> per game/regime —
@@ -1241,7 +1244,7 @@ def build_method_page(meth):
 <section><div class="wrap">
   <h2>In the audit</h2>
   <p>This is the method's entry in the actual cross-method audit — scored on the paper's
-  correctness triad, each axis a <b>mean over all %s core games</b> (%s committed §R records), not
+  correctness triad, each axis a <b>mean over all %s scored games</b> (%s committed §R records), not
   the single example shown above. Tradition: <b>%s</b>. The example figure (Pong) is one of those
   records.</p>
   %s

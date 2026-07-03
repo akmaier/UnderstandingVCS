@@ -37,7 +37,7 @@
 
 <section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>The score is the Pearson correlation of the Expected-Gradients attribution with the oracle's exact causal map, reported raw, and the grading is always against the intervention oracle. Expected Gradients averages Integrated Gradients over a distribution of baselines, which makes the attribution provably stable across reference draws, but stability is not accuracy. Each term carries the factor input-minus-baseline, so when the reference pool holds bytes that are constant across states, that factor is zero and the attribution collapses. Even on the redesigned gameplay reference pool, and with the differentiable sampler turned on for the position regime, the method carries almost no true causal signal, and it is the lowest-faithfulness attribution method in the study. On a sprite's position it still vanishes for the usual reason: the naive gradient is zero on a discrete strobe-timed step and averaging baselines does not change that. Its plausibility proxy is high, which places it squarely in the danger zone of high plausibility with low faithfulness. The audit box reports the measured all-regime faithfulness across the six core games, so the low number is an average over the whole core set, not one unlucky game.</p>
+  <p>The score is the Pearson correlation of the Expected-Gradients attribution with the oracle's exact causal map, reported raw, and the grading is always against the intervention oracle. Expected Gradients averages Integrated Gradients over a distribution of baselines, which makes the attribution provably stable across reference draws, but stability is not accuracy. Each term carries the factor input-minus-baseline, so when the reference pool holds bytes that are constant across states, that factor is zero and the attribution collapses. Even on the redesigned gameplay reference pool, and with the differentiable sampler turned on for the position regime, the method carries almost no true causal signal, and it is the lowest-faithfulness attribution method in the study. On a sprite's position it still vanishes for the usual reason: the naive gradient is zero on a discrete strobe-timed step and averaging baselines does not change that. Its plausibility proxy is high, which places it squarely in the danger zone of high plausibility with low faithfulness. The audit box reports the measured all-regime faithfulness across the 42 scored games, so the low number is an average over the whole scored set, not one unlucky game.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
   <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
@@ -48,10 +48,10 @@
 <section><div class="wrap">
   <h2>In the audit</h2>
   <p>This is the method's entry in the actual cross-method audit — scored on the paper's
-  correctness triad, each axis a <b>mean over all 6 core games</b> (12 committed §R records), not
+  correctness triad, each axis a <b>mean over all 42 scored games</b> (84 committed §R records), not
   the single example shown above. Tradition: <b>gradient</b>. The example figure (Pong) is one of those
   records.</p>
-  <div class="bignum"><div class="b"><strong>0.062</strong><small>F — faithfulness vs oracle (mean over 6 games, &plusmn;0.085 CI95)</small></div><div class="b"><strong><span class='cite'>n/a</span></strong><small>S — sufficiency: held-out predictive (n/a where the paper does not define this axis)</small></div><div class="b"><strong><span class='cite'>n/a</span></strong><small>M — minimality: true-minimal-set / named-set (n/a otherwise)</small></div><div class="b"><strong>12</strong><small>committed records aggregated</small></div><div class="b"><strong>0.90</strong><small>human-plausibility proxy</small></div></div>
+  <div class="bignum"><div class="b"><strong>0.175</strong><small>F — faithfulness vs oracle (mean over 42 games, &plusmn;0.070 CI95)</small></div><div class="b"><strong><span class='cite'>n/a</span></strong><small>S — sufficiency: held-out predictive (n/a where the paper does not define this axis)</small></div><div class="b"><strong><span class='cite'>n/a</span></strong><small>M — minimality: true-minimal-set / named-set (n/a otherwise)</small></div><div class="b"><strong>84</strong><small>committed records aggregated</small></div><div class="b"><strong>0.90</strong><small>human-plausibility proxy</small></div></div>
   <p class="caption"><b>F</b> faithfulness (scored vs the oracle for every method) · <b>S</b> sufficiency (held-out predictive; reported for the predictive Phase-B/C methods) · <b>M</b> minimality (true-minimal-set / named-set; where the method names a cause set) — <b>n/a</b> otherwise, per the paper's F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad.</p>
   <p class="caption">Source: <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/out/leaderboard.json"><code>leaderboard.json</code></a> · the whole leaderboard is on the
   <a href="methods.html#e6">methods page</a> and the
@@ -68,7 +68,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/a0f3c9e7b1f8155ad27719051ace33c772163d7e"><code>a0f3c9e7</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

@@ -5,8 +5,11 @@ method consumes and produces, the reference it is scored against, its sampling o
 budget, the metric that turns its output into a faithfulness score, and the committed record
 file that holds the per-game results. All methods share one evaluation contract. We state that
 contract once and then specialize it per method. Every method receives the same bit-exact VCS
-state on one of the six core games (\texttt{breakout}, \texttt{ms\_pacman}, \texttt{pong},
-\texttt{qbert}, \texttt{seaquest}, \texttt{space\_invaders}). That state is not the boot screen.
+state on each game of the scored battery. We state the contract on the six core games
+(\texttt{breakout}, \texttt{ms\_pacman}, \texttt{pong}, \texttt{qbert}, \texttt{seaquest},
+\texttt{space\_invaders}), which carry the full tiered ground truth and the exact oracle and
+serve as the running example; the aggregate leaderboard scores extend the identical protocol
+to the 42-game scored battery of \Sectionname\ref{supp:scoredbattery}. That state is not the boot screen.
 It is a shared gameplay state, produced by a single seeded random-action stream (seed~$0$) run
 for a $90$-frame prefix and then rolled forward for a $15$-frame analysis horizon. The stream is
 deterministic, so every method sees the identical state on each game, and the run is asserted
@@ -28,8 +31,9 @@ Records live under \texttt{tools/xai\_study/<phase>/out/}; the aggregate they fe
 The neuroscience battery (Phase~A) treats the running machine as a brain. It asks how far
 each classical analysis recovers the known mechanism on the shared gameplay state. Each
 method's baseline is the exact data-flow graph or causal role that the substrate makes
-available. Its budget is the six-game core unless noted, and its scoring metric is named in
-Table~\ref{supp:tab:phaseA}. One cell is honestly degenerate. On \texttt{ms\_pacman} the
+available. Its budget is the scored battery (\Sectionname\ref{supp:scoredbattery}) unless noted,
+with the six-game core as the running example, and its scoring metric is named in
+Table~\ref{supp:tab:phaseA}. One core cell is honestly degenerate. On \texttt{ms\_pacman} the
 pairwise analysis (A4) finds no coupled candidate pair to score at that frame, so its
 \texttt{ms\_pacman} value is uninformative rather than a failure; the other five games carry
 it.
@@ -38,7 +42,8 @@ it.
 \centering
 \caption{\textbf{Phase~A protocols (neuroscience battery).} One row per method. The columns
 give the input it reads, the reference it is scored against, the sampling or intervention
-budget, the scoring metric, and the committed record. All eight run on the six core games;
+budget, the scoring metric, and the committed record. All eight run on the scored battery
+(\Sectionname\ref{supp:scoredbattery}), with the six core games as the running example;
 faithfulness is the F axis of \Sectionname\ref{sec:triad}. The whole-state recording (A8) is included as a
 descriptive upper bound on coverage. Its faithfulness $F$ is trivial, so we read it for its
 minimality $M$.}
@@ -62,7 +67,8 @@ A8 whole-state & full state record & oracle decomp. & minimality $M$ vs.\ oracle
 
 \smallskip
 \noindent\scriptsize Records: \texttt{tools/xai\_study/phaseA\_kording/out/A\{1..8\}\_*}; all
-eight run on the six core games.
+eight run on the 42-game scored battery (\Sectionname\ref{supp:scoredbattery}), with the six core
+games as the running example (\jkey{n_games} per method in \jkey{leaderboard.json}).
 \end{table}
 
 The attribution battery (Phase~B) runs the everyday XAI toolbox over the same gameplay state.
@@ -87,7 +93,8 @@ in \Sectionname\ref{supp:provenance}.
 \centering
 \caption{\textbf{Phase~B protocols (attribution battery).} Each method emits a saliency over
 the candidate-cause set. We score it by Pearson correlation against the oracle attribution
-(\Sectionname\ref{sec:oracle}). The reference and the six-game budget are shared. The budget column records the
+(\Sectionname\ref{sec:oracle}). The reference is shared and the budget is the scored battery of
+\Sectionname\ref{supp:scoredbattery} (six core games as the running example). The budget column records the
 sampling or perturbation count that drives each estimator. The seed column flags which
 methods carry an independent-seed dispersion in \texttt{leaderboard\_ci.csv}.}
 \label{supp:tab:phaseB}
@@ -114,7 +121,8 @@ On-distribution counterfactual & intervention & on-manifold $\mathrm{do}(u)$ res
 
 \smallskip
 \noindent\scriptsize Records: \texttt{tools/xai\_study/phaseB\_attribution/out/}; all twelve run
-on the six core games and are scored by Pearson correlation against the oracle (\Sectionname\ref{sec:oracle}). Seed
+on the 42-game scored battery (\Sectionname\ref{supp:scoredbattery}), six core games as the running
+example, and are scored by Pearson correlation against the oracle (\Sectionname\ref{sec:oracle}). Seed
 sd is the independent-seed dispersion from \texttt{leaderboard\_ci.csv}.
 \end{table}
 
@@ -155,7 +163,8 @@ Sparse autoencoder & dim.\ red. & feature-variable matched fraction \\
 
 \smallskip
 \noindent\scriptsize Records: \texttt{tools/xai\_study/phaseC\_mechanistic/out/}; all ten run
-on the six core games.
+on the 42-game scored battery (\Sectionname\ref{supp:scoredbattery}), with the six core games as the
+running example.
 \end{table}
 
 The intervention oracle is the positive control, not a method under test. It is the exact

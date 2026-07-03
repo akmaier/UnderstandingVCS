@@ -37,7 +37,7 @@
 
 <section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>The score is the Pearson correlation of the Integrated-Gradients attribution with the oracle's exact causal map, reported raw, at the headline baseline, with the baseline swept to show the dependence. Faithfulness for this method is that correlation, graded always against the intervention oracle. On smooth content outputs it behaves like a stronger saliency and scores well, and sweeping the baseline moves the magnitude of the attribution but not its correlation with the truth, because the constant one-hot Jacobian keeps the mass on the same byte. The hard case is a sprite's position. The position is a discrete strobe-timed step, so the naive gradient along the whole integration path is zero, and the integral of zero is zero; completeness does not rescue it. The audit turns on the differentiable sampler to give the method a fair chance on position, but the restored gradient is faithful on only a minority of games, so the position score stays low. The audit box reports the all-regime faithfulness, which averages the strong content result and the weak position result across the core games. This makes Integrated Gradients a key reference for what the completeness axiom can and cannot fix on discrete outputs.</p>
+  <p>The score is the Pearson correlation of the Integrated-Gradients attribution with the oracle's exact causal map, reported raw, at the headline baseline, with the baseline swept to show the dependence. Faithfulness for this method is that correlation, graded always against the intervention oracle. On smooth content outputs it behaves like a stronger saliency and scores well, and sweeping the baseline moves the magnitude of the attribution but not its correlation with the truth, because the constant one-hot Jacobian keeps the mass on the same byte. The hard case is a sprite's position. The position is a discrete strobe-timed step, so the naive gradient along the whole integration path is zero, and the integral of zero is zero; completeness does not rescue it. The audit turns on the differentiable sampler to give the method a fair chance on position, but the restored gradient is faithful on only a minority of games, so the position score stays low. The audit box reports the all-regime faithfulness, which averages the strong content result and the weak position result across the scored games. This makes Integrated Gradients a key reference for what the completeness axiom can and cannot fix on discrete outputs.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
   <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
@@ -48,10 +48,10 @@
 <section><div class="wrap">
   <h2>In the audit</h2>
   <p>This is the method's entry in the actual cross-method audit — scored on the paper's
-  correctness triad, each axis a <b>mean over all 6 core games</b> (14 committed §R records), not
+  correctness triad, each axis a <b>mean over all 42 scored games</b> (86 committed §R records), not
   the single example shown above. Tradition: <b>gradient</b>. The example figure (Pong) is one of those
   records.</p>
-  <div class="bignum"><div class="b"><strong>0.410</strong><small>F — faithfulness vs oracle (mean over 6 games, &plusmn;0.215 CI95)</small></div><div class="b"><strong><span class='cite'>n/a</span></strong><small>S — sufficiency: held-out predictive (n/a where the paper does not define this axis)</small></div><div class="b"><strong><span class='cite'>n/a</span></strong><small>M — minimality: true-minimal-set / named-set (n/a otherwise)</small></div><div class="b"><strong>14</strong><small>committed records aggregated</small></div><div class="b"><strong>0.90</strong><small>human-plausibility proxy</small></div></div>
+  <div class="bignum"><div class="b"><strong>0.379</strong><small>F — faithfulness vs oracle (mean over 42 games, &plusmn;0.085 CI95)</small></div><div class="b"><strong><span class='cite'>n/a</span></strong><small>S — sufficiency: held-out predictive (n/a where the paper does not define this axis)</small></div><div class="b"><strong><span class='cite'>n/a</span></strong><small>M — minimality: true-minimal-set / named-set (n/a otherwise)</small></div><div class="b"><strong>86</strong><small>committed records aggregated</small></div><div class="b"><strong>0.90</strong><small>human-plausibility proxy</small></div></div>
   <p class="caption"><b>F</b> faithfulness (scored vs the oracle for every method) · <b>S</b> sufficiency (held-out predictive; reported for the predictive Phase-B/C methods) · <b>M</b> minimality (true-minimal-set / named-set; where the method names a cause set) — <b>n/a</b> otherwise, per the paper's F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad.</p>
   <p class="caption">Source: <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/out/leaderboard.json"><code>leaderboard.json</code></a> · the whole leaderboard is on the
   <a href="methods.html#e6">methods page</a> and the
@@ -68,7 +68,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/a0f3c9e7b1f8155ad27719051ace33c772163d7e"><code>a0f3c9e7</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

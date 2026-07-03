@@ -5,12 +5,15 @@ makes that dependency checkable. For each claim we list the figure or table that
 the games and methods it uses, the metric, the artifact it traces to, and the limitation that
 bounds it. Faithfulness, sufficiency, and minimality are the three axes of \Sectionname\ref{sec:triad}.
 The numbers themselves are sourced in \Sectionname\ref{supp:provenance}. The table below names which
-evidence supports which claim; it does not repeat the values. One split matters for how the
+evidence supports which claim; it does not repeat the values. All aggregate scores are taken
+over the 42-game scored battery of \Sectionname\ref{supp:scoredbattery}. One split matters for how the
 table is read. The all-regime faithfulness gap between causal/intervention and
-gradient/correlational methods is $0.297$ with a $95\%$ interval of $[0.232,0.375]$ that
-excludes zero, and it is the primary evidence for the headline. The position-only gap is
-$0.238$ with an interval of $[-0.049,0.315]$ that crosses zero at six games. We report the
-position gap as directional support, not as a significant result.
+gradient/correlational methods is $0.337$ (causal/intervention mean $0.722$ vs.\ gradient/correlational
+$0.384$), and it is the primary evidence for the headline. The position-only gap is now
+significant on this battery: bootstrapping the family-mean gap over the 42 games gives a mean of
+$0.327$ with a $95\%$ interval of $[0.132,0.370]$ that excludes zero. At the earlier six-game
+scope this gap was $0.238$ with an interval of $[-0.049,0.315]$ that crossed zero; scaling to
+42 games resolves it into a significant result.
 
 \begin{table}[t]
 \centering
@@ -26,11 +29,11 @@ claim is not read wider than the evidence.}
 \toprule
 Claim & Evidence & Methods / games & Metric & Limitation \\
 \midrule
-Causal/intervention methods beat gradient/correlational on faithfulness across all regimes & Fig.~\ref{fig:faithfulness}; leaderboard & 25 methods, 6 games & F mean (gap $0.297$) & robust: gap $0.297$ $[0.232,0.375]$ excludes zero; this all-regime gap is the primary evidence \\
-The gap holds with the same sign on the discrete position regime & Fig.~\ref{fig:faithfulness}; \jkey{faithful_demo} & 13 rows, 6 games & F position (gap $0.238$) & directional only: gap $0.238$ $[-0.049,0.315]$ crosses zero at 6 games, so it is not significant \\
-A faithful causal method reaches the oracle ceiling where the default tool stays low & \jkey{faithful_demo}; Fig.~\ref{fig:faithfulness} & act.\ patching vs.\ vanilla saliency, 6 games & F $1.0$ vs.\ $0.165$ (position regime; all-regimes saliency F $0.419$, plotted in Fig.~\ref{fig:faithfulness}) & one decisive pair \\
+Causal/intervention methods beat gradient/correlational on faithfulness across all regimes & Fig.~\ref{fig:faithfulness}; leaderboard & 25 methods, 42 games & F mean (gap $0.337$) & robust: causal/interv.\ $0.722$ vs.\ gradient/corr.\ $0.384$; this all-regime gap is the primary evidence \\
+The gap holds with the same sign on the discrete position regime & Fig.~\ref{fig:faithfulness}; \jkey{position_bootstrap} & 13 rows, 42 games & F position (gap $0.327$) & significant on the 42-game battery: family-mean gap $0.327$ $[0.132,0.370]$ excludes zero (crossed zero at 6 games) \\
+A faithful causal method reaches the oracle ceiling where the default tool stays low & \jkey{faithful_demo}; Fig.~\ref{fig:faithfulness} & act.\ patching vs.\ vanilla saliency, 42 games & F $1.0$ vs.\ $0.115$ (position regime; all-regimes saliency F $0.380$, plotted in Fig.~\ref{fig:faithfulness}) & one decisive pair \\
 The naive gradient of a discrete position output is provably zero & Prop.~\ref{prop:zero} (\Sectionname\ref{sec:oracle}); \jkey{oracle_grad} & all gradient methods & grad@position $=0$; sampler restores $166$ & position path only; restored gradient is low/mixed \\
-High plausibility coexists with low faithfulness (the danger zone) & Fig.~\ref{fig:faithfulness}; \jkey{faithful_demo} & vanilla saliency & proxy $0.9$, F $0.165$ (position regime; all-regimes F $0.419$, plotted in Fig.~\ref{fig:faithfulness}) & proxy, not measured plausibility \\
+High plausibility coexists with low faithfulness (the danger zone) & Fig.~\ref{fig:faithfulness}; \jkey{faithful_demo} & vanilla saliency & proxy $0.9$, F $0.115$ (position regime; all-regimes F $0.380$, plotted in Fig.~\ref{fig:faithfulness}) & proxy, not measured plausibility \\
 Faithful attribution recovers the wiring but not the computation's semantics & Fig.~\ref{fig:taxonomy} (\Sectionname\ref{supp:coverage}); discussion & Phase~B vs.\ C & F vs.\ S, M & necessary-condition stress test \\
 The failure modes have documented NN analogues & Fig.~\ref{fig:representativeness} & taxonomy & --- & analogues, not proof \\
 \bottomrule

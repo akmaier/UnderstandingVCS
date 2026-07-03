@@ -416,26 +416,26 @@ finding_row(
      "role — the tuning-curve trap, quantified."],
 )
 
-# Row A2 — rho ~ 0.99 but interaction blind spot
+# Row A2 — high rho but interaction blind spot (42-game: rho = 0.96)
 finding_row(
-    2, TRAD_COLOR["intervention"], "A2", "ρ = 0.99, blind to interactions",
+    2, TRAD_COLOR["intervention"], "A2", "high ρ, blind to interactions",
     f"ρ = {FACT_A2['rho_mean']:.2f} vs true role; misses {FACT_A2['si_miss']*100:.0f}% of interactions",
     [f"Super-additive pair Δ up to {FACT_A2['si_superadd']:.0f} (Space Inv.) is",
      "invisible to one-unit-at-a-time ablation."],
 )
 
-# Row A7 — NMF ~ PCA (both mediocre)
+# Row A7 — NMF edges PCA, both mediocre (42-game: NMF 0.52 > PCA 0.35)
 finding_row(
-    3, TRAD_COLOR["dim_reduction"], "A7", "NMF ≈ PCA (both mediocre)",
-    f"NMF matched frac {FACT_A7['nmf_mean']:.2f} ≈ PCA {FACT_A7['pca_mean']:.2f} (best {FACT_A7['nmf_best']:.1f})",
-    ["Near-tied on matched components; neither",
-     "recovers the true basis."],
+    3, TRAD_COLOR["dim_reduction"], "A7", "NMF > PCA (both mediocre)",
+    f"NMF matched frac {FACT_A7['nmf_mean']:.2f} vs PCA {FACT_A7['pca_mean']:.2f} (best {FACT_A7['nmf_best']:.1f})",
+    ["Neither recovers the true basis; both",
+     "score well below the oracle."],
 )
 
 # provenance footnote — no data-path microtext in the figure body (fig_pass #6);
 # exact paths live in the Supplement provenance table.
 fig.text(0.012, 0.018,
-         "Data: committed §R records (6 core games); whiskers = 95% bootstrap CI "
+         "Data: committed §R records (42-game scored battery); whiskers = 95% bootstrap CI "
          "(every bar has a CI record). See Supplement provenance table.",
          ha="left", va="bottom", fontsize=8.0, color=C_MUTE, fontstyle="italic")
 
@@ -489,16 +489,17 @@ if FACT_A6["pong_triadF"] != 0.0:
 # a stale point value.
 if max(FACT_A3.values()) <= 0.0:
     problems.append("A3 spurious-tuning absent in every game (tuning-curve trap gone)")
-if not (FACT_A2["rho_mean"] >= 0.98):
-    problems.append("A2 mean rho not ~0.99 (headline finding broken)")
+if not (FACT_A2["rho_mean"] >= 0.90):
+    problems.append("A2 mean rho not high (~0.96 on the 42-game battery; headline finding broken)")
 if not (FACT_A2["si_superadd"] > 0):
     problems.append("A2 interaction blind-spot absent (super-additive delta = 0)")
-# A7: NMF ~ PCA, both mediocre. Under the corrected re-run they are near-tied
-# (NMF 0.60, PCA 0.57) rather than exactly equal; the finding is the near-tie +
-# mediocrity, not exact equality. Assert both are mediocre and close.
-if not (abs(FACT_A7["nmf_mean"] - FACT_A7["pca_mean"]) < 0.10
-        and FACT_A7["nmf_mean"] < 0.75 and FACT_A7["pca_mean"] < 0.75):
-    problems.append("A7 NMF/PCA no longer near-tied-and-mediocre (headline finding broken)")
+# A7: both dim-reductions score mediocre against the true basis. On the 42-game
+# battery NMF edges PCA (NMF 0.52 > PCA 0.35) rather than being near-tied; the
+# durable finding is that NEITHER recovers the basis (both well below the oracle).
+# Assert both are mediocre and NMF is at least as good as PCA.
+if not (FACT_A7["nmf_mean"] < 0.75 and FACT_A7["pca_mean"] < 0.75
+        and FACT_A7["nmf_mean"] >= FACT_A7["pca_mean"]):
+    problems.append("A7 NMF/PCA no longer both-mediocre-with-NMF>=PCA (headline finding broken)")
 
 if problems:
     print("[FAIL] self-check:")
@@ -512,4 +513,4 @@ print(f"[OK] {len(bars)} analyses scored; oracle control = 1.0; "
 print(f"[OK] findings: A6 Pong F={FACT_A6['pong_triadF']:.2f}; "
       f"A3 Pong spurious={FACT_A3['pong']:.2f}; "
       f"A2 rho={FACT_A2['rho_mean']:.2f}/superadd={FACT_A2['si_superadd']:.0f}; "
-      f"A7 NMF={FACT_A7['nmf_mean']:.2f} = PCA={FACT_A7['pca_mean']:.2f}")
+      f"A7 NMF={FACT_A7['nmf_mean']:.2f} > PCA={FACT_A7['pca_mean']:.2f}")

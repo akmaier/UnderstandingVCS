@@ -10,8 +10,9 @@ to ask a question a real network cannot answer: is the map true?
 Every attribution is scored against the same intervention oracle (\Sectionname\ref{sec:oracle})
 that defines ground truth. For each chosen output $y$, a pixel, a score,
 or a game event, we know the exact set of causes it should have named. We ran twelve
-attribution methods across six core games (Pong, Breakout, Space~Invaders, Seaquest,
-Ms.~Pac-Man, Q*bert) and an oracle-as-method positive control, and score each against the
+attribution methods across the 42 scored games, with the six core games (Pong, Breakout,
+Space~Invaders, Seaquest, Ms.~Pac-Man, Q*bert) as running examples, plus an
+oracle-as-method positive control, and score each against the
 intervention oracle in Table~\ref{tab:phaseB}. We score all methods from a shared live
 state rather than a boot frame. We seed a single random-action prefix of $90$ steps and a
 horizon of $15$ (seed~$0$), gate the state through the oracle's cause-density check so that
@@ -51,10 +52,10 @@ and Integrated-Gradients maps carry no signal through the position read
 (Prop.~\ref{prop:zero}). A differentiable substrate can restore a non-zero gradient here,
 and we run that repair in \Sectionname\ref{sec:results_compare}, but the restored gradient
 is faithful only on a minority of games and its faithfulness stays low. Averaged over the
-position regime the gradient and correlational family reaches only $0.248$ against the
-oracle, against $0.486$ for the causal and intervention family (Table~\ref{tab:phaseB}).
-Across all output regimes the gradient and correlational family scores $0.367$ and the
-causal and intervention family $0.664$. The position map is not empty by choice; it is
+position regime the gradient and correlational family reaches only $0.23$ against the
+oracle, against $0.56$ for the causal and intervention family (Table~\ref{tab:phaseB}).
+Across all output regimes the gradient and correlational family scores $0.38$ and the
+causal and intervention family $0.72$. The position map is not empty by choice; it is
 weak exactly where the discrete game logic sits.
 
 Two further results make this point stronger. The baseline choice is the perennial
@@ -67,7 +68,7 @@ recorded VCS states. It removes that degeneracy and is provably stable across re
 draws (mean pairwise cosine $\approx 1$). Yet, on the content path it scores the same
 faithfulness as a well-chosen single-baseline IG at $M\times$ the compute, and it still
 vanishes on position. The more careful method gives stability but not accuracy. Its
-all-regime faithfulness of $0.062$ is the lowest in the study.
+all-regime faithfulness of $0.18$ is the lowest among the attribution methods.
 
 Guided backprop and vanilla saliency fail the program-randomization sanity check of
 Adebayo et al.~\cite{adebayo2018sanity} on the system itself. We scramble the ROM so
@@ -83,12 +84,12 @@ once. The map identifies the right cause but does not depend on the model that p
 When we replace the gradient with a real intervention, the position result improves.
 Occlusion~\cite{zeiler2014visualizing} sets a candidate cause and re-runs
 the bit-exact program, a coarse version of the oracle. On the position regime, where the
-naive gradient is zero, it reaches faithfulness $0.568$, and its all-regime faithfulness
-of $0.639$ is the highest among the attribution methods. The black-box perturb-and-re-run
+naive gradient is zero, it reaches faithfulness $0.619$, and its all-regime faithfulness
+of $0.687$ is the highest among the attribution methods. The black-box perturb-and-re-run
 methods follow the same logic and result:
 KernelSHAP / Shapley sampling~\cite{lundberg2017unified,strumbelj2014explaining}
-($0.645$), LIME~\cite{ribeiro2016why} ($0.627$), and RISE~\cite{petsiuk2018rise}
-($0.548$) each draw masked coalitions and average over the genuine responses, so each
+($0.652$), LIME~\cite{ribeiro2016why} ($0.644$), and RISE~\cite{petsiuk2018rise}
+($0.552$) each draw masked coalitions and average over the genuine responses, so each
 works on position outputs where the gradient is dead, and each reports its own
 completeness ($\Sigma\phi = y(\text{intact}) - y(\text{all-masked})$ for KernelSHAP,
 the surrogate $R^2$ for LIME).
@@ -100,15 +101,14 @@ area-bounded mask of real $do(\text{occlude})$ re-runs, and the on-distribution
 counterfactual~\cite{olson2021counterfactual} substitutes candidate cells toward a
 genuine alternative VCS state, the RAM of another frame of the same ROM. Both stay on
 the data manifold by construction and both work on position outputs (position-regime
-faithfulness $0.278$ and $0.098$, all-regime $0.401$ and $0.217$). The
-counterfactual is a no-op on three games, where no on-distribution content byte varies
+faithfulness $0.35$ and $0.28$, all-regime $0.46$ and $0.43$). The
+counterfactual is a no-op on some games, where no on-distribution content byte varies
 between frames, so its map is flat and we mark those cells invalid rather than score
 them. The cross-tradition contrast is clearest across all three phases: the causal and
-intervention family averages $0.664$ faithfulness [95\% CI $0.60$--$0.74$, $n=11$]
-against the oracle, against the gradient and correlational family's $0.367$
-[$0.32$--$0.41$, $n=14$] (Table~\ref{tab:phaseB}). Restricted to the attribution methods
-alone the two means are close, $0.419$ for the three intervention methods against $0.443$
-for the gradient methods, because the content-path gradient is faithful and lifts the
+intervention family averages $0.72$ faithfulness [$n=11$]
+against the oracle, against the gradient and correlational family's $0.38$
+[$n=14$] (Table~\ref{tab:phaseB}). Restricted to the attribution methods
+alone the two means are closer, because the content-path gradient is faithful and lifts the
 gradient mean. The intervention advantage is a cross-tradition and position-regime
 effect, not an attribution-wide one, and we report it as such. A perturbation is faithful
 only when it is a valid intervention.
@@ -129,8 +129,8 @@ a real artifact. This absence is itself a finding of the audit.
 Across the twelve methods, faithfulness and plausibility move in opposite directions:
 methods rank high on plausibility but low on faithfulness. The clearest pair makes it
 concrete. On the position regime the causal method activation patching (\Sectionname\ref{sec:results-c}) reaches
-faithfulness $1.000$, the oracle ceiling, on all six games, while vanilla saliency, a
-widely used baseline, reaches only $0.165$. This is a per-method position gap of $0.835$.
+faithfulness $1.000$, the oracle ceiling, while vanilla saliency, a
+widely used baseline, reaches only $0.115$. This is a per-method position gap of $0.885$.
 Yet, on the plausibility proxy of \Sectionname\ref{sec:methods}
 the popular method has the higher score ($0.9$ versus $0.5$): the weaker map has the
 higher plausibility score. Low faithfulness with high plausibility
@@ -149,7 +149,7 @@ achievable, and that the most popular methods do not achieve it.
 \footnotesize
 \setlength{\tabcolsep}{4pt}
 \caption{\textbf{Attribution scored against the intervention oracle
-(\Sectionname\ref{sec:oracle}).} Twelve attribution methods on the six core games
+(\Sectionname\ref{sec:oracle}).} Twelve attribution methods aggregated over the 42 scored games
 (oracle-as-method positive control $=1.0$). $F$ is the all-regime faithfulness against
 ground truth with its $95\%$ bootstrap CI; $F_{\text{pos}}$ is the position/index regime
 alone, where the naive gradient is provably zero; \emph{Plaus} is the documented
@@ -159,13 +159,14 @@ measurement. The naive gradient is provably zero on the position read
 carry comes from the content channel and, for the two SmoothGrad-family rows, from the
 sampler-restored gradient of \Sectionname\ref{sec:results_compare}, which is faithful on only a
 minority of games and stays low. Across all regimes the causal and intervention family
-leads ($0.66$ against $0.37$, position $0.49$ against $0.25$), and the popular gradient
+leads ($0.72$ against $0.38$, position $0.56$ against $0.23$), and the popular gradient
 methods carry the \emph{higher} plausibility tag --- the danger zone, measured. The two
 family-mean rows are the cross-tradition families ($n=14$ gradient/correlational, $n=11$
 causal/intervention across all three traditions), not the twelve rows above; restricted
-to attribution alone the two means are close, $0.44$ gradient against $0.42$ intervention,
+to attribution alone the two means are closer,
 because the faithful content gradient lifts the gradient mean. The on-distribution
-counterfactual is a no-op on Space~Invaders, Ms.~Pac-Man, and Q*bert (no on-distribution
+counterfactual is a no-op on some core games such as Space~Invaders, Ms.~Pac-Man, and
+Q*bert (no on-distribution
 content byte varies between frames, so $\Delta=0$ and the cells are marked invalid rather
 than scored). Grad-CAM, Grad-CAM++, attention rollout, and
 VIPER~\cite{selvaraju2017gradcam,abnar2020quantifying,bastani2018verifiable} do not apply
@@ -175,21 +176,21 @@ committed leaderboard~\cite{leaderboardP2}.}\label{tab:phaseB}
 \toprule
 Method & Family & $F$ ($95\%$ CI) & $F_{\text{pos}}$ & Plaus \\
 \midrule
-KernelSHAP~\cite{lundberg2017unified}             & black-box & $0.65$ $[0.51,0.77]$ & $0.58$ & $0.90$ \\
-Occlusion~\cite{zeiler2014visualizing}            & interv.\  & $0.64$ $[0.50,0.76]$ & $0.57$ & $0.55$ \\
-LIME~\cite{ribeiro2016why}                        & black-box & $0.63$ $[0.50,0.76]$ & $0.55$ & $0.90$ \\
-RISE~\cite{petsiuk2018rise}                        & black-box & $0.55$ $[0.43,0.69]$ & $0.42$ & $0.90$ \\
-Grad$\times$Input / DeepLIFT~\cite{shrikumar2017learning} & gradient & $0.52$ $[0.43,0.62]$ & $0.16$ & $0.90$ \\
-SmoothGrad~\cite{smilkov2017smoothgrad}           & gradient & $0.42$ $[0.37,0.46]$ & $0.16$ & $0.90$ \\
-Vanilla saliency~\cite{simonyan2014deep}          & gradient & $0.42$ $[0.38,0.46]$ & $0.16$ & $0.90$ \\
-Integrated Gradients~\cite{sundararajan2017axiomatic} & gradient & $0.42$ $[0.37,0.47]$ & $0.14$ & $0.90$ \\
-Extremal perturbation~\cite{fong2019understanding} & interv.\  & $0.40$ $[0.28,0.51]$ & $0.28$ & $0.55$ \\
-Guided backprop~\cite{springenberg2015striving}   & gradient & $0.34$ $[0.19,0.46]$ & $0.00$ & $0.90$ \\
-On-distribution counterfactual~\cite{olson2021counterfactual} & interv.\  & $0.22$ $[0.05,0.43]$ & $0.10$ & $0.55$ \\
-Expected Gradients~\cite{erion2021improving}      & gradient & $0.06$ $[0.00,0.19]$ & $0.05$ & $0.90$ \\
+Occlusion~\cite{zeiler2014visualizing}            & interv.\  & $0.69$ $[0.62,0.75]$ & $0.62$ & $0.55$ \\
+KernelSHAP~\cite{lundberg2017unified}             & black-box & $0.65$ $[0.59,0.72]$ & $0.60$ & $0.90$ \\
+LIME~\cite{ribeiro2016why}                        & black-box & $0.64$ $[0.58,0.71]$ & $0.59$ & $0.90$ \\
+RISE~\cite{petsiuk2018rise}                        & black-box & $0.55$ $[0.49,0.62]$ & $0.44$ & $0.90$ \\
+Grad$\times$Input / DeepLIFT~\cite{shrikumar2017learning} & gradient & $0.49$ $[0.40,0.58]$ & $0.12$ & $0.90$ \\
+Extremal perturbation~\cite{fong2019understanding} & interv.\  & $0.46$ $[0.40,0.52]$ & $0.35$ & $0.55$ \\
+On-distribution counterfactual~\cite{olson2021counterfactual} & interv.\  & $0.43$ $[0.35,0.51]$ & $0.28$ & $0.55$ \\
+SmoothGrad~\cite{smilkov2017smoothgrad}           & gradient & $0.38$ $[0.29,0.47]$ & $0.12$ & $0.90$ \\
+Vanilla saliency~\cite{simonyan2014deep}          & gradient & $0.38$ $[0.29,0.47]$ & $0.12$ & $0.90$ \\
+Integrated Gradients~\cite{sundararajan2017axiomatic} & gradient & $0.38$ $[0.29,0.46]$ & $0.11$ & $0.90$ \\
+Guided backprop~\cite{springenberg2015striving}   & gradient & $0.32$ $[0.24,0.41]$ & $0.00$ & $0.90$ \\
+Expected Gradients~\cite{erion2021improving}      & gradient & $0.18$ $[0.11,0.25]$ & $0.03$ & $0.90$ \\
 \midrule
-\multicolumn{2}{@{}l}{Gradient/corr.\ mean}  & $0.37$ $[0.32,0.41]$ & $0.25$ & --- \\
-\multicolumn{2}{@{}l}{Causal/interv.\ mean}  & $0.66$ $[0.60,0.74]$ & $0.49$ & --- \\
+\multicolumn{2}{@{}l}{Gradient/corr.\ mean}  & $0.38$ & $0.23$ & --- \\
+\multicolumn{2}{@{}l}{Causal/interv.\ mean}  & $0.72$ & $0.56$ & --- \\
 \botrule
 \end{tabularx}
 \end{table}

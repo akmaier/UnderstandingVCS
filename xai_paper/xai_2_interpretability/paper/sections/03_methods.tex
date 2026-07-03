@@ -217,11 +217,11 @@ at $\rho=0$, not at the $0.5$ of an affine $\tfrac{1}{2}(1+\rho)$ remap. This is
 the position regime informative. Under Prop.~\ref{prop:zero} the naive gradient is identically
 zero there, and its correlation with the oracle is $0$. The reported faithfulness is therefore
 $0.00$ and not a $0.5$ floor. The two committed estimators differ only in how the raw
-correlation is summarized across the six core games. Phase~B reports the raw correlation
-directly (e.g.\ occlusion at $F=0.639$), so a negative correlation is recorded as a negative
+correlation is summarized across the scored games. Phase~B reports the raw correlation
+directly (e.g.\ occlusion at $F=0.687$), so a negative correlation is recorded as a negative
 number. In Phase~A's single-unit and tuning analyses the per-game correlations can be negative,
 so we clip each per-game correlation at $0$ and then average across games (e.g.\ the tuning
-analysis A3, lowest in Phase~A at $0.091$, the clip-at-zero mean of six per-game correlations
+analysis A3 at $0.213$, the clip-at-zero mean of per-game correlations
 that include negatives). For the same attribution map we also report, as quality measures,
 deletion/insertion area-under-curve and precision at $k$ against the true causal top-$k$,
 $\mathrm{P@}k=|\,\mathrm{top}_k(\hat{E})\cap\mathrm{top}_k(\{\Delta y(u)\})\,|/k$. For a
@@ -230,7 +230,7 @@ $F_1$ against the true data-flow graph, the harmonic mean of precision and recal
 edges. For Phase~C patching and mediation we use the causal-effect-agreement correlation against
 the true $\{\Delta y(u)\}$. The final $\mathrm{F}_{\mathrm{score}}$ is the per-record primary
 metric averaged first within a game over its output records, then with equal weight across the
-six core games, so no game-rich method dominates; confidence intervals are 95\% bootstrap over
+scored games, so no game-rich method dominates; confidence intervals are 95\% bootstrap over
 games (\Sectionname\ref{sec:scoring}). The three Phases differ only in which primitive is primary: Phase~A
 uses graph $F_1$ for the data-flow methods and the clip-at-zero mean correlation for the
 single-unit and tuning analyses, Phase~B uses the raw effect-agreement correlation $\rho$ with
@@ -262,7 +262,7 @@ set the explanation actually names. An explanation that names exactly the minima
 $1$; one that records the whole machine state pays for every spurious cell. The target level
 is the algorithmic unit, the register, RAM cell, opcode, module, or program variable, not the
 pixel. Whole-state recording names all $128$ RAM cells, where the true cause set averages a
-handful. It therefore scores $\mathrm{M}_{\mathrm{score}}=0.07$ across the six core games. Its
+handful. It therefore scores $\mathrm{M}_{\mathrm{score}}=0.07$ across the scored games. Its
 faithfulness is perfect because it withholds nothing, but it is maximally non-minimal.
 
 Two reporting axes carry the headline comparison, faithfulness against the ground truth and a
@@ -300,20 +300,25 @@ patching, automatic circuit discovery, sparse autoencoders, causal scrubbing, li
 probing with control tasks, and the logit and tuned
 lens~\cite{vig2020investigating,meng2022locating,geiger2021causal,geiger2023finding,nanda2023attribution,wang2022interpretability,conmy2023towards,cunningham2023sparse,chan2022causal,alain2017understanding,hewitt2019designing,belrose2023eliciting}.
 
-All faithfulness scoring runs on the six core games of \Sectionname\ref{sec:tiers}, where the
-oracle's re-runs are exact. Cell- and pixel-level scores, correlation, deletion and insertion
-area-under-curve, and precision at $k$, are taken against T1 and need no T3; only object- and
-concept-level scores draw on the external T3 labels, and we flag every such score as
-alignment-to-given, not discovery. We aggregate the committed per-game records into one row
-per method on the shared faithfulness-versus-plausibility axes of the Results leaderboard.
+Aggregate faithfulness scoring runs on the 42 scored games, the T3-labeled roster minus
+the 12 degenerate or static games documented in Supplement~S3, where the oracle's re-runs
+are exact. The six core games of \Sectionname\ref{sec:tiers} remain the running examples
+and carry the full tiered ground truth and oracle. Cell- and pixel-level scores,
+correlation, deletion and insertion area-under-curve, and precision at $k$, are taken
+against T1 and need no T3; only object- and concept-level scores draw on the external T3
+labels, and we flag every such score as alignment-to-given, not discovery. We aggregate the
+committed per-game records into one row per method on the shared
+faithfulness-versus-plausibility axes of the Results leaderboard.
 The headline contrast is the all-regime gap. Pooled over every output, causal and
-intervention methods average a faithfulness of $0.66$ against $0.37$ for gradient and
-correlational methods, a gap of $0.30$ whose $95\%$ interval excludes zero. On the position
+intervention methods average a faithfulness of $0.72$ against $0.38$ for gradient and
+correlational methods, a gap of $0.34$ whose $95\%$ bootstrap interval $[0.31,0.36]$
+excludes zero. On the position
 regime alone, where the naive gradient is zero under the hard forward map by
-Prop.~\ref{prop:zero}, the two families average $0.49$ against $0.25$; this gap points the
-same way but is not significant at six games. The per-method extreme places an
-exact causal method, activation patching, at faithfulness $1.000$ on all six games and the
-field's default saliency at only $0.165$ on the position regime, the popular method
+Prop.~\ref{prop:zero}, the two families average $0.56$ against $0.23$, a gap of $0.33$.
+This gap is now statistically significant: a bootstrap over the 42 games gives a $95\%$
+interval of $[0.13,0.37]$ that excludes zero. The per-method extreme places an
+exact causal method, activation patching, at faithfulness $1.000$ on the position regime and
+the field's default saliency at only $0.115$ there, the popular method
 nonetheless carrying the higher plausibility proxy ($0.9$ versus $0.5$). We measure the
 semantic gap relative to these numbers.
 

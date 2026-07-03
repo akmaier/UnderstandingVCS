@@ -1,44 +1,44 @@
 kind,phase,method,tradition,n_games,n_records,mean,ci_lo,ci_hi,mean_over_records,ci_lo_over_records,ci_hi_over_records,S_mean,S_ci_lo,S_ci_hi,M_mean,M_ci_lo,M_ci_hi,F_mean,seed_sd,seed_sd_source,seed_sd_n_records,commits
-method,phaseA_kording,A1_connectomics,intervention,6,6,0.3393,0.0893,0.6667,0.3393,0.0893,0.631,0.9587,0.9082,0.9939,1.0,1.0,1.0,0.3393,,,0,19022dc7
-method,phaseA_kording,A2_lesions,intervention,6,7,0.9954,0.9866,1.0,0.9923,0.9812,0.9998,0.6211,0.398,0.7973,0.9123,0.829,0.9778,0.9954,,,0,86fdc27;c157ec63
-method,phaseA_kording,A3_tuning,correlational,6,6,0.0908,0.0,0.2464,0.0908,0.0,0.2464,0.0824,0.0,0.1862,0.7306,0.5583,0.9028,0.0908,,,0,19022dc7
-method,phaseA_kording,A4_spike_word,correlational,6,6,0.2203,0.0721,0.4063,0.2203,0.0721,0.3974,0.0264,0.0055,0.0532,0.276,0.0311,0.5938,0.2203,,,0,19022dc7;39cd1d3
-method,phaseA_kording,A5_local_field_potentials,correlational,6,6,0.295,0.2189,0.3901,0.295,0.2189,0.3944,,,,,,,,,,0,19022dc7
-method,phaseA_kording,A6_granger,correlational,6,6,0.0454,0.002,0.1102,0.0454,0.002,0.1101,0.8268,0.7008,0.925,0.0514,0.001,0.1338,0.0454,,,0,19022dc7
-method,phaseA_kording,A7_dim_reduction,dim_reduction,6,6,0.6,0.6,0.6,0.6,0.6,0.6,,,,,,,,,,0,19022dc7
-method,phaseA_kording,A8_wholestate,descriptive,6,6,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.0768,0.0495,0.1029,1.0,,,0,19022dc7
-method,phaseB_attribution,expected_gradients,gradient,6,12,0.0618,0.0,0.1855,0.0618,0.0,0.1624,,,,,,,,0.0,extra.stability.corr_std (independent-seed refits),12,9bc37f8b
-method,phaseB_attribution,extremal_perturbation,intervention,6,12,0.4013,0.2819,0.5125,0.4013,0.2729,0.5471,,,,,,,,,,0,9bc37f8b
-method,phaseB_attribution,gradxinput_deeplift,gradient,6,12,0.5162,0.4285,0.6243,0.5162,0.2999,0.7322,,,,,,,,,,0,9bc37f8b
-method,phaseB_attribution,guided_backprop,gradient,6,12,0.3368,0.1888,0.4632,0.3368,0.1219,0.5802,,,,,,,,,,0,c157ec63
-method,phaseB_attribution,integrated_gradients,gradient,6,14,0.417,0.372,0.4682,0.4099,0.2076,0.6258,,,,,,,,,,0,22881c2;9bc37f8b
-method,phaseB_attribution,kernelshap,gradient,6,12,0.6454,0.5135,0.7736,0.6454,0.4853,0.7841,,,,,,,,0.0189,std of extra.convergence_sweep[*].pearson_corr (Monte-Carlo budget dispersion ∝ 1/√N),12,9bc37f8b
-method,phaseB_attribution,lime,gradient,6,12,0.627,0.5007,0.7552,0.627,0.4616,0.7704,,,,,,,,0.0051,extra.stability.corr_std (independent-seed refits),12,9bc37f8b
-method,phaseB_attribution,occlusion,intervention,6,12,0.6387,0.4989,0.7642,0.6387,0.4759,0.7831,,,,,,,,,,0,9bc37f8b
-method,phaseB_attribution,on_distribution_counterfactual,intervention,6,12,0.2167,0.0453,0.4302,0.2167,0.0577,0.3946,,,,,,,,,,0,9bc37f8b
-method,phaseB_attribution,rise,gradient,6,12,0.5483,0.4301,0.6873,0.5483,0.3684,0.7182,,,,,,,,0.061,std of extra.convergence_sweep[*].pearson_corr (Monte-Carlo budget dispersion ∝ 1/√N),12,9bc37f8b
-method,phaseB_attribution,smoothgrad,gradient,6,12,0.4191,0.3749,0.4632,0.4191,0.2022,0.6534,,,,,,,,0.0,"|extra.vanilla_gradient_reference.smoothing_delta_pearson| (committed σ-robustness; SmoothGrad is a deterministic noise-average, 0 on the gradient-vanishing position regime)",12,9bc37f8b
-method,phaseB_attribution,vanilla_saliency,gradient,6,12,0.4191,0.3761,0.4634,0.4191,0.2078,0.6523,,,,,,,,,,0,c157ec63
-method,phaseC_mechanistic,ACDC,causal,6,6,0.4699,0.1822,0.7776,0.4699,0.1941,0.7576,0.3096,0.1508,0.4818,1.0,1.0,1.0,0.4699,,,0,19022dc7
-method,phaseC_mechanistic,activation_patching,causal,6,7,1.0,1.0,1.0,1.0,1.0,1.0,,,,,,,,,,0,86fdc27;c157ec63
-method,phaseC_mechanistic,attribution_patching,gradient,6,6,0.5002,0.2288,0.7806,0.5002,0.227,0.7615,,,,,,,,,,0,19022dc7
-method,phaseC_mechanistic,causal_scrubbing,causal,6,6,1.0,1.0,1.0,1.0,1.0,1.0,,,,,,,,,,0,19022dc7
-method,phaseC_mechanistic,interchange_interventions_das,causal,6,6,1.0,1.0,1.0,1.0,1.0,1.0,,,,,,,,,,0,19022dc7
-method,phaseC_mechanistic,linear_probing_control_tasks,probing,6,6,0.1066,0.0439,0.1712,0.1066,0.0439,0.1689,,,,,,,,,,0,19022dc7;81fc6963
-method,phaseC_mechanistic,logit_tuned_lens,causal,6,6,1.0,1.0,1.0,1.0,1.0,1.0,,,,,,,,,,0,81fc6963
-method,phaseC_mechanistic,nmf_pca_dictionaries,dim_reduction,6,6,0.5417,0.4375,0.6458,0.5417,0.4375,0.6458,,,,,,,,,,0,81fc6963
-method,phaseC_mechanistic,path_patching,causal,6,6,0.2476,0.0333,0.581,0.2476,0.0333,0.5667,,,,,,,,,,0,19022dc7
-method,phaseC_mechanistic,sparse_autoencoder,dim_reduction,6,7,0.1568,0.0282,0.3274,0.2088,0.0241,0.4945,0.1176,0.0,0.3528,0.0599,0.0064,0.1492,0.0769,,,0,81fc6963;86fdc27
+method,phaseA_kording,A1_connectomics,intervention,35,35,0.2066,0.129,0.2938,0.2066,0.129,0.2923,0.9708,0.9585,0.9812,0.9778,0.9333,1.0,0.2066,,,0,2a9ade4c
+method,phaseA_kording,A2_lesions,intervention,42,43,0.9647,0.9423,0.9837,0.9649,0.9435,0.9835,0.5873,0.5125,0.6578,0.8624,0.8113,0.9083,0.9647,,,0,2a9ade4c;86fdc27
+method,phaseA_kording,A3_tuning,correlational,42,42,0.2129,0.1371,0.2953,0.2129,0.1378,0.293,0.2001,0.129,0.2792,0.8413,0.7805,0.8985,0.2129,,,0,2a9ade4c
+method,phaseA_kording,A4_spike_word,correlational,34,34,0.2246,0.1665,0.2853,0.2246,0.1667,0.285,0.1332,0.0828,0.1871,0.34,0.2309,0.4579,0.2246,,,0,2a9ade4c;39cd1d3
+method,phaseA_kording,A5_local_field_potentials,correlational,40,40,0.3757,0.322,0.4302,0.3757,0.3216,0.4305,,,,,,,,,,0,2a9ade4c
+method,phaseA_kording,A6_granger,correlational,35,35,0.1364,0.0906,0.1834,0.1364,0.0909,0.1844,0.8841,0.8474,0.9176,0.2157,0.1328,0.3138,0.1364,,,0,2a9ade4c
+method,phaseA_kording,A7_dim_reduction,dim_reduction,42,42,0.519,0.4571,0.581,0.519,0.4619,0.581,,,,,,,,,,0,2a9ade4c
+method,phaseA_kording,A8_wholestate,descriptive,42,42,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.0755,0.0662,0.0852,1.0,,,0,2a9ade4c
+method,phaseB_attribution,expected_gradients,gradient,42,84,0.1754,0.1123,0.2404,0.1754,0.1097,0.2475,,,,,,,,0.0,extra.stability.corr_std (independent-seed refits),12,1adff48c;9bc37f8b
+method,phaseB_attribution,extremal_perturbation,intervention,42,84,0.4605,0.4064,0.5135,0.4605,0.4017,0.5197,,,,,,,,,,0,1adff48c;9bc37f8b
+method,phaseB_attribution,gradxinput_deeplift,gradient,42,84,0.4856,0.4478,0.5276,0.4856,0.3967,0.5739,,,,,,,,,,0,1adff48c;9bc37f8b
+method,phaseB_attribution,guided_backprop,gradient,42,84,0.3223,0.2671,0.3729,0.3223,0.237,0.4109,,,,,,,,,,0,1adff48c;c157ec63
+method,phaseB_attribution,integrated_gradients,gradient,42,86,0.3794,0.3138,0.4426,0.3791,0.2956,0.4622,,,,,,,,,,0,1adff48;22881c2
+method,phaseB_attribution,kernelshap,gradient,42,84,0.6518,0.5927,0.7087,0.6518,0.5855,0.7136,,,,,,,,0.0189,std of extra.convergence_sweep[*].pearson_corr (Monte-Carlo budget dispersion ∝ 1/√N),12,1adff48c;2a9ade4c;9bc37f8b
+method,phaseB_attribution,lime,gradient,42,84,0.6441,0.5818,0.7054,0.6441,0.578,0.707,,,,,,,,0.0051,extra.stability.corr_std (independent-seed refits),12,1adff48c;9bc37f8b
+method,phaseB_attribution,occlusion,intervention,42,84,0.6869,0.6268,0.7442,0.6869,0.6206,0.7488,,,,,,,,,,0,1adff48c;9bc37f8b
+method,phaseB_attribution,on_distribution_counterfactual,intervention,42,84,0.4329,0.3421,0.5195,0.4329,0.3523,0.5123,,,,,,,,,,0,5f0d6e67;9bc37f8b
+method,phaseB_attribution,rise,gradient,42,84,0.5522,0.5008,0.6035,0.5522,0.4865,0.6141,,,,,,,,0.061,std of extra.convergence_sweep[*].pearson_corr (Monte-Carlo budget dispersion ∝ 1/√N),12,15e5d2df
+method,phaseB_attribution,smoothgrad,gradient,42,84,0.3799,0.3144,0.4432,0.3799,0.2951,0.467,,,,,,,,0.0,"|extra.vanilla_gradient_reference.smoothing_delta_pearson| (committed σ-robustness; SmoothGrad is a deterministic noise-average, 0 on the gradient-vanishing position regime)",12,1adff48c;9bc37f8b
+method,phaseB_attribution,vanilla_saliency,gradient,42,84,0.3798,0.3144,0.4428,0.3798,0.2952,0.4678,,,,,,,,,,0,1adff48c;c157ec63
+method,phaseC_mechanistic,ACDC,causal,35,35,0.6254,0.5126,0.7316,0.6254,0.5131,0.7305,0.2995,0.2388,0.3628,1.0,1.0,1.0,0.6254,,,0,15e5d2df
+method,phaseC_mechanistic,activation_patching,causal,42,43,1.0,1.0,1.0,1.0,1.0,1.0,,,,,,,,,,0,2a9ade4c;86fdc27;c157ec63
+method,phaseC_mechanistic,attribution_patching,gradient,42,42,0.4563,0.345,0.5696,0.4563,0.3469,0.5692,,,,,,,,,,0,19022dc7;2a9ade4c
+method,phaseC_mechanistic,causal_scrubbing,causal,42,42,0.9792,0.9401,1.0,0.9792,0.9401,1.0,,,,,,,,,,0,19022dc7;2a9ade4c
+method,phaseC_mechanistic,interchange_interventions_das,causal,42,42,1.0,1.0,1.0,1.0,1.0,1.0,,,,,,,,,,0,19022dc7;2a9ade4c
+method,phaseC_mechanistic,linear_probing_control_tasks,probing,42,42,0.1082,0.0788,0.1427,0.1082,0.0785,0.1437,,,,,,,,,,0,19022dc7;2a9ade4c;81fc6963
+method,phaseC_mechanistic,logit_tuned_lens,causal,42,42,1.0,1.0,1.0,1.0,1.0,1.0,,,,,,,,,,0,2a9ade4c;81fc6963
+method,phaseC_mechanistic,nmf_pca_dictionaries,dim_reduction,42,42,0.4405,0.3929,0.4911,0.4405,0.3929,0.4911,,,,,,,,,,0,15e5d2df
+method,phaseC_mechanistic,path_patching,causal,42,42,0.5796,0.4467,0.7086,0.5796,0.4435,0.7089,,,,,,,,,,0,19022dc7;2a9ade4c
+method,phaseC_mechanistic,sparse_autoencoder,dim_reduction,40,41,0.1646,0.1045,0.23,0.1733,0.1056,0.2487,0.1828,0.1118,0.2567,0.0701,0.0412,0.1053,0.1526,,,0,2a9ade4c;81fc6963;86fdc27
 method,ground_truth,ORACLE,oracle,1,1,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.0,construction (exact oracle),0,
-family,ALL,family_causal_intervention,causal+intervention,6,11,0.6644,0.5985,0.7414,,,,,,,,,,,,,,members=A1_connectomics;A2_lesions;ACDC;activation_patching;causal_scrubbing;extremal_perturbation;interchange_interventions_das;logit_tuned_lens;occlusion;on_distribution_counterfactual;path_patching
-family,ALL,family_gradient_correlational,correlational+gradient,6,14,0.3673,0.3244,0.4111,,,,,,,,,,,,,,members=A3_tuning;A4_spike_word;A5_local_field_potentials;A6_granger;attribution_patching;expected_gradients;gradxinput_deeplift;guided_backprop;integrated_gradients;kernelshap;lime;rise;smoothgrad;vanilla_saliency
-family,regime:position,family_causal_intervention_position,causal+intervention,6,4,0.4859,0.2273,0.5595,,,,,,,,,,,,,,members=activation_patching;extremal_perturbation;occlusion;on_distribution_counterfactual
-family,regime:position,family_gradient_correlational_position,correlational+gradient,6,9,0.2477,0.142,0.3857,,,,,,,,,,,,,,members=expected_gradients;gradxinput_deeplift;guided_backprop;integrated_gradients;kernelshap;lime;rise;smoothgrad;vanilla_saliency
-family,regime:content,family_causal_intervention_content,causal+intervention,6,3,0.5232,0.4028,0.6139,,,,,,,,,,,,,,members=extremal_perturbation;occlusion;on_distribution_counterfactual
-family,regime:content,family_gradient_correlational_content,correlational+gradient,6,9,0.6367,0.4012,0.8208,,,,,,,,,,,,,,members=expected_gradients;gradxinput_deeplift;guided_backprop;integrated_gradients;kernelshap;lime;rise;smoothgrad;vanilla_saliency
-headline,headline,ACDC_S,,6,,0.3096,0.1427,0.4766,,,,,,,,,,,,,,
-headline,headline,ACDC_F_faithfulness,,6,,0.4699,0.1822,0.7733,,,,,,,,,,,,,,
-headline,headline,SAE_matched_feature_S,,6,,0.1176,0.0,0.3528,,,,,,,,,,,,,,
-headline,headline,wholestate_M,,6,,0.0768,0.0521,0.1016,,,,,,,,,,,,,,
-headline,headline,position_regime_gap,causal_intervention − gradient_correlational,6,,0.2382,-0.0488,0.3153,,,,,,,,,,,,,,excludes_zero=False
-headline,headline,all_regime_gap,causal_intervention − gradient_correlational,6,,0.2971,0.2317,0.3755,,,,,,,,,,,,,,excludes_zero=True
+family,ALL,family_causal_intervention,causal+intervention,42,11,0.7214,0.6945,0.7493,,,,,,,,,,,,,,members=A1_connectomics;A2_lesions;ACDC;activation_patching;causal_scrubbing;extremal_perturbation;interchange_interventions_das;logit_tuned_lens;occlusion;on_distribution_counterfactual;path_patching
+family,ALL,family_gradient_correlational,correlational+gradient,42,14,0.384,0.355,0.4117,,,,,,,,,,,,,,members=A3_tuning;A4_spike_word;A5_local_field_potentials;A6_granger;attribution_patching;expected_gradients;gradxinput_deeplift;guided_backprop;integrated_gradients;kernelshap;lime;rise;smoothgrad;vanilla_saliency
+family,regime:position,family_causal_intervention_position,causal+intervention,42,4,0.561,0.3536,0.6131,,,,,,,,,,,,,,members=activation_patching;extremal_perturbation;occlusion;on_distribution_counterfactual
+family,regime:position,family_gradient_correlational_position,correlational+gradient,42,9,0.2342,0.1849,0.2864,,,,,,,,,,,,,,members=expected_gradients;gradxinput_deeplift;guided_backprop;integrated_gradients;kernelshap;lime;rise;smoothgrad;vanilla_saliency
+family,regime:content,family_causal_intervention_content,causal+intervention,42,3,0.6388,0.5786,0.6982,,,,,,,,,,,,,,members=extremal_perturbation;occlusion;on_distribution_counterfactual
+family,regime:content,family_gradient_correlational_content,correlational+gradient,42,9,0.6478,0.5681,0.7214,,,,,,,,,,,,,,members=expected_gradients;gradxinput_deeplift;guided_backprop;integrated_gradients;kernelshap;lime;rise;smoothgrad;vanilla_saliency
+headline,headline,ACDC_S,,35,,0.2995,0.2389,0.3628,,,,,,,,,,,,,,
+headline,headline,ACDC_F_faithfulness,,35,,0.6254,0.5142,0.7299,,,,,,,,,,,,,,
+headline,headline,SAE_matched_feature_S,,40,,0.1828,0.112,0.2584,,,,,,,,,,,,,,
+headline,headline,wholestate_M,,42,,0.0755,0.0662,0.085,,,,,,,,,,,,,,
+headline,headline,position_regime_gap,causal_intervention − gradient_correlational,6,,0.3268,0.1325,0.3702,,,,,,,,,,,,,,excludes_zero=True
+headline,headline,all_regime_gap,causal_intervention − gradient_correlational,6,,0.3374,0.3104,0.3646,,,,,,,,,,,,,,excludes_zero=True

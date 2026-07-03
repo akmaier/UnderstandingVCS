@@ -8,11 +8,14 @@ separates a real explanation from a merely plausible one. We test this on the
 Understanding VCS Project, a bit-exact and differentiable copy of the Atari~2600.
 The machine was never built to be interpretable. Yet it is fully known, so the
 true cause of any output can be computed by exact intervention. We score thirty
-interpretability methods against this known answer. Causal and intervention
-methods are more faithful than gradient and correlational ones ($0.66$ versus
-$0.37$; the gap excludes zero). The clearest case is a sprite's position, where the
-naive gradient is provably zero: a causal method scores $1.000$ and standard saliency
-$0.165$. But faithfulness is not what is missing. When we switch on the port's
+interpretability methods against this known answer, aggregated over 42 games.
+Causal and intervention methods are more faithful than gradient and correlational
+ones ($0.72$ versus $0.38$; the gap excludes zero). The clearest case is a sprite's
+position, where the naive gradient is provably zero: a causal method scores $1.000$
+and standard saliency $0.115$. On this position regime the causal advantage is now
+statistically established: the family-mean gap is $0.33$, with a 95 percent bootstrap
+interval over the 42 games of $0.13$ to $0.37$ that excludes zero. But faithfulness is
+not what is missing. When we switch on the port's
 differentiable sampler, the naive gradient becomes non-zero---saliency rises
 from $0.000$ to $0.791$ on Pong---yet its faithfulness stays low on most games and no
 method recovers what a variable means.

@@ -33,7 +33,7 @@
 
 <section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>The score is a data-flow-graph F1 against the true read/write graph from the disassembly. An edge means that perturbing one RAM cell changes another. We build the recovered graph by single-shot perturbation and compare its edges to the true edges, taking the harmonic mean of precision, the fraction of recovered edges that are real, and recall, the fraction of real edges recovered. Faithfulness for this method is that edge F1: a graph-valued explanation is graded as a graph, not as a heat-map. The comparison is always against the intervention oracle's true wiring, never against another method. The hard part is that a single perturbation ripples through shared clocks and buffers, so the recovered graph contains many edges the real program does not have. Precision suffers, and the F1 stays low. There is no separate position hard-case here, because the method never claims a sprite position; it claims a wiring diagram. The audit box below reports the actual F1, aggregated across the core games, so no single game dominates. Read the recovered-versus-true graph as the error: every edge in one panel but not the other is a mistake the metric counts.</p>
+  <p>The score is a data-flow-graph F1 against the true read/write graph from the disassembly. An edge means that perturbing one RAM cell changes another. We build the recovered graph by single-shot perturbation and compare its edges to the true edges, taking the harmonic mean of precision, the fraction of recovered edges that are real, and recall, the fraction of real edges recovered. Faithfulness for this method is that edge F1: a graph-valued explanation is graded as a graph, not as a heat-map. The comparison is always against the intervention oracle's true wiring, never against another method. The hard part is that a single perturbation ripples through shared clocks and buffers, so the recovered graph contains many edges the real program does not have. Precision suffers, and the F1 stays low. There is no separate position hard-case here, because the method never claims a sprite position; it claims a wiring diagram. The audit box below reports the actual F1, aggregated across the scored games, so no single game dominates. Read the recovered-versus-true graph as the error: every edge in one panel but not the other is a mistake the metric counts.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
   <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
@@ -44,10 +44,10 @@
 <section><div class="wrap">
   <h2>In the audit</h2>
   <p>This is the method's entry in the actual cross-method audit — scored on the paper's
-  correctness triad, each axis a <b>mean over all 6 core games</b> (6 committed §R records), not
+  correctness triad, each axis a <b>mean over all 35 scored games</b> (35 committed §R records), not
   the single example shown above. Tradition: <b>intervention</b>. The example figure (Pong) is one of those
   records.</p>
-  <div class="bignum"><div class="b"><strong>0.339</strong><small>F — faithfulness vs oracle (mean over 6 games, &plusmn;0.300 CI95)</small></div><div class="b"><strong>0.959</strong><small>S — sufficiency: held-out predictive (n/a where the paper does not define this axis)</small></div><div class="b"><strong>1.000</strong><small>M — minimality: true-minimal-set / named-set (n/a otherwise)</small></div><div class="b"><strong>6</strong><small>committed records aggregated</small></div><div class="b"><strong>0.55</strong><small>human-plausibility proxy</small></div></div>
+  <div class="bignum"><div class="b"><strong>0.207</strong><small>F — faithfulness vs oracle (mean over 35 games, &plusmn;0.084 CI95)</small></div><div class="b"><strong>0.971</strong><small>S — sufficiency: held-out predictive (n/a where the paper does not define this axis)</small></div><div class="b"><strong>0.978</strong><small>M — minimality: true-minimal-set / named-set (n/a otherwise)</small></div><div class="b"><strong>35</strong><small>committed records aggregated</small></div><div class="b"><strong>0.55</strong><small>human-plausibility proxy</small></div></div>
   <p class="caption"><b>F</b> faithfulness (scored vs the oracle for every method) · <b>S</b> sufficiency (held-out predictive; reported for the predictive Phase-B/C methods) · <b>M</b> minimality (true-minimal-set / named-set; where the method names a cause set) — <b>n/a</b> otherwise, per the paper's F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad.</p>
   <p class="caption">Source: <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/out/leaderboard.json"><code>leaderboard.json</code></a> · the whole leaderboard is on the
   <a href="methods.html#e6">methods page</a> and the
@@ -64,7 +64,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/c7a6da2387300cf0d14fc132169a5079335ca8c1"><code>c7a6da23</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/a0f3c9e7b1f8155ad27719051ace33c772163d7e"><code>a0f3c9e7</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>
