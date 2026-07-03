@@ -280,8 +280,36 @@ def is_summary_record(path, rec):
     )
 
 
-def load_per_game_records():
-    """Yield (phase, path, rec) for every per-game §R record across A/B/C."""
+def _load_scored_games():
+    """The 42 scored games (XAI_SCORED in tools/xai_study/common/game_sets.jl) — the
+    single source of truth. Records for the 12 excluded (degenerate/static) games are
+    dropped from aggregation so the leaderboard reflects exactly the scored battery.
+    Empty set (parse failure) => no filtering, so this degrades safe."""
+    import re as _re
+    p = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                     "common", "game_sets.jl")
+    try:
+        m = _re.search(r"const XAI_SCORED = \[(.*?)\]", open(p).read(), _re.S)
+        return {x for x in _re.findall(r'"([a-z0-9_]+)"', m.group(1))} if m else set()
+    except Exception:
+        return set()
+
+
+SCORED_GAMES = _load_scored_games()
+
+
+def _game_of(path, rec):
+    g = rec.get("game")
+    if isinstance(g, str) and g:
+        return g.lower()
+    bn = os.path.basename(path).lower()
+    return next((c for c in SCORED_GAMES if c in bn), None)
+
+
+def load_per_game_records(scored_only=True):
+    """Yield (phase, path, rec) for every per-game §R record across A/B/C. When
+    scored_only and the 42-game scored set is known, records for games OUTSIDE that
+    set are skipped, so aggregation covers exactly the scored battery."""
     for phase, d in PHASE_DIRS.items():
         for path in sorted(glob.glob(os.path.join(d, "*.json"))):
             try:
@@ -293,6 +321,10 @@ def load_per_game_records():
                 continue
             if is_summary_record(path, rec):
                 continue
+            if scored_only and SCORED_GAMES:
+                g = _game_of(path, rec)
+                if g is not None and g not in SCORED_GAMES:
+                    continue
             yield phase, path, rec
 
 
