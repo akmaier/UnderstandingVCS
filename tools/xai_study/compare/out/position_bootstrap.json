@@ -1,58 +1,30 @@
 {
-  "regime": "position",
-  "method": "bootstrap over games",
-  "n_games": 42,
-  "n_boot": 20000,
-  "seed": 0,
-  "mean_per_game_gap": 0.1838,
-  "ci95": [
-    0.1215,
-    0.2467
-  ],
-  "excludes_zero": true,
-  "games_used": [
-    "air_raid",
-    "alien",
-    "assault",
-    "atlantis",
-    "bank_heist",
-    "beam_rider",
-    "berzerk",
-    "bowling",
-    "boxing",
-    "breakout",
-    "carnival",
-    "centipede",
-    "chopper_command",
-    "demon_attack",
-    "double_dunk",
-    "fishing_derby",
-    "freeway",
-    "frostbite",
-    "gopher",
-    "hero",
-    "ice_hockey",
-    "jamesbond",
-    "kangaroo",
-    "krull",
-    "kung_fu_master",
-    "montezuma_revenge",
-    "ms_pacman",
-    "name_this_game",
-    "pacman",
-    "phoenix",
-    "pitfall",
-    "pong",
-    "private_eye",
-    "qbert",
-    "riverraid",
-    "road_runner",
-    "seaquest",
-    "space_invaders",
-    "tennis",
-    "venture",
-    "video_pinball",
-    "yars_revenge"
-  ],
-  "note": "causal/intervention minus gradient/correlational family mean of the position-regime faithfulness, per game, then bootstrapped over games; comparable to the paper's original 6-game position CI of [-0.05, 0.32]."
+  "position": {
+    "regime": "position",
+    "method": "bootstrap over games (family-mean gap)",
+    "n_games": 42,
+    "n_boot": 20000,
+    "seed": 0,
+    "family_mean_gap": 0.3268,
+    "ci95": [
+      0.1316,
+      0.3697
+    ],
+    "excludes_zero": true,
+    "note": "causal/intervention minus gradient/correlational family mean of the position-regime faithfulness, per game, then bootstrapped over games; comparable to the paper's original 6-game position CI of [-0.05, 0.32]."
+  },
+  "all_regime": {
+    "regime": "all",
+    "method": "bootstrap over games (family-mean gap)",
+    "n_games": 42,
+    "n_boot": 20000,
+    "seed": 0,
+    "family_mean_gap": 0.3374,
+    "ci95": [
+      0.3103,
+      0.3643
+    ],
+    "excludes_zero": true,
+    "note": "same construction over ALL output regimes; comparable to the paper's original 6-game all-regime CI of [0.232, 0.375]."
+  }
 }

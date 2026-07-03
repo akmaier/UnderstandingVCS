@@ -2,10 +2,10 @@
 
 From compare/out/leaderboard.json + position_bootstrap.json. Scored battery = **42 games**. **1736** §R records → 31 method rows.
 
-## Headline
-- **All-regime gap = 0.3374** — causal/intervention **0.7215** (n=11 methods) vs gradient/correlational **0.384** (n=14). (6-game: 0.297.)
-- **Position, per-method families:** causal/intervention **0.561** (±0.3212, n=4) vs gradient/correlational **0.2343** (±0.156, n=9); gap **0.3267**.
-- **Position gap SIGNIFICANCE (bootstrap over games, n=42):** mean **0.1838**, 95% CI **[0.1215, 0.2467]** — **EXCLUDES ZERO**. (6-game: 0.238, CI [-0.05, 0.32], crossed zero.)
+## Headline (family-mean gaps; CI = bootstrap over games, the paper's convention)
+- **All-regime gap = 0.3374**, 95% CI **[0.3103, 0.3643]** (excludes zero). Family means: causal/intervention **0.7215** (n=11 methods) vs gradient/correlational **0.384** (n=14). (6-game: 0.297 [0.232,0.375].)
+- **Position gap = 0.3268**, 95% CI **[0.1316, 0.3697]** — **EXCLUDES ZERO (SIGNIFICANT)**. Family means: causal/intervention **0.561** (n=4) vs gradient/correlational **0.2343** (n=9). (6-game: 0.238, CI [-0.05, 0.32], crossed zero.)
+- Both CIs are bootstrap-over-games of the FAMILY-MEAN gap (position_bootstrap.py), so each point estimate lies inside its own CI. Do NOT use per-game-gap variants.
 
 ## Per-method (F, F_pos, S, M, plaus, tradition, n_games)
 
