@@ -9,7 +9,7 @@
     "y_plausibility": "DOCUMENTED METHOD-TRADITION PROXY (PLAUSIBILITY_BY_TRADITION), NOT a measurement \u2014 exposes the \u00a70 danger zone. [0,1] higher=looks-more-convincing."
   },
   "n_methods": 31,
-  "n_per_game_records_aggregated": 1599,
+  "n_per_game_records_aggregated": 1736,
   "na_audit_records_excluded": [
     "na_audit_air_raid.json",
     "na_audit_alien.json",
@@ -451,13 +451,13 @@
       "phase_code": "B",
       "method": "rise",
       "tradition": "gradient",
-      "n_games": 6,
-      "n_records": 12,
-      "faithfulness": 0.5483,
-      "faithfulness_ci95": 0.1873,
-      "faithfulness_n": 12,
-      "faithfulness_position_regime": 0.4186,
-      "faithfulness_content_regime": 0.678,
+      "n_games": 42,
+      "n_records": 84,
+      "faithfulness": 0.5522,
+      "faithfulness_ci95": 0.0646,
+      "faithfulness_n": 84,
+      "faithfulness_position_regime": 0.4399,
+      "faithfulness_content_regime": 0.6644,
       "faithfulness_other_regime": null,
       "plausibility_proxy": 0.9,
       "triad_F": null,
@@ -467,7 +467,7 @@
       "is_positive_control": 0,
       "faith_source": "value:pearson_corr_with_oracle",
       "metric_names": "pearson_corr_with_oracle",
-      "commits": "9bc37f8b"
+      "commits": "15e5d2df"
     },
     {
       "phase": "phaseB_attribution",
@@ -520,23 +520,23 @@
       "phase_code": "C",
       "method": "ACDC",
       "tradition": "causal",
-      "n_games": 6,
-      "n_records": 6,
-      "faithfulness": 0.4699,
-      "faithfulness_ci95": 0.321,
-      "faithfulness_n": 6,
+      "n_games": 35,
+      "n_records": 35,
+      "faithfulness": 0.6254,
+      "faithfulness_ci95": 0.1102,
+      "faithfulness_n": 35,
       "faithfulness_position_regime": null,
       "faithfulness_content_regime": null,
-      "faithfulness_other_regime": 0.4699,
+      "faithfulness_other_regime": 0.6254,
       "plausibility_proxy": 0.5,
-      "triad_F": 0.4699,
-      "triad_S": 0.3096,
+      "triad_F": 0.6254,
+      "triad_S": 0.2995,
       "triad_M": 1.0,
-      "FSM_composite": 0.526,
+      "FSM_composite": 0.5722,
       "is_positive_control": 0,
       "faith_source": "triad.F",
       "metric_names": "discovered_circuit_best_F1_vs_true_dataflow",
-      "commits": "19022dc7"
+      "commits": "15e5d2df"
     },
     {
       "phase": "phaseC_mechanistic",
@@ -681,14 +681,14 @@
       "phase_code": "C",
       "method": "nmf_pca_dictionaries",
       "tradition": "dim_reduction",
-      "n_games": 6,
-      "n_records": 6,
-      "faithfulness": 0.5417,
-      "faithfulness_ci95": 0.1211,
-      "faithfulness_n": 6,
+      "n_games": 42,
+      "n_records": 42,
+      "faithfulness": 0.4405,
+      "faithfulness_ci95": 0.0503,
+      "faithfulness_n": 42,
       "faithfulness_position_regime": null,
       "faithfulness_content_regime": null,
-      "faithfulness_other_regime": 0.5417,
+      "faithfulness_other_regime": 0.4405,
       "plausibility_proxy": 0.75,
       "triad_F": null,
       "triad_S": null,
@@ -697,7 +697,7 @@
       "is_positive_control": 0,
       "faith_source": "value:nmf_matched_component_fraction_vs_known_vars",
       "metric_names": "nmf_matched_component_fraction_vs_known_vars",
-      "commits": "81fc6963"
+      "commits": "15e5d2df"
     },
     {
       "phase": "phaseC_mechanistic",
@@ -781,19 +781,19 @@
     },
     "phaseB_attribution": {
       "n_methods": 12,
-      "faithfulness_mean": 0.4622,
-      "faithfulness_ci95": 0.0854,
+      "faithfulness_mean": 0.4625,
+      "faithfulness_ci95": 0.0855,
       "plausibility_proxy_mean": 0.8125,
       "FSM_composite_mean": null,
-      "faithfulness_position_regime_mean": 0.2776,
+      "faithfulness_position_regime_mean": 0.2794,
       "position_regime_n": 12
     },
     "phaseC_mechanistic": {
       "n_methods": 10,
-      "faithfulness_mean": 0.6308,
-      "faithfulness_ci95": 0.2147,
+      "faithfulness_mean": 0.6362,
+      "faithfulness_ci95": 0.2149,
       "plausibility_proxy_mean": 0.625,
-      "FSM_composite_mean": 0.3256,
+      "FSM_composite_mean": 0.3487,
       "faithfulness_position_regime_mean": 1.0,
       "position_regime_n": 1
     }
@@ -804,17 +804,17 @@
       "causal_intervention_faithfulness_mean": 0.561,
       "causal_intervention_ci95": 0.3212,
       "causal_intervention_n": 4,
-      "gradient_correlational_faithfulness_mean": 0.232,
-      "gradient_correlational_ci95": 0.1545,
+      "gradient_correlational_faithfulness_mean": 0.2343,
+      "gradient_correlational_ci95": 0.156,
       "gradient_correlational_n": 9,
-      "gap": 0.329
+      "gap": 0.3267
     },
     "all_regimes": {
-      "causal_intervention_faithfulness_mean": 0.7073,
+      "causal_intervention_faithfulness_mean": 0.7215,
       "causal_intervention_n": 11,
-      "gradient_correlational_faithfulness_mean": 0.3837,
+      "gradient_correlational_faithfulness_mean": 0.384,
       "gradient_correlational_n": 14,
-      "gap": 0.3236
+      "gap": 0.3374
     }
   },
   "danger_zone_discrepancy_table": [
@@ -927,8 +927,8 @@
       "method": "rise",
       "tradition": "gradient",
       "plausibility_proxy": 0.9,
-      "faithfulness": 0.5483,
-      "plausibility_minus_faithfulness": 0.3517
+      "faithfulness": 0.5522,
+      "plausibility_minus_faithfulness": 0.3478
     },
     {
       "phase": "phaseA_kording",
@@ -937,6 +937,14 @@
       "plausibility_proxy": 0.55,
       "faithfulness": 0.2066,
       "plausibility_minus_faithfulness": 0.3434
+    },
+    {
+      "phase": "phaseC_mechanistic",
+      "method": "nmf_pca_dictionaries",
+      "tradition": "dim_reduction",
+      "plausibility_proxy": 0.75,
+      "faithfulness": 0.4405,
+      "plausibility_minus_faithfulness": 0.3095
     },
     {
       "phase": "phaseB_attribution",
@@ -963,14 +971,6 @@
       "plausibility_minus_faithfulness": 0.231
     },
     {
-      "phase": "phaseC_mechanistic",
-      "method": "nmf_pca_dictionaries",
-      "tradition": "dim_reduction",
-      "plausibility_proxy": 0.75,
-      "faithfulness": 0.5417,
-      "plausibility_minus_faithfulness": 0.2083
-    },
-    {
       "phase": "phaseB_attribution",
       "method": "on_distribution_counterfactual",
       "tradition": "intervention",
@@ -988,19 +988,19 @@
     },
     {
       "phase": "phaseC_mechanistic",
-      "method": "ACDC",
-      "tradition": "causal",
-      "plausibility_proxy": 0.5,
-      "faithfulness": 0.4699,
-      "plausibility_minus_faithfulness": 0.0301
-    },
-    {
-      "phase": "phaseC_mechanistic",
       "method": "path_patching",
       "tradition": "causal",
       "plausibility_proxy": 0.5,
       "faithfulness": 0.5796,
       "plausibility_minus_faithfulness": -0.0796
+    },
+    {
+      "phase": "phaseC_mechanistic",
+      "method": "ACDC",
+      "tradition": "causal",
+      "plausibility_proxy": 0.5,
+      "faithfulness": 0.6254,
+      "plausibility_minus_faithfulness": -0.1254
     },
     {
       "phase": "phaseB_attribution",
@@ -1080,7 +1080,7 @@
       {
         "name": "position-regime gap (causal \u2212 gradient) > 0",
         "pass": true,
-        "detail": "gap=0.329"
+        "detail": "gap=0.3267"
       },
       {
         "name": "plausibility proxy in [0,1]",

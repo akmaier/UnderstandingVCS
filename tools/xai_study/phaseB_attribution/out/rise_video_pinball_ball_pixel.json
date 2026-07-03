@@ -1,0 +1,156 @@
+{
+  "arrays": "rise_video_pinball_ball_pixel.npz",
+  "ci": null,
+  "commit": "15e5d2df",
+  "extra": {
+    "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-RISE causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
+    "budget": {
+      "keep_prob": 0.5,
+      "n_candidate_cells": 7,
+      "n_masks": 500,
+      "n_real_reruns": 500,
+      "note": "N=500 masks at keep_prob=0.5 (Petsiuk's default mask density). Each mask = ONE real emulator re-run, so the cost is exactly N re-runs per output. RISE variance ∝ 1/N — see convergence_sweep.",
+      "rng": "MersenneTwister(seed*1_000_003 + 7919), seed=0"
+    },
+    "cause_names": [
+      "ram[48]:set",
+      "ram[48]:occlude",
+      "ram[50]:set",
+      "ram[50]:occlude",
+      "ram[67]:set",
+      "ram[67]:occlude",
+      "ram[68]:set",
+      "ram[68]:occlude",
+      "ram[98]:set",
+      "ram[98]:occlude",
+      "ram[102]:set",
+      "ram[102]:occlude",
+      "ram[25]:set",
+      "ram[25]:occlude",
+      "tia[COLUBK]:set",
+      "joystick:RIGHT"
+    ],
+    "content_ram_index": -1,
+    "convergence_sweep": {
+      "interpretation": "faithfulness (corr / precision@k / del-ins) recomputed from N/8, N/4, N/2, N masks of the SAME pool (no extra re-runs). RISE's Monte-Carlo variance is ∝ 1/N, so corr/p@k STABILISE as N grows; the spread between the smallest and full budget quantifies how many masks RISE needs on this output.",
+      "points": [
+        {
+          "deletion_auc": 0.5395833333333334,
+          "insertion_auc": 0.4479166666666666,
+          "n_masks": 62,
+          "pearson_corr": 0.10153208569975733,
+          "precision_at_k": 0.0,
+          "spearman_corr": 0.183608384473654
+        },
+        {
+          "deletion_auc": 0.6229166666666669,
+          "insertion_auc": 0.3645833333333333,
+          "n_masks": 125,
+          "pearson_corr": 0.24697473704275996,
+          "precision_at_k": 0.0,
+          "spearman_corr": 0.37022674246326953
+        },
+        {
+          "deletion_auc": 0.7379807692307693,
+          "insertion_auc": 0.3629807692307693,
+          "n_masks": 250,
+          "pearson_corr": 0.4070961694522256,
+          "precision_at_k": 0.6666666666666666,
+          "spearman_corr": 0.43301137844511706
+        },
+        {
+          "deletion_auc": 0.8629807692307693,
+          "insertion_auc": 0.31490384615384603,
+          "n_masks": 500,
+          "pearson_corr": 0.40631545110285566,
+          "precision_at_k": 0.3333333333333333,
+          "spearman_corr": 0.47256584200596197
+        }
+      ]
+    },
+    "harness_positive_control": {
+      "deletion_auc": 0.7104166666666668,
+      "insertion_auc": 0.34375000000000006,
+      "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the RISE numbers above are then a true measurement, not an artefact of the metric.",
+      "method": "oracle_abs_delta (the perfectly-faithful attribution)",
+      "oracle_column_degenerate": false,
+      "pearson_corr": 1.0,
+      "precision_at_k": 1.0
+    },
+    "headline_metrics": {
+      "deletion_auc": 0.8629807692307693,
+      "insertion_auc": 0.31490384615384603,
+      "pearson_corr": 0.40631545110285566,
+      "precision_at_k": 0.3333333333333333,
+      "spearman_corr": 0.47256584200596197,
+      "topk": 3
+    },
+    "oracle_abs_delta_per_cause": {
+      "joystick:RIGHT": 0.0,
+      "ram[102]:occlude": 96.0,
+      "ram[102]:set": 60.0,
+      "ram[25]:occlude": 80.0,
+      "ram[25]:set": 96.0,
+      "ram[48]:occlude": 0.0,
+      "ram[48]:set": 160.0,
+      "ram[50]:occlude": 0.0,
+      "ram[50]:set": 160.0,
+      "ram[67]:occlude": 64.0,
+      "ram[67]:set": 56.0,
+      "ram[68]:occlude": 32.0,
+      "ram[68]:set": 56.0,
+      "ram[98]:occlude": 0.0,
+      "ram[98]:set": 41.0,
+      "tia[COLUBK]:set": 0.0
+    },
+    "output_kind": "position",
+    "output_note": "POSITION/INDEX output (ball_pixel) — the §7 CONTRAST: unlike IG/saliency (which VANISH on position outputs because the pixel is a round/argmax sprite column with no differentiable RAM path), RISE — a BLACK-BOX perturb-and-re-run method — STILL produces a real attribution here. It masks candidate RAM cells to 0 and RE-RUNS the real ROM, reading the real pixel; no differentiation needed. Reported, not asserted to be large; the intervention oracle remains the sole truth.",
+    "rise_attr_per_cause": {
+      "joystick:RIGHT": 0.0,
+      "ram[102]:occlude": 30.93028571428573,
+      "ram[102]:set": 30.93028571428573,
+      "ram[25]:occlude": 24.338285714285732,
+      "ram[25]:set": 24.338285714285732,
+      "ram[48]:occlude": 22.061714285714274,
+      "ram[48]:set": 22.061714285714274,
+      "ram[50]:occlude": 10.669714285714264,
+      "ram[50]:set": 10.669714285714264,
+      "ram[67]:occlude": 7.506285714285738,
+      "ram[67]:set": 7.506285714285738,
+      "ram[68]:occlude": 15.981714285714261,
+      "ram[68]:set": 15.981714285714261,
+      "ram[98]:occlude": 14.061714285714274,
+      "ram[98]:set": 14.061714285714274,
+      "tia[COLUBK]:set": 0.0
+    },
+    "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard i --nshards n --shard-kind game): one Slurm array task per core game; or batched SOFT-STE masked re-runs over masks×cells×games on GPU (the forward is bit-exact to this HARD map).",
+    "substrate": "jutari (Julia, HARD) — RISE (Petsiuk 2018) randomized-mask saliency: draw N random binary masks over the candidate RAM cells, mask the dropped cells to 0, RE-RUN the real ROM (bit-exact oracle machinery), weight each mask by the masked output. Every probe is a genuine emulator re-run; no gradient, no surrogate.",
+    "testbed": {
+      "cause_density_above_floor": 11,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 16,
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r184c66",
+      "state_kind": "seeded_random_action_gameplay"
+    },
+    "y_intact": 0.0
+  },
+  "game": "video_pinball",
+  "method": "rise",
+  "metric_name": "pearson_corr_with_oracle",
+  "n": 16,
+  "oracle_ref": "oracle_intervene@video_pinball#screen_region(n_changed_px)@r184c66",
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "seed": 0,
+  "state": "gameplay(seed=0,prefix=90)+15",
+  "stderr": null,
+  "target_output": "screen_region(n_changed_px)@r184c66",
+  "timestamp": "1783114266",
+  "value": 0.40631545110285566,
+  "where": "local"
+}

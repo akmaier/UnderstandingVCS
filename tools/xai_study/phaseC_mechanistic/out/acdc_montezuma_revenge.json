@@ -1,0 +1,312 @@
+{
+  "arrays": "acdc_montezuma_revenge.npz",
+  "budget": {
+    "horizon_frames": 15,
+    "note": "paper-reasonable: the τ sweep adds zero re-runs (it thresholds the cached effect matrix). Heavy cost is the N resample re-runs + the exhaustive 3N ground-truth re-runs; re-runnable incrementally from the cached deepcopy checkpoint.",
+    "rom_reruns_acdc": "N resample-ablations (1 per source) + 1 corrupted boot + 1 scrub re-run + 2 bit-exact baselines",
+    "rom_reruns_true_graph": "≤ 3·N exhaustive interventions (N=15 cells × 3 do-values)",
+    "tau_sweep": "8 thresholds (pure thresholding of the cached effect matrix — NO extra re-runs)"
+  },
+  "ci": null,
+  "commit": "15e5d2df",
+  "extra": {
+    "ablation": "resample (parent overwritten with its value from the corrupted RIGHT-action donor run); standard ACDC corruption (Conmy et al. 2023 §3), not zero.",
+    "bit_exact_rerun": true,
+    "candidate_cells": [
+      "RAM[3]:room_number",
+      "RAM[19]:score_0",
+      "RAM[20]:score_1",
+      "RAM[21]:score_2",
+      "RAM[42]:player_x",
+      "RAM[43]:player_y",
+      "RAM[44]:key_monster_x",
+      "RAM[45]:key_monster_y",
+      "RAM[46]:enemy_skull_y",
+      "RAM[47]:enemy_skull_x",
+      "RAM[52]:player_direction",
+      "RAM[57]:level",
+      "RAM[58]:num_lives",
+      "RAM[61]:items_in_inventory_count",
+      "RAM[62]:room_state"
+    ],
+    "candidate_ram_indices": [
+      3,
+      19,
+      20,
+      21,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      52,
+      57,
+      58,
+      61,
+      62
+    ],
+    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_montezuma_revenge.json",
+    "circuit": {
+      "best_tau": 1.5,
+      "discovered_edges_at_best_tau": [
+        [
+          0,
+          4
+        ],
+        [
+          0,
+          5
+        ],
+        [
+          0,
+          9
+        ],
+        [
+          0,
+          10
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          4,
+          10
+        ],
+        [
+          5,
+          4
+        ],
+        [
+          5,
+          10
+        ],
+        [
+          11,
+          9
+        ],
+        [
+          11,
+          13
+        ],
+        [
+          11,
+          14
+        ]
+      ],
+      "f1": 0.888888888888889,
+      "fn": 3,
+      "fp": 0,
+      "n_discovered_edges_at_best": 12,
+      "n_nodes": 15,
+      "n_true_edges": 15,
+      "note": "edges are 0-based candidate ordinals [i,j] = cell i -> cell j. TRUE = exhaustive oracle (do 0/base+17/base+37, full horizon, any value changes j); DISCOVERED = ACDC keep-rule (resample-ablation effect > τ). The τ sweep is the ROC frontier.",
+      "precision": 1.0,
+      "recall": 0.8,
+      "roc_auc": 0.9,
+      "tp": 12,
+      "true_edges": [
+        [
+          0,
+          4
+        ],
+        [
+          0,
+          5
+        ],
+        [
+          0,
+          9
+        ],
+        [
+          0,
+          10
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          4,
+          9
+        ],
+        [
+          4,
+          10
+        ],
+        [
+          4,
+          14
+        ],
+        [
+          5,
+          4
+        ],
+        [
+          5,
+          10
+        ],
+        [
+          11,
+          9
+        ],
+        [
+          11,
+          13
+        ],
+        [
+          11,
+          14
+        ],
+        [
+          14,
+          13
+        ]
+      ]
+    },
+    "n_source_diverged": 0,
+    "positive_control": {
+      "f1": 1.0,
+      "name": "oracle-as-ACDC (exhaustive do-set, full horizon, τ=0)",
+      "note": "the exhaustive keep-rule IS the true-graph procedure, so it scores F1=1 — the harness rewards a perfectly-faithful discovery, so the resample-ACDC F1<1 is a real cheap-ablation faithfulness gap.",
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "rom_basename": "montezuma_revenge.bin",
+    "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard/--nshards/--shard-kind game --out-dir --roms-dir --where) — the full ACDC battery over the core + breadth sets; forward bit-exact to this HARD path.",
+    "scrubbing": {
+      "n_scrubbed_parents": 11,
+      "note": "causal scrubbing of the best-F1 discovered circuit: resample-ablate every parent NOT in the circuit, re-run, report the fraction of candidate-cell readouts unchanged vs clean.",
+      "preserved_fraction": 0.3333333333333333
+    },
+    "settings": "GenericRomSettings",
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge effect is an EXACT resample-ablation re-run on the true ROM.",
+    "tau_sweep": [
+      {
+        "f1": 0.888888888888889,
+        "fn": 3,
+        "fp": 0,
+        "n_discovered": 12,
+        "precision": 1.0,
+        "recall": 0.8,
+        "tau": 1.5,
+        "tp": 12
+      },
+      {
+        "f1": 0.8,
+        "fn": 5,
+        "fp": 0,
+        "n_discovered": 10,
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "tau": 3.5,
+        "tp": 10
+      },
+      {
+        "f1": 0.7499999999999999,
+        "fn": 6,
+        "fp": 0,
+        "n_discovered": 9,
+        "precision": 1.0,
+        "recall": 0.6,
+        "tau": 4.5,
+        "tp": 9
+      },
+      {
+        "f1": 0.6363636363636364,
+        "fn": 8,
+        "fp": 0,
+        "n_discovered": 7,
+        "precision": 1.0,
+        "recall": 0.4666666666666667,
+        "tau": 6.5,
+        "tp": 7
+      },
+      {
+        "f1": 0.5714285714285715,
+        "fn": 9,
+        "fp": 0,
+        "n_discovered": 6,
+        "precision": 1.0,
+        "recall": 0.4,
+        "tau": 8.5,
+        "tp": 6
+      },
+      {
+        "f1": 0.5,
+        "fn": 10,
+        "fp": 0,
+        "n_discovered": 5,
+        "precision": 1.0,
+        "recall": 0.3333333333333333,
+        "tau": 25.0,
+        "tp": 5
+      },
+      {
+        "f1": 0.33333333333333337,
+        "fn": 12,
+        "fp": 0,
+        "n_discovered": 3,
+        "precision": 1.0,
+        "recall": 0.2,
+        "tau": 48.5,
+        "tp": 3
+      },
+      {
+        "f1": 0.0,
+        "fn": 15,
+        "fp": 0,
+        "n_discovered": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "tau": 57.0,
+        "tp": 0
+      }
+    ],
+    "testbed": {
+      "cause_density_above_floor": 22,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 32,
+      "note": "P2 redesign: ACDC runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. The clean stream is the shared gameplay tape; the resample donor shares the gameplay prefix and diverges only from f* (a RIGHT action) so it is on-distribution. The ACDC discovery algorithm is unchanged; only the analysis state moves.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r66c75",
+      "state_kind": "seeded_random_action_gameplay"
+    },
+    "triad": {
+      "F": 0.888888888888889,
+      "F_note": "best-F1 of the ACDC-discovered circuit edges vs the exhaustive-oracle true data-flow (15 candidate cells)",
+      "M": 1.0,
+      "M_note": "1 − over-claim rate at best-F1 τ: fraction of discovered edges the oracle says are spurious (false wiring kept by the cheap ablation)",
+      "S": 0.3333333333333333,
+      "S_note": "scrubbing-preserved performance: the discovered circuit alone (non-circuit parents resample-scrubbed) reproduces the clean candidate-cell readouts (fraction unchanged, bit-exact re-run)",
+      "interpretation": "ACDC's goal state IS our ground truth (experiment_design.md §7: Partial→Succeed). The discovery uses a cheap single-value resample-ablation, so it can miss edges that fire only for a different value (recall deficit) and keep transient ones (precision deficit) vs the exhaustive true data-flow."
+    }
+  },
+  "game": "montezuma_revenge",
+  "method": "ACDC(automatic circuit discovery, resample-ablation edge pruning)",
+  "metric_name": "discovered_circuit_best_F1_vs_true_dataflow",
+  "n": 15,
+  "oracle_ref": "A1_connectomics/oracle_intervene@montezuma_revenge — exhaustive exact inter-cell data-flow (do-set 0/base+17/base+37, full horizon)",
+  "paper": "P2",
+  "phase": "phaseC_mechanistic",
+  "seed": 0,
+  "state": "gameplay(seed=0,prefix=90)+15",
+  "stderr": null,
+  "target_output": "auto-discovered inter-cell data-flow circuit (candidate RAM cells)",
+  "timestamp": "1783106588",
+  "value": 0.888888888888889,
+  "where": "local"
+}

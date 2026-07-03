@@ -1,33 +1,273 @@
 {
-  "commit": "81fc6963",
+  "commit": "15e5d2df",
   "games": [
     {
-      "all_ablated_break_px": 192.0,
-      "game": "pong",
+      "all_ablated_break_px": 1816.0,
+      "game": "air_raid",
       "headline_rank": 8,
       "in_window": false,
       "matched_frac_nmf": 0.625,
+      "matched_frac_pca": 0.375,
+      "matched_frac_sae": 0.5,
+      "n_cands": 13,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 8,
+      "n_causal_atoms_sae": 6,
+      "n_known_game_vars": 7,
+      "nmf_FSM": [
+        -0.19518001458970663,
+        0.372719385938068,
+        1.0
+      ],
+      "pca_FSM": [
+        0.545544725589981,
+        0.7661546202169359,
+        1.0
+      ],
+      "sae_FSM": [
+        0.287096310950944,
+        0.9574377811038883,
+        0.75
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 3399.0,
+      "game": "alien",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.75,
+      "matched_frac_pca": 0.125,
+      "matched_frac_sae": 0.25,
+      "n_cands": 6,
+      "n_causal_atoms_nmf": 2,
+      "n_causal_atoms_pca": 8,
+      "n_causal_atoms_sae": 2,
+      "n_known_game_vars": 4,
+      "nmf_FSM": [
+        -0.2587300414042701,
+        0.9999873986334288,
+        0.16666666666666663
+      ],
+      "pca_FSM": [
+        0.5773502691896257,
+        0.9997491673993374,
+        1.0
+      ],
+      "sae_FSM": [
+        -0.32653061224489793,
+        0.9990705785495119,
+        0.0
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 1018.0,
+      "game": "assault",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.25,
+      "matched_frac_pca": 0.25,
+      "matched_frac_sae": 0.375,
+      "n_cands": 20,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 8,
+      "n_causal_atoms_sae": 6,
+      "n_known_game_vars": 15,
+      "nmf_FSM": [
+        0.3117398431942748,
+        0.9084665685843103,
+        1.0
+      ],
+      "pca_FSM": [
+        -0.48319675695112596,
+        0.3364311264353091,
+        1.0
+      ],
+      "sae_FSM": [
+        -0.10976425998969036,
+        -0.06972238661618661,
+        0.6666666666666667
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 410.0,
+      "game": "atlantis",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.25,
       "matched_frac_pca": 0.5,
       "matched_frac_sae": 0.375,
-      "n_cands": 8,
+      "n_cands": 9,
       "n_causal_atoms_nmf": 8,
       "n_causal_atoms_pca": 8,
       "n_causal_atoms_sae": 3,
       "n_known_game_vars": 5,
       "nmf_FSM": [
-        0.3,
-        0.9322080797795143,
+        -0.20384791140942493,
+        0.9920879137208684,
         1.0
       ],
       "pca_FSM": [
-        -0.15949795052830226,
-        0.5817326598211711,
+        0.4439280032528609,
+        0.9980114906082301,
         1.0
       ],
       "sae_FSM": [
-        0.2047307562133314,
-        0.9873734800310344,
+        -0.1875,
+        0.97731471090095,
+        0.33333333333333337
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 134.0,
+      "game": "bank_heist",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.5,
+      "matched_frac_pca": 0.25,
+      "matched_frac_sae": 0.375,
+      "n_cands": 5,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 8,
+      "n_causal_atoms_sae": 4,
+      "n_known_game_vars": 3,
+      "nmf_FSM": [
+        -0.07610194341477615,
+        0.6268700537550635,
+        1.0
+      ],
+      "pca_FSM": [
+        0.40526179615255725,
+        -0.5040548772629062,
+        1.0
+      ],
+      "sae_FSM": [
+        0.10171668390084188,
+        0.6015638033988207,
+        0.33333333333333337
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 2859.0,
+      "game": "beam_rider",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.5,
+      "matched_frac_pca": 0.375,
+      "matched_frac_sae": 0.5,
+      "n_cands": 5,
+      "n_causal_atoms_nmf": 1,
+      "n_causal_atoms_pca": 7,
+      "n_causal_atoms_sae": 7,
+      "n_known_game_vars": 3,
+      "nmf_FSM": [
+        -0.35149982013099745,
+        1.0,
+        0.0
+      ],
+      "pca_FSM": [
+        -0.1118033988749895,
+        0.8572116532210061,
         0.6666666666666667
+      ],
+      "sae_FSM": [
+        -0.4643002821097108,
+        -0.7032891436939308,
+        0.75
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 4572.0,
+      "game": "berzerk",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.625,
+      "matched_frac_pca": 0.125,
+      "matched_frac_sae": 0.5,
+      "n_cands": 26,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 8,
+      "n_causal_atoms_sae": 3,
+      "n_known_game_vars": 19,
+      "nmf_FSM": [
+        -0.08385254915624211,
+        0.988999159172401,
+        1.0
+      ],
+      "pca_FSM": [
+        0.08247860988423225,
+        -0.7752141363099206,
+        1.0
+      ],
+      "sae_FSM": [
+        -0.05812381937190964,
+        0.9999884248768829,
+        0.25
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 64.0,
+      "game": "bowling",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.5,
+      "matched_frac_pca": 0.625,
+      "matched_frac_sae": 0.5,
+      "n_cands": 20,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 4,
+      "n_causal_atoms_sae": 1,
+      "n_known_game_vars": 17,
+      "nmf_FSM": [
+        -0.06341828617898013,
+        0.800324852555945,
+        1.0
+      ],
+      "pca_FSM": [
+        0.6498440561375454,
+        0.9932240150106001,
+        0.6
+      ],
+      "sae_FSM": [
+        0.4393747751637468,
+        1.0,
+        0.25
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 940.0,
+      "game": "boxing",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.25,
+      "matched_frac_pca": 0.125,
+      "matched_frac_sae": 0.25,
+      "n_cands": 11,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 7,
+      "n_causal_atoms_sae": 4,
+      "n_known_game_vars": 5,
+      "nmf_FSM": [
+        0.5017794742385845,
+        0.8300556851425532,
+        1.0
+      ],
+      "pca_FSM": [
+        -0.4123930494211613,
+        0.3146252583929729,
+        1.0
+      ],
+      "sae_FSM": [
+        -0.5314177771146025,
+        -0.14513428215570448,
+        0.0
       ],
       "state": "f90+15"
     },
@@ -62,62 +302,482 @@
       "state": "f90+15"
     },
     {
-      "all_ablated_break_px": 1343.0,
-      "game": "space_invaders",
+      "all_ablated_break_px": 1512.0,
+      "game": "carnival",
       "headline_rank": 8,
       "in_window": false,
-      "matched_frac_nmf": 0.75,
-      "matched_frac_pca": 0.5,
+      "matched_frac_nmf": 0.375,
+      "matched_frac_pca": 0.125,
       "matched_frac_sae": 0.75,
-      "n_cands": 17,
+      "n_cands": 18,
       "n_causal_atoms_nmf": 8,
-      "n_causal_atoms_pca": 5,
-      "n_causal_atoms_sae": 1,
-      "n_known_game_vars": 13,
+      "n_causal_atoms_pca": 8,
+      "n_causal_atoms_sae": 4,
+      "n_known_game_vars": 15,
       "nmf_FSM": [
-        -0.15569141404872366,
-        0.8806721125777258,
+        -0.13638618139749525,
+        0.985598180588023,
         1.0
       ],
       "pca_FSM": [
-        0.25993762245501817,
-        1.0,
-        0.75
+        0.4123930494211613,
+        0.9338699920152782,
+        1.0
       ],
       "sae_FSM": [
-        -0.08297398136450225,
-        -1.0,
-        0.16666666666666663
+        -0.357275409183397,
+        -0.47392936435496924,
+        0.33333333333333337
       ],
       "state": "f90+15"
     },
     {
-      "all_ablated_break_px": 315.0,
-      "game": "seaquest",
+      "all_ablated_break_px": 503.0,
+      "game": "centipede",
       "headline_rank": 8,
       "in_window": false,
-      "matched_frac_nmf": 0.625,
-      "matched_frac_pca": 0.5,
-      "matched_frac_sae": 0.375,
-      "n_cands": 23,
+      "matched_frac_nmf": 0.375,
+      "matched_frac_pca": 0.125,
+      "matched_frac_sae": 0.25,
+      "n_cands": 9,
       "n_causal_atoms_nmf": 8,
-      "n_causal_atoms_pca": 6,
+      "n_causal_atoms_pca": 7,
       "n_causal_atoms_sae": 4,
-      "n_known_game_vars": 15,
+      "n_known_game_vars": 5,
       "nmf_FSM": [
-        -0.1707825127659933,
-        0.6516525613378172,
+        0.2727723627949905,
+        0.9893803836741927,
         1.0
       ],
       "pca_FSM": [
-        0.7655901625358508,
-        0.999965345175129,
+        0.4123930494211613,
+        0.4776712996531609,
         1.0
       ],
       "sae_FSM": [
-        0.494052464661232,
-        -0.7877214932162487,
+        -0.008303402767415664,
+        0.9394260267985446,
+        0.5
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 1120.0,
+      "game": "chopper_command",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.625,
+      "matched_frac_pca": 0.25,
+      "matched_frac_sae": 0.5,
+      "n_cands": 20,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 8,
+      "n_causal_atoms_sae": 4,
+      "n_known_game_vars": 9,
+      "nmf_FSM": [
+        -0.14638501094227996,
+        0.9946851748851921,
         1.0
+      ],
+      "pca_FSM": [
+        0.0779349607985687,
+        0.9766796020496373,
+        1.0
+      ],
+      "sae_FSM": [
+        -0.32432432432432434,
+        0.9317830604801296,
+        0.5
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 198.0,
+      "game": "demon_attack",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.625,
+      "matched_frac_pca": 0.25,
+      "matched_frac_sae": 0.875,
+      "n_cands": 15,
+      "n_causal_atoms_nmf": 6,
+      "n_causal_atoms_pca": 6,
+      "n_causal_atoms_sae": 3,
+      "n_known_game_vars": 10,
+      "nmf_FSM": [
+        0.4321316985341955,
+        0.9233802567569053,
+        1.0
+      ],
+      "pca_FSM": [
+        -0.2969720859358214,
+        0.733131581600927,
+        0.5
+      ],
+      "sae_FSM": [
+        0.3436608745176344,
+        0.9914601339836673,
+        0.4285714285714286
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 650.0,
+      "game": "double_dunk",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.25,
+      "matched_frac_pca": 0.125,
+      "matched_frac_sae": 0.5,
+      "n_cands": 12,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 8,
+      "n_causal_atoms_sae": 4,
+      "n_known_game_vars": 2,
+      "nmf_FSM": [
+        -0.7325886315065459,
+        0.9978812352029356,
+        1.0
+      ],
+      "pca_FSM": [
+        0.08247860988423225,
+        0.7066225663393649,
+        1.0
+      ],
+      "sae_FSM": [
+        0.3581081081081081,
+        -0.9695912422560105,
+        0.75
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 754.0,
+      "game": "fishing_derby",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.25,
+      "matched_frac_pca": 0.125,
+      "matched_frac_sae": 0.375,
+      "n_cands": 9,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 7,
+      "n_causal_atoms_sae": 5,
+      "n_known_game_vars": 4,
+      "nmf_FSM": [
+        -0.32732683535398854,
+        0.9571125170493436,
+        1.0
+      ],
+      "pca_FSM": [
+        0.4123930494211613,
+        0.5919662870070724,
+        1.0
+      ],
+      "sae_FSM": [
+        -0.8385254915624212,
+        0.43053879760219066,
+        0.0
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 914.0,
+      "game": "freeway",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.375,
+      "matched_frac_pca": 0.125,
+      "matched_frac_sae": 0.625,
+      "n_cands": 14,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 8,
+      "n_causal_atoms_sae": 5,
+      "n_known_game_vars": 13,
+      "nmf_FSM": [
+        -0.02727723627949905,
+        -0.29127056376488386,
+        1.0
+      ],
+      "pca_FSM": [
+        0.5773502691896257,
+        0.735653946810388,
+        1.0
+      ],
+      "sae_FSM": [
+        0.225,
+        -0.05177309985638425,
+        0.6
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 1215.0,
+      "game": "frostbite",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.25,
+      "matched_frac_pca": 0.25,
+      "matched_frac_sae": 0.5,
+      "n_cands": 19,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 7,
+      "n_causal_atoms_sae": 3,
+      "n_known_game_vars": 17,
+      "nmf_FSM": [
+        0.658585559938142,
+        -0.8644135908118159,
+        1.0
+      ],
+      "pca_FSM": [
+        -0.1558699215971374,
+        -0.788725053307353,
+        1.0
+      ],
+      "sae_FSM": [
+        0.39233578076039005,
+        0.1507545948215053,
+        0.5
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 0.0,
+      "game": "gopher",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.375,
+      "matched_frac_pca": 0.25,
+      "matched_frac_sae": 0.25,
+      "n_cands": 20,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 0,
+      "n_causal_atoms_sae": 0,
+      "n_known_game_vars": 5,
+      "nmf_FSM": [
+        -0.2182178902359924,
+        0.8096720176577213,
+        1.0
+      ],
+      "pca_FSM": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "sae_FSM": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 328.0,
+      "game": "hero",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.375,
+      "matched_frac_pca": 0.5,
+      "matched_frac_sae": 0.25,
+      "n_cands": 17,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 7,
+      "n_causal_atoms_sae": 1,
+      "n_known_game_vars": 15,
+      "nmf_FSM": [
+        -0.1636634176769943,
+        0.9387018818512455,
+        1.0
+      ],
+      "pca_FSM": [
+        0.17757120130114434,
+        0.9998714994259277,
+        1.0
+      ],
+      "sae_FSM": [
+        0.7559289460184545,
+        -1.0,
+        0.5
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 361.0,
+      "game": "ice_hockey",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.25,
+      "matched_frac_pca": 0.25,
+      "matched_frac_sae": 0.375,
+      "n_cands": 10,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 8,
+      "n_causal_atoms_sae": 4,
+      "n_known_game_vars": 3,
+      "nmf_FSM": [
+        0.35281369282400465,
+        0.9525303075734128,
+        1.0
+      ],
+      "pca_FSM": [
+        0.5143707412705534,
+        0.8744084824560632,
+        1.0
+      ],
+      "sae_FSM": [
+        -0.30515005170252557,
+        0.4571103769125305,
+        0.33333333333333337
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 532.0,
+      "game": "jamesbond",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.5,
+      "matched_frac_pca": 0.125,
+      "matched_frac_sae": 0.5,
+      "n_cands": 13,
+      "n_causal_atoms_nmf": 7,
+      "n_causal_atoms_pca": 8,
+      "n_causal_atoms_sae": 6,
+      "n_known_game_vars": 3,
+      "nmf_FSM": [
+        -0.16488754406534833,
+        0.9146421420589703,
+        0.75
+      ],
+      "pca_FSM": [
+        0.5773502691896257,
+        0.23163987448234227,
+        1.0
+      ],
+      "sae_FSM": [
+        -0.4338344254369821,
+        0.9318732310508471,
+        0.5
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 83.0,
+      "game": "kangaroo",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.5,
+      "matched_frac_pca": 0.375,
+      "matched_frac_sae": 0.25,
+      "n_cands": 15,
+      "n_causal_atoms_nmf": 7,
+      "n_causal_atoms_pca": 2,
+      "n_causal_atoms_sae": 1,
+      "n_known_game_vars": 10,
+      "nmf_FSM": [
+        -0.08931885229584925,
+        -0.7592201123509367,
+        1.0
+      ],
+      "pca_FSM": [
+        0.05399492471560389,
+        1.0,
+        0.33333333333333337
+      ],
+      "sae_FSM": [
+        0.7559289460184545,
+        1.0,
+        0.5
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 159.0,
+      "game": "krull",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.25,
+      "matched_frac_pca": 0.125,
+      "matched_frac_sae": 0.25,
+      "n_cands": 25,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 8,
+      "n_causal_atoms_sae": 2,
+      "n_known_game_vars": 6,
+      "nmf_FSM": [
+        0.7325886315065459,
+        0.9999982021587419,
+        1.0
+      ],
+      "pca_FSM": [
+        -0.5808178695515156,
+        0.9999747797176423,
+        1.0
+      ],
+      "sae_FSM": [
+        -0.32653061224489793,
+        -0.9999995523920084,
+        0.0
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 0.0,
+      "game": "kung_fu_master",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.375,
+      "matched_frac_pca": 0.25,
+      "matched_frac_sae": 0.0,
+      "n_cands": 9,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 0,
+      "n_causal_atoms_sae": 0,
+      "n_known_game_vars": 5,
+      "nmf_FSM": [
+        0.05812381937190964,
+        0.9970859763646863,
+        1.0
+      ],
+      "pca_FSM": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "sae_FSM": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 254.0,
+      "game": "montezuma_revenge",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.5,
+      "matched_frac_pca": 0.125,
+      "matched_frac_sae": 0.25,
+      "n_cands": 15,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 7,
+      "n_causal_atoms_sae": 2,
+      "n_known_game_vars": 9,
+      "nmf_FSM": [
+        -0.6088155473182092,
+        0.5237137916842779,
+        1.0
+      ],
+      "pca_FSM": [
+        0.5773502691896257,
+        0.8067102708873144,
+        1.0
+      ],
+      "sae_FSM": [
+        0.5,
+        0.9940575734401292,
+        0.5
       ],
       "state": "f90+15"
     },
@@ -152,6 +812,186 @@
       "state": "f90+15"
     },
     {
+      "all_ablated_break_px": 1062.0,
+      "game": "name_this_game",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.375,
+      "matched_frac_pca": 0.375,
+      "matched_frac_sae": 0.25,
+      "n_cands": 5,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 8,
+      "n_causal_atoms_sae": 5,
+      "n_known_game_vars": 1,
+      "nmf_FSM": [
+        -0.6000991981489792,
+        0.9769587081396504,
+        1.0
+      ],
+      "pca_FSM": [
+        0.7910398521054725,
+        0.9999282515477268,
+        1.0
+      ],
+      "sae_FSM": [
+        0.23957871187497748,
+        -0.4485489436374229,
+        1.0
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 414.0,
+      "game": "pacman",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.875,
+      "matched_frac_pca": 0.125,
+      "matched_frac_sae": 0.25,
+      "n_cands": 8,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 6,
+      "n_causal_atoms_sae": 2,
+      "n_known_game_vars": 5,
+      "nmf_FSM": [
+        0.15569141404872366,
+        0.9970034891879149,
+        1.0
+      ],
+      "pca_FSM": [
+        0.5843487097907776,
+        0.9999987348232618,
+        1.0
+      ],
+      "sae_FSM": [
+        0.5,
+        0.8127856895429371,
+        0.5
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 3428.0,
+      "game": "phoenix",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.375,
+      "matched_frac_pca": 0.125,
+      "matched_frac_sae": 0.375,
+      "n_cands": 12,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 8,
+      "n_causal_atoms_sae": 6,
+      "n_known_game_vars": 5,
+      "nmf_FSM": [
+        -0.13638618139749525,
+        -0.9280606280223499,
+        1.0
+      ],
+      "pca_FSM": [
+        0.4123930494211613,
+        -0.5368196230817484,
+        1.0
+      ],
+      "sae_FSM": [
+        0.43905703995876144,
+        -0.8712378208273472,
+        1.0
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 734.0,
+      "game": "pitfall",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.375,
+      "matched_frac_pca": 0.25,
+      "matched_frac_sae": 0.375,
+      "n_cands": 16,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 8,
+      "n_causal_atoms_sae": 2,
+      "n_known_game_vars": 11,
+      "nmf_FSM": [
+        -0.3000495990744896,
+        0.959827494645978,
+        1.0
+      ],
+      "pca_FSM": [
+        0.03117398431942748,
+        0.6593092893669549,
+        1.0
+      ],
+      "sae_FSM": [
+        -0.42857142857142855,
+        0.6360679897457863,
+        0.0
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 192.0,
+      "game": "pong",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.625,
+      "matched_frac_pca": 0.5,
+      "matched_frac_sae": 0.375,
+      "n_cands": 8,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 8,
+      "n_causal_atoms_sae": 3,
+      "n_known_game_vars": 5,
+      "nmf_FSM": [
+        0.3,
+        0.9322080797795143,
+        1.0
+      ],
+      "pca_FSM": [
+        -0.15949795052830226,
+        0.5817326598211711,
+        1.0
+      ],
+      "sae_FSM": [
+        0.2047307562133314,
+        0.9873734800310344,
+        0.6666666666666667
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 403.0,
+      "game": "private_eye",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.375,
+      "matched_frac_pca": 0.625,
+      "matched_frac_sae": 0.75,
+      "n_cands": 24,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 8,
+      "n_causal_atoms_sae": 2,
+      "n_known_game_vars": 13,
+      "nmf_FSM": [
+        -0.1875,
+        0.9999467067211166,
+        1.0
+      ],
+      "pca_FSM": [
+        0.07319250547113998,
+        -0.7717400349208627,
+        1.0
+      ],
+      "sae_FSM": [
+        -0.015680608569955765,
+        0.9622282692875925,
+        0.33333333333333337
+      ],
+      "state": "f90+15"
+    },
+    {
       "all_ablated_break_px": 1794.0,
       "game": "qbert",
       "headline_rank": 8,
@@ -180,12 +1020,252 @@
         0.5
       ],
       "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 17193.0,
+      "game": "riverraid",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.5,
+      "matched_frac_pca": 0.375,
+      "matched_frac_sae": 0.625,
+      "n_cands": 22,
+      "n_causal_atoms_nmf": 7,
+      "n_causal_atoms_pca": 8,
+      "n_causal_atoms_sae": 3,
+      "n_known_game_vars": 15,
+      "nmf_FSM": [
+        0.038050971707388075,
+        -0.051327929288817783,
+        1.0
+      ],
+      "pca_FSM": [
+        0.6819309069874763,
+        -0.10263930243909233,
+        1.0
+      ],
+      "sae_FSM": [
+        -0.5590169943749475,
+        0.8421595531141923,
+        0.19999999999999996
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 1064.0,
+      "game": "road_runner",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.25,
+      "matched_frac_pca": 0.125,
+      "matched_frac_sae": 0.125,
+      "n_cands": 18,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 8,
+      "n_causal_atoms_sae": 3,
+      "n_known_game_vars": 12,
+      "nmf_FSM": [
+        -0.2649788667151336,
+        0.7687649719799071,
+        1.0
+      ],
+      "pca_FSM": [
+        -0.5773502691896257,
+        0.9990619570923277,
+        1.0
+      ],
+      "sae_FSM": [
+        -0.2834733547569204,
+        -0.9999974673175663,
+        0.0
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 315.0,
+      "game": "seaquest",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.625,
+      "matched_frac_pca": 0.5,
+      "matched_frac_sae": 0.375,
+      "n_cands": 23,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 6,
+      "n_causal_atoms_sae": 4,
+      "n_known_game_vars": 15,
+      "nmf_FSM": [
+        -0.1707825127659933,
+        0.6516525613378172,
+        1.0
+      ],
+      "pca_FSM": [
+        0.7655901625358508,
+        0.999965345175129,
+        1.0
+      ],
+      "sae_FSM": [
+        0.494052464661232,
+        -0.7877214932162487,
+        1.0
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 1343.0,
+      "game": "space_invaders",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.75,
+      "matched_frac_pca": 0.5,
+      "matched_frac_sae": 0.75,
+      "n_cands": 17,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 5,
+      "n_causal_atoms_sae": 1,
+      "n_known_game_vars": 13,
+      "nmf_FSM": [
+        -0.15569141404872366,
+        0.8806721125777258,
+        1.0
+      ],
+      "pca_FSM": [
+        0.25993762245501817,
+        1.0,
+        0.75
+      ],
+      "sae_FSM": [
+        -0.08297398136450225,
+        -1.0,
+        0.16666666666666663
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 367.0,
+      "game": "tennis",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.125,
+      "matched_frac_pca": 0.125,
+      "matched_frac_sae": 0.125,
+      "n_cands": 15,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 5,
+      "n_causal_atoms_sae": 4,
+      "n_known_game_vars": 9,
+      "nmf_FSM": [
+        -0.6151246852292455,
+        0.9669142179376707,
+        1.0
+      ],
+      "pca_FSM": [
+        0.4225771273642583,
+        0.7258925105423552,
+        1.0
+      ],
+      "sae_FSM": [
+        -0.35149982013099745,
+        -0.5944243352113561,
+        0.0
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 110.0,
+      "game": "venture",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.625,
+      "matched_frac_pca": 0.125,
+      "matched_frac_sae": 0.625,
+      "n_cands": 18,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 8,
+      "n_causal_atoms_sae": 4,
+      "n_known_game_vars": 5,
+      "nmf_FSM": [
+        -0.36596252735569995,
+        0.9999664701040178,
+        1.0
+      ],
+      "pca_FSM": [
+        -0.0944911182523068,
+        0.99293222543929,
+        1.0
+      ],
+      "sae_FSM": [
+        0.0,
+        0.9804863758541303,
+        0.6
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 382.0,
+      "game": "video_pinball",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.5,
+      "matched_frac_pca": 0.125,
+      "matched_frac_sae": 0.375,
+      "n_cands": 7,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 7,
+      "n_causal_atoms_sae": 4,
+      "n_known_game_vars": 5,
+      "nmf_FSM": [
+        -0.19025485853694038,
+        0.7106726815308996,
+        1.0
+      ],
+      "pca_FSM": [
+        -0.4148699068225112,
+        -0.7107180341732855,
+        1.0
+      ],
+      "sae_FSM": [
+        -0.02906190968595482,
+        -0.692897065860463,
+        0.6666666666666667
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 4826.0,
+      "game": "yars_revenge",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.375,
+      "matched_frac_pca": 0.5,
+      "matched_frac_sae": 0.625,
+      "n_cands": 13,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 8,
+      "n_causal_atoms_sae": 3,
+      "n_known_game_vars": 6,
+      "nmf_FSM": [
+        0.2182178902359924,
+        0.29223823794846676,
+        1.0
+      ],
+      "pca_FSM": [
+        0.11415291512216423,
+        -0.25444062344349605,
+        1.0
+      ],
+      "sae_FSM": [
+        0.0,
+        0.4149713709442632,
+        0.19999999999999996
+      ],
+      "state": "f90+15"
     }
   ],
   "headline": "PCA vs NMF vs SAE: matched-component fraction vs known variables AND the causal-use test (ablate an atom, re-run via the oracle — does it drive the output?). Generalises A7 with causal scoring.",
   "method": "nmf_pca_dictionaries(+SAE contrast)",
-  "n_games": 6,
+  "n_games": 42,
   "paper": "P2",
   "phase": "phaseC_mechanistic",
-  "timestamp": "1782972727"
+  "timestamp": "1783109542"
 }

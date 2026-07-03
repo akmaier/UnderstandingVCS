@@ -1,15 +1,13 @@
 # Paper-2 NUMBERS OF RECORD — 42-game scored battery (single source of truth)
 
-Generated from compare/out/leaderboard.json + position_bootstrap.json. Scored battery = **42 games**.
-Records aggregated: **1599** per-game §R records into 31 method rows.
+From compare/out/leaderboard.json + position_bootstrap.json. Scored battery = **42 games**. **1736** §R records → 31 method rows.
 
 ## Headline
+- **All-regime gap = 0.3374** — causal/intervention **0.7215** (n=11 methods) vs gradient/correlational **0.384** (n=14). (6-game: 0.297.)
+- **Position, per-method families:** causal/intervention **0.561** (±0.3212, n=4) vs gradient/correlational **0.2343** (±0.156, n=9); gap **0.3267**.
+- **Position gap SIGNIFICANCE (bootstrap over games, n=42):** mean **0.1838**, 95% CI **[0.1215, 0.2467]** — **EXCLUDES ZERO**. (6-game: 0.238, CI [-0.05, 0.32], crossed zero.)
 
-- **All-regime gap = 0.3236** — causal/intervention **0.7073** (n=11 methods) vs gradient/correlational **0.3837** (n=14 methods). (6-game was 0.297.)
-- **Position regime, per-method families:** causal/intervention **0.561** (±0.3212, n=4) vs gradient/correlational **0.232** (±0.1545, n=9); gap **0.329**.
-- **Position gap SIGNIFICANCE (bootstrap over games, n=42):** mean per-game gap **0.2064**, 95% CI **[0.1416, 0.2714]** — **EXCLUDES ZERO**. (6-game was 0.238, CI [-0.05, 0.32], crossed zero.)
-
-## Per-method (faithfulness F, position-regime F, F/S/M, plaus, tradition, n_games)
+## Per-method (F, F_pos, S, M, plaus, tradition, n_games)
 
 | method | tradition | F | F_pos | S | M | plaus | n_games |
 |---|---|---|---|---|---|---|---|
@@ -30,17 +28,17 @@ Records aggregated: **1599** per-game §R records into 31 method rows.
 | lime | gradient | 0.644 | 0.591 | — | — | 0.9 | 42 |
 | occlusion | intervention | 0.687 | 0.619 | — | — | 0.55 | 42 |
 | on_distribution_counterfactual | intervention | 0.433 | 0.277 | — | — | 0.55 | 42 |
-| rise | gradient | 0.548 | 0.419 | — | — | 0.9 | 6 |
+| rise | gradient | 0.552 | 0.44 | — | — | 0.9 | 42 |
 | smoothgrad | gradient | 0.38 | 0.115 | — | — | 0.9 | 42 |
 | vanilla_saliency | gradient | 0.38 | 0.115 | — | — | 0.9 | 42 |
-| ACDC | causal | 0.47 | — | 0.31 | 1.0 | 0.5 | 6 |
+| ACDC | causal | 0.625 | — | 0.299 | 1.0 | 0.5 | 35 |
 | activation_patching | causal | 1.0 | 1.0 | — | — | 0.5 | 42 |
 | attribution_patching | gradient | 0.456 | — | — | — | 0.9 | 42 |
 | causal_scrubbing | causal | 0.979 | — | — | — | 0.5 | 42 |
 | interchange_interventions_das | causal | 1.0 | — | — | — | 0.5 | 42 |
 | linear_probing_control_tasks | probing | 0.108 | — | — | — | 0.85 | 42 |
 | logit_tuned_lens | causal | 1.0 | — | — | — | 0.5 | 42 |
-| nmf_pca_dictionaries | dim_reduction | 0.542 | — | — | — | 0.75 | 6 |
+| nmf_pca_dictionaries | dim_reduction | 0.441 | — | — | — | 0.75 | 42 |
 | path_patching | causal | 0.58 | — | — | — | 0.5 | 42 |
 | sparse_autoencoder | dim_reduction | 0.173 | — | 0.183 | 0.07 | 0.75 | 40 |
 | ORACLE | oracle | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | 1 |

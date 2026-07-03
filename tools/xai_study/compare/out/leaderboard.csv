@@ -16,17 +16,17 @@ phaseB_attribution,kernelshap,gradient,42,84,0.6518,0.0649,0.5954,0.7083,0.9,,,,
 phaseB_attribution,lime,gradient,42,84,0.6441,0.0652,0.591,0.6973,0.9,,,,,0,value:pearson_corr_with_oracle
 phaseB_attribution,occlusion,intervention,42,84,0.6869,0.0647,0.6194,0.7543,0.55,,,,,0,value:pearson_corr_with_oracle
 phaseB_attribution,on_distribution_counterfactual,intervention,42,84,0.4329,0.0806,0.2772,0.5886,0.55,,,,,0,value:pearson_corr_with_oracle
-phaseB_attribution,rise,gradient,6,12,0.5483,0.1873,0.4186,0.678,0.9,,,,,0,value:pearson_corr_with_oracle
+phaseB_attribution,rise,gradient,42,84,0.5522,0.0646,0.4399,0.6644,0.9,,,,,0,value:pearson_corr_with_oracle
 phaseB_attribution,smoothgrad,gradient,42,84,0.3799,0.0861,0.1151,0.6447,0.9,,,,,0,value:pearson_corr_with_oracle
 phaseB_attribution,vanilla_saliency,gradient,42,84,0.3798,0.0861,0.115,0.6447,0.9,,,,,0,value:pearson_corr_with_oracle
-phaseC_mechanistic,ACDC,causal,6,6,0.4699,0.321,,,0.5,0.4699,0.3096,1.0,0.526,0,triad.F
+phaseC_mechanistic,ACDC,causal,35,35,0.6254,0.1102,,,0.5,0.6254,0.2995,1.0,0.5722,0,triad.F
 phaseC_mechanistic,activation_patching,causal,42,43,1.0,0.0,1.0,,0.5,,,,,0,value:max_abs_recovered_minus_exact
 phaseC_mechanistic,attribution_patching,gradient,42,42,0.4563,0.113,,,0.9,,,,,0,value:corr_approx_vs_exact
 phaseC_mechanistic,causal_scrubbing,causal,42,42,0.9792,0.0359,,,0.5,,,,,0,value:scrubbing_preserved_performance_true
 phaseC_mechanistic,interchange_interventions_das,causal,42,42,1.0,0.0,,,0.5,,,,,0,value:interchange_accuracy_aligned
 phaseC_mechanistic,linear_probing_control_tasks,probing,42,42,0.1082,0.0326,,,0.85,,,,,0,value:mean_selectivity
 phaseC_mechanistic,logit_tuned_lens,causal,42,42,1.0,0.0,,,0.5,,,,,0,value:logit_lens_fidelity_true_intermediate
-phaseC_mechanistic,nmf_pca_dictionaries,dim_reduction,6,6,0.5417,0.1211,,,0.75,,,,,0,value:nmf_matched_component_fraction_vs_known_vars
+phaseC_mechanistic,nmf_pca_dictionaries,dim_reduction,42,42,0.4405,0.0503,,,0.75,,,,,0,value:nmf_matched_component_fraction_vs_known_vars
 phaseC_mechanistic,path_patching,causal,42,42,0.5796,0.1334,,,0.5,,,,,0,value:path_circuit_F1_vs_true_routine
 phaseC_mechanistic,sparse_autoencoder,dim_reduction,40,41,0.1733,0.0722,,,0.75,0.1526,0.1828,0.0701,0.1251,0,triad.F;value:feature_variable_matched_fraction
 ground_truth,ORACLE,oracle,1,3,1.0,0.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1,construction (oracle IS the §1 ground truth; counterfactual_core_summary: oracle-as-method corr=1/p@k=1)

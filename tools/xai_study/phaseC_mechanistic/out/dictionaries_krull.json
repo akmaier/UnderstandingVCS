@@ -1,0 +1,1000 @@
+{
+  "arrays": "dictionaries_krull.npz",
+  "ci": null,
+  "commit": "15e5d2df",
+  "extra": {
+    "bit_exact_rerun": true,
+    "by_rank": [
+      {
+        "nmf": {
+          "causal_use": {
+            "all_atoms_ablated_break_px": 4890.0,
+            "method": "nmf",
+            "n_atoms": 8,
+            "n_causal_atoms": 8,
+            "per_atom_causal_effect_px": [
+              5033.0,
+              14814.0,
+              15040.0,
+              14987.0,
+              14812.0,
+              7619.0,
+              14226.0,
+              14220.0
+            ],
+            "per_atom_heldout_causal_effect_px": [
+              4946.0,
+              14743.0,
+              14957.0,
+              14900.0,
+              14736.0,
+              7541.0,
+              14142.0,
+              14125.0
+            ],
+            "reconstruct_only_break_px": 1943.0
+          },
+          "dict": {
+            "method": "nmf",
+            "rank": 8,
+            "recon_rel_frobenius_err": 0.024270142030140204,
+            "var_or_energy_share": [
+              0.14446513533944,
+              0.1379249988505092,
+              0.13673937058361466,
+              0.13448787170569249,
+              0.12599371564411546,
+              0.1114666356779125,
+              0.10695806220097083,
+              0.10196420999774468
+            ]
+          },
+          "matched": {
+            "matched_component_fraction": 0.25,
+            "method": "nmf",
+            "n_atoms": 8,
+            "n_matched_game_var": 0,
+            "n_matched_known_signal": 2,
+            "per_atom_matched_kind": [
+              "(none)",
+              "(none)",
+              "known_signal",
+              "known_signal",
+              "(none)",
+              "(none)",
+              "(none)",
+              "(none)"
+            ],
+            "per_atom_matched_label": [
+              "(none; cand_share=0.07,sig=0.26)",
+              "(none; cand_share=0.07,sig=0.26)",
+              "clock",
+              "clock",
+              "(none; cand_share=0.07,sig=0.44)",
+              "(none; cand_share=0.05,sig=0.08)",
+              "(none; cand_share=0.16,sig=0.36)",
+              "(none; cand_share=0.08,sig=0.48)"
+            ],
+            "per_atom_matched_purity": [
+              0.25944778225396015,
+              0.2639557713889223,
+              0.8822409704613567,
+              0.8843743277150732,
+              0.43649561406089954,
+              0.07807116453731024,
+              0.3624780742254525,
+              0.4829324770014652
+            ]
+          },
+          "triad": {
+            "F": 0.7325886315065459,
+            "F_note": "Spearman(per-atom matched-strength, per-atom causal effect) — are MATCHED atoms the USED ones?",
+            "M": 1.0,
+            "M_note": "1 − over-claim rate: fraction of MATCHED (nmf) atoms whose ablation has ZERO causal effect (present≠used dictionary trap)",
+            "S": 0.9999982021587419,
+            "S_note": "Pearson(per-atom causal effect, held-out-tail causal effect) — sufficiency on an unseen continuation (bit-exact re-run)"
+          }
+        },
+        "pca": {
+          "causal_use": {
+            "all_atoms_ablated_break_px": 159.0,
+            "method": "pca",
+            "n_atoms": 8,
+            "n_causal_atoms": 8,
+            "per_atom_causal_effect_px": [
+              3.0,
+              3431.0,
+              3476.0,
+              14870.0,
+              1793.0,
+              325.0,
+              159.0,
+              325.0
+            ],
+            "per_atom_heldout_causal_effect_px": [
+              148.0,
+              3484.0,
+              3538.0,
+              14874.0,
+              1800.0,
+              388.0,
+              225.0,
+              388.0
+            ],
+            "reconstruct_only_break_px": 148.0
+          },
+          "dict": {
+            "method": "pca",
+            "rank": 8,
+            "recon_rel_frobenius_err": 0.004558066411594765,
+            "var_or_energy_share": [
+              0.4255456117508438,
+              0.23101338196491372,
+              0.17744754252736983,
+              0.1254307779766861,
+              0.028013392634643957,
+              0.006845307665173751,
+              0.0023904724774606767,
+              0.0021823449702206652
+            ]
+          },
+          "matched": {
+            "matched_component_fraction": 0.125,
+            "method": "pca",
+            "n_atoms": 8,
+            "n_matched_game_var": 0,
+            "n_matched_known_signal": 1,
+            "per_atom_matched_kind": [
+              "known_signal",
+              "(none)",
+              "(none)",
+              "(none)",
+              "(none)",
+              "(none)",
+              "(none)",
+              "(none)"
+            ],
+            "per_atom_matched_label": [
+              "clock",
+              "(none; cand_share=0.0,sig=0.19)",
+              "(none; cand_share=0.0,sig=0.09)",
+              "(none; cand_share=0.0,sig=0.1)",
+              "(none; cand_share=0.0,sig=0.37)",
+              "(none; cand_share=0.0,sig=0.13)",
+              "(none; cand_share=0.0,sig=0.12)",
+              "(none; cand_share=0.0,sig=0.22)"
+            ],
+            "per_atom_matched_purity": [
+              0.9146614333718296,
+              0.19155532327160027,
+              0.08746172237971878,
+              0.10114889891292529,
+              0.36829078017809674,
+              0.13080673163116419,
+              0.11950083621496858,
+              0.22110496398356616
+            ]
+          },
+          "triad": {
+            "F": -0.5808178695515156,
+            "F_note": "Spearman(per-atom matched-strength, per-atom causal effect) — are MATCHED atoms the USED ones?",
+            "M": 1.0,
+            "M_note": "1 − over-claim rate: fraction of MATCHED (pca) atoms whose ablation has ZERO causal effect (present≠used dictionary trap)",
+            "S": 0.9999747797176423,
+            "S_note": "Pearson(per-atom causal effect, held-out-tail causal effect) — sufficiency on an unseen continuation (bit-exact re-run)"
+          }
+        },
+        "rank": 8,
+        "sae": {
+          "causal_use": {
+            "all_atoms_ablated_break_px": 228.0,
+            "method": "sae",
+            "n_atoms": 8,
+            "n_causal_atoms": 2,
+            "per_atom_causal_effect_px": [
+              0.0,
+              14974.0,
+              0.0,
+              0.0,
+              0.0,
+              14900.0,
+              0.0,
+              0.0
+            ],
+            "per_atom_heldout_causal_effect_px": [
+              14838.0,
+              229.0,
+              14838.0,
+              14838.0,
+              14838.0,
+              325.0,
+              14838.0,
+              14838.0
+            ],
+            "reconstruct_only_break_px": 14838.0
+          },
+          "dict": {
+            "method": "sae",
+            "rank": 8,
+            "recon_rel_frobenius_err": 0.07628053987845605,
+            "var_or_energy_share": [
+              0.3114313703475981,
+              0.1789932511954102,
+              0.16912310132890468,
+              0.12348428397354035,
+              0.11437141411767952,
+              0.1016626004724799,
+              0.000933978564387186,
+              0.0
+            ]
+          },
+          "matched": {
+            "matched_component_fraction": 0.25,
+            "method": "sae",
+            "n_atoms": 8,
+            "n_matched_game_var": 0,
+            "n_matched_known_signal": 2,
+            "per_atom_matched_kind": [
+              "known_signal",
+              "(none)",
+              "(none)",
+              "(none)",
+              "known_signal",
+              "(none)",
+              "(none)",
+              "(none)"
+            ],
+            "per_atom_matched_label": [
+              "clock",
+              "(none; cand_share=0.0,sig=0.18)",
+              "(none; cand_share=0.0,sig=0.06)",
+              "(none; cand_share=0.0,sig=0.07)",
+              "clock",
+              "(none; cand_share=0.0,sig=0.15)",
+              "(none; cand_share=0.0,sig=0.08)",
+              "(none; cand_share=0.0,sig=0.0)"
+            ],
+            "per_atom_matched_purity": [
+              0.931821926221313,
+              0.17640908728679353,
+              0.05833763635482195,
+              0.06903405052596859,
+              0.6287221164249222,
+              0.15475479877552734,
+              0.07584035120315871,
+              0.0
+            ]
+          },
+          "triad": {
+            "F": -0.32653061224489793,
+            "F_note": "Spearman(per-atom matched-strength, per-atom causal effect) — are MATCHED atoms the USED ones?",
+            "M": 0.0,
+            "M_note": "1 − over-claim rate: fraction of MATCHED (sae) atoms whose ablation has ZERO causal effect (present≠used dictionary trap)",
+            "S": -0.9999995523920084,
+            "S_note": "Pearson(per-atom causal effect, held-out-tail causal effect) — sufficiency on an unseen continuation (bit-exact re-run)"
+          }
+        }
+      },
+      {
+        "nmf": {
+          "causal_use": {
+            "all_atoms_ablated_break_px": 4890.0,
+            "method": "nmf",
+            "n_atoms": 4,
+            "n_causal_atoms": 4,
+            "per_atom_causal_effect_px": [
+              14278.0,
+              5058.0,
+              5031.0,
+              4935.0
+            ],
+            "per_atom_heldout_causal_effect_px": [
+              14244.0,
+              5034.0,
+              5007.0,
+              4911.0
+            ],
+            "reconstruct_only_break_px": 5001.0
+          },
+          "dict": {
+            "method": "nmf",
+            "rank": 4,
+            "recon_rel_frobenius_err": 0.07727796459558835,
+            "var_or_energy_share": [
+              0.28053091182115814,
+              0.27659422852391435,
+              0.24700194396130484,
+              0.19587291569362264
+            ]
+          },
+          "matched": {
+            "matched_component_fraction": 0.75,
+            "method": "nmf",
+            "n_atoms": 4,
+            "n_matched_game_var": 0,
+            "n_matched_known_signal": 3,
+            "per_atom_matched_kind": [
+              "known_signal",
+              "known_signal",
+              "(none)",
+              "known_signal"
+            ],
+            "per_atom_matched_label": [
+              "clock",
+              "clock",
+              "(none; cand_share=0.09,sig=0.19)",
+              "clock"
+            ],
+            "per_atom_matched_purity": [
+              0.8219596028964584,
+              0.6390902805886994,
+              0.18956166114963227,
+              0.9006392303215368
+            ]
+          },
+          "triad": {
+            "F": -0.2,
+            "F_note": "Spearman(per-atom matched-strength, per-atom causal effect) — are MATCHED atoms the USED ones?",
+            "M": 1.0,
+            "M_note": "1 − over-claim rate: fraction of MATCHED (nmf) atoms whose ablation has ZERO causal effect (present≠used dictionary trap)",
+            "S": 0.9999999999244009,
+            "S_note": "Pearson(per-atom causal effect, held-out-tail causal effect) — sufficiency on an unseen continuation (bit-exact re-run)"
+          }
+        },
+        "pca": {
+          "causal_use": {
+            "all_atoms_ablated_break_px": 159.0,
+            "method": "pca",
+            "n_atoms": 4,
+            "n_causal_atoms": 4,
+            "per_atom_causal_effect_px": [
+              1635.0,
+              14667.0,
+              14597.0,
+              3410.0
+            ],
+            "per_atom_heldout_causal_effect_px": [
+              14596.0,
+              1801.0,
+              1731.0,
+              14281.0
+            ],
+            "reconstruct_only_break_px": 14596.0
+          },
+          "dict": {
+            "method": "pca",
+            "rank": 4,
+            "recon_rel_frobenius_err": 0.027294832819695063,
+            "var_or_energy_share": [
+              0.4255456117508438,
+              0.23101338196491372,
+              0.17744754252736983,
+              0.1254307779766861
+            ]
+          },
+          "matched": {
+            "matched_component_fraction": 0.25,
+            "method": "pca",
+            "n_atoms": 4,
+            "n_matched_game_var": 0,
+            "n_matched_known_signal": 1,
+            "per_atom_matched_kind": [
+              "known_signal",
+              "(none)",
+              "(none)",
+              "(none)"
+            ],
+            "per_atom_matched_label": [
+              "clock",
+              "(none; cand_share=0.0,sig=0.19)",
+              "(none; cand_share=0.0,sig=0.09)",
+              "(none; cand_share=0.0,sig=0.1)"
+            ],
+            "per_atom_matched_purity": [
+              0.9146614333718296,
+              0.19155532327160027,
+              0.08746172237971878,
+              0.10114889891292529
+            ]
+          },
+          "triad": {
+            "F": -0.7745966692414833,
+            "F_note": "Spearman(per-atom matched-strength, per-atom causal effect) — are MATCHED atoms the USED ones?",
+            "M": 1.0,
+            "M_note": "1 − over-claim rate: fraction of MATCHED (pca) atoms whose ablation has ZERO causal effect (present≠used dictionary trap)",
+            "S": -0.9962979845171308,
+            "S_note": "Pearson(per-atom causal effect, held-out-tail causal effect) — sufficiency on an unseen continuation (bit-exact re-run)"
+          }
+        },
+        "rank": 4,
+        "sae": {
+          "causal_use": {
+            "all_atoms_ablated_break_px": 90.0,
+            "method": "sae",
+            "n_atoms": 4,
+            "n_causal_atoms": 1,
+            "per_atom_causal_effect_px": [
+              3484.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "per_atom_heldout_causal_effect_px": [
+              90.0,
+              3491.0,
+              3491.0,
+              3491.0
+            ],
+            "reconstruct_only_break_px": 3491.0
+          },
+          "dict": {
+            "method": "sae",
+            "rank": 4,
+            "recon_rel_frobenius_err": 0.1182995781429922,
+            "var_or_energy_share": [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "matched": {
+            "matched_component_fraction": 0.25,
+            "method": "sae",
+            "n_atoms": 4,
+            "n_matched_game_var": 0,
+            "n_matched_known_signal": 1,
+            "per_atom_matched_kind": [
+              "known_signal",
+              "(none)",
+              "(none)",
+              "(none)"
+            ],
+            "per_atom_matched_label": [
+              "clock",
+              "(none; cand_share=0.0,sig=0.0)",
+              "(none; cand_share=0.0,sig=0.0)",
+              "(none; cand_share=0.0,sig=0.0)"
+            ],
+            "per_atom_matched_purity": [
+              0.7794451353630973,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "triad": {
+            "F": 1.0,
+            "F_note": "Spearman(per-atom matched-strength, per-atom causal effect) — are MATCHED atoms the USED ones?",
+            "M": 1.0,
+            "M_note": "1 − over-claim rate: fraction of MATCHED (sae) atoms whose ablation has ZERO causal effect (present≠used dictionary trap)",
+            "S": -1.0,
+            "S_note": "Pearson(per-atom causal effect, held-out-tail causal effect) — sufficiency on an unseen continuation (bit-exact re-run)"
+          }
+        }
+      },
+      {
+        "nmf": {
+          "causal_use": {
+            "all_atoms_ablated_break_px": 4890.0,
+            "method": "nmf",
+            "n_atoms": 12,
+            "n_causal_atoms": 12,
+            "per_atom_causal_effect_px": [
+              14051.0,
+              15473.0,
+              7390.0,
+              3306.0,
+              5063.0,
+              7557.0,
+              4876.0,
+              14125.0,
+              13733.0,
+              25077.0,
+              5206.0,
+              13964.0
+            ],
+            "per_atom_heldout_causal_effect_px": [
+              14126.0,
+              15535.0,
+              7459.0,
+              3383.0,
+              5143.0,
+              7607.0,
+              4947.0,
+              14198.0,
+              13764.0,
+              25118.0,
+              5282.0,
+              14035.0
+            ],
+            "reconstruct_only_break_px": 278.0
+          },
+          "dict": {
+            "method": "nmf",
+            "rank": 12,
+            "recon_rel_frobenius_err": 0.0163830181374893,
+            "var_or_energy_share": [
+              0.1038805044583185,
+              0.10045338687182213,
+              0.09948847555755012,
+              0.09843311305033105,
+              0.09276938716923996,
+              0.0902041130900462,
+              0.08096669956030278,
+              0.07858851765549377,
+              0.07543981301708438,
+              0.0707359907805769,
+              0.06470338206946642,
+              0.04433661671976773
+            ]
+          },
+          "matched": {
+            "matched_component_fraction": 0.25,
+            "method": "nmf",
+            "n_atoms": 12,
+            "n_matched_game_var": 0,
+            "n_matched_known_signal": 3,
+            "per_atom_matched_kind": [
+              "known_signal",
+              "(none)",
+              "(none)",
+              "known_signal",
+              "(none)",
+              "(none)",
+              "(none)",
+              "(none)",
+              "known_signal",
+              "(none)",
+              "(none)",
+              "(none)"
+            ],
+            "per_atom_matched_label": [
+              "clock",
+              "(none; cand_share=0.11,sig=0.16)",
+              "(none; cand_share=0.05,sig=0.39)",
+              "clock",
+              "(none; cand_share=0.05,sig=0.21)",
+              "(none; cand_share=0.07,sig=0.17)",
+              "(none; cand_share=0.11,sig=0.08)",
+              "(none; cand_share=0.12,sig=0.22)",
+              "clock",
+              "(none; cand_share=0.08,sig=0.16)",
+              "(none; cand_share=0.12,sig=0.2)",
+              "(none; cand_share=0.06,sig=0.21)"
+            ],
+            "per_atom_matched_purity": [
+              0.994548083306627,
+              0.16029076819052293,
+              0.38998049909601984,
+              0.7836185073137574,
+              0.20704329694397344,
+              0.16735754337928865,
+              0.08458631242679716,
+              0.22063047416568138,
+              0.6314637920099986,
+              0.16257129807675813,
+              0.1980745561384916,
+              0.21349362279263198
+            ]
+          },
+          "triad": {
+            "F": -0.11932633102093543,
+            "F_note": "Spearman(per-atom matched-strength, per-atom causal effect) — are MATCHED atoms the USED ones?",
+            "M": 1.0,
+            "M_note": "1 − over-claim rate: fraction of MATCHED (nmf) atoms whose ablation has ZERO causal effect (present≠used dictionary trap)",
+            "S": 0.9999979081964008,
+            "S_note": "Pearson(per-atom causal effect, held-out-tail causal effect) — sufficiency on an unseen continuation (bit-exact re-run)"
+          }
+        },
+        "pca": {
+          "causal_use": {
+            "all_atoms_ablated_break_px": 159.0,
+            "method": "pca",
+            "n_atoms": 12,
+            "n_causal_atoms": 8,
+            "per_atom_causal_effect_px": [
+              3.0,
+              13188.0,
+              13229.0,
+              13978.0,
+              1793.0,
+              0.0,
+              159.0,
+              325.0,
+              0.0,
+              148.0,
+              0.0,
+              0.0
+            ],
+            "per_atom_heldout_causal_effect_px": [
+              3.0,
+              13188.0,
+              13229.0,
+              13978.0,
+              1793.0,
+              0.0,
+              159.0,
+              325.0,
+              0.0,
+              148.0,
+              0.0,
+              0.0
+            ],
+            "reconstruct_only_break_px": 0.0
+          },
+          "dict": {
+            "method": "pca",
+            "rank": 12,
+            "recon_rel_frobenius_err": 1.5669060003207405e-16,
+            "var_or_energy_share": [
+              0.4255456117508438,
+              0.23101338196491372,
+              0.17744754252736983,
+              0.1254307779766861,
+              0.028013392634643957,
+              0.006845307665173751,
+              0.0023904724774606767,
+              0.0021823449702206652,
+              0.0010434982873397556,
+              8.766974534774234e-5,
+              8.753728620039999e-33,
+              8.557136592870273e-33
+            ]
+          },
+          "matched": {
+            "matched_component_fraction": 0.25,
+            "method": "pca",
+            "n_atoms": 12,
+            "n_matched_game_var": 1,
+            "n_matched_known_signal": 2,
+            "per_atom_matched_kind": [
+              "known_signal",
+              "(none)",
+              "(none)",
+              "(none)",
+              "(none)",
+              "(none)",
+              "(none)",
+              "(none)",
+              "(none)",
+              "game_var",
+              "known_signal",
+              "(none)"
+            ],
+            "per_atom_matched_label": [
+              "clock",
+              "(none; cand_share=0.0,sig=0.19)",
+              "(none; cand_share=0.0,sig=0.09)",
+              "(none; cand_share=0.0,sig=0.1)",
+              "(none; cand_share=0.0,sig=0.37)",
+              "(none; cand_share=0.0,sig=0.13)",
+              "(none; cand_share=0.0,sig=0.12)",
+              "(none; cand_share=0.0,sig=0.22)",
+              "(none; cand_share=0.0,sig=0.12)",
+              "player",
+              "clock",
+              "(none; cand_share=0.03,sig=0.47)"
+            ],
+            "per_atom_matched_purity": [
+              0.9146614333718296,
+              0.19155532327160027,
+              0.08746172237971878,
+              0.10114889891292529,
+              0.36829078017809674,
+              0.13080673163116419,
+              0.11950083621496858,
+              0.22110496398356616,
+              0.12044612434548657,
+              0.9999985582747966,
+              0.826864259633905,
+              0.4749790324084064
+            ]
+          },
+          "triad": {
+            "F": -0.3036720152704066,
+            "F_note": "Spearman(per-atom matched-strength, per-atom causal effect) — are MATCHED atoms the USED ones?",
+            "M": 0.6666666666666667,
+            "M_note": "1 − over-claim rate: fraction of MATCHED (pca) atoms whose ablation has ZERO causal effect (present≠used dictionary trap)",
+            "S": 1.0,
+            "S_note": "Pearson(per-atom causal effect, held-out-tail causal effect) — sufficiency on an unseen continuation (bit-exact re-run)"
+          }
+        },
+        "rank": 12,
+        "sae": {
+          "causal_use": {
+            "all_atoms_ablated_break_px": 14356.0,
+            "method": "sae",
+            "n_atoms": 12,
+            "n_causal_atoms": 5,
+            "per_atom_causal_effect_px": [
+              14267.0,
+              70.0,
+              0.0,
+              3601.0,
+              0.0,
+              14838.0,
+              0.0,
+              0.0,
+              13113.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "per_atom_heldout_causal_effect_px": [
+              14266.0,
+              73.0,
+              3.0,
+              3601.0,
+              3.0,
+              14838.0,
+              3.0,
+              3.0,
+              13113.0,
+              3.0,
+              3.0,
+              3.0
+            ],
+            "reconstruct_only_break_px": 3.0
+          },
+          "dict": {
+            "method": "sae",
+            "rank": 12,
+            "recon_rel_frobenius_err": 0.04773340039692386,
+            "var_or_energy_share": [
+              0.15089202610270633,
+              0.138852009548865,
+              0.11296212926481283,
+              0.10299841376737111,
+              0.09983619248664008,
+              0.09451514020940739,
+              0.08956156470669442,
+              0.08289385506197436,
+              0.06599364324750391,
+              0.06141402590999113,
+              8.099969403338244e-5,
+              0.0
+            ]
+          },
+          "matched": {
+            "matched_component_fraction": 0.4166666666666667,
+            "method": "sae",
+            "n_atoms": 12,
+            "n_matched_game_var": 0,
+            "n_matched_known_signal": 5,
+            "per_atom_matched_kind": [
+              "known_signal",
+              "(none)",
+              "(none)",
+              "known_signal",
+              "known_signal",
+              "(none)",
+              "known_signal",
+              "(none)",
+              "(none)",
+              "known_signal",
+              "(none)",
+              "(none)"
+            ],
+            "per_atom_matched_label": [
+              "clock",
+              "(none; cand_share=0.0,sig=0.24)",
+              "(none; cand_share=0.0,sig=0.34)",
+              "clock",
+              "clock",
+              "(none; cand_share=0.0,sig=0.45)",
+              "clock",
+              "(none; cand_share=0.0,sig=0.08)",
+              "(none; cand_share=0.0,sig=0.39)",
+              "clock",
+              "(none; cand_share=0.0,sig=0.07)",
+              "(none; cand_share=0.0,sig=0.0)"
+            ],
+            "per_atom_matched_purity": [
+              0.5947607022265935,
+              0.2393929896940103,
+              0.33606941045305927,
+              0.573343476901908,
+              0.6186696368152348,
+              0.4496456127243173,
+              0.5339663798779103,
+              0.07623728439969311,
+              0.39125642762054075,
+              0.5223903909146395,
+              0.06918248090727004,
+              0.0
+            ]
+          },
+          "triad": {
+            "F": 0.034782608695652174,
+            "F_note": "Spearman(per-atom matched-strength, per-atom causal effect) — are MATCHED atoms the USED ones?",
+            "M": 0.4,
+            "M_note": "1 − over-claim rate: fraction of MATCHED (sae) atoms whose ablation has ZERO causal effect (present≠used dictionary trap)",
+            "S": 0.9999999943500265,
+            "S_note": "Pearson(per-atom causal effect, held-out-tail causal effect) — sufficiency on an unseen continuation (bit-exact re-run)"
+          }
+        }
+      }
+    ],
+    "candidate_cells": [
+      "RAM[23]:bottom",
+      "RAM[24]:xy",
+      "RAM[28]:value",
+      "RAM[29]:value",
+      "RAM[30]:value",
+      "RAM[31]:value",
+      "RAM[32]:value",
+      "RAM[34]:room",
+      "RAM[76]:xy",
+      "RAM[77]:xy",
+      "RAM[78]:xy",
+      "RAM[79]:xy",
+      "RAM[80]:wh",
+      "RAM[83]:player.xy",
+      "RAM[84]:xy",
+      "RAM[85]:xy",
+      "RAM[89]:player.xy",
+      "RAM[90]:player.xy",
+      "RAM[91]:player.xy",
+      "RAM[92]:xy",
+      "RAM[93]:xy",
+      "RAM[97]:player.xy",
+      "RAM[98]:player.xy",
+      "RAM[115]:xy",
+      "RAM[116]:xy"
+    ],
+    "candidate_concept_family": [
+      "bottom",
+      "xy",
+      "value",
+      "value",
+      "value",
+      "value",
+      "value",
+      "room",
+      "xy",
+      "xy",
+      "xy",
+      "xy",
+      "wh",
+      "player",
+      "xy",
+      "xy",
+      "player",
+      "player",
+      "player",
+      "xy",
+      "xy",
+      "player",
+      "player",
+      "xy",
+      "xy"
+    ],
+    "candidate_ram_indices": [
+      23,
+      24,
+      28,
+      29,
+      30,
+      31,
+      32,
+      34,
+      76,
+      77,
+      78,
+      79,
+      80,
+      83,
+      84,
+      85,
+      89,
+      90,
+      91,
+      92,
+      93,
+      97,
+      98,
+      115,
+      116
+    ],
+    "causal_use_note": "CAUSAL-USE test = ablate a dictionary atom (zero its activation), reconstruct the 128-byte state, WRITE it into the real env at frame t, RE-RUN the ROM via the §1 oracle, and measure the whole-screen break RELATIVE to the reconstruct-WITHOUT-ablation control (isolates the atom, not the lossy reconstruction). Asks: does a dictionary atom CAUSALLY drive the output? Generalises A7's correlational matched-component fraction with causal scoring (present≠used at the feature level).",
+    "conformance_note": "scored oracle frame f90+15 is BEYOND the strict 60-frame window — the game reaches live play later. HONEST descriptive jutari result (bit-exact jutari re-run IS asserted), not an xitari-parity claim.",
+    "headline_rank": 8,
+    "headline_summary": {
+      "all_atoms_ablated_break_px": {
+        "nmf": 4890.0,
+        "pca": 159.0,
+        "sae": 228.0
+      },
+      "matched_component_fraction": {
+        "nmf": 0.25,
+        "pca": 0.125,
+        "sae": 0.25
+      },
+      "n_causal_atoms": {
+        "nmf": 8,
+        "pca": 8,
+        "sae": 2
+      },
+      "rank": 8,
+      "recon_rel_err": {
+        "nmf": 0.024270142030140204,
+        "pca": 0.004558066411594765,
+        "sae": 0.07628053987845605
+      },
+      "triad": {
+        "nmf": {
+          "F": 0.7325886315065459,
+          "F_note": "Spearman(per-atom matched-strength, per-atom causal effect) — are MATCHED atoms the USED ones?",
+          "M": 1.0,
+          "M_note": "1 − over-claim rate: fraction of MATCHED (nmf) atoms whose ablation has ZERO causal effect (present≠used dictionary trap)",
+          "S": 0.9999982021587419,
+          "S_note": "Pearson(per-atom causal effect, held-out-tail causal effect) — sufficiency on an unseen continuation (bit-exact re-run)"
+        },
+        "pca": {
+          "F": -0.5808178695515156,
+          "F_note": "Spearman(per-atom matched-strength, per-atom causal effect) — are MATCHED atoms the USED ones?",
+          "M": 1.0,
+          "M_note": "1 − over-claim rate: fraction of MATCHED (pca) atoms whose ablation has ZERO causal effect (present≠used dictionary trap)",
+          "S": 0.9999747797176423,
+          "S_note": "Pearson(per-atom causal effect, held-out-tail causal effect) — sufficiency on an unseen continuation (bit-exact re-run)"
+        },
+        "sae": {
+          "F": -0.32653061224489793,
+          "F_note": "Spearman(per-atom matched-strength, per-atom causal effect) — are MATCHED atoms the USED ones?",
+          "M": 0.0,
+          "M_note": "1 − over-claim rate: fraction of MATCHED (sae) atoms whose ablation has ZERO causal effect (present≠used dictionary trap)",
+          "S": -0.9999995523920084,
+          "S_note": "Pearson(per-atom causal effect, held-out-tail causal effect) — sufficiency on an unseen continuation (bit-exact re-run)"
+        }
+      }
+    },
+    "interpretation": "Phase-C dictionary learning: PCA (orthogonal/signed), NMF (non-negative parts), SAE (sparse/over-complete). matched-component fraction quantifies how well each atom aligns to ONE known variable; the causal-use test quantifies how many atoms actually MOVE the output. A high matched fraction with few causal atoms is the dictionary trap — atoms named after variables that the program does not USE through that direction.",
+    "n_known_game_variables": 6,
+    "nmf_iters": 300,
+    "purity_threshold": 0.5,
+    "ranks_swept": [
+      8,
+      4,
+      12
+    ],
+    "sae_config": {
+      "epochs": 3000,
+      "hidden_at_headline": 8,
+      "l1": 0.05,
+      "note": "SAE hidden size = rank at each sweep point (same #atoms as PCA/NMF)"
+    },
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — full dictionary learning + causal-use sweeps over ranks × games; the forward is bit-exact to this HARD path.",
+    "scored_in_conformance_window": false,
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the causal-use test uses EXACT whole-state interventions re-run on the true ROM.",
+    "testbed": {
+      "cause_density_above_floor": 17,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 52,
+      "note": "P2 redesign: PCA/NMF/SAE dictionaries are fit/scored on a seeded random-action GAMEPLAY state (not the FIRE/attract tape), gated by the §1 oracle cause-density gate. The descriptive trajectory is stepped along the gameplay stream (NOOP-continued past prefix+horizon). The dictionary algorithms are unchanged; only the analysis state + trajectory move.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r162c84",
+      "state_kind": "seeded_random_action_gameplay"
+    },
+    "trajectory_frames": 150,
+    "trajectory_trace": "seeded random-action GAMEPLAY trajectory (seed=0, prefix=90; NOOP-continued past prefix+horizon)"
+  },
+  "game": "krull",
+  "method": "nmf_pca_dictionaries(+SAE contrast)",
+  "metric_name": "nmf_matched_component_fraction_vs_known_vars",
+  "n": 25,
+  "oracle_ref": "oracle_intervene@krull (P2-E1-1) — atom-ablation re-run (whole-state set + re-run)",
+  "paper": "P2",
+  "phase": "phaseC_mechanistic",
+  "seed": 0,
+  "state": "gameplay(seed=0,prefix=90)+15",
+  "stderr": null,
+  "target_output": "dictionary-atoms-vs-known-variables+causal-use",
+  "timestamp": "1783108595",
+  "value": 0.25,
+  "where": "local"
+}

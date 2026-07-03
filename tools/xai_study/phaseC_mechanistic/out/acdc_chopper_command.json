@@ -1,0 +1,356 @@
+{
+  "arrays": "acdc_chopper_command.npz",
+  "budget": {
+    "horizon_frames": 15,
+    "note": "paper-reasonable: the τ sweep adds zero re-runs (it thresholds the cached effect matrix). Heavy cost is the N resample re-runs + the exhaustive 3N ground-truth re-runs; re-runnable incrementally from the cached deepcopy checkpoint.",
+    "rom_reruns_acdc": "N resample-ablations (1 per source) + 1 corrupted boot + 1 scrub re-run + 2 bit-exact baselines",
+    "rom_reruns_true_graph": "≤ 3·N exhaustive interventions (N=20 cells × 3 do-values)",
+    "tau_sweep": "9 thresholds (pure thresholding of the cached effect matrix — NO extra re-runs)"
+  },
+  "ci": null,
+  "commit": "15e5d2df",
+  "extra": {
+    "ablation": "resample (parent overwritten with its value from the corrupted RIGHT-action donor run); standard ACDC corruption (Conmy et al. 2023 §3), not zero.",
+    "bit_exact_rerun": true,
+    "candidate_cells": [
+      "RAM[2]:bomb.xy",
+      "RAM[17]:x",
+      "RAM[52]:b_shot_line",
+      "RAM[55]:shot_lines",
+      "RAM[58]:shot_lines",
+      "RAM[61]:shot_lines",
+      "RAM[64]:shot_lines",
+      "RAM[65]:xy",
+      "RAM[66]:player.orientation",
+      "RAM[67]:x0",
+      "RAM[68]:truck_x",
+      "RAM[70]:bomb.xy",
+      "RAM[71]:player.xy",
+      "RAM[72]:player.xy",
+      "RAM[94]:bomb.xy",
+      "RAM[95]:bomb.xy",
+      "RAM[100]:wh",
+      "RAM[108]:value",
+      "RAM[110]:value",
+      "RAM[112]:value"
+    ],
+    "candidate_ram_indices": [
+      2,
+      17,
+      52,
+      55,
+      58,
+      61,
+      64,
+      65,
+      66,
+      67,
+      68,
+      70,
+      71,
+      72,
+      94,
+      95,
+      100,
+      108,
+      110,
+      112
+    ],
+    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_chopper_command.json",
+    "circuit": {
+      "best_tau": 0.5,
+      "discovered_edges_at_best_tau": [
+        [
+          8,
+          12
+        ],
+        [
+          9,
+          0
+        ],
+        [
+          9,
+          1
+        ],
+        [
+          9,
+          11
+        ],
+        [
+          9,
+          14
+        ],
+        [
+          9,
+          15
+        ],
+        [
+          10,
+          9
+        ],
+        [
+          12,
+          2
+        ],
+        [
+          13,
+          7
+        ]
+      ],
+      "f1": 0.5454545454545454,
+      "fn": 15,
+      "fp": 0,
+      "n_discovered_edges_at_best": 9,
+      "n_nodes": 20,
+      "n_true_edges": 24,
+      "note": "edges are 0-based candidate ordinals [i,j] = cell i -> cell j. TRUE = exhaustive oracle (do 0/base+17/base+37, full horizon, any value changes j); DISCOVERED = ACDC keep-rule (resample-ablation effect > τ). The τ sweep is the ROC frontier.",
+      "precision": 1.0,
+      "recall": 0.375,
+      "roc_auc": 0.6875,
+      "tp": 9,
+      "true_edges": [
+        [
+          7,
+          10
+        ],
+        [
+          7,
+          12
+        ],
+        [
+          7,
+          13
+        ],
+        [
+          8,
+          12
+        ],
+        [
+          9,
+          0
+        ],
+        [
+          9,
+          1
+        ],
+        [
+          9,
+          11
+        ],
+        [
+          9,
+          14
+        ],
+        [
+          9,
+          15
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          10,
+          9
+        ],
+        [
+          10,
+          11
+        ],
+        [
+          10,
+          14
+        ],
+        [
+          10,
+          15
+        ],
+        [
+          12,
+          2
+        ],
+        [
+          12,
+          3
+        ],
+        [
+          12,
+          7
+        ],
+        [
+          12,
+          10
+        ],
+        [
+          12,
+          13
+        ],
+        [
+          12,
+          18
+        ],
+        [
+          13,
+          7
+        ],
+        [
+          13,
+          10
+        ],
+        [
+          13,
+          12
+        ]
+      ]
+    },
+    "n_source_diverged": 0,
+    "positive_control": {
+      "f1": 1.0,
+      "name": "oracle-as-ACDC (exhaustive do-set, full horizon, τ=0)",
+      "note": "the exhaustive keep-rule IS the true-graph procedure, so it scores F1=1 — the harness rewards a perfectly-faithful discovery, so the resample-ACDC F1<1 is a real cheap-ablation faithfulness gap.",
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "rom_basename": "chopper_command.bin",
+    "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard/--nshards/--shard-kind game --out-dir --roms-dir --where) — the full ACDC battery over the core + breadth sets; forward bit-exact to this HARD path.",
+    "scrubbing": {
+      "n_scrubbed_parents": 15,
+      "note": "causal scrubbing of the best-F1 discovered circuit: resample-ablate every parent NOT in the circuit, re-run, report the fraction of candidate-cell readouts unchanged vs clean.",
+      "preserved_fraction": 0.8
+    },
+    "settings": "GenericRomSettings",
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge effect is an EXACT resample-ablation re-run on the true ROM.",
+    "tau_sweep": [
+      {
+        "f1": 0.5454545454545454,
+        "fn": 15,
+        "fp": 0,
+        "n_discovered": 9,
+        "precision": 1.0,
+        "recall": 0.375,
+        "tau": 0.5,
+        "tp": 9
+      },
+      {
+        "f1": 0.5,
+        "fn": 16,
+        "fp": 0,
+        "n_discovered": 8,
+        "precision": 1.0,
+        "recall": 0.3333333333333333,
+        "tau": 2.5,
+        "tp": 8
+      },
+      {
+        "f1": 0.45161290322580644,
+        "fn": 17,
+        "fp": 0,
+        "n_discovered": 7,
+        "precision": 1.0,
+        "recall": 0.2916666666666667,
+        "tau": 10.5,
+        "tp": 7
+      },
+      {
+        "f1": 0.4,
+        "fn": 18,
+        "fp": 0,
+        "n_discovered": 6,
+        "precision": 1.0,
+        "recall": 0.25,
+        "tau": 40.5,
+        "tp": 6
+      },
+      {
+        "f1": 0.3448275862068966,
+        "fn": 19,
+        "fp": 0,
+        "n_discovered": 5,
+        "precision": 1.0,
+        "recall": 0.20833333333333334,
+        "tau": 104.5,
+        "tp": 5
+      },
+      {
+        "f1": 0.2857142857142857,
+        "fn": 20,
+        "fp": 0,
+        "n_discovered": 4,
+        "precision": 1.0,
+        "recall": 0.16666666666666666,
+        "tau": 185.0,
+        "tp": 4
+      },
+      {
+        "f1": 0.15384615384615385,
+        "fn": 22,
+        "fp": 0,
+        "n_discovered": 2,
+        "precision": 1.0,
+        "recall": 0.08333333333333333,
+        "tau": 225.5,
+        "tp": 2
+      },
+      {
+        "f1": 0.07999999999999999,
+        "fn": 23,
+        "fp": 0,
+        "n_discovered": 1,
+        "precision": 1.0,
+        "recall": 0.041666666666666664,
+        "tau": 233.0,
+        "tp": 1
+      },
+      {
+        "f1": 0.0,
+        "fn": 24,
+        "fp": 0,
+        "n_discovered": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "tau": 241.0,
+        "tp": 0
+      }
+    ],
+    "testbed": {
+      "cause_density_above_floor": 16,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 42,
+      "note": "P2 redesign: ACDC runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. The clean stream is the shared gameplay tape; the resample donor shares the gameplay prefix and diverges only from f* (a RIGHT action) so it is on-distribution. The ACDC discovery algorithm is unchanged; only the analysis state moves.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r44c9",
+      "state_kind": "seeded_random_action_gameplay"
+    },
+    "triad": {
+      "F": 0.5454545454545454,
+      "F_note": "best-F1 of the ACDC-discovered circuit edges vs the exhaustive-oracle true data-flow (20 candidate cells)",
+      "M": 1.0,
+      "M_note": "1 − over-claim rate at best-F1 τ: fraction of discovered edges the oracle says are spurious (false wiring kept by the cheap ablation)",
+      "S": 0.8,
+      "S_note": "scrubbing-preserved performance: the discovered circuit alone (non-circuit parents resample-scrubbed) reproduces the clean candidate-cell readouts (fraction unchanged, bit-exact re-run)",
+      "interpretation": "ACDC's goal state IS our ground truth (experiment_design.md §7: Partial→Succeed). The discovery uses a cheap single-value resample-ablation, so it can miss edges that fire only for a different value (recall deficit) and keep transient ones (precision deficit) vs the exhaustive true data-flow."
+    }
+  },
+  "game": "chopper_command",
+  "method": "ACDC(automatic circuit discovery, resample-ablation edge pruning)",
+  "metric_name": "discovered_circuit_best_F1_vs_true_dataflow",
+  "n": 20,
+  "oracle_ref": "A1_connectomics/oracle_intervene@chopper_command — exhaustive exact inter-cell data-flow (do-set 0/base+17/base+37, full horizon)",
+  "paper": "P2",
+  "phase": "phaseC_mechanistic",
+  "seed": 0,
+  "state": "gameplay(seed=0,prefix=90)+15",
+  "stderr": null,
+  "target_output": "auto-discovered inter-cell data-flow circuit (candidate RAM cells)",
+  "timestamp": "1783105977",
+  "value": 0.5454545454545454,
+  "where": "local"
+}
