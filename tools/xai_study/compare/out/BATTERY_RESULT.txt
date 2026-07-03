@@ -1,0 +1,46 @@
+=== P2 battery aggregation (42 scored games) — 2026-07-03 19:49:59 ===
+--- driver progress tail ---
+DONE path_patching exit=0  [18:11]
+[18:11] RUN  sae
+DONE sae exit=0  [18:50]
+ALL DONE 2026-07-03 18:50:38
+--- leaderboard.py stdout ---
+[P2-E6-1] aggregated 1599 per-game §R records into 31 method rows (incl. 1 oracle positive control).
+  index: not present — globbed phase out/ trees directly (records ARE the index)
+  HEADLINE (position/index regime): causal/intervention 0.561 (n=4)  vs gradient/correlational 0.232 (n=9)  gap=0.329
+  all-regime mean faithfulness: causal/intervention 0.7073 vs gradient/correlational 0.3837  gap=0.3236
+  top danger-zone (plausibility − faithfulness):
+    linear_probing_control_tasks     plaus=0.85 faith=0.1082  Δ=0.7418
+    expected_gradients               plaus=0.9 faith=0.1754  Δ=0.7246
+    A6_granger                       plaus=0.8 faith=0.1364  Δ=0.6636
+    A3_tuning                        plaus=0.8 faith=0.2129  Δ=0.5871
+    guided_backprop                  plaus=0.9 faith=0.3223  Δ=0.5777
+  self-check:
+    [PASS] every expected method present — ok
+    [PASS] no method with null faithfulness — ok
+    [PASS] positive control present and == 1 — n_pc=1 faith=1.0
+    [PASS] position-regime gap (causal − gradient) > 0 — gap=0.329
+    [PASS] plausibility proxy in [0,1] — ok
+  SELF-CHECK: PASS
+  wrote: compare/out/leaderboard.json, leaderboard.csv, leaderboard.md
+
+--- headline_contrast (leaderboard.json) ---
+{
+  "claim": "Intervention/causal methods are near-ceiling while gradient/correlational methods collapse to near-chance on the position/index regime (the discrete sprite-position outputs whose naive gradient is zero, \u00a71).",
+  "position_regime": {
+    "causal_intervention_faithfulness_mean": 0.561,
+    "causal_intervention_ci95": 0.3212,
+    "causal_intervention_n": 4,
+    "gradient_correlational_faithfulness_mean": 0.232,
+    "gradient_correlational_ci95": 0.1545,
+    "gradient_correlational_n": 9,
+    "gap": 0.329
+  },
+  "all_regimes": {
+    "causal_intervention_faithfulness_mean": 0.7073,
+    "causal_intervention_n": 11,
+    "gradient_correlational_faithfulness_mean": 0.3837,
+    "gradient_correlational_n": 14,
+    "gap": 0.3236
+  }
+}

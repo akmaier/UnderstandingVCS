@@ -1,7 +1,7 @@
 {
   "arrays": "ig_baseline_sweep_ms_pacman_content.npz",
   "ci": null,
-  "commit": "9bc37f8b",
+  "commit": "1adff48",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-IG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline_sweep": {
@@ -54,7 +54,7 @@
           "deletion_auc": 0.0125,
           "ig_max_abs": 98.0,
           "insertion_auc": 0.9625,
-          "pearson_corr": 0.8105163119782981,
+          "pearson_corr": 0.810516311978298,
           "precision_at_k": 1.0,
           "spearman_corr": 0.9996712148522013,
           "topk": 3,
@@ -108,7 +108,7 @@
           "deletion_auc": 0.0125,
           "ig_max_abs": 9.2421875,
           "insertion_auc": 0.9625,
-          "pearson_corr": 0.8105163119782979,
+          "pearson_corr": 0.8105163119782975,
           "precision_at_k": 1.0,
           "spearman_corr": 0.9996712148522013,
           "topk": 3,
@@ -300,7 +300,7 @@
       "completeness_err": 0.0,
       "deletion_auc": 0.0125,
       "insertion_auc": 0.9625,
-      "pearson_corr": 0.8105163119782981,
+      "pearson_corr": 0.810516311978298,
       "precision_at_k": 1.0,
       "spearman_corr": 0.9996712148522013,
       "topk": 3
@@ -365,7 +365,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@16)",
-  "timestamp": "1782924424",
-  "value": 0.8105163119782981,
+  "timestamp": "1783063280",
+  "value": 0.810516311978298,
   "where": "local"
 }

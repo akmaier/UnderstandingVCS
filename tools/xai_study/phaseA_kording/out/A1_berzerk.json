@@ -1,0 +1,319 @@
+{
+  "arrays": "A1_berzerk.npz",
+  "ci": null,
+  "commit": "2a9ade4c",
+  "extra": {
+    "bit_exact_rerun": true,
+    "candidate_cells": [
+      "RAM[11]:player_y",
+      "RAM[14]:player_direction",
+      "RAM[19]:player_x",
+      "RAM[21]:player_missile_direction",
+      "RAM[22]:player_missile_x",
+      "RAM[23]:player_missile_y",
+      "RAM[26]:robot_missile_direction",
+      "RAM[29]:robot_missile_x",
+      "RAM[30]:robot_missile_y",
+      "RAM[46]:enemy_evilOtto_x",
+      "RAM[65]:enemy_robots_x[0]",
+      "RAM[66]:enemy_robots_x[1]",
+      "RAM[67]:enemy_robots_x[2]",
+      "RAM[68]:enemy_robots_x[3]",
+      "RAM[69]:enemy_robots_x[4]",
+      "RAM[70]:enemy_robots_x[5]",
+      "RAM[71]:enemy_robots_x[6]",
+      "RAM[72]:enemy_robots_x[7]",
+      "RAM[89]:enemy_evilOtto_y",
+      "RAM[90]:num_lives",
+      "RAM[91]:robots_killed_count",
+      "RAM[92]:game_level",
+      "RAM[93]:player_score[0]",
+      "RAM[94]:player_score[1]",
+      "RAM[95]:player_score[2]",
+      "RAM[56]:robot"
+    ],
+    "candidate_ram_indices": [
+      11,
+      14,
+      19,
+      21,
+      22,
+      23,
+      26,
+      29,
+      30,
+      46,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71,
+      72,
+      89,
+      90,
+      91,
+      92,
+      93,
+      94,
+      95,
+      56
+    ],
+    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_berzerk.json",
+    "graph": {
+      "f1": 0.042553191489361694,
+      "fn": 45,
+      "fp": 0,
+      "graph_edit_distance": 45,
+      "graph_edit_distance_normalised": 0.06923076923076923,
+      "n_nodes": 26,
+      "n_recovered_edges": 1,
+      "n_true_edges": 46,
+      "note": "edges are 0-based candidate ordinals [i,j] meaning cell i -> cell j. TRUE = exhaustive oracle (do 0/base+17/base+37, full horizon, any value changes j); RECOVERED = classical single do(base+17), 1-step latency. GED = symmetric edge difference (fp+fn) over off-diagonal edges.",
+      "precision": 1.0,
+      "recall": 0.021739130434782608,
+      "recovered_edges": [
+        [
+          3,
+          4
+        ]
+      ],
+      "tp": 1,
+      "true_edges": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          3
+        ],
+        [
+          0,
+          4
+        ],
+        [
+          0,
+          5
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ],
+        [
+          0,
+          21
+        ],
+        [
+          0,
+          24
+        ],
+        [
+          0,
+          25
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          2,
+          5
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          3,
+          5
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          10,
+          11
+        ],
+        [
+          10,
+          12
+        ],
+        [
+          10,
+          13
+        ],
+        [
+          10,
+          14
+        ],
+        [
+          10,
+          20
+        ],
+        [
+          10,
+          24
+        ],
+        [
+          10,
+          25
+        ],
+        [
+          11,
+          12
+        ],
+        [
+          11,
+          13
+        ],
+        [
+          11,
+          14
+        ],
+        [
+          11,
+          20
+        ],
+        [
+          11,
+          24
+        ],
+        [
+          12,
+          13
+        ],
+        [
+          12,
+          14
+        ],
+        [
+          12,
+          20
+        ],
+        [
+          12,
+          24
+        ],
+        [
+          13,
+          14
+        ],
+        [
+          13,
+          20
+        ],
+        [
+          13,
+          24
+        ],
+        [
+          14,
+          20
+        ],
+        [
+          14,
+          24
+        ],
+        [
+          25,
+          11
+        ],
+        [
+          25,
+          12
+        ],
+        [
+          25,
+          13
+        ],
+        [
+          25,
+          14
+        ],
+        [
+          25,
+          20
+        ],
+        [
+          25,
+          23
+        ]
+      ]
+    },
+    "positive_control": {
+      "f1": 1.0,
+      "graph_edit_distance": 0,
+      "name": "oracle-as-method (full do-set + full horizon)",
+      "note": "the oracle's OWN recovery must score F1=1, GED=0 — the harness rewards a perfectly-faithful graph, so the classical F1<1 is a real measurement.",
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "rom_basename": "berzerk.bin",
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
+    "settings": "GenericRomSettings",
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
+    "testbed": {
+      "cause_density_above_floor": 23,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 54,
+      "note": "P2 redesign: the connectomics recovery runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. A1's graph algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r114c5",
+      "state_kind": "seeded_random_action_gameplay"
+    },
+    "triad": {
+      "F": 0.042553191489361694,
+      "F_note": "F1 of recovered data-flow edges vs the exact-oracle true edges (26 candidate cells)",
+      "M": 1.0,
+      "M_note": "1 − over-claim rate: fraction of recovered edges the oracle says are spurious (false wiring)",
+      "S": 0.9569230769230769,
+      "S_note": "off-diagonal edge-agreement between the base+17 recovered graph and the HELD-OUT base+37 true edge set (generalisation to an unseen intervention value, bit-exact re-run)",
+      "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): classical connectomics scores LOW-to-PARTIAL faithfulness despite fully-known data-flow — the quantified-Kording lesson. A thin single-shot/short-latency perturbation misses long-latency / sign-dependent edges (recall deficit) and can over-claim transient ones (precision deficit)."
+    }
+  },
+  "game": "berzerk",
+  "method": "A1_connectomics(single-shot perturbation graph recovery)",
+  "metric_name": "dataflow_graph_F1_vs_oracle",
+  "n": 26,
+  "oracle_ref": "oracle_intervene@berzerk#cell-to-cell data-flow (exhaustive do-set, full horizon)",
+  "paper": "P2",
+  "phase": "phaseA_kording",
+  "seed": 0,
+  "state": "gameplay(seed=0,prefix=90)+15",
+  "stderr": null,
+  "target_output": "inter-cell data-flow graph (candidate RAM cells)",
+  "timestamp": "1783063013",
+  "value": 0.042553191489361694,
+  "where": "local"
+}

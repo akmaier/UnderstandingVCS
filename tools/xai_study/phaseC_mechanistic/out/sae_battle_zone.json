@@ -1,0 +1,273 @@
+{
+  "arrays": "sae_battle_zone.npz",
+  "ci": null,
+  "commit": "9391b559",
+  "extra": {
+    "bit_exact_rerun": true,
+    "candidate_cells": [
+      "RAM[47]:(unnamed)",
+      "RAM[48]:(unnamed)",
+      "RAM[53]:(unnamed)",
+      "RAM[54]:(unnamed)",
+      "RAM[74]:con1.xy",
+      "RAM[82]:con1.xy"
+    ],
+    "candidate_concept_family": [
+      "(unnamed)",
+      "(unnamed)",
+      "(unnamed)",
+      "(unnamed)",
+      "con",
+      "con"
+    ],
+    "candidate_ram_indices": [
+      47,
+      48,
+      53,
+      54,
+      74,
+      82
+    ],
+    "causal_use": {
+      "ablate_equals_oracle": true,
+      "ablate_equals_oracle_maxdiff_px": 0.0,
+      "n_causal_use_features": 1,
+      "note": "for each MATCHED & ORACLE-CAUSAL variable: ABLATE its best-matching feature (zero its activation), DECODE the code back to a RAM vector, UN-normalise to raw bytes, WRITE into the real ROM and RE-RUN `horizon` steps → Δscreen. The exact oracle re-runs the SAME write from an INDEPENDENT fresh boot (ablate==oracle, asserted, bit-exact). SPECIFICITY: decode_leakage = #RAM cells the decode changed; target_share = Δscreen(target-cell-only) / Δscreen(full-decode). Causally-real MONOSEMANTIC feature ⇒ leakage≈1 ∧ target_share≈1; correlational/polysemantic ⇒ decode smears (low target_share) — present, not cleanly used.",
+      "per_feature": [
+        {
+          "ablate_eq_oracle": true,
+          "decode_leakage": 5,
+          "delta_full": 0.0,
+          "delta_oracle": 0.0,
+          "delta_target_only": 0.0,
+          "family": "(unnamed)",
+          "feature": 25,
+          "moved": false,
+          "ram_index": 47,
+          "raw_ablate": 6,
+          "raw_base": 6,
+          "target_share": 0.0
+        }
+      ]
+    },
+    "conformance_note": "scored oracle frame f90+15 is BEYOND the strict 60-frame conformance window — the game only reaches live play later. HONEST descriptive jutari result (the bit-exact jutari re-run IS asserted), not an xitari-parity claim; Phase C is calibrated against the jutari oracle.",
+    "feature_variable_match": {
+      "matched_fraction": 1.0,
+      "n_varying_known_cells": 3,
+      "note": "for each KNOWN candidate cell that VARIES, max|Pearson r| between any learned feature's activation and that cell over the trajectory; matched iff |r| ≥ 0.7. Match-rate = #matched / #varying.",
+      "per_cell": [
+        {
+          "best_corr": 0.9515500473636465,
+          "best_feature": 25,
+          "concept": "(unnamed)",
+          "family": "(unnamed)",
+          "matched": true,
+          "ram_index": 47,
+          "varies": true
+        },
+        {
+          "best_corr": 0.9515500473636466,
+          "best_feature": 25,
+          "concept": "(unnamed)",
+          "family": "(unnamed)",
+          "matched": true,
+          "ram_index": 48,
+          "varies": true
+        },
+        {
+          "best_corr": 0.0,
+          "best_feature": -1,
+          "concept": "(unnamed)",
+          "family": "(unnamed)",
+          "matched": false,
+          "ram_index": 53,
+          "varies": false
+        },
+        {
+          "best_corr": 0.0,
+          "best_feature": -1,
+          "concept": "(unnamed)",
+          "family": "(unnamed)",
+          "matched": false,
+          "ram_index": 54,
+          "varies": false
+        },
+        {
+          "best_corr": 0.0,
+          "best_feature": -1,
+          "concept": "con1.xy",
+          "family": "con",
+          "matched": false,
+          "ram_index": 74,
+          "varies": false
+        },
+        {
+          "best_corr": 0.9830357196353792,
+          "best_feature": 25,
+          "concept": "con1.xy",
+          "family": "con",
+          "matched": true,
+          "ram_index": 82,
+          "varies": true
+        }
+      ]
+    },
+    "match_thresh": 0.7,
+    "n_known_game_variables": 2,
+    "oracle_importance": {
+      "importance_per_cell": {
+        "RAM[47]:(unnamed)": 21411.0,
+        "RAM[48]:(unnamed)": 0.0,
+        "RAM[53]:(unnamed)": 0.0,
+        "RAM[54]:(unnamed)": 0.0,
+        "RAM[74]:con1.xy": 0.0,
+        "RAM[82]:con1.xy": 0.0
+      },
+      "n_causal_cells": 1,
+      "note": "oracle importance(i) = max whole-screen break of an EXACT do(cell_i:=0)/do(cell_i:=base+17) intervention re-run on the real ROM (the §1 oracle restricted to the candidate cell + screen). The SAME map A2 / A7 / pilot_si.jl score against — the TRUE causal role."
+    },
+    "reconstruction": {
+      "best_d_hidden": 32,
+      "best_l1": 0.01,
+      "best_mean_l0": 15.586666666666666,
+      "fve_heldout": 0.878885521500747,
+      "fve_train": 0.9990086986341623
+    },
+    "sae": {
+      "activation": "relu",
+      "epochs": 4000,
+      "fitting": "manual full-batch gradient descent (dependency-free; Julia port of pilot_patch_sae.py's numpy SAE).",
+      "input": "z-scored 128-byte RIOT RAM (constant cells zeroed)",
+      "lr": 0.5,
+      "objective": "MSE(x,x̂) + l1·mean(|z|)"
+    },
+    "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard i --nshards n --shard-kind game): one Slurm task per core game (round-robin); a larger d_hidden×l1 grid + longer trajectories on the GPU (experiment_design.md §8). The forward is bit-exact to this HARD path.",
+    "scored_in_conformance_window": false,
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the SAE is a dependency-free manual-GD L1 autoencoder over the recorded RAM trajectory (no torch/flax/pip; adds no package to the shared env). The causal-use ablation RE-RUNS the real ROM via the exact intervention oracle.",
+    "sweep": {
+      "best": {
+        "d_hidden": 32,
+        "fve_held": 0.878885521500747,
+        "fve_train": 0.9990086986341623,
+        "l1": 0.01,
+        "matched_fraction": 1.0,
+        "mean_l0": 15.586666666666666
+      },
+      "grid": [
+        {
+          "d_hidden": 16,
+          "fve_held": 0.8734836944540967,
+          "fve_train": 0.9982508059684593,
+          "l1": 0.01,
+          "matched_fraction": 1.0,
+          "mean_l0": 7.913333333333333
+        },
+        {
+          "d_hidden": 16,
+          "fve_held": 0.8646211515934583,
+          "fve_train": 0.9929387356865708,
+          "l1": 0.05,
+          "matched_fraction": 1.0,
+          "mean_l0": 4.693333333333333
+        },
+        {
+          "d_hidden": 16,
+          "fve_held": 0.661712788928203,
+          "fve_train": 0.8462389683631485,
+          "l1": 0.2,
+          "matched_fraction": 1.0,
+          "mean_l0": 0.32
+        },
+        {
+          "d_hidden": 32,
+          "fve_held": 0.878885521500747,
+          "fve_train": 0.9990086986341623,
+          "l1": 0.01,
+          "matched_fraction": 1.0,
+          "mean_l0": 15.586666666666666
+        },
+        {
+          "d_hidden": 32,
+          "fve_held": 0.843601297710441,
+          "fve_train": 0.9968431671013814,
+          "l1": 0.05,
+          "matched_fraction": 1.0,
+          "mean_l0": 8.206666666666667
+        },
+        {
+          "d_hidden": 32,
+          "fve_held": 0.7227811559218917,
+          "fve_train": 0.9696318454208045,
+          "l1": 0.2,
+          "matched_fraction": 1.0,
+          "mean_l0": 3.46
+        },
+        {
+          "d_hidden": 64,
+          "fve_held": 0.8567317985637655,
+          "fve_train": 0.9990090706608741,
+          "l1": 0.01,
+          "matched_fraction": 1.0,
+          "mean_l0": 36.806666666666665
+        },
+        {
+          "d_hidden": 64,
+          "fve_held": 0.8460682276354741,
+          "fve_train": 0.9976189574844461,
+          "l1": 0.05,
+          "matched_fraction": 1.0,
+          "mean_l0": 21.48
+        },
+        {
+          "d_hidden": 64,
+          "fve_held": 0.8371563713351711,
+          "fve_train": 0.9946645657289607,
+          "l1": 0.2,
+          "matched_fraction": 1.0,
+          "mean_l0": 9.113333333333333
+        }
+      ],
+      "note": "dictionary-size (d_hidden) × L1-penalty sweep — the full-SAE knobs (Cunningham/Bricken 2023: overcomplete dict + L1). FVE = fraction of variance explained on a held-out (every-5th-frame) split.",
+      "selected_by": "max held-out FVE"
+    },
+    "testbed": {
+      "cause_density_above_floor": 1,
+      "cause_density_accepted": false,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 14,
+      "note": "P2 redesign: the SAE is fit/scored on a seeded random-action GAMEPLAY state (not the FIRE/attract tape), gated by the §1 oracle cause-density gate. The descriptive trajectory is stepped along the gameplay stream (NOOP-continued past prefix+horizon). The SAE algorithm is unchanged; only the analysis state + trajectory move.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r105c80",
+      "state_kind": "seeded_random_action_gameplay"
+    },
+    "trajectory_frames": 150,
+    "trajectory_trace": "seeded random-action GAMEPLAY trajectory (seed=0, prefix=90; NOOP-continued past prefix+horizon)",
+    "triad": {
+      "F": 0.6956083436402525,
+      "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
+      "M": 0.0,
+      "M_note": "mean over causal-use features of target_share·single-cell-ness (monosemantic ⇒ ablate perturbs ≈1 cell AND that cell carries Δscreen)",
+      "S": 0.5893863507836444,
+      "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
+      "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
+    }
+  },
+  "game": "battle_zone",
+  "item": "P2-E5-6",
+  "method": "sparse_autoencoder",
+  "metric_name": "feature_variable_matched_fraction",
+  "n": 3,
+  "oracle_ref": "oracle_intervene@battle_zone (P2-E1-1) — exact single-cell + full-decode patch re-run; traj from jutari_record (P2-E0-2j)",
+  "paper": "P2",
+  "phase": "phaseC_mechanistic",
+  "seed": 0,
+  "state": "gameplay(seed=0,prefix=90)+15",
+  "stderr": null,
+  "target_output": "state_features_vs_known_variables+causal_use",
+  "timestamp": "1783018562",
+  "value": 1.0,
+  "where": "local"
+}

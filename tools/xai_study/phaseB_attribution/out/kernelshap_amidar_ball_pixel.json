@@ -1,0 +1,177 @@
+{
+  "arrays": "kernelshap_amidar_ball_pixel.npz",
+  "ci": null,
+  "commit": "9391b559",
+  "extra": {
+    "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-SHAP causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
+    "budget": {
+      "endpoints": "f0=y(all-masked) and f1=y(intact) pinned exactly (2 extra re-runs)",
+      "n_candidate_cells": 6,
+      "n_coalitions_sampled": 512,
+      "n_real_reruns": 64,
+      "n_unique_coalitions": 62,
+      "note": "N=512 coalitions sampled from the Shapley-kernel size distribution p(s)∝(C−1)/(s·(C−s)); duplicate draws de-duplicated (their kernel weights SUM, the standard KernelSHAP de-dup) so only 62 UNIQUE coalitions are re-run + 2 endpoints = 64 real emulator re-runs per output. Re-runs continue from the cached deepcopy CHECKPOINT (boot+replay paid once), and the convergence sweep reuses the SAME pool (no extra re-runs).",
+      "rng": "MersenneTwister(seed*1_000_003 + 6151), seed=0"
+    },
+    "cause_names": [
+      "ram[13]:set",
+      "ram[13]:occlude",
+      "ram[14]:set",
+      "ram[14]:occlude",
+      "ram[49]:set",
+      "ram[49]:occlude",
+      "ram[54]:set",
+      "ram[54]:occlude",
+      "ram[51]:set",
+      "ram[51]:occlude",
+      "ram[50]:set",
+      "ram[50]:occlude",
+      "tia[COLUBK]:set",
+      "joystick:RIGHT"
+    ],
+    "comparison_note": "KernelSHAP vs the gradient family: vanilla saliency/Grad×Input/IG measure ∂y/∂u (vanish on index outputs); KernelSHAP measures the Shapley value of each cell from real coalition re-runs (alive everywhere the perturbation is valid). KernelSHAP vs the §1 oracle: SHAP credits the average marginal contribution over coalitions (occlude→0 baseline only), so it is the SAMPLING-APPROXIMATION twin of the oracle — the §7 'Partial/Fail: baseline/sampling-dependent; approximations diverge' prediction, in numbers (reported, not asserted).",
+    "content_ram_index": -1,
+    "convergence_sweep": {
+      "interpretation": "the SHAP solve + faithfulness (corr / precision@k / del-ins) + the completeness residual recomputed from N/8, N/4, N/2, N coalitions of the SAME pool (no extra re-runs). The SHAP-sampling variance is ∝ 1/N, so corr/p@k STABILISE as N grows; the spread between the smallest and full budget quantifies how many coalitions KernelSHAP needs on this output (the §5 'convergence vs compute', the §7 'approximations diverge' knob).",
+      "points": [
+        {
+          "completeness_residual": 0.0,
+          "deletion_auc": 0.9642857142857143,
+          "insertion_auc": 0.10714285714285714,
+          "n_coalitions": 64,
+          "n_unique": 35,
+          "pearson_corr": 0.08742644556830058,
+          "precision_at_k": 0.6666666666666666,
+          "spearman_corr": 0.2557885789770806
+        },
+        {
+          "completeness_residual": 0.0,
+          "deletion_auc": 0.9642857142857143,
+          "insertion_auc": 0.10714285714285714,
+          "n_coalitions": 128,
+          "n_unique": 46,
+          "pearson_corr": 0.08742644672316943,
+          "precision_at_k": 0.6666666666666666,
+          "spearman_corr": 0.19184143423281044
+        },
+        {
+          "completeness_residual": 0.0,
+          "deletion_auc": 0.9642857142857143,
+          "insertion_auc": 0.10714285714285714,
+          "n_coalitions": 256,
+          "n_unique": 53,
+          "pearson_corr": 0.08742644700638373,
+          "precision_at_k": 0.6666666666666666,
+          "spearman_corr": 0.06394714474427016
+        },
+        {
+          "completeness_residual": 0.0,
+          "deletion_auc": 0.9642857142857143,
+          "insertion_auc": 0.10714285714285714,
+          "n_coalitions": 512,
+          "n_unique": 62,
+          "pearson_corr": 0.08742644712745862,
+          "precision_at_k": 0.6666666666666666,
+          "spearman_corr": 0.20659846763533432
+        }
+      ]
+    },
+    "efficiency_completeness": {
+      "f0_all_masked": 4136.0,
+      "f1_intact": 0.0,
+      "f_full_minus_empty": -4136.0,
+      "interpretation": "Σφ = f(full) − f(∅) = y(intact) − y(all-masked) is the SHAP efficiency axiom (the additive attribution exactly reconstructs the output gap). Enforced by the equality constraint in the WLS solve; the tiny residual is numerical. This is the SHAP analogue of IG's completeness.",
+      "residual": 0.0,
+      "sum_phi": -4136.0
+    },
+    "harness_positive_control": {
+      "deletion_auc": 0.8928571428571429,
+      "insertion_auc": 0.17857142857142858,
+      "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the KernelSHAP numbers above are then a true measurement, not an artefact of the metric.",
+      "method": "oracle_abs_delta (the perfectly-faithful attribution)",
+      "oracle_column_degenerate": false,
+      "pearson_corr": 1.0,
+      "precision_at_k": 1.0
+    },
+    "headline_metrics": {
+      "deletion_auc": 0.9642857142857143,
+      "insertion_auc": 0.10714285714285714,
+      "pearson_corr": 0.08742644712745862,
+      "precision_at_k": 0.6666666666666666,
+      "spearman_corr": 0.20659846763533432,
+      "topk": 3
+    },
+    "method_ref": "KernelSHAP / Shapley sampling (Lundberg & Lee, NeurIPS 2017; Štrumbelj & Kononenko, KAIS 2014): sample coalitions from the Shapley kernel, re-run the true ROM with absent cells masked to 0, solve the efficiency-constrained weighted least squares for the SHAP values φ = attribution.",
+    "oracle_abs_delta_per_cause": {
+      "joystick:RIGHT": 0.0,
+      "ram[13]:occlude": 0.0,
+      "ram[13]:set": 80.0,
+      "ram[14]:occlude": 0.0,
+      "ram[14]:set": 16.0,
+      "ram[49]:occlude": 0.0,
+      "ram[49]:set": 16.0,
+      "ram[50]:occlude": 0.0,
+      "ram[50]:set": 0.0,
+      "ram[51]:occlude": 0.0,
+      "ram[51]:set": 0.0,
+      "ram[54]:occlude": 4136.0,
+      "ram[54]:set": 4136.0,
+      "tia[COLUBK]:set": 27980.0
+    },
+    "output_kind": "position",
+    "output_note": "POSITION/INDEX output (ball_pixel) — the §7 CONTRAST: unlike IG/saliency (which VANISH on position outputs because the pixel is a round/argmax sprite column with no differentiable RAM path), KernelSHAP — a BLACK-BOX perturb-and-re-run method — STILL produces a real attribution here. It masks the absent coalition cells to 0 and RE-RUNS the real ROM, reading the real pixel; no differentiation. Reported, not asserted to be large; the intervention oracle remains the sole truth.",
+    "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard i --nshards n --shard-kind game): one Slurm array task per core game; or batched SOFT-STE coalition re-runs over coalitions×games on GPU (the forward is bit-exact to this HARD map).",
+    "shap_attr_per_cause": {
+      "joystick:RIGHT": 0.0,
+      "ram[13]:occlude": 7.03218780637773e-7,
+      "ram[13]:set": 7.03218780637773e-7,
+      "ram[14]:occlude": 6.435286911023601e-7,
+      "ram[14]:set": 6.435286911023601e-7,
+      "ram[49]:occlude": 6.932430360749744e-7,
+      "ram[49]:set": 6.932430360749744e-7,
+      "ram[50]:occlude": 6.299908918392633e-7,
+      "ram[50]:set": 6.299908918392633e-7,
+      "ram[51]:occlude": 8.029266897793842e-7,
+      "ram[51]:set": 8.029266897793842e-7,
+      "ram[54]:occlude": 4135.999996527092,
+      "ram[54]:set": 4135.999996527092,
+      "tia[COLUBK]:set": 0.0
+    },
+    "shap_phi_signed_per_cell": {
+      "13": -7.03218780637773e-7,
+      "14": -6.435286911023601e-7,
+      "49": -6.932430360749744e-7,
+      "50": -6.299908918392633e-7,
+      "51": -8.029266897793842e-7,
+      "54": -4135.999996527092
+    },
+    "shapley_kernel_note": "coalitions sampled with size s ~ p(s)∝(C−1)/(s·(C−s)); each row of the WLS is weighted by the Shapley kernel π(s)=(C−1)/(binom(C,s)·s·(C−s)) (Lundberg & Lee Theorem 2). Endpoints s∈{0,C} carry infinite weight ⇒ pinned exactly by the efficiency constraint (not sampled). A 1e-8 ridge stabilises rank-deficient designs.",
+    "substrate": "jutari (Julia, HARD) — real-ROM coalition re-runs (bit-exact oracle machinery) + closed-form efficiency-constrained WLS solve. NO surrogate model: the value function IS the true emulator, so the only approximation is the coalition sampling + the additive (linear) SHAP model.",
+    "testbed": {
+      "cause_density_above_floor": 6,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 14,
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r165c125",
+      "state_kind": "seeded_random_action_gameplay"
+    }
+  },
+  "game": "amidar",
+  "method": "kernelshap",
+  "metric_name": "pearson_corr_with_oracle",
+  "n": 14,
+  "oracle_ref": "oracle_intervene@amidar#screen_region(n_changed_px)@r165c125",
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "seed": 0,
+  "state": "gameplay(seed=0,prefix=90)+15",
+  "stderr": null,
+  "target_output": "screen_region(n_changed_px)@r165c125",
+  "timestamp": "1783015685",
+  "value": 0.08742644712745862,
+  "where": "local"
+}

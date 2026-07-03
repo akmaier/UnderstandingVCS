@@ -1,0 +1,136 @@
+{
+  "applies": false,
+  "arrays": "na_audit_venture.npz",
+  "ci": null,
+  "commit": "2a9ade4c",
+  "extra": {
+    "applicable_contrast": {
+      "candidates_file": "tools/xai_study/t3/out/candidates_venture.json",
+      "methods_that_DO_apply": [
+        {
+          "item": "E4-1",
+          "method": "vanilla_gradient",
+          "name": "Vanilla gradient / saliency (Simonyan et al. 2014)"
+        },
+        {
+          "item": "E4-0 / E4-5",
+          "method": "integrated_gradients",
+          "name": "Integrated Gradients (Sundararajan et al. 2017; P8)"
+        },
+        {
+          "item": "E4-7",
+          "method": "occlusion",
+          "name": "Occlusion on the true VCS (Zeiler & Fergus 2014)"
+        },
+        {
+          "item": "E4-12",
+          "method": "counterfactual",
+          "name": "On-distribution counterfactual states (Olson 2021; Atrey 2020)"
+        }
+      ],
+      "n_candidate_causes": 37,
+      "note": "The ASYMMETRY is the finding: applicable methods (IG, occlusion, counterfactuals, vanilla gradient) have 37 candidate CAUSE cells (RAM/registers/inputs) to attribute over and ARE scored against the §1 intervention oracle. The N/A methods have ZERO of their required substrate channels — the absence is STRUCTURAL (no conv/attention/policy exists), not a tuning or coverage failure."
+    },
+    "finding": "Architecture-/policy-specific XAI methods DO NOT APPLY to the VCS substrate. The VCS is a deterministic 6502+TIA+RIOT program (no neural network, no learned policy), so methods that require conv feature maps, attention matrices, learned channels, or a learned policy have NO operand. Recorded as a measured statement about the narrowness of popular XAI (experiment_design.md §5 'N/A' row + §7 last row).",
+    "methods_not_applicable": [
+      {
+        "applies": false,
+        "citation": "Selvaraju et al. 2017 (ICCV)",
+        "family": "CNN class-activation mapping",
+        "method": "grad_cam",
+        "missing_ingredient": "convolutional feature maps (a last conv layer whose channels are spatially pooled and weighted by class-gradient)",
+        "missing_ingredient_kind": "conv_feature_maps",
+        "name": "Grad-CAM",
+        "present_in_vcs": false,
+        "reason": "Grad-CAM forms a class-discriminative heatmap by weighting the activation maps of a CNN's final convolutional layer by the gradient of the class logit w.r.t. those maps, then ReLU-ing the weighted sum. The VCS has NO convolutional layers, NO learned channels, and NO class logits: it is a 6502 CPU + TIA + RIOT executing a fixed ROM. There is no last-conv-layer activation tensor to weight, so the construction has no operand.",
+        "why_no_retarget": "Projecting register/RAM/colour-clock state into a 'feature map' grid and weighting by ∂y/∂state is NOT Grad-CAM: those are raw causal state cells, not learned conv channels, and the resulting map is just the content-path gradient (already covered by vanilla-gradient / Grad×Input, E4-1/E4-2). The channel-pooling + ReLU that DEFINE Grad-CAM are vacuous without conv channels."
+      },
+      {
+        "applies": false,
+        "citation": "Chattopadhyay et al. 2018 (WACV)",
+        "family": "CNN class-activation mapping",
+        "method": "grad_cam_pp",
+        "missing_ingredient": "convolutional feature maps + higher-order (2nd/3rd) gradients of the class score w.r.t. those maps",
+        "missing_ingredient_kind": "conv_feature_maps",
+        "name": "Grad-CAM++",
+        "present_in_vcs": false,
+        "reason": "Grad-CAM++ refines Grad-CAM's per-channel weights with pixel-wise higher-order gradient terms over the SAME final conv feature maps. It inherits Grad-CAM's hard requirement for conv channels; the VCS has none, so the refinement has nothing to refine.",
+        "why_no_retarget": "Higher-order gradients of a VCS pixel w.r.t. state cells exist (the substrate is differentiable, content path), but computing them is not Grad-CAM++ — without conv feature maps the per-channel weighting that the formula sums over is undefined. The result would again be a (higher-order) saliency map, not a CAM."
+      },
+      {
+        "applies": false,
+        "citation": "Abnar & Zuidema 2020 (ACL)",
+        "family": "Transformer attention attribution",
+        "method": "attention_rollout",
+        "missing_ingredient": "self-attention matrices across transformer layers (per-head token-to-token attention weights to multiply through, with the residual/identity mix)",
+        "missing_ingredient_kind": "attention",
+        "name": "Attention rollout",
+        "present_in_vcs": false,
+        "reason": "Attention rollout recursively multiplies the layer-wise self-attention matrices (averaged over heads, mixed with the residual identity) to trace how input tokens influence a later representation. The VCS is not a transformer: there are NO attention heads, NO token sequence, and NO attention matrices to multiply. The method's entire input — the stack of A^(l) matrices — does not exist.",
+        "why_no_retarget": "One could build a token-to-token influence matrix from the VCS's true data-flow (which RAM cell reads/writes which), but that is the §1 intervention/data-flow oracle (or Phase-C path patching), NOT attention rollout: there is no learned, softmax-normalised attention being rolled up. Calling the data-flow graph 'attention' would mislabel ground truth as a method under test."
+      },
+      {
+        "applies": false,
+        "citation": "Bastani et al. 2018 (NeurIPS)",
+        "family": "Policy extraction / surrogate",
+        "method": "viper",
+        "missing_ingredient": "a LEARNED policy π(a|s) (a trained agent / Q-network) to distil into an interpretable decision tree via DAgger-style imitation",
+        "missing_ingredient_kind": "learned_policy",
+        "name": "VIPER (policy distillation to a decision tree)",
+        "present_in_vcs": false,
+        "reason": "VIPER extracts a verifiable decision-tree policy by imitating a trained neural policy (Q-network) over visited states, using the Q-values to weight the imitation. Paper 2's subject is the PROGRAM (the VCS as a deterministic input→output function), not an agent: there is NO learned policy, NO action distribution to imitate, and NO Q-function to weight by. The thing VIPER distils does not exist in this study. (Agents are P5, not P2.)",
+        "why_no_retarget": "Fitting a decision tree to (state → next-RAM / pixel) of the VCS itself is not VIPER: VIPER's object is a LEARNED control policy, and its guarantee is about imitating that policy's returns. The VCS's own state-transition is the exact program — a tree over it is a (lossy) re-description of known ground truth, not a policy-distillation explanation. Faithful recovery of the program is Phase C (circuit discovery), scored vs the true data-flow."
+      },
+      {
+        "applies": false,
+        "citation": "Zhou et al. 2016 (CVPR)",
+        "family": "CNN class-activation mapping",
+        "method": "cam",
+        "missing_ingredient": "a global-average-pooled final conv layer feeding a single linear classification layer (the GAP+FC architecture CAM is defined on)",
+        "missing_ingredient_kind": "conv_feature_maps",
+        "name": "CAM (class activation mapping)",
+        "present_in_vcs": false,
+        "reason": "Vanilla CAM requires the specific CNN topology of a GAP'd last conv layer wired to one FC classifier; the heatmap is the conv maps weighted by that FC's class weights. The VCS has neither conv maps nor a learned classifier head, so the construction is undefined.",
+        "why_no_retarget": "There is no GAP+FC head to read class weights from; any 'importance grid' over VCS state is the content-path gradient, already covered by E4-1/E4-2."
+      },
+      {
+        "applies": false,
+        "citation": "Olah et al. 2017 (Distill); Kim et al. 2018 (TCAV, ICML)",
+        "family": "Learned-channel interpretation",
+        "method": "feature_vis",
+        "missing_ingredient": "LEARNED hidden channels / directions in a network's activation space to optimise an input toward, or to probe with concept-activation vectors",
+        "missing_ingredient_kind": "learned_channels",
+        "name": "Feature visualisation / CAV",
+        "present_in_vcs": false,
+        "reason": "Feature visualisation synthesises inputs that maximally activate a chosen LEARNED unit/channel/direction; TCAV measures sensitivity to a learned concept-activation vector in hidden space. Both require a trained network with hidden channels that have emergent semantics. The VCS's state cells are NOT learned channels — they are hardware registers/RAM with KNOWN, fixed semantics (T1/T2). There is nothing learned to visualise or to define a CAV in.",
+        "why_no_retarget": "Optimising a ROM/input to maximise a pixel is the §1 gradient/IG path (content) or an adversarial-style intervention, not feature-vis of a learned channel. Probing a KNOWN register's role is the §2/Phase-C probing task (with control tasks), where the labels are ground truth, not discovered concepts."
+      }
+    ],
+    "missing_ingredient_channel_counts": {
+      "attention": 0,
+      "conv_feature_maps": 0,
+      "learned_channels": 0,
+      "learned_policy": 0
+    },
+    "missing_ingredient_channel_counts_note": "Per the substrate audit (experiment_design.md §3): the VCS has ZERO conv feature maps, ZERO attention heads, ZERO learned policies, and ZERO learned channels — the exact ingredients these methods bind to.",
+    "n_methods_not_applicable": 6,
+    "scales_to_cluster_via": "N/A — this is an architectural finding, not a sweep; it is game-independent (the substrate has no NN/policy in ANY game), recorded per core game for leaderboard (E6) uniformity.",
+    "scoring": "No F/S/M and no positive control: there is NO method here that yields an importance/recovery claim to score against the oracle. (F/S/M + oracle-as-method control belong to the items that DO apply — see pilot_ig_vs_oracle.jl / pilot_si.jl.) The deliverable is the recorded applies=false finding with the missing-ingredient reason per method.",
+    "spec_ref": "xai_paper/xai_2_interpretability/experiment_design.md §5 (row 'N/A') + §7 (last row); SPEC.md §E4 (E4-1..E4-N 'N/A audit').",
+    "substrate": "jutari (Julia) — bare VCS as a function; no NN, no agent (agents are P5, not P2)."
+  },
+  "game": "venture",
+  "method": "na_audit",
+  "metric_name": "n_methods_not_applicable",
+  "n": 6,
+  "oracle_ref": "oracle_intervene@venture  (the contrast: applicable methods bind to its causes)",
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "seed": null,
+  "state": null,
+  "stderr": null,
+  "target_output": "applicability_of_NN/policy-specific_XAI_to_the_VCS",
+  "timestamp": "1783061007",
+  "value": 6,
+  "where": "local"
+}

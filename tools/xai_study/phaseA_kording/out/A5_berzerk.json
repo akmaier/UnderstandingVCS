@@ -1,0 +1,390 @@
+{
+  "arrays": "A5_berzerk.npz",
+  "ci": null,
+  "commit": "2a9ade4c",
+  "extra": {
+    "bit_exact_rerun": true,
+    "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): the LFP-analog pooled-activity spectrum is rich, but a high fraction of its power is the KNOWN frame/animation clocks — epiphenomenal structure that says nothing about the causal computation (the dominant spectral peaks are clock harmonics). A5 REVEALS the pooled periodicities and MISSES the causal map; the clock-explained fraction is the quantified-Kording measurement here.",
+    "known_clocks": {
+      "clock_basis_dim": 6,
+      "clock_cells": [
+        {
+          "kind": "ramp",
+          "period": 256,
+          "ram_index": 4,
+          "stride": 1
+        }
+      ],
+      "n_clock_cells": 1,
+      "n_harmonics_per_period": 3,
+      "n_periodic": 0,
+      "n_ramp": 1,
+      "note": "known clocks (T2) = RAM cells that are EXACT free-running counters over the trajectory: constant-stride ramps (frame/down counters, prescalers) or fixed-period cyclic timers (animation/blink). These are hardware/firmware clocks driven by the frame cadence, NOT game state — detected structurally (no labels). The clock basis is the frame ramp + sin/cos harmonics of every detected clock period; the %-variance a pooled signal projects onto it is the EPIPHENOMENAL fraction (experiment_design.md §4 A5)."
+    },
+    "method_kind": "descriptive (no oracle F/S/M; A5 reports the pooled spectral structure it REVEALS vs the causal map it MISSES — the clock-explained fraction quantifies how much of the headline spectrum is causally inert).",
+    "regions": [
+      {
+        "clock_explained_variance_fraction": 0.9110410283934368,
+        "dominant_period_frames": 256.0,
+        "dominant_power_share": 0.7074429834058117,
+        "n_cells": 85,
+        "n_cells_varying": 85,
+        "ram_cells": [
+          1,
+          2,
+          3,
+          4,
+          6,
+          7,
+          9,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          25,
+          31,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          58,
+          59,
+          60,
+          61,
+          62,
+          63,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          71,
+          72,
+          77,
+          78,
+          79,
+          80,
+          82,
+          83,
+          84,
+          85,
+          86,
+          87,
+          88,
+          89,
+          96,
+          97,
+          98,
+          99,
+          100,
+          101,
+          102,
+          104,
+          105,
+          119,
+          120,
+          124,
+          125
+        ],
+        "region": "global"
+      },
+      {
+        "clock_explained_variance_fraction": 0.9335576576771277,
+        "dominant_period_frames": 256.0,
+        "dominant_power_share": 0.7890205213340848,
+        "n_cells": 2,
+        "n_cells_varying": 1,
+        "ram_cells": [
+          46,
+          89
+        ],
+        "region": "enemy_evilotto"
+      },
+      {
+        "clock_explained_variance_fraction": 0.9483146986648434,
+        "dominant_period_frames": 256.0,
+        "dominant_power_share": 0.8458421346141628,
+        "n_cells": 1,
+        "n_cells_varying": 1,
+        "ram_cells": [
+          65
+        ],
+        "region": "enemy_robots_x[0]"
+      },
+      {
+        "clock_explained_variance_fraction": 0.9342122976365258,
+        "dominant_period_frames": 256.0,
+        "dominant_power_share": 0.797595277327162,
+        "n_cells": 1,
+        "n_cells_varying": 1,
+        "ram_cells": [
+          66
+        ],
+        "region": "enemy_robots_x[1]"
+      },
+      {
+        "clock_explained_variance_fraction": 0.9342122976365258,
+        "dominant_period_frames": 256.0,
+        "dominant_power_share": 0.797595277327162,
+        "n_cells": 1,
+        "n_cells_varying": 1,
+        "ram_cells": [
+          67
+        ],
+        "region": "enemy_robots_x[2]"
+      },
+      {
+        "clock_explained_variance_fraction": 0.013892704627191877,
+        "dominant_period_frames": 32.0,
+        "dominant_power_share": 0.018538095210277585,
+        "n_cells": 1,
+        "n_cells_varying": 1,
+        "ram_cells": [
+          68
+        ],
+        "region": "enemy_robots_x[3]"
+      },
+      {
+        "clock_explained_variance_fraction": 0.9363969077410966,
+        "dominant_period_frames": 256.0,
+        "dominant_power_share": 0.7809100560432817,
+        "n_cells": 1,
+        "n_cells_varying": 1,
+        "ram_cells": [
+          69
+        ],
+        "region": "enemy_robots_x[4]"
+      },
+      {
+        "clock_explained_variance_fraction": 0.037781859622440704,
+        "dominant_period_frames": 256.0,
+        "dominant_power_share": 0.021726899561434365,
+        "n_cells": 1,
+        "n_cells_varying": 1,
+        "ram_cells": [
+          70
+        ],
+        "region": "enemy_robots_x[5]"
+      },
+      {
+        "clock_explained_variance_fraction": 0.06891657436975841,
+        "dominant_period_frames": 256.0,
+        "dominant_power_share": 0.040217514148331066,
+        "n_cells": 1,
+        "n_cells_varying": 1,
+        "ram_cells": [
+          71
+        ],
+        "region": "enemy_robots_x[6]"
+      },
+      {
+        "clock_explained_variance_fraction": 0.03751213477818775,
+        "dominant_period_frames": 256.0,
+        "dominant_power_share": 0.021728868246120362,
+        "n_cells": 1,
+        "n_cells_varying": 1,
+        "ram_cells": [
+          72
+        ],
+        "region": "enemy_robots_x[7]"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 1,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          92
+        ],
+        "region": "game_level"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 1,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          90
+        ],
+        "region": "lives"
+      },
+      {
+        "clock_explained_variance_fraction": 0.4167827911271067,
+        "dominant_period_frames": 256.0,
+        "dominant_power_share": 0.2616956317197814,
+        "n_cells": 3,
+        "n_cells_varying": 3,
+        "ram_cells": [
+          11,
+          14,
+          19
+        ],
+        "region": "player"
+      },
+      {
+        "clock_explained_variance_fraction": 0.7416125787509703,
+        "dominant_period_frames": 256.0,
+        "dominant_power_share": 0.46832930800751965,
+        "n_cells": 3,
+        "n_cells_varying": 3,
+        "ram_cells": [
+          21,
+          22,
+          23
+        ],
+        "region": "player_missile"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 1,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          93
+        ],
+        "region": "player_score[0]"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 1,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          94
+        ],
+        "region": "player_score[1]"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 1,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          95
+        ],
+        "region": "player_score[2]"
+      },
+      {
+        "clock_explained_variance_fraction": 0.9342122976365258,
+        "dominant_period_frames": 256.0,
+        "dominant_power_share": 0.797595277327162,
+        "n_cells": 1,
+        "n_cells_varying": 1,
+        "ram_cells": [
+          56
+        ],
+        "region": "robot"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 3,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          26,
+          29,
+          30
+        ],
+        "region": "robot_missile"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 1,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          91
+        ],
+        "region": "robots_killed"
+      }
+    ],
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
+    "spectrum": {
+      "dft": "dependency-free one-sided DFT power (no FFTW added to the shared jutari env); freq unit = cycles/frame; DC bin dropped after detrend; Hann-windowed; linear trend (frame-counter ramp) removed.",
+      "frame_cadence_note": "the per-frame sampling clock is 1 frame; dominant periods are reported in FRAMES (period p ⇒ p-frame cycle, e.g. a period-2 blink, a period-N animation/score-flash timer). Relate to game cadence: short integer periods are animation/blink timers driven by the frame counter (T2), not game-state oscillations.",
+      "global_dominant_period_frames": 256.0,
+      "global_dominant_power_share": 0.7074429834058117,
+      "global_top_peak_periods_frames": [
+        256.0,
+        128.0,
+        85.33333333333333,
+        42.666666666666664,
+        51.2
+      ],
+      "global_top_peak_power": [
+        473.7174352967552,
+        82.0494730695361,
+        35.99511891334031,
+        11.402650741410831,
+        9.113328933272921
+      ]
+    },
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the analysed RAM trajectory is a deterministic re-run (asserted).",
+    "testbed": {
+      "cause_density_above_floor": 23,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 54,
+      "note": "P2 redesign: the pooled-activity spectrum runs on a seeded random-action GAMEPLAY trajectory (not the synthetic active/dir action tape), driven by the §1 oracle-gated gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A5's spectral/clock algorithm is unchanged; only the driving action stream moves onto genuine input-driven gameplay.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r114c5",
+      "state_kind": "seeded_random_action_gameplay"
+    },
+    "trajectory_frames": 256,
+    "trajectory_trace": "active trace (4×FIRE + periodic RIGHTFIRE/LEFTFIRE)"
+  },
+  "game": "berzerk",
+  "method": "A5_local_field_potentials(pooled_activity_spectra)",
+  "metric_name": "A5_global_pool_clock_explained_variance_fraction_epiphenomenal",
+  "n": 85,
+  "oracle_ref": "T2_known_clocks@berzerk (frame-counter + free-running periodic timers; structural detection)",
+  "paper": "P2",
+  "phase": "phaseA_kording",
+  "seed": 0,
+  "state": "gameplay(seed=0,prefix=90)+256",
+  "stderr": null,
+  "target_output": "pooled-activity-power-spectrum",
+  "timestamp": "1783069290",
+  "value": 0.9110410283934368,
+  "where": "local"
+}

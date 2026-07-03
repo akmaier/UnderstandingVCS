@@ -1,28 +1,220 @@
 {
-  "commit": "19022dc7",
+  "commit": "2a9ade4c",
   "games": [
     {
-      "game": "pong",
+      "game": "air_raid",
       "in_window": true,
-      "n_cands": 8,
+      "n_cands": 13,
+      "n_known_game_vars": 7,
+      "n_oracle_causal": 10,
+      "nmf_FSM": [
+        0.1250322955695868,
+        0.5295095287219841,
+        0.75
+      ],
+      "nmf_matched_frac": 0.8,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.06353890538307573,
+      "pca_FSM": [
+        0.420182903408009,
+        0.43676399567488683,
+        0.8
+      ],
+      "pca_cum_var_top5": 0.8267634303636078,
+      "pca_matched_frac": 0.4,
+      "pca_top1_var": 0.3311257723243676,
+      "state": "f90+15"
+    },
+    {
+      "game": "alien",
+      "in_window": true,
+      "n_cands": 6,
+      "n_known_game_vars": 4,
+      "n_oracle_causal": 3,
+      "nmf_FSM": [
+        -0.21251185925162072,
+        -0.44710372187729036,
+        0.33333333333333337
+      ],
+      "nmf_matched_frac": 1.0,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.08635291436101551,
+      "pca_FSM": [
+        0.07184212081070997,
+        -0.44844863701342025,
+        0.0
+      ],
+      "pca_cum_var_top5": 0.8853624406077116,
+      "pca_matched_frac": 0.2,
+      "pca_top1_var": 0.7559164528043804,
+      "state": "f90+15"
+    },
+    {
+      "game": "assault",
+      "in_window": true,
+      "n_cands": 20,
+      "n_known_game_vars": 15,
+      "n_oracle_causal": 9,
+      "nmf_FSM": [
+        -0.27026824030006685,
+        -0.17266471821232066,
+        0.375
+      ],
+      "nmf_matched_frac": 0.4,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.16879659073334347,
+      "pca_FSM": [
+        -0.0834448124185928,
+        -0.13637832241184175,
+        0.2857142857142857
+      ],
+      "pca_cum_var_top5": 0.5925191948572341,
+      "pca_matched_frac": 0.4,
+      "pca_top1_var": 0.1823066939169872,
+      "state": "f90+15"
+    },
+    {
+      "game": "atlantis",
+      "in_window": true,
+      "n_cands": 9,
       "n_known_game_vars": 5,
+      "n_oracle_causal": 7,
+      "nmf_FSM": [
+        0.01778216897897548,
+        -0.43851023095833513,
+        1.0
+      ],
+      "nmf_matched_frac": 0.4,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.09867038814235408,
+      "pca_FSM": [
+        0.05334650693692645,
+        -0.48366323957352936,
+        1.0
+      ],
+      "pca_cum_var_top5": 0.8351346082811213,
+      "pca_matched_frac": 0.6,
+      "pca_top1_var": 0.45763362608413594,
+      "state": "f90+15"
+    },
+    {
+      "game": "bank_heist",
+      "in_window": true,
+      "n_cands": 5,
+      "n_known_game_vars": 3,
       "n_oracle_causal": 4,
       "nmf_FSM": [
-        -0.3854080473098308,
-        -0.2910862615529313,
-        0.33333333333333337
+        -0.3,
+        -0.468938110249849,
+        0.6666666666666667
       ],
       "nmf_matched_frac": 0.6,
       "nmf_rank": 8,
-      "nmf_recon_rel_err": 0.03958651883483822,
+      "nmf_recon_rel_err": 0.07013453055096941,
       "pca_FSM": [
-        -0.04081727099225389,
-        -0.1916408936406495,
+        -0.4,
+        -0.4576846880126562,
+        0.6666666666666667
+      ],
+      "pca_cum_var_top5": 0.9003365985972379,
+      "pca_matched_frac": 0.2,
+      "pca_top1_var": 0.47482416832859564,
+      "state": "f90+15"
+    },
+    {
+      "game": "beam_rider",
+      "in_window": true,
+      "n_cands": 5,
+      "n_known_game_vars": 3,
+      "n_oracle_causal": 2,
+      "nmf_FSM": [
+        0.4588314677411235,
+        -0.12831123712594922,
         0.5
       ],
-      "pca_cum_var_top5": 0.9944015251966448,
+      "nmf_matched_frac": 0.6,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.04918919353577424,
+      "pca_FSM": [
+        -0.3952847075210474,
+        -0.2622631519170488,
+        0.0
+      ],
+      "pca_cum_var_top5": 0.9640634673551765,
+      "pca_matched_frac": 0.4,
+      "pca_top1_var": 0.6493808750902708,
+      "state": "f90+15"
+    },
+    {
+      "game": "berzerk",
+      "in_window": true,
+      "n_cands": 26,
+      "n_known_game_vars": 19,
+      "n_oracle_causal": 14,
+      "nmf_FSM": [
+        0.5170820353494547,
+        0.6871224168611256,
+        0.7777777777777778
+      ],
+      "nmf_matched_frac": 0.8,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.07232977693055764,
+      "pca_FSM": [
+        0.4881986844128487,
+        0.6064772461458147,
+        0.8888888888888888
+      ],
+      "pca_cum_var_top5": 0.9530809844953,
+      "pca_matched_frac": 0.2,
+      "pca_top1_var": 0.8491827966154366,
+      "state": "f90+15"
+    },
+    {
+      "game": "bowling",
+      "in_window": true,
+      "n_cands": 20,
+      "n_known_game_vars": 17,
+      "n_oracle_causal": 8,
+      "nmf_FSM": [
+        0.05357061512681597,
+        0.14880947552624413,
+        0.4444444444444444
+      ],
+      "nmf_matched_frac": 0.4,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.01009950832603611,
+      "pca_FSM": [
+        0.5708197951953983,
+        0.14229145519873723,
+        1.0
+      ],
+      "pca_cum_var_top5": 0.9996032701949942,
       "pca_matched_frac": 0.6,
-      "pca_top1_var": 0.6829132023139927,
+      "pca_top1_var": 0.7343019395685094,
+      "state": "f90+15"
+    },
+    {
+      "game": "boxing",
+      "in_window": true,
+      "n_cands": 11,
+      "n_known_game_vars": 5,
+      "n_oracle_causal": 8,
+      "nmf_FSM": [
+        0.24129995343553862,
+        0.16381664270973129,
+        0.75
+      ],
+      "nmf_matched_frac": 0.4,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.07969791638532876,
+      "pca_FSM": [
+        0.2691422557550239,
+        0.3547110584679723,
+        0.5
+      ],
+      "pca_cum_var_top5": 0.8122168755866819,
+      "pca_matched_frac": 0.2,
+      "pca_top1_var": 0.28496944026434035,
       "state": "f90+15"
     },
     {
@@ -50,51 +242,387 @@
       "state": "f90+15"
     },
     {
-      "game": "space_invaders",
-      "in_window": false,
-      "n_cands": 17,
-      "n_known_game_vars": 13,
-      "n_oracle_causal": 11,
-      "nmf_FSM": [
-        -0.3028250004988341,
-        -0.12405377915884616,
-        0.4285714285714286
-      ],
-      "nmf_matched_frac": 0.6,
-      "nmf_rank": 8,
-      "nmf_recon_rel_err": 0.048901698820350684,
-      "pca_FSM": [
-        -0.35072062796134534,
-        -0.145133227591614,
-        0.33333333333333337
-      ],
-      "pca_cum_var_top5": 0.8916037782368162,
-      "pca_matched_frac": 0.6,
-      "pca_top1_var": 0.3607556673045254,
-      "state": "f90+15"
-    },
-    {
-      "game": "seaquest",
-      "in_window": false,
-      "n_cands": 23,
+      "game": "carnival",
+      "in_window": true,
+      "n_cands": 18,
       "n_known_game_vars": 15,
       "n_oracle_causal": 15,
       "nmf_FSM": [
-        0.17329563161118924,
-        0.44893594460678865,
+        -0.0010362694300518134,
+        -0.1845071072377485,
+        0.75
+      ],
+      "nmf_matched_frac": 0.2,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.0502031677359183,
+      "pca_FSM": [
+        -0.2546237180681258,
+        0.069367149359047,
         0.6666666666666667
+      ],
+      "pca_cum_var_top5": 0.9179255309935141,
+      "pca_matched_frac": 0.2,
+      "pca_top1_var": 0.47415826359479757,
+      "state": "f90+15"
+    },
+    {
+      "game": "centipede",
+      "in_window": true,
+      "n_cands": 9,
+      "n_known_game_vars": 5,
+      "n_oracle_causal": 7,
+      "nmf_FSM": [
+        -0.042018290340800894,
+        -0.1833964956460877,
+        0.75
       ],
       "nmf_matched_frac": 0.6,
       "nmf_rank": 8,
-      "nmf_recon_rel_err": 0.0337634199828445,
+      "nmf_recon_rel_err": 0.05658543648576876,
       "pca_FSM": [
-        -0.03633914899572959,
-        0.3065487430441167,
+        -0.27426404480465666,
+        -0.20461475320775102,
+        0.75
+      ],
+      "pca_cum_var_top5": 0.9118140603236876,
+      "pca_matched_frac": 0.2,
+      "pca_top1_var": 0.4375621502274943,
+      "state": "f90+15"
+    },
+    {
+      "game": "chopper_command",
+      "in_window": true,
+      "n_cands": 20,
+      "n_known_game_vars": 9,
+      "n_oracle_causal": 10,
+      "nmf_FSM": [
+        -0.006111341066171931,
+        -0.27201350592106954,
+        0.2857142857142857
+      ],
+      "nmf_matched_frac": 0.6,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.13805621436447243,
+      "pca_FSM": [
+        -0.12733773680465155,
+        -0.23239603243735465,
+        0.2857142857142857
+      ],
+      "pca_cum_var_top5": 0.8777225470846166,
+      "pca_matched_frac": 0.2,
+      "pca_top1_var": 0.45010494601625606,
+      "state": "f90+15"
+    },
+    {
+      "game": "demon_attack",
+      "in_window": true,
+      "n_cands": 15,
+      "n_known_game_vars": 10,
+      "n_oracle_causal": 9,
+      "nmf_FSM": [
+        0.550086147409216,
+        0.2929578807288953,
+        0.8571428571428572
+      ],
+      "nmf_matched_frac": 0.8,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.1700157623875291,
+      "pca_FSM": [
+        0.22580979848267105,
+        0.6634370463924321,
+        0.5
+      ],
+      "pca_cum_var_top5": 0.7161664337613962,
+      "pca_matched_frac": 0.4,
+      "pca_top1_var": 0.3595430823556163,
+      "state": "f90+15"
+    },
+    {
+      "game": "double_dunk",
+      "in_window": true,
+      "n_cands": 12,
+      "n_known_game_vars": 2,
+      "n_oracle_causal": 12,
+      "nmf_FSM": [
+        0.12982456140350876,
+        0.6798131128189211,
+        1.0
+      ],
+      "nmf_matched_frac": 0.4,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.14385442109423083,
+      "pca_FSM": [
+        0.5017543859649123,
+        -0.02343917305936028,
+        1.0
+      ],
+      "pca_cum_var_top5": 0.6422545508092404,
+      "pca_matched_frac": 0.2,
+      "pca_top1_var": 0.24208049419837915,
+      "state": "f90+15"
+    },
+    {
+      "game": "fishing_derby",
+      "in_window": true,
+      "n_cands": 9,
+      "n_known_game_vars": 4,
+      "n_oracle_causal": 5,
+      "nmf_FSM": [
+        -0.043901895803817224,
+        -0.14273522249151271,
+        0.5
+      ],
+      "nmf_matched_frac": 0.4,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.1183167948821286,
+      "pca_FSM": [
+        -0.06146265412534411,
+        -0.03167629233973148,
+        0.5
+      ],
+      "pca_cum_var_top5": 0.7177561474695552,
+      "pca_matched_frac": 0.2,
+      "pca_top1_var": 0.36313444315617927,
+      "state": "f90+15"
+    },
+    {
+      "game": "freeway",
+      "in_window": true,
+      "n_cands": 14,
+      "n_known_game_vars": 13,
+      "n_oracle_causal": 14,
+      "nmf_FSM": [
+        0.583815759328952,
+        0.4728232344540963,
+        1.0
+      ],
+      "nmf_matched_frac": 0.6,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.1056512926471581,
+      "pca_FSM": [
+        0.8292331563725777,
+        0.4725779141475216,
+        1.0
+      ],
+      "pca_cum_var_top5": 0.6689853904048684,
+      "pca_matched_frac": 0.2,
+      "pca_top1_var": 0.19593068119171386,
+      "state": "f90+15"
+    },
+    {
+      "game": "frostbite",
+      "in_window": true,
+      "n_cands": 19,
+      "n_known_game_vars": 17,
+      "n_oracle_causal": 14,
+      "nmf_FSM": [
+        0.7163863774150735,
+        0.26676922370476824,
+        1.0
+      ],
+      "nmf_matched_frac": 0.2,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.038427887429799426,
+      "pca_FSM": [
+        0.3101762907283127,
+        0.4887244098916895,
+        0.8571428571428572
+      ],
+      "pca_cum_var_top5": 0.9658017518278925,
+      "pca_matched_frac": 0.2,
+      "pca_top1_var": 0.5809386551450381,
+      "state": "f90+15"
+    },
+    {
+      "game": "gopher",
+      "in_window": true,
+      "n_cands": 20,
+      "n_known_game_vars": 5,
+      "n_oracle_causal": 19,
+      "nmf_FSM": [
+        0.621404082552511,
+        0.9397169048804921,
+        1.0
+      ],
+      "nmf_matched_frac": 0.2,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.01658637292579133,
+      "pca_FSM": [
+        -0.06541629194156663,
+        -0.09264533949113855,
+        1.0
+      ],
+      "pca_cum_var_top5": 0.9962632412062828,
+      "pca_matched_frac": 0.4,
+      "pca_top1_var": 0.4075582986301432,
+      "state": "f90+15"
+    },
+    {
+      "game": "hero",
+      "in_window": true,
+      "n_cands": 17,
+      "n_known_game_vars": 15,
+      "n_oracle_causal": 11,
+      "nmf_FSM": [
+        0.22195441965549925,
+        -0.24464101955700207,
+        0.6
+      ],
+      "nmf_matched_frac": 0.6,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.021435375914019394,
+      "pca_FSM": [
+        0.25942539677463605,
+        -0.09884344947041553,
+        1.0
+      ],
+      "pca_cum_var_top5": 0.980721680138821,
+      "pca_matched_frac": 0.2,
+      "pca_top1_var": 0.5747895855906934,
+      "state": "f90+15"
+    },
+    {
+      "game": "ice_hockey",
+      "in_window": true,
+      "n_cands": 10,
+      "n_known_game_vars": 3,
+      "n_oracle_causal": 9,
+      "nmf_FSM": [
+        0.25637521378709616,
+        -0.054562869745616416,
+        1.0
+      ],
+      "nmf_matched_frac": 0.4,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.06691673286706747,
+      "pca_FSM": [
+        0.16934640869206552,
+        -0.48691931401218336,
+        0.75
+      ],
+      "pca_cum_var_top5": 0.9017420707472219,
+      "pca_matched_frac": 0.2,
+      "pca_top1_var": 0.5294691991050711,
+      "state": "f90+15"
+    },
+    {
+      "game": "jamesbond",
+      "in_window": true,
+      "n_cands": 13,
+      "n_known_game_vars": 3,
+      "n_oracle_causal": 7,
+      "nmf_FSM": [
+        -0.06655436965373772,
+        -0.09619044181123051,
+        0.5
+      ],
+      "nmf_matched_frac": 0.6,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.12708955041095274,
+      "pca_FSM": [
+        0.35931012132610013,
+        -0.07826473964966334,
+        0.6666666666666667
+      ],
+      "pca_cum_var_top5": 0.8192734254905709,
+      "pca_matched_frac": 0.2,
+      "pca_top1_var": 0.5872939127893718,
+      "state": "f90+15"
+    },
+    {
+      "game": "kangaroo",
+      "in_window": true,
+      "n_cands": 15,
+      "n_known_game_vars": 10,
+      "n_oracle_causal": 10,
+      "nmf_FSM": [
+        -0.32592592592592595,
+        -0.164802084223175,
+        0.4
+      ],
+      "nmf_matched_frac": 0.8,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.018135064426693423,
+      "pca_FSM": [
+        -0.4610694459770735,
+        -0.07289314830232879,
+        0.0
+      ],
+      "pca_cum_var_top5": 0.9998194723327463,
+      "pca_matched_frac": 0.4,
+      "pca_top1_var": 0.4708280864107231,
+      "state": "f90+15"
+    },
+    {
+      "game": "krull",
+      "in_window": true,
+      "n_cands": 25,
+      "n_known_game_vars": 6,
+      "n_oracle_causal": 11,
+      "nmf_FSM": [
+        0.4488675915389946,
+        -0.10906757506972027,
+        0.8
+      ],
+      "nmf_matched_frac": 0.4,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.024270142030140204,
+      "pca_FSM": [
+        0.2654039273243921,
+        -0.13432357850025595,
+        0.5
+      ],
+      "pca_cum_var_top5": 0.9874507068544575,
+      "pca_matched_frac": 0.2,
+      "pca_top1_var": 0.4255456117508438,
+      "state": "f90+15"
+    },
+    {
+      "game": "kung_fu_master",
+      "in_window": true,
+      "n_cands": 9,
+      "n_known_game_vars": 5,
+      "n_oracle_causal": 6,
+      "nmf_FSM": [
+        -0.14471361022898727,
+        0.04497761097866045,
+        0.4
+      ],
+      "nmf_matched_frac": 0.4,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.020602858799259306,
+      "pca_FSM": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "pca_cum_var_top5": 1.0,
+      "pca_matched_frac": 0.4,
+      "pca_top1_var": 0.6677995354674442,
+      "state": "f90+15"
+    },
+    {
+      "game": "montezuma_revenge",
+      "in_window": true,
+      "n_cands": 15,
+      "n_known_game_vars": 9,
+      "n_oracle_causal": 13,
+      "nmf_FSM": [
+        -0.10640566810977288,
+        -0.14629782560564783,
         0.8333333333333334
       ],
-      "pca_cum_var_top5": 0.994585491438863,
-      "pca_matched_frac": 0.8,
-      "pca_top1_var": 0.7399654781477876,
+      "nmf_matched_frac": 0.6,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.051111686069221174,
+      "pca_FSM": [
+        -0.05428110137937331,
+        -0.11136602266113686,
+        0.5
+      ],
+      "pca_cum_var_top5": 0.8878786859717818,
+      "pca_matched_frac": 0.2,
+      "pca_top1_var": 0.3603699446833191,
       "state": "f90+15"
     },
     {
@@ -122,6 +650,150 @@
       "state": "f90+15"
     },
     {
+      "game": "name_this_game",
+      "in_window": true,
+      "n_cands": 5,
+      "n_known_game_vars": 1,
+      "n_oracle_causal": 4,
+      "nmf_FSM": [
+        0.8,
+        0.6220794121771639,
+        1.0
+      ],
+      "nmf_matched_frac": 0.4,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.02103667900402218,
+      "pca_FSM": [
+        0.7826237921249264,
+        0.38747311085310693,
+        1.0
+      ],
+      "pca_cum_var_top5": 0.9884658778319431,
+      "pca_matched_frac": 0.6,
+      "pca_top1_var": 0.4266833628173535,
+      "state": "f90+15"
+    },
+    {
+      "game": "pacman",
+      "in_window": true,
+      "n_cands": 8,
+      "n_known_game_vars": 5,
+      "n_oracle_causal": 6,
+      "nmf_FSM": [
+        -0.3493975903614458,
+        -0.018910196254229093,
+        0.33333333333333337
+      ],
+      "nmf_matched_frac": 0.8,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.04485818639265585,
+      "pca_FSM": [
+        0.13720532498711294,
+        -0.3035723356955603,
+        1.0
+      ],
+      "pca_cum_var_top5": 0.927681142705997,
+      "pca_matched_frac": 0.2,
+      "pca_top1_var": 0.7750851232044423,
+      "state": "f90+15"
+    },
+    {
+      "game": "phoenix",
+      "in_window": true,
+      "n_cands": 12,
+      "n_known_game_vars": 5,
+      "n_oracle_causal": 8,
+      "nmf_FSM": [
+        -0.3012865455127263,
+        -0.40240351683231274,
+        0.4
+      ],
+      "nmf_matched_frac": 0.4,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.1495854666573698,
+      "pca_FSM": [
+        -0.11615264138250044,
+        -0.28181896514923366,
+        0.75
+      ],
+      "pca_cum_var_top5": 0.6881803831606037,
+      "pca_matched_frac": 0.2,
+      "pca_top1_var": 0.2373511077488019,
+      "state": "f90+15"
+    },
+    {
+      "game": "pitfall",
+      "in_window": true,
+      "n_cands": 16,
+      "n_known_game_vars": 11,
+      "n_oracle_causal": 11,
+      "nmf_FSM": [
+        -0.22705796073844006,
+        0.2015230471833769,
+        0.5714285714285714
+      ],
+      "nmf_matched_frac": 0.4,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.061042447389303374,
+      "pca_FSM": [
+        -0.3084053509562957,
+        -0.007020836809293217,
+        0.5714285714285714
+      ],
+      "pca_cum_var_top5": 0.891063543992124,
+      "pca_matched_frac": 0.4,
+      "pca_top1_var": 0.5155191859047155,
+      "state": "f90+15"
+    },
+    {
+      "game": "pong",
+      "in_window": true,
+      "n_cands": 8,
+      "n_known_game_vars": 5,
+      "n_oracle_causal": 4,
+      "nmf_FSM": [
+        -0.3854080473098308,
+        -0.2910862615529313,
+        0.33333333333333337
+      ],
+      "nmf_matched_frac": 0.6,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.03958651883483822,
+      "pca_FSM": [
+        -0.04081727099225389,
+        -0.1916408936406495,
+        0.5
+      ],
+      "pca_cum_var_top5": 0.9944015251966448,
+      "pca_matched_frac": 0.6,
+      "pca_top1_var": 0.6829132023139927,
+      "state": "f90+15"
+    },
+    {
+      "game": "private_eye",
+      "in_window": true,
+      "n_cands": 24,
+      "n_known_game_vars": 13,
+      "n_oracle_causal": 12,
+      "nmf_FSM": [
+        0.09987754163125682,
+        0.056551746020933415,
+        0.5
+      ],
+      "nmf_matched_frac": 0.2,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.05263050426513783,
+      "pca_FSM": [
+        0.24062826908089224,
+        0.13605981137746614,
+        0.75
+      ],
+      "pca_cum_var_top5": 0.912580474562474,
+      "pca_matched_frac": 0.8,
+      "pca_top1_var": 0.3994543293643411,
+      "state": "f90+15"
+    },
+    {
       "game": "qbert",
       "in_window": true,
       "n_cands": 20,
@@ -144,12 +816,204 @@
       "pca_matched_frac": 0.4,
       "pca_top1_var": 0.5742069140141812,
       "state": "f90+15"
+    },
+    {
+      "game": "riverraid",
+      "in_window": true,
+      "n_cands": 22,
+      "n_known_game_vars": 15,
+      "n_oracle_causal": 19,
+      "nmf_FSM": [
+        0.0011341185639104658,
+        -0.06785595148935113,
+        0.8181818181818181
+      ],
+      "nmf_matched_frac": 0.8,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.10867874352335523,
+      "pca_FSM": [
+        -0.07307371615473722,
+        0.214255035665728,
+        0.7777777777777778
+      ],
+      "pca_cum_var_top5": 0.795761678829255,
+      "pca_matched_frac": 0.6,
+      "pca_top1_var": 0.41420091372413376,
+      "state": "f90+15"
+    },
+    {
+      "game": "road_runner",
+      "in_window": true,
+      "n_cands": 18,
+      "n_known_game_vars": 12,
+      "n_oracle_causal": 6,
+      "nmf_FSM": [
+        0.367333401235482,
+        0.39742187490739433,
+        0.625
+      ],
+      "nmf_matched_frac": 0.4,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.05000112690041159,
+      "pca_FSM": [
+        0.45556325301797196,
+        0.2253670332050655,
+        0.7142857142857143
+      ],
+      "pca_cum_var_top5": 0.9001541719929087,
+      "pca_matched_frac": 0.2,
+      "pca_top1_var": 0.5163132575062027,
+      "state": "f90+15"
+    },
+    {
+      "game": "seaquest",
+      "in_window": false,
+      "n_cands": 23,
+      "n_known_game_vars": 15,
+      "n_oracle_causal": 15,
+      "nmf_FSM": [
+        0.17329563161118924,
+        0.44893594460678865,
+        0.6666666666666667
+      ],
+      "nmf_matched_frac": 0.6,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.0337634199828445,
+      "pca_FSM": [
+        -0.03633914899572959,
+        0.3065487430441167,
+        0.8333333333333334
+      ],
+      "pca_cum_var_top5": 0.994585491438863,
+      "pca_matched_frac": 0.8,
+      "pca_top1_var": 0.7399654781477876,
+      "state": "f90+15"
+    },
+    {
+      "game": "space_invaders",
+      "in_window": false,
+      "n_cands": 17,
+      "n_known_game_vars": 13,
+      "n_oracle_causal": 11,
+      "nmf_FSM": [
+        -0.3028250004988341,
+        -0.12405377915884616,
+        0.4285714285714286
+      ],
+      "nmf_matched_frac": 0.6,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.048901698820350684,
+      "pca_FSM": [
+        -0.35072062796134534,
+        -0.145133227591614,
+        0.33333333333333337
+      ],
+      "pca_cum_var_top5": 0.8916037782368162,
+      "pca_matched_frac": 0.6,
+      "pca_top1_var": 0.3607556673045254,
+      "state": "f90+15"
+    },
+    {
+      "game": "tennis",
+      "in_window": true,
+      "n_cands": 15,
+      "n_known_game_vars": 9,
+      "n_oracle_causal": 11,
+      "nmf_FSM": [
+        -0.04591525034078377,
+        -0.1758339570382859,
+        0.6
+      ],
+      "nmf_matched_frac": 0.2,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.13721078352549776,
+      "pca_FSM": [
+        0.03673220027262702,
+        -0.15883544814924055,
+        0.6
+      ],
+      "pca_cum_var_top5": 0.7500248654735117,
+      "pca_matched_frac": 0.2,
+      "pca_top1_var": 0.30230876358433734,
+      "state": "f90+15"
+    },
+    {
+      "game": "venture",
+      "in_window": true,
+      "n_cands": 18,
+      "n_known_game_vars": 5,
+      "n_oracle_causal": 16,
+      "nmf_FSM": [
+        -0.07896232815243086,
+        0.8193537056365681,
+        1.0
+      ],
+      "nmf_matched_frac": 0.8,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.07348623295818978,
+      "pca_FSM": [
+        0.10803763714727674,
+        0.8454143487250888,
+        0.8571428571428572
+      ],
+      "pca_cum_var_top5": 0.9215407902451452,
+      "pca_matched_frac": 0.2,
+      "pca_top1_var": 0.7238985072585647,
+      "state": "f90+15"
+    },
+    {
+      "game": "video_pinball",
+      "in_window": true,
+      "n_cands": 7,
+      "n_known_game_vars": 5,
+      "n_oracle_causal": 7,
+      "nmf_FSM": [
+        -0.6605782590758164,
+        0.7307468479876894,
+        1.0
+      ],
+      "nmf_matched_frac": 0.2,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.05567402367172541,
+      "pca_FSM": [
+        -0.7706746355884524,
+        -0.021835378332128796,
+        1.0
+      ],
+      "pca_cum_var_top5": 0.8948203971458606,
+      "pca_matched_frac": 0.2,
+      "pca_top1_var": 0.34177132063470844,
+      "state": "f90+15"
+    },
+    {
+      "game": "yars_revenge",
+      "in_window": true,
+      "n_cands": 13,
+      "n_known_game_vars": 6,
+      "n_oracle_causal": 7,
+      "nmf_FSM": [
+        0.04630547771212911,
+        -0.18249595783787032,
+        0.6666666666666667
+      ],
+      "nmf_matched_frac": 0.4,
+      "nmf_rank": 8,
+      "nmf_recon_rel_err": 0.04509025918047136,
+      "pca_FSM": [
+        0.11948123709065409,
+        -0.22362163587227862,
+        0.6
+      ],
+      "pca_cum_var_top5": 0.9190323648822756,
+      "pca_matched_frac": 0.6,
+      "pca_top1_var": 0.5521440247311539,
+      "state": "f90+15"
     }
   ],
   "headline": "PCA vs NMF matched-component fraction (does NMF beat the pilot's PCA ≈ 0?) + per-cell recovery F/S/M vs the exact intervention oracle.",
   "method": "A7_dim_reduction(NMF+PCA)",
-  "n_games": 6,
+  "n_games": 42,
   "paper": "P2",
   "phase": "phaseA_kording",
-  "timestamp": "1782971184"
+  "timestamp": "1783074965"
 }

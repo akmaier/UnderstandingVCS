@@ -1,0 +1,360 @@
+{
+  "arrays": "A5_frostbite.npz",
+  "ci": null,
+  "commit": "2a9ade4c",
+  "extra": {
+    "bit_exact_rerun": true,
+    "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): the LFP-analog pooled-activity spectrum is rich, but a high fraction of its power is the KNOWN frame/animation clocks — epiphenomenal structure that says nothing about the causal computation (the dominant spectral peaks are clock harmonics). A5 REVEALS the pooled periodicities and MISSES the causal map; the clock-explained fraction is the quantified-Kording measurement here.",
+    "known_clocks": {
+      "clock_basis_dim": 17,
+      "clock_cells": [
+        {
+          "kind": "ramp",
+          "period": 256,
+          "ram_index": 1,
+          "stride": 1
+        },
+        {
+          "kind": "periodic",
+          "period": 8,
+          "ram_index": 22,
+          "stride": 0
+        },
+        {
+          "kind": "periodic",
+          "period": 16,
+          "ram_index": 23,
+          "stride": 0
+        },
+        {
+          "kind": "periodic",
+          "period": 4,
+          "ram_index": 24,
+          "stride": 0
+        },
+        {
+          "kind": "periodic",
+          "period": 8,
+          "ram_index": 25,
+          "stride": 0
+        },
+        {
+          "kind": "periodic",
+          "period": 16,
+          "ram_index": 26,
+          "stride": 0
+        },
+        {
+          "kind": "periodic",
+          "period": 4,
+          "ram_index": 27,
+          "stride": 0
+        },
+        {
+          "kind": "periodic",
+          "period": 8,
+          "ram_index": 126,
+          "stride": 0
+        }
+      ],
+      "n_clock_cells": 8,
+      "n_harmonics_per_period": 3,
+      "n_periodic": 7,
+      "n_ramp": 1,
+      "note": "known clocks (T2) = RAM cells that are EXACT free-running counters over the trajectory: constant-stride ramps (frame/down counters, prescalers) or fixed-period cyclic timers (animation/blink). These are hardware/firmware clocks driven by the frame cadence, NOT game state — detected structurally (no labels). The clock basis is the frame ramp + sin/cos harmonics of every detected clock period; the %-variance a pooled signal projects onto it is the EPIPHENOMENAL fraction (experiment_design.md §4 A5)."
+    },
+    "method_kind": "descriptive (no oracle F/S/M; A5 reports the pooled spectral structure it REVEALS vs the causal map it MISSES — the clock-explained fraction quantifies how much of the headline spectrum is causally inert).",
+    "regions": [
+      {
+        "clock_explained_variance_fraction": 0.8625295675457026,
+        "dominant_period_frames": 256.0,
+        "dominant_power_share": 0.6023677836378449,
+        "n_cells": 40,
+        "n_cells_varying": 40,
+        "ram_cells": [
+          1,
+          2,
+          4,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          47,
+          69,
+          96,
+          97,
+          98,
+          99,
+          100,
+          101,
+          102,
+          103,
+          106,
+          107,
+          108,
+          110,
+          113,
+          115,
+          118,
+          123,
+          126
+        ],
+        "region": "global"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 1,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          104
+        ],
+        "region": "enemy_bear"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 1,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          84
+        ],
+        "region": "enemy_x[0]"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 1,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          85
+        ],
+        "region": "enemy_x[1]"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 1,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          86
+        ],
+        "region": "enemy_x[2]"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 1,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          87
+        ],
+        "region": "enemy_x[3]"
+      },
+      {
+        "clock_explained_variance_fraction": 0.963117995972298,
+        "dominant_period_frames": 256.0,
+        "dominant_power_share": 0.5792826039487983,
+        "n_cells": 1,
+        "n_cells_varying": 1,
+        "ram_cells": [
+          31
+        ],
+        "region": "fourth_row_iceflow"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 1,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          77
+        ],
+        "region": "igloo_blocks"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 1,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          76
+        ],
+        "region": "lives"
+      },
+      {
+        "clock_explained_variance_fraction": 0.5466208649282593,
+        "dominant_period_frames": 128.0,
+        "dominant_power_share": 0.24020652523363215,
+        "n_cells": 3,
+        "n_cells_varying": 3,
+        "ram_cells": [
+          4,
+          100,
+          102
+        ],
+        "region": "player"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 1,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          72
+        ],
+        "region": "score[0]"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 1,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          73
+        ],
+        "region": "score[1]"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 1,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          74
+        ],
+        "region": "score[2]"
+      },
+      {
+        "clock_explained_variance_fraction": 0.963117995972298,
+        "dominant_period_frames": 256.0,
+        "dominant_power_share": 0.5792826039487983,
+        "n_cells": 1,
+        "n_cells_varying": 1,
+        "ram_cells": [
+          33
+        ],
+        "region": "second_row_iceflow"
+      },
+      {
+        "clock_explained_variance_fraction": 0.0,
+        "dominant_period_frames": null,
+        "dominant_power_share": 0.0,
+        "n_cells": 1,
+        "n_cells_varying": 0,
+        "ram_cells": [
+          30
+        ],
+        "region": "sep"
+      },
+      {
+        "clock_explained_variance_fraction": 0.977901925254926,
+        "dominant_period_frames": 256.0,
+        "dominant_power_share": 0.5704012539722723,
+        "n_cells": 1,
+        "n_cells_varying": 1,
+        "ram_cells": [
+          107
+        ],
+        "region": "sink"
+      },
+      {
+        "clock_explained_variance_fraction": 0.963117995972298,
+        "dominant_period_frames": 256.0,
+        "dominant_power_share": 0.5792826039487983,
+        "n_cells": 1,
+        "n_cells_varying": 1,
+        "ram_cells": [
+          32
+        ],
+        "region": "third_row_iceflow"
+      },
+      {
+        "clock_explained_variance_fraction": 0.963117995972298,
+        "dominant_period_frames": 256.0,
+        "dominant_power_share": 0.5792826039487983,
+        "n_cells": 1,
+        "n_cells_varying": 1,
+        "ram_cells": [
+          34
+        ],
+        "region": "top_row_iceflow"
+      }
+    ],
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
+    "spectrum": {
+      "dft": "dependency-free one-sided DFT power (no FFTW added to the shared jutari env); freq unit = cycles/frame; DC bin dropped after detrend; Hann-windowed; linear trend (frame-counter ramp) removed.",
+      "frame_cadence_note": "the per-frame sampling clock is 1 frame; dominant periods are reported in FRAMES (period p ⇒ p-frame cycle, e.g. a period-2 blink, a period-N animation/score-flash timer). Relate to game cadence: short integer periods are animation/blink timers driven by the frame counter (T2), not game-state oscillations.",
+      "global_dominant_period_frames": 256.0,
+      "global_dominant_power_share": 0.6023677836378449,
+      "global_top_peak_periods_frames": [
+        256.0,
+        128.0,
+        42.666666666666664,
+        28.444444444444443,
+        36.57142857142857
+      ],
+      "global_top_peak_power": [
+        273.6546997355921,
+        88.78360318947881,
+        15.718262494926197,
+        14.133961343044984,
+        10.284392980922327
+      ]
+    },
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the analysed RAM trajectory is a deterministic re-run (asserted).",
+    "testbed": {
+      "cause_density_above_floor": 23,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 40,
+      "note": "P2 redesign: the pooled-activity spectrum runs on a seeded random-action GAMEPLAY trajectory (not the synthetic active/dir action tape), driven by the §1 oracle-gated gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A5's spectral/clock algorithm is unchanged; only the driving action stream moves onto genuine input-driven gameplay.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r181c14",
+      "state_kind": "seeded_random_action_gameplay"
+    },
+    "trajectory_frames": 256,
+    "trajectory_trace": "active trace (4×FIRE + periodic RIGHTFIRE/LEFTFIRE)"
+  },
+  "game": "frostbite",
+  "method": "A5_local_field_potentials(pooled_activity_spectra)",
+  "metric_name": "A5_global_pool_clock_explained_variance_fraction_epiphenomenal",
+  "n": 40,
+  "oracle_ref": "T2_known_clocks@frostbite (frame-counter + free-running periodic timers; structural detection)",
+  "paper": "P2",
+  "phase": "phaseA_kording",
+  "seed": 0,
+  "state": "gameplay(seed=0,prefix=90)+256",
+  "stderr": null,
+  "target_output": "pooled-activity-power-spectrum",
+  "timestamp": "1783069826",
+  "value": 0.8625295675457026,
+  "where": "local"
+}

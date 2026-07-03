@@ -1,0 +1,497 @@
+{
+  "arrays": "sae_bowling.npz",
+  "ci": null,
+  "commit": "2a9ade4c",
+  "extra": {
+    "bit_exact_rerun": true,
+    "candidate_cells": [
+      "RAM[29]:player_x",
+      "RAM[30]:ball_x",
+      "RAM[33]:score",
+      "RAM[36]:frame_number_display",
+      "RAM[40]:player_y",
+      "RAM[41]:ball_y",
+      "RAM[57]:pin_existence[0]",
+      "RAM[58]:pin_existence[1]",
+      "RAM[59]:pin_existence[2]",
+      "RAM[60]:pin_existence[3]",
+      "RAM[61]:pin_existence[4]",
+      "RAM[62]:pin_existence[5]",
+      "RAM[63]:pin_existence[6]",
+      "RAM[64]:pin_existence[7]",
+      "RAM[65]:pin_existence[8]",
+      "RAM[66]:pin_existence[9]",
+      "RAM[13]:states_of_throw",
+      "RAM[18]:throw_of_that_round",
+      "RAM[38]:score",
+      "RAM[47]:pins"
+    ],
+    "candidate_concept_family": [
+      "player",
+      "ball",
+      "score",
+      "frame_number_display",
+      "player",
+      "ball",
+      "pin_existence[0]",
+      "pin_existence[1]",
+      "pin_existence[2]",
+      "pin_existence[3]",
+      "pin_existence[4]",
+      "pin_existence[5]",
+      "pin_existence[6]",
+      "pin_existence[7]",
+      "pin_existence[8]",
+      "pin_existence[9]",
+      "states_of_throw",
+      "throw_of_that_round",
+      "score",
+      "pins"
+    ],
+    "candidate_ram_indices": [
+      29,
+      30,
+      33,
+      36,
+      40,
+      41,
+      57,
+      58,
+      59,
+      60,
+      61,
+      62,
+      63,
+      64,
+      65,
+      66,
+      13,
+      18,
+      38,
+      47
+    ],
+    "causal_use": {
+      "ablate_equals_oracle": true,
+      "ablate_equals_oracle_maxdiff_px": 0.0,
+      "n_causal_use_features": 4,
+      "note": "for each MATCHED & ORACLE-CAUSAL variable: ABLATE its best-matching feature (zero its activation), DECODE the code back to a RAM vector, UN-normalise to raw bytes, WRITE into the real ROM and RE-RUN `horizon` steps → Δscreen. The exact oracle re-runs the SAME write from an INDEPENDENT fresh boot (ablate==oracle, asserted, bit-exact). SPECIFICITY: decode_leakage = #RAM cells the decode changed; target_share = Δscreen(target-cell-only) / Δscreen(full-decode). Causally-real MONOSEMANTIC feature ⇒ leakage≈1 ∧ target_share≈1; correlational/polysemantic ⇒ decode smears (low target_share) — present, not cleanly used.",
+      "per_feature": [
+        {
+          "ablate_eq_oracle": true,
+          "decode_leakage": 2,
+          "delta_full": 0.0,
+          "delta_oracle": 0.0,
+          "delta_target_only": 0.0,
+          "family": "player",
+          "feature": 11,
+          "moved": false,
+          "ram_index": 29,
+          "raw_ablate": 24,
+          "raw_base": 24,
+          "target_share": 0.0
+        },
+        {
+          "ablate_eq_oracle": true,
+          "decode_leakage": 2,
+          "delta_full": 20.0,
+          "delta_oracle": 20.0,
+          "delta_target_only": 0.0,
+          "family": "ball",
+          "feature": 45,
+          "moved": true,
+          "ram_index": 30,
+          "raw_ablate": 44,
+          "raw_base": 44,
+          "target_share": 0.0
+        },
+        {
+          "ablate_eq_oracle": true,
+          "decode_leakage": 2,
+          "delta_full": 0.0,
+          "delta_oracle": 0.0,
+          "delta_target_only": 0.0,
+          "family": "ball",
+          "feature": 20,
+          "moved": false,
+          "ram_index": 41,
+          "raw_ablate": 2,
+          "raw_base": 2,
+          "target_share": 0.0
+        },
+        {
+          "ablate_eq_oracle": true,
+          "decode_leakage": 2,
+          "delta_full": 0.0,
+          "delta_oracle": 0.0,
+          "delta_target_only": 0.0,
+          "family": "states_of_throw",
+          "feature": 11,
+          "moved": false,
+          "ram_index": 13,
+          "raw_ablate": 5,
+          "raw_base": 5,
+          "target_share": 0.0
+        }
+      ]
+    },
+    "conformance_note": "scored oracle frame f90+15 is BEYOND the strict 60-frame conformance window — the game only reaches live play later. HONEST descriptive jutari result (the bit-exact jutari re-run IS asserted), not an xitari-parity claim; Phase C is calibrated against the jutari oracle.",
+    "feature_variable_match": {
+      "matched_fraction": 1.0,
+      "n_varying_known_cells": 4,
+      "note": "for each KNOWN candidate cell that VARIES, max|Pearson r| between any learned feature's activation and that cell over the trajectory; matched iff |r| ≥ 0.7. Match-rate = #matched / #varying.",
+      "per_cell": [
+        {
+          "best_corr": 0.9662709118116928,
+          "best_feature": 11,
+          "concept": "player_x",
+          "family": "player",
+          "matched": true,
+          "ram_index": 29,
+          "varies": true
+        },
+        {
+          "best_corr": 0.9407751482302025,
+          "best_feature": 45,
+          "concept": "ball_x",
+          "family": "ball",
+          "matched": true,
+          "ram_index": 30,
+          "varies": true
+        },
+        {
+          "best_corr": 0.0,
+          "best_feature": -1,
+          "concept": "score",
+          "family": "score",
+          "matched": false,
+          "ram_index": 33,
+          "varies": false
+        },
+        {
+          "best_corr": 0.0,
+          "best_feature": -1,
+          "concept": "frame_number_display",
+          "family": "frame_number_display",
+          "matched": false,
+          "ram_index": 36,
+          "varies": false
+        },
+        {
+          "best_corr": 0.0,
+          "best_feature": -1,
+          "concept": "player_y",
+          "family": "player",
+          "matched": false,
+          "ram_index": 40,
+          "varies": false
+        },
+        {
+          "best_corr": 0.9631128916672378,
+          "best_feature": 20,
+          "concept": "ball_y",
+          "family": "ball",
+          "matched": true,
+          "ram_index": 41,
+          "varies": true
+        },
+        {
+          "best_corr": 0.0,
+          "best_feature": -1,
+          "concept": "pin_existence[0]",
+          "family": "pin_existence[0]",
+          "matched": false,
+          "ram_index": 57,
+          "varies": false
+        },
+        {
+          "best_corr": 0.0,
+          "best_feature": -1,
+          "concept": "pin_existence[1]",
+          "family": "pin_existence[1]",
+          "matched": false,
+          "ram_index": 58,
+          "varies": false
+        },
+        {
+          "best_corr": 0.0,
+          "best_feature": -1,
+          "concept": "pin_existence[2]",
+          "family": "pin_existence[2]",
+          "matched": false,
+          "ram_index": 59,
+          "varies": false
+        },
+        {
+          "best_corr": 0.0,
+          "best_feature": -1,
+          "concept": "pin_existence[3]",
+          "family": "pin_existence[3]",
+          "matched": false,
+          "ram_index": 60,
+          "varies": false
+        },
+        {
+          "best_corr": 0.0,
+          "best_feature": -1,
+          "concept": "pin_existence[4]",
+          "family": "pin_existence[4]",
+          "matched": false,
+          "ram_index": 61,
+          "varies": false
+        },
+        {
+          "best_corr": 0.0,
+          "best_feature": -1,
+          "concept": "pin_existence[5]",
+          "family": "pin_existence[5]",
+          "matched": false,
+          "ram_index": 62,
+          "varies": false
+        },
+        {
+          "best_corr": 0.0,
+          "best_feature": -1,
+          "concept": "pin_existence[6]",
+          "family": "pin_existence[6]",
+          "matched": false,
+          "ram_index": 63,
+          "varies": false
+        },
+        {
+          "best_corr": 0.0,
+          "best_feature": -1,
+          "concept": "pin_existence[7]",
+          "family": "pin_existence[7]",
+          "matched": false,
+          "ram_index": 64,
+          "varies": false
+        },
+        {
+          "best_corr": 0.0,
+          "best_feature": -1,
+          "concept": "pin_existence[8]",
+          "family": "pin_existence[8]",
+          "matched": false,
+          "ram_index": 65,
+          "varies": false
+        },
+        {
+          "best_corr": 0.0,
+          "best_feature": -1,
+          "concept": "pin_existence[9]",
+          "family": "pin_existence[9]",
+          "matched": false,
+          "ram_index": 66,
+          "varies": false
+        },
+        {
+          "best_corr": 0.9812713820346309,
+          "best_feature": 11,
+          "concept": "states_of_throw",
+          "family": "states_of_throw",
+          "matched": true,
+          "ram_index": 13,
+          "varies": true
+        },
+        {
+          "best_corr": 0.0,
+          "best_feature": -1,
+          "concept": "throw_of_that_round",
+          "family": "throw_of_that_round",
+          "matched": false,
+          "ram_index": 18,
+          "varies": false
+        },
+        {
+          "best_corr": 0.0,
+          "best_feature": -1,
+          "concept": "score",
+          "family": "score",
+          "matched": false,
+          "ram_index": 38,
+          "varies": false
+        },
+        {
+          "best_corr": 0.0,
+          "best_feature": -1,
+          "concept": "pins",
+          "family": "pins",
+          "matched": false,
+          "ram_index": 47,
+          "varies": false
+        }
+      ]
+    },
+    "match_thresh": 0.7,
+    "n_known_game_variables": 17,
+    "oracle_importance": {
+      "importance_per_cell": {
+        "RAM[13]:states_of_throw": 270.0,
+        "RAM[18]:throw_of_that_round": 0.0,
+        "RAM[29]:player_x": 208.0,
+        "RAM[30]:ball_x": 64.0,
+        "RAM[33]:score": 168.0,
+        "RAM[36]:frame_number_display": 96.0,
+        "RAM[38]:score": 36.0,
+        "RAM[40]:player_y": 526.0,
+        "RAM[41]:ball_y": 64.0,
+        "RAM[47]:pins": 0.0,
+        "RAM[57]:pin_existence[0]": 0.0,
+        "RAM[58]:pin_existence[1]": 0.0,
+        "RAM[59]:pin_existence[2]": 0.0,
+        "RAM[60]:pin_existence[3]": 0.0,
+        "RAM[61]:pin_existence[4]": 0.0,
+        "RAM[62]:pin_existence[5]": 0.0,
+        "RAM[63]:pin_existence[6]": 0.0,
+        "RAM[64]:pin_existence[7]": 0.0,
+        "RAM[65]:pin_existence[8]": 0.0,
+        "RAM[66]:pin_existence[9]": 0.0
+      },
+      "n_causal_cells": 8,
+      "note": "oracle importance(i) = max whole-screen break of an EXACT do(cell_i:=0)/do(cell_i:=base+17) intervention re-run on the real ROM (the §1 oracle restricted to the candidate cell + screen). The SAME map A2 / A7 / pilot_si.jl score against — the TRUE causal role."
+    },
+    "reconstruction": {
+      "best_d_hidden": 64,
+      "best_l1": 0.01,
+      "best_mean_l0": 33.086666666666666,
+      "fve_heldout": 0.9769057567415964,
+      "fve_train": 0.9928476551232814
+    },
+    "sae": {
+      "activation": "relu",
+      "epochs": 4000,
+      "fitting": "manual full-batch gradient descent (dependency-free; Julia port of pilot_patch_sae.py's numpy SAE).",
+      "input": "z-scored 128-byte RIOT RAM (constant cells zeroed)",
+      "lr": 0.5,
+      "objective": "MSE(x,x̂) + l1·mean(|z|)"
+    },
+    "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard i --nshards n --shard-kind game): one Slurm task per core game (round-robin); a larger d_hidden×l1 grid + longer trajectories on the GPU (experiment_design.md §8). The forward is bit-exact to this HARD path.",
+    "scored_in_conformance_window": false,
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the SAE is a dependency-free manual-GD L1 autoencoder over the recorded RAM trajectory (no torch/flax/pip; adds no package to the shared env). The causal-use ablation RE-RUNS the real ROM via the exact intervention oracle.",
+    "sweep": {
+      "best": {
+        "d_hidden": 64,
+        "fve_held": 0.9769057567415964,
+        "fve_train": 0.9928476551232814,
+        "l1": 0.01,
+        "matched_fraction": 1.0,
+        "mean_l0": 33.086666666666666
+      },
+      "grid": [
+        {
+          "d_hidden": 16,
+          "fve_held": 0.9721456372667029,
+          "fve_train": 0.9901505253991431,
+          "l1": 0.01,
+          "matched_fraction": 0.75,
+          "mean_l0": 8.36
+        },
+        {
+          "d_hidden": 16,
+          "fve_held": 0.9495417571832213,
+          "fve_train": 0.9669988583833585,
+          "l1": 0.05,
+          "matched_fraction": 0.75,
+          "mean_l0": 4.226666666666667
+        },
+        {
+          "d_hidden": 16,
+          "fve_held": 0.4684819649591778,
+          "fve_train": 0.4893142947039659,
+          "l1": 0.2,
+          "matched_fraction": 0.75,
+          "mean_l0": 0.6733333333333333
+        },
+        {
+          "d_hidden": 32,
+          "fve_held": 0.9715862449262814,
+          "fve_train": 0.9916463558359268,
+          "l1": 0.01,
+          "matched_fraction": 1.0,
+          "mean_l0": 17.153333333333332
+        },
+        {
+          "d_hidden": 32,
+          "fve_held": 0.9568942683023783,
+          "fve_train": 0.9792380031989473,
+          "l1": 0.05,
+          "matched_fraction": 1.0,
+          "mean_l0": 10.253333333333334
+        },
+        {
+          "d_hidden": 32,
+          "fve_held": 0.8695951235218045,
+          "fve_train": 0.9008520306100862,
+          "l1": 0.2,
+          "matched_fraction": 0.75,
+          "mean_l0": 3.2466666666666666
+        },
+        {
+          "d_hidden": 64,
+          "fve_held": 0.9769057567415964,
+          "fve_train": 0.9928476551232814,
+          "l1": 0.01,
+          "matched_fraction": 1.0,
+          "mean_l0": 33.086666666666666
+        },
+        {
+          "d_hidden": 64,
+          "fve_held": 0.9721593527168059,
+          "fve_train": 0.9874491182446615,
+          "l1": 0.05,
+          "matched_fraction": 1.0,
+          "mean_l0": 19.906666666666666
+        },
+        {
+          "d_hidden": 64,
+          "fve_held": 0.9445875578396824,
+          "fve_train": 0.9687165172388216,
+          "l1": 0.2,
+          "matched_fraction": 0.75,
+          "mean_l0": 6.36
+        }
+      ],
+      "note": "dictionary-size (d_hidden) × L1-penalty sweep — the full-SAE knobs (Cunningham/Bricken 2023: overcomplete dict + L1). FVE = fraction of variance explained on a held-out (every-5th-frame) split.",
+      "selected_by": "max held-out FVE"
+    },
+    "testbed": {
+      "cause_density_above_floor": 14,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 42,
+      "note": "P2 redesign: the SAE is fit/scored on a seeded random-action GAMEPLAY state (not the FIRE/attract tape), gated by the §1 oracle cause-density gate. The descriptive trajectory is stepped along the gameplay stream (NOOP-continued past prefix+horizon). The SAE algorithm is unchanged; only the analysis state + trajectory move.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r164c33",
+      "state_kind": "seeded_random_action_gameplay"
+    },
+    "trajectory_frames": 150,
+    "trajectory_trace": "seeded random-action GAMEPLAY trajectory (seed=0, prefix=90; NOOP-continued past prefix+horizon)",
+    "triad": {
+      "F": 0.5841794074233757,
+      "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
+      "M": 0.0,
+      "M_note": "mean over causal-use features of target_share·single-cell-ness (monosemantic ⇒ ablate perturbs ≈1 cell AND that cell carries Δscreen)",
+      "S": 0.4758484972523214,
+      "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
+      "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
+    }
+  },
+  "game": "bowling",
+  "item": "P2-E5-6",
+  "method": "sparse_autoencoder",
+  "metric_name": "feature_variable_matched_fraction",
+  "n": 4,
+  "oracle_ref": "oracle_intervene@bowling (P2-E1-1) — exact single-cell + full-decode patch re-run; traj from jutari_record (P2-E0-2j)",
+  "paper": "P2",
+  "phase": "phaseC_mechanistic",
+  "seed": 0,
+  "state": "gameplay(seed=0,prefix=90)+15",
+  "stderr": null,
+  "target_output": "state_features_vs_known_variables+causal_use",
+  "timestamp": "1783095530",
+  "value": 1.0,
+  "where": "local"
+}

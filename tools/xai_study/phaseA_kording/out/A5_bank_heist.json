@@ -1,0 +1,174 @@
+{
+  "arrays": "A5_bank_heist.npz",
+  "ci": null,
+  "commit": "2a9ade4c",
+  "extra": {
+    "bit_exact_rerun": true,
+    "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): the LFP-analog pooled-activity spectrum is rich, but a high fraction of its power is the KNOWN frame/animation clocks — epiphenomenal structure that says nothing about the causal computation (the dominant spectral peaks are clock harmonics). A5 REVEALS the pooled periodicities and MISSES the causal map; the clock-explained fraction is the quantified-Kording measurement here.",
+    "known_clocks": {
+      "clock_basis_dim": 12,
+      "clock_cells": [
+        {
+          "kind": "ramp",
+          "period": 256,
+          "ram_index": 6,
+          "stride": 1
+        },
+        {
+          "kind": "periodic",
+          "period": 8,
+          "ram_index": 19,
+          "stride": 0
+        }
+      ],
+      "n_clock_cells": 2,
+      "n_harmonics_per_period": 3,
+      "n_periodic": 1,
+      "n_ramp": 1,
+      "note": "known clocks (T2) = RAM cells that are EXACT free-running counters over the trajectory: constant-stride ramps (frame/down counters, prescalers) or fixed-period cyclic timers (animation/blink). These are hardware/firmware clocks driven by the frame cadence, NOT game state — detected structurally (no labels). The clock basis is the frame ramp + sin/cos harmonics of every detected clock period; the %-variance a pooled signal projects onto it is the EPIPHENOMENAL fraction (experiment_design.md §4 A5)."
+    },
+    "method_kind": "descriptive (no oracle F/S/M; A5 reports the pooled spectral structure it REVEALS vs the causal map it MISSES — the clock-explained fraction quantifies how much of the headline spectrum is causally inert).",
+    "regions": [
+      {
+        "clock_explained_variance_fraction": 0.7153291570848341,
+        "dominant_period_frames": 256.0,
+        "dominant_power_share": 0.4058032976966903,
+        "n_cells": 44,
+        "n_cells_varying": 44,
+        "ram_cells": [
+          0,
+          2,
+          6,
+          7,
+          9,
+          10,
+          11,
+          12,
+          14,
+          15,
+          19,
+          20,
+          21,
+          22,
+          27,
+          28,
+          29,
+          30,
+          32,
+          33,
+          34,
+          35,
+          37,
+          38,
+          39,
+          40,
+          41,
+          45,
+          46,
+          48,
+          50,
+          59,
+          63,
+          65,
+          67,
+          69,
+          84,
+          86,
+          87,
+          120,
+          121,
+          122,
+          123,
+          124
+        ],
+        "region": "global"
+      },
+      {
+        "clock_explained_variance_fraction": 0.5228260238165969,
+        "dominant_period_frames": 85.33333333333333,
+        "dominant_power_share": 0.39083414670213495,
+        "n_cells": 2,
+        "n_cells_varying": 2,
+        "ram_cells": [
+          12,
+          32
+        ],
+        "region": "obj"
+      },
+      {
+        "clock_explained_variance_fraction": 0.8697867494463196,
+        "dominant_period_frames": 256.0,
+        "dominant_power_share": 0.637774650394515,
+        "n_cells": 2,
+        "n_cells_varying": 1,
+        "ram_cells": [
+          8,
+          28
+        ],
+        "region": "player"
+      },
+      {
+        "clock_explained_variance_fraction": 0.9303237078115167,
+        "dominant_period_frames": 256.0,
+        "dominant_power_share": 0.7608806579404889,
+        "n_cells": 1,
+        "n_cells_varying": 1,
+        "ram_cells": [
+          86
+        ],
+        "region": "wh"
+      }
+    ],
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
+    "spectrum": {
+      "dft": "dependency-free one-sided DFT power (no FFTW added to the shared jutari env); freq unit = cycles/frame; DC bin dropped after detrend; Hann-windowed; linear trend (frame-counter ramp) removed.",
+      "frame_cadence_note": "the per-frame sampling clock is 1 frame; dominant periods are reported in FRAMES (period p ⇒ p-frame cycle, e.g. a period-2 blink, a period-N animation/score-flash timer). Relate to game cadence: short integer periods are animation/blink timers driven by the frame counter (T2), not game-state oscillations.",
+      "global_dominant_period_frames": 256.0,
+      "global_dominant_power_share": 0.4058032976966903,
+      "global_top_peak_periods_frames": [
+        256.0,
+        128.0,
+        85.33333333333333,
+        8.0,
+        64.0
+      ],
+      "global_top_peak_power": [
+        85.27871770498268,
+        31.265562254670257,
+        12.048427134869646,
+        6.54451497661336,
+        5.905429438046327
+      ]
+    },
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the analysed RAM trajectory is a deterministic re-run (asserted).",
+    "testbed": {
+      "cause_density_above_floor": 8,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 12,
+      "note": "P2 redesign: the pooled-activity spectrum runs on a seeded random-action GAMEPLAY trajectory (not the synthetic active/dir action tape), driven by the §1 oracle-gated gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A5's spectral/clock algorithm is unchanged; only the driving action stream moves onto genuine input-driven gameplay.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r81c23",
+      "state_kind": "seeded_random_action_gameplay"
+    },
+    "trajectory_frames": 256,
+    "trajectory_trace": "active trace (4×FIRE + periodic RIGHTFIRE/LEFTFIRE)"
+  },
+  "game": "bank_heist",
+  "method": "A5_local_field_potentials(pooled_activity_spectra)",
+  "metric_name": "A5_global_pool_clock_explained_variance_fraction_epiphenomenal",
+  "n": 44,
+  "oracle_ref": "T2_known_clocks@bank_heist (frame-counter + free-running periodic timers; structural detection)",
+  "paper": "P2",
+  "phase": "phaseA_kording",
+  "seed": 0,
+  "state": "gameplay(seed=0,prefix=90)+256",
+  "stderr": null,
+  "target_output": "pooled-activity-power-spectrum",
+  "timestamp": "1783069204",
+  "value": 0.7153291570848341,
+  "where": "local"
+}

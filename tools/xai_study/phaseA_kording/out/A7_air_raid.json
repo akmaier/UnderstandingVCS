@@ -1,0 +1,233 @@
+{
+  "arrays": "A7_air_raid.npz",
+  "ci": null,
+  "commit": "2a9ade4c",
+  "extra": {
+    "bit_exact_rerun": true,
+    "candidate_cells": [
+      "RAM[19]:player.xy",
+      "RAM[20]:b1.xy",
+      "RAM[21]:b2.xy",
+      "RAM[27]:b1.damage",
+      "RAM[28]:b2.damage",
+      "RAM[39]:lives.lives",
+      "RAM[40]:a",
+      "RAM[41]:b",
+      "RAM[42]:c",
+      "RAM[83]:enemy_missile.xy",
+      "RAM[84]:enemy_missile.xy",
+      "RAM[85]:player_missile.xy",
+      "RAM[86]:player_missile.xy"
+    ],
+    "candidate_concept_family": [
+      "player",
+      "b",
+      "b",
+      "b",
+      "b",
+      "lives",
+      "a",
+      "b",
+      "c",
+      "enemy_missile",
+      "enemy_missile",
+      "player_missile",
+      "player_missile"
+    ],
+    "candidate_ram_indices": [
+      19,
+      20,
+      21,
+      27,
+      28,
+      39,
+      40,
+      41,
+      42,
+      83,
+      84,
+      85,
+      86
+    ],
+    "conformance_note": "scored oracle frame f90+15 is inside the Paper-1 60-frame screen conformance window (jutari↔xitari bit-exact).",
+    "n_known_game_variables": 7,
+    "nmf": {
+      "component_energy_share": [
+        0.18588208189399166,
+        0.1358058902419205,
+        0.13312826196699126,
+        0.12576564636332924,
+        0.11322445047801691,
+        0.11180557026946832,
+        0.10424581737559632,
+        0.09014228141068585
+      ],
+      "matched_components": {
+        "matched_component_fraction": 0.8,
+        "method": "nmf",
+        "n_matched_game_var": 0,
+        "n_matched_known_signal": 4,
+        "per_component_matched_kind": [
+          "known_signal",
+          "(none)",
+          "known_signal",
+          "known_signal",
+          "known_signal"
+        ],
+        "per_component_matched_label": [
+          "clock",
+          "(none; closest=clock@0.1)",
+          "clock",
+          "clock",
+          "clock"
+        ],
+        "per_component_matched_purity": [
+          0.6860463233188748,
+          0.10396312016772023,
+          0.5564798079810945,
+          0.6106079429681768,
+          0.6178243503990355
+        ],
+        "topk": 5
+      },
+      "n_iters": 300,
+      "note": "NMF (Lee & Seung multiplicative updates; RAM bytes are non-negative). matched-component fraction tests whether the non-negative PARTS align with single known variables better than PCA's signed components do — the prompt's NMF-vs-PCA question.",
+      "rank": 8,
+      "recon_rel_err_by_rank": [
+        0.8490082627647703,
+        0.7254908653884597,
+        0.57290923666616,
+        0.45502943447176225,
+        0.3504649409310956,
+        0.2412191353905587,
+        0.1434514758785086,
+        0.06353890538307573
+      ],
+      "recon_rel_frobenius_err": 0.06353890538307573
+    },
+    "oracle_importance": {
+      "importance_per_cell": {
+        "RAM[19]:player.xy": 132.0,
+        "RAM[20]:b1.xy": 1014.0,
+        "RAM[21]:b2.xy": 980.0,
+        "RAM[27]:b1.damage": 528.0,
+        "RAM[28]:b2.damage": 576.0,
+        "RAM[39]:lives.lives": 0.0,
+        "RAM[40]:a": 98.0,
+        "RAM[41]:b": 34.0,
+        "RAM[42]:c": 47.0,
+        "RAM[83]:enemy_missile.xy": 2.0,
+        "RAM[84]:enemy_missile.xy": 0.0,
+        "RAM[85]:player_missile.xy": 4.0,
+        "RAM[86]:player_missile.xy": 0.0
+      },
+      "n_causal_cells": 10,
+      "note": "oracle importance(i) = max whole-screen break of an EXACT do(cell_i:=0)/do(cell_i:=base+17) intervention re-run on the real ROM (the §1 oracle restricted to the candidate cell + screen). The SAME map A2 / pilot_si.jl score against — the TRUE causal role."
+    },
+    "pca": {
+      "cum_var_top": [
+        0.3311257723243676,
+        0.5556876182766375,
+        0.6917961394724255,
+        0.7823542640174677,
+        0.8267634303636078,
+        0.8649872839104205,
+        0.893558329415159,
+        0.9178464328491651
+      ],
+      "matched_components": {
+        "matched_component_fraction": 0.4,
+        "method": "pca",
+        "n_matched_game_var": 1,
+        "n_matched_known_signal": 1,
+        "per_component_matched_kind": [
+          "(none)",
+          "known_signal",
+          "(none)",
+          "game_var",
+          "(none)"
+        ],
+        "per_component_matched_label": [
+          "(none; closest=clock@0.5)",
+          "clock",
+          "(none; closest=clock@0.12)",
+          "b",
+          "(none; closest=rw_activity@0.27)"
+        ],
+        "per_component_matched_purity": [
+          0.49896521985901715,
+          0.8167023214963871,
+          0.12398497214694176,
+          0.7453059029628478,
+          0.26911010800768304
+        ],
+        "topk": 5
+      },
+      "n_cells": 128,
+      "n_frames": 150,
+      "n_varying_cells": 60,
+      "note": "PCA (SVD of the centred (T,128) tape). matched-component fraction = #top-k PCs concentrated on ONE known variable (a concept family, OR clock/R-W/vsync) / k. The pilot found ≈0 — PCs mix epiphenomenal high-variance structure across cells.",
+      "var_explained_top": [
+        0.3311257723243676,
+        0.2245618459522699,
+        0.13610852119578803,
+        0.09055812454504208,
+        0.04440916634614025,
+        0.03822385354681264,
+        0.028571045504738574,
+        0.024288103434006086
+      ]
+    },
+    "purity_threshold": 0.5,
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
+    "scored_in_conformance_window": true,
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the importance oracle uses EXACT interventions re-run on the true ROM.",
+    "testbed": {
+      "cause_density_above_floor": 14,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 28,
+      "note": "P2 redesign: BOTH the scored oracle prefix AND the descriptive PCA/NMF trajectory run on a seeded random-action GAMEPLAY state (not the FIRE-then-NOOP oracle tape / synthetic active tape), gated by the §1 oracle cause-density gate. The trajectory is the gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A7's dim-reduction + oracle-importance algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r162c64",
+      "state_kind": "seeded_random_action_gameplay"
+    },
+    "topk_components": 5,
+    "trajectory_frames": 150,
+    "trajectory_trace": "active trace (4×FIRE + periodic RIGHTFIRE/LEFTFIRE)",
+    "triad_nmf": {
+      "F": 0.1250322955695868,
+      "F_note": "Spearman(nmf per-cell recovery score, oracle causal importance) over candidate cells",
+      "M": 0.75,
+      "M_note": "1 − over-claim rate: fraction of nmf-surfaced cells (recovery ≥ q0.5) the oracle says are non-causal (variance≠causal trap)",
+      "S": 0.5295095287219841,
+      "S_note": "Pearson(nmf recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
+      "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): dim-reduction surfaces high-VARIANCE axes, which are NOT the causal cells (variance ≠ causal role — present ≠ used). F<1 + low matched-component fraction quantify the departure from the true causal structure."
+    },
+    "triad_pca": {
+      "F": 0.420182903408009,
+      "F_note": "Spearman(pca per-cell recovery score, oracle causal importance) over candidate cells",
+      "M": 0.8,
+      "M_note": "1 − over-claim rate: fraction of pca-surfaced cells (recovery ≥ q0.5) the oracle says are non-causal (variance≠causal trap)",
+      "S": 0.43676399567488683,
+      "S_note": "Pearson(pca recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run"
+    }
+  },
+  "game": "air_raid",
+  "method": "A7_dim_reduction(NMF+PCA)",
+  "metric_name": "A7_nmf_matched_component_fraction_vs_known_vars",
+  "n": 13,
+  "oracle_ref": "oracle_intervene@air_raid#per-cell-causal-importance(screen-break)",
+  "paper": "P2",
+  "phase": "phaseA_kording",
+  "seed": 0,
+  "state": "gameplay(seed=0,prefix=90)+15",
+  "stderr": null,
+  "target_output": "latent-components",
+  "timestamp": "1783073012",
+  "value": 0.8,
+  "where": "local"
+}

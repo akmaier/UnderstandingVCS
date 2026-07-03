@@ -1,0 +1,149 @@
+{
+  "arrays": "A3_tuning_fishing_derby.npz",
+  "ci": null,
+  "commit": "2a9ade4c",
+  "extra": {
+    "A3_tuning": {
+      "clock_corr_per_cell": {
+        "RAM[23]:p1s.hook_position": 0.693179426360484,
+        "RAM[24]:p2s.hook_position": 0.7001854377540041,
+        "RAM[34]:p1s.hook_position": 0.5479516123632191,
+        "RAM[35]:p2s.hook_position": 0.30467144073464275,
+        "RAM[61]:value": 0.0,
+        "RAM[62]:value": 0.0,
+        "RAM[65]:p1s.hook_position": 0.6337490551238341,
+        "RAM[66]:p2s.hook_position": 0.9996667858723377,
+        "RAM[75]:xy": 0.9985999111047462
+      },
+      "epiphenomenal_control": "frame_clock",
+      "game_variable_signals": [
+        "p1s.hook_position@23",
+        "p2s.hook_position@24",
+        "p1s.hook_position@34",
+        "p2s.hook_position@35",
+        "value@61",
+        "value@62",
+        "p1s.hook_position@65",
+        "p2s.hook_position@66",
+        "xy@75"
+      ],
+      "game_variable_spurious_tuning_rate": 0.25,
+      "gvar_selectivity_per_cell": {
+        "RAM[23]:p1s.hook_position": 0.6931159269930306,
+        "RAM[24]:p2s.hook_position": 0.9197606249455793,
+        "RAM[34]:p1s.hook_position": 0.5512790197383723,
+        "RAM[35]:p2s.hook_position": 0.348580113689634,
+        "RAM[61]:value": 0.0,
+        "RAM[62]:value": 0.0,
+        "RAM[65]:p1s.hook_position": 0.9197606249455793,
+        "RAM[66]:p2s.hook_position": 0.9981449119221973,
+        "RAM[75]:xy": 0.9981449119221973
+      },
+      "luminance_corr_per_cell": {
+        "RAM[23]:p1s.hook_position": 0.6947110681573047,
+        "RAM[24]:p2s.hook_position": 0.14516244581255883,
+        "RAM[34]:p1s.hook_position": 0.29619974199850696,
+        "RAM[35]:p2s.hook_position": 0.3773921001171717,
+        "RAM[61]:value": 0.0,
+        "RAM[62]:value": 0.0,
+        "RAM[65]:p1s.hook_position": 0.2140744864109988,
+        "RAM[66]:p2s.hook_position": 0.7019574844187301,
+        "RAM[75]:xy": 0.6985100976043203
+      },
+      "luminance_spurious_tuning_rate": 0.0,
+      "n_spurious_gvar": 1,
+      "n_spurious_luminance": 0,
+      "n_strongly_tuned_gvar": 4,
+      "n_strongly_tuned_luminance": 1,
+      "note": "selectivity = max |corr| to a GAME variable (the cell's own self-column excluded; frame clock excluded — it is the epiphenomenal control). spurious = strongly-tuned (selectivity≥τ) but NOT causal by the oracle — the present≠used tuning-curve trap (experiment_design.md §4 A3, Phase-A's headline failure). The luminance family is the HARDWARE (no-T3) version of the same trap.",
+      "spurious_gvar_cells": [
+        "RAM[24]:p2s.hook_position"
+      ],
+      "strongly_tuned_gvar_cells": [
+        "RAM[24]:p2s.hook_position",
+        "RAM[65]:p1s.hook_position",
+        "RAM[66]:p2s.hook_position",
+        "RAM[75]:xy"
+      ],
+      "tau": 0.7,
+      "trajectory_frames": 150,
+      "trajectory_trace": "seeded random-action GAMEPLAY (seed=0, prefix=90+15, NOOP-continued past the window)"
+    },
+    "bit_exact_rerun": true,
+    "candidate_cells": [
+      "RAM[23]:p1s.hook_position",
+      "RAM[24]:p2s.hook_position",
+      "RAM[34]:p1s.hook_position",
+      "RAM[35]:p2s.hook_position",
+      "RAM[61]:value",
+      "RAM[62]:value",
+      "RAM[65]:p1s.hook_position",
+      "RAM[66]:p2s.hook_position",
+      "RAM[75]:xy"
+    ],
+    "candidate_ram_indices": [
+      23,
+      24,
+      34,
+      35,
+      61,
+      62,
+      65,
+      66,
+      75
+    ],
+    "candidates_file": "candidates_fishing_derby.json",
+    "n_oracle_causal": 5,
+    "oracle_importance_per_cell": {
+      "RAM[23]:p1s.hook_position": 0.0,
+      "RAM[24]:p2s.hook_position": 0.0,
+      "RAM[34]:p1s.hook_position": 0.0,
+      "RAM[35]:p2s.hook_position": 0.0,
+      "RAM[61]:value": 60.0,
+      "RAM[62]:value": 60.0,
+      "RAM[65]:p1s.hook_position": 77.0,
+      "RAM[66]:p2s.hook_position": 226.0,
+      "RAM[75]:xy": 460.0
+    },
+    "positive_control_oracle_as_method_F": 1.0,
+    "rom_settings": "JuTari.RomSettingsModule.GenericRomSettings",
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the oracle causal map is EXACT interventions re-run on the true ROM; the tuning curves are a DESCRIPTIVE active-trace recording (the recorder's documented purpose), not a bit-exact-vs-xitari claim.",
+    "testbed": {
+      "cause_density_above_floor": 8,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 20,
+      "note": "P2 redesign: the tuning study runs on a seeded random-action GAMEPLAY state (not the FIRE×4/attract tape), gated by the §1 oracle cause-density gate. Both the oracle causal map AND the descriptive tuning trajectory are stepped along the SAME gameplay stream so the game variable VARIES on genuine input-driven play. A3's tuning algorithm is unchanged; only the analysis state moves.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r128c31",
+      "state_kind": "seeded_random_action_gameplay"
+    },
+    "triad": {
+      "F": 0.4914584462347158,
+      "F_note": "Spearman(A3 game-variable selectivity, oracle causal importance) over 9 candidate cells",
+      "M": 0.75,
+      "M_note": "1 − over-claim rate: fraction of strongly-tuned cells the oracle says are generic (non-causal)",
+      "S": 0.49046566783404316,
+      "S_note": "Pearson(A3 selectivity, held-out do(base+37) screen break) — sufficiency on a bit-exact re-run",
+      "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): a tuning-curve importance map scores LOW faithfulness despite fully-known structure. F<1 / spurious-tuning>0 quantify where the classical analysis departs from the ground truth. The oracle-as-method positive control (F=1.0) confirms the harness rewards a perfectly-faithful map."
+    }
+  },
+  "game": "fishing_derby",
+  "method": "A3_tuning_curves(luminance+game_variable)+spurious_tuning_rate",
+  "metric_name": "A3_game_variable_spurious_tuning_rate",
+  "n": 9,
+  "oracle_ref": "oracle_intervene@fishing_derby#screen-break",
+  "paper": "P2",
+  "phase": "phaseA_kording",
+  "seed": 0,
+  "state": "gameplay(seed=0,prefix=90)+15",
+  "stderr": null,
+  "target_output": "screen-break (oracle causal importance) vs tuning selectivity",
+  "timestamp": "1783065783",
+  "value": 0.25,
+  "where": "local"
+}

@@ -1,0 +1,125 @@
+{
+  "arrays": "A4_up_n_down.npz",
+  "ci": null,
+  "commit": "9391b559",
+  "extra": {
+    "bit_exact_rerun": true,
+    "candidate_cells": [
+      "RAM[13]:enemy_score",
+      "RAM[14]:player_score",
+      "RAM[49]:ball_x",
+      "RAM[54]:ball_y",
+      "RAM[51]:player_y",
+      "RAM[50]:enemy_y"
+    ],
+    "candidate_concept_family": [
+      "enemy_score",
+      "score",
+      "ball",
+      "ball",
+      "player",
+      "enemy"
+    ],
+    "candidate_ram_indices": [
+      13,
+      14,
+      49,
+      54,
+      51,
+      50
+    ],
+    "clustering": {
+      "cluster_label_per_cell": {
+        "RAM[13]:enemy_score": 1,
+        "RAM[14]:player_score": 2,
+        "RAM[49]:ball_x": 3,
+        "RAM[50]:enemy_y": 3,
+        "RAM[51]:player_y": 3,
+        "RAM[54]:ball_y": 4
+      },
+      "homogeneity": 0.8333333333333334,
+      "mean_cluster_size": 1.5,
+      "mean_true_group_size": 1.2,
+      "n_clusters": 4,
+      "n_true_groups": 5,
+      "note": "single-linkage on |corr|≥tau; over_grouping_ratio = fraction of within-cluster pairs whose cells are in DIFFERENT true variable groups (correlation lumping unrelated cells); size_inflation>1 ⇒ recovered clusters bigger than true groups.",
+      "over_grouping_ratio": 1.0,
+      "rand_index": 0.7333333333333333,
+      "size_inflation": 1.25,
+      "tau_cluster": 0.7
+    },
+    "conformance_note": "scored oracle frame f90+15 is BEYOND the strict 60-frame screen conformance window — the game only reaches live play later (e.g. Ms. Pac-Man's animated intro). This is an HONEST descriptive jutari result (the bit-exact jutari re-run IS asserted), not an xitari-parity claim; A4 is the calibration baseline, not a headline.",
+    "n_true_variable_groups": 5,
+    "oracle_coupling": {
+      "n_coupled_pairs": 5,
+      "n_total_pairs": 15,
+      "note": "true coupling(i,j) = max |Δ candidate-cell j| under an EXACT do(i:=0)/do(i:=base+17) intervention on cell i, re-run on the real ROM (symmetrised). The §1 oracle restricted to candidate-cell pairs — the TRUE coupling A4 is scored against.",
+      "self_footprint_per_cell": {
+        "RAM[13]:enemy_score": 0.0,
+        "RAM[14]:player_score": 0.0,
+        "RAM[49]:ball_x": 384.0,
+        "RAM[50]:enemy_y": 590.0,
+        "RAM[51]:player_y": 434.0,
+        "RAM[54]:ball_y": 106.0
+      }
+    },
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
+    "scored_in_conformance_window": false,
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the coupling oracle uses EXACT interventions re-run on the true ROM.",
+    "testbed": {
+      "cause_density_above_floor": 7,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 14,
+      "note": "P2 redesign: the correlation/coupling study runs on a seeded random-action GAMEPLAY state (not the per-game FIRE/attract tape), gated by the §1 oracle cause-density gate. Both the coupling oracle AND the descriptive correlation trajectory are stepped along the SAME gameplay stream so the candidate cells VARY on genuine input-driven play. A4's correlation/coupling algorithm is unchanged; only the analysis state moves.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r46c56",
+      "state_kind": "seeded_random_action_gameplay"
+    },
+    "trajectory_frames": 150,
+    "trajectory_trace": "seeded random-action GAMEPLAY (seed=0, prefix=90+15, NOOP-continued past the window)",
+    "triad": {
+      "F": 0.7821433703281334,
+      "F_note": "Spearman(|pairwise corr|, oracle cell-cell coupling) over 15 candidate-cell pairs",
+      "M": 1.0,
+      "M_note": "1 − over-claim rate: fraction of |corr|≥0.7-flagged pairs the oracle says are NOT coupled (correlation over-grouping)",
+      "S": 0.12383032726984117,
+      "S_note": "Pearson(|pairwise corr|, held-out do(base+37) coupling) — sufficiency on the bit-exact re-run",
+      "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): pairwise correlation structure GENERALLY OVER-GROUPS — it lumps causally-unrelated cells that merely co-vary (the present≠used trap, pairwise). F<1 + over_grouping_ratio>0 quantify the departure from the true coupling.",
+      "n_pairs": 15
+    },
+    "weak_pairwise_strong_global": {
+      "candidate_frac_strong_pairs(|corr|>=0.5)": 0.5,
+      "candidate_mean_abs_pairwise": 0.5958122346954934,
+      "candidate_median_abs_pairwise": 0.6257039725413179,
+      "candidate_n_varying_cells": 4,
+      "candidate_participation_ratio": 1.6024424967298116,
+      "candidate_top3_eig_share": 0.9991945553133181,
+      "candidate_top_eig_share": 0.7541801272931136,
+      "note": "the spike-word headline (Schneidman 2006; Tkačik 2014): over the FULL POPULATION of varying RAM cells the median pairwise |corr| is WEAK while a few GLOBAL eigen-modes dominate — the effective dimensionality (participation ratio) is far below the #cells, so the collective structure greatly exceeds the pairwise structure. WPSG flag = population median|corr|<0.5 AND population top3-eig-share≥0.6. (The candidate_* set is curated so its pairwise corr runs higher.)",
+      "population_mean_abs_pairwise": 0.43498982774078054,
+      "population_median_abs_pairwise": 0.351736445238765,
+      "population_n_cells": 84,
+      "population_participation_ratio": 3.2040459816427083,
+      "population_top3_eig_share": 0.7684613875877897,
+      "weak_pairwise_strong_global": true
+    }
+  },
+  "game": "up_n_down",
+  "method": "A4_spike_word_pairwise_correlation",
+  "metric_name": "A4_faithfulness_spearman_corr_vs_oracle_coupling",
+  "n": 6,
+  "oracle_ref": "oracle_intervene@up_n_down#cell-cell-coupling(screen+RAM)",
+  "paper": "P2",
+  "phase": "phaseA_kording",
+  "seed": 0,
+  "state": "gameplay(seed=0,prefix=90)+15",
+  "stderr": null,
+  "target_output": "cell-cell-coupling",
+  "timestamp": "1783017628",
+  "value": 0.7821433703281334,
+  "where": "local"
+}

@@ -1,0 +1,109 @@
+{
+  "arrays": "A1_pooyan.npz",
+  "ci": null,
+  "commit": "9391b559",
+  "extra": {
+    "bit_exact_rerun": true,
+    "candidate_cells": [
+      "RAM[9]:a",
+      "RAM[10]:b",
+      "RAM[14]:rock.num_wolfs",
+      "RAM[22]:lives.lives",
+      "RAM[31]:player.xy",
+      "RAM[38]:climbing_enemy.xy",
+      "RAM[39]:rock_y",
+      "RAM[40]:projectile1.xy",
+      "RAM[41]:row",
+      "RAM[63]:shifted_rs63",
+      "RAM[64]:shifted_rs64"
+    ],
+    "candidate_ram_indices": [
+      9,
+      10,
+      14,
+      22,
+      31,
+      38,
+      39,
+      40,
+      41,
+      63,
+      64
+    ],
+    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_pooyan.json",
+    "graph": {
+      "f1": 1.0,
+      "fn": 0,
+      "fp": 0,
+      "graph_edit_distance": 0,
+      "graph_edit_distance_normalised": 0.0,
+      "n_nodes": 11,
+      "n_recovered_edges": 1,
+      "n_true_edges": 1,
+      "note": "edges are 0-based candidate ordinals [i,j] meaning cell i -> cell j. TRUE = exhaustive oracle (do 0/base+17/base+37, full horizon, any value changes j); RECOVERED = classical single do(base+17), 1-step latency. GED = symmetric edge difference (fp+fn) over off-diagonal edges.",
+      "precision": 1.0,
+      "recall": 1.0,
+      "recovered_edges": [
+        [
+          8,
+          10
+        ]
+      ],
+      "tp": 1,
+      "true_edges": [
+        [
+          8,
+          10
+        ]
+      ]
+    },
+    "positive_control": {
+      "f1": 1.0,
+      "graph_edit_distance": 0,
+      "name": "oracle-as-method (full do-set + full horizon)",
+      "note": "the oracle's OWN recovery must score F1=1, GED=0 — the harness rewards a perfectly-faithful graph, so the classical F1<1 is a real measurement.",
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "rom_basename": "pooyan.bin",
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
+    "settings": "GenericRomSettings",
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
+    "testbed": {
+      "cause_density_above_floor": 2,
+      "cause_density_accepted": false,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 24,
+      "note": "P2 redesign: the connectomics recovery runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. A1's graph algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r105c80",
+      "state_kind": "seeded_random_action_gameplay"
+    },
+    "triad": {
+      "F": 1.0,
+      "F_note": "F1 of recovered data-flow edges vs the exact-oracle true edges (11 candidate cells)",
+      "M": 1.0,
+      "M_note": "1 − over-claim rate: fraction of recovered edges the oracle says are spurious (false wiring)",
+      "S": 1.0,
+      "S_note": "off-diagonal edge-agreement between the base+17 recovered graph and the HELD-OUT base+37 true edge set (generalisation to an unseen intervention value, bit-exact re-run)",
+      "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): classical connectomics scores LOW-to-PARTIAL faithfulness despite fully-known data-flow — the quantified-Kording lesson. A thin single-shot/short-latency perturbation misses long-latency / sign-dependent edges (recall deficit) and can over-claim transient ones (precision deficit)."
+    }
+  },
+  "game": "pooyan",
+  "method": "A1_connectomics(single-shot perturbation graph recovery)",
+  "metric_name": "dataflow_graph_F1_vs_oracle",
+  "n": 11,
+  "oracle_ref": "oracle_intervene@pooyan#cell-to-cell data-flow (exhaustive do-set, full horizon)",
+  "paper": "P2",
+  "phase": "phaseA_kording",
+  "seed": 0,
+  "state": "gameplay(seed=0,prefix=90)+15",
+  "stderr": null,
+  "target_output": "inter-cell data-flow graph (candidate RAM cells)",
+  "timestamp": "1783018500",
+  "value": 1.0,
+  "where": "local"
+}

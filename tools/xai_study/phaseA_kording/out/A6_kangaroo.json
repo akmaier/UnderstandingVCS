@@ -1,0 +1,146 @@
+{
+  "arrays": "A6_kangaroo.npz",
+  "ci": null,
+  "commit": "2a9ade4c",
+  "extra": {
+    "bit_exact_rerun": true,
+    "candidate_cells": [
+      "RAM[0]:ram_slice",
+      "RAM[16]:y",
+      "RAM[17]:x",
+      "RAM[18]:climbing",
+      "RAM[25]:ram_slice",
+      "RAM[28]:ram_slice",
+      "RAM[33]:ram_slice",
+      "RAM[34]:x",
+      "RAM[36]:current_level",
+      "RAM[39]:score_value",
+      "RAM[40]:score_value",
+      "RAM[45]:n_lives",
+      "RAM[54]:crashed",
+      "RAM[59]:time_value",
+      "RAM[83]:child.xy"
+    ],
+    "candidate_ram_indices": [
+      0,
+      16,
+      17,
+      18,
+      25,
+      28,
+      33,
+      34,
+      36,
+      39,
+      40,
+      45,
+      54,
+      59,
+      83
+    ],
+    "cell_scope": {
+      "direction_disagreement": 0.0,
+      "false_edge_rate": 0.0,
+      "inferred_edges_0based": [],
+      "missed_edge_rate": 1.0,
+      "n_inferred_edges": 0,
+      "n_nodes": 15,
+      "n_true_edges": 2,
+      "note": "false_edge_rate=#(Granger edge, true absent)/#Granger edges (=1−precision); missed_edge_rate=#(true edge, Granger absent)/#true edges (=1−recall); direction_disagreement = of unordered pairs with a single true AND single Granger arrow, the fraction whose directions OPPOSE — the headline temporal-precedence≠causation Granger failure.",
+      "true_edges_0based": [
+        [
+          8,
+          14
+        ],
+        [
+          12,
+          3
+        ]
+      ]
+    },
+    "conformance_note": "scored oracle frame f90+15 is inside the Paper-1 60-frame screen conformance window (jutari↔xitari bit-exact).",
+    "granger_estimator": {
+      "alpha": 0.05,
+      "edge_rule": "canonical Granger: edge x→y iff the F-test p-value ≤ alpha (significance), optionally AND-gated by a magnitude floor G(x→y) ≥ granger_tau (default granger_tau=0.0 = significance alone, the textbook procedure)",
+      "form": "bivariate lag-p log-likelihood-ratio G(x→y)=ln(RSS_restricted/RSS_unrestricted) (Geweke 1982)",
+      "granger_tau": 0.0,
+      "lag": 2,
+      "pvalue": "F-test on the RSS drop; survival function via the regularized incomplete beta (dependency-free)"
+    },
+    "positive_control": {
+      "f1": 1.0,
+      "false_edge_rate": 0.0,
+      "method": "true-data-flow-graph-as-method",
+      "missed_edge_rate": 0.0,
+      "note": "scoring the exact true graph as the candidate method yields false-edge=missed-edge=0, F1=1 — the harness rewards a perfectly-faithful directed map, so a sub-1 Granger F is a real measurement."
+    },
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
+    "scored_in_conformance_window": true,
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the true data-flow graph uses EXACT interventions re-run on the true ROM.",
+    "subsystem_scope": {
+      "activity_metric": "per-frame #bytes changed vs previous frame (CPU=RAM working set lower 3/4; TIA=64-byte register file; RIOT=upper-RAM timer/SWCHx I/O block)",
+      "direction_disagreement": 0.0,
+      "false_edge_rate": 0.0,
+      "inferred_edges_0based": [],
+      "missed_edge_rate": 1.0,
+      "note": "on a tightly clock-locked frame loop Granger generically infers DENSE bidirectional edges among all co-active subsystems (every subsystem's past predicts every other's) — false-edge rate > 0 despite the true data-flow being sparse and directional.",
+      "subsystems": [
+        "CPU",
+        "TIA",
+        "RIOT"
+      ],
+      "true_dataflow_edges_0based": [
+        [
+          0,
+          1
+        ],
+        [
+          2,
+          0
+        ]
+      ],
+      "true_dataflow_note": "T2 known data-flow: the 6507 CPU is the only bus master — CPU→TIA (writes graphics), RIOT→CPU (reads timer/inputs); TIA and RIOT never drive each other or the CPU. Index order [CPU,TIA,RIOT]."
+    },
+    "testbed": {
+      "cause_density_above_floor": 16,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 32,
+      "note": "P2 redesign: BOTH the scored oracle prefix (true data-flow graph) AND the descriptive Granger trajectory run on a seeded random-action GAMEPLAY state (not the FIRE-then-NOOP oracle tape / synthetic active tape), gated by the §1 oracle cause-density gate. The Granger tape is the gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A6's Granger + true-data-flow algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r105c80",
+      "state_kind": "seeded_random_action_gameplay"
+    },
+    "trajectory_frames": 150,
+    "trajectory_trace": "active trace (4×FIRE + periodic RIGHTFIRE/LEFTFIRE)",
+    "triad": {
+      "F": 0.0,
+      "F_note": "F1 of the Granger-inferred directed edges vs the exact-oracle true data-flow edges (15 candidate cells)",
+      "M": 1.0,
+      "M_note": "1 − false-edge rate: fraction of Granger-inferred edges the oracle says are spurious (temporal precedence ≠ causation)",
+      "S": 0.9952380952380953,
+      "S_note": "off-diagonal directed-edge agreement between the Granger graph and the HELD-OUT base+37 true data-flow (generalisation to an unseen intervention, bit-exact re-run)",
+      "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): Granger causality infers TEMPORAL PRECEDENCE, which is NOT the true causal data-flow direction. On a deterministic register-transfer machine the two demonstrably disagree — false_edge_rate>0, missed_edge_rate>0, and direction_disagreement>0 quantify the departure from the known data-flow.",
+      "n_inferred_edges": 0,
+      "n_nodes": 15,
+      "n_true_edges": 2
+    }
+  },
+  "game": "kangaroo",
+  "method": "A6_granger_causality(CPU/TIA/RIOT + cell-cell directed edges)",
+  "metric_name": "A6_cell_false_edge_rate_vs_true_dataflow",
+  "n": 15,
+  "oracle_ref": "oracle_intervene@kangaroo#directed-data-flow(candidate cells)",
+  "paper": "P2",
+  "phase": "phaseA_kording",
+  "seed": 0,
+  "state": "gameplay(seed=0,prefix=90)+15",
+  "stderr": null,
+  "target_output": "directed data-flow edges (CPU/TIA/RIOT subsystems + candidate RAM cells)",
+  "timestamp": "1783072060",
+  "value": 0.0,
+  "where": "local"
+}

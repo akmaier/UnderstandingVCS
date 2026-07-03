@@ -1,0 +1,167 @@
+{
+  "arrays": "A1_double_dunk.npz",
+  "ci": null,
+  "commit": "2a9ade4c",
+  "extra": {
+    "bit_exact_rerun": true,
+    "candidate_cells": [
+      "RAM[33]:xy",
+      "RAM[34]:xy",
+      "RAM[35]:xy",
+      "RAM[36]:xy",
+      "RAM[37]:xy",
+      "RAM[38]:xy",
+      "RAM[39]:xy",
+      "RAM[40]:xy",
+      "RAM[46]:xy",
+      "RAM[47]:xy",
+      "RAM[118]:value",
+      "RAM[119]:value"
+    ],
+    "candidate_ram_indices": [
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      46,
+      47,
+      118,
+      119
+    ],
+    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_double_dunk.json",
+    "graph": {
+      "f1": 0.125,
+      "fn": 14,
+      "fp": 0,
+      "graph_edit_distance": 14,
+      "graph_edit_distance_normalised": 0.10606060606060606,
+      "n_nodes": 12,
+      "n_recovered_edges": 1,
+      "n_true_edges": 15,
+      "note": "edges are 0-based candidate ordinals [i,j] meaning cell i -> cell j. TRUE = exhaustive oracle (do 0/base+17/base+37, full horizon, any value changes j); RECOVERED = classical single do(base+17), 1-step latency. GED = symmetric edge difference (fp+fn) over off-diagonal edges.",
+      "precision": 1.0,
+      "recall": 0.06666666666666667,
+      "recovered_edges": [
+        [
+          9,
+          8
+        ]
+      ],
+      "tp": 1,
+      "true_edges": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          4
+        ],
+        [
+          0,
+          8
+        ],
+        [
+          0,
+          9
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          1,
+          8
+        ],
+        [
+          8,
+          0
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          8,
+          4
+        ],
+        [
+          9,
+          0
+        ],
+        [
+          9,
+          1
+        ],
+        [
+          9,
+          4
+        ],
+        [
+          9,
+          5
+        ],
+        [
+          9,
+          8
+        ]
+      ]
+    },
+    "positive_control": {
+      "f1": 1.0,
+      "graph_edit_distance": 0,
+      "name": "oracle-as-method (full do-set + full horizon)",
+      "note": "the oracle's OWN recovery must score F1=1, GED=0 — the harness rewards a perfectly-faithful graph, so the classical F1<1 is a real measurement.",
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "rom_basename": "double_dunk.bin",
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
+    "settings": "GenericRomSettings",
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
+    "testbed": {
+      "cause_density_above_floor": 22,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 26,
+      "note": "P2 redesign: the connectomics recovery runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. A1's graph algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r105c80",
+      "state_kind": "seeded_random_action_gameplay"
+    },
+    "triad": {
+      "F": 0.125,
+      "F_note": "F1 of recovered data-flow edges vs the exact-oracle true edges (12 candidate cells)",
+      "M": 1.0,
+      "M_note": "1 − over-claim rate: fraction of recovered edges the oracle says are spurious (false wiring)",
+      "S": 0.9015151515151515,
+      "S_note": "off-diagonal edge-agreement between the base+17 recovered graph and the HELD-OUT base+37 true edge set (generalisation to an unseen intervention value, bit-exact re-run)",
+      "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): classical connectomics scores LOW-to-PARTIAL faithfulness despite fully-known data-flow — the quantified-Kording lesson. A thin single-shot/short-latency perturbation misses long-latency / sign-dependent edges (recall deficit) and can over-claim transient ones (precision deficit)."
+    }
+  },
+  "game": "double_dunk",
+  "method": "A1_connectomics(single-shot perturbation graph recovery)",
+  "metric_name": "dataflow_graph_F1_vs_oracle",
+  "n": 12,
+  "oracle_ref": "oracle_intervene@double_dunk#cell-to-cell data-flow (exhaustive do-set, full horizon)",
+  "paper": "P2",
+  "phase": "phaseA_kording",
+  "seed": 0,
+  "state": "gameplay(seed=0,prefix=90)+15",
+  "stderr": null,
+  "target_output": "inter-cell data-flow graph (candidate RAM cells)",
+  "timestamp": "1783063013",
+  "value": 0.125,
+  "where": "local"
+}

@@ -1,7 +1,7 @@
 {
   "arrays": "ig_baseline_sweep_seaquest_ball_pixel.npz",
   "ci": null,
-  "commit": "9bc37f8b",
+  "commit": "1adff48",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-IG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline_sweep": {
@@ -59,7 +59,7 @@
           },
           "baseline": "zeros",
           "completeness_err": 0.1875,
-          "deletion_auc": 0.96757797550708,
+          "deletion_auc": 0.9675779755070799,
           "ig_max_abs": 1.1875,
           "insertion_auc": 0.06666188289322618,
           "pearson_corr": 0.7097972052076025,
@@ -121,7 +121,7 @@
           },
           "baseline": "mean_ram",
           "completeness_err": 0.0015869140625,
-          "deletion_auc": 0.96757797550708,
+          "deletion_auc": 0.9675779755070799,
           "ig_max_abs": 1.0015869140625,
           "insertion_auc": 0.06666188289322618,
           "pearson_corr": 0.7097972052076024,
@@ -183,10 +183,10 @@
           },
           "baseline": "random",
           "completeness_err": 0.453125,
-          "deletion_auc": 0.96757797550708,
+          "deletion_auc": 0.9675779755070799,
           "ig_max_abs": 1.453125,
           "insertion_auc": 0.06666188289322618,
-          "pearson_corr": 0.7097972052076027,
+          "pearson_corr": 0.7097972052076025,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.3410477771148741,
           "topk": 3,
@@ -245,9 +245,9 @@
           },
           "baseline": "real_alt",
           "completeness_err": 0.0,
-          "deletion_auc": 0.8146885763490243,
+          "deletion_auc": 0.814688576349024,
           "ig_max_abs": 0.0,
-          "insertion_auc": 0.212949674703406,
+          "insertion_auc": 0.2129496747034061,
           "pearson_corr": 0.0,
           "precision_at_k": 0.0,
           "spearman_corr": 0.0,
@@ -256,9 +256,9 @@
         }
       ],
       "completeness_err_max": 0.453125,
-      "corr_max": 0.7097972052076027,
+      "corr_max": 0.7097972052076025,
       "corr_min": 0.0,
-      "corr_sensitivity": 0.7097972052076027,
+      "corr_sensitivity": 0.7097972052076025,
       "definitions": {
         "mean_ram": "constant baseline = mean(x) per byte (the 'average input')",
         "random": "one uniform-random RAM draw ∈ 0..255 (seed=0+9973)",
@@ -328,7 +328,7 @@
     "content_ram_index": -1,
     "harness_positive_control": {
       "deletion_auc": 0.9863841848450057,
-      "insertion_auc": 0.15428865288939914,
+      "insertion_auc": 0.15428865288939916,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the IG numbers above are then a true measurement, not an artefact of the metric.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "oracle_column_degenerate": false,
@@ -338,7 +338,7 @@
     "headline_baseline": "zeros",
     "headline_metrics": {
       "completeness_err": 0.1875,
-      "deletion_auc": 0.96757797550708,
+      "deletion_auc": 0.9675779755070799,
       "insertion_auc": 0.06666188289322618,
       "pearson_corr": 0.7097972052076025,
       "precision_at_k": 0.3333333333333333,
@@ -431,7 +431,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r52c77",
-  "timestamp": "1782924317",
+  "timestamp": "1783064127",
   "value": 0.7097972052076025,
   "where": "local"
 }

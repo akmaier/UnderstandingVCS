@@ -1,0 +1,610 @@
+{
+  "arrays": "A6_berzerk.npz",
+  "ci": null,
+  "commit": "2a9ade4c",
+  "extra": {
+    "bit_exact_rerun": true,
+    "candidate_cells": [
+      "RAM[11]:player_y",
+      "RAM[14]:player_direction",
+      "RAM[19]:player_x",
+      "RAM[21]:player_missile_direction",
+      "RAM[22]:player_missile_x",
+      "RAM[23]:player_missile_y",
+      "RAM[26]:robot_missile_direction",
+      "RAM[29]:robot_missile_x",
+      "RAM[30]:robot_missile_y",
+      "RAM[46]:enemy_evilOtto_x",
+      "RAM[65]:enemy_robots_x[0]",
+      "RAM[66]:enemy_robots_x[1]",
+      "RAM[67]:enemy_robots_x[2]",
+      "RAM[68]:enemy_robots_x[3]",
+      "RAM[69]:enemy_robots_x[4]",
+      "RAM[70]:enemy_robots_x[5]",
+      "RAM[71]:enemy_robots_x[6]",
+      "RAM[72]:enemy_robots_x[7]",
+      "RAM[89]:enemy_evilOtto_y",
+      "RAM[90]:num_lives",
+      "RAM[91]:robots_killed_count",
+      "RAM[92]:game_level",
+      "RAM[93]:player_score[0]",
+      "RAM[94]:player_score[1]",
+      "RAM[95]:player_score[2]",
+      "RAM[56]:robot"
+    ],
+    "candidate_ram_indices": [
+      11,
+      14,
+      19,
+      21,
+      22,
+      23,
+      26,
+      29,
+      30,
+      46,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71,
+      72,
+      89,
+      90,
+      91,
+      92,
+      93,
+      94,
+      95,
+      56
+    ],
+    "cell_scope": {
+      "direction_disagreement": 0.14285714285714285,
+      "false_edge_rate": 0.78125,
+      "inferred_edges_0based": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          13
+        ],
+        [
+          2,
+          14
+        ],
+        [
+          2,
+          16
+        ],
+        [
+          2,
+          18
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          5,
+          4
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          10,
+          13
+        ],
+        [
+          10,
+          14
+        ],
+        [
+          10,
+          16
+        ],
+        [
+          10,
+          18
+        ],
+        [
+          11,
+          1
+        ],
+        [
+          11,
+          13
+        ],
+        [
+          11,
+          14
+        ],
+        [
+          11,
+          16
+        ],
+        [
+          11,
+          18
+        ],
+        [
+          12,
+          1
+        ],
+        [
+          12,
+          13
+        ],
+        [
+          12,
+          14
+        ],
+        [
+          12,
+          16
+        ],
+        [
+          12,
+          18
+        ],
+        [
+          13,
+          14
+        ],
+        [
+          13,
+          15
+        ],
+        [
+          13,
+          16
+        ],
+        [
+          13,
+          18
+        ],
+        [
+          14,
+          1
+        ],
+        [
+          14,
+          4
+        ],
+        [
+          14,
+          5
+        ],
+        [
+          14,
+          18
+        ],
+        [
+          15,
+          13
+        ],
+        [
+          15,
+          14
+        ],
+        [
+          15,
+          16
+        ],
+        [
+          16,
+          13
+        ],
+        [
+          16,
+          14
+        ],
+        [
+          16,
+          15
+        ],
+        [
+          16,
+          18
+        ],
+        [
+          17,
+          13
+        ],
+        [
+          17,
+          14
+        ],
+        [
+          17,
+          15
+        ],
+        [
+          17,
+          16
+        ],
+        [
+          17,
+          18
+        ],
+        [
+          18,
+          1
+        ],
+        [
+          18,
+          5
+        ],
+        [
+          18,
+          13
+        ],
+        [
+          18,
+          14
+        ],
+        [
+          18,
+          15
+        ],
+        [
+          18,
+          16
+        ],
+        [
+          25,
+          1
+        ],
+        [
+          25,
+          13
+        ],
+        [
+          25,
+          14
+        ],
+        [
+          25,
+          16
+        ],
+        [
+          25,
+          18
+        ]
+      ],
+      "missed_edge_rate": 0.6956521739130435,
+      "n_inferred_edges": 64,
+      "n_nodes": 26,
+      "n_true_edges": 46,
+      "note": "false_edge_rate=#(Granger edge, true absent)/#Granger edges (=1−precision); missed_edge_rate=#(true edge, Granger absent)/#true edges (=1−recall); direction_disagreement = of unordered pairs with a single true AND single Granger arrow, the fraction whose directions OPPOSE — the headline temporal-precedence≠causation Granger failure.",
+      "true_edges_0based": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          3
+        ],
+        [
+          0,
+          4
+        ],
+        [
+          0,
+          5
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ],
+        [
+          0,
+          21
+        ],
+        [
+          0,
+          24
+        ],
+        [
+          0,
+          25
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          2,
+          5
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          3,
+          5
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          10,
+          11
+        ],
+        [
+          10,
+          12
+        ],
+        [
+          10,
+          13
+        ],
+        [
+          10,
+          14
+        ],
+        [
+          10,
+          20
+        ],
+        [
+          10,
+          24
+        ],
+        [
+          10,
+          25
+        ],
+        [
+          11,
+          12
+        ],
+        [
+          11,
+          13
+        ],
+        [
+          11,
+          14
+        ],
+        [
+          11,
+          20
+        ],
+        [
+          11,
+          24
+        ],
+        [
+          12,
+          13
+        ],
+        [
+          12,
+          14
+        ],
+        [
+          12,
+          20
+        ],
+        [
+          12,
+          24
+        ],
+        [
+          13,
+          14
+        ],
+        [
+          13,
+          20
+        ],
+        [
+          13,
+          24
+        ],
+        [
+          14,
+          20
+        ],
+        [
+          14,
+          24
+        ],
+        [
+          25,
+          11
+        ],
+        [
+          25,
+          12
+        ],
+        [
+          25,
+          13
+        ],
+        [
+          25,
+          14
+        ],
+        [
+          25,
+          20
+        ],
+        [
+          25,
+          23
+        ]
+      ]
+    },
+    "conformance_note": "scored oracle frame f90+15 is inside the Paper-1 60-frame screen conformance window (jutari↔xitari bit-exact).",
+    "granger_estimator": {
+      "alpha": 0.05,
+      "edge_rule": "canonical Granger: edge x→y iff the F-test p-value ≤ alpha (significance), optionally AND-gated by a magnitude floor G(x→y) ≥ granger_tau (default granger_tau=0.0 = significance alone, the textbook procedure)",
+      "form": "bivariate lag-p log-likelihood-ratio G(x→y)=ln(RSS_restricted/RSS_unrestricted) (Geweke 1982)",
+      "granger_tau": 0.0,
+      "lag": 2,
+      "pvalue": "F-test on the RSS drop; survival function via the regularized incomplete beta (dependency-free)"
+    },
+    "positive_control": {
+      "f1": 1.0,
+      "false_edge_rate": 0.0,
+      "method": "true-data-flow-graph-as-method",
+      "missed_edge_rate": 0.0,
+      "note": "scoring the exact true graph as the candidate method yields false-edge=missed-edge=0, F1=1 — the harness rewards a perfectly-faithful directed map, so a sub-1 Granger F is a real measurement."
+    },
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
+    "scored_in_conformance_window": true,
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the true data-flow graph uses EXACT interventions re-run on the true ROM.",
+    "subsystem_scope": {
+      "activity_metric": "per-frame #bytes changed vs previous frame (CPU=RAM working set lower 3/4; TIA=64-byte register file; RIOT=upper-RAM timer/SWCHx I/O block)",
+      "direction_disagreement": 0.0,
+      "false_edge_rate": 0.5,
+      "inferred_edges_0based": [
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          1
+        ]
+      ],
+      "missed_edge_rate": 0.5,
+      "note": "on a tightly clock-locked frame loop Granger generically infers DENSE bidirectional edges among all co-active subsystems (every subsystem's past predicts every other's) — false-edge rate > 0 despite the true data-flow being sparse and directional.",
+      "subsystems": [
+        "CPU",
+        "TIA",
+        "RIOT"
+      ],
+      "true_dataflow_edges_0based": [
+        [
+          0,
+          1
+        ],
+        [
+          2,
+          0
+        ]
+      ],
+      "true_dataflow_note": "T2 known data-flow: the 6507 CPU is the only bus master — CPU→TIA (writes graphics), RIOT→CPU (reads timer/inputs); TIA and RIOT never drive each other or the CPU. Index order [CPU,TIA,RIOT]."
+    },
+    "testbed": {
+      "cause_density_above_floor": 23,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 54,
+      "note": "P2 redesign: BOTH the scored oracle prefix (true data-flow graph) AND the descriptive Granger trajectory run on a seeded random-action GAMEPLAY state (not the FIRE-then-NOOP oracle tape / synthetic active tape), gated by the §1 oracle cause-density gate. The Granger tape is the gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A6's Granger + true-data-flow algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r114c5",
+      "state_kind": "seeded_random_action_gameplay"
+    },
+    "trajectory_frames": 150,
+    "trajectory_trace": "active trace (4×FIRE + periodic RIGHTFIRE/LEFTFIRE)",
+    "triad": {
+      "F": 0.2545454545454546,
+      "F_note": "F1 of the Granger-inferred directed edges vs the exact-oracle true data-flow edges (26 candidate cells)",
+      "M": 0.21875,
+      "M_note": "1 − false-edge rate: fraction of Granger-inferred edges the oracle says are spurious (temporal precedence ≠ causation)",
+      "S": 0.8815384615384615,
+      "S_note": "off-diagonal directed-edge agreement between the Granger graph and the HELD-OUT base+37 true data-flow (generalisation to an unseen intervention, bit-exact re-run)",
+      "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): Granger causality infers TEMPORAL PRECEDENCE, which is NOT the true causal data-flow direction. On a deterministic register-transfer machine the two demonstrably disagree — false_edge_rate>0, missed_edge_rate>0, and direction_disagreement>0 quantify the departure from the known data-flow.",
+      "n_inferred_edges": 64,
+      "n_nodes": 26,
+      "n_true_edges": 46
+    }
+  },
+  "game": "berzerk",
+  "method": "A6_granger_causality(CPU/TIA/RIOT + cell-cell directed edges)",
+  "metric_name": "A6_cell_false_edge_rate_vs_true_dataflow",
+  "n": 26,
+  "oracle_ref": "oracle_intervene@berzerk#directed-data-flow(candidate cells)",
+  "paper": "P2",
+  "phase": "phaseA_kording",
+  "seed": 0,
+  "state": "gameplay(seed=0,prefix=90)+15",
+  "stderr": null,
+  "target_output": "directed data-flow edges (CPU/TIA/RIOT subsystems + candidate RAM cells)",
+  "timestamp": "1783071308",
+  "value": 0.78125,
+  "where": "local"
+}

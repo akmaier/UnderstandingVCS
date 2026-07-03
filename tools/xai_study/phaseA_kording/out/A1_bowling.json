@@ -1,0 +1,143 @@
+{
+  "arrays": "A1_bowling.npz",
+  "ci": null,
+  "commit": "2a9ade4c",
+  "extra": {
+    "bit_exact_rerun": true,
+    "candidate_cells": [
+      "RAM[29]:player_x",
+      "RAM[30]:ball_x",
+      "RAM[33]:score",
+      "RAM[36]:frame_number_display",
+      "RAM[40]:player_y",
+      "RAM[41]:ball_y",
+      "RAM[57]:pin_existence[0]",
+      "RAM[58]:pin_existence[1]",
+      "RAM[59]:pin_existence[2]",
+      "RAM[60]:pin_existence[3]",
+      "RAM[61]:pin_existence[4]",
+      "RAM[62]:pin_existence[5]",
+      "RAM[63]:pin_existence[6]",
+      "RAM[64]:pin_existence[7]",
+      "RAM[65]:pin_existence[8]",
+      "RAM[66]:pin_existence[9]",
+      "RAM[13]:states_of_throw",
+      "RAM[18]:throw_of_that_round",
+      "RAM[38]:score",
+      "RAM[47]:pins"
+    ],
+    "candidate_ram_indices": [
+      29,
+      30,
+      33,
+      36,
+      40,
+      41,
+      57,
+      58,
+      59,
+      60,
+      61,
+      62,
+      63,
+      64,
+      65,
+      66,
+      13,
+      18,
+      38,
+      47
+    ],
+    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_bowling.json",
+    "graph": {
+      "f1": 0.6666666666666666,
+      "fn": 2,
+      "fp": 0,
+      "graph_edit_distance": 2,
+      "graph_edit_distance_normalised": 0.005263157894736842,
+      "n_nodes": 20,
+      "n_recovered_edges": 2,
+      "n_true_edges": 4,
+      "note": "edges are 0-based candidate ordinals [i,j] meaning cell i -> cell j. TRUE = exhaustive oracle (do 0/base+17/base+37, full horizon, any value changes j); RECOVERED = classical single do(base+17), 1-step latency. GED = symmetric edge difference (fp+fn) over off-diagonal edges.",
+      "precision": 1.0,
+      "recall": 0.5,
+      "recovered_edges": [
+        [
+          16,
+          1
+        ],
+        [
+          16,
+          5
+        ]
+      ],
+      "tp": 2,
+      "true_edges": [
+        [
+          16,
+          0
+        ],
+        [
+          16,
+          1
+        ],
+        [
+          16,
+          4
+        ],
+        [
+          16,
+          5
+        ]
+      ]
+    },
+    "positive_control": {
+      "f1": 1.0,
+      "graph_edit_distance": 0,
+      "name": "oracle-as-method (full do-set + full horizon)",
+      "note": "the oracle's OWN recovery must score F1=1, GED=0 — the harness rewards a perfectly-faithful graph, so the classical F1<1 is a real measurement.",
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "rom_basename": "bowling.bin",
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
+    "settings": "GenericRomSettings",
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
+    "testbed": {
+      "cause_density_above_floor": 14,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 42,
+      "note": "P2 redesign: the connectomics recovery runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. A1's graph algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r164c33",
+      "state_kind": "seeded_random_action_gameplay"
+    },
+    "triad": {
+      "F": 0.6666666666666666,
+      "F_note": "F1 of recovered data-flow edges vs the exact-oracle true edges (20 candidate cells)",
+      "M": 1.0,
+      "M_note": "1 − over-claim rate: fraction of recovered edges the oracle says are spurious (false wiring)",
+      "S": 1.0,
+      "S_note": "off-diagonal edge-agreement between the base+17 recovered graph and the HELD-OUT base+37 true edge set (generalisation to an unseen intervention value, bit-exact re-run)",
+      "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): classical connectomics scores LOW-to-PARTIAL faithfulness despite fully-known data-flow — the quantified-Kording lesson. A thin single-shot/short-latency perturbation misses long-latency / sign-dependent edges (recall deficit) and can over-claim transient ones (precision deficit)."
+    }
+  },
+  "game": "bowling",
+  "method": "A1_connectomics(single-shot perturbation graph recovery)",
+  "metric_name": "dataflow_graph_F1_vs_oracle",
+  "n": 20,
+  "oracle_ref": "oracle_intervene@bowling#cell-to-cell data-flow (exhaustive do-set, full horizon)",
+  "paper": "P2",
+  "phase": "phaseA_kording",
+  "seed": 0,
+  "state": "gameplay(seed=0,prefix=90)+15",
+  "stderr": null,
+  "target_output": "inter-cell data-flow graph (candidate RAM cells)",
+  "timestamp": "1783063013",
+  "value": 0.6666666666666666,
+  "where": "local"
+}

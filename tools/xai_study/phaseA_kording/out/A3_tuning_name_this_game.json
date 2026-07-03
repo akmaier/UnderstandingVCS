@@ -1,0 +1,117 @@
+{
+  "arrays": "A3_tuning_name_this_game.npz",
+  "ci": null,
+  "commit": "2a9ade4c",
+  "extra": {
+    "A3_tuning": {
+      "clock_corr_per_cell": {
+        "RAM[100]:xy": 0.9996704645331169,
+        "RAM[50]:xy": 0.0,
+        "RAM[51]:xy": 0.0,
+        "RAM[60]:xy": 0.9976760690034779,
+        "RAM[99]:xy": 0.0
+      },
+      "epiphenomenal_control": "frame_clock",
+      "game_variable_signals": [
+        "xy@50",
+        "xy@51",
+        "xy@60",
+        "xy@99",
+        "xy@100"
+      ],
+      "game_variable_spurious_tuning_rate": 0.0,
+      "gvar_selectivity_per_cell": {
+        "RAM[100]:xy": 0.9973400793673132,
+        "RAM[50]:xy": 0.0,
+        "RAM[51]:xy": 0.0,
+        "RAM[60]:xy": 0.9973400793673132,
+        "RAM[99]:xy": 0.0
+      },
+      "luminance_corr_per_cell": {
+        "RAM[100]:xy": 0.02904673890548501,
+        "RAM[50]:xy": 0.0,
+        "RAM[51]:xy": 0.0,
+        "RAM[60]:xy": 0.021170463091502816,
+        "RAM[99]:xy": 0.0
+      },
+      "luminance_spurious_tuning_rate": 0.0,
+      "n_spurious_gvar": 0,
+      "n_spurious_luminance": 0,
+      "n_strongly_tuned_gvar": 2,
+      "n_strongly_tuned_luminance": 0,
+      "note": "selectivity = max |corr| to a GAME variable (the cell's own self-column excluded; frame clock excluded — it is the epiphenomenal control). spurious = strongly-tuned (selectivity≥τ) but NOT causal by the oracle — the present≠used tuning-curve trap (experiment_design.md §4 A3, Phase-A's headline failure). The luminance family is the HARDWARE (no-T3) version of the same trap.",
+      "spurious_gvar_cells": [],
+      "strongly_tuned_gvar_cells": [
+        "RAM[60]:xy",
+        "RAM[100]:xy"
+      ],
+      "tau": 0.7,
+      "trajectory_frames": 150,
+      "trajectory_trace": "seeded random-action GAMEPLAY (seed=0, prefix=90+15, NOOP-continued past the window)"
+    },
+    "bit_exact_rerun": true,
+    "candidate_cells": [
+      "RAM[50]:xy",
+      "RAM[51]:xy",
+      "RAM[60]:xy",
+      "RAM[99]:xy",
+      "RAM[100]:xy"
+    ],
+    "candidate_ram_indices": [
+      50,
+      51,
+      60,
+      99,
+      100
+    ],
+    "candidates_file": "candidates_name_this_game.json",
+    "n_oracle_causal": 4,
+    "oracle_importance_per_cell": {
+      "RAM[100]:xy": 210.0,
+      "RAM[50]:xy": 1.0,
+      "RAM[51]:xy": 0.0,
+      "RAM[60]:xy": 168.0,
+      "RAM[99]:xy": 156.0
+    },
+    "positive_control_oracle_as_method_F": 1.0,
+    "rom_settings": "JuTari.RomSettingsModule.GenericRomSettings",
+    "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
+    "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the oracle causal map is EXACT interventions re-run on the true ROM; the tuning curves are a DESCRIPTIVE active-trace recording (the recorder's documented purpose), not a bit-exact-vs-xitari claim.",
+    "testbed": {
+      "cause_density_above_floor": 7,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 12,
+      "note": "P2 redesign: the tuning study runs on a seeded random-action GAMEPLAY state (not the FIRE×4/attract tape), gated by the §1 oracle cause-density gate. Both the oracle causal map AND the descriptive tuning trajectory are stepped along the SAME gameplay stream so the game variable VARIES on genuine input-driven play. A3's tuning algorithm is unchanged; only the analysis state moves.",
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r106c109",
+      "state_kind": "seeded_random_action_gameplay"
+    },
+    "triad": {
+      "F": 0.8660254037844387,
+      "F_note": "Spearman(A3 game-variable selectivity, oracle causal importance) over 5 candidate cells",
+      "M": 1.0,
+      "M_note": "1 − over-claim rate: fraction of strongly-tuned cells the oracle says are generic (non-causal)",
+      "S": 0.7540791804075119,
+      "S_note": "Pearson(A3 selectivity, held-out do(base+37) screen break) — sufficiency on a bit-exact re-run",
+      "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): a tuning-curve importance map scores LOW faithfulness despite fully-known structure. F<1 / spurious-tuning>0 quantify where the classical analysis departs from the ground truth. The oracle-as-method positive control (F=1.0) confirms the harness rewards a perfectly-faithful map."
+    }
+  },
+  "game": "name_this_game",
+  "method": "A3_tuning_curves(luminance+game_variable)+spurious_tuning_rate",
+  "metric_name": "A3_game_variable_spurious_tuning_rate",
+  "n": 5,
+  "oracle_ref": "oracle_intervene@name_this_game#screen-break",
+  "paper": "P2",
+  "phase": "phaseA_kording",
+  "seed": 0,
+  "state": "gameplay(seed=0,prefix=90)+15",
+  "stderr": null,
+  "target_output": "screen-break (oracle causal importance) vs tuning selectivity",
+  "timestamp": "1783066328",
+  "value": 0.0,
+  "where": "local"
+}

@@ -1,7 +1,7 @@
 {
   "arrays": "ig_baseline_sweep_space_invaders_content.npz",
   "ci": null,
-  "commit": "9bc37f8b",
+  "commit": "1adff48",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-IG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline_sweep": {
@@ -50,7 +50,7 @@
           "deletion_auc": 0.023373983739837415,
           "ig_max_abs": 246.0,
           "insertion_auc": 0.9583333333333334,
-          "pearson_corr": 0.9998830846093597,
+          "pearson_corr": 0.9998830846093599,
           "precision_at_k": 1.0,
           "spearman_corr": 0.9995917534020515,
           "topk": 3,
@@ -100,7 +100,7 @@
           "deletion_auc": 0.023373983739837415,
           "ig_max_abs": 150.9140625,
           "insertion_auc": 0.9583333333333334,
-          "pearson_corr": 0.9998830846093595,
+          "pearson_corr": 0.9998830846093597,
           "precision_at_k": 1.0,
           "spearman_corr": 0.9995917534020515,
           "topk": 3,
@@ -199,7 +199,7 @@
           "completeness_err": 0.0,
           "deletion_auc": 0.625,
           "ig_max_abs": 0.0,
-          "insertion_auc": 0.3567073170731707,
+          "insertion_auc": 0.35670731707317077,
           "pearson_corr": 0.0,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.0,
@@ -208,9 +208,9 @@
         }
       ],
       "completeness_err_max": 0.0,
-      "corr_max": 0.9998830846093597,
+      "corr_max": 0.9998830846093599,
       "corr_min": 0.0,
-      "corr_sensitivity": 0.9998830846093597,
+      "corr_sensitivity": 0.9998830846093599,
       "definitions": {
         "mean_ram": "constant baseline = mean(x) per byte (the 'average input')",
         "random": "one uniform-random RAM draw ∈ 0..255 (seed=0+9973)",
@@ -280,7 +280,7 @@
       "completeness_err": 0.0,
       "deletion_auc": 0.023373983739837415,
       "insertion_auc": 0.9583333333333334,
-      "pearson_corr": 0.9998830846093597,
+      "pearson_corr": 0.9998830846093599,
       "precision_at_k": 1.0,
       "spearman_corr": 0.9995917534020515,
       "topk": 3
@@ -341,7 +341,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@81)",
-  "timestamp": "1782924224",
-  "value": 0.9998830846093597,
+  "timestamp": "1783064029",
+  "value": 0.9998830846093599,
   "where": "local"
 }
