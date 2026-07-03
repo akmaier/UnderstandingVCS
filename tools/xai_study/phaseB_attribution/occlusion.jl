@@ -104,7 +104,8 @@ using .SaliencyAttr: intervene_ram!, env_step!, soft_ram_peek
 # the IG pilot's faithfulness SCORER + §R writer helpers (the validated Phase-B
 # contract) — reached through the single saliency include chain.
 using .SaliencyAttr.PilotIGvsOracle: pearson, spearman, precision_at_k,
-                                     _git_commit, _json_num, _trapz_unit
+                                     _git_commit, _json_num, _trapz_unit,
+                                     triad_extra_dict
 
 # the oracle's cause set + intervention machinery (game-agnostic: RAM/TIA/joystick)
 # — same single include chain, so these types match what saliency.jl produces.
@@ -444,6 +445,10 @@ function write_faithfulness(f::Faithfulness; out_dir, st_extra = nothing)
                 "precision_at_k" => f.precision_at_k, "topk" => f.topk,
                 "deletion_auc" => _json_num(f.deletion_auc),
                 "insertion_auc" => _json_num(f.insertion_auc)),
+            # F∧S∧M triad — F is the runner-computed faithfulness (unchanged);
+            # S and M are derived from the occlusion map + the oracle |Δy| (no new re-runs).
+            "triad" => triad_extra_dict(f.pearson, f.occ_attr, f.oracle_abs_delta;
+                                        topk = f.topk, seed = f.seed),
             "harness_positive_control" => Dict{String,Any}(
                 "method" => "oracle_abs_delta (the perfectly-faithful attribution)",
                 "pearson_corr" => f.oracle_self_pearson,

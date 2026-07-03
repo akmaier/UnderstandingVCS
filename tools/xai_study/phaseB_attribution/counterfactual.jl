@@ -78,7 +78,7 @@ using .IGBaselineSweep: CORE_GAMES, xai_resolve_games, load_env, boot_replay, co
                         oracle_abs_delta, deletion_insertion_auc, position_pixel_cell,
                         pick_content_idx, candidates_path_for, rom_path_for, settings_for
 using .IGBaselineSweep.PilotIGvsOracle: pearson, spearman, precision_at_k,
-                                        _git_commit, _json_num, _trapz_unit
+                                        _git_commit, _json_num, _trapz_unit, triad_extra_dict
 using .IGBaselineSweep.PilotIGvsOracle.OracleIntervene: build_pong_causes, Cause,
                                                         candidate_ram_indices
 using .IGBaselineSweep.PilotIGvsOracle.OracleIntervene.JutariOracle: Snapshot, snapshot,
@@ -708,6 +708,10 @@ function write_result(f::CFResult; out_dir = OUT_DIR, st_extra = nothing)
                     "(0,1]; LOWER = SPARSER (the desirable minimal-counterfactual: a few cells suffice to " *
                     "flip y, e.g. 1/2 = a single cell out of two causal ones). set-state-and-re-render keeps " *
                     "every edit ON-DISTRIBUTION (Atrey 2020 off-manifold objection removed; §7 Partial→Succeed)."),
+            # F∧S∧M triad — F is the runner-computed faithfulness (unchanged);
+            # S and M are derived from the method map + the oracle |Δy| (no new re-runs).
+            "triad" => triad_extra_dict(f.pearson, f.cf_attr_per_cause, f.oracle_abs_delta;
+                                        topk = f.topk, seed = f.seed),
             "harness_positive_control" => Dict{String,Any}(
                 "method" => "oracle_abs_delta (the perfectly-faithful attribution)",
                 "pearson_corr" => f.oracle_self_pearson,

@@ -101,6 +101,11 @@ include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
 # the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
 include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
+# shared triad helpers (jnum_or_null for JSON-null on undefined S/M); guarded.
+isdefined(@__MODULE__, :TriadSM) ||
+    include(joinpath(@__DIR__, "..", "common", "triad_sm.jl"))
+using .TriadSM: jnum_or_null
+
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders", "seaquest", "ms_pacman", "qbert"]
 const _PRIMARY_REPO = get(ENV, "XAI_PRIMARY_REPO", "/Users/maier/Documents/code/UnderstandingVCS")
@@ -576,6 +581,28 @@ function write_game_result(r::GameProbeResult; out_dir = OUT_DIR)
         "timestamp" => string(round(Int, time())),
         "arrays" => basename(npz_path),
         "extra" => Dict{String,Any}(
+            # F∧S∧M triad (paper sec:triad). F = mean probe selectivity vs the control
+            # task (leaderboard-oriented value, UNCHANGED). M = |U*|/|U_named|: the
+            # decodable cells the oracle confirms are CAUSAL (decodable minus the
+            # decodable-not-causal count) over all decodable cells the probe names. S
+            # is UNDEFINED for probing: a probe reads out PRESENCE of information, not
+            # its causal USE, so it makes no held-out do(u) OUTPUT prediction (the
+            # present-vs-used gap the paper flags, Hewitt & Liang 2019).
+            "triad" => let ndec = r.n_decodable, ncausal = r.n_decodable - r.n_decodable_not_causal
+                Dict{String,Any}(
+                    "F" => jnum_or_null(clamp(r.mean_selectivity, 0.0, 1.0)),
+                    "S" => nothing,
+                    "S_note" => "S undefined: a linear probe reads out whether a concept is " *
+                        "PRESENT (decodable), not whether it is causally USED; it emits no " *
+                        "held-out do(u) output prediction (present≠used, Hewitt & Liang 2019)",
+                    "M" => jnum_or_null(ndec == 0 ? nothing : min(1.0, ncausal / ndec)),
+                    "M_note" => "|U*|=$ncausal decodable-AND-causal cells / |U_named|=$ndec " *
+                        "decodable cells the probe names (present-but-not-causal cells are spurious)",
+                    "M_true_minimal_size" => ncausal, "M_named_size" => ndec,
+                    "definition" => "F∧S∧M triad (03_methods.tex sec:triad): F = probe selectivity " *
+                        "(unchanged); M = |decodable∧causal|/|decodable|; S undefined for a probe " *
+                        "(presence, not causal use).")
+            end,
             "substrate" => "jutari (Julia, HARD) — real-ROM bit-exact path",
             "n_features" => r.n_features,
             "n_bins" => N_BINS,

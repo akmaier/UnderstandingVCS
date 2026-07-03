@@ -83,7 +83,7 @@ using .OracleIntervene.JutariOracle: boot_replay, continue_from, snapshot,
 # instance, so its `Cause` is a distinct type from ours; the occlude is a 3-line
 # intervention we define locally over OUR `Cause`.
 include(joinpath(HERE, "pilot_ig_vs_oracle.jl"))
-using .PilotIGvsOracle: pearson, spearman, precision_at_k, _trapz_unit
+using .PilotIGvsOracle: pearson, spearman, precision_at_k, _trapz_unit, triad_extra_dict
 
 """Occlude one cause on a live env via a REAL intervention (the "absent" do) —
 local mirror of the pilot's `_occlude!`, defined over OUR `Cause` type."""
@@ -890,6 +890,10 @@ function write_game(r::GameRecord; out_dir = OUT_DIR, st_extra = nothing)
                 "deeplift_rescale" => _method_json(r.deeplift,   r.cause_names, r.topk),
                 "vanilla_saliency" => _method_json(r.saliency,   r.cause_names, r.topk),
             ),
+            # F∧S∧M triad — F is the runner-computed faithfulness (unchanged);
+            # S and M are derived from the method map + the oracle |Δy| (no new re-runs).
+            "triad" => triad_extra_dict(r.deeplift.pearson, r.deeplift.attr_per_cause, r.oracle_abs_delta;
+                                        topk = r.topk, seed = r.seed),
             "harness_positive_control" => merge(
                 _method_json(r.oracle_self, r.cause_names, r.topk),
                 Dict{String,Any}("interpretation" =>

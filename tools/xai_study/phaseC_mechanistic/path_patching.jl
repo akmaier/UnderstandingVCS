@@ -118,6 +118,11 @@ include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
 # the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
 include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
+# shared triad helpers (jnum_or_null for JSON-null on undefined S/M); guarded.
+isdefined(@__MODULE__, :TriadSM) ||
+    include(joinpath(@__DIR__, "..", "common", "triad_sm.jl"))
+using .TriadSM: jnum_or_null
+
 const DEFAULT_OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders", "seaquest", "ms_pacman", "qbert"]
 
@@ -677,6 +682,26 @@ function write_game_result(r::PathResult; out_dir = DEFAULT_OUT_DIR, where_ = "l
         "timestamp" => string(round(Int, time())),
         "arrays" => basename(npz_path),
         "extra" => Dict{String,Any}(
+            # F∧S∧M triad (paper sec:triad). F = the recovered-circuit F1 vs the true
+            # routine (leaderboard-oriented value, UNCHANGED). M = |U*|/|U_named| over
+            # graph EDGES: |true_graph edges| / |discovered rec_graph edges| ∈ (0,1]
+            # (an over-claiming circuit that names spurious edges pays for them). S is
+            # a held-out predictive score over do(u); a single-shot path circuit is a
+            # STRUCTURE, not a per-edge predictive map, so S is undefined here → null.
+            "triad" => let ntrue = count(r.true_graph), nrec = count(r.rec_graph)
+                Dict{String,Any}(
+                    "F" => jnum_or_null(isfinite(r.score.f1) ? clamp(r.score.f1, 0.0, 1.0) : nothing),
+                    "S" => nothing,
+                    "S_note" => "S undefined: the recovered path circuit is a graph STRUCTURE, " *
+                        "not a per-do(u) predictive map (Phase-C patching reports F via edge-F1; " *
+                        "sufficiency is not a held-out output prediction here)",
+                    "M" => jnum_or_null(nrec == 0 ? nothing : min(1.0, ntrue / nrec)),
+                    "M_note" => "|U*|=$ntrue true-graph edges / |U_named|=$nrec discovered edges",
+                    "M_true_minimal_size" => ntrue, "M_named_size" => nrec,
+                    "definition" => "F∧S∧M triad (03_methods.tex sec:triad): F = edge-F1 " *
+                        "of the recovered path circuit vs the true routine (unchanged); " *
+                        "M = |true edges|/|discovered edges|; S undefined for a graph-valued explanation.")
+            end,
             "substrate" => "jutari (Julia, HARD) — real-ROM bit-exact path; every edge " *
                 "probe is a genuine path-restricted re-run on the true ROM.",
             "bit_exact_rerun" => r.bit_exact,

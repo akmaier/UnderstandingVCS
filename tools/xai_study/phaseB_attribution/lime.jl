@@ -115,7 +115,7 @@ using .IGBaselineSweep: CORE_GAMES, xai_resolve_games, load_env, boot_replay, co
                         # identity, reached through the SAME single include chain).
                         settings_for, rom_path_for, run_intervention, soft_ram_peek
 using .IGBaselineSweep.PilotIGvsOracle: pearson, spearman, precision_at_k,
-                                        _git_commit, _json_num, _trapz_unit
+                                        _git_commit, _json_num, _trapz_unit, triad_extra_dict
 using .IGBaselineSweep.PilotIGvsOracle.OracleIntervene: build_pong_causes, Cause,
                                                         candidate_ram_indices
 using .IGBaselineSweep.PilotIGvsOracle.OracleIntervene.JutariOracle: Snapshot, snapshot,
@@ -684,6 +684,10 @@ function write_result(f::LIMEResult; out_dir = OUT_DIR, st_extra = nothing)
                     "the §7 prediction (Partial/Fail: 'baseline/sampling-dependent; approximations " *
                     "diverge'). High coef_cosine (→1) ⇒ a stable explanation direction; large corr_std ⇒ " *
                     "the faithfulness verdict itself wobbles with the random seed."),
+            # F∧S∧M triad — F is the runner-computed faithfulness (unchanged);
+            # S and M are derived from the method map + the oracle |Δy| (no new re-runs).
+            "triad" => triad_extra_dict(f.pearson, f.lime_attr_per_cause, f.oracle_abs_delta;
+                                        topk = f.topk, seed = f.seed),
             "harness_positive_control" => Dict{String,Any}(
                 "method" => "oracle_abs_delta (the perfectly-faithful attribution)",
                 "pearson_corr" => f.oracle_self_pearson,

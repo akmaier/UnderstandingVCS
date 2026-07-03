@@ -119,6 +119,11 @@ include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
 # the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
 include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
+# shared triad helpers (jnum_or_null for JSON-null on undefined S/M); guarded.
+isdefined(@__MODULE__, :TriadSM) ||
+    include(joinpath(@__DIR__, "..", "common", "triad_sm.jl"))
+using .TriadSM: jnum_or_null
+
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders", "seaquest", "ms_pacman", "qbert"]
 # shared-testbed switch + params (redesign protocol: prefix=90 gameplay, horizon=15).
@@ -659,6 +664,27 @@ function write_game_result(r::LensResult; out_dir = OUT_DIR)
         "timestamp" => string(round(Int, time())),
         "arrays" => basename(npz_path),
         "extra" => Dict{String,Any}(
+            # F∧S∧M triad (paper sec:triad). F = logit-lens fidelity to the TRUE
+            # intermediate value (leaderboard-oriented value, UNCHANGED). M is the
+            # tuned-lens FAITHFUL-WEIGHT fraction: the share of the readout weight that
+            # lands on truly-causal sites (a minimality proxy — a parsimonious readout
+            # places its mass on the causal cell, not on spurious ones); reported as a
+            # weight-share proxy, since the lens names a readout DIRECTION rather than a
+            # discrete cell set. S is UNDEFINED: the lens emits a readout fidelity, not
+            # a held-out do(u) output prediction.
+            "triad" => Dict{String,Any}(
+                "F" => jnum_or_null(clamp(r.logit_true_fidelity, 0.0, 1.0)),
+                "S" => nothing,
+                "S_note" => "S undefined: the logit/tuned lens reports readout fidelity to the " *
+                    "true intermediate, not a held-out do(u) output prediction",
+                "M" => jnum_or_null(clamp(r.mean_faithful_weight_frac, 0.0, 1.0)),
+                "M_note" => "minimality proxy = mean tuned-lens faithful-weight fraction " *
+                    "(share of readout weight on truly-causal sites; a spurious readout that " *
+                    "reads off-causal sites scores low). Weight-share proxy, not a set-cardinality " *
+                    "ratio: the lens names a readout direction, not a discrete cell set.",
+                "definition" => "F∧S∧M triad (03_methods.tex sec:triad): F = lens fidelity to " *
+                    "the true intermediate (unchanged); M = faithful-weight-fraction proxy; " *
+                    "S undefined for a readout method."),
             "substrate" => "jutari (Julia, HARD) — real-ROM bit-exact path",
             "variables" => var_meta,
             "bit_exact_rerun" => r.bit_exact,

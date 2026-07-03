@@ -99,6 +99,11 @@ include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
 # the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
 include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
+# shared triad helpers (jnum_or_null for JSON-null on undefined S/M); guarded.
+isdefined(@__MODULE__, :TriadSM) ||
+    include(joinpath(@__DIR__, "..", "common", "triad_sm.jl"))
+using .TriadSM: jnum_or_null
+
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders", "seaquest", "ms_pacman", "qbert"]
 # shared-testbed switch + params (redesign protocol: prefix=90 gameplay, horizon=15).
@@ -642,6 +647,28 @@ function write_game_result(r::CSResult; out_dir = OUT_DIR, where_str = "local")
         "timestamp" => string(round(Int, time())),
         "arrays" => basename(npz_path),
         "extra" => Dict{String,Any}(
+            # F∧S∧M triad (paper sec:triad). F = scrubbing-preserved performance of
+            # the TRUE hypothesis (leaderboard-oriented value, UNCHANGED). S is the
+            # SAME held-out sufficiency test the sibling ACDC uses: the hypothesised
+            # circuit alone (non-circuit parents resample-scrubbed) reproduces the
+            # clean behaviour under held-out resample trials ⇒ S = true_preserved. M =
+            # |U*|/|U_named|: the minimal true circuit vs the whole candidate state
+            # (the named circuit's parsimony against recording every cell).
+            "triad" => let ncirc = length(r.true_circuit), ncand = r.n_candidates
+                Dict{String,Any}(
+                    "F" => jnum_or_null(clamp(r.true_preserved, 0.0, 1.0)),
+                    "S" => jnum_or_null(clamp(r.true_preserved, 0.0, 1.0)),
+                    "S_note" => "held-out scrubbing sufficiency: the circuit alone " *
+                        "(non-circuit parents resample-scrubbed) reproduces the clean " *
+                        "readouts over held-out resample trials (fraction preserved, bit-exact re-run)",
+                    "M" => jnum_or_null(ncand == 0 ? nothing : min(1.0, ncirc / ncand)),
+                    "M_note" => "|U*|=$ncirc minimal true-circuit cells / |U_named|=$ncand " *
+                        "candidate cells (circuit parsimony vs recording the whole candidate state)",
+                    "M_true_minimal_size" => ncirc, "M_named_size" => ncand,
+                    "definition" => "F∧S∧M triad (03_methods.tex sec:triad): F = scrubbing-" *
+                        "preserved performance (unchanged); S = held-out scrubbing sufficiency; " *
+                        "M = |true circuit|/|candidate cells|.")
+            end,
             "substrate" => "jutari (Julia, HARD) — real-ROM bit-exact path; every " *
                            "scrub is a genuine intervention + re-run on the true ROM.",
             "bit_exact_rerun" => r.bit_exact,

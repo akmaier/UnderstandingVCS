@@ -77,6 +77,13 @@ import Zygote
 # output/patch builders, and the oracle cause set (via its own includes). We do
 # not duplicate any of that — attribution patching is a *scorer on top* of it.
 include(joinpath(@__DIR__, "activation_patching.jl"))
+# shared Sufficiency (S) + Minimality (M) scorers for the F∧S∧M triad (paper
+# sec:triad). Pure vector functions; guarded so a transitive include cannot
+# redefine the module. Cannot touch the runner-computed F.
+isdefined(@__MODULE__, :TriadSM) ||
+    include(joinpath(@__DIR__, "..", "common", "triad_sm.jl"))
+using .TriadSM: triad_extra_dict, minimality_score, sufficiency_score, jnum_or_null
+
 using .ActivationPatching: load_env, boot_replay, continue_from, fresh_baseline,
                            assert_bit_exact, run_patch, pick_active_cells,
                            build_outputs, Output, Patch, CORE_GAMES,
@@ -567,6 +574,10 @@ function write_game_result(r::AttrResult; out_dir = OUT_DIR)
         "timestamp" => string(round(Int, time())),
         "arrays" => basename(npz_path),
         "extra" => Dict{String,Any}(
+            # F∧S∧M triad (paper sec:triad). F = the leaderboard-oriented
+            # faithfulness (UNCHANGED); S = held-out predictive sufficiency, M =
+            # |U*|/|U_named|, both from the method vs oracle per-site effects.
+            "triad" => triad_extra_dict(clamp(r.corr, 0.0, 1.0), vec(r.approx), vec(r.exact)),
             "substrate" => "jutari (Julia, HARD) — real-ROM bit-exact path",
             "method_long" => "attribution patching / edge AP (Nanda 2023; Syed et al. 2023)",
             "expected" => "Partial (experiment_design.md §6/§7) — cheap linear approximation",

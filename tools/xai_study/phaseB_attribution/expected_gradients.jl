@@ -110,7 +110,7 @@ using .IGBaselineSweep: CORE_GAMES, xai_resolve_games, load_env, boot_replay, co
 # the IG pilot scorer + per-cause mapping + §R writer helpers (the shared contract)
 using .IGBaselineSweep.PilotIGvsOracle: pearson, spearman, precision_at_k,
                                         ig_attribution_per_cause, _git_commit,
-                                        _json_num, _trapz_unit
+                                        _json_num, _trapz_unit, triad_extra_dict
 using .IGBaselineSweep.PilotIGvsOracle.OracleIntervene: build_pong_causes, Cause,
                                                         candidate_ram_indices
 using .IGBaselineSweep.PilotIGvsOracle.OracleIntervene.JutariOracle: Snapshot,
@@ -854,6 +854,10 @@ function write_faithfulness(f::Faithfulness; out_dir = OUT_DIR, st_extra = nothi
                     "corr/precision@k (Δcorr=$(round(hs.pearson - f.ig_pearson,digits=4))) — EG buys robustness " *
                     "(it avoids the IG degeneracy where a `zeros` baseline byte equals a 0-valued content byte) " *
                     "at M× the gradient compute, NOT a faithfulness gain. The position output: both VANISH."),
+            # F∧S∧M triad — F is the runner-computed faithfulness (unchanged);
+            # S and M are derived from the method map + the oracle |Δy| (no new re-runs).
+            "triad" => triad_extra_dict(hs.pearson, f.eg_attr_mean, f.oracle_abs_delta;
+                                        topk = f.topk, seed = f.seed),
             "harness_positive_control" => Dict{String,Any}(
                 "method" => "oracle_abs_delta (the perfectly-faithful attribution)",
                 "pearson_corr" => f.oracle_self_pearson,

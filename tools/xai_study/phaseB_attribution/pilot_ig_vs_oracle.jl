@@ -51,6 +51,15 @@ import Statistics
 # the verified oracle (the causal map + the TRUE-VCS intervention machinery)
 include(joinpath(@__DIR__, "..", "ground_truth", "oracle_intervene.jl"))
 using .OracleIntervene
+
+# shared Sufficiency (S) + Minimality (M) scorers for the F∧S∧M triad (paper
+# sec:triad). Pure vector functions over (attr, oracle |Δy|) that every Phase-B
+# attribution runner already holds, so they add the S/M axes without new re-runs
+# and cannot touch the F value the runner computes separately. Re-exported so every
+# runner that includes this pilot (directly or via saliency.jl) reaches them through
+# ONE type-consistent include chain.
+include(joinpath(@__DIR__, "..", "common", "triad_sm.jl"))
+using .TriadSM: minimality_score, sufficiency_score, triad_extra_dict, jnum_or_null
 using .OracleIntervene: compute_causal_map, resolve_candidates, run_intervention,
                         pong_outputs, build_pong_causes, Cause, CausalMap
 using .OracleIntervene.JutariOracle: boot_replay, continue_from, snapshot,

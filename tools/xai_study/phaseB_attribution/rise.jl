@@ -100,7 +100,7 @@ using .IGBaselineSweep: build_shared_testbed, SHARED_TESTBED,
 # NOTE: intervene_ram! + snapshot come in below via the JutariOracle line (same
 # single include chain ⇒ same identity); do NOT re-import them here.
 using .IGBaselineSweep.PilotIGvsOracle: pearson, spearman, precision_at_k,
-                                        _git_commit, _json_num, _trapz_unit
+                                        _git_commit, _json_num, _trapz_unit, triad_extra_dict
 using .IGBaselineSweep.PilotIGvsOracle.OracleIntervene: build_pong_causes, Cause,
                                                         candidate_ram_indices
 using .IGBaselineSweep.PilotIGvsOracle.OracleIntervene.JutariOracle: Snapshot, snapshot,
@@ -557,6 +557,10 @@ function write_result(f::RISEResult; out_dir = OUT_DIR, st_extra = nothing)
                     "N/8, N/4, N/2, N masks of the SAME pool (no extra re-runs). RISE's Monte-Carlo " *
                     "variance is ∝ 1/N, so corr/p@k STABILISE as N grows; the spread between the " *
                     "smallest and full budget quantifies how many masks RISE needs on this output."),
+            # F∧S∧M triad — F is the runner-computed faithfulness (unchanged);
+            # S and M are derived from the method map + the oracle |Δy| (no new re-runs).
+            "triad" => triad_extra_dict(f.pearson, f.rise_attr_per_cause, f.oracle_abs_delta;
+                                        topk = f.topk, seed = f.seed),
             "harness_positive_control" => Dict{String,Any}(
                 "method" => "oracle_abs_delta (the perfectly-faithful attribution)",
                 "pearson_corr" => f.oracle_self_pearson,

@@ -128,7 +128,7 @@ using .IGBaselineSweep: build_shared_testbed, SHARED_TESTBED,
 using .IGBaselineSweep: env_step!, soft_ram_peek, run_intervention,
                         settings_for, rom_path_for
 using .IGBaselineSweep.PilotIGvsOracle: pearson, spearman, precision_at_k,
-                                        _git_commit, _json_num, _trapz_unit
+                                        _git_commit, _json_num, _trapz_unit, triad_extra_dict
 using .IGBaselineSweep.PilotIGvsOracle.OracleIntervene: build_pong_causes, Cause,
                                                         candidate_ram_indices
 using .IGBaselineSweep.PilotIGvsOracle.OracleIntervene.JutariOracle: Snapshot, snapshot,
@@ -715,6 +715,10 @@ function write_result(f::SHAPResult; out_dir = OUT_DIR, where = "local", st_extr
                     "grows; the spread between the smallest and full budget quantifies how many " *
                     "coalitions KernelSHAP needs on this output (the §5 'convergence vs compute', the §7 " *
                     "'approximations diverge' knob)."),
+            # F∧S∧M triad — F is the runner-computed faithfulness (unchanged);
+            # S and M are derived from the method map + the oracle |Δy| (no new re-runs).
+            "triad" => triad_extra_dict(f.pearson, f.shap_attr_per_cause, f.oracle_abs_delta;
+                                        topk = f.topk, seed = f.seed),
             "harness_positive_control" => Dict{String,Any}(
                 "method" => "oracle_abs_delta (the perfectly-faithful attribution)",
                 "pearson_corr" => f.oracle_self_pearson,

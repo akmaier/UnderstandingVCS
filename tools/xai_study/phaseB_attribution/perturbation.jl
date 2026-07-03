@@ -150,7 +150,8 @@ using .IGBaselineSweep: CORE_GAMES, xai_resolve_games, candidates_path_for,
 # RISE sibling reaches it the same way (IGBaselineSweep.env_step!).
 using JuTari.Env: env_step!
 using .IGBaselineSweep.PilotIGvsOracle: pearson, spearman, precision_at_k,
-                                        _git_commit, _json_num, _trapz_unit
+                                        _git_commit, _json_num, _trapz_unit,
+                                        triad_extra_dict
 using .IGBaselineSweep.PilotIGvsOracle.OracleIntervene: build_pong_causes, Cause,
                                                         candidate_ram_indices
 using .IGBaselineSweep.PilotIGvsOracle.OracleIntervene.JutariOracle: Snapshot, snapshot,
@@ -648,6 +649,10 @@ function write_faithfulness(f::Faithfulness; out_dir, st_extra = nothing)
                 "headline metric for the extremal-perturbation row ('mask IoU vs true causal set'). " *
                 "Pixel/cell-level IoU scores against T1 (no T3); object-set IoU would need T3 (out of scope here).",
             "oracle_causal_set" => [f.cause_names[i] for i in f.oracle_causal_set],
+            # F∧S∧M triad — F is the runner-computed faithfulness (unchanged);
+            # S and M are derived from the method map + the oracle |Δy| (no new re-runs).
+            "triad" => triad_extra_dict(f.pearson, f.pert_attr, f.oracle_abs_delta;
+                                        topk = f.topk, seed = f.seed),
             "harness_positive_control" => Dict{String,Any}(
                 "method" => "oracle_abs_delta (the perfectly-faithful attribution)",
                 "pearson_corr" => f.oracle_self_pearson,

@@ -81,7 +81,8 @@ using JuTari.Diff: soft_ram_peek
 # writer helpers (the validated Phase-B contract).
 include(joinpath(@__DIR__, "pilot_ig_vs_oracle.jl"))
 using .PilotIGvsOracle: pearson, spearman, precision_at_k, ig_attribution_per_cause,
-                        _git_commit, _json_num, _trapz_unit
+                        _git_commit, _json_num, _trapz_unit,
+                        minimality_score, sufficiency_score, triad_extra_dict
 
 # the oracle's cause set + intervention machinery (game-agnostic: RAM/TIA/joystick)
 using .PilotIGvsOracle.OracleIntervene: build_pong_causes, Cause, candidate_ram_indices
@@ -691,6 +692,10 @@ function write_faithfulness(f::Faithfulness; out_dir = OUT_DIR, st_extra = nothi
                 "precision_at_k" => f.precision_at_k, "topk" => f.topk,
                 "deletion_auc" => _json_num(f.deletion_auc),
                 "insertion_auc" => _json_num(f.insertion_auc)),
+            # F∧S∧M triad — F is the already-computed pearson (unchanged); S and M
+            # are derived from the saliency map + the oracle |Δy| (no new re-runs).
+            "triad" => triad_extra_dict(f.pearson, f.sal_attr, f.oracle_abs_delta;
+                                        topk = f.topk, seed = f.seed),
             "harness_positive_control" => Dict{String,Any}(
                 "method" => "oracle_abs_delta (the perfectly-faithful attribution)",
                 "pearson_corr" => f.oracle_self_pearson,

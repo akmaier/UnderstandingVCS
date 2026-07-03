@@ -97,6 +97,13 @@ using JuTari.Diff: soft_ram_peek
 include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
 # the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
 include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
+# shared Sufficiency (S) + Minimality (M) scorers for the F∧S∧M triad (paper
+# sec:triad). Pure vector functions; guarded so a transitive include cannot
+# redefine the module. Cannot touch the runner-computed F.
+isdefined(@__MODULE__, :TriadSM) ||
+    include(joinpath(@__DIR__, "..", "common", "triad_sm.jl"))
+using .TriadSM: triad_extra_dict, minimality_score, sufficiency_score, jnum_or_null
+
 
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders", "seaquest", "ms_pacman", "qbert"]
@@ -625,6 +632,10 @@ function write_game_result(r::DASResult; out_dir = OUT_DIR)
         "timestamp" => string(round(Int, time())),
         "arrays" => basename(npz_path),
         "extra" => Dict{String,Any}(
+            # F∧S∧M triad (paper sec:triad). F = the leaderboard-oriented
+            # faithfulness (UNCHANGED); S = held-out predictive sufficiency, M =
+            # |U*|/|U_named|, both from the method vs oracle per-site effects.
+            "triad" => triad_extra_dict(clamp(r.iia_aligned, 0.0, 1.0), vec(r.effect), vec(r.exact_effect)),
             "substrate" => "jutari (Julia, HARD) — real-ROM bit-exact path",
             "variables" => r.var_meta,
             "bit_exact_rerun" => r.bit_exact,

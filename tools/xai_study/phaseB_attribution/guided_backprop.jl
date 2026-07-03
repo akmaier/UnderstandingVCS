@@ -96,7 +96,7 @@ using JuTari.Diff: soft_ram_peek
 # writer helpers (the validated Phase-B contract every E4 method shares).
 include(joinpath(@__DIR__, "pilot_ig_vs_oracle.jl"))
 using .PilotIGvsOracle: pearson, spearman, precision_at_k, ig_attribution_per_cause,
-                        _git_commit, _json_num, _trapz_unit
+                        _git_commit, _json_num, _trapz_unit, triad_extra_dict
 
 # the oracle's cause set + intervention machinery (game-agnostic: RAM/TIA/joystick)
 using .PilotIGvsOracle.OracleIntervene: build_pong_causes, Cause, candidate_ram_indices
@@ -904,6 +904,10 @@ function write_faithfulness(f::Faithfulness; out_dir = OUT_DIR, st_extra = nothi
                     "(Δpearson = 0). The negative-suppression rule IS wired (it provably " *
                     "rectifies a mixed-sign surrogate — see guided_demo_rectifies); it simply " *
                     "has nothing to do on this substrate. This is the honest finding the DoD asks for."),
+            # F∧S∧M triad — F is the runner-computed faithfulness (unchanged);
+            # S and M are derived from the method map + the oracle |Δy| (no new re-runs).
+            "triad" => triad_extra_dict(f.pearson, f.gbp_attr, f.oracle_abs_delta;
+                                        topk = f.topk, seed = f.seed),
             "harness_positive_control" => Dict{String,Any}(
                 "method" => "oracle_abs_delta (the perfectly-faithful attribution)",
                 "pearson_corr" => f.oracle_self_pearson,
