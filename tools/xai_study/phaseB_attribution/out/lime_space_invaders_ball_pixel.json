@@ -1,7 +1,7 @@
 {
   "arrays": "lime_space_invaders_ball_pixel.npz",
   "ci": null,
-  "commit": "9bc37f8b",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-LIME causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -216,6 +216,16 @@
       "shared_output": "screen_region(n_changed_px)@r192c35",
       "state_kind": "seeded_random_action_gameplay"
     },
+    "triad": {
+      "F": 0.7562358786436092,
+      "M": 0.5294117647058824,
+      "M_named_size": 34,
+      "M_note": "|U*|=18 (oracle movers) / |U_hat|=34 (method above-threshold)",
+      "M_true_minimal_size": 18,
+      "S": 0.8333333333333334,
+      "S_note": "held-out predictive fit: 15/18 held-out do(u) within ε=254.3 (calib=18, fit Δy≈0.845·attr+141.067)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_intact": 0.0
   },
   "game": "space_invaders",
@@ -229,7 +239,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": 0.013558505153169738,
   "target_output": "screen_region(n_changed_px)@r192c35",
-  "timestamp": "1782944237",
+  "timestamp": "1783132800",
   "value": 0.7562358786436092,
   "where": "local"
 }

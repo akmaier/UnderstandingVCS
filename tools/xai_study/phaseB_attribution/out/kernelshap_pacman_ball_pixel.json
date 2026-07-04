@@ -1,7 +1,7 @@
 {
   "arrays": "kernelshap_pacman_ball_pixel.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-SHAP causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -172,6 +172,16 @@
       "seed": 0,
       "shared_output": "screen_region(n_changed_px)@r131c77",
       "state_kind": "seeded_random_action_gameplay"
+    },
+    "triad": {
+      "F": 0.7246561735937174,
+      "M": 1.0,
+      "M_named_size": 6,
+      "M_note": "|U*|=9 (oracle movers) / |U_hat|=6 (method above-threshold)",
+      "M_true_minimal_size": 9,
+      "S": 0.0,
+      "S_note": "held-out predictive fit: 0/9 held-out do(u) within ε=14.4 (calib=9, fit Δy≈0.991·attr+44.171)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
     }
   },
   "game": "pacman",
@@ -185,7 +195,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r131c77",
-  "timestamp": "1783058550",
+  "timestamp": "1783129309",
   "value": 0.7246561735937174,
   "where": "local"
 }

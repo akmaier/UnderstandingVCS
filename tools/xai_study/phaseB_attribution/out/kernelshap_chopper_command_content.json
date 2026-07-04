@@ -1,7 +1,7 @@
 {
   "arrays": "kernelshap_chopper_command_content.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-SHAP causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -244,7 +244,17 @@
       "95": 0.0
     },
     "shapley_kernel_note": "coalitions sampled with size s ~ p(s)∝(C−1)/(s·(C−s)); each row of the WLS is weighted by the Shapley kernel π(s)=(C−1)/(binom(C,s)·s·(C−s)) (Lundberg & Lee Theorem 2). Endpoints s∈{0,C} carry infinite weight ⇒ pinned exactly by the efficiency constraint (not sampled). A 1e-8 ridge stabilises rank-deficient designs.",
-    "substrate": "jutari (Julia, HARD) — real-ROM coalition re-runs (bit-exact oracle machinery) + closed-form efficiency-constrained WLS solve. NO surrogate model: the value function IS the true emulator, so the only approximation is the coalition sampling + the additive (linear) SHAP model."
+    "substrate": "jutari (Julia, HARD) — real-ROM coalition re-runs (bit-exact oracle machinery) + closed-form efficiency-constrained WLS solve. NO surrogate model: the value function IS the true emulator, so the only approximation is the coalition sampling + the additive (linear) SHAP model.",
+    "triad": {
+      "F": 0.0,
+      "M": null,
+      "M_named_size": 0,
+      "M_note": "M undefined: method names nothing (all-zero attribution) at this state",
+      "M_true_minimal_size": 1,
+      "S": 0.0,
+      "S_note": "held-out predictive fit: 0/21 held-out do(u) within ε=0.5 (calib=21, fit Δy≈0.0·attr+11.429)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    }
   },
   "game": "chopper_command",
   "method": "kernelshap",
@@ -257,7 +267,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@52)",
-  "timestamp": "1783056929",
+  "timestamp": "1783127520",
   "value": 0.0,
   "where": "local"
 }

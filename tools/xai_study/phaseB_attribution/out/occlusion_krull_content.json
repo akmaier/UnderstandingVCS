@@ -1,7 +1,7 @@
 {
   "arrays": "occlusion_krull_content.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-occlusion causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -199,6 +199,16 @@
     "output_note": "OCCLUSION (Zeiler & Fergus 2014) is INTERVENTION-BASED: every attribution is |y(occlude u) − y(intact)| from a real-ROM re-run on the TRUE VCS, NOT a surrogate. occ max|attr|=255.0, occ L1=510.0, budget=159 real-ROM re-runs. CONTENT output: RAM byte 79 (the most causally-active candidate concept byte the oracle found at this state). Occlusion probes ONLY the occlude-to-0 direction, while the §1 oracle's per-cause map MIXES the set (base+17) and occlude (→0) modes plus a TIA/joystick do — so occlusion is a COARSE oracle (§5 '≈ coarse intervention oracle'): the occlude-mode causes line up, the set-mode causes can disagree. Expect high but not perfect corr=0.999 (precision@3=1.0). We REPORT the measured numbers; we do not assert corr=1.",
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (E0-3) — --array=0-5%N over the 6 core games (--shard i --shard-kind game); each task re-runs the real ROM, no GPU needed.",
     "substrate": "jutari (Julia) — real-ROM single-cause occlusion + TRUE-VCS deletion/insertion re-runs (bit-exact oracle machinery). NO surrogate model.",
+    "triad": {
+      "F": 0.9994549526511057,
+      "M": 1.0,
+      "M_named_size": 2,
+      "M_note": "|U*|=2 (oracle movers) / |U_hat|=2 (method above-threshold)",
+      "M_true_minimal_size": 2,
+      "S": 1.0,
+      "S_note": "held-out predictive fit: 26/26 held-out do(u) within ε=25.5 (calib=26, fit Δy≈0.937·attr+-0.0)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 255.0
   },
   "game": "krull",
@@ -212,7 +222,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@79)",
-  "timestamp": "1783027434",
+  "timestamp": "1783127888",
   "value": 0.9994549526511057,
   "where": "local"
 }

@@ -1,7 +1,7 @@
 {
   "arrays": "perturbation_freeway_position.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-attributed causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -178,6 +178,16 @@
       "shared_output": "screen_region(n_changed_px)@r173c19",
       "state_kind": "seeded_random_action_gameplay"
     },
+    "triad": {
+      "F": 0.5496386767523196,
+      "M": 1.0,
+      "M_named_size": 24,
+      "M_note": "|U*|=26 (oracle movers) / |U_hat|=24 (method above-threshold)",
+      "M_true_minimal_size": 26,
+      "S": 0.06666666666666667,
+      "S_note": "held-out predictive fit: 1/15 held-out do(u) within ε=10.8 (calib=15, fit Δy≈0.067·attr+63.79)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 0.0
   },
   "game": "freeway",
@@ -191,7 +201,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r173c19",
-  "timestamp": "1783047135",
+  "timestamp": "1783128126",
   "value": 0.5496386767523196,
   "where": "local"
 }

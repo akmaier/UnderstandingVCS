@@ -4,14 +4,50 @@
     "cost": "≤ n_coalitions unique real re-runs + 2 pinned endpoints per output (2 outputs/game: content + position)",
     "n_coalitions": 512
   },
-  "commit": "9bc37f8b",
+  "commit": "d85961ed",
   "games": [
-    "pong",
+    "air_raid",
+    "alien",
+    "assault",
+    "atlantis",
+    "bank_heist",
+    "beam_rider",
+    "berzerk",
+    "bowling",
+    "boxing",
     "breakout",
-    "space_invaders",
-    "seaquest",
+    "carnival",
+    "centipede",
+    "chopper_command",
+    "demon_attack",
+    "double_dunk",
+    "fishing_derby",
+    "freeway",
+    "frostbite",
+    "gopher",
+    "hero",
+    "ice_hockey",
+    "jamesbond",
+    "kangaroo",
+    "krull",
+    "kung_fu_master",
+    "montezuma_revenge",
     "ms_pacman",
-    "qbert"
+    "name_this_game",
+    "pacman",
+    "phoenix",
+    "pitfall",
+    "pong",
+    "private_eye",
+    "qbert",
+    "riverraid",
+    "road_runner",
+    "seaquest",
+    "space_invaders",
+    "tennis",
+    "venture",
+    "video_pinball",
+    "yars_revenge"
   ],
   "headline": "KernelSHAP / Shapley sampling (Lundberg & Lee 2017; Štrumbelj & Kononenko 2014): estimate the Shapley values of the candidate RAM cells for y by sampling N=512 coalitions from the Shapley kernel, masking absent cells to 0, RE-RUNNING the real ROM for each unique coalition, and solving the efficiency-constrained weighted least squares. Scored vs the intervention oracle (corr + del/ins AUC + precision@k); the EFFICIENCY axiom Σφ = y(intact) − y(all-masked) is reported as completeness; the CONVERGENCE sweep (N/8…N) shows the estimate stabilising as N grows (SHAP variance ∝ 1/N — the §7 'approximations diverge' knob). NO surrogate: the value function IS the true emulator. KEY CONTRAST vs IG/saliency: KernelSHAP ALSO works on POSITION outputs where the gradient methods VANISH. Oracle-as-method positive control corr=1/p@k=1.",
   "horizon": 30,
@@ -27,8 +63,8 @@
   "phase": "phaseB_attribution",
   "results": [
     {
-      "completeness_residual": 0.0,
-      "content_ram_index": 54,
+      "completeness_residual": 2.842170943040401e-14,
+      "content_ram_index": 42,
       "convergence_n_coalitions": [
         64,
         128,
@@ -36,24 +72,140 @@
         512
       ],
       "convergence_pearson": [
-        0.5818667789449864,
-        0.6355732788515687,
-        0.6965989870312853,
-        0.6898355036070195
+        0.7906295372549019,
+        0.7906295372549024,
+        0.7906295372549026,
+        0.7906295372549024
       ],
-      "deletion_auc": 0.027777777777777776,
-      "game": "pong",
-      "insertion_auc": 0.8150793650793651,
+      "deletion_auc": 0.017857142857142856,
+      "game": "air_raid",
+      "insertion_auc": 0.9464285714285714,
       "is_content_path": true,
       "n_coalitions": 512,
-      "n_real_reruns": 165,
+      "n_real_reruns": 318,
       "oracle_self_pearson": 1.0,
       "oracle_self_precision_at_k": 1.0,
-      "output": "content(ram_self@54)",
+      "output": "content(ram_self@42)",
       "output_kind": "content",
-      "pearson": 0.6898355036070195,
+      "pearson": 0.7906295372549024,
+      "precision_at_k": 1.0,
+      "spearman": 0.4469067593777291
+    },
+    {
+      "completeness_residual": 2.2737367544323206e-13,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.7506146994437757,
+        0.7521192973477276,
+        0.7470312742487302,
+        0.7490751774304373
+      ],
+      "deletion_auc": 0.9605648535564855,
+      "game": "air_raid",
+      "insertion_auc": 0.08423490735206217,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 318,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r162c64",
+      "output_kind": "position",
+      "pearson": 0.7490751774304373,
       "precision_at_k": 0.6666666666666666,
-      "spearman": 0.5809036604762328
+      "spearman": 0.6025114415247302
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": 60,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.7793451871942163,
+        0.7793451871942162,
+        0.7793451871942162,
+        0.7793451871942161
+      ],
+      "deletion_auc": 0.03571428571428571,
+      "game": "alien",
+      "insertion_auc": 0.8928571428571429,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 64,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@60)",
+      "output_kind": "content",
+      "pearson": 0.7793451871942161,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.6105579948610594
+    },
+    {
+      "completeness_residual": 1.4210854715202004e-14,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.7896028921426198,
+        0.8822965473885519,
+        0.8708749679879185,
+        0.9305714442996176
+      ],
+      "deletion_auc": 0.9189560439560439,
+      "game": "alien",
+      "insertion_auc": 0.2857142857142857,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 64,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r64c78",
+      "output_kind": "position",
+      "pearson": 0.9305714442996176,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.8928436656664787
+    },
+    {
+      "completeness_residual": 2.1316282072803006e-14,
+      "content_ram_index": 39,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.596541267805469,
+        0.19355128961163315,
+        0.3400118899217323,
+        0.26412003300209336
+      ],
+      "deletion_auc": 0.013308168795973671,
+      "game": "assault",
+      "insertion_auc": 0.2637921022067364,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 376,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@39)",
+      "output_kind": "content",
+      "pearson": 0.26412003300209336,
+      "precision_at_k": 0.0,
+      "spearman": 0.4741017413439988
     },
     {
       "completeness_residual": 0.0,
@@ -65,24 +217,372 @@
         512
       ],
       "convergence_pearson": [
-        0.5957518958941215,
-        0.5906837371874658,
-        0.570057612471303,
-        0.5593890581291057
+        0.6990985356267408,
+        0.6991404158015693,
+        0.6992010838125065,
+        0.6991916351809901
       ],
-      "deletion_auc": 0.9722222222222222,
-      "game": "pong",
-      "insertion_auc": 0.1272609819121447,
+      "deletion_auc": 0.9872875977221052,
+      "game": "assault",
+      "insertion_auc": 0.03856403445720695,
       "is_content_path": false,
       "n_coalitions": 512,
-      "n_real_reruns": 165,
+      "n_real_reruns": 376,
       "oracle_self_pearson": 1.0,
       "oracle_self_precision_at_k": 1.0,
-      "output": "screen_region(n_changed_px)@r162c17",
+      "output": "screen_region(n_changed_px)@r20c11",
       "output_kind": "position",
-      "pearson": 0.5593890581291057,
+      "pearson": 0.6991916351809901,
       "precision_at_k": 0.3333333333333333,
-      "spearman": 0.6426515210571795
+      "spearman": 0.7447405223211193
+    },
+    {
+      "completeness_residual": 7.105427357601002e-15,
+      "content_ram_index": 60,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.4115577840393375,
+        0.3707527219319826,
+        0.39468185838375586,
+        0.5456114179089027
+      ],
+      "deletion_auc": 0.5018382352941178,
+      "game": "atlantis",
+      "insertion_auc": 0.18713235294117644,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 223,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@60)",
+      "output_kind": "content",
+      "pearson": 0.5456114179089027,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.6118740168712087
+    },
+    {
+      "completeness_residual": 1.4210854715202004e-14,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.6454328541788105,
+        0.6458624912700662,
+        0.6475468723096562,
+        0.6463802834649364
+      ],
+      "deletion_auc": 0.9550000000000001,
+      "game": "atlantis",
+      "insertion_auc": 0.09083333333333332,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 223,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r22c76",
+      "output_kind": "position",
+      "pearson": 0.6463802834649364,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.6086756815770021
+    },
+    {
+      "completeness_residual": 7.105427357601002e-15,
+      "content_ram_index": 12,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.899806807721758,
+        0.8998068077217576,
+        0.8998068077217576,
+        0.8998068077217577
+      ],
+      "deletion_auc": 0.041666666666666664,
+      "game": "bank_heist",
+      "insertion_auc": 0.875,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 32,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@12)",
+      "output_kind": "content",
+      "pearson": 0.8998068077217577,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.65194287781876
+    },
+    {
+      "completeness_residual": 1.1368683772161603e-13,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.5598018851770584,
+        0.5055534665146157,
+        0.4547699008947673,
+        0.43761991873615647
+      ],
+      "deletion_auc": 0.17407984837368543,
+      "game": "bank_heist",
+      "insertion_auc": 0.0033168256297383225,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 32,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r81c23",
+      "output_kind": "position",
+      "pearson": 0.43761991873615647,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.7063349707533182
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": 41,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.7662396634704651,
+        0.766239663470465,
+        0.7662396634704651,
+        0.766239663470465
+      ],
+      "deletion_auc": 0.041666666666666664,
+      "game": "beam_rider",
+      "insertion_auc": 0.875,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 32,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@41)",
+      "output_kind": "content",
+      "pearson": 0.766239663470465,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.65194287781876
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.9971546798980905,
+        0.9971309366201451,
+        0.9971722970875069,
+        0.9971661563372453
+      ],
+      "deletion_auc": 0.9583333333333334,
+      "game": "beam_rider",
+      "insertion_auc": 0.13132911392405067,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 32,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r179c78",
+      "output_kind": "position",
+      "pearson": 0.9971661563372453,
+      "precision_at_k": 1.0,
+      "spearman": 0.8430492595427839
+    },
+    {
+      "completeness_residual": 1.4210854715202004e-14,
+      "content_ram_index": 56,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.6999893821675665,
+        0.6960719357406637,
+        0.6918651867336036,
+        0.6910500634201433
+      ],
+      "deletion_auc": 0.9911052785068533,
+      "game": "berzerk",
+      "insertion_auc": 0.06313794109069698,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 418,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@56)",
+      "output_kind": "content",
+      "pearson": 0.6910500634201433,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.4271306958703383
+    },
+    {
+      "completeness_residual": 2.2737367544323206e-13,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        -0.017216071647037465,
+        -0.00973271785712899,
+        0.004011004126287655,
+        0.004487359319484964
+      ],
+      "deletion_auc": 0.9907407407407407,
+      "game": "berzerk",
+      "insertion_auc": 0.11517384731670445,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 418,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r114c5",
+      "output_kind": "position",
+      "pearson": 0.004487359319484964,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.6330643563021817
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": 30,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.5731237042961534,
+        0.7764845905676104,
+        0.8334873369107125,
+        0.7667120390079339
+      ],
+      "deletion_auc": 0.26839826839826836,
+      "game": "bowling",
+      "insertion_auc": 0.9393939393939396,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 376,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@30)",
+      "output_kind": "content",
+      "pearson": 0.7667120390079339,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.5082142813035229
+    },
+    {
+      "completeness_residual": 5.684341886080802e-14,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.6784980726910995,
+        0.3819268901688369,
+        0.679944352386955,
+        0.8382906084471954
+      ],
+      "deletion_auc": 0.6203603114249502,
+      "game": "bowling",
+      "insertion_auc": 0.10089625203693646,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 376,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r164c33",
+      "output_kind": "position",
+      "pearson": 0.8382906084471954,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.6676680349719937
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": 17,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.8168233082431011,
+        0.816823308243101,
+        0.8168233082431011,
+        0.8168233082431012
+      ],
+      "deletion_auc": 0.020833333333333332,
+      "game": "boxing",
+      "insertion_auc": 0.9375,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 287,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@17)",
+      "output_kind": "content",
+      "pearson": 0.8168233082431012,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.47993019704754775
+    },
+    {
+      "completeness_residual": 2.2737367544323206e-13,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.7380056732160711,
+        0.6894596206999135,
+        0.7573590898757777,
+        0.8893136282828894
+      ],
+      "deletion_auc": 0.9566807909604521,
+      "game": "boxing",
+      "insertion_auc": 0.272725988700565,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 287,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r84c44",
+      "output_kind": "position",
+      "pearson": 0.8893136282828894,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.7024307424610646
     },
     {
       "completeness_residual": 2.842170943040401e-14,
@@ -143,8 +643,8 @@
       "spearman": 0.6955909376418277
     },
     {
-      "completeness_residual": 5.684341886080802e-14,
-      "content_ram_index": 81,
+      "completeness_residual": 1.4210854715202004e-14,
+      "content_ram_index": 111,
       "convergence_n_coalitions": [
         64,
         128,
@@ -152,27 +652,27 @@
         512
       ],
       "convergence_pearson": [
-        0.9995983399158723,
-        0.9998760841826053,
-        0.9997154108472527,
-        0.9996377852697428
+        0.8031245953186134,
+        0.8426985342303451,
+        0.9115592042549266,
+        0.8274247710078904
       ],
-      "deletion_auc": 0.015469738030713645,
-      "game": "space_invaders",
-      "insertion_auc": 0.9583333333333334,
+      "deletion_auc": 0.05263157894736842,
+      "game": "carnival",
+      "insertion_auc": 0.0,
       "is_content_path": true,
       "n_coalitions": 512,
-      "n_real_reruns": 380,
+      "n_real_reruns": 369,
       "oracle_self_pearson": 1.0,
       "oracle_self_precision_at_k": 1.0,
-      "output": "content(ram_self@81)",
+      "output": "content(ram_self@111)",
       "output_kind": "content",
-      "pearson": 0.9996377852697428,
+      "pearson": 0.8274247710078904,
       "precision_at_k": 0.6666666666666666,
-      "spearman": 0.39719748637091973
+      "spearman": 0.2614381932240289
     },
     {
-      "completeness_residual": 4.547473508864641e-13,
+      "completeness_residual": 0.0,
       "content_ram_index": -1,
       "convergence_n_coalitions": [
         64,
@@ -181,28 +681,86 @@
         512
       ],
       "convergence_pearson": [
-        0.7687360036901926,
-        0.8138881457536875,
-        0.8023557503796114,
-        0.8196153171440388
+        -0.060265943539580376,
+        -0.05294884856552312,
+        -0.026788148343513316,
+        -0.025890620306769946
       ],
-      "deletion_auc": 0.9050159260290069,
-      "game": "space_invaders",
-      "insertion_auc": 0.1258774778117945,
+      "deletion_auc": 0.6790077473182362,
+      "game": "carnival",
+      "insertion_auc": 0.18738237877172073,
       "is_content_path": false,
       "n_coalitions": 512,
-      "n_real_reruns": 380,
+      "n_real_reruns": 369,
       "oracle_self_pearson": 1.0,
       "oracle_self_precision_at_k": 1.0,
-      "output": "screen_region(n_changed_px)@r192c35",
+      "output": "screen_region(n_changed_px)@r84c33",
       "output_kind": "position",
-      "pearson": 0.8196153171440388,
+      "pearson": -0.025890620306769946,
       "precision_at_k": 0.3333333333333333,
-      "spearman": 0.33068129456704204
+      "spearman": 0.35485363488416527
     },
     {
       "completeness_residual": 0.0,
-      "content_ram_index": 118,
+      "content_ram_index": 110,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.6785885012818669,
+        0.7148390918553287,
+        0.7059541967235883,
+        0.7470825782923871
+      ],
+      "deletion_auc": 0.03712121212121211,
+      "game": "centipede",
+      "insertion_auc": 0.9128787878787878,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 223,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@110)",
+      "output_kind": "content",
+      "pearson": 0.7470825782923871,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.30593700843560434
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        -0.24847285346808617,
+        -0.2514096223644104,
+        -0.2534025704569231,
+        -0.25250883455019374
+      ],
+      "deletion_auc": 0.803428927680798,
+      "game": "centipede",
+      "insertion_auc": 0.2425810473815461,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 223,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r157c81",
+      "output_kind": "position",
+      "pearson": -0.25250883455019374,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.5425645780486094
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": 52,
       "convergence_n_coalitions": [
         64,
         128,
@@ -216,18 +774,76 @@
         0.0
       ],
       "deletion_auc": null,
-      "game": "seaquest",
+      "game": "chopper_command",
       "insertion_auc": null,
       "is_content_path": true,
       "n_coalitions": 512,
-      "n_real_reruns": 400,
+      "n_real_reruns": 376,
       "oracle_self_pearson": 1.0,
       "oracle_self_precision_at_k": 1.0,
-      "output": "content(ram_self@118)",
+      "output": "content(ram_self@52)",
       "output_kind": "content",
       "pearson": 0.0,
-      "precision_at_k": 0.3333333333333333,
+      "precision_at_k": 0.6666666666666666,
       "spearman": 0.0
+    },
+    {
+      "completeness_residual": 1.8189894035458565e-12,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.3812801073311862,
+        0.45852191083351773,
+        0.5628794336136586,
+        0.6836597759218658
+      ],
+      "deletion_auc": 0.9880952380952381,
+      "game": "chopper_command",
+      "insertion_auc": 0.09630758077473207,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 376,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r44c9",
+      "output_kind": "position",
+      "pearson": 0.6836597759218658,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.18464573977719292
+    },
+    {
+      "completeness_residual": 7.993605777301127e-15,
+      "content_ram_index": 16,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        -0.04402883521535641,
+        0.31384843760257525,
+        0.10766612521084322,
+        0.7353488673978553
+      ],
+      "deletion_auc": 0.9469095303867401,
+      "game": "demon_attack",
+      "insertion_auc": 0.9362051104972375,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 357,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@16)",
+      "output_kind": "content",
+      "pearson": 0.7353488673978553,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.47464136576088
     },
     {
       "completeness_residual": 0.0,
@@ -239,24 +855,720 @@
         512
       ],
       "convergence_pearson": [
-        0.7135968349817274,
-        0.7137045230725442,
-        0.7136412948207594,
-        0.7136288812297126
+        0.7087968689521994,
+        0.7067833630992779,
+        0.7036115897042424,
+        0.7079111331134598
       ],
-      "deletion_auc": 0.9808983147672098,
-      "game": "seaquest",
-      "insertion_auc": 0.038120060934970966,
+      "deletion_auc": 0.982799510592652,
+      "game": "demon_attack",
+      "insertion_auc": 0.10427980021453474,
       "is_content_path": false,
       "n_coalitions": 512,
-      "n_real_reruns": 400,
+      "n_real_reruns": 357,
       "oracle_self_pearson": 1.0,
       "oracle_self_precision_at_k": 1.0,
-      "output": "screen_region(n_changed_px)@r52c77",
+      "output": "screen_region(n_changed_px)@r189c1",
       "output_kind": "position",
-      "pearson": 0.7136288812297126,
+      "pearson": 0.7079111331134598,
       "precision_at_k": 0.3333333333333333,
-      "spearman": 0.5253645541679283
+      "spearman": 0.6092749147996799
+    },
+    {
+      "completeness_residual": 2.842170943040401e-14,
+      "content_ram_index": 37,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.7375213005694333,
+        0.7375004062090535,
+        0.7375416499160464,
+        0.7375531312252831
+      ],
+      "deletion_auc": 0.9754782254782255,
+      "game": "double_dunk",
+      "insertion_auc": 0.07397232397232399,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 323,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@37)",
+      "output_kind": "content",
+      "pearson": 0.7375531312252831,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.7340511304308958
+    },
+    {
+      "completeness_residual": 2.2737367544323206e-13,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.17842365879371297,
+        0.24832669700168283,
+        -0.0579448285259897,
+        0.2352794299775044
+      ],
+      "deletion_auc": 0.32344589409056024,
+      "game": "double_dunk",
+      "insertion_auc": 0.3222888009917941,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 323,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r105c80",
+      "output_kind": "position",
+      "pearson": 0.2352794299775044,
+      "precision_at_k": 0.0,
+      "spearman": 0.5360826008390699
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": 75,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.947546923159053,
+        0.9475469231590531,
+        0.947546923159053,
+        0.9475469231590531
+      ],
+      "deletion_auc": 0.025,
+      "game": "fishing_derby",
+      "insertion_auc": 0.925,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 223,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@75)",
+      "output_kind": "content",
+      "pearson": 0.9475469231590531,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.5215091519019602
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.9681276787594999,
+        0.9680670135866158,
+        0.968021077119008,
+        0.9680135736281555
+      ],
+      "deletion_auc": 0.9460843373493976,
+      "game": "fishing_derby",
+      "insertion_auc": 0.10552208835341366,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 223,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r128c31",
+      "output_kind": "position",
+      "pearson": 0.9680135736281555,
+      "precision_at_k": 1.0,
+      "spearman": 0.7193054101735723
+    },
+    {
+      "completeness_residual": 2.1316282072803006e-14,
+      "content_ram_index": 14,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.5114883909607997,
+        0.4292784476857679,
+        0.3745568095909273,
+        0.38672838701638307
+      ],
+      "deletion_auc": 0.004201680672268908,
+      "game": "freeway",
+      "insertion_auc": 0.11120448179271705,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 346,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@14)",
+      "output_kind": "content",
+      "pearson": 0.38672838701638307,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.3709330166899843
+    },
+    {
+      "completeness_residual": 1.1368683772161603e-13,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.8786011319235014,
+        0.878601124647631,
+        0.8786011181135913,
+        0.8786011172663114
+      ],
+      "deletion_auc": 0.6949137627595917,
+      "game": "freeway",
+      "insertion_auc": 0.33841957057374167,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 346,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r173c19",
+      "output_kind": "position",
+      "pearson": 0.8786011172663114,
+      "precision_at_k": 0.0,
+      "spearman": 0.8366911538617358
+    },
+    {
+      "completeness_residual": 2.842170943040401e-14,
+      "content_ram_index": 77,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.5760581454200125,
+        0.7609981927257199,
+        0.7803175625676475,
+        0.762708952547612
+      ],
+      "deletion_auc": 0.012892156862745096,
+      "game": "frostbite",
+      "insertion_auc": 0.9625,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 399,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@77)",
+      "output_kind": "content",
+      "pearson": 0.762708952547612,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.5236863095042367
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.6857572327319178,
+        0.8131220475974128,
+        0.8255113181409178,
+        0.8040880317915768
+      ],
+      "deletion_auc": 0.8431787969425057,
+      "game": "frostbite",
+      "insertion_auc": 0.24857926221335988,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 399,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r181c14",
+      "output_kind": "position",
+      "pearson": 0.8040880317915768,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.271496276797103
+    },
+    {
+      "completeness_residual": 2.842170943040401e-14,
+      "content_ram_index": 28,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.7762058127914782,
+        0.7762058127914866,
+        0.7762058127914877,
+        0.776205812791488
+      ],
+      "deletion_auc": 0.011904761904761904,
+      "game": "gopher",
+      "insertion_auc": 0.9642857142857143,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 376,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@28)",
+      "output_kind": "content",
+      "pearson": 0.776205812791488,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.36916461886061924
+    },
+    {
+      "completeness_residual": 4.547473508864641e-13,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.8271410949910136,
+        0.8347636512250938,
+        0.8312591684778768,
+        0.834974448700108
+      ],
+      "deletion_auc": 0.9717077654076925,
+      "game": "gopher",
+      "insertion_auc": 0.0634429299760691,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 376,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r103c74",
+      "output_kind": "position",
+      "pearson": 0.834974448700108,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.36720053816209686
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": 115,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "deletion_auc": null,
+      "game": "hero",
+      "insertion_auc": null,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 380,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@115)",
+      "output_kind": "content",
+      "pearson": 0.0,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.0
+    },
+    {
+      "completeness_residual": 3.637978807091713e-12,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.4666540530061711,
+        0.5124073657733954,
+        0.5264513892257895,
+        0.532212115570314
+      ],
+      "deletion_auc": 0.9575132490995555,
+      "game": "hero",
+      "insertion_auc": 0.11757803163299789,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 380,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r63c34",
+      "output_kind": "position",
+      "pearson": 0.532212115570314,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.2689325583668584
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": 55,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.7628685894885416,
+        0.7532777976240332,
+        0.7589973259683864,
+        0.7615188129081818
+      ],
+      "deletion_auc": 0.026515151515151502,
+      "game": "ice_hockey",
+      "insertion_auc": 0.8295454545454544,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 267,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@55)",
+      "output_kind": "content",
+      "pearson": 0.7615188129081818,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.3226323440825583
+    },
+    {
+      "completeness_residual": 5.684341886080802e-14,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.6095372506175578,
+        0.7104319783240334,
+        0.7818305483785349,
+        0.8144651904129024
+      ],
+      "deletion_auc": 0.8675324675324675,
+      "game": "ice_hockey",
+      "insertion_auc": 0.5061224489795918,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 267,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r92c61",
+      "output_kind": "position",
+      "pearson": 0.8144651904129024,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.7807247491766064
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": 27,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.7474141710126831,
+        0.7472527328184514,
+        0.7473763792604985,
+        0.7473864528900591
+      ],
+      "deletion_auc": 0.9131652661064426,
+      "game": "jamesbond",
+      "insertion_auc": 0.18347338935574234,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 318,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@27)",
+      "output_kind": "content",
+      "pearson": 0.7473864528900591,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.4469067593777291
+    },
+    {
+      "completeness_residual": 9.094947017729282e-13,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.6869596840448379,
+        0.691282474503906,
+        0.6940028865820795,
+        0.6913175545424585
+      ],
+      "deletion_auc": 0.9073032924107144,
+      "game": "jamesbond",
+      "insertion_auc": 0.09608677455357147,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 318,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r121c35",
+      "output_kind": "position",
+      "pearson": 0.6913175545424585,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.7070404330962642
+    },
+    {
+      "completeness_residual": 5.684341886080802e-14,
+      "content_ram_index": 25,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.9994409887946534,
+        0.9994409887946534,
+        0.9994409887946538,
+        0.9994409887946537
+      ],
+      "deletion_auc": 0.015625,
+      "game": "kangaroo",
+      "insertion_auc": 0.953125,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 357,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@25)",
+      "output_kind": "content",
+      "pearson": 0.9994409887946537,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.4198654022296571
+    },
+    {
+      "completeness_residual": 5.684341886080802e-14,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        -0.11035427147837316,
+        -0.060435637377610804,
+        -0.09475289022172234,
+        -0.0813510810245072
+      ],
+      "deletion_auc": 0.9437873505976095,
+      "game": "kangaroo",
+      "insertion_auc": 0.19951444223107573,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 357,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r105c80",
+      "output_kind": "position",
+      "pearson": -0.0813510810245072,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.4101149763743954
+    },
+    {
+      "completeness_residual": 2.842170943040401e-14,
+      "content_ram_index": 79,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.995583961020814,
+        0.99872196955653,
+        0.9990675621966458,
+        0.9992852917896373
+      ],
+      "deletion_auc": 0.009615384615384616,
+      "game": "krull",
+      "insertion_auc": 0.9711538461538461,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 428,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@79)",
+      "output_kind": "content",
+      "pearson": 0.9992852917896373,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.33326924925443036
+    },
+    {
+      "completeness_residual": 5.684341886080802e-14,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.07216549135319911,
+        0.27472195783859277,
+        0.5021401511308459,
+        0.752054076870711
+      ],
+      "deletion_auc": 0.9188546693159242,
+      "game": "krull",
+      "insertion_auc": 0.10718847573091116,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 428,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r162c84",
+      "output_kind": "position",
+      "pearson": 0.752054076870711,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.5811227165134376
+    },
+    {
+      "completeness_residual": 5.684341886080802e-14,
+      "content_ram_index": 74,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.7449541972846249,
+        0.7449541972846248,
+        0.7449541972846248,
+        0.7449541972846245
+      ],
+      "deletion_auc": 0.025,
+      "game": "kung_fu_master",
+      "insertion_auc": 0.925,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 223,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@74)",
+      "output_kind": "content",
+      "pearson": 0.7449541972846245,
+      "precision_at_k": 1.0,
+      "spearman": 0.5215091519019602
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.698037141372963,
+        0.701916827663108,
+        0.6853797119922571,
+        0.6956505400814819
+      ],
+      "deletion_auc": 0.9185813125085629,
+      "game": "kung_fu_master",
+      "insertion_auc": 0.1901664611590629,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 223,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r105c80",
+      "output_kind": "position",
+      "pearson": 0.6956505400814819,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.6968868015165988
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": 45,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.999506637747537,
+        0.999506637747538,
+        0.9994572254510358,
+        0.9994855104782753
+      ],
+      "deletion_auc": 0.140625,
+      "game": "montezuma_revenge",
+      "insertion_auc": 0.953125,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 357,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@45)",
+      "output_kind": "content",
+      "pearson": 0.9994855104782753,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.4198654022296571
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.8392845809359877,
+        0.8706576570562375,
+        0.8857264251330536,
+        0.8870995622480541
+      ],
+      "deletion_auc": 0.9751302627910219,
+      "game": "montezuma_revenge",
+      "insertion_auc": 0.07891354733026627,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 357,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r66c75",
+      "output_kind": "position",
+      "pearson": 0.8870995622480541,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.2864363865947674
     },
     {
       "completeness_residual": 1.4210854715202004e-14,
@@ -318,6 +1630,354 @@
     },
     {
       "completeness_residual": 0.0,
+      "content_ram_index": 100,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.787561530648217,
+        0.787561530648217,
+        0.7875615306482169,
+        0.7875615306482168
+      ],
+      "deletion_auc": 0.041666666666666664,
+      "game": "name_this_game",
+      "insertion_auc": 0.875,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 32,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@100)",
+      "output_kind": "content",
+      "pearson": 0.7875615306482168,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.65194287781876
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.9999957383307511,
+        0.9999957383303887,
+        0.9999957383299706,
+        0.9999957383296194
+      ],
+      "deletion_auc": 0.8085205992509362,
+      "game": "name_this_game",
+      "insertion_auc": 0.274812734082397,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 32,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r106c109",
+      "output_kind": "position",
+      "pearson": 0.9999957383296194,
+      "precision_at_k": 1.0,
+      "spearman": 0.9581123937430295
+    },
+    {
+      "completeness_residual": 1.4210854715202004e-14,
+      "content_ram_index": 59,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.7763215392512727,
+        0.7763215392512727,
+        0.7763215392512728,
+        0.7763215392512727
+      ],
+      "deletion_auc": 0.027777777777777776,
+      "game": "pacman",
+      "insertion_auc": 0.9166666666666666,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 165,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@59)",
+      "output_kind": "content",
+      "pearson": 0.7763215392512727,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.5467741194645765
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.7246561734849312,
+        0.7246561736610481,
+        0.7246561736359715,
+        0.7246561735937174
+      ],
+      "deletion_auc": 0.8928571428571428,
+      "game": "pacman",
+      "insertion_auc": 0.1626984126984127,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 165,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r131c77",
+      "output_kind": "position",
+      "pearson": 0.7246561735937174,
+      "precision_at_k": 1.0,
+      "spearman": 0.7629764206688532
+    },
+    {
+      "completeness_residual": 2.842170943040401e-14,
+      "content_ram_index": 89,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.9093146105232096,
+        0.9093146105232095,
+        0.9093146105232097,
+        0.9093146105232097
+      ],
+      "deletion_auc": 0.9807692307692307,
+      "game": "phoenix",
+      "insertion_auc": 0.057692307692307696,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 323,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@89)",
+      "output_kind": "content",
+      "pearson": 0.9093146105232097,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.46253957359652714
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.6217083116040542,
+        0.6217083118253828,
+        0.6217083114791695,
+        0.6217083111336805
+      ],
+      "deletion_auc": 0.8680124223602486,
+      "game": "phoenix",
+      "insertion_auc": 0.17044911610129002,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 323,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r53c84",
+      "output_kind": "position",
+      "pearson": 0.6217083111336805,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.701134954395744
+    },
+    {
+      "completeness_residual": 2.842170943040401e-14,
+      "content_ram_index": 32,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.3967100044469635,
+        0.40328457560776065,
+        0.4548794307502748,
+        0.5055632772737096
+      ],
+      "deletion_auc": 0.058823529411764705,
+      "game": "pitfall",
+      "insertion_auc": 0.05859284890426759,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 355,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@32)",
+      "output_kind": "content",
+      "pearson": 0.5055632772737096,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.42542052174390416
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.6844867916378291,
+        0.6889229810841435,
+        0.6952826547503043,
+        0.7064920496923939
+      ],
+      "deletion_auc": 0.9319149791063968,
+      "game": "pitfall",
+      "insertion_auc": 0.08909916425586631,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 355,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r120c61",
+      "output_kind": "position",
+      "pearson": 0.7064920496923939,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.5516264815884097
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": 54,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.5818667789449864,
+        0.6355732788515687,
+        0.6965989870312853,
+        0.6898355036070195
+      ],
+      "deletion_auc": 0.027777777777777776,
+      "game": "pong",
+      "insertion_auc": 0.8150793650793651,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 165,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@54)",
+      "output_kind": "content",
+      "pearson": 0.6898355036070195,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.5809036604762328
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.5957518958941215,
+        0.5906837371874658,
+        0.570057612471303,
+        0.5593890581291057
+      ],
+      "deletion_auc": 0.9722222222222222,
+      "game": "pong",
+      "insertion_auc": 0.1272609819121447,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 165,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r162c17",
+      "output_kind": "position",
+      "pearson": 0.5593890581291057,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.6426515210571795
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": 84,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.39663522819777397,
+        0.5522948621986958,
+        0.7375527435694336,
+        0.7497698273729368
+      ],
+      "deletion_auc": 0.01,
+      "game": "private_eye",
+      "insertion_auc": 0.9445882352941177,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 413,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@84)",
+      "output_kind": "content",
+      "pearson": 0.7497698273729368,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.33961236503585457
+    },
+    {
+      "completeness_residual": 9.094947017729282e-13,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.7333489374821056,
+        0.7366127778036582,
+        0.7378674241230041,
+        0.7371148198606142
+      ],
+      "deletion_auc": 0.9825199949219245,
+      "game": "private_eye",
+      "insertion_auc": 0.04719944141170496,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 413,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r148c48",
+      "output_kind": "position",
+      "pearson": 0.7371148198606142,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.7247111586792231
+    },
+    {
+      "completeness_residual": 0.0,
       "content_ram_index": 39,
       "convergence_n_coalitions": [
         64,
@@ -373,12 +2033,476 @@
       "pearson": 0.3867575942267832,
       "precision_at_k": 0.6666666666666666,
       "spearman": 0.7080385183431254
+    },
+    {
+      "completeness_residual": 2.842170943040401e-14,
+      "content_ram_index": 55,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.999522621812764,
+        0.99959774442473,
+        0.9995983195876965,
+        0.9996054956883786
+      ],
+      "deletion_auc": 0.01078397808969531,
+      "game": "riverraid",
+      "insertion_auc": 0.9601163984936667,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 407,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@55)",
+      "output_kind": "content",
+      "pearson": 0.9996054956883786,
+      "precision_at_k": 1.0,
+      "spearman": 0.4373661900475861
+    },
+    {
+      "completeness_residual": 1.8189894035458565e-12,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.26675399470117706,
+        0.45858081790398425,
+        0.5801728154750112,
+        0.7873110018852068
+      ],
+      "deletion_auc": 0.9404200296774082,
+      "game": "riverraid",
+      "insertion_auc": 0.19688944736548672,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 407,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r158c79",
+      "output_kind": "position",
+      "pearson": 0.7873110018852068,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.37728858897722245
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": 55,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "deletion_auc": null,
+      "game": "road_runner",
+      "insertion_auc": null,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 369,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@55)",
+      "output_kind": "content",
+      "pearson": 0.0,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.0
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.9269556452311148,
+        0.946930161329395,
+        0.9457459886901153,
+        0.947549985467327
+      ],
+      "deletion_auc": 0.9013234841489688,
+      "game": "road_runner",
+      "insertion_auc": 0.08039396737457678,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 369,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r74c30",
+      "output_kind": "position",
+      "pearson": 0.947549985467327,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.6379332839336977
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": 118,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "deletion_auc": null,
+      "game": "seaquest",
+      "insertion_auc": null,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 400,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@118)",
+      "output_kind": "content",
+      "pearson": 0.0,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.0
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.7135968349817274,
+        0.7137045230725442,
+        0.7136412948207594,
+        0.7136288812297126
+      ],
+      "deletion_auc": 0.9808983147672098,
+      "game": "seaquest",
+      "insertion_auc": 0.038120060934970966,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 400,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r52c77",
+      "output_kind": "position",
+      "pearson": 0.7136288812297126,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.5253645541679283
+    },
+    {
+      "completeness_residual": 5.684341886080802e-14,
+      "content_ram_index": 81,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.9995983399158723,
+        0.9998760841826053,
+        0.9997154108472527,
+        0.9996377852697428
+      ],
+      "deletion_auc": 0.015469738030713645,
+      "game": "space_invaders",
+      "insertion_auc": 0.9583333333333334,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 380,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@81)",
+      "output_kind": "content",
+      "pearson": 0.9996377852697428,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.39719748637091973
+    },
+    {
+      "completeness_residual": 4.547473508864641e-13,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.7687360036901926,
+        0.8138881457536875,
+        0.8023557503796114,
+        0.8196153171440388
+      ],
+      "deletion_auc": 0.9050159260290069,
+      "game": "space_invaders",
+      "insertion_auc": 0.1258774778117945,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 380,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r192c35",
+      "output_kind": "position",
+      "pearson": 0.8196153171440388,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.33068129456704204
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": 45,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.9998555185690589,
+        0.99985551856906,
+        0.9998555185690604,
+        0.9998555185690604
+      ],
+      "deletion_auc": 0.015625,
+      "game": "tennis",
+      "insertion_auc": 0.953125,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 357,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@45)",
+      "output_kind": "content",
+      "pearson": 0.9998555185690604,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.4198654022296571
+    },
+    {
+      "completeness_residual": 2.2737367544323206e-13,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        -0.04281100744248977,
+        -0.016246590679245602,
+        -0.014171844305779746,
+        -0.0076805781751618975
+      ],
+      "deletion_auc": 0.8739395775623265,
+      "game": "tennis",
+      "insertion_auc": 0.13718403739612187,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 357,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r26c68",
+      "output_kind": "position",
+      "pearson": -0.0076805781751618975,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.6434697475833516
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": 82,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.5808308189907135,
+        0.6285781120712963,
+        0.7286788701429726,
+        0.7364428998863893
+      ],
+      "deletion_auc": 0.10738707003729796,
+      "game": "venture",
+      "insertion_auc": 0.0037815996684624938,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 369,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@82)",
+      "output_kind": "content",
+      "pearson": 0.7364428998863893,
+      "precision_at_k": 1.0,
+      "spearman": 0.5319269737590727
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        -0.057255083356557684,
+        -0.048629407248990425,
+        -0.05691268346552606,
+        -0.05878510254190269
+      ],
+      "deletion_auc": 0.8011443443774269,
+      "game": "venture",
+      "insertion_auc": 0.15444517888126907,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 369,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r73c4",
+      "output_kind": "position",
+      "pearson": -0.05878510254190269,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.43495435622271456
+    },
+    {
+      "completeness_residual": 2.842170943040401e-14,
+      "content_ram_index": 67,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.7703554458188094,
+        0.770357169501133,
+        0.7703567953538369,
+        0.7703563876788008
+      ],
+      "deletion_auc": 0.9654017857142857,
+      "game": "video_pinball",
+      "insertion_auc": 0.09375,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 115,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@67)",
+      "output_kind": "content",
+      "pearson": 0.7703563876788008,
+      "precision_at_k": 1.0,
+      "spearman": 0.6683786036416091
+    },
+    {
+      "completeness_residual": 0.0,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.30555572661067154,
+        0.30756849345738313,
+        0.3104400268180593,
+        0.3093232534055976
+      ],
+      "deletion_auc": 0.7812500000000002,
+      "game": "video_pinball",
+      "insertion_auc": 0.17291666666666666,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 115,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r184c66",
+      "output_kind": "position",
+      "pearson": 0.3093232534055976,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.5478151799050005
+    },
+    {
+      "completeness_residual": 2.842170943040401e-14,
+      "content_ram_index": 43,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        0.7708164565650644,
+        0.7708164565650649,
+        0.7708164565650649,
+        0.770816456565065
+      ],
+      "deletion_auc": 0.017857142857142856,
+      "game": "yars_revenge",
+      "insertion_auc": 0.9464285714285714,
+      "is_content_path": true,
+      "n_coalitions": 512,
+      "n_real_reruns": 318,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "content(ram_self@43)",
+      "output_kind": "content",
+      "pearson": 0.770816456565065,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.4469067593777291
+    },
+    {
+      "completeness_residual": 5.684341886080802e-14,
+      "content_ram_index": -1,
+      "convergence_n_coalitions": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "convergence_pearson": [
+        -0.08777029194313726,
+        -0.0861485756099225,
+        -0.08419369060195095,
+        -0.08480697623240883
+      ],
+      "deletion_auc": 0.9521428571428572,
+      "game": "yars_revenge",
+      "insertion_auc": 0.12071428571428573,
+      "is_content_path": false,
+      "n_coalitions": 512,
+      "n_real_reruns": 318,
+      "oracle_self_pearson": 1.0,
+      "oracle_self_precision_at_k": 1.0,
+      "output": "screen_region(n_changed_px)@r118c38",
+      "output_kind": "position",
+      "pearson": -0.08480697623240883,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.5321275577238695
     }
   ],
   "seed": 0,
   "target_frame": 120,
-  "timestamp": "1782945410",
+  "timestamp": "1783130944",
   "topk": 3,
-  "total_budget_reruns": 3886,
+  "total_budget_reruns": 25228,
   "where": "local"
 }

@@ -1,7 +1,7 @@
 {
   "arrays": "ig_baseline_sweep_demon_attack_content.npz",
   "ci": null,
-  "commit": "1adff48",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-IG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline_sweep": {
@@ -247,7 +247,7 @@
     ],
     "content_ram_index": 16,
     "harness_positive_control": {
-      "deletion_auc": 0.9120338397790052,
+      "deletion_auc": 0.9120338397790053,
       "insertion_auc": 0.7777106353591161,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the IG numbers above are then a true measurement, not an artefact of the metric.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
@@ -304,6 +304,16 @@
     "output_note": "CONTENT output: RAM byte 16 read one-hot through soft_ram_peek (∂y/∂ram[16]=1) — the most causally-active candidate concept byte. BASELINE SWEEP (the §5 finding): the raw IG MAGNITUDE is baseline-sensitive (max|IG| ranges 73.0…181.0 via the (x−x0) factor), but the faithfulness CORR/RANKING is INVARIANT (Δcorr=0.0) because the one-hot read makes ∂y/∂u a CONSTANT ⇒ all mass stays on the same byte for every baseline. The only baseline that changes the ranking is the DEGENERACY: a baseline byte equal to the content byte kills IG there (4/4 baselines keep IG alive). completeness Σ IG ≈ y(x)−y(x0) holds for all baselines (err≈0.0 at the headline).",
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE IG over outputs×causes×games×baselines on GPU; the forward is bit-exact to this map.",
     "substrate": "jutari (Julia) — Zygote Integrated Gradients over the RAM tape + TRUE-VCS deletion/insertion re-runs (real-ROM, bit-exact oracle machinery).",
+    "triad": {
+      "F": 0.954493509598193,
+      "M": 1.0,
+      "M_named_size": 2,
+      "M_note": "|U*|=3 (oracle movers) / |U_hat|=2 (method above-threshold)",
+      "M_true_minimal_size": 3,
+      "S": 0.875,
+      "S_note": "held-out predictive fit: 14/16 held-out do(u) within ε=18.1 (calib=16, fit Δy≈1.32·attr+0.0)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 245.0
   },
   "game": "demon_attack",
@@ -317,7 +327,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@16)",
-  "timestamp": "1783063754",
+  "timestamp": "1783122695",
   "value": 0.954493509598193,
   "where": "local"
 }

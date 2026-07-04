@@ -1,7 +1,7 @@
 {
   "arrays": "ig_baseline_sweep_bowling_ball_pixel.npz",
   "ci": null,
-  "commit": "1adff48",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-IG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline_sweep": {
@@ -53,10 +53,10 @@
           },
           "baseline": "zeros",
           "completeness_err": 0.25,
-          "deletion_auc": 0.7310799319727894,
+          "deletion_auc": 0.7310799319727892,
           "ig_max_abs": 0.75,
           "insertion_auc": 0.2874453352769679,
-          "pearson_corr": 0.34852126796713184,
+          "pearson_corr": 0.3485212679671316,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.38497085331018943,
           "topk": 3,
@@ -109,7 +109,7 @@
           },
           "baseline": "mean_ram",
           "completeness_err": 0.0107421875,
-          "deletion_auc": 0.7310799319727894,
+          "deletion_auc": 0.7310799319727892,
           "ig_max_abs": 1.0107421875,
           "insertion_auc": 0.2874453352769679,
           "pearson_corr": 0.3485212679671317,
@@ -165,10 +165,10 @@
           },
           "baseline": "random",
           "completeness_err": 0.03125,
-          "deletion_auc": 0.7310799319727894,
+          "deletion_auc": 0.7310799319727892,
           "ig_max_abs": 0.96875,
           "insertion_auc": 0.2874453352769679,
-          "pearson_corr": 0.3485212679671319,
+          "pearson_corr": 0.3485212679671317,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.38497085331018943,
           "topk": 3,
@@ -221,10 +221,10 @@
           },
           "baseline": "real_alt",
           "completeness_err": 0.0,
-          "deletion_auc": 0.7310799319727894,
+          "deletion_auc": 0.7310799319727892,
           "ig_max_abs": 1.0,
           "insertion_auc": 0.2874453352769679,
-          "pearson_corr": 0.34852126796713156,
+          "pearson_corr": 0.34852126796713173,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.38497085331018943,
           "topk": 3,
@@ -232,9 +232,9 @@
         }
       ],
       "completeness_err_max": 0.25,
-      "corr_max": 0.3485212679671319,
-      "corr_min": 0.34852126796713156,
-      "corr_sensitivity": 3.3306690738754696e-16,
+      "corr_max": 0.34852126796713173,
+      "corr_min": 0.3485212679671316,
+      "corr_sensitivity": 1.1102230246251565e-16,
       "definitions": {
         "mean_ram": "constant baseline = mean(x) per byte (the 'average input')",
         "random": "one uniform-random RAM draw ∈ 0..255 (seed=0+9973)",
@@ -297,8 +297,8 @@
     ],
     "content_ram_index": -1,
     "harness_positive_control": {
-      "deletion_auc": 0.6087724063009238,
-      "insertion_auc": 0.1618232844468586,
+      "deletion_auc": 0.6087724063009234,
+      "insertion_auc": 0.16182328444685856,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the IG numbers above are then a true measurement, not an artefact of the metric.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "oracle_column_degenerate": false,
@@ -308,9 +308,9 @@
     "headline_baseline": "zeros",
     "headline_metrics": {
       "completeness_err": 0.25,
-      "deletion_auc": 0.7310799319727894,
+      "deletion_auc": 0.7310799319727892,
       "insertion_auc": 0.2874453352769679,
-      "pearson_corr": 0.34852126796713184,
+      "pearson_corr": 0.3485212679671316,
       "precision_at_k": 0.3333333333333333,
       "spearman_corr": 0.38497085331018943,
       "topk": 3
@@ -382,6 +382,16 @@
       "shared_output": "screen_region(n_changed_px)@r164c33",
       "state_kind": "seeded_random_action_gameplay"
     },
+    "triad": {
+      "F": 0.3485212679671316,
+      "M": 1.0,
+      "M_named_size": 2,
+      "M_note": "|U*|=14 (oracle movers) / |U_hat|=2 (method above-threshold)",
+      "M_true_minimal_size": 14,
+      "S": 0.9047619047619048,
+      "S_note": "held-out predictive fit: 19/21 held-out do(u) within ε=52.6 (calib=21, fit Δy≈231.067·attr+34.7)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 0.0
   },
   "game": "bowling",
@@ -395,7 +405,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r164c33",
-  "timestamp": "1783064305",
-  "value": 0.34852126796713184,
+  "timestamp": "1783122162",
+  "value": 0.3485212679671316,
   "where": "local"
 }

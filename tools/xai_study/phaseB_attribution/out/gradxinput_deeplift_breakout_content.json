@@ -1,7 +1,7 @@
 {
   "arrays": "gradxinput_deeplift_breakout_content.npz",
   "ci": null,
-  "commit": "9bc37f8b",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-attributed causes occluded (deletion) / restored (insertion); each curve point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline": "all-zeros RAM (the 'absent' state)",
@@ -187,6 +187,16 @@
       "ram_index": 30
     },
     "substrate": "jutari (Julia) — Zygote content-path ∂y/∂u over the RAM tape + TRUE-VCS deletion/insertion re-runs (real-ROM, bit-exact oracle machinery).",
+    "triad": {
+      "F": 0.7497409755188416,
+      "M": 1.0,
+      "M_named_size": 2,
+      "M_note": "|U*|=2 (oracle movers) / |U_hat|=2 (method above-threshold)",
+      "M_true_minimal_size": 2,
+      "S": 0.9,
+      "S_note": "held-out predictive fit: 9/10 held-out do(u) within ε=19.2 (calib=10, fit Δy≈0.089·attr+0.0)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 192.0
   },
   "game": "breakout",
@@ -200,7 +210,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content:score@ram[30]",
-  "timestamp": "1782941640",
+  "timestamp": "1783129948",
   "value": 0.7497409755188416,
   "where": "local"
 }

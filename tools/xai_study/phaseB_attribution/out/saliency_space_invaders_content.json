@@ -1,7 +1,7 @@
 {
   "arrays": "saliency_space_invaders_content.npz",
   "ci": null,
-  "commit": "c157ec63",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-saliency causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment (e.g. the vanishing position output).",
     "baseline": "none (vanilla saliency uses no baseline and no input weighting)",
@@ -144,6 +144,16 @@
     },
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE saliency over outputs×causes×games on GPU; the forward is bit-exact to this map.",
     "substrate": "jutari (Julia) — Zygote content-path |∂y/∂u| over the RAM tape + TRUE-VCS deletion/insertion re-runs (real-ROM, bit-exact oracle machinery).",
+    "triad": {
+      "F": 0.9998830846093596,
+      "M": 1.0,
+      "M_named_size": 2,
+      "M_note": "|U*|=2 (oracle movers) / |U_hat|=2 (method above-threshold)",
+      "M_true_minimal_size": 2,
+      "S": 1.0,
+      "S_note": "held-out predictive fit: 18/18 held-out do(u) within ε=23.9 (calib=18, fit Δy≈232.0·attr+0.0)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 246.0
   },
   "game": "space_invaders",
@@ -157,7 +167,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@81)",
-  "timestamp": "1782921942",
+  "timestamp": "1783129130",
   "value": 0.9998830846093596,
   "where": "local"
 }

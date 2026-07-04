@@ -1,7 +1,7 @@
 {
   "arrays": "lime_jamesbond_content.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-LIME causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -180,6 +180,16 @@
       "model": "weighted linear g(z)=w·z+b, ridge-regularised normal equations (LinearAlgebra)",
       "r2": 0.774590912378628
     },
+    "triad": {
+      "F": 0.7272479689295319,
+      "M": 0.07692307692307693,
+      "M_named_size": 26,
+      "M_note": "|U*|=2 (oracle movers) / |U_hat|=26 (method above-threshold)",
+      "M_true_minimal_size": 2,
+      "S": 0.9285714285714286,
+      "S_note": "held-out predictive fit: 13/14 held-out do(u) within ε=22.0 (calib=14, fit Δy≈0.089·attr+-0.884)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_intact": 35.0
   },
   "game": "jamesbond",
@@ -193,7 +203,7 @@
   "state": "f90+15",
   "stderr": 0.005037076829061123,
   "target_output": "content(ram_self@27)",
-  "timestamp": "1783052477",
+  "timestamp": "1783129897",
   "value": 0.7272479689295319,
   "where": "local"
 }

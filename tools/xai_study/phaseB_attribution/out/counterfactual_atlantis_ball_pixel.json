@@ -1,7 +1,7 @@
 {
   "arrays": "counterfactual_atlantis_ball_pixel.npz",
   "ci": null,
-  "commit": "5f0d6e67",
+  "commit": "d85961ed",
   "extra": {
     "alt_frame": 60,
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-CF causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
@@ -133,6 +133,16 @@
       "seed": 0,
       "shared_output": "screen_region(n_changed_px)@r22c76",
       "state_kind": "seeded_random_action_gameplay"
+    },
+    "triad": {
+      "F": 0.6509876909805804,
+      "M": 1.0,
+      "M_named_size": 8,
+      "M_note": "|U*|=12 (oracle movers) / |U_hat|=8 (method above-threshold)",
+      "M_true_minimal_size": 12,
+      "S": 0.0,
+      "S_note": "held-out predictive fit: 0/10 held-out do(u) within ε=10.7 (calib=10, fit Δy≈0.398·attr+20.368)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
     }
   },
   "game": "atlantis",
@@ -146,7 +156,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r22c76",
-  "timestamp": "1783097962",
+  "timestamp": "1783131234",
   "value": 0.6509876909805804,
   "where": "local"
 }

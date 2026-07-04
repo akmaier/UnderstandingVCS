@@ -1,7 +1,7 @@
 {
   "arrays": "rise_riverraid_content.npz",
   "ci": null,
-  "commit": "15e5d2df",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-RISE causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -215,6 +215,16 @@
     },
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard i --nshards n --shard-kind game): one Slurm array task per core game; or batched SOFT-STE masked re-runs over masks×cells×games on GPU (the forward is bit-exact to this HARD map).",
     "substrate": "jutari (Julia, HARD) — RISE (Petsiuk 2018) randomized-mask saliency: draw N random binary masks over the candidate RAM cells, mask the dropped cells to 0, RE-RUN the real ROM (bit-exact oracle machinery), weight each mask by the masked output. Every probe is a genuine emulator re-run; no gradient, no surrogate.",
+    "triad": {
+      "F": 0.9730028609304865,
+      "M": 0.11363636363636363,
+      "M_named_size": 44,
+      "M_note": "|U*|=5 (oracle movers) / |U_hat|=44 (method above-threshold)",
+      "M_true_minimal_size": 5,
+      "S": 1.0,
+      "S_note": "held-out predictive fit: 23/23 held-out do(u) within ε=25.2 (calib=23, fit Δy≈2.121·attr+-12.592)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_intact": 252.0
   },
   "game": "riverraid",
@@ -228,7 +238,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@55)",
-  "timestamp": "1783113569",
+  "timestamp": "1783125967",
   "value": 0.9730028609304865,
   "where": "local"
 }

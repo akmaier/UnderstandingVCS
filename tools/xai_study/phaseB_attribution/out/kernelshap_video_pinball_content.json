@@ -1,7 +1,7 @@
 {
   "arrays": "kernelshap_video_pinball_content.npz",
   "ci": null,
-  "commit": "2a9ade4c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-SHAP causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -153,7 +153,17 @@
       "98": 0.024528061569074625
     },
     "shapley_kernel_note": "coalitions sampled with size s ~ p(s)∝(C−1)/(s·(C−s)); each row of the WLS is weighted by the Shapley kernel π(s)=(C−1)/(binom(C,s)·s·(C−s)) (Lundberg & Lee Theorem 2). Endpoints s∈{0,C} carry infinite weight ⇒ pinned exactly by the efficiency constraint (not sampled). A 1e-8 ridge stabilises rank-deficient designs.",
-    "substrate": "jutari (Julia, HARD) — real-ROM coalition re-runs (bit-exact oracle machinery) + closed-form efficiency-constrained WLS solve. NO surrogate model: the value function IS the true emulator, so the only approximation is the coalition sampling + the additive (linear) SHAP model."
+    "substrate": "jutari (Julia, HARD) — real-ROM coalition re-runs (bit-exact oracle machinery) + closed-form efficiency-constrained WLS solve. NO surrogate model: the value function IS the true emulator, so the only approximation is the coalition sampling + the additive (linear) SHAP model.",
+    "triad": {
+      "F": 0.7703563876788008,
+      "M": 0.21428571428571427,
+      "M_named_size": 14,
+      "M_note": "|U*|=3 (oracle movers) / |U_hat|=14 (method above-threshold)",
+      "M_true_minimal_size": 3,
+      "S": 0.875,
+      "S_note": "held-out predictive fit: 7/8 held-out do(u) within ε=10.9 (calib=8, fit Δy≈0.125·attr+0.251)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    }
   },
   "game": "video_pinball",
   "method": "kernelshap",
@@ -166,7 +176,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@67)",
-  "timestamp": "1783059949",
+  "timestamp": "1783130861",
   "value": 0.7703563876788008,
   "where": "local"
 }

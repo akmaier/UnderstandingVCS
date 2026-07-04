@@ -1,7 +1,7 @@
 {
   "arrays": "ig_baseline_sweep_double_dunk_content.npz",
   "ci": null,
-  "commit": "1adff48",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-IG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline_sweep": {
@@ -39,8 +39,8 @@
           "completeness_err": 0.0,
           "deletion_auc": 0.9791412291412291,
           "ig_max_abs": 68.0,
-          "insertion_auc": 0.06827431827431833,
-          "pearson_corr": 0.7374679883355404,
+          "insertion_auc": 0.06827431827431826,
+          "pearson_corr": 0.7374679883355406,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.6262636502688146,
           "topk": 3,
@@ -79,8 +79,8 @@
           "completeness_err": 0.0,
           "deletion_auc": 0.9791412291412291,
           "ig_max_abs": 6.5,
-          "insertion_auc": 0.06827431827431833,
-          "pearson_corr": 0.7374679883355411,
+          "insertion_auc": 0.06827431827431826,
+          "pearson_corr": 0.7374679883355408,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.6262636502688146,
           "topk": 3,
@@ -119,8 +119,8 @@
           "completeness_err": 0.0,
           "deletion_auc": 0.9791412291412291,
           "ig_max_abs": 182.0,
-          "insertion_auc": 0.06827431827431833,
-          "pearson_corr": 0.7374679883355407,
+          "insertion_auc": 0.06827431827431826,
+          "pearson_corr": 0.7374679883355406,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.6262636502688146,
           "topk": 3,
@@ -159,7 +159,7 @@
           "completeness_err": 0.0,
           "deletion_auc": 0.675750719868367,
           "ig_max_abs": 0.0,
-          "insertion_auc": 0.3651789387083503,
+          "insertion_auc": 0.36517893870835044,
           "pearson_corr": 0.0,
           "precision_at_k": 0.0,
           "spearman_corr": 0.0,
@@ -168,9 +168,9 @@
         }
       ],
       "completeness_err_max": 0.0,
-      "corr_max": 0.7374679883355411,
+      "corr_max": 0.7374679883355408,
       "corr_min": 0.0,
-      "corr_sensitivity": 0.7374679883355411,
+      "corr_sensitivity": 0.7374679883355408,
       "definitions": {
         "mean_ram": "constant baseline = mean(x) per byte (the 'average input')",
         "random": "one uniform-random RAM draw ∈ 0..255 (seed=0+9973)",
@@ -218,7 +218,7 @@
     "content_ram_index": 37,
     "harness_positive_control": {
       "deletion_auc": 0.9754782254782255,
-      "insertion_auc": 0.07315832315832324,
+      "insertion_auc": 0.07315832315832317,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the IG numbers above are then a true measurement, not an artefact of the metric.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "oracle_column_degenerate": false,
@@ -229,8 +229,8 @@
     "headline_metrics": {
       "completeness_err": 0.0,
       "deletion_auc": 0.9791412291412291,
-      "insertion_auc": 0.06827431827431833,
-      "pearson_corr": 0.7374679883355404,
+      "insertion_auc": 0.06827431827431826,
+      "pearson_corr": 0.7374679883355406,
       "precision_at_k": 0.6666666666666666,
       "spearman_corr": 0.6262636502688146,
       "topk": 3
@@ -268,6 +268,16 @@
     "output_note": "CONTENT output: RAM byte 37 read one-hot through soft_ram_peek (∂y/∂ram[37]=1) — the most causally-active candidate concept byte. BASELINE SWEEP (the §5 finding): the raw IG MAGNITUDE is baseline-sensitive (max|IG| ranges 0.0…182.0 via the (x−x0) factor), but the faithfulness CORR/RANKING is INVARIANT (Δcorr=0.7375) because the one-hot read makes ∂y/∂u a CONSTANT ⇒ all mass stays on the same byte for every baseline. The only baseline that changes the ranking is the DEGENERACY: a baseline byte equal to the content byte kills IG there (3/4 baselines keep IG alive). completeness Σ IG ≈ y(x)−y(x0) holds for all baselines (err≈0.0 at the headline).",
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE IG over outputs×causes×games×baselines on GPU; the forward is bit-exact to this map.",
     "substrate": "jutari (Julia) — Zygote Integrated Gradients over the RAM tape + TRUE-VCS deletion/insertion re-runs (real-ROM, bit-exact oracle machinery).",
+    "triad": {
+      "F": 0.7374679883355406,
+      "M": 1.0,
+      "M_named_size": 2,
+      "M_note": "|U*|=6 (oracle movers) / |U_hat|=2 (method above-threshold)",
+      "M_true_minimal_size": 6,
+      "S": 0.9230769230769231,
+      "S_note": "held-out predictive fit: 12/13 held-out do(u) within ε=18.3 (calib=13, fit Δy≈0.173·attr+0.25)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 66.0
   },
   "game": "double_dunk",
@@ -281,7 +291,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@37)",
-  "timestamp": "1783064359",
-  "value": 0.7374679883355404,
+  "timestamp": "1783122773",
+  "value": 0.7374679883355406,
   "where": "local"
 }

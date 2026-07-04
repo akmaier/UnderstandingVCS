@@ -1,7 +1,7 @@
 {
   "arrays": "counterfactual_kung_fu_master_content.npz",
   "ci": null,
-  "commit": "5f0d6e67",
+  "commit": "d85961ed",
   "extra": {
     "alt_frame": 15,
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-CF causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
@@ -119,7 +119,17 @@
     "output_note": "CONTENT output: RAM byte 74 (the most causally-active candidate concept byte — SAME pick as the IG/EG/saliency siblings). The ON-DISTRIBUTION COUNTERFACTUAL substitutes candidate RAM cells toward a REAL alternative state x' (genuine RAM at frame 15 of the same ROM — on-distribution, not a synthetic vector) and RE-RUNS the real ROM. y(x)=209.0, y(x')=209.0; minimal valid set S=Int64[] (|S|=0 vs 0 true-causal cells, minimality=NA). Set-state-and-re-render keeps every edit on-distribution ⇒ removes Atrey 2020's off-manifold objection (method matrix §7: Partial→Succeed).",
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE counterfactual search over outputs×cells×games on GPU; the forward is bit-exact to this HARD map.",
     "substrate": "jutari (Julia, HARD) — on-distribution counterfactual: set the real alternative state + re-run the real ROM (bit-exact oracle machinery); every validity test + del/ins curve point is a genuine emulator re-run, no surrogate.",
-    "tau": 0.5
+    "tau": 0.5,
+    "triad": {
+      "F": 0.0,
+      "M": null,
+      "M_named_size": 0,
+      "M_note": "M undefined: method names nothing (all-zero attribution) at this state",
+      "M_true_minimal_size": 2,
+      "S": 0.9,
+      "S_note": "held-out predictive fit: 9/10 held-out do(u) within ε=20.9 (calib=10, fit Δy≈0.0·attr+1.7)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    }
   },
   "game": "kung_fu_master",
   "method": "on_distribution_counterfactual",
@@ -132,7 +142,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@74)",
-  "timestamp": "1783099576",
+  "timestamp": "1783132943",
   "value": 0.0,
   "where": "local"
 }

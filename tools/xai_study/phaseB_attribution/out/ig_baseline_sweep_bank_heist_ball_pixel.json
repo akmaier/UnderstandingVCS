@@ -1,7 +1,7 @@
 {
   "arrays": "ig_baseline_sweep_bank_heist_ball_pixel.npz",
   "ci": null,
-  "commit": "1adff48",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-IG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline_sweep": {
@@ -52,7 +52,7 @@
           "deletion_auc": 0.008999511062217332,
           "ig_max_abs": 0.998046875,
           "insertion_auc": 0.3346931915413765,
-          "pearson_corr": -0.12755330911210916,
+          "pearson_corr": -0.12755330911210913,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.4624047813530715,
           "topk": 3,
@@ -202,6 +202,16 @@
       "shared_output": "screen_region(n_changed_px)@r81c23",
       "state_kind": "seeded_random_action_gameplay"
     },
+    "triad": {
+      "F": -0.1275533091121092,
+      "M": 1.0,
+      "M_named_size": 2,
+      "M_note": "|U*|=8 (oracle movers) / |U_hat|=2 (method above-threshold)",
+      "M_true_minimal_size": 8,
+      "S": 0.8333333333333334,
+      "S_note": "held-out predictive fit: 5/6 held-out do(u) within ε=1090.4 (calib=6, fit Δy≈61.815·attr+32.4)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 0.0
   },
   "game": "bank_heist",
@@ -215,7 +225,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r81c23",
-  "timestamp": "1783063572",
+  "timestamp": "1783121885",
   "value": -0.1275533091121092,
   "where": "local"
 }

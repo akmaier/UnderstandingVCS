@@ -1,7 +1,7 @@
 {
   "arrays": "guided_backprop_phoenix_ball_pixel.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "adebayo_sanity_check": {
       "failure_mode": "model_invariant_saliency_constant_jacobian",
@@ -153,6 +153,16 @@
       "shared_output": "screen_region(n_changed_px)@r53c84",
       "state_kind": "seeded_random_action_gameplay"
     },
+    "triad": {
+      "F": 0.0,
+      "M": null,
+      "M_named_size": 0,
+      "M_note": "M undefined: method names nothing (all-zero attribution) at this state",
+      "M_true_minimal_size": 12,
+      "S": 0.23076923076923078,
+      "S_note": "held-out predictive fit: 3/13 held-out do(u) within ε=4.5 (calib=13, fit Δy≈0.0·attr+40.923)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 0.0
   },
   "game": "phoenix",
@@ -166,7 +176,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r53c84",
-  "timestamp": "1783037476",
+  "timestamp": "1783131913",
   "value": 0.0,
   "where": "local"
 }

@@ -1,7 +1,7 @@
 {
   "arrays": "rise_double_dunk_content.npz",
   "ci": null,
-  "commit": "15e5d2df",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-RISE causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -155,6 +155,16 @@
     },
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard i --nshards n --shard-kind game): one Slurm array task per core game; or batched SOFT-STE masked re-runs over masks×cells×games on GPU (the forward is bit-exact to this HARD map).",
     "substrate": "jutari (Julia, HARD) — RISE (Petsiuk 2018) randomized-mask saliency: draw N random binary masks over the candidate RAM cells, mask the dropped cells to 0, RE-RUN the real ROM (bit-exact oracle machinery), weight each mask by the masked output. Every probe is a genuine emulator re-run; no gradient, no surrogate.",
+    "triad": {
+      "F": 0.709225199027362,
+      "M": 0.25,
+      "M_named_size": 24,
+      "M_note": "|U*|=6 (oracle movers) / |U_hat|=24 (method above-threshold)",
+      "M_true_minimal_size": 6,
+      "S": 0.9230769230769231,
+      "S_note": "held-out predictive fit: 12/13 held-out do(u) within ε=18.3 (calib=13, fit Δy≈0.131·attr+-0.683)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_intact": 66.0
   },
   "game": "double_dunk",
@@ -168,7 +178,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@37)",
-  "timestamp": "1783111069",
+  "timestamp": "1783123229",
   "value": 0.709225199027362,
   "where": "local"
 }

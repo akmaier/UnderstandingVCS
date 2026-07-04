@@ -1,7 +1,7 @@
 {
   "arrays": "saliency_alien_position.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-saliency causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment (e.g. the vanishing position output).",
     "baseline": "none (vanilla saliency uses no baseline and no input weighting)",
@@ -98,6 +98,16 @@
       "shared_output": "screen_region(n_changed_px)@r64c78",
       "state_kind": "seeded_random_action_gameplay"
     },
+    "triad": {
+      "F": -0.30370980670660913,
+      "M": 1.0,
+      "M_named_size": 2,
+      "M_note": "|U*|=6 (oracle movers) / |U_hat|=2 (method above-threshold)",
+      "M_true_minimal_size": 6,
+      "S": 0.2857142857142857,
+      "S_note": "held-out predictive fit: 2/7 held-out do(u) within ε=9.7 (calib=7, fit Δy≈-25.667·attr+25.667)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 0.0
   },
   "game": "alien",
@@ -111,7 +121,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r64c78",
-  "timestamp": "1783038624",
+  "timestamp": "1783126136",
   "value": -0.30370980670660913,
   "where": "local"
 }

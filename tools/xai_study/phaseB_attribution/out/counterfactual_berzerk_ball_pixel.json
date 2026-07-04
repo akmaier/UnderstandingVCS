@@ -1,7 +1,7 @@
 {
   "arrays": "counterfactual_berzerk_ball_pixel.npz",
   "ci": null,
-  "commit": "5f0d6e67",
+  "commit": "d85961ed",
   "extra": {
     "alt_frame": 15,
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-CF causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
@@ -252,6 +252,16 @@
       "seed": 0,
       "shared_output": "screen_region(n_changed_px)@r114c5",
       "state_kind": "seeded_random_action_gameplay"
+    },
+    "triad": {
+      "F": -0.057930674897006644,
+      "M": 1.0,
+      "M_named_size": 18,
+      "M_note": "|U*|=23 (oracle movers) / |U_hat|=18 (method above-threshold)",
+      "M_true_minimal_size": 23,
+      "S": 0.18518518518518517,
+      "S_note": "held-out predictive fit: 5/27 held-out do(u) within ε=156.8 (calib=27, fit Δy≈-4.831·attr+1372.866)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
     }
   },
   "game": "berzerk",
@@ -265,7 +275,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r114c5",
-  "timestamp": "1783098167",
+  "timestamp": "1783131459",
   "value": -0.057930674897006644,
   "where": "local"
 }

@@ -1,7 +1,7 @@
 {
   "arrays": "smoothgrad_boxing_ball_pixel.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-SmoothGrad causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run. NaN = a genuinely flat experiment.",
     "cause_names": [
@@ -128,6 +128,16 @@
       "shared_output": "screen_region(n_changed_px)@r84c44",
       "state_kind": "seeded_random_action_gameplay"
     },
+    "triad": {
+      "F": 0.15630037693634644,
+      "M": 1.0,
+      "M_named_size": 2,
+      "M_note": "|U*|=13 (oracle movers) / |U_hat|=2 (method above-threshold)",
+      "M_true_minimal_size": 13,
+      "S": 0.16666666666666666,
+      "S_note": "held-out predictive fit: 2/12 held-out do(u) within ε=119.4 (calib=12, fit Δy≈1030.42·attr+240.091)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "vanilla_gradient_reference": {
       "interpretation": "Δpearson = SmoothGrad − vanilla |grad|. ≈0 ⇒ smoothing did NOT change FAITHFULNESS (it denoises the visual map; on a one-hot content read the map is already on the true cause, nothing to denoise; on the vanishing position output both are 0 — smoothing cannot create a gradient).",
       "pearson_corr": 0.15630037693634644,
@@ -147,7 +157,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r84c44",
-  "timestamp": "1783029315",
+  "timestamp": "1783128338",
   "value": 0.15630037693634644,
   "where": "local"
 }

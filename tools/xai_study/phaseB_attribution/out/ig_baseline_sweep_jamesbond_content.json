@@ -1,7 +1,7 @@
 {
   "arrays": "ig_baseline_sweep_jamesbond_content.npz",
   "ci": null,
-  "commit": "1adff48",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-IG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline_sweep": {
@@ -42,7 +42,7 @@
           "deletion_auc": 0.9821428571428571,
           "ig_max_abs": 36.0,
           "insertion_auc": 0.05357142857142857,
-          "pearson_corr": 0.7474149731016063,
+          "pearson_corr": 0.7474149731016058,
           "precision_at_k": 1.0,
           "spearman_corr": 0.9993138935727439,
           "topk": 3,
@@ -84,7 +84,7 @@
           "deletion_auc": 0.9821428571428571,
           "ig_max_abs": 41.671875,
           "insertion_auc": 0.05357142857142857,
-          "pearson_corr": 0.7474149731016068,
+          "pearson_corr": 0.7474149731016063,
           "precision_at_k": 1.0,
           "spearman_corr": 0.9993138935727439,
           "topk": 3,
@@ -126,7 +126,7 @@
           "deletion_auc": 0.9821428571428571,
           "ig_max_abs": 215.0,
           "insertion_auc": 0.05357142857142857,
-          "pearson_corr": 0.7474149731016059,
+          "pearson_corr": 0.7474149731016057,
           "precision_at_k": 1.0,
           "spearman_corr": 0.9993138935727439,
           "topk": 3,
@@ -176,9 +176,9 @@
         }
       ],
       "completeness_err_max": 0.0,
-      "corr_max": 0.7474149731016068,
-      "corr_min": 0.7474149731016059,
-      "corr_sensitivity": 8.881784197001252e-16,
+      "corr_max": 0.7474149731016063,
+      "corr_min": 0.7474149731016057,
+      "corr_sensitivity": 6.661338147750939e-16,
       "definitions": {
         "mean_ram": "constant baseline = mean(x) per byte (the 'average input')",
         "random": "one uniform-random RAM draw ∈ 0..255 (seed=0+9973)",
@@ -240,7 +240,7 @@
       "completeness_err": 0.0,
       "deletion_auc": 0.9821428571428571,
       "insertion_auc": 0.05357142857142857,
-      "pearson_corr": 0.7474149731016063,
+      "pearson_corr": 0.7474149731016058,
       "precision_at_k": 1.0,
       "spearman_corr": 0.9993138935727439,
       "topk": 3
@@ -280,6 +280,16 @@
     "output_note": "CONTENT output: RAM byte 27 read one-hot through soft_ram_peek (∂y/∂ram[27]=1) — the most causally-active candidate concept byte. BASELINE SWEEP (the §5 finding): the raw IG MAGNITUDE is baseline-sensitive (max|IG| ranges 1.0…215.0 via the (x−x0) factor), but the faithfulness CORR/RANKING is INVARIANT (Δcorr=0.0) because the one-hot read makes ∂y/∂u a CONSTANT ⇒ all mass stays on the same byte for every baseline. The only baseline that changes the ranking is the DEGENERACY: a baseline byte equal to the content byte kills IG there (4/4 baselines keep IG alive). completeness Σ IG ≈ y(x)−y(x0) holds for all baselines (err≈0.0 at the headline).",
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE IG over outputs×causes×games×baselines on GPU; the forward is bit-exact to this map.",
     "substrate": "jutari (Julia) — Zygote Integrated Gradients over the RAM tape + TRUE-VCS deletion/insertion re-runs (real-ROM, bit-exact oracle machinery).",
+    "triad": {
+      "F": 0.7474149731016058,
+      "M": 1.0,
+      "M_named_size": 2,
+      "M_note": "|U*|=2 (oracle movers) / |U_hat|=2 (method above-threshold)",
+      "M_true_minimal_size": 2,
+      "S": 0.9285714285714286,
+      "S_note": "held-out predictive fit: 13/14 held-out do(u) within ε=22.0 (calib=14, fit Δy≈0.472·attr+0.0)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 35.0
   },
   "game": "jamesbond",
@@ -293,7 +303,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@27)",
-  "timestamp": "1783063839",
-  "value": 0.7474149731016063,
+  "timestamp": "1783123475",
+  "value": 0.7474149731016058,
   "where": "local"
 }

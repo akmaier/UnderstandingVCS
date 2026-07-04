@@ -1,7 +1,7 @@
 {
   "arrays": "occlusion_riverraid_position.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-occlusion causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -193,6 +193,16 @@
       "shared_output": "screen_region(n_changed_px)@r158c79",
       "state_kind": "seeded_random_action_gameplay"
     },
+    "triad": {
+      "F": 0.831818773814144,
+      "M": 1.0,
+      "M_named_size": 30,
+      "M_note": "|U*|=33 (oracle movers) / |U_hat|=30 (method above-threshold)",
+      "M_true_minimal_size": 33,
+      "S": 0.8260869565217391,
+      "S_note": "held-out predictive fit: 19/23 held-out do(u) within ε=290.3 (calib=23, fit Δy≈0.814·attr+145.588)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 0.0
   },
   "game": "riverraid",
@@ -206,7 +216,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r158c79",
-  "timestamp": "1783028266",
+  "timestamp": "1783128829",
   "value": 0.831818773814144,
   "where": "local"
 }

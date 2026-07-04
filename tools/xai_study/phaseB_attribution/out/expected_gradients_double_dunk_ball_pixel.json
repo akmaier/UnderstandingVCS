@@ -1,7 +1,7 @@
 {
   "arrays": "expected_gradients_double_dunk_ball_pixel.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-EG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "cause_names": [
@@ -357,6 +357,16 @@
       "shared_output": "screen_region(n_changed_px)@r105c80",
       "state_kind": "seeded_random_action_gameplay"
     },
+    "triad": {
+      "F": 0.0,
+      "M": null,
+      "M_named_size": 0,
+      "M_note": "M undefined: method names nothing (all-zero attribution) at this state",
+      "M_true_minimal_size": 22,
+      "S": 0.6923076923076923,
+      "S_note": "held-out predictive fit: 9/13 held-out do(u) within ε=126.0 (calib=13, fit Δy≈0.0·attr+170.308)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "vs_single_baseline_ig": {
       "delta_deletion_auc": 0.0,
       "delta_pearson": 0.0,
@@ -384,7 +394,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": 0.0,
   "target_output": "screen_region(n_changed_px)@r105c80",
-  "timestamp": "1783032816",
+  "timestamp": "1783131729",
   "value": 0.0,
   "where": "local"
 }

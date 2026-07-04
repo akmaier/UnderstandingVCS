@@ -1,7 +1,7 @@
 {
   "arrays": "kernelshap_kung_fu_master_ball_pixel.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-SHAP causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -179,6 +179,16 @@
       "seed": 0,
       "shared_output": "screen_region(n_changed_px)@r105c80",
       "state_kind": "seeded_random_action_gameplay"
+    },
+    "triad": {
+      "F": 0.6956505400814819,
+      "M": 0.6111111111111112,
+      "M_named_size": 18,
+      "M_note": "|U*|=11 (oracle movers) / |U_hat|=18 (method above-threshold)",
+      "M_true_minimal_size": 11,
+      "S": 0.7,
+      "S_note": "held-out predictive fit: 7/10 held-out do(u) within ε=487.5 (calib=10, fit Δy≈0.227·attr+123.05)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
     }
   },
   "game": "kung_fu_master",
@@ -192,7 +202,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r105c80",
-  "timestamp": "1783058180",
+  "timestamp": "1783128904",
   "value": 0.6956505400814819,
   "where": "local"
 }

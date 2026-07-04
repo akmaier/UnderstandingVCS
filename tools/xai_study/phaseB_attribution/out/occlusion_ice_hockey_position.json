@@ -1,7 +1,7 @@
 {
   "arrays": "occlusion_ice_hockey_position.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-occlusion causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -121,6 +121,16 @@
       "shared_output": "screen_region(n_changed_px)@r92c61",
       "state_kind": "seeded_random_action_gameplay"
     },
+    "triad": {
+      "F": 0.8647031677981128,
+      "M": 1.0,
+      "M_named_size": 16,
+      "M_note": "|U*|=17 (oracle movers) / |U_hat|=16 (method above-threshold)",
+      "M_true_minimal_size": 17,
+      "S": 0.45454545454545453,
+      "S_note": "held-out predictive fit: 5/11 held-out do(u) within ε=19.7 (calib=11, fit Δy≈0.482·attr+48.182)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 0.0
   },
   "game": "ice_hockey",
@@ -134,7 +144,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r92c61",
-  "timestamp": "1783027246",
+  "timestamp": "1783127681",
   "value": 0.8647031677981128,
   "where": "local"
 }

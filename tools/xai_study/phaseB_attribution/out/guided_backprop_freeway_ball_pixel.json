@@ -1,7 +1,7 @@
 {
   "arrays": "guided_backprop_freeway_ball_pixel.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "adebayo_sanity_check": {
       "failure_mode": "model_invariant_saliency_constant_jacobian",
@@ -165,6 +165,16 @@
       "shared_output": "screen_region(n_changed_px)@r173c19",
       "state_kind": "seeded_random_action_gameplay"
     },
+    "triad": {
+      "F": 0.0,
+      "M": null,
+      "M_named_size": 0,
+      "M_note": "M undefined: method names nothing (all-zero attribution) at this state",
+      "M_true_minimal_size": 26,
+      "S": 0.2,
+      "S_note": "held-out predictive fit: 3/15 held-out do(u) within ε=10.8 (calib=15, fit Δy≈0.0·attr+84.8)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 0.0
   },
   "game": "freeway",
@@ -178,7 +188,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r173c19",
-  "timestamp": "1783036499",
+  "timestamp": "1783130788",
   "value": 0.0,
   "where": "local"
 }

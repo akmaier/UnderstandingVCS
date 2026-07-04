@@ -1,7 +1,7 @@
 {
   "arrays": "gradxinput_deeplift_bank_heist_content.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-attributed causes occluded (deletion) / restored (insertion); each curve point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline": "all-zeros RAM (the 'absent' state)",
@@ -139,6 +139,16 @@
       "ram_index": 8
     },
     "substrate": "jutari (Julia) — Zygote content-path ∂y/∂u over the RAM tape + TRUE-VCS deletion/insertion re-runs (real-ROM, bit-exact oracle machinery).",
+    "triad": {
+      "F": 0.9107975515542103,
+      "M": 1.0,
+      "M_named_size": 2,
+      "M_note": "|U*|=2 (oracle movers) / |U_hat|=2 (method above-threshold)",
+      "M_true_minimal_size": 2,
+      "S": 0.8333333333333334,
+      "S_note": "held-out predictive fit: 5/6 held-out do(u) within ε=4.1 (calib=6, fit Δy≈0.415·attr+-0.0)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 41.0
   },
   "game": "bank_heist",
@@ -152,7 +162,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content:score@ram[8]",
-  "timestamp": "1783041745",
+  "timestamp": "1783129659",
   "value": 0.9107975515542103,
   "where": "local"
 }

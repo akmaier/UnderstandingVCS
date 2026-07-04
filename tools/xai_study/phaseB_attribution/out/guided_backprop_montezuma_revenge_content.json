@@ -1,7 +1,7 @@
 {
   "arrays": "guided_backprop_montezuma_revenge_content.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "adebayo_sanity_check": {
       "failure_mode": "model_invariant_saliency_constant_jacobian",
@@ -151,6 +151,16 @@
     "output_note": "CONTENT output: RAM byte 45 read one-hot through soft_ram_peek (∂y/∂ram[45]=1) — a LINEAR unit. Guided BP suppresses negative backprop, but ∂y/∂u ≥ 0 here, so it removes NOTHING: Guided BP ≡ vanilla saliency on this substrate (guided==vanilla: true). The soft VCS has no deep ReLU stack for Guided BP to exploit — the documented degeneracy. Measured precision@1=0.0.",
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE guided gradients over outputs×causes×games on GPU; the forward is bit-exact to this map.",
     "substrate": "jutari (Julia) — Zygote content-path ∂y/∂u over the RAM tape, guided rule g⊙1[g>0] (suppress −grad), + TRUE-VCS deletion/insertion re-runs (real-ROM, bit-exact oracle machinery).",
+    "triad": {
+      "F": 0.9995066377475382,
+      "M": 1.0,
+      "M_named_size": 2,
+      "M_note": "|U*|=2 (oracle movers) / |U_hat|=2 (method above-threshold)",
+      "M_true_minimal_size": 2,
+      "S": 1.0,
+      "S_note": "held-out predictive fit: 16/16 held-out do(u) within ε=25.4 (calib=16, fit Δy≈239.0·attr+0.0)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 254.0
   },
   "game": "montezuma_revenge",
@@ -164,7 +174,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@45)",
-  "timestamp": "1783037210",
+  "timestamp": "1783131606",
   "value": 0.9995066377475382,
   "where": "local"
 }

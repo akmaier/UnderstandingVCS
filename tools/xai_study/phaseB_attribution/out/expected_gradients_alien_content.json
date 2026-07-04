@@ -1,7 +1,7 @@
 {
   "arrays": "expected_gradients_alien_content.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-EG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "cause_names": [
@@ -240,6 +240,16 @@
       "precision_at_k_min": 0.3333333333333333
     },
     "substrate": "jutari (Julia) — Zygote Expected Gradients (Erion 2021) over the RAM tape with a reference distribution of real states + TRUE-VCS deletion/insertion re-runs.",
+    "triad": {
+      "F": 0.0,
+      "M": null,
+      "M_named_size": 0,
+      "M_note": "M undefined: method names nothing (all-zero attribution) at this state",
+      "M_true_minimal_size": 2,
+      "S": 0.8571428571428571,
+      "S_note": "held-out predictive fit: 6/7 held-out do(u) within ε=11.6 (calib=7, fit Δy≈0.0·attr+2.429)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "vs_single_baseline_ig": {
       "delta_deletion_auc": 0.5714285714285714,
       "delta_pearson": -0.7793451871942163,
@@ -267,7 +277,7 @@
   "state": "f90+15",
   "stderr": 0.0,
   "target_output": "content(ram_self@60)",
-  "timestamp": "1783031775",
+  "timestamp": "1783130556",
   "value": 0.0,
   "where": "local"
 }

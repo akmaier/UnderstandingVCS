@@ -1,7 +1,7 @@
 {
   "arrays": "ig_baseline_sweep_seaquest_content.npz",
   "ci": null,
-  "commit": "1adff48",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-IG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline_sweep": {
@@ -186,7 +186,7 @@
           "deletion_auc": null,
           "ig_max_abs": 19.0,
           "insertion_auc": null,
-          "pearson_corr": 0.017329864981630125,
+          "pearson_corr": 0.017329864981630118,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.467285499863313,
           "topk": 3,
@@ -256,9 +256,9 @@
         }
       ],
       "completeness_err_max": 0.0,
-      "corr_max": 0.017329864981630125,
+      "corr_max": 0.01732986498163012,
       "corr_min": 0.0,
-      "corr_sensitivity": 0.017329864981630125,
+      "corr_sensitivity": 0.01732986498163012,
       "definitions": {
         "mean_ram": "constant baseline = mean(x) per byte (the 'average input')",
         "random": "one uniform-random RAM draw ∈ 0..255 (seed=0+9973)",
@@ -400,6 +400,16 @@
     "output_note": "CONTENT output: RAM byte 118 read one-hot through soft_ram_peek (∂y/∂ram[118]=1) — the most causally-active candidate concept byte. BASELINE SWEEP (the §5 finding): the raw IG MAGNITUDE is baseline-sensitive (max|IG| ranges 0.0…54.6 via the (x−x0) factor), but the faithfulness CORR/RANKING is INVARIANT (Δcorr=0.0173) because the one-hot read makes ∂y/∂u a CONSTANT ⇒ all mass stays on the same byte for every baseline. The only baseline that changes the ranking is the DEGENERACY: a baseline byte equal to the content byte kills IG there (2/4 baselines keep IG alive). completeness Σ IG ≈ y(x)−y(x0) holds for all baselines (err≈0.0 at the headline).",
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE IG over outputs×causes×games×baselines on GPU; the forward is bit-exact to this map.",
     "substrate": "jutari (Julia) — Zygote Integrated Gradients over the RAM tape + TRUE-VCS deletion/insertion re-runs (real-ROM, bit-exact oracle machinery).",
+    "triad": {
+      "F": 0.0,
+      "M": null,
+      "M_named_size": 0,
+      "M_note": "M undefined: method names nothing (all-zero attribution) at this state",
+      "M_true_minimal_size": 2,
+      "S": 0.0,
+      "S_note": "held-out predictive fit: 0/24 held-out do(u) within ε=0.5 (calib=24, fit Δy≈0.0·attr+11.083)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 0.0
   },
   "game": "seaquest",
@@ -413,7 +423,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@118)",
-  "timestamp": "1783064126",
+  "timestamp": "1783124969",
   "value": 0.0,
   "where": "local"
 }

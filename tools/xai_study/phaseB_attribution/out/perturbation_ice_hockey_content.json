@@ -1,7 +1,7 @@
 {
   "arrays": "perturbation_ice_hockey_content.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-attributed causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -128,6 +128,16 @@
     "perturbation_baseline": "0 (masked RAM cell / TIA register set to 0; joystick masked == NOOP, the baseline trace) — the oracle's occlude! operator",
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (E0-3) — --array=0-5%N over the 6 core games (--shard i --shard-kind game); each task re-runs the real ROM, no GPU needed.",
     "substrate": "jutari (Julia) — real-ROM greedy extremal-mask optimisation + TRUE-VCS deletion/insertion re-runs (bit-exact oracle machinery). NO surrogate model, NO gradient.",
+    "triad": {
+      "F": 0.5122074588010324,
+      "M": 0.75,
+      "M_named_size": 4,
+      "M_note": "|U*|=3 (oracle movers) / |U_hat|=4 (method above-threshold)",
+      "M_true_minimal_size": 3,
+      "S": 0.9090909090909091,
+      "S_note": "held-out predictive fit: 10/11 held-out do(u) within ε=7.0 (calib=11, fit Δy≈0.057·attr+-0.011)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 79.0
   },
   "game": "ice_hockey",
@@ -141,7 +151,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@55)",
-  "timestamp": "1783047484",
+  "timestamp": "1783128533",
   "value": 0.5122074588010324,
   "where": "local"
 }

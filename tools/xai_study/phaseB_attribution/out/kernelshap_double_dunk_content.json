@@ -1,7 +1,7 @@
 {
   "arrays": "kernelshap_double_dunk_content.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-SHAP causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -188,7 +188,17 @@
       "47": 1.0686133063681094
     },
     "shapley_kernel_note": "coalitions sampled with size s ~ p(s)∝(C−1)/(s·(C−s)); each row of the WLS is weighted by the Shapley kernel π(s)=(C−1)/(binom(C,s)·s·(C−s)) (Lundberg & Lee Theorem 2). Endpoints s∈{0,C} carry infinite weight ⇒ pinned exactly by the efficiency constraint (not sampled). A 1e-8 ridge stabilises rank-deficient designs.",
-    "substrate": "jutari (Julia, HARD) — real-ROM coalition re-runs (bit-exact oracle machinery) + closed-form efficiency-constrained WLS solve. NO surrogate model: the value function IS the true emulator, so the only approximation is the coalition sampling + the additive (linear) SHAP model."
+    "substrate": "jutari (Julia, HARD) — real-ROM coalition re-runs (bit-exact oracle machinery) + closed-form efficiency-constrained WLS solve. NO surrogate model: the value function IS the true emulator, so the only approximation is the coalition sampling + the additive (linear) SHAP model.",
+    "triad": {
+      "F": 0.7375531312252831,
+      "M": 0.25,
+      "M_named_size": 24,
+      "M_note": "|U*|=6 (oracle movers) / |U_hat|=24 (method above-threshold)",
+      "M_true_minimal_size": 6,
+      "S": 0.9230769230769231,
+      "S_note": "held-out predictive fit: 12/13 held-out do(u) within ε=18.3 (calib=13, fit Δy≈0.063·attr+0.227)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    }
   },
   "game": "double_dunk",
   "method": "kernelshap",
@@ -201,7 +211,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@37)",
-  "timestamp": "1783057108",
+  "timestamp": "1783127723",
   "value": 0.7375531312252831,
   "where": "local"
 }

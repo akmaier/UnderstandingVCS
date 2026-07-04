@@ -1,7 +1,7 @@
 {
   "arrays": "guided_backprop_boxing_content.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "adebayo_sanity_check": {
       "failure_mode": "model_invariant_saliency_constant_jacobian",
@@ -127,6 +127,16 @@
     "output_note": "CONTENT output: RAM byte 17 read one-hot through soft_ram_peek (∂y/∂ram[17]=1) — a LINEAR unit. Guided BP suppresses negative backprop, but ∂y/∂u ≥ 0 here, so it removes NOTHING: Guided BP ≡ vanilla saliency on this substrate (guided==vanilla: true). The soft VCS has no deep ReLU stack for Guided BP to exploit — the documented degeneracy. Measured precision@1=0.0.",
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE guided gradients over outputs×causes×games on GPU; the forward is bit-exact to this map.",
     "substrate": "jutari (Julia) — Zygote content-path ∂y/∂u over the RAM tape, guided rule g⊙1[g>0] (suppress −grad), + TRUE-VCS deletion/insertion re-runs (real-ROM, bit-exact oracle machinery).",
+    "triad": {
+      "F": 0.8168233082431011,
+      "M": 1.0,
+      "M_named_size": 2,
+      "M_note": "|U*|=2 (oracle movers) / |U_hat|=2 (method above-threshold)",
+      "M_true_minimal_size": 2,
+      "S": 0.9166666666666666,
+      "S_note": "held-out predictive fit: 11/12 held-out do(u) within ε=8.8 (calib=12, fit Δy≈17.0·attr+-0.0)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 88.0
   },
   "game": "boxing",
@@ -140,7 +150,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@17)",
-  "timestamp": "1783035937",
+  "timestamp": "1783130144",
   "value": 0.8168233082431011,
   "where": "local"
 }

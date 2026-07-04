@@ -1,7 +1,7 @@
 {
   "arrays": "lime_ice_hockey_content.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-LIME causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -162,6 +162,16 @@
       "model": "weighted linear g(z)=w·z+b, ridge-regularised normal equations (LinearAlgebra)",
       "r2": 0.7920548078255145
     },
+    "triad": {
+      "F": 0.7365032795072786,
+      "M": 0.15,
+      "M_named_size": 20,
+      "M_note": "|U*|=3 (oracle movers) / |U_hat|=20 (method above-threshold)",
+      "M_true_minimal_size": 3,
+      "S": 0.9090909090909091,
+      "S_note": "held-out predictive fit: 10/11 held-out do(u) within ε=7.0 (calib=11, fit Δy≈0.144·attr+-0.636)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_intact": 79.0
   },
   "game": "ice_hockey",
@@ -175,7 +185,7 @@
   "state": "f90+15",
   "stderr": 0.01303542242378723,
   "target_output": "content(ram_self@55)",
-  "timestamp": "1783052342",
+  "timestamp": "1783129761",
   "value": 0.7365032795072786,
   "where": "local"
 }

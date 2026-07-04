@@ -1,7 +1,7 @@
 {
   "arrays": "ig_baseline_sweep_venture_ball_pixel.npz",
   "ci": null,
-  "commit": "1adff48",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-IG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline_sweep": {
@@ -51,7 +51,7 @@
           "completeness_err": 1.0,
           "deletion_auc": 0.7615537686809619,
           "ig_max_abs": 0.0,
-          "insertion_auc": 0.22817170240415857,
+          "insertion_auc": 0.22817170240415846,
           "pearson_corr": 0.0,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.0,
@@ -103,8 +103,8 @@
           "completeness_err": 1.5931396484375,
           "deletion_auc": 0.7615537686809619,
           "ig_max_abs": 2.5931396484375,
-          "insertion_auc": 0.22817170240415857,
-          "pearson_corr": -0.01398626255518629,
+          "insertion_auc": 0.22817170240415846,
+          "pearson_corr": -0.013986262555186294,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.36864256497122916,
           "topk": 3,
@@ -155,7 +155,7 @@
           "completeness_err": 1.0,
           "deletion_auc": 0.7615537686809619,
           "ig_max_abs": 0.0,
-          "insertion_auc": 0.22817170240415857,
+          "insertion_auc": 0.22817170240415846,
           "pearson_corr": 0.0,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.0,
@@ -207,7 +207,7 @@
           "completeness_err": 1.0,
           "deletion_auc": 0.7615537686809619,
           "ig_max_abs": 0.0,
-          "insertion_auc": 0.22817170240415857,
+          "insertion_auc": 0.22817170240415846,
           "pearson_corr": 0.0,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.0,
@@ -217,8 +217,8 @@
       ],
       "completeness_err_max": 1.5931396484375,
       "corr_max": 0.0,
-      "corr_min": -0.01398626255518629,
-      "corr_sensitivity": 0.01398626255518629,
+      "corr_min": -0.013986262555186294,
+      "corr_sensitivity": 0.013986262555186294,
       "definitions": {
         "mean_ram": "constant baseline = mean(x) per byte (the 'average input')",
         "random": "one uniform-random RAM draw ∈ 0..255 (seed=0+9973)",
@@ -278,7 +278,7 @@
     "content_ram_index": -1,
     "harness_positive_control": {
       "deletion_auc": 0.797995951417004,
-      "insertion_auc": 0.22419028340080968,
+      "insertion_auc": 0.22419028340080974,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the IG numbers above are then a true measurement, not an artefact of the metric.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "oracle_column_degenerate": false,
@@ -289,7 +289,7 @@
     "headline_metrics": {
       "completeness_err": 1.0,
       "deletion_auc": 0.7615537686809619,
-      "insertion_auc": 0.22817170240415857,
+      "insertion_auc": 0.22817170240415846,
       "pearson_corr": 0.0,
       "precision_at_k": 0.6666666666666666,
       "spearman_corr": 0.0,
@@ -358,6 +358,16 @@
       "shared_output": "screen_region(n_changed_px)@r73c4",
       "state_kind": "seeded_random_action_gameplay"
     },
+    "triad": {
+      "F": 0.0,
+      "M": null,
+      "M_named_size": 0,
+      "M_note": "M undefined: method names nothing (all-zero attribution) at this state",
+      "M_true_minimal_size": 29,
+      "S": 0.0,
+      "S_note": "held-out predictive fit: 0/19 held-out do(u) within ε=32.9 (calib=19, fit Δy≈0.0·attr+1305.737)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 0.0
   },
   "game": "venture",
@@ -371,7 +381,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r73c4",
-  "timestamp": "1783064798",
+  "timestamp": "1783125256",
   "value": 0.0,
   "where": "local"
 }

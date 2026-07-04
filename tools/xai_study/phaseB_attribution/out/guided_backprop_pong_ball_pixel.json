@@ -1,7 +1,7 @@
 {
   "arrays": "guided_backprop_pong_ball_pixel.npz",
   "ci": null,
-  "commit": "c157ec63",
+  "commit": "d85961ed",
   "extra": {
     "adebayo_sanity_check": {
       "failure_mode": "model_invariant_saliency_constant_jacobian",
@@ -129,6 +129,16 @@
       "shared_output": "screen_region(n_changed_px)@r162c17",
       "state_kind": "seeded_random_action_gameplay"
     },
+    "triad": {
+      "F": 0.0,
+      "M": null,
+      "M_named_size": 0,
+      "M_note": "M undefined: method names nothing (all-zero attribution) at this state",
+      "M_true_minimal_size": 6,
+      "S": 0.0,
+      "S_note": "held-out predictive fit: 0/9 held-out do(u) within ε=34.4 (calib=9, fit Δy≈0.0·attr+49.778)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 0.0
   },
   "game": "pong",
@@ -142,7 +152,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r162c17",
-  "timestamp": "1782923065",
+  "timestamp": "1783132077",
   "value": 0.0,
   "where": "local"
 }

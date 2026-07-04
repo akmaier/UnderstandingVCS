@@ -1,7 +1,7 @@
 {
   "arrays": "kernelshap_ice_hockey_content.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-SHAP causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -174,7 +174,17 @@
       "91": 5.460384005586195
     },
     "shapley_kernel_note": "coalitions sampled with size s ~ p(s)∝(C−1)/(s·(C−s)); each row of the WLS is weighted by the Shapley kernel π(s)=(C−1)/(binom(C,s)·s·(C−s)) (Lundberg & Lee Theorem 2). Endpoints s∈{0,C} carry infinite weight ⇒ pinned exactly by the efficiency constraint (not sampled). A 1e-8 ridge stabilises rank-deficient designs.",
-    "substrate": "jutari (Julia, HARD) — real-ROM coalition re-runs (bit-exact oracle machinery) + closed-form efficiency-constrained WLS solve. NO surrogate model: the value function IS the true emulator, so the only approximation is the coalition sampling + the additive (linear) SHAP model."
+    "substrate": "jutari (Julia, HARD) — real-ROM coalition re-runs (bit-exact oracle machinery) + closed-form efficiency-constrained WLS solve. NO surrogate model: the value function IS the true emulator, so the only approximation is the coalition sampling + the additive (linear) SHAP model.",
+    "triad": {
+      "F": 0.7615188129081818,
+      "M": 0.15,
+      "M_named_size": 20,
+      "M_note": "|U*|=3 (oracle movers) / |U_hat|=20 (method above-threshold)",
+      "M_true_minimal_size": 3,
+      "S": 0.9090909090909091,
+      "S_note": "held-out predictive fit: 10/11 held-out do(u) within ε=7.0 (calib=11, fit Δy≈0.211·attr+-0.577)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    }
   },
   "game": "ice_hockey",
   "method": "kernelshap",
@@ -187,7 +197,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@55)",
-  "timestamp": "1783057811",
+  "timestamp": "1783128495",
   "value": 0.7615188129081818,
   "where": "local"
 }

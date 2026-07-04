@@ -1,7 +1,7 @@
 {
   "arrays": "lime_chopper_command_ball_pixel.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-LIME causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -234,6 +234,16 @@
       "shared_output": "screen_region(n_changed_px)@r44c9",
       "state_kind": "seeded_random_action_gameplay"
     },
+    "triad": {
+      "F": 0.686591702951668,
+      "M": 0.4,
+      "M_named_size": 40,
+      "M_note": "|U*|=16 (oracle movers) / |U_hat|=40 (method above-threshold)",
+      "M_true_minimal_size": 16,
+      "S": 0.9047619047619048,
+      "S_note": "held-out predictive fit: 19/21 held-out do(u) within ε=1458.2 (calib=21, fit Δy≈0.003·attr+44.065)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_intact": 0.0
   },
   "game": "chopper_command",
@@ -247,7 +257,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": 0.0015904199046773348,
   "target_output": "screen_region(n_changed_px)@r44c9",
-  "timestamp": "1783050971",
+  "timestamp": "1783128224",
   "value": 0.686591702951668,
   "where": "local"
 }

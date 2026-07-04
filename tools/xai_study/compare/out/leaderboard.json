@@ -76,7 +76,7 @@
       "is_positive_control": 0,
       "faith_source": "triad.F",
       "metric_names": "dataflow_graph_F1_vs_oracle",
-      "commits": "2a9ade4c"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseA_kording",
@@ -99,7 +99,7 @@
       "is_positive_control": 0,
       "faith_source": "triad.F",
       "metric_names": "A2_faithfulness_spearman_vs_oracle;lesion_importance_spearman_vs_oracle_role",
-      "commits": "2a9ade4c;86fdc27"
+      "commits": "86fdc27;d85961ed"
     },
     {
       "phase": "phaseA_kording",
@@ -122,7 +122,7 @@
       "is_positive_control": 0,
       "faith_source": "triad.F",
       "metric_names": "A3_game_variable_spurious_tuning_rate",
-      "commits": "2a9ade4c"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseA_kording",
@@ -145,7 +145,7 @@
       "is_positive_control": 0,
       "faith_source": "triad.F",
       "metric_names": "A4_faithfulness_spearman_corr_vs_oracle_coupling",
-      "commits": "2a9ade4c;39cd1d3"
+      "commits": "39cd1d3;d85961ed"
     },
     {
       "phase": "phaseA_kording",
@@ -168,7 +168,7 @@
       "is_positive_control": 0,
       "faith_source": "value:A5_global_pool_clock_explained_variance_fraction_epiphenomenal",
       "metric_names": "A5_global_pool_clock_explained_variance_fraction_epiphenomenal",
-      "commits": "2a9ade4c"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseA_kording",
@@ -191,7 +191,7 @@
       "is_positive_control": 0,
       "faith_source": "triad.F",
       "metric_names": "A6_cell_false_edge_rate_vs_true_dataflow",
-      "commits": "2a9ade4c"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseA_kording",
@@ -214,7 +214,7 @@
       "is_positive_control": 0,
       "faith_source": "value:A7_nmf_matched_component_fraction_vs_known_vars",
       "metric_names": "A7_nmf_matched_component_fraction_vs_known_vars",
-      "commits": "2a9ade4c"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseA_kording",
@@ -237,7 +237,7 @@
       "is_positive_control": 0,
       "faith_source": "triad.F",
       "metric_names": "wholestate_minimality_M_vs_oracle",
-      "commits": "2a9ade4c"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseB_attribution",
@@ -253,14 +253,14 @@
       "faithfulness_content_regime": 0.3252,
       "faithfulness_other_regime": null,
       "plausibility_proxy": 0.9,
-      "triad_F": null,
-      "triad_S": null,
-      "triad_M": null,
-      "FSM_composite": null,
+      "triad_F": 0.1754,
+      "triad_S": 0.5758,
+      "triad_M": 1.0,
+      "FSM_composite": 0.4656,
       "is_positive_control": 0,
-      "faith_source": "value:pearson_corr_with_oracle",
+      "faith_source": "triad.F",
       "metric_names": "pearson_corr_with_oracle",
-      "commits": "1adff48c;9bc37f8b"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseB_attribution",
@@ -276,14 +276,14 @@
       "faithfulness_content_regime": 0.5736,
       "faithfulness_other_regime": null,
       "plausibility_proxy": 0.55,
-      "triad_F": null,
-      "triad_S": null,
-      "triad_M": null,
-      "FSM_composite": null,
+      "triad_F": 0.4605,
+      "triad_S": 0.6297,
+      "triad_M": 0.9689,
+      "FSM_composite": 0.6549,
       "is_positive_control": 0,
-      "faith_source": "value:pearson_corr_with_oracle",
+      "faith_source": "triad.F",
       "metric_names": "pearson_corr_with_oracle",
-      "commits": "1adff48c;9bc37f8b"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseB_attribution",
@@ -299,14 +299,14 @@
       "faithfulness_content_regime": 0.8563,
       "faithfulness_other_regime": null,
       "plausibility_proxy": 0.9,
-      "triad_F": null,
-      "triad_S": null,
-      "triad_M": null,
-      "FSM_composite": null,
+      "triad_F": 0.4856,
+      "triad_S": 0.6254,
+      "triad_M": 0.9929,
+      "FSM_composite": 0.6706,
       "is_positive_control": 0,
-      "faith_source": "value:deeplift_pearson_corr_with_oracle",
+      "faith_source": "triad.F",
       "metric_names": "deeplift_pearson_corr_with_oracle",
-      "commits": "1adff48c;9bc37f8b"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseB_attribution",
@@ -322,14 +322,14 @@
       "faithfulness_content_regime": 0.6447,
       "faithfulness_other_regime": null,
       "plausibility_proxy": 0.9,
-      "triad_F": null,
-      "triad_S": null,
-      "triad_M": null,
-      "FSM_composite": null,
+      "triad_F": 0.3223,
+      "triad_S": 0.5725,
+      "triad_M": 0.9643,
+      "FSM_composite": 0.5625,
       "is_positive_control": 0,
-      "faith_source": "value:pearson_corr_with_oracle",
+      "faith_source": "triad.F",
       "metric_names": "pearson_corr_with_oracle",
-      "commits": "1adff48c;c157ec63"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseB_attribution",
@@ -345,14 +345,14 @@
       "faithfulness_content_regime": 0.6443,
       "faithfulness_other_regime": 0.7276,
       "plausibility_proxy": 0.9,
-      "triad_F": null,
-      "triad_S": null,
-      "triad_M": null,
-      "FSM_composite": null,
+      "triad_F": 0.3794,
+      "triad_S": 0.5907,
+      "triad_M": 0.9841,
+      "FSM_composite": 0.6042,
       "is_positive_control": 0,
-      "faith_source": "value:pearson_corr_with_oracle",
+      "faith_source": "triad.F;value:pearson_corr_with_oracle",
       "metric_names": "pearson_corr_with_oracle",
-      "commits": "1adff48;22881c2"
+      "commits": "22881c2;d85961ed"
     },
     {
       "phase": "phaseB_attribution",
@@ -368,14 +368,14 @@
       "faithfulness_content_regime": 0.7083,
       "faithfulness_other_regime": null,
       "plausibility_proxy": 0.9,
-      "triad_F": null,
-      "triad_S": null,
-      "triad_M": null,
-      "FSM_composite": null,
+      "triad_F": 0.6518,
+      "triad_S": 0.6567,
+      "triad_M": 0.57,
+      "FSM_composite": 0.6249,
       "is_positive_control": 0,
-      "faith_source": "value:pearson_corr_with_oracle",
+      "faith_source": "triad.F",
       "metric_names": "pearson_corr_with_oracle",
-      "commits": "1adff48c;2a9ade4c;9bc37f8b"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseB_attribution",
@@ -391,14 +391,14 @@
       "faithfulness_content_regime": 0.6973,
       "faithfulness_other_regime": null,
       "plausibility_proxy": 0.9,
-      "triad_F": null,
-      "triad_S": null,
-      "triad_M": null,
-      "FSM_composite": null,
+      "triad_F": 0.6441,
+      "triad_S": 0.6547,
+      "triad_M": 0.557,
+      "FSM_composite": 0.617,
       "is_positive_control": 0,
-      "faith_source": "value:pearson_corr_with_oracle",
+      "faith_source": "triad.F",
       "metric_names": "pearson_corr_with_oracle",
-      "commits": "1adff48c;9bc37f8b"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseB_attribution",
@@ -414,14 +414,14 @@
       "faithfulness_content_regime": 0.7543,
       "faithfulness_other_regime": null,
       "plausibility_proxy": 0.55,
-      "triad_F": null,
-      "triad_S": null,
-      "triad_M": null,
-      "FSM_composite": null,
+      "triad_F": 0.6869,
+      "triad_S": 0.6667,
+      "triad_M": 0.9731,
+      "FSM_composite": 0.7638,
       "is_positive_control": 0,
-      "faith_source": "value:pearson_corr_with_oracle",
+      "faith_source": "triad.F",
       "metric_names": "pearson_corr_with_oracle",
-      "commits": "1adff48c;9bc37f8b"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseB_attribution",
@@ -437,14 +437,14 @@
       "faithfulness_content_regime": 0.5886,
       "faithfulness_other_regime": null,
       "plausibility_proxy": 0.55,
-      "triad_F": null,
-      "triad_S": null,
-      "triad_M": null,
-      "FSM_composite": null,
+      "triad_F": 0.4329,
+      "triad_S": 0.6392,
+      "triad_M": 0.989,
+      "FSM_composite": 0.6492,
       "is_positive_control": 0,
-      "faith_source": "value:pearson_corr_with_oracle",
+      "faith_source": "triad.F",
       "metric_names": "pearson_corr_with_oracle",
-      "commits": "5f0d6e67;9bc37f8b"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseB_attribution",
@@ -460,14 +460,14 @@
       "faithfulness_content_regime": 0.6644,
       "faithfulness_other_regime": null,
       "plausibility_proxy": 0.9,
-      "triad_F": null,
-      "triad_S": null,
-      "triad_M": null,
-      "FSM_composite": null,
+      "triad_F": 0.5522,
+      "triad_S": 0.5825,
+      "triad_M": 0.3475,
+      "FSM_composite": 0.4817,
       "is_positive_control": 0,
-      "faith_source": "value:pearson_corr_with_oracle",
+      "faith_source": "triad.F",
       "metric_names": "pearson_corr_with_oracle",
-      "commits": "15e5d2df"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseB_attribution",
@@ -483,14 +483,14 @@
       "faithfulness_content_regime": 0.6447,
       "faithfulness_other_regime": null,
       "plausibility_proxy": 0.9,
-      "triad_F": null,
-      "triad_S": null,
-      "triad_M": null,
-      "FSM_composite": null,
+      "triad_F": 0.3799,
+      "triad_S": 0.5968,
+      "triad_M": 0.981,
+      "FSM_composite": 0.6059,
       "is_positive_control": 0,
-      "faith_source": "value:pearson_corr_with_oracle",
+      "faith_source": "triad.F",
       "metric_names": "pearson_corr_with_oracle",
-      "commits": "1adff48c;9bc37f8b"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseB_attribution",
@@ -506,14 +506,14 @@
       "faithfulness_content_regime": 0.6447,
       "faithfulness_other_regime": null,
       "plausibility_proxy": 0.9,
-      "triad_F": null,
-      "triad_S": null,
-      "triad_M": null,
-      "FSM_composite": null,
+      "triad_F": 0.3798,
+      "triad_S": 0.5932,
+      "triad_M": 0.9795,
+      "FSM_composite": 0.6043,
       "is_positive_control": 0,
-      "faith_source": "value:pearson_corr_with_oracle",
+      "faith_source": "triad.F",
       "metric_names": "pearson_corr_with_oracle",
-      "commits": "1adff48c;c157ec63"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseC_mechanistic",
@@ -536,7 +536,7 @@
       "is_positive_control": 0,
       "faith_source": "triad.F",
       "metric_names": "discovered_circuit_best_F1_vs_true_dataflow",
-      "commits": "15e5d2df"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseC_mechanistic",
@@ -552,14 +552,14 @@
       "faithfulness_content_regime": null,
       "faithfulness_other_regime": 1.0,
       "plausibility_proxy": 0.5,
-      "triad_F": null,
-      "triad_S": null,
-      "triad_M": null,
-      "FSM_composite": null,
+      "triad_F": 1.0,
+      "triad_S": 1.0,
+      "triad_M": 0.9457,
+      "FSM_composite": 0.9816,
       "is_positive_control": 0,
-      "faith_source": "value:max_abs_recovered_minus_exact",
+      "faith_source": "triad.F;value:max_abs_recovered_minus_exact",
       "metric_names": "max_abs_recovered_minus_exact",
-      "commits": "2a9ade4c;86fdc27;c157ec63"
+      "commits": "86fdc27;d85961ed"
     },
     {
       "phase": "phaseC_mechanistic",
@@ -575,14 +575,14 @@
       "faithfulness_content_regime": null,
       "faithfulness_other_regime": 0.4563,
       "plausibility_proxy": 0.9,
-      "triad_F": null,
-      "triad_S": null,
-      "triad_M": null,
-      "FSM_composite": null,
+      "triad_F": 0.4563,
+      "triad_S": 0.769,
+      "triad_M": 0.9947,
+      "FSM_composite": 0.7041,
       "is_positive_control": 0,
-      "faith_source": "value:corr_approx_vs_exact",
+      "faith_source": "triad.F",
       "metric_names": "corr_approx_vs_exact",
-      "commits": "19022dc7;2a9ade4c"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseC_mechanistic",
@@ -598,14 +598,14 @@
       "faithfulness_content_regime": null,
       "faithfulness_other_regime": 0.9792,
       "plausibility_proxy": 0.5,
-      "triad_F": null,
-      "triad_S": null,
-      "triad_M": null,
-      "FSM_composite": null,
+      "triad_F": 0.9792,
+      "triad_S": 0.9792,
+      "triad_M": 0.4296,
+      "FSM_composite": 0.744,
       "is_positive_control": 0,
-      "faith_source": "value:scrubbing_preserved_performance_true",
+      "faith_source": "triad.F",
       "metric_names": "scrubbing_preserved_performance_true",
-      "commits": "19022dc7;2a9ade4c"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseC_mechanistic",
@@ -621,14 +621,14 @@
       "faithfulness_content_regime": null,
       "faithfulness_other_regime": 1.0,
       "plausibility_proxy": 0.5,
-      "triad_F": null,
-      "triad_S": null,
-      "triad_M": null,
-      "FSM_composite": null,
+      "triad_F": 1.0,
+      "triad_S": 1.0,
+      "triad_M": 0.8895,
+      "FSM_composite": 0.9617,
       "is_positive_control": 0,
-      "faith_source": "value:interchange_accuracy_aligned",
+      "faith_source": "triad.F",
       "metric_names": "interchange_accuracy_aligned",
-      "commits": "19022dc7;2a9ade4c"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseC_mechanistic",
@@ -644,14 +644,14 @@
       "faithfulness_content_regime": null,
       "faithfulness_other_regime": 0.1082,
       "plausibility_proxy": 0.85,
-      "triad_F": null,
+      "triad_F": 0.1082,
       "triad_S": null,
-      "triad_M": null,
-      "FSM_composite": null,
+      "triad_M": 0.857,
+      "FSM_composite": 0.4826,
       "is_positive_control": 0,
-      "faith_source": "value:mean_selectivity",
+      "faith_source": "triad.F",
       "metric_names": "mean_selectivity",
-      "commits": "19022dc7;2a9ade4c;81fc6963"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseC_mechanistic",
@@ -667,14 +667,14 @@
       "faithfulness_content_regime": null,
       "faithfulness_other_regime": 1.0,
       "plausibility_proxy": 0.5,
-      "triad_F": null,
+      "triad_F": 1.0,
       "triad_S": null,
-      "triad_M": null,
-      "FSM_composite": null,
+      "triad_M": 0.8197,
+      "FSM_composite": 0.9099,
       "is_positive_control": 0,
-      "faith_source": "value:logit_lens_fidelity_true_intermediate",
+      "faith_source": "triad.F",
       "metric_names": "logit_lens_fidelity_true_intermediate",
-      "commits": "2a9ade4c;81fc6963"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseC_mechanistic",
@@ -697,7 +697,7 @@
       "is_positive_control": 0,
       "faith_source": "value:nmf_matched_component_fraction_vs_known_vars",
       "metric_names": "nmf_matched_component_fraction_vs_known_vars",
-      "commits": "15e5d2df"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseC_mechanistic",
@@ -713,14 +713,14 @@
       "faithfulness_content_regime": null,
       "faithfulness_other_regime": 0.5796,
       "plausibility_proxy": 0.5,
-      "triad_F": null,
+      "triad_F": 0.5796,
       "triad_S": null,
-      "triad_M": null,
-      "FSM_composite": null,
+      "triad_M": 1.0,
+      "FSM_composite": 0.7898,
       "is_positive_control": 0,
-      "faith_source": "value:path_circuit_F1_vs_true_routine",
+      "faith_source": "triad.F",
       "metric_names": "path_circuit_F1_vs_true_routine",
-      "commits": "19022dc7;2a9ade4c"
+      "commits": "d85961ed"
     },
     {
       "phase": "phaseC_mechanistic",
@@ -743,7 +743,7 @@
       "is_positive_control": 0,
       "faith_source": "triad.F;value:feature_variable_matched_fraction",
       "metric_names": "feature_variable_matched_fraction",
-      "commits": "2a9ade4c;81fc6963;86fdc27"
+      "commits": "86fdc27;d85961ed"
     },
     {
       "phase": "ground_truth",
@@ -784,7 +784,7 @@
       "faithfulness_mean": 0.4625,
       "faithfulness_ci95": 0.0855,
       "plausibility_proxy_mean": 0.8125,
-      "FSM_composite_mean": null,
+      "FSM_composite_mean": 0.6087,
       "faithfulness_position_regime_mean": 0.2794,
       "position_regime_n": 12
     },
@@ -793,7 +793,7 @@
       "faithfulness_mean": 0.6362,
       "faithfulness_ci95": 0.2149,
       "plausibility_proxy_mean": 0.625,
-      "FSM_composite_mean": 0.3487,
+      "FSM_composite_mean": 0.6968,
       "faithfulness_position_regime_mean": 1.0,
       "position_regime_n": 1
     }

@@ -1,7 +1,7 @@
 {
   "arrays": "occlusion_alien_position.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-occlusion causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -97,6 +97,16 @@
       "shared_output": "screen_region(n_changed_px)@r64c78",
       "state_kind": "seeded_random_action_gameplay"
     },
+    "triad": {
+      "F": 0.983542144464848,
+      "M": 1.0,
+      "M_named_size": 6,
+      "M_note": "|U*|=6 (oracle movers) / |U_hat|=6 (method above-threshold)",
+      "M_true_minimal_size": 6,
+      "S": 0.7142857142857143,
+      "S_note": "held-out predictive fit: 5/7 held-out do(u) within ε=9.7 (calib=7, fit Δy≈0.74·attr+0.76)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 0.0
   },
   "game": "alien",
@@ -110,7 +120,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r64c78",
-  "timestamp": "1783025949",
+  "timestamp": "1783126226",
   "value": 0.983542144464848,
   "where": "local"
 }

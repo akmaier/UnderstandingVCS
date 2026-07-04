@@ -1,7 +1,7 @@
 {
   "arrays": "ig_baseline_sweep_boxing_ball_pixel.npz",
   "ci": null,
-  "commit": "1adff48",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-IG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline_sweep": {
@@ -38,7 +38,7 @@
           "deletion_auc": 0.7573022598870057,
           "ig_max_abs": 1.09375,
           "insertion_auc": 0.5368502824858757,
-          "pearson_corr": 0.15630037693634655,
+          "pearson_corr": 0.1563003769363465,
           "precision_at_k": 0.0,
           "spearman_corr": 0.2748832530976198,
           "topk": 3,
@@ -76,7 +76,7 @@
           "deletion_auc": 0.7573022598870057,
           "ig_max_abs": 0.910888671875,
           "insertion_auc": 0.5368502824858757,
-          "pearson_corr": 0.1563003769363464,
+          "pearson_corr": 0.15630037693634646,
           "precision_at_k": 0.0,
           "spearman_corr": 0.2748832530976198,
           "topk": 3,
@@ -114,7 +114,7 @@
           "deletion_auc": 0.7573022598870057,
           "ig_max_abs": 0.859375,
           "insertion_auc": 0.5368502824858757,
-          "pearson_corr": 0.15630037693634652,
+          "pearson_corr": 0.15630037693634644,
           "precision_at_k": 0.0,
           "spearman_corr": 0.2748832530976198,
           "topk": 3,
@@ -160,9 +160,9 @@
         }
       ],
       "completeness_err_max": 0.140625,
-      "corr_max": 0.15630037693634655,
+      "corr_max": 0.1563003769363465,
       "corr_min": 0.0,
-      "corr_sensitivity": 0.15630037693634655,
+      "corr_sensitivity": 0.1563003769363465,
       "definitions": {
         "mean_ram": "constant baseline = mean(x) per byte (the 'average input')",
         "random": "one uniform-random RAM draw ∈ 0..255 (seed=0+9973)",
@@ -220,7 +220,7 @@
       "completeness_err": 0.09375,
       "deletion_auc": 0.7573022598870057,
       "insertion_auc": 0.5368502824858757,
-      "pearson_corr": 0.15630037693634655,
+      "pearson_corr": 0.1563003769363465,
       "precision_at_k": 0.0,
       "spearman_corr": 0.2748832530976198,
       "topk": 3
@@ -274,6 +274,16 @@
       "shared_output": "screen_region(n_changed_px)@r84c44",
       "state_kind": "seeded_random_action_gameplay"
     },
+    "triad": {
+      "F": 0.1563003769363465,
+      "M": 1.0,
+      "M_named_size": 2,
+      "M_note": "|U*|=13 (oracle movers) / |U_hat|=2 (method above-threshold)",
+      "M_true_minimal_size": 13,
+      "S": 0.16666666666666666,
+      "S_note": "held-out predictive fit: 2/12 held-out do(u) within ε=119.4 (calib=12, fit Δy≈244.945·attr+240.091)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 0.0
   },
   "game": "boxing",
@@ -287,7 +297,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r84c44",
-  "timestamp": "1783062121",
-  "value": 0.15630037693634655,
+  "timestamp": "1783122266",
+  "value": 0.1563003769363465,
   "where": "local"
 }

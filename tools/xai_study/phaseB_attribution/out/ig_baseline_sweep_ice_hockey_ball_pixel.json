@@ -1,7 +1,7 @@
 {
   "arrays": "ig_baseline_sweep_ice_hockey_ball_pixel.npz",
   "ci": null,
-  "commit": "1adff48",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-IG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline_sweep": {
@@ -36,7 +36,7 @@
           "deletion_auc": 0.7785741229724633,
           "ig_max_abs": 1.265625,
           "insertion_auc": 0.6786118445869482,
-          "pearson_corr": 0.1879335293880802,
+          "pearson_corr": 0.18793352938808017,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.40533202317133543,
           "topk": 3,
@@ -197,8 +197,8 @@
     ],
     "content_ram_index": -1,
     "harness_positive_control": {
-      "deletion_auc": 0.8903743315508023,
-      "insertion_auc": 0.5975935828877006,
+      "deletion_auc": 0.890374331550802,
+      "insertion_auc": 0.5975935828877005,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the IG numbers above are then a true measurement, not an artefact of the metric.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "oracle_column_degenerate": false,
@@ -210,7 +210,7 @@
       "completeness_err": 0.265625,
       "deletion_auc": 0.7785741229724633,
       "insertion_auc": 0.6786118445869482,
-      "pearson_corr": 0.1879335293880802,
+      "pearson_corr": 0.18793352938808017,
       "precision_at_k": 0.3333333333333333,
       "spearman_corr": 0.40533202317133543,
       "topk": 3
@@ -262,6 +262,16 @@
       "shared_output": "screen_region(n_changed_px)@r92c61",
       "state_kind": "seeded_random_action_gameplay"
     },
+    "triad": {
+      "F": 0.18793352938808017,
+      "M": 1.0,
+      "M_named_size": 2,
+      "M_note": "|U*|=17 (oracle movers) / |U_hat|=2 (method above-threshold)",
+      "M_true_minimal_size": 17,
+      "S": 0.18181818181818182,
+      "S_note": "held-out predictive fit: 2/11 held-out do(u) within ε=19.7 (calib=11, fit Δy≈31.21·attr+92.5)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 0.0
   },
   "game": "ice_hockey",
@@ -275,7 +285,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r92c61",
-  "timestamp": "1783063912",
-  "value": 0.1879335293880802,
+  "timestamp": "1783123411",
+  "value": 0.18793352938808017,
   "where": "local"
 }

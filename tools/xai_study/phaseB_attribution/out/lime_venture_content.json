@@ -1,7 +1,7 @@
 {
   "arrays": "lime_venture_content.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-LIME causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -210,6 +210,16 @@
       "model": "weighted linear g(z)=w·z+b, ridge-regularised normal equations (LinearAlgebra)",
       "r2": 0.25102176040409996
     },
+    "triad": {
+      "F": 0.4511270774301333,
+      "M": 0.19444444444444445,
+      "M_named_size": 36,
+      "M_note": "|U*|=7 (oracle movers) / |U_hat|=36 (method above-threshold)",
+      "M_true_minimal_size": 7,
+      "S": 0.9473684210526315,
+      "S_note": "held-out predictive fit: 18/19 held-out do(u) within ε=25.3 (calib=19, fit Δy≈0.197·attr+-1.027)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_intact": 1.0
   },
   "game": "venture",
@@ -223,7 +233,7 @@
   "state": "f90+15",
   "stderr": 0.051533526768043195,
   "target_output": "content(ram_self@82)",
-  "timestamp": "1783055508",
+  "timestamp": "1783133170",
   "value": 0.4511270774301333,
   "where": "local"
 }

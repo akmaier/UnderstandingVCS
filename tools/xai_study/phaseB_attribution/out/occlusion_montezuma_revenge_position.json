@@ -1,7 +1,7 @@
 {
   "arrays": "occlusion_montezuma_revenge_position.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-occlusion causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -151,6 +151,16 @@
       "shared_output": "screen_region(n_changed_px)@r66c75",
       "state_kind": "seeded_random_action_gameplay"
     },
+    "triad": {
+      "F": 0.8660521571928359,
+      "M": 1.0,
+      "M_named_size": 18,
+      "M_note": "|U*|=22 (oracle movers) / |U_hat|=18 (method above-threshold)",
+      "M_true_minimal_size": 22,
+      "S": 0.875,
+      "S_note": "held-out predictive fit: 14/16 held-out do(u) within ε=1403.8 (calib=16, fit Δy≈0.611·attr+354.396)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 0.0
   },
   "game": "montezuma_revenge",
@@ -164,7 +174,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r66c75",
-  "timestamp": "1783027562",
+  "timestamp": "1783128032",
   "value": 0.8660521571928359,
   "where": "local"
 }

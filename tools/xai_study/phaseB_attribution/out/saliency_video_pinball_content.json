@@ -1,7 +1,7 @@
 {
   "arrays": "saliency_video_pinball_content.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-saliency causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment (e.g. the vanishing position output).",
     "baseline": "none (vanilla saliency uses no baseline and no input weighting)",
@@ -84,6 +84,16 @@
     },
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE saliency over outputs×causes×games on GPU; the forward is bit-exact to this map.",
     "substrate": "jutari (Julia) — Zygote content-path |∂y/∂u| over the RAM tape + TRUE-VCS deletion/insertion re-runs (real-ROM, bit-exact oracle machinery).",
+    "triad": {
+      "F": 0.7702573842286506,
+      "M": 1.0,
+      "M_named_size": 2,
+      "M_note": "|U*|=3 (oracle movers) / |U_hat|=2 (method above-threshold)",
+      "M_true_minimal_size": 3,
+      "S": 0.875,
+      "S_note": "held-out predictive fit: 7/8 held-out do(u) within ε=10.9 (calib=8, fit Δy≈13.714·attr+0.286)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 143.0
   },
   "game": "video_pinball",
@@ -97,7 +107,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@67)",
-  "timestamp": "1783041446",
+  "timestamp": "1783129377",
   "value": 0.7702573842286506,
   "where": "local"
 }

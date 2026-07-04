@@ -1,7 +1,7 @@
 {
   "arrays": "lime_video_pinball_content.npz",
   "ci": null,
-  "commit": "1adff48c",
+  "commit": "d85961ed",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-LIME causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -144,6 +144,16 @@
       "model": "weighted linear g(z)=w·z+b, ridge-regularised normal equations (LinearAlgebra)",
       "r2": 0.9998190044965588
     },
+    "triad": {
+      "F": 0.7703507134469205,
+      "M": 0.21428571428571427,
+      "M_named_size": 14,
+      "M_note": "|U*|=3 (oracle movers) / |U_hat|=14 (method above-threshold)",
+      "M_true_minimal_size": 3,
+      "S": 0.875,
+      "S_note": "held-out predictive fit: 7/8 held-out do(u) within ε=10.9 (calib=8, fit Δy≈0.125·attr+0.252)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_intact": 143.0
   },
   "game": "video_pinball",
@@ -157,7 +167,7 @@
   "state": "f90+15",
   "stderr": 1.4863310338219966e-6,
   "target_output": "content(ram_self@67)",
-  "timestamp": "1783055683",
+  "timestamp": "1783133360",
   "value": 0.7703507134469205,
   "where": "local"
 }
