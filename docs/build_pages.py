@@ -1565,9 +1565,9 @@ def build_ground_truth():
 .gtcounts .c b{font-size:1.3rem;display:block}
 .gtgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;margin-top:1rem}
 .gtcard{border:1px solid rgba(127,127,127,.25);border-radius:.6rem;overflow:hidden;display:flex;flex-direction:column;background:rgba(127,127,127,.04)}
-.gtimg{background:#000;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center}
-.gtimg img{width:100%;height:100%;object-fit:fill;image-rendering:pixelated}
-.gtimg .noimg{color:#888;font-size:.85rem}
+.gtimg{background:#000;aspect-ratio:4/3;position:relative;overflow:hidden}
+.gtimg img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;image-rendering:pixelated;display:block}
+.gtimg .noimg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#888;font-size:.85rem}
 .gtbody{padding:.6rem .8rem}
 .gtbody h4{margin:.1rem 0 .5rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
 .gtbody ul{margin:0;padding-left:0;list-style:none;font-size:.86rem;line-height:1.45}
