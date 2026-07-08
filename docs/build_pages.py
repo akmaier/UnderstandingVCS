@@ -1505,7 +1505,7 @@ def build_ground_truth():
         d = data[g]
         rel = "assets/groundtruth/%s.png" % g
         has_img = os.path.exists(os.path.join(HERE, "assets", "groundtruth", g + ".png"))
-        thumb = ('<img src="%s" alt="%s screen" loading="lazy">' % (rel, esc(disp(g)))
+        thumb = ('<img src="%s" alt="%s screen">' % (rel, esc(disp(g)))
                  if has_img else '<div class="noimg">screenshot pending</div>')
         obadge = {"both": "AtariARI + OCAtari", "OCAtari": "OCAtari",
                   "none": "no external label"}[d["origin"]]
@@ -1562,8 +1562,8 @@ def build_ground_truth():
 .gtcounts .c b{font-size:1.3rem;display:block}
 .gtgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;margin-top:1rem}
 .gtcard{border:1px solid rgba(127,127,127,.25);border-radius:.6rem;overflow:hidden;display:flex;flex-direction:column;background:rgba(127,127,127,.04)}
-.gtimg{background:#000;aspect-ratio:16/10;display:flex;align-items:center;justify-content:center}
-.gtimg img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
+.gtimg{background:#000;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center}
+.gtimg img{width:100%;height:100%;object-fit:fill;image-rendering:pixelated}
 .gtimg .noimg{color:#888;font-size:.85rem}
 .gtbody{padding:.6rem .8rem}
 .gtbody h4{margin:.1rem 0 .5rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
@@ -1696,7 +1696,7 @@ def build_game_page(game):
     rel = "assets/groundtruth/%s.png" % game
     has_img = os.path.exists(os.path.join(HERE, "assets", "groundtruth", game + ".png"))
     thumb = ('<a href="%s" target="_blank"><img src="%s" alt="%s screen" '
-             'style="max-width:100%%;image-rendering:pixelated"></a>' % (rel, rel, esc(disp))
+             'style="width:100%%;aspect-ratio:4/3;object-fit:fill;image-rendering:pixelated"></a>' % (rel, rel, esc(disp))
              if has_img else '<div class="noimg">screenshot pending</div>')
 
     origin_lab = {"both": "AtariARI + OCAtari", "OCAtari": "OCAtari",
