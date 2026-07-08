@@ -80,7 +80,7 @@ def build():
         game = (rec.get("game") or "").lower()
         if not game or (L.SCORED_GAMES and game not in L.SCORED_GAMES):
             continue
-        F, _S, _M = L.triad_of(rec)
+        F, S, M = L.triad_of(rec)
         if F is not None:
             faith = L.clip01(F)
         else:
@@ -91,6 +91,12 @@ def build():
         per[mk][game]["all"].append(faith)
         if regime in ("content", "position"):
             per[mk][game][regime].append(faith)
+        # per-game triad S/M (raw — S can be negative, M in (0,1]); the triad-S/M
+        # broadening emits these per record so per-game F/S/M can be shown everywhere.
+        if S is not None:
+            per[mk][game]["S"].append(S)
+        if M is not None:
+            per[mk][game]["M"].append(M)
 
     def per_game_block(lb_method):
         out = {}
@@ -99,6 +105,8 @@ def build():
                 "F": _mean(regs["all"]),
                 "F_content": _mean(regs["content"]),
                 "F_position": _mean(regs["position"]),
+                "S": _mean(regs["S"]) if regs["S"] else None,
+                "M": _mean(regs["M"]) if regs["M"] else None,
             }
         return out
 
@@ -137,6 +145,8 @@ def build():
                 "F": _mean(vals["all"]),
                 "F_content": _mean(vals["content"]),
                 "F_position": _mean(vals["position"]),
+                "S": _mean(vals["S"]) if vals["S"] else None,
+                "M": _mean(vals["M"]) if vals["M"] else None,
             }
 
     games = {}

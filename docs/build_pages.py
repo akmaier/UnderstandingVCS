@@ -1327,16 +1327,19 @@ def build_method_results_section(key):
         pg = m["per_game"][game]
         note = _method_pergame_note(pg.get("F"), pg.get("F_position"))
         rows.append(
-            '<tr><td data-v="%s"><a href="g_%s.html">%s</a></td>%s%s%s'
+            '<tr><td data-v="%s"><a href="g_%s.html">%s</a></td>%s%s%s%s%s'
             '<td data-v="%s"><span class="cite">%s</span></td></tr>'
             % (esc(game_disp(game)), game, esc(game_disp(game)),
                _fcell(pg.get("F")), _fcell(pg.get("F_content")), _fcell(pg.get("F_position")),
+               _fcell(pg.get("S")), _fcell(pg.get("M")),
                esc(note), esc(note)))
     table = ('<table class="tbl sortable"><thead><tr>'
              '<th data-sort="str">Game</th>'
              '<th data-sort="num">F (all)</th>'
              '<th data-sort="num">content-F</th>'
              '<th data-sort="num">position-F</th>'
+             '<th data-sort="num">S</th>'
+             '<th data-sort="num">M</th>'
              '<th>Note</th></tr></thead><tbody>%s</tbody></table>' % "".join(rows))
     return """
 <section><div class="wrap">
@@ -1724,16 +1727,19 @@ def build_game_page(game):
             '<tr class="fam-%s">'
             '<td data-v="%s"><a href="m_%s.html">%s</a></td>'
             '<td data-v="%s"><span class="ob %s">%s</span></td>'
-            '%s%s%s</tr>'
+            '%s%s%s%s%s</tr>'
             % (fam_cls, esc(name), key, esc(name),
                esc(fam_lab), {"causal": "ok", "grad": "na", "other": "mid"}[fam_cls], esc(fam_lab),
-               _fcell(d.get("F")), _fcell(d.get("F_content")), _fcell(d.get("F_position"))))
+               _fcell(d.get("F")), _fcell(d.get("F_content")), _fcell(d.get("F_position")),
+               _fcell(d.get("S")), _fcell(d.get("M"))))
     table = ('<table class="tbl sortable"><thead><tr>'
              '<th data-sort="str">Method</th>'
              '<th data-sort="str">Family</th>'
              '<th data-sort="num">F (all)</th>'
              '<th data-sort="num">content-F</th>'
-             '<th data-sort="num">position-F</th></tr></thead><tbody>%s</tbody></table>'
+             '<th data-sort="num">position-F</th>'
+             '<th data-sort="num">S</th>'
+             '<th data-sort="num">M</th></tr></thead><tbody>%s</tbody></table>'
              % "".join(rows))
 
     style = (SORT_CSS + SORT_JS +
