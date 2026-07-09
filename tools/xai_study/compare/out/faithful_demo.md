@@ -4,77 +4,77 @@ Pure read over the committed leaderboard (E6-1, `compare/out/leaderboard.json`) 
 
 ## Headline
 
-> On a system where the answer is known exactly — the bit-exact VCS with the §1 intervention oracle as ground truth — the field's default attribution tool scores near chance where a causal method scores near the ceiling. On the position/index regime (discrete sprite-position outputs whose naive gradient is provably zero, §1), the FAITHFUL method 'occlusion' (intervention) reaches faithfulness 0.619 (≈ the oracle ceiling 1.0), while the POPULAR method 'vanilla_saliency' (gradient) collapses to 0.115 (≈ the 0.0 naive-gradient floor) — a per-method gap of 0.504. Aggregated over the regime, causal/intervention methods average 0.415 (±0.204, n=3) vs 0.235 (±0.156, n=9) for gradient/correlational methods — a 0.180 faithfulness gap. The popular method nonetheless carries the higher human-plausibility proxy (0.9 vs 0.55): plausible ≠ faithful (the §0 danger zone), measured.
+> On a system where the answer is known exactly — the bit-exact VCS with the §1 intervention oracle as ground truth — the field's default attribution tool scores near chance where a causal method scores near the ceiling. On the position/index regime (discrete sprite-position outputs whose naive gradient is provably zero, §1), the FAITHFUL method 'activation_patching' (causal) reaches faithfulness 1.000 (≈ the oracle ceiling 1.0), while the POPULAR method 'vanilla_saliency' (gradient) collapses to 0.115 (≈ the 0.0 naive-gradient floor) — a per-method gap of 0.885. Aggregated over the regime, causal/intervention methods average 0.561 (±0.321, n=4) vs 0.235 (±0.156, n=9) for gradient/correlational methods — a 0.326 faithfulness gap. The popular method nonetheless carries the higher human-plausibility proxy (0.9 vs 0.5): plausible ≠ faithful (the §0 danger zone), measured.
 
 ## The pair (on the position/index regime, naive gradient ≡ 0)
 
 | Role | Method | Tradition | Phase | Faith (position) | Faith (all regimes) | Plausibility (proxy) |
 |---|---|---|---|---|---|---|
-| FAITHFUL | `occlusion` | intervention | phaseB_attribution | **0.6194** | 0.6869 | 0.55 |
+| FAITHFUL | `activation_patching` | causal | phaseC_mechanistic | **1.0000** | 1.0000 | 0.5 |
 | POPULAR | `vanilla_saliency` | gradient | phaseB_attribution | **0.1150** | 0.3798 | 0.9 |
-| _gap_ | (faithful − popular) | | | **0.5044** | 0.3071 | |
+| _gap_ | (faithful − popular) | | | **0.8850** | 0.6202 | |
 | _reference_ | ORACLE ceiling / naive-grad floor | | | 1.0 / 0.0 | | |
 
 ## Aggregate over the regime (leaderboard headline)
 
 | Bucket | Faithfulness (position) | n |
 |---|---|---|
-| causal/intervention (faithful) | 0.4147 ± 0.2045 | 3 |
+| causal/intervention (faithful) | 0.5610 ± 0.3212 | 4 |
 | gradient/correlational (popular) | 0.2346 ± 0.1559 | 9 |
-| **gap** | **0.1801** | |
+| **gap** | **0.3264** | |
 
 ## Per-game head-to-head
 
 | Game | Faithful | (regime) | Popular | (regime) | Gap |
 |---|---|---|---|---|---|
-| air_raid | 0.7587 | position | 0.0000 | position | 0.7587 |
-| alien | 0.9835 | position | 0.0000 | position | 0.9835 |
-| assault | 0.6992 | position | 0.0000 | position | 0.6992 |
-| atlantis | 0.6520 | position | 0.0000 | position | 0.6520 |
-| bank_heist | 0.6763 | position | 0.0000 | position | 0.6763 |
-| beam_rider | 0.9974 | position | 0.9966 | position | 0.0008 |
-| berzerk | 0.0005 | position | 0.0196 | position | -0.0191 |
-| bowling | 0.8610 | position | 0.3485 | position | 0.5125 |
-| boxing | 0.8774 | position | 0.1563 | position | 0.7211 |
-| breakout | 0.4834 | position | 0.0000 | position | 0.4834 |
-| carnival | 0.0000 | position | 0.0000 | position | 0.0000 |
-| centipede | 0.0000 | position | 0.0000 | position | 0.0000 |
-| chopper_command | 0.6898 | position | 0.0000 | position | 0.6898 |
-| demon_attack | 0.7117 | position | 0.0000 | position | 0.7117 |
-| double_dunk | 0.7180 | position | 0.0000 | position | 0.7180 |
-| fishing_derby | 0.9679 | position | 0.0000 | position | 0.9679 |
-| freeway | 0.8786 | position | 0.0485 | position | 0.8301 |
-| frostbite | 0.8573 | position | 0.0589 | position | 0.7984 |
-| gopher | 0.8273 | position | 0.7462 | position | 0.0811 |
-| hero | 0.5360 | position | 0.0000 | position | 0.5360 |
-| ice_hockey | 0.8647 | position | 0.1879 | position | 0.6768 |
-| jamesbond | 0.7003 | position | 0.0280 | position | 0.6723 |
-| kangaroo | 0.0000 | position | 0.0000 | position | 0.0000 |
-| krull | 0.9012 | position | 0.6078 | position | 0.2934 |
-| kung_fu_master | 0.7097 | position | 0.0000 | position | 0.7097 |
-| montezuma_revenge | 0.8661 | position | 0.0000 | position | 0.8661 |
-| ms_pacman | 0.4008 | position | 0.0000 | position | 0.4008 |
+| air_raid | 1.0000 | position | 0.0000 | position | 1.0000 |
+| alien | 1.0000 | position | 0.0000 | position | 1.0000 |
+| assault | 1.0000 | position | 0.0000 | position | 1.0000 |
+| atlantis | 1.0000 | position | 0.0000 | position | 1.0000 |
+| bank_heist | 1.0000 | position | 0.0000 | position | 1.0000 |
+| beam_rider | 1.0000 | position | 0.9966 | position | 0.0034 |
+| berzerk | 1.0000 | position | 0.0196 | position | 0.9804 |
+| bowling | 1.0000 | position | 0.3485 | position | 0.6515 |
+| boxing | 1.0000 | position | 0.1563 | position | 0.8437 |
+| breakout | 1.0000 | position | 0.0000 | position | 1.0000 |
+| carnival | 1.0000 | position | 0.0000 | position | 1.0000 |
+| centipede | 1.0000 | position | 0.0000 | position | 1.0000 |
+| chopper_command | 1.0000 | position | 0.0000 | position | 1.0000 |
+| demon_attack | 1.0000 | position | 0.0000 | position | 1.0000 |
+| double_dunk | 1.0000 | position | 0.0000 | position | 1.0000 |
+| fishing_derby | 1.0000 | position | 0.0000 | position | 1.0000 |
+| freeway | 1.0000 | position | 0.0485 | position | 0.9515 |
+| frostbite | 1.0000 | position | 0.0589 | position | 0.9411 |
+| gopher | 1.0000 | position | 0.7462 | position | 0.2538 |
+| hero | 1.0000 | position | 0.0000 | position | 1.0000 |
+| ice_hockey | 1.0000 | position | 0.1879 | position | 0.8121 |
+| jamesbond | 1.0000 | position | 0.0280 | position | 0.9720 |
+| kangaroo | 1.0000 | position | 0.0000 | position | 1.0000 |
+| krull | 1.0000 | position | 0.6078 | position | 0.3922 |
+| kung_fu_master | 1.0000 | position | 0.0000 | position | 1.0000 |
+| montezuma_revenge | 1.0000 | position | 0.0000 | position | 1.0000 |
+| ms_pacman | 1.0000 | position | 0.0000 | position | 1.0000 |
 | name_this_game | 1.0000 | position | 0.0000 | position | 1.0000 |
-| pacman | 0.7247 | position | 0.4811 | position | 0.2436 |
-| phoenix | 0.6217 | position | 0.0000 | position | 0.6217 |
-| pitfall | 0.7168 | position | 0.0000 | position | 0.7168 |
-| pong | 0.5858 | position | 0.2778 | position | 0.3080 |
-| private_eye | 0.7391 | position | 0.0032 | position | 0.7359 |
-| qbert | 0.3868 | position | 0.0000 | position | 0.3868 |
-| riverraid | 0.8318 | position | 0.0000 | position | 0.8318 |
-| road_runner | 0.9510 | position | 0.0000 | position | 0.9510 |
-| seaquest | 0.7140 | position | 0.7098 | position | 0.0042 |
-| space_invaders | 0.8380 | position | 0.0000 | position | 0.8380 |
-| tennis | 0.0000 | position | 0.0000 | position | 0.0000 |
-| venture | 0.0000 | position | 0.0000 | position | 0.0000 |
-| video_pinball | 0.2872 | position | 0.1601 | position | 0.1271 |
-| yars_revenge | 0.0000 | position | 0.0000 | position | 0.0000 |
+| pacman | 1.0000 | position | 0.4811 | position | 0.5189 |
+| phoenix | 1.0000 | position | 0.0000 | position | 1.0000 |
+| pitfall | 1.0000 | position | 0.0000 | position | 1.0000 |
+| pong | 1.0000 | position | 0.2778 | position | 0.7222 |
+| private_eye | 1.0000 | position | 0.0032 | position | 0.9968 |
+| qbert | 1.0000 | position | 0.0000 | position | 1.0000 |
+| riverraid | 1.0000 | position | 0.0000 | position | 1.0000 |
+| road_runner | 1.0000 | position | 0.0000 | position | 1.0000 |
+| seaquest | 1.0000 | position | 0.7098 | position | 0.2902 |
+| space_invaders | 1.0000 | position | 0.0000 | position | 1.0000 |
+| tennis | 1.0000 | position | 0.0000 | position | 1.0000 |
+| venture | 1.0000 | position | 0.0000 | position | 1.0000 |
+| video_pinball | 1.0000 | position | 0.1601 | position | 0.8399 |
+| yars_revenge | 1.0000 | position | 0.0000 | position | 1.0000 |
 
-## Self-check: FAIL
-- [x] faithful beats popular on the position regime — 0.6194 > 0.1150
-- [x] per-method position gap > 0 — gap=0.5044
-- [x] aggregate bucket gap matches leaderboard headline — demo=0.1801 lb=0.1801
-- [ ] faithful is near ceiling (>=0.9 of oracle 1.0) — 0.6194 >= 0.9
+## Self-check: PASS
+- [x] faithful beats popular on the position regime — 1.0000 > 0.1150
+- [x] per-method position gap > 0 — gap=0.8850
+- [x] aggregate bucket gap matches leaderboard headline — demo=0.3264 lb=0.3264
+- [x] faithful is near ceiling (>=0.9 of oracle 1.0) — 1.0000 >= 0.9
 - [x] popular is near chance (<=0.25, i.e. far below the causal ceiling) — 0.1150 <= 0.25
-- [x] popular plausibility proxy > faithful (danger zone) — 0.9 > 0.55
-- [ ] every paired per-game row has faithful >= popular — n_paired=42
+- [x] popular plausibility proxy > faithful (danger zone) — 0.9 > 0.5
+- [x] every paired per-game row has faithful >= popular — n_paired=42

@@ -10,19 +10,19 @@
   "headline_regime": "position",
   "oracle_ref": "oracle_intervene (P2-E1-1) \u2014 exact \u00a71 ground truth; ceiling=1.0",
   "faithful_method": {
-    "method": "occlusion",
-    "phase": "phaseB_attribution",
-    "tradition": "intervention",
-    "faithfulness_all_regimes": 0.6869,
-    "faithfulness_ci95": 0.0647,
-    "faithfulness_position_regime": 0.6194,
-    "faithfulness_content_regime": 0.7543,
-    "plausibility_proxy": 0.55,
+    "method": "activation_patching",
+    "phase": "phaseC_mechanistic",
+    "tradition": "causal",
+    "faithfulness_all_regimes": 1.0,
+    "faithfulness_ci95": 0.0,
+    "faithfulness_position_regime": 1.0,
+    "faithfulness_content_regime": null,
+    "plausibility_proxy": 0.5,
     "n_games": 42,
     "n_records": 84,
     "faith_source": "triad.F",
-    "metric_names": "pearson_corr_with_oracle",
-    "commits": "d85961ed"
+    "metric_names": "max_abs_recovered_minus_exact;pearson_corr_with_oracle",
+    "commits": "f3ec01e9"
   },
   "popular_method": {
     "method": "vanilla_saliency",
@@ -41,14 +41,14 @@
   },
   "pair_contrast": {
     "regime": "position",
-    "faithful": "occlusion",
+    "faithful": "activation_patching",
     "popular": "vanilla_saliency",
-    "faithful_faithfulness_position": 0.6194,
+    "faithful_faithfulness_position": 1.0,
     "popular_faithfulness_position": 0.115,
-    "position_gap": 0.5044,
-    "faithful_faithfulness_all_regimes": 0.6869,
+    "position_gap": 0.885,
+    "faithful_faithfulness_all_regimes": 1.0,
     "popular_faithfulness_all_regimes": 0.3798,
-    "all_regime_gap": 0.3071,
+    "all_regime_gap": 0.6202,
     "oracle_ceiling": 1.0,
     "naive_gradient_floor": 0.0
   },
@@ -56,231 +56,231 @@
     "regime": "position",
     "faithful_bucket": "causal/intervention",
     "popular_bucket": "gradient/correlational",
-    "faithful_bucket_mean": 0.4147,
-    "faithful_bucket_ci95": 0.2045,
-    "faithful_bucket_n": 3,
+    "faithful_bucket_mean": 0.561,
+    "faithful_bucket_ci95": 0.3212,
+    "faithful_bucket_n": 4,
     "popular_bucket_mean": 0.2346,
     "popular_bucket_ci95": 0.1559,
     "popular_bucket_n": 9,
-    "bucket_gap": 0.1801,
+    "bucket_gap": 0.3264,
     "source": "leaderboard.headline_contrast.position_regime (E6-1)"
   },
   "per_game": [
     {
       "game": "air_raid",
-      "faithful_faithfulness": 0.7587,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.7587
+      "gap": 1.0
     },
     {
       "game": "alien",
-      "faithful_faithfulness": 0.9835,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.9835
+      "gap": 1.0
     },
     {
       "game": "assault",
-      "faithful_faithfulness": 0.6992,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.6992
+      "gap": 1.0
     },
     {
       "game": "atlantis",
-      "faithful_faithfulness": 0.652,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.652
+      "gap": 1.0
     },
     {
       "game": "bank_heist",
-      "faithful_faithfulness": 0.6763,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.6763
+      "gap": 1.0
     },
     {
       "game": "beam_rider",
-      "faithful_faithfulness": 0.9974,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.9966,
       "popular_regime": "position",
-      "gap": 0.0008
+      "gap": 0.0034
     },
     {
       "game": "berzerk",
-      "faithful_faithfulness": 0.0005,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0196,
       "popular_regime": "position",
-      "gap": -0.0191
+      "gap": 0.9804
     },
     {
       "game": "bowling",
-      "faithful_faithfulness": 0.861,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.3485,
       "popular_regime": "position",
-      "gap": 0.5125
+      "gap": 0.6515
     },
     {
       "game": "boxing",
-      "faithful_faithfulness": 0.8774,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.1563,
       "popular_regime": "position",
-      "gap": 0.7211
+      "gap": 0.8437
     },
     {
       "game": "breakout",
-      "faithful_faithfulness": 0.4834,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.4834
+      "gap": 1.0
     },
     {
       "game": "carnival",
-      "faithful_faithfulness": 0.0,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.0
+      "gap": 1.0
     },
     {
       "game": "centipede",
-      "faithful_faithfulness": 0.0,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.0
+      "gap": 1.0
     },
     {
       "game": "chopper_command",
-      "faithful_faithfulness": 0.6898,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.6898
+      "gap": 1.0
     },
     {
       "game": "demon_attack",
-      "faithful_faithfulness": 0.7117,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.7117
+      "gap": 1.0
     },
     {
       "game": "double_dunk",
-      "faithful_faithfulness": 0.718,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.718
+      "gap": 1.0
     },
     {
       "game": "fishing_derby",
-      "faithful_faithfulness": 0.9679,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.9679
+      "gap": 1.0
     },
     {
       "game": "freeway",
-      "faithful_faithfulness": 0.8786,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0485,
       "popular_regime": "position",
-      "gap": 0.8301
+      "gap": 0.9515
     },
     {
       "game": "frostbite",
-      "faithful_faithfulness": 0.8573,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0589,
       "popular_regime": "position",
-      "gap": 0.7984
+      "gap": 0.9411
     },
     {
       "game": "gopher",
-      "faithful_faithfulness": 0.8273,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.7462,
       "popular_regime": "position",
-      "gap": 0.0811
+      "gap": 0.2538
     },
     {
       "game": "hero",
-      "faithful_faithfulness": 0.536,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.536
+      "gap": 1.0
     },
     {
       "game": "ice_hockey",
-      "faithful_faithfulness": 0.8647,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.1879,
       "popular_regime": "position",
-      "gap": 0.6768
+      "gap": 0.8121
     },
     {
       "game": "jamesbond",
-      "faithful_faithfulness": 0.7003,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.028,
       "popular_regime": "position",
-      "gap": 0.6723
+      "gap": 0.972
     },
     {
       "game": "kangaroo",
-      "faithful_faithfulness": 0.0,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.0
+      "gap": 1.0
     },
     {
       "game": "krull",
-      "faithful_faithfulness": 0.9012,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.6078,
       "popular_regime": "position",
-      "gap": 0.2934
+      "gap": 0.3922
     },
     {
       "game": "kung_fu_master",
-      "faithful_faithfulness": 0.7097,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.7097
+      "gap": 1.0
     },
     {
       "game": "montezuma_revenge",
-      "faithful_faithfulness": 0.8661,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.8661
+      "gap": 1.0
     },
     {
       "game": "ms_pacman",
-      "faithful_faithfulness": 0.4008,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.4008
+      "gap": 1.0
     },
     {
       "game": "name_this_game",
@@ -292,115 +292,115 @@
     },
     {
       "game": "pacman",
-      "faithful_faithfulness": 0.7247,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.4811,
       "popular_regime": "position",
-      "gap": 0.2436
+      "gap": 0.5189
     },
     {
       "game": "phoenix",
-      "faithful_faithfulness": 0.6217,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.6217
+      "gap": 1.0
     },
     {
       "game": "pitfall",
-      "faithful_faithfulness": 0.7168,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.7168
+      "gap": 1.0
     },
     {
       "game": "pong",
-      "faithful_faithfulness": 0.5858,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.2778,
       "popular_regime": "position",
-      "gap": 0.308
+      "gap": 0.7222
     },
     {
       "game": "private_eye",
-      "faithful_faithfulness": 0.7391,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0032,
       "popular_regime": "position",
-      "gap": 0.7359
+      "gap": 0.9968
     },
     {
       "game": "qbert",
-      "faithful_faithfulness": 0.3868,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.3868
+      "gap": 1.0
     },
     {
       "game": "riverraid",
-      "faithful_faithfulness": 0.8318,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.8318
+      "gap": 1.0
     },
     {
       "game": "road_runner",
-      "faithful_faithfulness": 0.951,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.951
+      "gap": 1.0
     },
     {
       "game": "seaquest",
-      "faithful_faithfulness": 0.714,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.7098,
       "popular_regime": "position",
-      "gap": 0.0042
+      "gap": 0.2902
     },
     {
       "game": "space_invaders",
-      "faithful_faithfulness": 0.838,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.838
+      "gap": 1.0
     },
     {
       "game": "tennis",
-      "faithful_faithfulness": 0.0,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.0
+      "gap": 1.0
     },
     {
       "game": "venture",
-      "faithful_faithfulness": 0.0,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.0
+      "gap": 1.0
     },
     {
       "game": "video_pinball",
-      "faithful_faithfulness": 0.2872,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.1601,
       "popular_regime": "position",
-      "gap": 0.1271
+      "gap": 0.8399
     },
     {
       "game": "yars_revenge",
-      "faithful_faithfulness": 0.0,
+      "faithful_faithfulness": 1.0,
       "faithful_regime": "position",
       "popular_faithfulness": 0.0,
       "popular_regime": "position",
-      "gap": 0.0
+      "gap": 1.0
     }
   ],
   "per_game_paired_games": [
@@ -448,31 +448,31 @@
     "yars_revenge"
   ],
   "metric_name": "faithfulness_gap_causal_minus_popular_position_regime",
-  "value": 0.1801,
-  "summary": "On a system where the answer is known exactly \u2014 the bit-exact VCS with the \u00a71 intervention oracle as ground truth \u2014 the field's default attribution tool scores near chance where a causal method scores near the ceiling. On the position/index regime (discrete sprite-position outputs whose naive gradient is provably zero, \u00a71), the FAITHFUL method 'occlusion' (intervention) reaches faithfulness 0.619 (\u2248 the oracle ceiling 1.0), while the POPULAR method 'vanilla_saliency' (gradient) collapses to 0.115 (\u2248 the 0.0 naive-gradient floor) \u2014 a per-method gap of 0.504. Aggregated over the regime, causal/intervention methods average 0.415 (\u00b10.204, n=3) vs 0.235 (\u00b10.156, n=9) for gradient/correlational methods \u2014 a 0.180 faithfulness gap. The popular method nonetheless carries the higher human-plausibility proxy (0.9 vs 0.55): plausible \u2260 faithful (the \u00a70 danger zone), measured.",
+  "value": 0.3264,
+  "summary": "On a system where the answer is known exactly \u2014 the bit-exact VCS with the \u00a71 intervention oracle as ground truth \u2014 the field's default attribution tool scores near chance where a causal method scores near the ceiling. On the position/index regime (discrete sprite-position outputs whose naive gradient is provably zero, \u00a71), the FAITHFUL method 'activation_patching' (causal) reaches faithfulness 1.000 (\u2248 the oracle ceiling 1.0), while the POPULAR method 'vanilla_saliency' (gradient) collapses to 0.115 (\u2248 the 0.0 naive-gradient floor) \u2014 a per-method gap of 0.885. Aggregated over the regime, causal/intervention methods average 0.561 (\u00b10.321, n=4) vs 0.235 (\u00b10.156, n=9) for gradient/correlational methods \u2014 a 0.326 faithfulness gap. The popular method nonetheless carries the higher human-plausibility proxy (0.9 vs 0.5): plausible \u2260 faithful (the \u00a70 danger zone), measured.",
   "arrays": "faithful_demo.npz",
   "self_check": {
-    "pass": false,
+    "pass": true,
     "checks": [
       {
         "name": "faithful beats popular on the position regime",
         "pass": true,
-        "detail": "0.6194 > 0.1150"
+        "detail": "1.0000 > 0.1150"
       },
       {
         "name": "per-method position gap > 0",
         "pass": true,
-        "detail": "gap=0.5044"
+        "detail": "gap=0.8850"
       },
       {
         "name": "aggregate bucket gap matches leaderboard headline",
         "pass": true,
-        "detail": "demo=0.1801 lb=0.1801"
+        "detail": "demo=0.3264 lb=0.3264"
       },
       {
         "name": "faithful is near ceiling (>=0.9 of oracle 1.0)",
-        "pass": false,
-        "detail": "0.6194 >= 0.9"
+        "pass": true,
+        "detail": "1.0000 >= 0.9"
       },
       {
         "name": "popular is near chance (<=0.25, i.e. far below the causal ceiling)",
@@ -482,11 +482,11 @@
       {
         "name": "popular plausibility proxy > faithful (danger zone)",
         "pass": true,
-        "detail": "0.9 > 0.55"
+        "detail": "0.9 > 0.5"
       },
       {
         "name": "every paired per-game row has faithful >= popular",
-        "pass": false,
+        "pass": true,
         "detail": "n_paired=42"
       }
     ]

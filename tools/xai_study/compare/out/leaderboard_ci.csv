@@ -20,25 +20,25 @@ method,phaseB_attribution,rise,gradient,42,84,0.5522,0.4994,0.6051,0.5522,0.4896
 method,phaseB_attribution,smoothgrad,gradient,42,84,0.3799,0.3142,0.4462,0.3799,0.2949,0.4659,0.5968,0.5379,0.656,0.9821,0.9583,1.0,0.3799,0.0,"|extra.vanilla_gradient_reference.smoothing_delta_pearson| (committed σ-robustness; SmoothGrad is a deterministic noise-average, 0 on the gradient-vanishing position regime)",12,d85961ed
 method,phaseB_attribution,vanilla_saliency,gradient,42,84,0.3798,0.3119,0.445,0.3798,0.2911,0.4694,0.5932,0.5301,0.6549,0.9762,0.9464,1.0,0.3798,,,0,d85961ed
 method,phaseC_mechanistic,ACDC,causal,35,35,0.6254,0.5146,0.7263,0.6254,0.5138,0.7279,0.2995,0.2355,0.3623,1.0,1.0,1.0,0.6254,,,0,d85961ed
-method,phaseC_mechanistic,activation_patching,causal,42,42,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.9457,0.9259,0.9654,1.0,,,0,d85961ed
-method,phaseC_mechanistic,attribution_patching,gradient,42,42,0.4563,0.3484,0.5701,0.4563,0.3464,0.566,0.769,0.6538,0.8766,0.9947,0.9841,1.0,0.4563,,,0,d85961ed
-method,phaseC_mechanistic,causal_scrubbing,causal,42,42,0.9792,0.9401,1.0,0.9792,0.9401,1.0,0.9792,0.9401,1.0,0.4296,0.3602,0.5021,0.9792,,,0,d85961ed
-method,phaseC_mechanistic,interchange_interventions_das,causal,42,42,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.8895,0.8542,0.9238,1.0,,,0,d85961ed
-method,phaseC_mechanistic,linear_probing_control_tasks,probing,42,42,0.1082,0.0808,0.1429,0.1082,0.0787,0.143,,,,0.857,0.7812,0.9271,0.1082,,,0,d85961ed
-method,phaseC_mechanistic,logit_tuned_lens,causal,42,42,1.0,1.0,1.0,1.0,1.0,1.0,,,,0.8197,0.7678,0.8696,1.0,,,0,d85961ed
-method,phaseC_mechanistic,nmf_pca_dictionaries,dim_reduction,42,42,0.4405,0.3929,0.4911,0.4405,0.3899,0.4881,,,,,,,,,,0,d85961ed
-method,phaseC_mechanistic,path_patching,causal,42,42,0.5796,0.4416,0.708,0.5796,0.4419,0.7077,,,,1.0,1.0,1.0,0.5796,,,0,d85961ed
-method,phaseC_mechanistic,sparse_autoencoder,dim_reduction,40,40,0.1526,0.0941,0.2187,0.1526,0.0974,0.2184,0.1828,0.1113,0.2598,0.0701,0.0412,0.1041,0.1526,,,0,d85961ed
+method,phaseC_mechanistic,activation_patching,causal,42,84,1.0,1.0,1.0,1.0,1.0,1.0,0.996,0.9881,1.0,0.9729,0.9632,0.9824,1.0,,,0,f3ec01e9
+method,phaseC_mechanistic,attribution_patching,gradient,42,42,0.4563,0.3464,0.566,0.4563,0.3455,0.5627,0.769,0.6541,0.8767,0.9947,0.9841,1.0,0.4563,,,0,d85961ed
+method,phaseC_mechanistic,causal_scrubbing,causal,42,42,0.9792,0.9401,1.0,0.9792,0.9401,1.0,0.9792,0.9401,1.0,0.4296,0.3599,0.5008,0.9792,,,0,d85961ed
+method,phaseC_mechanistic,interchange_interventions_das,causal,42,42,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.8895,0.8537,0.923,1.0,,,0,d85961ed
+method,phaseC_mechanistic,linear_probing_control_tasks,probing,42,42,0.1082,0.0787,0.143,0.1082,0.0795,0.1418,,,,0.857,0.7864,0.9208,0.1082,,,0,d85961ed
+method,phaseC_mechanistic,logit_tuned_lens,causal,42,42,1.0,1.0,1.0,1.0,1.0,1.0,,,,0.8197,0.765,0.87,1.0,,,0,d85961ed
+method,phaseC_mechanistic,nmf_pca_dictionaries,dim_reduction,42,42,0.4405,0.3899,0.4881,0.4405,0.3899,0.4911,,,,,,,,,,0,d85961ed
+method,phaseC_mechanistic,path_patching,causal,42,42,0.5796,0.4419,0.7077,0.5796,0.449,0.705,,,,1.0,1.0,1.0,0.5796,,,0,d85961ed
+method,phaseC_mechanistic,sparse_autoencoder,dim_reduction,40,40,0.1526,0.0974,0.2165,0.1526,0.0973,0.2177,0.1828,0.1095,0.2602,0.0701,0.0408,0.1048,0.1526,,,0,d85961ed
 method,ground_truth,ORACLE,oracle,1,1,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.0,construction (exact oracle),0,
-family,ALL,family_causal_intervention,causal+intervention,42,11,0.7214,0.6945,0.7502,,,,,,,,,,,,,,members=A1_connectomics;A2_lesions;ACDC;activation_patching;causal_scrubbing;extremal_perturbation;interchange_interventions_das;logit_tuned_lens;occlusion;on_distribution_counterfactual;path_patching
-family,ALL,family_gradient_correlational,correlational+gradient,42,14,0.384,0.3553,0.4113,,,,,,,,,,,,,,members=A3_tuning;A4_spike_word;A5_local_field_potentials;A6_granger;attribution_patching;expected_gradients;gradxinput_deeplift;guided_backprop;integrated_gradients;kernelshap;lime;rise;smoothgrad;vanilla_saliency
-family,regime:position,family_causal_intervention_position,causal+intervention,42,3,0.4147,0.3377,0.4976,,,,,,,,,,,,,,members=extremal_perturbation;occlusion;on_distribution_counterfactual
-family,regime:position,family_gradient_correlational_position,correlational+gradient,42,9,0.2346,0.185,0.2894,,,,,,,,,,,,,,members=expected_gradients;gradxinput_deeplift;guided_backprop;integrated_gradients;kernelshap;lime;rise;smoothgrad;vanilla_saliency
-family,regime:content,family_causal_intervention_content,causal+intervention,42,3,0.6388,0.5756,0.6979,,,,,,,,,,,,,,members=extremal_perturbation;occlusion;on_distribution_counterfactual
-family,regime:content,family_gradient_correlational_content,correlational+gradient,42,9,0.6478,0.5683,0.7231,,,,,,,,,,,,,,members=expected_gradients;gradxinput_deeplift;guided_backprop;integrated_gradients;kernelshap;lime;rise;smoothgrad;vanilla_saliency
-headline,headline,ACDC_S,,35,,0.2995,0.2394,0.3655,,,,,,,,,,,,,,
-headline,headline,ACDC_F_faithfulness,,35,,0.6254,0.5168,0.7301,,,,,,,,,,,,,,
-headline,headline,SAE_matched_feature_S,,40,,0.1828,0.1139,0.2596,,,,,,,,,,,,,,
-headline,headline,wholestate_M,,42,,0.0755,0.066,0.0854,,,,,,,,,,,,,,
-headline,headline,position_regime_gap,causal_intervention − gradient_correlational,6,,0.1801,0.1198,0.244,,,,,,,,,,,,,,excludes_zero=True
+family,ALL,family_causal_intervention,causal+intervention,42,11,0.7214,0.6933,0.7495,,,,,,,,,,,,,,members=A1_connectomics;A2_lesions;ACDC;activation_patching;causal_scrubbing;extremal_perturbation;interchange_interventions_das;logit_tuned_lens;occlusion;on_distribution_counterfactual;path_patching
+family,ALL,family_gradient_correlational,correlational+gradient,42,14,0.384,0.3564,0.4122,,,,,,,,,,,,,,members=A3_tuning;A4_spike_word;A5_local_field_potentials;A6_granger;attribution_patching;expected_gradients;gradxinput_deeplift;guided_backprop;integrated_gradients;kernelshap;lime;rise;smoothgrad;vanilla_saliency
+family,regime:position,family_causal_intervention_position,causal+intervention,42,4,0.561,0.4998,0.6197,,,,,,,,,,,,,,members=activation_patching;extremal_perturbation;occlusion;on_distribution_counterfactual
+family,regime:position,family_gradient_correlational_position,correlational+gradient,42,9,0.2346,0.1848,0.2862,,,,,,,,,,,,,,members=expected_gradients;gradxinput_deeplift;guided_backprop;integrated_gradients;kernelshap;lime;rise;smoothgrad;vanilla_saliency
+family,regime:content,family_causal_intervention_content,causal+intervention,42,3,0.6388,0.58,0.6985,,,,,,,,,,,,,,members=extremal_perturbation;occlusion;on_distribution_counterfactual
+family,regime:content,family_gradient_correlational_content,correlational+gradient,42,9,0.6478,0.5725,0.7196,,,,,,,,,,,,,,members=expected_gradients;gradxinput_deeplift;guided_backprop;integrated_gradients;kernelshap;lime;rise;smoothgrad;vanilla_saliency
+headline,headline,ACDC_S,,35,,0.2995,0.2387,0.3573,,,,,,,,,,,,,,
+headline,headline,ACDC_F_faithfulness,,35,,0.6254,0.5148,0.7285,,,,,,,,,,,,,,
+headline,headline,SAE_matched_feature_S,,40,,0.1828,0.1087,0.2604,,,,,,,,,,,,,,
+headline,headline,wholestate_M,,42,,0.0755,0.066,0.0852,,,,,,,,,,,,,,
+headline,headline,position_regime_gap,causal_intervention − gradient_correlational,6,,0.3264,0.2785,0.3744,,,,,,,,,,,,,,excludes_zero=True
 headline,headline,all_regime_gap,causal_intervention − gradient_correlational,6,,0.3374,0.3097,0.365,,,,,,,,,,,,,,excludes_zero=True

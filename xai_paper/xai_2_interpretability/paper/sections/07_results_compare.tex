@@ -46,7 +46,7 @@ the semantic gap is the main result. The correctness triad we apply throughout -
 The leaderboard separates cleanly along the faithfulness axis. We read it as an
 exploratory cross-tradition ranking, not a single commensurable score, because the
 traditions measure different objects. We report the ranking with its robustness. We
-aggregate the 1736 committed per-game records into the canonical 30
+aggregate the 1773 committed per-game records into the canonical 30
 interpretability methods plus the intervention oracle as a positive control, 31 rows
 in all~\cite{leaderboardP2} (Fig.~\ref{fig:faithfulness}). Scored over the 42 games, the
 causal and intervention methods average a faithfulness of $0.722$ against the oracle, while
@@ -57,7 +57,7 @@ position regime is the set of discrete sprite-position outputs
 whose naive gradient is provably zero under the hard forward map
 (\Sectionname\ref{sec:results-b}). On this regime the gap points the same way, causal and
 intervention $0.561$ against gradient and correlational $0.234$, a gap of $0.327$; at 42
-games its bootstrap interval $[0.13,0.37]$ now excludes zero, so on position the causal
+games its bootstrap interval $[0.28,0.38]$ now excludes zero, so on position the causal
 advantage is statistically significant, not merely directional. The ordering is the one the method
 matrix predicted (\Sectionname\ref{sec:methods}), now measured. Activation patching, causal
 scrubbing, interchange interventions, and the logit lens sit at the oracle ceiling of
@@ -81,7 +81,7 @@ regime-specific in a way that cuts against a simple ``gradients fail'' reading. 
 content outputs, where the naive gradient is valid, the gradient and correlational family
 is level with the causal and intervention family ($0.648$ against $0.639$), so the content
 gap is $-0.01$, essentially zero. On the position regime, by contrast, the gap is $0.327$
-in the expected direction, and at 42 games its bootstrap interval $[0.13,0.37]$ excludes
+in the expected direction, and at 42 games its bootstrap interval $[0.28,0.38]$ excludes
 zero. The conclusion is now two-sided: pooled over every output, and on the position regime
 alone, causal and intervention methods are more faithful than gradient and correlational
 methods, both with intervals that exclude zero. The position-regime advantage, once only

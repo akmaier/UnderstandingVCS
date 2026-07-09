@@ -13,7 +13,7 @@
 <header class="hero"><div class="wrap">
   <span class="venue" style="color:var(--accent-2);font-weight:600">Nature Machine Intelligence (in preparation)</span>
   <h1>Paper 2 — An Interpretability Ground-Truth Benchmark</h1>
-  <p class="lead">Because the VCS is fully known and exactly intervenable, every explanation can be scored against ground truth. An oracle measures the true causal effect of each state variable; XAI and mechanistic-interpretability methods are then graded by how well they recover it. Headline finding: across all regimes, causal/intervention methods stay well above gradient and correlational methods — a robust faithfulness gap of 0.337 (causal/intervention 0.722 vs gradient/correlational 0.384). On the discrete sprite-position outputs the naive gradient is exactly zero; the emulator's bilinear sampler restores a non-zero position gradient, but its faithfulness stays low, so gradient/correlational methods still collapse there while causal/intervention methods do not. Bootstrapped over the 42 scored games, the position gap is now significant (mean 0.180, 95% CI [0.118, 0.243], excludes zero). <br><br>The testbed was <b>redesigned</b> to score every method on the same shared random-action gameplay states — see the <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/xai_paper/xai_2_interpretability/experiment_redesign.md">experiment redesign note</a>.</p>
+  <p class="lead">Because the VCS is fully known and exactly intervenable, every explanation can be scored against ground truth. An oracle measures the true causal effect of each state variable; XAI and mechanistic-interpretability methods are then graded by how well they recover it. Headline finding: across all regimes, causal/intervention methods stay well above gradient and correlational methods — a robust faithfulness gap of 0.337 (causal/intervention 0.722 vs gradient/correlational 0.384). On the discrete sprite-position outputs the naive gradient is exactly zero; the emulator's bilinear sampler restores a non-zero position gradient, but its faithfulness stays low, so gradient/correlational methods still collapse there while causal/intervention methods do not. Bootstrapped over the 42 scored games, the position gap is now significant (mean 0.326, 95% CI [0.277, 0.375], excludes zero). <br><br>The testbed was <b>redesigned</b> to score every method on the same shared random-action gameplay states — see the <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/xai_paper/xai_2_interpretability/experiment_redesign.md">experiment redesign note</a>.</p>
   <p style="margin-top:14px"><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/xai_paper/xai_2_interpretability/paper/main.pdf">paper PDF</a> · <a href="methods.html"><b>Method catalogue &amp; execution stack →</b></a> · Scoring XAI / mechanistic-interpretability methods against the exact causal truth of a known machine</p>
 </div></header>
 
@@ -32,7 +32,7 @@
     <div class="b"><strong>0.722</strong><small>causal / intervention mean (all regimes, n=11)</small></div>
     <div class="b"><strong>0.384</strong><small>gradient / correlational mean (all regimes, n=14)</small></div>
     <div class="b"><strong>31</strong><small>methods on the leaderboard</small></div>
-    <div class="b"><strong>1731</strong><small>per-game records aggregated</small></div>
+    <div class="b"><strong>1773</strong><small>per-game records aggregated</small></div>
   </div>
   <p class="caption">Primary contrast from
   <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/out/leaderboard.json"><code>leaderboard.json</code></a>,
@@ -41,8 +41,8 @@
   <p class="sub" style="margin-top:18px">Position-regime gap — now <b>significant at n&asymp;42</b>
   (bootstrap over games, 95% CI excludes zero):</p>
   <div class="bignum">
-    <div class="b"><strong>0.180</strong><small>position-regime gap · bootstrap CI [0.118, 0.243] (excludes 0)</small></div>
-    <div class="b"><strong>0.415</strong><small>causal / intervention mean (position, n=3)</small></div>
+    <div class="b"><strong>0.326</strong><small>position-regime gap · bootstrap CI [0.277, 0.375] (excludes 0)</small></div>
+    <div class="b"><strong>0.561</strong><small>causal / intervention mean (position, n=4)</small></div>
     <div class="b"><strong>0.235</strong><small>gradient / correlational mean (position, n=9)</small></div>
   </div>
   <p class="caption"><code>headline_contrast.position_regime</code> family means; significance from
@@ -130,11 +130,11 @@
 <div class="row">
   <div class="head">
     <span class="claim">E6 · Cross-tradition leaderboard</span>
-    <span class="value">31 methods, 1731 records</span>
+    <span class="value">31 methods, 1773 records</span>
     <span class="badge measured">measured</span>
   </div>
   <div class="body">
-    <p class="detail">Faithfulness-vs-plausibility leaderboard aggregated from every committed per-game record over the 42 scored games. Headline contrast (all regimes): causal/intervention faithfulness 0.722 vs gradient/correlational 0.384 — a robust gap of 0.337. The position-regime gap is now significant: bootstrapped over the 42 games it is 0.180 (95% CI [0.118, 0.243], excludes zero; it crossed zero at six games).</p>
+    <p class="detail">Faithfulness-vs-plausibility leaderboard aggregated from every committed per-game record over the 42 scored games. Headline contrast (all regimes): causal/intervention faithfulness 0.722 vs gradient/correlational 0.384 — a robust gap of 0.337. The position-regime gap is now significant: bootstrapped over the 42 games it is 0.326 (95% CI [0.277, 0.375], excludes zero; it crossed zero at six games).</p>
     <dl class="meta"><dt>Script</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/leaderboard.py"><code>tools/xai_study/compare/leaderboard.py</code></a></dd><dt>Command</dt><dd><code class="cmd">python3 tools/xai_study/compare/leaderboard.py</code></dd><dt>Artifact</dt><dd><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/out/leaderboard.json"><code>tools/xai_study/compare/out/leaderboard.json</code></a></dd><dt>Runtime</dt><dd>seconds (pure read)</dd><dt>Hardware</dt><dd>any · embedded self-check</dd><dt>Verified by</dt><dd>self-check asserts oracle_copy F=1, uniform at floor</dd></dl>
     
   </div>
@@ -191,7 +191,7 @@
 
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/7e8cb0c6b8f3b706bb0d06f87f9dea481e8767fc"><code>7e8cb0c6</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/f3ec01e90d6aec394ce6bad1dd3ceba3e258a51f"><code>f3ec01e9</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

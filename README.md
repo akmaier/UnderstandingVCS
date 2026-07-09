@@ -284,6 +284,35 @@ UnderstandingVCS/
 
 ## Rules / Working Setup
 
+### Scientific standard — hard evidence, no shortcuts
+
+This repository *is* the scientific record: the papers, the committed per-run
+records under `tools/xai_study/**/out/`, and the results dashboard all derive from
+the same measured numbers, so a vague or asserted value propagates straight into a
+published claim. Work to that standard:
+
+- **Measure, don't assert.** Every number must trace to a committed record or a
+  re-run, computed rather than hardcoded — even a value that is provably a constant
+  (e.g. faithfulness `F = Pearson(recovered, exact)` is *computed* even when the two
+  vectors are identical by construction and it must come out `1.0`).
+- **Read the primary source in full before concluding.** The paper text, the runner
+  code, the record schema — do not extrapolate from a summary or a stale note, and
+  verify any file/function claim against the current code.
+- **Report provenance and scope.** State which record and which command a number
+  comes from, name the caveats, and compare like with like (same output, same
+  oracle). If a check fails, say so and diagnose it; distinguish a pre-existing
+  failure from one your change introduced.
+- **No side-channel notes.** Findings, decisions, and rationale live in these
+  tracked docs (this README and the files it links — `bug_fix_log.md`,
+  `STATUS.md`, the per-paper docs under `xai_paper/`, `NUMBERS_OF_RECORD.md`, the
+  style file `xai_paper/STYLE.md`), never in a private scratch memory the reviewer
+  cannot see. Weave new guidance into the relevant file; put style guidance in the
+  style file.
+
+This is the same discipline as the conformance philosophy above (match the deep
+mechanism, not the scoreboard): the point is a result that is *true*, not one that
+merely looks right.
+
 ### Developer Log Book via Commits
 
 **Every command, change, or action performed in this project is committed and pushed to GitHub immediately after each turn.** The commit history serves as a complete developer log.

@@ -649,6 +649,92 @@ function write_game_result(r::PatchResult; out_dir = OUT_DIR)
     return json_path, npz_path
 end
 
+# Pearson correlation, dependency-free (avoids adding Statistics to the shared jutari env).
+# NaN when either vector is constant (degenerate) so the caller can gate on it.
+function _pearson(a::AbstractVector{<:Real}, b::AbstractVector{<:Real})
+    n = length(a)
+    n < 2 && return NaN
+    ma = sum(a) / n; mb = sum(b) / n
+    va = sum((a .- ma) .^ 2); vb = sum((b .- mb) .^ 2)
+    (va == 0 || vb == 0) && return NaN
+    return sum((a .- ma) .* (b .- mb)) / sqrt(va * vb)
+end
+
+# ============================================================================
+# Position-regime §R record (P2 position exemplar).
+#
+# Activation patching's faithfulness on a discrete SCREEN-POSITION output is the
+# causal-effect agreement between its recovered per-patch effect and the exact
+# oracle effect on that output (03_methods.tex sec:triad: Phase-C patching F =
+# causal-effect-agreement correlation vs the true Δy(u)). The position output is
+# `n_changed_px`, the count of framebuffer cells a patch moves — a discrete index
+# output whose naive gradient is provably zero (Prop. "zero naive gradient"), so it
+# is the position regime the gradient family scores ~0 on. Because activation
+# patching literally re-runs the exact single-site intervention, recovered==exact on
+# this output too, so the Pearson agreement is 1.0 wherever the position output is
+# causally live — the paper's "where a method's operation IS an intervention,
+# faithfulness is automatic". This is the per-method position exemplar reported at
+# faithfulness 1.000 (abstract; sec:results-b; sec:results-c; sec:results_compare),
+# now measured across the scored battery rather than a single pilot game.
+#
+# Games whose position output is STATIC (degenerate: <2 patches move the screen, or
+# a constant oracle-effect vector) get NO position record (n/a) — exactly as the
+# Phase-B position path drops static-sprite games rather than scoring a flat map.
+# ============================================================================
+function write_game_position_result(r::PatchResult; out_dir = OUT_DIR)
+    pxj = findfirst(==("n_changed_px"), r.output_names)
+    pxj === nothing && return nothing
+    rec_px = r.recovered[:, pxj]
+    ex_px  = r.exact[:, pxj]
+    # non-degeneracy gate: the position output must actually respond to the
+    # interventions (>=2 patches with a nonzero oracle effect and a non-constant
+    # oracle vector), else the position regime is static on this game -> n/a.
+    (count(x -> abs(x) > 0, ex_px) >= 2 && length(unique(ex_px)) >= 2) || return nothing
+    F = _pearson(rec_px, ex_px)      # recovered==exact -> 1.0 by construction
+    isfinite(F) || return nothing
+    isdir(out_dir) || mkpath(out_dir)
+    stem = "activation_patching_$(r.game)_position"
+    json_path = joinpath(out_dir, stem * ".json")
+    cell = r.shared_cell
+    rec = Dict{String,Any}(
+        "paper" => "P2",
+        "phase" => "phaseC_mechanistic",
+        "method" => "activation_patching",
+        "game" => r.game,
+        "state" => r.state_kind == "noop" ? "f$(r.target_frame)+$(r.horizon)" :
+                   "gameplay(seed=$(r.st_seed),prefix=$(r.st_prefix))+$(r.horizon)",
+        "target_output" => "position@screen_region(n_changed_px)@r$(cell[1])c$(cell[2])",
+        "metric_name" => "pearson_corr_with_oracle",
+        "value" => F,
+        "stderr" => nothing, "ci" => nothing,
+        "n" => length(rec_px), "seed" => 0, "where" => "local",
+        "commit" => _git_commit(),
+        "oracle_ref" => "oracle_intervene@$(r.game) (P2-E1-1) — exact single-site patch, position output",
+        "timestamp" => string(round(Int, time())),
+        "extra" => Dict{String,Any}(
+            # extra.output_kind is the canonical regime tag the leaderboard reads first.
+            "output_kind" => "position",
+            "triad" => triad_extra_dict(F, rec_px, ex_px),
+            "substrate" => "jutari (Julia, HARD) — real-ROM bit-exact path",
+            "recovered_position_delta" => rec_px,
+            "exact_position_delta" => ex_px,
+            "n_active_position_patches" => count(x -> abs(x) > 0, ex_px),
+            "note" =>
+                "Position-regime score for activation patching: causal-effect agreement " *
+                "(Pearson) between the recovered per-patch effect and the exact oracle " *
+                "effect on the discrete screen-position output n_changed_px (naive gradient " *
+                "provably zero there, the same position regime the Phase-B methods score ~0 " *
+                "on). recovered==exact because the patch IS the oracle's own single-site " *
+                "intervention, so the agreement is 1.0 wherever the position output is " *
+                "causally live; static-position games get no record (n/a).",
+        ),
+    )
+    open(json_path, "w") do io
+        write(io, _j(rec) * "\n")
+    end
+    return json_path
+end
+
 function write_summary(results::Vector{PatchResult}; out_dir = OUT_DIR)
     isdir(out_dir) || mkpath(out_dir)
     path = joinpath(out_dir, "activation_patching_core_summary.json")
@@ -760,6 +846,12 @@ function main(args = ARGS)
         try
             r = run_game(; game = g, target_frame = target_frame, horizon = horizon, verbose = true)
             jp, np = write_game_result(r)
+            pp = write_game_position_result(r)
+            if pp === nothing
+                println("[$g] position regime static (n/a) — no position record")
+            else
+                println("[$g] position record -> $pp")
+            end
             println("[$g] recovered==exact: $(r.recovered_eq_exact) " *
                     "(max|rec-exact|=$(r.max_abs_recovered_minus_exact)); " *
                     "data-flow P=$(round(r.site_precision,digits=3)) R=$(round(r.site_recall,digits=3)); " *

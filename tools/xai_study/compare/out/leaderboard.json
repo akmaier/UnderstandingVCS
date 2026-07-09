@@ -9,7 +9,7 @@
     "y_plausibility": "DOCUMENTED METHOD-TRADITION PROXY (PLAUSIBILITY_BY_TRADITION), NOT a measurement \u2014 exposes the \u00a70 danger zone. [0,1] higher=looks-more-convincing."
   },
   "n_methods": 31,
-  "n_per_game_records_aggregated": 1731,
+  "n_per_game_records_aggregated": 1773,
   "na_audit_records_excluded": [
     "na_audit_air_raid.json",
     "na_audit_alien.json",
@@ -544,22 +544,22 @@
       "method": "activation_patching",
       "tradition": "causal",
       "n_games": 42,
-      "n_records": 42,
+      "n_records": 84,
       "faithfulness": 1.0,
       "faithfulness_ci95": 0.0,
-      "faithfulness_n": 42,
-      "faithfulness_position_regime": null,
+      "faithfulness_n": 84,
+      "faithfulness_position_regime": 1.0,
       "faithfulness_content_regime": null,
       "faithfulness_other_regime": 1.0,
       "plausibility_proxy": 0.5,
       "triad_F": 1.0,
-      "triad_S": 1.0,
-      "triad_M": 0.9457,
-      "FSM_composite": 0.9816,
+      "triad_S": 0.996,
+      "triad_M": 0.9729,
+      "FSM_composite": 0.9896,
       "is_positive_control": 0,
       "faith_source": "triad.F",
-      "metric_names": "max_abs_recovered_minus_exact",
-      "commits": "d85961ed"
+      "metric_names": "max_abs_recovered_minus_exact;pearson_corr_with_oracle",
+      "commits": "f3ec01e9"
     },
     {
       "phase": "phaseC_mechanistic",
@@ -793,21 +793,21 @@
       "faithfulness_mean": 0.6342,
       "faithfulness_ci95": 0.2168,
       "plausibility_proxy_mean": 0.625,
-      "FSM_composite_mean": 0.6968,
-      "faithfulness_position_regime_mean": null,
-      "position_regime_n": 0
+      "FSM_composite_mean": 0.6977,
+      "faithfulness_position_regime_mean": 1.0,
+      "position_regime_n": 1
     }
   },
   "headline_contrast": {
     "claim": "Intervention/causal methods are near-ceiling while gradient/correlational methods collapse to near-chance on the position/index regime (the discrete sprite-position outputs whose naive gradient is zero, \u00a71).",
     "position_regime": {
-      "causal_intervention_faithfulness_mean": 0.4147,
-      "causal_intervention_ci95": 0.2045,
-      "causal_intervention_n": 3,
+      "causal_intervention_faithfulness_mean": 0.561,
+      "causal_intervention_ci95": 0.3212,
+      "causal_intervention_n": 4,
       "gradient_correlational_faithfulness_mean": 0.2346,
       "gradient_correlational_ci95": 0.1559,
       "gradient_correlational_n": 9,
-      "gap": 0.1801
+      "gap": 0.3264
     },
     "all_regimes": {
       "causal_intervention_faithfulness_mean": 0.7215,
@@ -1080,7 +1080,7 @@
       {
         "name": "position-regime gap (causal \u2212 gradient) > 0",
         "pass": true,
-        "detail": "gap=0.1801"
+        "detail": "gap=0.3264"
       },
       {
         "name": "plausibility proxy in [0,1]",
