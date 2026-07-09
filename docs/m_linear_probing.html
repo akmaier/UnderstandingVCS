@@ -19,7 +19,7 @@
 
 <section><div class="wrap">
   <h2>What it does?</h2>
-  <p>Linear probing asks whether a concept can be read out of the state by a simple classifier. A linear probe is trained to predict a concept, say the ball's position, from the internal state; if it succeeds, the concept is said to be 'encoded' there. The well-known danger is that a probe can succeed just because the concept happens to be linearly recoverable, not because the system uses it. Hewitt and Liang's control-task fix addresses this: train a second probe to predict a random label, and report selectivity, the probe's real accuracy minus its accuracy on the random control. High selectivity means the state genuinely encodes the concept rather than the probe memorising it. We apply this on the VCS, training probes for game concepts and subtracting the control-task baseline. The VCS then adds a test no neural network allows: we check, by intervention, whether the program actually uses each decodable cell. It often does not. A cell can be decodable, and pass the control-task check, yet be provably inert when we clamp it and re-run, because the value is present in the state but never causally used within the window. Linear probing is thus our clearest illustration of the present-versus-used gap: decodability shows information is there, but only the intervention oracle shows whether the program relies on it.</p>
+  <p>Linear probing asks whether a concept can be read out of the state by a simple classifier. A linear probe is trained to predict a concept, say the ball's position, from the internal state; if it succeeds, the concept is said to be 'encoded' there. The well-known danger is that a probe can succeed just because the concept happens to be linearly recoverable, not because the system uses it. Hewitt and Liang's control-task fix addresses this: train a second probe to predict a random label, and report selectivity, the probe's real accuracy minus its accuracy on the random control. High selectivity means the state genuinely encodes the concept rather than the probe memorising it. We apply this on the VCS, training probes for game concepts and subtracting the control-task baseline. The VCS then adds a test no neural network allows: we check, by intervention, whether the program actually uses each decodable cell. It often does not. A cell can be decodable, and pass the control-task check, yet be provably unused when we clamp it and re-run, because the value is present in the state but never causally used within the window. Linear probing is thus our clearest illustration of the present-versus-used gap: decodability shows information is there, but only the intervention oracle shows whether the program relies on it.</p>
 </div></section>
 
 <section><div class="wrap">
@@ -95,7 +95,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/84ada09e035009fd5542a2de5e41e91eee13f8a0"><code>84ada09e</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/d4d90eba0bc70da604b27662f512ade7fc29c26a"><code>d4d90eba</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

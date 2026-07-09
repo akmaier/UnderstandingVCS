@@ -1384,7 +1384,7 @@ def build_method_results_section(key):
                  'the true effect, so it lies in [&minus;1,&nbsp;1]. A value near <b>0</b> means the '
                  'explanation predicts no better than the unperturbed output; a <b>negative</b> value '
                  'means it predicts <em>worse</em> &mdash; its held-out claim is anti-correlated with the '
-                 'truth (named yet causally inert). The aggregate S is the mean over the scored '
+                 'truth (named yet causally unused). The aggregate S is the mean over the scored '
                  'games.</p>' % s_neg)
     return """
 <section><div class="wrap">

@@ -1179,7 +1179,8 @@ P2_METHOD_ABOUT = {
    "a matching feature. By the metric the field usually uses to claim a feature 'is' a concept, "
    "the SAE looks like a complete success. The VCS lets us apply a stronger test. We ablate the "
    "matched feature, re-run the real ROM, and ask whether the computation it is supposed to name "
-   "actually changes. Often it does not: the feature is named but causally inert. The sparse "
+   "actually changes. Often it does not: the feature is named but causally unused: clamping it "
+   "and re-running changes nothing. The sparse "
    "autoencoder is therefore our sharpest example of a method that scores well on the standard "
    "matching metric while failing the causal test that only a known machine can provide.",
  "dictionaries":
@@ -1226,7 +1227,7 @@ P2_METHOD_ABOUT = {
    "for game concepts and subtracting the control-task baseline. The VCS then adds a test no "
    "neural network allows: we check, by intervention, whether the program actually uses each "
    "decodable cell. It often does not. A cell can be decodable, and pass the control-task check, "
-   "yet be provably inert when we clamp it and re-run, because the value is present in the state "
+   "yet be provably unused when we clamp it and re-run, because the value is present in the state "
    "but never causally used within the window. Linear probing is thus our clearest illustration "
    "of the present-versus-used gap: decodability shows information is there, but only the "
    "intervention oracle shows whether the program relies on it.",
@@ -1648,7 +1649,7 @@ P2_METHOD_HOWSCORED = {
    "as the real faithfulness: we ablate the matched feature, re-run the real ROM, and ask whether "
    "the computation it is supposed to name actually changes. Often it does not, so the causal "
    "faithfulness is low even though the matched fraction is high, and the sufficiency can even go "
-   "negative. This split is the point: a feature can be named yet causally inert. There is no "
+   "negative. This split is the point: a feature can be named yet causally unused. There is no "
    "sprite-position hard-case here, because the method is scored on features and their ablation, "
    "not on a rendered position. Its plausibility proxy is high, which places it in the danger "
    "zone of high plausibility with low faithfulness. The grading is always against the "

@@ -28,7 +28,7 @@ exactness recovers the wiring of the circuit without recovering what the variabl
 control $=1.0$): faithfulness $F$ with its $95\%$ bootstrap CI, the plausibility proxy
 (\Sectionname\ref{sec:methods}), and the kind of recovery the oracle certifies. The causal core is
 exact by construction; the approximate and search-based methods lose recall; and the
-named-but-inert and present-but-unused methods sit in the danger zone (high plausibility, low
+named-but-unused and present-but-unused methods sit in the danger zone (high plausibility, low
 faithfulness). Values read from the committed leaderboard~\cite{leaderboardP2}.}
 \label{tab:phaseC}
 \begin{tabularx}{\textwidth}{@{}X l c >{\raggedright\arraybackslash}X@{}}
@@ -42,8 +42,8 @@ Causal scrubbing~\cite{chan2022causal}                   & $0.98$ $[0.94,1.00]$ 
 ACDC~\cite{conmy2023towards}                              & $0.63$ $[0.52,0.74]$ & $0.50$ & search (graph-correct, $S{=}0.30$) \\
 Path patching~\cite{wang2022interpretability}            & $0.58$ $[0.45,0.71]$ & $0.50$ & search (single-shot edges) \\
 Attribution patching~\cite{nanda2023attribution}         & $0.46$ $[0.34,0.57]$ & $0.90$ & approximate (linear surrogate) \\
-NMF/PCA dictionaries                                     & $0.44$ $[0.39,0.49]$ & $0.75$ & named, partly inert \\
-Sparse autoencoder~\cite{cunningham2023sparse}           & $0.17$ $[0.10,0.25]$ & $0.75$ & named yet inert ($F{=}0.04$ on Pong) \\
+NMF/PCA dictionaries                                     & $0.44$ $[0.39,0.49]$ & $0.75$ & named, partly unused \\
+Sparse autoencoder~\cite{cunningham2023sparse}           & $0.17$ $[0.10,0.25]$ & $0.75$ & named yet unused ($F{=}0.04$ on Pong) \\
 Linear probing ($+$ control)~\cite{hewitt2019designing}  & $0.11$ $[0.08,0.14]$ & $0.85$ & present, not used \\
 \midrule
 Oracle (positive control)                               & $1.00$ $[1.00,1.00]$ & $1.00$ & exact intervention ground truth \\
@@ -123,7 +123,7 @@ plausibility proxy of $0.75$, squarely in the \Sectionname\ref{sec:methods} dang
 NMF/PCA dictionary contrast repeats the pattern at lower resolution (matched-component
 fractions up to $0.75$ beside near-zero causal use). This separation is the reverse of the
 first. The circuit was causal but behaviourally incomplete; the feature is perfectly
-named but causally inert. The two failures point in opposite directions.
+named but never used. The two failures point in opposite directions.
 
 Linear probing shows a third version of the same gap, the well-known probing trap. With
 control tasks (Hewitt \&
@@ -134,7 +134,7 @@ intervention oracle, the oracle
 flags $14$ concept cells across the core games that the program never causally uses within the
 window. Of those, $2$ are also decodable above chance, so a probe would have nominated them as
 encoded concepts. Breakout's score cell~84 sits in the larger set: it is present in the state
-and linearly associated with the displayed score, yet provably inert under intervention within
+and linearly associated with the displayed score, yet provably unused under intervention within
 the window.
 The oracle is strictly stronger than the probe. The probe asks whether a value can be read
 out. The oracle asks whether changing that value changes the output. Probing earns a high plausibility proxy ($0.85$)
@@ -152,10 +152,10 @@ construction: activation patching, DAS, and the logit lens all at $1.0$, and cau
 at $0.98$. Together with the intervention methods this causal and intervention family averages
 $0.72$ faithfulness, the highest of the three traditions. The second is a recovery
 layer that is either precise but partial (attribution and path patching, ACDC) or present but
-inert (SAEs, dictionaries, probing). The oracle, not our judgement, decides the three
+unused (SAEs, dictionaries, probing). The oracle, not our judgement, decides the three
 separations. They appear exactly where the field's success metrics report success:
 graph-correct yet behaviour-incomplete (ACDC on Q*bert F$=1.0$/M$=1.0$, S$=0.10$), named yet
-causally inert (SAE on Pong matched $1.0$, F$=0.041$), present yet unused (cell~84). The
+causally unused (SAE on Pong matched $1.0$, F$=0.041$), present yet unused (cell~84). The
 faithfulness advantage that the causal and intervention family holds over the gradient
 methods is robust across all output regimes. The all-regime gap is $0.34$ (95\% CI
 $[0.31,0.36]$, excluding zero). Restricted to the position-output regime alone the gap is

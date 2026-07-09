@@ -230,12 +230,12 @@ residual to the algorithm cannot be a worse fit closed by a better hyperparamete
 is a missing object of a different type, and that is why the gap is not merely
 ``methods underperform.''
 
-The second separation is named yet causally inert, the reverse failure: high matched
+The second separation is named yet causally unused, the reverse failure: high matched
 fraction, low causal $F$. A sparse autoencoder~\cite{cunningham2023sparse} trained on
 the recorded Pong state matches every one of its candidate game-concept variables, a
 feature-to-variable matched fraction of $1.0$, a perfect semantic alignment by the
 field's usual yardstick. By the oracle, those same matched features are nearly causally
-inert on Pong: faithfulness $F = 0.041$ and a \emph{negative} sufficiency
+unused on Pong: faithfulness $F = 0.041$ and a \emph{negative} sufficiency
 $S = -0.46$~\cite{leaderboardP2}. A feature that looks like the ball's $x$ is not the
 same as the mechanism the program uses to compute with the ball's $x$. The circuit was
 correct but incomplete; the dictionary is named but causally wrong. The gap runs in the
@@ -268,7 +268,7 @@ Read together, the leaderboard plane of Fig.~\ref{fig:faithfulness} and the fail
 taxonomy of Fig.~\ref{fig:taxonomy} make the same point from three sides, and the
 triad's axes are not redundant: a method can be faithful and minimal yet not sufficient
 (ACDC on Q*bert, $F = M = 1.0$, $S = 0.10$); it can match a named concept perfectly yet be
-causally inert (the SAE on Pong, matched fraction $1.0$, $F = 0.041$); it can flag a
+causally unused (the SAE on Pong, matched fraction $1.0$, $F = 0.041$); it can flag a
 concept the program never uses (cell~$84$, present but unused). The claim does not rest
 on any single low number; a lone low $S$ could be a tuning artifact. It rests on two
 things. First, the gap appears where tuning cannot help: the effect table is already
@@ -309,8 +309,8 @@ only $0.23$, and stays low even after the sampler restores a gradient), and the
 architecture-specific methods (Grad-CAM, attention, VIPER) do not apply because the VCS
 lacks the neural substrate they require, a property of the subject, not a method failure. The
 higher-order branches are the \emph{semantic gap}: present-but-unused concepts (linear
-probing~\cite{hewitt2019designing} flags a present-but-unused cell the oracle says is inert),
-named-but-inert factorisations (the SAE~\cite{cunningham2023sparse} matches every
+probing~\cite{hewitt2019designing} flags a present-but-unused cell the oracle says is unused),
+named-but-unused factorisations (the SAE~\cite{cunningham2023sparse} matches every
 variable at fraction $1.0$ yet scores $F=0.041$ on Pong), and graph-correct-but-
 incomplete circuits (ACDC~\cite{conmy2023towards} at $F=M=1.0$, $S=0.10$ on Q*bert). The
 neural-network parallels shown alongside each branch are documented
