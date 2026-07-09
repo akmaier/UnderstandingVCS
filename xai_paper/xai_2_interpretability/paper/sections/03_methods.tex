@@ -188,12 +188,12 @@ separate problem, the subject of the companion paper.
 A faithful attribution is not yet an understanding. To measure understanding, we need an
 operational criterion. We adopt one in the spirit of Marr's levels of
 analysis~\cite{marr1982vision} and of Jonas and Kording's warning that finding structure is
-not the same as explaining it~\cite{jonas2017could}: each axis is first a continuous score in
-$[0,1]$, and the boolean ``right'' is a thresholded reading of those scores. We score an
-explanation $\hat{E}$ of how an output $y$ arises by three numbers,
-$\mathrm{F}_{\mathrm{score}}(\hat{E}),\,\mathrm{S}_{\mathrm{score}}(\hat{E}),\,
-\mathrm{M}_{\mathrm{score}}(\hat{E})\in[0,1]$, and call it \emph{right} when all three clear
-their thresholds,
+not the same as explaining it~\cite{jonas2017could}: each axis is first a continuous score,
+and the boolean ``right'' is a thresholded reading of those scores. We score an
+explanation $\hat{E}$ of how an output $y$ arises by three numbers, faithfulness
+$\mathrm{F}_{\mathrm{score}}(\hat{E})$ and minimality $\mathrm{M}_{\mathrm{score}}(\hat{E})$
+in $[0,1]$ and the held-out sufficiency $\mathrm{S}_{\mathrm{score}}(\hat{E})$ in $[-1,1]$,
+and call it \emph{right} when all three clear their thresholds,
 \begin{equation}
   \mathrm{right}(\hat{E}) \;=\; \mathbf{1}\!\left[\,
   \mathrm{F}_{\mathrm{score}}\!\ge\!\tau_{\mathrm{F}} \,\wedge\,
@@ -243,15 +243,20 @@ Sufficiency asks whether the explanation could regenerate the behavior under int
 has not seen. We treat $\mathrm{S}_{\mathrm{score}}$ as a held-out predictive estimator:
 $\hat{E}$ is fit (or its causal sites read off) on a calibration set of interventions and then
 asked to predict the true output $y'$ under a disjoint test set of held-out $\mathrm{do}(u)$
-edits, with the prediction compared to the bit-exact re-run. The score is the fraction of
-held-out interventions whose predicted $y'$ matches the true $y'$ within a fixed
+edits, with the prediction compared to the bit-exact re-run. The score is either the fraction
+of held-out interventions whose predicted $y'$ matches the true $y'$ within a fixed
 output-type tolerance (exact for discrete indices and events, a small $\varepsilon$ band for
-continuous scores), so $\mathrm{S}_{\mathrm{score}}\in[0,1]$ and a value near zero means the
-explanation predicts no better than the unperturbed output. We deliberately do not define it
+continuous scores), or, where the explanation's claim is a graded per-cause effect (the
+dictionary, probing, and classical correlational analyses), the held-out predictive
+correlation between the claimed and the true $\Delta y$. Hence
+$\mathrm{S}_{\mathrm{score}}\in[-1,1]$: a value near zero means the explanation predicts no
+better than the unperturbed output, and a negative value means it predicts \emph{worse}, its
+held-out claim anti-correlated with the truth (the sparse autoencoder reaches
+$\mathrm{S}=-0.46$ on Pong, \Sectionname\ref{sec:results-c}). We deliberately do not define it
 through interchange interventions or scrubbing. Those are themselves
 mechanistic-interpretability methods under test in Phase~C, so using them would make the
-criterion circular. Only Phase~B and Phase~C report $\mathrm{S}$, and its bootstrap intervals
-follow \Sectionname\ref{sec:scoring}.
+criterion circular. All three phases report $\mathrm{S}$ where the calibration and held-out
+split is defined, and its bootstrap intervals follow \Sectionname\ref{sec:scoring}.
 
 Minimality asks whether the explanation is parsimonious and lives at the algorithmic level of
 the machine's own module decomposition. We define
