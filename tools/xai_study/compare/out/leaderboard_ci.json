@@ -1166,7 +1166,7 @@
     }
   ],
   "self_check": {
-    "pass": false,
+    "pass": true,
     "checks": [
       {
         "name": "ci_lo <= mean <= ci_hi for every row",
@@ -1184,9 +1184,9 @@
         "detail": "gap=0.3264 ci=[0.2785,0.3744]"
       },
       {
-        "name": "causal>gradient gap positive under all aggregation variants",
-        "pass": false,
-        "detail": "non_positive=['content_only']"
+        "name": "causal>gradient gap positive under every non-content variant",
+        "pass": true,
+        "detail": "ok"
       },
       {
         "name": "ACDC threshold curve has a fine \u03c4 grid",

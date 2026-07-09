@@ -313,6 +313,34 @@ This is the same discipline as the conformance philosophy above (match the deep
 mechanism, not the scoreboard): the point is a result that is *true*, not one that
 merely looks right.
 
+### Working conventions (hard-won)
+
+Practical rules learned on this project. They exist because ignoring them broke
+something before.
+
+- **Work on `main`, in the primary checkout** (`/Users/maier/Documents/code/UnderstandingVCS/`).
+  No feature branches, and do not commit from a `claude/*` worktree — the user reviews
+  progress on `main` and on disk, so commits must literally originate there.
+- **Rebase before you push:** `git fetch && git rebase origin/main`. A background jaxtari
+  agent may push to `origin/main` concurrently, so a stale push is rejected non-fast-forward.
+  If you pushed from a worktree, immediately `git -C <primary> pull --ff-only` so the
+  user's on-disk checkout reflects it.
+- **Run the heavy gates alone.** The 64-ROM sweeps and the jaxtari pytest suite
+  (pytest-xdist) *deadlock at 0% CPU* under concurrent load on this 10-core machine —
+  never run them next to each other or next to a workflow fan-out.
+- **jutari first, jaxtari in the background.** jaxtari (JAX) is ~205× slower per frame;
+  never let a jaxtari stage block a jutari deliverable. Commit the jutari result, then let
+  the jaxtari measurement run in a background task and tighten pins afterward.
+- **Heavy XAI re-runs: a ~6-wide parallel job-pool on the Mac**, each job to its own log
+  file — not the cluster (missing ROMs, submit-cap contention), not a 27-wide pool (CPU
+  thrash), not a tail-buffered pipe. The Mac is reliable and free overnight.
+- **Guard bit-exactness on every jutari change.** HARD and SOFT-STE (executed) paths must
+  stay pixel-exact vs xitari (64/64 screen + 64/64 RAM). New differentiable/relaxation
+  knobs default OFF and leave the executed path verbatim; gate on both sweeps plus
+  `tools/relaxation_study/verify_soft_ste.jl`. This is the invariant Theorem 1 and the XAI
+  framebuffer attribution both rest on (see the Conformance-philosophy callout above:
+  fix genuine divergences even at the cost of a temporary RAM/screen regression).
+
 ### Developer Log Book via Commits
 
 **Every command, change, or action performed in this project is committed and pushed to GitHub immediately after each turn.** The commit history serves as a complete developer log.

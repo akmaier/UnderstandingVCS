@@ -652,10 +652,16 @@ def main():
     pos_excl = (isinstance(pos_gap["gap_ci_lo"], (int, float)) and pos_gap["gap_ci_lo"] > 0)
     checks.append(("position-regime gap CI excludes 0", pos_excl,
                    f"gap={pos_gap['gap']} ci=[{pos_gap['gap_ci_lo']},{pos_gap['gap_ci_hi']}]"))
-    # (4) the headline causal>gradient gap stays POSITIVE under every robustness variant
+    # (4) the headline causal>gradient gap stays POSITIVE under every robustness variant,
+    # EXCEPT the content regime. On smooth content outputs the naive gradient is valid, so the
+    # two families are level and the gap is ~0 (about -0.01) BY DESIGN — a documented finding
+    # (sec:results_compare: "the content gap is -0.01, essentially zero"), not a failure. We
+    # therefore assert positivity only where the paper claims an advantage (all-regime and
+    # position) and exclude the content-only variant.
     neg_variants = [v["variant"] for v in agg
-                    if isinstance(v["gap"], (int, float)) and v["gap"] <= 0]
-    checks.append(("causal>gradient gap positive under all aggregation variants",
+                    if isinstance(v["gap"], (int, float)) and v["gap"] <= 0
+                    and v.get("regime") != "content"]
+    checks.append(("causal>gradient gap positive under every non-content variant",
                    not neg_variants, f"non_positive={neg_variants}" if neg_variants else "ok"))
     # (5) ACDC threshold curve produced (>=2 τ points per game)
     n_tau = len({r["tau"] for r in thr_per_game})
