@@ -71,12 +71,12 @@
       "plausibility_proxy": 0.55,
       "triad_F": 0.2066,
       "triad_S": 0.9708,
-      "triad_M": 0.9778,
-      "FSM_composite": 0.581,
+      "triad_M": 0.9667,
+      "FSM_composite": 0.5788,
       "is_positive_control": 0,
       "faith_source": "triad.F",
       "metric_names": "dataflow_graph_F1_vs_oracle",
-      "commits": "d85961ed"
+      "commits": "ddf78172"
     },
     {
       "phase": "phaseA_kording",
@@ -94,12 +94,12 @@
       "plausibility_proxy": 0.55,
       "triad_F": 0.965,
       "triad_S": 0.5888,
-      "triad_M": 0.8565,
-      "FSM_composite": 0.7866,
+      "triad_M": 1.0,
+      "FSM_composite": 0.8282,
       "is_positive_control": 0,
       "faith_source": "triad.F",
       "metric_names": "lesion_importance_spearman_vs_oracle_role",
-      "commits": "d85961ed"
+      "commits": "ddf78172"
     },
     {
       "phase": "phaseA_kording",
@@ -117,12 +117,12 @@
       "plausibility_proxy": 0.8,
       "triad_F": 0.2129,
       "triad_S": 0.2001,
-      "triad_M": 0.8413,
-      "FSM_composite": 0.3297,
+      "triad_M": 0.9277,
+      "FSM_composite": 0.3406,
       "is_positive_control": 0,
       "faith_source": "triad.F",
       "metric_names": "A3_game_variable_spurious_tuning_rate",
-      "commits": "d85961ed"
+      "commits": "ddf78172"
     },
     {
       "phase": "phaseA_kording",
@@ -140,12 +140,12 @@
       "plausibility_proxy": 0.8,
       "triad_F": 0.2246,
       "triad_S": 0.1332,
-      "triad_M": 0.34,
-      "FSM_composite": 0.2167,
+      "triad_M": 0.3635,
+      "FSM_composite": 0.2216,
       "is_positive_control": 0,
       "faith_source": "triad.F",
       "metric_names": "A4_faithfulness_spearman_corr_vs_oracle_coupling",
-      "commits": "39cd1d3;d85961ed"
+      "commits": "39cd1d3;ddf78172"
     },
     {
       "phase": "phaseA_kording",
@@ -186,12 +186,12 @@
       "plausibility_proxy": 0.8,
       "triad_F": 0.1364,
       "triad_S": 0.8841,
-      "triad_M": 0.2157,
-      "FSM_composite": 0.2963,
+      "triad_M": 0.6469,
+      "FSM_composite": 0.4273,
       "is_positive_control": 0,
       "faith_source": "triad.F",
       "metric_names": "A6_cell_false_edge_rate_vs_true_dataflow",
-      "commits": "d85961ed"
+      "commits": "ddf78172"
     },
     {
       "phase": "phaseA_kording",
@@ -214,7 +214,7 @@
       "is_positive_control": 0,
       "faith_source": "value:A7_nmf_matched_component_fraction_vs_known_vars",
       "metric_names": "A7_nmf_matched_component_fraction_vs_known_vars",
-      "commits": "d85961ed"
+      "commits": "ddf78172"
     },
     {
       "phase": "phaseA_kording",
@@ -536,7 +536,7 @@
       "is_positive_control": 0,
       "faith_source": "triad.F",
       "metric_names": "discovered_circuit_best_F1_vs_true_dataflow",
-      "commits": "d85961ed"
+      "commits": "ddf78172"
     },
     {
       "phase": "phaseC_mechanistic",
@@ -600,12 +600,12 @@
       "plausibility_proxy": 0.5,
       "triad_F": 0.9792,
       "triad_S": 0.9792,
-      "triad_M": 0.4296,
-      "FSM_composite": 0.744,
+      "triad_M": 0.814,
+      "FSM_composite": 0.9207,
       "is_positive_control": 0,
       "faith_source": "triad.F",
       "metric_names": "scrubbing_preserved_performance_true",
-      "commits": "d85961ed"
+      "commits": "ddf78172"
     },
     {
       "phase": "phaseC_mechanistic",
@@ -637,21 +637,21 @@
       "tradition": "probing",
       "n_games": 42,
       "n_records": 42,
-      "faithfulness": 0.1082,
-      "faithfulness_ci95": 0.0326,
-      "faithfulness_n": 42,
+      "faithfulness": 0.2404,
+      "faithfulness_ci95": 0.0983,
+      "faithfulness_n": 27,
       "faithfulness_position_regime": null,
       "faithfulness_content_regime": null,
-      "faithfulness_other_regime": 0.1082,
+      "faithfulness_other_regime": 0.2404,
       "plausibility_proxy": 0.85,
-      "triad_F": 0.1082,
+      "triad_F": 0.2404,
       "triad_S": null,
-      "triad_M": 0.857,
-      "FSM_composite": 0.4826,
+      "triad_M": 0.9316,
+      "FSM_composite": 0.586,
       "is_positive_control": 0,
       "faith_source": "triad.F",
-      "metric_names": "mean_selectivity",
-      "commits": "d85961ed"
+      "metric_names": "probe_selectivity_vs_causal_use_correlation",
+      "commits": "ddf78172"
     },
     {
       "phase": "phaseC_mechanistic",
@@ -660,21 +660,21 @@
       "tradition": "causal",
       "n_games": 42,
       "n_records": 42,
-      "faithfulness": 1.0,
-      "faithfulness_ci95": 0.0,
+      "faithfulness": 0.8197,
+      "faithfulness_ci95": 0.0529,
       "faithfulness_n": 42,
       "faithfulness_position_regime": null,
       "faithfulness_content_regime": null,
-      "faithfulness_other_regime": 1.0,
+      "faithfulness_other_regime": 0.8197,
       "plausibility_proxy": 0.5,
-      "triad_F": 1.0,
+      "triad_F": 0.8197,
       "triad_S": null,
-      "triad_M": 0.8197,
-      "FSM_composite": 0.9099,
+      "triad_M": 0.224,
+      "FSM_composite": 0.5219,
       "is_positive_control": 0,
       "faith_source": "triad.F",
-      "metric_names": "logit_lens_fidelity_true_intermediate",
-      "commits": "d85961ed"
+      "metric_names": "logit_lens_faithful_weight_fraction_vs_causal_mask",
+      "commits": "ddf78172"
     },
     {
       "phase": "phaseC_mechanistic",
@@ -683,21 +683,21 @@
       "tradition": "dim_reduction",
       "n_games": 42,
       "n_records": 42,
-      "faithfulness": 0.4405,
-      "faithfulness_ci95": 0.0503,
+      "faithfulness": 0.1016,
+      "faithfulness_ci95": 0.0572,
       "faithfulness_n": 42,
       "faithfulness_position_regime": null,
       "faithfulness_content_regime": null,
-      "faithfulness_other_regime": 0.4405,
+      "faithfulness_other_regime": 0.1016,
       "plausibility_proxy": 0.75,
-      "triad_F": null,
-      "triad_S": null,
-      "triad_M": null,
-      "FSM_composite": null,
+      "triad_F": 0.1016,
+      "triad_S": 0.7511,
+      "triad_M": 0.9663,
+      "FSM_composite": 0.4194,
       "is_positive_control": 0,
-      "faith_source": "value:nmf_matched_component_fraction_vs_known_vars",
-      "metric_names": "nmf_matched_component_fraction_vs_known_vars",
-      "commits": "d85961ed"
+      "faith_source": "triad.F",
+      "metric_names": "nmf_causal_effect_agreement_spearman",
+      "commits": "ddf78172"
     },
     {
       "phase": "phaseC_mechanistic",
@@ -738,12 +738,12 @@
       "plausibility_proxy": 0.75,
       "triad_F": 0.1526,
       "triad_S": 0.1828,
-      "triad_M": 0.0701,
-      "FSM_composite": 0.1251,
+      "triad_M": 0.9339,
+      "FSM_composite": 0.2965,
       "is_positive_control": 0,
       "faith_source": "triad.F",
       "metric_names": "feature_variable_matched_fraction",
-      "commits": "d85961ed"
+      "commits": "ddf78172"
     },
     {
       "phase": "ground_truth",
@@ -775,7 +775,7 @@
       "faithfulness_mean": 0.455,
       "faithfulness_ci95": 0.2404,
       "plausibility_proxy_mean": 0.6688,
-      "FSM_composite_mean": 0.4388,
+      "FSM_composite_mean": 0.4699,
       "faithfulness_position_regime_mean": null,
       "position_regime_n": 0
     },
@@ -790,10 +790,10 @@
     },
     "phaseC_mechanistic": {
       "n_methods": 10,
-      "faithfulness_mean": 0.6342,
-      "faithfulness_ci95": 0.2168,
+      "faithfulness_mean": 0.5955,
+      "faithfulness_ci95": 0.2178,
       "plausibility_proxy_mean": 0.625,
-      "FSM_composite_mean": 0.6977,
+      "FSM_composite_mean": 0.6762,
       "faithfulness_position_regime_mean": 1.0,
       "position_regime_n": 1
     }
@@ -810,22 +810,14 @@
       "gap": 0.3264
     },
     "all_regimes": {
-      "causal_intervention_faithfulness_mean": 0.7215,
+      "causal_intervention_faithfulness_mean": 0.7051,
       "causal_intervention_n": 11,
       "gradient_correlational_faithfulness_mean": 0.384,
       "gradient_correlational_n": 14,
-      "gap": 0.3374
+      "gap": 0.321
     }
   },
   "danger_zone_discrepancy_table": [
-    {
-      "phase": "phaseC_mechanistic",
-      "method": "linear_probing_control_tasks",
-      "tradition": "probing",
-      "plausibility_proxy": 0.85,
-      "faithfulness": 0.1082,
-      "plausibility_minus_faithfulness": 0.7418
-    },
     {
       "phase": "phaseB_attribution",
       "method": "expected_gradients",
@@ -841,6 +833,22 @@
       "plausibility_proxy": 0.8,
       "faithfulness": 0.1364,
       "plausibility_minus_faithfulness": 0.6636
+    },
+    {
+      "phase": "phaseC_mechanistic",
+      "method": "nmf_pca_dictionaries",
+      "tradition": "dim_reduction",
+      "plausibility_proxy": 0.75,
+      "faithfulness": 0.1016,
+      "plausibility_minus_faithfulness": 0.6484
+    },
+    {
+      "phase": "phaseC_mechanistic",
+      "method": "linear_probing_control_tasks",
+      "tradition": "probing",
+      "plausibility_proxy": 0.85,
+      "faithfulness": 0.2404,
+      "plausibility_minus_faithfulness": 0.6096
     },
     {
       "phase": "phaseC_mechanistic",
@@ -939,14 +947,6 @@
       "plausibility_minus_faithfulness": 0.3434
     },
     {
-      "phase": "phaseC_mechanistic",
-      "method": "nmf_pca_dictionaries",
-      "tradition": "dim_reduction",
-      "plausibility_proxy": 0.75,
-      "faithfulness": 0.4405,
-      "plausibility_minus_faithfulness": 0.3095
-    },
-    {
       "phase": "phaseB_attribution",
       "method": "lime",
       "tradition": "gradient",
@@ -1011,6 +1011,14 @@
       "plausibility_minus_faithfulness": -0.1369
     },
     {
+      "phase": "phaseC_mechanistic",
+      "method": "logit_tuned_lens",
+      "tradition": "causal",
+      "plausibility_proxy": 0.5,
+      "faithfulness": 0.8197,
+      "plausibility_minus_faithfulness": -0.3197
+    },
+    {
       "phase": "phaseA_kording",
       "method": "A2_lesions",
       "tradition": "intervention",
@@ -1037,14 +1045,6 @@
     {
       "phase": "phaseC_mechanistic",
       "method": "interchange_interventions_das",
-      "tradition": "causal",
-      "plausibility_proxy": 0.5,
-      "faithfulness": 1.0,
-      "plausibility_minus_faithfulness": -0.5
-    },
-    {
-      "phase": "phaseC_mechanistic",
-      "method": "logit_tuned_lens",
       "tradition": "causal",
       "plausibility_proxy": 0.5,
       "faithfulness": 1.0,

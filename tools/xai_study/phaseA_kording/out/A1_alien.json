@@ -1,7 +1,7 @@
 {
   "arrays": "A1_alien.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "ddf78172",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -70,8 +70,8 @@
     "triad": {
       "F": 0.0,
       "F_note": "F1 of recovered data-flow edges vs the exact-oracle true edges (6 candidate cells)",
-      "M": 1.0,
-      "M_note": "1 − over-claim rate: fraction of recovered edges the oracle says are spurious (false wiring)",
+      "M": null,
+      "M_note": "M = |U*|/|U_hat| over edges: |true edges|=1 / |discovered edges|=0",
       "S": 1.0,
       "S_note": "off-diagonal edge-agreement between the base+17 recovered graph and the HELD-OUT base+37 true edge set (generalisation to an unseen intervention value, bit-exact re-run)",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): classical connectomics scores LOW-to-PARTIAL faithfulness despite fully-known data-flow — the quantified-Kording lesson. A thin single-shot/short-latency perturbation misses long-latency / sign-dependent edges (recall deficit) and can over-claim transient ones (precision deficit)."
@@ -88,7 +88,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-  "timestamp": "1783123856",
+  "timestamp": "1783606707",
   "value": 0.0,
   "where": "local"
 }

@@ -75,6 +75,7 @@ module LinearProbing
 
 using LinearAlgebra
 using Random
+using Statistics
 
 using JuTari
 using JuTari.Env: StellaEnvironment, env_reset!, env_step!, get_ram
@@ -104,7 +105,7 @@ include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 # shared triad helpers (jnum_or_null for JSON-null on undefined S/M); guarded.
 isdefined(@__MODULE__, :TriadSM) ||
     include(joinpath(@__DIR__, "..", "common", "triad_sm.jl"))
-using .TriadSM: jnum_or_null
+using .TriadSM: jnum_or_null, minimality_score
 
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders", "seaquest", "ms_pacman", "qbert"]
@@ -557,6 +558,23 @@ function write_game_result(r::GameProbeResult; out_dir = OUT_DIR)
     json_path = joinpath(out_dir, stem * ".json")
     npz_path  = joinpath(out_dir, stem * ".npz")
 
+    # §3 (sec:triad) causal-agreement F for the probe: the point-biserial CORRELATION
+    # between the probe's per-cell claim (selectivity) and the oracle's per-cell causal
+    # indicator (1 = causally used, 0 = transient/not-used). This is exactly what sec:triad
+    # defines F to be — the correlation between the attribution and the true causal effects,
+    # NOT a set-overlap precision. A low/zero value means the probe's selectivity does not
+    # track causal use: the present-but-unused finding. Undefined (null) without the das
+    # cross-reference, or when the causal indicator has no contrast (all cells causal, or
+    # all transient) so a correlation is not defined. `_selmag` is the named-strength used
+    # for the standardised minimality M.
+    _sel = Float64[ c.selectivity for c in r.cells if c.n_classes > 1 && isfinite(c.selectivity) ]
+    _eff = Float64[ (c.not_causally_used ? 0.0 : 1.0) for c in r.cells
+                    if c.n_classes > 1 && isfinite(c.selectivity) ]
+    _selmag = Float64[ max(0.0, x) for x in _sel ]
+    _Fcausal = (!r.oracle_xref_available || length(_sel) < 2 ||
+                Statistics.std(_sel) == 0.0 || Statistics.std(_eff) == 0.0) ? nothing :
+               (let cc = Statistics.cor(_sel, _eff); isfinite(cc) ? cc : nothing end)
+
     rec = Dict{String,Any}(
         "paper" => "P2",
         "phase" => "phaseC_mechanistic",
@@ -567,10 +585,14 @@ function write_game_result(r::GameProbeResult; out_dir = OUT_DIR)
                    "gameplay(seed=$(r.st_seed),prefix=$(r.st_prefix))+$(r.st_horizon), " *
                    "NOOP-continued to f$(r.frames)",
         "target_output" => "concept decodability from VCS state (labelled RAM cells)",
-        # headline §R scalar: mean selectivity (probe − control) over probeable
-        # concept cells — the honest decodability signal (Hewitt & Liang 2019).
-        "metric_name" => "mean_selectivity",
-        "value" => r.mean_selectivity,
+        # headline §R scalar: the CAUSAL-agreement F = the point-biserial correlation of
+        # per-cell selectivity (the probe's claim) with the oracle's causally-used indicator
+        # (sec:triad's ρ between attribution and true causal effect). Low/zero = selectivity
+        # does not track causal use (the present-but-unused finding). This replaces
+        # mean_selectivity (decodability), which is kept under extra.mean_selectivity.
+        # Undefined (null) without the das cross-reference / without causal contrast.
+        "metric_name" => "probe_selectivity_vs_causal_use_correlation",
+        "value" => _Fcausal,
         "stderr" => nothing,
         "ci" => nothing,
         "n" => r.n_probeable,
@@ -581,27 +603,42 @@ function write_game_result(r::GameProbeResult; out_dir = OUT_DIR)
         "timestamp" => string(round(Int, time())),
         "arrays" => basename(npz_path),
         "extra" => Dict{String,Any}(
-            # F∧S∧M triad (paper sec:triad). F = mean probe selectivity vs the control
-            # task (leaderboard-oriented value, UNCHANGED). M = |U*|/|U_named|: the
-            # decodable cells the oracle confirms are CAUSAL (decodable minus the
-            # decodable-not-causal count) over all decodable cells the probe names. S
-            # is UNDEFINED for probing: a probe reads out PRESENCE of information, not
-            # its causal USE, so it makes no held-out do(u) OUTPUT prediction (the
-            # present-vs-used gap the paper flags, Hewitt & Liang 2019).
-            "triad" => let ndec = r.n_decodable, ncausal = r.n_decodable - r.n_decodable_not_causal
+            # F∧S∧M triad (paper sec:triad). F is now the CAUSAL-agreement score: the
+            # fraction of the probe's DECODABLE cells that the exact oracle confirms are
+            # causally USED = |decodable∧causally-used|/|decodable| (a precision of
+            # decodability w.r.t. causal use). Low = the present-but-unused finding
+            # (probing "finds" concepts the program does not causally use over the
+            # horizon). This replaces mean_selectivity (kept under extra.mean_selectivity),
+            # which is decodability, NOT causal agreement. F is defined only when the
+            # oracle cross-reference (das transient cells) is available; else null.
+            # M is STANDARDISED to |U*|/|U_hat| via TriadSM over per-cell vectors:
+            # attr = per-cell selectivity strength (the probe's claim), odelta = per-cell
+            # oracle causal effect (1 if the cell is causally used, 0 if transient). S is
+            # UNDEFINED: a probe reads out PRESENCE, not a held-out do(u) output prediction.
+            "triad" => let
+                # standardised M = |U*|/|U_hat| (oracle movers / probe-named cells). Only
+                # meaningful when the oracle xref supplies causal effects; else undefined.
+                Mv, ustar, uhat, mnote =
+                    (r.oracle_xref_available && !isempty(_selmag)) ? minimality_score(_selmag, _eff) :
+                    (nothing, 0, 0, "M undefined: no oracle causal cross-reference (das transient cells) available")
                 Dict{String,Any}(
-                    "F" => jnum_or_null(clamp(r.mean_selectivity, 0.0, 1.0)),
+                    "F" => jnum_or_null(_Fcausal),
+                    "F_note" => "causal-agreement F = point-biserial ρ(per-cell selectivity, " *
+                        "oracle causally-used indicator) over $(length(_sel)) probeable cells " *
+                        "(sec:triad's correlation between attribution and true causal effect). " *
+                        "Low/zero = selectivity does not track causal use (present-but-unused). " *
+                        "Undefined without the das cross-reference or without causal contrast.",
                     "S" => nothing,
                     "S_note" => "S undefined: a linear probe reads out whether a concept is " *
                         "PRESENT (decodable), not whether it is causally USED; it emits no " *
                         "held-out do(u) output prediction (present≠used, Hewitt & Liang 2019)",
-                    "M" => jnum_or_null(ndec == 0 ? nothing : min(1.0, ncausal / ndec)),
-                    "M_note" => "|U*|=$ncausal decodable-AND-causal cells / |U_named|=$ndec " *
-                        "decodable cells the probe names (present-but-not-causal cells are spurious)",
-                    "M_true_minimal_size" => ncausal, "M_named_size" => ndec,
-                    "definition" => "F∧S∧M triad (03_methods.tex sec:triad): F = probe selectivity " *
-                        "(unchanged); M = |decodable∧causal|/|decodable|; S undefined for a probe " *
-                        "(presence, not causal use).")
+                    "M" => jnum_or_null(Mv),
+                    "M_note" => mnote,
+                    "M_true_minimal_size" => ustar, "M_named_size" => uhat,
+                    "definition" => "F∧S∧M triad (03_methods.tex sec:triad): F = point-biserial " *
+                        "correlation of probe selectivity with the oracle causally-used indicator; " *
+                        "M = |U*|/|U_hat| (oracle causally-used cells / probe-named cells " *
+                        "by selectivity); S undefined for a probe (presence, not causal use).")
             end,
             "substrate" => "jutari (Julia, HARD) — real-ROM bit-exact path",
             "n_features" => r.n_features,

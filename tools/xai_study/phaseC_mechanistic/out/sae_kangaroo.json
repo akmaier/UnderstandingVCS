@@ -1,7 +1,7 @@
 {
   "arrays": "sae_kangaroo.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "ddf78172",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -350,8 +350,8 @@
     "triad": {
       "F": -0.314970394174356,
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
-      "M": 0.0,
-      "M_note": "no matched∧causal feature to ablate at this state → M undefined, reported 0.0",
+      "M": 1.0,
+      "M_note": "|U*|=10 (oracle movers) / |U_hat|=1 (method above-threshold)",
       "S": -0.0728931483023288,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
@@ -369,7 +369,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783137105",
+  "timestamp": "1783608139",
   "value": 1.0,
   "where": "local"
 }

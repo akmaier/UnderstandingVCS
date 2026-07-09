@@ -109,6 +109,12 @@ include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
 # the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
 include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
+# the canonical triad Minimality scorer M = |U*|/|U_hat| (03_methods.tex sec:triad);
+# guarded so re-includes across the Phase-A battery don't redefine the module.
+isdefined(@__MODULE__, :TriadSM) ||
+    include(joinpath(@__DIR__, "..", "common", "triad_sm.jl"))
+using .TriadSM: minimality_score
+
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders",
                     "seaquest", "ms_pacman", "qbert"]
@@ -615,9 +621,10 @@ end
 # F / S / M (the correctness triad, scored against the coupling oracle).
 # ============================================================================
 struct Triad
-    F::Float64; S::Float64; M::Float64
+    F::Float64; S::Float64; M::Union{Float64,Nothing}
     F_note::String; S_note::String; M_note::String
     n_pairs::Int
+    legacy_minimality::Float64        # the old 1 − over-claim rate (kept for reference)
 end
 
 """Lower-triangle off-diagonal pairs as flat vectors (the scored pair set)."""
@@ -648,19 +655,24 @@ function score_triad(C::AbstractMatrix, oracle::CouplingOracle, τ::Real)
     F = spearman(corr_pairs, couple_pairs)
     # S — predict the HELD-OUT coupling (do base+37, unseen) from |corr|.
     S = pearson(corr_pairs, held_pairs)
-    # M — minimality / over-grouping: of the pairs A4 flags coupled (|corr|≥τ), how
-    #     many are NOT truly causally coupled (oracle coupling == 0)? Over-claiming
-    #     a co-varying-but-uncoupled pair is the correlation-over-grouping failure.
+    # legacy minimality (retained for reference): 1 − over-claim rate over pairs.
     flagged = corr_pairs .>= τ
     nflag = sum(flagged)
     overclaim = nflag == 0 ? 0.0 :
         count(k -> flagged[k] && couple_pairs[k] == 0.0, 1:length(flagged)) / nflag
-    M = 1.0 - overclaim
+    legacy_M = 1.0 - overclaim
+    # M — standardized to the paper's M = |U*|/|U_hat| (03_methods.tex sec:triad),
+    #     here over the candidate-cell PAIRS that are the "causes": |U*| = the truly
+    #     coupled pairs (oracle coupling above the floor), |U_hat| = the pairs the
+    #     correlation method NAMES (|corr| above its own threshold). Uses the SAME
+    #     attr (|corr| pairs, the F claim) and odelta (oracle coupling pairs, the F
+    #     ground truth).
+    M, _ustar, _uhat, M_note = minimality_score(corr_pairs, couple_pairs)
     return Triad(F, S, M,
         "Spearman(|pairwise corr|, oracle cell-cell coupling) over $(length(corr_pairs)) candidate-cell pairs",
         "Pearson(|pairwise corr|, held-out do(base+37) coupling) — sufficiency on the bit-exact re-run",
-        "1 − over-claim rate: fraction of |corr|≥$(τ)-flagged pairs the oracle says are NOT coupled (correlation over-grouping)",
-        length(corr_pairs))
+        "M = |U*|/|U_hat| over candidate-cell pairs (03_methods.tex sec:triad): " * M_note,
+        length(corr_pairs), legacy_M)
 end
 
 # ============================================================================
@@ -801,7 +813,8 @@ function compute_game(game::AbstractString; target_frame = nothing, horizon = no
                 "strong-global top3-eig=$(round(global_s.pop_top3_eig_share,digits=3)) " *
                 "PR=$(round(global_s.pop_participation_ratio,digits=2))/$(global_s.pop_n_cells) " *
                 "→ WPSG=$(global_s.weak_pairwise_strong_global)")
-        println("[A4:$game]   TRIAD F=$(round(triad.F,digits=3)) S=$(round(triad.S,digits=3)) M=$(round(triad.M,digits=3))")
+        println("[A4:$game]   TRIAD F=$(round(triad.F,digits=3)) S=$(round(triad.S,digits=3)) " *
+                "M=$(triad.M === nothing ? "null" : round(triad.M,digits=3)) (legacy=$(round(triad.legacy_minimality,digits=3)))")
     end
 
     return GameResult(game, target_frame, horizon, traj_frames, trace, in_window,
@@ -861,7 +874,7 @@ function selftest(r::GameResult)
 
     @assert -1.0 - 1e-9 <= r.triad.F <= 1.0 + 1e-9 "F out of [-1,1]: $(r.triad.F)"
     @assert -1.0 - 1e-9 <= r.triad.S <= 1.0 + 1e-9 "S out of [-1,1]: $(r.triad.S)"
-    @assert  0.0 - 1e-9 <= r.triad.M <= 1.0 + 1e-9 "M out of [0,1]: $(r.triad.M)"
+    @assert  r.triad.M === nothing || (0.0 - 1e-9 <= r.triad.M <= 1.0 + 1e-9) "M out of (0,1]: $(r.triad.M)"
 
     g = r.grouping
     for (nm, v) in (("rand", g.rand_index), ("homogeneity", g.homogeneity),
@@ -879,7 +892,8 @@ function selftest(r::GameResult)
     println("[A4:$(r.game)] SELF-CHECK PASS:")
     println("[A4:$(r.game)]   bit-exact baseline re-run: $(r.bit_exact)")
     println("[A4:$(r.game)]   oracle coupled pairs: $n_coupled (positive control F = $(round(self_F,digits=3)))")
-    println("[A4:$(r.game)]   F=$(round(r.triad.F,digits=3)) S=$(round(r.triad.S,digits=3)) M=$(round(r.triad.M,digits=3))")
+    println("[A4:$(r.game)]   F=$(round(r.triad.F,digits=3)) S=$(round(r.triad.S,digits=3)) " *
+            "M=$(r.triad.M === nothing ? "null" : round(r.triad.M,digits=3))")
     println("[A4:$(r.game)]   over-grouping=$(round(g.over_grouping_ratio,digits=3)) " *
             "WPSG=$(gs.weak_pairwise_strong_global)")
     return true
@@ -894,6 +908,7 @@ catch
     "unknown"
 end
 _json_num(x::Real) = isfinite(x) ? Float64(x) : nothing
+_json_num(::Nothing) = nothing
 
 const CANDIDATES_DIR_REL = joinpath("tools", "xai_study", "t3", "out")
 function resolve_candidates(game::AbstractString)
@@ -977,6 +992,10 @@ function write_game(r::GameResult; out_dir = OUT_DIR)
                 "F" => _json_num(r.triad.F), "F_note" => r.triad.F_note,
                 "S" => _json_num(r.triad.S), "S_note" => r.triad.S_note,
                 "M" => _json_num(r.triad.M), "M_note" => r.triad.M_note,
+                "legacy_minimality" => _json_num(r.triad.legacy_minimality),
+                "legacy_minimality_note" => "1 − over-claim rate (the pre-standardization " *
+                    "M): fraction of |corr|-flagged pairs the oracle says are NOT coupled. " *
+                    "Retained for reference; the triad M above is the paper's |U*|/|U_hat|.",
                 "n_pairs" => r.triad.n_pairs,
                 "interpretation" => "Phase A is the calibration baseline " *
                     "(experiment_design.md §4): pairwise correlation structure " *
@@ -1059,7 +1078,8 @@ function write_game(r::GameResult; out_dir = OUT_DIR)
                                            r.global_s.pop_mean_abs, r.global_s.pop_median_abs,
                                            r.global_s.pop_top3_eig_share, r.global_s.pop_participation_ratio,
                                            Float64(r.global_s.pop_n_cells)],
-        "triad_FSM"             => Float64[r.triad.F, r.triad.S, r.triad.M],
+        "triad_FSM"             => Float64[r.triad.F, r.triad.S,
+                                           r.triad.M === nothing ? NaN : r.triad.M],
     ))
     return json_path, npz_path
 end

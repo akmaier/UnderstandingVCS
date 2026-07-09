@@ -124,6 +124,12 @@ include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
 # the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
 include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
+# the canonical triad Minimality scorer M = |U*|/|U_hat| (03_methods.tex sec:triad);
+# guarded so re-includes across the Phase-A battery don't redefine the module.
+isdefined(@__MODULE__, :TriadSM) ||
+    include(joinpath(@__DIR__, "..", "common", "triad_sm.jl"))
+using .TriadSM: minimality_score
+
 const OUT_DIR = joinpath(@__DIR__, "out")
 const PRIMARY_REPO = get(ENV, "XAI_PRIMARY_REPO",
                          "/Users/maier/Documents/code/UnderstandingVCS")
@@ -708,9 +714,10 @@ end
 # F / S / M (the correctness triad, scored against the oracle importance).
 # ============================================================================
 struct Triad
-    F::Float64; S::Float64; M::Float64
+    F::Float64; S::Float64; M::Union{Float64,Nothing}
     F_note::String; S_note::String; M_note::String
     method::String
+    legacy_minimality::Float64        # the old 1 − over-claim rate (kept for reference)
 end
 
 function _pearson(a::AbstractVector, b::AbstractVector)
@@ -743,21 +750,26 @@ function score_triad(method::AbstractString, recovery::Vector{Float64},
                      oracle::OracleImportance; flag_quantile = 0.5)
     F = _spearman(recovery, oracle.importance)
     S = _pearson(recovery, oracle.held_out)
-    # "captured" = recovery score in the upper portion (a leading-component cell).
-    # threshold = the flag_quantile-quantile of the non-zero recovery scores (so a
-    # cell the method genuinely surfaces). If all recovery is 0, nothing is flagged.
+    # legacy minimality (retained for reference): 1 − over-claim rate over the
+    # upper-quantile "captured" cells.
     pos = recovery[recovery .> 0.0]
     thr = isempty(pos) ? Inf : _quantile(pos, flag_quantile)
     flagged = recovery .>= thr
     nflag = sum(flagged)
     overclaim = nflag == 0 ? 0.0 :
         count(i -> flagged[i] && oracle.importance[i] == 0.0, 1:length(flagged)) / nflag
-    M = 1.0 - overclaim
+    legacy_M = 1.0 - overclaim
+    # M — standardized to the paper's M = |U*|/|U_hat| (03_methods.tex sec:triad):
+    #     |U*| = the true movers (oracle importance above the floor), |U_hat| = the
+    #     cells the dim-reduction method NAMES (recovery score above its own
+    #     threshold). Uses the SAME attr (per-cell recovery, the F claim) and odelta
+    #     (oracle.importance, the F ground truth).
+    M, _ustar, _uhat, M_note = minimality_score(recovery, oracle.importance)
     return Triad(F, S, M,
         "Spearman($(method) per-cell recovery score, oracle causal importance) over candidate cells",
         "Pearson($(method) recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
-        "1 − over-claim rate: fraction of $(method)-surfaced cells (recovery ≥ q$(flag_quantile)) the oracle says are non-causal (variance≠causal trap)",
-        method)
+        "M = |U*|/|U_hat| (03_methods.tex sec:triad, $(method)): " * M_note,
+        method, legacy_M)
 end
 
 function _quantile(v::AbstractVector, q::Real)
@@ -927,8 +939,8 @@ function compute_game(game::AbstractString; target_frame = nothing, horizon = no
         println("[A7:$game]   NMF rank=$(nmf.rank) rel-err=$(round(nmf.recon_rel_err,digits=3)) " *
                 "matched-frac=$(round(nmf_match.matched_component_fraction,digits=3)) " *
                 "(gv=$(nmf_match.n_matched_game_var) sig=$(nmf_match.n_matched_known_signal))")
-        println("[A7:$game]   PCA TRIAD F=$(round(pca_triad.F,digits=3)) S=$(round(pca_triad.S,digits=3)) M=$(round(pca_triad.M,digits=3))")
-        println("[A7:$game]   NMF TRIAD F=$(round(nmf_triad.F,digits=3)) S=$(round(nmf_triad.S,digits=3)) M=$(round(nmf_triad.M,digits=3))")
+        println("[A7:$game]   PCA TRIAD F=$(round(pca_triad.F,digits=3)) S=$(round(pca_triad.S,digits=3)) M=$(pca_triad.M === nothing ? "null" : round(pca_triad.M,digits=3)) (legacy=$(round(pca_triad.legacy_minimality,digits=3)))")
+        println("[A7:$game]   NMF TRIAD F=$(round(nmf_triad.F,digits=3)) S=$(round(nmf_triad.S,digits=3)) M=$(nmf_triad.M === nothing ? "null" : round(nmf_triad.M,digits=3)) (legacy=$(round(nmf_triad.legacy_minimality,digits=3)))")
     end
 
     return GameResult(game, target_frame, horizon, traj_frames, trace, in_window,
@@ -996,7 +1008,7 @@ function selftest(r::GameResult)
     for tr in (r.pca_triad, r.nmf_triad)
         @assert -1.0 - 1e-9 <= tr.F <= 1.0 + 1e-9 "$(tr.method) F out of [-1,1]: $(tr.F)"
         @assert -1.0 - 1e-9 <= tr.S <= 1.0 + 1e-9 "$(tr.method) S out of [-1,1]: $(tr.S)"
-        @assert  0.0 - 1e-9 <= tr.M <= 1.0 + 1e-9 "$(tr.method) M out of [0,1]: $(tr.M)"
+        @assert  tr.M === nothing || (0.0 - 1e-9 <= tr.M <= 1.0 + 1e-9) "$(tr.method) M out of (0,1]: $(tr.M)"
     end
 
     println("[A7:$(r.game)] SELF-CHECK PASS:")
@@ -1004,10 +1016,10 @@ function selftest(r::GameResult)
     println("[A7:$(r.game)]   oracle causal cells: $n_causal/$(length(r.cands)) " *
             "(positive control F = $(round(self_F,digits=3)))")
     println("[A7:$(r.game)]   PCA matched-frac=$(round(r.pca_match.matched_component_fraction,digits=3)) " *
-            "F=$(round(r.pca_triad.F,digits=3)) S=$(round(r.pca_triad.S,digits=3)) M=$(round(r.pca_triad.M,digits=3))")
+            "F=$(round(r.pca_triad.F,digits=3)) S=$(round(r.pca_triad.S,digits=3)) M=$(r.pca_triad.M === nothing ? "null" : round(r.pca_triad.M,digits=3))")
     println("[A7:$(r.game)]   NMF matched-frac=$(round(r.nmf_match.matched_component_fraction,digits=3)) " *
             "rel-err=$(round(r.nmf.recon_rel_err,digits=3)) " *
-            "F=$(round(r.nmf_triad.F,digits=3)) S=$(round(r.nmf_triad.S,digits=3)) M=$(round(r.nmf_triad.M,digits=3))")
+            "F=$(round(r.nmf_triad.F,digits=3)) S=$(round(r.nmf_triad.S,digits=3)) M=$(r.nmf_triad.M === nothing ? "null" : round(r.nmf_triad.M,digits=3))")
     return true
 end
 
@@ -1020,6 +1032,7 @@ catch
     "unknown"
 end
 _json_num(x::Real) = isfinite(x) ? Float64(x) : nothing
+_json_num(::Nothing) = nothing
 
 const CANDIDATES_DIR_REL = joinpath("tools", "xai_study", "t3", "out")
 function resolve_candidates(game::AbstractString)
@@ -1140,11 +1153,17 @@ function write_game(r::GameResult; out_dir = OUT_DIR)
                 "F" => _json_num(r.pca_triad.F), "F_note" => r.pca_triad.F_note,
                 "S" => _json_num(r.pca_triad.S), "S_note" => r.pca_triad.S_note,
                 "M" => _json_num(r.pca_triad.M), "M_note" => r.pca_triad.M_note,
+                "legacy_minimality" => _json_num(r.pca_triad.legacy_minimality),
+                "legacy_minimality_note" => "1 − over-claim rate (the pre-standardization " *
+                    "M). Retained for reference; the triad M above is the paper's |U*|/|U_hat|.",
             ),
             "triad_nmf" => Dict{String,Any}(
                 "F" => _json_num(r.nmf_triad.F), "F_note" => r.nmf_triad.F_note,
                 "S" => _json_num(r.nmf_triad.S), "S_note" => r.nmf_triad.S_note,
                 "M" => _json_num(r.nmf_triad.M), "M_note" => r.nmf_triad.M_note,
+                "legacy_minimality" => _json_num(r.nmf_triad.legacy_minimality),
+                "legacy_minimality_note" => "1 − over-claim rate (the pre-standardization " *
+                    "M). Retained for reference; the triad M above is the paper's |U*|/|U_hat|.",
                 "interpretation" => "Phase A is the calibration baseline " *
                     "(experiment_design.md §4): dim-reduction surfaces high-VARIANCE " *
                     "axes, which are NOT the causal cells (variance ≠ causal role — " *
@@ -1183,8 +1202,10 @@ function write_game(r::GameResult; out_dir = OUT_DIR)
         "oracle_importance"     => r.oracle.importance,
         "oracle_held_out"       => r.oracle.held_out,
         # [pca_F,pca_S,pca_M, nmf_F,nmf_S,nmf_M, pca_matched_frac, nmf_matched_frac]
-        "scores"                => Float64[r.pca_triad.F, r.pca_triad.S, r.pca_triad.M,
-                                           r.nmf_triad.F, r.nmf_triad.S, r.nmf_triad.M,
+        "scores"                => Float64[r.pca_triad.F, r.pca_triad.S,
+                                           r.pca_triad.M === nothing ? NaN : r.pca_triad.M,
+                                           r.nmf_triad.F, r.nmf_triad.S,
+                                           r.nmf_triad.M === nothing ? NaN : r.nmf_triad.M,
                                            r.pca_match.matched_component_fraction,
                                            r.nmf_match.matched_component_fraction],
     ))

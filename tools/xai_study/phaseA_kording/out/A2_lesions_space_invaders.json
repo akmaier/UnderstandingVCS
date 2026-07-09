@@ -1,7 +1,7 @@
 {
   "arrays": "A2_lesions_space_invaders.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "ddf78172",
   "extra": {
     "bit_exact_rerun": true,
     "budget": {
@@ -200,11 +200,13 @@
     "triad": {
       "F": 0.9862863815671543,
       "F_note": "Spearman ρ of the single-unit lesion importance map vs the exact-oracle per-unit causal role (17 units).",
-      "M": 0.5,
-      "M_note": "1 − false-specificity rate: fraction of lesion-flagged 'specific' units the oracle says are actually generic (spurious selectivity) — minimal & at the right level.",
+      "M": 1.0,
+      "M_note": "M = |U*|/|U_hat| (03_methods.tex sec:triad): |U*|=13 (oracle movers) / |U_hat|=12 (method above-threshold)",
       "S": 0.8120053349214044,
       "S_note": "generalisation to a HELD-OUT clamp value: ρ of the lesion map (built on {0,alt}) vs the per-unit role under the UNSEEN value base+37 (scored on the bit-exact re-run).",
-      "interpretation": "Phase A calibration baseline (experiment_design.md §4): the single-unit lesion is a RELATIVELY FAITHFUL classical method (high F) BUT structurally blind to interaction effects (the interaction_blind_spot) and prone to spurious specificity (M<1). 'Right but incomplete' — the quantified-Kording lesson for ablation."
+      "interpretation": "Phase A calibration baseline (experiment_design.md §4): the single-unit lesion is a RELATIVELY FAITHFUL classical method (high F) BUT structurally blind to interaction effects (the interaction_blind_spot) and prone to spurious specificity (M<1). 'Right but incomplete' — the quantified-Kording lesson for ablation.",
+      "legacy_minimality": 0.5,
+      "legacy_minimality_note": "1 − false-specificity rate (the pre-standardization M): fraction of lesion-flagged 'specific' units the oracle says are actually generic. Retained for reference; the triad M above is the paper's |U*|/|U_hat|."
     }
   },
   "frame": 90,
@@ -219,7 +221,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "per-unit behavioural-importance map (candidate RAM cells)",
-  "timestamp": "1783123711",
+  "timestamp": "1783606557",
   "value": 0.9862863815671543,
   "where": "local"
 }

@@ -12,14 +12,14 @@ Pure read over every committed §R record under `phaseA_kording/` · `phaseB_att
 ## Headline contrast
 On the **position/index regime** (discrete sprite-position outputs, naive gradient = 0): causal/intervention methods average **0.561** (±0.3212, n=4) faithfulness vs gradient/correlational methods at **0.2346** (±0.1559, n=9) — a gap of **0.3264**.
 
-Across **all output regimes**, causal/intervention average **0.7215** (n=11) vs gradient/correlational **0.384** (n=14), gap **0.3374**.
+Across **all output regimes**, causal/intervention average **0.7051** (n=11) vs gradient/correlational **0.384** (n=14), gap **0.321**.
 
 ## Per-phase rollups (mean ± 95% CI over the phase's methods)
 | Phase | n methods | Faithfulness | Plausibility (proxy) | F∧S∧M | Faith (position regime) |
 |---|---|---|---|---|---|
-| phaseA_kording | 8 | 0.455 ± 0.2404 | 0.6688 | 0.4388 | None (n=0) |
+| phaseA_kording | 8 | 0.455 ± 0.2404 | 0.6688 | 0.4699 | None (n=0) |
 | phaseB_attribution | 12 | 0.4626 ± 0.0855 | 0.8125 | 0.6087 | 0.2796 (n=12) |
-| phaseC_mechanistic | 10 | 0.6342 ± 0.2168 | 0.625 | 0.6977 | 1.0 (n=1) |
+| phaseC_mechanistic | 10 | 0.5955 ± 0.2178 | 0.625 | 0.6762 | 1.0 (n=1) |
 
 ## Leaderboard (sorted by faithfulness, desc)
 | Phase | Method | Tradition | Faith | Faith(pos) | Plaus(proxy) | F | S | M | F∧S∧M | PC |
@@ -27,10 +27,10 @@ Across **all output regimes**, causal/intervention average **0.7215** (n=11) vs 
 | phaseA_kording | A8_wholestate | descriptive | 1.0 | None | 0.3 | 1.0 | 1.0 | 0.0755 | 0.4227 |  |
 | phaseC_mechanistic | activation_patching | causal | 1.0 | 1.0 | 0.5 | 1.0 | 0.996 | 0.9729 | 0.9896 |  |
 | phaseC_mechanistic | interchange_interventions_das | causal | 1.0 | None | 0.5 | 1.0 | 1.0 | 0.8895 | 0.9617 |  |
-| phaseC_mechanistic | logit_tuned_lens | causal | 1.0 | None | 0.5 | 1.0 | None | 0.8197 | 0.9099 |  |
 | ground_truth | ORACLE | oracle | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | ✔ |
-| phaseC_mechanistic | causal_scrubbing | causal | 0.9792 | None | 0.5 | 0.9792 | 0.9792 | 0.4296 | 0.744 |  |
-| phaseA_kording | A2_lesions | intervention | 0.965 | None | 0.55 | 0.965 | 0.5888 | 0.8565 | 0.7866 |  |
+| phaseC_mechanistic | causal_scrubbing | causal | 0.9792 | None | 0.5 | 0.9792 | 0.9792 | 0.814 | 0.9207 |  |
+| phaseA_kording | A2_lesions | intervention | 0.965 | None | 0.55 | 0.965 | 0.5888 | 1.0 | 0.8282 |  |
+| phaseC_mechanistic | logit_tuned_lens | causal | 0.8197 | None | 0.5 | 0.8197 | None | 0.224 | 0.5219 |  |
 | phaseB_attribution | occlusion | intervention | 0.6869 | 0.6194 | 0.55 | 0.6869 | 0.6667 | 0.9731 | 0.7638 |  |
 | phaseB_attribution | kernelshap | gradient | 0.6518 | 0.5954 | 0.9 | 0.6518 | 0.6567 | 0.57 | 0.6249 |  |
 | phaseB_attribution | lime | gradient | 0.6441 | 0.591 | 0.9 | 0.6441 | 0.6547 | 0.557 | 0.617 |  |
@@ -41,34 +41,34 @@ Across **all output regimes**, causal/intervention average **0.7215** (n=11) vs 
 | phaseB_attribution | gradxinput_deeplift | gradient | 0.4856 | 0.115 | 0.9 | 0.4856 | 0.6254 | 0.9929 | 0.6706 |  |
 | phaseB_attribution | extremal_perturbation | intervention | 0.4605 | 0.3474 | 0.55 | 0.4605 | 0.6297 | 0.9689 | 0.6549 |  |
 | phaseC_mechanistic | attribution_patching | gradient | 0.4563 | None | 0.9 | 0.4563 | 0.769 | 0.9947 | 0.7041 |  |
-| phaseC_mechanistic | nmf_pca_dictionaries | dim_reduction | 0.4405 | None | 0.75 | None | None | None | None |  |
 | phaseB_attribution | on_distribution_counterfactual | intervention | 0.4329 | 0.2772 | 0.55 | 0.4329 | 0.6392 | 0.989 | 0.6492 |  |
 | phaseB_attribution | smoothgrad | gradient | 0.3799 | 0.1151 | 0.9 | 0.3799 | 0.5968 | 0.981 | 0.6059 |  |
 | phaseB_attribution | vanilla_saliency | gradient | 0.3798 | 0.115 | 0.9 | 0.3798 | 0.5932 | 0.9795 | 0.6043 |  |
 | phaseB_attribution | integrated_gradients | gradient | 0.3794 | 0.1146 | 0.9 | 0.3794 | 0.5907 | 0.9841 | 0.6042 |  |
 | phaseA_kording | A5_local_field_potentials | correlational | 0.3757 | None | 0.8 | None | None | None | None |  |
 | phaseB_attribution | guided_backprop | gradient | 0.3223 | 0.0 | 0.9 | 0.3223 | 0.5725 | 0.9643 | 0.5625 |  |
-| phaseA_kording | A4_spike_word | correlational | 0.2246 | None | 0.8 | 0.2246 | 0.1332 | 0.34 | 0.2167 |  |
-| phaseA_kording | A3_tuning | correlational | 0.2129 | None | 0.8 | 0.2129 | 0.2001 | 0.8413 | 0.3297 |  |
-| phaseA_kording | A1_connectomics | intervention | 0.2066 | None | 0.55 | 0.2066 | 0.9708 | 0.9778 | 0.581 |  |
+| phaseC_mechanistic | linear_probing_control_tasks | probing | 0.2404 | None | 0.85 | 0.2404 | None | 0.9316 | 0.586 |  |
+| phaseA_kording | A4_spike_word | correlational | 0.2246 | None | 0.8 | 0.2246 | 0.1332 | 0.3635 | 0.2216 |  |
+| phaseA_kording | A3_tuning | correlational | 0.2129 | None | 0.8 | 0.2129 | 0.2001 | 0.9277 | 0.3406 |  |
+| phaseA_kording | A1_connectomics | intervention | 0.2066 | None | 0.55 | 0.2066 | 0.9708 | 0.9667 | 0.5788 |  |
 | phaseB_attribution | expected_gradients | gradient | 0.1754 | 0.0255 | 0.9 | 0.1754 | 0.5758 | 1.0 | 0.4656 |  |
-| phaseC_mechanistic | sparse_autoencoder | dim_reduction | 0.1526 | None | 0.75 | 0.1526 | 0.1828 | 0.0701 | 0.1251 |  |
-| phaseA_kording | A6_granger | correlational | 0.1364 | None | 0.8 | 0.1364 | 0.8841 | 0.2157 | 0.2963 |  |
-| phaseC_mechanistic | linear_probing_control_tasks | probing | 0.1082 | None | 0.85 | 0.1082 | None | 0.857 | 0.4826 |  |
+| phaseC_mechanistic | sparse_autoencoder | dim_reduction | 0.1526 | None | 0.75 | 0.1526 | 0.1828 | 0.9339 | 0.2965 |  |
+| phaseA_kording | A6_granger | correlational | 0.1364 | None | 0.8 | 0.1364 | 0.8841 | 0.6469 | 0.4273 |  |
+| phaseC_mechanistic | nmf_pca_dictionaries | dim_reduction | 0.1016 | None | 0.75 | 0.1016 | 0.7511 | 0.9663 | 0.4194 |  |
 
 ## Danger zone — high plausibility, low faithfulness (top 10)
 | Phase | Method | Tradition | Plaus(proxy) | Faith | Δ (plaus − faith) |
 |---|---|---|---|---|---|
-| phaseC_mechanistic | linear_probing_control_tasks | probing | 0.85 | 0.1082 | 0.7418 |
 | phaseB_attribution | expected_gradients | gradient | 0.9 | 0.1754 | 0.7246 |
 | phaseA_kording | A6_granger | correlational | 0.8 | 0.1364 | 0.6636 |
+| phaseC_mechanistic | nmf_pca_dictionaries | dim_reduction | 0.75 | 0.1016 | 0.6484 |
+| phaseC_mechanistic | linear_probing_control_tasks | probing | 0.85 | 0.2404 | 0.6096 |
 | phaseC_mechanistic | sparse_autoencoder | dim_reduction | 0.75 | 0.1526 | 0.5974 |
 | phaseA_kording | A3_tuning | correlational | 0.8 | 0.2129 | 0.5871 |
 | phaseB_attribution | guided_backprop | gradient | 0.9 | 0.3223 | 0.5777 |
 | phaseA_kording | A4_spike_word | correlational | 0.8 | 0.2246 | 0.5754 |
 | phaseB_attribution | integrated_gradients | gradient | 0.9 | 0.3794 | 0.5206 |
 | phaseB_attribution | vanilla_saliency | gradient | 0.9 | 0.3798 | 0.5202 |
-| phaseB_attribution | smoothgrad | gradient | 0.9 | 0.3799 | 0.5201 |
 
 ## Self-check: PASS
 - [x] every expected method present — ok

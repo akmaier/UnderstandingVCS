@@ -153,6 +153,12 @@ include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
 # the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
 include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
+# the canonical triad Minimality scorer M = |U*|/|U_hat| (03_methods.tex sec:triad);
+# guarded so re-includes across the Phase-A battery don't redefine the module.
+isdefined(@__MODULE__, :TriadSM) ||
+    include(joinpath(@__DIR__, "..", "common", "triad_sm.jl"))
+using .TriadSM: minimality_score
+
 import JSON
 
 const DEFAULT_OUT_DIR = joinpath(@__DIR__, "out")
@@ -522,7 +528,9 @@ struct GameResult
     interaction::InteractionStat
     triad_F::Float64
     triad_S::Float64
-    triad_M::Float64
+    triad_M::Union{Float64,Nothing}     # |U*|/|U_hat| (triad_sm); nothing if method names nothing
+    triad_M_note::String
+    legacy_minimality::Float64          # the old 1 − false-specificity rate (kept for reference)
     # SHARED-TESTBED provenance (redesign); "noop"/-1/false in the legacy path.
     state_kind::String             # "seeded_random_action_gameplay" | "noop"
     st_seed::Int
@@ -638,9 +646,14 @@ function run_game(game::AbstractString; target_frame = 30, horizon = 30,
     # S — generalisation to the held-out clamp value: Spearman of the lesion map
     #     (built on {0,alt}) vs the role under the UNSEEN value (+37).
     S = spearman(lesion_imp, heldout_role)
-    # M — minimal / right level: 1 − false-specificity rate (specificity claims
-    #     that the oracle contradicts).
-    M = 1.0 - false_rate
+    # M — minimality, standardized to the paper's definition M = |U*|/|U_hat|
+    #     (03_methods.tex sec:triad): |U*| = the true movers (oracle_role above the
+    #     floor), |U_hat| = the cells the lesion map NAMES (lesion_imp above its own
+    #     threshold). Uses the SAME attr (lesion_imp, the F claim) and odelta
+    #     (oracle_role, the F ground truth). The legacy 1 − false-specificity rate is
+    #     retained under extra.legacy_minimality.
+    M, _ustar, _uhat, M_note = minimality_score(lesion_imp, oracle_role)
+    legacy_M = 1.0 - false_rate
 
     if verbose
         println("[A2:$game] ---- scores ----")
@@ -651,7 +664,8 @@ function run_game(game::AbstractString; target_frame = 30, horizon = 30,
         println("[A2:$game]   interactions: $(interaction.n_missed)/$(interaction.n_pairs) " *
                 "pairs miss interaction (rate=$(round(interaction.missed_rate,digits=3))) " *
                 "max super-add Δ=$(round(interaction.max_superadd,digits=2))")
-        println("[A2:$game]   TRIAD F=$(round(F,digits=3)) S=$(round(S,digits=3)) M=$(round(M,digits=3))")
+        println("[A2:$game]   TRIAD F=$(round(F,digits=3)) S=$(round(S,digits=3)) " *
+                "M=$(M === nothing ? "null" : round(M,digits=3)) ($M_note; legacy=$(round(legacy_M,digits=3)))")
     end
 
     return GameResult(game, spec.settings_name, spec.rom_basename, cand_path,
@@ -659,7 +673,7 @@ function run_game(game::AbstractString; target_frame = 30, horizon = 30,
                       lesion_imp, lesion_fps, lesion_scr, lesion_works,
                       oracle_role, oracle_fps, oracle_scr, heldout_role,
                       rho, rho_control, n_flagged, n_false, false_rate,
-                      interaction, F, S, M,
+                      interaction, F, S, M, M_note, legacy_M,
                       st === nothing ? "noop" : "seeded_random_action_gameplay",
                       st === nothing ? -1 : st.seed,
                       st === nothing ? -1 : st.prefix,
@@ -751,6 +765,7 @@ catch
     "unknown"
 end
 _jnum(x::Real) = isfinite(x) ? Float64(x) : nothing
+_jnum(::Nothing) = nothing
 
 function _game_record(r::GameResult; where_str = "local", budget = Dict{String,Any}())
     cell_names = ["RAM[$(c.ram_index)]:$(c.concept)" for c in r.cands]
@@ -859,9 +874,12 @@ function _game_record(r::GameResult; where_str = "local", budget = Dict{String,A
                     "(built on {0,alt}) vs the per-unit role under the UNSEEN value base+37 " *
                     "(scored on the bit-exact re-run).",
                 "M" => _jnum(r.triad_M),
-                "M_note" => "1 − false-specificity rate: fraction of lesion-flagged " *
-                    "'specific' units the oracle says are actually generic (spurious " *
-                    "selectivity) — minimal & at the right level.",
+                "M_note" => "M = |U*|/|U_hat| (03_methods.tex sec:triad): " * r.triad_M_note,
+                "legacy_minimality" => _jnum(r.legacy_minimality),
+                "legacy_minimality_note" => "1 − false-specificity rate (the pre-" *
+                    "standardization M): fraction of lesion-flagged 'specific' units the " *
+                    "oracle says are actually generic. Retained for reference; the triad M " *
+                    "above is the paper's |U*|/|U_hat|.",
                 "interpretation" => "Phase A calibration baseline (experiment_design.md §4): " *
                     "the single-unit lesion is a RELATIVELY FAITHFUL classical method " *
                     "(high F) BUT structurally blind to interaction effects (the " *
@@ -890,7 +908,7 @@ function _write_game_npz(r::GameResult, npz_path)
         #  n_pairs, n_missed, missed_rate, max_superadd]
         "summary" => Float64[r.rho, r.rho_control, r.n_flagged_specific,
                              r.n_false_specific, r.false_specificity_rate,
-                             r.triad_F, r.triad_S, r.triad_M,
+                             r.triad_F, r.triad_S, r.triad_M === nothing ? NaN : r.triad_M,
                              r.interaction.n_pairs, r.interaction.n_missed,
                              r.interaction.missed_rate, r.interaction.max_superadd],
     ))
@@ -953,7 +971,7 @@ function write_combined(results::Vector{GameResult}; out_dir = DEFAULT_OUT_DIR,
     for (k, r) in enumerate(results)
         M[k, :] = [r.rho, r.rho_control, r.false_specificity_rate,
                    r.interaction.missed_rate, r.interaction.max_superadd,
-                   r.triad_F, r.triad_S, r.triad_M]
+                   r.triad_F, r.triad_S, r.triad_M === nothing ? NaN : r.triad_M]
     end
     cnp = joinpath(out_dir, "A2_lesions.npz")
     write_npz(cnp, Dict(
@@ -999,10 +1017,12 @@ function selftest(r::GameResult)
     for (nm, v) in (("rho", r.rho), ("F", r.triad_F), ("S", r.triad_S))
         @assert -1.0 - 1e-9 <= v <= 1.0 + 1e-9 "[A2:$(r.game)] $nm out of [-1,1]: $v"
     end
-    for (nm, v) in (("M", r.triad_M), ("false_rate", r.false_specificity_rate),
+    for (nm, v) in (("false_rate", r.false_specificity_rate),
                     ("int_missed_rate", r.interaction.missed_rate))
         @assert 0.0 - 1e-9 <= v <= 1.0 + 1e-9 "[A2:$(r.game)] $nm out of [0,1]: $v"
     end
+    # triad M = |U*|/|U_hat| ∈ (0,1] (or nothing when the method names nothing)
+    @assert r.triad_M === nothing || (0.0 - 1e-9 <= r.triad_M <= 1.0 + 1e-9) "[A2:$(r.game)] M out of (0,1]: $(r.triad_M)"
     @assert isfinite(r.interaction.max_superadd) "[A2:$(r.game)] max_superadd not finite"
 
     println("[A2:$(r.game)] SELF-CHECK PASS:")
@@ -1011,7 +1031,7 @@ function selftest(r::GameResult)
     println("[A2:$(r.game)]   positive control ρ = $(round(r.rho_control, digits=3))")
     println("[A2:$(r.game)]   Spearman ρ(lesion,role) = $(round(r.rho, digits=3))  (F)")
     println("[A2:$(r.game)]   false-specificity = $(r.n_false_specific)/$(r.n_flagged_specific) " *
-            "(M=$(round(r.triad_M, digits=3)))")
+            "(M=$(r.triad_M === nothing ? "null" : round(r.triad_M, digits=3)); legacy=$(round(r.legacy_minimality, digits=3)))")
     println("[A2:$(r.game)]   interactions missed = $(r.interaction.n_missed)/$(r.interaction.n_pairs) " *
             "(rate=$(round(r.interaction.missed_rate, digits=3)))")
     return true
@@ -1129,7 +1149,7 @@ function main(args = ARGS)
                 "ctrl=$(round(r.rho_control,digits=2)) " *
                 "false-spec=$(r.n_false_specific)/$(r.n_flagged_specific) " *
                 "int-miss=$(r.interaction.n_missed)/$(r.interaction.n_pairs) " *
-                "| F=$(round(r.triad_F,digits=2)) S=$(round(r.triad_S,digits=2)) M=$(round(r.triad_M,digits=2))")
+                "| F=$(round(r.triad_F,digits=2)) S=$(round(r.triad_S,digits=2)) M=$(r.triad_M === nothing ? "null" : round(r.triad_M,digits=2))")
     end
     for (g, m) in blockers; println("[A2]   FAIL $g — $m"); end
     return isempty(results) ? 1 : 0

@@ -240,23 +240,23 @@ circuit discovery. The leaderboard score is therefore a single scalar per method
 multi-metric in origin, and the per-method choice is recorded in the Supplement.
 
 Sufficiency asks whether the explanation could regenerate the behavior under interventions it
-has not seen. We treat $\mathrm{S}_{\mathrm{score}}$ as a held-out predictive estimator:
-$\hat{E}$ is fit (or its causal sites read off) on a calibration set of interventions and then
-asked to predict the true output $y'$ under a disjoint test set of held-out $\mathrm{do}(u)$
-edits, with the prediction compared to the bit-exact re-run. The score is either the fraction
-of held-out interventions whose predicted $y'$ matches the true $y'$ within a fixed
-output-type tolerance (exact for discrete indices and events, a small $\varepsilon$ band for
-continuous scores), or, where the explanation's claim is a graded per-cause effect (the
-dictionary, probing, and classical correlational analyses), the held-out predictive
-correlation between the claimed and the true $\Delta y$. Hence
+has not seen. We treat $\mathrm{S}_{\mathrm{score}}$ as a held-out predictive estimator: the
+explanation's per-cause claim, its attribution or the effect read off its causal sites, is
+read on a calibration split of interventions and used to predict the true effect on a disjoint
+held-out split of $\mathrm{do}(u)$ edits, each compared to the bit-exact re-run. We score it by
+the held-out predictive \emph{correlation} between the claimed and the true $\Delta y$ on that
+held-out split (Pearson, or Spearman for ranked outputs), so
 $\mathrm{S}_{\mathrm{score}}\in[-1,1]$: a value near zero means the explanation predicts no
 better than the unperturbed output, and a negative value means it predicts \emph{worse}, its
 held-out claim anti-correlated with the truth (the sparse autoencoder reaches
-$\mathrm{S}=-0.46$ on Pong, \Sectionname\ref{sec:results-c}). We deliberately do not define it
-through interchange interventions or scrubbing. Those are themselves
-mechanistic-interpretability methods under test in Phase~C, so using them would make the
-criterion circular. All three phases report $\mathrm{S}$ where the calibration and held-out
-split is defined, and its bootstrap intervals follow \Sectionname\ref{sec:scoring}.
+$\mathrm{S}=-0.46$ on Pong, \Sectionname\ref{sec:results-c}). Where the output admits only an
+exact match, a discrete index or event, we report instead the fraction of held-out
+interventions predicted correctly within a fixed tolerance, the $[0,1]$ special case of the
+same held-out test. We deliberately do not define it through interchange interventions or
+scrubbing. Those are themselves mechanistic-interpretability methods under test in Phase~C, so
+using them would make the criterion circular. All three phases report $\mathrm{S}$ where the
+calibration and held-out split is defined, and its bootstrap intervals follow
+\Sectionname\ref{sec:scoring}.
 
 Minimality asks whether the explanation is parsimonious and lives at the algorithmic level of
 the machine's own module decomposition. We define

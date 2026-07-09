@@ -1,7 +1,7 @@
 {
   "arrays": "sae_name_this_game.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "ddf78172",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -249,8 +249,8 @@
     "triad": {
       "F": 0.7826237921249264,
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
-      "M": 0.24820512820512822,
-      "M_note": "mean over causal-use features of target_share·single-cell-ness (monosemantic ⇒ ablate perturbs ≈1 cell AND that cell carries Δscreen)",
+      "M": 1.0,
+      "M_note": "|U*|=4 (oracle movers) / |U_hat|=2 (method above-threshold)",
       "S": 0.7493421220038967,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
@@ -268,7 +268,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783137397",
+  "timestamp": "1783608754",
   "value": 1.0,
   "where": "local"
 }

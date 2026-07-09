@@ -391,7 +391,7 @@ end
 struct Triad
     F::Float64
     S::Float64
-    M::Float64
+    M::Union{Float64,Nothing}       # |true edges|/|discovered edges|; nothing if 0 discovered
     F_note::String
     S_note::String
     M_note::String
@@ -414,12 +414,16 @@ function score_triad(rec::BitMatrix, tru::BitMatrix, heldout_true::BitMatrix,
     agree = count((R .& H) .| (.!R .& .!H .& offdiag))
     total = count(offdiag)
     S = total == 0 ? 1.0 : agree / total
-    # M — minimality / no spurious wiring: 1 − (false edges / recovered edges)
-    M = gs.n_rec_edges == 0 ? 1.0 : 1.0 - gs.fp / gs.n_rec_edges
+    # M — minimality = |U*|/|U_hat| over graph EDGES (paper sec:triad, the edge
+    #     analogue tools/xai_study/phaseC_mechanistic/path_patching.jl uses):
+    #     |true edges| / |discovered edges|, clamped to (0,1]; null if the method
+    #     discovered 0 edges. An over-claiming graph that names spurious edges pays
+    #     for every one. (Replaces the legacy edge precision = 1 − FP/n_discovered.)
+    M = gs.n_rec_edges == 0 ? nothing : min(1.0, gs.n_true_edges / gs.n_rec_edges)
     return Triad(F, S, M,
         "F1 of recovered data-flow edges vs the exact-oracle true edges ($(gs.n_nodes) candidate cells)",
         "off-diagonal edge-agreement between the base+17 recovered graph and the HELD-OUT base+37 true edge set (generalisation to an unseen intervention value, bit-exact re-run)",
-        "1 − over-claim rate: fraction of recovered edges the oracle says are spurious (false wiring)")
+        "M = |U*|/|U_hat| over edges: |true edges|=$(gs.n_true_edges) / |discovered edges|=$(gs.n_rec_edges)")
 end
 
 # ===========================================================================
@@ -553,7 +557,7 @@ function run_game(game::AbstractString; target_frame = 30, horizon = 30, verbose
                 "R=$(round(oracle_control.recall,digits=3)) " *
                 "F1=$(round(oracle_control.f1,digits=3)) GED=$(oracle_control.ged)")
         println("[A1:$game]   TRIAD: F=$(round(triad.F,digits=3))  " *
-                "S=$(round(triad.S,digits=3))  M=$(round(triad.M,digits=3))")
+                "S=$(round(triad.S,digits=3))  M=$(triad.M === nothing ? "null" : round(triad.M,digits=3))")
     end
 
     return GameResult(game, spec.settings_name, spec.rom_basename, cand_path,
@@ -599,6 +603,7 @@ catch
     "unknown"
 end
 _jnum(x::Real) = isfinite(x) ? Float64(x) : nothing
+_jnum(::Nothing) = nothing
 
 # adjacency -> list of [i,j] edge pairs (0-based candidate ordinals, off-diagonal)
 function _edge_list(A::BitMatrix)
@@ -710,7 +715,8 @@ function _write_game_npz(r::GameResult, npz_path)
         "oracle_method_graph"   => to_u8(r.oracle_method_graph),
         "scores"                => Float64[r.score.precision, r.score.recall, r.score.f1,
                                            Float64(r.score.ged), r.score.ged_norm],
-        "triad_FSM"             => Float64[r.triad.F, r.triad.S, r.triad.M],
+        "triad_FSM"             => Float64[r.triad.F, r.triad.S,
+                                           r.triad.M === nothing ? NaN : r.triad.M],
     ))
 end
 
@@ -760,7 +766,8 @@ function write_results(results::Vector{GameResult}; out_dir = OUT_DIR)
     M = zeros(Float64, n, 7)
     for (k, r) in enumerate(results)
         M[k, :] = [r.score.precision, r.score.recall, r.score.f1,
-                   Float64(r.score.ged), r.triad.F, r.triad.S, r.triad.M]
+                   Float64(r.score.ged), r.triad.F, r.triad.S,
+                   r.triad.M === nothing ? NaN : r.triad.M]
     end
     cnp = joinpath(out_dir, "A1_connectomics.npz")
     write_npz(cnp, Dict(
@@ -809,9 +816,11 @@ function selftest(r::GameResult)
         "P=$(oc.precision) R=$(oc.recall) F1=$(oc.f1) GED=$(oc.ged) (expected 1/1/1/0)"
 
     for (nm, v) in (("P", r.score.precision), ("R", r.score.recall), ("F1", r.score.f1),
-                    ("S", r.triad.S), ("M", r.triad.M), ("F", r.triad.F))
+                    ("S", r.triad.S), ("F", r.triad.F))
         @assert 0.0 - 1e-9 <= v <= 1.0 + 1e-9 "[A1:$(r.game)] $nm out of [0,1]: $v"
     end
+    # M = |true edges|/|discovered edges| ∈ (0,1] (or nothing when 0 edges discovered)
+    @assert r.triad.M === nothing || (0.0 - 1e-9 <= r.triad.M <= 1.0 + 1e-9) "[A1:$(r.game)] M out of (0,1]: $(r.triad.M)"
     @assert r.score.ged >= 0 "[A1:$(r.game)] GED negative"
 
     println("[A1:$(r.game)] SELF-CHECK PASS:")
@@ -821,7 +830,7 @@ function selftest(r::GameResult)
     println("[A1:$(r.game)]   recovered F1 = $(round(r.score.f1, digits = 3))  " *
             "P = $(round(r.score.precision, digits = 3))  R = $(round(r.score.recall, digits = 3))")
     println("[A1:$(r.game)]   TRIAD F=$(round(r.triad.F,digits=3)) " *
-            "S=$(round(r.triad.S,digits=3)) M=$(round(r.triad.M,digits=3))")
+            "S=$(round(r.triad.S,digits=3)) M=$(r.triad.M === nothing ? "null" : round(r.triad.M,digits=3))")
     return true
 end
 
@@ -883,7 +892,7 @@ function main(args = ARGS)
                 "P=$(round(r.score.precision,digits=2)) R=$(round(r.score.recall,digits=2)) " *
                 "F1=$(round(r.score.f1,digits=2)) GED=$(r.score.ged) " *
                 "| ctrl F1=$(round(r.oracle_control.f1,digits=2)) " *
-                "| F=$(round(r.triad.F,digits=2)) S=$(round(r.triad.S,digits=2)) M=$(round(r.triad.M,digits=2))")
+                "| F=$(round(r.triad.F,digits=2)) S=$(round(r.triad.S,digits=2)) M=$(r.triad.M === nothing ? "null" : round(r.triad.M,digits=2))")
     end
     isempty(blockers) || println("[A1] blockers: $blockers")
     println("[A1] wrote:")

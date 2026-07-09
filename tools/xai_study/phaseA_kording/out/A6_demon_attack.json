@@ -1,7 +1,7 @@
 {
   "arrays": "A6_demon_attack.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "ddf78172",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -273,11 +273,13 @@
     "triad": {
       "F": 0.25641025641025644,
       "F_note": "F1 of the Granger-inferred directed edges vs the exact-oracle true data-flow edges (15 candidate cells)",
-      "M": 0.23809523809523814,
-      "M_note": "1 − false-edge rate: fraction of Granger-inferred edges the oracle says are spurious (temporal precedence ≠ causation)",
+      "M": 0.8571428571428571,
+      "M_note": "M = |U*|/|U_hat| over edges: |true edges|=18 / |discovered edges|=21",
       "S": 0.8761904761904762,
       "S_note": "off-diagonal directed-edge agreement between the Granger graph and the HELD-OUT base+37 true data-flow (generalisation to an unseen intervention, bit-exact re-run)",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): Granger causality infers TEMPORAL PRECEDENCE, which is NOT the true causal data-flow direction. On a deterministic register-transfer machine the two demonstrably disagree — false_edge_rate>0, missed_edge_rate>0, and direction_disagreement>0 quantify the departure from the known data-flow.",
+      "legacy_minimality": 0.23809523809523814,
+      "legacy_minimality_note": "1 − false-edge rate (the pre-standardization edge M). Retained for reference; the triad M above is the paper's |true edges|/|discovered edges|.",
       "n_inferred_edges": 21,
       "n_nodes": 15,
       "n_true_edges": 18
@@ -294,7 +296,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "directed data-flow edges (CPU/TIA/RIOT subsystems + candidate RAM cells)",
-  "timestamp": "1783124674",
+  "timestamp": "1783605247",
   "value": 0.7619047619047619,
   "where": "local"
 }

@@ -102,7 +102,7 @@ include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 # shared triad helpers (jnum_or_null for JSON-null on undefined S/M); guarded.
 isdefined(@__MODULE__, :TriadSM) ||
     include(joinpath(@__DIR__, "..", "common", "triad_sm.jl"))
-using .TriadSM: jnum_or_null
+using .TriadSM: jnum_or_null, minimality_score
 
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders", "seaquest", "ms_pacman", "qbert"]
@@ -326,6 +326,12 @@ struct CSResult
     true_screen_sim::Float64            # frac of screen pixels preserved (TRUE)
     wrong_screen_sim::Float64           # frac of screen pixels preserved (WRONG)
     n_true_edges::Int
+    # M = |U*|/|U_hat| inputs (paper sec:triad, CELL-valued hypothesis): the oracle
+    # per-cell true effect on the behaviour (odelta) and the hypothesis's per-cell
+    # named-strength (attr = 1 for in-circuit candidate cells). |U*| = oracle movers;
+    # |U_hat| = named circuit cells.
+    m_attr::Vector{Float64}             # per-candidate-cell named strength (in true circuit?)
+    m_odelta::Vector{Float64}           # per-candidate-cell oracle true effect on the outputs
     # the per-output preservation matrices (outputs × sources), for the npz
     true_preserve_mat::Matrix{Float64}
     wrong_preserve_mat::Matrix{Float64}
@@ -549,12 +555,38 @@ function _run_game_body(; game, target_frame, horizon, total, base_actions, base
                        "discriminates=$discriminates  true_edges=$n_true_edges " *
                        "outputs=$(length(outs)) resample_vals/cell~$(maximum(length.(values(resamp))))")
 
+    # ---- M = |U*|/|U_hat| inputs (paper sec:triad; CELL-valued hypothesis) -------
+    # odelta[k] = the oracle's TRUE per-cell effect of cell k on the behaviour: how
+    # many output cells change when cell k is resample-ablated (its oracle do-set
+    # value-set), all other cells at base. This is exactly the oracle edge test the
+    # WRONG-hypothesis "is_live" check uses, evaluated for every candidate cell. A
+    # cell with odelta>0 is a genuine driver of the behaviour (a member of U*).
+    m_odelta = zeros(Float64, n)
+    for k in 1:n
+        # count of output cells moved by the STRONGEST resample value of cell k.
+        best = 0
+        for v in resamp[k]
+            env = deepcopy(base_ckpt)
+            intervene_ram!(env, cand_idx[k], v)
+            for a in Int.(tail); env_step!(env, a); end
+            sc = snapshot(env, length(tail))
+            c = count(Int(sc.ram[cand_idx[o] + 1]) != clean_out[oi]
+                      for (oi, o) in enumerate(outs))
+            best = max(best, c)
+        end
+        m_odelta[k] = Float64(best)
+    end
+    # attr[k] = the hypothesis's per-cell named strength: 1 for the cells the TRUE
+    # hypothesis NAMES (the circuit = {outputs} ∪ ancestors), 0 otherwise. U_hat =
+    # the above-threshold named set = the named circuit cells.
+    m_attr = [Float64(k in true_circuit ? 1.0 : 0.0) for k in 1:n]
+
     return CSResult(game, target_frame, horizon, n, cand_idx, cand_concepts,
                     length(outs), outs, sort(collect(true_circuit)),
                     sort(collect(wrong_circuit)), size(true_mat, 2), size(wrong_mat, 2),
                     bit_exact, true_preserved, wrong_preserved, true_pass, wrong_pass,
                     discriminates, true_cell_sim, wrong_cell_sim, true_scr_sim,
-                    wrong_scr_sim, n_true_edges, true_mat, wrong_mat,
+                    wrong_scr_sim, n_true_edges, m_attr, m_odelta, true_mat, wrong_mat,
                     st === nothing ? "noop" : "seeded_random_action_gameplay",
                     st === nothing ? -1 : st.seed,
                     st === nothing ? -1 : st.prefix,
@@ -651,23 +683,31 @@ function write_game_result(r::CSResult; out_dir = OUT_DIR, where_str = "local")
             # the TRUE hypothesis (leaderboard-oriented value, UNCHANGED). S is the
             # SAME held-out sufficiency test the sibling ACDC uses: the hypothesised
             # circuit alone (non-circuit parents resample-scrubbed) reproduces the
-            # clean behaviour under held-out resample trials ⇒ S = true_preserved. M =
-            # |U*|/|U_named|: the minimal true circuit vs the whole candidate state
-            # (the named circuit's parsimony against recording every cell).
-            "triad" => let ncirc = length(r.true_circuit), ncand = r.n_candidates
+            # clean behaviour under held-out resample trials ⇒ S = true_preserved
+            # (UNCHANGED). M standardized to the paper's definition M = |U*|/|U_hat|
+            # via the canonical cell/cause scorer TriadSM.minimality_score: the
+            # hypothesis is CELL-valued (its circuit is a set of candidate cells), so
+            # attr = the hypothesis's per-cell named-strength (1 for in-circuit cells)
+            # and odelta = the oracle's TRUE per-cell effect on the behaviour (# output
+            # cells cell k moves under its resample do-set). Then |U*| = the oracle's
+            # movers (cells with nonzero true effect) and |U_hat| = the cells the
+            # hypothesis NAMES (its circuit). A circuit that names cells the oracle
+            # says never drive the behaviour pays for each one.
+            "triad" => let mres = minimality_score(r.m_attr, r.m_odelta)
+                Mval, ustar, uhat, mnote = mres
                 Dict{String,Any}(
                     "F" => jnum_or_null(clamp(r.true_preserved, 0.0, 1.0)),
                     "S" => jnum_or_null(clamp(r.true_preserved, 0.0, 1.0)),
                     "S_note" => "held-out scrubbing sufficiency: the circuit alone " *
                         "(non-circuit parents resample-scrubbed) reproduces the clean " *
                         "readouts over held-out resample trials (fraction preserved, bit-exact re-run)",
-                    "M" => jnum_or_null(ncand == 0 ? nothing : min(1.0, ncirc / ncand)),
-                    "M_note" => "|U*|=$ncirc minimal true-circuit cells / |U_named|=$ncand " *
-                        "candidate cells (circuit parsimony vs recording the whole candidate state)",
-                    "M_true_minimal_size" => ncirc, "M_named_size" => ncand,
+                    "M" => jnum_or_null(Mval),
+                    "M_note" => mnote * " (CELL-valued hypothesis: |U*|=oracle movers " *
+                        "over the behaviour, |U_hat|=named circuit cells)",
+                    "M_true_minimal_size" => ustar, "M_named_size" => uhat,
                     "definition" => "F∧S∧M triad (03_methods.tex sec:triad): F = scrubbing-" *
                         "preserved performance (unchanged); S = held-out scrubbing sufficiency; " *
-                        "M = |true circuit|/|candidate cells|.")
+                        "M = |U*|/|U_hat| (true minimal cause set / method-named cell set).")
             end,
             "substrate" => "jutari (Julia, HARD) — real-ROM bit-exact path; every " *
                            "scrub is a genuine intervention + re-run on the true ROM.",

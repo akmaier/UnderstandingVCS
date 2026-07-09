@@ -122,7 +122,7 @@ include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 # shared triad helpers (jnum_or_null for JSON-null on undefined S/M); guarded.
 isdefined(@__MODULE__, :TriadSM) ||
     include(joinpath(@__DIR__, "..", "common", "triad_sm.jl"))
-using .TriadSM: jnum_or_null
+using .TriadSM: jnum_or_null, minimality_score
 
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders", "seaquest", "ms_pacman", "qbert"]
@@ -336,6 +336,13 @@ struct LensResult
     earliest_logit::Vector{Int}        # earliest step the logit lens decodes (R²≥τ), -1 if none
     earliest_tuned::Vector{Int}        # earliest step the tuned lens decodes (R²≥τ), -1 if none
     faithful_weight_frac::Vector{Float64}  # tuned-lens faithful-weight fraction at earliest step
+    # per-SITE aggregates for the standardised M = |U*|/|U_hat| (attr vs odelta):
+    #   readout_weight_per_site = the lens's per-site CLAIM = Σ_v |A_t[site]| readout
+    #     weight mass at each var v's earliest-decode step (the sites the lens points at);
+    #   causal_effect_per_site  = the oracle's per-site causal effect = #vars for which
+    #     do(site:=site+17) changes the final value (Σ_v causal_mask[v,site]).
+    readout_weight_per_site::Vector{Float64}   # (site,)  lens claim per RAM site
+    causal_effect_per_site::Vector{Float64}    # (site,)  oracle movers per RAM site
     causal_mask::Matrix{Bool}          # (var, site): is site causal for var's final value? (oracle)
     best_tuned_per_var::Vector{Float64}  # per-var peak (over steps) held-out tuned R² (clipped≥0)
     # headline scalars
@@ -483,6 +490,11 @@ function _run_game_body(; game, target_frame, horizon, base_ckpt, src_ckpt, tail
     earliest_logit  = fill(-1, nvar)
     earliest_tuned  = fill(-1, nvar)
     faithful_weight_frac = fill(NaN, nvar)
+    # per-site accumulator of the lens's readout-weight CLAIM (the attr vector for M):
+    # summed over variables at each var's earliest tuned-decode step (the step whose
+    # |A_t| mass is scored against the causal mask). Sites the lens never points at
+    # stay 0 → they are not "named" and don't inflate |U_hat|.
+    readout_weight_per_site = zeros(Float64, RAM_SIZE)
 
     # FINAL value of variable v = its own cell at the LAST recorded step (row H+1),
     # per trajectory. The lens decodes THIS from the intermediate state at step t.
@@ -531,6 +543,8 @@ function _run_game_body(; game, target_frame, horizon, base_ckpt, src_ckpt, tail
                 total_mass = sum(wmag) + 1e-12
                 faithful_mass = isempty(causal_sites) ? 0.0 : sum(wmag[causal_sites])
                 faithful_weight_frac[v] = faithful_mass / total_mass
+                # accumulate the lens's per-site readout-weight claim (for the M vector).
+                readout_weight_per_site .+= wmag
             end
         end
     end
@@ -557,6 +571,12 @@ function _run_game_body(; game, target_frame, horizon, base_ckpt, src_ckpt, tail
     mean_best_tuned_r2 = isempty(finite_best) ? NaN : mean(finite_best)
     finite_fwf = filter(isfinite, faithful_weight_frac)
     mean_faithful_weight_frac = isempty(finite_fwf) ? NaN : mean(finite_fwf)
+    # the oracle's per-SITE causal effect = #variables for which do(site:=site+17)
+    # changes the final value (Σ_v causal_mask[v, site]); the odelta vector for M.
+    causal_effect_per_site = zeros(Float64, RAM_SIZE)
+    for s in 1:nvar
+        causal_effect_per_site[sites[s] + 1] = Float64(count(causal_mask[:, s]))
+    end
     # fraction of vars the tuned lens decodes strictly EARLIER than the logit lens
     earlier = 0; comparable = 0
     for v in 1:nvar
@@ -579,6 +599,7 @@ function _run_game_body(; game, target_frame, horizon, base_ckpt, src_ckpt, tail
                       sites, concepts, var_names, bit_exact,
                       logit_fid_true, logit_fid_final, tuned_fid_final,
                       earliest_logit, earliest_tuned, faithful_weight_frac,
+                      readout_weight_per_site, causal_effect_per_site,
                       causal_mask, best_tuned_per_var,
                       logit_true_fidelity, mean_tuned_final_r2,
                       median_tuned_final_r2, mean_best_tuned_r2,
@@ -649,11 +670,13 @@ function write_game_result(r::LensResult; out_dir = OUT_DIR)
         "state" => r.state_kind == "noop" ? "f$(r.target_frame)+$(r.horizon)" :
                    "gameplay(seed=$(r.st_seed),prefix=$(r.st_prefix))+$(r.horizon)",
         "target_output" => "per-stage readout of intermediate VCS state -> a variable's final value",
-        # headline §R scalar: logit-lens fidelity to the TRUE intermediate value
-        # (the DoD metric). =1.0 by construction on the VCS (the readout IS the
-        # cell) — the positive control that the readout point is the true site.
-        "metric_name" => "logit_lens_fidelity_true_intermediate",
-        "value" => r.logit_true_fidelity,
+        # headline §R scalar: the CAUSAL-agreement faithfulness = the fraction of the
+        # lens's readout WEIGHT mass that sits on TRUE-CAUSAL sites (oracle causal mask).
+        # Low ⇒ the lens rides a spurious correlate (present≠used). This replaces the
+        # old readout-fidelity-to-true-intermediate (=1.0 by construction), which is kept
+        # under extra.readout_fidelity_true_intermediate.
+        "metric_name" => "logit_lens_faithful_weight_fraction_vs_causal_mask",
+        "value" => (isfinite(r.mean_faithful_weight_frac) ? r.mean_faithful_weight_frac : nothing),
         "stderr" => nothing,
         "ci" => nothing,
         "n" => r.n_vars,
@@ -664,27 +687,39 @@ function write_game_result(r::LensResult; out_dir = OUT_DIR)
         "timestamp" => string(round(Int, time())),
         "arrays" => basename(npz_path),
         "extra" => Dict{String,Any}(
-            # F∧S∧M triad (paper sec:triad). F = logit-lens fidelity to the TRUE
-            # intermediate value (leaderboard-oriented value, UNCHANGED). M is the
-            # tuned-lens FAITHFUL-WEIGHT fraction: the share of the readout weight that
-            # lands on truly-causal sites (a minimality proxy — a parsimonious readout
-            # places its mass on the causal cell, not on spurious ones); reported as a
-            # weight-share proxy, since the lens names a readout DIRECTION rather than a
-            # discrete cell set. S is UNDEFINED: the lens emits a readout fidelity, not
-            # a held-out do(u) output prediction.
-            "triad" => Dict{String,Any}(
-                "F" => jnum_or_null(clamp(r.logit_true_fidelity, 0.0, 1.0)),
-                "S" => nothing,
-                "S_note" => "S undefined: the logit/tuned lens reports readout fidelity to the " *
-                    "true intermediate, not a held-out do(u) output prediction",
-                "M" => jnum_or_null(clamp(r.mean_faithful_weight_frac, 0.0, 1.0)),
-                "M_note" => "minimality proxy = mean tuned-lens faithful-weight fraction " *
-                    "(share of readout weight on truly-causal sites; a spurious readout that " *
-                    "reads off-causal sites scores low). Weight-share proxy, not a set-cardinality " *
-                    "ratio: the lens names a readout direction, not a discrete cell set.",
-                "definition" => "F∧S∧M triad (03_methods.tex sec:triad): F = lens fidelity to " *
-                    "the true intermediate (unchanged); M = faithful-weight-fraction proxy; " *
-                    "S undefined for a readout method."),
+            # F∧S∧M triad (paper sec:triad). F is now the CAUSAL-agreement faithfulness:
+            # the fraction of the lens's readout WEIGHT mass on TRUE-CAUSAL sites (oracle
+            # causal mask). Low ⇒ the lens rides a spurious correlate (present≠used) — the
+            # discriminating VCS metric, NOT the readout-fidelity-to-true-intermediate
+            # (=1.0 by construction), which is kept under readout_fidelity_true_intermediate.
+            # M is STANDARDISED to |U*|/|U_hat| via TriadSM: attr = the lens's per-site
+            # readout-weight claim (Σ_v |A_t[site]| at each var's earliest-decode step),
+            # odelta = the oracle's per-site causal effect (#vars do(site) moves). S is
+            # UNDEFINED: the lens emits a readout, not a held-out do(u) output prediction.
+            "triad" => let attr = r.readout_weight_per_site, od = r.causal_effect_per_site
+                Mv, ustar, uhat, mnote = minimality_score(attr, od)
+                Dict{String,Any}(
+                    "F" => jnum_or_null(isfinite(r.mean_faithful_weight_frac) ?
+                                        clamp(r.mean_faithful_weight_frac, 0.0, 1.0) : nothing),
+                    "F_note" => "causal-agreement F = mean faithful-weight fraction — the share " *
+                        "of the tuned-lens readout weight |A_t| that lands on TRUE-CAUSAL sites " *
+                        "(oracle causal mask). Low ⇒ the lens reads a spurious correlate " *
+                        "(present≠used); NOT the readout fidelity to the true intermediate (=1.0).",
+                    "S" => nothing,
+                    "S_note" => "S undefined: the logit/tuned lens reports a readout, " *
+                        "not a held-out do(u) output prediction",
+                    "M" => jnum_or_null(Mv),
+                    "M_note" => mnote,
+                    "M_true_minimal_size" => ustar, "M_named_size" => uhat,
+                    "definition" => "F∧S∧M triad (03_methods.tex sec:triad): F = lens " *
+                        "faithful-weight fraction vs the oracle causal mask (causal agreement); " *
+                        "M = |U*|/|U_hat| (oracle per-site movers / lens-named readout sites); " *
+                        "S undefined for a readout method.")
+            end,
+            # the OLD headline (readout fidelity to the TRUE intermediate = 1.0 by
+            # construction on the VCS — the positive control that the readout point is
+            # the true site). Kept for provenance; NO LONGER the leaderboard F.
+            "readout_fidelity_true_intermediate" => r.logit_true_fidelity,
             "substrate" => "jutari (Julia, HARD) — real-ROM bit-exact path",
             "variables" => var_meta,
             "bit_exact_rerun" => r.bit_exact,

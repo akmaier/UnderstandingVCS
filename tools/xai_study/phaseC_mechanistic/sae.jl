@@ -124,6 +124,11 @@ include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
 # the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
 include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
+# shared triad helpers — the canonical M = |U*|/|U_hat| scorer (03_methods.tex
+# sec:triad). Guarded so a repeated include across sibling runners is a no-op.
+isdefined(@__MODULE__, :TriadSM) ||
+    include(joinpath(@__DIR__, "..", "common", "triad_sm.jl"))
+
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders",
                     "seaquest", "ms_pacman", "qbert"]
@@ -766,28 +771,20 @@ function _pearson(a::AbstractVector, b::AbstractVector)
 end
 _spearman(a::AbstractVector, b::AbstractVector) = _pearson(_rank(a), _rank(b))
 
-"""M = monosemanticity = mean over the causal-use features of (target_share with a
-single-cell-leakage bonus): a feature is minimal/monosemantic iff ablating it
-perturbs ≈one cell AND that cell carries the screen-effect. If no causal-use
-feature exists, M falls back to 1 − decoder polysemy proxy (set to 0.0, reported)."""
+"""M standardized to the paper's definition (03_methods.tex sec:triad): M =
+|U*|/|U_hat| ∈ (0,1], via the canonical cell/cause scorer TriadSM.minimality_score.
+This is a CELL/cause method, so U* = the oracle's true movers (cells with nonzero
+per-cell causal importance) and U_hat = the cells the SAE NAMES — the above-threshold
+set of its per-cell recovery vector (the SAME `recovery` used for F = Spearman(recovery,
+oracle.importance)). An SAE that spreads mass over the whole state pays for every
+spurious cell. Returns NaN (⇒ JSON null) when the method names nothing / no true mover
+exists at this state. F and S are UNCHANGED."""
 function score_triad(recovery::Vector{Float64}, oracle::OracleImportance,
                      cu::Vector{CausalUse})
     F = _spearman(recovery, oracle.importance)
     S = _pearson(recovery, oracle.held_out)
-    if isempty(cu)
-        M = 0.0
-        Mnote = "no matched∧causal feature to ablate at this state → M undefined, reported 0.0"
-    else
-        # each feature's monosemanticity = target_share scaled by single-cell-ness
-        ms = Float64[]
-        for c in cu
-            single = c.decode_leakage <= 1 ? 1.0 : 1.0 / c.decode_leakage
-            push!(ms, c.target_share * (0.5 + 0.5 * single))
-        end
-        M = Statistics.mean(ms)
-        Mnote = "mean over causal-use features of target_share·single-cell-ness " *
-                "(monosemantic ⇒ ablate perturbs ≈1 cell AND that cell carries Δscreen)"
-    end
+    Mraw, ustar, uhat, Mnote = TriadSM.minimality_score(recovery, oracle.importance)
+    M = Mraw === nothing ? NaN : Float64(Mraw)
     return Triad(F, S, M,
         "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
         "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
@@ -1043,7 +1040,8 @@ function selftest(r::GameResult)
     @assert 0.0 <= r.matched_fraction <= 1.0 "match-rate out of [0,1]"
     @assert -1.0 - 1e-9 <= r.triad.F <= 1.0 + 1e-9 "F out of [-1,1]: $(r.triad.F)"
     @assert -1.0 - 1e-9 <= r.triad.S <= 1.0 + 1e-9 "S out of [-1,1]: $(r.triad.S)"
-    @assert  0.0 - 1e-9 <= r.triad.M <= 1.0 + 1e-9 "M out of [0,1]: $(r.triad.M)"
+    # M = |U*|/|U_hat| ∈ (0,1], or NaN (undefined — SAE names nothing / no true mover).
+    @assert isnan(r.triad.M) || (0.0 - 1e-9 <= r.triad.M <= 1.0 + 1e-9) "M out of (0,1]: $(r.triad.M)"
 
     println("[sae:$(r.game)] SELF-CHECK PASS:")
     println("[sae:$(r.game)]   bit-exact re-run: $(r.bit_exact)  oracle causal cells: $n_causal/$(length(r.cands)) (pos.ctrl F=$(round(self_F,digits=3)))")

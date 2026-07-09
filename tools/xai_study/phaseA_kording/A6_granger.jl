@@ -728,9 +728,10 @@ end
 # F / S / M (the correctness triad, scored against the exact data-flow oracle).
 # ============================================================================
 struct Triad
-    F::Float64; S::Float64; M::Float64
+    F::Float64; S::Float64; M::Union{Float64,Nothing}
     F_note::String; S_note::String; M_note::String
     n_nodes::Int; n_true_edges::Int; n_inferred_edges::Int
+    legacy_minimality::Float64        # the old 1 − false-edge rate (kept for reference)
 end
 
 """F = F1 of the Granger graph vs the true data-flow edges. S = generalisation to a
@@ -752,13 +753,18 @@ function score_triad(inferred::BitMatrix, tru::BitMatrix, heldout_true::BitMatri
         (inferred[i, j] == heldout_true[i, j]) && (agree += 1)
     end
     S = total == 0 ? 1.0 : agree / total
-    # M — minimality: 1 − false-edge rate (spurious directed wiring).
-    M = 1.0 - false_edge_rate
+    # M — minimality = |U*|/|U_hat| over graph EDGES (paper sec:triad, the edge
+    #     analogue tools/xai_study/phaseC_mechanistic/path_patching.jl uses):
+    #     |true edges| / |discovered (Granger-inferred) edges|, clamped to (0,1];
+    #     null if the method inferred 0 edges. (Replaces the legacy edge precision =
+    #     1 − false-edge rate.)
+    M = n_inf == 0 ? nothing : min(1.0, n_tru / n_inf)
+    legacy_M = 1.0 - false_edge_rate
     return Triad(F, S, M,
         "F1 of the Granger-inferred directed edges vs the exact-oracle true data-flow edges ($n candidate cells)",
         "off-diagonal directed-edge agreement between the Granger graph and the HELD-OUT base+37 true data-flow (generalisation to an unseen intervention, bit-exact re-run)",
-        "1 − false-edge rate: fraction of Granger-inferred edges the oracle says are spurious (temporal precedence ≠ causation)",
-        n, n_tru, n_inf)
+        "M = |U*|/|U_hat| over edges: |true edges|=$n_tru / |discovered edges|=$n_inf",
+        n, n_tru, n_inf, legacy_M)
 end
 
 # ============================================================================
@@ -928,7 +934,8 @@ function compute_game(game::AbstractString; target_frame = nothing, horizon = no
                 "DIR-DISAGREE=$(round(dda,digits=3))")
         println("[A6:$game]   positive control (true-graph-as-method): " *
                 "false-edge=$(round(cfer,digits=3)) missed-edge=$(round(cmer,digits=3)) F1=$(round(cf1,digits=3))")
-        println("[A6:$game]   TRIAD F=$(round(triad.F,digits=3)) S=$(round(triad.S,digits=3)) M=$(round(triad.M,digits=3))")
+        println("[A6:$game]   TRIAD F=$(round(triad.F,digits=3)) S=$(round(triad.S,digits=3)) " *
+                "M=$(triad.M === nothing ? "null" : round(triad.M,digits=3)) (legacy=$(round(triad.legacy_minimality,digits=3)))")
     end
 
     return GameResult(game, target_frame, horizon, traj_frames, trace, in_window,
@@ -1001,7 +1008,7 @@ function selftest(r::GameResult)
     end
     @assert 0.0 - 1e-9 <= r.triad.F <= 1.0 + 1e-9 "F out of [0,1]: $(r.triad.F)"
     @assert 0.0 - 1e-9 <= r.triad.S <= 1.0 + 1e-9 "S out of [0,1]: $(r.triad.S)"
-    @assert 0.0 - 1e-9 <= r.triad.M <= 1.0 + 1e-9 "M out of [0,1]: $(r.triad.M)"
+    @assert r.triad.M === nothing || (0.0 - 1e-9 <= r.triad.M <= 1.0 + 1e-9) "M out of (0,1]: $(r.triad.M)"
 
     println("[A6:$(r.game)] SELF-CHECK PASS:")
     println("[A6:$(r.game)]   bit-exact baseline re-run: $(r.bit_exact)")
@@ -1010,7 +1017,7 @@ function selftest(r::GameResult)
     println("[A6:$(r.game)]   cell FALSE-EDGE=$(round(r.cell_false_edge_rate,digits=3)) " *
             "MISSED-EDGE=$(round(r.cell_missed_edge_rate,digits=3)) " *
             "DIR-DISAGREE=$(round(r.cell_direction_disagreement,digits=3))")
-    println("[A6:$(r.game)]   F=$(round(r.triad.F,digits=3)) S=$(round(r.triad.S,digits=3)) M=$(round(r.triad.M,digits=3))")
+    println("[A6:$(r.game)]   F=$(round(r.triad.F,digits=3)) S=$(round(r.triad.S,digits=3)) M=$(r.triad.M === nothing ? "null" : round(r.triad.M,digits=3))")
     return true
 end
 
@@ -1023,6 +1030,7 @@ catch
     "unknown"
 end
 _json_num(x::Real) = isfinite(x) ? Float64(x) : nothing
+_json_num(::Nothing) = nothing
 
 const CANDIDATES_DIR_REL = joinpath("tools", "xai_study", "t3", "out")
 function resolve_candidates(game::AbstractString)
@@ -1155,6 +1163,10 @@ function write_game(r::GameResult; out_dir = OUT_DIR)
                 "F" => _json_num(r.triad.F), "F_note" => r.triad.F_note,
                 "S" => _json_num(r.triad.S), "S_note" => r.triad.S_note,
                 "M" => _json_num(r.triad.M), "M_note" => r.triad.M_note,
+                "legacy_minimality" => _json_num(r.triad.legacy_minimality),
+                "legacy_minimality_note" => "1 − false-edge rate (the pre-standardization " *
+                    "edge M). Retained for reference; the triad M above is the paper's " *
+                    "|true edges|/|discovered edges|.",
                 "n_nodes" => r.triad.n_nodes,
                 "n_true_edges" => r.triad.n_true_edges,
                 "n_inferred_edges" => r.triad.n_inferred_edges,
@@ -1206,7 +1218,8 @@ function write_game(r::GameResult; out_dir = OUT_DIR)
                                              r.cell_direction_disagreement,
                                              r.subsys.false_edge_rate, r.subsys.missed_edge_rate,
                                              r.subsys.direction_disagreement],
-        "triad_FSM"               => Float64[r.triad.F, r.triad.S, r.triad.M],
+        "triad_FSM"               => Float64[r.triad.F, r.triad.S,
+                                             r.triad.M === nothing ? NaN : r.triad.M],
     ))
     return json_path, npz_path
 end

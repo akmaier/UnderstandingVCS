@@ -1,7 +1,7 @@
 {
   "arrays": "A4_riverraid.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "ddf78172",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -164,11 +164,13 @@
     "triad": {
       "F": 0.13604327904903238,
       "F_note": "Spearman(|pairwise corr|, oracle cell-cell coupling) over 231 candidate-cell pairs",
-      "M": 0.0357142857142857,
-      "M_note": "1 − over-claim rate: fraction of |corr|≥0.7-flagged pairs the oracle says are NOT coupled (correlation over-grouping)",
+      "M": 0.11029411764705882,
+      "M_note": "M = |U*|/|U_hat| over candidate-cell pairs (03_methods.tex sec:triad): |U*|=15 (oracle movers) / |U_hat|=136 (method above-threshold)",
       "S": -0.02673551747877135,
       "S_note": "Pearson(|pairwise corr|, held-out do(base+37) coupling) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): pairwise correlation structure GENERALLY OVER-GROUPS — it lumps causally-unrelated cells that merely co-vary (the present≠used trap, pairwise). F<1 + over_grouping_ratio>0 quantify the departure from the true coupling.",
+      "legacy_minimality": 0.0357142857142857,
+      "legacy_minimality_note": "1 − over-claim rate (the pre-standardization M): fraction of |corr|-flagged pairs the oracle says are NOT coupled. Retained for reference; the triad M above is the paper's |U*|/|U_hat|.",
       "n_pairs": 231
     },
     "weak_pairwise_strong_global": {
@@ -199,7 +201,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "cell-cell-coupling",
-  "timestamp": "1783125730",
+  "timestamp": "1783606361",
   "value": 0.13604327904903238,
   "where": "local"
 }

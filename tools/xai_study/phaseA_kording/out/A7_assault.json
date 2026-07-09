@@ -1,7 +1,7 @@
 {
   "arrays": "A7_assault.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "ddf78172",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -229,19 +229,23 @@
     "triad_nmf": {
       "F": -0.27026824030006685,
       "F_note": "Spearman(nmf per-cell recovery score, oracle causal importance) over candidate cells",
-      "M": 0.375,
-      "M_note": "1 − over-claim rate: fraction of nmf-surfaced cells (recovery ≥ q0.5) the oracle says are non-causal (variance≠causal trap)",
+      "M": 0.5625,
+      "M_note": "M = |U*|/|U_hat| (03_methods.tex sec:triad, nmf): |U*|=9 (oracle movers) / |U_hat|=16 (method above-threshold)",
       "S": -0.17266471821232066,
       "S_note": "Pearson(nmf recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
-      "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): dim-reduction surfaces high-VARIANCE axes, which are NOT the causal cells (variance ≠ causal role — present ≠ used). F<1 + low matched-component fraction quantify the departure from the true causal structure."
+      "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): dim-reduction surfaces high-VARIANCE axes, which are NOT the causal cells (variance ≠ causal role — present ≠ used). F<1 + low matched-component fraction quantify the departure from the true causal structure.",
+      "legacy_minimality": 0.375,
+      "legacy_minimality_note": "1 − over-claim rate (the pre-standardization M). Retained for reference; the triad M above is the paper's |U*|/|U_hat|."
     },
     "triad_pca": {
       "F": -0.0834448124185928,
       "F_note": "Spearman(pca per-cell recovery score, oracle causal importance) over candidate cells",
-      "M": 0.2857142857142857,
-      "M_note": "1 − over-claim rate: fraction of pca-surfaced cells (recovery ≥ q0.5) the oracle says are non-causal (variance≠causal trap)",
+      "M": 0.9,
+      "M_note": "M = |U*|/|U_hat| (03_methods.tex sec:triad, pca): |U*|=9 (oracle movers) / |U_hat|=10 (method above-threshold)",
       "S": -0.13637832241184175,
-      "S_note": "Pearson(pca recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run"
+      "S_note": "Pearson(pca recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
+      "legacy_minimality": 0.2857142857142857,
+      "legacy_minimality_note": "1 − over-claim rate (the pre-standardization M). Retained for reference; the triad M above is the paper's |U*|/|U_hat|."
     }
   },
   "game": "assault",
@@ -255,7 +259,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "latent-components",
-  "timestamp": "1783124103",
+  "timestamp": "1783604731",
   "value": 0.4,
   "where": "local"
 }

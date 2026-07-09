@@ -126,6 +126,12 @@ include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
 # the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
 include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
+# shared triad helpers (standardised M = |U*|/|U_hat|, jnum_or_null for JSON-null);
+# guarded so a double-include (as a module, or alongside another Phase-C runner) is safe.
+isdefined(@__MODULE__, :TriadSM) ||
+    include(joinpath(@__DIR__, "..", "common", "triad_sm.jl"))
+using .TriadSM: minimality_score, jnum_or_null
+
 const DEFAULT_OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders",
                     "seaquest", "ms_pacman", "qbert"]
@@ -1063,10 +1069,13 @@ function write_game(r::GameResult; out_dir = DEFAULT_OUT_DIR)
         "state" => r.state_kind == "noop" ? "f$(r.target_frame)+$(r.horizon)" :
                    "gameplay(seed=$(r.st_seed),prefix=$(r.st_prefix))+$(r.horizon)",
         "target_output" => "dictionary-atoms-vs-known-variables+causal-use",
-        # headline scalar: the NMF matched-component fraction at the headline rank
-        # (the prompt's "matched-component fraction"). Full PCA/NMF/SAE breakdown in extra.
-        "metric_name" => "nmf_matched_component_fraction_vs_known_vars",
-        "value" => _jn(headline.nmf_match.matched_component_fraction),
+        # headline scalar: the NMF CAUSAL-EFFECT-agreement Spearman at the headline rank
+        # (F = ρ(per-atom matched-strength, per-atom ablation causal effect) — the
+        # causal triad F, NOT the correlational matched-component fraction). The matched
+        # fraction is kept under extra.matched_component_fraction. Full PCA/NMF/SAE
+        # breakdown in extra.by_rank / extra.headline_summary.
+        "metric_name" => "nmf_causal_effect_agreement_spearman",
+        "value" => _jn(headline.nmf_triad.F),
         "stderr" => nothing, "ci" => nothing,
         "n" => length(r.cands),
         "seed" => r.seed,
@@ -1076,6 +1085,44 @@ function write_game(r::GameResult; out_dir = DEFAULT_OUT_DIR)
         "timestamp" => string(round(Int, time())),
         "arrays" => basename(npz_path),
         "extra" => Dict{String,Any}(
+            # ---- TOP-LEVEL F∧S∧M triad (leaderboard reads extra.triad) ----------
+            # The CAUSAL triad = the headline-rank NMF causal-use triad, NOT the
+            # correlational matched-component fraction. F = ρ_Spearman(per-atom
+            # matched-strength, per-atom ablation causal effect) — are the atoms that
+            # MATCH a known variable the ones the program causally USES? S = the NMF
+            # causal-use sufficiency (Pearson on a held-out continuation tail, unchanged
+            # from score_triad). M is STANDARDISED to |U*|/|U_hat| via TriadSM over the
+            # SAME per-atom vectors F uses: attr = per-atom matched-strength (the method's
+            # claim), odelta = per-atom ablation causal effect (the oracle movers).
+            "triad" => let mm = headline.nmf_match, cu = headline.nmf_cu, t = headline.nmf_triad
+                strength = matched_strength(mm)             # the exact vector nmf triad F uses
+                Mv, ustar, uhat, mnote = minimality_score(strength, cu.effect)
+                Dict{String,Any}(
+                    "F" => jnum_or_null(t.F),
+                    "F_note" => "ρ_Spearman(per-atom matched-strength, per-atom ablation " *
+                        "causal effect) at headline rank $(headline.rank), NMF — do MATCHED " *
+                        "dictionary atoms CAUSALLY drive the output? (causal-agreement F, " *
+                        "not the correlational matched-component fraction)",
+                    "S" => jnum_or_null(t.S),
+                    "S_note" => t.S_note,
+                    "M" => jnum_or_null(Mv),
+                    "M_note" => mnote,
+                    "M_true_minimal_size" => ustar, "M_named_size" => uhat,
+                    "method" => "nmf", "rank" => headline.rank,
+                    "definition" => "F∧S∧M triad (03_methods.tex sec:triad): F = NMF " *
+                        "causal-effect agreement (Spearman of matched-strength vs ablation " *
+                        "causal effect); S = held-out causal-use sufficiency; " *
+                        "M = |U*|/|U_hat| (oracle movers / method-named matched atoms).")
+            end,
+            # the correlational matched-component fraction (the OLD top-level value),
+            # kept for provenance; NOT the leaderboard's F any more.
+            "matched_component_fraction" => Dict{String,Any}(
+                "pca" => _jn(headline.pca_match.matched_component_fraction),
+                "nmf" => _jn(headline.nmf_match.matched_component_fraction),
+                "sae" => _jn(headline.sae_match.matched_component_fraction),
+                "note" => "correlational A7-style match of dictionary atoms to known " *
+                    "variables (PRESENT, not USED); the leaderboard F is the causal " *
+                    "extra.triad.F, not this fraction."),
             "substrate" => "jutari (Julia, HARD) — real-ROM bit-exact path; the " *
                 "causal-use test uses EXACT whole-state interventions re-run on the true ROM.",
             "bit_exact_rerun" => r.bit_exact,

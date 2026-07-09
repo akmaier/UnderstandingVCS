@@ -153,6 +153,11 @@ include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
 # the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
 include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
+# shared triad helpers (the canonical M = |U*|/|U_hat|; here the EDGE-set analogue);
+# guarded so a repeated include across sibling runners is a no-op.
+isdefined(@__MODULE__, :TriadSM) ||
+    include(joinpath(@__DIR__, "..", "common", "triad_sm.jl"))
+
 import JSON
 
 const OUT_DIR = joinpath(@__DIR__, "out")
@@ -715,12 +720,22 @@ function run_game(spec::GameSpec; target_frame = 30, horizon = 30, verbose = tru
     scrub_preserved, n_scrubbed =
         scrubbing_preserved(checkpoint, tail, cands, at_target, resampled, best_circuit)
 
-    # 8) triad.
-    M = best_score.n_disc == 0 ? 1.0 : 1.0 - best_score.fp / best_score.n_disc
+    # 8) triad. M standardized to the paper's definition (03_methods.tex sec:triad):
+    #    M = |U*|/|U_hat|. For an EDGE/GRAPH method U* = the TRUE edges (the wiring
+    #    that carries real data-flow) and U_hat = the edges the method NAMES (the
+    #    discovered circuit at best-F1 τ) — the same |true edges|/|discovered edges|
+    #    ratio path_patching.jl uses, clamped to (0,1]; null when 0 edges discovered
+    #    (nothing named ⇒ M undefined). An over-claiming circuit that names spurious
+    #    edges pays for every one of them.
+    n_true_e = best_score.n_true; n_disc_e = best_score.n_disc
+    M = n_disc_e == 0 ? NaN : min(1.0, n_true_e / n_disc_e)
+    Mnote = n_disc_e == 0 ?
+        "M undefined: ACDC named NO edge at best-F1 τ (|U_hat|=0)" :
+        "|U*|=$n_true_e true edges / |U_hat|=$n_disc_e discovered edges (best-F1 τ)"
     triad = Triad(best_score.f1, scrub_preserved, M,
         "best-F1 of the ACDC-discovered circuit edges vs the exhaustive-oracle true data-flow ($(length(cands)) candidate cells)",
         "scrubbing-preserved performance: the discovered circuit alone (non-circuit parents resample-scrubbed) reproduces the clean candidate-cell readouts (fraction unchanged, bit-exact re-run)",
-        "1 − over-claim rate at best-F1 τ: fraction of discovered edges the oracle says are spurious (false wiring kept by the cheap ablation)")
+        Mnote)
 
     if verbose
         println("[acdc:$(spec.name)] ---- scores ----")
@@ -1011,9 +1026,11 @@ function selftest(r::GameResult)
 
     for (nm, v) in (("P", r.best_score.precision), ("R", r.best_score.recall),
                     ("F1", r.best_score.f1), ("AUC", r.roc_auc),
-                    ("S", r.triad.S), ("M", r.triad.M), ("F", r.triad.F))
+                    ("S", r.triad.S), ("F", r.triad.F))
         @assert 0.0 - 1e-9 <= v <= 1.0 + 1e-9 "[acdc:$(r.game)] $nm out of [0,1]: $v"
     end
+    # M = |U*|/|U_hat| ∈ (0,1], or NaN (undefined — 0 edges named); both are valid.
+    @assert isnan(r.triad.M) || (0.0 - 1e-9 <= r.triad.M <= 1.0 + 1e-9) "[acdc:$(r.game)] M out of (0,1]: $(r.triad.M)"
 
     println("[acdc:$(r.game)] SELF-CHECK PASS:")
     println("[acdc:$(r.game)]   bit-exact baseline re-run: $(r.bit_exact)")

@@ -1,7 +1,7 @@
 {
   "arrays": "dictionaries_bowling.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "ddf78172",
   "extra": {
     "bit_exact_rerun": true,
     "by_rank": [
@@ -935,6 +935,12 @@
       }
     },
     "interpretation": "Phase-C dictionary learning: PCA (orthogonal/signed), NMF (non-negative parts), SAE (sparse/over-complete). matched-component fraction quantifies how well each atom aligns to ONE known variable; the causal-use test quantifies how many atoms actually MOVE the output. A high matched fraction with few causal atoms is the dictionary trap — atoms named after variables that the program does not USE through that direction.",
+    "matched_component_fraction": {
+      "nmf": 0.5,
+      "note": "correlational A7-style match of dictionary atoms to known variables (PRESENT, not USED); the leaderboard F is the causal extra.triad.F, not this fraction.",
+      "pca": 0.625,
+      "sae": 0.5
+    },
     "n_known_game_variables": 17,
     "nmf_iters": 300,
     "purity_threshold": 0.5,
@@ -966,11 +972,24 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "trajectory_frames": 150,
-    "trajectory_trace": "seeded random-action GAMEPLAY trajectory (seed=0, prefix=90; NOOP-continued past prefix+horizon)"
+    "trajectory_trace": "seeded random-action GAMEPLAY trajectory (seed=0, prefix=90; NOOP-continued past prefix+horizon)",
+    "triad": {
+      "F": -0.06341828617898013,
+      "F_note": "ρ_Spearman(per-atom matched-strength, per-atom ablation causal effect) at headline rank 8, NMF — do MATCHED dictionary atoms CAUSALLY drive the output? (causal-agreement F, not the correlational matched-component fraction)",
+      "M": 1.0,
+      "M_named_size": 4,
+      "M_note": "|U*|=8 (oracle movers) / |U_hat|=4 (method above-threshold)",
+      "M_true_minimal_size": 8,
+      "S": 0.800324852555945,
+      "S_note": "Pearson(per-atom causal effect, held-out-tail causal effect) — sufficiency on an unseen continuation (bit-exact re-run)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = NMF causal-effect agreement (Spearman of matched-strength vs ablation causal effect); S = held-out causal-use sufficiency; M = |U*|/|U_hat| (oracle movers / method-named matched atoms).",
+      "method": "nmf",
+      "rank": 8
+    }
   },
   "game": "bowling",
   "method": "nmf_pca_dictionaries(+SAE contrast)",
-  "metric_name": "nmf_matched_component_fraction_vs_known_vars",
+  "metric_name": "nmf_causal_effect_agreement_spearman",
   "n": 20,
   "oracle_ref": "oracle_intervene@bowling (P2-E1-1) — atom-ablation re-run (whole-state set + re-run)",
   "paper": "P2",
@@ -979,7 +998,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "dictionary-atoms-vs-known-variables+causal-use",
-  "timestamp": "1783121932",
-  "value": 0.5,
+  "timestamp": "1783607152",
+  "value": -0.06341828617898013,
   "where": "local"
 }

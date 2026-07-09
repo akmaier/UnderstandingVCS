@@ -8,7 +8,7 @@
     "tau_sweep": "2 thresholds (pure thresholding of the cached effect matrix — NO extra re-runs)"
   },
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "ddf78172",
   "extra": {
     "ablation": "resample (parent overwritten with its value from the corrupted RIGHT-action donor run); standard ACDC corruption (Conmy et al. 2023 §3), not zero.",
     "bit_exact_rerun": true,
@@ -159,7 +159,7 @@
       "F": 0.15384615384615385,
       "F_note": "best-F1 of the ACDC-discovered circuit edges vs the exhaustive-oracle true data-flow (8 candidate cells)",
       "M": 1.0,
-      "M_note": "1 − over-claim rate at best-F1 τ: fraction of discovered edges the oracle says are spurious (false wiring kept by the cheap ablation)",
+      "M_note": "|U*|=12 true edges / |U_hat|=1 discovered edges (best-F1 τ)",
       "S": 0.625,
       "S_note": "scrubbing-preserved performance: the discovered circuit alone (non-circuit parents resample-scrubbed) reproduces the clean candidate-cell readouts (fraction unchanged, bit-exact re-run)",
       "interpretation": "ACDC's goal state IS our ground truth (experiment_design.md §7: Partial→Succeed). The discovery uses a cheap single-value resample-ablation, so it can miss edges that fire only for a different value (recall deficit) and keep transient ones (precision deficit) vs the exhaustive true data-flow."
@@ -176,7 +176,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "auto-discovered inter-cell data-flow circuit (candidate RAM cells)",
-  "timestamp": "1783137850",
+  "timestamp": "1783608567",
   "value": 0.15384615384615385,
   "where": "local"
 }

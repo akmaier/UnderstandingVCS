@@ -115,6 +115,12 @@ include(joinpath(@__DIR__, "..", "common", "shared_testbed_impl.jl"))
 # the shared game-set + ROM-root resolver (XAI_LABELED / xai_resolve_games / xai_rom_roots).
 include(joinpath(@__DIR__, "..", "common", "game_sets.jl"))
 
+# the canonical triad Minimality scorer M = |U*|/|U_hat| (03_methods.tex sec:triad);
+# guarded so re-includes across the Phase-A battery don't redefine the module.
+isdefined(@__MODULE__, :TriadSM) ||
+    include(joinpath(@__DIR__, "..", "common", "triad_sm.jl"))
+using .TriadSM: minimality_score
+
 const OUT_DIR = joinpath(@__DIR__, "out")
 const CORE_GAMES = ["pong", "breakout", "space_invaders",
                     "seaquest", "ms_pacman", "qbert"]
@@ -456,8 +462,9 @@ end
 # scored against the oracle.
 # ============================================================================
 struct Triad
-    F::Float64; S::Float64; M::Float64
+    F::Float64; S::Float64; M::Union{Float64,Nothing}
     F_note::String; S_note::String; M_note::String
+    legacy_minimality::Float64        # the old 1 − over-claim rate (kept for reference)
 end
 
 function score_triad(tun::TuningResult, oracle_importance::Vector{Float64},
@@ -469,11 +476,18 @@ function score_triad(tun::TuningResult, oracle_importance::Vector{Float64},
     nflag = sum(flagged)
     overclaim = nflag == 0 ? 0.0 :
         count(i -> flagged[i] && oracle_importance[i] == 0.0, 1:length(flagged)) / nflag
-    M = 1.0 - overclaim
+    legacy_M = 1.0 - overclaim
+    # M — standardized to the paper's M = |U*|/|U_hat| (03_methods.tex sec:triad):
+    #     |U*| = the true movers (oracle_importance above the floor), |U_hat| = the
+    #     cells the tuning method NAMES (selectivity above its own threshold). Uses
+    #     the SAME attr (gvar_selectivity, the F claim) and odelta (oracle_importance,
+    #     the F ground truth). The legacy 1 − over-claim rate is retained separately.
+    M, _ustar, _uhat, M_note = minimality_score(sel, oracle_importance)
     return Triad(F, S, M,
         "Spearman(A3 game-variable selectivity, oracle causal importance) over $(length(oracle_importance)) candidate cells",
         "Pearson(A3 selectivity, held-out do(base+37) screen break) — sufficiency on a bit-exact re-run",
-        "1 − over-claim rate: fraction of strongly-tuned cells the oracle says are generic (non-causal)")
+        "M = |U*|/|U_hat| (03_methods.tex sec:triad): " * M_note,
+        legacy_M)
 end
 
 # ============================================================================
@@ -631,8 +645,8 @@ function compute_game(game::AbstractString; target_frame = 30, horizon = 30,
                 "; SPURIOUS-tuning rate (luminance) = " *
                 "$(round(tuning.lum_spurious_rate, digits = 3))")
         println("[A3:$game] TRIAD F=$(round(triad.F,digits=3)) " *
-                "S=$(round(triad.S,digits=3)) M=$(round(triad.M,digits=3)) " *
-                "(oracle-as-method F=$(round(self_F,digits=3)))")
+                "S=$(round(triad.S,digits=3)) M=$(triad.M === nothing ? "null" : round(triad.M,digits=3)) " *
+                "(oracle-as-method F=$(round(self_F,digits=3)); legacy_M=$(round(triad.legacy_minimality,digits=3)))")
     end
 
     return GameA3(string(game), target_frame, horizon, traj_frames, tau, bit_exact,
@@ -660,7 +674,7 @@ function selftest(g::GameA3)
     # ranges
     @assert -1.0 - 1e-9 <= g.triad.F <= 1.0 + 1e-9 "[$(g.game)] F out of [-1,1]: $(g.triad.F)"
     @assert -1.0 - 1e-9 <= g.triad.S <= 1.0 + 1e-9 "[$(g.game)] S out of [-1,1]: $(g.triad.S)"
-    @assert 0.0 - 1e-9 <= g.triad.M <= 1.0 + 1e-9 "[$(g.game)] M out of [0,1]: $(g.triad.M)"
+    @assert g.triad.M === nothing || (0.0 - 1e-9 <= g.triad.M <= 1.0 + 1e-9) "[$(g.game)] M out of (0,1]: $(g.triad.M)"
     @assert 0.0 <= g.tuning.gvar_spurious_rate <= 1.0 "[$(g.game)] game-var spurious rate out of [0,1]"
     @assert 0.0 <= g.tuning.lum_spurious_rate <= 1.0 "[$(g.game)] luminance spurious rate out of [0,1]"
     # selectivity / correlations are well-formed (finite, in [0,1] as |corr|)
@@ -678,6 +692,7 @@ catch
     "unknown"
 end
 _json_num(x::Real) = isfinite(x) ? Float64(x) : nothing
+_json_num(::Nothing) = nothing
 
 function write_game(g::GameA3; out_dir = OUT_DIR)
     isdir(out_dir) || mkpath(out_dir)
@@ -768,6 +783,10 @@ function write_game(g::GameA3; out_dir = OUT_DIR)
                 "F" => _json_num(g.triad.F), "F_note" => g.triad.F_note,
                 "S" => _json_num(g.triad.S), "S_note" => g.triad.S_note,
                 "M" => _json_num(g.triad.M), "M_note" => g.triad.M_note,
+                "legacy_minimality" => _json_num(g.triad.legacy_minimality),
+                "legacy_minimality_note" => "1 − over-claim rate (the pre-standardization " *
+                    "M): fraction of strongly-tuned cells the oracle says are generic. " *
+                    "Retained for reference; the triad M above is the paper's |U*|/|U_hat|.",
                 "interpretation" => "Phase A is the calibration baseline " *
                     "(experiment_design.md §4): a tuning-curve importance map scores " *
                     "LOW faithfulness despite fully-known structure. F<1 / " *
@@ -795,7 +814,8 @@ function write_game(g::GameA3; out_dir = OUT_DIR)
         "gvar_spurious"         => Int64.(g.tuning.gvar_spurious),
         "lum_strong"            => Int64.(g.tuning.lum_strong),
         "lum_spurious"          => Int64.(g.tuning.lum_spurious),
-        "triad_FSM"             => Float64[g.triad.F, g.triad.S, g.triad.M],
+        "triad_FSM"             => Float64[g.triad.F, g.triad.S,
+                                           g.triad.M === nothing ? NaN : g.triad.M],
     ))
     return json_path, npz_path
 end
@@ -877,7 +897,7 @@ function main(args = ARGS)
                 "$(round(g.tuning.gvar_spurious_rate,digits=2)) / " *
                 "$(round(g.tuning.lum_spurious_rate,digits=2)) : " *
                 "F=$(round(g.triad.F,digits=2)) S=$(round(g.triad.S,digits=2)) " *
-                "M=$(round(g.triad.M,digits=2))")
+                "M=$(g.triad.M === nothing ? "null" : round(g.triad.M,digits=2))")
     end
     for (game, msg) in problems
         println("[A3]   $(rpad(game,16)) : PROBLEM — $(first(split(msg, '\n')))")

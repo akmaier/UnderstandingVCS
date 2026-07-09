@@ -1,7 +1,7 @@
 {
   "arrays": "A3_tuning_chopper_command.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "ddf78172",
   "extra": {
     "A3_tuning": {
       "clock_corr_per_cell": {
@@ -212,11 +212,13 @@
     "triad": {
       "F": 0.006585205292881106,
       "F_note": "Spearman(A3 game-variable selectivity, oracle causal importance) over 20 candidate cells",
-      "M": 0.5,
-      "M_note": "1 − over-claim rate: fraction of strongly-tuned cells the oracle says are generic (non-causal)",
+      "M": 0.7692307692307693,
+      "M_note": "M = |U*|/|U_hat| (03_methods.tex sec:triad): |U*|=10 (oracle movers) / |U_hat|=13 (method above-threshold)",
       "S": 0.18005706600310617,
       "S_note": "Pearson(A3 selectivity, held-out do(base+37) screen break) — sufficiency on a bit-exact re-run",
-      "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): a tuning-curve importance map scores LOW faithfulness despite fully-known structure. F<1 / spurious-tuning>0 quantify where the classical analysis departs from the ground truth. The oracle-as-method positive control (F=1.0) confirms the harness rewards a perfectly-faithful map."
+      "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): a tuning-curve importance map scores LOW faithfulness despite fully-known structure. F<1 / spurious-tuning>0 quantify where the classical analysis departs from the ground truth. The oracle-as-method positive control (F=1.0) confirms the harness rewards a perfectly-faithful map.",
+      "legacy_minimality": 0.5,
+      "legacy_minimality_note": "1 − over-claim rate (the pre-standardization M): fraction of strongly-tuned cells the oracle says are generic. Retained for reference; the triad M above is the paper's |U*|/|U_hat|."
     }
   },
   "game": "chopper_command",
@@ -230,7 +232,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen-break (oracle causal importance) vs tuning selectivity",
-  "timestamp": "1783122184",
+  "timestamp": "1783605199",
   "value": 0.5,
   "where": "local"
 }

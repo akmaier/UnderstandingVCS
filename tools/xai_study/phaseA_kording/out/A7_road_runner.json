@@ -1,7 +1,7 @@
 {
   "arrays": "A7_road_runner.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "ddf78172",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -221,19 +221,23 @@
     "triad_nmf": {
       "F": 0.367333401235482,
       "F_note": "Spearman(nmf per-cell recovery score, oracle causal importance) over candidate cells",
-      "M": 0.625,
-      "M_note": "1 − over-claim rate: fraction of nmf-surfaced cells (recovery ≥ q0.5) the oracle says are non-causal (variance≠causal trap)",
+      "M": 0.4,
+      "M_note": "M = |U*|/|U_hat| (03_methods.tex sec:triad, nmf): |U*|=6 (oracle movers) / |U_hat|=15 (method above-threshold)",
       "S": 0.39742187490739433,
       "S_note": "Pearson(nmf recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
-      "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): dim-reduction surfaces high-VARIANCE axes, which are NOT the causal cells (variance ≠ causal role — present ≠ used). F<1 + low matched-component fraction quantify the departure from the true causal structure."
+      "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): dim-reduction surfaces high-VARIANCE axes, which are NOT the causal cells (variance ≠ causal role — present ≠ used). F<1 + low matched-component fraction quantify the departure from the true causal structure.",
+      "legacy_minimality": 0.625,
+      "legacy_minimality_note": "1 − over-claim rate (the pre-standardization M). Retained for reference; the triad M above is the paper's |U*|/|U_hat|."
     },
     "triad_pca": {
       "F": 0.45556325301797196,
       "F_note": "Spearman(pca per-cell recovery score, oracle causal importance) over candidate cells",
-      "M": 0.7142857142857143,
-      "M_note": "1 − over-claim rate: fraction of pca-surfaced cells (recovery ≥ q0.5) the oracle says are non-causal (variance≠causal trap)",
+      "M": 0.42857142857142855,
+      "M_note": "M = |U*|/|U_hat| (03_methods.tex sec:triad, pca): |U*|=6 (oracle movers) / |U_hat|=14 (method above-threshold)",
       "S": 0.2253670332050655,
-      "S_note": "Pearson(pca recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run"
+      "S_note": "Pearson(pca recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
+      "legacy_minimality": 0.7142857142857143,
+      "legacy_minimality_note": "1 − over-claim rate (the pre-standardization M). Retained for reference; the triad M above is the paper's |U*|/|U_hat|."
     }
   },
   "game": "road_runner",
@@ -247,7 +251,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "latent-components",
-  "timestamp": "1783125843",
+  "timestamp": "1783606485",
   "value": 0.4,
   "where": "local"
 }

@@ -1,11 +1,11 @@
 {
   "all_games_positive_control_passes": true,
-  "commit": "d85961ed",
+  "commit": "ddf78172",
   "mean_best_f1": 0.6253551844980416,
   "mean_roc_auc": 0.7674595978048663,
   "mean_scrub_preserved": 0.2995156693594957,
   "mean_triad_F": 0.6253551844980416,
-  "mean_triad_M": 1.0,
+  "mean_triad_M": null,
   "mean_triad_S": 0.2995156693594957,
   "method": "ACDC(automatic circuit discovery)",
   "note": "Phase-C ACDC (Conmy et al. 2023) over the core games; auto-discovered data-flow circuit by resample-ablation edge pruning + τ sweep (ROC), scored edge P/R/F1 + scrubbing-preserved performance vs the exhaustive true data-flow (experiment_design.md §6/§7: Partial→Succeed — goal state = our ground truth).",
@@ -13,7 +13,7 @@
   "per_game": [
     {
       "F": 0.0,
-      "M": 1.0,
+      "M": null,
       "S": 0.0,
       "best_f1": 0.0,
       "best_precision": 0.0,
@@ -268,7 +268,7 @@
     },
     {
       "F": 0.0,
-      "M": 1.0,
+      "M": null,
       "S": 0.13333333333333333,
       "best_f1": 0.0,
       "best_precision": 0.0,
@@ -313,7 +313,7 @@
     },
     {
       "F": 0.0,
-      "M": 1.0,
+      "M": null,
       "S": 0.05263157894736842,
       "best_f1": 0.0,
       "best_precision": 0.0,
@@ -328,7 +328,7 @@
     },
     {
       "F": 0.0,
-      "M": 1.0,
+      "M": null,
       "S": 0.125,
       "best_f1": 0.0,
       "best_precision": 0.0,
@@ -539,6 +539,6 @@
   ],
   "phase": "phaseC_mechanistic",
   "scope": "core (35 games)",
-  "timestamp": "1783138375",
+  "timestamp": "1783609243",
   "where": "local"
 }
