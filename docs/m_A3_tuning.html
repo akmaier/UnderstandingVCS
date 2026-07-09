@@ -36,8 +36,32 @@
   <p>The score is a spurious-tuning rate: the fraction of cells that are strongly tuned to a game variable yet are not among the oracle's causal cells. We first find the cells whose value tracks a game variable strongly, then ask the intervention oracle which of those cells actually cause the output. A tuned cell that is not causal is a false positive, and the spurious-tuning rate counts them. Faithfulness is one minus that rate, so a method that only flags true causes scores high and a method that flags many non-causal cells scores low. On the VCS the rate is high, because many cells co-vary with the beam clock, so tuning is cheap and often unrelated to causation. This is the same present-versus-used trap that also defeats linear probing: a cell can carry a variable without the program using it. The grading is always against the oracle. There is no sprite-position hard-case here, because the output is a tuning judgement, not a coordinate. Because per-game correlations for this family can go negative, the aggregate clips each per-game value at zero before averaging, so a method with no real signal lands near zero rather than at a spurious floor. The audit box reports the aggregated faithfulness.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
-  are in the <b>In the audit</b> box below.</p>
+  <a href="methods.html#stack">execution stack</a>. How each of F / S / M is actually computed for
+  this method (and whether it matches the paper) is in the box just below; the numbers are in the
+  <b>In the audit</b> box under it.</p>
+</div></section>
+
+
+<section><div class="wrap">
+  <h2>How F, S, M are computed here</h2>
+  <p class="sub">The exact formula this method uses for each score, read from its runner, and
+  whether it matches the paper's &sect;3 (F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad) definition.
+  From the committed audit
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/data/fsm_math_phaseA.json"><code>fsm_math_phaseA.json</code></a>.</p>
+  <style>
+    .fsmtab td{vertical-align:top}
+    .fsm-badge{display:inline-block;padding:1px 8px;border-radius:6px;font-size:.82rem;font-weight:600;white-space:nowrap}
+    .fsm-ok{background:#12351f;color:#5ee08a}.fsm-warn{background:#3a2f10;color:#e8c65e}
+    .fsm-bad{background:#3a1414;color:#f18a8a}.fsm-na{background:#1c222b;color:#8a94a0}
+    .fsm-note{color:var(--fg-dim);font-size:.85rem}
+  </style>
+  <table class="fsmtab"><thead><tr><th>Axis</th><th>Formula (as computed)</th>
+  <th>What it measures</th><th>Matches &sect;3?</th></tr></thead><tbody><tr><td><b>F</b><br><span class="fsm-note">faithfulness</span></td><td><code>F = Spearman(rho)(sel, oracle_importance); sel = per-cell max |Pearson| to game variables (excl. self, excl. frame clock); oracle_importance = max whole-screen break over do{0, base+17, base+37}</code></td><td>Spearman correlation between per-cell game-variable tuning selectivity and the oracle causal importance over 8 candidate cells.</td><td><span class="fsm-badge fsm-ok">&#10003; matches</span> <span class="fsm-note">Scored vs oracle causal importance (not vs external labels); the per-game clip-at-0-then-mean is applied at aggregation (paper cites A3 = 0.213 clip-at-zero mean). Runner A3_tuning.jl L466,L318-338; record out/A3_tuning_pong.json triad.F=-0.007.</span></td></tr><tr><td><b>S</b><br><span class="fsm-note">sufficiency</span></td><td><code>S = Pearson(sel, held_out); held_out = whole-screen break under held-out do(base+37) only</code></td><td>Pearson correlation of the selectivity map vs the held-out do(base+37) screen break.</td><td><span class="fsm-badge fsm-warn">&#9680; partial</span> <span class="fsm-note">Held-out predictive correlation in [-1,1], right spirit; single held-out value, no calibration-fit split. A3_tuning.jl L467,L318-338; record S=-0.412.</span></td></tr><tr><td><b>M</b><br><span class="fsm-note">minimality</span></td><td><code>M = 1 - overclaim; overclaim = #(strongly-tuned AND oracle_importance==0)/#strongly-tuned</code></td><td>1 minus the over-claim rate: fraction of strongly-tuned cells the oracle says are generic (non-causal).</td><td><span class="fsm-badge fsm-bad">&#10007; does not match</span> <span class="fsm-note">Paper M = |U*|/|U_hat|. This is 1 - a spurious-tuning rate, not a set-size ratio. Headline metric_name = A3_game_variable_spurious_tuning_rate (= overclaim itself). A3_tuning.jl L468-472,L445,L699-700; record M=0.5.</span></td></tr></tbody></table>
+  <p class="caption"><b>&#10003; matches</b> = the same quantity as &sect;3; <b>&#9680; partial</b>
+  = the same kind of estimator but a differing detail; <b>&#10007; does not match</b> = a
+  different quantity (see the note). Definitions: F = agreement with the oracle's true causal
+  effects &Delta;y(u); S = held-out predictive score in [&minus;1,&nbsp;1]; M&nbsp;=&nbsp;|U*|/|U&#770;|
+  (true-minimal-set size / named-set size).</p>
 </div></section>
 
 
@@ -95,7 +119,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/d4d90eba0bc70da604b27662f512ade7fc29c26a"><code>d4d90eba</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2a3cd9aa1d0d15e7ea8ca47492d3d7b32d7cd12a"><code>2a3cd9aa</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

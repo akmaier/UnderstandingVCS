@@ -36,8 +36,32 @@
   <p>The score is the fraction of NMF or PCA dictionary components that match a known, verified variable. We decompose the state into a small dictionary, match each component to a known variable, and count the matched fraction. The grading is always against the intervention oracle. Faithfulness for this method is that matched fraction, and it is partial: NMF's non-negativity separates the additive register basis better than PCA, so NMF yields cleaner named components while PCA blurs several variables into one component. The deeper limit, which the matched fraction alone does not expose, is causal use. A component can match a variable by correlation while playing little causal role, so a good matched fraction sits beside near-zero causal use, exactly as it does for the sparse autoencoder. There is no sprite-position hard-case here; the output is a set of components. The grading is always against the oracle, never against another method. The audit box reports the measured triad across the scored games, so the matched fraction is an average over the scored set. Dictionary learning is a useful interpretable baseline, but its named components must be tested by intervention before they can be trusted, and the score reflects that gap.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
-  are in the <b>In the audit</b> box below.</p>
+  <a href="methods.html#stack">execution stack</a>. How each of F / S / M is actually computed for
+  this method (and whether it matches the paper) is in the box just below; the numbers are in the
+  <b>In the audit</b> box under it.</p>
+</div></section>
+
+
+<section><div class="wrap">
+  <h2>How F, S, M are computed here</h2>
+  <p class="sub">The exact formula this method uses for each score, read from its runner, and
+  whether it matches the paper's &sect;3 (F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad) definition.
+  From the committed audit
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/data/fsm_math_phaseC.json"><code>fsm_math_phaseC.json</code></a>.</p>
+  <style>
+    .fsmtab td{vertical-align:top}
+    .fsm-badge{display:inline-block;padding:1px 8px;border-radius:6px;font-size:.82rem;font-weight:600;white-space:nowrap}
+    .fsm-ok{background:#12351f;color:#5ee08a}.fsm-warn{background:#3a2f10;color:#e8c65e}
+    .fsm-bad{background:#3a1414;color:#f18a8a}.fsm-na{background:#1c222b;color:#8a94a0}
+    .fsm-note{color:var(--fg-dim);font-size:.85rem}
+  </style>
+  <table class="fsmtab"><thead><tr><th>Axis</th><th>Formula (as computed)</th>
+  <th>What it measures</th><th>Matches &sect;3?</th></tr></thead><tbody><tr><td><b>F</b><br><span class="fsm-note">faithfulness</span></td><td><code>LEADERBOARD F = nmf_matched_component_fraction_vs_known_vars (NAMING score vs external labels).   CORRECT causal F = ρ_Spearman(per-atom matched-strength, per-atom ablation causal effect)</code></td><td>The leaderboard/site F is the fraction of NMF atoms that align to a known variable label (a naming stat), not agreement with the oracle causal effects.</td><td><span class="fsm-badge fsm-bad">&#10007; does not match</span> <span class="fsm-note">dictionaries.jl:1068-1069 sets top-level metric_name=nmf_matched_component_fraction_vs_known_vars, value=nmf matched_component_fraction, and emits NO top-level extra.triad. So leaderboard.py triad_of() returns None and falls back (leaderboard.py:407) to orient_faithfulness(value) =&gt; leaderboard F = the MATCHED-COMPONENT FRACTION (dictionaries_pong.json value=0.625; battery mean 0.4405 ~ the paper&#x27;s 0.44). This is a label-match / naming score against external variable labels, NOT the paper&#x27;s oracle causal F. The CORRECT causal F IS computed but buried at extra.by_rank[rank==headline_rank].nmf.triad.F = Spearman(matched-strength, ablation causal effect) (dictionaries.jl:756; pong nmf causal F=0.3; battery mean nmf causal F=-0.073 ~ near-zero/negative). Report both: matched fraction 0.44 is a separate naming stat; oracle-agreement causal F ~ 0.10/near-zero.</span></td></tr><tr><td><b>S</b><br><span class="fsm-note">sufficiency</span></td><td><code>S = ρ_Pearson(per-atom causal effect, per-atom held-out-tail causal effect)   (buried in extra.by_rank[].{pca,nmf,sae}.triad.S)</code></td><td>Held-out sufficiency = Pearson correlation of each atom&#x27;s ablation causal effect with its effect on an unseen continuation (bit-exact re-run). Only in by_rank, not top-level.</td><td><span class="fsm-badge fsm-warn">&#9680; partial</span> <span class="fsm-note">dictionaries.jl:757 (S = _pearson(cu.effect, cu.held_out_effect)). A held-out predictive correlation in [-1,1] (paper-shaped), but computed over a held-out CONTINUATION TAIL rather than a disjoint do(u) split, and NOT surfaced to the leaderboard (no top-level extra.triad). Record: extra.by_rank[headline].nmf.triad.S (pong nmf S=0.932).</span></td></tr><tr><td><b>M</b><br><span class="fsm-note">minimality</span></td><td><code>M = 1 − over-claim rate = 1 − (#matched atoms with ZERO ablation effect) / (#matched atoms)   (buried in by_rank)</code></td><td>One minus the fraction of matched atoms whose ablation has no causal effect (present-not-used trap).</td><td><span class="fsm-badge fsm-bad">&#10007; does not match</span> <span class="fsm-note">dictionaries.jl:760-762 (M = 1 − overclaim). This is a matched-atom PRECISION / over-claim rate, NOT the paper&#x27;s M = |U*|/|U_hat|. Also only in extra.by_rank[].nmf.triad.M, never at top level (dictionaries has no leaderboard M). Record: by_rank[headline].nmf.triad.M (pong nmf M=1.0).</span></td></tr></tbody></table>
+  <p class="caption"><b>&#10003; matches</b> = the same quantity as &sect;3; <b>&#9680; partial</b>
+  = the same kind of estimator but a differing detail; <b>&#10007; does not match</b> = a
+  different quantity (see the note). Definitions: F = agreement with the oracle's true causal
+  effects &Delta;y(u); S = held-out predictive score in [&minus;1,&nbsp;1]; M&nbsp;=&nbsp;|U*|/|U&#770;|
+  (true-minimal-set size / named-set size).</p>
 </div></section>
 
 
@@ -95,7 +119,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/d4d90eba0bc70da604b27662f512ade7fc29c26a"><code>d4d90eba</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2a3cd9aa1d0d15e7ea8ca47492d3d7b32d7cd12a"><code>2a3cd9aa</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

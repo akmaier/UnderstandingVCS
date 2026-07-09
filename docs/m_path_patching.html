@@ -36,8 +36,32 @@
   <p>The score is the F1 of the recovered path or circuit against the true routine's data-flow. We patch along directed edges of the candidate data-flow and compare the recovered edge set to the true routine from the disassembly, taking the harmonic mean of edge precision and recall. The grading is always against the intervention oracle's true wiring. Faithfulness for this method is that circuit F1. Run as a single-frame, one-step directed do-operation, the method recovers only the paths that carry a surviving signal in that single step. Many true dependencies are re-derived within the frame through other cells, so a one-step path does not carry them and recall suffers, which is the main limit the score reflects. On some games the direct circuit is genuinely empty and the method matches it perfectly; on others it recovers little. There is no sprite-position hard-case here, because the output is a circuit, not a coordinate. The grading is always against the oracle, never against another method. The audit box reports the measured triad across the scored games, so the F1 is an average over the scored set. Path patching is precise about the paths it finds but silent about dependencies that flow through intermediate cells.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
-  are in the <b>In the audit</b> box below.</p>
+  <a href="methods.html#stack">execution stack</a>. How each of F / S / M is actually computed for
+  this method (and whether it matches the paper) is in the box just below; the numbers are in the
+  <b>In the audit</b> box under it.</p>
+</div></section>
+
+
+<section><div class="wrap">
+  <h2>How F, S, M are computed here</h2>
+  <p class="sub">The exact formula this method uses for each score, read from its runner, and
+  whether it matches the paper's &sect;3 (F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad) definition.
+  From the committed audit
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/data/fsm_math_phaseC.json"><code>fsm_math_phaseC.json</code></a>.</p>
+  <style>
+    .fsmtab td{vertical-align:top}
+    .fsm-badge{display:inline-block;padding:1px 8px;border-radius:6px;font-size:.82rem;font-weight:600;white-space:nowrap}
+    .fsm-ok{background:#12351f;color:#5ee08a}.fsm-warn{background:#3a2f10;color:#e8c65e}
+    .fsm-bad{background:#3a1414;color:#f18a8a}.fsm-na{background:#1c222b;color:#8a94a0}
+    .fsm-note{color:var(--fg-dim);font-size:.85rem}
+  </style>
+  <table class="fsmtab"><thead><tr><th>Axis</th><th>Formula (as computed)</th>
+  <th>What it measures</th><th>Matches &sect;3?</th></tr></thead><tbody><tr><td><b>F</b><br><span class="fsm-note">faithfulness</span></td><td><code>F = clamp01(edge-F1(recovered_path_circuit, true_routine))</code></td><td>Edge-F1 of the recovered path circuit against the true direct-path routine (exhaustive edge-restricted path patch).</td><td><span class="fsm-badge fsm-ok">&#10003; matches</span> <span class="fsm-note">path_patching.jl:693 (F = clamp(score.f1)); metric_name path_circuit_F1_vs_true_routine. Exactly the paper&#x27;s circuit-discovery F = edge F1 vs the true data-flow/routine. Record: extra.triad.F / value (pong F=0.0 — no path edges recovered; battery mean F=0.580, n=42).</span></td></tr><tr><td><b>S</b><br><span class="fsm-note">sufficiency</span></td><td><code>S = null (undefined)</code></td><td>Not scored: the recovered path circuit is a graph structure, not a per-do(u) predictive map.</td><td><span class="fsm-badge fsm-na">&mdash; n/a</span> <span class="fsm-note">path_patching.jl:694 (S = nothing). n/a for a graph-valued explanation is consistent with the paper (S defined for predictive maps). Record: extra.triad.S = null.</span></td></tr><tr><td><b>M</b><br><span class="fsm-note">minimality</span></td><td><code>M = min(1, |true edges| / |discovered edges|)  = |U*| / |U_hat| at the edge level</code></td><td>True-routine edge count over the number of discovered path edges.</td><td><span class="fsm-badge fsm-ok">&#10003; matches</span> <span class="fsm-note">path_patching.jl:698 (M = min(1, ntrue/nrec)). This is the paper&#x27;s |U*|/|U_hat| applied to edges. n/a when |U_hat|=0 discovered edges (emitted as null, e.g. pong M_named_size=0 -&gt; M=null). Record: extra.triad.M, M_true_minimal_size/M_named_size (battery mean M=1.0 over the n=18 games with &gt;=1 discovered edge).</span></td></tr></tbody></table>
+  <p class="caption"><b>&#10003; matches</b> = the same quantity as &sect;3; <b>&#9680; partial</b>
+  = the same kind of estimator but a differing detail; <b>&#10007; does not match</b> = a
+  different quantity (see the note). Definitions: F = agreement with the oracle's true causal
+  effects &Delta;y(u); S = held-out predictive score in [&minus;1,&nbsp;1]; M&nbsp;=&nbsp;|U*|/|U&#770;|
+  (true-minimal-set size / named-set size).</p>
 </div></section>
 
 
@@ -95,7 +119,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/d4d90eba0bc70da604b27662f512ade7fc29c26a"><code>d4d90eba</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2a3cd9aa1d0d15e7ea8ca47492d3d7b32d7cd12a"><code>2a3cd9aa</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

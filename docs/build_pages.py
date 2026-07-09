@@ -25,6 +25,24 @@ import manifest as M  # noqa: E402
 # ---------------------------------------------------------------------------
 SITE = _json.load(open(os.path.join(HERE, "site_data.json")))
 
+# Per-method audit of how F/S/M are ACTUALLY computed + whether each matches the
+# paper's sec:triad definition. Written by the three phase-audit passes into
+# docs/data/fsm_math_phase{A,B,C}.json. Keyed by site method key.
+FSM_MATH = {}
+# some audit entries are keyed by the leaderboard method name rather than the site key;
+# normalize both to the site key so every method page resolves.
+_LB2SITE = {d.get("leaderboard_method"): k for k, d in SITE.get("methods", {}).items()
+            if d.get("leaderboard_method")}
+for _p in ("A", "B", "C"):
+    try:
+        _d = _json.load(open(os.path.join(HERE, "data", "fsm_math_phase%s.json" % _p)))
+        for _k, _v in _d.get("methods", {}).items():
+            _v["__phase__"] = _p
+            _sk = _k if _k in SITE.get("methods", {}) else _LB2SITE.get(_k, _k)
+            FSM_MATH[_sk] = _v
+    except Exception:
+        pass
+
 
 GAME_NAMES = {
     "ms_pacman": "Ms. Pac-Man", "qbert": "Q*bert", "up_n_down": "Up'n Down",
@@ -1401,6 +1419,60 @@ def build_method_results_section(key):
                        SORT_CSS, SORT_JS, table)
 
 
+_FSM_BADGE = {
+    "yes":     ("&#10003; matches", "ok"),
+    "partial": ("&#9680; partial", "warn"),
+    "no":      ("&#10007; does not match", "bad"),
+    "n/a":     ("&mdash; n/a", "na"),
+}
+
+
+def build_fsm_math_section(key):
+    """Per-method box: the EXACT formula this method uses for F, S, M, and whether
+    each matches the paper's sec:triad definition. Data from the committed audit
+    (docs/data/fsm_math_phase{A,B,C}.json)."""
+    fm = FSM_MATH.get(key)
+    if not fm:
+        return ""
+    phase = fm.get("__phase__", "A")
+    rows = []
+    for axis, longname in (("F", "faithfulness"), ("S", "sufficiency"), ("M", "minimality")):
+        a = fm.get(axis) or {}
+        formula = a.get("formula")
+        formula = "&mdash;" if (not formula or str(formula).lower() == "null") else "<code>%s</code>" % esc(str(formula))
+        plain = esc(a.get("plain") or "")
+        mp = (a.get("matches_paper") or "n/a")
+        label, cls = _FSM_BADGE.get(mp, ("&mdash;", "na"))
+        note = a.get("note") or ""
+        notehtml = ' <span class="fsm-note">%s</span>' % esc(note) if note else ""
+        rows.append(
+            '<tr><td><b>%s</b><br><span class="fsm-note">%s</span></td><td>%s</td>'
+            '<td>%s</td><td><span class="fsm-badge fsm-%s">%s</span>%s</td></tr>'
+            % (axis, longname, formula, plain, cls, label, notehtml))
+    return ("""
+<section><div class="wrap">
+  <h2>How F, S, M are computed here</h2>
+  <p class="sub">The exact formula this method uses for each score, read from its runner, and
+  whether it matches the paper's &sect;3 (F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad) definition.
+  From the committed audit
+  <a href="%sdocs/data/fsm_math_phase%s.json"><code>fsm_math_phase%s.json</code></a>.</p>
+  <style>
+    .fsmtab td{vertical-align:top}
+    .fsm-badge{display:inline-block;padding:1px 8px;border-radius:6px;font-size:.82rem;font-weight:600;white-space:nowrap}
+    .fsm-ok{background:#12351f;color:#5ee08a}.fsm-warn{background:#3a2f10;color:#e8c65e}
+    .fsm-bad{background:#3a1414;color:#f18a8a}.fsm-na{background:#1c222b;color:#8a94a0}
+    .fsm-note{color:var(--fg-dim);font-size:.85rem}
+  </style>
+  <table class="fsmtab"><thead><tr><th>Axis</th><th>Formula (as computed)</th>
+  <th>What it measures</th><th>Matches &sect;3?</th></tr></thead><tbody>%s</tbody></table>
+  <p class="caption"><b>&#10003; matches</b> = the same quantity as &sect;3; <b>&#9680; partial</b>
+  = the same kind of estimator but a differing detail; <b>&#10007; does not match</b> = a
+  different quantity (see the note). Definitions: F = agreement with the oracle's true causal
+  effects &Delta;y(u); S = held-out predictive score in [&minus;1,&nbsp;1]; M&nbsp;=&nbsp;|U*|/|U&#770;|
+  (true-minimal-set size / named-set size).</p>
+</div></section>""" % (BLOB, phase, phase, "".join(rows)))
+
+
 def build_method_page(meth):
     rec = {}
     rpath = os.path.join(REPO, "tools", "xai_study", _RECDIR[meth["phase"]], "out",
@@ -1507,9 +1579,12 @@ def build_method_page(meth):
   <p>%s</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
-  are in the <b>In the audit</b> box below.</p>
+  <a href="methods.html#stack">execution stack</a>. How each of F / S / M is actually computed for
+  this method (and whether it matches the paper) is in the box just below; the numbers are in the
+  <b>In the audit</b> box under it.</p>
 </div></section>
+
+%s
 
 %s
 
@@ -1526,7 +1601,8 @@ def build_method_page(meth):
 """ % (esc(_PHASE_LABEL[meth["phase"]]), esc(meth["title"]), esc(meth["ref"]),
        _PHASE_ANCHOR[meth["phase"]], about, meth["key"], meth["key"], esc(meth["title"]),
        _method_caption(meth), score, _phaseB_reading(meth),
-       howscored, audit_html, results_section, metahtml, BLOB, BLOB, BLOB)
+       howscored, build_fsm_math_section(meth["key"]), audit_html, results_section,
+       metahtml, BLOB, BLOB, BLOB)
     return page("m_%s.html" % meth["key"], meth["title"] + " — Paper 2 method", body)
 
 

@@ -36,8 +36,32 @@
   <p>The score is a rank correlation between the measured cell-to-cell correlation structure and the oracle's true coupling. We compute how each pair of cells co-varies across the trajectory, assemble that into a coupling matrix, and compare it, by Spearman correlation, to the true coupling the oracle certifies. Faithfulness for this method is that correlation. It is only partial, because the method never intervenes; it only watches. On a clock-locked machine two cells can be strongly correlated because they share a driver, not because one influences the other. So the correlation matrix conflates true coupling with common drivers, and the score reflects that confusion. Sufficiency, whether the recovered structure can predict held-out interventions, is near zero for this method, because a correlation matrix carries no mechanism to re-generate behaviour. The grading is always against the oracle, not against another method. There is no sprite-position hard-case here; the output is a coupling matrix. The audit box reports the measured faithfulness and, where the paper defines it, the sufficiency, each aggregated across the scored games so no single game dominates the number.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
-  are in the <b>In the audit</b> box below.</p>
+  <a href="methods.html#stack">execution stack</a>. How each of F / S / M is actually computed for
+  this method (and whether it matches the paper) is in the box just below; the numbers are in the
+  <b>In the audit</b> box under it.</p>
+</div></section>
+
+
+<section><div class="wrap">
+  <h2>How F, S, M are computed here</h2>
+  <p class="sub">The exact formula this method uses for each score, read from its runner, and
+  whether it matches the paper's &sect;3 (F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad) definition.
+  From the committed audit
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/data/fsm_math_phaseA.json"><code>fsm_math_phaseA.json</code></a>.</p>
+  <style>
+    .fsmtab td{vertical-align:top}
+    .fsm-badge{display:inline-block;padding:1px 8px;border-radius:6px;font-size:.82rem;font-weight:600;white-space:nowrap}
+    .fsm-ok{background:#12351f;color:#5ee08a}.fsm-warn{background:#3a2f10;color:#e8c65e}
+    .fsm-bad{background:#3a1414;color:#f18a8a}.fsm-na{background:#1c222b;color:#8a94a0}
+    .fsm-note{color:var(--fg-dim);font-size:.85rem}
+  </style>
+  <table class="fsmtab"><thead><tr><th>Axis</th><th>Formula (as computed)</th>
+  <th>What it measures</th><th>Matches &sect;3?</th></tr></thead><tbody><tr><td><b>F</b><br><span class="fsm-note">faithfulness</span></td><td><code>F = Spearman(rho)(|corr|_pairs, coupling_pairs) over 28 candidate-cell pairs; coupling(i,j) = max |delta cell_j| under do(i:=0)/do(i:=base+17), symmetrised</code></td><td>Spearman correlation between absolute pairwise data correlations and the oracle intervention-based cell-cell coupling over candidate-cell pairs.</td><td><span class="fsm-badge fsm-ok">&#10003; matches</span> <span class="fsm-note">Oracle &#x27;coupling&#x27; is a bit-exact intervention effect (not a data correlation); F correlates the method&#x27;s |corr| map against it. Correlation primitive on pairs. Runner A4_correlations.jl L648,L573-612; record out/A4_pong.json triad.F=0.633.</span></td></tr><tr><td><b>S</b><br><span class="fsm-note">sufficiency</span></td><td><code>S = Pearson(|corr|_pairs, held_pairs); held coupling(i,j) uses held-out do(base+37) only</code></td><td>Pearson correlation of the pairwise-correlation map vs the held-out do(base+37) coupling.</td><td><span class="fsm-badge fsm-warn">&#9680; partial</span> <span class="fsm-note">Held-out predictive correlation, correct spirit; single held-out value, no calibration-fit split. A4_correlations.jl L650,L579,L601-603; record S=-0.170.</span></td></tr><tr><td><b>M</b><br><span class="fsm-note">minimality</span></td><td><code>M = 1 - overclaim; overclaim = #(|corr|&gt;=tau-flagged pairs AND coupling==0)/#flagged pairs</code></td><td>1 minus the over-claim rate: fraction of high-correlation-flagged pairs the oracle says are NOT causally coupled.</td><td><span class="fsm-badge fsm-bad">&#10007; does not match</span> <span class="fsm-note">Paper M = |U*|/|U_hat|. This is 1 - a correlation over-grouping rate, not a set-size ratio. A4_correlations.jl L654-658; record M=0.5.</span></td></tr></tbody></table>
+  <p class="caption"><b>&#10003; matches</b> = the same quantity as &sect;3; <b>&#9680; partial</b>
+  = the same kind of estimator but a differing detail; <b>&#10007; does not match</b> = a
+  different quantity (see the note). Definitions: F = agreement with the oracle's true causal
+  effects &Delta;y(u); S = held-out predictive score in [&minus;1,&nbsp;1]; M&nbsp;=&nbsp;|U*|/|U&#770;|
+  (true-minimal-set size / named-set size).</p>
 </div></section>
 
 
@@ -95,7 +119,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/d4d90eba0bc70da604b27662f512ade7fc29c26a"><code>d4d90eba</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2a3cd9aa1d0d15e7ea8ca47492d3d7b32d7cd12a"><code>2a3cd9aa</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

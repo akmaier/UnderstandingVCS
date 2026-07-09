@@ -36,9 +36,12 @@
   <p>This entry is not scored on the faithfulness leaderboard, and that is deliberate. Grad-CAM, attention rollout, and VIPER need a convolutional layer, an attention matrix, or a learned policy that the VCS does not have. Across all 42 scored games the count of each required substrate is exactly zero, against many genuine candidate causes per game for the methods that do apply. A faithfulness number would be meaningless, because there is no map to compare to the oracle. So we record a measured structural fact, applies equals false, rather than force a score. We also note that re-targeting Grad-CAM's pooling onto the raw register state would only be the content-path gradient under another name, so it would add no new information. The grading standard elsewhere in the audit is always correlation, F1, or effect-agreement against the intervention oracle; here none of those is defined, because the method cannot run. The audit box below therefore marks this row as excluded from the leaderboard rather than showing an F, S, and M triad. Recording the absence openly is itself a finding: several popular tools have no purchase on a real artifact that lacks the neural structure they assume.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
-  are in the <b>In the audit</b> box below.</p>
+  <a href="methods.html#stack">execution stack</a>. How each of F / S / M is actually computed for
+  this method (and whether it matches the paper) is in the box just below; the numbers are in the
+  <b>In the audit</b> box under it.</p>
 </div></section>
+
+
 
 
 <section><div class="wrap">
@@ -61,7 +64,7 @@
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/d4d90eba0bc70da604b27662f512ade7fc29c26a"><code>d4d90eba</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2a3cd9aa1d0d15e7ea8ca47492d3d7b32d7cd12a"><code>2a3cd9aa</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

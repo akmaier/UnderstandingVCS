@@ -36,8 +36,32 @@
   <p>The score that matters for this method is minimality, not faithfulness. Recording the whole state is perfectly faithful, because it contains every cause, and perfectly sufficient, because it holds the whole machine and can predict any intervention. So F and S are both at the ceiling by construction. Minimality is defined as the size of the true minimal cause set divided by the size of the set the explanation names. The whole-state dump names all 128 RAM cells, while the true cause of any output is a handful of them, so the ratio is tiny and the minimality is very low. That is the whole point of including this baseline: a complete record is faithful and sufficient yet says nothing in particular, because it withholds nothing. The grading is always against the intervention oracle, which supplies the true minimal set. There is no sprite-position hard-case here; the method makes no positional claim. The audit box reports the exact per-axis triad, F, S, and M, read straight from the leaderboard, so you can see faithfulness and sufficiency at the ceiling beside a minimality near the floor.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
-  are in the <b>In the audit</b> box below.</p>
+  <a href="methods.html#stack">execution stack</a>. How each of F / S / M is actually computed for
+  this method (and whether it matches the paper) is in the box just below; the numbers are in the
+  <b>In the audit</b> box under it.</p>
+</div></section>
+
+
+<section><div class="wrap">
+  <h2>How F, S, M are computed here</h2>
+  <p class="sub">The exact formula this method uses for each score, read from its runner, and
+  whether it matches the paper's &sect;3 (F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad) definition.
+  From the committed audit
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/data/fsm_math_phaseA.json"><code>fsm_math_phaseA.json</code></a>.</p>
+  <style>
+    .fsmtab td{vertical-align:top}
+    .fsm-badge{display:inline-block;padding:1px 8px;border-radius:6px;font-size:.82rem;font-weight:600;white-space:nowrap}
+    .fsm-ok{background:#12351f;color:#5ee08a}.fsm-warn{background:#3a2f10;color:#e8c65e}
+    .fsm-bad{background:#3a1414;color:#f18a8a}.fsm-na{background:#1c222b;color:#8a94a0}
+    .fsm-note{color:var(--fg-dim);font-size:.85rem}
+  </style>
+  <table class="fsmtab"><thead><tr><th>Axis</th><th>Formula (as computed)</th>
+  <th>What it measures</th><th>Matches &sect;3?</th></tr></thead><tbody><tr><td><b>F</b><br><span class="fsm-note">faithfulness</span></td><td><code>F = recall of oracle-causal candidate cells under the whole-state map = 1.0 (whole state contains every cell)</code></td><td>Recall of the oracle-causal cells under the record-everything map; trivially 1.0 because the whole state includes every cell.</td><td><span class="fsm-badge fsm-warn">&#9680; partial</span> <span class="fsm-note">Scored vs the oracle causal cells but the primitive is recall (not the correlation/edge-F1 the paper specifies); it is a hard-coded 1.0 by construction, consistent with the paper&#x27;s &#x27;trivially faithful&#x27; whole-state baseline. Runner A8_wholestate.jl L561,L356-375; record out/A8_pong.json triad.F=1.0.</span></td></tr><tr><td><b>S</b><br><span class="fsm-note">sufficiency</span></td><td><code>S = 1.0 if lossless restore else 0.0; restore the recorded 128-byte RAM into a fresh checkpoint and require byte-identical re-rendered RAM + screen</code></td><td>1 if the recorded whole 128-byte RAM state, restored, reproduces the exact RAM and frame (lossless), else 0.</td><td><span class="fsm-badge fsm-warn">&#9680; partial</span> <span class="fsm-note">Literal sufficiency (the recorded state regenerates the behaviour), matching the spirit; but not the held-out fit-then-predict-disjoint predictive estimator, and a boolean rather than a fraction/correlation in [-1,1]. A8_wholestate.jl L560-562,L397-402; record S=1.0.</span></td></tr><tr><td><b>M</b><br><span class="fsm-note">minimality</span></td><td><code>M = |U*|/|U_hat| = n_causal / 128 (RAM_SIZE); U_hat = whole 128-byte state, U* = #oracle-causal cells</code></td><td>Number of oracle-causal cells over the size of the named set (128), the whole-state minimality floor.</td><td><span class="fsm-badge fsm-ok">&#10003; matches</span> <span class="fsm-note">The only Phase-A method whose M is exactly |U*|/|U_hat|; paper cites whole-state M=0.07. Headline metric_name = wholestate_minimality_M_vs_oracle. A8_wholestate.jl L563,L537-538; record out/A8_pong.json M=0.03125 = 4/128.</span></td></tr></tbody></table>
+  <p class="caption"><b>&#10003; matches</b> = the same quantity as &sect;3; <b>&#9680; partial</b>
+  = the same kind of estimator but a differing detail; <b>&#10007; does not match</b> = a
+  different quantity (see the note). Definitions: F = agreement with the oracle's true causal
+  effects &Delta;y(u); S = held-out predictive score in [&minus;1,&nbsp;1]; M&nbsp;=&nbsp;|U*|/|U&#770;|
+  (true-minimal-set size / named-set size).</p>
 </div></section>
 
 
@@ -95,7 +119,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/d4d90eba0bc70da604b27662f512ade7fc29c26a"><code>d4d90eba</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2a3cd9aa1d0d15e7ea8ca47492d3d7b32d7cd12a"><code>2a3cd9aa</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

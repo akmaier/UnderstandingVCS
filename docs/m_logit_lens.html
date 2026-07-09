@@ -36,8 +36,32 @@
   <p>The score is the readout fidelity of the lens-decoded intermediate against the true intermediate value, reported as an R-squared. We read an intermediate value through the machine's own decoding and compare it to the true value at that site. The grading is always against the intervention oracle. On this transparent machine the readout is exact: the state is linearly readable at the right site, so the lens reproduces the true intermediate value on every core game and the fidelity is at the ceiling. Faithfulness for this method is that readout fidelity. There is no sprite-position hard-case here, because the method reads an internal value rather than a rendered position, and it does not rely on a gradient. The result is expected, because the VCS keeps its variables in plain, addressable memory rather than in a distorted distributed code. The important qualification, which the score does not by itself capture, is that reading the right value at the right site confirms the value is represented and readable, but does not explain how the value is computed or what role it plays. The grading is always against the oracle. The audit box reports the measured triad, with fidelity at the ceiling.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
-  are in the <b>In the audit</b> box below.</p>
+  <a href="methods.html#stack">execution stack</a>. How each of F / S / M is actually computed for
+  this method (and whether it matches the paper) is in the box just below; the numbers are in the
+  <b>In the audit</b> box under it.</p>
+</div></section>
+
+
+<section><div class="wrap">
+  <h2>How F, S, M are computed here</h2>
+  <p class="sub">The exact formula this method uses for each score, read from its runner, and
+  whether it matches the paper's &sect;3 (F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad) definition.
+  From the committed audit
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/data/fsm_math_phaseC.json"><code>fsm_math_phaseC.json</code></a>.</p>
+  <style>
+    .fsmtab td{vertical-align:top}
+    .fsm-badge{display:inline-block;padding:1px 8px;border-radius:6px;font-size:.82rem;font-weight:600;white-space:nowrap}
+    .fsm-ok{background:#12351f;color:#5ee08a}.fsm-warn{background:#3a2f10;color:#e8c65e}
+    .fsm-bad{background:#3a1414;color:#f18a8a}.fsm-na{background:#1c222b;color:#8a94a0}
+    .fsm-note{color:var(--fg-dim);font-size:.85rem}
+  </style>
+  <table class="fsmtab"><thead><tr><th>Axis</th><th>Formula (as computed)</th>
+  <th>What it measures</th><th>Matches &sect;3?</th></tr></thead><tbody><tr><td><b>F</b><br><span class="fsm-note">faithfulness</span></td><td><code>F = clamp01(logit_lens_fidelity_true_intermediate) = 1.0 by construction (the frozen/identity logit-lens readout IS the cell, so it matches the true intermediate value)</code></td><td>Fidelity of the logit-lens readout to the true intermediate variable value; 1.0 by construction because the readout reads the cell directly.</td><td><span class="fsm-badge fsm-bad">&#10007; does not match</span> <span class="fsm-note">logit_lens.jl:676 (F = clamp(logit_true_fidelity)); value=1.0. This is readout fidelity to a TRUE INTERMEDIATE value (a positive control by construction), NOT agreement between a method claim and the oracle CAUSAL effects {Delta_y(u)}. Paper&#x27;s F must be the causal-effect agreement; readout fidelity to the intermediate is a different quantity. Record: extra.triad.F=1.0 (battery mean F=1.0, n=42). (The genuine causal-alignment signal is mean_faithful_weight_fraction, used as M below.)</span></td></tr><tr><td><b>S</b><br><span class="fsm-note">sufficiency</span></td><td><code>S = null (undefined)</code></td><td>Not scored: the lens reports readout fidelity to the true intermediate, not a held-out do(u) output prediction.</td><td><span class="fsm-badge fsm-na">&mdash; n/a</span> <span class="fsm-note">logit_lens.jl:677 (S = nothing). n/a is defensible per paper. Record: extra.triad.S = null.</span></td></tr><tr><td><b>M</b><br><span class="fsm-note">minimality</span></td><td><code>M = clamp01(mean_faithful_weight_fraction) = mean share of tuned-lens |A_t| readout-weight mass on oracle-causal sites</code></td><td>Mean fraction of the tuned-lens readout weight that sits on truly-causal sites (a weight-share proxy, not a cardinality ratio).</td><td><span class="fsm-badge fsm-bad">&#10007; does not match</span> <span class="fsm-note">logit_lens.jl:680 (M = clamp(mean_faithful_weight_frac)). A continuous weight-share proxy, NOT the paper&#x27;s M = |U*|/|U_hat| set-cardinality ratio; the lens names a readout DIRECTION not a discrete cell set, so the runner substitutes faithful-weight-fraction. Record: extra.triad.M (pong M=0.438; battery mean M=0.820, n=42).</span></td></tr></tbody></table>
+  <p class="caption"><b>&#10003; matches</b> = the same quantity as &sect;3; <b>&#9680; partial</b>
+  = the same kind of estimator but a differing detail; <b>&#10007; does not match</b> = a
+  different quantity (see the note). Definitions: F = agreement with the oracle's true causal
+  effects &Delta;y(u); S = held-out predictive score in [&minus;1,&nbsp;1]; M&nbsp;=&nbsp;|U*|/|U&#770;|
+  (true-minimal-set size / named-set size).</p>
 </div></section>
 
 
@@ -95,7 +119,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/d4d90eba0bc70da604b27662f512ade7fc29c26a"><code>d4d90eba</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2a3cd9aa1d0d15e7ea8ca47492d3d7b32d7cd12a"><code>2a3cd9aa</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

@@ -36,8 +36,32 @@
   <p>The score is a data-flow-graph F1 against the true read/write graph from the disassembly. An edge means that perturbing one RAM cell changes another. We build the recovered graph by single-shot perturbation and compare its edges to the true edges, taking the harmonic mean of precision, the fraction of recovered edges that are real, and recall, the fraction of real edges recovered. Faithfulness for this method is that edge F1: a graph-valued explanation is graded as a graph, not as a heat-map. The comparison is always against the intervention oracle's true wiring, never against another method. The hard part is that a single perturbation ripples through shared clocks and buffers, so the recovered graph contains many edges the real program does not have. Precision suffers, and the F1 stays low. There is no separate position hard-case here, because the method never claims a sprite position; it claims a wiring diagram. The audit box below reports the actual F1, aggregated across the scored games, so no single game dominates. Read the recovered-versus-true graph as the error: every edge in one panel but not the other is a mistake the metric counts.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
-  are in the <b>In the audit</b> box below.</p>
+  <a href="methods.html#stack">execution stack</a>. How each of F / S / M is actually computed for
+  this method (and whether it matches the paper) is in the box just below; the numbers are in the
+  <b>In the audit</b> box under it.</p>
+</div></section>
+
+
+<section><div class="wrap">
+  <h2>How F, S, M are computed here</h2>
+  <p class="sub">The exact formula this method uses for each score, read from its runner, and
+  whether it matches the paper's &sect;3 (F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad) definition.
+  From the committed audit
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/data/fsm_math_phaseA.json"><code>fsm_math_phaseA.json</code></a>.</p>
+  <style>
+    .fsmtab td{vertical-align:top}
+    .fsm-badge{display:inline-block;padding:1px 8px;border-radius:6px;font-size:.82rem;font-weight:600;white-space:nowrap}
+    .fsm-ok{background:#12351f;color:#5ee08a}.fsm-warn{background:#3a2f10;color:#e8c65e}
+    .fsm-bad{background:#3a1414;color:#f18a8a}.fsm-na{background:#1c222b;color:#8a94a0}
+    .fsm-note{color:var(--fg-dim);font-size:.85rem}
+  </style>
+  <table class="fsmtab"><thead><tr><th>Axis</th><th>Formula (as computed)</th>
+  <th>What it measures</th><th>Matches &sect;3?</th></tr></thead><tbody><tr><td><b>F</b><br><span class="fsm-note">faithfulness</span></td><td><code>F = edge-F1(R, T) = 2PR/(P+R), R=recovered do(base+17) 1-step edges, T=true oracle edges (do 0/base+17/base+37, full horizon)</code></td><td>F1 of the single-shot recovered data-flow edges against the exact-oracle true data-flow graph over 8 candidate cells.</td><td><span class="fsm-badge fsm-ok">&#10003; matches</span> <span class="fsm-note">Graph-valued primitive = edge F1 vs true data-flow graph, exactly the paper&#x27;s connectomics case. Runner A1_connectomics.jl L406,L367-386; record out/A1_pong.json extra.triad.F=0.0 / graph.f1.</span></td></tr><tr><td><b>S</b><br><span class="fsm-note">sufficiency</span></td><td><code>S = agree/total over off-diagonal edges, agree = #(R AND H) + #(NOT R AND NOT H); H = true edges under held-out do(base+37)</code></td><td>Off-diagonal edge agreement between the base+17 recovered graph and the held-out base+37 true edge set (unseen intervention value).</td><td><span class="fsm-badge fsm-warn">&#9680; partial</span> <span class="fsm-note">Held-out generalisation, right spirit, but it is a plain agreement/accuracy of the fixed recovered graph vs held-out truth, not a fit-on-calibration then predict-disjoint estimator; not in [-1,1] predictive-correlation form. A1_connectomics.jl L412-416,L571-591; record S=0.839.</span></td></tr><tr><td><b>M</b><br><span class="fsm-note">minimality</span></td><td><code>M = 1 - fp/|recovered edges| (= edge precision)</code></td><td>1 minus the over-claim rate: fraction of recovered edges the oracle says are spurious.</td><td><span class="fsm-badge fsm-bad">&#10007; does not match</span> <span class="fsm-note">Paper M = |U*|/|U_hat| (true-minimal-cause-set size over named-set size). This is 1 - false-positive-edge rate (= precision), a different quantity. A1_connectomics.jl L417-418; record M=1.0.</span></td></tr></tbody></table>
+  <p class="caption"><b>&#10003; matches</b> = the same quantity as &sect;3; <b>&#9680; partial</b>
+  = the same kind of estimator but a differing detail; <b>&#10007; does not match</b> = a
+  different quantity (see the note). Definitions: F = agreement with the oracle's true causal
+  effects &Delta;y(u); S = held-out predictive score in [&minus;1,&nbsp;1]; M&nbsp;=&nbsp;|U*|/|U&#770;|
+  (true-minimal-set size / named-set size).</p>
 </div></section>
 
 
@@ -95,7 +119,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/d4d90eba0bc70da604b27662f512ade7fc29c26a"><code>d4d90eba</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2a3cd9aa1d0d15e7ea8ca47492d3d7b32d7cd12a"><code>2a3cd9aa</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

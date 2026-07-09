@@ -40,8 +40,32 @@
   <p>The score is the Pearson correlation of the learned mask with the oracle's exact causal map, together with the mask's overlap, measured as intersection-over-union, against the true minimal cause set. The grading is always against the intervention oracle. Every entry of the mask is a real occlude-and-re-run, so the method is a valid intervention and works even on a sprite's position, where the gradient family scores zero. That is why there is no position-collapse here. Its faithfulness is moderate rather than high: the area-bounded optimisation finds a compact set that partly overlaps the true causes but does not exactly match the oracle's minimal set, so both the correlation and the mask overlap are partial. Minimality is central to this method, because it explicitly seeks the smallest disruptive mask, so the score rewards a mask that is both on-target and small. The grading never compares the mask to another method's mask, only to the oracle's minimal set. The audit box reports the measured all-regime faithfulness across the 42 scored games, so the number reflects the whole scored set rather than the single game where the optimised mask happens to line up best with the true causes.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
-  are in the <b>In the audit</b> box below.</p>
+  <a href="methods.html#stack">execution stack</a>. How each of F / S / M is actually computed for
+  this method (and whether it matches the paper) is in the box just below; the numbers are in the
+  <b>In the audit</b> box under it.</p>
+</div></section>
+
+
+<section><div class="wrap">
+  <h2>How F, S, M are computed here</h2>
+  <p class="sub">The exact formula this method uses for each score, read from its runner, and
+  whether it matches the paper's &sect;3 (F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad) definition.
+  From the committed audit
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/data/fsm_math_phaseB.json"><code>fsm_math_phaseB.json</code></a>.</p>
+  <style>
+    .fsmtab td{vertical-align:top}
+    .fsm-badge{display:inline-block;padding:1px 8px;border-radius:6px;font-size:.82rem;font-weight:600;white-space:nowrap}
+    .fsm-ok{background:#12351f;color:#5ee08a}.fsm-warn{background:#3a2f10;color:#e8c65e}
+    .fsm-bad{background:#3a1414;color:#f18a8a}.fsm-na{background:#1c222b;color:#8a94a0}
+    .fsm-note{color:var(--fg-dim);font-size:.85rem}
+  </style>
+  <table class="fsmtab"><thead><tr><th>Axis</th><th>Formula (as computed)</th>
+  <th>What it measures</th><th>Matches &sect;3?</th></tr></thead><tbody><tr><td><b>F</b><br><span class="fsm-note">faithfulness</span></td><td><code>F = rho_Pearson(attr, |Delta_y(u)|)  =  Statistics.cor(attr, oracle_abs_delta)  (0 if either has zero variance; negatives preserved)</code></td><td>Raw Pearson correlation between the method&#x27;s per-cause attribution magnitudes and the oracle&#x27;s true absolute causal effects |Delta_y(u)|, scored separately for the content and position output regimes.</td><td><span class="fsm-badge fsm-ok">&#10003; matches</span> <span class="fsm-note">perturbation.jl: extremal-perturbation mask per cause, F = pearson(attr, oracle_abs_delta); triad_extra_dict(f.pearson, attr, f.oracle_abs_delta). Record: out/perturbation_air_raid_content.json (metric_name=pearson_corr_with_oracle, value=0.55). Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance-&gt;0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper&#x27;s auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}.</span></td></tr><tr><td><b>S</b><br><span class="fsm-note">sufficiency</span></td><td><code>S = (#held-out do(u) with |y_intact + Delta_y_pred - (y_intact + Delta_y_true)| &lt;= epsilon) / |held-out|,  in [0,1]</code></td><td>Fit Delta_y = a*attr + b on a calibration half of the do(u) causes, predict the disjoint held-out half, and report the fraction of held-out causes whose predicted output lands within an epsilon band of the oracle&#x27;s bit-exact re-run.</td><td><span class="fsm-badge fsm-warn">&#9680; partial</span> <span class="fsm-note">common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  Paper (sec:triad) allows the fraction-within-tolerance [0,1] variant, so the estimator TYPE matches; but epsilon is a self-scaled continuous band (0.10*spread) rather than a fixed output-type tolerance, and S is bounded [0,1] here so the &#x27;negative = worse than baseline&#x27; [-1,1] correlation variant is not used.</span></td></tr><tr><td><b>M</b><br><span class="fsm-note">minimality</span></td><td><code>M = |U*| / |U_hat|,  clamped to (0,1];  |U*| = #{u : Delta_y(u) &gt; 0},  |U_hat| = #{u : |attr(u)| &gt; 1e-6*max|attr|}</code></td><td>Ratio of the number of oracle causal movers (causes with nonzero true Delta_y) to the number of cells the method names above 1e-6 of its own max attribution; null when the oracle finds no mover or the method names nothing.</td><td><span class="fsm-badge fsm-warn">&#9680; partial</span> <span class="fsm-note">common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181.  Matches paper&#x27;s M = |U*|/|U_hat| in (0,1]; but |U*| is taken as ALL oracle movers (Delta_y&gt;0), not the strictly-smallest reproducing subset the paper defines as the &#x27;true minimal cause set&#x27;, so |U*| is an upper bound and M can be optimistic.</span></td></tr></tbody></table>
+  <p class="caption"><b>&#10003; matches</b> = the same quantity as &sect;3; <b>&#9680; partial</b>
+  = the same kind of estimator but a differing detail; <b>&#10007; does not match</b> = a
+  different quantity (see the note). Definitions: F = agreement with the oracle's true causal
+  effects &Delta;y(u); S = held-out predictive score in [&minus;1,&nbsp;1]; M&nbsp;=&nbsp;|U*|/|U&#770;|
+  (true-minimal-set size / named-set size).</p>
 </div></section>
 
 
@@ -99,7 +123,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/d4d90eba0bc70da604b27662f512ade7fc29c26a"><code>d4d90eba</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2a3cd9aa1d0d15e7ea8ca47492d3d7b32d7cd12a"><code>2a3cd9aa</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

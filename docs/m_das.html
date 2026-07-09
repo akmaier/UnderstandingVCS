@@ -36,8 +36,32 @@
   <p>The score is the interchange accuracy of the aligned subspace against the true variable. We align a learned subspace of the state to a supplied concept, then swap that subspace between two runs and check whether the output changes exactly as the concept predicts; the fraction of correct interchanges is the accuracy. The grading is against the intervention oracle, and on this transparent machine the alignment is exact, so interchange accuracy is at the ceiling, while a mis-aligned control scores zero. Faithfulness for this method is that interchange accuracy. There is no sprite-position hard-case here, because DAS operates by intervention rather than by a gradient. The essential caveat the audit makes explicit is that the concept DAS aligns to is one we supplied from an external label, not one the method discovered. So a perfect interchange accuracy is guaranteed in advance: it confirms an alignment to a given meaning, and does not show the method found the meaning on its own. The grading is always against the oracle, never against another method. The audit box reports the measured triad. DAS is thus a clean example of the difference between verifying a supplied concept and discovering one, which only a machine with known ground truth can separate.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
-  are in the <b>In the audit</b> box below.</p>
+  <a href="methods.html#stack">execution stack</a>. How each of F / S / M is actually computed for
+  this method (and whether it matches the paper) is in the box just below; the numbers are in the
+  <b>In the audit</b> box under it.</p>
+</div></section>
+
+
+<section><div class="wrap">
+  <h2>How F, S, M are computed here</h2>
+  <p class="sub">The exact formula this method uses for each score, read from its runner, and
+  whether it matches the paper's &sect;3 (F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad) definition.
+  From the committed audit
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/data/fsm_math_phaseC.json"><code>fsm_math_phaseC.json</code></a>.</p>
+  <style>
+    .fsmtab td{vertical-align:top}
+    .fsm-badge{display:inline-block;padding:1px 8px;border-radius:6px;font-size:.82rem;font-weight:600;white-space:nowrap}
+    .fsm-ok{background:#12351f;color:#5ee08a}.fsm-warn{background:#3a2f10;color:#e8c65e}
+    .fsm-bad{background:#3a1414;color:#f18a8a}.fsm-na{background:#1c222b;color:#8a94a0}
+    .fsm-note{color:var(--fg-dim);font-size:.85rem}
+  </style>
+  <table class="fsmtab"><thead><tr><th>Axis</th><th>Formula (as computed)</th>
+  <th>What it measures</th><th>Matches &sect;3?</th></tr></thead><tbody><tr><td><b>F</b><br><span class="fsm-note">faithfulness</span></td><td><code>F = interchange_accuracy_aligned = fraction of aligned variables whose interchange (swap SOURCE-&gt;BASE, re-run) reproduces the high-level abstraction o_V := source(V) at the readout  (= 1.0 by construction)</code></td><td>Interchange accuracy of the SUPPLIED alignment: for each aligned cell, does swapping its value reproduce the predicted high-level outcome; 1.0 by construction on the VCS.</td><td><span class="fsm-badge fsm-warn">&#9680; partial</span> <span class="fsm-note">das.jl:638 (F = clamp(iia_aligned)); metric_name interchange_accuracy_aligned. It IS a causal check (each interchange is a real do(cell:=source) bit-exact re-run, so single-cell interchange == the exact patch oracle), but F verifies a SUPPLIED/known-true alignment reproduces the abstraction (Geiger IIA) rather than scoring a method-discovered claim&#x27;s agreement against {Delta_y(u)} -&gt; &#x27;1.0 by construction&#x27;. The genuine discovery signal (alignment_accuracy, whether DAS recovers the right cell) is a separate extra field, not F. Record: extra.triad.F=1.0 (battery mean F=1.0, n=42).</span></td></tr><tr><td><b>S</b><br><span class="fsm-note">sufficiency</span></td><td><code>S = fraction of held-out do(u) within ε of the bit-exact re-run (shared calibration/held-out estimator over the interchange-effect vs exact-effect)</code></td><td>Shared held-out predictive sufficiency estimator over the interchange effects.</td><td><span class="fsm-badge fsm-ok">&#10003; matches</span> <span class="fsm-note">common/triad_sm.jl sufficiency_score via triad_extra_dict (das.jl:638, effect vs exact_effect). Paper-conform. Record: extra.triad.S=1.0 (battery mean S=1.0, n=42).</span></td></tr><tr><td><b>M</b><br><span class="fsm-note">minimality</span></td><td><code>M = |U*| / |U_hat|</code></td><td>True minimal cause set over method-named set.</td><td><span class="fsm-badge fsm-ok">&#10003; matches</span> <span class="fsm-note">common/triad_sm.jl minimality_score. Paper-conform. Record: extra.triad.M (pong |U*|=5/|U_hat|=5, M=1.0; battery mean M=0.890, n=42).</span></td></tr></tbody></table>
+  <p class="caption"><b>&#10003; matches</b> = the same quantity as &sect;3; <b>&#9680; partial</b>
+  = the same kind of estimator but a differing detail; <b>&#10007; does not match</b> = a
+  different quantity (see the note). Definitions: F = agreement with the oracle's true causal
+  effects &Delta;y(u); S = held-out predictive score in [&minus;1,&nbsp;1]; M&nbsp;=&nbsp;|U*|/|U&#770;|
+  (true-minimal-set size / named-set size).</p>
 </div></section>
 
 
@@ -95,7 +119,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/d4d90eba0bc70da604b27662f512ade7fc29c26a"><code>d4d90eba</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2a3cd9aa1d0d15e7ea8ca47492d3d7b32d7cd12a"><code>2a3cd9aa</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

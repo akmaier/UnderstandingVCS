@@ -36,8 +36,32 @@
   <p>The score is the fraction of the pooled-activity power spectrum that the known clocks explain. We pool a region of memory into one signal, take its power spectrum, and measure how much of that spectrum is accounted for by the frame clock and the scanline clock, whose frequencies we know exactly. Faithfulness is one minus that clock-explained fraction, because the part of the spectrum that is just the hardware's timing is epiphenomenal, not computation. A high clock-explained fraction means the impressive-looking spectrum is mostly the machine's pacemaker, so the method's faithfulness is low. The grading is always against the intervention oracle, which certifies what is truly computational. There is no sprite-position hard-case here; the output is a spectrum, not a coordinate. This method is a calibration baseline: it shows how a standard neuroscience signal can look rich while carrying little of the real computation. The audit box reports the measured faithfulness across the scored games, so the number reflects the whole scored set rather than one game where the clocks happen to dominate more or less.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
-  are in the <b>In the audit</b> box below.</p>
+  <a href="methods.html#stack">execution stack</a>. How each of F / S / M is actually computed for
+  this method (and whether it matches the paper) is in the box just below; the numbers are in the
+  <b>In the audit</b> box under it.</p>
+</div></section>
+
+
+<section><div class="wrap">
+  <h2>How F, S, M are computed here</h2>
+  <p class="sub">The exact formula this method uses for each score, read from its runner, and
+  whether it matches the paper's &sect;3 (F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad) definition.
+  From the committed audit
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/data/fsm_math_phaseA.json"><code>fsm_math_phaseA.json</code></a>.</p>
+  <style>
+    .fsmtab td{vertical-align:top}
+    .fsm-badge{display:inline-block;padding:1px 8px;border-radius:6px;font-size:.82rem;font-weight:600;white-space:nowrap}
+    .fsm-ok{background:#12351f;color:#5ee08a}.fsm-warn{background:#3a2f10;color:#e8c65e}
+    .fsm-bad{background:#3a1414;color:#f18a8a}.fsm-na{background:#1c222b;color:#8a94a0}
+    .fsm-note{color:var(--fg-dim);font-size:.85rem}
+  </style>
+  <table class="fsmtab"><thead><tr><th>Axis</th><th>Formula (as computed)</th>
+  <th>What it measures</th><th>Matches &sect;3?</th></tr></thead><tbody><tr><td><b>F</b><br><span class="fsm-note">faithfulness</span></td><td>&mdash;</td><td>No faithfulness score. A5 is declared a descriptive method: it reports the pooled-activity spectral structure it reveals (headline = global-pool clock-explained variance fraction), not an F vs the oracle.</td><td><span class="fsm-badge fsm-na">&mdash; n/a</span> <span class="fsm-note">Runner A5_lfp.jl explicitly sets method_kind=&#x27;descriptive (no oracle F/S/M)&#x27; (L919-922,L41-47); metric_name=A5_global_pool_clock_explained_variance_fraction_epiphenomenal, value=gp.clock_var_fraction (L891-892). Record out/A5_pong.json has no triad.</span></td></tr><tr><td><b>S</b><br><span class="fsm-note">sufficiency</span></td><td>&mdash;</td><td>Not computed; A5 emits no S.</td><td><span class="fsm-badge fsm-na">&mdash; n/a</span> <span class="fsm-note">No S/held-out estimator in A5_lfp.jl; descriptive method by design.</span></td></tr><tr><td><b>M</b><br><span class="fsm-note">minimality</span></td><td>&mdash;</td><td>Not computed; A5 emits no M.</td><td><span class="fsm-badge fsm-na">&mdash; n/a</span> <span class="fsm-note">No minimality set in A5_lfp.jl; descriptive method by design.</span></td></tr></tbody></table>
+  <p class="caption"><b>&#10003; matches</b> = the same quantity as &sect;3; <b>&#9680; partial</b>
+  = the same kind of estimator but a differing detail; <b>&#10007; does not match</b> = a
+  different quantity (see the note). Definitions: F = agreement with the oracle's true causal
+  effects &Delta;y(u); S = held-out predictive score in [&minus;1,&nbsp;1]; M&nbsp;=&nbsp;|U*|/|U&#770;|
+  (true-minimal-set size / named-set size).</p>
 </div></section>
 
 
@@ -95,7 +119,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/d4d90eba0bc70da604b27662f512ade7fc29c26a"><code>d4d90eba</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2a3cd9aa1d0d15e7ea8ca47492d3d7b32d7cd12a"><code>2a3cd9aa</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

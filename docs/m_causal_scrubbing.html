@@ -36,8 +36,32 @@
   <p>The score is the behaviour preserved when resampling activations consistent with a hypothesised circuit. We scrub, that is resample, everything the hypothesis marks as irrelevant and measure whether the program's behaviour still holds. The grading is always against the intervention oracle. For the true data-flow hypothesis, which we know from the disassembly, scrubbing preserves the behaviour on every core game, so the preserved performance is at the ceiling; a deliberately wrong hypothesis fails, and the two are told apart on every game. Faithfulness for this method is that preserved-performance score, and it is exact here, because the resample-and-re-run operation is a genuine intervention on a fully observable machine. There is no sprite-position hard-case here, because the method works by intervention rather than by a gradient. The grading is a pass/fail of a whole hypothesis against the oracle, not a comparison to another method. The important qualification, which the score does not by itself capture, is that confirming the correct wiring is not the same as recovering what the circuit means or how its variables combine. The audit box reports the measured triad, with faithfulness at the ceiling on the correct hypothesis.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
-  are in the <b>In the audit</b> box below.</p>
+  <a href="methods.html#stack">execution stack</a>. How each of F / S / M is actually computed for
+  this method (and whether it matches the paper) is in the box just below; the numbers are in the
+  <b>In the audit</b> box under it.</p>
+</div></section>
+
+
+<section><div class="wrap">
+  <h2>How F, S, M are computed here</h2>
+  <p class="sub">The exact formula this method uses for each score, read from its runner, and
+  whether it matches the paper's &sect;3 (F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad) definition.
+  From the committed audit
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/data/fsm_math_phaseC.json"><code>fsm_math_phaseC.json</code></a>.</p>
+  <style>
+    .fsmtab td{vertical-align:top}
+    .fsm-badge{display:inline-block;padding:1px 8px;border-radius:6px;font-size:.82rem;font-weight:600;white-space:nowrap}
+    .fsm-ok{background:#12351f;color:#5ee08a}.fsm-warn{background:#3a2f10;color:#e8c65e}
+    .fsm-bad{background:#3a1414;color:#f18a8a}.fsm-na{background:#1c222b;color:#8a94a0}
+    .fsm-note{color:var(--fg-dim);font-size:.85rem}
+  </style>
+  <table class="fsmtab"><thead><tr><th>Axis</th><th>Formula (as computed)</th>
+  <th>What it measures</th><th>Matches &sect;3?</th></tr></thead><tbody><tr><td><b>F</b><br><span class="fsm-note">faithfulness</span></td><td><code>F = scrubbing_preserved_performance_true = fraction of the true-graph sink readouts preserved when every candidate OUTSIDE the true hypothesised circuit is resample-ablated</code></td><td>For the ground-truth hypothesised circuit, the fraction of the behaviour (true-graph sink cells) preserved across the resample distribution.</td><td><span class="fsm-badge fsm-warn">&#9680; partial</span> <span class="fsm-note">causal_scrubbing.jl:650-670 (F = clamp(true_preserved)). The hypothesis is built FROM the A1 oracle data-flow (ancestors of the output), so it is oracle-grounded, but F is a scrubbing-preservation fraction, NOT the paper&#x27;s edge-F1 (circuit discovery) nor a causal-effect-agreement correlation (patching/mediation). It measures &#x27;does the oracle-derived circuit pass the scrub&#x27; rather than &#x27;how well does the method&#x27;s discovered claim agree with the oracle&#x27;. Record: extra.triad.F / top-level value (pong F=1.0; battery mean F=0.979, n=42).</span></td></tr><tr><td><b>S</b><br><span class="fsm-note">sufficiency</span></td><td><code>S = true_preserved (same scalar as F): held-out scrubbing sufficiency = fraction of readouts preserved over held-out resample trials</code></td><td>Held-out scrubbing sufficiency; equals the F scalar here.</td><td><span class="fsm-badge fsm-warn">&#9680; partial</span> <span class="fsm-note">causal_scrubbing.jl:659-663 (S = clamp(true_preserved), identical to F). A bit-exact-re-run preservation fraction in [0,1], but NOT the paper&#x27;s held-out PREDICTIVE do(u) estimator, and S == F leaves S carrying no independent held-out predictive information. Record: extra.triad.S (pong S=1.0; battery mean S=0.979, n=42).</span></td></tr><tr><td><b>M</b><br><span class="fsm-note">minimality</span></td><td><code>M = |true_circuit| / |candidate_cells|  = min(1, n_circuit / n_candidates)</code></td><td>True minimal circuit size over the number of candidate cells recorded.</td><td><span class="fsm-badge fsm-warn">&#9680; partial</span> <span class="fsm-note">causal_scrubbing.jl:664 (M = min(1, ncirc/ncand)). Numerator |U*| is paper-correct (true minimal circuit), but the denominator is the fixed CANDIDATE-CELL count (whole recorded state), not the size of the set the METHOD itself NAMES. Since causal scrubbing tests a supplied hypothesis rather than emitting its own named set, U_hat is taken as the candidate pool -&gt; a parsimony-vs-whole-state ratio, close to but not strictly the paper&#x27;s |U*|/|U_hat|. Record: extra.triad.M (pong |U*|=6/8=0.75; battery mean M=0.430, n=42).</span></td></tr></tbody></table>
+  <p class="caption"><b>&#10003; matches</b> = the same quantity as &sect;3; <b>&#9680; partial</b>
+  = the same kind of estimator but a differing detail; <b>&#10007; does not match</b> = a
+  different quantity (see the note). Definitions: F = agreement with the oracle's true causal
+  effects &Delta;y(u); S = held-out predictive score in [&minus;1,&nbsp;1]; M&nbsp;=&nbsp;|U*|/|U&#770;|
+  (true-minimal-set size / named-set size).</p>
 </div></section>
 
 
@@ -95,7 +119,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/d4d90eba0bc70da604b27662f512ade7fc29c26a"><code>d4d90eba</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2a3cd9aa1d0d15e7ea8ca47492d3d7b32d7cd12a"><code>2a3cd9aa</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

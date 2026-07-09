@@ -36,8 +36,32 @@
   <p>The score is the best F1 of the auto-discovered circuit against the true data-flow over a threshold sweep. ACDC prunes edges by resample-ablation, keeping an edge only if removing it hurts performance beyond the current threshold, and sweeping the threshold traces a family of candidate circuits from which we take the best F1 against the true routine. The grading is always against the intervention oracle's true wiring. Faithfulness for this method is that best F1, and it is partial: precision is reasonable but recall is limited, because dependencies re-derived through other cells survive the resample and get pruned away. A positive control runs the identical pruning under exhaustive exact interventions and reaches a perfect F1 on every game, so the shortfall is a real measurement of single-shot discovery, not a broken scorer. There is no sprite-position hard-case here; the output is a circuit. One of the paper's key separations comes from this method: on one game ACDC recovers a perfect, minimal circuit that nonetheless fails to regenerate the behaviour under held-out interventions, so sufficiency drops well below faithfulness. The grading is always against the oracle. The audit box reports the measured triad, so you can see faithfulness beside a lower sufficiency on the same discovered graph.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
-  are in the <b>In the audit</b> box below.</p>
+  <a href="methods.html#stack">execution stack</a>. How each of F / S / M is actually computed for
+  this method (and whether it matches the paper) is in the box just below; the numbers are in the
+  <b>In the audit</b> box under it.</p>
+</div></section>
+
+
+<section><div class="wrap">
+  <h2>How F, S, M are computed here</h2>
+  <p class="sub">The exact formula this method uses for each score, read from its runner, and
+  whether it matches the paper's &sect;3 (F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad) definition.
+  From the committed audit
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/data/fsm_math_phaseC.json"><code>fsm_math_phaseC.json</code></a>.</p>
+  <style>
+    .fsmtab td{vertical-align:top}
+    .fsm-badge{display:inline-block;padding:1px 8px;border-radius:6px;font-size:.82rem;font-weight:600;white-space:nowrap}
+    .fsm-ok{background:#12351f;color:#5ee08a}.fsm-warn{background:#3a2f10;color:#e8c65e}
+    .fsm-bad{background:#3a1414;color:#f18a8a}.fsm-na{background:#1c222b;color:#8a94a0}
+    .fsm-note{color:var(--fg-dim);font-size:.85rem}
+  </style>
+  <table class="fsmtab"><thead><tr><th>Axis</th><th>Formula (as computed)</th>
+  <th>What it measures</th><th>Matches &sect;3?</th></tr></thead><tbody><tr><td><b>F</b><br><span class="fsm-note">faithfulness</span></td><td><code>F = edge-F1(discovered_edges@best-τ, true_dataflow_edges)</code></td><td>Best-τ F1 of the ACDC-discovered inter-cell edge set against the exhaustive-oracle true data-flow graph.</td><td><span class="fsm-badge fsm-ok">&#10003; matches</span> <span class="fsm-note">acdc.jl:718-723 (F = best_score.f1); true graph = exhaustive do-set 0/base+17/base+37 over the candidate cells. This is exactly the paper&#x27;s circuit-discovery F = edge F1 vs the true data-flow graph. Record: extra.triad.F and top-level value (e.g. acdc_pong.json F=0.154; battery mean F=0.625, n=35).</span></td></tr><tr><td><b>S</b><br><span class="fsm-note">sufficiency</span></td><td><code>S = scrubbing_preserved(discovered_circuit) = fraction of clean candidate-cell readouts unchanged when non-circuit parents are resample-scrubbed</code></td><td>Fraction of the clean readouts the discovered circuit alone reproduces when everything outside it is resample-ablated (bit-exact re-run).</td><td><span class="fsm-badge fsm-warn">&#9680; partial</span> <span class="fsm-note">acdc.jl:713-722 (S = scrub_preserved). A held-out-flavoured sufficiency in [0,1] on bit-exact re-runs, but it is a scrubbing-preservation fraction, NOT the paper&#x27;s held-out PREDICTIVE estimator (fit on a calibration do(u) split, predict a disjoint held-out split vs bit-exact re-run). No calibration/held-out do(u) split; not a correlation in [-1,1]. Record: extra.triad.S (acdc_pong.json S=0.625; battery mean S=0.300, n=35).</span></td></tr><tr><td><b>M</b><br><span class="fsm-note">minimality</span></td><td><code>M = 1 − FP / n_discovered_edges  (1 − over-claim rate at best-τ)</code></td><td>One minus the fraction of discovered edges the oracle calls spurious; i.e. edge precision of the discovered circuit.</td><td><span class="fsm-badge fsm-bad">&#10007; does not match</span> <span class="fsm-note">acdc.jl:719 (M = 1 − best_score.fp/best_score.n_disc). This is edge PRECISION (over-claim rate), NOT the paper&#x27;s M = |U*|/|U_hat| = true-minimal-cause-set-size / method-named-set-size. For a graph explanation the paper&#x27;s M would be |true edges| / |discovered edges| (as path_patching does). Record shows M=1.0 (mean M=1.0, n=35) which is precision, not a minimality ratio (recall is very low: only 1 of 12 true edges found in pong).</span></td></tr></tbody></table>
+  <p class="caption"><b>&#10003; matches</b> = the same quantity as &sect;3; <b>&#9680; partial</b>
+  = the same kind of estimator but a differing detail; <b>&#10007; does not match</b> = a
+  different quantity (see the note). Definitions: F = agreement with the oracle's true causal
+  effects &Delta;y(u); S = held-out predictive score in [&minus;1,&nbsp;1]; M&nbsp;=&nbsp;|U*|/|U&#770;|
+  (true-minimal-set size / named-set size).</p>
 </div></section>
 
 
@@ -95,7 +119,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/d4d90eba0bc70da604b27662f512ade7fc29c26a"><code>d4d90eba</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2a3cd9aa1d0d15e7ea8ca47492d3d7b32d7cd12a"><code>2a3cd9aa</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

@@ -36,8 +36,32 @@
   <p>The score is the maximum absolute difference between the recovered patch effect and the exact patch effect from the oracle, taken across every site and every core game. The grading is always against the intervention oracle. This method is exact by construction, so the difference is zero. Clamping a cell to a donor value and re-running the real ROM is literally the same operation the intervention oracle performs, so the recovered effect table cannot disagree with the oracle, and site precision and recall are both perfect. Faithfulness for this method is therefore at the ceiling, level with the oracle-as-method positive control. There is no sprite-position hard-case here: because the method intervenes on the real machine rather than taking a derivative, it works on position outputs exactly as it works on content outputs. The important qualification, which the score does not by itself capture, is that recovering the exact effect table is not the same as recovering what the patched variables mean or how they combine into the computed function. The audit box reports the measured triad. This method is the clearest demonstration that when a method's operation is itself a real intervention on a fully observable machine, faithfulness is automatic.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
-  are in the <b>In the audit</b> box below.</p>
+  <a href="methods.html#stack">execution stack</a>. How each of F / S / M is actually computed for
+  this method (and whether it matches the paper) is in the box just below; the numbers are in the
+  <b>In the audit</b> box under it.</p>
+</div></section>
+
+
+<section><div class="wrap">
+  <h2>How F, S, M are computed here</h2>
+  <p class="sub">The exact formula this method uses for each score, read from its runner, and
+  whether it matches the paper's &sect;3 (F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad) definition.
+  From the committed audit
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/data/fsm_math_phaseC.json"><code>fsm_math_phaseC.json</code></a>.</p>
+  <style>
+    .fsmtab td{vertical-align:top}
+    .fsm-badge{display:inline-block;padding:1px 8px;border-radius:6px;font-size:.82rem;font-weight:600;white-space:nowrap}
+    .fsm-ok{background:#12351f;color:#5ee08a}.fsm-warn{background:#3a2f10;color:#e8c65e}
+    .fsm-bad{background:#3a1414;color:#f18a8a}.fsm-na{background:#1c222b;color:#8a94a0}
+    .fsm-note{color:var(--fg-dim);font-size:.85rem}
+  </style>
+  <table class="fsmtab"><thead><tr><th>Axis</th><th>Formula (as computed)</th>
+  <th>What it measures</th><th>Matches &sect;3?</th></tr></thead><tbody><tr><td><b>F</b><br><span class="fsm-note">faithfulness</span></td><td><code>F = 1.0 by construction (recovered == exact); leaderboard passes clamp(1 − |max_abs_recovered−exact|); position record uses F = ρ(recovered_px, exact_px)</code></td><td>The patch literally re-runs the exact single-site intervention, so recovered effect equals the oracle effect and the causal-effect agreement is 1.</td><td><span class="fsm-badge fsm-ok">&#10003; matches</span> <span class="fsm-note">activation_patching.jl:582-597 main record (metric max_abs_recovered_minus_exact=0 -&gt; F=1.0); jl:693 position record F = _pearson(rec_px, ex_px). Both are the paper&#x27;s Phase-C patching F = causal-effect-agreement correlation vs Delta_y(u); here exact by construction. Record: extra.triad.F=1.0 (battery mean F=1.0, n=84).</span></td></tr><tr><td><b>S</b><br><span class="fsm-note">sufficiency</span></td><td><code>S = fraction of held-out do(u) whose predicted Δy (least-squares a·attr+b fit on a disjoint calibration half) lands within ε of the bit-exact re-run</code></td><td>Held-out predictive sufficiency: fit the attribution-&gt;Δy map on a calibration half of the causes, predict the disjoint held-out half, count hits within an ε band.</td><td><span class="fsm-badge fsm-ok">&#10003; matches</span> <span class="fsm-note">common/triad_sm.jl:111-155 sufficiency_score, called via triad_extra_dict (activation_patching.jl:597). Exactly the paper&#x27;s held-out predictive estimator on the oracle&#x27;s per-cause bit-exact re-runs. Record: extra.triad.S (activation_patching_pong.json S=1.0; battery mean S=0.996, n=84).</span></td></tr><tr><td><b>M</b><br><span class="fsm-note">minimality</span></td><td><code>M = |U*| / |U_hat|,  U* = causes with true |Δy| &gt; mover_floor,  U_hat = above-threshold named causes</code></td><td>True minimal cause set size over the method-named set size.</td><td><span class="fsm-badge fsm-ok">&#10003; matches</span> <span class="fsm-note">common/triad_sm.jl:57-86 minimality_score. Exactly the paper&#x27;s M. Record: extra.triad.M=1.0, M_true_minimal_size / M_named_size (pong |U*|=6/|U_hat|=6; battery mean M=0.973, n=84).</span></td></tr></tbody></table>
+  <p class="caption"><b>&#10003; matches</b> = the same quantity as &sect;3; <b>&#9680; partial</b>
+  = the same kind of estimator but a differing detail; <b>&#10007; does not match</b> = a
+  different quantity (see the note). Definitions: F = agreement with the oracle's true causal
+  effects &Delta;y(u); S = held-out predictive score in [&minus;1,&nbsp;1]; M&nbsp;=&nbsp;|U*|/|U&#770;|
+  (true-minimal-set size / named-set size).</p>
 </div></section>
 
 
@@ -95,7 +119,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/d4d90eba0bc70da604b27662f512ade7fc29c26a"><code>d4d90eba</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2a3cd9aa1d0d15e7ea8ca47492d3d7b32d7cd12a"><code>2a3cd9aa</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

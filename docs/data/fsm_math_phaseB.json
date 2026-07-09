@@ -1,0 +1,269 @@
+{
+  "phase": "B",
+  "methods": {
+    "counterfactual": {
+      "leaderboard_method": "on_distribution_counterfactual",
+      "F": {
+        "formula": "F = rho_Pearson(attr, |Delta_y(u)|)  =  Statistics.cor(attr, oracle_abs_delta)  (0 if either has zero variance; negatives preserved)",
+        "plain": "Raw Pearson correlation between the method's per-cause attribution magnitudes and the oracle's true absolute causal effects |Delta_y(u)|, scored separately for the content and position output regimes.",
+        "against_oracle": true,
+        "matches_paper": "yes",
+        "note": "counterfactual.jl: cf_attr = single-cell on-distribution counterfactual per cause (lines 295-306), pr = pearson(cf_attr, odelta) (line 305); triad_extra_dict(f.pearson, f.cf_attr_per_cause, f.oracle_abs_delta) line 713. Record: out/counterfactual_air_raid_content.json (metric_name=pearson_corr_with_oracle, value=0.79). Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}."
+      },
+      "S": {
+        "formula": "S = (#held-out do(u) with |y_intact + Delta_y_pred - (y_intact + Delta_y_true)| <= epsilon) / |held-out|,  in [0,1]",
+        "plain": "Fit Delta_y = a*attr + b on a calibration half of the do(u) causes, predict the disjoint held-out half, and report the fraction of held-out causes whose predicted output lands within an epsilon band of the oracle's bit-exact re-run.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  Paper (sec:triad) allows the fraction-within-tolerance [0,1] variant, so the estimator TYPE matches; but epsilon is a self-scaled continuous band (0.10*spread) rather than a fixed output-type tolerance, and S is bounded [0,1] here so the 'negative = worse than baseline' [-1,1] correlation variant is not used."
+      },
+      "M": {
+        "formula": "M = |U*| / |U_hat|,  clamped to (0,1];  |U*| = #{u : Delta_y(u) > 0},  |U_hat| = #{u : |attr(u)| > 1e-6*max|attr|}",
+        "plain": "Ratio of the number of oracle causal movers (causes with nonzero true Delta_y) to the number of cells the method names above 1e-6 of its own max attribution; null when the oracle finds no mover or the method names nothing.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181.  Matches paper's M = |U*|/|U_hat| in (0,1]; but |U*| is taken as ALL oracle movers (Delta_y>0), not the strictly-smallest reproducing subset the paper defines as the 'true minimal cause set', so |U*| is an upper bound and M can be optimistic."
+      }
+    },
+    "expected_gradients": {
+      "leaderboard_method": "expected_gradients",
+      "F": {
+        "formula": "F = rho_Pearson(attr, |Delta_y(u)|)  =  Statistics.cor(attr, oracle_abs_delta)  (0 if either has zero variance; negatives preserved)",
+        "plain": "Raw Pearson correlation between the method's per-cause attribution magnitudes and the oracle's true absolute causal effects |Delta_y(u)|, scored separately for the content and position output regimes.",
+        "against_oracle": true,
+        "matches_paper": "yes",
+        "note": "expected_gradients.jl: attr = expected-gradients per cause, F = pearson(attr, oracle_abs_delta); triad_extra_dict(f.pearson, attr, f.oracle_abs_delta). Record: out/expected_gradients_air_raid_content.json (metric_name=pearson_corr_with_oracle, value=0.79). Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}."
+      },
+      "S": {
+        "formula": "S = (#held-out do(u) with |y_intact + Delta_y_pred - (y_intact + Delta_y_true)| <= epsilon) / |held-out|,  in [0,1]",
+        "plain": "Fit Delta_y = a*attr + b on a calibration half of the do(u) causes, predict the disjoint held-out half, and report the fraction of held-out causes whose predicted output lands within an epsilon band of the oracle's bit-exact re-run.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  Paper (sec:triad) allows the fraction-within-tolerance [0,1] variant, so the estimator TYPE matches; but epsilon is a self-scaled continuous band (0.10*spread) rather than a fixed output-type tolerance, and S is bounded [0,1] here so the 'negative = worse than baseline' [-1,1] correlation variant is not used."
+      },
+      "M": {
+        "formula": "M = |U*| / |U_hat|,  clamped to (0,1];  |U*| = #{u : Delta_y(u) > 0},  |U_hat| = #{u : |attr(u)| > 1e-6*max|attr|}",
+        "plain": "Ratio of the number of oracle causal movers (causes with nonzero true Delta_y) to the number of cells the method names above 1e-6 of its own max attribution; null when the oracle finds no mover or the method names nothing.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181.  Matches paper's M = |U*|/|U_hat| in (0,1]; but |U*| is taken as ALL oracle movers (Delta_y>0), not the strictly-smallest reproducing subset the paper defines as the 'true minimal cause set', so |U*| is an upper bound and M can be optimistic."
+      }
+    },
+    "gradxinput": {
+      "leaderboard_method": "gradxinput_deeplift",
+      "F": {
+        "formula": "F = rho_Pearson(attr, |Delta_y(u)|)  =  Statistics.cor(attr, oracle_abs_delta)  (0 if either has zero variance; negatives preserved)",
+        "plain": "Raw Pearson correlation between the method's per-cause attribution magnitudes and the oracle's true absolute causal effects |Delta_y(u)|, scored separately for the content and position output regimes.",
+        "against_oracle": true,
+        "matches_paper": "yes",
+        "note": "gradxinput.jl: pr = pearson(attr, cmap.abs_delta) (line 478); metric_name=deeplift_pearson_corr_with_oracle. Record: out/gradxinput_deeplift_air_raid_content.json (value=0.90). Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}."
+      },
+      "S": {
+        "formula": "S = (#held-out do(u) with |y_intact + Delta_y_pred - (y_intact + Delta_y_true)| <= epsilon) / |held-out|,  in [0,1]",
+        "plain": "Fit Delta_y = a*attr + b on a calibration half of the do(u) causes, predict the disjoint held-out half, and report the fraction of held-out causes whose predicted output lands within an epsilon band of the oracle's bit-exact re-run.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  Paper (sec:triad) allows the fraction-within-tolerance [0,1] variant, so the estimator TYPE matches; but epsilon is a self-scaled continuous band (0.10*spread) rather than a fixed output-type tolerance, and S is bounded [0,1] here so the 'negative = worse than baseline' [-1,1] correlation variant is not used."
+      },
+      "M": {
+        "formula": "M = |U*| / |U_hat|,  clamped to (0,1];  |U*| = #{u : Delta_y(u) > 0},  |U_hat| = #{u : |attr(u)| > 1e-6*max|attr|}",
+        "plain": "Ratio of the number of oracle causal movers (causes with nonzero true Delta_y) to the number of cells the method names above 1e-6 of its own max attribution; null when the oracle finds no mover or the method names nothing.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181.  Matches paper's M = |U*|/|U_hat| in (0,1]; but |U*| is taken as ALL oracle movers (Delta_y>0), not the strictly-smallest reproducing subset the paper defines as the 'true minimal cause set', so |U*| is an upper bound and M can be optimistic."
+      }
+    },
+    "guided_backprop": {
+      "leaderboard_method": "guided_backprop",
+      "F": {
+        "formula": "F = rho_Pearson(attr, |Delta_y(u)|)  =  Statistics.cor(attr, oracle_abs_delta)  (0 if either has zero variance; negatives preserved)",
+        "plain": "Raw Pearson correlation between the method's per-cause attribution magnitudes and the oracle's true absolute causal effects |Delta_y(u)|, scored separately for the content and position output regimes.",
+        "against_oracle": true,
+        "matches_paper": "yes",
+        "note": "guided_backprop.jl: attr = guided-backprop per cause, F = pearson(attr, oracle_abs_delta); triad_extra_dict(f.pearson, attr, f.oracle_abs_delta). Record: out/guided_backprop_air_raid_content.json (metric_name=pearson_corr_with_oracle, value=0.79). Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}."
+      },
+      "S": {
+        "formula": "S = (#held-out do(u) with |y_intact + Delta_y_pred - (y_intact + Delta_y_true)| <= epsilon) / |held-out|,  in [0,1]",
+        "plain": "Fit Delta_y = a*attr + b on a calibration half of the do(u) causes, predict the disjoint held-out half, and report the fraction of held-out causes whose predicted output lands within an epsilon band of the oracle's bit-exact re-run.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  Paper (sec:triad) allows the fraction-within-tolerance [0,1] variant, so the estimator TYPE matches; but epsilon is a self-scaled continuous band (0.10*spread) rather than a fixed output-type tolerance, and S is bounded [0,1] here so the 'negative = worse than baseline' [-1,1] correlation variant is not used."
+      },
+      "M": {
+        "formula": "M = |U*| / |U_hat|,  clamped to (0,1];  |U*| = #{u : Delta_y(u) > 0},  |U_hat| = #{u : |attr(u)| > 1e-6*max|attr|}",
+        "plain": "Ratio of the number of oracle causal movers (causes with nonzero true Delta_y) to the number of cells the method names above 1e-6 of its own max attribution; null when the oracle finds no mover or the method names nothing.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181.  Matches paper's M = |U*|/|U_hat| in (0,1]; but |U*| is taken as ALL oracle movers (Delta_y>0), not the strictly-smallest reproducing subset the paper defines as the 'true minimal cause set', so |U*| is an upper bound and M can be optimistic."
+      }
+    },
+    "ig_baseline_sweep": {
+      "leaderboard_method": "integrated_gradients",
+      "F": {
+        "formula": "F = rho_Pearson(attr, |Delta_y(u)|)  =  Statistics.cor(attr, oracle_abs_delta)  (0 if either has zero variance; negatives preserved)",
+        "plain": "Raw Pearson correlation between the method's per-cause attribution magnitudes and the oracle's true absolute causal effects |Delta_y(u)|, scored separately for the content and position output regimes.",
+        "against_oracle": true,
+        "matches_paper": "yes",
+        "note": "ig_baseline_sweep.jl: pr = pearson(attr, odelta) (line 410); headline value = content-path corr at zeros baseline; triad_extra_dict(hs.pearson, hs.attr_per_cause, f.oracle_abs_delta) line 858. Record: out/ig_baseline_sweep_air_raid_content.json (value=0.79). Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}."
+      },
+      "S": {
+        "formula": "S = (#held-out do(u) with |y_intact + Delta_y_pred - (y_intact + Delta_y_true)| <= epsilon) / |held-out|,  in [0,1]",
+        "plain": "Fit Delta_y = a*attr + b on a calibration half of the do(u) causes, predict the disjoint held-out half, and report the fraction of held-out causes whose predicted output lands within an epsilon band of the oracle's bit-exact re-run.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  Paper (sec:triad) allows the fraction-within-tolerance [0,1] variant, so the estimator TYPE matches; but epsilon is a self-scaled continuous band (0.10*spread) rather than a fixed output-type tolerance, and S is bounded [0,1] here so the 'negative = worse than baseline' [-1,1] correlation variant is not used."
+      },
+      "M": {
+        "formula": "M = |U*| / |U_hat|,  clamped to (0,1];  |U*| = #{u : Delta_y(u) > 0},  |U_hat| = #{u : |attr(u)| > 1e-6*max|attr|}",
+        "plain": "Ratio of the number of oracle causal movers (causes with nonzero true Delta_y) to the number of cells the method names above 1e-6 of its own max attribution; null when the oracle finds no mover or the method names nothing.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181.  Matches paper's M = |U*|/|U_hat| in (0,1]; but |U*| is taken as ALL oracle movers (Delta_y>0), not the strictly-smallest reproducing subset the paper defines as the 'true minimal cause set', so |U*| is an upper bound and M can be optimistic."
+      }
+    },
+    "kernelshap": {
+      "leaderboard_method": "kernelshap",
+      "F": {
+        "formula": "F = rho_Pearson(attr, |Delta_y(u)|)  =  Statistics.cor(attr, oracle_abs_delta)  (0 if either has zero variance; negatives preserved)",
+        "plain": "Raw Pearson correlation between the method's per-cause attribution magnitudes and the oracle's true absolute causal effects |Delta_y(u)|, scored separately for the content and position output regimes.",
+        "against_oracle": true,
+        "matches_paper": "yes",
+        "note": "kernelshap.jl: SHAP map per cause, F = pearson(shap_attr, oracle_abs_delta); triad_extra_dict(f.pearson, attr, f.oracle_abs_delta). Record: out/kernelshap_air_raid_content.json (metric_name=pearson_corr_with_oracle, value=0.79). Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}."
+      },
+      "S": {
+        "formula": "S = (#held-out do(u) with |y_intact + Delta_y_pred - (y_intact + Delta_y_true)| <= epsilon) / |held-out|,  in [0,1]",
+        "plain": "Fit Delta_y = a*attr + b on a calibration half of the do(u) causes, predict the disjoint held-out half, and report the fraction of held-out causes whose predicted output lands within an epsilon band of the oracle's bit-exact re-run.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  Paper (sec:triad) allows the fraction-within-tolerance [0,1] variant, so the estimator TYPE matches; but epsilon is a self-scaled continuous band (0.10*spread) rather than a fixed output-type tolerance, and S is bounded [0,1] here so the 'negative = worse than baseline' [-1,1] correlation variant is not used."
+      },
+      "M": {
+        "formula": "M = |U*| / |U_hat|,  clamped to (0,1];  |U*| = #{u : Delta_y(u) > 0},  |U_hat| = #{u : |attr(u)| > 1e-6*max|attr|}",
+        "plain": "Ratio of the number of oracle causal movers (causes with nonzero true Delta_y) to the number of cells the method names above 1e-6 of its own max attribution; null when the oracle finds no mover or the method names nothing.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181.  Matches paper's M = |U*|/|U_hat| in (0,1]; but |U*| is taken as ALL oracle movers (Delta_y>0), not the strictly-smallest reproducing subset the paper defines as the 'true minimal cause set', so |U*| is an upper bound and M can be optimistic."
+      }
+    },
+    "lime": {
+      "leaderboard_method": "lime",
+      "F": {
+        "formula": "F = rho_Pearson(attr, |Delta_y(u)|)  =  Statistics.cor(attr, oracle_abs_delta)  (0 if either has zero variance; negatives preserved)",
+        "plain": "Raw Pearson correlation between the method's per-cause attribution magnitudes and the oracle's true absolute causal effects |Delta_y(u)|, scored separately for the content and position output regimes.",
+        "against_oracle": true,
+        "matches_paper": "yes",
+        "note": "lime.jl: pr = pearson(attr, odelta) (line 331); a stability sweep over K seeds reports corr mean/std but the headline F is the single-run pearson; triad_extra_dict(f.pearson, attr, f.oracle_abs_delta). Record: out/lime_air_raid_content.json (value=0.79). Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}."
+      },
+      "S": {
+        "formula": "S = (#held-out do(u) with |y_intact + Delta_y_pred - (y_intact + Delta_y_true)| <= epsilon) / |held-out|,  in [0,1]",
+        "plain": "Fit Delta_y = a*attr + b on a calibration half of the do(u) causes, predict the disjoint held-out half, and report the fraction of held-out causes whose predicted output lands within an epsilon band of the oracle's bit-exact re-run.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  Paper (sec:triad) allows the fraction-within-tolerance [0,1] variant, so the estimator TYPE matches; but epsilon is a self-scaled continuous band (0.10*spread) rather than a fixed output-type tolerance, and S is bounded [0,1] here so the 'negative = worse than baseline' [-1,1] correlation variant is not used."
+      },
+      "M": {
+        "formula": "M = |U*| / |U_hat|,  clamped to (0,1];  |U*| = #{u : Delta_y(u) > 0},  |U_hat| = #{u : |attr(u)| > 1e-6*max|attr|}",
+        "plain": "Ratio of the number of oracle causal movers (causes with nonzero true Delta_y) to the number of cells the method names above 1e-6 of its own max attribution; null when the oracle finds no mover or the method names nothing.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181.  Matches paper's M = |U*|/|U_hat| in (0,1]; but |U*| is taken as ALL oracle movers (Delta_y>0), not the strictly-smallest reproducing subset the paper defines as the 'true minimal cause set', so |U*| is an upper bound and M can be optimistic."
+      }
+    },
+    "occlusion": {
+      "leaderboard_method": "occlusion",
+      "F": {
+        "formula": "F = rho_Pearson(attr, |Delta_y(u)|)  =  Statistics.cor(attr, oracle_abs_delta)  (0 if either has zero variance; negatives preserved)",
+        "plain": "Raw Pearson correlation between the method's per-cause attribution magnitudes and the oracle's true absolute causal effects |Delta_y(u)|, scored separately for the content and position output regimes.",
+        "against_oracle": true,
+        "matches_paper": "yes",
+        "note": "occlusion.jl: pr = pearson(occ_attr, odelta) (line 204); triad_extra_dict(f.pearson, f.occ_attr, f.oracle_abs_delta) line 450. Record: out/occlusion_air_raid_content.json (value=0.79). Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}."
+      },
+      "S": {
+        "formula": "S = (#held-out do(u) with |y_intact + Delta_y_pred - (y_intact + Delta_y_true)| <= epsilon) / |held-out|,  in [0,1]",
+        "plain": "Fit Delta_y = a*attr + b on a calibration half of the do(u) causes, predict the disjoint held-out half, and report the fraction of held-out causes whose predicted output lands within an epsilon band of the oracle's bit-exact re-run.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  Paper (sec:triad) allows the fraction-within-tolerance [0,1] variant, so the estimator TYPE matches; but epsilon is a self-scaled continuous band (0.10*spread) rather than a fixed output-type tolerance, and S is bounded [0,1] here so the 'negative = worse than baseline' [-1,1] correlation variant is not used."
+      },
+      "M": {
+        "formula": "M = |U*| / |U_hat|,  clamped to (0,1];  |U*| = #{u : Delta_y(u) > 0},  |U_hat| = #{u : |attr(u)| > 1e-6*max|attr|}",
+        "plain": "Ratio of the number of oracle causal movers (causes with nonzero true Delta_y) to the number of cells the method names above 1e-6 of its own max attribution; null when the oracle finds no mover or the method names nothing.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181.  Matches paper's M = |U*|/|U_hat| in (0,1]; but |U*| is taken as ALL oracle movers (Delta_y>0), not the strictly-smallest reproducing subset the paper defines as the 'true minimal cause set', so |U*| is an upper bound and M can be optimistic."
+      }
+    },
+    "perturbation": {
+      "leaderboard_method": "extremal_perturbation",
+      "F": {
+        "formula": "F = rho_Pearson(attr, |Delta_y(u)|)  =  Statistics.cor(attr, oracle_abs_delta)  (0 if either has zero variance; negatives preserved)",
+        "plain": "Raw Pearson correlation between the method's per-cause attribution magnitudes and the oracle's true absolute causal effects |Delta_y(u)|, scored separately for the content and position output regimes.",
+        "against_oracle": true,
+        "matches_paper": "yes",
+        "note": "perturbation.jl: extremal-perturbation mask per cause, F = pearson(attr, oracle_abs_delta); triad_extra_dict(f.pearson, attr, f.oracle_abs_delta). Record: out/perturbation_air_raid_content.json (metric_name=pearson_corr_with_oracle, value=0.55). Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}."
+      },
+      "S": {
+        "formula": "S = (#held-out do(u) with |y_intact + Delta_y_pred - (y_intact + Delta_y_true)| <= epsilon) / |held-out|,  in [0,1]",
+        "plain": "Fit Delta_y = a*attr + b on a calibration half of the do(u) causes, predict the disjoint held-out half, and report the fraction of held-out causes whose predicted output lands within an epsilon band of the oracle's bit-exact re-run.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  Paper (sec:triad) allows the fraction-within-tolerance [0,1] variant, so the estimator TYPE matches; but epsilon is a self-scaled continuous band (0.10*spread) rather than a fixed output-type tolerance, and S is bounded [0,1] here so the 'negative = worse than baseline' [-1,1] correlation variant is not used."
+      },
+      "M": {
+        "formula": "M = |U*| / |U_hat|,  clamped to (0,1];  |U*| = #{u : Delta_y(u) > 0},  |U_hat| = #{u : |attr(u)| > 1e-6*max|attr|}",
+        "plain": "Ratio of the number of oracle causal movers (causes with nonzero true Delta_y) to the number of cells the method names above 1e-6 of its own max attribution; null when the oracle finds no mover or the method names nothing.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181.  Matches paper's M = |U*|/|U_hat| in (0,1]; but |U*| is taken as ALL oracle movers (Delta_y>0), not the strictly-smallest reproducing subset the paper defines as the 'true minimal cause set', so |U*| is an upper bound and M can be optimistic."
+      }
+    },
+    "rise": {
+      "leaderboard_method": "rise",
+      "F": {
+        "formula": "F = rho_Pearson(attr, |Delta_y(u)|)  =  Statistics.cor(attr, oracle_abs_delta)  (0 if either has zero variance; negatives preserved)",
+        "plain": "Raw Pearson correlation between the method's per-cause attribution magnitudes and the oracle's true absolute causal effects |Delta_y(u)|, scored separately for the content and position output regimes.",
+        "against_oracle": true,
+        "matches_paper": "yes",
+        "note": "rise.jl: pr = pearson(attr, odelta) (line 249); triad_extra_dict(f.pearson, f.rise_attr_per_cause, f.oracle_abs_delta) line 562. Record: out/rise_air_raid_content.json (value=0.76); note M=0.077 there (|U_hat|=26 named vs |U*|=2 movers) illustrating the dense-mask minimality penalty. Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}."
+      },
+      "S": {
+        "formula": "S = (#held-out do(u) with |y_intact + Delta_y_pred - (y_intact + Delta_y_true)| <= epsilon) / |held-out|,  in [0,1]",
+        "plain": "Fit Delta_y = a*attr + b on a calibration half of the do(u) causes, predict the disjoint held-out half, and report the fraction of held-out causes whose predicted output lands within an epsilon band of the oracle's bit-exact re-run.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  Paper (sec:triad) allows the fraction-within-tolerance [0,1] variant, so the estimator TYPE matches; but epsilon is a self-scaled continuous band (0.10*spread) rather than a fixed output-type tolerance, and S is bounded [0,1] here so the 'negative = worse than baseline' [-1,1] correlation variant is not used."
+      },
+      "M": {
+        "formula": "M = |U*| / |U_hat|,  clamped to (0,1];  |U*| = #{u : Delta_y(u) > 0},  |U_hat| = #{u : |attr(u)| > 1e-6*max|attr|}",
+        "plain": "Ratio of the number of oracle causal movers (causes with nonzero true Delta_y) to the number of cells the method names above 1e-6 of its own max attribution; null when the oracle finds no mover or the method names nothing.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181. RISE names a dense mask, so |U_hat| >> |U*| and M is small (e.g. 2/26=0.077 in the air_raid content record) -- the intended discrimination of the above-threshold reading. Matches paper's M = |U*|/|U_hat| in (0,1]; but |U*| is taken as ALL oracle movers (Delta_y>0), not the strictly-smallest reproducing subset the paper defines as the 'true minimal cause set', so |U*| is an upper bound and M can be optimistic."
+      }
+    },
+    "saliency": {
+      "leaderboard_method": "vanilla_saliency",
+      "F": {
+        "formula": "F = rho_Pearson(attr, |Delta_y(u)|)  =  Statistics.cor(attr, oracle_abs_delta)  (0 if either has zero variance; negatives preserved)",
+        "plain": "Raw Pearson correlation between the method's per-cause attribution magnitudes and the oracle's true absolute causal effects |Delta_y(u)|, scored separately for the content and position output regimes.",
+        "against_oracle": true,
+        "matches_paper": "yes",
+        "note": "saliency.jl: sal_attr = abs.(gradient) per cause (line 338, 426), pr = pearson(sal_attr, odelta) (line 429); triad_extra_dict(f.pearson, f.sal_attr, f.oracle_abs_delta) line 697. Record: out/saliency_air_raid_content.json (value=0.79); position record out/saliency_air_raid_position.json has F=-0.144 (negative preserved). Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}."
+      },
+      "S": {
+        "formula": "S = (#held-out do(u) with |y_intact + Delta_y_pred - (y_intact + Delta_y_true)| <= epsilon) / |held-out|,  in [0,1]",
+        "plain": "Fit Delta_y = a*attr + b on a calibration half of the do(u) causes, predict the disjoint held-out half, and report the fraction of held-out causes whose predicted output lands within an epsilon band of the oracle's bit-exact re-run.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  Paper (sec:triad) allows the fraction-within-tolerance [0,1] variant, so the estimator TYPE matches; but epsilon is a self-scaled continuous band (0.10*spread) rather than a fixed output-type tolerance, and S is bounded [0,1] here so the 'negative = worse than baseline' [-1,1] correlation variant is not used."
+      },
+      "M": {
+        "formula": "M = |U*| / |U_hat|,  clamped to (0,1];  |U*| = #{u : Delta_y(u) > 0},  |U_hat| = #{u : |attr(u)| > 1e-6*max|attr|}",
+        "plain": "Ratio of the number of oracle causal movers (causes with nonzero true Delta_y) to the number of cells the method names above 1e-6 of its own max attribution; null when the oracle finds no mover or the method names nothing.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181.  Matches paper's M = |U*|/|U_hat| in (0,1]; but |U*| is taken as ALL oracle movers (Delta_y>0), not the strictly-smallest reproducing subset the paper defines as the 'true minimal cause set', so |U*| is an upper bound and M can be optimistic."
+      }
+    },
+    "smoothgrad": {
+      "leaderboard_method": "smoothgrad",
+      "F": {
+        "formula": "F = rho_Pearson(attr, |Delta_y(u)|)  =  Statistics.cor(attr, oracle_abs_delta)  (0 if either has zero variance; negatives preserved)",
+        "plain": "Raw Pearson correlation between the method's per-cause attribution magnitudes and the oracle's true absolute causal effects |Delta_y(u)|, scored separately for the content and position output regimes.",
+        "against_oracle": true,
+        "matches_paper": "yes",
+        "note": "smoothgrad.jl: noise-averaged saliency per cause, F = pearson(attr, oracle_abs_delta); triad_extra_dict(f.pearson, attr, f.oracle_abs_delta). Record: out/smoothgrad_air_raid_content.json (metric_name=pearson_corr_with_oracle, value=0.79). Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}."
+      },
+      "S": {
+        "formula": "S = (#held-out do(u) with |y_intact + Delta_y_pred - (y_intact + Delta_y_true)| <= epsilon) / |held-out|,  in [0,1]",
+        "plain": "Fit Delta_y = a*attr + b on a calibration half of the do(u) causes, predict the disjoint held-out half, and report the fraction of held-out causes whose predicted output lands within an epsilon band of the oracle's bit-exact re-run.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  Paper (sec:triad) allows the fraction-within-tolerance [0,1] variant, so the estimator TYPE matches; but epsilon is a self-scaled continuous band (0.10*spread) rather than a fixed output-type tolerance, and S is bounded [0,1] here so the 'negative = worse than baseline' [-1,1] correlation variant is not used."
+      },
+      "M": {
+        "formula": "M = |U*| / |U_hat|,  clamped to (0,1];  |U*| = #{u : Delta_y(u) > 0},  |U_hat| = #{u : |attr(u)| > 1e-6*max|attr|}",
+        "plain": "Ratio of the number of oracle causal movers (causes with nonzero true Delta_y) to the number of cells the method names above 1e-6 of its own max attribution; null when the oracle finds no mover or the method names nothing.",
+        "matches_paper": "partial",
+        "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181.  Matches paper's M = |U*|/|U_hat| in (0,1]; but |U*| is taken as ALL oracle movers (Delta_y>0), not the strictly-smallest reproducing subset the paper defines as the 'true minimal cause set', so |U*| is an upper bound and M can be optimistic."
+      }
+    }
+  }
+}

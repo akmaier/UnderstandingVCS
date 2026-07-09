@@ -36,8 +36,32 @@
   <p>The score is the fraction of sparse-autoencoder features that match a known, verified game-variable cell, together with a causal-use check by ablation. We first measure the matched fraction, how many of the concept cells the SAE was asked to represent get a matching feature, and on this small state that fraction is high. That is the metric the field usually uses to claim a feature is a concept. The VCS then applies a stronger test the audit treats as the real faithfulness: we ablate the matched feature, re-run the real ROM, and ask whether the computation it is supposed to name actually changes. Often it does not, so the causal faithfulness is low even though the matched fraction is high, and the sufficiency can even go negative. This split is the point: a feature can be named yet causally unused. There is no sprite-position hard-case here, because the method is scored on features and their ablation, not on a rendered position. Its plausibility proxy is high, which places it in the danger zone of high plausibility with low faithfulness. The grading is always against the intervention oracle, never against the matching metric alone. The audit box reports the measured triad, so you can read the low causal faithfulness directly.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
-  are in the <b>In the audit</b> box below.</p>
+  <a href="methods.html#stack">execution stack</a>. How each of F / S / M is actually computed for
+  this method (and whether it matches the paper) is in the box just below; the numbers are in the
+  <b>In the audit</b> box under it.</p>
+</div></section>
+
+
+<section><div class="wrap">
+  <h2>How F, S, M are computed here</h2>
+  <p class="sub">The exact formula this method uses for each score, read from its runner, and
+  whether it matches the paper's &sect;3 (F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad) definition.
+  From the committed audit
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/data/fsm_math_phaseC.json"><code>fsm_math_phaseC.json</code></a>.</p>
+  <style>
+    .fsmtab td{vertical-align:top}
+    .fsm-badge{display:inline-block;padding:1px 8px;border-radius:6px;font-size:.82rem;font-weight:600;white-space:nowrap}
+    .fsm-ok{background:#12351f;color:#5ee08a}.fsm-warn{background:#3a2f10;color:#e8c65e}
+    .fsm-bad{background:#3a1414;color:#f18a8a}.fsm-na{background:#1c222b;color:#8a94a0}
+    .fsm-note{color:var(--fg-dim);font-size:.85rem}
+  </style>
+  <table class="fsmtab"><thead><tr><th>Axis</th><th>Formula (as computed)</th>
+  <th>What it measures</th><th>Matches &sect;3?</th></tr></thead><tbody><tr><td><b>F</b><br><span class="fsm-note">faithfulness</span></td><td><code>LEADERBOARD value = feature_variable_matched_fraction (naming). CORRECT causal F (extra.triad.F) = ρ_Spearman(per-cell SAE recovery = max|feature r|·decoder-mass, oracle causal importance)</code></td><td>extra.triad.F is the Spearman correlation between per-cell SAE recovery and the oracle causal importance (paper-shaped); but the top-level leaderboard value is the matched-fraction naming stat.</td><td><span class="fsm-badge fsm-warn">&#9680; partial</span> <span class="fsm-note">sae.jl:775 (F = _spearman(recovery, oracle.importance)) IS oracle-causal-agreement and paper-shaped. BUT sae.jl top-level metric_name=feature_variable_matched_fraction, value=1.0 (a naming score). Because sae DOES emit a top-level extra.triad, leaderboard.py triad_of() reads extra.triad.F (the correct causal Spearman), so the leaderboard F is correct here (sae_pong.json extra.triad.F=0.041; battery mean F~0.002, n=43) — unlike dictionaries whose leaderboard falls back to the naming value. Note the top-level &#x27;value&#x27; field is still the misleading matched-fraction.</span></td></tr><tr><td><b>S</b><br><span class="fsm-note">sufficiency</span></td><td><code>S = ρ_Pearson(per-cell SAE recovery, held-out do(base+37) screen-break effect)</code></td><td>Held-out predictive correlation between SAE recovery and the causal effect on an unseen do(base+37) bit-exact re-run; can be negative.</td><td><span class="fsm-badge fsm-ok">&#10003; matches</span> <span class="fsm-note">sae.jl:776 (S = _pearson(recovery, oracle.held_out)). A held-out predictive correlation in [-1,1] on a disjoint intervention (paper-conform; negative allowed). Record: extra.triad.S (sae_pong.json S=−0.458; battery mean S=0.041, n=43).</span></td></tr><tr><td><b>M</b><br><span class="fsm-note">minimality</span></td><td><code>M = mean over causal-use features of (target_share · single-cell-ness)  (monosemanticity proxy)</code></td><td>Mean monosemanticity of the causal-use features: how much ablating a feature perturbs ~1 cell AND that cell carries the screen change.</td><td><span class="fsm-badge fsm-bad">&#10007; does not match</span> <span class="fsm-note">sae.jl:769-787, score_triad M = mean(target_share · single-cell-ness). This is a monosemanticity/target-share proxy, NOT the paper&#x27;s M = |U*|/|U_hat| cardinality ratio. Record: extra.triad.M (sae_pong.json M=0.039; battery mean M=0.066, n=43).</span></td></tr></tbody></table>
+  <p class="caption"><b>&#10003; matches</b> = the same quantity as &sect;3; <b>&#9680; partial</b>
+  = the same kind of estimator but a differing detail; <b>&#10007; does not match</b> = a
+  different quantity (see the note). Definitions: F = agreement with the oracle's true causal
+  effects &Delta;y(u); S = held-out predictive score in [&minus;1,&nbsp;1]; M&nbsp;=&nbsp;|U*|/|U&#770;|
+  (true-minimal-set size / named-set size).</p>
 </div></section>
 
 
@@ -95,7 +119,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/d4d90eba0bc70da604b27662f512ade7fc29c26a"><code>d4d90eba</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2a3cd9aa1d0d15e7ea8ca47492d3d7b32d7cd12a"><code>2a3cd9aa</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

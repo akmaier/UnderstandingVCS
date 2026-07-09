@@ -36,8 +36,32 @@
   <p>The score is the Pearson correlation between the gradient-approximate patch effect and the exact patch effect from the oracle. The grading is always against the intervention oracle. Attribution patching forms a first-order, linear estimate of each site's patch effect in a single backward pass, so we can compare that estimate directly to the exact effect the oracle measures at the same site. Faithfulness for this method is that correlation, and it is good but not perfect, because the true relationship is not linear. The linear surrogate keeps the edges precise: it is usually right about which dependencies exist, since a real edge tends to have a non-zero gradient, so edge precision and recall stay high. What it gets wrong is the size of an edge, which is why the numerical agreement with the exact patch is only partial. There is no sprite-position collapse framed as such here, because the method is scored on internal patch effects rather than on a rendered position; but its gradient origin is exactly why it approximates rather than matches. The grading is always against the oracle. The audit box reports the measured triad, so the correlation is an average across the scored games, quantifying how much accuracy the fast approximation trades away for its speed.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
-  are in the <b>In the audit</b> box below.</p>
+  <a href="methods.html#stack">execution stack</a>. How each of F / S / M is actually computed for
+  this method (and whether it matches the paper) is in the box just below; the numbers are in the
+  <b>In the audit</b> box under it.</p>
+</div></section>
+
+
+<section><div class="wrap">
+  <h2>How F, S, M are computed here</h2>
+  <p class="sub">The exact formula this method uses for each score, read from its runner, and
+  whether it matches the paper's &sect;3 (F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad) definition.
+  From the committed audit
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/data/fsm_math_phaseC.json"><code>fsm_math_phaseC.json</code></a>.</p>
+  <style>
+    .fsmtab td{vertical-align:top}
+    .fsm-badge{display:inline-block;padding:1px 8px;border-radius:6px;font-size:.82rem;font-weight:600;white-space:nowrap}
+    .fsm-ok{background:#12351f;color:#5ee08a}.fsm-warn{background:#3a2f10;color:#e8c65e}
+    .fsm-bad{background:#3a1414;color:#f18a8a}.fsm-na{background:#1c222b;color:#8a94a0}
+    .fsm-note{color:var(--fg-dim);font-size:.85rem}
+  </style>
+  <table class="fsmtab"><thead><tr><th>Axis</th><th>Formula (as computed)</th>
+  <th>What it measures</th><th>Matches &sect;3?</th></tr></thead><tbody><tr><td><b>F</b><br><span class="fsm-note">faithfulness</span></td><td><code>F = clamp01( ρ(approx_Δ, exact_Δ) )   (Pearson corr of the linear/gradient approximation vs the exact patch effect)</code></td><td>Pearson correlation between the first-order attribution-patching approximation of each patch effect and the exact re-run patch effect.</td><td><span class="fsm-badge fsm-ok">&#10003; matches</span> <span class="fsm-note">attribution_patching.jl:580 (F = clamp(r.corr,0,1)); metric_name corr_approx_vs_exact. This is the paper&#x27;s Phase-C patching F = causal-effect-agreement correlation vs Delta_y(u). Record: extra.triad.F (attribution_patching_pong.json F=0.876; battery mean F=0.456, n=42).</span></td></tr><tr><td><b>S</b><br><span class="fsm-note">sufficiency</span></td><td><code>S = fraction of held-out do(u) within ε of the bit-exact re-run (calibration/held-out split of attr-&gt;Δy)</code></td><td>Same shared held-out predictive sufficiency estimator as activation_patching.</td><td><span class="fsm-badge fsm-ok">&#10003; matches</span> <span class="fsm-note">common/triad_sm.jl sufficiency_score via triad_extra_dict (attribution_patching.jl:580). Paper-conform. Record: extra.triad.S (pong S=0.973; battery mean S=0.769, n=42).</span></td></tr><tr><td><b>M</b><br><span class="fsm-note">minimality</span></td><td><code>M = |U*| / |U_hat|</code></td><td>True minimal cause set over method-named (above-threshold) set.</td><td><span class="fsm-badge fsm-ok">&#10003; matches</span> <span class="fsm-note">common/triad_sm.jl minimality_score. Paper-conform. Record: extra.triad.M (pong |U*|=6/|U_hat|=5, M=1.0; battery mean M=0.995, n=42).</span></td></tr></tbody></table>
+  <p class="caption"><b>&#10003; matches</b> = the same quantity as &sect;3; <b>&#9680; partial</b>
+  = the same kind of estimator but a differing detail; <b>&#10007; does not match</b> = a
+  different quantity (see the note). Definitions: F = agreement with the oracle's true causal
+  effects &Delta;y(u); S = held-out predictive score in [&minus;1,&nbsp;1]; M&nbsp;=&nbsp;|U*|/|U&#770;|
+  (true-minimal-set size / named-set size).</p>
 </div></section>
 
 
@@ -95,7 +119,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/d4d90eba0bc70da604b27662f512ade7fc29c26a"><code>d4d90eba</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2a3cd9aa1d0d15e7ea8ca47492d3d7b32d7cd12a"><code>2a3cd9aa</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

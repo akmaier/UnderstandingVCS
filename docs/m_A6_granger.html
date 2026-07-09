@@ -36,8 +36,32 @@
   <p>The score is the false-edge rate of the Granger-inferred graph against the true data-flow. We let Granger causality infer directed edges from the timing of CPU, TIA, and RIOT activity, then compare each inferred edge to the true wiring the oracle certifies. An inferred edge that is not real is a false edge, and the false-edge rate counts them; faithfulness is one minus that rate. On the VCS the rate is at or near one, because the machine is clock-locked and almost every signal is predictable from almost every other one cycle earlier. So Granger causality infers edges everywhere, and nearly all of them are spurious. Neither a longer lag nor a stricter threshold repairs this, because the shared clock, not a real dependency, creates the predictability. The grading is always against the intervention oracle, which is the only thing that separates precedence from causation here. There is no sprite-position hard-case for this method; its output is a directed graph. The audit box reports the measured faithfulness across the scored games, and it is among the lowest in the battery, which is the point: timing-based causal inference fails on a machine whose timing is shared.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
-  are in the <b>In the audit</b> box below.</p>
+  <a href="methods.html#stack">execution stack</a>. How each of F / S / M is actually computed for
+  this method (and whether it matches the paper) is in the box just below; the numbers are in the
+  <b>In the audit</b> box under it.</p>
+</div></section>
+
+
+<section><div class="wrap">
+  <h2>How F, S, M are computed here</h2>
+  <p class="sub">The exact formula this method uses for each score, read from its runner, and
+  whether it matches the paper's &sect;3 (F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad) definition.
+  From the committed audit
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/data/fsm_math_phaseA.json"><code>fsm_math_phaseA.json</code></a>.</p>
+  <style>
+    .fsmtab td{vertical-align:top}
+    .fsm-badge{display:inline-block;padding:1px 8px;border-radius:6px;font-size:.82rem;font-weight:600;white-space:nowrap}
+    .fsm-ok{background:#12351f;color:#5ee08a}.fsm-warn{background:#3a2f10;color:#e8c65e}
+    .fsm-bad{background:#3a1414;color:#f18a8a}.fsm-na{background:#1c222b;color:#8a94a0}
+    .fsm-note{color:var(--fg-dim);font-size:.85rem}
+  </style>
+  <table class="fsmtab"><thead><tr><th>Axis</th><th>Formula (as computed)</th>
+  <th>What it measures</th><th>Matches &sect;3?</th></tr></thead><tbody><tr><td><b>F</b><br><span class="fsm-note">faithfulness</span></td><td><code>F = edge-F1(inferred, true) = 2PR/(P+R) over off-diagonal directed edges; inferred = Granger-significant directed edges, true = exact-oracle data-flow graph</code></td><td>F1 of the Granger-inferred directed edges against the exact-oracle true data-flow graph over 8 candidate cells.</td><td><span class="fsm-badge fsm-ok">&#10003; matches</span> <span class="fsm-note">Graph-valued primitive = edge F1 vs true data-flow graph, matching the paper. Runner A6_granger.jl L743-744,L710-724; record out/A6_pong.json triad.F=0.0.</span></td></tr><tr><td><b>S</b><br><span class="fsm-note">sufficiency</span></td><td><code>S = agree/total over off-diagonal directed edges, agree = #(inferred[i,j] == heldout_true[i,j]); heldout_true = true edges under do(base+37) only</code></td><td>Directed off-diagonal edge agreement (accuracy) between the Granger graph and the held-out base+37 true data-flow.</td><td><span class="fsm-badge fsm-warn">&#9680; partial</span> <span class="fsm-note">Held-out generalisation, right spirit; plain accuracy of the fixed graph vs held-out truth, not a calibration-fit predictor in [-1,1]. A6_granger.jl L745-754,L905-906; record S=0.821.</span></td></tr><tr><td><b>M</b><br><span class="fsm-note">minimality</span></td><td><code>M = 1 - false_edge_rate; false_edge_rate = #(inferred i-&gt;j, true absent)/#inferred edges (= 1 - precision)</code></td><td>1 minus the false-edge rate: fraction of Granger-inferred edges the oracle says are spurious.</td><td><span class="fsm-badge fsm-bad">&#10007; does not match</span> <span class="fsm-note">Paper M = |U*|/|U_hat|. This is 1 - false-positive-edge rate (= precision), not a set-size ratio. Headline metric_name = A6_cell_false_edge_rate_vs_true_dataflow. A6_granger.jl L755-756,L671-706; record M=0.0.</span></td></tr></tbody></table>
+  <p class="caption"><b>&#10003; matches</b> = the same quantity as &sect;3; <b>&#9680; partial</b>
+  = the same kind of estimator but a differing detail; <b>&#10007; does not match</b> = a
+  different quantity (see the note). Definitions: F = agreement with the oracle's true causal
+  effects &Delta;y(u); S = held-out predictive score in [&minus;1,&nbsp;1]; M&nbsp;=&nbsp;|U*|/|U&#770;|
+  (true-minimal-set size / named-set size).</p>
 </div></section>
 
 
@@ -95,7 +119,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/d4d90eba0bc70da604b27662f512ade7fc29c26a"><code>d4d90eba</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2a3cd9aa1d0d15e7ea8ca47492d3d7b32d7cd12a"><code>2a3cd9aa</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

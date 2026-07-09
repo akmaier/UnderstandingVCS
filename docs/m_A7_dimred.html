@@ -36,8 +36,32 @@
   <p>The score is the fraction of NMF or PCA components that match a known signal or variable. We decompose the state tensor into components, then match each to the machine's known internal signals, the frame or scanline clock, a read/write pattern, vsync, or a game variable, and count the matched fraction against what the oracle marks as important. Faithfulness for this method is that matched-component fraction. It is moderate: the decomposition recovers most of the known factors, and NMF's non-negativity fits the additive register basis a little better than PCA, but a substantial fraction of components stay unmatched or mix several signals into one. A secondary reconstruction-error composite gives NMF a small edge, but on the primary matched-fraction metric the two are close. The grading is always against the oracle, not against another method. There is no sprite-position hard-case here; the output is a set of components. The audit box reports the measured matched fraction across the scored games, so the number is an average over the scored set rather than the best single game.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
-  <a href="methods.html#stack">execution stack</a>. The exact F / S / M numbers for this method
-  are in the <b>In the audit</b> box below.</p>
+  <a href="methods.html#stack">execution stack</a>. How each of F / S / M is actually computed for
+  this method (and whether it matches the paper) is in the box just below; the numbers are in the
+  <b>In the audit</b> box under it.</p>
+</div></section>
+
+
+<section><div class="wrap">
+  <h2>How F, S, M are computed here</h2>
+  <p class="sub">The exact formula this method uses for each score, read from its runner, and
+  whether it matches the paper's &sect;3 (F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad) definition.
+  From the committed audit
+  <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/data/fsm_math_phaseA.json"><code>fsm_math_phaseA.json</code></a>.</p>
+  <style>
+    .fsmtab td{vertical-align:top}
+    .fsm-badge{display:inline-block;padding:1px 8px;border-radius:6px;font-size:.82rem;font-weight:600;white-space:nowrap}
+    .fsm-ok{background:#12351f;color:#5ee08a}.fsm-warn{background:#3a2f10;color:#e8c65e}
+    .fsm-bad{background:#3a1414;color:#f18a8a}.fsm-na{background:#1c222b;color:#8a94a0}
+    .fsm-note{color:var(--fg-dim);font-size:.85rem}
+  </style>
+  <table class="fsmtab"><thead><tr><th>Axis</th><th>Formula (as computed)</th>
+  <th>What it measures</th><th>Matches &sect;3?</th></tr></thead><tbody><tr><td><b>F</b><br><span class="fsm-note">faithfulness</span></td><td><code>F = Spearman(rho)(recovery, oracle_importance); recovery_cell = Sigma_j comp_energy[j] * loading[cell,j]^2 over top-k PCA/NMF components; oracle_importance = max screen break over do{0, base+17}</code></td><td>Spearman correlation between each cell&#x27;s PCA/NMF component-recovery score and the oracle causal importance over candidate cells (reported separately for PCA and NMF).</td><td><span class="fsm-badge fsm-ok">&#10003; matches</span> <span class="fsm-note">Two triads (triad_pca, triad_nmf); correlation vs oracle causal importance, not vs known-variable labels. Runner A7_dimred.jl L744,L682-705; record out/A7_pong.json triad_nmf.F=-0.385, triad_pca.F=-0.041.</span></td></tr><tr><td><b>S</b><br><span class="fsm-note">sufficiency</span></td><td><code>S = Pearson(recovery, held_out); held_out = whole-screen break under held-out do(base+37)</code></td><td>Pearson correlation of the component-recovery score vs the held-out do(base+37) screen break.</td><td><span class="fsm-badge fsm-warn">&#9680; partial</span> <span class="fsm-note">Held-out predictive correlation, right spirit; single held-out value, no calibration-fit split. A7_dimred.jl L745,L697,L700; record S: nmf=-0.291, pca=-0.192.</span></td></tr><tr><td><b>M</b><br><span class="fsm-note">minimality</span></td><td><code>M = 1 - overclaim; overclaim = #(surfaced cells recovery&gt;=q0.5 AND oracle_importance==0)/#surfaced cells</code></td><td>1 minus the over-claim rate: fraction of dim-reduction-surfaced cells the oracle says are non-causal (variance != causal).</td><td><span class="fsm-badge fsm-bad">&#10007; does not match</span> <span class="fsm-note">Paper M = |U*|/|U_hat|. This is 1 - a variance-not-causal over-claim rate, not a set-size ratio. A7_dimred.jl L746-755; record M: nmf=0.333, pca=0.5.</span></td></tr></tbody></table>
+  <p class="caption"><b>&#10003; matches</b> = the same quantity as &sect;3; <b>&#9680; partial</b>
+  = the same kind of estimator but a differing detail; <b>&#10007; does not match</b> = a
+  different quantity (see the note). Definitions: F = agreement with the oracle's true causal
+  effects &Delta;y(u); S = held-out predictive score in [&minus;1,&nbsp;1]; M&nbsp;=&nbsp;|U*|/|U&#770;|
+  (true-minimal-set size / named-set size).</p>
 </div></section>
 
 
@@ -95,7 +119,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/d4d90eba0bc70da604b27662f512ade7fc29c26a"><code>d4d90eba</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/2a3cd9aa1d0d15e7ea8ca47492d3d7b32d7cd12a"><code>2a3cd9aa</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>
