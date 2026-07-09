@@ -6661,7 +6661,7 @@
         "activation_patching": {
           "F": 1.0,
           "F_content": null,
-          "F_position": 1.0,
+          "F_position": null,
           "M": 1.0,
           "S": 1.0
         },
@@ -6722,9 +6722,9 @@
           "S": 0.3889
         },
         "ig_baseline_sweep": {
-          "F": 0.3674,
+          "F": 0.371,
           "F_content": 0.4642,
-          "F_position": 0.1389,
+          "F_position": 0.2778,
           "M": 1.0,
           "S": 0.4444
         },
@@ -6785,7 +6785,7 @@
           "S": 0.3889
         },
         "sae": {
-          "F": 0.5204,
+          "F": 0.0408,
           "F_content": null,
           "F_position": null,
           "M": 0.0386,
@@ -7923,11 +7923,11 @@
           "S": 0.9816
         },
         "A2_lesions": {
-          "F": 0.9738,
+          "F": 0.9863,
           "F_content": null,
           "F_position": null,
-          "M": 0.75,
-          "S": 0.7501
+          "M": 0.5,
+          "S": 0.812
         },
         "A3_tuning": {
           "F": 0.0,
@@ -9018,22 +9018,22 @@
     "all_regime_gap": 0.337,
     "causal_all": 0.722,
     "causal_all_n": 11,
-    "causal_pos": 0.561,
-    "causal_pos_n": 4,
+    "causal_pos": 0.415,
+    "causal_pos_n": 3,
     "grad_all": 0.384,
     "grad_all_n": 14,
-    "grad_pos": 0.234,
+    "grad_pos": 0.235,
     "grad_pos_n": 9,
     "position_ci": [
-      0.132,
-      0.37
+      0.118,
+      0.243
     ],
-    "position_gap": 0.327
+    "position_gap": 0.18
   },
   "meta": {
     "generated_by": "docs/gen_site_data.py",
     "n_methods": 31,
-    "n_records": 1736,
+    "n_records": 1731,
     "scored_game_list": [
       "air_raid",
       "alien",
@@ -9347,16 +9347,16 @@
       "tradition": "intervention"
     },
     "A2_lesions": {
-      "F": 0.9649,
-      "F_ci": 0.0205,
+      "F": 0.965,
+      "F_ci": 0.021,
       "F_content": null,
       "F_position": null,
-      "M": 0.8598,
-      "S": 0.5911,
+      "M": 0.8565,
+      "S": 0.5888,
       "leaderboard_method": "A2_lesions",
-      "metric": "A2_faithfulness_spearman_vs_oracle;lesion_importance_spearman_vs_oracle_role",
+      "metric": "lesion_importance_spearman_vs_oracle_role",
       "n_games": 42,
-      "n_records": 43,
+      "n_records": 42,
       "name": "A2 \u00b7 Single-unit lesions",
       "per_game": {
         "air_raid": {
@@ -9619,11 +9619,11 @@
           "S": 0.7996
         },
         "space_invaders": {
-          "F": 0.9738,
+          "F": 0.9863,
           "F_content": null,
           "F_position": null,
-          "M": 0.75,
-          "S": 0.7501
+          "M": 0.5,
+          "S": 0.812
         },
         "tennis": {
           "F": 1.0,
@@ -11686,13 +11686,13 @@
       "F": 1.0,
       "F_ci": 0.0,
       "F_content": null,
-      "F_position": 1.0,
+      "F_position": null,
       "M": 0.9457,
       "S": 1.0,
       "leaderboard_method": "activation_patching",
       "metric": "max_abs_recovered_minus_exact",
       "n_games": 42,
-      "n_records": 43,
+      "n_records": 42,
       "name": "Activation patching / causal mediation",
       "per_game": {
         "air_raid": {
@@ -11915,7 +11915,7 @@
         "pong": {
           "F": 1.0,
           "F_content": null,
-          "F_position": 1.0,
+          "F_position": null,
           "M": 1.0,
           "S": 1.0
         },
@@ -11992,7 +11992,7 @@
       },
       "phase": "C",
       "plaus": 0.5,
-      "regime_split": true,
+      "regime_split": false,
       "tradition": "causal"
     },
     "attribution_patching": {
@@ -14500,16 +14500,16 @@
       "tradition": "gradient"
     },
     "ig_baseline_sweep": {
-      "F": 0.3791,
-      "F_ci": 0.085,
+      "F": 0.3794,
+      "F_ci": 0.0862,
       "F_content": 0.6443,
-      "F_position": 0.112,
+      "F_position": 0.1146,
       "M": 0.9841,
       "S": 0.5907,
       "leaderboard_method": "integrated_gradients",
       "metric": "pearson_corr_with_oracle",
       "n_games": 42,
-      "n_records": 86,
+      "n_records": 84,
       "name": "Integrated Gradients",
       "per_game": {
         "air_raid": {
@@ -14730,9 +14730,9 @@
           "S": 0.8824
         },
         "pong": {
-          "F": 0.3674,
+          "F": 0.371,
           "F_content": 0.4642,
-          "F_position": 0.1389,
+          "F_position": 0.2778,
           "M": 1.0,
           "S": 0.4444
         },
@@ -17317,8 +17317,8 @@
       "tradition": "gradient"
     },
     "sae": {
-      "F": 0.1733,
-      "F_ci": 0.0722,
+      "F": 0.1526,
+      "F_ci": 0.0613,
       "F_content": null,
       "F_position": null,
       "M": 0.0701,
@@ -17326,7 +17326,7 @@
       "leaderboard_method": "sparse_autoencoder",
       "metric": "feature_variable_matched_fraction",
       "n_games": 40,
-      "n_records": 41,
+      "n_records": 40,
       "name": "Sparse autoencoders",
       "per_game": {
         "air_raid": {
@@ -17533,7 +17533,7 @@
           "S": -0.2444
         },
         "pong": {
-          "F": 0.5204,
+          "F": 0.0408,
           "F_content": null,
           "F_position": null,
           "M": 0.0386,

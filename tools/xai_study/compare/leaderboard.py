@@ -309,9 +309,21 @@ def _game_of(path, rec):
 def load_per_game_records(scored_only=True):
     """Yield (phase, path, rec) for every per-game §R record across A/B/C. When
     scored_only and the 42-game scored set is known, records for games OUTSIDE that
-    set are skipped, so aggregation covers exactly the scored battery."""
+    set are skipped, so aggregation covers exactly the scored battery.
+
+    ``pilot*`` records are SKIPPED. Those are the June single-game proof-of-concept
+    runs that stood up each phase's harness before the July 42-game battery (e.g.
+    ``pilotC_patch_pong.json``, P2-E5-0, commit 9f6bef31). They are superseded by
+    the battery records and score the method differently — pilotC_patch_pong tagged
+    activation_patching as a *position*-regime hit at faithfulness 1.0 on Pong alone,
+    whereas the battery grades activation_patching on the whole-behaviour interchange
+    metric (no position regime). Leaving them in double-counted that one Pong point
+    and inflated the causal position-family mean (0.415 -> 0.561), and with it the
+    position gap (0.180 -> 0.327). Excluding them makes aggregation the battery only."""
     for phase, d in PHASE_DIRS.items():
         for path in sorted(glob.glob(os.path.join(d, "*.json"))):
+            if os.path.basename(path).startswith("pilot"):
+                continue
             try:
                 rec = json.load(open(path))
             except Exception as e:  # pragma: no cover

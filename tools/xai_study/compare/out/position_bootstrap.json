@@ -5,10 +5,10 @@
     "n_games": 42,
     "n_boot": 20000,
     "seed": 0,
-    "family_mean_gap": 0.3268,
+    "family_mean_gap": 0.1801,
     "ci95": [
-      0.1316,
-      0.3697
+      0.1181,
+      0.243
     ],
     "excludes_zero": true,
     "note": "causal/intervention minus gradient/correlational family mean of the position-regime faithfulness, per game, then bootstrapped over games; comparable to the paper's original 6-game position CI of [-0.05, 0.32]."
@@ -21,7 +21,7 @@
     "seed": 0,
     "family_mean_gap": 0.3374,
     "ci95": [
-      0.3103,
+      0.3104,
       0.3643
     ],
     "excludes_zero": true,
