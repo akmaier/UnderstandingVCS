@@ -9090,6 +9090,7 @@
       "M": 0.9778,
       "S": 0.9708,
       "leaderboard_method": "A1_connectomics",
+      "metric": "dataflow_graph_F1_vs_oracle",
       "n_games": 35,
       "n_records": 35,
       "name": "A1 \u00b7 Connectomics / data-flow graph",
@@ -9342,6 +9343,7 @@
       },
       "phase": "A",
       "plaus": 0.55,
+      "regime_split": false,
       "tradition": "intervention"
     },
     "A2_lesions": {
@@ -9352,6 +9354,7 @@
       "M": 0.8598,
       "S": 0.5911,
       "leaderboard_method": "A2_lesions",
+      "metric": "A2_faithfulness_spearman_vs_oracle;lesion_importance_spearman_vs_oracle_role",
       "n_games": 42,
       "n_records": 43,
       "name": "A2 \u00b7 Single-unit lesions",
@@ -9653,6 +9656,7 @@
       },
       "phase": "A",
       "plaus": 0.55,
+      "regime_split": false,
       "tradition": "intervention"
     },
     "A3_tuning": {
@@ -9663,6 +9667,7 @@
       "M": 0.8413,
       "S": 0.2001,
       "leaderboard_method": "A3_tuning",
+      "metric": "A3_game_variable_spurious_tuning_rate",
       "n_games": 42,
       "n_records": 42,
       "name": "A3 \u00b7 Tuning curves",
@@ -9964,6 +9969,7 @@
       },
       "phase": "A",
       "plaus": 0.8,
+      "regime_split": false,
       "tradition": "correlational"
     },
     "A4_correlations": {
@@ -9974,6 +9980,7 @@
       "M": 0.34,
       "S": 0.1332,
       "leaderboard_method": "A4_spike_word",
+      "metric": "A4_faithfulness_spearman_corr_vs_oracle_coupling",
       "n_games": 34,
       "n_records": 34,
       "name": "A4 \u00b7 Pairwise correlations",
@@ -10219,6 +10226,7 @@
       },
       "phase": "A",
       "plaus": 0.8,
+      "regime_split": false,
       "tradition": "correlational"
     },
     "A5_lfp": {
@@ -10229,6 +10237,7 @@
       "M": null,
       "S": null,
       "leaderboard_method": "A5_local_field_potentials",
+      "metric": "A5_global_pool_clock_explained_variance_fraction_epiphenomenal",
       "n_games": 40,
       "n_records": 40,
       "name": "A5 \u00b7 Local field potentials",
@@ -10516,6 +10525,7 @@
       },
       "phase": "A",
       "plaus": 0.8,
+      "regime_split": false,
       "tradition": "correlational"
     },
     "A6_granger": {
@@ -10526,6 +10536,7 @@
       "M": 0.2157,
       "S": 0.8841,
       "leaderboard_method": "A6_granger",
+      "metric": "A6_cell_false_edge_rate_vs_true_dataflow",
       "n_games": 35,
       "n_records": 35,
       "name": "A6 \u00b7 Granger causality",
@@ -10778,6 +10789,7 @@
       },
       "phase": "A",
       "plaus": 0.8,
+      "regime_split": false,
       "tradition": "correlational"
     },
     "A7_dimred": {
@@ -10788,6 +10800,7 @@
       "M": null,
       "S": null,
       "leaderboard_method": "A7_dim_reduction",
+      "metric": "A7_nmf_matched_component_fraction_vs_known_vars",
       "n_games": 42,
       "n_records": 42,
       "name": "A7 \u00b7 Dimensionality reduction (NMF/PCA)",
@@ -11089,6 +11102,7 @@
       },
       "phase": "A",
       "plaus": 0.75,
+      "regime_split": false,
       "tradition": "dim_reduction"
     },
     "A8_wholestate": {
@@ -11099,6 +11113,7 @@
       "M": 0.0755,
       "S": 1.0,
       "leaderboard_method": "A8_wholestate",
+      "metric": "wholestate_minimality_M_vs_oracle",
       "n_games": 42,
       "n_records": 42,
       "name": "A8 \u00b7 Whole-state recording",
@@ -11400,6 +11415,7 @@
       },
       "phase": "A",
       "plaus": 0.3,
+      "regime_split": false,
       "tradition": "descriptive"
     },
     "acdc": {
@@ -11410,6 +11426,7 @@
       "M": 1.0,
       "S": 0.2995,
       "leaderboard_method": "ACDC",
+      "metric": "discovered_circuit_best_F1_vs_true_dataflow",
       "n_games": 35,
       "n_records": 35,
       "name": "ACDC \u2014 automatic circuit discovery",
@@ -11662,6 +11679,7 @@
       },
       "phase": "C",
       "plaus": 0.5,
+      "regime_split": false,
       "tradition": "causal"
     },
     "activation_patching": {
@@ -11672,6 +11690,7 @@
       "M": 0.9457,
       "S": 1.0,
       "leaderboard_method": "activation_patching",
+      "metric": "max_abs_recovered_minus_exact",
       "n_games": 42,
       "n_records": 43,
       "name": "Activation patching / causal mediation",
@@ -11973,6 +11992,7 @@
       },
       "phase": "C",
       "plaus": 0.5,
+      "regime_split": true,
       "tradition": "causal"
     },
     "attribution_patching": {
@@ -11983,6 +12003,7 @@
       "M": 0.9947,
       "S": 0.769,
       "leaderboard_method": "attribution_patching",
+      "metric": "corr_approx_vs_exact",
       "n_games": 42,
       "n_records": 42,
       "name": "Attribution / edge patching",
@@ -12284,6 +12305,7 @@
       },
       "phase": "C",
       "plaus": 0.9,
+      "regime_split": false,
       "tradition": "gradient"
     },
     "causal_scrubbing": {
@@ -12294,6 +12316,7 @@
       "M": 0.4296,
       "S": 0.9792,
       "leaderboard_method": "causal_scrubbing",
+      "metric": "scrubbing_preserved_performance_true",
       "n_games": 42,
       "n_records": 42,
       "name": "Causal scrubbing",
@@ -12595,6 +12618,7 @@
       },
       "phase": "C",
       "plaus": 0.5,
+      "regime_split": false,
       "tradition": "causal"
     },
     "counterfactual": {
@@ -12605,6 +12629,7 @@
       "M": 0.989,
       "S": 0.6392,
       "leaderboard_method": "on_distribution_counterfactual",
+      "metric": "pearson_corr_with_oracle",
       "n_games": 42,
       "n_records": 84,
       "name": "On-distribution counterfactual",
@@ -12906,6 +12931,7 @@
       },
       "phase": "B",
       "plaus": 0.55,
+      "regime_split": true,
       "tradition": "intervention"
     },
     "das": {
@@ -12916,6 +12942,7 @@
       "M": 0.8895,
       "S": 1.0,
       "leaderboard_method": "interchange_interventions_das",
+      "metric": "interchange_accuracy_aligned",
       "n_games": 42,
       "n_records": 42,
       "name": "Interchange interventions / DAS",
@@ -13217,6 +13244,7 @@
       },
       "phase": "C",
       "plaus": 0.5,
+      "regime_split": false,
       "tradition": "causal"
     },
     "dictionaries": {
@@ -13227,6 +13255,7 @@
       "M": null,
       "S": null,
       "leaderboard_method": "nmf_pca_dictionaries",
+      "metric": "nmf_matched_component_fraction_vs_known_vars",
       "n_games": 42,
       "n_records": 42,
       "name": "NMF/PCA dictionaries",
@@ -13528,6 +13557,7 @@
       },
       "phase": "C",
       "plaus": 0.75,
+      "regime_split": false,
       "tradition": "dim_reduction"
     },
     "expected_gradients": {
@@ -13538,6 +13568,7 @@
       "M": 1.0,
       "S": 0.5758,
       "leaderboard_method": "expected_gradients",
+      "metric": "pearson_corr_with_oracle",
       "n_games": 42,
       "n_records": 84,
       "name": "Expected Gradients",
@@ -13839,6 +13870,7 @@
       },
       "phase": "B",
       "plaus": 0.9,
+      "regime_split": true,
       "tradition": "gradient"
     },
     "gradxinput": {
@@ -13849,6 +13881,7 @@
       "M": 0.9929,
       "S": 0.6254,
       "leaderboard_method": "gradxinput_deeplift",
+      "metric": "deeplift_pearson_corr_with_oracle",
       "n_games": 42,
       "n_records": 84,
       "name": "Grad\u00d7Input / DeepLIFT",
@@ -14150,6 +14183,7 @@
       },
       "phase": "B",
       "plaus": 0.9,
+      "regime_split": true,
       "tradition": "gradient"
     },
     "guided_backprop": {
@@ -14160,6 +14194,7 @@
       "M": 0.9643,
       "S": 0.5725,
       "leaderboard_method": "guided_backprop",
+      "metric": "pearson_corr_with_oracle",
       "n_games": 42,
       "n_records": 84,
       "name": "Guided Backprop",
@@ -14461,6 +14496,7 @@
       },
       "phase": "B",
       "plaus": 0.9,
+      "regime_split": true,
       "tradition": "gradient"
     },
     "ig_baseline_sweep": {
@@ -14471,6 +14507,7 @@
       "M": 0.9841,
       "S": 0.5907,
       "leaderboard_method": "integrated_gradients",
+      "metric": "pearson_corr_with_oracle",
       "n_games": 42,
       "n_records": 86,
       "name": "Integrated Gradients",
@@ -14772,6 +14809,7 @@
       },
       "phase": "B",
       "plaus": 0.9,
+      "regime_split": true,
       "tradition": "gradient"
     },
     "kernelshap": {
@@ -14782,6 +14820,7 @@
       "M": 0.57,
       "S": 0.6567,
       "leaderboard_method": "kernelshap",
+      "metric": "pearson_corr_with_oracle",
       "n_games": 42,
       "n_records": 84,
       "name": "KernelSHAP / Shapley",
@@ -15083,6 +15122,7 @@
       },
       "phase": "B",
       "plaus": 0.9,
+      "regime_split": true,
       "tradition": "gradient"
     },
     "lime": {
@@ -15093,6 +15133,7 @@
       "M": 0.557,
       "S": 0.6547,
       "leaderboard_method": "lime",
+      "metric": "pearson_corr_with_oracle",
       "n_games": 42,
       "n_records": 84,
       "name": "LIME",
@@ -15394,6 +15435,7 @@
       },
       "phase": "B",
       "plaus": 0.9,
+      "regime_split": true,
       "tradition": "gradient"
     },
     "linear_probing": {
@@ -15404,6 +15446,7 @@
       "M": 0.857,
       "S": null,
       "leaderboard_method": "linear_probing_control_tasks",
+      "metric": "mean_selectivity",
       "n_games": 42,
       "n_records": 42,
       "name": "Linear probing + control tasks",
@@ -15705,6 +15748,7 @@
       },
       "phase": "C",
       "plaus": 0.85,
+      "regime_split": false,
       "tradition": "probing"
     },
     "logit_lens": {
@@ -15715,6 +15759,7 @@
       "M": 0.8197,
       "S": null,
       "leaderboard_method": "logit_tuned_lens",
+      "metric": "logit_lens_fidelity_true_intermediate",
       "n_games": 42,
       "n_records": 42,
       "name": "Logit / tuned lens",
@@ -16016,6 +16061,7 @@
       },
       "phase": "C",
       "plaus": 0.5,
+      "regime_split": false,
       "tradition": "causal"
     },
     "occlusion": {
@@ -16026,6 +16072,7 @@
       "M": 0.9731,
       "S": 0.6667,
       "leaderboard_method": "occlusion",
+      "metric": "pearson_corr_with_oracle",
       "n_games": 42,
       "n_records": 84,
       "name": "Occlusion",
@@ -16327,6 +16374,7 @@
       },
       "phase": "B",
       "plaus": 0.55,
+      "regime_split": true,
       "tradition": "intervention"
     },
     "path_patching": {
@@ -16337,6 +16385,7 @@
       "M": 1.0,
       "S": null,
       "leaderboard_method": "path_patching",
+      "metric": "path_circuit_F1_vs_true_routine",
       "n_games": 42,
       "n_records": 42,
       "name": "Path patching / IOI circuit",
@@ -16638,6 +16687,7 @@
       },
       "phase": "C",
       "plaus": 0.5,
+      "regime_split": false,
       "tradition": "causal"
     },
     "perturbation": {
@@ -16648,6 +16698,7 @@
       "M": 0.9689,
       "S": 0.6297,
       "leaderboard_method": "extremal_perturbation",
+      "metric": "pearson_corr_with_oracle",
       "n_games": 42,
       "n_records": 84,
       "name": "Extremal / meaningful perturbation",
@@ -16949,6 +17000,7 @@
       },
       "phase": "B",
       "plaus": 0.55,
+      "regime_split": true,
       "tradition": "intervention"
     },
     "rise": {
@@ -16959,6 +17011,7 @@
       "M": 0.3475,
       "S": 0.5825,
       "leaderboard_method": "rise",
+      "metric": "pearson_corr_with_oracle",
       "n_games": 42,
       "n_records": 84,
       "name": "RISE",
@@ -17260,6 +17313,7 @@
       },
       "phase": "B",
       "plaus": 0.9,
+      "regime_split": true,
       "tradition": "gradient"
     },
     "sae": {
@@ -17270,6 +17324,7 @@
       "M": 0.0701,
       "S": 0.1828,
       "leaderboard_method": "sparse_autoencoder",
+      "metric": "feature_variable_matched_fraction",
       "n_games": 40,
       "n_records": 41,
       "name": "Sparse autoencoders",
@@ -17557,6 +17612,7 @@
       },
       "phase": "C",
       "plaus": 0.75,
+      "regime_split": false,
       "tradition": "dim_reduction"
     },
     "saliency": {
@@ -17567,6 +17623,7 @@
       "M": 0.9795,
       "S": 0.5932,
       "leaderboard_method": "vanilla_saliency",
+      "metric": "pearson_corr_with_oracle",
       "n_games": 42,
       "n_records": 84,
       "name": "Vanilla gradient (saliency)",
@@ -17868,6 +17925,7 @@
       },
       "phase": "B",
       "plaus": 0.9,
+      "regime_split": true,
       "tradition": "gradient"
     },
     "smoothgrad": {
@@ -17878,6 +17936,7 @@
       "M": 0.981,
       "S": 0.5968,
       "leaderboard_method": "smoothgrad",
+      "metric": "pearson_corr_with_oracle",
       "n_games": 42,
       "n_records": 84,
       "name": "SmoothGrad",
@@ -18179,6 +18238,7 @@
       },
       "phase": "B",
       "plaus": 0.9,
+      "regime_split": true,
       "tradition": "gradient"
     }
   }

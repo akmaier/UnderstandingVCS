@@ -132,6 +132,11 @@ def build():
             "plaus": r.get("plausibility_proxy"),
             "n_games": r.get("n_games"),
             "n_records": r.get("n_records"),
+            "metric": r.get("metric_names"),
+            # regime_split: does this method produce a content-vs-position pixel split,
+            # or is it graded by its own fidelity metric (then content/position are n/a)?
+            "regime_split": r.get("faithfulness_content_regime") is not None
+                            or r.get("faithfulness_position_regime") is not None,
             "per_game": per_game_block(lb_method),
         }
 

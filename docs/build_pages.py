@@ -1341,16 +1341,31 @@ def build_method_results_section(key):
              '<th data-sort="num">S</th>'
              '<th data-sort="num">M</th>'
              '<th>Note</th></tr></thead><tbody>%s</tbody></table>' % "".join(rows))
+    split = m.get("regime_split", True)
+    metric = m.get("metric") or "its own fidelity metric"
+    if split:
+        subtail = "all-regime F, and the content vs position split"
+        note = ""
+    else:
+        subtail = "all-regime F; this method has no content-vs-position split (see the note below)"
+        note = ('<p class="rownote"><b>content-F and position-F are n/a for this method.</b> '
+                'The content-vs-position split applies only to <em>pixel-attribution</em> methods '
+                '&mdash; those that produce an attribution map over the framebuffer, whose score can be '
+                'read separately on the smooth <b>content</b> outputs and the discrete <b>position</b> '
+                'outputs (where the naive gradient is provably zero). This method does not attribute to '
+                'a pixel output; it is graded by its own fidelity metric (<code>%s</code>), reported as '
+                'the <b>F</b> column, so there is no content or position regime to separate.</p>'
+                % esc(str(metric)))
     return """
 <section><div class="wrap">
   <h2>Results per game</h2>
-  <p class="sub">This method's faithfulness on each of the %d scored games (all-regime F, and the
-  content vs position split). Click a header to sort. Every number is read from
-  <a href="%sdocs/site_data.json"><code>site_data.json</code></a>
+  <p class="sub">This method's faithfulness on each of the %d scored games (%s). Click a header to
+  sort. Every number is read from <a href="%sdocs/site_data.json"><code>site_data.json</code></a>
   (<code>methods.%s.per_game</code>).</p>
+  %s
   %s%s
   %s
-</div></section>""" % (len(m["per_game"]), BLOB, esc(key), SORT_CSS, SORT_JS, table)
+</div></section>""" % (len(m["per_game"]), subtail, BLOB, esc(key), note, SORT_CSS, SORT_JS, table)
 
 
 def build_method_page(meth):
