@@ -200,6 +200,13 @@ under intervention. Hence every one of them contributes to the all-regime leader
 the position regime. The six core games of Table~\ref{supp:tab:coverage} are the subset of
 these 42 that also carry the full tiered ground truth and the exact oracle.
 
+The full per-game roster is in Table~\ref{supp:romroster}. It lists all 64 bit-exact games with
+their label source, the number of causally verified T3 labels, whether the game carries a moving
+tracked position, and whether it enters the scored battery (with the held-out reason otherwise).
+It makes the $64\rightarrow54\rightarrow42$ funnel explicit at the level of individual games: 64
+in the roster, 54 with a T3 label, and 42 in the scored battery. This mirrors the per-game
+``Ground Truth ROMs'' page of the public dashboard.
+
 \begin{table}[t]
 \centering
 \caption{\textbf{Games held out from the scored battery.} The 12 games excluded from the
@@ -235,3 +242,102 @@ star\_gunner & gate + static & too few causes clear the density floor and no spr
 \bottomrule
 \end{tabular}
 \end{table}
+
+\subsection{Per-game ground-truth roster}\label{supp:romrostersec}
+
+Table~\ref{supp:romroster} gives the full per-game roster behind the counts above, one row for
+each of the 64 bit-exact games. It mirrors the ``Ground Truth ROMs'' page of the public
+dashboard. For each game it records the T3 label source (OCAtari, both OCAtari and AtariARI, or
+none), the number of causally verified T3 labels, whether the game carries a moving tracked
+position, and whether it enters the 42-game scored battery. Games that are held out show the
+reason in the last column. Reading down the last column makes the $64\rightarrow54\rightarrow42$
+funnel explicit: 64 games in the roster, 10 with no T3 label, 12 T3-labeled games held out from
+scoring for lack of causal structure or a moving target, and 42 in the scored battery.
+
+\footnotesize
+\begin{longtable}{@{}p{3.2cm}p{1.6cm}r p{1.7cm}p{4.2cm}@{}}
+\caption{\textbf{Per-game ground-truth roster.} All 64 bit-exact games, alphabetically. ``Label
+source'' is the T3 provenance (OCAtari, both sources, or --- for no label). ``T3 verified'' is the
+count of causally verified T3 labels. ``Moving pos.'' is Yes when the game carries a tracked
+sprite that moves under intervention. ``Scored battery'' is Yes for the 42 scored games; otherwise
+it gives the held-out reason. The three held-out reasons match Table~\ref{supp:tab:scoredbattery}:
+the density gate, static-only labels, or both; ``no T3 label'' marks the 10 unlabeled games. This
+is a coverage record; no interpretability score appears in it.}
+\label{supp:romroster} \\
+\toprule
+Game & Label source & T3 verified & Moving pos. & Scored battery \\
+\midrule
+\endfirsthead
+\multicolumn{5}{@{}l}{\footnotesize Table~\ref{supp:romroster} (continued)}\\
+\toprule
+Game & Label source & T3 verified & Moving pos. & Scored battery \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\texttt{air\_raid} & OCAtari & 9 & Yes & Yes \\
+\texttt{alien} & OCAtari & 3 & Yes & Yes \\
+\texttt{amidar} & OCAtari & 0 & --- & held out (static labels) \\
+\texttt{assault} & OCAtari & 14 & Yes & Yes \\
+\texttt{asterix} & OCAtari & 0 & --- & held out (static labels) \\
+\texttt{asteroids} & both & 0 & --- & held out (gate + static) \\
+\texttt{atlantis} & OCAtari & 3 & Yes & Yes \\
+\texttt{bank\_heist} & OCAtari & 3 & Yes & Yes \\
+\texttt{battle\_zone} & OCAtari & 1 & --- & held out (gate + static) \\
+\texttt{beam\_rider} & OCAtari & 2 & Yes & Yes \\
+\texttt{berzerk} & both & 13 & Yes & Yes \\
+\texttt{bowling} & both & 8 & Yes & Yes \\
+\texttt{boxing} & both & 8 & Yes & Yes \\
+\texttt{breakout} & both & 7 & Yes & Yes \\
+\texttt{carnival} & OCAtari & 17 & Yes & Yes \\
+\texttt{centipede} & OCAtari & 8 & Yes & Yes \\
+\texttt{chopper\_command} & OCAtari & 13 & Yes & Yes \\
+\texttt{crazy\_climber} & OCAtari & 2 & Yes & held out (density gate) \\
+\texttt{defender} & --- & 0 & --- & no T3 label \\
+\texttt{demon\_attack} & both & 11 & Yes & Yes \\
+\texttt{double\_dunk} & OCAtari & 10 & Yes & Yes \\
+\texttt{elevator\_action} & --- & 0 & --- & no T3 label \\
+\texttt{enduro} & OCAtari & 2 & Yes & held out (density gate) \\
+\texttt{fishing\_derby} & OCAtari & 7 & Yes & Yes \\
+\texttt{freeway} & both & 14 & Yes & Yes \\
+\texttt{frostbite} & both & 12 & Yes & Yes \\
+\texttt{gopher} & OCAtari & 14 & Yes & Yes \\
+\texttt{gravitar} & --- & 0 & --- & no T3 label \\
+\texttt{hero} & both & 11 & Yes & Yes \\
+\texttt{ice\_hockey} & OCAtari & 10 & Yes & Yes \\
+\texttt{jamesbond} & OCAtari & 5 & Yes & Yes \\
+\texttt{journey\_escape} & --- & 0 & --- & no T3 label \\
+\texttt{kangaroo} & OCAtari & 9 & Yes & Yes \\
+\texttt{krull} & OCAtari & 11 & Yes & Yes \\
+\texttt{kung\_fu\_master} & OCAtari & 5 & Yes & Yes \\
+\texttt{montezuma\_revenge} & both & 15 & Yes & Yes \\
+\texttt{ms\_pacman} & both & 15 & Yes & Yes \\
+\texttt{name\_this\_game} & OCAtari & 4 & Yes & Yes \\
+\texttt{pacman} & OCAtari & 8 & Yes & Yes \\
+\texttt{phoenix} & OCAtari & 8 & Yes & Yes \\
+\texttt{pitfall} & both & 10 & Yes & Yes \\
+\texttt{pong} & both & 6 & Yes & Yes \\
+\texttt{pooyan} & OCAtari & 4 & Yes & held out (density gate) \\
+\texttt{private\_eye} & both & 12 & Yes & Yes \\
+\texttt{qbert} & both & 6 & Yes & Yes \\
+\texttt{riverraid} & both & 15 & Yes & Yes \\
+\texttt{road\_runner} & OCAtari & 7 & Yes & Yes \\
+\texttt{robotank} & OCAtari & 0 & --- & held out (static labels) \\
+\texttt{seaquest} & both & 11 & Yes & Yes \\
+\texttt{skiing} & OCAtari & 8 & Yes & held out (density gate) \\
+\texttt{solaris} & --- & 0 & --- & no T3 label \\
+\texttt{space\_invaders} & both & 8 & Yes & Yes \\
+\texttt{star\_gunner} & OCAtari & 0 & --- & held out (gate + static) \\
+\texttt{surround} & --- & 0 & --- & no T3 label \\
+\texttt{tennis} & both & 11 & Yes & Yes \\
+\texttt{time\_pilot} & OCAtari & 2 & Yes & held out (density gate) \\
+\texttt{tutankham} & --- & 0 & --- & no T3 label \\
+\texttt{up\_n\_down} & OCAtari & 0 & --- & held out (static labels) \\
+\texttt{venture} & both & 16 & Yes & Yes \\
+\texttt{video\_pinball} & both & 7 & Yes & Yes \\
+\texttt{videochess} & --- & 0 & --- & no T3 label \\
+\texttt{wizard\_of\_wor} & --- & 0 & --- & no T3 label \\
+\texttt{yars\_revenge} & both & 4 & Yes & Yes \\
+\texttt{zaxxon} & --- & 0 & --- & no T3 label \\
+\end{longtable}
+\normalsize

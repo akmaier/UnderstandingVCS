@@ -27,6 +27,64 @@ as zero. An empty result is therefore never read as a wrong one. Faithfulness is
 axis of the main-text triad (\Sectionname\ref{sec:triad}); we reference that definition and do not restate it.
 Records live under \texttt{tools/xai\_study/<phase>/out/}; the aggregate they feed is
 \texttt{tools/xai\_study/compare/out/leaderboard.json}.
+Table~\ref{supp:leaderboard} consolidates the triad scores for all thirty methods and the
+oracle positive control in one place; the per-method protocols follow.
+
+\begin{table*}[t]
+\centering
+\caption{\textbf{Consolidated leaderboard: all methods, all triad axes.} One row per method
+across the three phases, plus the intervention oracle as a positive control. $F$ is
+faithfulness (Pearson correlation against the oracle, with the bootstrap-over-games 95\% CI in
+brackets), $S$ is sufficiency, $M$ is minimality, all as defined in \Sectionname\ref{sec:triad};
+Plaus is the elicited plausibility prior and $n$ is the number of scored games. Attribution
+methods that emit only a saliency have no defined $S$ or $M$ and are marked ``---''; A5
+(field potentials) and A7 (dimensionality reduction) likewise lack the $S$/$M$ decomposition.
+Values are transcribed from \texttt{tools/xai\_study/compare/out/leaderboard.json} (the
+committed numbers of record).}
+\label{supp:leaderboard}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\textwidth}{@{}Xccccccc@{}}
+\toprule
+Method & Phase & Tradition & $F$ (95\% CI) & $S$ & $M$ & Plaus & $n$ \\
+\midrule
+A1 connectomics & A & intervention & 0.207 [0.130, 0.293] & 0.971 & 0.967 & 0.55 & 35 \\
+A2 lesions & A & intervention & 0.965 [0.942, 0.983] & 0.591 & 1.000 & 0.55 & 42 \\
+A3 tuning curves & A & correlational & 0.213 [0.136, 0.295] & 0.200 & 0.928 & 0.80 & 42 \\
+A4 spike-word / pairwise & A & correlational & 0.225 [0.166, 0.283] & 0.133 & 0.363 & 0.80 & 34 \\
+A5 field potentials & A & correlational & 0.376 [0.323, 0.428] & --- & --- & 0.80 & 40 \\
+A6 Granger & A & correlational & 0.136 [0.091, 0.184] & 0.884 & 0.647 & 0.80 & 35 \\
+A7 dim.\ reduction & A & dim.\ red. & 0.519 [0.457, 0.581] & --- & --- & 0.75 & 42 \\
+A8 whole-state & A & descriptive & 1.000 [1.000, 1.000] & 1.000 & 0.075 & 0.30 & 42 \\
+\midrule
+Vanilla saliency & B & gradient & 0.380 [0.316, 0.445] & --- & --- & 0.90 & 42 \\
+smoothgrad & B & gradient & 0.380 [0.317, 0.445] & --- & --- & 0.90 & 42 \\
+Guided backprop & B & gradient & 0.322 [0.267, 0.375] & --- & --- & 0.90 & 42 \\
+Grad$\times$Input / DeepLIFT & B & gradient & 0.486 [0.448, 0.526] & --- & --- & 0.90 & 42 \\
+Integrated Gradients & B & gradient & 0.379 [0.314, 0.444] & --- & --- & 0.90 & 42 \\
+Expected Gradients & B & gradient & 0.175 [0.110, 0.240] & --- & --- & 0.90 & 42 \\
+kernelshap & B & gradient & 0.652 [0.596, 0.709] & --- & --- & 0.90 & 42 \\
+lime & B & gradient & 0.644 [0.582, 0.705] & --- & --- & 0.90 & 42 \\
+rise & B & gradient & 0.552 [0.500, 0.600] & --- & --- & 0.90 & 42 \\
+occlusion & B & intervention & 0.687 [0.624, 0.746] & --- & --- & 0.55 & 42 \\
+Extremal perturbation & B & intervention & 0.461 [0.410, 0.513] & --- & --- & 0.55 & 42 \\
+On-distribution counterfactual & B & intervention & 0.433 [0.343, 0.522] & --- & --- & 0.55 & 42 \\
+\midrule
+Activation patching & C & causal & 1.000 [1.000, 1.000] & --- & --- & 0.50 & 42 \\
+Causal scrubbing & C & causal & 0.979 [0.940, 1.000] & 0.979 & 0.814 & 0.50 & 42 \\
+Interchange interventions (DAS) & C & causal & 1.000 [1.000, 1.000] & --- & --- & 0.50 & 42 \\
+Logit / tuned lens & C & causal & 0.820 [0.768, 0.871] & --- & 0.224 & 0.50 & 42 \\
+Path patching & C & causal & 0.580 [0.452, 0.710] & --- & --- & 0.50 & 42 \\
+ACDC & C & causal & 0.625 [0.514, 0.730] & 0.299 & 1.000 & 0.50 & 35 \\
+Attribution patching & C & gradient & 0.456 [0.345, 0.573] & --- & --- & 0.90 & 42 \\
+Linear probing (+ control) & C & probing & 0.240 [0.153, 0.346] & --- & 0.932 & 0.85 & 42 \\
+NMF / PCA dictionaries & C & dim.\ red. & 0.102 [0.049, 0.160] & 0.751 & 0.966 & 0.75 & 42 \\
+Sparse autoencoder & C & dim.\ red. & 0.153 [0.096, 0.218] & 0.183 & 0.934 & 0.75 & 40 \\
+\midrule
+Intervention oracle & --- & oracle & 1.000 [1.000, 1.000] & 1.000 & 1.000 & 1.00 & 1 \\
+\bottomrule
+\end{tabularx}
+\end{table*}
 
 The neuroscience battery (Phase~A) treats the running machine as a brain. It asks how far
 each classical analysis recovers the known mechanism on the shared gameplay state. Each
