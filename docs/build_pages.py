@@ -1356,6 +1356,21 @@ def build_method_results_section(key):
                 'a pixel output; it is graded by its own fidelity metric (<code>%s</code>), reported as '
                 'the <b>F</b> column, so there is no content or position regime to separate.</p>'
                 % esc(str(metric)))
+    # M (minimality) is left blank on games where the method NAMES NOTHING: minimality
+    # M = |U*|/|U_hat| (true minimal cause set / method-named set) is undefined when the
+    # named set is empty (|U_hat| = 0), so it is reported n/a rather than scored.
+    pg = m["per_game"]
+    m_present = sum(1 for v in pg.values() if v.get("M") is not None)
+    m_na = sum(1 for v in pg.values() if v.get("M") is None)
+    mnote = ""
+    if m_present and m_na:
+        mnote = ('<p class="rownote"><b>M is n/a on %d of these games.</b> Minimality is '
+                 'M&nbsp;=&nbsp;|U*|/|U&#770;|, the size of the true minimal cause set over the size of '
+                 'the set the method actually names. On a game where the method <b>names nothing</b> '
+                 '(|U&#770;|&nbsp;=&nbsp;0 &mdash; it discovers no circuit, its attribution map is '
+                 'all-zero, or it decodes no cell), that ratio is undefined, so M is left blank rather '
+                 'than scored. The aggregate M is the mean over the %d games where the method did name a '
+                 'cause set.</p>' % (m_na, m_present))
     return """
 <section><div class="wrap">
   <h2>Results per game</h2>
@@ -1363,9 +1378,11 @@ def build_method_results_section(key):
   sort. Every number is read from <a href="%sdocs/site_data.json"><code>site_data.json</code></a>
   (<code>methods.%s.per_game</code>).</p>
   %s
+  %s
   %s%s
   %s
-</div></section>""" % (len(m["per_game"]), subtail, BLOB, esc(key), note, SORT_CSS, SORT_JS, table)
+</div></section>""" % (len(m["per_game"]), subtail, BLOB, esc(key), note, mnote,
+                       SORT_CSS, SORT_JS, table)
 
 
 def build_method_page(meth):

@@ -65,6 +65,7 @@
   sort. Every number is read from <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/site_data.json"><code>site_data.json</code></a>
   (<code>methods.expected_gradients.per_game</code>).</p>
   
+  <p class="rownote"><b>M is n/a on 14 of these games.</b> Minimality is M&nbsp;=&nbsp;|U*|/|U&#770;|, the size of the true minimal cause set over the size of the set the method actually names. On a game where the method <b>names nothing</b> (|U&#770;|&nbsp;=&nbsp;0 &mdash; it discovers no circuit, its attribution map is all-zero, or it decodes no cell), that ratio is undefined, so M is left blank rather than scored. The aggregate M is the mean over the 28 games where the method did name a cause set.</p>
   <style>table.sortable th[data-sort]{cursor:pointer;user-select:none}table.sortable th[data-sort]::after{content:' \2195';opacity:.4;font-size:.8em}table.sortable th[data-dir=asc]::after{content:' \2191';opacity:.9}table.sortable th[data-dir=desc]::after{content:' \2193';opacity:.9}td.num{text-align:right;font-variant-numeric:tabular-nums}</style><script>
 document.addEventListener('click',function(e){
   var th=e.target.closest('th[data-sort]'); if(!th) return;
@@ -97,7 +98,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/f3ec01e90d6aec394ce6bad1dd3ceba3e258a51f"><code>f3ec01e9</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/641b79b71d49678693bd7e7be6392f1169d2a3a5"><code>641b79b7</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>
