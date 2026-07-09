@@ -8,7 +8,7 @@ The numbers themselves are sourced in \Sectionname\ref{supp:provenance}. The tab
 evidence supports which claim; it does not repeat the values. All aggregate scores are taken
 over the 42-game scored battery of \Sectionname\ref{supp:scoredbattery}. One split matters for how the
 table is read. The all-regime faithfulness gap between causal/intervention and
-gradient/correlational methods is $0.337$ (causal/intervention mean $0.722$ vs.\ gradient/correlational
+gradient/correlational methods is $0.321$ (causal/intervention mean $0.705$ vs.\ gradient/correlational
 $0.384$), and it is the primary evidence for the headline. The position-only gap is now
 significant on this battery: bootstrapping the family-mean gap over the 42 games gives a mean of
 $0.327$ with a $95\%$ interval of $[0.277,0.375]$ that excludes zero. At the earlier six-game
@@ -29,7 +29,7 @@ claim is not read wider than the evidence.}
 \toprule
 Claim & Evidence & Methods / games & Metric & Limitation \\
 \midrule
-Causal/intervention methods beat gradient/correlational on faithfulness across all regimes & Fig.~\ref{fig:faithfulness}; leaderboard & 25 methods, 42 games & F mean (gap $0.337$) & robust: causal/interv.\ $0.722$ vs.\ gradient/corr.\ $0.384$; this all-regime gap is the primary evidence \\
+Causal/intervention methods beat gradient/correlational on faithfulness across all regimes & Fig.~\ref{fig:faithfulness}; leaderboard & 25 methods, 42 games & F mean (gap $0.321$) & robust: causal/interv.\ $0.705$ vs.\ gradient/corr.\ $0.384$; this all-regime gap is the primary evidence \\
 The gap holds with the same sign on the discrete position regime & Fig.~\ref{fig:faithfulness}; \jkey{position_bootstrap} & 13 rows, 42 games & F position (gap $0.327$) & significant on the 42-game battery: family-mean gap $0.327$ $[0.277,0.375]$ excludes zero (crossed zero at 6 games) \\
 A faithful causal method reaches the oracle ceiling where the default tool stays low & \jkey{faithful_demo}; Fig.~\ref{fig:faithfulness} & act.\ patching vs.\ vanilla saliency, 42 games & F $1.0$ vs.\ $0.115$ (position regime; all-regimes saliency F $0.380$, plotted in Fig.~\ref{fig:faithfulness}) & one decisive pair \\
 The naive gradient of a discrete position output is provably zero & Prop.~\ref{prop:zero} (\Sectionname\ref{sec:oracle}); \jkey{oracle_grad} & all gradient methods & grad@position $=0$; sampler restores $166$ & position path only; restored gradient is low/mixed \\

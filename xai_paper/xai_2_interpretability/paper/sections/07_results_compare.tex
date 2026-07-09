@@ -49,19 +49,19 @@ traditions measure different objects. We report the ranking with its robustness.
 aggregate the 1773 committed per-game records into the canonical 30
 interpretability methods plus the intervention oracle as a positive control, 31 rows
 in all~\cite{leaderboardP2} (Fig.~\ref{fig:faithfulness}). Scored over the 42 games, the
-causal and intervention methods average a faithfulness of $0.722$ against the oracle, while
-the gradient and correlational methods average $0.384$, a gap of $0.337$ across all
+causal and intervention methods average a faithfulness of $0.705$ against the oracle, while
+the gradient and correlational methods average $0.384$, a gap of $0.321$ across all
 output regimes. This all-regime gap is the robust headline result: its $95\%$
-bootstrap interval over games is $[0.31,0.36]$ and excludes zero~\cite{leaderboardP2}. The
+bootstrap interval over games is $[0.29,0.35]$ and excludes zero~\cite{leaderboardP2}. The
 position regime is the set of discrete sprite-position outputs
 whose naive gradient is provably zero under the hard forward map
 (\Sectionname\ref{sec:results-b}). On this regime the gap points the same way, causal and
 intervention $0.561$ against gradient and correlational $0.234$, a gap of $0.327$; at 42
 games its bootstrap interval $[0.28,0.38]$ now excludes zero, so on position the causal
 advantage is statistically significant, not merely directional. The ordering is the one the method
-matrix predicted (\Sectionname\ref{sec:methods}), now measured. Activation patching, causal
-scrubbing, interchange interventions, and the logit lens sit at the oracle ceiling of
-$1.0$; the single-unit lesion follows at $0.99$; the classical correlational analyses
+matrix predicted (\Sectionname\ref{sec:methods}), now measured. Activation patching and
+interchange interventions sit at the oracle ceiling of $1.0$, causal scrubbing at $0.98$,
+and the logit lens at $0.82$; the single-unit lesion follows at $0.99$; the classical correlational analyses
 (tuning curves, Granger causality, and spike-word correlations) score near zero. The
 clearest single-method contrast is on the position regime. Activation patching reaches
 faithfulness $1.000$, the oracle ceiling, while vanilla saliency, a
@@ -70,9 +70,9 @@ $0.885$~\cite{leaderboardP2}. Hence, on a system where the answer is known exact
 an everyday attribution tool scores far below a causal method on the discrete outputs.
 
 The all-regime separation survives reweighting, and where it does not we say so. Reading
-the robustness record~\cite{leaderboardP2}, the causal-versus-gradient gap is $0.337$
-weighting methods equally and $0.343$ weighting games equally, and its $95\%$ bootstrap
-interval over games excludes zero in both cases ($[0.31,0.36]$ and $[0.32,0.37]$). Two
+the robustness record~\cite{leaderboardP2}, the causal-versus-gradient gap is $0.321$
+weighting methods equally and $0.327$ weighting games equally, and its $95\%$ bootstrap
+interval over games excludes zero in both cases ($[0.29,0.35]$ and $[0.30,0.35]$). Two
 qualifications must be stated alongside this result. When the oracle-equivalent intervention
 methods at faithfulness $1.0$ are removed, leaving only coarser approximations, the gap
 shrinks but the causal and intervention family still leads, so part of the leaderboard's
@@ -102,7 +102,7 @@ documented method-tradition \emph{plausibility proxy} (Y; \Sectionname\ref{sec:m
 plausibility axis is a tradition-level proxy, not a human-subjects measurement. The
 oracle positive control anchors $(1.0,1.0)$, a ceiling no interpretability method
 reaches. Pooled over all outputs the causal and intervention family is more faithful than
-the gradient and correlational family ($0.72$ against $0.38$, a gap of $0.34$ whose $95\%$
+the gradient and correlational family ($0.71$ against $0.38$, a gap of $0.32$ whose $95\%$
 interval excludes zero). Note that several gradient and correlational methods sit low on
 faithfulness yet \emph{higher} on the proxy --- the \emph{danger zone} of high apparent
 plausibility at low faithfulness. Among the gradient methods the danger-zone offenders are
@@ -119,8 +119,8 @@ If the faithfulness axis matched how convincing a method looks, it would tell us
 nothing new. It does not match. Plotted against the plausibility proxy of \Sectionname\ref{sec:methods},
 the points split into a safe diagonal and a dangerous corner. The methods the
 field uses first sit near zero faithfulness while having the highest plausibility-proxy
-values. Linear probing tops the danger list at plausibility $0.85$ against
-faithfulness $0.108$; expected gradients follows at $0.9$ against $0.175$; A3 tuning at
+values. Linear probing sits in the danger zone at plausibility $0.85$ against
+faithfulness $0.24$; expected gradients follows at $0.9$ against $0.175$; A3 tuning at
 $0.8$ against $0.213$. This inversion is the key finding: a map that is weak or empty on
 the position regime looks \emph{more} convincing than the exactly correct one.
 We state the caveat plainly. The plausibility axis is a documented method-tradition
@@ -261,7 +261,7 @@ yet play no part in the computation, exactly Hewitt and Liang's control-task war
 decodability is necessary, never sufficient. Probing answers whether the concept is
 present. The oracle answers whether it is used. Only the second tells us how the
 program works. Linear
-probing's leaderboard faithfulness of $0.108$ paired with a plausibility proxy of $0.85$
+probing's leaderboard faithfulness of $0.24$ paired with a plausibility proxy of $0.85$
 is its place in the danger zone, and this cell is the mechanism behind that placement.
 
 Read together, the leaderboard plane of Fig.~\ref{fig:faithfulness} and the failure
@@ -288,11 +288,11 @@ not this one's.
 A note on aggregation closes the section, because two committed records report the
 sparse autoencoder differently and a careful reader will see both. The leaderboard
 score~\cite{leaderboardP2} aggregates over the per-method records, which for the SAE
-gives faithfulness $0.173$ with a $95\%$ bootstrap interval of $[0.10,0.25]$
+gives faithfulness $0.153$ with a $95\%$ bootstrap interval of $[0.10,0.22]$
 that brackets it; the figures plot this value (Supplement~\ref{supp:provenance} records both
 aggregations). The per-game Pong record used in the
 named-not-causal separation above is a different, finer object, $F = 0.041$ on that one
-game. We keep the two distinct: the $0.173$ is the leaderboard aggregate, the
+game. We keep the two distinct: the $0.153$ is the leaderboard aggregate, the
 $0.041$ is the single-game illustration. Throughout the paper, the leaderboard and its
 figures use the per-method aggregation as canonical, so text, table, and figure agree.
 

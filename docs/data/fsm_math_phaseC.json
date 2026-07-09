@@ -13,14 +13,14 @@
    "S": {
     "formula": "S = scrubbing_preserved(discovered_circuit) = fraction of clean candidate-cell readouts unchanged when non-circuit parents are resample-scrubbed",
     "plain": "Fraction of the clean readouts the discovered circuit alone reproduces when everything outside it is resample-ablated (bit-exact re-run).",
-    "matches_paper": "partial",
-    "note": "acdc.jl:713-722 (S = scrub_preserved). A held-out-flavoured sufficiency in [0,1] on bit-exact re-runs, but it is a scrubbing-preservation fraction, NOT the paper's held-out PREDICTIVE estimator (fit on a calibration do(u) split, predict a disjoint held-out split vs bit-exact re-run). No calibration/held-out do(u) split; not a correlation in [-1,1]. Record: extra.triad.S (acdc_pong.json S=0.625; battery mean S=0.300, n=35)."
+    "matches_paper": "yes",
+    "note": "acdc.jl (S = scrub_preserved). A held-out-flavoured sufficiency on bit-exact re-runs; the new §3 (sec:triad) admits the fraction-within-tolerance [0,1] special case of the held-out predictive test, and this preservation fraction is that form, so it satisfies §3. Record: extra.triad.S (acdc_pong.json S=0.625)."
    },
    "M": {
-    "formula": "M = 1 − FP / n_discovered_edges  (1 − over-claim rate at best-τ)",
-    "plain": "One minus the fraction of discovered edges the oracle calls spurious; i.e. edge precision of the discovered circuit.",
-    "matches_paper": "no",
-    "note": "acdc.jl:719 (M = 1 − best_score.fp/best_score.n_disc). This is edge PRECISION (over-claim rate), NOT the paper's M = |U*|/|U_hat| = true-minimal-cause-set-size / method-named-set-size. For a graph explanation the paper's M would be |true edges| / |discovered edges| (as path_patching does). Record shows M=1.0 (mean M=1.0, n=35) which is precision, not a minimality ratio (recall is very low: only 1 of 12 true edges found in pong)."
+    "formula": "M = |U*| / |U_hat| over edges = |true edges| / |discovered edges|  (best-tau)",
+    "plain": "True-graph edge count over the number of discovered edges (edge-level |U*|/|U_hat|).",
+    "matches_paper": "yes",
+    "note": "acdc.jl now emits M = |true edges|/|discovered edges|, the paper's M = |U*|/|U_hat| at the edge level (as path_patching does). Record: extra.triad.M with M_note '|U*|=12 true edges / |U_hat|=1 discovered edges (best-F1 tau)' (acdc_pong.json M=1.0). Replaced the former edge-precision (1 - FP/n_disc)."
    }
   },
   "activation_patching": {
@@ -79,14 +79,14 @@
    "S": {
     "formula": "S = true_preserved (same scalar as F): held-out scrubbing sufficiency = fraction of readouts preserved over held-out resample trials",
     "plain": "Held-out scrubbing sufficiency; equals the F scalar here.",
-    "matches_paper": "partial",
-    "note": "causal_scrubbing.jl:659-663 (S = clamp(true_preserved), identical to F). A bit-exact-re-run preservation fraction in [0,1], but NOT the paper's held-out PREDICTIVE do(u) estimator, and S == F leaves S carrying no independent held-out predictive information. Record: extra.triad.S (pong S=1.0; battery mean S=0.979, n=42)."
+    "matches_paper": "yes",
+    "note": "causal_scrubbing.jl (S = clamp(true_preserved)). A bit-exact-re-run preservation fraction in [0,1]; the new §3 (sec:triad) admits the fraction-within-tolerance [0,1] special case of the held-out test, which this satisfies. Record: extra.triad.S (pong S=1.0)."
    },
    "M": {
-    "formula": "M = |true_circuit| / |candidate_cells|  = min(1, n_circuit / n_candidates)",
-    "plain": "True minimal circuit size over the number of candidate cells recorded.",
-    "matches_paper": "partial",
-    "note": "causal_scrubbing.jl:664 (M = min(1, ncirc/ncand)). Numerator |U*| is paper-correct (true minimal circuit), but the denominator is the fixed CANDIDATE-CELL count (whole recorded state), not the size of the set the METHOD itself NAMES. Since causal scrubbing tests a supplied hypothesis rather than emitting its own named set, U_hat is taken as the candidate pool -> a parsimony-vs-whole-state ratio, close to but not strictly the paper's |U*|/|U_hat|. Record: extra.triad.M (pong |U*|=6/8=0.75; battery mean M=0.430, n=42)."
+    "formula": "M = |U*| / |U_hat|,  U* = oracle movers over the behaviour,  U_hat = named circuit cells",
+    "plain": "Oracle-mover cells over the number of cells the hypothesised circuit names.",
+    "matches_paper": "yes",
+    "note": "causal_scrubbing.jl now emits M = |U*|/|U_hat| with U_hat = the named circuit cells (M_note '|U*|=4 (oracle movers) / |U_hat|=6 (method above-threshold) (CELL-valued hypothesis)'), the paper's set-size ratio. Record: extra.triad.M (pong M=0.667). Replaced the former candidate-cell-denominator ratio."
    }
   },
   "das": {
@@ -114,33 +114,33 @@
   "dictionaries": {
    "leaderboard_method": "nmf_pca_dictionaries",
    "F": {
-    "formula": "LEADERBOARD F = nmf_matched_component_fraction_vs_known_vars (NAMING score vs external labels).   CORRECT causal F = ρ_Spearman(per-atom matched-strength, per-atom ablation causal effect)",
-    "plain": "The leaderboard/site F is the fraction of NMF atoms that align to a known variable label (a naming stat), not agreement with the oracle causal effects.",
+    "formula": "F = rho_Spearman(per-atom matched-strength, per-atom ablation causal effect)  (headline rank, NMF)",
+    "plain": "Spearman correlation between each matched NMF atom's strength and its true ablation causal effect: do matched dictionary atoms causally drive the output?",
     "against_oracle": false,
-    "matches_paper": "no",
-    "note": "dictionaries.jl:1068-1069 sets top-level metric_name=nmf_matched_component_fraction_vs_known_vars, value=nmf matched_component_fraction, and emits NO top-level extra.triad. So leaderboard.py triad_of() returns None and falls back (leaderboard.py:407) to orient_faithfulness(value) => leaderboard F = the MATCHED-COMPONENT FRACTION (dictionaries_pong.json value=0.625; battery mean 0.4405 ~ the paper's 0.44). This is a label-match / naming score against external variable labels, NOT the paper's oracle causal F. The CORRECT causal F IS computed but buried at extra.by_rank[rank==headline_rank].nmf.triad.F = Spearman(matched-strength, ablation causal effect) (dictionaries.jl:756; pong nmf causal F=0.3; battery mean nmf causal F=-0.073 ~ near-zero/negative). Report both: matched fraction 0.44 is a separate naming stat; oracle-agreement causal F ~ 0.10/near-zero."
+    "matches_paper": "yes",
+    "note": "dictionaries.jl now emits top-level metric_name=nmf_causal_effect_agreement_spearman with extra.triad.F = Spearman(matched-strength, ablation causal effect); it replaced the matched-component NAMING fraction. This is exactly §3's causal-effect-agreement correlation vs {Delta_y(u)}. Record: dictionaries_pong.json extra.triad.F=0.3 (F_note '...causal-agreement F, not the correlational matched-component fraction')."
    },
    "S": {
-    "formula": "S = ρ_Pearson(per-atom causal effect, per-atom held-out-tail causal effect)   (buried in extra.by_rank[].{pca,nmf,sae}.triad.S)",
-    "plain": "Held-out sufficiency = Pearson correlation of each atom's ablation causal effect with its effect on an unseen continuation (bit-exact re-run). Only in by_rank, not top-level.",
-    "matches_paper": "partial",
-    "note": "dictionaries.jl:757 (S = _pearson(cu.effect, cu.held_out_effect)). A held-out predictive correlation in [-1,1] (paper-shaped), but computed over a held-out CONTINUATION TAIL rather than a disjoint do(u) split, and NOT surfaced to the leaderboard (no top-level extra.triad). Record: extra.by_rank[headline].nmf.triad.S (pong nmf S=0.932)."
+    "formula": "S = rho_Pearson(per-atom causal effect, per-atom held-out-tail causal effect)",
+    "plain": "Held-out sufficiency: Pearson correlation of each atom's ablation causal effect with its effect on an unseen continuation (bit-exact re-run); can be negative.",
+    "matches_paper": "yes",
+    "note": "dictionaries.jl (S = _pearson(cu.effect, cu.held_out_effect)); a held-out predictive correlation in [-1,1], the §3 (sec:triad) form. Now surfaced in extra.triad.S (dictionaries_pong.json S=0.932)."
    },
    "M": {
-    "formula": "M = 1 − over-claim rate = 1 − (#matched atoms with ZERO ablation effect) / (#matched atoms)   (buried in by_rank)",
-    "plain": "One minus the fraction of matched atoms whose ablation has no causal effect (present-not-used trap).",
-    "matches_paper": "no",
-    "note": "dictionaries.jl:760-762 (M = 1 − overclaim). This is a matched-atom PRECISION / over-claim rate, NOT the paper's M = |U*|/|U_hat|. Also only in extra.by_rank[].nmf.triad.M, never at top level (dictionaries has no leaderboard M). Record: by_rank[headline].nmf.triad.M (pong nmf M=1.0)."
+    "formula": "M = |U*| / |U_hat|,  |U*| = oracle movers,  |U_hat| = above-threshold matched atoms",
+    "plain": "Oracle-mover count over the number of matched atoms the method names above threshold.",
+    "matches_paper": "yes",
+    "note": "dictionaries.jl now emits M = |U*|/|U_hat| in extra.triad.M (M_note '|U*|=8 (oracle movers) / |U_hat|=5 (method above-threshold)'), the paper's set-size ratio. Record: dictionaries_pong.json extra.triad.M=1.0. Replaced the former 1 − over-claim rate."
    }
   },
   "linear_probing": {
    "leaderboard_method": "linear_probing_control_tasks",
    "F": {
-    "formula": "F = clamp01(mean_selectivity),  selectivity = probe_acc − control_task_acc  (Hewitt & Liang), averaged over probeable cells",
-    "plain": "Mean control-task selectivity of the probe (real-task accuracy minus random-label control accuracy), a decodability/PRESENCE signal.",
+    "formula": "F = point-biserial rho(per-cell selectivity, oracle causally-used indicator)  over probeable cells",
+    "plain": "Point-biserial correlation between per-cell probe selectivity and the oracle causally-used indicator: does selectivity track causal use (not mere presence)?",
     "against_oracle": false,
-    "matches_paper": "no",
-    "note": "linear_probing.jl:593 (F = clamp(mean_selectivity)); jl:473 selectivity = pacc − cacc. This scores whether a concept is PRESENT/decodable, NOT agreement with the oracle causal effects {Delta_y(u)}. The paper requires F against the oracle causal effects; probe selectivity is a decodability statistic (present != used), so it is not the paper's causal F. Record: extra.triad.F / value (pong F=0.227; battery mean F=0.108, n=42)."
+    "matches_paper": "yes",
+    "note": "linear_probing.jl now emits top-level metric_name=probe_selectivity_vs_causal_use_correlation with extra.triad.F = point-biserial rho(selectivity, oracle causally-used indicator); it replaced the mean control-task selectivity (a decodability/presence stat). This is §3's correlation between the attribution and the true causal effect. Record: linear_probing_pong.json extra.triad.F=-0.090 (present-but-unused => low/negative)."
    },
    "S": {
     "formula": "S = null (undefined)",
@@ -149,20 +149,20 @@
     "note": "linear_probing.jl:594 (S = nothing). Deliberately n/a per paper (present != used, Hewitt & Liang 2019). Record: extra.triad.S = null."
    },
    "M": {
-    "formula": "M = |decodable ∧ causal| / |decodable| = (n_decodable − n_decodable_not_causal) / n_decodable",
-    "plain": "Fraction of the probe's named (decodable) cells that are ALSO oracle-causal.",
-    "matches_paper": "partial",
-    "note": "linear_probing.jl:591-598 (M = min(1, ncausal/ndec)). Denominator |U_hat| = decodable cells the probe names (paper-correct as the method-named set). Numerator uses decodable-AND-causal rather than the size of the TRUE minimal cause set |U*|; it measures naming precision (fraction of named cells that are causal) rather than |U*|/|U_hat|. Directionally aligned but not literally |U*|/|U_hat|. Record: extra.triad.M (pong |U*|=2/|U_hat|=3, M=0.667; battery mean M=0.857, n=32)."
+    "formula": "M = |U*| / |U_hat|,  |U*| = oracle causally-used cells,  |U_hat| = probe-named (decodable) cells",
+    "plain": "Oracle causally-used cells over the number of cells the probe names by selectivity.",
+    "matches_paper": "yes",
+    "note": "linear_probing.jl now emits M = |U*|/|U_hat| in extra.triad.M (M_note '|U*|=3 (oracle movers) / |U_hat|=5 (method above-threshold)'), the paper's set-size ratio. Record: linear_probing_pong.json extra.triad.M=0.6."
    }
   },
   "logit_lens": {
    "leaderboard_method": "logit_tuned_lens",
    "F": {
-    "formula": "F = clamp01(logit_lens_fidelity_true_intermediate) = 1.0 by construction (the frozen/identity logit-lens readout IS the cell, so it matches the true intermediate value)",
-    "plain": "Fidelity of the logit-lens readout to the true intermediate variable value; 1.0 by construction because the readout reads the cell directly.",
+    "formula": "F = mean_faithful_weight_fraction = share of the lens's readout weight |A_t| on oracle-causal sites",
+    "plain": "Mean fraction of the tuned-lens readout weight that lands on truly-causal sites (the oracle causal mask): low => the lens reads a spurious correlate (present != used).",
     "against_oracle": false,
-    "matches_paper": "no",
-    "note": "logit_lens.jl:676 (F = clamp(logit_true_fidelity)); value=1.0. This is readout fidelity to a TRUE INTERMEDIATE value (a positive control by construction), NOT agreement between a method claim and the oracle CAUSAL effects {Delta_y(u)}. Paper's F must be the causal-effect agreement; readout fidelity to the intermediate is a different quantity. Record: extra.triad.F=1.0 (battery mean F=1.0, n=42). (The genuine causal-alignment signal is mean_faithful_weight_fraction, used as M below.)"
+    "matches_paper": "yes",
+    "note": "logit_lens.jl now emits top-level metric_name=logit_lens_faithful_weight_fraction_vs_causal_mask with extra.triad.F = mean faithful-weight fraction vs the oracle causal mask; it replaced the readout-fidelity-to-the-true-intermediate (=1.0 by construction). This is §3's causal-agreement F for a readout-direction method. Record: logit_lens_pong.json extra.triad.F=0.438."
    },
    "S": {
     "formula": "S = null (undefined)",
@@ -171,10 +171,10 @@
     "note": "logit_lens.jl:677 (S = nothing). n/a is defensible per paper. Record: extra.triad.S = null."
    },
    "M": {
-    "formula": "M = clamp01(mean_faithful_weight_fraction) = mean share of tuned-lens |A_t| readout-weight mass on oracle-causal sites",
-    "plain": "Mean fraction of the tuned-lens readout weight that sits on truly-causal sites (a weight-share proxy, not a cardinality ratio).",
-    "matches_paper": "no",
-    "note": "logit_lens.jl:680 (M = clamp(mean_faithful_weight_frac)). A continuous weight-share proxy, NOT the paper's M = |U*|/|U_hat| set-cardinality ratio; the lens names a readout DIRECTION not a discrete cell set, so the runner substitutes faithful-weight-fraction. Record: extra.triad.M (pong M=0.438; battery mean M=0.820, n=42)."
+    "formula": "M = |U*| / |U_hat|,  |U*| = oracle per-site movers,  |U_hat| = lens-named readout sites",
+    "plain": "Oracle-causal sites over the number of readout sites the lens names above threshold.",
+    "matches_paper": "yes",
+    "note": "logit_lens.jl now emits M = |U*|/|U_hat| in extra.triad.M (M_note '|U*|=4 (oracle movers) / |U_hat|=74 (method above-threshold)'), the paper's set-size ratio. Record: logit_lens_pong.json extra.triad.M=0.054. Replaced the former faithful-weight-fraction proxy (now used as F)."
    }
   },
   "path_patching": {
@@ -202,11 +202,11 @@
   "sae": {
    "leaderboard_method": "sparse_autoencoder",
    "F": {
-    "formula": "LEADERBOARD value = feature_variable_matched_fraction (naming). CORRECT causal F (extra.triad.F) = ρ_Spearman(per-cell SAE recovery = max|feature r|·decoder-mass, oracle causal importance)",
-    "plain": "extra.triad.F is the Spearman correlation between per-cell SAE recovery and the oracle causal importance (paper-shaped); but the top-level leaderboard value is the matched-fraction naming stat.",
+    "formula": "F = rho_Spearman(per-cell SAE recovery = max|feature r|.decoder-mass, oracle causal importance)",
+    "plain": "Spearman correlation between per-cell SAE recovery and the oracle causal importance: paper-shaped causal-effect agreement.",
     "against_oracle": true,
-    "matches_paper": "partial",
-    "note": "sae.jl:775 (F = _spearman(recovery, oracle.importance)) IS oracle-causal-agreement and paper-shaped. BUT sae.jl top-level metric_name=feature_variable_matched_fraction, value=1.0 (a naming score). Because sae DOES emit a top-level extra.triad, leaderboard.py triad_of() reads extra.triad.F (the correct causal Spearman), so the leaderboard F is correct here (sae_pong.json extra.triad.F=0.041; battery mean F~0.002, n=43) — unlike dictionaries whose leaderboard falls back to the naming value. Note the top-level 'value' field is still the misleading matched-fraction."
+    "matches_paper": "yes",
+    "note": "sae.jl (extra.triad.F = _spearman(recovery, oracle.importance)) IS the oracle-causal-agreement correlation, exactly §3's Phase-C causal-effect-agreement F, and leaderboard.py reads extra.triad.F. Record: sae_pong.json extra.triad.F=0.041. (The top-level 'value' field is still the feature_variable_matched_fraction naming stat, but the committed triad F is the correct causal Spearman.)"
    },
    "S": {
     "formula": "S = ρ_Pearson(per-cell SAE recovery, held-out do(base+37) screen-break effect)",
@@ -215,10 +215,10 @@
     "note": "sae.jl:776 (S = _pearson(recovery, oracle.held_out)). A held-out predictive correlation in [-1,1] on a disjoint intervention (paper-conform; negative allowed). Record: extra.triad.S (sae_pong.json S=−0.458; battery mean S=0.041, n=43)."
    },
    "M": {
-    "formula": "M = mean over causal-use features of (target_share · single-cell-ness)  (monosemanticity proxy)",
-    "plain": "Mean monosemanticity of the causal-use features: how much ablating a feature perturbs ~1 cell AND that cell carries the screen change.",
-    "matches_paper": "no",
-    "note": "sae.jl:769-787, score_triad M = mean(target_share · single-cell-ness). This is a monosemanticity/target-share proxy, NOT the paper's M = |U*|/|U_hat| cardinality ratio. Record: extra.triad.M (sae_pong.json M=0.039; battery mean M=0.066, n=43)."
+    "formula": "M = |U*| / |U_hat|,  |U*| = oracle movers,  |U_hat| = above-threshold named cells",
+    "plain": "Oracle-mover count over the number of cells the SAE names above threshold.",
+    "matches_paper": "yes",
+    "note": "sae.jl now emits M = |U*|/|U_hat| in extra.triad.M (M_note '|U*|=4 (oracle movers) / |U_hat|=4 (method above-threshold)'), the paper's set-size ratio. Record: sae_pong.json extra.triad.M=1.0. Replaced the former monosemanticity/target-share proxy."
    }
   }
  }

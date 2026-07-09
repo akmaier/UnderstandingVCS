@@ -3,7 +3,7 @@
 From compare/out/leaderboard.json + position_bootstrap.json. Scored battery = **42 games**. **1773** §R records → 31 method rows.
 
 ## Headline (family-mean gaps; CI = bootstrap over games, the paper's convention)
-- **All-regime gap = 0.3374**, 95% CI **[0.3103, 0.3643]** (excludes zero). Family means: causal/intervention **0.7215** (n=11 methods) vs gradient/correlational **0.384** (n=14). (6-game: 0.297 [0.232,0.375].)
+- **All-regime gap = 0.3213**, 95% CI **[0.294, 0.348]** (excludes zero). Family means: causal/intervention **0.705** (n=11 methods) vs gradient/correlational **0.384** (n=14). (6-game: 0.297 [0.232,0.375].)
 - **Position gap = 0.3264**, 95% CI **[0.2767, 0.375]** — **EXCLUDES ZERO (SIGNIFICANT)**. Family means: causal/intervention **0.561** (n=4) vs gradient/correlational **0.2346** (n=9). (6-game: 0.238, CI [-0.05, 0.32], crossed zero.)
 - Both CIs are bootstrap-over-games of the FAMILY-MEAN gap (position_bootstrap.py), so each point estimate lies inside its own CI. Do NOT use per-game-gap variants.
 
@@ -18,12 +18,12 @@ Before, activation_patching sat in the position family via the single pilot game
 
 | method | tradition | F | F_pos | S | M | plaus | n_games |
 |---|---|---|---|---|---|---|---|
-| A1_connectomics | intervention | 0.207 | — | 0.971 | 0.978 | 0.55 | 35 |
-| A2_lesions | intervention | 0.965 | — | 0.591 | 0.86 | 0.55 | 42 |
-| A3_tuning | correlational | 0.213 | — | 0.2 | 0.841 | 0.8 | 42 |
-| A4_spike_word | correlational | 0.225 | — | 0.133 | 0.34 | 0.8 | 34 |
+| A1_connectomics | intervention | 0.207 | — | 0.971 | 0.967 | 0.55 | 35 |
+| A2_lesions | intervention | 0.965 | — | 0.591 | 1.0 | 0.55 | 42 |
+| A3_tuning | correlational | 0.213 | — | 0.2 | 0.928 | 0.8 | 42 |
+| A4_spike_word | correlational | 0.225 | — | 0.133 | 0.363 | 0.8 | 34 |
 | A5_local_field_potentials | correlational | 0.376 | — | — | — | 0.8 | 40 |
-| A6_granger | correlational | 0.136 | — | 0.884 | 0.216 | 0.8 | 35 |
+| A6_granger | correlational | 0.136 | — | 0.884 | 0.647 | 0.8 | 35 |
 | A7_dim_reduction | dim_reduction | 0.519 | — | — | — | 0.75 | 42 |
 | A8_wholestate | descriptive | 1.0 | — | 1.0 | 0.075 | 0.3 | 42 |
 | expected_gradients | gradient | 0.175 | 0.025 | — | — | 0.9 | 42 |
@@ -41,11 +41,11 @@ Before, activation_patching sat in the position family via the single pilot game
 | ACDC | causal | 0.625 | — | 0.299 | 1.0 | 0.5 | 35 |
 | activation_patching | causal | 1.0 | 1.0 | — | — | 0.5 | 42 |
 | attribution_patching | gradient | 0.456 | — | — | — | 0.9 | 42 |
-| causal_scrubbing | causal | 0.979 | — | — | — | 0.5 | 42 |
+| causal_scrubbing | causal | 0.979 | — | 0.979 | 0.814 | 0.5 | 42 |
 | interchange_interventions_das | causal | 1.0 | — | — | — | 0.5 | 42 |
-| linear_probing_control_tasks | probing | 0.108 | — | — | — | 0.85 | 42 |
-| logit_tuned_lens | causal | 1.0 | — | — | — | 0.5 | 42 |
-| nmf_pca_dictionaries | dim_reduction | 0.441 | — | — | — | 0.75 | 42 |
+| linear_probing_control_tasks | probing | 0.24 | — | — | 0.932 | 0.85 | 42 |
+| logit_tuned_lens | causal | 0.82 | — | — | 0.224 | 0.5 | 42 |
+| nmf_pca_dictionaries | dim_reduction | 0.102 | — | 0.751 | 0.966 | 0.75 | 42 |
 | path_patching | causal | 0.58 | — | — | — | 0.5 | 42 |
-| sparse_autoencoder | dim_reduction | 0.173 | — | 0.183 | 0.07 | 0.75 | 40 |
+| sparse_autoencoder | dim_reduction | 0.153 | — | 0.183 | 0.934 | 0.75 | 40 |
 | ORACLE | oracle | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | 1 |

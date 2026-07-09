@@ -55,7 +55,7 @@ is faithful only on a minority of games and its faithfulness stays low. Averaged
 position regime the gradient and correlational family reaches only $0.23$ against the
 oracle, against $0.56$ for the causal and intervention family (Table~\ref{tab:phaseB}).
 Across all output regimes the gradient and correlational family scores $0.38$ and the
-causal and intervention family $0.72$. The position map is not empty by choice; it is
+causal and intervention family $0.71$. The position map is not empty by choice; it is
 weak exactly where the discrete game logic sits.
 
 Two further results make this point stronger. The baseline choice is the perennial
@@ -105,7 +105,7 @@ faithfulness $0.35$ and $0.28$, all-regime $0.46$ and $0.43$). The
 counterfactual is a no-op on some games, where no on-distribution content byte varies
 between frames, so its map is flat and we mark those cells invalid rather than score
 them. The cross-tradition contrast is clearest across all three phases: the causal and
-intervention family averages $0.72$ faithfulness [$n=11$]
+intervention family averages $0.71$ faithfulness [$n=11$]
 against the oracle, against the gradient and correlational family's $0.38$
 [$n=14$] (Table~\ref{tab:phaseB}). Restricted to the attribution methods
 alone the two means are closer, because the content-path gradient is faithful and lifts the
@@ -159,7 +159,7 @@ measurement. The naive gradient is provably zero on the position read
 carry comes from the content channel and, for the two SmoothGrad-family rows, from the
 sampler-restored gradient of \Sectionname\ref{sec:results_compare}, which is faithful on only a
 minority of games and stays low. Across all regimes the causal and intervention family
-leads ($0.72$ against $0.38$, position $0.56$ against $0.23$), and the popular gradient
+leads ($0.71$ against $0.38$, position $0.56$ against $0.23$), and the popular gradient
 methods carry the \emph{higher} plausibility tag --- the danger zone, measured. The two
 family-mean rows are the cross-tradition families ($n=14$ gradient/correlational, $n=11$
 causal/intervention across all three traditions), not the twelve rows above; restricted
@@ -190,7 +190,7 @@ Guided backprop~\cite{springenberg2015striving}   & gradient & $0.32$ $[0.24,0.4
 Expected Gradients~\cite{erion2021improving}      & gradient & $0.18$ $[0.11,0.25]$ & $0.03$ & $0.90$ \\
 \midrule
 \multicolumn{2}{@{}l}{Gradient/corr.\ mean}  & $0.38$ & $0.23$ & --- \\
-\multicolumn{2}{@{}l}{Causal/interv.\ mean}  & $0.72$ & $0.56$ & --- \\
+\multicolumn{2}{@{}l}{Causal/interv.\ mean}  & $0.71$ & $0.56$ & --- \\
 \botrule
 \end{tabularx}
 \end{table}

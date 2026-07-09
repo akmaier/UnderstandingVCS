@@ -30,8 +30,8 @@ relative to \texttt{tools/xai\_study/}.}
 \toprule
 Number & Value & Record (JSON key) & Command \\
 \midrule
-Faithfulness gap, all regimes (causal $-$ gradient) & $0.3374$\newline {\scriptsize$[0.3103,0.3643]$, excl.\ $0$} & \jkey{position_bootstrap.json}: \jkey{all\_regime.family\_mean\_gap}, \jkey{ci95} & \jkey{position_bootstrap.py} \\
-Causal/interv.\ mean F, all regimes & $0.7215$\newline {\scriptsize$n{=}11$} & \jkey{leaderboard.json}: \jkey{family_causal_intervention} \jkey{mean} & \jkey{leaderboard.py} \\
+Faithfulness gap, all regimes (causal $-$ gradient) & $0.3213$\newline {\scriptsize$[0.294,0.348]$, excl.\ $0$} & \jkey{position_bootstrap.json}: \jkey{all\_regime.family\_mean\_gap}, \jkey{ci95} & \jkey{position_bootstrap.py} \\
+Causal/interv.\ mean F, all regimes & $0.705$\newline {\scriptsize$n{=}11$} & \jkey{leaderboard.json}: \jkey{family_causal_intervention} \jkey{mean} & \jkey{leaderboard.py} \\
 Gradient/corr.\ mean F, all regimes & $0.384$\newline {\scriptsize$n{=}14$} & \jkey{leaderboard.json}: \jkey{family_gradient_correlational} \jkey{mean} & \jkey{leaderboard.py} \\
 Faithfulness gap, position regime (bootstrap over games) & $0.3268$\newline {\scriptsize$[0.1325,0.3702]$, excl.\ $0$} & \jkey{position_bootstrap.json}: \jkey{family_mean_gap}, \jkey{ci95} & \jkey{position_bootstrap.py} \\
 Causal/interv.\ mean F, position regime & $0.561$\newline {\scriptsize$\pm0.3212$, $n{=}4$} & \jkey{leaderboard.json}: \jkey{family_..._intervention_position} \jkey{mean} & \jkey{leaderboard.py} \\
@@ -54,12 +54,11 @@ trees. JSON keys are abbreviated with ``\texttt{...}'' where nested; the full pa
 REPRODUCIBILITY \Sectionname6.5.
 \end{table}
 
-One number needs a reconciliation, and we record it rather than hide it. The sparse
-autoencoder is the only method whose two aggregations disagree. On the 42-game scored battery
-the over-games mean is $F=0.1526$ (\jkey{triad_F}) and the over-records mean is $0.1733$
-(\jkey{faithfulness}); both are read from the sparse-autoencoder row of
-\jkey{leaderboard.json}. The figures and the main-text leaderboard plot the over-records value
-$0.1733$. We treat the over-games mean as the canonical row value for the aggregation rule of
-\Sectionname\ref{supp:schema}, and report the over-records figure alongside it, so that text,
-table, and figure agree on which aggregation each cites. No headline claim depends on which of
-the two is read, since the sparse autoencoder sits near the floor under both.
+One number needs a note, and we record it rather than hide it. On the 42-game scored battery
+the sparse autoencoder's over-games mean $F=0.1526$ (\jkey{triad_F}) and over-records mean
+$0.1526$ (\jkey{faithfulness}) coincide, both read from the sparse-autoencoder row of
+\jkey{leaderboard.json}; the figures and the main-text leaderboard plot this value
+($0.153$). The finer object is the per-game Pong record $F=0.041$ used in the
+named-not-causal separation of \Sectionname\ref{sec:results_compare}: it is a single-game
+illustration, not the leaderboard aggregate. No headline claim depends on which is read,
+since the sparse autoencoder sits near the floor under both.
