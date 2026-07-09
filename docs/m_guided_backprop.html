@@ -52,7 +52,7 @@
   the single example shown above. Tradition: <b>gradient</b>. The example figure (Pong) is one of those
   records.</p>
   <div class="bignum"><div class="b"><strong>0.322</strong><small>F — faithfulness vs oracle (mean over 42 games, &plusmn;0.087 CI95)</small></div><div class="b"><strong>0.573</strong><small>S — sufficiency: held-out predictive (n/a where the paper does not define this axis)</small></div><div class="b"><strong>0.964</strong><small>M — minimality: true-minimal-set / named-set (n/a otherwise)</small></div><div class="b"><strong>84</strong><small>committed records aggregated</small></div><div class="b"><strong>0.00</strong><small>human-plausibility proxy</small></div></div>
-  <p class="caption"><b>F</b> faithfulness (scored vs the oracle for every method) · <b>S</b> sufficiency (held-out predictive; reported for the predictive Phase-B/C methods) · <b>M</b> minimality (true-minimal-set / named-set; where the method names a cause set) — <b>n/a</b> otherwise, per the paper's F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad.</p>
+  <p class="caption"><b>F</b> faithfulness (scored vs the oracle for every method) · <b>S</b> sufficiency (held-out predictive score in [&minus;1,&nbsp;1]; a negative value means the explanation predicts held-out interventions <em>worse</em> than the unperturbed baseline; reported for the predictive methods across all three phases where the calibration/held-out split is defined) · <b>M</b> minimality (true-minimal-set / named-set; where the method names a cause set) — <b>n/a</b> otherwise, per the paper's F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad.</p>
   <p class="caption">Source: <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/compare/out/leaderboard.json"><code>leaderboard.json</code></a> · the whole leaderboard is on the
   <a href="methods.html#e6">methods page</a> and the
   <a href="paper2.html">Paper&nbsp;2 audit</a>.</p>
@@ -64,6 +64,7 @@
   <p class="sub">This method's faithfulness on each of the 42 scored games (all-regime F, and the content vs position split). Click a header to
   sort. Every number is read from <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/docs/site_data.json"><code>site_data.json</code></a>
   (<code>methods.guided_backprop.per_game</code>).</p>
+  
   
   
   <style>table.sortable th[data-sort]{cursor:pointer;user-select:none}table.sortable th[data-sort]::after{content:' \2195';opacity:.4;font-size:.8em}table.sortable th[data-dir=asc]::after{content:' \2191';opacity:.9}table.sortable th[data-dir=desc]::after{content:' \2193';opacity:.9}td.num{text-align:right;font-variant-numeric:tabular-nums}</style><script>
@@ -98,7 +99,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/641b79b71d49678693bd7e7be6392f1169d2a3a5"><code>641b79b7</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/84ada09e035009fd5542a2de5e41e91eee13f8a0"><code>84ada09e</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

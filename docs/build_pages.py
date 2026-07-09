@@ -1116,7 +1116,9 @@ def _triad_cell(val):
 
 TRIAD_LEGEND = (
     "<p class=\"caption\"><b>F</b> faithfulness (scored vs the oracle for every method) · "
-    "<b>S</b> sufficiency (held-out predictive; reported for the predictive Phase-B/C methods) · "
+    "<b>S</b> sufficiency (held-out predictive score in [&minus;1,&nbsp;1]; a negative value means the "
+    "explanation predicts held-out interventions <em>worse</em> than the unperturbed baseline; reported "
+    "for the predictive methods across all three phases where the calibration/held-out split is defined) · "
     "<b>M</b> minimality (true-minimal-set / named-set; where the method names a cause set) — "
     "<b>n/a</b> otherwise, per the paper's F&nbsp;&and;&nbsp;S&nbsp;&and;&nbsp;M triad.</p>")
 
@@ -1371,6 +1373,19 @@ def build_method_results_section(key):
                  'all-zero, or it decodes no cell), that ratio is undefined, so M is left blank rather '
                  'than scored. The aggregate M is the mean over the %d games where the method did name a '
                  'cause set.</p>' % (m_na, m_present))
+    # S (sufficiency) is a held-out predictive score in [-1,1]; a negative value means the
+    # explanation predicts held-out interventions WORSE than the unperturbed baseline.
+    s_neg = sum(1 for v in pg.values() if v.get("S") is not None and v.get("S") < 0)
+    snote = ""
+    if s_neg:
+        snote = ('<p class="rownote"><b>S is negative on %d of these games.</b> Sufficiency asks whether '
+                 'the explanation can predict the outcome of <em>held-out</em> interventions it was not '
+                 'fit on; for this method S is the held-out predictive correlation between its claim and '
+                 'the true effect, so it lies in [&minus;1,&nbsp;1]. A value near <b>0</b> means the '
+                 'explanation predicts no better than the unperturbed output; a <b>negative</b> value '
+                 'means it predicts <em>worse</em> &mdash; its held-out claim is anti-correlated with the '
+                 'truth (named yet causally inert). The aggregate S is the mean over the scored '
+                 'games.</p>' % s_neg)
     return """
 <section><div class="wrap">
   <h2>Results per game</h2>
@@ -1379,9 +1394,10 @@ def build_method_results_section(key):
   (<code>methods.%s.per_game</code>).</p>
   %s
   %s
+  %s
   %s%s
   %s
-</div></section>""" % (len(m["per_game"]), subtail, BLOB, esc(key), note, mnote,
+</div></section>""" % (len(m["per_game"]), subtail, BLOB, esc(key), note, mnote, snote,
                        SORT_CSS, SORT_JS, table)
 
 
