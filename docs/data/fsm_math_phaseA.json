@@ -5,88 +5,224 @@
    "leaderboard_method": "A1_connectomics",
    "F": {
     "formula": "F = edge-F1(R, T) = 2PR/(P+R), R=recovered do(base+17) 1-step edges, T=true oracle edges (do 0/base+17/base+37, full horizon)",
+    "formula_tex": "F = F_1^{\\mathrm{edge}}(\\hat{E}, E^{\\star})",
     "plain": "F1 of the single-shot recovered data-flow edges against the exact-oracle true data-flow graph over 8 candidate cells.",
     "against_oracle": true,
     "matches_paper": "yes",
-    "note": "Graph-valued primitive = edge F1 vs true data-flow graph, exactly the paper's connectomics case. Runner A1_connectomics.jl L406,L367-386; record out/A1_pong.json extra.triad.F=0.0 / graph.f1."
+    "note": "Graph-valued primitive = edge F1 vs true data-flow graph, exactly the paper's connectomics case. Runner A1_connectomics.jl L406,L367-386; record out/A1_pong.json extra.triad.F=0.0 / graph.f1.",
+    "source": [
+     {
+      "label": "A1_connectomics.jl:406",
+      "path": "tools/xai_study/phaseA_kording/A1_connectomics.jl",
+      "line": 406
+     },
+     {
+      "label": "A1_connectomics.jl:367",
+      "path": "tools/xai_study/phaseA_kording/A1_connectomics.jl",
+      "line": 367
+     }
+    ]
    },
    "S": {
     "formula": "S = agree/total over off-diagonal edges, agree = #(R AND H) + #(NOT R AND NOT H); H = true edges under held-out do(base+37)",
+    "formula_tex": "S = \\dfrac{\\#\\{(i,j):\\ \\hat{E}_{ij}=E^{\\star,\\mathrm{held}}_{ij}\\}}{\\#\\,\\mathrm{off\\text{-}diag}} \\in [0,1]",
     "plain": "Off-diagonal edge agreement between the base+17 recovered graph and the held-out base+37 true edge set (unseen intervention value).",
     "matches_paper": "yes",
-    "note": "Held-out edge agreement between the base+17 recovered graph and the held-out base+37 true edge set: a non-null held-out sufficiency. §3 (sec:triad) admits the fraction-within-tolerance [0,1] special case of the held-out predictive test, which this off-diagonal edge-agreement fraction satisfies. A1_connectomics.jl L412-416,L571-591; record S=0.839."
+    "note": "Held-out edge agreement between the base+17 recovered graph and the held-out base+37 true edge set: a non-null held-out sufficiency. §3 (sec:triad) admits the fraction-within-tolerance [0,1] special case of the held-out predictive test, which this off-diagonal edge-agreement fraction satisfies. A1_connectomics.jl L412-416,L571-591; record S=0.839.",
+    "source": [
+     {
+      "label": "A1_connectomics.jl:416",
+      "path": "tools/xai_study/phaseA_kording/A1_connectomics.jl",
+      "line": 416
+     },
+     {
+      "label": "A1_connectomics.jl:578",
+      "path": "tools/xai_study/phaseA_kording/A1_connectomics.jl",
+      "line": 578
+     }
+    ]
    },
    "M": {
     "formula": "M = |U*|/|U_hat| over edges = |true edges| / |discovered edges|",
+    "formula_tex": "M = |U^{\\star}| / |\\hat{U}| = |E^{\\star}| / |\\hat{E}| \\in (0,1]",
     "plain": "True-graph edge count over the number of recovered edges (edge-level |U*|/|U_hat|).",
     "matches_paper": "yes",
-    "note": "Runner now emits M = |U*|/|U_hat| over edges (M_note '|true edges|=12 / |discovered edges|=0'); the paper's minimality ratio applied at the edge level. Record out/A1_pong.json extra.triad.M (null in pong when 0 edges discovered). Replaced the former 1 − FP-rate (edge precision)."
+    "note": "Runner now emits M = |U*|/|U_hat| over edges (M_note '|true edges|=12 / |discovered edges|=0'); the paper's minimality ratio applied at the edge level. Record out/A1_pong.json extra.triad.M (null in pong when 0 edges discovered). Replaced the former 1 − FP-rate (edge precision).",
+    "source": [
+     {
+      "label": "A1_connectomics.jl:422",
+      "path": "tools/xai_study/phaseA_kording/A1_connectomics.jl",
+      "line": 422
+     }
+    ]
    }
   },
   "A2_lesions": {
    "leaderboard_method": "A2_lesions",
    "F": {
     "formula": "F = Spearman(rho)(lesion_imp, oracle_role); lesion_imp = max screen/RAM break over clamp{0, base XOR 0xFF}; oracle_role = max over do-set{0, base+17, base+37, base XOR 0xFF} full horizon",
+    "formula_tex": "F = \\rho_{\\mathrm{Spearman}}\\!\\left(\\mathrm{attr},\\ \\Delta y(u)\\right)",
     "plain": "Spearman rank correlation between the single-unit lesion importance map and the exact-oracle per-unit causal role over 8 units.",
     "against_oracle": true,
     "matches_paper": "yes",
-    "note": "Rank correlation of attribution vs oracle causal effects; matches the paper's ranked-output correlation primitive. A2_lesions.jl L621,L637,L378-409; record out/A2_lesions_pong.json triad.F=1.0."
+    "note": "Rank correlation of attribution vs oracle causal effects; matches the paper's ranked-output correlation primitive. A2_lesions.jl L621,L637,L378-409; record out/A2_lesions_pong.json triad.F=1.0.",
+    "source": [
+     {
+      "label": "A2_lesions.jl:646",
+      "path": "tools/xai_study/phaseA_kording/A2_lesions.jl",
+      "line": 646
+     },
+     {
+      "label": "A2_lesions.jl:621",
+      "path": "tools/xai_study/phaseA_kording/A2_lesions.jl",
+      "line": 621
+     }
+    ]
    },
    "S": {
     "formula": "S = Spearman(rho)(lesion_imp, heldout_role); heldout_role = per-unit role under UNSEEN do(base+37) only, full horizon",
+    "formula_tex": "S = \\rho_{\\mathrm{Spearman}}\\!\\left(\\mathrm{attr},\\ \\Delta y_{\\mathrm{held\\text{-}out}}(u)\\right) \\in [-1,1]",
     "plain": "Rank correlation of the lesion map (built on {0, alt}) vs the per-unit role under the held-out clamp value base+37.",
     "matches_paper": "yes",
-    "note": "Rank correlation in [-1,1] of the lesion map (built on {0,alt}) vs the per-unit role under the held-out clamp value base+37: a non-null held-out predictive correlation, the §3 (sec:triad) form. A2_lesions.jl; record S=0.836."
+    "note": "Rank correlation in [-1,1] of the lesion map (built on {0,alt}) vs the per-unit role under the held-out clamp value base+37: a non-null held-out predictive correlation, the §3 (sec:triad) form. A2_lesions.jl; record S=0.836.",
+    "source": [
+     {
+      "label": "A2_lesions.jl:648",
+      "path": "tools/xai_study/phaseA_kording/A2_lesions.jl",
+      "line": 648
+     }
+    ]
    },
    "M": {
     "formula": "M = |U*|/|U_hat|; |U*| = #oracle-mover units, |U_hat| = #above-threshold named units",
+    "formula_tex": "M = |U^{\\star}| / |\\hat{U}| \\in (0,1]\\quad U^{\\star}=\\{u:\\Delta y(u)>0\\},\\ \\hat{U}=\\{u:|\\mathrm{attr}(u)|>\\tau\\}",
     "plain": "Number of oracle-causal units over the number of units the lesion map names above threshold.",
     "matches_paper": "yes",
-    "note": "Runner now emits M = |U*|/|U_hat| (M_note '|U*|=4 (oracle movers) / |U_hat|=4 (method above-threshold)'), the paper's set-size ratio. Record out/A2_lesions_pong.json extra.triad.M=1.0. Replaced the former 1 − false-specificity rate."
+    "note": "Runner now emits M = |U*|/|U_hat| (M_note '|U*|=4 (oracle movers) / |U_hat|=4 (method above-threshold)'), the paper's set-size ratio. Record out/A2_lesions_pong.json extra.triad.M=1.0. Replaced the former 1 − false-specificity rate.",
+    "source": [
+     {
+      "label": "A2_lesions.jl:655",
+      "path": "tools/xai_study/phaseA_kording/A2_lesions.jl",
+      "line": 655
+     },
+     {
+      "label": "triad_sm.jl:57",
+      "path": "tools/xai_study/common/triad_sm.jl",
+      "line": 57
+     }
+    ]
    }
   },
   "A3_tuning": {
    "leaderboard_method": "A3_tuning",
    "F": {
     "formula": "F = Spearman(rho)(sel, oracle_importance); sel = per-cell max |Pearson| to game variables (excl. self, excl. frame clock); oracle_importance = max whole-screen break over do{0, base+17, base+37}",
+    "formula_tex": "F = \\rho_{\\mathrm{Spearman}}\\!\\left(\\mathrm{attr},\\ \\Delta y(u)\\right)",
     "plain": "Spearman correlation between per-cell game-variable tuning selectivity and the oracle causal importance over 8 candidate cells.",
     "against_oracle": true,
     "matches_paper": "yes",
-    "note": "Scored vs oracle causal importance (not vs external labels); the per-game clip-at-0-then-mean is applied at aggregation (paper cites A3 = 0.213 clip-at-zero mean). Runner A3_tuning.jl L466,L318-338; record out/A3_tuning_pong.json triad.F=-0.007."
+    "note": "Scored vs oracle causal importance (not vs external labels); the per-game clip-at-0-then-mean is applied at aggregation (paper cites A3 = 0.213 clip-at-zero mean). Runner A3_tuning.jl L466,L318-338; record out/A3_tuning_pong.json triad.F=-0.007.",
+    "source": [
+     {
+      "label": "A3_tuning.jl:473",
+      "path": "tools/xai_study/phaseA_kording/A3_tuning.jl",
+      "line": 473
+     },
+     {
+      "label": "A3_tuning.jl:470",
+      "path": "tools/xai_study/phaseA_kording/A3_tuning.jl",
+      "line": 470
+     }
+    ]
    },
    "S": {
     "formula": "S = Pearson(sel, held_out); held_out = whole-screen break under held-out do(base+37) only",
+    "formula_tex": "S = \\rho_{\\mathrm{Pearson}}\\!\\left(\\mathrm{attr},\\ \\Delta y_{\\mathrm{held\\text{-}out}}(u)\\right) \\in [-1,1]",
     "plain": "Pearson correlation of the selectivity map vs the held-out do(base+37) screen break.",
     "matches_paper": "yes",
-    "note": "Held-out predictive correlation in [-1,1] of the selectivity map vs the held-out do(base+37) screen break: the §3 (sec:triad) form. A3_tuning.jl; record S=0.441 (battery air_raid)."
+    "note": "Held-out predictive correlation in [-1,1] of the selectivity map vs the held-out do(base+37) screen break: the §3 (sec:triad) form. A3_tuning.jl; record S=0.441 (battery air_raid).",
+    "source": [
+     {
+      "label": "A3_tuning.jl:474",
+      "path": "tools/xai_study/phaseA_kording/A3_tuning.jl",
+      "line": 474
+     }
+    ]
    },
    "M": {
     "formula": "M = |U*|/|U_hat|; |U*| = #oracle-mover cells, |U_hat| = #above-threshold named cells",
+    "formula_tex": "M = |U^{\\star}| / |\\hat{U}| \\in (0,1]\\quad U^{\\star}=\\{u:\\Delta y(u)>0\\},\\ \\hat{U}=\\{u:|\\mathrm{attr}(u)|>\\tau\\}",
     "plain": "Number of oracle-causal cells over the number of strongly-tuned cells the method names.",
     "matches_paper": "yes",
-    "note": "Runner now emits M = |U*|/|U_hat| (M_note '|U*|=10 (oracle movers) / |U_hat|=7 (method above-threshold)'), the paper's set-size ratio. Record out/A3_tuning_*.json extra.triad.M. Replaced the former 1 − spurious-tuning rate."
+    "note": "Runner now emits M = |U*|/|U_hat| (M_note '|U*|=10 (oracle movers) / |U_hat|=7 (method above-threshold)'), the paper's set-size ratio. Record out/A3_tuning_*.json extra.triad.M. Replaced the former 1 − spurious-tuning rate.",
+    "source": [
+     {
+      "label": "A3_tuning.jl:485",
+      "path": "tools/xai_study/phaseA_kording/A3_tuning.jl",
+      "line": 485
+     },
+     {
+      "label": "triad_sm.jl:57",
+      "path": "tools/xai_study/common/triad_sm.jl",
+      "line": 57
+     }
+    ]
    }
   },
   "A4_spike_word": {
    "leaderboard_method": "A4_spike_word",
    "F": {
     "formula": "F = Spearman(rho)(|corr|_pairs, coupling_pairs) over 28 candidate-cell pairs; coupling(i,j) = max |delta cell_j| under do(i:=0)/do(i:=base+17), symmetrised",
+    "formula_tex": "F = \\rho_{\\mathrm{Spearman}}\\!\\left(|\\mathrm{corr}|_{\\mathrm{pairs}},\\ \\mathrm{coupling}_{\\mathrm{pairs}}\\right)",
     "plain": "Spearman correlation between absolute pairwise data correlations and the oracle intervention-based cell-cell coupling over candidate-cell pairs.",
     "against_oracle": true,
     "matches_paper": "yes",
-    "note": "Oracle 'coupling' is a bit-exact intervention effect (not a data correlation); F correlates the method's |corr| map against it. Correlation primitive on pairs. Runner A4_correlations.jl L648,L573-612; record out/A4_pong.json triad.F=0.633."
+    "note": "Oracle 'coupling' is a bit-exact intervention effect (not a data correlation); F correlates the method's |corr| map against it. Correlation primitive on pairs. Runner A4_correlations.jl L648,L573-612; record out/A4_pong.json triad.F=0.633.",
+    "source": [
+     {
+      "label": "A4_correlations.jl:655",
+      "path": "tools/xai_study/phaseA_kording/A4_correlations.jl",
+      "line": 655
+     },
+     {
+      "label": "A4_correlations.jl:650",
+      "path": "tools/xai_study/phaseA_kording/A4_correlations.jl",
+      "line": 650
+     }
+    ]
    },
    "S": {
     "formula": "S = Pearson(|corr|_pairs, held_pairs); held coupling(i,j) uses held-out do(base+37) only",
+    "formula_tex": "S = \\rho_{\\mathrm{Pearson}}\\!\\left(|\\mathrm{corr}|_{\\mathrm{pairs}},\\ \\mathrm{coupling}^{\\mathrm{held\\text{-}out}}_{\\mathrm{pairs}}\\right) \\in [-1,1]",
     "plain": "Pearson correlation of the pairwise-correlation map vs the held-out do(base+37) coupling.",
     "matches_paper": "yes",
-    "note": "Held-out predictive correlation in [-1,1] of the pairwise-correlation map vs the held-out do(base+37) coupling: the §3 (sec:triad) form (can be negative). A4_correlations.jl; record S=-0.170."
+    "note": "Held-out predictive correlation in [-1,1] of the pairwise-correlation map vs the held-out do(base+37) coupling: the §3 (sec:triad) form (can be negative). A4_correlations.jl; record S=-0.170.",
+    "source": [
+     {
+      "label": "A4_correlations.jl:657",
+      "path": "tools/xai_study/phaseA_kording/A4_correlations.jl",
+      "line": 657
+     }
+    ]
    },
    "M": {
     "formula": "M = |U*|/|U_hat| over candidate-cell pairs = #oracle-coupled pairs / #above-threshold named pairs",
+    "formula_tex": "M = |U^{\\star}| / |\\hat{U}| \\in (0,1]\\quad(\\text{over candidate-cell pairs})",
     "plain": "Number of oracle-coupled cell pairs over the number of high-correlation pairs the method names.",
     "matches_paper": "yes",
-    "note": "Runner now emits M = |U*|/|U_hat| over pairs (M_note '|U*|=4 (oracle movers) / |U_hat|=6'), the paper's set-size ratio at the pair level. Record out/A4_pong.json extra.triad.M=0.667. Replaced the former 1 − correlation-overgrouping rate."
+    "note": "Runner now emits M = |U*|/|U_hat| over pairs (M_note '|U*|=4 (oracle movers) / |U_hat|=6'), the paper's set-size ratio at the pair level. Record out/A4_pong.json extra.triad.M=0.667. Replaced the former 1 − correlation-overgrouping rate.",
+    "source": [
+     {
+      "label": "A4_correlations.jl:670",
+      "path": "tools/xai_study/phaseA_kording/A4_correlations.jl",
+      "line": 670
+     },
+     {
+      "label": "triad_sm.jl:57",
+      "path": "tools/xai_study/common/triad_sm.jl",
+      "line": 57
+     }
+    ]
    }
   },
   "A5_local_field_potentials": {
@@ -115,66 +251,158 @@
    "leaderboard_method": "A6_granger",
    "F": {
     "formula": "F = edge-F1(inferred, true) = 2PR/(P+R) over off-diagonal directed edges; inferred = Granger-significant directed edges, true = exact-oracle data-flow graph",
+    "formula_tex": "F = F_1^{\\mathrm{edge}}(\\hat{E}, E^{\\star})",
     "plain": "F1 of the Granger-inferred directed edges against the exact-oracle true data-flow graph over 8 candidate cells.",
     "against_oracle": true,
     "matches_paper": "yes",
-    "note": "Graph-valued primitive = edge F1 vs true data-flow graph, matching the paper. Runner A6_granger.jl L743-744,L710-724; record out/A6_pong.json triad.F=0.0."
+    "note": "Graph-valued primitive = edge F1 vs true data-flow graph, matching the paper. Runner A6_granger.jl L743-744,L710-724; record out/A6_pong.json triad.F=0.0.",
+    "source": [
+     {
+      "label": "A6_granger.jl:745",
+      "path": "tools/xai_study/phaseA_kording/A6_granger.jl",
+      "line": 745
+     },
+     {
+      "label": "A6_granger.jl:744",
+      "path": "tools/xai_study/phaseA_kording/A6_granger.jl",
+      "line": 744
+     }
+    ]
    },
    "S": {
     "formula": "S = agree/total over off-diagonal directed edges, agree = #(inferred[i,j] == heldout_true[i,j]); heldout_true = true edges under do(base+37) only",
+    "formula_tex": "S = \\dfrac{\\#\\{(i,j):\\ \\hat{E}_{ij}=E^{\\star,\\mathrm{held}}_{ij}\\}}{\\#\\,\\mathrm{off\\text{-}diag}} \\in [0,1]",
     "plain": "Directed off-diagonal edge agreement (accuracy) between the Granger graph and the held-out base+37 true data-flow.",
     "matches_paper": "yes",
-    "note": "Directed off-diagonal edge agreement between the Granger graph and the held-out base+37 true data-flow: a non-null held-out sufficiency, the [0,1] fraction-within-tolerance special case §3 (sec:triad) admits. A6_granger.jl; record S=0.821."
+    "note": "Directed off-diagonal edge agreement between the Granger graph and the held-out base+37 true data-flow: a non-null held-out sufficiency, the [0,1] fraction-within-tolerance special case §3 (sec:triad) admits. A6_granger.jl; record S=0.821.",
+    "source": [
+     {
+      "label": "A6_granger.jl:755",
+      "path": "tools/xai_study/phaseA_kording/A6_granger.jl",
+      "line": 755
+     }
+    ]
    },
    "M": {
     "formula": "M = |U*|/|U_hat| over edges = |true edges| / |discovered edges|",
+    "formula_tex": "M = |U^{\\star}| / |\\hat{U}| = |E^{\\star}| / |\\hat{E}| \\in (0,1]",
     "plain": "True-graph directed-edge count over the number of Granger-inferred edges (edge-level |U*|/|U_hat|).",
     "matches_paper": "yes",
-    "note": "Runner now emits M = |U*|/|U_hat| over edges (M_note '|true edges|=12 / |discovered edges|=1'), the paper's minimality ratio at the edge level. Record out/A6_pong.json extra.triad.M=1.0. Replaced the former 1 − false-edge rate (edge precision)."
+    "note": "Runner now emits M = |U*|/|U_hat| over edges (M_note '|true edges|=12 / |discovered edges|=1'), the paper's minimality ratio at the edge level. Record out/A6_pong.json extra.triad.M=1.0. Replaced the former 1 − false-edge rate (edge precision).",
+    "source": [
+     {
+      "label": "A6_granger.jl:761",
+      "path": "tools/xai_study/phaseA_kording/A6_granger.jl",
+      "line": 761
+     }
+    ]
    }
   },
   "A7_dim_reduction": {
    "leaderboard_method": "A7_dim_reduction",
    "F": {
     "formula": "F = Spearman(rho)(recovery, oracle_importance); recovery_cell = Sigma_j comp_energy[j] * loading[cell,j]^2 over top-k PCA/NMF components; oracle_importance = max screen break over do{0, base+17}",
+    "formula_tex": "F = \\rho_{\\mathrm{Spearman}}\\!\\left(\\mathrm{attr}_{\\mathrm{recovery}},\\ \\Delta y(u)\\right)",
     "plain": "Spearman correlation between each cell's PCA/NMF component-recovery score and the oracle causal importance over candidate cells (reported separately for PCA and NMF).",
     "against_oracle": true,
     "matches_paper": "yes",
-    "note": "Two triads (triad_pca, triad_nmf); correlation vs oracle causal importance, not vs known-variable labels. Runner A7_dimred.jl L744,L682-705; record out/A7_pong.json triad_nmf.F=-0.385, triad_pca.F=-0.041."
+    "note": "Two triads (triad_pca, triad_nmf); correlation vs oracle causal importance, not vs known-variable labels. Runner A7_dimred.jl L744,L682-705; record out/A7_pong.json triad_nmf.F=-0.385, triad_pca.F=-0.041.",
+    "source": [
+     {
+      "label": "A7_dimred.jl:751",
+      "path": "tools/xai_study/phaseA_kording/A7_dimred.jl",
+      "line": 751
+     },
+     {
+      "label": "A7_dimred.jl:749",
+      "path": "tools/xai_study/phaseA_kording/A7_dimred.jl",
+      "line": 749
+     }
+    ]
    },
    "S": {
     "formula": "S = Pearson(recovery, held_out); held_out = whole-screen break under held-out do(base+37)",
+    "formula_tex": "S = \\rho_{\\mathrm{Pearson}}\\!\\left(\\mathrm{attr}_{\\mathrm{recovery}},\\ \\Delta y_{\\mathrm{held\\text{-}out}}(u)\\right) \\in [-1,1]",
     "plain": "Pearson correlation of the component-recovery score vs the held-out do(base+37) screen break.",
     "matches_paper": "yes",
-    "note": "Held-out predictive correlation in [-1,1] of the component-recovery score vs the held-out do(base+37) screen break: the §3 (sec:triad) form. Two triads (pca, nmf). A7_dimred.jl; record S: nmf=-0.291, pca=-0.192."
+    "note": "Held-out predictive correlation in [-1,1] of the component-recovery score vs the held-out do(base+37) screen break: the §3 (sec:triad) form. Two triads (pca, nmf). A7_dimred.jl; record S: nmf=-0.291, pca=-0.192.",
+    "source": [
+     {
+      "label": "A7_dimred.jl:752",
+      "path": "tools/xai_study/phaseA_kording/A7_dimred.jl",
+      "line": 752
+     }
+    ]
    },
    "M": {
     "formula": "M = |U*|/|U_hat|; |U*| = #oracle-mover cells, |U_hat| = #above-threshold surfaced cells",
+    "formula_tex": "M = |U^{\\star}| / |\\hat{U}| \\in (0,1]\\quad U^{\\star}=\\{u:\\Delta y(u)>0\\},\\ \\hat{U}=\\{u:|\\mathrm{attr}(u)|>\\tau\\}",
     "plain": "Number of oracle-causal cells over the number of dim-reduction-surfaced cells the method names.",
     "matches_paper": "yes",
-    "note": "Runner now emits M = |U*|/|U_hat| for both triad_pca and triad_nmf (M_note '|U*|=4 (oracle movers) / |U_hat|=4/6'), the paper's set-size ratio. Record out/A7_pong.json triad_pca.M=1.0, triad_nmf.M=0.667. Replaced the former 1 − variance-not-causal over-claim rate."
+    "note": "Runner now emits M = |U*|/|U_hat| for both triad_pca and triad_nmf (M_note '|U*|=4 (oracle movers) / |U_hat|=4/6'), the paper's set-size ratio. Record out/A7_pong.json triad_pca.M=1.0, triad_nmf.M=0.667. Replaced the former 1 − variance-not-causal over-claim rate.",
+    "source": [
+     {
+      "label": "A7_dimred.jl:767",
+      "path": "tools/xai_study/phaseA_kording/A7_dimred.jl",
+      "line": 767
+     },
+     {
+      "label": "triad_sm.jl:57",
+      "path": "tools/xai_study/common/triad_sm.jl",
+      "line": 57
+     }
+    ]
    }
   },
   "A8_wholestate": {
    "leaderboard_method": "A8_wholestate",
    "F": {
     "formula": "F = recall of oracle-causal candidate cells under the whole-state map = 1.0 (whole state contains every cell)",
+    "formula_tex": "F = \\mathrm{recall}\\!\\left(U^{\\star}\\mid \\hat{U}=\\text{whole state}\\right) = 1",
     "plain": "Recall of the oracle-causal cells under the record-everything map; trivially 1.0 because the whole state includes every cell.",
     "against_oracle": true,
     "matches_paper": "partial",
-    "note": "Scored vs the oracle causal cells but the primitive is recall (not the correlation/edge-F1 the paper specifies); it is a hard-coded 1.0 by construction, consistent with the paper's 'trivially faithful' whole-state baseline. Runner A8_wholestate.jl L561,L356-375; record out/A8_pong.json triad.F=1.0."
+    "note": "Scored vs the oracle causal cells but the primitive is recall (not the correlation/edge-F1 the paper specifies); it is a hard-coded 1.0 by construction, consistent with the paper's 'trivially faithful' whole-state baseline. Runner A8_wholestate.jl L561,L356-375; record out/A8_pong.json triad.F=1.0.",
+    "source": [
+     {
+      "label": "A8_wholestate.jl:561",
+      "path": "tools/xai_study/phaseA_kording/A8_wholestate.jl",
+      "line": 561
+     }
+    ]
    },
    "S": {
     "formula": "S = 1.0 if lossless restore else 0.0; restore the recorded 128-byte RAM into a fresh checkpoint and require byte-identical re-rendered RAM + screen",
+    "formula_tex": "S = \\mathbb{1}\\!\\left[\\text{restored 128-byte RAM} = \\text{exact RAM + frame}\\right] \\in \\{0,1\\}",
     "plain": "1 if the recorded whole 128-byte RAM state, restored, reproduces the exact RAM and frame (lossless), else 0.",
     "matches_paper": "yes",
-    "note": "Literal sufficiency: the recorded whole 128-byte RAM state, restored, reproduces the exact RAM and frame (bit-exact re-run). §3 (sec:triad) admits the [0,1] fraction-within-tolerance special case of the held-out test; this boolean 1/0 hit is that special case at its extreme. A8_wholestate.jl; record S=1.0."
+    "note": "Literal sufficiency: the recorded whole 128-byte RAM state, restored, reproduces the exact RAM and frame (bit-exact re-run). §3 (sec:triad) admits the [0,1] fraction-within-tolerance special case of the held-out test; this boolean 1/0 hit is that special case at its extreme. A8_wholestate.jl; record S=1.0.",
+    "source": [
+     {
+      "label": "A8_wholestate.jl:399",
+      "path": "tools/xai_study/phaseA_kording/A8_wholestate.jl",
+      "line": 399
+     },
+     {
+      "label": "A8_wholestate.jl:565",
+      "path": "tools/xai_study/phaseA_kording/A8_wholestate.jl",
+      "line": 565
+     }
+    ]
    },
    "M": {
     "formula": "M = |U*|/|U_hat| = n_causal / 128 (RAM_SIZE); U_hat = whole 128-byte state, U* = #oracle-causal cells",
+    "formula_tex": "M = |U^{\\star}| / |\\hat{U}| = n_{\\mathrm{causal}} / 128",
     "plain": "Number of oracle-causal cells over the size of the named set (128), the whole-state minimality floor.",
     "matches_paper": "yes",
-    "note": "The only Phase-A method whose M is exactly |U*|/|U_hat|; paper cites whole-state M=0.07. Headline metric_name = wholestate_minimality_M_vs_oracle. A8_wholestate.jl L563,L537-538; record out/A8_pong.json M=0.03125 = 4/128."
+    "note": "The only Phase-A method whose M is exactly |U*|/|U_hat|; paper cites whole-state M=0.07. Headline metric_name = wholestate_minimality_M_vs_oracle. A8_wholestate.jl L563,L537-538; record out/A8_pong.json M=0.03125 = 4/128.",
+    "source": [
+     {
+      "label": "A8_wholestate.jl:563",
+      "path": "tools/xai_study/phaseA_kording/A8_wholestate.jl",
+      "line": 563
+     }
+    ]
    }
   }
  }

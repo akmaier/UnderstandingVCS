@@ -6,6 +6,10 @@
 <title>A5 · Local field potentials — Paper 2 method</title>
 <meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
 <link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'\(',right:'\)',display:false},{left:'$$',right:'$$',display:true}],throwOnError:false});"></script>
 </head>
 <body>
 <nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
@@ -54,9 +58,12 @@
     .fsm-ok{background:#12351f;color:#5ee08a}.fsm-warn{background:#3a2f10;color:#e8c65e}
     .fsm-bad{background:#3a1414;color:#f18a8a}.fsm-na{background:#1c222b;color:#8a94a0}
     .fsm-note{color:var(--fg-dim);font-size:.85rem}
+    .fsm-formula .katex{font-size:1.02em}
+    .fsm-src{font-size:.78rem;margin-top:6px;color:var(--fg-dim)}
+    .fsm-src code{font-size:.76rem}
   </style>
   <table class="fsmtab"><thead><tr><th>Axis</th><th>Formula (as computed)</th>
-  <th>What it measures</th><th>Matches &sect;3?</th></tr></thead><tbody><tr><td><b>F</b><br><span class="fsm-note">faithfulness</span></td><td>&mdash;</td><td>No faithfulness score. A5 is declared a descriptive method: it reports the pooled-activity spectral structure it reveals (headline = global-pool clock-explained variance fraction), not an F vs the oracle.</td><td><span class="fsm-badge fsm-na">&mdash; n/a</span> <span class="fsm-note">Runner A5_lfp.jl explicitly sets method_kind=&#x27;descriptive (no oracle F/S/M)&#x27; (L919-922,L41-47); metric_name=A5_global_pool_clock_explained_variance_fraction_epiphenomenal, value=gp.clock_var_fraction (L891-892). Record out/A5_pong.json has no triad.</span></td></tr><tr><td><b>S</b><br><span class="fsm-note">sufficiency</span></td><td>&mdash;</td><td>Not computed; A5 emits no S.</td><td><span class="fsm-badge fsm-na">&mdash; n/a</span> <span class="fsm-note">No S/held-out estimator in A5_lfp.jl; descriptive method by design.</span></td></tr><tr><td><b>M</b><br><span class="fsm-note">minimality</span></td><td>&mdash;</td><td>Not computed; A5 emits no M.</td><td><span class="fsm-badge fsm-na">&mdash; n/a</span> <span class="fsm-note">No minimality set in A5_lfp.jl; descriptive method by design.</span></td></tr></tbody></table>
+  <th>What it measures</th><th>Matches &sect;3?</th></tr></thead><tbody><tr><td><b>F</b><br><span class="fsm-note">faithfulness</span></td><td>&mdash;</td><td>No faithfulness score. A5 is declared a descriptive method: it reports the pooled-activity spectral structure it reveals (headline = global-pool clock-explained variance fraction), not an F vs the oracle.</td><td><span class="fsm-badge fsm-na">&mdash; n/a</span> <span class="fsm-note">Runner A5_lfp.jl explicitly sets method_kind=&#x27;descriptive (no oracle F/S/M)&#x27;,; metric_name=A5_global_pool_clock_explained_variance_fraction_epiphenomenal, value=gp.clock_var_fraction. Record out/A5_pong.json has no triad.</span></td></tr><tr><td><b>S</b><br><span class="fsm-note">sufficiency</span></td><td>&mdash;</td><td>Not computed; A5 emits no S.</td><td><span class="fsm-badge fsm-na">&mdash; n/a</span> <span class="fsm-note">No S/held-out estimator in A5_lfp.jl; descriptive method by design.</span></td></tr><tr><td><b>M</b><br><span class="fsm-note">minimality</span></td><td>&mdash;</td><td>Not computed; A5 emits no M.</td><td><span class="fsm-badge fsm-na">&mdash; n/a</span> <span class="fsm-note">No minimality set in A5_lfp.jl; descriptive method by design.</span></td></tr></tbody></table>
   <p class="caption"><b>&#10003; matches</b> = the same quantity as &sect;3; <b>&#9680; partial</b>
   = the same kind of estimator but a differing detail; <b>&#10007; does not match</b> = a
   different quantity (see the note). Definitions: F = agreement with the oracle's true causal
@@ -136,7 +143,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/65594793d354072686b05818d710121040593983"><code>65594793</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/58d8a35e5e83c7c7050c977b91f7c731e14e3048"><code>58d8a35e</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

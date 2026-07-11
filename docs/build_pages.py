@@ -6,6 +6,7 @@ Re-run after editing manifest.py or regenerating assets.
 """
 import html
 import os
+import re
 import subprocess
 import sys
 
@@ -181,6 +182,10 @@ def page(active, title, body):
 <title>%s</title>
 <meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
 <link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'\\(',right:'\\)',display:false},{left:'$$',right:'$$',display:true}],throwOnError:false});"></script>
 </head>
 <body>
 %s
@@ -1452,17 +1457,39 @@ def build_fsm_math_section(key):
     rows = []
     for axis, longname in (("F", "faithfulness"), ("S", "sufficiency"), ("M", "minimality")):
         a = fm.get(axis) or {}
+        # Formula as MATH: prefer the clean LaTeX (rendered by KaTeX via \( \)); fall back to
+        # the raw as-computed string in <code>.
+        ftex = a.get("formula_tex")
         formula = a.get("formula")
-        formula = "&mdash;" if (not formula or str(formula).lower() == "null") else "<code>%s</code>" % esc(str(formula))
+        if ftex and str(ftex).lower() != "null":
+            # decode any HTML entities the LaTeX may carry (e.g. &gt; -> >), then re-escape for
+            # HTML safety; the browser decodes it back so KaTeX reads the raw LaTeX (>, <, &).
+            fhtml = '<span class="fsm-formula">\\(%s\\)</span>' % esc(html.unescape(str(ftex)))
+        elif formula and str(formula).lower() != "null":
+            fhtml = "<code>%s</code>" % esc(str(formula))
+        else:
+            fhtml = "&mdash;"
+        # Source: the line-numbers as clickable links to the code on main.
+        srclinks = ""
+        srcs = a.get("source") or []
+        if srcs:
+            parts = [srcln(s["path"], int(s["line"]), s.get("label"))
+                     for s in srcs if s.get("path") and s.get("line")]
+            if parts:
+                srclinks = '<div class="fsm-src">source: %s</div>' % " &middot; ".join(parts)
         plain = esc(a.get("plain") or "")
         mp = (a.get("matches_paper") or "n/a")
         label, cls = _FSM_BADGE.get(mp, ("&mdash;", "na"))
+        # drop the raw file:line noise from the displayed note (now clickable in `source`).
         note = a.get("note") or ""
+        note = re.sub(r'\s*\(?\b(?:lines?|L)\s*\d+(?:\s*[-–,]\s*\d+)*\)?', '', note)
+        note = re.sub(r'([\w./-]+\.(?:jl|py|json)):\d+(?:-\d+)?', r'\1', note)
+        note = re.sub(r'\s{2,}', ' ', note).strip()
         notehtml = ' <span class="fsm-note">%s</span>' % esc(note) if note else ""
         rows.append(
-            '<tr><td><b>%s</b><br><span class="fsm-note">%s</span></td><td>%s</td>'
+            '<tr><td><b>%s</b><br><span class="fsm-note">%s</span></td><td>%s%s</td>'
             '<td>%s</td><td><span class="fsm-badge fsm-%s">%s</span>%s</td></tr>'
-            % (axis, longname, formula, plain, cls, label, notehtml))
+            % (axis, longname, fhtml, srclinks, plain, cls, label, notehtml))
     return ("""
 <section><div class="wrap">
   <h2>How F, S, M are computed here</h2>
@@ -1476,6 +1503,9 @@ def build_fsm_math_section(key):
     .fsm-ok{background:#12351f;color:#5ee08a}.fsm-warn{background:#3a2f10;color:#e8c65e}
     .fsm-bad{background:#3a1414;color:#f18a8a}.fsm-na{background:#1c222b;color:#8a94a0}
     .fsm-note{color:var(--fg-dim);font-size:.85rem}
+    .fsm-formula .katex{font-size:1.02em}
+    .fsm-src{font-size:.78rem;margin-top:6px;color:var(--fg-dim)}
+    .fsm-src code{font-size:.76rem}
   </style>
   <table class="fsmtab"><thead><tr><th>Axis</th><th>Formula (as computed)</th>
   <th>What it measures</th><th>Matches &sect;3?</th></tr></thead><tbody>%s</tbody></table>

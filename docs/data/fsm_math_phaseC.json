@@ -5,142 +5,359 @@
    "leaderboard_method": "ACDC",
    "F": {
     "formula": "F = edge-F1(discovered_edges@best-τ, true_dataflow_edges)",
+    "formula_tex": "F = F_1^{\\mathrm{edge}}(\\hat{E}, E^{\\star})",
     "plain": "Best-τ F1 of the ACDC-discovered inter-cell edge set against the exhaustive-oracle true data-flow graph.",
     "against_oracle": true,
     "matches_paper": "yes",
-    "note": "acdc.jl:718-723 (F = best_score.f1); true graph = exhaustive do-set 0/base+17/base+37 over the candidate cells. This is exactly the paper's circuit-discovery F = edge F1 vs the true data-flow graph. Record: extra.triad.F and top-level value (e.g. acdc_pong.json F=0.154; battery mean F=0.625, n=35)."
+    "note": "acdc.jl:718-723 (F = best_score.f1); true graph = exhaustive do-set 0/base+17/base+37 over the candidate cells. This is exactly the paper's circuit-discovery F = edge F1 vs the true data-flow graph. Record: extra.triad.F and top-level value (e.g. acdc_pong.json F=0.154; battery mean F=0.625, n=35).",
+    "source": [
+     {
+      "label": "acdc.jl:735",
+      "path": "tools/xai_study/phaseC_mechanistic/acdc.jl",
+      "line": 735
+     },
+     {
+      "label": "acdc.jl:474",
+      "path": "tools/xai_study/phaseC_mechanistic/acdc.jl",
+      "line": 474
+     }
+    ]
    },
    "S": {
     "formula": "S = scrubbing_preserved(discovered_circuit) = fraction of clean candidate-cell readouts unchanged when non-circuit parents are resample-scrubbed",
+    "formula_tex": "S = \\dfrac{\\#\\{\\text{clean readouts preserved under scrub}\\}}{\\#\\ \\text{readouts}} \\in [0,1]",
     "plain": "Fraction of the clean readouts the discovered circuit alone reproduces when everything outside it is resample-ablated (bit-exact re-run).",
     "matches_paper": "yes",
-    "note": "acdc.jl (S = scrub_preserved). A held-out-flavoured sufficiency on bit-exact re-runs; the new §3 (sec:triad) admits the fraction-within-tolerance [0,1] special case of the held-out predictive test, and this preservation fraction is that form, so it satisfies §3. Record: extra.triad.S (acdc_pong.json S=0.625)."
+    "note": "acdc.jl (S = scrub_preserved). A held-out-flavoured sufficiency on bit-exact re-runs; the new §3 (sec:triad) admits the fraction-within-tolerance [0,1] special case of the held-out predictive test, and this preservation fraction is that form, so it satisfies §3. Record: extra.triad.S (acdc_pong.json S=0.625).",
+    "source": [
+     {
+      "label": "acdc.jl:720",
+      "path": "tools/xai_study/phaseC_mechanistic/acdc.jl",
+      "line": 720
+     },
+     {
+      "label": "acdc.jl:735",
+      "path": "tools/xai_study/phaseC_mechanistic/acdc.jl",
+      "line": 735
+     }
+    ]
    },
    "M": {
     "formula": "M = |U*| / |U_hat| over edges = |true edges| / |discovered edges|  (best-tau)",
+    "formula_tex": "M = |U^{\\star}| / |\\hat{U}| = |E^{\\star}| / |\\hat{E}| \\in (0,1]",
     "plain": "True-graph edge count over the number of discovered edges (edge-level |U*|/|U_hat|).",
     "matches_paper": "yes",
-    "note": "acdc.jl now emits M = |true edges|/|discovered edges|, the paper's M = |U*|/|U_hat| at the edge level (as path_patching does). Record: extra.triad.M with M_note '|U*|=12 true edges / |U_hat|=1 discovered edges (best-F1 tau)' (acdc_pong.json M=1.0). Replaced the former edge-precision (1 - FP/n_disc)."
+    "note": "acdc.jl now emits M = |true edges|/|discovered edges|, the paper's M = |U*|/|U_hat| at the edge level (as path_patching does). Record: extra.triad.M with M_note '|U*|=12 true edges / |U_hat|=1 discovered edges (best-F1 tau)' (acdc_pong.json M=1.0). Replaced the former edge-precision (1 - FP/n_disc).",
+    "source": [
+     {
+      "label": "acdc.jl:731",
+      "path": "tools/xai_study/phaseC_mechanistic/acdc.jl",
+      "line": 731
+     }
+    ]
    }
   },
   "activation_patching": {
    "leaderboard_method": "activation_patching",
    "F": {
     "formula": "F = 1.0 by construction (recovered == exact); leaderboard passes clamp(1 − |max_abs_recovered−exact|); position record uses F = ρ(recovered_px, exact_px)",
+    "formula_tex": "F = 1 - \\max_u|\\,\\hat{\\Delta y}(u)-\\Delta y(u)\\,| = 1",
     "plain": "The patch literally re-runs the exact single-site intervention, so recovered effect equals the oracle effect and the causal-effect agreement is 1.",
     "against_oracle": true,
     "matches_paper": "yes",
-    "note": "activation_patching.jl:582-597 main record (metric max_abs_recovered_minus_exact=0 -> F=1.0); jl:693 position record F = _pearson(rec_px, ex_px). Both are the paper's Phase-C patching F = causal-effect-agreement correlation vs Delta_y(u); here exact by construction. Record: extra.triad.F=1.0 (battery mean F=1.0, n=84)."
+    "note": "activation_patching.jl:582-597 main record (metric max_abs_recovered_minus_exact=0 -> F=1.0); jl:693 position record F = _pearson(rec_px, ex_px). Both are the paper's Phase-C patching F = causal-effect-agreement correlation vs Delta_y(u); here exact by construction. Record: extra.triad.F=1.0 (battery mean F=1.0, n=84).",
+    "source": [
+     {
+      "label": "activation_patching.jl:582",
+      "path": "tools/xai_study/phaseC_mechanistic/activation_patching.jl",
+      "line": 582
+     },
+     {
+      "label": "activation_patching.jl:693",
+      "path": "tools/xai_study/phaseC_mechanistic/activation_patching.jl",
+      "line": 693
+     }
+    ]
    },
    "S": {
     "formula": "S = fraction of held-out do(u) whose predicted Δy (least-squares a·attr+b fit on a disjoint calibration half) lands within ε of the bit-exact re-run",
+    "formula_tex": "S = \\dfrac{\\#\\{\\,u_{\\mathrm{held}}:\\ |\\hat{y}-y|\\le\\varepsilon\\,\\}}{|\\mathrm{held\\text{-}out}|}\\in[0,1]",
     "plain": "Held-out predictive sufficiency: fit the attribution->Δy map on a calibration half of the causes, predict the disjoint held-out half, count hits within an ε band.",
     "matches_paper": "yes",
-    "note": "common/triad_sm.jl:111-155 sufficiency_score, called via triad_extra_dict (activation_patching.jl:597). Exactly the paper's held-out predictive estimator on the oracle's per-cause bit-exact re-runs. Record: extra.triad.S (activation_patching_pong.json S=1.0; battery mean S=0.996, n=84)."
+    "note": "common/triad_sm.jl:111-155 sufficiency_score, called via triad_extra_dict (activation_patching.jl:597). Exactly the paper's held-out predictive estimator on the oracle's per-cause bit-exact re-runs. Record: extra.triad.S (activation_patching_pong.json S=1.0; battery mean S=0.996, n=84).",
+    "source": [
+     {
+      "label": "triad_sm.jl:111",
+      "path": "tools/xai_study/common/triad_sm.jl",
+      "line": 111
+     },
+     {
+      "label": "activation_patching.jl:597",
+      "path": "tools/xai_study/phaseC_mechanistic/activation_patching.jl",
+      "line": 597
+     }
+    ]
    },
    "M": {
     "formula": "M = |U*| / |U_hat|,  U* = causes with true |Δy| > mover_floor,  U_hat = above-threshold named causes",
+    "formula_tex": "M = |U^{\\star}| / |\\hat{U}| \\in (0,1]\\quad U^{\\star}=\\{u:\\Delta y(u)>0\\},\\ \\hat{U}=\\{u:|\\mathrm{attr}(u)|>\\tau\\}",
     "plain": "True minimal cause set size over the method-named set size.",
     "matches_paper": "yes",
-    "note": "common/triad_sm.jl:57-86 minimality_score. Exactly the paper's M. Record: extra.triad.M=1.0, M_true_minimal_size / M_named_size (pong |U*|=6/|U_hat|=6; battery mean M=0.973, n=84)."
+    "note": "common/triad_sm.jl:57-86 minimality_score. Exactly the paper's M. Record: extra.triad.M=1.0, M_true_minimal_size / M_named_size (pong |U*|=6/|U_hat|=6; battery mean M=0.973, n=84).",
+    "source": [
+     {
+      "label": "triad_sm.jl:57",
+      "path": "tools/xai_study/common/triad_sm.jl",
+      "line": 57
+     },
+     {
+      "label": "activation_patching.jl:597",
+      "path": "tools/xai_study/phaseC_mechanistic/activation_patching.jl",
+      "line": 597
+     }
+    ]
    }
   },
   "attribution_patching": {
    "leaderboard_method": "attribution_patching",
    "F": {
     "formula": "F = clamp01( ρ(approx_Δ, exact_Δ) )   (Pearson corr of the linear/gradient approximation vs the exact patch effect)",
+    "formula_tex": "F = \\rho_{\\mathrm{Pearson}}\\!\\left(\\hat{\\Delta y}(u),\\ \\Delta y(u)\\right)",
     "plain": "Pearson correlation between the first-order attribution-patching approximation of each patch effect and the exact re-run patch effect.",
     "against_oracle": true,
     "matches_paper": "yes",
-    "note": "attribution_patching.jl:580 (F = clamp(r.corr,0,1)); metric_name corr_approx_vs_exact. This is the paper's Phase-C patching F = causal-effect-agreement correlation vs Delta_y(u). Record: extra.triad.F (attribution_patching_pong.json F=0.876; battery mean F=0.456, n=42)."
+    "note": "attribution_patching.jl:580 (F = clamp(r.corr,0,1)); metric_name corr_approx_vs_exact. This is the paper's Phase-C patching F = causal-effect-agreement correlation vs Delta_y(u). Record: extra.triad.F (attribution_patching_pong.json F=0.876; battery mean F=0.456, n=42).",
+    "source": [
+     {
+      "label": "attribution_patching.jl:580",
+      "path": "tools/xai_study/phaseC_mechanistic/attribution_patching.jl",
+      "line": 580
+     }
+    ]
    },
    "S": {
     "formula": "S = fraction of held-out do(u) within ε of the bit-exact re-run (calibration/held-out split of attr->Δy)",
+    "formula_tex": "S = \\dfrac{\\#\\{\\,u_{\\mathrm{held}}:\\ |\\hat{y}-y|\\le\\varepsilon\\,\\}}{|\\mathrm{held\\text{-}out}|}\\in[0,1]",
     "plain": "Same shared held-out predictive sufficiency estimator as activation_patching.",
     "matches_paper": "yes",
-    "note": "common/triad_sm.jl sufficiency_score via triad_extra_dict (attribution_patching.jl:580). Paper-conform. Record: extra.triad.S (pong S=0.973; battery mean S=0.769, n=42)."
+    "note": "common/triad_sm.jl sufficiency_score via triad_extra_dict (attribution_patching.jl:580). Paper-conform. Record: extra.triad.S (pong S=0.973; battery mean S=0.769, n=42).",
+    "source": [
+     {
+      "label": "triad_sm.jl:111",
+      "path": "tools/xai_study/common/triad_sm.jl",
+      "line": 111
+     },
+     {
+      "label": "attribution_patching.jl:580",
+      "path": "tools/xai_study/phaseC_mechanistic/attribution_patching.jl",
+      "line": 580
+     }
+    ]
    },
    "M": {
     "formula": "M = |U*| / |U_hat|",
+    "formula_tex": "M = |U^{\\star}| / |\\hat{U}| \\in (0,1]\\quad U^{\\star}=\\{u:\\Delta y(u)>0\\},\\ \\hat{U}=\\{u:|\\mathrm{attr}(u)|>\\tau\\}",
     "plain": "True minimal cause set over method-named (above-threshold) set.",
     "matches_paper": "yes",
-    "note": "common/triad_sm.jl minimality_score. Paper-conform. Record: extra.triad.M (pong |U*|=6/|U_hat|=5, M=1.0; battery mean M=0.995, n=42)."
+    "note": "common/triad_sm.jl minimality_score. Paper-conform. Record: extra.triad.M (pong |U*|=6/|U_hat|=5, M=1.0; battery mean M=0.995, n=42).",
+    "source": [
+     {
+      "label": "triad_sm.jl:57",
+      "path": "tools/xai_study/common/triad_sm.jl",
+      "line": 57
+     },
+     {
+      "label": "attribution_patching.jl:580",
+      "path": "tools/xai_study/phaseC_mechanistic/attribution_patching.jl",
+      "line": 580
+     }
+    ]
    }
   },
   "causal_scrubbing": {
    "leaderboard_method": "causal_scrubbing",
    "F": {
     "formula": "F = scrubbing_preserved_performance_true = fraction of the true-graph sink readouts preserved when every candidate OUTSIDE the true hypothesised circuit is resample-ablated",
+    "formula_tex": "F = \\dfrac{\\#\\{\\text{true-circuit sink readouts preserved under scrub}\\}}{\\#\\ \\text{readouts}} \\in [0,1]",
     "plain": "For the ground-truth hypothesised circuit, the fraction of the behaviour (true-graph sink cells) preserved across the resample distribution.",
     "against_oracle": true,
     "matches_paper": "partial",
-    "note": "causal_scrubbing.jl:650-670 (F = clamp(true_preserved)). The hypothesis is built FROM the A1 oracle data-flow (ancestors of the output), so it is oracle-grounded, but F is a scrubbing-preservation fraction, NOT the paper's edge-F1 (circuit discovery) nor a causal-effect-agreement correlation (patching/mediation). It measures 'does the oracle-derived circuit pass the scrub' rather than 'how well does the method's discovered claim agree with the oracle'. Record: extra.triad.F / top-level value (pong F=1.0; battery mean F=0.979, n=42)."
+    "note": "causal_scrubbing.jl:650-670 (F = clamp(true_preserved)). The hypothesis is built FROM the A1 oracle data-flow (ancestors of the output), so it is oracle-grounded, but F is a scrubbing-preservation fraction, NOT the paper's edge-F1 (circuit discovery) nor a causal-effect-agreement correlation (patching/mediation). It measures 'does the oracle-derived circuit pass the scrub' rather than 'how well does the method's discovered claim agree with the oracle'. Record: extra.triad.F / top-level value (pong F=1.0; battery mean F=0.979, n=42).",
+    "source": [
+     {
+      "label": "causal_scrubbing.jl:699",
+      "path": "tools/xai_study/phaseC_mechanistic/causal_scrubbing.jl",
+      "line": 699
+     }
+    ]
    },
    "S": {
     "formula": "S = true_preserved (same scalar as F): held-out scrubbing sufficiency = fraction of readouts preserved over held-out resample trials",
+    "formula_tex": "S = \\dfrac{\\#\\{\\text{readouts preserved (held-out resample)}\\}}{\\#\\ \\text{readouts}} \\in [0,1]",
     "plain": "Held-out scrubbing sufficiency; equals the F scalar here.",
     "matches_paper": "yes",
-    "note": "causal_scrubbing.jl (S = clamp(true_preserved)). A bit-exact-re-run preservation fraction in [0,1]; the new §3 (sec:triad) admits the fraction-within-tolerance [0,1] special case of the held-out test, which this satisfies. Record: extra.triad.S (pong S=1.0)."
+    "note": "causal_scrubbing.jl (S = clamp(true_preserved)). A bit-exact-re-run preservation fraction in [0,1]; the new §3 (sec:triad) admits the fraction-within-tolerance [0,1] special case of the held-out test, which this satisfies. Record: extra.triad.S (pong S=1.0).",
+    "source": [
+     {
+      "label": "causal_scrubbing.jl:700",
+      "path": "tools/xai_study/phaseC_mechanistic/causal_scrubbing.jl",
+      "line": 700
+     }
+    ]
    },
    "M": {
     "formula": "M = |U*| / |U_hat|,  U* = oracle movers over the behaviour,  U_hat = named circuit cells",
+    "formula_tex": "M = |U^{\\star}| / |\\hat{U}| \\in (0,1]\\quad U^{\\star}=\\{u:\\Delta y(u)>0\\},\\ \\hat{U}=\\{u:|\\mathrm{attr}(u)|>\\tau\\}",
     "plain": "Oracle-mover cells over the number of cells the hypothesised circuit names.",
     "matches_paper": "yes",
-    "note": "causal_scrubbing.jl now emits M = |U*|/|U_hat| with U_hat = the named circuit cells (M_note '|U*|=4 (oracle movers) / |U_hat|=6 (method above-threshold) (CELL-valued hypothesis)'), the paper's set-size ratio. Record: extra.triad.M (pong M=0.667). Replaced the former candidate-cell-denominator ratio."
+    "note": "causal_scrubbing.jl now emits M = |U*|/|U_hat| with U_hat = the named circuit cells (M_note '|U*|=4 (oracle movers) / |U_hat|=6 (method above-threshold) (CELL-valued hypothesis)'), the paper's set-size ratio. Record: extra.triad.M (pong M=0.667). Replaced the former candidate-cell-denominator ratio.",
+    "source": [
+     {
+      "label": "causal_scrubbing.jl:696",
+      "path": "tools/xai_study/phaseC_mechanistic/causal_scrubbing.jl",
+      "line": 696
+     },
+     {
+      "label": "triad_sm.jl:57",
+      "path": "tools/xai_study/common/triad_sm.jl",
+      "line": 57
+     }
+    ]
    }
   },
   "das": {
    "leaderboard_method": "interchange_interventions_das",
    "F": {
     "formula": "F = interchange_accuracy_aligned = fraction of aligned variables whose interchange (swap SOURCE->BASE, re-run) reproduces the high-level abstraction o_V := source(V) at the readout  (= 1.0 by construction)",
+    "formula_tex": "F = \\mathrm{interchange\\ accuracy} = 1",
     "plain": "Interchange accuracy of the SUPPLIED alignment: for each aligned cell, does swapping its value reproduce the predicted high-level outcome; 1.0 by construction on the VCS.",
     "against_oracle": true,
     "matches_paper": "partial",
-    "note": "das.jl:638 (F = clamp(iia_aligned)); metric_name interchange_accuracy_aligned. It IS a causal check (each interchange is a real do(cell:=source) bit-exact re-run, so single-cell interchange == the exact patch oracle), but F verifies a SUPPLIED/known-true alignment reproduces the abstraction (Geiger IIA) rather than scoring a method-discovered claim's agreement against {Delta_y(u)} -> '1.0 by construction'. The genuine discovery signal (alignment_accuracy, whether DAS recovers the right cell) is a separate extra field, not F. Record: extra.triad.F=1.0 (battery mean F=1.0, n=42)."
+    "note": "das.jl:638 (F = clamp(iia_aligned)); metric_name interchange_accuracy_aligned. It IS a causal check (each interchange is a real do(cell:=source) bit-exact re-run, so single-cell interchange == the exact patch oracle), but F verifies a SUPPLIED/known-true alignment reproduces the abstraction (Geiger IIA) rather than scoring a method-discovered claim's agreement against {Delta_y(u)} -> '1.0 by construction'. The genuine discovery signal (alignment_accuracy, whether DAS recovers the right cell) is a separate extra field, not F. Record: extra.triad.F=1.0 (battery mean F=1.0, n=42).",
+    "source": [
+     {
+      "label": "das.jl:638",
+      "path": "tools/xai_study/phaseC_mechanistic/das.jl",
+      "line": 638
+     }
+    ]
    },
    "S": {
     "formula": "S = fraction of held-out do(u) within ε of the bit-exact re-run (shared calibration/held-out estimator over the interchange-effect vs exact-effect)",
+    "formula_tex": "S = \\dfrac{\\#\\{\\,u_{\\mathrm{held}}:\\ |\\hat{y}-y|\\le\\varepsilon\\,\\}}{|\\mathrm{held\\text{-}out}|}\\in[0,1]",
     "plain": "Shared held-out predictive sufficiency estimator over the interchange effects.",
     "matches_paper": "yes",
-    "note": "common/triad_sm.jl sufficiency_score via triad_extra_dict (das.jl:638, effect vs exact_effect). Paper-conform. Record: extra.triad.S=1.0 (battery mean S=1.0, n=42)."
+    "note": "common/triad_sm.jl sufficiency_score via triad_extra_dict (das.jl:638, effect vs exact_effect). Paper-conform. Record: extra.triad.S=1.0 (battery mean S=1.0, n=42).",
+    "source": [
+     {
+      "label": "triad_sm.jl:111",
+      "path": "tools/xai_study/common/triad_sm.jl",
+      "line": 111
+     },
+     {
+      "label": "das.jl:638",
+      "path": "tools/xai_study/phaseC_mechanistic/das.jl",
+      "line": 638
+     }
+    ]
    },
    "M": {
     "formula": "M = |U*| / |U_hat|",
+    "formula_tex": "M = |U^{\\star}| / |\\hat{U}| \\in (0,1]\\quad U^{\\star}=\\{u:\\Delta y(u)>0\\},\\ \\hat{U}=\\{u:|\\mathrm{attr}(u)|>\\tau\\}",
     "plain": "True minimal cause set over method-named set.",
     "matches_paper": "yes",
-    "note": "common/triad_sm.jl minimality_score. Paper-conform. Record: extra.triad.M (pong |U*|=5/|U_hat|=5, M=1.0; battery mean M=0.890, n=42)."
+    "note": "common/triad_sm.jl minimality_score. Paper-conform. Record: extra.triad.M (pong |U*|=5/|U_hat|=5, M=1.0; battery mean M=0.890, n=42).",
+    "source": [
+     {
+      "label": "triad_sm.jl:57",
+      "path": "tools/xai_study/common/triad_sm.jl",
+      "line": 57
+     },
+     {
+      "label": "das.jl:638",
+      "path": "tools/xai_study/phaseC_mechanistic/das.jl",
+      "line": 638
+     }
+    ]
    }
   },
   "dictionaries": {
    "leaderboard_method": "nmf_pca_dictionaries",
    "F": {
     "formula": "F = rho_Spearman(per-atom matched-strength, per-atom ablation causal effect)  (headline rank, NMF)",
+    "formula_tex": "F = \\rho_{\\mathrm{Spearman}}\\!\\left(\\mathrm{attr}_{\\mathrm{atom}},\\ \\Delta y(u)\\right)",
     "plain": "Spearman correlation between each matched NMF atom's strength and its true ablation causal effect: do matched dictionary atoms causally drive the output?",
     "against_oracle": false,
     "matches_paper": "yes",
-    "note": "dictionaries.jl now emits top-level metric_name=nmf_causal_effect_agreement_spearman with extra.triad.F = Spearman(matched-strength, ablation causal effect); it replaced the matched-component NAMING fraction. This is exactly §3's causal-effect-agreement correlation vs {Delta_y(u)}. Record: dictionaries_pong.json extra.triad.F=0.3 (F_note '...causal-agreement F, not the correlational matched-component fraction')."
+    "note": "dictionaries.jl now emits top-level metric_name=nmf_causal_effect_agreement_spearman with extra.triad.F = Spearman(matched-strength, ablation causal effect); it replaced the matched-component NAMING fraction. This is exactly §3's causal-effect-agreement correlation vs {Delta_y(u)}. Record: dictionaries_pong.json extra.triad.F=0.3 (F_note '...causal-agreement F, not the correlational matched-component fraction').",
+    "source": [
+     {
+      "label": "dictionaries.jl:762",
+      "path": "tools/xai_study/phaseC_mechanistic/dictionaries.jl",
+      "line": 762
+     },
+     {
+      "label": "dictionaries.jl:759",
+      "path": "tools/xai_study/phaseC_mechanistic/dictionaries.jl",
+      "line": 759
+     }
+    ]
    },
    "S": {
     "formula": "S = rho_Pearson(per-atom causal effect, per-atom held-out-tail causal effect)",
+    "formula_tex": "S = \\rho_{\\mathrm{Pearson}}\\!\\left(\\Delta y(u),\\ \\Delta y_{\\mathrm{held\\text{-}out}}(u)\\right) \\in [-1,1]",
     "plain": "Held-out sufficiency: Pearson correlation of each atom's ablation causal effect with its effect on an unseen continuation (bit-exact re-run); can be negative.",
     "matches_paper": "yes",
-    "note": "dictionaries.jl (S = _pearson(cu.effect, cu.held_out_effect)); a held-out predictive correlation in [-1,1], the §3 (sec:triad) form. Now surfaced in extra.triad.S (dictionaries_pong.json S=0.932)."
+    "note": "dictionaries.jl (S = _pearson(cu.effect, cu.held_out_effect)); a held-out predictive correlation in [-1,1], the §3 (sec:triad) form. Now surfaced in extra.triad.S (dictionaries_pong.json S=0.932).",
+    "source": [
+     {
+      "label": "dictionaries.jl:763",
+      "path": "tools/xai_study/phaseC_mechanistic/dictionaries.jl",
+      "line": 763
+     }
+    ]
    },
    "M": {
     "formula": "M = |U*| / |U_hat|,  |U*| = oracle movers,  |U_hat| = above-threshold matched atoms",
+    "formula_tex": "M = |U^{\\star}| / |\\hat{U}| \\in (0,1]\\quad U^{\\star}=\\{u:\\Delta y(u)>0\\},\\ \\hat{U}=\\{u:|\\mathrm{attr}(u)|>\\tau\\}",
     "plain": "Oracle-mover count over the number of matched atoms the method names above threshold.",
     "matches_paper": "yes",
-    "note": "dictionaries.jl now emits M = |U*|/|U_hat| in extra.triad.M (M_note '|U*|=8 (oracle movers) / |U_hat|=5 (method above-threshold)'), the paper's set-size ratio. Record: dictionaries_pong.json extra.triad.M=1.0. Replaced the former 1 − over-claim rate."
+    "note": "dictionaries.jl now emits M = |U*|/|U_hat| in extra.triad.M (M_note '|U*|=8 (oracle movers) / |U_hat|=5 (method above-threshold)'), the paper's set-size ratio. Record: dictionaries_pong.json extra.triad.M=1.0. Replaced the former 1 − over-claim rate.",
+    "source": [
+     {
+      "label": "dictionaries.jl:1099",
+      "path": "tools/xai_study/phaseC_mechanistic/dictionaries.jl",
+      "line": 1099
+     },
+     {
+      "label": "triad_sm.jl:57",
+      "path": "tools/xai_study/common/triad_sm.jl",
+      "line": 57
+     }
+    ]
    }
   },
   "linear_probing": {
    "leaderboard_method": "linear_probing_control_tasks",
    "F": {
     "formula": "F = point-biserial rho(per-cell selectivity, oracle causally-used indicator)  over probeable cells",
+    "formula_tex": "F = \\rho_{\\mathrm{pb}}\\!\\left(\\mathrm{attr}_{\\mathrm{sel}},\\ \\mathbb{1}[\\text{causally used}]\\right)",
     "plain": "Point-biserial correlation between per-cell probe selectivity and the oracle causally-used indicator: does selectivity track causal use (not mere presence)?",
     "against_oracle": false,
     "matches_paper": "yes",
-    "note": "linear_probing.jl now emits top-level metric_name=probe_selectivity_vs_causal_use_correlation with extra.triad.F = point-biserial rho(selectivity, oracle causally-used indicator); it replaced the mean control-task selectivity (a decodability/presence stat). This is §3's correlation between the attribution and the true causal effect. Record: linear_probing_pong.json extra.triad.F=-0.090 (present-but-unused => low/negative)."
+    "note": "linear_probing.jl now emits top-level metric_name=probe_selectivity_vs_causal_use_correlation with extra.triad.F = point-biserial rho(selectivity, oracle causally-used indicator); it replaced the mean control-task selectivity (a decodability/presence stat). This is §3's correlation between the attribution and the true causal effect. Record: linear_probing_pong.json extra.triad.F=-0.090 (present-but-unused => low/negative).",
+    "source": [
+     {
+      "label": "linear_probing.jl:594",
+      "path": "tools/xai_study/phaseC_mechanistic/linear_probing.jl",
+      "line": 594
+     },
+     {
+      "label": "linear_probing.jl:626",
+      "path": "tools/xai_study/phaseC_mechanistic/linear_probing.jl",
+      "line": 626
+     }
+    ]
    },
    "S": {
     "formula": "S = null (undefined)",
@@ -150,19 +367,45 @@
    },
    "M": {
     "formula": "M = |U*| / |U_hat|,  |U*| = oracle causally-used cells,  |U_hat| = probe-named (decodable) cells",
+    "formula_tex": "M = |U^{\\star}| / |\\hat{U}| \\in (0,1]\\quad U^{\\star}=\\{u:\\Delta y(u)>0\\},\\ \\hat{U}=\\{u:|\\mathrm{attr}(u)|>\\tau\\}",
     "plain": "Oracle causally-used cells over the number of cells the probe names by selectivity.",
     "matches_paper": "yes",
-    "note": "linear_probing.jl now emits M = |U*|/|U_hat| in extra.triad.M (M_note '|U*|=3 (oracle movers) / |U_hat|=5 (method above-threshold)'), the paper's set-size ratio. Record: linear_probing_pong.json extra.triad.M=0.6."
+    "note": "linear_probing.jl now emits M = |U*|/|U_hat| in extra.triad.M (M_note '|U*|=3 (oracle movers) / |U_hat|=5 (method above-threshold)'), the paper's set-size ratio. Record: linear_probing_pong.json extra.triad.M=0.6.",
+    "source": [
+     {
+      "label": "linear_probing.jl:622",
+      "path": "tools/xai_study/phaseC_mechanistic/linear_probing.jl",
+      "line": 622
+     },
+     {
+      "label": "triad_sm.jl:57",
+      "path": "tools/xai_study/common/triad_sm.jl",
+      "line": 57
+     }
+    ]
    }
   },
   "logit_lens": {
    "leaderboard_method": "logit_tuned_lens",
    "F": {
     "formula": "F = mean_faithful_weight_fraction = share of the lens's readout weight |A_t| on oracle-causal sites",
+    "formula_tex": "F = \\dfrac{\\sum_t |A_t|\\cdot \\mathbb{1}[\\text{site causal}]}{\\sum_t |A_t|}",
     "plain": "Mean fraction of the tuned-lens readout weight that lands on truly-causal sites (the oracle causal mask): low => the lens reads a spurious correlate (present != used).",
     "against_oracle": false,
     "matches_paper": "yes",
-    "note": "logit_lens.jl now emits top-level metric_name=logit_lens_faithful_weight_fraction_vs_causal_mask with extra.triad.F = mean faithful-weight fraction vs the oracle causal mask; it replaced the readout-fidelity-to-the-true-intermediate (=1.0 by construction). This is §3's causal-agreement F for a readout-direction method. Record: logit_lens_pong.json extra.triad.F=0.438."
+    "note": "logit_lens.jl now emits top-level metric_name=logit_lens_faithful_weight_fraction_vs_causal_mask with extra.triad.F = mean faithful-weight fraction vs the oracle causal mask; it replaced the readout-fidelity-to-the-true-intermediate (=1.0 by construction). This is §3's causal-agreement F for a readout-direction method. Record: logit_lens_pong.json extra.triad.F=0.438.",
+    "source": [
+     {
+      "label": "logit_lens.jl:573",
+      "path": "tools/xai_study/phaseC_mechanistic/logit_lens.jl",
+      "line": 573
+     },
+     {
+      "label": "logit_lens.jl:702",
+      "path": "tools/xai_study/phaseC_mechanistic/logit_lens.jl",
+      "line": 702
+     }
+    ]
    },
    "S": {
     "formula": "S = null (undefined)",
@@ -172,19 +415,40 @@
    },
    "M": {
     "formula": "M = |U*| / |U_hat|,  |U*| = oracle per-site movers,  |U_hat| = lens-named readout sites",
+    "formula_tex": "M = |U^{\\star}| / |\\hat{U}| \\in (0,1]\\quad U^{\\star}=\\{u:\\Delta y(u)>0\\},\\ \\hat{U}=\\{u:|\\mathrm{attr}(u)|>\\tau\\}",
     "plain": "Oracle-causal sites over the number of readout sites the lens names above threshold.",
     "matches_paper": "yes",
-    "note": "logit_lens.jl now emits M = |U*|/|U_hat| in extra.triad.M (M_note '|U*|=4 (oracle movers) / |U_hat|=74 (method above-threshold)'), the paper's set-size ratio. Record: logit_lens_pong.json extra.triad.M=0.054. Replaced the former faithful-weight-fraction proxy (now used as F)."
+    "note": "logit_lens.jl now emits M = |U*|/|U_hat| in extra.triad.M (M_note '|U*|=4 (oracle movers) / |U_hat|=74 (method above-threshold)'), the paper's set-size ratio. Record: logit_lens_pong.json extra.triad.M=0.054. Replaced the former faithful-weight-fraction proxy (now used as F).",
+    "source": [
+     {
+      "label": "logit_lens.jl:700",
+      "path": "tools/xai_study/phaseC_mechanistic/logit_lens.jl",
+      "line": 700
+     },
+     {
+      "label": "triad_sm.jl:57",
+      "path": "tools/xai_study/common/triad_sm.jl",
+      "line": 57
+     }
+    ]
    }
   },
   "path_patching": {
    "leaderboard_method": "path_patching",
    "F": {
     "formula": "F = clamp01(edge-F1(recovered_path_circuit, true_routine))",
+    "formula_tex": "F = F_1^{\\mathrm{edge}}(\\hat{E}, E^{\\star})",
     "plain": "Edge-F1 of the recovered path circuit against the true direct-path routine (exhaustive edge-restricted path patch).",
     "against_oracle": true,
     "matches_paper": "yes",
-    "note": "path_patching.jl:693 (F = clamp(score.f1)); metric_name path_circuit_F1_vs_true_routine. Exactly the paper's circuit-discovery F = edge F1 vs the true data-flow/routine. Record: extra.triad.F / value (pong F=0.0 — no path edges recovered; battery mean F=0.580, n=42)."
+    "note": "path_patching.jl:693 (F = clamp(score.f1)); metric_name path_circuit_F1_vs_true_routine. Exactly the paper's circuit-discovery F = edge F1 vs the true data-flow/routine. Record: extra.triad.F / value (pong F=0.0 — no path edges recovered; battery mean F=0.580, n=42).",
+    "source": [
+     {
+      "label": "path_patching.jl:693",
+      "path": "tools/xai_study/phaseC_mechanistic/path_patching.jl",
+      "line": 693
+     }
+    ]
    },
    "S": {
     "formula": "S = null (undefined)",
@@ -194,31 +458,68 @@
    },
    "M": {
     "formula": "M = min(1, |true edges| / |discovered edges|)  = |U*| / |U_hat| at the edge level",
+    "formula_tex": "M = |U^{\\star}| / |\\hat{U}| = |E^{\\star}| / |\\hat{E}| \\in (0,1]",
     "plain": "True-routine edge count over the number of discovered path edges.",
     "matches_paper": "yes",
-    "note": "path_patching.jl:698 (M = min(1, ntrue/nrec)). This is the paper's |U*|/|U_hat| applied to edges. n/a when |U_hat|=0 discovered edges (emitted as null, e.g. pong M_named_size=0 -> M=null). Record: extra.triad.M, M_true_minimal_size/M_named_size (battery mean M=1.0 over the n=18 games with >=1 discovered edge)."
+    "note": "path_patching.jl:698 (M = min(1, ntrue/nrec)). This is the paper's |U*|/|U_hat| applied to edges. n/a when |U_hat|=0 discovered edges (emitted as null, e.g. pong M_named_size=0 -> M=null). Record: extra.triad.M, M_true_minimal_size/M_named_size (battery mean M=1.0 over the n=18 games with >=1 discovered edge).",
+    "source": [
+     {
+      "label": "path_patching.jl:698",
+      "path": "tools/xai_study/phaseC_mechanistic/path_patching.jl",
+      "line": 698
+     }
+    ]
    }
   },
   "sae": {
    "leaderboard_method": "sparse_autoencoder",
    "F": {
     "formula": "F = rho_Spearman(per-cell SAE recovery = max|feature r|.decoder-mass, oracle causal importance)",
+    "formula_tex": "F = \\rho_{\\mathrm{Spearman}}\\!\\left(\\mathrm{attr}_{\\mathrm{recovery}},\\ \\Delta y(u)\\right)",
     "plain": "Spearman correlation between per-cell SAE recovery and the oracle causal importance: paper-shaped causal-effect agreement.",
     "against_oracle": true,
     "matches_paper": "yes",
-    "note": "sae.jl (extra.triad.F = _spearman(recovery, oracle.importance)) IS the oracle-causal-agreement correlation, exactly §3's Phase-C causal-effect-agreement F, and leaderboard.py reads extra.triad.F. Record: sae_pong.json extra.triad.F=0.041. (The top-level 'value' field is still the feature_variable_matched_fraction naming stat, but the committed triad F is the correct causal Spearman.)"
+    "note": "sae.jl (extra.triad.F = _spearman(recovery, oracle.importance)) IS the oracle-causal-agreement correlation, exactly §3's Phase-C causal-effect-agreement F, and leaderboard.py reads extra.triad.F. Record: sae_pong.json extra.triad.F=0.041. (The top-level 'value' field is still the feature_variable_matched_fraction naming stat, but the committed triad F is the correct causal Spearman.)",
+    "source": [
+     {
+      "label": "sae.jl:784",
+      "path": "tools/xai_study/phaseC_mechanistic/sae.jl",
+      "line": 784
+     }
+    ]
    },
    "S": {
     "formula": "S = ρ_Pearson(per-cell SAE recovery, held-out do(base+37) screen-break effect)",
+    "formula_tex": "S = \\rho_{\\mathrm{Pearson}}\\!\\left(\\mathrm{attr}_{\\mathrm{recovery}},\\ \\Delta y_{\\mathrm{held\\text{-}out}}(u)\\right) \\in [-1,1]",
     "plain": "Held-out predictive correlation between SAE recovery and the causal effect on an unseen do(base+37) bit-exact re-run; can be negative.",
     "matches_paper": "yes",
-    "note": "sae.jl:776 (S = _pearson(recovery, oracle.held_out)). A held-out predictive correlation in [-1,1] on a disjoint intervention (paper-conform; negative allowed). Record: extra.triad.S (sae_pong.json S=−0.458; battery mean S=0.041, n=43)."
+    "note": "sae.jl:776 (S = _pearson(recovery, oracle.held_out)). A held-out predictive correlation in [-1,1] on a disjoint intervention (paper-conform; negative allowed). Record: extra.triad.S (sae_pong.json S=−0.458; battery mean S=0.041, n=43).",
+    "source": [
+     {
+      "label": "sae.jl:785",
+      "path": "tools/xai_study/phaseC_mechanistic/sae.jl",
+      "line": 785
+     }
+    ]
    },
    "M": {
     "formula": "M = |U*| / |U_hat|,  |U*| = oracle movers,  |U_hat| = above-threshold named cells",
+    "formula_tex": "M = |U^{\\star}| / |\\hat{U}| \\in (0,1]\\quad U^{\\star}=\\{u:\\Delta y(u)>0\\},\\ \\hat{U}=\\{u:|\\mathrm{attr}(u)|>\\tau\\}",
     "plain": "Oracle-mover count over the number of cells the SAE names above threshold.",
     "matches_paper": "yes",
-    "note": "sae.jl now emits M = |U*|/|U_hat| in extra.triad.M (M_note '|U*|=4 (oracle movers) / |U_hat|=4 (method above-threshold)'), the paper's set-size ratio. Record: sae_pong.json extra.triad.M=1.0. Replaced the former monosemanticity/target-share proxy."
+    "note": "sae.jl now emits M = |U*|/|U_hat| in extra.triad.M (M_note '|U*|=4 (oracle movers) / |U_hat|=4 (method above-threshold)'), the paper's set-size ratio. Record: sae_pong.json extra.triad.M=1.0. Replaced the former monosemanticity/target-share proxy.",
+    "source": [
+     {
+      "label": "sae.jl:786",
+      "path": "tools/xai_study/phaseC_mechanistic/sae.jl",
+      "line": 786
+     },
+     {
+      "label": "triad_sm.jl:57",
+      "path": "tools/xai_study/common/triad_sm.jl",
+      "line": 57
+     }
+    ]
    }
   }
  }
