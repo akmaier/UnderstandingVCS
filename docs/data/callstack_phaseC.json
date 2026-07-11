@@ -1,0 +1,175 @@
+{
+  "phase": "C",
+  "_provenance": {
+    "note": "Phase-C mechanistic-interpretability call stacks: how each runner drives the jutari substrate (applied_on), its own core mechanism (computation), and the exact intervention oracle it is scored against (oracle). Every path is repo-relative; every line was verified by opening the file.",
+    "substrate_anchors": {
+      "env_reset!": "jutari/src/env/StellaEnvironment.jl:220",
+      "env_step!": "jutari/src/env/StellaEnvironment.jl:259",
+      "snapshot": "tools/xai_study/common/jutari_oracle.jl:136",
+      "build_shared_testbed": "tools/xai_study/common/shared_testbed_impl.jl:115",
+      "oracle_run_intervention": "tools/xai_study/ground_truth/oracle_intervene.jl:242",
+      "soft_ram_peek": "jutari/src/diff/SoftStep.jl:108"
+    }
+  },
+  "methods": {
+    "acdc": {
+      "runner": {"path": "tools/xai_study/phaseC_mechanistic/acdc.jl", "entry": "run_game", "line": 646},
+      "applied_on": [
+        {"desc": "Boot the real ROM with the xitari-parity reset (60 NOOP + 4 RESET) before any replay", "call": "env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 220, "substrate": "jutari"},
+        {"desc": "Deterministically step the emulator one action per env-frame (drives boot_replay/continue re-runs)", "call": "env_step!(env::StellaEnvironment, action::Integer)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "Assemble the shared seeded-random-action gameplay-state testbed (checkpoint at f*, causes, shared screen output, cause-density gate)", "call": "build_shared_testbed(game; ... run_intervention = O.run_intervention, soft_ram_peek = soft_ram_peek, ...) via build_acdc_shared_state", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "runner"},
+        {"desc": "Freeze byte-exact RAM + cropped screen out of the env at a frame", "call": "snapshot(env::StellaEnvironment, frame::Integer)", "path": "tools/xai_study/common/jutari_oracle.jl", "line": 136, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "Pick the corrupted resample value per source (donor byte where it diverges, else base+17)", "call": "resample_value(clean_val::Int, donor_val::Int)", "path": "tools/xai_study/phaseC_mechanistic/acdc.jl", "line": 403, "substrate": "runner"},
+        {"desc": "ACDC edge-effect matrix E[i,j] = |child_j(resample-ablate source_i) - child_j(clean)|: one real-ROM re-run per source via intervene_continue (write source cell, continue tail)", "call": "acdc_edge_effects(checkpoint, tail, cands, at_target, corrupt_at_target)  ->  intervene_continue -> intervene_ram!", "path": "tools/xai_study/phaseC_mechanistic/acdc.jl", "line": 416, "substrate": "runner", "note": "intervene_continue @ acdc.jl:290 -> intervene_ram! @ acdc.jl:274; base = continue_from(checkpoint, tail) @ acdc.jl:281"},
+        {"desc": "Discovered circuit at threshold tau: edge i->j iff E[i,j] > tau (diagonal forced off)", "call": "discovered_at(E::Matrix{Float64}, tau::Float64)", "path": "tools/xai_study/phaseC_mechanistic/acdc.jl", "line": 441, "substrate": "runner"},
+        {"desc": "Threshold sweep over tau (the ACDC pruning schedule) feeding the ROC/AUC against the true data-flow graph", "call": "tau_sweep(E::Matrix{Float64})", "path": "tools/xai_study/phaseC_mechanistic/acdc.jl", "line": 481, "substrate": "runner"}
+      ],
+      "oracle": {"desc": "Exact intervention oracle Delta_y(u) = y(do(u:=v')) - y(baseline): apply the cause to a deepcopy of the checkpoint and continue the horizon", "call": "run_intervention(checkpoint, actions, target_frame, horizon, cause)", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": null
+    },
+    "activation_patching": {
+      "runner": {"path": "tools/xai_study/phaseC_mechanistic/activation_patching.jl", "entry": "run_game", "line": 327},
+      "applied_on": [
+        {"desc": "Boot the real ROM with the xitari-parity reset (60 NOOP + 4 RESET)", "call": "env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 220, "substrate": "jutari"},
+        {"desc": "Deterministically step the emulator one action per env-frame", "call": "env_step!(env::StellaEnvironment, action::Integer)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "Assemble the shared gameplay-state testbed (checkpoint at f*, causes, shared screen output cell, cause-density gate)", "call": "build_shared_testbed(game; ... intervene_ram = intervene_ram!, run_intervention = run_intervention, soft_ram_peek = soft_ram_peek, ...)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "runner"},
+        {"desc": "Freeze byte-exact RAM + screen out of the env at a frame", "call": "snapshot(env::StellaEnvironment, frame::Integer)", "path": "tools/xai_study/common/jutari_oracle.jl", "line": 136, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "Single-site activation patch: write the patched value into one RAM cell / TIA register, re-run the tail, snapshot (the TRUE patch)", "call": "run_patch(checkpoint, tail, kind, site, value)  ->  intervene_ram!/intervene_tia!", "path": "tools/xai_study/phaseC_mechanistic/activation_patching.jl", "line": 282, "substrate": "runner", "note": "intervene_ram! @ activation_patching.jl:285, intervene_tia! @ :287"},
+        {"desc": "Patch loop: recovered (rec_snap) vs exact-clean and corrupted-fresh (ex_snap) re-runs per patch site, both via run_patch", "call": "rec_snap = run_patch(clean_ckpt, ...); ex_snap = run_patch(fresh_ckpt, ...) inside _run_game_body", "path": "tools/xai_study/phaseC_mechanistic/activation_patching.jl", "line": 396, "substrate": "runner", "note": "rec_snap @ :460, ex_snap @ :466"}
+      ],
+      "oracle": {"desc": "Exact intervention oracle Delta_y(u) = y(do(u:=v')) - y(baseline): apply the cause to a deepcopy of the checkpoint and continue the horizon", "call": "run_intervention(checkpoint, actions, target_frame, horizon, cause)", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": null
+    },
+    "attribution_patching": {
+      "runner": {"path": "tools/xai_study/phaseC_mechanistic/attribution_patching.jl", "entry": "run_game", "line": 229},
+      "applied_on": [
+        {"desc": "Boot the real ROM with the xitari-parity reset (60 NOOP + 4 RESET)", "call": "env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 220, "substrate": "jutari"},
+        {"desc": "Deterministically step the emulator one action per env-frame", "call": "env_step!(env::StellaEnvironment, action::Integer)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "Assemble the shared gameplay-state testbed via build_attr_shared_state (also builds the sampler-aware position read through soft_ram_peek)", "call": "build_shared_testbed(game; ... run_intervention = run_intervention, soft_ram_peek = soft_ram_peek, ...) via build_attr_shared_state", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "runner"},
+        {"desc": "Freeze byte-exact RAM + screen out of the env at a frame", "call": "snapshot(env::StellaEnvironment, frame::Integer)", "path": "tools/xai_study/common/jutari_oracle.jl", "line": 136, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "THE gradient step (linear/gradient surrogate): local slope (partial y / partial a)|_clean via a central finite difference of the true patch at a+eps and a-eps", "call": "site_gradient(...) -> snap_hi = run_patch(...hi); snap_lo = run_patch(...lo); (read(snap_hi)-read(snap_lo))/denom", "path": "tools/xai_study/phaseC_mechanistic/attribution_patching.jl", "line": 136, "substrate": "runner", "note": "gradient surrogate over the true patch run_patch (activation_patching.jl:282)"},
+        {"desc": "Attribution approx = grad*(a'-a) compared cell-by-cell against the exact full re-run patch (ex_snap = run_patch) in _run_game_body", "call": "ex_snap = run_patch(clean_ckpt, tail, p.kind, p.site, p.value)", "path": "tools/xai_study/phaseC_mechanistic/attribution_patching.jl", "line": 290, "substrate": "runner", "note": "ex_snap @ :352; linear-probe positive control @ linear_probe :481"},
+        {"desc": "Sampler-aware position gradient (redesign Problem 2): differentiable screen-position read of the RAM tape through the bilinear sampler; nonzero partial/partial ram[pidx] via the one-hot soft RAM read", "call": "_st_sampler_position_read(ram, geom, cell; soft_ram_peek) -> soft_ram_peek(ram, pidx)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 357, "substrate": "runner", "note": "soft_ram_peek definition @ jutari/src/diff/SoftStep.jl:108"}
+      ],
+      "oracle": {"desc": "Exact intervention oracle Delta_y(u) = y(do(u:=v')) - y(baseline): apply the cause to a deepcopy of the checkpoint and continue the horizon", "call": "run_intervention(checkpoint, actions, target_frame, horizon, cause)", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": "jaxtari/jaxtari/diff/soft_step.py (soft_ram_peek @ line 102) — the JAX SOFT-STE gradient path, forward-bit-exact to the HARD jutari map. attribution_patching is the ONLY Phase-C method with a gradient step; its sampler-aware position gradient routes through soft_ram_peek (jutari/src/diff/SoftStep.jl:108), whose JAX sibling is this file."
+    },
+    "causal_scrubbing": {
+      "runner": {"path": "tools/xai_study/phaseC_mechanistic/causal_scrubbing.jl", "entry": "run_game", "line": 368},
+      "applied_on": [
+        {"desc": "Boot the real ROM with the xitari-parity reset (60 NOOP + 4 RESET)", "call": "env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 220, "substrate": "jutari"},
+        {"desc": "Deterministically step the emulator one action per env-frame", "call": "env_step!(env::StellaEnvironment, action::Integer)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "Assemble the shared gameplay-state testbed (checkpoint at f*, causes, shared screen output, cause-density gate)", "call": "build_shared_testbed(game; ... intervene_ram = intervene_ram!, run_intervention = run_intervention, soft_ram_peek = soft_ram_peek, ...)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "runner"},
+        {"desc": "Freeze byte-exact RAM + screen out of the env at a frame", "call": "snapshot(env::StellaEnvironment, frame::Integer)", "path": "tools/xai_study/common/jutari_oracle.jl", "line": 136, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "Build the per-cell resample-value pool from the at-target state (donor activations to swap in for out-of-circuit cells)", "call": "resample_values(at_target::Snapshot, cand_idx::Vector{Int}, k::Int)", "path": "tools/xai_study/phaseC_mechanistic/causal_scrubbing.jl", "line": 276, "substrate": "runner"},
+        {"desc": "Scrubbing re-run: resample-ablate every out-of-circuit candidate cell (in-circuit cells keep their base value), then continue the tail and snapshot", "call": "scrub_assign(base_ckpt, tail, cand_idx, circuit, assign)  ->  intervene_ram!", "path": "tools/xai_study/phaseC_mechanistic/causal_scrubbing.jl", "line": 289, "substrate": "runner", "note": "intervene_ram! @ causal_scrubbing.jl:294; performance-preserved compared TRUE vs WRONG circuit hypotheses"},
+        {"desc": "True data-flow graph the scrub hypothesis is checked against (per-cell interchange over the candidate set) + ancestors closure", "call": "true_dataflow_graph(base_ckpt, tail, cand_idx, at_target)  ->  intervene_ram!; ancestors(A, out)", "path": "tools/xai_study/phaseC_mechanistic/causal_scrubbing.jl", "line": 221, "substrate": "runner", "note": "ancestors @ :245"}
+      ],
+      "oracle": {"desc": "Exact intervention oracle Delta_y(u) = y(do(u:=v')) - y(baseline): apply the cause to a deepcopy of the checkpoint and continue the horizon", "call": "run_intervention(checkpoint, actions, target_frame, horizon, cause)", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": null
+    },
+    "das": {
+      "runner": {"path": "tools/xai_study/phaseC_mechanistic/das.jl", "entry": "run_game", "line": 307},
+      "applied_on": [
+        {"desc": "Boot the real ROM with the xitari-parity reset (60 NOOP + 4 RESET)", "call": "env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 220, "substrate": "jutari"},
+        {"desc": "Deterministically step the emulator one action per env-frame", "call": "env_step!(env::StellaEnvironment, action::Integer)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "Assemble the shared gameplay-state testbed (checkpoint at f*, causes, shared screen output, cause-density gate)", "call": "build_shared_testbed(game; ... intervene_ram = intervene_ram!, run_intervention = run_intervention, soft_ram_peek = soft_ram_peek, ...)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "runner"},
+        {"desc": "Freeze byte-exact RAM + screen out of the env at a frame", "call": "snapshot(env::StellaEnvironment, frame::Integer)", "path": "tools/xai_study/common/jutari_oracle.jl", "line": 136, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "Define the abstract variables (concept-labelled RAM cells) the DAS alignment maps onto", "call": "build_variables(cand_indices_concepts)", "path": "tools/xai_study/phaseC_mechanistic/das.jl", "line": 227, "substrate": "runner"},
+        {"desc": "Interchange intervention: write the source-run cell value(s) into a deepcopy of the base checkpoint, continue the tail, snapshot (the DAS interchange / resample re-run measuring alignment-cell effect on each variable readout)", "call": "interchange(base_ckpt, tail, kind, sites, values)  ->  intervene_ram!/intervene_tia!; env_step!", "path": "tools/xai_study/phaseC_mechanistic/das.jl", "line": 250, "substrate": "runner", "note": "intervene_ram! @ das.jl:256, intervene_tia! @ :258, env_step! @ :263"}
+      ],
+      "oracle": {"desc": "Exact intervention oracle Delta_y(u) = y(do(u:=v')) - y(baseline): apply the cause to a deepcopy of the checkpoint and continue the horizon", "call": "run_intervention(checkpoint, actions, target_frame, horizon, cause)", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": null
+    },
+    "dictionaries": {
+      "runner": {"path": "tools/xai_study/phaseC_mechanistic/dictionaries.jl", "entry": "compute_game", "line": 842},
+      "applied_on": [
+        {"desc": "Boot the real ROM with the xitari-parity reset (60 NOOP + 4 RESET)", "call": "env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 220, "substrate": "jutari"},
+        {"desc": "Deterministically step the emulator one action per env-frame (also drives the RAM-trajectory recording)", "call": "env_step!(env::StellaEnvironment, action::Integer)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "Assemble the shared gameplay-state testbed via build_dict_shared_state", "call": "build_shared_testbed(game; ... intervene_ram = J.intervene_ram!, run_intervention = O.run_intervention, soft_ram_peek = soft_ram_peek, ...)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "runner"},
+        {"desc": "Freeze byte-exact RAM + screen out of the env at a frame", "call": "snapshot(env::StellaEnvironment, frame::Integer)", "path": "tools/xai_study/common/jutari_oracle.jl", "line": 136, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "Record the RAM trajectory (per-frame 128-byte tape) the dictionary is fit on", "call": "record_ram(game, frames, ...)  ->  env_step!", "path": "tools/xai_study/phaseC_mechanistic/dictionaries.jl", "line": 246, "substrate": "runner"},
+        {"desc": "Fit the dictionary on the RAM tape: PCA / NMF / SAE", "call": "run_pca(tape, rank) / run_nmf(tape, rank) / run_sae(tape, hidden)", "path": "tools/xai_study/phaseC_mechanistic/dictionaries.jl", "line": 409, "substrate": "runner", "note": "run_nmf @ :464, run_sae @ :487"},
+        {"desc": "CAUSAL-USE test: ablate atom k (zero its activation), DECODE to a full 128-byte RAM vector, WRITE it into the env over all cells and re-run; effect = screen change vs the reconstruction control", "call": "causal_use(m, checkpoint, at_target, tail, ...)  ->  rerun_with_ram(checkpoint, bk, tail)", "path": "tools/xai_study/phaseC_mechanistic/dictionaries.jl", "line": 680, "substrate": "runner", "note": "rerun_with_ram writes the decoded RAM over all cells via intervene_ram! (dictionaries.jl:671 -> :674)"}
+      ],
+      "oracle": {"desc": "Exact intervention oracle Delta_y(u) = y(do(u:=v')) - y(baseline): apply the cause to a deepcopy of the checkpoint and continue the horizon", "call": "run_intervention(checkpoint, actions, target_frame, horizon, cause)", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": null
+    },
+    "linear_probing": {
+      "runner": {"path": "tools/xai_study/phaseC_mechanistic/linear_probing.jl", "entry": "run_game", "line": 359},
+      "applied_on": [
+        {"desc": "Boot the real ROM with the xitari-parity reset (60 NOOP + 4 RESET)", "call": "env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 220, "substrate": "jutari"},
+        {"desc": "Deterministically step the emulator one action per env-frame (drives the RAM-tape recording)", "call": "env_step!(env::StellaEnvironment, action::Integer)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "Assemble the shared gameplay-state testbed via build_linear_probing_shared_state", "call": "build_shared_testbed(game; ... intervene_ram = J.intervene_ram!, run_intervention = O.run_intervention, soft_ram_peek = soft_ram_peek, ...)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "runner"},
+        {"desc": "Freeze byte-exact RAM + screen out of the env at a frame", "call": "snapshot(env::StellaEnvironment, frame::Integer)", "path": "tools/xai_study/common/jutari_oracle.jl", "line": 136, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "Record the per-frame RAM tape (128-byte activations) the probes are trained on", "call": "record_ram_tape(game, actions)  ->  env_step!", "path": "tools/xai_study/phaseC_mechanistic/linear_probing.jl", "line": 157, "substrate": "runner"},
+        {"desc": "Train a linear (ridge) probe per RAM cell + control-task selectivity: probe accuracy on the real label vs a random control label", "call": "probe_accuracy(Xtr, ytr, Xte, yte, nclass; lambda = RIDGE_LAMBDA)", "path": "tools/xai_study/phaseC_mechanistic/linear_probing.jl", "line": 270, "substrate": "runner"},
+        {"desc": "Cross-reference each probed cell with the oracle causal flag (transient/causal cells) so selectivity is scored against real causal use", "call": "oracle_transient_cells(game::AbstractString)", "path": "tools/xai_study/phaseC_mechanistic/linear_probing.jl", "line": 213, "substrate": "runner"}
+      ],
+      "oracle": {"desc": "Exact intervention oracle Delta_y(u) = y(do(u:=v')) - y(baseline): apply the cause to a deepcopy of the checkpoint and continue the horizon", "call": "run_intervention(checkpoint, actions, target_frame, horizon, cause)", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": null
+    },
+    "logit_lens": {
+      "runner": {"path": "tools/xai_study/phaseC_mechanistic/logit_lens.jl", "entry": "run_game", "line": 393},
+      "applied_on": [
+        {"desc": "Boot the real ROM with the xitari-parity reset (60 NOOP + 4 RESET)", "call": "env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 220, "substrate": "jutari"},
+        {"desc": "Deterministically step the emulator one action per env-frame (drives the RAM-tape / trajectory-set recording)", "call": "env_step!(env::StellaEnvironment, action::Integer)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "Assemble the shared gameplay-state testbed (checkpoint at f*, causes, shared screen output, cause-density gate)", "call": "build_shared_testbed(game; ... intervene_ram = intervene_ram!, run_intervention = run_intervention, soft_ram_peek = soft_ram_peek, ...)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "runner"},
+        {"desc": "Freeze byte-exact RAM + screen out of the env at a frame", "call": "snapshot(env::StellaEnvironment, frame::Integer)", "path": "tools/xai_study/common/jutari_oracle.jl", "line": 136, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "Build the per-site trajectory set (poke each candidate cell across offsets, record the RAM tape) the readouts are fit on", "call": "build_trajset(base_ckpt, src_ckpt, ...)  ->  intervene_ram!", "path": "tools/xai_study/phaseC_mechanistic/logit_lens.jl", "line": 258, "substrate": "runner", "note": "intervene_ram! @ logit_lens.jl:277; record_ram_tape @ :213"},
+        {"desc": "Per-site readout fidelity: ridge-fit a linear readout from each site to the output and score R^2", "call": "ridge_fit(X, y; lambda) ; r2(y, yhat)", "path": "tools/xai_study/phaseC_mechanistic/logit_lens.jl", "line": 290, "substrate": "runner", "note": "r2 @ :300"},
+        {"desc": "Faithful-weight fraction vs the oracle causal mask: build the causal mask by poking each site (+SET_DELTA), re-run, and compare which readout weights land on truly-causal cells", "call": "build_causal_mask(base_ckpt, tail, ...)  ->  intervene_ram!", "path": "tools/xai_study/phaseC_mechanistic/logit_lens.jl", "line": 371, "substrate": "runner", "note": "intervene_ram! @ logit_lens.jl:379"}
+      ],
+      "oracle": {"desc": "Exact intervention oracle Delta_y(u) = y(do(u:=v')) - y(baseline): apply the cause to a deepcopy of the checkpoint and continue the horizon", "call": "run_intervention(checkpoint, actions, target_frame, horizon, cause)", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": null
+    },
+    "path_patching": {
+      "runner": {"path": "tools/xai_study/phaseC_mechanistic/path_patching.jl", "entry": "run_game", "line": 468},
+      "applied_on": [
+        {"desc": "Boot the real ROM with the xitari-parity reset (60 NOOP + 4 RESET)", "call": "env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 220, "substrate": "jutari"},
+        {"desc": "Deterministically step the emulator one action per env-frame (the one-hop and tail replays)", "call": "env_step!(env::StellaEnvironment, action::Integer)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "Assemble the shared gameplay-state testbed (checkpoint at f*, causes, shared screen output, cause-density gate)", "call": "build_shared_testbed(game; ... intervene_ram = intervene_ram!, run_intervention = run_intervention, soft_ram_peek = soft_ram_peek, ...)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "runner"},
+        {"desc": "Freeze byte-exact RAM + screen out of the env at a frame", "call": "snapshot(env::StellaEnvironment, frame::Integer)", "path": "tools/xai_study/common/jutari_oracle.jl", "line": 136, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "Path patch edge i->j: corrupt the sender cell, step ONE frame (i -> t+1), freeze-restore every other candidate cell at t+1 to its clean value (leaving only j on the i->j edge), continue the rest of the tail, snapshot", "call": "path_patch(checkpoint, clean_next, nodes, sender_i, receiver_j, sender_value, rest_tail; hop_action)  ->  intervene_ram!; env_step!", "path": "tools/xai_study/phaseC_mechanistic/path_patching.jl", "line": 310, "substrate": "runner", "note": "intervene_ram! @ path_patching.jl:314 & :319, env_step! @ :316 & :322"},
+        {"desc": "Node-level true data-flow graph (transitive reachability) the recovered circuit is scored against", "call": "node_dataflow_graph(checkpoint, tail, nodes, at_target)  ->  intervene_ram!", "path": "tools/xai_study/phaseC_mechanistic/path_patching.jl", "line": 263, "substrate": "runner", "note": "intervene_ram! @ :272"},
+        {"desc": "Recovered path circuit: which edges fire under the single-shot path patch (vs the exhaustive-do-set true routine graph @ :353)", "call": "recovered_path_circuit(checkpoint, clean_next, nodes, ...)  ->  edge_fires -> path_patch", "path": "tools/xai_study/phaseC_mechanistic/path_patching.jl", "line": 377, "substrate": "runner", "note": "true_routine_graph @ :353, score_circuit @ :424"}
+      ],
+      "oracle": {"desc": "Exact intervention oracle Delta_y(u) = y(do(u:=v')) - y(baseline): apply the cause to a deepcopy of the checkpoint and continue the horizon", "call": "run_intervention(checkpoint, actions, target_frame, horizon, cause)", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": null
+    },
+    "sae": {
+      "runner": {"path": "tools/xai_study/phaseC_mechanistic/sae.jl", "entry": "compute_game", "line": 866},
+      "applied_on": [
+        {"desc": "Boot the real ROM with the xitari-parity reset (60 NOOP + 4 RESET)", "call": "env_reset!(env; boot_noop_steps = 60, boot_reset_steps = 4)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 220, "substrate": "jutari"},
+        {"desc": "Deterministically step the emulator one action per env-frame (drives the RAM-trajectory recording)", "call": "env_step!(env::StellaEnvironment, action::Integer)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "Assemble the shared gameplay-state testbed via build_sae_shared_state", "call": "build_shared_testbed(game; ... intervene_ram = J.intervene_ram!, run_intervention = O.run_intervention, soft_ram_peek = soft_ram_peek, ...)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "runner"},
+        {"desc": "Freeze byte-exact RAM + screen out of the env at a frame", "call": "snapshot(env::StellaEnvironment, frame::Integer)", "path": "tools/xai_study/common/jutari_oracle.jl", "line": 136, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "Record the RAM trajectory (per-frame 128-byte tape) the SAE is fit on", "call": "sae_record_ram(game, frames, ...)  ->  env_step!", "path": "tools/xai_study/phaseC_mechanistic/sae.jl", "line": 241, "substrate": "runner"},
+        {"desc": "Fit the sparse autoencoder (L1-regularised) on the z-scored RAM tape", "call": "fit!(s::SAE, X; epochs, lr)  (ctor SAE @ :375, loss @ :395)", "path": "tools/xai_study/phaseC_mechanistic/sae.jl", "line": 404, "substrate": "runner"},
+        {"desc": "CAUSAL-USE test: ablate feature f (zero its code), DECODE + denorm to a full raw RAM vector, WRITE it over all cells and re-run; effect = screen break of ablated-decode vs un-ablated-decode re-run (isolates the feature)", "call": "causal_use(...) -> run_full_write(raw_ablate) -> intervene_ram! over all cells; env_step!", "path": "tools/xai_study/phaseC_mechanistic/sae.jl", "line": 612, "substrate": "runner", "note": "run_full_write writes the decoded RAM via intervene_ram! (sae.jl:627), denorm_ram @ :598; scored only on ORACLE-CAUSAL cells via oracle_importance @ :536"}
+      ],
+      "oracle": {"desc": "Exact intervention oracle Delta_y(u) = y(do(u:=v')) - y(baseline): apply the cause to a deepcopy of the checkpoint and continue the horizon", "call": "run_intervention(checkpoint, actions, target_frame, horizon, cause)", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": null
+    }
+  }
+}

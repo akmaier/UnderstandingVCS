@@ -1,0 +1,206 @@
+{
+  "phase": "B",
+  "_note": "Phase-B attribution methods split into GRADIENT (differentiable soft_ram_peek + Zygote + bilinear sampler position path) and PERTURBATION/BLACK-BOX (intervene_ram!/intervene_tia! + bit-exact ROM re-run, read screen delta). Every path+line verified against the file. jaxtari_note is the JAX-equivalent differentiable path (gradient methods) or null (perturbation methods). Shared oracle for all: run_intervention (Delta_y) in ground_truth/oracle_intervene.jl:242.",
+  "methods": {
+    "saliency": {
+      "kind": "gradient",
+      "runner": {"path": "tools/xai_study/phaseB_attribution/saliency.jl", "entry": "main", "line": 775},
+      "applied_on": [
+        {"desc": "env reset + per-frame step of the bit-exact VCS", "call": "env_reset! / env_step!", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "shared gameplay-state testbed (seeded random-action prefix, oracle cause-density gate, position cell + sampler geom)", "call": "build_shared_testbed", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "jutari"},
+        {"desc": "drive one game: build causes, pick content byte, score content headline + position contrast", "call": "compute_game", "path": "tools/xai_study/phaseB_attribution/saliency.jl", "line": 479, "substrate": "runner"}
+      ],
+      "computation": [
+        {"desc": "CONTENT output = forward-exact one-hot RAM read; its Zygote gradient is the content-path dy/du (Theorem 1)", "call": "content_read -> soft_ram_peek", "path": "jutari/src/diff/SoftStep.jl", "line": 108, "substrate": "jutari-diff", "note": "call site tools/xai_study/phaseB_attribution/saliency.jl:316"},
+        {"desc": "vanilla saliency |dy/du| over the 128-byte RAM tape", "call": "saliency_over_ram", "path": "tools/xai_study/phaseB_attribution/saliency.jl", "line": 334, "substrate": "runner"},
+        {"desc": "autodiff yielding the attribution (the surrogate backward of Theorem 1)", "call": "Zygote.gradient(readf, x)", "path": "tools/xai_study/phaseB_attribution/saliency.jl", "line": 336, "substrate": "Zygote"},
+        {"desc": "POSITION path: bilinear (triangular-kernel) sampler read whose column is an affine fn of RAM byte pidx via soft_ram_peek — restores the non-vanishing position gradient", "call": "_st_sampler_position_read (wired as st.sampler_read, used at compute_game:512)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 357, "substrate": "runner-diff", "note": "bound to sampler_read at shared_testbed_impl.jl:174; naive position_read is identically zero (vanishing baseline)"}
+      ],
+      "oracle": {"desc": "exact intervention oracle Delta_y(u): set the cause, re-run the bit-exact ROM, read y; F = correlation(|dy/du|, |Delta_y|). Invoked via oracle_abs_delta (saliency.jl:301)", "call": "run_intervention", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": "JAX-equivalent differentiable path (bit-exact per Theorem 1, for GPU batching): jaxtari/jaxtari/diff/soft_step.py, soft_mem.py, straight_through.py"
+    },
+    "smoothgrad": {
+      "kind": "gradient",
+      "runner": {"path": "tools/xai_study/phaseB_attribution/smoothgrad.jl", "entry": "main", "line": 837},
+      "applied_on": [
+        {"desc": "env reset + per-frame step of the bit-exact VCS", "call": "env_reset! / env_step!", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "shared gameplay-state testbed", "call": "build_shared_testbed", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "jutari"},
+        {"desc": "drive one game (content headline + position contrast)", "call": "compute_game", "path": "tools/xai_study/phaseB_attribution/smoothgrad.jl", "line": 493, "substrate": "runner"}
+      ],
+      "computation": [
+        {"desc": "CONTENT output = forward-exact one-hot RAM read", "call": "content_read -> soft_ram_peek", "path": "jutari/src/diff/SoftStep.jl", "line": 108, "substrate": "jutari-diff", "note": "call site tools/xai_study/phaseB_attribution/smoothgrad.jl:307"},
+        {"desc": "SmoothGrad: average |dy/du| over n_samples Gaussian-perturbed RAM copies (sigma noise)", "call": "smoothgrad_over_ram", "path": "tools/xai_study/phaseB_attribution/smoothgrad.jl", "line": 327, "substrate": "runner"},
+        {"desc": "autodiff on each noisy sample x + sigma*randn", "call": "Zygote.gradient(readf, xn)", "path": "tools/xai_study/phaseB_attribution/smoothgrad.jl", "line": 335, "substrate": "Zygote"},
+        {"desc": "clean (noise-free) reference gradient for the vanilla-vs-smooth contrast", "call": "Zygote.gradient(readf, x)", "path": "tools/xai_study/phaseB_attribution/smoothgrad.jl", "line": 340, "substrate": "Zygote"},
+        {"desc": "POSITION path: bilinear sampler read restoring the non-vanishing position gradient", "call": "_st_sampler_position_read", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 357, "substrate": "runner-diff"}
+      ],
+      "oracle": {"desc": "exact intervention oracle Delta_y(u): set cause, re-run ROM, read y; F = correlation(SmoothGrad, |Delta_y|)", "call": "run_intervention", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": "JAX-equivalent differentiable path (bit-exact per Theorem 1, for GPU batching): jaxtari/jaxtari/diff/soft_step.py, soft_mem.py, straight_through.py"
+    },
+    "gradxinput": {
+      "kind": "gradient",
+      "runner": {"path": "tools/xai_study/phaseB_attribution/gradxinput.jl", "entry": "main", "line": 1014},
+      "applied_on": [
+        {"desc": "env reset + per-frame step of the bit-exact VCS", "call": "env_reset! / env_step!", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "shared gameplay-state testbed", "call": "build_shared_testbed", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "CONTENT output y = one-hot RAM read at score cell (forward-exact, Theorem 1)", "call": "content_output -> soft_ram_peek", "path": "jutari/src/diff/SoftStep.jl", "line": 108, "substrate": "jutari-diff", "note": "call site tools/xai_study/phaseB_attribution/gradxinput.jl:268"},
+        {"desc": "dy/du over the 128-byte RAM tape (one-hot content gradient e_s)", "call": "content_grad_over_ram", "path": "tools/xai_study/phaseB_attribution/gradxinput.jl", "line": 272, "substrate": "runner"},
+        {"desc": "autodiff of the content read", "call": "Zygote.gradient(r -> content_output(r, score_idx), ...)", "path": "tools/xai_study/phaseB_attribution/gradxinput.jl", "line": 273, "substrate": "Zygote"},
+        {"desc": "attribution maps: GradxInput u*dy/du, DeepLIFT (u-baseline)*dy/du (completeness-exact on the linear content unit), saliency |dy/du|", "call": "attributions_over_ram", "path": "tools/xai_study/phaseB_attribution/gradxinput.jl", "line": 303, "substrate": "runner"},
+        {"desc": "POSITION/pixel output is a discrete argmax of sprite column => differentiable RAM handle identically zero (vanishing gradient, modeled honestly)", "call": "position_grad_over_ram", "path": "tools/xai_study/phaseB_attribution/gradxinput.jl", "line": 285, "substrate": "runner"},
+        {"desc": "POSITION path restored via bilinear sampler (shared testbed)", "call": "_st_sampler_position_read", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 357, "substrate": "runner-diff"}
+      ],
+      "oracle": {"desc": "exact intervention oracle Delta_y(u): set cause, re-run ROM, read y; F = correlation(GradxInput, |Delta_y|)", "call": "run_intervention", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": "JAX-equivalent differentiable path (bit-exact per Theorem 1, for GPU batching): jaxtari/jaxtari/diff/soft_step.py, soft_mem.py, straight_through.py"
+    },
+    "guided_backprop": {
+      "kind": "gradient",
+      "runner": {"path": "tools/xai_study/phaseB_attribution/guided_backprop.jl", "entry": "main", "line": 988},
+      "applied_on": [
+        {"desc": "env reset + per-frame step of the bit-exact VCS", "call": "env_reset! / env_step!", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "shared gameplay-state testbed", "call": "build_shared_testbed", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "CONTENT output = forward-exact one-hot RAM read; a LINEAR unit (dy/du = e_idx >= 0)", "call": "content_read -> soft_ram_peek", "path": "jutari/src/diff/SoftStep.jl", "line": 108, "substrate": "jutari-diff", "note": "call site tools/xai_study/phaseB_attribution/guided_backprop.jl:320"},
+        {"desc": "Guided Backprop: gradient then keep positive part (guided_rule) => |positive part|; returns (guided, vanilla)", "call": "guided_backprop_over_ram", "path": "tools/xai_study/phaseB_attribution/guided_backprop.jl", "line": 347, "substrate": "runner"},
+        {"desc": "autodiff yielding the raw gradient the guided rule rectifies", "call": "Zygote.gradient(readf, x)", "path": "tools/xai_study/phaseB_attribution/guided_backprop.jl", "line": 349, "substrate": "Zygote"},
+        {"desc": "POSITION path restored via bilinear sampler (shared testbed)", "call": "_st_sampler_position_read", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 357, "substrate": "runner-diff"}
+      ],
+      "oracle": {"desc": "exact intervention oracle Delta_y(u): set cause, re-run ROM, read y; F = correlation(guided saliency, |Delta_y|)", "call": "run_intervention", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": "JAX-equivalent differentiable path (bit-exact per Theorem 1, for GPU batching): jaxtari/jaxtari/diff/soft_step.py, soft_mem.py, straight_through.py"
+    },
+    "ig_baseline_sweep": {
+      "kind": "gradient",
+      "runner": {"path": "tools/xai_study/phaseB_attribution/ig_baseline_sweep.jl", "entry": "main", "line": 950},
+      "applied_on": [
+        {"desc": "env reset + per-frame step of the bit-exact VCS", "call": "env_reset! / env_step!", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "shared gameplay-state testbed", "call": "build_shared_testbed", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "CONTENT output IG integrates = forward-exact one-hot RAM read", "call": "content_read -> soft_ram_peek", "path": "jutari/src/diff/SoftStep.jl", "line": 108, "substrate": "jutari-diff", "note": "call site tools/xai_study/phaseB_attribution/ig_baseline_sweep.jl:294"},
+        {"desc": "build the IG baseline x0 (zeros / mean_ram / random / real_alt) for the baseline sweep", "call": "make_baseline", "path": "tools/xai_study/phaseB_attribution/ig_baseline_sweep.jl", "line": 337, "substrate": "runner"},
+        {"desc": "Integrated Gradients: Riemann sum of dy/du over the straight-line path x0->x, times (x-x0)", "call": "ig_over_ram", "path": "tools/xai_study/phaseB_attribution/ig_baseline_sweep.jl", "line": 365, "substrate": "runner"},
+        {"desc": "autodiff at each interpolation point x_alpha", "call": "Zygote.gradient(readf, xalpha)", "path": "tools/xai_study/phaseB_attribution/ig_baseline_sweep.jl", "line": 373, "substrate": "Zygote"},
+        {"desc": "POSITION path restored via bilinear sampler (shared testbed)", "call": "_st_sampler_position_read", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 357, "substrate": "runner-diff"}
+      ],
+      "oracle": {"desc": "exact intervention oracle Delta_y(u): set cause, re-run ROM, read y; F = correlation(IG, |Delta_y|)", "call": "run_intervention", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": "JAX-equivalent differentiable path (bit-exact per Theorem 1, for GPU batching): jaxtari/jaxtari/diff/soft_step.py, soft_mem.py, straight_through.py"
+    },
+    "expected_gradients": {
+      "kind": "gradient",
+      "runner": {"path": "tools/xai_study/phaseB_attribution/expected_gradients.jl", "entry": "main", "line": 942},
+      "applied_on": [
+        {"desc": "env reset + per-frame step of the bit-exact VCS", "call": "env_reset! / env_step!", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "shared gameplay-state testbed", "call": "build_shared_testbed", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "jutari"},
+        {"desc": "delegates to ig_baseline_sweep.jl (included) for the shared scorer + content read", "call": "include(ig_baseline_sweep.jl)", "path": "tools/xai_study/phaseB_attribution/expected_gradients.jl", "line": 104, "substrate": "runner"}
+      ],
+      "computation": [
+        {"desc": "CONTENT output EG integrates = forward-exact one-hot RAM read (via ig_baseline_sweep)", "call": "content_read -> soft_ram_peek", "path": "jutari/src/diff/SoftStep.jl", "line": 108, "substrate": "jutari-diff", "note": "call site tools/xai_study/phaseB_attribution/ig_baseline_sweep.jl:294 (reused via include)"},
+        {"desc": "EG background reference pool D drawn from the seeded gameplay stream (each row = RAM tape at a prefix frame, so the causal byte varies)", "call": "reference_pool", "path": "tools/xai_study/phaseB_attribution/expected_gradients.jl", "line": 149, "substrate": "runner"},
+        {"desc": "Expected Gradients: Monte-Carlo over (baseline m ~ D, alpha ~ U(0,1)); accumulate (x-x0)*dy/dx at interpolated x_alpha", "call": "expected_gradients", "path": "tools/xai_study/phaseB_attribution/expected_gradients.jl", "line": 182, "substrate": "runner"},
+        {"desc": "autodiff at each MC interpolation point x_alpha", "call": "Zygote.gradient(readf, xalpha)", "path": "tools/xai_study/phaseB_attribution/expected_gradients.jl", "line": 196, "substrate": "Zygote"},
+        {"desc": "POSITION path restored via bilinear sampler (the redesign keystone)", "call": "_st_sampler_position_read", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 357, "substrate": "runner-diff"}
+      ],
+      "oracle": {"desc": "exact intervention oracle Delta_y(u): set cause, re-run ROM, read y; F = correlation(EG, |Delta_y|)", "call": "run_intervention", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": "JAX-equivalent differentiable path (bit-exact per Theorem 1, for GPU batching): jaxtari/jaxtari/diff/soft_step.py, soft_mem.py, straight_through.py"
+    },
+    "occlusion": {
+      "kind": "perturbation",
+      "runner": {"path": "tools/xai_study/phaseB_attribution/occlusion.jl", "entry": "main", "line": 526},
+      "applied_on": [
+        {"desc": "env reset + per-frame step of the bit-exact VCS (the masked re-runs step the horizon here)", "call": "env_reset! / env_step!", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "shared gameplay-state testbed", "call": "build_shared_testbed", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "occlusion attribution: for each cause, occlude to baseline, step the horizon, read the |screen/output delta| vs intact", "call": "occlusion_attr", "path": "tools/xai_study/phaseB_attribution/occlusion.jl", "line": 132, "substrate": "runner"},
+        {"desc": "the intervention operator: set the masked cause to its baseline (RAM cell / TIA reg -> 0, joystick -> NOOP)", "call": "occlude! -> intervene_ram! / intervene_tia!", "path": "tools/xai_study/phaseB_attribution/saliency.jl", "line": 244, "substrate": "jutari", "note": "intervene_ram! jutari_oracle.jl:174, intervene_tia! jutari_oracle.jl:185"},
+        {"desc": "snapshot the RAM+screen (byte-exact) after the re-run to read the output", "call": "snapshot", "path": "tools/xai_study/common/jutari_oracle.jl", "line": 136, "substrate": "jutari"}
+      ],
+      "oracle": {"desc": "exact intervention oracle Delta_y(u): set cause, re-run ROM, read y; F = correlation(occlusion attr, |Delta_y|)", "call": "run_intervention", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": null
+    },
+    "perturbation": {
+      "kind": "perturbation",
+      "runner": {"path": "tools/xai_study/phaseB_attribution/perturbation.jl", "entry": "main", "line": 729},
+      "applied_on": [
+        {"desc": "env reset + per-frame step of the bit-exact VCS (masked re-runs step the horizon)", "call": "env_reset! / env_step!", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "shared gameplay-state testbed", "call": "build_shared_testbed", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "value of a masked coalition: occlude every masked cause (do-intervention), step the horizon, read |output delta| vs intact", "call": "masked_abs_dy", "path": "tools/xai_study/phaseB_attribution/perturbation.jl", "line": 179, "substrate": "runner"},
+        {"desc": "the mask operator = the oracle's occlude! (RAM/TIA -> 0, joystick masked = NOOP)", "call": "occlude! -> intervene_ram! / intervene_tia!", "path": "tools/xai_study/phaseB_attribution/ig_baseline_sweep.jl", "line": 224, "substrate": "jutari", "note": "intervene_ram! jutari_oracle.jl:174, intervene_tia! jutari_oracle.jl:185"},
+        {"desc": "extremal-perturbation search: grow the smallest mask that maximally shifts the output, then attribute per cause", "call": "extremal_mask", "path": "tools/xai_study/phaseB_attribution/perturbation.jl", "line": 206, "substrate": "runner"},
+        {"desc": "snapshot RAM+screen after each masked re-run", "call": "snapshot", "path": "tools/xai_study/common/jutari_oracle.jl", "line": 136, "substrate": "jutari"}
+      ],
+      "oracle": {"desc": "exact intervention oracle Delta_y(u): set cause, re-run ROM, read y; F = correlation(extremal attr, |Delta_y|)", "call": "run_intervention", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": null
+    },
+    "rise": {
+      "kind": "perturbation",
+      "runner": {"path": "tools/xai_study/phaseB_attribution/rise.jl", "entry": "main", "line": 644},
+      "applied_on": [
+        {"desc": "env reset + per-frame step of the bit-exact VCS (masked re-runs step the horizon)", "call": "env_reset! / env_step!", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "shared gameplay-state testbed", "call": "build_shared_testbed", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "masked forward: drop (mask to 0) the not-kept cells via the oracle's occlude!, step the horizon, read y", "call": "masked_read_y -> intervene_ram!", "path": "tools/xai_study/phaseB_attribution/rise.jl", "line": 128, "substrate": "jutari", "note": "intervene_ram! call at rise.jl:131 -> jutari_oracle.jl:174"},
+        {"desc": "draw N random Bernoulli(keep_prob) masks and collect the masked outputs", "call": "rise_sample", "path": "tools/xai_study/phaseB_attribution/rise.jl", "line": 147, "substrate": "runner"},
+        {"desc": "RISE importance: output-weighted mean mask (1/(N*p)) * sum_n y_n * m_n[i]", "call": "rise_importance", "path": "tools/xai_study/phaseB_attribution/rise.jl", "line": 172, "substrate": "runner"},
+        {"desc": "snapshot RAM+screen after each masked re-run", "call": "snapshot", "path": "tools/xai_study/common/jutari_oracle.jl", "line": 136, "substrate": "jutari"}
+      ],
+      "oracle": {"desc": "exact intervention oracle Delta_y(u): set cause, re-run ROM, read y; F = correlation(RISE importance, |Delta_y|)", "call": "run_intervention", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": null
+    },
+    "lime": {
+      "kind": "perturbation",
+      "runner": {"path": "tools/xai_study/phaseB_attribution/lime.jl", "entry": "main", "line": 777},
+      "applied_on": [
+        {"desc": "env reset + per-frame step of the bit-exact VCS (masked re-runs step the horizon)", "call": "env_reset! / env_step!", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "shared gameplay-state testbed", "call": "build_shared_testbed", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "masked forward: absent cells -> 0 via the oracle's occlude! (RAM->0), step the horizon, read y", "call": "masked_read_y -> intervene_ram!", "path": "tools/xai_study/phaseB_attribution/lime.jl", "line": 142, "substrate": "jutari", "note": "intervene_ram! call at lime.jl:145 -> jutari_oracle.jl:174"},
+        {"desc": "draw the perturbation design matrix Z (Bernoulli present-mask, anchor row = all-present) and outputs", "call": "lime_sample", "path": "tools/xai_study/phaseB_attribution/lime.jl", "line": 163, "substrate": "runner"},
+        {"desc": "LIME locality kernel pi(z) = exp(-cosine_dist(z,1)^2 / sigma^2)", "call": "lime_weights", "path": "tools/xai_study/phaseB_attribution/lime.jl", "line": 188, "substrate": "runner"},
+        {"desc": "fit the weighted ridge linear surrogate; coefficients are the attributions", "call": "fit_weighted_linear", "path": "tools/xai_study/phaseB_attribution/lime.jl", "line": 211, "substrate": "runner"},
+        {"desc": "snapshot RAM+screen after each masked re-run", "call": "snapshot", "path": "tools/xai_study/common/jutari_oracle.jl", "line": 136, "substrate": "jutari"}
+      ],
+      "oracle": {"desc": "exact intervention oracle Delta_y(u): set cause, re-run ROM, read y; F = correlation(LIME coef, |Delta_y|)", "call": "run_intervention", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": null
+    },
+    "kernelshap": {
+      "kind": "perturbation",
+      "runner": {"path": "tools/xai_study/phaseB_attribution/kernelshap.jl", "entry": "main", "line": 817},
+      "applied_on": [
+        {"desc": "env reset + per-frame step of the bit-exact VCS (coalition re-runs step the horizon)", "call": "env_reset! / env_step!", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "shared gameplay-state testbed", "call": "build_shared_testbed", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "coalition value f(S): mask the absent cells to 0 via the oracle's occlude! (RAM->0), step the horizon, read y", "call": "coalition_value -> intervene_ram!", "path": "tools/xai_study/phaseB_attribution/kernelshap.jl", "line": 156, "substrate": "jutari", "note": "intervene_ram! call at kernelshap.jl:159 -> jutari_oracle.jl:174"},
+        {"desc": "sample coalitions with sizes from the Shapley-kernel weighting", "call": "sample_coalitions", "path": "tools/xai_study/phaseB_attribution/kernelshap.jl", "line": 189, "substrate": "runner"},
+        {"desc": "solve the weighted least-squares KernelSHAP system for the Shapley values phi", "call": "kernelshap_solve", "path": "tools/xai_study/phaseB_attribution/kernelshap.jl", "line": 230, "substrate": "runner"},
+        {"desc": "snapshot RAM+screen after each coalition re-run", "call": "snapshot", "path": "tools/xai_study/common/jutari_oracle.jl", "line": 136, "substrate": "jutari"}
+      ],
+      "oracle": {"desc": "exact intervention oracle Delta_y(u): set cause, re-run ROM, read y; F = correlation(SHAP phi, |Delta_y|)", "call": "run_intervention", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": null
+    },
+    "counterfactual": {
+      "kind": "perturbation",
+      "runner": {"path": "tools/xai_study/phaseB_attribution/counterfactual.jl", "entry": "main", "line": 770},
+      "applied_on": [
+        {"desc": "env reset + per-frame step of the bit-exact VCS (counterfactual re-runs step the horizon)", "call": "env_reset! / env_step!", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "shared gameplay-state testbed", "call": "build_shared_testbed", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "counterfactual re-run: substitute the chosen RAM cells to the alternative RAM values, step the horizon, read y", "call": "cf_read_y -> intervene_ram!", "path": "tools/xai_study/phaseB_attribution/counterfactual.jl", "line": 115, "substrate": "jutari", "note": "intervene_ram! call at counterfactual.jl:118 -> jutari_oracle.jl:174"},
+        {"desc": "single-cell counterfactual effect per candidate cell (|y_cf - y_x|)", "call": "single_cell_cf", "path": "tools/xai_study/phaseB_attribution/counterfactual.jl", "line": 132, "substrate": "runner"},
+        {"desc": "greedy search for the minimal counterfactual cell set that flips the output past tau", "call": "greedy_minimal_cf", "path": "tools/xai_study/phaseB_attribution/counterfactual.jl", "line": 148, "substrate": "runner"},
+        {"desc": "snapshot RAM+screen after each counterfactual re-run", "call": "snapshot", "path": "tools/xai_study/common/jutari_oracle.jl", "line": 136, "substrate": "jutari"}
+      ],
+      "oracle": {"desc": "exact intervention oracle Delta_y(u): set cause, re-run ROM, read y; F = correlation(CF mass, |Delta_y|)", "call": "run_intervention", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": null
+    }
+  }
+}

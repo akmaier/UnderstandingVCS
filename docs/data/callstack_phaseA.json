@@ -1,0 +1,171 @@
+{
+  "phase": "A",
+  "_notes": {
+    "substrate_legend": "\"jutari\" = the emulator core under jutari/src (StellaEnvironment.jl). \"runner\" = tooling under tools/xai_study (the Phase-A runner + the shared JutariOracle / OracleIntervene / shared_testbed helpers it drives).",
+    "common_definitions": {
+      "env_step!": "jutari/src/env/StellaEnvironment.jl:259",
+      "env_reset!": "jutari/src/env/StellaEnvironment.jl:220",
+      "get_ram": "jutari/src/env/StellaEnvironment.jl:350",
+      "get_screen": "jutari/src/env/StellaEnvironment.jl:346",
+      "StellaEnvironment": "jutari/src/env/StellaEnvironment.jl:66",
+      "load_pong_env (xitari-parity boot 60 NOOP + 4 RESET)": "tools/xai_study/common/jutari_oracle.jl:110",
+      "JutariOracle.boot_replay": "tools/xai_study/common/jutari_oracle.jl:145",
+      "JutariOracle.continue_from": "tools/xai_study/common/jutari_oracle.jl:160",
+      "snapshot": "tools/xai_study/common/jutari_oracle.jl:136",
+      "intervene_ram!": "tools/xai_study/common/jutari_oracle.jl:174",
+      "intervene_tia!": "tools/xai_study/common/jutari_oracle.jl:185",
+      "build_shared_testbed": "tools/xai_study/common/shared_testbed_impl.jl:115",
+      "cause_density_gate": "tools/xai_study/common/shared_testbed_impl.jl:170",
+      "oracle.run_intervention (Delta_y(u))": "tools/xai_study/ground_truth/oracle_intervene.jl:242",
+      "oracle.compute_causal_map": "tools/xai_study/ground_truth/oracle_intervene.jl:262",
+      "oracle.delta_read": "tools/xai_study/ground_truth/oracle_intervene.jl:295"
+    }
+  },
+  "methods": {
+    "A1_connectomics": {
+      "runner": {"path": "tools/xai_study/phaseA_kording/A1_connectomics.jl", "entry": "run_game", "line": 488},
+      "applied_on": [
+        {"desc": "assemble the shared gameplay-state testbed (seeded random-action stream, bit-exact checkpoint at f*, cause-density gate)", "call": "build_a1_shared_state(game) -> build_shared_testbed(game; ...)", "path": "tools/xai_study/phaseA_kording/A1_connectomics.jl", "line": 476, "substrate": "runner"},
+        {"desc": "build_shared_testbed definition: booted checkpoint + shared n_changed_px output + cause-density gate", "call": "function build_shared_testbed(game; ...)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "runner"},
+        {"desc": "cause-density gate scores each cause via the injected oracle run_intervention and counts |Delta_y|>floor", "call": "cause_density = count(>(floor), deltas)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 170, "substrate": "runner"},
+        {"desc": "boot the real ROM and deterministically replay to the intervention frame (runner-local boot_replay)", "call": "checkpoint = boot_replay(spec, actions, target_frame)", "path": "tools/xai_study/phaseA_kording/A1_connectomics.jl", "line": 518, "substrate": "runner"},
+        {"desc": "fresh env with xitari-parity boot (60 NOOP + 4 RESET) inside boot_replay", "call": "env_reset!(env; boot_noop_steps=60, boot_reset_steps=4)", "path": "tools/xai_study/phaseA_kording/A1_connectomics.jl", "line": 204, "substrate": "runner"},
+        {"desc": "step the real emulator one frame per action", "call": "env_step!(env, Int(actions[i]))", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "read the 128-byte RIOT RAM out of the console", "call": "get_ram(env)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 350, "substrate": "jutari"},
+        {"desc": "snapshot RAM+screen at the target frame (state to run the graph on)", "call": "at_target = continue_from(checkpoint, Int[])", "path": "tools/xai_study/phaseA_kording/A1_connectomics.jl", "line": 519, "substrate": "runner"}
+      ],
+      "computation": [
+        {"desc": "the RECOVERED data-flow graph (method under test): single cheap do(i:=base+17), 1-step latency, edge i->j iff cell j differs from baseline", "call": "recovered_dataflow_graph(checkpoint, tail, cands, at_target; delta=17, latency=1)", "path": "tools/xai_study/phaseA_kording/A1_connectomics.jl", "line": 330, "substrate": "runner"},
+        {"desc": "the TRUE data-flow graph (ground truth): exhaustive do-set {0, base+17, base+37} at full horizon, edge i->j iff cell j changes for ANY value", "call": "true_dataflow_graph(checkpoint, tail, cands, at_target)", "path": "tools/xai_study/phaseA_kording/A1_connectomics.jl", "line": 304, "substrate": "runner"},
+        {"desc": "each edge probe intervenes on a RAM byte then re-runs the tail (uses intervene_ram!)", "call": "intervene_continue(checkpoint, c.ram_index, v, tail)", "path": "tools/xai_study/phaseA_kording/A1_connectomics.jl", "line": 242, "substrate": "runner"},
+        {"desc": "score recovered vs true adjacency: precision/recall/F1/graph-edit-distance over off-diagonal edges", "call": "score_graph(rec_graph, true_graph)", "path": "tools/xai_study/phaseA_kording/A1_connectomics.jl", "line": 367, "substrate": "runner"}
+      ],
+      "oracle": {"desc": "exact intervention oracle Delta_y(u) = y(do(u:=v')) - y(baseline); injected as run_intervention into the cause-density gate", "call": "run_intervention(checkpoint, actions, target_frame, horizon, cause)", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": null
+    },
+    "A2_lesions": {
+      "runner": {"path": "tools/xai_study/phaseA_kording/A2_lesions.jl", "entry": "run_game", "line": 574},
+      "applied_on": [
+        {"desc": "assemble the shared gameplay-state testbed + cause-density gate for this game", "call": "build_a2_shared_state(game) -> build_shared_testbed(game; ...)", "path": "tools/xai_study/phaseA_kording/A2_lesions.jl", "line": 562, "substrate": "runner"},
+        {"desc": "build_shared_testbed definition: booted checkpoint + shared output + gate", "call": "function build_shared_testbed(game; ...)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "runner"},
+        {"desc": "cause-density gate counts causes with |Delta_y|>floor via the oracle", "call": "cause_density = count(>(floor), deltas)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 170, "substrate": "runner"},
+        {"desc": "boot the real ROM and replay to the target frame (runner-local boot_replay)", "call": "boot_replay(spec, actions, target_frame)", "path": "tools/xai_study/phaseA_kording/A2_lesions.jl", "line": 251, "substrate": "runner"},
+        {"desc": "step the real emulator one frame per action", "call": "env_step!(env, Int(actions[i]))", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "read the 128-byte RAM", "call": "get_ram(env)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 350, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "lesion primitive: deepcopy the checkpoint, CLAMP one/more cells to a fixed value, re-run the tail, snapshot", "call": "lesion_continue(checkpoint, pokes, tail)", "path": "tools/xai_study/phaseA_kording/A2_lesions.jl", "line": 277, "substrate": "runner"},
+        {"desc": "clamp writes the fixed value into the RAM byte before re-running", "call": "intervene_ram!(env, idx, v)", "path": "tools/xai_study/phaseA_kording/A2_lesions.jl", "line": 260, "substrate": "runner"},
+        {"desc": "the lesion map (method under test): per-unit importance = best out-delta over the exhaustive single-unit clamp set {clamp->0, clamp->alt=base XOR 0xFF}, plus screen change and works-flag", "call": "lesion_map(checkpoint, tail, cands, at_target, ...)", "path": "tools/xai_study/phaseA_kording/A2_lesions.jl", "line": 384, "substrate": "runner"}
+      ],
+      "oracle": {"desc": "exact intervention oracle Delta_y(u); injected as run_intervention into the cause-density gate", "call": "run_intervention(checkpoint, actions, target_frame, horizon, cause)", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": null
+    },
+    "A3_tuning": {
+      "runner": {"path": "tools/xai_study/phaseA_kording/A3_tuning.jl", "entry": "compute_game", "line": 575},
+      "applied_on": [
+        {"desc": "assemble the shared gameplay-state testbed + cause-density gate", "call": "build_a3_shared_state(game) -> build_shared_testbed(game; ...)", "path": "tools/xai_study/phaseA_kording/A3_tuning.jl", "line": 563, "substrate": "runner"},
+        {"desc": "build_shared_testbed definition: booted checkpoint + shared output + gate", "call": "function build_shared_testbed(game; ...)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "runner"},
+        {"desc": "cause-density gate counts causes with |Delta_y|>floor via the oracle", "call": "cause_density = count(>(floor), deltas)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 170, "substrate": "runner"},
+        {"desc": "record a JutariRecord.Trajectory: step the ROM frame-by-frame and log RAM+screen per frame (the tuning-curve data matrix)", "call": "record_parity_trajectory(game, actions)", "path": "tools/xai_study/phaseA_kording/A3_tuning.jl", "line": 234, "substrate": "runner"},
+        {"desc": "step the real emulator one frame per action while recording", "call": "env_step!(env, Int(actions[t]))", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "read RAM into the trajectory tape each frame", "call": "get_ram(env)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 350, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "derive game-variable signals (candidate-cell time series) from the trajectory tape", "call": "game_variable_signals(traj, cands)", "path": "tools/xai_study/phaseA_kording/A3_tuning.jl", "line": 390, "substrate": "runner"},
+        {"desc": "derive luminance + frame-clock reference signals", "call": "luminance_and_clock(traj)", "path": "tools/xai_study/phaseA_kording/A3_tuning.jl", "line": 370, "substrate": "runner"},
+        {"desc": "fit tuning curves (method under test): per-cell |Pearson correlation| selectivity to game variables / luminance / clock, self-column excluded", "call": "run_a3_tuning(traj, cands, oracle_importance; tau=0.7)", "path": "tools/xai_study/phaseA_kording/A3_tuning.jl", "line": 413, "substrate": "runner"}
+      ],
+      "oracle": {"desc": "exact intervention oracle Delta_y(u); injected as run_intervention into the cause-density gate", "call": "run_intervention(checkpoint, actions, target_frame, horizon, cause)", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": null
+    },
+    "A4_correlations": {
+      "runner": {"path": "tools/xai_study/phaseA_kording/A4_correlations.jl", "entry": "compute_game", "line": 728},
+      "applied_on": [
+        {"desc": "assemble the shared gameplay-state testbed + cause-density gate", "call": "build_a4_shared_state(game) -> build_shared_testbed(game; ...)", "path": "tools/xai_study/phaseA_kording/A4_correlations.jl", "line": 716, "substrate": "runner"},
+        {"desc": "build_shared_testbed definition: booted checkpoint + shared output + gate", "call": "function build_shared_testbed(game; ...)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "runner"},
+        {"desc": "cause-density gate counts causes with |Delta_y|>floor via the oracle", "call": "cause_density = count(>(floor), deltas)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 170, "substrate": "runner"},
+        {"desc": "record a (frames x 128) RAM tape by stepping the ROM with A4's per-game settings", "call": "a4_record_ram(game, frames, actions)", "path": "tools/xai_study/phaseA_kording/A4_correlations.jl", "line": 241, "substrate": "runner"},
+        {"desc": "step the real emulator one frame per action while recording", "call": "env_step!(env, Int(actions[t]))", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "read RAM into the tape each frame", "call": "get_ram(env)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 350, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "compute the pairwise correlation matrix over candidate-cell time series (method under test)", "call": "pairwise_corr(tape, cands)", "path": "tools/xai_study/phaseA_kording/A4_correlations.jl", "line": 391, "substrate": "runner"},
+        {"desc": "extract global structure from the correlation matrix (clustering/summary over varying cells)", "call": "global_structure(C, varying, tape)", "path": "tools/xai_study/phaseA_kording/A4_correlations.jl", "line": 531, "substrate": "runner"}
+      ],
+      "oracle": {"desc": "exact intervention oracle Delta_y(u); injected as run_intervention into the cause-density gate", "call": "run_intervention(checkpoint, actions, target_frame, horizon, cause)", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": null
+    },
+    "A5_lfp": {
+      "runner": {"path": "tools/xai_study/phaseA_kording/A5_lfp.jl", "entry": "compute_game", "line": 629},
+      "applied_on": [
+        {"desc": "assemble the shared gameplay-state testbed + cause-density gate", "call": "build_a5_shared_state(game) -> build_shared_testbed(game; ...)", "path": "tools/xai_study/phaseA_kording/A5_lfp.jl", "line": 617, "substrate": "runner"},
+        {"desc": "build_shared_testbed definition: booted checkpoint + shared output + gate", "call": "function build_shared_testbed(game; ...)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "runner"},
+        {"desc": "cause-density gate counts causes with |Delta_y|>floor via the oracle", "call": "cause_density = count(>(floor), deltas)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 170, "substrate": "runner"},
+        {"desc": "record a (frames x 128) RAM tape by stepping the ROM with A5's per-game settings", "call": "a5_record_ram(game, frames, actions)", "path": "tools/xai_study/phaseA_kording/A5_lfp.jl", "line": 197, "substrate": "runner"},
+        {"desc": "step the real emulator one frame per action while recording", "call": "env_step!(env, Int(actions[t]))", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "read RAM into the tape each frame", "call": "get_ram(env)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 350, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "detect periodic clock cells (basis of the clock-explained fraction) over the tape", "call": "detect_clock_cells(tape; p_max=64)", "path": "tools/xai_study/phaseA_kording/A5_lfp.jl", "line": 417, "substrate": "runner"},
+        {"desc": "LFP analysis (method under test): pool RAM cells into a region, detrend + window, DFT power spectrum, dominant period/band + clock-explained fraction", "call": "analyse_region(name, cells, tape, B, win)", "path": "tools/xai_study/phaseA_kording/A5_lfp.jl", "line": 551, "substrate": "runner"}
+      ],
+      "oracle": {"desc": "exact intervention oracle Delta_y(u); injected as run_intervention into the cause-density gate", "call": "run_intervention(checkpoint, actions, target_frame, horizon, cause)", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": null
+    },
+    "A6_granger": {
+      "runner": {"path": "tools/xai_study/phaseA_kording/A6_granger.jl", "entry": "compute_game", "line": 839},
+      "applied_on": [
+        {"desc": "assemble the shared gameplay-state testbed + cause-density gate", "call": "build_a6_shared_state(game) -> build_shared_testbed(game; ...)", "path": "tools/xai_study/phaseA_kording/A6_granger.jl", "line": 827, "substrate": "runner"},
+        {"desc": "build_shared_testbed definition: booted checkpoint + shared output + gate", "call": "function build_shared_testbed(game; ...)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "runner"},
+        {"desc": "cause-density gate counts causes with |Delta_y|>floor via the oracle", "call": "cause_density = count(>(floor), deltas)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 170, "substrate": "runner"},
+        {"desc": "record a (frames x width) RAM tape by stepping the ROM with A6's per-game settings", "call": "a6_record_tape(game, frames, actions)", "path": "tools/xai_study/phaseA_kording/A6_granger.jl", "line": 256, "substrate": "runner"},
+        {"desc": "step the real emulator one frame per action while recording", "call": "env_step!(env, Int(actions[t]))", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "read RAM into the tape each frame", "call": "get_ram(env)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 350, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "cell-level Granger causality (method under test): pairwise VAR-based Granger test over candidate-cell series, edge i->j iff G>=tau and p<=alpha (a directed graph)", "call": "run_cell_granger(tape, cands; p, granger_tau, alpha)", "path": "tools/xai_study/phaseA_kording/A6_granger.jl", "line": 611, "substrate": "runner"},
+        {"desc": "subsystem-level Granger over pooled RAM-region activity time series", "call": "run_subsystem_granger(tape; p, granger_tau, ...)", "path": "tools/xai_study/phaseA_kording/A6_granger.jl", "line": 577, "substrate": "runner"}
+      ],
+      "oracle": {"desc": "exact intervention oracle Delta_y(u); the inferred Granger graph is scored against the true exhaustive-do-set data-flow graph; oracle injected as run_intervention into the gate", "call": "run_intervention(checkpoint, actions, target_frame, horizon, cause)", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": null
+    },
+    "A7_dimred": {
+      "runner": {"path": "tools/xai_study/phaseA_kording/A7_dimred.jl", "entry": "compute_game", "line": 851},
+      "applied_on": [
+        {"desc": "assemble the shared gameplay-state testbed + cause-density gate", "call": "build_a7_shared_state(game) -> build_shared_testbed(game; ...)", "path": "tools/xai_study/phaseA_kording/A7_dimred.jl", "line": 839, "substrate": "runner"},
+        {"desc": "build_shared_testbed definition: booted checkpoint + shared output + gate", "call": "function build_shared_testbed(game; ...)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "runner"},
+        {"desc": "cause-density gate counts causes with |Delta_y|>floor via the oracle", "call": "cause_density = count(>(floor), deltas)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 170, "substrate": "runner"},
+        {"desc": "record a (frames x 128) RAM tape by stepping the ROM with A7's per-game settings", "call": "a7_record_ram(game, frames, actions)", "path": "tools/xai_study/phaseA_kording/A7_dimred.jl", "line": 247, "substrate": "runner"},
+        {"desc": "step the real emulator one frame per action while recording", "call": "env_step!(env, Int(actions[t]))", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"},
+        {"desc": "read RAM into the tape each frame", "call": "get_ram(env)", "path": "jutari/src/env/StellaEnvironment.jl", "line": 350, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "PCA (method under test): principal-component decomposition of the RAM tape", "call": "run_pca(tape)", "path": "tools/xai_study/phaseA_kording/A7_dimred.jl", "line": 382, "substrate": "runner"},
+        {"desc": "NMF (method under test): non-negative matrix factorization of the RAM tape into rank components", "call": "run_nmf(tape, rank; iters=300, seed=0)", "path": "tools/xai_study/phaseA_kording/A7_dimred.jl", "line": 442, "substrate": "runner"},
+        {"desc": "match recovered components to known ground-truth signals (scoring)", "call": "match_components(method, tape, ...)", "path": "tools/xai_study/phaseA_kording/A7_dimred.jl", "line": 576, "substrate": "runner"}
+      ],
+      "oracle": {"desc": "exact intervention oracle Delta_y(u); injected as run_intervention into the cause-density gate", "call": "run_intervention(checkpoint, actions, target_frame, horizon, cause)", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": null
+    },
+    "A8_wholestate": {
+      "runner": {"path": "tools/xai_study/phaseA_kording/A8_wholestate.jl", "entry": "run_game", "line": 492},
+      "applied_on": [
+        {"desc": "assemble the shared gameplay-state testbed + cause-density gate", "call": "build_a8_shared_state(game) -> build_shared_testbed(game; ...)", "path": "tools/xai_study/phaseA_kording/A8_wholestate.jl", "line": 480, "substrate": "runner"},
+        {"desc": "build_shared_testbed definition: booted checkpoint + shared output + gate", "call": "function build_shared_testbed(game; ...)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 115, "substrate": "runner"},
+        {"desc": "cause-density gate counts causes with |Delta_y|>floor via the oracle", "call": "cause_density = count(>(floor), deltas)", "path": "tools/xai_study/common/shared_testbed_impl.jl", "line": 170, "substrate": "runner"},
+        {"desc": "boot the real ROM and replay to the target frame (runner-local boot_replay)", "call": "boot_replay(game, actions, target_frame)", "path": "tools/xai_study/phaseA_kording/A8_wholestate.jl", "line": 215, "substrate": "runner"},
+        {"desc": "record the WHOLE state (128 RAM + 64 TIA) per frame across the trajectory", "call": "record_whole_state(game, actions)", "path": "tools/xai_study/phaseA_kording/A8_wholestate.jl", "line": 292, "substrate": "runner"},
+        {"desc": "step the real emulator one frame per action while recording", "call": "env_step!(env, Int(actions[t]))", "path": "jutari/src/env/StellaEnvironment.jl", "line": 259, "substrate": "jutari"}
+      ],
+      "computation": [
+        {"desc": "whole-state restore: write the full recorded 128-byte RAM back over the baseline checkpoint (the whole-state 'readout')", "call": "restore_whole_ram(checkpoint, ram)", "path": "tools/xai_study/phaseA_kording/A8_wholestate.jl", "line": 234, "substrate": "runner"},
+        {"desc": "whole-state sufficiency (method under test): does restoring the ENTIRE recorded RAM reproduce the exact frame (RAM+screen)", "call": "verify_wholestate_sufficiency(checkpoint, at_target)", "path": "tools/xai_study/phaseA_kording/A8_wholestate.jl", "line": 397, "substrate": "runner"},
+        {"desc": "minimal-set sufficiency (positive control): restore ONLY the oracle-causal cells and check the frame is reproduced (contrast that makes over-recording measurable)", "call": "verify_minimal_sufficiency(checkpoint, at_target, causal_idx)", "path": "tools/xai_study/phaseA_kording/A8_wholestate.jl", "line": 411, "substrate": "runner"},
+        {"desc": "oracle-causal importance per cell (defines the minimal causal set)", "call": "oracle_causal_importance(checkpoint, tail, cands, at_target)", "path": "tools/xai_study/phaseA_kording/A8_wholestate.jl", "line": 360, "substrate": "runner"}
+      ],
+      "oracle": {"desc": "exact intervention oracle Delta_y(u); injected as run_intervention into the cause-density gate and mirrored by oracle_causal_importance", "call": "run_intervention(checkpoint, actions, target_frame, horizon, cause)", "path": "tools/xai_study/ground_truth/oracle_intervene.jl", "line": 242},
+      "jaxtari_note": null
+    }
+  }
+}

@@ -43,6 +43,20 @@ for _p in ("A", "B", "C"):
     except Exception:
         pass
 
+# Per-method CALL STACK: how the method drives the jutari substrate and what its core
+# computation (gradient / intervention) involves, with verified repo-linked file:line
+# locations. Written by the three phase-trace passes into docs/data/callstack_phase{A,B,C}.json.
+CALLSTACK = {}
+for _p in ("A", "B", "C"):
+    try:
+        _d = _json.load(open(os.path.join(HERE, "data", "callstack_phase%s.json" % _p)))
+        for _k, _v in _d.get("methods", {}).items():
+            _v["__phase__"] = _p
+            _sk = _k if _k in SITE.get("methods", {}) else _LB2SITE.get(_k, _k)
+            CALLSTACK[_sk] = _v
+    except Exception:
+        pass
+
 
 GAME_NAMES = {
     "ms_pacman": "Ms. Pac-Man", "qbert": "Q*bert", "up_n_down": "Up'n Down",
@@ -1473,6 +1487,60 @@ def build_fsm_math_section(key):
 </div></section>""" % (BLOB, phase, phase, "".join(rows)))
 
 
+def _cs_step(s):
+    """One <li> of a call-stack list: description + a repo link to the exact code line."""
+    call = s.get("call") or ""
+    path, line = s.get("path"), s.get("line")
+    link = srcln(path, int(line), call) if (path and line) else ("<code>%s</code>" % esc(call))
+    tag = s.get("substrate")
+    tagh = ' <span class="cs-tag">%s</span>' % esc(tag) if tag else ""
+    note = s.get("note")
+    noteh = ' <span class="fsm-note">%s</span>' % esc(note) if note else ""
+    return "<li>%s &mdash; %s%s%s</li>" % (esc(s.get("desc", "")), link, tagh, noteh)
+
+
+def build_callstack_section(key):
+    """Per-method box: how the method drives the bit-exact jutari substrate and what its
+    core computation involves, every step linked to the exact source. Data from the
+    committed trace (docs/data/callstack_phase{A,B,C}.json)."""
+    cs = CALLSTACK.get(key)
+    if not cs:
+        return ""
+    phase = cs.get("__phase__", "A")
+    rn = cs.get("runner") or {}
+    runner_link = srcln(rn["path"], int(rn["line"]),
+                        rn.get("entry") or rn["path"].rsplit("/", 1)[-1]) \
+        if rn.get("path") and rn.get("line") else "the method runner"
+    applied = "".join(_cs_step(s) for s in (cs.get("applied_on") or []))
+    comp = "".join(_cs_step(s) for s in (cs.get("computation") or []))
+    orc = cs.get("oracle") or {}
+    orc_link = srcln(orc["path"], int(orc["line"]), orc.get("call") or "run_intervention") \
+        if orc.get("path") and orc.get("line") else "the intervention oracle"
+    kind = cs.get("kind")
+    comp_title = "The computation" + (" (differentiable / gradient path)" if kind == "gradient"
+                                      else " (intervention path)" if kind == "perturbation" else "")
+    jax = cs.get("jaxtari_note")
+    jaxh = ('<p class="rownote"><b>On jaxtari (JAX / GPU):</b> the same differentiable path has a '
+            'bit-exact JAX sibling (Theorem&nbsp;1, forward-exact) for batched GPU runs &mdash; %s</p>'
+            % esc(jax)) if jax else ""
+    return ("""
+<section><div class="wrap">
+  <h2>Call stack &mdash; how it runs on jutari / jaxtari</h2>
+  <p class="sub">The path from this method's runner (%s) into the bit-exact VCS substrate, and the
+  computation it involves. Every step links to the exact source on <code>main</code>. From
+  <a href="%sdocs/data/callstack_phase%s.json"><code>callstack_phase%s.json</code></a>.</p>
+  <style>.callstack{margin:6px 0 16px;padding-left:22px}.callstack li{margin:6px 0}
+    .cs-tag{display:inline-block;padding:0 6px;border-radius:5px;font-size:.72rem;
+      background:#1c222b;color:#8a94a0;margin-left:4px;vertical-align:middle}</style>
+  <h3>Applied on the substrate</h3>
+  <ol class="callstack">%s</ol>
+  <h3>%s</h3>
+  <ol class="callstack">%s</ol>
+  <p class="sub">Scored against the exact intervention oracle &Delta;y(u): %s.</p>
+  %s
+</div></section>""" % (runner_link, BLOB, phase, phase, applied, comp_title, comp, orc_link, jaxh))
+
+
 def build_method_page(meth):
     rec = {}
     rpath = os.path.join(REPO, "tools", "xai_study", _RECDIR[meth["phase"]], "out",
@@ -1590,6 +1658,8 @@ def build_method_page(meth):
 
 %s
 
+%s
+
 <section><div class="wrap">
   <dl class="meta" style="margin-top:0">%s</dl>
   <p class="caption" style="margin-top:14px">The figure is generated from the committed record by
@@ -1602,6 +1672,7 @@ def build_method_page(meth):
        _PHASE_ANCHOR[meth["phase"]], about, meth["key"], meth["key"], esc(meth["title"]),
        _method_caption(meth), score, _phaseB_reading(meth),
        howscored, build_fsm_math_section(meth["key"]), audit_html, results_section,
+       build_callstack_section(meth["key"]),
        metahtml, BLOB, BLOB, BLOB)
     return page("m_%s.html" % meth["key"], meth["title"] + " — Paper 2 method", body)
 
