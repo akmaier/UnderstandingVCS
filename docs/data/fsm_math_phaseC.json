@@ -12,14 +12,22 @@
     "note": "acdc.jl:718-723 (F = best_score.f1); true graph = exhaustive do-set 0/base+17/base+37 over the candidate cells. This is exactly the paper's circuit-discovery F = edge F1 vs the true data-flow graph. Record: extra.triad.F and top-level value (e.g. acdc_pong.json F=0.154; battery mean F=0.625, n=35).",
     "source": [
      {
+      "desc": "F = best-τ edge-F1 of the discovered circuit, into the triad",
       "label": "acdc.jl:735",
       "path": "tools/xai_study/phaseC_mechanistic/acdc.jl",
       "line": 735
      },
      {
+      "desc": "score_edges: edge precision·recall → F1",
       "label": "acdc.jl:474",
       "path": "tools/xai_study/phaseC_mechanistic/acdc.jl",
       "line": 474
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -31,11 +39,13 @@
     "note": "acdc.jl (S = scrub_preserved). A held-out-flavoured sufficiency on bit-exact re-runs; the new §3 (sec:triad) admits the fraction-within-tolerance [0,1] special case of the held-out predictive test, and this preservation fraction is that form, so it satisfies §3. Record: extra.triad.S (acdc_pong.json S=0.625).",
     "source": [
      {
+      "desc": "scrub_preserved: clean readouts kept when non-circuit parents are resample-scrubbed",
       "label": "acdc.jl:720",
       "path": "tools/xai_study/phaseC_mechanistic/acdc.jl",
       "line": 720
      },
      {
+      "desc": "S folded into the triad record",
       "label": "acdc.jl:735",
       "path": "tools/xai_study/phaseC_mechanistic/acdc.jl",
       "line": 735
@@ -50,9 +60,16 @@
     "note": "acdc.jl now emits M = |true edges|/|discovered edges|, the paper's M = |U*|/|U_hat| at the edge level (as path_patching does). Record: extra.triad.M with M_note '|U*|=12 true edges / |U_hat|=1 discovered edges (best-F1 tau)' (acdc_pong.json M=1.0). Replaced the former edge-precision (1 - FP/n_disc).",
     "source": [
      {
+      "desc": "M = |true edges| / |discovered edges| (best-τ)",
       "label": "acdc.jl:731",
       "path": "tools/xai_study/phaseC_mechanistic/acdc.jl",
       "line": 731
+     },
+     {
+      "desc": "score_edges counts the true and discovered edge sets",
+      "label": "acdc.jl:474",
+      "path": "tools/xai_study/phaseC_mechanistic/acdc.jl",
+      "line": 474
      }
     ]
    }
@@ -68,14 +85,22 @@
     "note": "activation_patching.jl:582-597 main record (metric max_abs_recovered_minus_exact=0 -> F=1.0); jl:693 position record F = _pearson(rec_px, ex_px). Both are the paper's Phase-C patching F = causal-effect-agreement correlation vs Delta_y(u); here exact by construction. Record: extra.triad.F=1.0 (battery mean F=1.0, n=84).",
     "source": [
      {
+      "desc": "main record: max_abs_recovered_minus_exact = 0 ⇒ F = 1",
       "label": "activation_patching.jl:582",
       "path": "tools/xai_study/phaseC_mechanistic/activation_patching.jl",
       "line": 582
      },
      {
+      "desc": "position record: F = Pearson(recovered_px, exact_px)",
       "label": "activation_patching.jl:693",
       "path": "tools/xai_study/phaseC_mechanistic/activation_patching.jl",
       "line": 693
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -87,14 +112,22 @@
     "note": "common/triad_sm.jl:111-155 sufficiency_score, called via triad_extra_dict (activation_patching.jl:597). Exactly the paper's held-out predictive estimator on the oracle's per-cause bit-exact re-runs. Record: extra.triad.S (activation_patching_pong.json S=1.0; battery mean S=0.996, n=84).",
     "source": [
      {
+      "desc": "sufficiency_score: fit Δy=a·attr+b on a calib half, predict held-out within ε",
       "label": "triad_sm.jl:111",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 111
      },
      {
+      "desc": "assemble the triad via triad_extra_dict",
       "label": "activation_patching.jl:597",
       "path": "tools/xai_study/phaseC_mechanistic/activation_patching.jl",
       "line": 597
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -106,14 +139,22 @@
     "note": "common/triad_sm.jl:57-86 minimality_score. Exactly the paper's M. Record: extra.triad.M=1.0, M_true_minimal_size / M_named_size (pong |U*|=6/|U_hat|=6; battery mean M=0.973, n=84).",
     "source": [
      {
+      "desc": "minimality_score: |U*| oracle movers / |U_hat| named cells",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
      },
      {
+      "desc": "assemble the triad via triad_extra_dict",
       "label": "activation_patching.jl:597",
       "path": "tools/xai_study/phaseC_mechanistic/activation_patching.jl",
       "line": 597
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }
@@ -129,9 +170,16 @@
     "note": "attribution_patching.jl:580 (F = clamp(r.corr,0,1)); metric_name corr_approx_vs_exact. This is the paper's Phase-C patching F = causal-effect-agreement correlation vs Delta_y(u). Record: extra.triad.F (attribution_patching_pong.json F=0.876; battery mean F=0.456, n=42).",
     "source": [
      {
+      "desc": "F = clamp Pearson(approx Δ, exact patch Δ), into the triad",
       "label": "attribution_patching.jl:580",
       "path": "tools/xai_study/phaseC_mechanistic/attribution_patching.jl",
       "line": 580
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -143,14 +191,22 @@
     "note": "common/triad_sm.jl sufficiency_score via triad_extra_dict (attribution_patching.jl:580). Paper-conform. Record: extra.triad.S (pong S=0.973; battery mean S=0.769, n=42).",
     "source": [
      {
+      "desc": "sufficiency_score: fit Δy=a·attr+b on a calib half, predict held-out within ε",
       "label": "triad_sm.jl:111",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 111
      },
      {
+      "desc": "assemble the triad via triad_extra_dict",
       "label": "attribution_patching.jl:580",
       "path": "tools/xai_study/phaseC_mechanistic/attribution_patching.jl",
       "line": 580
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -162,14 +218,22 @@
     "note": "common/triad_sm.jl minimality_score. Paper-conform. Record: extra.triad.M (pong |U*|=6/|U_hat|=5, M=1.0; battery mean M=0.995, n=42).",
     "source": [
      {
+      "desc": "minimality_score: |U*| oracle movers / |U_hat| named cells",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
      },
      {
+      "desc": "assemble the triad via triad_extra_dict",
       "label": "attribution_patching.jl:580",
       "path": "tools/xai_study/phaseC_mechanistic/attribution_patching.jl",
       "line": 580
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }
@@ -185,9 +249,22 @@
     "note": "causal_scrubbing.jl:650-670 (F = clamp(true_preserved)). The hypothesis is built FROM the A1 oracle data-flow (ancestors of the output), so it is oracle-grounded, but F is a scrubbing-preservation fraction, NOT the paper's edge-F1 (circuit discovery) nor a causal-effect-agreement correlation (patching/mediation). It measures 'does the oracle-derived circuit pass the scrub' rather than 'how well does the method's discovered claim agree with the oracle'. Record: extra.triad.F / top-level value (pong F=1.0; battery mean F=0.979, n=42).",
     "source": [
      {
+      "desc": "true_preserved: fraction of true-circuit readouts kept under resample-scrub",
+      "label": "causal_scrubbing.jl:547",
+      "path": "tools/xai_study/phaseC_mechanistic/causal_scrubbing.jl",
+      "line": 547
+     },
+     {
+      "desc": "F = clamp(true_preserved)",
       "label": "causal_scrubbing.jl:699",
       "path": "tools/xai_study/phaseC_mechanistic/causal_scrubbing.jl",
       "line": 699
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -199,6 +276,13 @@
     "note": "causal_scrubbing.jl (S = clamp(true_preserved)). A bit-exact-re-run preservation fraction in [0,1]; the new §3 (sec:triad) admits the fraction-within-tolerance [0,1] special case of the held-out test, which this satisfies. Record: extra.triad.S (pong S=1.0).",
     "source": [
      {
+      "desc": "true_preserved: readouts kept over held-out resample trials",
+      "label": "causal_scrubbing.jl:547",
+      "path": "tools/xai_study/phaseC_mechanistic/causal_scrubbing.jl",
+      "line": 547
+     },
+     {
+      "desc": "S = clamp(true_preserved)",
       "label": "causal_scrubbing.jl:700",
       "path": "tools/xai_study/phaseC_mechanistic/causal_scrubbing.jl",
       "line": 700
@@ -213,14 +297,22 @@
     "note": "causal_scrubbing.jl now emits M = |U*|/|U_hat| with U_hat = the named circuit cells (M_note '|U*|=4 (oracle movers) / |U_hat|=6 (method above-threshold) (CELL-valued hypothesis)'), the paper's set-size ratio. Record: extra.triad.M (pong M=0.667). Replaced the former candidate-cell-denominator ratio.",
     "source": [
      {
+      "desc": "minimality_score(named circuit cells, oracle movers)",
       "label": "causal_scrubbing.jl:696",
       "path": "tools/xai_study/phaseC_mechanistic/causal_scrubbing.jl",
       "line": 696
      },
      {
+      "desc": "minimality_score: |U*| oracle movers / |U_hat| named cells",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }
@@ -236,9 +328,16 @@
     "note": "das.jl:638 (F = clamp(iia_aligned)); metric_name interchange_accuracy_aligned. It IS a causal check (each interchange is a real do(cell:=source) bit-exact re-run, so single-cell interchange == the exact patch oracle), but F verifies a SUPPLIED/known-true alignment reproduces the abstraction (Geiger IIA) rather than scoring a method-discovered claim's agreement against {Delta_y(u)} -> '1.0 by construction'. The genuine discovery signal (alignment_accuracy, whether DAS recovers the right cell) is a separate extra field, not F. Record: extra.triad.F=1.0 (battery mean F=1.0, n=42).",
     "source": [
      {
+      "desc": "F = clamp(interchange accuracy) into the triad; each interchange is a do(cell:=source) re-run",
       "label": "das.jl:638",
       "path": "tools/xai_study/phaseC_mechanistic/das.jl",
       "line": 638
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -250,14 +349,22 @@
     "note": "common/triad_sm.jl sufficiency_score via triad_extra_dict (das.jl:638, effect vs exact_effect). Paper-conform. Record: extra.triad.S=1.0 (battery mean S=1.0, n=42).",
     "source": [
      {
+      "desc": "sufficiency_score: fit Δy=a·attr+b on a calib half, predict held-out within ε",
       "label": "triad_sm.jl:111",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 111
      },
      {
+      "desc": "assemble the triad via triad_extra_dict",
       "label": "das.jl:638",
       "path": "tools/xai_study/phaseC_mechanistic/das.jl",
       "line": 638
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -269,14 +376,22 @@
     "note": "common/triad_sm.jl minimality_score. Paper-conform. Record: extra.triad.M (pong |U*|=5/|U_hat|=5, M=1.0; battery mean M=0.890, n=42).",
     "source": [
      {
+      "desc": "minimality_score: |U*| oracle movers / |U_hat| named cells",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
      },
      {
+      "desc": "assemble the triad via triad_extra_dict",
       "label": "das.jl:638",
       "path": "tools/xai_study/phaseC_mechanistic/das.jl",
       "line": 638
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }
@@ -292,14 +407,22 @@
     "note": "dictionaries.jl now emits top-level metric_name=nmf_causal_effect_agreement_spearman with extra.triad.F = Spearman(matched-strength, ablation causal effect); it replaced the matched-component NAMING fraction. This is exactly §3's causal-effect-agreement correlation vs {Delta_y(u)}. Record: dictionaries_pong.json extra.triad.F=0.3 (F_note '...causal-agreement F, not the correlational matched-component fraction').",
     "source": [
      {
+      "desc": "F = Spearman(matched-atom strength, ablation causal effect)",
       "label": "dictionaries.jl:762",
       "path": "tools/xai_study/phaseC_mechanistic/dictionaries.jl",
       "line": 762
      },
      {
+      "desc": "score_triad over the matched dictionary atoms",
       "label": "dictionaries.jl:759",
       "path": "tools/xai_study/phaseC_mechanistic/dictionaries.jl",
       "line": 759
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -311,9 +434,16 @@
     "note": "dictionaries.jl (S = _pearson(cu.effect, cu.held_out_effect)); a held-out predictive correlation in [-1,1], the §3 (sec:triad) form. Now surfaced in extra.triad.S (dictionaries_pong.json S=0.932).",
     "source": [
      {
+      "desc": "S = Pearson(atom effect, held-out continuation effect)",
       "label": "dictionaries.jl:763",
       "path": "tools/xai_study/phaseC_mechanistic/dictionaries.jl",
       "line": 763
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -325,14 +455,22 @@
     "note": "dictionaries.jl now emits M = |U*|/|U_hat| in extra.triad.M (M_note '|U*|=8 (oracle movers) / |U_hat|=5 (method above-threshold)'), the paper's set-size ratio. Record: dictionaries_pong.json extra.triad.M=1.0. Replaced the former 1 − over-claim rate.",
     "source": [
      {
+      "desc": "minimality_score(atom strength, ablation effect)",
       "label": "dictionaries.jl:1099",
       "path": "tools/xai_study/phaseC_mechanistic/dictionaries.jl",
       "line": 1099
      },
      {
+      "desc": "minimality_score: |U*| oracle movers / |U_hat| matched atoms",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }
@@ -348,14 +486,22 @@
     "note": "linear_probing.jl now emits top-level metric_name=probe_selectivity_vs_causal_use_correlation with extra.triad.F = point-biserial rho(selectivity, oracle causally-used indicator); it replaced the mean control-task selectivity (a decodability/presence stat). This is §3's correlation between the attribution and the true causal effect. Record: linear_probing_pong.json extra.triad.F=-0.090 (present-but-unused => low/negative).",
     "source": [
      {
+      "desc": "record: metric = probe selectivity vs causal-use correlation",
       "label": "linear_probing.jl:594",
       "path": "tools/xai_study/phaseC_mechanistic/linear_probing.jl",
       "line": 594
      },
      {
+      "desc": "F_note: point-biserial ρ(selectivity, oracle causally-used indicator)",
       "label": "linear_probing.jl:626",
       "path": "tools/xai_study/phaseC_mechanistic/linear_probing.jl",
       "line": 626
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -373,14 +519,22 @@
     "note": "linear_probing.jl now emits M = |U*|/|U_hat| in extra.triad.M (M_note '|U*|=3 (oracle movers) / |U_hat|=5 (method above-threshold)'), the paper's set-size ratio. Record: linear_probing_pong.json extra.triad.M=0.6.",
     "source": [
      {
+      "desc": "minimality_score(selectivity, oracle causal-use) when the xref is available",
       "label": "linear_probing.jl:622",
       "path": "tools/xai_study/phaseC_mechanistic/linear_probing.jl",
       "line": 622
      },
      {
+      "desc": "minimality_score: |U*| causally-used cells / |U_hat| probe-named cells",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }
@@ -396,14 +550,22 @@
     "note": "logit_lens.jl now emits top-level metric_name=logit_lens_faithful_weight_fraction_vs_causal_mask with extra.triad.F = mean faithful-weight fraction vs the oracle causal mask; it replaced the readout-fidelity-to-the-true-intermediate (=1.0 by construction). This is §3's causal-agreement F for a readout-direction method. Record: logit_lens_pong.json extra.triad.F=0.438.",
     "source": [
      {
+      "desc": "mean_faithful_weight_frac: share of lens readout weight on causal sites",
       "label": "logit_lens.jl:573",
       "path": "tools/xai_study/phaseC_mechanistic/logit_lens.jl",
       "line": 573
      },
      {
+      "desc": "emit F = faithful-weight fraction vs the oracle causal mask",
       "label": "logit_lens.jl:702",
       "path": "tools/xai_study/phaseC_mechanistic/logit_lens.jl",
       "line": 702
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -421,14 +583,22 @@
     "note": "logit_lens.jl now emits M = |U*|/|U_hat| in extra.triad.M (M_note '|U*|=4 (oracle movers) / |U_hat|=74 (method above-threshold)'), the paper's set-size ratio. Record: logit_lens_pong.json extra.triad.M=0.054. Replaced the former faithful-weight-fraction proxy (now used as F).",
     "source": [
      {
+      "desc": "minimality_score(lens readout weights, oracle Δy)",
       "label": "logit_lens.jl:700",
       "path": "tools/xai_study/phaseC_mechanistic/logit_lens.jl",
       "line": 700
      },
      {
+      "desc": "minimality_score: |U*| oracle movers / |U_hat| lens-named sites",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }
@@ -444,9 +614,16 @@
     "note": "path_patching.jl:693 (F = clamp(score.f1)); metric_name path_circuit_F1_vs_true_routine. Exactly the paper's circuit-discovery F = edge F1 vs the true data-flow/routine. Record: extra.triad.F / value (pong F=0.0 — no path edges recovered; battery mean F=0.580, n=42).",
     "source": [
      {
+      "desc": "F = clamp edge-F1(recovered path circuit, true routine)",
       "label": "path_patching.jl:693",
       "path": "tools/xai_study/phaseC_mechanistic/path_patching.jl",
       "line": 693
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -464,9 +641,16 @@
     "note": "path_patching.jl:698 (M = min(1, ntrue/nrec)). This is the paper's |U*|/|U_hat| applied to edges. n/a when |U_hat|=0 discovered edges (emitted as null, e.g. pong M_named_size=0 -> M=null). Record: extra.triad.M, M_true_minimal_size/M_named_size (battery mean M=1.0 over the n=18 games with >=1 discovered edge).",
     "source": [
      {
+      "desc": "M = |true edges| / |discovered path edges|",
       "label": "path_patching.jl:698",
       "path": "tools/xai_study/phaseC_mechanistic/path_patching.jl",
       "line": 698
+     },
+     {
+      "desc": "count true-routine and recovered path edges",
+      "label": "path_patching.jl:691",
+      "path": "tools/xai_study/phaseC_mechanistic/path_patching.jl",
+      "line": 691
      }
     ]
    }
@@ -482,9 +666,16 @@
     "note": "sae.jl (extra.triad.F = _spearman(recovery, oracle.importance)) IS the oracle-causal-agreement correlation, exactly §3's Phase-C causal-effect-agreement F, and leaderboard.py reads extra.triad.F. Record: sae_pong.json extra.triad.F=0.041. (The top-level 'value' field is still the feature_variable_matched_fraction naming stat, but the committed triad F is the correct causal Spearman.)",
     "source": [
      {
+      "desc": "F = Spearman(per-cell SAE recovery, oracle causal importance)",
       "label": "sae.jl:784",
       "path": "tools/xai_study/phaseC_mechanistic/sae.jl",
       "line": 784
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -496,9 +687,16 @@
     "note": "sae.jl:776 (S = _pearson(recovery, oracle.held_out)). A held-out predictive correlation in [-1,1] on a disjoint intervention (paper-conform; negative allowed). Record: extra.triad.S (sae_pong.json S=−0.458; battery mean S=0.041, n=43).",
     "source": [
      {
+      "desc": "S = Pearson(SAE recovery, held-out do(base+37) effect)",
       "label": "sae.jl:785",
       "path": "tools/xai_study/phaseC_mechanistic/sae.jl",
       "line": 785
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -510,14 +708,22 @@
     "note": "sae.jl now emits M = |U*|/|U_hat| in extra.triad.M (M_note '|U*|=4 (oracle movers) / |U_hat|=4 (method above-threshold)'), the paper's set-size ratio. Record: sae_pong.json extra.triad.M=1.0. Replaced the former monosemanticity/target-share proxy.",
     "source": [
      {
+      "desc": "minimality_score(SAE recovery, oracle importance)",
       "label": "sae.jl:786",
       "path": "tools/xai_study/phaseC_mechanistic/sae.jl",
       "line": 786
      },
      {
+      "desc": "minimality_score: |U*| oracle movers / |U_hat| named cells",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }

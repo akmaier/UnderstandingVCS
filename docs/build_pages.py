@@ -1469,14 +1469,18 @@ def build_fsm_math_section(key):
             fhtml = "<code>%s</code>" % esc(str(formula))
         else:
             fhtml = "&mdash;"
-        # Source: the line-numbers as clickable links to the code on main.
+        # Source: a described, ordered CALL STACK of how this score is measured in the
+        # code — each step is a short description + a link to the exact line on main.
         srclinks = ""
-        srcs = a.get("source") or []
-        if srcs:
-            parts = [srcln(s["path"], int(s["line"]), s.get("label"))
-                     for s in srcs if s.get("path") and s.get("line")]
-            if parts:
-                srclinks = '<div class="fsm-src">source: %s</div>' % " &middot; ".join(parts)
+        steps = [s for s in (a.get("source") or []) if s.get("path") and s.get("line")]
+        if steps:
+            lis = "".join(
+                ("<li>%s &mdash; %s</li>" % (esc(s["desc"]), srcln(s["path"], int(s["line"]), s.get("label")))
+                 if s.get("desc") else
+                 "<li>%s</li>" % srcln(s["path"], int(s["line"]), s.get("label")))
+                for s in steps)
+            srclinks = ('<div class="fsm-src"><span class="fsm-stack-h">how it\'s measured '
+                        '&mdash; call stack:</span><ol class="fsm-stack">%s</ol></div>' % lis)
         plain = esc(a.get("plain") or "")
         mp = (a.get("matches_paper") or "n/a")
         label, cls = _FSM_BADGE.get(mp, ("&mdash;", "na"))
@@ -1506,6 +1510,11 @@ def build_fsm_math_section(key):
     .fsm-bad{background:#3a1414;color:#f18a8a}.fsm-na{background:#1c222b;color:#8a94a0}
     .fsm-note{color:var(--fg-dim);font-size:.85rem}
     .fsm-formula .katex{font-size:1.02em}
+    .fsm-src{margin-top:8px}
+    .fsm-stack-h{display:block;font-size:.76rem;font-weight:600;color:var(--fg-dim);
+      text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}
+    ol.fsm-stack{margin:0;padding-left:18px}
+    ol.fsm-stack li{margin:2px 0;font-size:.85rem}
     .fsm-src{font-size:.78rem;margin-top:6px;color:var(--fg-dim)}
     .fsm-src code{font-size:.76rem}
   </style>

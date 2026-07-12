@@ -12,14 +12,28 @@
     "note": "counterfactual.jl: cf_attr = single-cell on-distribution counterfactual per cause (lines 295-306), pr = pearson(cf_attr, odelta) (line 305); triad_extra_dict(f.pearson, f.cf_attr_per_cause, f.oracle_abs_delta) line 713. Record: out/counterfactual_air_raid_content.json (metric_name=pearson_corr_with_oracle, value=0.79). Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}.",
     "source": [
      {
+      "desc": "per-cause on-distribution counterfactual attribution",
       "label": "counterfactual.jl:305",
       "path": "tools/xai_study/phaseB_attribution/counterfactual.jl",
       "line": 305
      },
      {
+      "desc": "raw Pearson of attribution vs oracle |Δy(u)|",
       "label": "pilot_ig_vs_oracle.jl:173",
       "path": "tools/xai_study/phaseB_attribution/pilot_ig_vs_oracle.jl",
       "line": 173
+     },
+     {
+      "desc": "assemble the F∧S∧M triad record",
+      "label": "counterfactual.jl:713",
+      "path": "tools/xai_study/phaseB_attribution/counterfactual.jl",
+      "line": 713
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -31,14 +45,22 @@
     "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  The new §3 (sec:triad) admits the fraction-within-tolerance [0,1] special case of the held-out predictive test, which this held-out do(u) fit-then-predict estimator satisfies, so it matches. (Detail: epsilon is a self-scaled band 0.10*spread; the [-1,1] correlation form is available but this method reports the [0,1] hit fraction.)",
     "source": [
      {
+      "desc": "sufficiency_score: fit Δy=a·attr+b on a calib half, predict held-out within ε",
       "label": "triad_sm.jl:111",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 111
      },
      {
+      "desc": "assemble the F∧S∧M triad record (calls sufficiency_score)",
       "label": "triad_sm.jl:173",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 173
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -50,14 +72,22 @@
     "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181.  This is the paper's M = |U*|/|U_hat| in (0,1] (standardized everywhere), so it matches the new §3. (Detail: |U*| is taken as all oracle movers with Delta_y>0, an upper bound on the strictly-smallest reproducing subset, so M can be optimistic.)",
     "source": [
      {
+      "desc": "minimality_score: |U*| oracle movers / |U_hat| named cells",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
      },
      {
+      "desc": "assemble the triad record (calls minimality_score)",
       "label": "triad_sm.jl:178",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 178
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }
@@ -73,14 +103,28 @@
     "note": "expected_gradients.jl: attr = expected-gradients per cause, F = pearson(attr, oracle_abs_delta); triad_extra_dict(f.pearson, attr, f.oracle_abs_delta). Record: out/expected_gradients_air_raid_content.json (metric_name=pearson_corr_with_oracle, value=0.79). Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}.",
     "source": [
      {
+      "desc": "per-cause expected-gradients attribution",
       "label": "expected_gradients.jl:233",
       "path": "tools/xai_study/phaseB_attribution/expected_gradients.jl",
       "line": 233
      },
      {
+      "desc": "raw Pearson of attribution vs oracle |Δy(u)|",
       "label": "pilot_ig_vs_oracle.jl:173",
       "path": "tools/xai_study/phaseB_attribution/pilot_ig_vs_oracle.jl",
       "line": 173
+     },
+     {
+      "desc": "assemble the F∧S∧M triad record",
+      "label": "expected_gradients.jl:859",
+      "path": "tools/xai_study/phaseB_attribution/expected_gradients.jl",
+      "line": 859
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -92,14 +136,22 @@
     "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  The new §3 (sec:triad) admits the fraction-within-tolerance [0,1] special case of the held-out predictive test, which this held-out do(u) fit-then-predict estimator satisfies, so it matches. (Detail: epsilon is a self-scaled band 0.10*spread; the [-1,1] correlation form is available but this method reports the [0,1] hit fraction.)",
     "source": [
      {
+      "desc": "sufficiency_score: fit Δy=a·attr+b on a calib half, predict held-out within ε",
       "label": "triad_sm.jl:111",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 111
      },
      {
+      "desc": "assemble the F∧S∧M triad record (calls sufficiency_score)",
       "label": "triad_sm.jl:173",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 173
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -111,14 +163,22 @@
     "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181.  This is the paper's M = |U*|/|U_hat| in (0,1] (standardized everywhere), so it matches the new §3. (Detail: |U*| is taken as all oracle movers with Delta_y>0, an upper bound on the strictly-smallest reproducing subset, so M can be optimistic.)",
     "source": [
      {
+      "desc": "minimality_score: |U*| oracle movers / |U_hat| named cells",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
      },
      {
+      "desc": "assemble the triad record (calls minimality_score)",
       "label": "triad_sm.jl:178",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 178
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }
@@ -134,14 +194,28 @@
     "note": "gradxinput.jl: pr = pearson(attr, cmap.abs_delta) (line 478); metric_name=deeplift_pearson_corr_with_oracle. Record: out/gradxinput_deeplift_air_raid_content.json (value=0.90). Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}.",
     "source": [
      {
+      "desc": "per-cause DeepLIFT grad×input attribution",
       "label": "gradxinput.jl:478",
       "path": "tools/xai_study/phaseB_attribution/gradxinput.jl",
       "line": 478
      },
      {
+      "desc": "raw Pearson of attribution vs oracle |Δy(u)|",
       "label": "pilot_ig_vs_oracle.jl:173",
       "path": "tools/xai_study/phaseB_attribution/pilot_ig_vs_oracle.jl",
       "line": 173
+     },
+     {
+      "desc": "assemble the F∧S∧M triad record",
+      "label": "gradxinput.jl:895",
+      "path": "tools/xai_study/phaseB_attribution/gradxinput.jl",
+      "line": 895
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -153,14 +227,22 @@
     "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  The new §3 (sec:triad) admits the fraction-within-tolerance [0,1] special case of the held-out predictive test, which this held-out do(u) fit-then-predict estimator satisfies, so it matches. (Detail: epsilon is a self-scaled band 0.10*spread; the [-1,1] correlation form is available but this method reports the [0,1] hit fraction.)",
     "source": [
      {
+      "desc": "sufficiency_score: fit Δy=a·attr+b on a calib half, predict held-out within ε",
       "label": "triad_sm.jl:111",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 111
      },
      {
+      "desc": "assemble the F∧S∧M triad record (calls sufficiency_score)",
       "label": "triad_sm.jl:173",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 173
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -172,14 +254,22 @@
     "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181.  This is the paper's M = |U*|/|U_hat| in (0,1] (standardized everywhere), so it matches the new §3. (Detail: |U*| is taken as all oracle movers with Delta_y>0, an upper bound on the strictly-smallest reproducing subset, so M can be optimistic.)",
     "source": [
      {
+      "desc": "minimality_score: |U*| oracle movers / |U_hat| named cells",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
      },
      {
+      "desc": "assemble the triad record (calls minimality_score)",
       "label": "triad_sm.jl:178",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 178
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }
@@ -195,14 +285,28 @@
     "note": "guided_backprop.jl: attr = guided-backprop per cause, F = pearson(attr, oracle_abs_delta); triad_extra_dict(f.pearson, attr, f.oracle_abs_delta). Record: out/guided_backprop_air_raid_content.json (metric_name=pearson_corr_with_oracle, value=0.79). Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}.",
     "source": [
      {
+      "desc": "per-cause guided-backprop attribution",
       "label": "guided_backprop.jl:601",
       "path": "tools/xai_study/phaseB_attribution/guided_backprop.jl",
       "line": 601
      },
      {
+      "desc": "raw Pearson of attribution vs oracle |Δy(u)|",
       "label": "pilot_ig_vs_oracle.jl:173",
       "path": "tools/xai_study/phaseB_attribution/pilot_ig_vs_oracle.jl",
       "line": 173
+     },
+     {
+      "desc": "assemble the F∧S∧M triad record",
+      "label": "guided_backprop.jl:909",
+      "path": "tools/xai_study/phaseB_attribution/guided_backprop.jl",
+      "line": 909
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -214,14 +318,22 @@
     "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  The new §3 (sec:triad) admits the fraction-within-tolerance [0,1] special case of the held-out predictive test, which this held-out do(u) fit-then-predict estimator satisfies, so it matches. (Detail: epsilon is a self-scaled band 0.10*spread; the [-1,1] correlation form is available but this method reports the [0,1] hit fraction.)",
     "source": [
      {
+      "desc": "sufficiency_score: fit Δy=a·attr+b on a calib half, predict held-out within ε",
       "label": "triad_sm.jl:111",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 111
      },
      {
+      "desc": "assemble the F∧S∧M triad record (calls sufficiency_score)",
       "label": "triad_sm.jl:173",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 173
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -233,14 +345,22 @@
     "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181.  This is the paper's M = |U*|/|U_hat| in (0,1] (standardized everywhere), so it matches the new §3. (Detail: |U*| is taken as all oracle movers with Delta_y>0, an upper bound on the strictly-smallest reproducing subset, so M can be optimistic.)",
     "source": [
      {
+      "desc": "minimality_score: |U*| oracle movers / |U_hat| named cells",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
      },
      {
+      "desc": "assemble the triad record (calls minimality_score)",
       "label": "triad_sm.jl:178",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 178
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }
@@ -256,14 +376,28 @@
     "note": "ig_baseline_sweep.jl: pr = pearson(attr, odelta) (line 410); headline value = content-path corr at zeros baseline; triad_extra_dict(hs.pearson, hs.attr_per_cause, f.oracle_abs_delta) line 858. Record: out/ig_baseline_sweep_air_raid_content.json (value=0.79). Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}.",
     "source": [
      {
+      "desc": "per-cause integrated-gradients attribution (zeros baseline)",
       "label": "ig_baseline_sweep.jl:410",
       "path": "tools/xai_study/phaseB_attribution/ig_baseline_sweep.jl",
       "line": 410
      },
      {
+      "desc": "raw Pearson of attribution vs oracle |Δy(u)|",
       "label": "pilot_ig_vs_oracle.jl:173",
       "path": "tools/xai_study/phaseB_attribution/pilot_ig_vs_oracle.jl",
       "line": 173
+     },
+     {
+      "desc": "assemble the F∧S∧M triad record",
+      "label": "ig_baseline_sweep.jl:858",
+      "path": "tools/xai_study/phaseB_attribution/ig_baseline_sweep.jl",
+      "line": 858
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -275,14 +409,22 @@
     "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  The new §3 (sec:triad) admits the fraction-within-tolerance [0,1] special case of the held-out predictive test, which this held-out do(u) fit-then-predict estimator satisfies, so it matches. (Detail: epsilon is a self-scaled band 0.10*spread; the [-1,1] correlation form is available but this method reports the [0,1] hit fraction.)",
     "source": [
      {
+      "desc": "sufficiency_score: fit Δy=a·attr+b on a calib half, predict held-out within ε",
       "label": "triad_sm.jl:111",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 111
      },
      {
+      "desc": "assemble the F∧S∧M triad record (calls sufficiency_score)",
       "label": "triad_sm.jl:173",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 173
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -294,14 +436,22 @@
     "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181.  This is the paper's M = |U*|/|U_hat| in (0,1] (standardized everywhere), so it matches the new §3. (Detail: |U*| is taken as all oracle movers with Delta_y>0, an upper bound on the strictly-smallest reproducing subset, so M can be optimistic.)",
     "source": [
      {
+      "desc": "minimality_score: |U*| oracle movers / |U_hat| named cells",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
      },
      {
+      "desc": "assemble the triad record (calls minimality_score)",
       "label": "triad_sm.jl:178",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 178
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }
@@ -317,14 +467,28 @@
     "note": "kernelshap.jl: SHAP map per cause, F = pearson(shap_attr, oracle_abs_delta); triad_extra_dict(f.pearson, attr, f.oracle_abs_delta). Record: out/kernelshap_air_raid_content.json (metric_name=pearson_corr_with_oracle, value=0.79). Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}.",
     "source": [
      {
+      "desc": "per-cause KernelSHAP attribution",
       "label": "kernelshap.jl:338",
       "path": "tools/xai_study/phaseB_attribution/kernelshap.jl",
       "line": 338
      },
      {
+      "desc": "raw Pearson of attribution vs oracle |Δy(u)|",
       "label": "pilot_ig_vs_oracle.jl:173",
       "path": "tools/xai_study/phaseB_attribution/pilot_ig_vs_oracle.jl",
       "line": 173
+     },
+     {
+      "desc": "assemble the F∧S∧M triad record",
+      "label": "kernelshap.jl:720",
+      "path": "tools/xai_study/phaseB_attribution/kernelshap.jl",
+      "line": 720
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -336,14 +500,22 @@
     "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  The new §3 (sec:triad) admits the fraction-within-tolerance [0,1] special case of the held-out predictive test, which this held-out do(u) fit-then-predict estimator satisfies, so it matches. (Detail: epsilon is a self-scaled band 0.10*spread; the [-1,1] correlation form is available but this method reports the [0,1] hit fraction.)",
     "source": [
      {
+      "desc": "sufficiency_score: fit Δy=a·attr+b on a calib half, predict held-out within ε",
       "label": "triad_sm.jl:111",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 111
      },
      {
+      "desc": "assemble the F∧S∧M triad record (calls sufficiency_score)",
       "label": "triad_sm.jl:173",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 173
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -355,14 +527,22 @@
     "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181.  This is the paper's M = |U*|/|U_hat| in (0,1] (standardized everywhere), so it matches the new §3. (Detail: |U*| is taken as all oracle movers with Delta_y>0, an upper bound on the strictly-smallest reproducing subset, so M can be optimistic.)",
     "source": [
      {
+      "desc": "minimality_score: |U*| oracle movers / |U_hat| named cells",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
      },
      {
+      "desc": "assemble the triad record (calls minimality_score)",
       "label": "triad_sm.jl:178",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 178
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }
@@ -378,14 +558,28 @@
     "note": "lime.jl: pr = pearson(attr, odelta) (line 331); a stability sweep over K seeds reports corr mean/std but the headline F is the single-run pearson; triad_extra_dict(f.pearson, attr, f.oracle_abs_delta). Record: out/lime_air_raid_content.json (value=0.79). Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}.",
     "source": [
      {
+      "desc": "per-cause LIME attribution",
       "label": "lime.jl:331",
       "path": "tools/xai_study/phaseB_attribution/lime.jl",
       "line": 331
      },
      {
+      "desc": "raw Pearson of attribution vs oracle |Δy(u)|",
       "label": "pilot_ig_vs_oracle.jl:173",
       "path": "tools/xai_study/phaseB_attribution/pilot_ig_vs_oracle.jl",
       "line": 173
+     },
+     {
+      "desc": "assemble the F∧S∧M triad record",
+      "label": "lime.jl:689",
+      "path": "tools/xai_study/phaseB_attribution/lime.jl",
+      "line": 689
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -397,14 +591,22 @@
     "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  The new §3 (sec:triad) admits the fraction-within-tolerance [0,1] special case of the held-out predictive test, which this held-out do(u) fit-then-predict estimator satisfies, so it matches. (Detail: epsilon is a self-scaled band 0.10*spread; the [-1,1] correlation form is available but this method reports the [0,1] hit fraction.)",
     "source": [
      {
+      "desc": "sufficiency_score: fit Δy=a·attr+b on a calib half, predict held-out within ε",
       "label": "triad_sm.jl:111",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 111
      },
      {
+      "desc": "assemble the F∧S∧M triad record (calls sufficiency_score)",
       "label": "triad_sm.jl:173",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 173
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -416,14 +618,22 @@
     "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181.  This is the paper's M = |U*|/|U_hat| in (0,1] (standardized everywhere), so it matches the new §3. (Detail: |U*| is taken as all oracle movers with Delta_y>0, an upper bound on the strictly-smallest reproducing subset, so M can be optimistic.)",
     "source": [
      {
+      "desc": "minimality_score: |U*| oracle movers / |U_hat| named cells",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
      },
      {
+      "desc": "assemble the triad record (calls minimality_score)",
       "label": "triad_sm.jl:178",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 178
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }
@@ -439,14 +649,28 @@
     "note": "occlusion.jl: pr = pearson(occ_attr, odelta) (line 204); triad_extra_dict(f.pearson, f.occ_attr, f.oracle_abs_delta) line 450. Record: out/occlusion_air_raid_content.json (value=0.79). Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}.",
     "source": [
      {
+      "desc": "per-cause occlusion attribution",
       "label": "occlusion.jl:204",
       "path": "tools/xai_study/phaseB_attribution/occlusion.jl",
       "line": 204
      },
      {
+      "desc": "raw Pearson of attribution vs oracle |Δy(u)|",
       "label": "pilot_ig_vs_oracle.jl:173",
       "path": "tools/xai_study/phaseB_attribution/pilot_ig_vs_oracle.jl",
       "line": 173
+     },
+     {
+      "desc": "assemble the F∧S∧M triad record",
+      "label": "occlusion.jl:450",
+      "path": "tools/xai_study/phaseB_attribution/occlusion.jl",
+      "line": 450
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -458,14 +682,22 @@
     "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  The new §3 (sec:triad) admits the fraction-within-tolerance [0,1] special case of the held-out predictive test, which this held-out do(u) fit-then-predict estimator satisfies, so it matches. (Detail: epsilon is a self-scaled band 0.10*spread; the [-1,1] correlation form is available but this method reports the [0,1] hit fraction.)",
     "source": [
      {
+      "desc": "sufficiency_score: fit Δy=a·attr+b on a calib half, predict held-out within ε",
       "label": "triad_sm.jl:111",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 111
      },
      {
+      "desc": "assemble the F∧S∧M triad record (calls sufficiency_score)",
       "label": "triad_sm.jl:173",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 173
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -477,14 +709,22 @@
     "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181.  This is the paper's M = |U*|/|U_hat| in (0,1] (standardized everywhere), so it matches the new §3. (Detail: |U*| is taken as all oracle movers with Delta_y>0, an upper bound on the strictly-smallest reproducing subset, so M can be optimistic.)",
     "source": [
      {
+      "desc": "minimality_score: |U*| oracle movers / |U_hat| named cells",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
      },
      {
+      "desc": "assemble the triad record (calls minimality_score)",
       "label": "triad_sm.jl:178",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 178
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }
@@ -500,14 +740,28 @@
     "note": "perturbation.jl: extremal-perturbation mask per cause, F = pearson(attr, oracle_abs_delta); triad_extra_dict(f.pearson, attr, f.oracle_abs_delta). Record: out/perturbation_air_raid_content.json (metric_name=pearson_corr_with_oracle, value=0.55). Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}.",
     "source": [
      {
+      "desc": "per-cause extremal-perturbation mask attribution",
       "label": "perturbation.jl:373",
       "path": "tools/xai_study/phaseB_attribution/perturbation.jl",
       "line": 373
      },
      {
+      "desc": "raw Pearson of attribution vs oracle |Δy(u)|",
       "label": "pilot_ig_vs_oracle.jl:173",
       "path": "tools/xai_study/phaseB_attribution/pilot_ig_vs_oracle.jl",
       "line": 173
+     },
+     {
+      "desc": "assemble the F∧S∧M triad record",
+      "label": "perturbation.jl:654",
+      "path": "tools/xai_study/phaseB_attribution/perturbation.jl",
+      "line": 654
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -519,14 +773,22 @@
     "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  The new §3 (sec:triad) admits the fraction-within-tolerance [0,1] special case of the held-out predictive test, which this held-out do(u) fit-then-predict estimator satisfies, so it matches. (Detail: epsilon is a self-scaled band 0.10*spread; the [-1,1] correlation form is available but this method reports the [0,1] hit fraction.)",
     "source": [
      {
+      "desc": "sufficiency_score: fit Δy=a·attr+b on a calib half, predict held-out within ε",
       "label": "triad_sm.jl:111",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 111
      },
      {
+      "desc": "assemble the F∧S∧M triad record (calls sufficiency_score)",
       "label": "triad_sm.jl:173",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 173
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -538,14 +800,22 @@
     "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181.  This is the paper's M = |U*|/|U_hat| in (0,1] (standardized everywhere), so it matches the new §3. (Detail: |U*| is taken as all oracle movers with Delta_y>0, an upper bound on the strictly-smallest reproducing subset, so M can be optimistic.)",
     "source": [
      {
+      "desc": "minimality_score: |U*| oracle movers / |U_hat| named cells",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
      },
      {
+      "desc": "assemble the triad record (calls minimality_score)",
       "label": "triad_sm.jl:178",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 178
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }
@@ -561,14 +831,28 @@
     "note": "rise.jl: pr = pearson(attr, odelta) (line 249); triad_extra_dict(f.pearson, f.rise_attr_per_cause, f.oracle_abs_delta) line 562. Record: out/rise_air_raid_content.json (value=0.76); note M=0.077 there (|U_hat|=26 named vs |U*|=2 movers) illustrating the dense-mask minimality penalty. Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}.",
     "source": [
      {
+      "desc": "per-cause RISE mask attribution",
       "label": "rise.jl:249",
       "path": "tools/xai_study/phaseB_attribution/rise.jl",
       "line": 249
      },
      {
+      "desc": "raw Pearson of attribution vs oracle |Δy(u)|",
       "label": "pilot_ig_vs_oracle.jl:173",
       "path": "tools/xai_study/phaseB_attribution/pilot_ig_vs_oracle.jl",
       "line": 173
+     },
+     {
+      "desc": "assemble the F∧S∧M triad record",
+      "label": "rise.jl:562",
+      "path": "tools/xai_study/phaseB_attribution/rise.jl",
+      "line": 562
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -580,14 +864,22 @@
     "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  The new §3 (sec:triad) admits the fraction-within-tolerance [0,1] special case of the held-out predictive test, which this held-out do(u) fit-then-predict estimator satisfies, so it matches. (Detail: epsilon is a self-scaled band 0.10*spread; the [-1,1] correlation form is available but this method reports the [0,1] hit fraction.)",
     "source": [
      {
+      "desc": "sufficiency_score: fit Δy=a·attr+b on a calib half, predict held-out within ε",
       "label": "triad_sm.jl:111",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 111
      },
      {
+      "desc": "assemble the F∧S∧M triad record (calls sufficiency_score)",
       "label": "triad_sm.jl:173",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 173
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -599,14 +891,22 @@
     "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181. RISE names a dense mask, so |U_hat| >> |U*| and M is small (e.g. 2/26=0.077 in the air_raid content record) -- the intended discrimination of the above-threshold reading. This is the paper's M = |U*|/|U_hat| in (0,1] (standardized everywhere), so it matches the new §3. (Detail: |U*| is taken as all oracle movers with Delta_y>0, an upper bound on the strictly-smallest reproducing subset, so M can be optimistic.)",
     "source": [
      {
+      "desc": "minimality_score: |U*| oracle movers / |U_hat| named cells",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
      },
      {
+      "desc": "assemble the triad record (calls minimality_score)",
       "label": "triad_sm.jl:178",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 178
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }
@@ -622,14 +922,28 @@
     "note": "saliency.jl: sal_attr = abs.(gradient) per cause (line 338, 426), pr = pearson(sal_attr, odelta) (line 429); triad_extra_dict(f.pearson, f.sal_attr, f.oracle_abs_delta) line 697. Record: out/saliency_air_raid_content.json (value=0.79); position record out/saliency_air_raid_position.json has F=-0.144 (negative preserved). Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}.",
     "source": [
      {
+      "desc": "per-cause attribution |∂y/∂u| over the RAM tape",
       "label": "saliency.jl:429",
       "path": "tools/xai_study/phaseB_attribution/saliency.jl",
       "line": 429
      },
      {
+      "desc": "raw Pearson of attribution vs oracle |Δy(u)|",
       "label": "pilot_ig_vs_oracle.jl:173",
       "path": "tools/xai_study/phaseB_attribution/pilot_ig_vs_oracle.jl",
       "line": 173
+     },
+     {
+      "desc": "assemble the F∧S∧M triad record",
+      "label": "saliency.jl:697",
+      "path": "tools/xai_study/phaseB_attribution/saliency.jl",
+      "line": 697
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -641,14 +955,22 @@
     "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  The new §3 (sec:triad) admits the fraction-within-tolerance [0,1] special case of the held-out predictive test, which this held-out do(u) fit-then-predict estimator satisfies, so it matches. (Detail: epsilon is a self-scaled band 0.10*spread; the [-1,1] correlation form is available but this method reports the [0,1] hit fraction.)",
     "source": [
      {
+      "desc": "sufficiency_score: fit Δy=a·attr+b on a calib half, predict held-out within ε",
       "label": "triad_sm.jl:111",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 111
      },
      {
+      "desc": "assemble the F∧S∧M triad record (calls sufficiency_score)",
       "label": "triad_sm.jl:173",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 173
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -660,14 +982,22 @@
     "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181.  This is the paper's M = |U*|/|U_hat| in (0,1] (standardized everywhere), so it matches the new §3. (Detail: |U*| is taken as all oracle movers with Delta_y>0, an upper bound on the strictly-smallest reproducing subset, so M can be optimistic.)",
     "source": [
      {
+      "desc": "minimality_score: |U*| oracle movers / |U_hat| named cells",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
      },
      {
+      "desc": "assemble the triad record (calls minimality_score)",
       "label": "triad_sm.jl:178",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 178
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }
@@ -683,14 +1013,28 @@
     "note": "smoothgrad.jl: noise-averaged saliency per cause, F = pearson(attr, oracle_abs_delta); triad_extra_dict(f.pearson, attr, f.oracle_abs_delta). Record: out/smoothgrad_air_raid_content.json (metric_name=pearson_corr_with_oracle, value=0.79). Scorer pilot_ig_vs_oracle.jl pearson() lines 173-178 (raw Statistics.cor, zero-variance->0); F = pearson(attr, oracle_abs_delta) where oracle_abs_delta = abs.(cmap.delta) (true |Delta_y| per cause). Also reports spearman, precision@k, deletion/insertion AUC (paper's auxiliary F metrics). Per-regime split: separate *_content.json and *_position.json records, each carrying its own extra.triad.{F,S,M}.",
     "source": [
      {
+      "desc": "per-cause noise-averaged saliency attribution",
       "label": "smoothgrad.jl:439",
       "path": "tools/xai_study/phaseB_attribution/smoothgrad.jl",
       "line": 439
      },
      {
+      "desc": "raw Pearson of attribution vs oracle |Δy(u)|",
       "label": "pilot_ig_vs_oracle.jl:173",
       "path": "tools/xai_study/phaseB_attribution/pilot_ig_vs_oracle.jl",
       "line": 173
+     },
+     {
+      "desc": "assemble the F∧S∧M triad record",
+      "label": "smoothgrad.jl:732",
+      "path": "tools/xai_study/phaseB_attribution/smoothgrad.jl",
+      "line": 732
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -702,14 +1046,22 @@
     "note": "common/triad_sm.jl sufficiency_score() lines 111-155 (interleaved calib/held split by seed, least-squares 1-D fit Delta_y~a*attr+b on calib, epsilon = max(0.5, 0.10*heldout_spread)); assembled in triad_extra_dict() lines 173-191.  The new §3 (sec:triad) admits the fraction-within-tolerance [0,1] special case of the held-out predictive test, which this held-out do(u) fit-then-predict estimator satisfies, so it matches. (Detail: epsilon is a self-scaled band 0.10*spread; the [-1,1] correlation form is available but this method reports the [0,1] hit fraction.)",
     "source": [
      {
+      "desc": "sufficiency_score: fit Δy=a·attr+b on a calib half, predict held-out within ε",
       "label": "triad_sm.jl:111",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 111
      },
      {
+      "desc": "assemble the F∧S∧M triad record (calls sufficiency_score)",
       "label": "triad_sm.jl:173",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 173
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -721,14 +1073,22 @@
     "note": "common/triad_sm.jl minimality_score() lines 57-86 with name_frac=1e-6, mover_floor=0.0; the above-threshold named set is used (topk kept but not passed), see triad_extra_dict() lines 178-181.  This is the paper's M = |U*|/|U_hat| in (0,1] (standardized everywhere), so it matches the new §3. (Detail: |U*| is taken as all oracle movers with Delta_y>0, an upper bound on the strictly-smallest reproducing subset, so M can be optimistic.)",
     "source": [
      {
+      "desc": "minimality_score: |U*| oracle movers / |U_hat| named cells",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
      },
      {
+      "desc": "assemble the triad record (calls minimality_score)",
       "label": "triad_sm.jl:178",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 178
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }

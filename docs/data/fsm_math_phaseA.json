@@ -12,14 +12,22 @@
     "note": "Graph-valued primitive = edge F1 vs true data-flow graph, exactly the paper's connectomics case. Runner A1_connectomics.jl L406,L367-386; record out/A1_pong.json extra.triad.F=0.0 / graph.f1.",
     "source": [
      {
+      "desc": "F = edge-F1 of the recovered do(base+17) edges vs the true graph",
       "label": "A1_connectomics.jl:406",
       "path": "tools/xai_study/phaseA_kording/A1_connectomics.jl",
       "line": 406
      },
      {
+      "desc": "score_graph: edge precision, recall and F1 of the two graphs",
       "label": "A1_connectomics.jl:367",
       "path": "tools/xai_study/phaseA_kording/A1_connectomics.jl",
       "line": 367
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -31,11 +39,13 @@
     "note": "Held-out edge agreement between the base+17 recovered graph and the held-out base+37 true edge set: a non-null held-out sufficiency. §3 (sec:triad) admits the fraction-within-tolerance [0,1] special case of the held-out predictive test, which this off-diagonal edge-agreement fraction satisfies. A1_connectomics.jl L412-416,L571-591; record S=0.839.",
     "source": [
      {
+      "desc": "S = off-diagonal edge agreement, recovered vs held-out true edges",
       "label": "A1_connectomics.jl:416",
       "path": "tools/xai_study/phaseA_kording/A1_connectomics.jl",
       "line": 416
      },
      {
+      "desc": "heldout_true_graph: true edges under the unseen do(base+37)",
       "label": "A1_connectomics.jl:578",
       "path": "tools/xai_study/phaseA_kording/A1_connectomics.jl",
       "line": 578
@@ -50,9 +60,16 @@
     "note": "Runner now emits M = |U*|/|U_hat| over edges (M_note '|true edges|=12 / |discovered edges|=0'); the paper's minimality ratio applied at the edge level. Record out/A1_pong.json extra.triad.M (null in pong when 0 edges discovered). Replaced the former 1 − FP-rate (edge precision).",
     "source": [
      {
+      "desc": "M = |true edges| / |discovered edges|",
       "label": "A1_connectomics.jl:422",
       "path": "tools/xai_study/phaseA_kording/A1_connectomics.jl",
       "line": 422
+     },
+     {
+      "desc": "score_graph counts the true and recovered edge sets",
+      "label": "A1_connectomics.jl:367",
+      "path": "tools/xai_study/phaseA_kording/A1_connectomics.jl",
+      "line": 367
      }
     ]
    }
@@ -68,14 +85,22 @@
     "note": "Rank correlation of attribution vs oracle causal effects; matches the paper's ranked-output correlation primitive. A2_lesions.jl L621,L637,L378-409; record out/A2_lesions_pong.json triad.F=1.0.",
     "source": [
      {
-      "label": "A2_lesions.jl:646",
+      "desc": "F = Spearman(lesion importance, oracle causal role)",
+      "label": "A2_lesions.jl:645",
       "path": "tools/xai_study/phaseA_kording/A2_lesions.jl",
-      "line": 646
+      "line": 645
      },
      {
+      "desc": "oracle_role: per-unit causal role over the full-horizon do-set",
       "label": "A2_lesions.jl:621",
       "path": "tools/xai_study/phaseA_kording/A2_lesions.jl",
       "line": 621
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -87,9 +112,16 @@
     "note": "Rank correlation in [-1,1] of the lesion map (built on {0,alt}) vs the per-unit role under the held-out clamp value base+37: a non-null held-out predictive correlation, the §3 (sec:triad) form. A2_lesions.jl; record S=0.836.",
     "source": [
      {
+      "desc": "S = Spearman(lesion map, per-unit role under held-out do(base+37))",
       "label": "A2_lesions.jl:648",
       "path": "tools/xai_study/phaseA_kording/A2_lesions.jl",
       "line": 648
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -101,14 +133,22 @@
     "note": "Runner now emits M = |U*|/|U_hat| (M_note '|U*|=4 (oracle movers) / |U_hat|=4 (method above-threshold)'), the paper's set-size ratio. Record out/A2_lesions_pong.json extra.triad.M=1.0. Replaced the former 1 − false-specificity rate.",
     "source": [
      {
+      "desc": "minimality_score(lesion names, oracle movers)",
       "label": "A2_lesions.jl:655",
       "path": "tools/xai_study/phaseA_kording/A2_lesions.jl",
       "line": 655
      },
      {
+      "desc": "minimality_score: |U*| oracle movers / |U_hat| named units",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }
@@ -124,14 +164,22 @@
     "note": "Scored vs oracle causal importance (not vs external labels); the per-game clip-at-0-then-mean is applied at aggregation (paper cites A3 = 0.213 clip-at-zero mean). Runner A3_tuning.jl L466,L318-338; record out/A3_tuning_pong.json triad.F=-0.007.",
     "source": [
      {
+      "desc": "F = Spearman(tuning selectivity, oracle causal importance)",
       "label": "A3_tuning.jl:473",
       "path": "tools/xai_study/phaseA_kording/A3_tuning.jl",
       "line": 473
      },
      {
+      "desc": "score_triad: builds selectivity and scores it against the oracle",
       "label": "A3_tuning.jl:470",
       "path": "tools/xai_study/phaseA_kording/A3_tuning.jl",
       "line": 470
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -143,9 +191,16 @@
     "note": "Held-out predictive correlation in [-1,1] of the selectivity map vs the held-out do(base+37) screen break: the §3 (sec:triad) form. A3_tuning.jl; record S=0.441 (battery air_raid).",
     "source": [
      {
+      "desc": "S = Pearson(selectivity, held-out do(base+37) screen break)",
       "label": "A3_tuning.jl:474",
       "path": "tools/xai_study/phaseA_kording/A3_tuning.jl",
       "line": 474
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -157,14 +212,22 @@
     "note": "Runner now emits M = |U*|/|U_hat| (M_note '|U*|=10 (oracle movers) / |U_hat|=7 (method above-threshold)'), the paper's set-size ratio. Record out/A3_tuning_*.json extra.triad.M. Replaced the former 1 − spurious-tuning rate.",
     "source": [
      {
+      "desc": "minimality_score(selectivity, oracle importance)",
       "label": "A3_tuning.jl:485",
       "path": "tools/xai_study/phaseA_kording/A3_tuning.jl",
       "line": 485
      },
      {
+      "desc": "minimality_score: |U*| oracle movers / |U_hat| named cells",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }
@@ -180,14 +243,22 @@
     "note": "Oracle 'coupling' is a bit-exact intervention effect (not a data correlation); F correlates the method's |corr| map against it. Correlation primitive on pairs. Runner A4_correlations.jl L648,L573-612; record out/A4_pong.json triad.F=0.633.",
     "source": [
      {
+      "desc": "F = Spearman(|corr| pairs, oracle coupling pairs)",
       "label": "A4_correlations.jl:655",
       "path": "tools/xai_study/phaseA_kording/A4_correlations.jl",
       "line": 655
      },
      {
+      "desc": "score_triad over the candidate-cell pairs",
       "label": "A4_correlations.jl:650",
       "path": "tools/xai_study/phaseA_kording/A4_correlations.jl",
       "line": 650
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -199,9 +270,16 @@
     "note": "Held-out predictive correlation in [-1,1] of the pairwise-correlation map vs the held-out do(base+37) coupling: the §3 (sec:triad) form (can be negative). A4_correlations.jl; record S=-0.170.",
     "source": [
      {
+      "desc": "S = Pearson(|corr| pairs, held-out do(base+37) coupling)",
       "label": "A4_correlations.jl:657",
       "path": "tools/xai_study/phaseA_kording/A4_correlations.jl",
       "line": 657
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -213,14 +291,22 @@
     "note": "Runner now emits M = |U*|/|U_hat| over pairs (M_note '|U*|=4 (oracle movers) / |U_hat|=6'), the paper's set-size ratio at the pair level. Record out/A4_pong.json extra.triad.M=0.667. Replaced the former 1 − correlation-overgrouping rate.",
     "source": [
      {
+      "desc": "minimality_score(|corr| pairs, oracle coupling)",
       "label": "A4_correlations.jl:670",
       "path": "tools/xai_study/phaseA_kording/A4_correlations.jl",
       "line": 670
      },
      {
+      "desc": "minimality_score: |U*| coupled pairs / |U_hat| named pairs",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }
@@ -258,14 +344,22 @@
     "note": "Graph-valued primitive = edge F1 vs true data-flow graph, matching the paper. Runner A6_granger.jl L743-744,L710-724; record out/A6_pong.json triad.F=0.0.",
     "source": [
      {
+      "desc": "F = edge-F1 of the Granger-inferred edges vs the true graph",
       "label": "A6_granger.jl:745",
       "path": "tools/xai_study/phaseA_kording/A6_granger.jl",
       "line": 745
      },
      {
+      "desc": "_prf: directed-edge precision, recall and F1",
       "label": "A6_granger.jl:744",
       "path": "tools/xai_study/phaseA_kording/A6_granger.jl",
       "line": 744
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -277,6 +371,13 @@
     "note": "Directed off-diagonal edge agreement between the Granger graph and the held-out base+37 true data-flow: a non-null held-out sufficiency, the [0,1] fraction-within-tolerance special case §3 (sec:triad) admits. A6_granger.jl; record S=0.821.",
     "source": [
      {
+      "desc": "_prf builds the Granger-inferred directed-edge set",
+      "label": "A6_granger.jl:744",
+      "path": "tools/xai_study/phaseA_kording/A6_granger.jl",
+      "line": 744
+     },
+     {
+      "desc": "S = off-diagonal edge agreement vs held-out true edges",
       "label": "A6_granger.jl:755",
       "path": "tools/xai_study/phaseA_kording/A6_granger.jl",
       "line": 755
@@ -291,9 +392,16 @@
     "note": "Runner now emits M = |U*|/|U_hat| over edges (M_note '|true edges|=12 / |discovered edges|=1'), the paper's minimality ratio at the edge level. Record out/A6_pong.json extra.triad.M=1.0. Replaced the former 1 − false-edge rate (edge precision).",
     "source": [
      {
+      "desc": "M = |true edges| / |Granger-inferred edges|",
       "label": "A6_granger.jl:761",
       "path": "tools/xai_study/phaseA_kording/A6_granger.jl",
       "line": 761
+     },
+     {
+      "desc": "_prf counts the true and inferred directed edges",
+      "label": "A6_granger.jl:744",
+      "path": "tools/xai_study/phaseA_kording/A6_granger.jl",
+      "line": 744
      }
     ]
    }
@@ -309,14 +417,22 @@
     "note": "Two triads (triad_pca, triad_nmf); correlation vs oracle causal importance, not vs known-variable labels. Runner A7_dimred.jl L744,L682-705; record out/A7_pong.json triad_nmf.F=-0.385, triad_pca.F=-0.041.",
     "source": [
      {
+      "desc": "F = Spearman(component recovery, oracle causal importance)",
       "label": "A7_dimred.jl:751",
       "path": "tools/xai_study/phaseA_kording/A7_dimred.jl",
       "line": 751
      },
      {
+      "desc": "score_triad for the PCA / NMF recovery maps",
       "label": "A7_dimred.jl:749",
       "path": "tools/xai_study/phaseA_kording/A7_dimred.jl",
       "line": 749
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -328,9 +444,16 @@
     "note": "Held-out predictive correlation in [-1,1] of the component-recovery score vs the held-out do(base+37) screen break: the §3 (sec:triad) form. Two triads (pca, nmf). A7_dimred.jl; record S: nmf=-0.291, pca=-0.192.",
     "source": [
      {
+      "desc": "S = Pearson(recovery, held-out do(base+37) screen break)",
       "label": "A7_dimred.jl:752",
       "path": "tools/xai_study/phaseA_kording/A7_dimred.jl",
       "line": 752
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -342,14 +465,22 @@
     "note": "Runner now emits M = |U*|/|U_hat| for both triad_pca and triad_nmf (M_note '|U*|=4 (oracle movers) / |U_hat|=4/6'), the paper's set-size ratio. Record out/A7_pong.json triad_pca.M=1.0, triad_nmf.M=0.667. Replaced the former 1 − variance-not-causal over-claim rate.",
     "source": [
      {
+      "desc": "minimality_score(recovery, oracle importance)",
       "label": "A7_dimred.jl:767",
       "path": "tools/xai_study/phaseA_kording/A7_dimred.jl",
       "line": 767
      },
      {
+      "desc": "minimality_score: |U*| oracle movers / |U_hat| surfaced cells",
       "label": "triad_sm.jl:57",
       "path": "tools/xai_study/common/triad_sm.jl",
       "line": 57
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }
@@ -365,9 +496,16 @@
     "note": "Scored vs the oracle causal cells but the primitive is recall (not the correlation/edge-F1 the paper specifies); it is a hard-coded 1.0 by construction, consistent with the paper's 'trivially faithful' whole-state baseline. Runner A8_wholestate.jl L561,L356-375; record out/A8_pong.json triad.F=1.0.",
     "source": [
      {
+      "desc": "whole state names every cell ⇒ recall of oracle-causal cells = 1",
       "label": "A8_wholestate.jl:561",
       "path": "tools/xai_study/phaseA_kording/A8_wholestate.jl",
       "line": 561
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -379,14 +517,22 @@
     "note": "Literal sufficiency: the recorded whole 128-byte RAM state, restored, reproduces the exact RAM and frame (bit-exact re-run). §3 (sec:triad) admits the [0,1] fraction-within-tolerance special case of the held-out test; this boolean 1/0 hit is that special case at its extreme. A8_wholestate.jl; record S=1.0.",
     "source": [
      {
+      "desc": "lossless check: restored 128-byte RAM == exact RAM",
       "label": "A8_wholestate.jl:399",
       "path": "tools/xai_study/phaseA_kording/A8_wholestate.jl",
       "line": 399
      },
      {
+      "desc": "S folded into the triad record",
       "label": "A8_wholestate.jl:565",
       "path": "tools/xai_study/phaseA_kording/A8_wholestate.jl",
       "line": 565
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    },
@@ -398,9 +544,16 @@
     "note": "The only Phase-A method whose M is exactly |U*|/|U_hat|; paper cites whole-state M=0.07. Headline metric_name = wholestate_minimality_M_vs_oracle. A8_wholestate.jl L563,L537-538; record out/A8_pong.json M=0.03125 = 4/128.",
     "source": [
      {
+      "desc": "M = |oracle-causal cells| / 128 (whole-state floor)",
       "label": "A8_wholestate.jl:563",
       "path": "tools/xai_study/phaseA_kording/A8_wholestate.jl",
       "line": 563
+     },
+     {
+      "desc": "true causal effect Δy(u) by bit-exact re-run",
+      "label": "oracle_intervene.jl:242",
+      "path": "tools/xai_study/ground_truth/oracle_intervene.jl",
+      "line": 242
      }
     ]
    }
