@@ -1486,10 +1486,12 @@ def build_fsm_math_section(key):
         note = re.sub(r'([\w./-]+\.(?:jl|py|json)):\d+(?:-\d+)?', r'\1', note)
         note = re.sub(r'\s{2,}', ' ', note).strip()
         notehtml = ' <span class="fsm-note">%s</span>' % esc(note) if note else ""
+        # source links live in the "Matches §3?" column (they justify the verdict) —
+        # clickable links to the exact code line on main, replacing the old bare numbers.
         rows.append(
-            '<tr><td><b>%s</b><br><span class="fsm-note">%s</span></td><td>%s%s</td>'
-            '<td>%s</td><td><span class="fsm-badge fsm-%s">%s</span>%s</td></tr>'
-            % (axis, longname, fhtml, srclinks, plain, cls, label, notehtml))
+            '<tr><td><b>%s</b><br><span class="fsm-note">%s</span></td><td>%s</td>'
+            '<td>%s</td><td><span class="fsm-badge fsm-%s">%s</span>%s%s</td></tr>'
+            % (axis, longname, fhtml, plain, cls, label, notehtml, srclinks))
     return ("""
 <section><div class="wrap">
   <h2>How F, S, M are computed here</h2>
