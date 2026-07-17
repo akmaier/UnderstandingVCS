@@ -21,16 +21,16 @@ defined**. That one fact generates the majority of the worst stumbles.
 
 ## Top 10 to fix first
 
-1. [ ] **"regime" / "position regime" / "content regime"** — the primary results axis; used from the Abstract onward, defined only in Methods (last section).
-2. [ ] **F / S / M as bare symbols; "sufficiency S", "minimality M"** — numbers like `S=0.13`, `M=0.08`, `S=−0.46` appear in Results with no scale, sign convention, or definition until Methods. A *negative* sufficiency is uninterpretable on first encounter.
-3. [ ] **"the gap excludes zero"** — CI-significance shorthand; first used in the Abstract *before* its expansion four lines later; recurs ~14 times.
-4. [ ] **"plausibility proxy"** — a headline axis; that it is a rubric score, *not* a human study, is stated only in Methods/S7. Without it the "danger zone" is unreadable.
-5. [ ] **"bilinear sampler"** — the keystone experiment hinges on it; what it *is* is explained only in Methods.
-6. [ ] **T3 labels / Tier 1–3** — carry the semantic-verification argument in Results B/C; tiers defined only in Methods.
-7. [ ] **"naive gradient is provably zero" / "hard forward map" / Prop. zero-gradient** — a load-bearing "provably" referenced from the Abstract on; the proposition lives only in Methods.
-8. [ ] **TIA and RIOT** — named repeatedly, **never expanded anywhere** (verified). Also "6502".
-9. [ ] **"Paper 1" / "Maier et al." / "companion paper" + "Paper 3/4/5" + "Phase E"** — an invisible five-paper program; **"Phase E" appears with no Phase D anywhere**.
-10. [ ] **`do(u)` notation** — Pearl's do-operator with no gloss; `do(u:=v')→Δy(u)` is opaque outside causal inference.
+1. [x] **"regime" / "position regime" / "content regime"** — the primary results axis; used from the Abstract onward, defined only in Methods (last section).
+2. [x] **F / S / M as bare symbols; "sufficiency S", "minimality M"** — numbers like `S=0.13`, `M=0.08`, `S=−0.46` appear in Results with no scale, sign convention, or definition until Methods. A *negative* sufficiency is uninterpretable on first encounter.
+3. [x] **"the gap excludes zero"** — CI-significance shorthand; first used in the Abstract *before* its expansion four lines later; recurs ~14 times.
+4. [x] **"plausibility proxy"** — a headline axis; that it is a rubric score, *not* a human study, is stated only in Methods/S7. Without it the "danger zone" is unreadable.
+5. [x] **"bilinear sampler"** — the keystone experiment hinges on it; what it *is* is explained only in Methods.
+6. [x] **T3 labels / Tier 1–3** — carry the semantic-verification argument in Results B/C; tiers defined only in Methods.
+7. [x] **"naive gradient is provably zero" / "hard forward map" / Prop. zero-gradient** — a load-bearing "provably" referenced from the Abstract on; the proposition lives only in Methods.
+8. [x] **TIA and RIOT** — named repeatedly, **never expanded anywhere** (verified). Also "6502".
+9. [x] **"Paper 1" / "Maier et al." / "companion paper" + "Paper 3/4/5" + "Phase E"** — an invisible five-paper program; **"Phase E" appears with no Phase D anywhere**.
+10. [x] **`do(u)` notation** — Pearl's do-operator with no gloss; `do(u:=v')→Δy(u)` is opaque outside causal inference.
 
 ---
 
