@@ -3,7 +3,7 @@
 This section records five things for each method under test. It records the exact objects the
 method consumes and produces, the reference it is scored against, its sampling or optimization
 budget, the metric that turns its output into a faithfulness score, and the committed record
-file that holds the per-game results. All methods share one evaluation contract. We state that
+file (version-controlled, in the released repository) that holds the per-game results. All methods share one evaluation contract. We state that
 contract once and then specialize it per method. Every method receives the same bit-exact VCS
 state on each game of the scored battery. We state the contract on the six core games
 (\texttt{breakout}, \texttt{ms\_pacman}, \texttt{pong}, \texttt{qbert}, \texttt{seaquest},

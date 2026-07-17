@@ -11,7 +11,7 @@ We begin with a known concern in the field. Jonas and Kording asked whether a
 neuroscientist with the standard toolkit could understand a microprocessor. They
 found that the toolkit yields rich structure but misses the
 mechanism~\cite{jonas2017could}. They could show the failure but not measure it.
-On the 6502 they had no causal ground truth to score each method against. We
+On the 6502 (the CPU model) they had no causal ground truth to score each method against. We
 supply that missing number. We run the same battery on the bit-exact, fully
 known VCS, where exact intervention recovers the true causal role of every
 register and RAM cell (\Sectionname\ref{sec:methods}). This makes Kording's
@@ -29,7 +29,7 @@ against the true data-flow graph at a faithfulness of
 $0.21$~\cite{leaderboardP2}: most of its edges are spurious. The single-unit
 lesion A2 fares best. It clamps each RAM cell in turn and ranks it by the
 behavioral damage it does. The resulting importance map has a Spearman
-correlation of about $1.0$ with the unit's true causal role on the six core games,
+correlation of about $1.0$ with the unit's true causal role on the six core games (listed in \Sectionname\ref{sec:results-b}),
 and averages $0.96$ over the scored games~\cite{leaderboardP2}. Lesioning is causal,
 which is why A2 is the one classical method that scores near the top.
 
@@ -48,21 +48,21 @@ VCS it actively misleads. Its \emph{spurious-tuning rate} is the fraction of
 strongly-tuned units whose tuning does not match their true causal role. That
 rate is $0.50$ on Pong, and its faithfulness averages $0.21$, among the lowest in the
 battery~\cite{leaderboardP2}. Tuning is correlational. On a machine where many
-cells co-vary with the beam clock, apparent tuning is cheap. This is the same
+cells co-vary with the beam clock (timing of the scanning electron beam), apparent tuning is cheap. This is the same
 present-versus-used distinction we discuss later for linear probing.
 
 Correlation structure and field potentials are real, but they are mostly side
-effects, not causes. A4, the spike-word analysis of pairwise and global
+effects, not causes. A4, the spike-word analysis (which cells fire together) of pairwise and global
 correlation, reproduces the familiar weak-pairwise/strong-global signature. Yet
 against the true coupling its faithfulness is only $0.22$, with low sufficiency
-($S = 0.13$)~\cite{leaderboardP2}. A5 is the local-field-potential
+($S = 0.13$; $S\in[-1,1]$ is a held-out predictive fit, so it can be negative)~\cite{leaderboardP2}. A5 is the local-field-potential (voltage from nearby neurons)
 analogue that pools regional activity into power spectra. It scores $0.38$, and
 much of that variance is the known frame and scanline
 clocks~\cite{leaderboardP2}. Both methods detect the machine's activity but not
 its computation.
 
 Granger causality treats ``happens earlier'' as ``is the cause.'' A6 infers
-directed CPU/TIA/RIOT edges and scores them against the true data-flow. On Pong
+directed CPU/TIA/RIOT edges (the TIA is the Television Interface Adaptor, the graphics/sound chip, and the RIOT the RAM-I/O-Timer) and scores them against the true data-flow. On Pong
 its faithfulness is $0.0$, with false-edge and missed-edge rates both at
 $1.0$~\cite{leaderboardP2}. The VCS is clock-locked, so nearly everything is
 predictable from everything else one cycle earlier. Equating precedence with
@@ -70,20 +70,20 @@ causation therefore infers spurious edges everywhere. Neither a longer lag nor a
 stricter threshold fixes this. Precedence and causation differ here, and only
 the intervention oracle separates them.
 
-Dimensionality reduction scores in the middle, with NMF and PCA tied. A7
+Dimensionality reduction scores in the middle, with NMF (non-negative matrix factorization) and PCA (principal component analysis) tied. A7
 decomposes the state tensor into latent components and matches them to the known
 clock, read/write, and vsync signals. Non-negative matrix factorization and PCA
 both match about 60 percent of the known components on the core games and
-average a matched fraction of $0.52$ over the scored games, so neither
+average a matched fraction (the share of known game variables its components correctly align to) of $0.52$ over the scored games, so neither
 factorization is the more faithful at this
-analogue~\cite{leaderboardP2}. NMF leads only on the secondary recon-error/FSM
+analogue~\cite{leaderboardP2}. NMF leads only on the secondary reconstruction-error / (F,S,M)-triad
 composite, where its non-negativity better fits the additive register basis.
 This makes A7 the second-highest score, behind only the causal lesion. It still
 leaves about half of the components unmatched.
 
 A complete record is still not an explanation. A8 records the full RAM and
-register state, faithful and sufficient by definition ($F = 1.0$, $S = 1.0$).
-Yet its minimality is only $0.08$~\cite{leaderboardP2}. At the algorithmic level,
+register state, faithful and sufficient by definition ($F = 1.0$, $S = 1.0$; faithfulness $F\in[0,1]$ runs from chance at $0$ to the oracle ceiling at $1$).
+Yet its minimality is only $0.08$ ($M\in[0,1]$)~\cite{leaderboardP2}. At the algorithmic level,
 a recording of every cell explains nothing. Faithfulness and sufficiency without
 minimality give a log file, not an account of the computation. This is the first
 sign that the three axes are independent. The semantic-gap result makes that
@@ -91,7 +91,7 @@ point central later.
 
 Taken together, the battery confirms the expected result and puts a number on
 it. The advance over Jonas and Kording is that we grade the \emph{architectural}
-register-transfer level with a \emph{quantitative} $F$ against an exact oracle,
+register-transfer level (registers and the logic between them) with a \emph{quantitative} $F$ against an exact oracle,
 rather than giving a qualitative verdict on the transistor. The contrast is
 clear, because the causal operators we apply to the same machine in
 \Sectionname\ref{sec:results-b} and~\Sectionname\ref{sec:results-c} reach the ceiling this battery

@@ -37,7 +37,7 @@ On the content path the gradient is faithful, as expected. Vanilla
 saliency~\cite{simonyan2014deep} puts most of its attribution on the true causal byte: on
 Q*bert its attribution of a content read correlates with the oracle at Pearson
 $0.999$ with precision@3 of $1.0$, on Ms.~Pac-Man at $0.811$ / $1.0$, on Breakout
-at $0.750$ / $1.0$. Integrated Gradients~\cite{sundararajan2017axiomatic},
+at $0.750$ / $1.0$. Integrated Gradients (IG)~\cite{sundararajan2017axiomatic},
 Grad$\times$Input/DeepLIFT~\cite{shrikumar2017learning},
 SmoothGrad~\cite{smilkov2017smoothgrad}, and guided
 backpropagation~\cite{springenberg2015striving} all reproduce this, because the
@@ -48,7 +48,7 @@ saliency. On this path all methods give the same answer.
 
 The gradient family is weak on the position output. The naive gradient there is
 identically zero, so the raw saliency, Grad$\times$Input, SmoothGrad, guided-backprop,
-and Integrated-Gradients maps carry no signal through the position read
+and IG maps carry no signal through the position read
 (Prop.~\ref{prop:zero}). A differentiable substrate can restore a non-zero gradient here,
 and we run that repair in \Sectionname\ref{sec:results_compare}, but the restored gradient
 is faithful only on a minority of games and its faithfulness stays low. Averaged over the
@@ -59,14 +59,14 @@ causal and intervention family $0.71$. The position map is not empty by choice; 
 weak exactly where the discrete game logic sits.
 
 Two further results make this point stronger. The baseline choice is the perennial
-worry about Integrated Gradients. Here it changes magnitude, not faithfulness. The
+worry about IG. Here it changes magnitude, not faithfulness. The
 $(x-x_0)$ factor moves $\max|\mathrm{IG}|$, yet the ranking and the oracle correlation
 hold, because the constant one-hot Jacobian keeps the mass on the same byte. Only the
 degenerate baseline equal to the content byte breaks it.
 Expected Gradients~\cite{erion2021improving} averages IG over a distribution of
 recorded VCS states. It removes that degeneracy and is provably stable across reference
 draws (mean pairwise cosine $\approx 1$). Yet, on the content path it scores the same
-faithfulness as a well-chosen single-baseline IG at $M\times$ the compute, and it still
+faithfulness as a well-chosen single-baseline IG at $K\times$ the compute (for $K$ baseline draws), and it still
 vanishes on position. The more careful method gives stability but not accuracy. Its
 all-regime faithfulness of $0.18$ is the lowest among the attribution methods.
 
@@ -89,23 +89,23 @@ of $0.687$ is the highest among the attribution methods. The black-box perturb-a
 methods follow the same logic and result:
 KernelSHAP / Shapley sampling~\cite{lundberg2017unified,strumbelj2014explaining}
 ($0.652$), LIME~\cite{ribeiro2016why} ($0.644$), and RISE~\cite{petsiuk2018rise}
-($0.552$) each draw masked coalitions and average over the genuine responses, so each
+($0.552$) each draw masked coalitions (random held-out subsets of candidate causes) and average over the genuine responses, so each
 works on position outputs where the gradient is dead, and each reports its own
 completeness ($\Sigma\phi = y(\text{intact}) - y(\text{all-masked})$ for KernelSHAP,
-the surrogate $R^2$ for LIME).
+LIME's surrogate $R^2$, the fit of its local linear model).
 
 The two minimal-mask methods meet Atrey et al.'s~\cite{atrey2020exploratory} objection
-that perturbations stray off-manifold. Extremal
+that perturbations stray off-manifold (a byte value the running program would never itself write). Extremal
 perturbation~\cite{fong2017interpretable,fong2019understanding} optimises an
 area-bounded mask of real $do(\text{occlude})$ re-runs, and the on-distribution
 counterfactual~\cite{olson2021counterfactual} substitutes candidate cells toward a
 genuine alternative VCS state, the RAM of another frame of the same ROM. Both stay on
 the data manifold by construction and both work on position outputs (position-regime
 faithfulness $0.35$ and $0.28$, all-regime $0.46$ and $0.43$). The
-counterfactual is a no-op on some games, where no on-distribution content byte varies
+counterfactual has no effect (a no-op) on some games, where no on-distribution content byte varies
 between frames, so its map is flat and we mark those cells invalid rather than score
 them. The cross-tradition contrast is clearest across all three phases: the causal and
-intervention family averages $0.71$ faithfulness [$n=11$]
+intervention family averages $0.71$ faithfulness [$n=11$ methods]
 against the oracle, against the gradient and correlational family's $0.38$
 [$n=14$] (Table~\ref{tab:phaseB}). Restricted to the attribution methods
 alone the two means are closer, because the content-path gradient is faithful and lifts the
@@ -134,12 +134,12 @@ widely used baseline, reaches only $0.115$. This is a per-method position gap of
 Yet, on the plausibility proxy of \Sectionname\ref{sec:methods}
 the popular method has the higher score ($0.9$ versus $0.5$): the weaker map has the
 higher plausibility score. Low faithfulness with high plausibility
-is the danger zone. On the VCS we can measure it directly, not just warn about it.
+is the danger zone (\Sectionname\ref{sec:methods}). On the VCS we can measure it directly, not just warn about it.
 
 We claim only that these maps are faithful, nothing more. A correct occlusion map names
 the true causal bytes. It does not tell us what those bytes mean, that a cell is the
 ball's $x$ or that a routine is the bounce. Object-level semantics enter only through
-the external T3 labels (AtariARI, OCAtari; \Sectionname\ref{sec:methods}), and even there we
+the external Tier-3 (T3) labels, game-concept names imported from AtariARI and OCAtari (\Sectionname\ref{sec:methods}), and even there we
 verify a supplied label by intervention rather than discover it. Whether a faithful
 attribution amounts to understanding the computation we take up in
 \Sectionname\ref{sec:results_compare}. Here we have established only that faithfulness is
@@ -164,7 +164,9 @@ methods carry the \emph{higher} plausibility tag --- the danger zone, measured. 
 family-mean rows are the cross-tradition families ($n=14$ gradient/correlational, $n=11$
 causal/intervention across all three traditions), not the twelve rows above; restricted
 to attribution alone the two means are closer,
-because the faithful content gradient lifts the gradient mean. The on-distribution
+because the faithful content gradient lifts the gradient mean. In the \emph{Family}
+column, \emph{interv.}\ and \emph{black-box} (perturb-and-re-run) both belong to the
+causal/intervention family, and \emph{gradient} to the gradient/correlational family. The on-distribution
 counterfactual is a no-op on some core games such as Space~Invaders, Ms.~Pac-Man, and
 Q*bert (no on-distribution
 content byte varies between frames, so $\Delta=0$ and the cells are marked invalid rather

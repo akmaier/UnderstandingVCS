@@ -15,7 +15,7 @@
 
 Interpretability now matters in practice. Neural networks drive cars, read scans, and
 approve loans. Before we trust such a decision, we ask why. Yet on the systems we most
-want to explain we cannot check whether the answer is correct. A saliency map for a deep
+want to explain we cannot check whether the answer is correct. A saliency map (an input-importance heatmap) for a deep
 network can look convincing and can change with the action, and still not be a correct
 explanation~\cite{greydanus2018visualizing}. The field of explainable AI has converged on
 \emph{faithfulness} as its quality criterion: whether an explanation names a system's
@@ -45,7 +45,7 @@ than against the mechanism~\cite{atrey2020exploratory}, and even the sparse-dict
 reports that its tuning proxies do not track interpretability~\cite{saebench2025}.
 Faithfulness has stood in for understanding, and no one could test the stand-in.
 
-Maier et al. recently built the missing reference. It is a bit-exact, differentiable port
+Maier et al.\ recently built the missing reference, in a companion study. It is a bit-exact, differentiable port
 of the Atari 2600 Video Computer System (VCS) that reproduces a real 1977 machine to the
 byte and pixel~\cite{maier2025vcs,xitari}. The VCS is software with a known specification,
 so the true cause of any output is computable by exact intervention. This \emph{intervention
@@ -60,10 +60,11 @@ structure, scored by the oracle.
   \centering
   \includegraphics[width=\linewidth]{fig1_platform_oracle.pdf}
   \caption{\textbf{The measurement platform and its ground-truth oracle.} A
-  differentiable, bit-exact port of the Atari VCS (left), realized as
-  \texttt{jutari} (Julia) $\cdot$ \texttt{jaxtari} (JAX), gives four capabilities no neural
-  network grants for free: exact forward, exact interventions $\mathrm{do}(u)$, full state
-  observability, and content-path gradients. On it we build the oracle (centre): the primary
+  differentiable, bit-exact port of the Atari VCS (left), realized as two cross-checked
+  implementations, \texttt{jutari} (Julia) and \texttt{jaxtari} (JAX), gives four capabilities
+  no neural network grants for free: exact forward, exact interventions $\mathrm{do}(u)$ (force
+  a cause to a value and re-run), full state observability, and content-path gradients (through
+  the smoothly varying values, not the discrete position read). On it we build the oracle (centre): the primary
   intervention oracle of \Sectionname\ref{sec:oracle}, $\mathrm{do}(u{:=}v')\!\to\!\Delta y(u)$
   by bit-exact re-run, with a content-path gradient $\partial y/\partial u$ as a companion on
   the content path only. Any explanation $\hat{E}$ is scored by the correctness triad (right),
@@ -79,14 +80,16 @@ structure, scored by the oracle.
   \label{fig:platform}
 \end{figure}
 
-We audit $30$ interpretability methods, plus the oracle as a positive control, on two axes:
+We audit $30$ interpretability methods, plus the oracle as a positive control (the ground
+truth scored as if it were a method, so it reaches $1$ by construction), on two axes:
 faithfulness against the oracle, and a documented plausibility proxy for how convincing a
-method looks. The first result is the expected one, and we treat it as a step rather than the
+method looks (a fixed per-tradition rubric, not a human study). The first result is the expected one, and we treat it as a step rather than the
 finding: causal and intervention methods are faithful, while gradient and correlational
-methods are not, most sharply on the discrete sprite-position outputs whose naive gradient is
-provably zero. A reader could dismiss that zero as an artifact of a discrete index, so we
-remove it: turning the differentiable port's bilinear sampler on restores the position
-gradient, and the gradient methods become faithful too on the games with a moving tracked
+methods are not, most sharply on the discrete sprite-position outputs whose naive (unsmoothed)
+gradient is provably zero (Prop.~\ref{prop:zero}). A reader could dismiss that zero as an
+artifact of a discrete index, so we remove it: turning the differentiable port's bilinear
+sampler on --- a sub-pixel interpolation that makes the discrete position read smooth ---
+restores the position gradient, and the gradient methods become faithful too on the games with a moving tracked
 sprite. Making them faithful does not change the conclusion, because faithfulness was never the
 dividing line.
 
@@ -94,7 +97,8 @@ With the same oracle we ask what a faithful method \emph{delivers}, and the answ
 the same kind of object: a causal-effect map or a data-flow graph, never the variable's meaning
 or the routine's algorithm. We call an explanation right only if it is \textbf{F}aithful (its
 claimed causes are the true ones), \textbf{S}ufficient (it regenerates behavior under held-out
-interventions), and \textbf{M}inimal at the algorithmic level
+interventions), and \textbf{M}inimal at the algorithmic level --- the level of the function
+computed, not its wiring ---
 ($\mathrm{right} = \mathbf{F}\wedge\mathbf{S}\wedge\mathbf{M}$, \Sectionname\ref{sec:triad}).
 The data then show a gap in both directions: a circuit that is graph-correct and minimal yet
 does not reproduce the behavior it explains, and a learned feature that matches a named game
@@ -106,13 +110,13 @@ Figs.~\ref{fig:faithfulness} and~\ref{fig:sampler}).
 The reference for meaning lies outside the mechanism. Every semantic label in the study entered
 from outside the system, imported from external annotation
 sets~\cite{anand2019unsupervised,delfosse2023ocatari} and only \emph{causally verified} on our
-substrate, never \emph{discovered} by a method under test. An alignment method that reports
+substrate (the differentiable VCS port), never \emph{discovered} by a method under test. An alignment method that reports
 perfect accuracy is therefore right by construction, because it checks a variable we supplied.
 Probing shows that information is present, not that it is used~\cite{hewitt2019designing}, and
 our oracle is the strictly stronger test. What fixes the meaning is the system's
 \emph{behavior}. For software, that behavior is set down in its documentation and data: the
-manuals, the specification, and the design. IEEE~610.12 makes these part of the definition of
-software itself~\cite{ieee610}. The wiring is in the mechanism, so any faithful method can
+manuals, the specification, and the design. IEEE~610.12, the software-engineering glossary,
+makes these part of the definition of software itself~\cite{ieee610}. The wiring is in the mechanism, so any faithful method can
 recover it. The meaning is not, and no method we tested supplied it.
 
 To our knowledge this is the first cross-tradition audit of interpretability methods on a real,

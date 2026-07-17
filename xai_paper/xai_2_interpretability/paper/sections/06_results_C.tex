@@ -36,10 +36,10 @@ faithfulness). Values read from the committed leaderboard~\cite{leaderboardP2}.}
 Method & $F$ ($95\%$ CI) & Plaus & Recovery \\
 \midrule
 Activation patching~\cite{vig2020investigating}          & $1.00$ $[1.00,1.00]$ & $0.50$ & exact effect table \\
-Interchange interventions (DAS)~\cite{geiger2023finding} & $1.00$ $[1.00,1.00]$ & $0.50$ & verifies a supplied alignment \\
+Interchange interventions (DAS, distributed alignment search)~\cite{geiger2023finding} & $1.00$ $[1.00,1.00]$ & $0.50$ & verifies a supplied alignment \\
 Logit / tuned lens~\cite{belrose2023eliciting}           & $0.82$ $[0.77,0.87]$ & $0.50$ & exact intermediate value \\
 Causal scrubbing~\cite{chan2022causal}                   & $0.98$ $[0.94,1.00]$ & $0.50$ & exact data-flow preserved \\
-ACDC~\cite{conmy2023towards}                              & $0.63$ $[0.52,0.74]$ & $0.50$ & search (graph-correct, $S{=}0.30$) \\
+ACDC (automatic circuit discovery)~\cite{conmy2023towards} & $0.63$ $[0.52,0.74]$ & $0.50$ & search (graph-correct, $S{=}0.30$) \\
 Path patching~\cite{wang2022interpretability}            & $0.58$ $[0.45,0.71]$ & $0.50$ & search (single-shot edges) \\
 Attribution patching~\cite{nanda2023attribution}         & $0.46$ $[0.34,0.57]$ & $0.90$ & approximate (linear surrogate) \\
 NMF/PCA dictionaries                                     & $0.10$ $[0.05,0.16]$ & $0.75$ & named, partly unused \\
@@ -82,7 +82,7 @@ correlates with the exact patch at only $0.50$ and matches it inside the linear 
 just $0.17$ of cases. Yet its recovered edges stay precise (edge precision $0.98$, recall
 $0.70$) because the linearisation is wrong about the size of an edge, not about whether the
 edge exists. Path patching,
-run in the IOI style as a single directed do-operation, recovers the directed edge set of
+run in the single-edge style of the IOI (indirect-object-identification) circuit study as a single directed do-operation, recovers the directed edge set of
 the true routine at mean $F1=0.25$. On Q*bert it matches the empty direct circuit perfectly
 ($F1=1.0$). On Pong it recovers none of the eleven true edges ($F1=0.0$), because each
 receiver's value is re-derived within the horizon, so no one-step path carries a surviving
@@ -111,7 +111,7 @@ method is exact and the other recovers a perfect graph. Even so, neither reprodu
 behaviour. A ``methods underperform'' explanation cannot account for this separation, because
 no method underperformed here.
 
-The dictionary methods show the same gap from the opposite direction. A sparse autoencoder
+The dictionary methods show the same gap from the opposite direction. A sparse autoencoder (SAE)
 trained on
 the recorded RAM trajectory reconstructs the state almost perfectly (fraction of variance
 explained $>0.99$ on Pong) and matches every verified game-variable cell it was asked to
@@ -134,7 +134,7 @@ $0.95$, mean selectivity $0.11$), confirming that the information is present in 
 Yet the program does not necessarily use that information. Cross-referenced against the exact
 intervention oracle, the oracle
 flags $14$ concept cells across the core games that the program never causally uses within the
-window. Of those, $2$ are also decodable above chance, so a probe would have nominated them as
+window (the 15-frame analysis horizon). Of those, $2$ are also decodable above chance, so a probe would have nominated them as
 encoded concepts. Breakout's score cell~84 sits in the larger set: it is present in the state
 and linearly associated with the displayed score, yet provably unused under intervention within
 the window.

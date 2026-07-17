@@ -30,14 +30,15 @@ an exact forward map,
 that is, the output $y$ at step $t$, a pixel, a score, or a game event, is a deterministic
 function of the cartridge bytes, the inputs up to $t$, and the initial state $s_0$. Re-running
 reproduces $y$ to the bit. The second is exact interventions. We set any cause
-$u$, a ROM byte, a RAM cell, a CPU/TIA/RIOT register, an opcode, or a joystick input, to any
+$u$, a ROM byte, a RAM cell, a CPU/TIA/RIOT register, an opcode (a CPU instruction byte), or a joystick input, to any
 value and re-run Eq.~\eqref{eq:vcs} deterministically. This realizes the causal operator
 $\mathrm{do}(u)$ on a real machine rather than an assumed world model. The third is full
 state observability. We record every bit of RAM and every register along the trajectory, so
 the ``activations'' we interpret are the program's own variables. The fourth is a
-content-path gradient $\partial y / \partial u$ through a straight-through estimator (STE)
+content-path gradient $\partial y / \partial u$ through a straight-through estimator (STE,
+a surrogate gradient whose forward pass still returns the exact discrete value)
 formulation whose forward pass is bit-exact to the hard machine at any finite
-temperature~\cite{bengio2013estimating,jang2017gumbel}, batched on the GPU. A neural
+temperature (a smoothing parameter)~\cite{bengio2013estimating,jang2017gumbel}, batched on the GPU. A neural
 interpretability study works with three things: the inputs, the state, and the outputs. Our
 substrate gives us all three.
 
@@ -67,9 +68,9 @@ value that flows smoothly into the pixel, where the naive gradient is valid. A
 \emph{position/index} output is a sprite, missile, or ball coordinate set by strobe timing.
 Here the naive gradient vanishes by Prop.~\ref{prop:zero}, and only the bilinear-sampler
 surrogate or the intervention oracle applies. An \emph{event} output is a discrete state
-change, a collision latch or a life lost, also gradient-zero. A \emph{score} output is the
+change, a collision latch (a one-bit hardware flag) or a life lost, also gradient-zero. A \emph{score} output is the
 game's running counter, valid for the gradient only where it varies continuously. A
-\emph{pixel} output is the rendered framebuffer value. It is content-valid where it tracks a
+\emph{pixel} output is the rendered framebuffer (the array of screen pixels) value. It is content-valid where it tracks a
 smooth cause and index-zero where it tracks a position. The Supplement lists, per game, which
 outputs each method is scored on and the per-output gradient verdict.
 
@@ -90,12 +91,12 @@ read it through the differentiable substrate. It is fast and dense, and it agree
 intervention oracle on the content path, the register, color, and graphics-bit values that
 flow smoothly into the pixel. Yet, one important limit applies to the whole study.
 The straight-through gradient routes to the content path only. So a discrete index, a
-sprite's screen position the VCS sets by the timing of a strobe write, has a naive gradient
+sprite's screen position the VCS sets by the timing of a strobe write (a write that latches the sprite's horizontal position), has a naive gradient
 that vanishes under the hard forward map. We make this precise.
 
 \begin{proposition}[Zero naive gradient for discrete-index outputs]\label{prop:zero}
 Let an output $y$ depend on a cause $u$ only through a discrete index
-$n(u)=\lfloor g(u)\rfloor\in\mathbb{Z}$, the integer count of color clocks between a strobe
+$n(u)=\lfloor g(u)\rfloor\in\mathbb{Z}$, the integer count of color clocks (each one pixel-time of the scanning beam) between a strobe
 write and the position-counter reset that the VCS uses to place a sprite, missile, or ball,
 with $g$ continuous, piecewise linear, and non-constant (strictly monotone on each linear
 piece). Under the hard (bit-exact) forward map the rendered output is $y=h(n(u))$ for a fixed
@@ -223,7 +224,8 @@ number. In Phase~A's single-unit and tuning analyses the per-game correlations c
 so we clip each per-game correlation at $0$ and then average across games (e.g.\ the tuning
 analysis A3 at $0.213$, the clip-at-zero mean of per-game correlations
 that include negatives). For the same attribution map we also report, as quality measures,
-deletion/insertion area-under-curve and precision at $k$ against the true causal top-$k$,
+deletion/insertion area-under-curve (deleting or inserting the top-attributed inputs and
+tracking the change in output) and precision at $k$ against the true causal top-$k$,
 $\mathrm{P@}k=|\,\mathrm{top}_k(\hat{E})\cap\mathrm{top}_k(\{\Delta y(u)\})\,|/k$. For a
 graph-valued explanation (Phase~A connectomics, Phase~C circuit discovery) we use the edge
 $F_1$ against the true data-flow graph, the harmonic mean of precision and recall over recovered
