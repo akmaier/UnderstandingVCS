@@ -26,7 +26,7 @@ Column & Meaning \\
 \texttt{phase} & phaseA\_kording, phaseB\_attribution, phaseC\_mechanistic, or ground\_truth \\
 \texttt{method} & method identifier (the row key) \\
 \texttt{tradition} & intervention, causal, gradient, correlational, \jkey{dim_reduction}, probing, descriptive, oracle \\
-\jkey{n_games} & number of games the method was scored on (up to 42 for the scored battery of \Sectionname\ref{supp:scoredbattery}; 1 for the oracle) \\
+\jkey{n_games} & number of games the method was scored on (up to 42 for the scored set of \Sectionname\ref{supp:scoredset}; 1 for the oracle) \\
 \jkey{n_records} & number of per-game output records aggregated into the row \\
 \texttt{faithfulness} (F) & faithfulness vs.\ the intervention oracle (\Sectionname\ref{sec:oracle}), $[0,1]$, higher better \\
 \jkey{faithfulness_ci95} & $95\%$ bootstrap CI half-width over games \\
@@ -54,6 +54,6 @@ it is recorded as N/A rather than as a zero. With this vocabulary the count is u
 The benchmark scores 30 interpretability methods together with the intervention
 oracle as a positive control, for 31 leaderboard rows in total
 (\texttt{leaderboard.json.n\_methods}~$=31$), aggregating 1773 per-game records over the
-42-game scored battery (\texttt{n\_per\_game\_records\_aggregated}~$=1773$): 8 methods in
+42-game scored set (\texttt{n\_per\_game\_records\_aggregated}~$=1773$): 8 methods in
 Phase~A, 12 in Phase~B, 10 in Phase~C, and the one oracle row. This count is the canonical one
 used in the abstract, the figures, and throughout this Supplement.

@@ -5,14 +5,14 @@
 % headline; we report what the methods recover against the KNOWN mechanism, and we do
 % NOT claim any of them recovered meaning or algorithm.
 
-\subsection{The neuroscience battery}\label{sec:results-a}
+\subsection{The neuroscience analyses}\label{sec:results-a}
 
 We begin with a known concern in the field. Jonas and Kording asked whether a
 neuroscientist with the standard toolkit could understand a microprocessor. They
 found that the toolkit yields rich structure but misses the
 mechanism~\cite{jonas2017could}. They could show the failure but not measure it.
 On the 6502 (the CPU model) they had no causal ground truth to score each method against. We
-supply that missing number. We run the same battery on the bit-exact, fully
+supply that missing number. We run the same analyses on the bit-exact, fully
 known VCS, where exact intervention recovers the true causal role of every
 register and RAM cell (\Sectionname\ref{sec:methods}). This makes Kording's
 qualitative lesson quantitative. Across the eight analyses A1--A8,
@@ -46,8 +46,7 @@ Tuning curves report structure that does not match the true cause. A3 fits
 per-unit tuning to a game variable, the workhorse of systems neuroscience. On the
 VCS it actively misleads. Its \emph{spurious-tuning rate} is the fraction of
 strongly-tuned units whose tuning does not match their true causal role. That
-rate is $0.50$ on Pong, and its faithfulness averages $0.21$, among the lowest in the
-battery~\cite{leaderboardP2}. Tuning is correlational. On a machine where many
+rate is $0.50$ on Pong, and its faithfulness averages $0.21$, among the lowest of the analyses~\cite{leaderboardP2}. Tuning is correlational. On a machine where many
 cells co-vary with the beam clock (timing of the scanning electron beam), apparent tuning is cheap. This is the same
 present-versus-used distinction we discuss later for linear probing.
 
@@ -89,25 +88,24 @@ minimality give a log file, not an account of the computation. This is the first
 sign that the three axes are independent. The semantic-gap result makes that
 point central later.
 
-Taken together, the battery confirms the expected result and puts a number on
+Taken together, these analyses confirm the expected result and puts a number on
 it. The advance over Jonas and Kording is that we grade the \emph{architectural}
 register-transfer level (registers and the logic between them) with a \emph{quantitative} $F$ against an exact oracle,
 rather than giving a qualitative verdict on the transistor. The contrast is
 clear, because the causal operators we apply to the same machine in
-\Sectionname\ref{sec:results-b} and~\Sectionname\ref{sec:results-c} reach the ceiling this battery
-cannot. So the limitation lies in the analysis methods, not in the machine. We
-mean this strictly as calibration. Even the battery's best members recover a
+\Sectionname\ref{sec:results-b} and~\Sectionname\ref{sec:results-c} reach the ceiling these analyses cannot. So the limitation lies in the analysis methods, not in the machine. We
+mean this strictly as calibration. Even the best of these analyses recover a
 ranking, a graph, or a record, never the algorithm the program runs. This
 remaining gap is what the paper measures.
 
 \begin{table}[t]
 \footnotesize
 \setlength{\tabcolsep}{4pt}
-\caption{\textbf{The neuroscience battery scored against the intervention oracle.}
+\caption{\textbf{The neuroscience analyses scored against the intervention oracle.}
 Faithfulness $F$ of each classical analysis A1--A8 against the exact intervention oracle
 (\Sectionname\ref{sec:oracle}), with its $95\%$ bootstrap confidence interval over the six
-core games and the documented plausibility proxy (\Sectionname\ref{sec:methods}). The battery
-averages $0.45$; the oracle-as-method positive control is $1.0$ by construction. Only the
+core games and the documented plausibility proxy (\Sectionname\ref{sec:methods}). The analyses
+average $0.45$; the oracle-as-method positive control is $1.0$ by construction. Only the
 causal single-unit lesion (A2) reaches the ceiling on a non-trivial metric. The whole-state
 recording (A8) is at $1.0$ only because recording everything is faithful, yet its minimality
 is $0.08$ --- a log file, not an account. Every value reads from a committed per-game record

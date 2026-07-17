@@ -9,10 +9,10 @@ ones at the current revision. The position-regime gap and its $95\%$ interval ar
 \texttt{leaderboard.json}, rather than recomputed here. Each
 record also carries \texttt{seed}, \texttt{where}, \texttt{commit}, and \texttt{timestamp}, so
 the provenance of every value is self-documenting. The aggregate scores below are taken over
-the 42-game scored battery of \Sectionname\ref{supp:scoredbattery}, not the six-game core;
+the 42-game scored set of \Sectionname\ref{supp:scoredset}, not the six-game core;
 each per-method row is a mean over the games on which that method applies (\jkey{n_games}
 per method, e.g.\ 42 for most methods, 35 for ACDC and A1). The position-regime gap is now
-significant on this battery.
+significant on this set.
 
 \begin{table}[t]
 \centering
@@ -54,7 +54,7 @@ trees. JSON keys are abbreviated with ``\texttt{...}'' where nested; the full pa
 REPRODUCIBILITY \Sectionname6.5.
 \end{table}
 
-One number needs a note, and we record it rather than hide it. On the 42-game scored battery
+One number needs a note, and we record it rather than hide it. On the 42-game scored set
 the sparse autoencoder's over-games mean $F=0.1526$ (\jkey{triad_F}) and over-records mean
 $0.1526$ (\jkey{faithfulness}) coincide, both read from the sparse-autoencoder row of
 \jkey{leaderboard.json}; the figures and the main-text leaderboard plot this value

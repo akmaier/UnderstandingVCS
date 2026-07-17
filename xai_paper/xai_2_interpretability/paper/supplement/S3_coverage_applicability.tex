@@ -25,7 +25,7 @@ labels) is available.
 \begin{table}[t]
 \centering
 \caption{\textbf{Core-game coverage.} The six core games carry exact tiered ground truth and
-the full method battery. Faithfulness is scored within the Paper~1 bit-exact window. The
+the full set of methods. Faithfulness is scored within the Paper~1 bit-exact window. The
 last two columns give the methods run and the per-game output records contributed. The wider
 64-game substrate is bit-exact (Paper~1) but is reserved for the larger sweep. T3 labels are
 external (\Sectionname\ref{sec:tiers}); we record this so the benchmark does not appear to certify them.}
@@ -107,7 +107,7 @@ labels imported from AtariARI~\cite{anand2019unsupervised} and OCAtari~\cite{del
 not derived by our oracle. This subsection documents where such labels \emph{exist}, so that the
 breadth and position analyses can, in principle, scale beyond the six-game core of
 Table~\ref{supp:tab:coverage}. It reports label \emph{availability and provenance} only. It does
-not report any result on the wider battery. The larger sweep is in progress and has produced no
+not report any result on the wider set. The larger sweep is in progress and has produced no
 scores yet; nothing below should be read as a score.
 
 The counts are computed, not estimated. We intersect our bit-exact roster with the games that
@@ -170,10 +170,10 @@ are: \texttt{defender}, \texttt{elevator\_action}, \texttt{gravitar}, \texttt{jo
 \texttt{solaris}, \texttt{surround}, \texttt{tutankham}, \texttt{videochess},
 \texttt{wizard\_of\_wor}, and \texttt{zaxxon}.
 
-\subsection{Scored battery: the 42-game applicable subset}\label{supp:scoredbattery}
+\subsection{Scored set: the 42-game applicable subset}\label{supp:scoredset}
 
 The T3-coverage of \Sectionname\ref{supp:t3coverage} sets the outer breadth of the sweep,
-but not every labeled game can measure faithfulness. The interpretability battery is scored on
+but not every labeled game can measure faithfulness. The interpretability methods are scored on
 42 games, not on all 54 T3-labeled games of Table~\ref{supp:tab:t3coverage}. We hold out 12
 games for two methodological reasons, decided before scoring. This is a scope decision about
 where the benchmark can measure anything, not a result. The excluded games keep their exact T1
@@ -192,7 +192,7 @@ and a position method has nothing to recover. These seven are \texttt{amidar}, \
 \texttt{star\_gunner}. The two criteria overlap for exactly three games, namely
 \texttt{asteroids}, \texttt{battle\_zone}, and \texttt{star\_gunner}, which fail both. Counting
 each excluded game once, the union is 5 gate-only plus 4 static-only plus 3 that fail both,
-which is 12, so the scored battery is $54-12=42$ games. Table~\ref{supp:tab:scoredbattery}
+which is 12, so the scored set is $54-12=42$ games. Table~\ref{supp:tab:scoredset}
 lists the 12 with their reason.
 
 Each of the 42 scored games both clears the cause-density gate and carries a sprite that moves
@@ -202,23 +202,23 @@ these 42 that also carry the full tiered ground truth and the exact oracle.
 
 The full per-game roster is in Table~\ref{supp:romroster}. It lists all 64 bit-exact games with
 their label source, the number of causally verified T3 labels, whether the game carries a moving
-tracked position, and whether it enters the scored battery (with the held-out reason otherwise).
+tracked position, and whether it enters the scored set (with the held-out reason otherwise).
 It makes the $64\rightarrow54\rightarrow42$ funnel explicit at the level of individual games: 64
-in the roster, 54 with a T3 label, and 42 in the scored battery. This mirrors the per-game
+in the roster, 54 with a T3 label, and 42 in the scored set. This mirrors the per-game
 ``Ground Truth ROMs'' page of the public dashboard.
 
 \begin{table}[t]
 \centering
-\caption{\textbf{Games held out from the scored battery.} The 12 games excluded from the
-42-game interpretability battery, with the methodological reason for each. ``Gate'' marks a
+\caption{\textbf{Games held out from the scored set.} The 12 games excluded from the
+42-game scored set, with the methodological reason for each. ``Gate'' marks a
 game that fails the oracle cause-density gate (fewer than four causes with $|\Delta y|>0.5$ at
 the shared analysis state). ``Static'' marks a game whose verified labels are all static
 (e.g.\ score or life counters), so no sprite moves under intervention for a position method to
 recover. The two criteria overlap for three games marked ``gate + static'', so counting each
 game once the union is 5 gate-only plus 4 static-only plus 3 both, which is 12, and the scored
-battery is $54-12=42$. These games keep their exact T1/T2 ground truth
+set is $54-12=42$. These games keep their exact T1/T2 ground truth
 (\Sectionname\ref{supp:t3coverage}); only their score cells are held out.}
-\label{supp:tab:scoredbattery}
+\label{supp:tab:scoredset}
 \footnotesize
 \setlength{\tabcolsep}{6pt}
 \begin{tabular}{@{}p{2.6cm}p{1.6cm}p{6.0cm}@{}}
@@ -249,28 +249,28 @@ Table~\ref{supp:romroster} gives the full per-game roster behind the counts abov
 each of the 64 bit-exact games. It mirrors the ``Ground Truth ROMs'' page of the public
 dashboard. For each game it records the T3 label source (OCAtari, both OCAtari and AtariARI, or
 none), the number of causally verified T3 labels, whether the game carries a moving tracked
-position, and whether it enters the 42-game scored battery. Games that are held out show the
+position, and whether it enters the 42-game scored set. Games that are held out show the
 reason in the last column. Reading down the last column makes the $64\rightarrow54\rightarrow42$
 funnel explicit: 64 games in the roster, 10 with no T3 label, 12 T3-labeled games held out from
-scoring for lack of causal structure or a moving target, and 42 in the scored battery.
+scoring for lack of causal structure or a moving target, and 42 in the scored set.
 
 \footnotesize
 \begin{longtable}{@{}p{3.2cm}p{1.6cm}r p{1.7cm}p{4.2cm}@{}}
 \caption{\textbf{Per-game ground-truth roster.} All 64 bit-exact games, alphabetically. ``Label
 source'' is the T3 provenance (OCAtari, both sources, or --- for no label). ``T3 verified'' is the
 count of causally verified T3 labels. ``Moving pos.'' is Yes when the game carries a tracked
-sprite that moves under intervention. ``Scored battery'' is Yes for the 42 scored games; otherwise
-it gives the held-out reason. The three held-out reasons match Table~\ref{supp:tab:scoredbattery}:
+sprite that moves under intervention. ``Scored set'' is Yes for the 42 scored games; otherwise
+it gives the held-out reason. The three held-out reasons match Table~\ref{supp:tab:scoredset}:
 the density gate, static-only labels, or both; ``no T3 label'' marks the 10 unlabeled games. This
 is a coverage record; no interpretability score appears in it.}
 \label{supp:romroster} \\
 \toprule
-Game & Label source & T3 verified & Moving pos. & Scored battery \\
+Game & Label source & T3 verified & Moving pos. & Scored set \\
 \midrule
 \endfirsthead
 \multicolumn{5}{@{}l}{\footnotesize Table~\ref{supp:romroster} (continued)}\\
 \toprule
-Game & Label source & T3 verified & Moving pos. & Scored battery \\
+Game & Label source & T3 verified & Moving pos. & Scored set \\
 \midrule
 \endhead
 \bottomrule
