@@ -68,11 +68,11 @@ def fig_architecture():
     riot = box(ax, 0.4, 5.5, 3.3, 1.8, "RIOT / M6532\nRAM, timer, I/O", fs=6.7)
     cpu  = box(ax, 4.2, 5.5, 2.8, 1.8, "6507 CPU\n(6502 core)", fs=7.2)
     cart = box(ax, 7.5, 5.5, 2.8, 1.8, "cartridge\nROM", fs=7.4)
-    tia  = box(ax, 10.8, 5.5, 2.8, 1.8, "TIA\nvideo+audio", fs=6.9)
+    tia  = box(ax, 10.8, 5.5, 2.8, 1.8, "TIA\nvideo", fs=6.9)
 
     # Peripherals below: input under RIOT (left), TV under TIA (right).
     inp = box(ax, 0.4, 2.4, 3.3, 1.6, "joystick,\nswitches", fs=7.2)
-    tv  = box(ax, 10.8, 2.4, 2.8, 1.6, "TV picture\n+ audio", fs=7.2)
+    tv  = box(ax, 10.8, 2.4, 2.8, 1.6, "TV picture", fs=7.2)
 
     for b in (riot, cpu, cart, tia):
         arrow(ax, (b[0], 7.3), (b[0], 8.0), style="<|-|>", lw=1.0)

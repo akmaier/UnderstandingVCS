@@ -1,3 +1,4 @@
+
 \documentclass[letterpaper]{article} % DO NOT CHANGE THIS
 \usepackage[submission]{aaai2027}  % DO NOT CHANGE THIS
 \usepackage[hyphens]{url}  % DO NOT CHANGE THIS
@@ -19,6 +20,7 @@
 \setcounter{secnumdepth}{1}
 \newtheorem{theorem}{Theorem}
 \newtheorem{assumption}{Assumption}
+\newtheorem{proposition}{Proposition}
 \newcommand{\sg}{\mathrm{sg}}
 \newcommand{\softmax}{\mathrm{softmax}}
 
@@ -31,26 +33,35 @@ Ground Truth for Explainable AI}
 \begin{document}
 \maketitle
 
-This supplement collects the analyses behind the main paper. We give the full
-proofs of the two theorems; a numerical study of how the relaxation parameters
-$\alpha$ and $T$ shape the gradient; an empirical and analytic account of when the
-\emph{fully relaxed} forward stays bit-exact (a cast-margin model, its
-$(\alpha,T)$ likelihood map, and boundary measurements on the full simulator),
-accompanied by the beam-timed comparison videos; and the implementation-effort
-timeline referenced in the Results. It is self-contained: we first restate the
-soft/hard formulation, prove the forward-equivalence and temperature-limit
-results, then study the relaxation gradient and forward bit-exactness, and finally
-show the effort timeline.
+This supplement collects the analyses behind the main paper. We give
+the full proofs of forward equivalence, the temperature-limit bound,
+and finite-parameter exactness; a numerical study of how $\alpha$
+and $T$ shape the gradient; measurements of forward bit-exactness
+under relaxation; throughput and active development time; and
+beam-timed comparison results. We first restate the execution
+modes and prove their properties.
 
 \section{Setup and Notation}
 
-The differentiable emulator runs one of two transition maps over the full VCS
-state $x=(\text{registers},\text{RAM},\text{RIOT},\text{TIA},\text{frame
-buffer})$: the bit-exact \emph{hard} map $\Phi_{\mathrm{H}}$ and the
-differentiable \emph{soft} map $\Phi_{\mathrm{S}}$. In both, the handler that
-runs is the one for the opcode byte at the program counter $\mathrm{pc}$. The
-handlers are assembled from five primitives, which we restate here so that the
-proofs are self-contained.
+The full VCS state is
+$x=(\text{CPU registers},\text{RAM},\text{RIOT},\text{TIA},
+\text{cartridge},\text{frame buffer})$.
+The hard transition $\Phi_{\mathrm{H}}$ executes one CPU instruction
+on the complete bit-exact machine. The full-system SOFT-STE
+transition $\Phi_{\mathrm{S}}$ first executes this hard instruction,
+including all bus and device effects. It then replays the instruction
+through differentiable CPU/RAM handlers against the same hard machine.
+ROM bytes are read through the current bank/slice mapping of the
+hard cartridge. TIA, RIOT, and Superchip register reads are
+replayed as constants from the hard bus; writes outside RAM
+affect only the hard devices.
+
+Every CPU register and RAM cell is returned as
+$\mathrm{STE}(\text{soft},\text{hard})$. TIA, RIOT, cartridge,
+and frame-buffer states are carried by the hard machine and
+receive no gradient. The backward pass reaches CPU registers,
+RAM, and ROM bytes. We define five primitives for the
+differentiable handlers and relaxed execution.
 
 The first primitive is the memory read. A read of a memory tensor
 $r\in\mathbb{R}^{M}$ of size $M$ (the ROM or the RAM) at an integer address
@@ -72,6 +83,10 @@ handler-output rows $V$ is the convex combination
 w_k=\frac{e^{\ell_k/T}}{\sum_j e^{\ell_j/T}} .
 \label{eq:s-select}
 \end{equation}
+This is a definition of a possible relaxation, not an executed
+dispatch mode. Every mode studied here uses the hard switch
+on the decoded opcode byte. No executed mode relaxes opcode
+dispatch, so it contributes no error term to the bounds below.
 
 The third primitive is the conditional branch. For a relaxed status flag
 $f\in[0,1]$ written as a logit $z=s(2f-1)$, where the sign $s$ selects
@@ -106,45 +121,21 @@ w_k=\frac{e^{-|k|/T}}{\sum_j e^{-|j|/T}},
 \label{eq:s-read}
 \end{equation}
 so that $\mathrm{peek}_{\mathrm{R}}\!\to r_a$ as $T\to0$ while the address carries
-a nonzero gradient for $T>0$. The executed (SOFT-STE) path uses the exact one-hot
-read~\eqref{eq:s-peek}; only the fully relaxed variant of
-Theorem~\ref{thm:s-limit} uses~\eqref{eq:s-read}.
+a nonzero gradient for $T>0$. The executed SOFT-STE path uses the exact one-hot
+read~\eqref{eq:s-peek}; FULL and LEAKY use~\eqref{eq:s-read}
+with their results rounded back to integers.
 
-In the executed soft step, dispatch uses the saturated (hard) form of
-\eqref{eq:s-select} and the branch returns
-$\mathrm{STE}(\mathrm{pc}_{\mathrm{soft}},\mathrm{pc}_{\mathrm{hard}})$. The
-relaxed forms \eqref{eq:s-select} and \eqref{eq:s-branch} \emph{without} the
-straight-through correction define the ``fully relaxed'' variant analysed in
-Theorem~\ref{thm:s-limit}. The temperature-limit result needs one
-non-degeneracy assumption, identical to the one in the main paper.
-
-\begin{assumption}[Decision margins]
-\label{ass:s-dm}
-Along the executed trajectory of length $N$, every discrete decision has a
-strictly positive margin. For opcode dispatch at step $t$ with logits
-$\ell^{(t)}$ and winner $k^\star_t$, the logit gap
-$\Delta_t=\ell^{(t)}_{k^\star_t}-\max_{k\ne k^\star_t}\ell^{(t)}_k$ is positive,
-and for each conditional branch with flag logit $z_t$, the margin $m_t=|z_t|$ is
-positive. Let $\Delta_{\min}=\min_t\Delta_t>0$ and $m_{\min}=\min_t m_t>0$.
-\end{assumption}
-
-These positive margins are a property of the \emph{executed} length-$N$
-trajectory; geometrically they define a tube around it inside which the relaxed
-maps agree with the hard one. The relaxed read~\eqref{eq:s-read} needs no margin:
-its off-target weights decay unconditionally with $T$ (proved below), so only
-dispatch and branches require Assumption~\ref{ass:s-dm}.
-
-The three execution modes referenced throughout are summarised in
-Table~\ref{tab:s-modes}.
+Table~\ref{tab:s-modes} summarises the six execution
+and gradient modes. FULL relaxes branches and reads only, with
+hard opcode dispatch. LEAKY is the same construction just
+outside the sufficient exactness region. NAIVE differentiates
+hard execution through discrete indices; SAMPLER adds a
+bilinear position kernel while retaining the hard forward.
 
 \begin{table}[tbh]
 \centering
-\caption{The three execution modes. \textsc{soft-ste} is the mode used for every
-gradient in this paper: its forward pass is bit-identical to \textsc{hard}
-(Theorem~\ref{thm:s-exact}) and its backward pass is a surrogate. The fully
-relaxed mode (\textsc{full}) is used only for the temperature-limit analysis
-(Theorem~\ref{thm:s-limit}); its forward pass is bit-exact only inside the corner
-of small $T$ and large $\alpha$.}
+\caption{Execution and gradient modes. Only SOFT-STE
+replays the full-system instruction for CPU/RAM gradients.}
 \label{tab:s-modes}
 \small
 \setlength{\tabcolsep}{4pt}
@@ -152,333 +143,550 @@ of small $T$ and large $\alpha$.}
 \toprule
 Mode & Forward & Gradient & Used for\\
 \midrule
-\textsc{hard} & bit-exact & none & conformance\\
-\textsc{soft-ste} & $=$\,\textsc{hard} & surrogate & attribution\\
-\textsc{full} & exact in corner & relaxed & $T{\to}0$ study\\
+\textsc{hard} & bit-exact & none & reference\\
+\textsc{soft-ste} & $=$\,\textsc{hard} & surrogate & CPU/RAM/ROM\\
+\textsc{full} & exact in corner & relaxed & $\alpha/T$ study\\
+\textsc{leaky} & mild divergence & relaxed & boundary test\\
+\textsc{naive} & bit-exact & zero on indices & baseline\\
+\textsc{sampler} & bit-exact & bilinear & position\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\paragraph{Numerical scope.} Soft mode keeps every quantity in float32 but only
-ever at integer values in $[-2^{24},2^{24}]$ (Theorem~\ref{thm:s-exact}), so no
-representation error accrues and the equalities below are exact, not approximate.
-Both ports apply the \emph{same} round-to-integer after each soft primitive, so
-\textsc{jutari} (Zygote) and \textsc{jaxtari} (JAX/XLA) produce identical integer
-trajectories. The float path carries gradients only; a quantity outside the
-$24$-bit range---which the VCS never produces---would forfeit the exactness
-guarantee.
+\begin{assumption}[Decision margins]
+\label{ass:s-dm}
+Along the executed trajectory of length $N$, each
+relaxed conditional branch has strictly positive
+flag-logit margin $m_t=|z_t|>0$.
+Let $m_{\min}=\min_t m_t>0$.
+\end{assumption}
 
+For exact processor flags, $z_t=\pm1$ and $m_{\min}=1$.
+The relaxed read~\eqref{eq:s-read} needs no additional
+margin assumption: the addressed integer byte is
+separated from other addresses by distance at least one.
+Opcode dispatch is hard.
 
+\paragraph{Numerical scope.}
+IEEE-754 float32 represents every integer in
+$[-2^{24},2^{24}]$ exactly
+\citep{ieee754_2019,goldberg1991}. All VCS register
+values, data bytes, addresses, and instruction-local
+integer quantities lie within this range.
+The full-system SOFT-STE forward uses hard-machine
+values for every state component, so it does not
+accumulate soft arithmetic or rounding error.
+The exactness statement concerns these returned
+values; the soft computation supplies gradients.
 
 \section{Proofs}
 
 \begin{theorem}[Exact forward equivalence]
 \label{thm:s-exact}
-For every reachable state $x$ and every finite sharpness $\alpha$ and
-temperature $T$, the soft and hard one-step maps are equal by design,
-$\Phi_{\mathrm{S}}(x) = \Phi_{\mathrm{H}}(x)$, with identical float32
-representations. Consequently, over a trajectory of $N$ steps,
-$x^{\mathrm{S}}_t = x^{\mathrm{H}}_t$ for all $t\le N$. The modes differ only in
-the Jacobian $\partial\Phi_{\mathrm{S}}/\partial x$, which is defined and
-generically nonzero where $\partial\Phi_{\mathrm{H}}/\partial x$ is zero or
-undefined.
-\end{theorem}
-
-\begin{proof}
-We first prove the one-step equality $\Phi_{\mathrm{S}}(x)=\Phi_{\mathrm{H}}(x)$
-for an arbitrary reachable $x$, and then extend it to a trajectory of length $N$
-by induction on the step index.
-
-\textit{One-step equality.} Fix a reachable $x$. In both modes the handler that
-executes is selected by the decoded opcode byte through the same hard switch (the
-softmax form~\eqref{eq:s-select} is not evaluated on the forward path), so both
-modes run the same handler on the same input. It therefore suffices to show that
-each primitive the handler uses returns the same forward value in both modes. A
-memory read at the integer address $a$ uses an exact one-hot indicator, so
-\begin{equation}
-\mathrm{peek}_{\mathrm{S}}(r,a)=\mathbf{1}_a^{\top}r
-=\textstyle\sum_i[\![i=a]\!]\,r_i=r_a=\mathrm{peek}_{\mathrm{H}}(r,a),
-\label{eq:s-peek-eq}
-\end{equation}
-the value a hard array read returns. Register, status-flag,
-binary-coded-decimal, and timer updates use the same integer and $\mathrm{round}$
-arithmetic in both modes (soft mode merely keeps the results in float32). A
-conditional branch returns the straight-through value~\eqref{eq:s-ste}. Since
-$\sg$ is the identity in the forward direction,
-\begin{equation}
-\begin{aligned}
-\mathrm{STE}(\mathrm{pc}_{\mathrm{soft}},\mathrm{pc}_{\mathrm{hard}})
-&=\mathrm{pc}_{\mathrm{soft}}+\sg(\mathrm{pc}_{\mathrm{hard}}-\mathrm{pc}_{\mathrm{soft}})\\
-&=\mathrm{pc}_{\mathrm{hard}}
-\end{aligned}
-\label{eq:s-branch-eq}
-\end{equation}
-for every $\alpha$ and $T$. Every component of the handler output thus equals its
-hard counterpart, and as the two handlers act on the same input,
+For every reachable full-machine state $x$ and finite
+sharpness $\alpha$ and temperature $T>0$, the full-system
+SOFT-STE step equals the hard step:
 \begin{equation}
 \Phi_{\mathrm{S}}(x)=\Phi_{\mathrm{H}}(x).
 \label{eq:s-onestep}
 \end{equation}
-These equalities hold in float32, not merely over the reals: IEEE-754 single
-precision has a $24$-bit significand and so represents every integer in
-$[-2^{24},2^{24}]$ exactly~\citep{ieee754_2019,goldberg1991}, and every VCS
-quantity lies in this range (data bytes $\le255$, $13$-bit addresses, per-frame
-cycle counts of a few tens of thousands), so
-\eqref{eq:s-peek-eq}--\eqref{eq:s-onestep} are exact.
-
-\textit{Induction on the trajectory.} Let the two runs share the initial state
-and evolve by $x^{\bullet}_{t+1}=\Phi_{\bullet}(x^{\bullet}_t)$. We show
-$x^{\mathrm{S}}_t=x^{\mathrm{H}}_t$ for all $0\le t\le N$.
-
-\textit{Base case} ($t=0$): $x^{\mathrm{S}}_0=x^{\mathrm{H}}_0$ by the shared
-initial state.
-
-\textit{Inductive step:} assume $x^{\mathrm{S}}_t=x^{\mathrm{H}}_t=:x$ for some
-$t<N$. Applying the one-step equality~\eqref{eq:s-onestep} to $x$,
-\begin{equation}
-x^{\mathrm{S}}_{t+1}=\Phi_{\mathrm{S}}(x^{\mathrm{S}}_t)=\Phi_{\mathrm{S}}(x)
-=\Phi_{\mathrm{H}}(x)=\Phi_{\mathrm{H}}(x^{\mathrm{H}}_t)=x^{\mathrm{H}}_{t+1},
-\end{equation}
-where the outer equalities use the inductive hypothesis and the middle one
-is~\eqref{eq:s-onestep}. By induction $x^{\mathrm{S}}_t=x^{\mathrm{H}}_t$ for all
-$t\le N$.
-
-\textit{Gradients.} The stop-gradient in~\eqref{eq:s-ste} alters only the
-reverse-mode rule: the returned counter carries the derivative of
-$\mathrm{pc}_{\mathrm{soft}}=\mathrm{pc}_{\bar b}+g\,\delta$, namely
-$\alpha\,g(1-g)\,\delta$, which is generically nonzero where the hard branch---a
-step function of the flag---has zero or undefined derivative. Likewise the
-read~\eqref{eq:s-peek} has Jacobian $\mathbf{1}_a$ with respect to $r$. The
-forward pass is unchanged while gradients become available.
-\end{proof}
-
-\begin{theorem}[Temperature-limit bound]
-\label{thm:s-limit}
-Consider the fully relaxed emulator that uses the softmax
-dispatch~\eqref{eq:s-select}, sigmoid branch~\eqref{eq:s-branch}, and
-distance-softmax reads~\eqref{eq:s-read} \emph{without} the straight-through
-correction. Under Assumption~\ref{ass:s-dm}, its one-step map converges to the
-hard map as $T\to0$ and $\alpha\to\infty$, with per-step deviation
-\begin{equation}
-\begin{aligned}
-\big\|\Phi^{T}_{\mathrm{S}}(x)-\Phi_{\mathrm{H}}(x)\big\|_\infty
-\;\le\; C\big[&(K-1)\,e^{-\Delta_{\min}/T}\\
-&{}+e^{-\alpha m_{\min}}+\rho\,e^{-1/T}\big],
-\end{aligned}
-\label{eq:s-bound}
-\end{equation}
-where $C$ bounds the value range (bytes $\le255$, branch offsets $\le256$) and
-$\rho$ the number of reads in the step. Over $N$ steps, with Lipschitz constant
-$L\ge1$ for error propagation, the trajectory deviation is at most
-$\frac{L^{N}-1}{L-1}$ times the right-hand side of~\eqref{eq:s-bound}, which is
-$\mathcal{O}(e^{-c/T})$ with $c=\min(\Delta_{\min},1)$.
+The complete trajectories therefore agree for every
+instruction under identical initial states and inputs.
+The modes differ only in their backward rules.
 \end{theorem}
 
 \begin{proof}
-We bound the deviation of the relaxed one-step map from the hard one and then
-propagate it along the trajectory. Throughout, $C$ bounds the range of any state
-value (bytes $\le255$, branch offsets $\le256$).
+We first prove the one-step equality for an arbitrary
+reachable state $x$, then extend it by induction.
 
-\textit{Dispatch term.} At a step with logits $\ell$ and winner $k^\star$ the
-gap is $\Delta\ge\Delta_{\min}>0$ by Assumption~\ref{ass:s-dm}, so for any loser
-$k\ne k^\star$,
-\begin{equation}
-w_k=\frac{e^{\ell_k/T}}{\sum_j e^{\ell_j/T}}
-\le\frac{e^{\ell_k/T}}{e^{\ell_{k^\star}/T}}
-=e^{(\ell_k-\ell_{k^\star})/T}\le e^{-\Delta_{\min}/T},
-\end{equation}
-so the non-winning mass is $1-w_{k^\star}=\sum_{k\ne k^\star}w_k\le
-(K-1)e^{-\Delta_{\min}/T}$. As the dispatch output is the convex combination
-$\sum_k w_k V_k$,
+\textit{Hard instruction and soft replay.}
+The full-system step first executes the instruction on
+the bit-exact hard machine. This updates the CPU
+registers, RAM, bus, TIA, RIOT, cartridge, and
+frame buffer exactly as $\Phi_{\mathrm{H}}$ does.
+The selected opcode handler is determined by the
+hard decoded byte.
+
+The soft CPU/RAM handlers then replay the instruction
+against that same hard machine. Opcode dispatch
+remains the hard switch. A ROM read uses the current
+hard-cartridge bank/slice mapping; a RAM read uses
+the soft tape. Reads of TIA, RIOT, and Superchip
+registers are constants from the hard bus, and
+writes outside RAM go to hard devices only.
+These rules ensure that the soft replay does not
+replace the hard device state with an approximation.
+
+\textit{STE join.}
+Let $h_j$ be the hard result for any CPU register
+or RAM cell and $s_j$ its soft replay result.
+The returned value is
 \begin{equation}
 \begin{aligned}
-\Big\|\textstyle\sum_k w_k V_k-V_{k^\star}\Big\|_\infty
-&\le(1-w_{k^\star})\max_k\|V_k-V_{k^\star}\|_\infty\\
-&\le(K-1)\,e^{-\Delta_{\min}/T}\,C .
+\mathrm{STE}(s_j,h_j)
+&=s_j+\sg(h_j-s_j)\\
+&=h_j.
 \end{aligned}
-\label{eq:s-disp}
+\label{eq:s-branch-eq}
 \end{equation}
+This equality holds for every value of $s_j$, without
+assuming that the soft handler numerically reproduces
+the hard one. Thus every returned CPU register and
+RAM cell is exactly hard. All other state components
+are already carried by the hard machine. Therefore
+every component of the complete state agrees, proving
+$\Phi_{\mathrm{S}}(x)=\Phi_{\mathrm{H}}(x)$.
 
-\textit{Branch term.} For a margin $m=|z|\ge m_{\min}$ the gate error is
+\textit{Floating-point equality.}
+The hard values of VCS bytes, registers, addresses,
+and instruction-local counts lie within the exact
+integer range of float32. IEEE-754 single precision
+has a 24-bit significand and represents all integers
+in $[-2^{24},2^{24}]$ exactly
+\citep{ieee754_2019,goldberg1991}.
+For example, the one-hot read obeys
 \begin{equation}
-\big|\sigma(\alpha z)-[\![z>0]\!]\big|=\sigma(-\alpha m)\le e^{-\alpha m_{\min}},
+\mathrm{peek}_{\mathrm{S}}(r,a)
+=\mathbf{1}_a^{\top}r=r_a
+=\mathrm{peek}_{\mathrm{H}}(r,a).
+\label{eq:s-peek-eq}
+\end{equation}
+The STE join likewise returns the hard integer value.
+Hence no representation error is introduced in the
+returned state. Equality is exact, not a tolerance
+comparison.
+
+\textit{Induction on the trajectory.}
+Let the two runs share $x_0$ and the same input
+sequence. For the base case,
+$x^{\mathrm{S}}_0=x^{\mathrm{H}}_0$.
+If $x^{\mathrm{S}}_t=x^{\mathrm{H}}_t=:x$,
+one-step equality gives
+\begin{equation}
+\begin{aligned}
+x^{\mathrm{S}}_{t+1}
+&=\Phi_{\mathrm{S}}(x)\\
+&=\Phi_{\mathrm{H}}(x)
+=x^{\mathrm{H}}_{t+1}.
+\end{aligned}
+\end{equation}
+By induction, the complete trajectories agree at
+every instruction.
+
+\textit{Gradients.}
+The stop-gradient changes the reverse-mode rule
+without changing the forward result. For example,
+the relaxed branch gate contributes
+$\alpha g(1-g)\delta$ to the derivative with
+respect to its logit, where the corresponding
+hard branch is discrete. The memory
+read~\eqref{eq:s-peek} supplies the one-hot
+Jacobian $\mathbf{1}_a$ with respect to memory
+contents. The soft replay therefore exposes
+surrogate gradients through CPU registers, RAM,
+and ROM bytes. TIA, RIOT, cartridge, and
+frame-buffer states carry no gradient.
+These derivatives are not the derivatives of
+the hard discrete transition.
+\end{proof}
+
+\paragraph{Measured handler agreement.}
+We tested the full-system soft step in
+\textsc{jutari} on all 64 ROMs, beginning 20
+frames into play and executing 3,000 instructions
+per game. SOFT-STE equalled HARD at every
+instruction (64/64). Moreover, the soft
+handlers \emph{before} STE correction reproduced
+every hard CPU register and RAM cell at every
+instruction, with zero disagreements. Thus
+the correction was the identity in value on
+these trajectories.
+
+This check exposed two soft-handler defects,
+both fixed. The functional \texttt{BRK} handler
+did not push the required state and jump through
+the IRQ vector. Instruction fetches also always
+read ROM, incorrectly handling code executed
+from RAM, as in Up'n Down at
+$\mathrm{pc}=\texttt{\$00EA}$.
+The tests therefore check the computation through
+which gradients pass, not only the STE result.
+
+\begin{theorem}[Temperature-limit bound]
+\label{thm:s-limit}
+Consider FULL, which uses sigmoid
+branches~\eqref{eq:s-branch} and distance-softmax
+reads~\eqref{eq:s-read} without STE correction,
+while retaining hard opcode dispatch.
+Under Assumption~\ref{ass:s-dm}, the deviations
+of the unrounded relaxed branch and read values
+from their hard counterparts satisfy
+\begin{equation}
+\begin{aligned}
+\big\|\Phi_{\mathrm{S}}^{T,\alpha}(x)
+-\Phi_{\mathrm{H}}(x)\big\|_\infty
+\le C\big[
+e^{-\alpha m_{\min}}
++\rho e^{-1/T}\big],
+\end{aligned}
+\label{eq:s-bound}
+\end{equation}
+where the norm denotes the local deviations of
+these relaxed operations, $C$ bounds their
+value ranges and fixed geometric factors, and
+$\rho$ bounds the number of reads per step.
+The branch and read errors converge separately
+as $\alpha\to\infty$ and $T\to0$:
+\[
+\mathcal{O}(e^{-\alpha m_{\min}}+e^{-1/T}).
+\]
+No opcode-dispatch term occurs.
+\end{theorem}
+
+\begin{proof}
+We bound the two relaxed operations evaluated
+on the same hard input state. The bound concerns
+their unrounded values; rounding is addressed
+separately in Proposition~\ref{prop:s-finite}.
+
+\textit{Branch term.}
+For a branch with margin $m=|z|\ge m_{\min}$,
+the difference between the sigmoid gate and the
+hard decision is
+\begin{equation}
+\begin{aligned}
+\big|\sigma(\alpha z)-[\![z>0]\!]\big|
+&=\sigma(-\alpha m)\\
+&\le e^{-\alpha m_{\min}}.
+\end{aligned}
 \label{eq:s-gate}
 \end{equation}
-so the blended counter $\mathrm{pc}_{\bar b}+g\,\delta$ differs from the hard
-target $\mathrm{pc}_{\bar b}+[\![z>0]\!]\,\delta$ by
+Consequently, the unrounded program counter
+differs from the hard target by
 \begin{equation}
-\big|(g-[\![z>0]\!])\,\delta\big|\le|\delta|\,e^{-\alpha m_{\min}}
-\le C\,e^{-\alpha m_{\min}}.
+\begin{aligned}
+\big|(g-[\![z>0]\!])\delta\big|
+&\le|\delta|e^{-\alpha m_{\min}}\\
+&\le C e^{-\alpha m_{\min}}.
+\end{aligned}
 \label{eq:s-branchterm}
 \end{equation}
 
-\textit{Read term.} A distance-softmax read~\eqref{eq:s-read} deviates from the
-hard value $r_a$ by the neighbour pull. Using $|r_{a+k}-r_a|\le 2C$ and
-$1-w_0=\big(\sum_{k\ne0}e^{-|k|/T}\big)/\big(\sum_j e^{-|j|/T}\big)
-\le 2\sum_{k\ge1}e^{-k/T}=2e^{-1/T}/(1-e^{-1/T})$,
+\textit{Read term.}
+For an addressed byte $r_a$, the
+distance-softmax read gives
 \begin{equation}
-\Big|\textstyle\sum_{k\ne0}w_k(r_{a+k}-r_a)\Big|
-\le (1-w_0)\,2C\le C\,e^{-1/T}
+\mathrm{peek}_{\mathrm{R}}(r,a;T)-r_a
+=\sum_{k\ne0}w_k(r_{a+k}-r_a).
+\end{equation}
+Let $w_0$ denote the weight of the addressed
+byte. Since bytes lie in $[0,255]$,
+\begin{equation}
+\begin{aligned}
+\big|\mathrm{peek}_{\mathrm{R}}(r,a;T)-r_a\big|
+&\le255(1-w_0).
+\end{aligned}
+\end{equation}
+The denominator in~\eqref{eq:s-read} contains
+the addressed weight $1$, so
+\begin{equation}
+\begin{aligned}
+1-w_0
+&\le2\sum_{d=1}^{\infty}e^{-d/T}\\
+&=\frac{2e^{-1/T}}{1-e^{-1/T}}.
+\end{aligned}
+\label{eq:s-readmass}
+\end{equation}
+Thus
+\begin{equation}
+\big|\mathrm{peek}_{\mathrm{R}}(r,a;T)-r_a\big|
+\le\frac{510e^{-1/T}}{1-e^{-1/T}}.
 \label{eq:s-readterm}
 \end{equation}
-for $T$ below a fixed $T_0$, absorbing the geometric factor and the byte range
-into $C$. Unlike dispatch and branch this requires no margin: the integer address
-spacing is $\ge1$, so the off-target weights decay as $e^{-1/T}$ unconditionally.
-The $\rho$ reads of the step contribute at most $\rho\,C\,e^{-1/T}$.
+For $T$ bounded above by any fixed $T_0>0$,
+the denominator is bounded away from zero.
+Absorbing this fixed factor and the byte range
+into $C$ gives the rate $C e^{-1/T}$.
+The $\rho$ reads contribute at most
+$\rho C e^{-1/T}$.
 
-\textit{Per-step bound.} Adding~\eqref{eq:s-disp}, \eqref{eq:s-branchterm},
-and~\eqref{eq:s-readterm} bounds the one-step deviation: for every reachable $x$,
+\textit{Combined bound.}
+The executed opcode dispatch is a hard switch;
+its contribution is exactly zero. Adding the
+branch and read contributions yields
 \begin{equation}
 \begin{aligned}
 \delta_{\mathrm{step}}
-&:=\big\|\Phi^{T}_{\mathrm{S}}(x)-\Phi_{\mathrm{H}}(x)\big\|_\infty\\
-&\le C\big[(K-1)e^{-\Delta_{\min}/T}+e^{-\alpha m_{\min}}+\rho\,e^{-1/T}\big],
+&\le C\big[
+e^{-\alpha m_{\min}}
++\rho e^{-1/T}\big],
 \end{aligned}
 \label{eq:s-perstep}
 \end{equation}
-which is~\eqref{eq:s-bound}.
-
-\textit{Propagation.} Let $L\ge1$ be a Lipschitz constant of $\Phi_{\mathrm{H}}$
-in $\|\cdot\|_\infty$ and $e_t=\|x^{T,\mathrm{S}}_t-x^{\mathrm{H}}_t\|_\infty$ the
-trajectory error after $t$ steps, with $e_0=0$. Each step adds at most
-$\delta_{\mathrm{step}}$ to the hard map applied to the accumulated error,
-\begin{equation}
-e_{t+1}\le L\,e_t+\delta_{\mathrm{step}},
-\end{equation}
-and unrolling from $e_0=0$ gives
-\begin{equation}
-e_N\le\delta_{\mathrm{step}}\sum_{i=0}^{N-1}L^i
-=\delta_{\mathrm{step}}\,\frac{L^N-1}{L-1}.
-\end{equation}
-As $T\to0$ and $\alpha\to\infty$,
-$\delta_{\mathrm{step}}=\mathcal{O}(e^{-c/T})\to0$ with
-$c=\min(\Delta_{\min},1)$, so the relaxed trajectory converges to the hard one,
-$\Phi^{T}_{\mathrm{S}}\to\Phi_{\mathrm{H}}$.
+which is~\eqref{eq:s-bound}. The two
+exponential rates remain separate; no relation
+between $\alpha$ and $T$ is assumed.
 \end{proof}
+
+\begin{proposition}[Finite-parameter exactness]
+\label{prop:s-finite}
+FULL retains hard opcode dispatch and rounds
+each relaxed branch target and memory-read result
+to an integer. If every relaxed value differs
+from the corresponding hard integer by less
+than $1/2$, the rounded value equals the hard
+one. Hence the entire rounded trajectory is
+bit-exact.
+
+For a binary-flag branch with offset $\delta$,
+the sufficient and, away from rounding ties,
+necessary condition is
+\begin{equation}
+|\delta|\sigma(-\alpha)<\frac12
+\quad\Longleftrightarrow\quad
+|\delta|<\frac{1+e^\alpha}{2}.
+\label{eq:s-branchcorner}
+\end{equation}
+Since $|\delta|\le128$ for a 6502 branch,
+$\alpha\ge6$ suffices.
+
+For an 8-bit distance-softmax read,
+\begin{equation}
+\begin{aligned}
+|\mathrm{peek}_{\mathrm{R}}(r,a;T)-r_a|
+&\le255(1-w_0)\\
+&\le\frac{510e^{-1/T}}{1-e^{-1/T}}\\
+&<\frac12 \qquad(T\le0.14).
+\end{aligned}
+\label{eq:s-readcorner}
+\end{equation}
+Thus $\alpha\ge6$, $T\le0.14$ are
+program-independent sufficient conditions
+for the rounded FULL trajectory to equal HARD.
+\end{proposition}
+
+\begin{proof}
+\textit{Branch casts.}
+A hard branch with a binary flag chooses either
+$\mathrm{pc}_{\bar b}$ or
+$\mathrm{pc}_{b}=\mathrm{pc}_{\bar b}+\delta$.
+The sigmoid gate leaves weight
+$\sigma(-\alpha)$ on the unselected target.
+Therefore the absolute displacement of the
+relaxed result from the hard target is exactly
+\begin{equation}
+\epsilon_b=|\delta|\sigma(-\alpha).
+\end{equation}
+Rounding to the nearest integer returns the
+hard target whenever $\epsilon_b<1/2$.
+Using
+$\sigma(-\alpha)=1/(1+e^\alpha)$,
+\begin{equation}
+\begin{aligned}
+\epsilon_b<\frac12
+&\Longleftrightarrow
+\frac{|\delta|}{1+e^\alpha}<\frac12\\
+&\Longleftrightarrow
+|\delta|<\frac{1+e^\alpha}{2}.
+\end{aligned}
+\end{equation}
+At $\alpha=6$, the right-hand side is
+approximately $202.2$, exceeding the maximum
+6502 offset magnitude of $128$. Hence all
+binary-flag branches round to their hard target.
+
+\textit{Memory-read casts.}
+For address $a$, let $w_0$ be the weight of
+the addressed byte. Each other byte differs
+from $r_a$ by at most $255$, so
+\begin{equation}
+\begin{aligned}
+\epsilon_r
+&=\left|\sum_{k\ne0}w_k(r_{a+k}-r_a)\right|\\
+&\le255\sum_{k\ne0}w_k
+=255(1-w_0).
+\end{aligned}
+\end{equation}
+For each distance $d\ge1$, at most two
+addresses lie at that distance from $a$.
+Furthermore, the normalising denominator is
+at least one. Thus
+\begin{equation}
+\begin{aligned}
+1-w_0
+&\le2\sum_{d=1}^{\infty}e^{-d/T}\\
+&=\frac{2e^{-1/T}}{1-e^{-1/T}}.
+\end{aligned}
+\end{equation}
+Reads near either end of the memory have fewer
+neighbours, which can only decrease this bound.
+It follows that
+\begin{equation}
+\epsilon_r
+\le\frac{510e^{-1/T}}{1-e^{-1/T}}.
+\end{equation}
+At $T=0.14$, the right-hand side is
+approximately $0.40<1/2$. The worst-case
+threshold is approximately $T=0.1443$.
+Hence every relaxed byte read rounds exactly
+to its addressed hard value for $T\le0.14$,
+regardless of the program or byte contents.
+
+\textit{Induction over instructions.}
+At the initial instruction the FULL and HARD
+states agree. Suppose they agree immediately
+before some instruction. Both decode the same
+opcode through the hard dispatch switch and
+execute the same non-relaxed operations.
+By the preceding bounds, every relaxed branch
+target and memory-read result rounds to its
+hard counterpart. Therefore the state after
+the instruction also agrees. Induction proves
+equality for the entire trajectory, without
+a Lipschitz or error-propagation assumption.
+\end{proof}
+
+The bounds are sufficient, not necessary:
+outside this corner, exactness depends on the
+branch offsets and byte patterns actually
+encountered. At $\alpha=6$, $T=0.14$, FULL
+was measured bit-exact for 6,000 instructions
+on Pong, Breakout, and Space Invaders.
+LEAKY ($\alpha=5.5$, $T=0.145$) lies just
+outside the sufficient region and exhibits
+mild forward divergence in the measured scene.
 
 \section{Effect of the Relaxation Parameters on the Gradient}
 
-Theorems~\ref{thm:s-exact} and~\ref{thm:s-limit} say the hard limit
-($\alpha\to\infty$ for the sigmoid branch, $T\to0$ for the softmax select) is
-exact in value but degenerate in gradient. We illustrate both knobs on \textsc{jutari}
-with a single target sprite (an invader) whose horizontal placement is produced
-by the soft primitives. For the sigmoid branch we plot the screen-space
-directional-derivative saliency
-$\partial(\text{screen})/\partial(\text{control})$ as the sharpness $\alpha$ is
-swept (Figure~\ref{fig:alphatemp}). The main paper additionally plots the gate
-and its gradient directly, and shows the softmax select's temperature effect in
-pixel space (a sampled sprite-occupancy heatmap). In the gradient maps the colour
-encodes the
-\emph{sign} of the derivative---red where a pixel brightens as the control
-increases (the sprite arriving) and blue where it darkens (the sprite
-leaving)---and its intensity the magnitude, on a black background. The colour bar
-is in absolute units and the per-panel number is the peak relative to the row
-maximum.
+Theorems~\ref{thm:s-exact} and~\ref{thm:s-limit} show
+that exact forward execution and useful gradients
+are distinct properties. We illustrate how $\alpha$
+and $T$ affect surrogate gradients in \textsc{jutari},
+using a target invader sprite whose horizontal placement
+is controlled by the soft primitives.
 
-For the branch the position is $\mathrm{pc}=(1-g)\,\mathrm{pc}_L+g\,\mathrm{pc}_R$
-with $g=\sigma(\alpha z)$, so its derivative with respect to the control $z$ is
-$\alpha\,\sigma(\alpha z)\,(1-\sigma(\alpha z))\,(\mathrm{pc}_R-\mathrm{pc}_L)$:
-a dipole, blue on the placement being vacated and red on the one being entered.
-The magnitude $\alpha\,\sigma(\alpha z)(1-\sigma(\alpha z))$ is
-\emph{non-monotonic} in $\alpha$ at the fixed operating point $z{=}0.25$. A small
-$\alpha$ gives a shallow gate and hence a small slope, and a large $\alpha$
-saturates the gate ($\sigma(\alpha z)\to1$, so $\sigma(1-\sigma)\to0$). The maximum
-is the intermediate $\alpha$ for which $\alpha z$ falls in the sigmoid's steep band,
-near $\alpha{=}6$ here---$\alpha{=}2,6,20$ give peak magnitudes
-$0.53,1.00,0.15$, and at $\alpha{=}20$ the gate has essentially switched and the
-gradient has nearly vanished (the hard-branch limit). The main paper plots this
-gate and its gradient directly.
+For the sigmoid branch, we plot the screen-space
+directional derivative
+$\partial(\text{screen})/\partial(\text{control})$
+while varying $\alpha$ (Figure~\ref{fig:alphatemp}).
+The colour encodes the sign of the derivative:
+red where a pixel brightens as the control increases,
+blue where it darkens. Intensity denotes magnitude.
+The colour bar gives absolute units; each panel
+also reports its peak relative to the row maximum.
 
-In every panel the forward render is the exact hard one
-(Theorem~\ref{thm:s-exact}), and only the gradient changes. It is most informative
-at intermediate relaxation and decays to zero as the relaxation is sharpened toward
-the hard limit (Theorem~\ref{thm:s-limit}). This
-is a qualitative study of how the parameter \emph{values} act on the gradient,
-run on \textsc{jutari}, and the values need not be tuned for the bit-exact forward pass.
+For a position
+$\mathrm{pc}=(1-g)\mathrm{pc}_L+g\mathrm{pc}_R$,
+with $g=\sigma(\alpha z)$, the derivative is
+\begin{equation}
+\frac{\partial\mathrm{pc}}{\partial z}
+=\alpha g(1-g)(\mathrm{pc}_R-\mathrm{pc}_L).
+\end{equation}
+This produces a dipole at the two sprite placements.
+Its magnitude is non-monotonic in $\alpha$ at fixed
+$z=0.25$: small $\alpha$ gives a shallow gate,
+while large $\alpha$ saturates it. The measured
+relative peaks for $\alpha=2,6,20$ are
+$0.53,1.00,0.15$, respectively. The intermediate
+$\alpha=6$ gives the strongest gradient here.
+
+The forward render in this STE gradient experiment
+remains the exact hard one (Theorem~\ref{thm:s-exact});
+only the surrogate derivative changes. The gradient
+vanishes as the relaxation approaches its hard limit.
+This is a property of the estimator, not evidence
+that its attributions are faithful.
 
 \begin{figure}[tbh]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_alpha_temp.pdf}
 \caption{Soft branch: the screen-space gradient
-$\partial(\text{screen})/\partial z$ as the sharpness $\alpha$ is swept, on
-\textsc{jutari}. The target sprite's placement is a sigmoid-gated blend of a left and a
-right position, so the gradient is a dipole---blue where a pixel darkens (the
-placement being vacated) and red where it brightens (the one being entered). The
-colour bar is in absolute units (here $\pm0.90$) and the per-panel number is the
-peak relative to the maximum. The dipole is strongest at an intermediate $\alpha$
-(here $\alpha{=}6$) and nearly vanishes by $\alpha{=}20$ as the gate
-saturates---the hard-branch limit (cf.\ Theorems~\ref{thm:s-exact}
-and~\ref{thm:s-limit}).}
+$\partial(\text{screen})/\partial z$ as sharpness
+$\alpha$ is swept in \textsc{jutari}. The gradient
+is a dipole: blue where a sprite leaves, red where
+it arrives. The colour bar is in absolute units
+(here $\pm0.90$); panel values are relative peaks.
+The gradient is strongest at $\alpha=6$ and nearly
+vanishes at $\alpha=20$ as the gate saturates.
+The STE forward remains bit-exact.}
 \label{fig:alphatemp}
 \end{figure}
 
 \section{Forward Bit-Exactness Under Full Relaxation}
 
-The gradient study above keeps the straight-through estimator, so the forward
-pass is bit-exact at any $\alpha$ and $T$ (Theorem~\ref{thm:s-exact}). To probe
-the temperature-limit bound (Theorem~\ref{thm:s-limit}) empirically we instead
-\emph{drop} the straight-through correction---the fully relaxed forward, where
-$\alpha$ and $T$ act on the executed values themselves---and run it on the full
-\textsc{jutari} simulator executing the real Space Invaders ROM. Every instruction casts
-the sigmoid-blended program counter and the temperature-blended operand reads
-back to integers, so the trajectory stays bit-exact only while every such cast
-rounds to the value the executed (straight-through) path would produce: a large
-$\alpha$ keeps the rounded soft program counter on the hard branch target, and a
-small $T$ keeps the distance-softmax read on the addressed byte.
+SOFT-STE is forward-exact independently of $\alpha$
+and $T$ (Theorem~\ref{thm:s-exact}). FULL instead
+relaxes conditional branches and memory reads without
+STE correction, retaining hard opcode dispatch.
+Every relaxed branch target and byte read is rounded
+back to an integer. Proposition~\ref{prop:s-finite}
+proves that $\alpha\ge6$ and $T\le0.14$ suffice for
+exactness independently of the executed program.
+
+We test the rounding boundaries on the full
+\textsc{jutari} simulator executing Space Invaders.
+The hard, cycle-timed TIA and other devices remain
+unchanged; only the CPU's branch and read operations
+pass through the relaxation hook.
 
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_relax_heatmap.pdf}
-\caption{Overview of the per-step bit-exactness likelihood
-$P_{\mathrm{step}}=p_{\mathrm{read}}(T)^{\rho}\,p_{\mathrm{branch}}(\alpha)^{f_b}$
-of the fully relaxed forward across the $(\alpha,T)$ plane (Space Invaders).
-A bit-exact corner---bright, with the green contour marking
-$P_{\mathrm{step}}{=}1$---sits at large branch sharpness $\alpha$ and small read
-temperature $T$, bounded by a gradual branch boundary (in $\alpha$) and a sharp
-temperature boundary (in $T$); the white dashed line is $P_{\mathrm{step}}{=}0.5$.
-Because $P_{\mathrm{step}}$ factorises, the plane is the outer combination of the
-two $1$D profiles, and the two boundary sweeps of Table~\ref{tab:relax-exact} are
-slices along the green contour's two edges. The star marks the recommended
-operating point ($\alpha{=}6$, $T{=}0.14$)---the corner where they cross.}
+\caption{Heuristic per-step exactness likelihood
+$P_{\mathrm{step}}=
+p_{\mathrm{read}}(T)^\rho
+p_{\mathrm{branch}}(\alpha)^{f_b}$
+for Space Invaders. The green contour marks
+$P_{\mathrm{step}}=1$; the dashed white contour
+marks $0.5$. The star marks the sufficient
+program-independent setting $\alpha=6$, $T=0.14$
+(Proposition~\ref{prop:s-finite}). The likelihood
+model describes the measured boundary, not the
+source of the exactness guarantee.}
 \label{fig:relaxheat}
 \end{figure}
 
-Because each cast is a rounding, the likelihood of staying bit-exact follows
-from the cast margins. A crisp-flag branch with signed offset $\delta$ keeps its
-rounded soft program counter on the hard target exactly when
-$|\delta|<\tau_b(\alpha)$, $\tau_b(\alpha)=\tfrac12(1+e^{\alpha})$, so the
-per-branch exactness $p_{\mathrm{branch}}(\alpha)$ is the fraction of executed
-branch offsets below $\tau_b$. A temperature-$T$ read at address $a$ returns
-$\mathrm{round}\!\big(\sum_k w_k\,\mathrm{mem}[a{+}k]\big)$ with
-$w_k\propto e^{-|k|/T}$, and is exact when the neighbour pull
-$\big|\sum_{k\neq0} w_k(\mathrm{mem}[a{+}k]-\mathrm{mem}[a])\big|<\tfrac12$,
-giving a per-read exactness $p_{\mathrm{read}}(T)$. Treating the $\rho$ reads and
-the occasional branch of an instruction as independent casts, the per-step
-bit-exactness likelihood is
-$P_{\mathrm{step}}(\alpha,T)=p_{\mathrm{read}}(T)^{\rho}\,
-p_{\mathrm{branch}}(\alpha)^{f_b}$, with $\rho=2.16$ reads per instruction and
-branch fraction $f_b=0.374$ measured on the executed Space Invaders trace, and
-the run is bit-exact only while every cast rounds correctly.
-$P_{\mathrm{step}}$ is a \emph{heuristic} likelihood---it treats the casts as
-independent Bernoulli rounds, which they are not---so it predicts \emph{where}
-exactness degrades rather than giving a probabilistic guarantee; the guarantee is
-the deterministic worst-case cast condition, with $P_{\mathrm{step}}{=}1$ exactly
-when every cast margin holds.
+A crisp-flag branch with signed offset $\delta$
+rounds to the hard target when
+$|\delta|<\tau_b(\alpha)$, where
+$\tau_b(\alpha)=\tfrac12(1+e^\alpha)$.
+The empirical per-branch exactness
+$p_{\mathrm{branch}}(\alpha)$ is the fraction of
+executed offsets satisfying this condition.
+
+A relaxed read is exact when its neighbour pull
+\begin{equation}
+\left|\sum_{k\ne0}
+w_k\big(\mathrm{mem}[a+k]-\mathrm{mem}[a]\big)\right|
+<\frac12 .
+\end{equation}
+The corresponding empirical fraction is
+$p_{\mathrm{read}}(T)$. Treating individual casts
+as independent gives the heuristic per-step
+likelihood
+\begin{equation}
+P_{\mathrm{step}}(\alpha,T)
+=p_{\mathrm{read}}(T)^\rho
+p_{\mathrm{branch}}(\alpha)^{f_b}.
+\label{eq:s-castlikelihood}
+\end{equation}
+For Space Invaders, the executed trace has
+$\rho=2.16$ reads per instruction and branch
+fraction $f_b=0.374$. Independence is an
+approximation, so $P_{\mathrm{step}}$ is not a
+probabilistic guarantee. Exactness of a particular
+trajectory requires every cast to round correctly;
+Proposition~\ref{prop:s-finite} supplies sufficient
+conditions for this without the likelihood model.
 
 \begin{table}[tb]
 \centering
-\caption{Forward bit-exactness of the \emph{fully relaxed} pass (soft branch
-without the straight-through estimator, temperature-$T$ reads) on the full
-simulator running Space Invaders, sampled around the two critical boundaries.
-\textbf{Measured} $N_{\mathrm{div}}$: the first instruction (of $N{=}3000$ from
-reset) at which the relaxed trajectory deviates from the executed
-(straight-through) one; ``exact'' means no deviation over the whole run.
-\textbf{Predicted} (cast-margin model): per-branch exactness
-$p_{\mathrm{branch}}(\alpha)$, per-read exactness $p_{\mathrm{read}}(T)$, and the
-per-step likelihood
-$P_{\mathrm{step}}=p_{\mathrm{read}}^{\rho}\,p_{\mathrm{branch}}^{f_b}$
-($\rho=2.16$, $f_b=0.374$); the forward is bit-exact iff $P_{\mathrm{step}}=1$.
-\textsc{jaxtari} uses the identical cast-to-Int logic and is omitted.}
+\caption{Forward exactness of FULL on Space Invaders,
+over 3,000 instructions from reset. Measured
+$N_{\mathrm{div}}$ is the first divergent instruction;
+``exact'' means none. Predicted columns are cast
+fractions and heuristic per-step likelihood, with
+$\rho=2.16$, $f_b=0.374$.}
 \label{tab:relax-exact}
 \small
 \setlength{\tabcolsep}{4pt}
@@ -486,16 +694,18 @@ $P_{\mathrm{step}}=p_{\mathrm{read}}^{\rho}\,p_{\mathrm{branch}}^{f_b}$
 \toprule
 \multicolumn{2}{c}{} & Meas. & \multicolumn{3}{c}{Predicted}\\
 \cmidrule(lr){3-3}\cmidrule(lr){4-6}
-$\alpha$ & $T$ & $N_{\mathrm{div}}$ & $p_{\mathrm{branch}}$ & $p_{\mathrm{read}}$ & $P_{\mathrm{step}}$\\
+$\alpha$ & $T$ & $N_{\mathrm{div}}$ &
+$p_{\mathrm{branch}}$ & $p_{\mathrm{read}}$ &
+$P_{\mathrm{step}}$\\
 \midrule
-\multicolumn{6}{l}{\emph{Branch boundary} ($T{=}0.14$, read-exact)}\\
+\multicolumn{6}{l}{\emph{Branch boundary} ($T=0.14$, read-exact)}\\
 $2$ & $0.14$ & $7$     & $0.039$ & $1.000$ & $0.298$\\
 $3$ & $0.14$ & $879$   & $0.953$ & $1.000$ & $0.982$\\
 $4$ & $0.14$ & $1121$  & $0.988$ & $1.000$ & $0.996$\\
 $5$ & $0.14$ & $1216$  & $0.996$ & $1.000$ & $0.999$\\
 $6$ & $0.14$ & \emph{exact} & $1.000$ & $1.000$ & $1.000$\\
 \midrule
-\multicolumn{6}{l}{\emph{Temperature boundary} ($\alpha{=}6$, branch-exact)}\\
+\multicolumn{6}{l}{\emph{Temperature boundary} ($\alpha=6$, branch-exact)}\\
 $6$ & $0.08$ & \emph{exact} & $1.000$ & $1.000$ & $1.000$\\
 $6$ & $0.10$ & \emph{exact} & $1.000$ & $1.000$ & $1.000$\\
 $6$ & $0.12$ & \emph{exact} & $1.000$ & $1.000$ & $1.000$\\
@@ -507,53 +717,50 @@ $6$ & $0.20$ & $2$   & $1.000$ & $0.144$ & $0.015$\\
 \end{tabular}
 \end{table}
 
+Figure~\ref{fig:relaxheat} shows a bit-exact corner
+at large $\alpha$ and small $T$, with a gradual
+branch boundary and a sharp read boundary.
+Table~\ref{tab:relax-exact} measures the first
+divergence rather than the final state, since
+game-state reinitialisation can partially
+resynchronise divergent trajectories.
 
-
-Figure~\ref{fig:relaxheat} maps this likelihood across the whole $(\alpha,T)$
-plane: a bit-exact corner at large $\alpha$ and small $T$, a gradual branch
-boundary, and a sharp temperature boundary. Table~\ref{tab:relax-exact} zooms
-into the two boundaries. As the faithful measurement
-we report the first instruction at which the relaxed trajectory deviates from the
-executed one over $N=3000$ steps (``exact'' means no deviation): the game
-re-initialises much of its state every frame, so a diverged run can partially
-re-synchronise and an end-of-run state match would overstate exactness.
-Measurement and model agree---the forward is bit-exact precisely where
-$P_{\mathrm{step}}=1$, namely $\alpha\ge6$ (so $\tau_b$ exceeds the largest
-offset, $122$) and $T\le0.14$, and the first-divergence step grows as
-$P_{\mathrm{step}}\to1$ ($\alpha{=}3,4,5$ at $T{=}0.14$ first diverge at steps
-$879,1121,1216$). The branch boundary is gradual in $\alpha$ while the
-temperature boundary is sharp: a single max-amplitude neighbour already pulls a
-read by $\approx1.7>\tfrac12$, so $p_{\mathrm{read}}$ drops from $1$ at
-$T\le0.14$ to $0.14$ at $T=0.20$. This is the empirical face of
-Theorem~\ref{thm:s-limit}: exactness is recovered as $\alpha\to\infty$ and
-$T\to0$. The \textsc{jaxtari} twin uses the identical cast-to-Int logic, so the same
-analysis applies.
-
-
+At $T=0.14$, $\alpha=3,4,5$ first diverge at
+instructions $879,1121,1216$, respectively;
+$\alpha=6$ remains exact. At $\alpha=6$,
+the read-exact fraction falls from $1$ at
+$T\le0.14$ to $0.981$ at $T=0.15$ and
+$0.144$ at $T=0.20$. The measured boundary
+agrees with the cast-margin analysis.
+The program-independent guarantee, however,
+comes from Proposition~\ref{prop:s-finite},
+not the observed $P_{\mathrm{step}}$ values.
+The same cast-to-integer logic is used in
+\textsc{jaxtari}.
 
 \begin{figure*}[p]
 \centering
 \includegraphics[width=\textwidth]{figures/fig_divergence_frame.pdf}
-\caption{One frame of the $60$-second full-simulator comparison (Space Invaders,
-beam-timed). \textbf{HARD} and \textbf{SOFT-STE} are pixel-identical
-(Theorem~\ref{thm:s-exact}). \textbf{SOFT} $\alpha{=}6,T{=}0.14$ is inside the
-bit-exact corner and stays identical to HARD for the whole rollout. \textbf{SOFT}
-$\alpha{=}5.5,T{=}0.145$ is just past the read boundary and diverges \emph{mildly}:
-the game stays recognisable but a column of invaders is missing---the localised
-effect of one corrupted sprite-position read, persistent over the rollout.}
+\caption{One frame of the 60-second beam-timed
+Space Invaders comparison. HARD and SOFT-STE are
+pixel-identical. FULL ($\alpha=6,T=0.14$) remains
+identical throughout the rollout. LEAKY
+($\alpha=5.5,T=0.145$) diverges mildly:
+a column of invaders is missing after a
+sprite-position read rounds incorrectly.}
 \label{fig:divframe}
 \end{figure*}
 
 \begin{figure*}[p]
 \centering
 \includegraphics[width=\textwidth]{figures/fig_timeline.pdf}
-\caption{Implementation effort reconstructed from the version-control log.
-The step curve is the cumulative number of commits against calendar time, and
-each shaded band is an active work session (a maximal run of consecutive
-commits no more than three hours apart), and the long flat stretches between
-bands are idle gaps, the largest of which are annotated. The $373$ commits form
-$52$ active sessions totalling ${\sim}137$ hours of work---about $5.7$
-round-the-clock days---spread across a $29$-day calendar window.}
+\caption{Active development time reconstructed from
+the version-control log. The curve shows cumulative
+commits; shaded bands denote sessions separated by
+at most three hours between commits. The 373 commits
+form 52 sessions totalling 136.8 hours over a
+29-day calendar window. This is estimated
+development wall-time, not person-effort or compute.}
 \label{fig:timeline}
 \end{figure*}
 
@@ -640,80 +847,80 @@ zaxxon & F8 & \texttt{e1c323ce00cc} & \checkmark & \checkmark\\
 \end{tabular}
 \end{table*}
 
-\paragraph{Choosing $\alpha$ and $T$.} The two bounds are
-\emph{program-independent}, which is what makes the setting reliable across
-games. A $6502$ branch displacement is at most $|\delta|\le127$, so
-$\tfrac12(1+e^{\alpha})>127$---that is $\alpha\ge\ln(2\cdot127-1)\approx5.5$---makes
-every branch round correctly, and $\alpha\ge6$ suffices. A read is pulled away
-from its addressed byte by at most $255\,(1-w_0)\approx510\,e^{-1/T}$, which stays
-below $\tfrac12$ once $T\le 1/\ln(4\cdot255)\approx0.144$; the corner value
-$T{=}0.14$ sits just inside this (worst-case pull $\approx0.40<\tfrac12$).
-Both bounds depend only on the instruction set and the $8$-bit byte range, not on
-the program, so $\alpha{=}6,\ T{=}0.14$ is bit-exact across games---verified over
-$6000$ instructions on Pong, Breakout and Space Invaders---whereas \emph{just
-outside} them the forward fails on a game-dependent subset ($\alpha{=}5$ diverges
-on Space Invaders but not Pong or Breakout; $T{=}0.15$ diverges on Pong and Space
-Invaders but not Breakout), which is exactly why the conservative bounds are
-needed. Within the exact region the relaxed gradient is strongest at the boundary
-(it vanishes as $\alpha\to\infty$, $T\to0$; Theorem~\ref{thm:s-limit}), so the
-recommended operating point is the corner of the bit-exact region,
-$\alpha{=}6,\ T{=}0.14$ (Figure~\ref{fig:relaxheat}): the smallest $\alpha$ and
-largest $T$ that keep the forward bit-exact, giving the most informative gradient
-compatible with exactness. We present this as a conservative, program-independent
-operating point---its per-cast bounds are worst-case over the instruction set and
-the $8$-bit byte range, and the cross-game exactness is confirmed empirically
-(Pong, Breakout, Space Invaders)---not as a theorem that every program is exact at
-this setting.
+\paragraph{Choosing $\alpha$ and $T$.}
+Proposition~\ref{prop:s-finite} gives
+program-independent sufficient conditions.
+For 6502 branch offsets $|\delta|\le128$,
+$\alpha=6$ gives
+$\tfrac12(1+e^\alpha)\approx202.2>128$.
+For byte reads, the worst-case pull
+$510e^{-1/T}/(1-e^{-1/T})$ is approximately
+$0.40$ at $T=0.14$, below the rounding
+threshold $1/2$. The exact sufficient
+temperature threshold is approximately $0.1443$.
+Thus $\alpha=6,T=0.14$ guarantees
+bit-exact rounded branch and read operations
+under the stated model.
 
-\paragraph{Full-simulator demonstration.} The per-cast model is borne out on a
-real $60$-second rollout. We render Space Invaders beam-timed in four modes side
-by side (Figure~\ref{fig:divframe}): the exact hard run, the executed soft
-(straight-through) run, and the fully relaxed run at two settings. The relaxed
-frames come from the same cycle-accurate hard renderer driven through a
-default-off relaxation hook on the CPU's branch and reads, so HARD, SOFT-STE and
-any in-corner setting render pixel-identically. At $\alpha{=}6,\ T{=}0.14$---inside
-the bit-exact corner---the relaxed run stays identical to HARD for the entire
-rollout. At $\alpha{=}5.5,\ T{=}0.145$---just past the read boundary---it diverges,
-but only mildly: the game remains recognisable with a persistent, localised error
-(a depleted column of invaders), because the relaxation corrupts a sprite-position
-read rather than the control flow.
+Measurements confirm bit-exact execution over
+6,000 instructions on Pong, Breakout, and
+Space Invaders at this setting. Outside the
+sufficient corner, failure depends on the
+executed program: $\alpha=5$ diverges on
+Space Invaders but not Pong or Breakout;
+$T=0.15$ diverges on Pong and Space Invaders
+but not Breakout. The selected setting lies
+near the finite-parameter boundary, retaining
+a useful relaxation gradient while preserving
+the exact forward. More extreme parameters
+saturate the branch and read gradients.
 
-\paragraph{Delayed divergence.} A setting can also boot cleanly and diverge only
-after many frames---the Bernoulli first failure deep into the rollout. The
-mechanism is that the read margins are \emph{time-varying} for RAM: a data read
-is exact while its neighbouring bytes are similar and crosses $\tfrac12$ only once
-the game state evolves into a high-contrast layout, so the most-borderline cast
-may be one the program reaches only late. Sweeping $T$ just below the read
-boundary on a long clean-boot rollout (boot exact, relaxation enabled only for the
-rollout) makes the first-divergence frame recede: at $\alpha{=}20$ the rollout
-first deviates on frame~$1$ for $T{=}0.1448$, on frame~$194$ for $T{=}0.1446$, and
-only on frame~$2365$ (${\approx}40$\,s of play) for $T\le0.1444$---reproducing the
-game bit-for-bit for tens of seconds before a single late RAM read first rounds
-wrong. (Below $T{=}0.1465$, the lowest fixed ROM-read threshold, no opcode/operand
-fetch ever fails, so this late divergence is driven purely by an evolving RAM
-read.) The exact--diverge boundary is thus a per-cast threshold \emph{spectrum}
-over both fixed (ROM) and state-dependent (RAM) reads, not a single cliff.
+\paragraph{Full-simulator demonstration.}
+Figure~\ref{fig:divframe} compares four
+beam-timed Space Invaders rollouts over 60 seconds.
+HARD, SOFT-STE, and FULL at $\alpha=6,T=0.14$
+render identical frames. The relaxed executions
+use the same cycle-accurate hard renderer with
+a default-off relaxation hook for CPU branches
+and reads. LEAKY at $\alpha=5.5,T=0.145$
+diverges mildly but remains recognisable,
+with a persistent missing invader column
+caused by a corrupted sprite-position read.
+
+\paragraph{Delayed divergence.}
+A relaxed run can boot exactly and diverge only
+after the game state changes. RAM neighbour
+values evolve, and a read may cross its
+rounding threshold only after many frames.
+For a clean-boot rollout with relaxation
+enabled afterward and $\alpha=20$,
+the first divergent frame is $1$ at
+$T=0.1448$, $194$ at $T=0.1446$, and
+$2365$ (approximately 40 seconds) at
+$T\le0.1444$. Below $T=0.1465$, the
+lowest fixed ROM-read threshold, opcode and
+operand fetches remain exact; these late
+failures come from evolving RAM reads.
+The boundary is therefore a spectrum of
+fixed ROM and state-dependent RAM thresholds.
 
 \begin{table}[tb]
 \centering
-\caption{Throughput across engine $\times$ backend (real Pong ROM, soft mode,
-$3{,}000$-step rollout, median of repeated runs after JIT warm-up). \textsc{jutari}
-(Julia) executes one environment with inlined opcode handlers; \textsc{jaxtari} (JAX)
-is slow per single environment but recovers---and on the GPU far exceeds---that by
-\texttt{vmap}-batching the compiled rollout, its intended regime. Single-env rows are
-steps/s ($=$ env-steps/s at batch~1); batched rows are aggregate env-steps/s at their
-best batch ($N{\approx}4096$ on the GPU).}
+\caption{Soft CPU core throughput (Pong,
+3,000 instructions). The simplified bus has
+no TIA, one 4\,KB ROM window, and only the
+RIOT timer. Rates are aggregate instructions/s.}
 \label{tab:s-compare}
 \small
 \setlength{\tabcolsep}{6pt}
 \begin{tabular}{llr}
 \toprule
-engine \& backend & mode & env-steps/s\\
+Engine and backend & Mode & Instructions/s\\
 \midrule
-\textsc{jutari}, CPU  & single env              & $370{,}100$\\
-\textsc{jaxtari}, CPU & single env              & $1{,}178$\\
-\textsc{jaxtari}, CPU & batched (\texttt{vmap})  & ${\sim}60{,}000$\\
-\textsc{jaxtari}, GPU & batched (\texttt{vmap})  & $\mathbf{3{,}119{,}115}$\\
+\textsc{jutari}, CPU  & single env             & $370{,}100$\\
+\textsc{jaxtari}, CPU & single env             & $1{,}178$\\
+\textsc{jaxtari}, CPU & batched (\texttt{vmap}) & ${\sim}60{,}000$\\
+\textsc{jaxtari}, GPU & batched (\texttt{vmap}) & $\mathbf{3{,}119{,}115}$\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -726,30 +933,59 @@ exactness, so the headline 64/64 claim can be audited game by game. Both ports
 pass every game; \textsc{jaxtari} and \textsc{jutari} agree game-for-game, and
 the cross-check between them is part of the test suite.
 
+The conformance protocol uses the standard ALE boot
+(60 NOOP frames and four resets), followed by a
+fixed action stream. RAM is checked on every one
+of 30 frames and the complete $210\times160$
+frame buffer on every one of 60 frames.
+The results establish exactness on these tested
+trajectories, not on all possible executions.
+Ten cartridge mappers are implemented, seven
+exercised by the 64 games.
+
+The \textsc{xitari} reference originally seeds
+Superchip RAM with \texttt{time(NULL)}, irrespective
+of its emulator seed. We patched this initialisation
+to zero to match the deterministic ports.
+The patch ships with the code.
+
 \section{Throughput}
 
-We measure soft-mode throughput as steps per second (one step $=$ one CPU
-instruction) on a fixed ROM after just-in-time warm-up, on a single Apple~M1~Max
-core (JAX CPU backend, Julia~1.12), reporting the median of repeated runs.
-Table~\ref{tab:s-compare} summarises the three operating points the rest of this
-section develops; the per-batch scaling behind the batched rows is in
-Tables~\ref{tab:s-batched} (CPU) and~\ref{tab:s-gpu} (GPU).
+One step is one CPU instruction, not an ALE
+frame. We distinguish the soft CPU core, used
+for the batched \textsc{jaxtari} measurements,
+from the full-system SOFT-STE step.
 
+The soft CPU core has a simplified bus:
+no TIA, a single 4\,KB ROM window, and only
+the RIOT timer. It excludes the complete TIA,
+RIOT, and cartridge execution of the full-system
+step. The \textsc{jaxtari} hard interpreter
+executes eagerly and cannot be batched on GPU.
+Consequently the GPU throughput figures do not
+measure full-machine differentiable rollouts.
 
+CPU measurements use an Apple M1 Max core
+(Julia 1.12, JAX CPU backend). GPU measurements
+use a GTX 1080 Ti and a Quadro RTX 5000.
+JIT warm-up is excluded. Table~\ref{tab:s-compare}
+summarises soft-core rates; Tables~\ref{tab:s-batched}
+and~\ref{tab:s-gpu} give batch scaling.
 
 \begin{table}[tb]
 \centering
-\caption{Batched soft-mode throughput of \textsc{jaxtari} on the CPU backend
-(M1~Max, Pong, a compiled \texttt{lax.scan} \texttt{vmap}-ped over $N$ environments).
-\emph{Aggregate} is total environment-steps per second; \emph{per-env} is
-aggregate$/N$. Batching trades single-environment latency for aggregate throughput.}
+\caption{Batched \textsc{jaxtari} soft CPU core
+throughput on Apple M1 Max (Pong, compiled
+\texttt{lax.scan} with \texttt{vmap}).
+Aggregate rates count CPU instructions
+across environments; per-env is aggregate$/N$.}
 \label{tab:s-batched}
 \small
 \setlength{\tabcolsep}{5pt}
 \begin{tabular}{rrrr}
 \toprule
-batch $N$ & aggregate & per-env & vs.\ $N{=}1$\\
- & (env-steps/s) & (steps/s) & \\
+batch $N$ & aggregate & per-env & vs.\ $N=1$\\
+ & (instr./s) & (instr./s) & \\
 \midrule
 $1$   & $30{,}200$ & $30{,}200$ & $1.0\times$\\
 $16$  & $35{,}200$ & $2{,}200$  & $1.2\times$\\
@@ -761,21 +997,20 @@ $128$ & $55{,}900$ & $440$      & $1.9\times$\\
 
 \begin{table}[tb]
 \centering
-\caption{Batched soft-mode \textsc{jaxtari} throughput on a single \emph{commodity}
-GTX~1080~Ti (11\,GB Pascal), Pong, a $3{,}000$-step \texttt{lax.scan}
-\texttt{vmap}-ped over $N$ environments (\textbf{mean $\pm$ standard deviation over
-$10$ timed runs}, JIT warm-up excluded). Aggregate environment-steps per second,
-forward and forward+gradient. Both peak near $N{=}4096$ at ${\sim}3$M env-steps/s---%
-${\sim}50\times$ the CPU \texttt{vmap} asymptote (Table~\ref{tab:s-batched})---and the
-gradient costs only ${\sim}5\%$ more. The run-to-run spread is ${<}0.2\%$ throughout,
-so the throughput measurement is highly stable.}
+\caption{Batched \textsc{jaxtari} soft CPU core
+on one GTX 1080 Ti (Pong, 3,000 instructions,
+\texttt{lax.scan} and \texttt{vmap}; mean
+$\pm$ standard deviation over 10 timed runs).
+Forward+gradient is approximately 5\% slower
+than forward at the peak near $N=4096$.
+Neither includes full-system TIA/RIOT execution.}
 \label{tab:s-gpu}
 \small
 \setlength{\tabcolsep}{6pt}
 \begin{tabular}{rrr}
 \toprule
 batch $N$ & forward & forward+grad\\
- & (env-steps/s) & (env-steps/s)\\
+ & (instr./s) & (instr./s)\\
 \midrule
 $1$     & $2{,}458 \pm 1$         & $1{,}265 \pm 4$\\
 $64$    & $258{,}747 \pm 17$      & $224{,}194 \pm 48$\\
@@ -788,94 +1023,116 @@ $65536$ & $2{,}599{,}829 \pm 100$ & $2{,}534{,}157 \pm 43$\\
 \end{tabular}
 \end{table}
 
+\paragraph{Soft CPU core.}
+At single-instruction granularity,
+\textsc{jutari} reaches approximately 370,100
+instructions/s and \textsc{jaxtari} 1,178.
+JAX incurs substantial per-operation overhead
+at this granularity. Compiling a 3,000-instruction
+Pong rollout into \texttt{lax.scan} increases
+single-environment \textsc{jaxtari} throughput
+to approximately 30,000 instructions/s.
+A 50,000-instruction trace takes approximately
+42 seconds for one forward-plus-backward pass
+(gradient) through the \textsc{jaxtari} soft CPU
+core with its simplified bus, as used for one
+attribution. This is not the full-system step.
 
-
-At single-instruction granularity \textsc{jutari} sustains ${\sim}370{,}100$
-steps/s and \textsc{jaxtari} ${\sim}1{,}178$, a ${\sim}314\times$ gap. The
-difference is dominated by JAX's per-operation kernel-launch overhead: each soft
-step dispatches one opcode through a $256$-way switch, so at single-instruction
-granularity the launch overhead dwarfs the instruction, whereas Julia inlines the
-small handlers---a property of the execution granularity, not the AD systems. For a
-gradient-based XAI workflow (one forward-plus-backward pass per attribution)
-\textsc{jaxtari}'s ${\sim}42$\,s per $50{,}000$-step trace is comfortably
-interactive.
-
-Two modes recover throughput beyond this single-step figure: compiling a whole
-rollout into one \texttt{lax.scan} (${\sim}30{,}000$ steps/s for a single
-environment, a ${\sim}25\times$ gain that amortises the launches), and
-\texttt{vmap}-ing that scan over a batch of independent environments.
-Table~\ref{tab:s-batched} reports the batched scaling on the CPU
-backend (Apple~M1~Max, real Pong ROM, median of repeated $3{,}000$-step runs after
-JIT warm-up; the batched run is verified bit-identical to the unbatched one).
-Aggregate throughput rises \emph{sub-linearly} with the batch because the
-data-dependent $256$-way opcode dispatch (\texttt{lax.switch}) evaluates all
-candidate handler branches under \texttt{vmap}; on a CPU these branches serialise,
-so the aggregate asymptotes near ${\sim}60{,}000$ env-steps/s (Table~\ref{tab:s-batched}).
+Batching with \texttt{vmap} increases aggregate
+CPU throughput toward 60,000 instructions/s.
+The 256-way \texttt{lax.switch} evaluates candidate
+branches under batching, limiting CPU scaling
+but allowing effective parallel evaluation
+on GPU.
 
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\linewidth]{figures/gpu_throughput.pdf}
-\caption{\textsc{jaxtari} soft-mode GPU throughput vs.\ batch size $N$ (Pong,
-$3{,}000$ steps; two commodity GPUs, GTX~1080~Ti and Quadro~RTX~5000). Forward and forward+gradient both rise
-${\sim}1200\times$ from $N{=}1$ to a peak near $N{=}4096$ (${\sim}3$M env-steps/s,
-${\sim}50\times$ the CPU \texttt{vmap} asymptote, dotted), then roll off as the device
-saturates---the $256$-way \texttt{lax.switch} all-branch dispatch parallelises across
-lanes on the GPU where it serialises on the CPU.}
+\caption{\textsc{jaxtari} soft CPU core throughput
+versus batch size on GTX 1080 Ti and Quadro RTX 5000
+(Pong, 3,000 instructions). Forward and
+forward+gradient peak near $N=4096$ at
+approximately 3 million aggregate instructions/s.
+The dotted line indicates the CPU batching limit.
+These are simplified-bus results, not full-system
+differentiable rollouts.}
 \label{fig:gpu-throughput}
 \end{figure}
 
-\paragraph{GPU.} On a GPU the same all-branch evaluation maps onto the device's
-parallel lanes instead of serialising, so batching the differentiable rollout is the
-intended operating regime. Table~\ref{tab:s-gpu} and Figure~\ref{fig:gpu-throughput}
-measure this on a single \emph{commodity} GTX~1080~Ti (an 11\,GB Pascal card; real
-Pong ROM, a $3{,}000$-step \texttt{lax.scan} \texttt{vmap}-ped over $N$ environments,
-mean over $10$ runs after JIT warm-up---with the per-run standard deviation in
-Table~\ref{tab:s-gpu}---verified bit-identical to the CPU rollout).
-Aggregate forward throughput climbs from ${\sim}2{,}500$ env-steps/s at $N{=}1$ to a
-peak of ${\sim}2.95$M at $N{\approx}4096$---roughly $50\times$ the CPU asymptote and
-${\sim}1200\times$ the single-environment rate---then rolls off gently as the device
-saturates. The workload is compute/occupancy-bound, not memory-bound: the peak uses
-only ${\sim}0.1$\,GB, so the ceiling is lane parallelism rather than capacity.
-Crucially the reverse-mode gradient is nearly free at scale---\emph{forward+gradient}
-tracks forward to within ${\sim}5\%$ at the peak (${\sim}2.8$M env-steps/s)---so a
-commodity GPU turns batched \emph{differentiable} rollouts (gradient-based RL or
-attribution over thousands of environments at once) into the natural way to use
-\textsc{jaxtari}. A second, newer architecture (Quadro~RTX~5000, 16\,GB Turing)
-traces the same curve and peaks slightly higher ($3{,}117{,}908 \pm 2{,}871$
-env-steps/s, mean over $10$ runs, at $N{\approx}4096$; Figure~\ref{fig:gpu-throughput}),
-so the scaling reflects the
-batched all-branch execution rather than one specific GPU. We report widely-available
-cards deliberately: the curve's shape, not a datacenter accelerator, is the point.
+\paragraph{GPU.}
+On the GTX 1080 Ti, forward throughput rises
+from approximately 2,500 instructions/s at
+$N=1$ to 2.95 million at $N=4096$,
+approximately 50 times the CPU batching limit,
+then declines slightly at larger batches.
+Forward+gradient reaches approximately
+2.80 million instructions/s at the peak.
+The workload uses approximately 0.1\,GB there,
+so available parallelism rather than memory
+capacity limits performance.
 
+The Quadro RTX 5000 shows the same scaling
+pattern, peaking at
+$3{,}117{,}908\pm2{,}871$ instructions/s
+(mean and standard deviation over 10 runs)
+near $N=4096$.
+The GPU results establish efficient batched
+soft CPU core execution, not differentiable
+full-machine rendering.
 
+\paragraph{Full-system soft step.}
+In \textsc{jutari}, the implemented full-system
+SOFT-STE step executes CPU, bus, TIA, RIOT,
+and cartridge effects through the hard machine,
+replays the soft handlers, and joins CPU registers
+and RAM with STE. On Pong, it reaches approximately
+146,000 instructions/s on one Apple M1 Max core
+(median of three runs).
 
-\section{Implementation Effort}
+Zygote reverse-mode gradients through this
+full-system step depend strongly on window length.
+Measured throughput is approximately
+400--450 instructions/s over 50--100-instruction
+windows, 250 instructions/s at 200 instructions,
+and 120 instructions/s at 400 instructions.
+It falls further for longer windows.
+Both the full-system and older soft-core
+reverse passes slow down superlinearly with
+window length under Zygote. The soft core
+is approximately 1.5 times faster at 50
+instructions, 3.7 times at 100, 4.8 times
+at 200, and 7 times at 400 instructions.
 
-Figure~\ref{fig:timeline} is the evidence behind the effort estimate in the main
-paper. All effort numbers are derived from the project's \texttt{git} history,
-which---like the rest of the artifact---will be made public on acceptance of the
-paper, so every figure here can be independently recomputed from the commit log.
-Because every step of the project was committed, the commit timestamps
-record when work actually happened. To turn them into an active-time figure we
-group the commits into sessions, treating a gap of more than three hours between
-consecutive commits as a session boundary. Three hours is well above the
-in-session rhythm---the median gap between consecutive commits is about
-$13$ minutes---and well below the multi-hour and overnight gaps that separate
-genuine work periods, so the partition is insensitive to the exact threshold:
-the active total is $106$ hours at a two-hour cutoff and $162$ hours at a
-four-hour cutoff, bracketing the $137$ hours obtained at three hours.
+Thus full-system gradients are practical for
+short windows, but not for million-step
+differentiable rollouts. An efficient per-step
+reverse pass is future work.
 
-With the three-hour boundary the $373$ commits fall into $52$ sessions whose
-durations sum to $136.8$ hours, i.e.\ about $5.7$ round-the-clock days (the
-coding agents run continuously, not in eight-hour shifts), even though they are
-spread over a $29$-day calendar window. The remaining
-${\sim}80\%$ of the calendar span is idle and excluded. It consists mostly of
-stretches during which the lead programmer was travelling and without reliable
-internet access, which appear in the plot as the long flat segments. This active
-total---not the calendar span---is what we compare against the scale of the
-reference codebase in the main paper.
+\section{Active Development Time}
 
+Figure~\ref{fig:timeline} gives the version-control
+evidence for the active development time estimate.
+All figures derive from the project's \texttt{git}
+history, which will be released with the code.
+Commit timestamps provide a wall-time proxy,
+not a direct measurement of person-effort,
+coding-agent compute, or total labour.
 
+We group commits into sessions separated by
+gaps greater than three hours. This exceeds
+the median in-session gap of approximately
+13 minutes. A two-hour cutoff gives 106 hours;
+a four-hour cutoff gives 162 hours, compared
+with 136.8 hours at three hours.
+
+The 373 commits form 52 sessions across 29
+calendar days, totalling approximately 5.7
+round-the-clock days of active development
+wall-time. Around 80\% of the calendar span
+is excluded as idle, including travel without
+reliable internet access. The figure is an
+order-of-magnitude estimate, not a controlled
+comparison with conventional development.
 
 \section{Fixed Settings and Parameters}
 
