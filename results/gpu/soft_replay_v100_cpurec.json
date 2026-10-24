@@ -1,0 +1,33 @@
+{
+  "rom": "pong.bin",
+  "backend": "gpu",
+  "devices": [
+    "cuda:0"
+  ],
+  "record_device": "cpu:0",
+  "windows": {
+    "100": {
+      "checkpoint_every": null,
+      "fwd_instr_per_s": 8126.709701028467,
+      "grad_instr_per_s": 4516.12987603066,
+      "fwd_compile_s": 16.086138807004318,
+      "grad_compile_s": 49.118336756015196
+    }
+  },
+  "record_instr_per_s": 263.1000182937225,
+  "placement": {
+    "trace": "cuda:0",
+    "replay_output": "cuda:0"
+  },
+  "batched": [
+    {
+      "batch": 256,
+      "window": 400,
+      "checkpoint_every": 100,
+      "fwd_env_instr_per_s": 500651.8620483865,
+      "fwd_compile_s": 15.044563988223672,
+      "grad_env_instr_per_s": 69034.84602349572,
+      "grad_compile_s": 97.34361859504133
+    }
+  ]
+}

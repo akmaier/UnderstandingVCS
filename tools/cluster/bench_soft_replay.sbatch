@@ -6,6 +6,8 @@
 #                                   # runs, so a missing dir kills the job in ~1 s, no log
 #   sbatch --qos=turbo --gres=gpu:v100:1     --export=ALL,GPUTYPE=v100     tools/cluster/bench_soft_replay.sbatch
 #   sbatch --qos=turbo --gres=gpu:rtxa6000:1 --export=ALL,GPUTYPE=rtxa6000 tools/cluster/bench_soft_replay.sbatch
+# Comma lists in --export are split by sbatch (BATCHES=256,1024 arrives as 256): pass
+# them as  BATCHES=256:1024  — the script turns ':' into ','.
 # QOS: the default `miti` caps a user at 4 running jobs (priority 0); `turbo` is the
 # priority lane (priority 10000, 10 running jobs/user, 1-day wall). Both: partition main.
 # The job imports jaxtari from THIS checkout (PYTHONPATH), not from wherever the shared
@@ -28,6 +30,7 @@ ROM="${ROM:-tools/rom_sweep/roms/pong.bin}"
 WINDOWS="${WINDOWS:-100 400 3000}"
 BATCH_WINDOW="${BATCH_WINDOW:-400}"
 BATCHES="${BATCHES:-1,16,64,256,1024,4096}"
+BATCHES="${BATCHES//:/,}"
 CKPT="${CKPT:-100}"
 REPEATS="${REPEATS:-5}"
 

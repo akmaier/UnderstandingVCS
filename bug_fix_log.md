@@ -52,7 +52,7 @@ window length (100 / 400 / 3,000 instructions at ~4–5k instr/s with
 `checkpoint_every=100`), unlike jutari/Zygote (450 → 120 → 18 instr/s). Recording ran at
 only 53–59 instr/s on the GPU nodes: the eager hard console's tiny array ops were
 dispatched to the GPU — boot and record under the CPU device (now the benchmark
-default, `--record-device cpu`). Use: CPU for one trajectory, GPU for batches.
+default, `--record-device cpu`). Verified (job 780329, V100, commit 2e629d7): recording 53–59 → **263 instr/s** (~4.5×; still below the M1 Max's 2,306 — slower node CPU / Python overhead, not investigated); replay still on `cuda:0`; B=256 fwd 501k / grad 69k env-instr/s (reproduces 780322). Gotcha: `sbatch --export` splits on commas, so `BATCHES=256,1024` ran only B=256 — the sbatch now accepts `BATCHES=256:1024`. Use: CPU for one trajectory, GPU for batches.
 
 **Gotchas.** (1) `vmap` is *slower* on CPU (~23k env-instr/s fwd, ~1k grad, even
 at B=1): a batched 256-way opcode `lax.switch` lowers to evaluate-all-branches +

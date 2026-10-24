@@ -32,9 +32,10 @@ Placement and speed (measured, tools/bench_soft_system_replay.py): one trajector
 replays fastest on the CPU (a sequential scan is launch-latency bound on a GPU);
 large batches (`vmap`) belong on the GPU. On a GPU host, boot the environment and
 record under `with jax.default_device(jax.devices("cpu")[0]):` — the eager hard
-console issues many tiny array ops, and dispatching them to the GPU made recording
-~40x slower (53-59 instr/s on V100 / Q5000 / RTX A6000 nodes vs 2,306 instr/s on an
-M1 Max CPU). The replay `jit` then runs on the default device.
+console issues many tiny array ops, and dispatching them to the GPU slows recording
+~4.5x (V100 node: 53-59 instr/s with GPU dispatch, 263 instr/s under the CPU device;
+2,306 instr/s on an M1 Max). The trace arrays are uncommitted, so the replay `jit`
+afterwards runs on the default device (GPU).
 
 Batching across games: SoftBus shapes must agree under `vmap`; the RAM is
 always 128 B, ROMs differ in size. With the full-system context on, every ROM
