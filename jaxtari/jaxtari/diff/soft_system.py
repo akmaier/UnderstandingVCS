@@ -60,10 +60,15 @@ def _hard_snapshot(con: Console) -> dict:
                 ram=np.asarray(con.bus.ram, dtype=np.float32))
 
 
-def _hard_step_with_io_log(con: Console):
-    """Run the hard instruction, recording the values of its non-RAM,
-    non-ROM reads. Returns `(new_console, ctx, hard_snapshot)` where `ctx`
-    is the dict of SoftBus context fields for the soft re-execution."""
+def _hard_step_record(con: Console):
+    """Run the hard instruction and return `(new_console, rec)` where `rec`
+    holds, as numpy / Python values, everything the soft handlers need from
+    the hard machine for this instruction: the cart mapping in force when it
+    started (`kind`, `bank`, `slices`), its non-RAM, non-ROM reads
+    (`io_addr` / `io_val` / `io_valid`, `IO_LOG_SLOTS` slots) and the hard
+    snapshot after it (`hard`, see `_hard_snapshot`). Shared by the eager
+    `soft_system_step` and the recorder of `jaxtari.diff.soft_replay`, so
+    both re-execute the soft handlers against identical context."""
     cart = con.bus.cart
     kind, bank = int(cart.kind), int(cart.current_bank)
     slices = [int(s) for s in cart.slice_slots] or [0, 0, 0]
@@ -83,12 +88,23 @@ def _hard_step_with_io_log(con: Console):
     valid = np.zeros(IO_LOG_SLOTS, dtype=np.float32)
     for i, (a, v) in enumerate(io):
         addr[i], val[i], valid[i] = a, v & 0xFF, 1.0
-    ctx = dict(sys_on=jnp.float32(1.0), sys_kind=jnp.float32(kind),
-               sys_bank=jnp.float32(bank),
-               sys_slices=jnp.asarray(slices, dtype=jnp.float32),
-               io_addr=jnp.asarray(addr), io_val=jnp.asarray(val),
-               io_valid=jnp.asarray(valid))
-    return con, ctx, _hard_snapshot(con)
+    rec = dict(kind=kind, bank=bank, slices=slices,
+               io_addr=addr, io_val=val, io_valid=valid,
+               hard=_hard_snapshot(con))
+    return con, rec
+
+
+def _hard_step_with_io_log(con: Console):
+    """Run the hard instruction, recording the values of its non-RAM,
+    non-ROM reads. Returns `(new_console, ctx, hard_snapshot)` where `ctx`
+    is the dict of SoftBus context fields for the soft re-execution."""
+    con, r = _hard_step_record(con)
+    ctx = dict(sys_on=jnp.float32(1.0), sys_kind=jnp.float32(r["kind"]),
+               sys_bank=jnp.float32(r["bank"]),
+               sys_slices=jnp.asarray(r["slices"], dtype=jnp.float32),
+               io_addr=jnp.asarray(r["io_addr"]), io_val=jnp.asarray(r["io_val"]),
+               io_valid=jnp.asarray(r["io_valid"]))
+    return con, ctx, r["hard"]
 
 
 # Inert context values (SoftBus defaults) restored on the returned bus.

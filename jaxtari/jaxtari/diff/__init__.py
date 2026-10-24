@@ -25,6 +25,11 @@ Contents:
          the soft handlers (run against the live hard machine: banked
          ROM, replayed TIA/RIOT reads) to the bit-exact hard console via
          the straight-through estimator — Theorem 1 on the whole state.
+  - Record / replay: `record_soft_trace` runs the hard console once and
+         stores what the soft handlers need; `soft_system_replay` re-runs
+         them over the trace with `lax.scan` — a pure function, so `jit`,
+         `vmap` and `grad` work on CPU / GPU (`pad_rom`, `stack_trees` for
+         batching across games).
   - P7f: `soft_render_scanline` / `soft_render_frame` — a differentiable
          TIA playfield renderer, so `jax.grad` reaches a framebuffer
          pixel.
@@ -54,6 +59,13 @@ from jaxtari.diff.soft_system import (
     soft_system_init,
     soft_system_run,
     soft_system_step,
+)
+from jaxtari.diff.soft_replay import (
+    SoftTrace,
+    pad_rom,
+    record_soft_trace,
+    soft_system_replay,
+    stack_trees,
 )
 from jaxtari.diff.soft_tia import (
     soft_collision_registers,
@@ -86,10 +98,15 @@ __all__ = [
     "soft_run_scan",
     "soft_select",
     "soft_step",
+    "SoftTrace",
+    "pad_rom",
+    "record_soft_trace",
     "soft_handler_agreement",
     "soft_system_init",
+    "soft_system_replay",
     "soft_system_run",
     "soft_system_step",
+    "stack_trees",
     "straight_through_clamp",
     "straight_through_round",
     "using_mode",

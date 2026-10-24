@@ -14,6 +14,42 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### ✅ jaxtari full-system SOFT step: record / replay — jit / vmap / grad on device — 2026-10-24
+
+**Symptom.** `soft_system_run` steps the eager-Python hard console on every
+instruction, so it cannot be `jit`-compiled or `vmap`ped, returns to the host
+per instruction, and `jax.grad` goes through a Python loop of jitted calls.
+Measured (Pong, 3 boot frames, M1 Max CPU, warmed): hard `console_step` 3,750
+instr/s; eager full-system forward 943 instr/s; eager gradient **0.13 instr/s**
+(751–766 s for 100 instructions).
+
+**Fix.** The hard machine reaches the soft handlers only through data that does
+not depend on the traced inputs (cart kind/bank/E0 slices, the non-RAM non-ROM
+read values, the hard registers + RAM used in the STE join). New
+`jaxtari/diff/soft_replay.py`: `record_soft_trace` runs the hard console once
+and stores that per instruction (`SoftTrace`); `soft_system_replay` re-runs
+`soft_step` + the STE join over it as one `lax.scan` — pure, so `jit`, `vmap`,
+`grad` apply; `checkpoint_every=k` = segmented remat (memory O(T/k + k));
+`collect` emits per-step values for trajectory losses; `pad_rom`/`stack_trees`
+batch across games (zero-padding is value-exact: with the context on every ROM
+read uses the explicit bank/slice index inside the true ROM). The eager step and
+the recorder now share one numpy core (`soft_system._hard_step_record`).
+
+**Measured (Pong, CPU).** Replay forward identical to eager and to the hard
+console; ROM gradient **bitwise equal** to the eager gradient. Single-trajectory
+replay: forward 133k–179k instr/s (~150–190×), gradient 41k–75k instr/s
+(~3–6·10⁵×); recording 2,306 instr/s (one-time). Compile 40–190 s.
+
+**Gotchas.** (1) `vmap` is *slower* on CPU (~23k env-instr/s fwd, ~1k grad, even
+at B=1): a batched 256-way opcode `lax.switch` lowers to evaluate-all-branches +
+select (same caveat as `tools/bench_soft_run_batched.py`); GPU sweep:
+`tools/cluster/bench_soft_replay.sbatch`. (2) A *final-state* loss right after
+boot has a near-empty ROM gradient (Pong `sum(RAM)+A` over 100–120 steps: 0–1
+non-zeros; Montezuma: 5–8) — under the STE the ROM gradient enters only where a
+soft handler computes with a ROM byte. Equality tests therefore use a trajectory
+loss (13–17 non-zeros) with a floor, so they cannot pass vacuously.
+Tests: `jaxtari/tests/test_soft_replay.py`.
+
 ### ⚠️ Conformance re-check after the SOFT-step work — elevator_action "regression" was an unpatched xitari; jaxtari lacked the #123 LCG — 2026-10-24
 
 **Symptom.** Re-running the 64-ROM jutari sweeps on the laptop gave 63/64 RAM and 63/64 screen:
@@ -53,6 +89,7 @@ cols 34-35; (2) the "naive ≡ 0" panel used ε = 0.5 with `round` (half-to-even
 for even x — at x = 76 it showed a spurious step; now ε = 1e-3.
 
 ---
+
 
 ### ✅ jutari full-system SOFT step — soft == hard on all 64 ROMs (Theorem 1 now true on the whole machine) — 2026-10-24
 
