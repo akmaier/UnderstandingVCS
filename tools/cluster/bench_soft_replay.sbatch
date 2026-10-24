@@ -2,8 +2,12 @@
 # Full-system SOFT step on GPU: record / replay throughput (tools/bench_soft_system_replay.py).
 # One Slurm job per GPU type. Submit from the repo root (a checkout or worktree on
 # /cluster/<user>) e.g.:
-#   sbatch --gres=gpu:v100:1     --export=ALL,GPUTYPE=v100     tools/cluster/bench_soft_replay.sbatch
-#   sbatch --gres=gpu:rtxa6000:1 --export=ALL,GPUTYPE=rtxa6000 tools/cluster/bench_soft_replay.sbatch
+#   mkdir -p results/slurm          # BEFORE sbatch: Slurm opens --output before this script
+#                                   # runs, so a missing dir kills the job in ~1 s, no log
+#   sbatch --qos=turbo --gres=gpu:v100:1     --export=ALL,GPUTYPE=v100     tools/cluster/bench_soft_replay.sbatch
+#   sbatch --qos=turbo --gres=gpu:rtxa6000:1 --export=ALL,GPUTYPE=rtxa6000 tools/cluster/bench_soft_replay.sbatch
+# QOS: the default `miti` caps a user at 4 running jobs (priority 0); `turbo` is the
+# priority lane (priority 10000, 10 running jobs/user, 1-day wall). Both: partition main.
 # The job imports jaxtari from THIS checkout (PYTHONPATH), not from wherever the shared
 # venv's editable install points, and aborts if that is not the case.
 #SBATCH --job-name=jaxtari_soft_replay
