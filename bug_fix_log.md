@@ -40,6 +40,20 @@ console; ROM gradient **bitwise equal** to the eager gradient. Single-trajectory
 replay: forward 133k–179k instr/s (~150–190×), gradient 41k–75k instr/s
 (~3–6·10⁵×); recording 2,306 instr/s (one-time). Compile 40–190 s.
 
+**Measured (GPU, cluster, Pong; jobs 780322/780323/780325, QOS turbo; JSON in
+`results/gpu/soft_replay_{v100,q5000,rtxa6000}.json`).** Single-trajectory replay is
+*slower* on GPU than on the M1 Max CPU — fwd 8.7k–16k, grad 3.6k–5.7k instr/s (a
+1-element sequential scan is launch-latency bound) — but batches scale near-linearly:
+`vmap` B=256 fwd 507k (V100) / 828k (Q5000) / 954k (A6000) env-instr/s, grad 69k / 81k
+/ 83k; A6000 B=1024 fwd **2.62M**, grad **254k** env-instr/s. Gradient OOM at B=1024 on
+the 16 GB cards and B=4096 on the A6000 (window 400, `checkpoint_every=100`; the
+batched 256-way switch keeps every branch's residuals). Gradient cost is flat in the
+window length (100 / 400 / 3,000 instructions at ~4–5k instr/s with
+`checkpoint_every=100`), unlike jutari/Zygote (450 → 120 → 18 instr/s). Recording ran at
+only 53–59 instr/s on the GPU nodes: the eager hard console's tiny array ops were
+dispatched to the GPU — boot and record under the CPU device (now the benchmark
+default, `--record-device cpu`). Use: CPU for one trajectory, GPU for batches.
+
 **Gotchas.** (1) `vmap` is *slower* on CPU (~23k env-instr/s fwd, ~1k grad, even
 at B=1): a batched 256-way opcode `lax.switch` lowers to evaluate-all-branches +
 select (same caveat as `tools/bench_soft_run_batched.py`); GPU sweep:

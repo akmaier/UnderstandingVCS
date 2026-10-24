@@ -1,0 +1,81 @@
+{
+  "rom": "pong.bin",
+  "backend": "gpu",
+  "devices": [
+    "cuda:0"
+  ],
+  "windows": {
+    "100": {
+      "checkpoint_every": null,
+      "fwd_instr_per_s": 8741.18239689524,
+      "grad_instr_per_s": 4636.664025781214,
+      "fwd_compile_s": 85.54810854000971,
+      "grad_compile_s": 192.02246565697715
+    },
+    "400": {
+      "checkpoint_every": 100,
+      "fwd_instr_per_s": 11207.004475490648,
+      "grad_instr_per_s": 4311.043976531622,
+      "fwd_compile_s": 99.81165012787096,
+      "grad_compile_s": 343.80617385101505
+    },
+    "3000": {
+      "checkpoint_every": 100,
+      "fwd_instr_per_s": 13247.936373492646,
+      "grad_instr_per_s": 4624.17569358333,
+      "fwd_compile_s": 98.68555352510884,
+      "grad_compile_s": 319.6322337188758
+    }
+  },
+  "record_instr_per_s": 53.415836354515775,
+  "batched": [
+    {
+      "batch": 1,
+      "window": 400,
+      "checkpoint_every": 100,
+      "fwd_env_instr_per_s": 1923.027997958387,
+      "grad_env_instr_per_s": 390.5298830134005,
+      "fwd_compile_s": 43.34936500899494,
+      "grad_compile_s": 171.27507076086476
+    },
+    {
+      "batch": 16,
+      "window": 400,
+      "checkpoint_every": 100,
+      "fwd_env_instr_per_s": 43193.80060907525,
+      "grad_env_instr_per_s": 5667.433737657756,
+      "fwd_compile_s": 45.157163883093745,
+      "grad_compile_s": 179.57659147609957
+    },
+    {
+      "batch": 64,
+      "window": 400,
+      "checkpoint_every": 100,
+      "fwd_env_instr_per_s": 191862.34022426876,
+      "grad_env_instr_per_s": 19873.592555622625,
+      "fwd_compile_s": 43.25318026100285,
+      "grad_compile_s": 190.18694513989612
+    },
+    {
+      "batch": 256,
+      "window": 400,
+      "checkpoint_every": 100,
+      "fwd_env_instr_per_s": 506819.29571978486,
+      "grad_env_instr_per_s": 69135.1875585963,
+      "fwd_compile_s": 47.212978675961494,
+      "grad_compile_s": 194.0497505031526
+    },
+    {
+      "batch": 1024,
+      "window": 400,
+      "checkpoint_every": 100,
+      "error": "JaxRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 21.59GiB. [executable_name='jit_lossB'] [tf-allocator-allocation-error='']"
+    },
+    {
+      "batch": 4096,
+      "window": 400,
+      "checkpoint_every": 100,
+      "error": "JaxRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 86.23GiB. [executable_name='jit_lossB'] [tf-allocator-allocation-error='']"
+    }
+  ]
+}

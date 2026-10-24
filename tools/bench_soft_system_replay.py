@@ -77,6 +77,9 @@ def main():
     ap.add_argument("--batch-window", type=int, default=400)
     ap.add_argument("--cache-dir", default=None,
                     help="persistent JAX compilation cache directory")
+    ap.add_argument("--record-device", default="cpu", choices=["cpu", "default"],
+                    help="device for booting + recording the eager hard console "
+                         "(cpu: its tiny array ops are not dispatched to a GPU)")
     ap.add_argument("--eager", type=int, default=0,
                     help="also time the eager loop over this many steps (slow)")
     ap.add_argument("--repeats", type=int, default=3)
@@ -88,19 +91,22 @@ def main():
     rom_path = Path(a.rom)
     rom = np.frombuffer(rom_path.read_bytes(), dtype=np.uint8)
     settings = PongRomSettings() if rom_path.stem == "pong" else GenericRomSettings()
-    env = StellaEnvironment(rom, settings)
-    env.reset(boot_noop_steps=a.boot_frames)
-    con0 = env.console
-    state, bus = soft_system_init(con0)
-    res = dict(rom=rom_path.name, backend=jax.default_backend(),
-               devices=[str(d) for d in jax.devices()], windows={})
-    print(f"backend={res['backend']} devices={res['devices']} rom={rom_path.name}")
-
     batches = [int(b) for b in a.batches.split(",") if b]
     T = max(a.windows + [a.batch_window])
-    t = time.perf_counter()
-    trace_all, _ = record_soft_trace(copy.deepcopy(con0), T)
-    rec_s = time.perf_counter() - t
+    rec_dev = jax.devices("cpu")[0] if a.record_device == "cpu" else jax.devices()[0]
+    with jax.default_device(rec_dev):        # eager hard console + recording
+        env = StellaEnvironment(rom, settings)
+        env.reset(boot_noop_steps=a.boot_frames)
+        con0 = env.console
+        state, bus = soft_system_init(con0)
+        t = time.perf_counter()
+        trace_all, _ = record_soft_trace(copy.deepcopy(con0), T)
+        rec_s = time.perf_counter() - t
+    res = dict(rom=rom_path.name, backend=jax.default_backend(),
+               devices=[str(d) for d in jax.devices()], record_device=str(rec_dev),
+               windows={})
+    print(f"backend={res['backend']} devices={res['devices']} rom={rom_path.name} "
+          f"record_device={rec_dev}")
     res["record_instr_per_s"] = T / rec_s
     print(f"record   {T:6d} instr in {rec_s:8.2f}s  -> {T / rec_s:12.0f} instr/s")
 
@@ -135,6 +141,12 @@ def main():
 
         grd = jax.jit(jax.grad(loss))
         cf, tf = _timed(lambda: fwd(state, bus, tr), a.repeats)
+        if "placement" not in res:
+            out = fwd(state, bus, tr)[1].ram
+            res["placement"] = dict(trace=str(list(tr.ram.devices())[0]),
+                                    replay_output=str(list(out.devices())[0]))
+            print(f"placement trace={res['placement']['trace']} "
+                  f"replay_output={res['placement']['replay_output']}")
         cg, tg = _timed(lambda: grd(bus.rom, tr), a.repeats)
         res["windows"][w] = dict(checkpoint_every=ck, fwd_instr_per_s=w / tf,
                                  grad_instr_per_s=w / tg, fwd_compile_s=cf,
@@ -159,19 +171,18 @@ def main():
 
         grdB = jax.jit(jax.grad(lossB))
         entry = dict(batch=B, window=w, checkpoint_every=ck)
-        try:
-            cf, tf = _timed(lambda: fwdB(sB, bB, trB), a.repeats)
-            cg, tg = _timed(lambda: grdB(bB.rom), a.repeats)
-        except Exception as e:                       # OOM etc.: record, continue
-            entry["error"] = f"{type(e).__name__}: {str(e).splitlines()[0][:200]}"
-            print(f"batched  B={B}: {entry['error']}")
-            res["batched"].append(entry)
-            continue
-        entry.update(fwd_env_instr_per_s=B * w / tf, grad_env_instr_per_s=B * w / tg,
-                     fwd_compile_s=cf, grad_compile_s=cg)
+        line = f"batched  B={B:6d} x {w} instr"
+        for mode, fn in (("fwd", lambda: fwdB(sB, bB, trB)), ("grad", lambda: grdB(bB.rom))):
+            try:                                     # OOM etc.: record, continue
+                c, t_ = _timed(fn, a.repeats)
+                entry[f"{mode}_env_instr_per_s"] = B * w / t_
+                entry[f"{mode}_compile_s"] = c
+                line += f"  {mode} {B * w / t_:12.0f} env-instr/s (compile {c:.1f}s)"
+            except Exception as e:
+                entry[f"{mode}_error"] = f"{type(e).__name__}: {str(e).splitlines()[0][:200]}"
+                line += f"  {mode} {entry[f'{mode}_error'][:60]}"
         res["batched"].append(entry)
-        print(f"batched  B={B:6d} x {w} instr  fwd {B * w / tf:12.0f} env-instr/s   "
-              f"grad {B * w / tg:12.0f} env-instr/s   (compile {cf:.1f}s / {cg:.1f}s)")
+        print(line)
 
     if a.json:
         Path(a.json).write_text(json.dumps(res, indent=2))
