@@ -48,7 +48,7 @@ boot has a near-empty ROM gradient (Pong `sum(RAM)+A` over 100–120 steps: 0–
 non-zeros; Montezuma: 5–8) — under the STE the ROM gradient enters only where a
 soft handler computes with a ROM byte. Equality tests therefore use a trajectory
 loss (13–17 non-zeros) with a floor, so they cannot pass vacuously.
-Tests: `jaxtari/tests/test_soft_replay.py`.
+Tests: `jaxtari/tests/test_soft_replay.py` (6) + `test_soft_system.py` (8): **14 passed** (run on the tree before the rebase onto `bef47885`, the F8SC Superchip power-on-init change; the replay tests use Pong/Montezuma, no Superchip).
 
 ### ⚠️ Conformance re-check after the SOFT-step work — elevator_action "regression" was an unpatched xitari; jaxtari lacked the #123 LCG — 2026-10-24
 
