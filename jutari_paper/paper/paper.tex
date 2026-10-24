@@ -1,3 +1,4 @@
+
 \documentclass[letterpaper]{article} % DO NOT CHANGE THIS
 \usepackage[submission]{aaai2027}  % DO NOT CHANGE THIS
 \usepackage[hyphens]{url}  % DO NOT CHANGE THIS
@@ -23,6 +24,7 @@
 \newtheorem{theorem}{Theorem}
 \newtheorem{corollary}{Corollary}
 \newtheorem{assumption}{Assumption}
+\newtheorem{proposition}{Proposition}
 \newcommand{\sg}{\mathrm{sg}}
 \newcommand{\softmax}{\mathrm{softmax}}
 
@@ -43,29 +45,23 @@ Ground Truth for Explainable AI}
 \begin{abstract}
 Explanation requires ground truth: to verify an account of a system, we must
 know its inner functioning---precisely what is missing wherever explainable AI
-(XAI) is most needed. Today's study objects fall into two camps: simple and
-procedural---decision trees, rule lists, sparse linear models---where the
-mechanism is known but trivial, so explaining it tests nothing; or genuinely
-complex---deep networks, real-world tasks---where XAI is needed but no
-ground-truth mechanism exists, so an explanation can be plausible, confident, and
-wrong with no way to tell. We remove this dichotomy with a study object
-at once genuinely complex yet fully specified---inspectable by construction---and
-fully differentiable. We re-implement the Atari 2600 Video Computer System
-(VCS)---a real computer architecture, and the platform on which deep
-reinforcement learning was first established---as two independent, end-to-end
-\emph{differentiable} emulators, \textsc{jutari} (Julia) and \textsc{jaxtari}
-(JAX), each validated bit-for-bit against the \textsc{xitari} reference: 64/64
-byte-identical RAM and 64/64 pixel-identical screens on all 64 supported Arcade
-Learning Environment (ALE) games. Treating the cartridge ROM as a weight tensor,
-the RAM as a soft tape, and control flow as gates, we prove the differentiable
-(soft) execution equals the original (hard) execution bit-for-bit in the forward
-pass at any finite temperature, while exposing \emph{surrogate} gradients where
-the bit logic has none. The JAX port opens a GPU path: batched differentiable
-rollouts reach millions of environment-steps per second on one commodity GPU.
-Built in roughly 137 hours over 29 days, largely by autonomous coding agents, the
-paper validates this foundation and shows---theoretically and in a qualitative
-gradient study---that gradient-based XAI on it is feasible. The full code of both
-ports will be released under the MIT license upon acceptance.
+(XAI) is most needed. Today's study objects are either simple, with a known
+but trivial mechanism, or genuinely complex, with no ground-truth mechanism
+against which to check explanations. We remove this dichotomy with a real
+computer architecture that is fully specified and differentiable. We
+re-implement the Atari 2600 Video Computer System (VCS) as two independent
+emulators, \textsc{jutari} (Julia) and \textsc{jaxtari} (JAX), validated
+bit-for-bit against \textsc{xitari}: 64/64 byte-identical RAM and 64/64
+pixel-identical screens on tested Arcade Learning Environment (ALE)
+trajectories. A full-system soft step executes the exact hard machine
+and supplies surrogate gradients through CPU registers, RAM, and ROM bytes.
+We prove forward equivalence by construction and measure zero soft-handler
+disagreements across 64 games in \textsc{jutari}. Exact interventions on
+the hard machine independently test these gradients. A companion study
+finds that vanilla saliency can fail this test, while interventions
+recover more of the causal structure. GPU batching reaches ${\sim}3.1$M
+steps/s for the soft CPU core, not the full-system step. Both ports
+will be released under the MIT license upon acceptance.
 \end{abstract}
 
 \section{Introduction}
@@ -80,234 +76,167 @@ it is exactly what is missing where explanation matters most.
 The systems available to study fall into two unsatisfying camps. Simple,
 procedural models---decision trees, rule lists, sparse linear models---have fully
 known inner functioning, but there the explanation is essentially the model
-itself, testing an XAI method on nothing it could get wrong. These are not the
-systems XAI was created for. The systems XAI does target---deep neural networks,
-learned agents, real-world pipelines---are genuinely complex and, for that very
-reason, have no ground truth of their inner functioning, so an attribution or
-saliency map can be plausible, confident, and wrong with no way to tell
+itself, testing an XAI method on nothing it could get wrong. The systems XAI
+does target---deep neural networks, learned agents, real-world pipelines---are
+genuinely complex and have no independently known mechanism, so an attribution
+can be plausible and wrong with no way to tell
 \citep{atrey2020exploratory,nikulin2019freelunch}.
 
-Neuroscience faces a similar problem. Therefore, \citet{jonas2017could} asked
-whether the standard systems-neuroscience toolkit---connectomics, tuning curves,
-lesioning, dimensionality reduction---could recover how a MOS\,6502 microprocessor
-computes, using the chip as a model organism precisely because its mechanism is
-complex \emph{and} completely known. Even with perfect, unlimited data the methods
-produced structure that looked meaningful but did not recover the processor's
-actual organisation. The conclusion was that the \emph{methods} were lacking, and
-that the way to find out is to test them on a system whose ground truth we already
-possess. Two things make it difficult to translate this to modern XAI: the
-microprocessor was not \emph{differentiable}, so today's gradient-based methods
-could not be applied, and the analyses were classical statistics, not XAI. The
-MOS\,6502 is no accident---it is the CPU at the heart of the Atari 2600 Video
-Computer System (VCS), the platform on which modern deep reinforcement learning
-was first demonstrated \citep{mnih2013playing,mnih2015human,bellemare2013arcade}.
+Neuroscience faces a similar problem. \citet{jonas2017could} asked whether the
+standard systems-neuroscience toolkit---connectomics, tuning curves, lesioning,
+dimensionality reduction---could recover how a MOS\,6502 microprocessor computes.
+The chip was chosen because its mechanism is complex and completely known.
+Even with perfect data the methods produced meaningful-looking structure but
+did not recover the actual organisation. This suggests testing methods against
+known mechanisms. Yet the processor was not differentiable, excluding modern
+gradient-based XAI. The MOS\,6502 is the CPU at the heart of the Atari 2600
+VCS, the platform on which modern deep reinforcement learning was demonstrated
+\citep{mnih2013playing,mnih2015human,bellemare2013arcade}.
 
-We therefore build the missing piece: a study object at once \emph{complex} (a
-real computer architecture), \emph{fully specified} to us bit-for-bit, and
-\emph{differentiable}, so the gradient-based XAI toolkit can in principle be turned
-on it. We re-implement the VCS---a 6507 CPU executing code from a cartridge ROM, a
-Television Interface Adapter (TIA) that turns register writes into pixels cycle by
-cycle, and a RIOT (RAM, I/O, timer) chip providing the RAM, an interval timer, and
-joystick and switch I/O---as two independent, end-to-end differentiable emulators:
-\textsc{jutari} in Julia \citep{bezanson2017julia} and \textsc{jaxtari} in JAX
-\citep{bradbury2018jax}. Each runs in a bit-exact \emph{hard} mode and a
-differentiable \emph{soft} mode, validated against \textsc{xitari} \citep{xitari},
-the Stella-derived C\texttt{++} emulator \citep{stella} that served as the
-reference for the original deep-Q-network (DQN) work.
+We therefore build a study object that is \emph{complex}, \emph{fully specified},
+and \emph{differentiable}. The VCS combines a 6507 CPU executing cartridge ROM,
+a Television Interface Adapter (TIA) generating pixels cycle by cycle, and
+a RIOT chip providing RAM, timers, and input. We implement two independent
+ports: \textsc{jutari} in Julia \citep{bezanson2017julia} and
+\textsc{jaxtari} in JAX \citep{bradbury2018jax}. Both have bit-exact
+\emph{hard} execution and differentiable \emph{soft} CPU handlers, checked
+against \textsc{xitari} \citep{xitari}, the Stella-derived C\texttt{++}
+reference \citep{stella} used by the original DQN work.
 
-This paper builds and validates that foundation, and shows---both theoretically
-and in a qualitative gradient study---that XAI on this system is feasible. Our
-contributions are:
+Our contributions are:
 \begin{itemize}
-  \item \textbf{Two differentiable VCS ports.} Independent Julia
-  (\textsc{jutari}) and JAX (\textsc{jaxtari}) implementations of the full VCS
-  (CPU, TIA, RIOT, cartridge bank-switching, console, controllers), each with a
-  bit-exact hard path and a differentiable soft path. Both ports are
-  bit-for-bit identical to \textsc{xitari} on all 64 supported games---64/64
-  byte-identical RAM and 64/64 pixel-identical screens.
-  \item \textbf{A soft/hard formulation with theoretical analysis thereof.}
-  We treat the ROM as a weight tensor, the RAM as a soft tape, and control
-  flow as gates, and show that the soft forward pass is bit-exact equal to the
-  hard forward pass at any finite temperature (Theorem~\ref{thm:exact}), and
-  give the temperature-limit error bound for the fully relaxed variant
+  \item \textbf{Two VCS ports.} Independent Julia and JAX implementations
+  reproducing reference RAM and screens on all 64 tested ALE games.
+  \item \textbf{Exact-forward differentiation.} A full-system STE step
+  (Theorem~\ref{thm:exact}) and bounds for relaxed execution
   (Theorem~\ref{thm:limit}).
-  \item \textbf{An AI-assisted engineering account.} A quantified report of
-  how an emulator port that would classically cost many person-months was
-  built in roughly 137 hours of active work, measured from the version-control
-  log, with large parts written autonomously by coding agents.
-  \item \textbf{A conformance evaluation} across the 64-game Arcade Learning
-  Environment (ALE) set, with
-  formally defined bit- and pixel-exactness metrics, and the observation that
-  a bit-exact re-implementation is itself an audit tool for its reference.
-  \item \textbf{A qualitative gradient study} showing that the foundation works
-  as intended: the forward pass is bit-exact and the backward pass supplies
-  \emph{surrogate} gradients with respect to registers, RAM, and ROM bytes, so
-  attributions can be checked against the known mechanism---demonstrated here on
-  the joystick-to-screen control path.
+  \item \textbf{Mechanism-grounded evaluation.} Exact interventions
+  test surrogate attributions to ROM, RAM, registers, and inputs.
+  \item \textbf{AI-assisted implementation.} Approximately 137 hours
+  of active development time, with agent-written code checked by
+  three conformance harnesses.
+  \item \textbf{Reproducible measurements.} Bit- and pixel-exactness,
+  gradient checks, and CPU/GPU throughput with explicit scope.
 \end{itemize}
 
 \section{Background and Related Work}
 
 The dominant XAI tools are \emph{attribution} or \emph{saliency} methods,
 which assign each input element a number reflecting how much it mattered to
-the output. Grad-CAM computes the gradient of a target output with respect
-to a convolutional layer and renders it as a heatmap of important regions
-\citep{selvaraju2017gradcam}. Grad-CAM++ refines this with a pixel-wise
-weighting of positive gradients \citep{chattopadhyay2018gradcampp}. These
-methods are powerful and architecture-agnostic, but they share a limitation
-their own authors flag: there is no way to confirm that a heatmap reflects
-the network's true reason for deciding, because for a deep network that
-reason is unknown. Grad-CAM++ notes explicitly that conventional
-faithfulness metrics ``need not correlate with the actual factors
-responsible for the network's decision''
-\citep{chattopadhyay2018gradcampp}. Validation therefore falls back on
-proxies---bounding-box overlap, or human-trust studies.
+the output. Grad-CAM computes gradients with respect to convolutional
+features \citep{selvaraju2017gradcam}; Grad-CAM++ refines their weighting
+\citep{chattopadhyay2018gradcampp}. Their limitation is verification:
+conventional faithfulness metrics ``need not correlate with the actual
+factors responsible for the network's decision''
+\citep{chattopadhyay2018gradcampp}. Validation often relies on proxies
+such as bounding-box overlap or human trust.
 
-The problem sharpens when the object of explanation is a reinforcement
-learning (RL) agent rather than an image classifier. A widely studied such
-agent is the DQN, which learns to play Atari games from raw pixels
-\citep{mnih2013playing,mnih2015human} and became a standard testbed.
-\citet{greydanus2018visualizing} introduced a perturbation-based
-saliency for Atari agents and described strategies such as Breakout
-``tunneling''. The one case in which they verify the saliency is an
-experiment where they inserted the ground-truth feature themselves.
-\citet{nikulin2019freelunch} built saliency directly
-into the agent and validated it against human eye-tracking---a behavioural
-surrogate, not the machine's own computation. \citet{atrey2020exploratory}
-then made the consequence explicit: using counterfactual interventions (for
-example, mirroring the Breakout wall) they showed that popular
-saliency-based explanations of Atari agents are frequently unfalsifiable
-and do not hold up, and concluded that saliency maps are best treated as an
-\emph{exploratory}, not an \emph{explanatory}, tool. \citet{such2019atarizoo}
-industrialised the comparison of trained agents while leaving the validation
-gap untouched.
+The problem sharpens for reinforcement learning (RL) agents. DQN learns
+Atari games from pixels \citep{mnih2013playing,mnih2015human}.
+\citet{greydanus2018visualizing} introduced perturbation saliency
+and described strategies such as Breakout ``tunneling'', but verified
+one case using a deliberately inserted feature.
+\citet{nikulin2019freelunch} compared built-in saliency with human
+eye-tracking, a behavioural surrogate. Through counterfactual
+interventions, \citet{atrey2020exploratory} showed that Atari saliency
+explanations frequently fail and should be treated as exploratory.
+\citet{such2019atarizoo} enabled comparisons of trained agents
+without resolving mechanism-grounded validation.
 
-Surveys of explainable RL confirm that this is the field's structural
-condition rather than an incidental gap
+Surveys repeatedly identify this gap
 \citep{qing2022xrlsurvey,vouros2023xrlsurvey,cheng2025xrlsurvey,saulieres2025xrlsurvey}.
-Across hundreds of methods the target is uniformly described as a closed or
-black box, and objective, mechanism-grounded evaluation is repeatedly named
-among the field's open needs. Even methods designed for interpretability
-inherit the problem: XDQN makes a DQN interpretable by training a transparent
-surrogate to mimic it, but its strongest correctness measure is fidelity
-\emph{to the DQN}---agreement with another black box, not with a known
-mechanism \citep{kontogiannis2023xdqn}. A parallel line manufactures
-interpretability ground truth---inserted features \citep{yangkim2019bim}, or small
-transformers compiled or trained to a known structure
-\citep{lindner2023tracr,gupta2024interpbench}---but on synthetic, built-to-be-interpretable
-models, not a real complex system. The recurring obstacle is the one
-\citet{jonas2017could} identified: without a study object whose true mechanism is
-available, an explanation cannot be checked. We build such an
-object---complex, fully specified, and differentiable---and validate it, opening
-the way to develop and validate XAI tools against a known mechanism.
+XDQN trains a transparent surrogate but measures fidelity to another
+black box \citep{kontogiannis2023xdqn}. Other work supplies known
+structure through inserted features \citep{yangkim2019bim}, or
+small transformers compiled or trained for interpretability
+\citep{lindner2023tracr,gupta2024interpbench}. Tracr and InterpBench
+use known circuits as targets. Our target is instead a real
+human-written program, never designed for interpretability, executing
+across CPU, memory, control flow, bank switching, timers, and
+cycle-timed graphics. We evaluate explanations against exact
+interventions on machine variables, rather than recovery of a
+designed circuit. This extends the test proposed by
+\citet{jonas2017could} to gradient-based XAI.
 
 \subsection{Known Operators and Differentiable Programming}
 
-Our approach is related to \emph{known-operator learning}. The idea began with
-deep-learning computed tomography \citep{wuerfl2016deep}, where a known
-reconstruction operator is built into the network rather than learned from
-data. \citet{maier2019known} later showed that embedding known, differentiable
-operators directly into a network reduces its maximum error bound: if a layer
-is known, its error term vanishes and the corresponding part of the bound
-cancels, even for networks of arbitrary depth. The principle is general---``any operation that allows
-computation of a gradient or sub-gradient towards its inputs'' can be
-embedded \citep{maier2019known}---and the same spirit underlies
-physics-informed neural networks, which embed known governing equations
-\citep{raissi2019pinn}, and operator-aware treatments of deep
-learning for practitioners \citep{maier2019gentle}. Our VCS is, in this
-sense, an extreme case: \emph{every} operator is known, so the entire
-forward computation is a fixed, differentiable program, and the only thing
-left to ``explain'' is how that known program maps inputs to outputs.
+Our approach relates to \emph{known-operator learning}, introduced in
+deep-learning computed tomography \citep{wuerfl2016deep}.
+\citet{maier2019known} showed that embedding known differentiable
+operators removes their error contributions from a network's bound.
+The same principle appears in physics-informed neural networks
+\citep{raissi2019pinn} and operator-aware deep learning
+\citep{maier2019gentle}. In the VCS, every operator is known;
+the task is to explain how the fixed program maps inputs to outputs.
 
-Making a hand-written emulator differentiable requires a general-purpose
-differentiable-programming substrate. Julia provides source-to-source
-automatic differentiation (AD) over essentially arbitrary code via Zygote
-\citep{innes2019zygote}, with eager execution and mutable state that map
-naturally onto an emulator's registers and RAM. JAX provides trace-based AD
-with just-in-time compilation to XLA \citep{bradbury2018jax}, which favours
-pure, functional, array-shaped code. The two make different trade-offs for
-this workload, and building both lets us cross-check each port against the
-other in addition to the reference. We treat the cartridge ROM as a weight
-tensor, the 128 bytes of RAM as a Neural-Turing-Machine-style addressable
-tape \citep{graves2014ntm}, and discrete control flow as gates relaxed with
-the Gumbel-softmax reparameterisation \citep{jang2017gumbel} and
-straight-through estimators \citep{bengio2013estimating}.
+Julia's Zygote provides source-to-source automatic differentiation
+\citep{innes2019zygote}; JAX provides trace-based differentiation and
+XLA compilation \citep{bradbury2018jax}. We represent ROM as a weight
+tensor, RAM as an addressable tape \citep{graves2014ntm}, and discrete
+decisions using deterministic softmax and straight-through estimators
+\citep{bengio2013estimating}. Only the $T\to0$ relation is shared
+with Gumbel-softmax \citep{jang2017gumbel}; no Gumbel noise is used.
 
 \subsection{Why the Atari VCS Is Good Ground Truth}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.92\columnwidth]{figures/fig_architecture.pdf}
-\caption{The Atari 2600 VCS. A 6507 CPU executes code from a
-(bank-switched) cartridge ROM over a shared address/data bus. The RIOT
-provides 128 bytes of RAM, a timer, and joystick/switch I/O, and the TIA turns
-register writes into a picture and sound, cycle by cycle. Every block is
-re-implemented and differentiated in both ports.}
+\caption{The Atari 2600 VCS. A 6507 CPU executes cartridge ROM over a
+shared bus. The RIOT provides RAM, timer, and I/O; the TIA generates
+cycle-timed graphics. Audio is not implemented in our ports.}
 \label{fig:arch}
 \end{figure}
 
 The VCS (Figure~\ref{fig:arch}) is a real computer architecture, small
-enough to know completely yet complex enough to be interesting. A 6507 CPU
-(a cost-reduced MOS\,6502) executes a program stored in the cartridge ROM.
-Because the address space is only 13 bits wide, larger cartridges
-\emph{bank-switch}: writes to special addresses swap which 4\,KB ROM page is
-visible. The RIOT chip (M6532) holds the 128 bytes of system RAM, an
-interval timer, and the input ports for the joystick, paddles, and console
-switches. The heart of the machine is the TIA: it has no frame buffer, so
-the CPU must race the electron beam, writing its registers in time with each
-scanline. These include the colour registers---\texttt{COLUP0}
-and \texttt{COLUP1} for the two player sprites, \texttt{COLUPF} for the
-playfield, and \texttt{COLUBK} for the background---together with sprite-shape
-and position registers. The screen and audio are the TIA's outputs. This is
-the system the Arcade Learning Environment \citep{bellemare2013arcade} exposes
-to RL agents, and that \textsc{xitari} \citep{xitari}, a fork of the Stella
-emulator \citep{stella}, uses as the reference for DQN. Because \textsc{xitari}
-is deterministic given a ROM, an action stream, and a seed, every register,
-RAM byte, and pixel our ports produce can be compared against it, and any
-disagreement is a measurable mistake in the software port.
+enough to know completely yet complex enough to be interesting.
+Its 6507 CPU (a cost-reduced MOS\,6502) has a 13-bit address space;
+larger cartridges \emph{bank-switch} ROM pages. The RIOT (M6532)
+provides 128 bytes of RAM, an interval timer, and joystick, paddle,
+and console-switch I/O. The TIA has no frame buffer: the CPU writes
+registers while the electron beam scans the screen.
+These include sprite colours \texttt{COLUP0}, \texttt{COLUP1},
+playfield colour \texttt{COLUPF}, background \texttt{COLUBK},
+and sprite-shape and position registers. The TIA produces screen
+and audio signals; our ports implement the graphics path only.
+
+ALE \citep{bellemare2013arcade} exposes the VCS to RL agents.
+\textsc{xitari} \citep{xitari}, derived from Stella \citep{stella},
+is the DQN reference. Given a ROM, action stream, and deterministic
+initial state, its registers, RAM, and pixels provide an independent
+reference for the ports.
 
 \paragraph{Other Atari substrates and differentiable simulators.}
-The Atari platform is also used as a throughput target and as a structured RL
-environment. CuLE ports ALE to CUDA for massive-batch rollouts (up to
-${\sim}155$M frames/h on a single GPU) but is neither bit-exact nor
-differentiable \citep{dalton2020cule}; object-centric and JAX-native Atari
-environments such as OCAtari and JAXAtari expose structured states and run on
-the GPU \citep{delfosse2023ocatari,delfosse2025jaxatari}, but JAXAtari
-\emph{reimplements} each game's logic in JAX and cannot execute the original ROMs
-at all, and both are RL \emph{environments} rather than a gate-level
-differentiable port validated bit-for-bit against the emulator reference. Differentiable simulators are by now standard in
-continuous physics---Brax back-propagates through rigid-body dynamics in JAX
-\citep{freeman2021brax}---whereas our substrate differentiates a \emph{discrete}
-computer architecture whose hard forward pass is provably exact. We follow the
-ALE evaluation protocol and its game catalogue
+CuLE provides GPU Atari execution but is neither bit-exact nor
+differentiable \citep{dalton2020cule}. OCAtari and JAXAtari offer
+structured, GPU-oriented environments
+\citep{delfosse2023ocatari,delfosse2025jaxatari}, but JAXAtari
+reimplements game logic rather than executing original ROMs.
+Brax differentiates continuous rigid-body physics
+\citep{freeman2021brax}; we differentiate selected operations
+of a discrete computer while preserving its hard execution.
+We use ALE's game catalogue and evaluation protocol
 \citep{bellemare2013arcade,machado2018revisiting}.
 
 \section{Building Two Differentiable VCS Ports}
 
-We ported \textsc{xitari} subsystem by subsystem---CPU, bus, TIA, RIOT,
-cartridge mappers, console, controllers, and the ALE-style environment
-wrapper---under a strict conformance gate. We define ``correct'' by three
-automated test harnesses: programs that drive a port and the reference on
-identical inputs and compare their internal state byte for byte, failing on
-any mismatch. The first (PXC1) compares each port against a per-instruction
-\textsc{xitari} trace of the CPU registers, RAM, and TIA state. The second
-(PXC2) cross-checks the two ports against each other, so that a bug shared by
-the reference and one port is still caught by the second, independent
-implementation. The third (PXC-S) compares the full $210\times160$ frame
-buffer. Each port implements all 151 documented NMOS\,6502 instructions
-plus the undocumented \texttt{USBC} alias and 37 common ``illegal''
-opcodes (NOP/LAX/SAX families)---189 opcode bytes in total---in both
-execution modes, and nine cartridge mappers (2K, 4K, F8, F6, F4, their
-Superchip variants, and E0) with content-based auto-detection mirroring
-the reference. Table~\ref{tab:ports} summarises the two ports.
+We ported \textsc{xitari} subsystem by subsystem---CPU, bus, TIA,
+RIOT, cartridge mappers, console, controllers, and ALE wrapper---under
+three conformance harnesses. PXC1 compares per-instruction CPU, RAM,
+and TIA traces with \textsc{xitari}; PXC2 cross-checks the independent
+ports; PXC-S compares full $210\times160$ frame buffers.
+Each port supports 151 documented NMOS\,6502 instructions,
+the undocumented \texttt{USBC} alias, and 37 common illegal opcodes
+(189 opcode bytes), plus ten cartridge mappers: 2K, 4K, F8, F6,
+F4, three Superchip variants, E0, and FE. Seven mappers are
+exercised by the 64 games. Table~\ref{tab:ports} summarises the ports.
 
 \begin{table}[t]
 \centering
 \setlength{\tabcolsep}{4pt}
-\caption{The two differentiable ports at a glance. Both reproduce
-\textsc{xitari} bit-for-bit on all 64 games. Throughput rows are soft-mode
-env-steps/s (Pong, $3{,}000$ steps); a dash marks a regime the port does not
-target. Full per-batch scaling is in the supplementary material.}
+\caption{Port statistics and instruction throughput. CPU: Apple M1 Max;
+GPU: GTX 1080 Ti / Quadro RTX 5000, peak batch $N\approx4096$.
+Batched JAX rows use the soft CPU core with a simplified bus.}
 \label{tab:ports}
 \begin{tabular}{lcc}
 \toprule
@@ -318,13 +247,14 @@ Source lines            & 8{,}630 & 10{,}111 \\
 Test lines              & 6{,}052 & 11{,}855 \\
 Test cases              & ${\sim}1{,}183$ & 803 \\
 Opcode bytes            & 189 & 189 \\
-Cartridge mappers       & 9 & 9 \\
+Cartridge mappers       & 10 & 10 \\
 RAM-exact (of 64)       & \textbf{64} & \textbf{64} \\
 Pixel-exact (of 64)     & \textbf{64} & \textbf{64} \\
 \addlinespace
-Throughput, 1 env (CPU) & $\mathbf{370{,}100}$ & $1{,}178$ \\
-Throughput, batched CPU & --- & ${\sim}60{,}000$ \\
-Throughput, batched GPU & --- & \textbf{$\sim$3.1\,M} \\
+Soft CPU core, 1 env (CPU) & $\mathbf{370{,}100}$ & $1{,}178$ \\
+Soft CPU core, batched CPU & --- & ${\sim}60{,}000$ \\
+Soft CPU core, batched GPU & --- & \textbf{$\sim$3.1\,M} \\
+Full-system soft step (CPU) & ${\sim}146{,}000$ & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -334,388 +264,499 @@ Throughput, batched GPU & --- & \textbf{$\sim$3.1\,M} \\
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.90\textwidth]{figures/fig_pipeline.pdf}
-\caption{The two execution paths share one known mechanism. The HARD step
-uses integer dispatch and exact bit logic. The SOFT step reads the ROM and
-RAM as one-hot dot products and relaxes the branch decision with a sigmoid
-gate. A straight-through estimator joins them: the forward value is the
-hard one (bit-exact), while the backward pass uses the soft gradient, so the
-substrate emits an exact frame together with a \emph{surrogate} gradient of each
-pixel with respect to ROM bytes and registers (forward exact; backward from the
-relaxation).}
+\caption{HARD executes the complete machine bit-exactly.
+SOFT-STE replays the instruction through differentiable CPU/RAM
+handlers and joins their outputs with hard values. CPU registers
+and RAM carry surrogate gradients; device and frame-buffer
+states remain hard.}
 \label{fig:pipeline}
 \end{figure*}
 
-Each port runs in two modes that share one code path (Figure~\ref{fig:pipeline}).
-In \textbf{hard} mode, the emulator is the ordinary bit-exact machine:
-opcode bytes index an integer dispatch table, the ALU is integer
-arithmetic, and flags are bits. In \textbf{soft} mode, the same step is
-re-expressed so that gradients can flow. Three relaxations carry the idea.
+In HARD mode the CPU uses integer arithmetic, bit flags, and
+opcode dispatch. The implemented full-system SOFT-STE step
+in \textsc{jutari} first executes the instruction on the hard
+CPU, bus, TIA, RIOT, and cartridge. It then replays the
+instruction through differentiable handlers against that same
+hard machine. ROM reads follow the hard cartridge's current
+bank/slice mapping; TIA, RIOT, and Superchip register reads
+are constants from the hard bus. Writes outside RAM affect
+only hard devices. Every CPU register and RAM cell is joined
+with its hard value through STE. Device and frame-buffer
+states remain hard and receive no gradient. Gradients reach
+registers, RAM, and ROM bytes.
 
-First, every ROM and RAM read is written as a dot product against a one-hot
-address vector. For a memory tensor $r\in\mathbb{R}^{M}$ of size $M$ (the ROM or
-RAM) and an address $a\in\{0,\dots,M-1\}$,
+Table~\ref{tab:modes} distinguishes execution from gradient
+methods. FULL relaxes branches and reads without STE,
+rounding their results to integers; opcode dispatch remains
+hard. LEAKY uses $\alpha=5.5$, $T=0.145$ just outside the
+sufficient exactness region and permits mild forward divergence.
+NAIVE differentiates through hard discrete indices, giving zero
+position gradients. SAMPLER adds a bilinear position kernel.
+
+\begin{table}[t]
+\centering
+\setlength{\tabcolsep}{3pt}
+\small
+\caption{Execution modes and gradient methods.}
+\label{tab:modes}
+\begin{tabular}{llll}
+\toprule
+Mode & Forward & Backward & Used for \\
+\midrule
+HARD & Exact & None & Reference \\
+SOFT-STE & Exact, full & Surrogate & CPU/RAM/ROM \\
+FULL & Exact in corner & Relaxed & $\alpha/T$ study \\
+LEAKY & Mild divergence & Relaxed & Boundary test \\
+NAIVE & Exact & Zero on indices & Baseline \\
+SAMPLER & Exact & Bilinear & Position \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The soft formulation uses three constructions. First, ROM
+and RAM reads use a one-hot address vector. For memory
+$r\in\mathbb{R}^{M}$ and address $a$,
 \begin{equation}
 \mathrm{peek}(r,a) \;=\; \mathbf{1}_a^{\top} r \;=\; \sum_{i} [\![i=a]\!]\, r_i \;=\; r_a .
 \label{eq:peek}
 \end{equation}
-The forward value is exactly $r_a$, but the gradient
-$\partial\,\mathrm{peek}/\partial r = \mathbf{1}_a$ is now defined and
-one-hot---this is what makes ``which ROM byte explains this pixel?'' a
-gradient question. The RAM tape uses the identical construction, which is
-the discrete limit of the soft, attention-style addressing of a Neural
-Turing Machine \citep{graves2014ntm}.
+The value is $r_a$, with gradient
+$\partial\,\mathrm{peek}/\partial r=\mathbf{1}_a$.
+This is the discrete limit of attention-style memory addressing
+\citep{graves2014ntm}.
 
-Second, opcode dispatch is, in principle, a convex combination over the
-handler outputs. Let $\ell\in\mathbb{R}^{K}$ be a score vector over the
-$K=256$ possible opcodes---the \emph{logits}. In the hard machine $\ell$ is a
-one-hot indicator of the decoded opcode, and in the relaxed form it is a soft
-score. With temperature $T>0$ and softmax weights $w=\softmax(\ell/T)$, that
-is $w_k=e^{\ell_k/T}/\sum_j e^{\ell_j/T}$, the dispatch output is
+Second, a general soft selection over $K=256$ opcode
+candidates has logits $\ell$ and weights
+$w=\softmax(\ell/T)$:
 \begin{equation}
 \mathrm{select}(\ell,V;T) = w^{\top} V,
 \label{eq:select}
 \end{equation}
-where the rows of $V$ are the candidate handler outputs. This collapses to the
-hard pick as $T\to0$ \citep{jang2017gumbel}. In the executed step we use the
-saturated form directly---a hard switch on the decoded opcode---so the forward
-pass is exact, and the relaxed form~\eqref{eq:select} is what a fully soft variant
-would use. The same softmax select governs \emph{any} discrete choice, with $T$
-setting how widely the soft pick spreads---and with it the range over which
-gradients flow. Figure~\ref{fig:tempheat} shows this on a visualisable selection
-(placing a target sprite among candidate screen columns rather than choosing an
-opcode): raising $T$ spreads the pick over neighbouring columns, widening the
-\emph{capture range} over which gradients reach the input, while the forward render
-stays exact.
+where $V$ contains candidate outputs. The selection
+approaches the hard winner as $T\to0$
+\citep{jang2017gumbel}. This is deterministic,
+without Gumbel noise. Actual opcode dispatch remains
+a hard switch in both SOFT-STE and FULL.
+Figure~\ref{fig:tempheat} visualises the spread of
+soft selection using sprite columns, not opcodes.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_temp_heatmap.pdf}
-\caption{Soft-select temperature $T$ in pixel space, on a visualisable selection:
-a target sprite's screen column chosen with $w=\softmax(\ell/T)$. For each $T$ we
-sample the column $100$ times, render the hard sprite, and average, so each pixel
-is the expected occupancy. Low $T$ is a single sharp sprite (the hard pick,
-$\sigma\approx1.3$ px). Raising $T$ spreads it over neighbouring columns
-($\sigma\approx3$, then $6$ px), widening the range over which gradients reach---a
-knob for the gradient's capture range. The forward pass stays bit-exact
-(Theorem~\ref{thm:exact}).}
+\caption{Temperature controls soft selection in pixel space.
+A sprite column is sampled 100 times and the hard renders
+averaged. Increasing $T$ spreads occupancy
+($\sigma\approx1.3,3,6$ px). These averages illustrate
+temperature spread, not the bit-exact STE forward pass.}
 \label{fig:tempheat}
 \end{figure}
 
-Third, a conditional branch---``if the status flag is set, add the offset
-$\delta$ to the program counter (\textsc{pc})''---is relaxed with a sigmoid
-gate. The branch condition is one processor status flag, a single bit in the
-hard machine. In soft mode we let it take a real value $f\in[0,1]$, a relaxed
-flag. Writing $f$ as a logit $z = s\,(2f-1)$, where the sign $s$ selects
-branch-when-set ($s={+}1$) or branch-when-clear ($s={-}1$), and with sharpness
-$\alpha$, the gate $g$ and relaxed program counter are
+Third, conditional branches use a sigmoid gate. Let
+$f\in[0,1]$ be a relaxed status flag, $z=s(2f-1)$
+with $s=\pm1$ for branch-when-set/clear, and
+$\delta$ the relative offset:
 \begin{equation}
 g = \sigma(\alpha z),\qquad
 \mathrm{pc}_{\mathrm{soft}} = (1-g)\,\mathrm{pc}_{\bar b} + g\,\mathrm{pc}_{b}
 = \mathrm{pc}_{\bar b} + g\,\delta,
 \label{eq:branch}
 \end{equation}
-where $\mathrm{pc}_{\bar b}$ is the fall-through (not-taken) counter and
-$\mathrm{pc}_{b}=\mathrm{pc}_{\bar b}+\delta$ is the taken counter, so the blend
-simplifies to $\mathrm{pc}_{\bar b}+g\,\delta$. As $\alpha\to\infty$ the gate
-saturates to a hard branch. For the fully relaxed variant (no straight-through
-correction) $\alpha$ must be large enough that the gate's residual uncertainty
-$g(1-g)$ stays below the integer-rounding threshold of $\mathrm{pc}$, so the
-rounded counter still matches the hard branch (see the supplementary material).
+where $\mathrm{pc}_{\bar b}$ is the fall-through counter.
+FULL rounds the target to an integer. With an exact binary
+flag, a branch rounds correctly when
+$|\delta|\sigma(-\alpha)<1/2$; thus $\alpha\ge6$
+suffices for 6502 offsets $|\delta|\le128$.
+FULL memory reads instead use distance-softmax at
+temperature $T$ and round their byte values.
+Proposition~\ref{prop:finite} gives both exactness conditions.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_sigmoid_alpha.pdf}
-\caption{The soft-branch gate $g=\sigma(\alpha z)$ (left) and its gradient
-$\mathrm{d}g/\mathrm{d}z=\alpha\,\sigma(\alpha z)(1-\sigma(\alpha z))$ (right) for
-$\alpha\in\{2,6,20\}$, with the operating point $z{=}0.25$ marked. Too large an
-$\alpha$ (here $20$) saturates the gate, leaving essentially no gradient away from
-the switch. Too small an $\alpha$ (here $2$) gives a shallow gate whose gradient is
-weak and barely varies with $z$. The intermediate $\alpha{=}6$ places the operating
-point in the sigmoid's steep band and yields the largest, most localised gradient.}
+\caption{Sigmoid branch gate and derivative for
+$\alpha\in\{2,6,20\}$, with $z=0.25$ marked.
+Small $\alpha$ gives a shallow gate; large $\alpha$
+saturates it. Here $\alpha=6$ gives the largest
+local gradient at the marked point.}
 \label{fig:sigmoid}
 \end{figure}
 
-These relaxations are connected to the exact machine by a
-\emph{straight-through estimator} (STE) \citep{bengio2013estimating}. For any
-soft quantity with a matching hard value,
+The straight-through estimator (STE)
+\citep{bengio2013estimating} joins soft and hard values:
 \begin{equation}
 \mathrm{STE}(\text{soft},\text{hard}) = \text{soft} + \sg(\text{hard}-\text{soft}),
 \label{eq:ste}
 \end{equation}
-where $\sg(\cdot)$ is the stop-gradient operator. The forward value is
-exactly \textit{hard}, and the backward pass uses the derivative of the soft
-value. The
-round and clamp operations are treated the same way (forward exact, backward
-identity inside the valid range). The consequence, made precise next, is that
-soft mode reproduces the hard machine \emph{exactly} in the forward pass and
-differs only in the gradient it exposes.
+where $\sg$ stops gradients. Its forward value is hard;
+its derivative follows soft. Applied after every
+instruction to all CPU registers and RAM cells,
+it makes the complete forward state exact
+(Theorem~\ref{thm:exact}), independently of the
+relaxation parameters.
 
-This is the same device that makes \emph{max-pooling} differentiable, and it
-applies far beyond branches. Every hard decision in the machine is a discrete
-\emph{selection}: which opcode handler runs, whether a branch is taken, which
-object owns a pixel under TIA priority, which sprite bit lights it. Each is a
-switch whose winner we record in the forward pass, and the backward pass then
-routes the gradient to the selected value, exactly as max-pooling routes its
-gradient to the argmax input. With the switch stored, the entire \emph{content}
-path---register values, sprite colours and graphics bits, priority
-compositing---is differentiable with no approximation and a bit-exact forward
-pass. The one quantity a stored switch cannot differentiate is a discrete
-\emph{index}: the column at which a sprite is placed by strobe timing, for the
-same reason max-pooling gives no gradient with respect to the pooling location.
-There, and only there, a differentiable sampler---a sub-pixel triangular
-(bilinear) kernel, as in spatial transformer networks
-\citep{jaderberg2015spatial}---restores the position gradient.
+The key distinction is between \emph{content} and
+\emph{indices}. A stored hard switch routes gradients
+to selected values, as in max-pooling: register
+contents, sprite colours, graphics bits, and priority
+compositing. It does not differentiate which index was
+selected, such as a sprite column determined by strobe
+timing. A triangular (bilinear) sampler
+\citep{jaderberg2015spatial} supplies a position
+surrogate. Whether that gradient reflects the actual
+mechanism must be tested by exact interventions.
+
 
 \section{Soft Equals Hard: Equivalence and Gradients}
 
-We now state what the construction guarantees. Let $\Phi_{\mathrm{H}}$ and
-$\Phi_{\mathrm{S}}$ be the one-step transition maps of the hard and soft
-emulators, acting on the full state $x$ (CPU registers, RAM, RIOT, TIA, and
-frame buffer). We state both theorems here and give only \emph{proof sketches}.
-The complete, formal proofs are in the supplementary material. The first result
-is that the two maps agree in value.
+Let $\Phi_{\mathrm{H}}$ and $\Phi_{\mathrm{S}}$ be the
+hard and full-system SOFT-STE one-step maps on the
+complete machine state $x$ (CPU, RAM, TIA, RIOT,
+cartridge, frame buffer). Proofs are in the supplement.
 
 \begin{theorem}[Exact forward equivalence]
 \label{thm:exact}
-For every reachable state $x$ and every finite sharpness $\alpha$ and
-temperature $T$, the soft and hard one-step maps are equal by design,
-$\Phi_{\mathrm{S}}(x) = \Phi_{\mathrm{H}}(x)$, with identical float32
-representations. Consequently, over a trajectory of $N$ steps,
-$x^{\mathrm{S}}_t = x^{\mathrm{H}}_t$ for all $t\le N$. The modes differ only in
-the Jacobian
-$\partial\Phi_{\mathrm{S}}/\partial x$, which is defined and generically
-nonzero where $\partial\Phi_{\mathrm{H}}/\partial x$ is zero or undefined.
+For every reachable state $x$ and finite $\alpha,T>0$,
+$\Phi_{\mathrm{S}}(x)=\Phi_{\mathrm{H}}(x)$.
+Consequently, identical initial states and inputs yield
+identical complete trajectories for any number of steps.
+SOFT-STE differs only in its surrogate backward rule.
 \end{theorem}
 
 \begin{proof}[Proof sketch]
-Each handler's forward output composes one-hot ROM/RAM reads~\eqref{eq:peek},
-integer/round arithmetic, a hard opcode dispatch, and the straight-through
-branch~\eqref{eq:ste}, each forward-identical to the hard handler, and the
-stop-gradient alters only the backward rule. The one-step equality then extends
-to whole trajectories by induction on the step index. The complete proof, with
-the per-primitive equalities and the formal induction, is in the supplementary
-material.
+The full-system step executes the complete hard machine
+and replays the instruction through soft CPU/RAM handlers
+against that same state. Every CPU register and RAM cell
+is joined with its hard value by~\eqref{eq:ste}, while
+all device and frame-buffer states remain hard.
+Thus every output component equals the hard value,
+and trajectory equality follows by induction.
 \end{proof}
 
-By Theorem~\ref{thm:exact}, attribution in soft mode is computed on the exact
-hard trajectory rather than an approximation, and the forward error is
-identically zero independent of the temperature. The remaining question is the
-behaviour of a \emph{fully} relaxed variant that does not apply the
-straight-through correction. For that we need a mild non-degeneracy assumption.
+Exact forward execution does not imply exact gradients:
+the STE derivative remains a surrogate of the
+discrete machine.
+
+The FULL variant instead relaxes only branches and
+memory reads without STE, rounding their results
+to integers; opcode dispatch remains hard.
 
 \begin{assumption}[Decision margins]
 \label{ass:dm}
-Along the executed trajectory of length $N$, every discrete decision has a
-strictly positive margin. For opcode dispatch at step $t$ with logits
-$\ell^{(t)}$ and winner $k^\star_t$, the logit gap
-$\Delta_t = \ell^{(t)}_{k^\star_t}-\max_{k\ne k^\star_t}\ell^{(t)}_k$ is
-positive, and for each conditional branch with flag logit $z_t$, the margin
-$m_t = |z_t|$ is positive. Let $\Delta_{\min}=\min_t \Delta_t>0$ and
-$m_{\min}=\min_t m_t>0$.
+Every relaxed branch on the executed trajectory has
+flag-logit margin $m_t=|z_t|>0$, with
+$m_{\min}=\min_t m_t>0$. Each memory read selects
+a unique integer address, with other candidates
+at distance at least one.
 \end{assumption}
 
-In the executed dispatch the flags are exact bits, so $z_t = \pm 1$ and
-$m_{\min}=1$, so Assumption~\ref{ass:dm} holds trivially for branches and is a
-statement only about ties in a fully soft dispatch.
+For exact processor flags, $z_t=\pm1$ and
+$m_{\min}=1$.
 
 \begin{theorem}[Temperature-limit bound]
 \label{thm:limit}
-Consider the fully relaxed emulator that uses the softmax
-dispatch~\eqref{eq:select}, sigmoid branch~\eqref{eq:branch}, and a
-distance-softmax (temperature-$T$) read \emph{without} the straight-through
-correction. Under Assumption~\ref{ass:dm}, its one-step map converges to the hard
-map as $T\to0$ and $\alpha\to\infty$, with per-step deviation
+For the unrounded relaxed branch and read values,
+under Assumption~\ref{ass:dm}, the local deviation
+from the hard operation satisfies
 \begin{equation}
 \begin{aligned}
-\big\|\Phi^{T}_{\mathrm{S}}(x)-\Phi_{\mathrm{H}}(x)\big\|_\infty
-\;\le\; C\Big[&(K-1)\,e^{-\Delta_{\min}/T}\\
-&{}+ e^{-\alpha m_{\min}} + \rho\,e^{-1/T}\Big],
+\big\|\Phi_{\mathrm{S}}^{T,\alpha}(x)
+-\Phi_{\mathrm{H}}(x)\big\|_\infty
+\le C\big[
+e^{-\alpha m_{\min}}
++\rho e^{-c/T}\big],
 \end{aligned}
 \label{eq:bound}
 \end{equation}
-where $C$ bounds the value range (bytes $\le255$, branch offsets $\le256$) and
-$\rho$ the number of reads per step. Over $N$ steps, with Lipschitz constant
-$L\ge1$ for error propagation, the trajectory deviation is at most
-$\frac{L^{N}-1}{L-1}$ times~\eqref{eq:bound}, which is $\mathcal{O}(e^{-c/T})$
-with $c=\min(\Delta_{\min},1)$.
+where $C$ bounds value ranges, $\rho$ the number of
+reads per step, and $c>0$ the read-distance gap.
+The two rates remain separate:
+$\mathcal{O}(e^{-\alpha m_{\min}}+e^{-c/T})$.
+There is no opcode-dispatch term because dispatch
+remains hard.
 \end{theorem}
 
 \begin{proof}[Proof sketch]
-Bound the non-winning softmax mass by $(K-1)e^{-\Delta_{\min}/T}$, the sigmoid
-error by $e^{-\alpha m_{\min}}$, and the temperature-read pull by $e^{-1/T}$ (no
-margin needed), then propagate over $N$ steps with the Lipschitz constant $L$. The
-complete proof is in the supplementary material.
+The sigmoid branch error is bounded by
+$e^{-\alpha m_{\min}}$; incorrect-address weight
+in a distance-softmax read has a geometric tail
+of order $e^{-c/T}$. Bounding the corresponding
+value differences gives~\eqref{eq:bound}.
 \end{proof}
+
+Rounding gives a stronger finite-parameter result.
+
+\begin{proposition}[Finite-parameter exactness]
+\label{prop:finite}
+If every relaxed branch target and memory-read value
+is within $1/2$ of its hard integer value, rounding
+restores that value exactly. With hard opcode dispatch,
+the complete trajectory is then bit-exact.
+
+For a branch with binary flag and offset $\delta$,
+the condition is
+\begin{equation}
+|\delta|\sigma(-\alpha)<\frac12
+\quad\Longleftrightarrow\quad
+|\delta|<\frac{1+e^\alpha}{2}.
+\label{eq:branchcorner}
+\end{equation}
+Since 6502 offsets satisfy $|\delta|\le128$,
+$\alpha\ge6$ suffices (bound greater than $202$).
+
+For a distance-softmax byte read with selected-address
+weight $w_0$,
+\begin{equation}
+\begin{aligned}
+|\mathrm{read}_{T}-r_a|
+&\le255(1-w_0)\\
+&\le\frac{510e^{-1/T}}{1-e^{-1/T}}
+<\frac12 \quad (T\le0.14).
+\end{aligned}
+\label{eq:readcorner}
+\end{equation}
+The bound is approximately $0.40$ at $T=0.14$.
+Thus $\alpha\ge6$, $T\le0.14$ suffice independently
+of the executed program.
+\end{proposition}
+
+\begin{proof}[Proof sketch]
+A branch differs from its hard target by
+$|\delta|\sigma(-\alpha)$; incorrect read-address
+weights are bounded by a two-sided geometric series.
+Both deviations below $1/2$ round to the hard
+integers, so induction gives whole-trajectory equality.
+The full proof is in the supplement.
+\end{proof}
+
+At $\alpha=6$, $T=0.14$, FULL was bit-exact over
+6,000 instructions on Pong, Breakout, and Space
+Invaders (supplement). LEAKY uses $\alpha=5.5$,
+$T=0.145$ just outside the sufficient region,
+with mild forward divergence.
 
 \begin{corollary}
 \label{cor:ste}
-The straight-through estimator~\eqref{eq:ste} sets the bracket
-in~\eqref{eq:bound} to zero for all $T,\alpha$: its forward value is the hard
-($T\to0$) limit \emph{exactly at finite temperature}, while its backward pass
-uses the chosen soft relaxation's gradient. It is therefore a
-\emph{surrogate-gradient estimator}---the forward equals the hard machine, the
-gradient does not differentiate it---not the limiting hard derivative.
-Theorem~\ref{thm:exact} is thus the $T\to0$ forward limit, achieved by
-construction.
+STE~\eqref{eq:ste} makes full-system forward error
+zero for all finite $\alpha,T>0$, irrespective of
+the bounds above. Its backward derivative is that
+of the chosen soft computation, not the hard
+machine's derivative.
 \end{corollary}
 
-These results are matched by the implementation's unit tests, which confirm
-that the softmax dispatch saturates to the exact hard pick at large logits,
-that the sigmoid branch saturates to the exact taken/not-taken program
-counter at large $\alpha$, and that the soft memory read collapses to
-ordinary indexing at small $T$---the empirical face of
-Theorems~\ref{thm:exact}--\ref{thm:limit}.
+\section{Mechanism, Intervention, Explanation}
+
+The known mechanism is the bit-exact hard transition
+map $\Phi_{\mathrm{H}}$. Ground truth for explanation
+is an \emph{exact intervention}, not a gradient.
+For a ROM byte, RAM cell, register, or input $u$,
+replace its value by $v$ and rerun the hard machine
+with all other conditions fixed:
+\begin{equation}
+\Delta y(u;v)=
+\Phi_{\mathrm{H}}(\ldots,\mathrm{do}(u:=v),\ldots)-y.
+\label{eq:intervention}
+\end{equation}
+Here $\Phi_{\mathrm{H}}$ denotes execution to the
+observation time and $y$ the original output.
+
+We distinguish four output regimes.
+\emph{Content} comprises register, colour, and
+graphics-bit values, where selected-value gradients
+are valid. \emph{Position} comprises sprite coordinates
+set by strobe timing, where naive gradients through
+indices are provably zero. \emph{Event} comprises
+collision latches and lost lives, also with zero
+naive gradients. \emph{Score} records game scores.
+
+For a method $M$, faithfulness $F\in[0,1]$
+measures correlation-based agreement between its
+per-cause attribution $a_M(u)$ and the exact
+intervention magnitude $|\Delta y(u;v)|$:
+$F=1$ denotes exact agreement, $F=0$ chance.
+Naive gradients, STE surrogates, samplers, and
+fully relaxed gradients are \emph{methods under test},
+never the reference. Exact forward equivalence
+does not establish their faithfulness; comparison
+with interventions does.
+
 
 \section{Evaluation Methodology}
 
-We report two conformance metrics and an implementation-effort estimate, defined
-here so the results are unambiguous. The two conformance metrics are evaluated on the 64 ALE games in
-our \textsc{xitari} configuration---\textsc{xitari} being the emulator DeepMind
-released with DQN; the canonical DQN results were reported on a 49-game subset
-\citep{mnih2015human}, later work on an Atari-57 set, all drawn from ALE's larger
-catalogue \citep{machado2018revisiting}. For each game we run the standard ALE
-boot (60 no-op frames plus four resets) and then a fixed action stream. A game is
-\emph{RAM-exact} if its 128-byte RIOT RAM is identical to \textsc{xitari} on every
-frame, and \emph{pixel-exact} if its full $210\times160$ frame buffer (palette
-indices) is identical on every frame. We report the count of each out of 64. We
-estimate \emph{active} implementation wall-time from the version-control log.
-\textsc{jutari} is the faster engine per single environment on the CPU, whereas
-\textsc{jaxtari} scales on the GPU---batched differentiable rollouts reach
-${\sim}3$M environment-steps per second on a commodity card---with the full
-single-step, compiled-rollout, batched, and GPU numbers in the supplementary material.
+We evaluate 64 ALE games in the \textsc{xitari}
+configuration. Canonical DQN used 49 games
+\citep{mnih2015human}; later work used Atari-57
+\citep{machado2018revisiting}. Each game follows the
+standard ALE boot (60 NOOP frames, four resets),
+then a fixed action stream. We compare all 128 RAM
+bytes on each of 30 frames and the full
+$210\times160$ frame buffer on each of 60 frames.
+RAM- and pixel-exactness require zero differences
+on every comparison. Claims concern these tested
+trajectories, not all possible executions.
+
+For conformance, we patched \textsc{xitari}'s
+Superchip RAM seed from \texttt{time(NULL)} to zero,
+matching both ports. The patch ships with the code.
+One step denotes one CPU instruction, not an ALE
+frame. CPU measurements use an Apple M1 Max core;
+GPU measurements use a GTX 1080 Ti / Quadro RTX 5000
+with peak batch $N\approx4096$. Batched
+\textsc{jaxtari} uses the soft CPU core with no TIA,
+a single ROM window, and only the RIOT timer.
+Its hard path is eager and cannot be GPU-batched.
+The full-system soft step and Zygote reverse-mode
+gradients are measured separately in \textsc{jutari}.
 
 \section{Results}
 
-Both ports are bit-for-bit identical to \textsc{xitari} on \emph{all} 64 ALE
-games: 64/64 games are RAM-exact (zero differing bytes across every frame) and
-64/64 are pixel-exact (zero differing pixels across every frame).
+Both ports reproduce \textsc{xitari} on all 64 games:
+64/64 RAM-exact over 30 frames and 64/64 pixel-exact
+over 60 frames.
 
-\subsection{Effort: Person-Months into Days}
+In \textsc{jutari}, the full-system SOFT-STE forward
+equals HARD at every instruction across all 64 ROMs,
+starting 20 frames into play and running 3,000
+instructions per game. Before STE correction, the
+soft handlers also match every hard CPU register
+and RAM cell (zero disagreements). This check
+exposed and resolved functional \texttt{BRK} and
+RAM-executed-code bugs.
 
-The project comprises 373 commits over a 29-day calendar span (a cumulative
-commit-time plot is in the supplement). Splitting the commit stream at three-hour
-gaps---the session boundary defined in the methodology, with commits within a
-session a median ${\sim}13$ minutes apart---yields 52 active sessions totalling
-\textbf{136.8 hours}, about \textbf{5.7 round-the-clock days}, and the split is
-insensitive to the cutoff (106 hours at two hours, 162 at four). The remaining
-${\sim}80\%$ of the span was idle, mostly travel without reliable internet. The
-work used Anthropic's Claude Opus~4.7 and 4.8 as the primary coding models, with a
-brief autonomous stint by Fable~5. Against this we built two independent emulators
-totalling ${\sim}18{,}700$ lines of source and a comparable volume of tests
-(${\sim}1{,}990$ cases across the two ports), and chased 71 numbered bug
-investigations to a bit-exact result.
+The full-system soft step reaches ${\sim}146{,}000$
+instructions/s on CPU. Zygote reverse-mode gradients
+are practical for 50--400-instruction windows, at a
+few hundred instructions/s. The batched
+\textsc{jaxtari} soft CPU core reaches ${\sim}3.1$M
+instructions/s on GPU with ${\sim}5\%$ gradient
+overhead; this is not full-machine differentiable
+rollout throughput.
 
-For a baseline, \textsc{xitari} is a C\texttt{++} core of about 46{,}000 lines
-derived from Stella, with sources dating to the 1990s and an \textsc{xitari} fork
-spanning 2014--2017 \citep{xitari,stella}---many person-years of work. Our two
-ports reproduce its behaviour (bit-exact RAM, pixel-exact screens) in about
-18{,}700 lines and 137 active hours. We do not claim a controlled comparison---the
-reference is larger in scope (audio, every cartridge type, tooling)---but the
-contrast between a multi-year reference and a six-day reimplementation is the right
-order of magnitude for what agentic tools change.
+\subsection{Active Development Time}
 
-\subsection{Proof of Concept: Ground-Truth Gradients}
+The version-control log records 373 commits over
+29 days; splitting at three-hour gaps gives 52
+sessions totalling 136.8 hours of active development
+wall-time. This is an order-of-magnitude estimate,
+not a controlled trial or measure of person-effort
+or compute. Coding agents wrote and debugged most
+of the ${\sim}18{,}700$ source lines under automated
+conformance tests (details in the supplement).
+
+\subsection{Proof of Concept: Gradients and Interventions}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{figures/si_joystick_gradient.pdf}
-\caption{Ground-truth gradients on the \emph{real} Space Invaders ROM in the
-differentiable VCS. \textbf{(a)} the live game $35$\,s after boot---the scene the
-real ROM renders, pixel-exact to \textsc{xitari}. \textbf{(b)} the screen's
-directional derivative with respect to the \textsc{right} joystick, recovered by a
-differentiable sampler over the player-cannon position (a sub-pixel bilinear
-kernel, as in spatial-transformer networks); it lights exactly the cannon edges
-that move. Because soft mode is forward-exact (Theorem~\ref{thm:exact}), this
-gradient is \emph{identical} for SOFT-STE and the soft (relaxed) variant (the
-leaky, past-boundary variant is studied in the supplement). \textbf{(c)} the
-\emph{naive} gradient runs through the discrete sprite-position index and is
-identically zero---it would wrongly report ``the joystick does not affect the
-screen.'' \textbf{(d)} the inverse problem,
-$\partial(\text{move cannon right})/\partial\text{joystick}$: SOFT-STE and soft
-recover the control mapping (push \textsc{right}, not up/down), while the naive
-gradient vanishes. Every recovered quantity can be \emph{checked} against the
-known wiring---the whole point of a ground-truth substrate.}
+\caption{Space Invaders, 35\,s after boot.
+(a) Pixel-exact scene. (b) Bilinear sampler gradient
+on cannon edges. (c) Zero naive position gradient.
+(d) Sampler Jacobian: RIGHT $+35.7$, LEFT $-35.7$,
+UP/DOWN zero. The joystick drives position directly
+through the sampler, not the ROM's controller code.
+Exact interventions reveal that LEFT is wrong at the wall.}
 \label{fig:xai}
 \end{figure}
 
-The point of the foundation is that gradients computed on it can be
-\emph{checked}. Because soft mode is forward-exact (Theorem~\ref{thm:exact}), the
-surrogate gradients are taken along the true hard trajectory, not an
-approximation; we illustrate this end-to-end on the \emph{real} Space Invaders
-ROM, rolled to a live scene (Figure~\ref{fig:xai}a). It is a proof of concept
-that the substrate behaves as intended, not an XAI evaluation.
+Figure~\ref{fig:xai} compares surrogate gradients
+with exact interventions on the hard emulator.
+The sampler directly maps joystick input to cannon
+position, bypassing the ROM's controller-reading
+code. Naive differentiation through the position
+index gives zero; the bilinear sampler produces a
+gradient localised to cannon edges.
 
-The joystick moves the cannon, but the path to the screen runs through a discrete
-sprite \emph{position} index, so a naive gradient is identically zero
-(Figure~\ref{fig:xai}c)---the ground truth itself warning that a naive saliency
-would report ``the joystick does not affect the screen.'' A differentiable
-sampler over the position (a sub-pixel bilinear kernel, as in spatial-transformer
-networks~\citep{jaderberg2015spatial}) restores it: the per-direction map lights
-exactly the cannon edges that move (Figure~\ref{fig:xai}b), and the inverse
-recovers the control mapping---push \textsc{right}, not up/down
-(Figure~\ref{fig:xai}d), identically for SOFT-STE and the soft relaxed variant
-(the leaky variant is in the supplement). Because the wiring is known these
-gradients can be \emph{scored}: the sampler puts $100\%$ of its
-$\partial$screen$/\partial\textsc{right}$ mass on the cannon and the naive map
-none ($\equiv0$), and the inverse Jacobian is $+35.7/{-}35.7$ for
-\textsc{right}/\textsc{left} and $0$ up/down (axis and sign right), the naive
-gradient silent.
+In the same scene, pressing RIGHT changes only
+cannon pixels (rows 186--195; 38 pixels after
+four frames). UP and DOWN change nothing. LEFT
+also changes nothing because the cannon stands
+at the left wall ($x=35$). Away from the wall
+($x=39$), LEFT moves it and changes only cannon
+pixels. The sampler's symmetric $+35.7/-35.7$
+RIGHT/LEFT attribution therefore incorrectly
+predicts a LEFT effect at the wall. This is a
+measurable gradient--mechanism disagreement.
+
+\subsection{Scoring Attribution Methods}
+
+A companion study scores 30 methods across 42 ALE
+games: eight neuroscience-style analyses, 12
+attribution methods, and ten mechanistic-
+interpretability methods. Faithfulness compares
+per-cause attribution with exact hard-machine
+intervention effects. Table~\ref{tab:faithfulness}
+reports 95\% bootstrap confidence intervals
+over games.
+
+\begin{table}[t]
+\centering
+\setlength{\tabcolsep}{5pt}
+\caption{Faithfulness against exact interventions
+(42 games; 95\% bootstrap CI over games).}
+\label{tab:faithfulness}
+\begin{tabular}{lcc}
+\toprule
+Method & Overall $F$ & Position-only $F$ \\
+\midrule
+Occlusion (intervention) & $0.69$ [0.62, 0.75] & $0.62$ \\
+Vanilla saliency (gradient) & $0.38$ [0.29, 0.47] & $0.12$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A program-randomisation sanity check
+\citep{adebayo2018sanity} scrambles the ROM so the
+program boots to a different state. Yet content-path
+saliency remains unchanged (cosine ${\sim}1$) on all
+six core games, failing the check. A bilinear
+sampler restores non-zero position gradients, but
+faithfulness improves on only a few games, including
+Pong ($0\to0.79$) and Q*bert ($0\to0.53$).
+Non-zero gradients therefore do not establish
+faithful explanations.
 
 \section{Discussion}
 
-This paper delivers five results. We built two independent differentiable ports of
-the Atari VCS, in Julia and JAX, bit-exact in RAM and pixel-exact on screen against
-\textsc{xitari} on all 64 DQN games; proved the soft forward pass equals the hard
-one exactly, so gradients run on the true execution rather than an approximation;
-measured the implementation effort at about 137 active hours, built largely by
-coding agents; found that a bit-exact re-implementation is itself an audit tool for
-its reference; and showed qualitatively that gradients localise to the correct
-hardware and can be checked against the known mechanism. A theoretical analysis of
-$\alpha$ and $T$ shows that the fully relaxed variant, too, is forward-exact for
-small $T$ and large $\alpha$. The supplement collects the full proofs, the
-numerical relaxation analyses ($\alpha$/$T$ gradient maps and the
-forward-bit-exactness boundaries), and the beam-timed comparison videos.
+The ports reproduce all tested reference trajectories.
+SOFT-STE is forward-exact by construction
+(Theorem~\ref{thm:exact}); the rounded relaxed variant
+is also exact within the conditions of
+Proposition~\ref{prop:finite}. Neither result
+guarantees attribution faithfulness, as the
+intervention tests demonstrate.
 
-Building the ports also revealed a bug in the reference. Driving them to 64/64
-pixel exactness surfaced a latent non-determinism in \textsc{xitari} itself: one
-title's attract-mode demo reads \emph{uninitialised} on-cartridge Superchip RAM as
-a random-number source, and \textsc{xitari} seeds that RAM from
-\texttt{time(NULL)} while ignoring its own seed parameter, so the title renders
-differently on every run despite a pinned seed---a divergence invisible to RAM
-checks and visible only on screen. We reach full conformance by pinning the seed
-deterministically in both emulators and have prepared an upstream fix: a bit-exact
-re-implementation is useful in both directions, the reference validating the port
-and the port auditing the reference.
+The authors designed the hard/soft split and
+full-system STE step, the stored-switch
+(max-pooling) view restricting surrogates to
+discrete indices, the three conformance harnesses
+using two independent ports as the oracle, and
+the program-independent $\alpha/T$ bounds.
+Agents wrote and debugged most code under this
+oracle. Conformance exposed \textsc{xitari}'s
+time-dependent Superchip RAM seed; the deterministic
+seed-zero patch ships with the code.
 
-The hardest divergences were all in timing---the RIOT timer's reset state, the
-TIA's sub-cycle object rendering, and the boot-time format probe that seeds
-free-running counters games never re-initialise. As one model anecdote, an early
-attempt with Kimi-K2.6 (a one-trillion-parameter model) ended when it refused to
-start, judging the port to be months of work.
-
-\paragraph{What we do not claim.} This paper builds and validates the substrate;
-it is not yet an XAI benchmark. We neither rank attribution methods nor study a
-learned agent---the gradients here explain the \emph{known machine}, not a policy,
-and are surrogate estimators of the hard map (Corollary~\ref{cor:ste}), not the
-hard derivative.
-
-\paragraph{Limitations.} The effort figure is an order-of-magnitude estimate, not
-a controlled trial; this does not affect the core claims (Theorem~\ref{thm:exact}
-and the measured 64/64 conformance). Audio is not implemented, being irrelevant to
-a pixel- and RAM-level XAI substrate. Evaluating attribution methods on this
-ground truth, and extending it from the known environment to learned agents, is
-the program this foundation opens.
+\paragraph{Limitations and next steps.}
+Conformance covers tested trajectories, not all
+executions. Audio is absent. \textsc{jutari}
+gradients are practical for short windows; GPU
+batching applies only to the soft CPU core, not
+full-system differentiation. The next step is
+to intervene on a game variable, re-render
+bit-exactly, and measure the resulting change in
+a learned agent's action. Calibration on the
+known machine must come first.
 
 \section{Conclusion}
 
-We set out to give explainable AI a study object that escapes the
-known-but-trivial / complex-but-unknown dichotomy: a genuine, complex
-information-processing system that is at once fully specified and fully
-differentiable. We built it twice and validated both ports bit-for-bit against the
-reference, with a forward pass proven bit-exact yet exposing \emph{surrogate}
-gradients where bit logic has none. An attribution can now---to our knowledge, for
-the first time on a system of this complexity---be scored against the truth: the
-XAI testbed we hope the community takes up.
+We provide a complex, fully known machine for
+mechanism-grounded XAI. Two Atari VCS ports
+reproduce the reference on 64 tested games.
+A full-system soft step preserves exact forward
+execution while supplying surrogate gradients.
+Exact interventions expose where those gradients
+agree with the known mechanism and where they fail.
+This provides a reference for testing explanations
+rather than relying on their plausibility.
 
 \section*{Ethical Statement}
 This work involves no human subjects, personal data, or sensitive information. The
