@@ -291,22 +291,31 @@ the hard discrete transition.
 \end{proof}
 
 \paragraph{Measured handler agreement.}
-We tested the full-system soft step in
-\textsc{jutari} on all 64 ROMs, beginning 20
-frames into play and executing 3,000 instructions
-per game. SOFT-STE equalled HARD at every
-instruction (64/64). Moreover, the soft
-handlers \emph{before} STE correction reproduced
-every hard CPU register and RAM cell at every
-instruction, with zero disagreements. Thus
-the correction was the identity in value on
-these trajectories.
+We tested the full-system soft step in both ports.
+In \textsc{jutari}, all 64 ROMs were checked
+starting 20 frames into play, over 3,000 instructions
+per game. SOFT-STE equalled HARD at every instruction
+(64/64), and the soft handlers before STE correction
+reproduced every hard CPU register and RAM cell,
+with zero disagreements.
 
-This check exposed two soft-handler defects,
-both fixed. The functional \texttt{BRK} handler
-did not push the required state and jump through
-the IRQ vector. Instruction fetches also always
-read ROM, incorrectly handling code executed
+In \textsc{jaxtari}, nine ROMs cover every mapper
+family exercised by the conformance set:
+Pong and Breakout (2K), Space Invaders (4K),
+Ms.\ Pac-Man and Up'n Down (F8), Double Dunk (F6),
+Elevator Action (F8SC), Montezuma's Revenge (E0),
+and Robot Tank (FE). After standard boot and
+20 frames of play, SOFT-STE equalled the hard
+console on all 1,500 instructions per ROM,
+with zero soft-handler disagreements.
+Furthermore, \texttt{jax.grad} through 100
+full-system steps reaches ROM bytes.
+
+The \textsc{jutari} check exposed two soft-handler
+defects, both fixed. The functional \texttt{BRK}
+handler did not push the required state and jump
+through the IRQ vector. Instruction fetches also
+always read ROM, incorrectly handling code executed
 from RAM, as in Up'n Down at
 $\mathrm{pc}=\texttt{\$00EA}$.
 The tests therefore check the computation through
@@ -1081,13 +1090,17 @@ soft CPU core execution, not differentiable
 full-machine rendering.
 
 \paragraph{Full-system soft step.}
-In \textsc{jutari}, the implemented full-system
-SOFT-STE step executes CPU, bus, TIA, RIOT,
-and cartridge effects through the hard machine,
-replays the soft handlers, and joins CPU registers
-and RAM with STE. On Pong, it reaches approximately
-146,000 instructions/s on one Apple M1 Max core
-(median of three runs).
+Both ports implement the full-system SOFT-STE
+construction: the hard machine executes CPU,
+bus, TIA, RIOT, and cartridge effects; soft
+handlers replay the instruction; CPU registers
+and RAM are joined with STE. In \textsc{jutari},
+the step reaches approximately 146,000
+instructions/s on Pong using one Apple M1 Max
+core (median of three runs). In \textsc{jaxtari},
+it executes eagerly on CPU and is slow;
+its measured GPU throughput applies only
+to the simplified soft CPU core.
 
 Zygote reverse-mode gradients through this
 full-system step depend strongly on window length.

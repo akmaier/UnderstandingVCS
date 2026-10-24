@@ -144,6 +144,33 @@ def pending_tick(world: World) -> World:
     return world
 
 
+# Default-off read log for the full-system SOFT step
+# (`jaxtari.diff.soft_system`): while enabled, every Bus `peek` appends
+# `(13-bit addr, value)` so the soft handlers can replay the values the
+# hard instruction read from TIA / RIOT I/O / Superchip RAM. `None` (the
+# default) means disabled — the hot path pays one `is not None` check.
+# Mirror of jutari's `Bus.trace_enable!` / `trace_take!` peek events.
+_READ_LOG: list | None = None
+
+
+def read_log_enable() -> list | None:
+    """Start a fresh bus read log; returns the previous log (or None) so
+    the caller can restore it with `read_log_restore`."""
+    global _READ_LOG
+    prev = _READ_LOG
+    _READ_LOG = []
+    return prev
+
+
+def read_log_take(restore: list | None = None) -> list:
+    """Return the logged `(addr13, value)` reads and reinstate `restore`
+    (the value `read_log_enable` returned; None disables logging)."""
+    global _READ_LOG
+    events = _READ_LOG if _READ_LOG is not None else []
+    _READ_LOG = restore
+    return events
+
+
 def peek(world: World, addr: int):
     """Read a byte from `world` at the 16-bit address `addr`.
 
@@ -163,7 +190,10 @@ def peek(world: World, addr: int):
     rationale.
     """
     if isinstance(world, Bus):
-        return _bus_peek(world, addr)
+        value, new_bus = _bus_peek(world, addr)
+        if _READ_LOG is not None:
+            _READ_LOG.append((addr & 0x1FFF, value))
+        return value, new_bus
     return int(world[addr & 0xFFFF]), world
 
 

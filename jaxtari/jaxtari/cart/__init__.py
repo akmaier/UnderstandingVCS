@@ -17,6 +17,7 @@ from jaxtari.cart.system import (
     Cart,
     cart_peek,
     cart_poke,
+    cart_rom_index,
     make_cart,
 )
 
@@ -33,5 +34,6 @@ __all__ = [
     "Cart",
     "cart_peek",
     "cart_poke",
+    "cart_rom_index",
     "make_cart",
 ]

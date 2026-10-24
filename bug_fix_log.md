@@ -41,9 +41,18 @@ and the soft handlers ALONE reproduce the hard registers+RAM on every instructio
 steps on Pong: finite, non-zero. New testset "full-system SOFT step" (7 ROMs, one per
 mapper family, + gradient) green; full `Pkg.test()` green.
 
-**Still open.** jaxtari mirror (in progress). jaxtari's hard path is eager Python, so the
-full-system soft step is CPU-only there; the GPU `soft_run_scan` throughput numbers measure
-the soft CPU core without the context (simplified bus) and must be labelled as such.
+**jaxtari mirror (landed 2026-10-24).** `jaxtari/diff/soft_system.py` + optional `SoftBus`
+context fields (`sys_on`, `sys_kind`, `sys_bank`, `sys_slices`, `io_addr/io_val/io_valid`, 8 slots;
+inert defaults keep jit/vmap/grad paths unchanged), `cart.cart_rom_index`, default-off hard
+bus read log (`read_log_enable` / `read_log_take`). API returns the advanced console
+(`soft_system_step(state, bus, con) -> (state, bus, con)`) because the jaxtari Console is
+immutable. jaxtari's `_branch_brk` was already correct. Measured: 9 ROMs (pong, breakout,
+space_invaders, ms_pacman, up_n_down, double_dunk, elevator_action, montezuma_revenge,
+robotank — every exercised mapper), standard boot + 20 frames, 1,500 instructions: forward
+exact, 0 soft-handler disagreements; `jax.grad` through 100 steps reaches the ROM. New
+`tests/test_soft_system.py` (short boot by default; `JAXTARI_SOFT_SYSTEM_FULL=1` for the full
+protocol). jaxtari's hard path is eager, so the full-system step is CPU-only and slow; the GPU
+`soft_run_scan` numbers measure the soft CPU core (simplified bus) and are labelled so in the paper.
 
 ---
 

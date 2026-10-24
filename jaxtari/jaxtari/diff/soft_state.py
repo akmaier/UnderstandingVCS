@@ -92,6 +92,12 @@ def initial_soft_cpu_state(pc: float = 0xF000) -> SoftCPUState:
     )
 
 
+# Fixed number of (addr, value) slots for the hard instruction's non-RAM,
+# non-ROM reads in the full-system context (a 6502 instruction issues at
+# most 7 bus reads, so 8 always suffices).
+IO_LOG_SLOTS = 8
+
+
 class SoftBus(NamedTuple):
     """SOFT-mode bus: float-valued RAM + raw ROM array, plus the
     minimal RIOT timer state introduced in **P8-cx**.
@@ -114,6 +120,23 @@ class SoftBus(NamedTuple):
     riot_prescaler_shift: jnp.ndarray = jnp.float32(0.0)   # 0/3/6/10 → 1/8/64/1024×
     riot_residual_cycles: jnp.ndarray = jnp.float32(0.0)
     riot_expired: jnp.ndarray = jnp.float32(0.0)           # latch, 1.0 = INTIM reached 0
+    # Full-system context (set by `jaxtari.diff.soft_system.soft_system_step`;
+    # inert defaults = the simplified bus above). When `sys_on` != 0 the soft
+    # handlers run against the live HARD machine: ROM fetches follow the hard
+    # cart's bank / E0-slice mapping (`sys_kind` / `sys_bank` / `sys_slices`,
+    # jaxtari `cart.system.KIND_*` tags), reads of TIA / RIOT I/O / Superchip
+    # RAM return the value the hard bus read in the same instruction (first
+    # `io_valid` slot whose `io_addr` matches the 13-bit address; 0 if none),
+    # and writes to non-RAM addresses leave the soft RAM unchanged. All
+    # float32 (exact small integers) so `jax.grad` w.r.t. a whole SoftBus
+    # keeps working; they carry no gradient of interest.
+    sys_on: jnp.ndarray = jnp.float32(0.0)
+    sys_kind: jnp.ndarray = jnp.float32(0.0)
+    sys_bank: jnp.ndarray = jnp.float32(0.0)
+    sys_slices: jnp.ndarray = jnp.zeros((3,), dtype=jnp.float32)
+    io_addr: jnp.ndarray = jnp.zeros((IO_LOG_SLOTS,), dtype=jnp.float32)
+    io_val: jnp.ndarray = jnp.zeros((IO_LOG_SLOTS,), dtype=jnp.float32)
+    io_valid: jnp.ndarray = jnp.zeros((IO_LOG_SLOTS,), dtype=jnp.float32)
 
 
 def initial_soft_bus(rom: jnp.ndarray) -> SoftBus:

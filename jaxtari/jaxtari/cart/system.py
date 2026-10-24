@@ -332,6 +332,33 @@ def cart_peek(cart: Cart, addr: int) -> int:
     return value
 
 
+def cart_rom_index(kind: int, bank: int, slices, addr: int) -> int:
+    """Side-effect-free address decode: the 0-based ROM image offset a read
+    of `addr` returns under the given cart `kind` / `bank` / E0 `slices`
+    mapping, or `-1` when the read is served by on-cart Superchip RAM
+    (the $1080-$10FF read window of the SC kinds). Mirrors `cart_peek`
+    without its hotspot side effects; FE uses A13 of the FULL (unmasked)
+    address. Used by the full-system SOFT step
+    (`jaxtari.diff.soft_system`) so its one-hot ROM read addresses the
+    same byte the hard cartridge returns. Mirror of jutari
+    `Cart.cart_rom_index`.
+    """
+    a = int(addr) & 0x1FFF
+    if kind == KIND_2K:
+        return a & 0x07FF
+    if kind == KIND_4K:
+        return a & 0x0FFF
+    if kind == KIND_E0:
+        slot = (a - 0x1000) >> 10
+        slice_idx = slices[slot] if slot < 3 else E0_FIXED_SLICE
+        return int(slice_idx) * 0x0400 + (a & 0x03FF)
+    if kind == KIND_FE:
+        return (int(addr) & 0x0FFF) + (0x1000 if (int(addr) & 0x2000) == 0 else 0)
+    if kind in _SC_KINDS and (a & _SC_AREA_MASK) == _SC_READ_BASE:
+        return -1
+    return int(bank) * 0x1000 + (a & 0x0FFF)
+
+
 def cart_poke(cart: Cart, addr: int, value: int) -> None:
     """ROM is read-only, so the value is discarded. But hotspot accesses
     still fire on writes, switching the bank.

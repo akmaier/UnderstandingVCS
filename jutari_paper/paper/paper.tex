@@ -55,8 +55,10 @@ bit-for-bit against \textsc{xitari}: 64/64 byte-identical RAM and 64/64
 pixel-identical screens on tested Arcade Learning Environment (ALE)
 trajectories. A full-system soft step executes the exact hard machine
 and supplies surrogate gradients through CPU registers, RAM, and ROM bytes.
-We prove forward equivalence by construction and measure zero soft-handler
-disagreements across 64 games in \textsc{jutari}. Exact interventions on
+We prove forward equivalence by construction and
+measure zero soft-handler disagreements in
+\textsc{jutari} (64 games) and \textsc{jaxtari}
+(9 games spanning the exercised mapper families). Exact interventions on
 the hard machine independently test these gradients. A companion study
 finds that vanilla saliency can fail this test, while interventions
 recover more of the causal structure. GPU batching reaches ${\sim}3.1$M
@@ -273,8 +275,8 @@ states remain hard.}
 \end{figure*}
 
 In HARD mode the CPU uses integer arithmetic, bit flags, and
-opcode dispatch. The implemented full-system SOFT-STE step
-in \textsc{jutari} first executes the instruction on the hard
+opcode dispatch. The full-system SOFT-STE step, implemented
+in both ports, first executes the instruction on the hard
 CPU, bus, TIA, RIOT, and cartridge. It then replays the
 instruction through differentiable handlers against that same
 hard machine. ROM reads follow the hard cartridge's current
@@ -604,8 +606,10 @@ with peak batch $N\approx4096$. Batched
 \textsc{jaxtari} uses the soft CPU core with no TIA,
 a single ROM window, and only the RIOT timer.
 Its hard path is eager and cannot be GPU-batched.
-The full-system soft step and Zygote reverse-mode
-gradients are measured separately in \textsc{jutari}.
+Full-system steps run eagerly on CPU in both ports;
+Zygote reverse-mode throughput is measured in
+\textsc{jutari}. The JAX GPU numbers remain
+soft-CPU-core only.
 
 \section{Results}
 
@@ -613,14 +617,17 @@ Both ports reproduce \textsc{xitari} on all 64 games:
 64/64 RAM-exact over 30 frames and 64/64 pixel-exact
 over 60 frames.
 
-In \textsc{jutari}, the full-system SOFT-STE forward
-equals HARD at every instruction across all 64 ROMs,
-starting 20 frames into play and running 3,000
-instructions per game. Before STE correction, the
-soft handlers also match every hard CPU register
-and RAM cell (zero disagreements). This check
-exposed and resolved functional \texttt{BRK} and
-RAM-executed-code bugs.
+In \textsc{jutari}, full-system SOFT-STE equals HARD
+on every instruction across 64 ROMs (3,000 each,
+starting 20 frames into play), with zero uncorrected
+soft-handler disagreements in CPU registers or RAM.
+In \textsc{jaxtari}, the same holds on 9 ROMs
+covering every exercised mapper family (1,500
+instructions each, after standard boot and 20 frames).
+The \textsc{jutari} checks exposed and fixed functional
+\texttt{BRK} and RAM-executed-code bugs. In \textsc{jaxtari},
+\texttt{jax.grad} through 100 full-system steps
+reaches ROM bytes.
 
 The full-system soft step reaches ${\sim}146{,}000$
 instructions/s on CPU. Zygote reverse-mode gradients
@@ -689,7 +696,8 @@ over games.
 
 \begin{table}[t]
 \centering
-\setlength{\tabcolsep}{5pt}
+\setlength{\tabcolsep}{3pt}
+\small
 \caption{Faithfulness against exact interventions
 (42 games; 95\% bootstrap CI over games).}
 \label{tab:faithfulness}

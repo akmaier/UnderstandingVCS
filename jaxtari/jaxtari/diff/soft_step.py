@@ -40,14 +40,17 @@ stays differentiable.
     PC is exact, but gradient through the predicate is broken at the
     int-cast of `P`. A float-valued flag representation would let
     `soft_branch` carry that gradient. (P7c-dx)
-  - BRK stays the "end-of-trace sentinel" from P7b rather than running
-    the proper interrupt sequence — the useful semantics for fixed-
-    length XAI traces.
-  - Bus dispatch is simplified: cart-range reads use `soft_rom_peek`,
+  - (BRK runs the full interrupt sequence since P8-cx — see `_branch_brk`.)
+  - Without a full-system context (`SoftBus.sys_on == 0`, the default)
+    bus dispatch is simplified: cart-range reads use `soft_rom_peek`,
     everything else maps into the 128-byte RAM array via `addr & 0x7F`.
     TIA / RIOT register writes therefore land in RAM rather than
     affecting chip state or a framebuffer. Real TIA / RIOT / cart-
     hotspot dispatch + a differentiable TIA is **P7f**.
+    `jaxtari.diff.soft_system.soft_system_step` sets the context: ROM
+    reads then follow the hard cart's bank / slice mapping, TIA / RIOT /
+    Superchip reads replay the hard bus's values, and only RIOT-RAM
+    writes touch the soft RAM.
 """
 
 from __future__ import annotations
@@ -119,6 +122,112 @@ def _cart_addr(pc_offset) -> jnp.ndarray:
     return jnp.asarray(pc_offset).astype(jnp.int32) & 0x0FFF
 
 
+# --------------------------------------------------------------------------- #
+# Full-system context (set by `soft_system_step`, jaxtari.diff.soft_system)
+# --------------------------------------------------------------------------- #
+#
+# Without a context (`bus.sys_on == 0`, the default) the handlers use the
+# simplified bus: one 4 KB ROM window and every non-ROM address folded into
+# the 128-byte RAM. Inside `soft_system_step` they instead run against the
+# live HARD machine: ROM fetches follow the hard cartridge's bank / slice
+# mapping, reads of TIA, RIOT I/O and Superchip registers return the value the
+# hard bus read during the same instruction (a constant, no gradient), and
+# writes to non-RAM addresses leave the soft RAM untouched. Everything is
+# `jnp.where`-selected so the step stays jit / vmap-able. Mirror of jutari
+# `_SYS_CTX` (SoftStep.jl).
+
+# jaxtari cart kind tags (jaxtari.cart.system) — duplicated as plain ints to
+# keep this module free of the hard-cart import.
+_K_2K, _K_4K, _K_E0, _K_FE = 0, 1, 8, 9
+_K_SC = (5, 6, 7)          # F8SC / F6SC / F4SC
+
+
+def _is_ram_addr(a13: jnp.ndarray) -> jnp.ndarray:
+    """RIOT RAM decode on a 13-bit address: A12=0, A7=1, A9=0."""
+    return ((a13 & 0x1000) == 0) & ((a13 & 0x80) != 0) & ((a13 & 0x200) == 0)
+
+
+def _ctx_rom_index(bus: SoftBus, addr_full: jnp.ndarray) -> jnp.ndarray:
+    """Traced twin of `jaxtari.cart.system.cart_rom_index`: the 0-based ROM
+    offset the hard cart maps `addr_full` to under the context's kind / bank
+    / slices, or -1 for a Superchip-RAM read window. FE uses A13 of the
+    FULL (unmasked) address."""
+    a     = addr_full & 0x1FFF
+    kind  = bus.sys_kind.astype(jnp.int32)
+    bank  = bus.sys_bank.astype(jnp.int32)
+    slot  = jnp.clip((a - 0x1000) >> 10, 0, 3)
+    slice_idx = jnp.where(
+        slot < 3,
+        bus.sys_slices.astype(jnp.int32)[jnp.minimum(slot, 2)],
+        7)
+    idx_e0   = slice_idx * 0x0400 + (a & 0x03FF)
+    idx_fe   = (addr_full & 0x0FFF) + jnp.where((addr_full & 0x2000) == 0, 0x1000, 0)
+    idx_bank = bank * 0x1000 + (a & 0x0FFF)
+    is_sc    = (kind == _K_SC[0]) | (kind == _K_SC[1]) | (kind == _K_SC[2])
+    sc_win   = is_sc & ((a & 0x1F80) == 0x1080)
+    idx = jnp.where(kind == _K_2K, a & 0x07FF,
+          jnp.where(kind == _K_4K, a & 0x0FFF,
+          jnp.where(kind == _K_E0, idx_e0,
+          jnp.where(kind == _K_FE, idx_fe, idx_bank))))
+    return jnp.where(sc_win, -1, idx)
+
+
+def _ctx_io_read(bus: SoftBus, a13: jnp.ndarray) -> jnp.ndarray:
+    """Value the hard bus returned for the FIRST read of `a13` in this
+    instruction (0 if the hard instruction never read it, e.g. a soft-only
+    dummy read). A constant w.r.t. every differentiable input."""
+    match = (bus.io_valid != 0) & (bus.io_addr.astype(jnp.int32) == a13)
+    first = jnp.argmax(match)
+    return jnp.where(jnp.any(match), bus.io_val[first], jnp.float32(0.0))
+
+
+def _sys_read(bus: SoftBus, addr, fetch: bool) -> jnp.ndarray:
+    """Shared bus read. `fetch=True` is an instruction-stream fetch (opcode
+    / operand): without a context it reads the ROM window (`addr & 0x0FFF`)
+    unconditionally, as P7b-P8 always did; with a context it goes through
+    the full decode, so code executing from RAM (Up'n Down's zero-page
+    routines) is fetched from the soft RAM."""
+    a_full  = jnp.asarray(addr).astype(jnp.int32)
+    a_int   = a_full & 0x1FFF
+    sys_on  = bus.sys_on != 0
+    is_cart = (a_int & 0x1000) != 0
+    is_riot_io = (~is_cart) & ((a_int & 0x80) != 0) & ((a_int & 0x200) != 0)
+
+    ctx_idx  = _ctx_rom_index(bus, a_full)
+    rom_idx  = jnp.where(sys_on, jnp.maximum(ctx_idx, 0), a_int & 0x0FFF)
+    cart_val = soft_rom_peek(bus.rom, rom_idx)
+    ram_val  = soft_ram_peek(bus.ram, a_int & 0x7F)
+
+    # Context path: ROM (or SC-RAM window → logged value), RAM, else logged.
+    io_val  = _ctx_io_read(bus, a_int)
+    ctx_val = jnp.where(is_cart,
+                        jnp.where(ctx_idx < 0, io_val, cart_val),
+                        jnp.where(_is_ram_addr(a_int), ram_val, io_val))
+
+    if fetch:
+        off_val = cart_val
+    else:
+        # P8-cx: RIOT I/O reads ($0280-$029F band, decoded by `addr & 0x07`):
+        #   reg 4 (INTIM) → bus.riot_intim
+        #   reg 5 (INSTAT) → bit 7 = riot_expired latch
+        #   anything else (SWCHA/SWACNT/SWCHB/SWBCNT) → 0xFF, the "all
+        #   console switches released, all joystick directions released"
+        #   default. Falling through to RAM here was the bug that kept
+        #   Pong's init reading RESET-pressed because a prior VSYNC write
+        #   to $02 had clobbered ram[2] (the SOFT collapse stores TIA $02
+        #   and reads RIOT $0282 in the same cell). Returning a constant
+        #   gives Pong an idle controller — enough for its init to proceed.
+        reg = a_int & 0x07
+        riot_val = jnp.where(
+            reg == 4, bus.riot_intim,
+            jnp.where(reg == 5,
+                      jnp.where(bus.riot_expired != 0, jnp.float32(0x80), jnp.float32(0)),
+                      jnp.float32(0xFF)))
+        off_val = jnp.where(is_cart, cart_val,
+                            jnp.where(is_riot_io, riot_val, ram_val))
+    return jnp.where(sys_on, ctx_val, off_val)
+
+
 def _bus_read(bus: SoftBus, addr) -> jnp.ndarray:
     """SOFT-mode differentiable bus read with cart-vs-RAM decode.
 
@@ -141,35 +250,12 @@ def _bus_read(bus: SoftBus, addr) -> jnp.ndarray:
     the architectural prerequisite — see STATUS.md P7f-dx for the
     deferral rationale. Callers that want collision values today
     should call `soft_collision_registers(bus)` directly.
+
+    With a full-system context (`bus.sys_on`), cart reads follow the hard
+    cart mapping and TIA / RIOT / Superchip reads return the hard bus's
+    logged value — see `_sys_read`.
     """
-    a_int       = jnp.asarray(addr).astype(jnp.int32) & 0x1FFF
-    is_cart     = (a_int & 0x1000) != 0
-    is_riot_io  = (~is_cart) & ((a_int & 0x80) != 0) & ((a_int & 0x200) != 0)
-    cart_offset = a_int & 0x0FFF
-    ram_offset  = a_int & 0x7F
-
-    cart_val = soft_rom_peek(bus.rom, cart_offset)
-    ram_val  = soft_ram_peek(bus.ram, ram_offset)
-
-    # P8-cx: RIOT I/O reads ($0280-$029F band, decoded by `addr & 0x07`):
-    #   reg 4 (INTIM) → bus.riot_intim
-    #   reg 5 (INSTAT) → bit 7 = riot_expired latch
-    #   anything else (SWCHA/SWACNT/SWCHB/SWBCNT) → 0xFF, the "all
-    #   console switches released, all joystick directions released"
-    #   default. Falling through to RAM here was the bug that kept
-    #   Pong's init reading RESET-pressed because a prior VSYNC write
-    #   to $02 had clobbered ram[2] (the SOFT collapse stores TIA $02
-    #   and reads RIOT $0282 in the same cell). Returning a constant
-    #   gives Pong an idle controller — enough for its init to proceed.
-    reg = a_int & 0x07
-    riot_val = jnp.where(
-        reg == 4, bus.riot_intim,
-        jnp.where(reg == 5,
-                  jnp.where(bus.riot_expired != 0, jnp.float32(0x80), jnp.float32(0)),
-                  jnp.float32(0xFF)))
-
-    return jnp.where(is_cart, cart_val,
-                     jnp.where(is_riot_io, riot_val, ram_val))
+    return _sys_read(bus, addr, fetch=False)
 
 
 # Prescaler-shift lookup for TIM*T addresses: low 2 bits select
@@ -199,11 +285,15 @@ def _bus_write(bus: SoftBus, addr, value: jnp.ndarray) -> SoftBus:
     # timer load. Round-trip stack pushes / pops then pulled zeros and
     # any RTI landed at PC=$0000.
     is_riot_io = (~is_cart) & ((a_int & 0x80) != 0) & ((a_int & 0x200) != 0)
-    is_tim_t   = is_riot_io & ((a_int & 0x14) == 0x14)
+    # Full-system context: the hard machine owns TIA / RIOT / cart state, so
+    # only genuine RIOT-RAM writes touch the soft bus (no soft timer load).
+    sys_on     = bus.sys_on != 0
+    is_tim_t   = is_riot_io & ((a_int & 0x14) == 0x14) & (~sys_on)
+    sys_drop   = sys_on & (~_is_ram_addr(a_int))
 
     # RAM path: keep current value if this is a cart or TIM*T write.
     current   = soft_ram_peek(bus.ram, ram_offset)
-    new_val   = jnp.where(is_cart | is_tim_t, current, value)
+    new_val   = jnp.where(is_cart | is_tim_t | sys_drop, current, value)
     new_ram   = bus.ram.at[ram_offset].set(new_val)
 
     # P8-cx: timer load on TIM*T.
@@ -375,14 +465,16 @@ def _with_p(state: SoftCPUState, new_p: jnp.ndarray, **other_fields) -> SoftCPUS
 # --------------------------------------------------------------------------- #
 
 def _operand_byte(bus: SoftBus, pc_plus_one: jnp.ndarray) -> jnp.ndarray:
-    """Read the byte at ROM[PC+1] (the typical operand fetch)."""
-    return soft_rom_peek(bus.rom, _cart_addr(pc_plus_one))
+    """Read the byte at ROM[PC+1] (the typical operand fetch). Under a
+    full-system context the fetch goes through the bus decode (bank-
+    switched ROM, or soft RAM for code executing from RAM)."""
+    return _sys_read(bus, pc_plus_one, fetch=True)
 
 
 def _operand_word(bus: SoftBus, pc_plus_one: jnp.ndarray) -> jnp.ndarray:
     """Read the little-endian 16-bit word at ROM[PC+1..PC+2]."""
-    lo = soft_rom_peek(bus.rom, _cart_addr(pc_plus_one))
-    hi = soft_rom_peek(bus.rom, _cart_addr(pc_plus_one + 1.0))
+    lo = _sys_read(bus, pc_plus_one, fetch=True)
+    hi = _sys_read(bus, pc_plus_one + 1.0, fetch=True)
     return lo + hi * 256.0
 
 
@@ -1796,8 +1888,7 @@ def soft_step(state: SoftCPUState, bus: SoftBus):
     Returns `(new_state, new_bus)`. After the opcode handler runs, the
     RIOT timer (P8-cx) is ticked by the instruction's cycle count.
     """
-    rom_off = _cart_addr(state.PC)
-    opcode_float = soft_rom_peek(bus.rom, rom_off)
+    opcode_float = _sys_read(bus, state.PC, fetch=True)
     opcode_int = opcode_float.astype(jnp.int32)
     cycles_before = state.cycles
     new_state, new_bus = jax.lax.switch(opcode_int, _HANDLERS, state, bus)
