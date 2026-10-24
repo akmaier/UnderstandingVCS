@@ -6,7 +6,10 @@ handlers need; `soft_system_replay` re-runs them over the trace with
 the replay is the eager `soft_system_run` in another form:
 
   1. forward: identical to the eager path and to the hard console, on a 2K
-     ROM and on a bank-switched one (E0 slices);
+     ROM, a bank-switched one (E0 slices) and an F8SC one whose program reads
+     the Superchip RAM uninitialised (elevator_action: the replay must carry
+     the hard cart's LCG power-on bytes, bug_fix_log #123 / bef47885, through
+     the recorded reads);
   2. gradient w.r.t. the ROM: equal to the eager gradient. The loss is summed
      over the whole trajectory (`collect`): under the STE the ROM gradient
      enters only where a soft handler computes with a ROM byte, so a
@@ -42,7 +45,11 @@ from jaxtari.diff import (
     stack_trees,
 )
 from jaxtari.env.stella_environment import StellaEnvironment
-from jaxtari.games import MontezumaRevengeRomSettings, PongRomSettings
+from jaxtari.games import (
+    ElevatorActionRomSettings,
+    MontezumaRevengeRomSettings,
+    PongRomSettings,
+)
 
 _ROMS = Path(__file__).resolve().parents[2] / "tools" / "rom_sweep" / "roms"
 _LIGHT_BOOT_FRAMES = 3
@@ -68,6 +75,11 @@ def pong():
 @pytest.fixture(scope="module")
 def montezuma():
     return _boot("montezuma_revenge", MontezumaRevengeRomSettings)
+
+
+@pytest.fixture(scope="module")
+def elevator():
+    return _boot("elevator_action", ElevatorActionRomSettings)
 
 
 def _record(con0, n=_N):
@@ -98,7 +110,7 @@ def _loss_replay(state, bus, trace, **kw):
     return loss
 
 
-@pytest.mark.parametrize("which", ["pong", "montezuma"])
+@pytest.mark.parametrize("which", ["pong", "montezuma", "elevator"])
 def test_replay_forward_equals_eager_and_hard(which, request):
     con0 = request.getfixturevalue(which)
     state, bus, trace, con_hard = _record(con0)
