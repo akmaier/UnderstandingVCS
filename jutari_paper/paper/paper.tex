@@ -654,34 +654,42 @@ conformance tests (details in the supplement).
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{figures/si_joystick_gradient.pdf}
-\caption{Space Invaders, 35\,s after boot.
-(a) Pixel-exact scene. (b) Bilinear sampler gradient
-on cannon edges. (c) Zero naive position gradient.
-(d) Sampler Jacobian: RIGHT $+35.7$, LEFT $-35.7$,
-UP/DOWN zero. The joystick drives position directly
-through the sampler, not the ROM's controller code.
-Exact interventions reveal that LEFT is wrong at the wall.}
+\caption{Space Invaders at the cannon midpoint ($x=76$).
+(a) Pixel-exact scene. (b) Bilinear (triangular) sampler
+gradient $\partial\mathrm{screen}/\partial\mathrm{RIGHT}$,
+nonzero only at cannon edges. (c) Exactly zero naive
+gradient through integer sprite position.
+(d) Four normalised directional-effect series:
+sampler and naive gradients, and exact hard-emulator
+interventions (8 frames versus NOOP) at the midpoint
+and at the 35\,s left-wall scene (LEFT has zero effect).}
 \label{fig:xai}
 \end{figure}
 
-Figure~\ref{fig:xai} compares surrogate gradients
-with exact interventions on the hard emulator.
-The sampler directly maps joystick input to cannon
-position, bypassing the ROM's controller-reading
-code. Naive differentiation through the position
-index gives zero; the bilinear sampler produces a
-gradient localised to cannon edges.
+Figure~\ref{fig:xai} compares gradients with exact
+interventions. Starting 35\,s after boot ($x=35$),
+we hold RIGHT for 81 frames to reach the midpoint
+$x=76$ of the measured range $[35,117]$, avoiding
+wall clipping. The scene is pixel-exact against
+the reference. The joystick drives position directly
+through the sampler, bypassing ROM controller-reading
+code. Naive differentiation gives zero; the bilinear
+sampler localises screen gradients to cannon edges.
 
-In the same scene, pressing RIGHT changes only
-cannon pixels (rows 186--195; 38 pixels after
-four frames). UP and DOWN change nothing. LEFT
-also changes nothing because the cannon stands
-at the left wall ($x=35$). Away from the wall
-($x=39$), LEFT moves it and changes only cannon
-pixels. The sampler's symmetric $+35.7/-35.7$
-RIGHT/LEFT attribution therefore incorrectly
-predicts a LEFT effect at the wall. This is a
-measurable gradient--mechanism disagreement.
+In panel (d), each series is normalised by its largest
+magnitude because units differ. The sampler gives
+RIGHT $+1.23$, LEFT $-1.23$, and UP/DOWN zero,
+identically for SOFT-STE and relaxed settings
+$(\alpha,T)=(6,0.14),(5.5,0.145)$ (maximum
+difference zero). Naive gradients vanish throughout.
+Hard-emulator interventions give RIGHT $+0.5$ and
+LEFT $-0.5$\,px/frame, with UP/DOWN zero; only cannon
+pixels change (rows 186--195; 56 pixels).
+Thus the sign/zero pattern agrees away from the wall,
+but the surrogate magnitude and joystick scale are not
+game dynamics. At the wall, LEFT causes no pixel changes
+despite the same nonzero sampler gradient. Exact
+interventions, not gradients, provide the reference.
 
 \subsection{Scoring Attribution Methods}
 

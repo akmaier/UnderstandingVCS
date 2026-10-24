@@ -30,13 +30,14 @@ for ln in open(f"{OUT}/ji_grad.txt"):
     if ln.startswith("VARIANT"):
         cur = ln.split()[1]; variants.append(cur); grads[cur] = {}
     elif "d(move_right)" in ln:
-        d = ln.split("d(")[2].split(")")[0]; grads[cur][d] = float(ln.split("=")[1])
+        d = ln.split("d(")[2].split(")")[0]
+        grads[cur][d] = float(ln.split("=")[1].split()[0])
 
 pal = load_ntsc_palette()
 rgb = decode_palette(scene, pal).astype(np.float32)
 
 # zoom window around the cannon for (b)/(c)
-zr0, zr1, zc0, zc1 = 168, 205, 16, 70
+zr0, zr1, zc0, zc1 = R0 - 15, R1 + 6, C0 - 8, C1 + 6   # around the crop
 def zoom(img): return img[zr0:zr1, zc0:zc1]
 
 # place a crop map into a full-frame field
@@ -50,7 +51,7 @@ vmax = np.nanmax(np.abs(sal)) + 1e-6
 
 # (a) real scene
 ax[0, 0].imshow(rgb.astype(np.uint8), interpolation="none")
-ax[0, 0].set_title("(a) real SI, 35 s", fontsize=9)
+ax[0, 0].set_title("(a) SI scene, cannon mid-field", fontsize=9)
 
 # (b) sampler saliency over dimmed zoom — alpha-masked so zeros are transparent
 def overlay(a, field, title, cmap, vmx):
@@ -59,7 +60,7 @@ def overlay(a, field, title, cmap, vmx):
     a.imshow(base, interpolation="none", extent=[zc0, zc1, zr1, zr0])
     z = zoom(field)
     norm = np.clip((z + vmx) / (2 * vmx), 0, 1)
-    rgba = cm.get_cmap(cmap)(np.nan_to_num(norm))
+    rgba = matplotlib.colormaps[cmap](np.nan_to_num(norm))
     rgba[..., 3] = np.where(np.isnan(z), 0.0, np.clip(np.abs(z) / vmx, 0, 1))  # alpha=|sal|
     a.imshow(rgba, interpolation="none", extent=[zc0, zc1, zr1, zr0])
     a.set_title(title, fontsize=9); a.set_xticks([]); a.set_yticks([])
@@ -68,18 +69,25 @@ overlay(ax[0, 1], sal_f, r"(b) $\partial$screen$/\partial$RIGHT (sampler)",
         "RdBu_r", vmax)
 overlay(ax[1, 0], naive_f, r"(c) naive $\equiv$ 0 (vanishes)", "RdBu_r", vmax)
 
-# (d) inverse bar chart (3 variants x 4 directions)
+# (d) sampler / naive gradient vs exact hard-machine interventions, each series
+# normalised by its largest |value| (units differ: px per joystick unit vs px/frame)
 dirs = ["up", "down", "left", "right"]
-x = np.arange(4); wbar = 0.26
-show = ["STE", "relax_a6_T0.14", "naive"]      # soft-STE, soft, naive (per request)
-nice = {"STE": "SOFT-STE", "relax_a6_T0.14": "soft", "naive": "naive"}
+x = np.arange(4); wbar = 0.2
+show = ["STE", "naive", "intervention_mid", "intervention_wall"]
+nice = {"STE": "sampler grad.", "naive": "naive grad.",
+        "intervention_mid": "intervention", "intervention_wall": "interv. at wall"}
+cols = {"STE": "#3b6fb6", "naive": "#9a9a9a",
+        "intervention_mid": "#d1603d", "intervention_wall": "#e8b04a"}
 for i, v in enumerate(show):
-    vals = [grads[v][d] for d in dirs]
-    ax[1, 1].bar(x + (i - 1) * wbar, vals, wbar, label=nice.get(v, v))
+    vals = np.array([grads[v][d] for d in dirs])
+    m = np.max(np.abs(vals))
+    vals = vals / m if m > 0 else vals
+    ax[1, 1].bar(x + (i - 1.5) * wbar, vals, wbar, label=nice[v], color=cols[v])
 ax[1, 1].axhline(0, color="k", lw=0.6)
 ax[1, 1].set_xticks(x); ax[1, 1].set_xticklabels(dirs)
-ax[1, 1].set_title(r"(d) inverse $\partial$(move right)$/\partial$joy", fontsize=9)
-ax[1, 1].set_ylabel("gradient"); ax[1, 1].legend(fontsize=7, loc="upper left")
+ax[1, 1].set_ylim(-1.15, 1.15)
+ax[1, 1].set_title(r"(d) effect on cannon $x$ (normalised)", fontsize=9)
+ax[1, 1].legend(fontsize=6, loc="upper left", frameon=False)
 
 for a in (ax[0, 0],): a.set_xticks([]); a.set_yticks([])
 fig.tight_layout()

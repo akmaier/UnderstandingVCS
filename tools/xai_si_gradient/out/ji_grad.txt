@@ -1,20 +1,30 @@
 VARIANT STE  on=false alpha=10.0 T=0.1
   d(move_right)/d(up) = 0.0
   d(move_right)/d(down) = 0.0
-  d(move_right)/d(left) = -35.7292
-  d(move_right)/d(right) = 35.7292
+  d(move_right)/d(left) = -1.2273
+  d(move_right)/d(right) = 1.2273
 VARIANT relax_a6_T0.14  on=true alpha=6.0 T=0.14
   d(move_right)/d(up) = 0.0
   d(move_right)/d(down) = 0.0
-  d(move_right)/d(left) = -35.7292
-  d(move_right)/d(right) = 35.7292
+  d(move_right)/d(left) = -1.2273
+  d(move_right)/d(right) = 1.2273
 VARIANT relax_a5.5_T0.145  on=true alpha=5.5 T=0.145
   d(move_right)/d(up) = 0.0
   d(move_right)/d(down) = 0.0
-  d(move_right)/d(left) = -35.7292
-  d(move_right)/d(right) = 35.7292
+  d(move_right)/d(left) = -1.2273
+  d(move_right)/d(right) = 1.2273
 VARIANT naive  on=false alpha=0 T=0
   d(move_right)/d(up) = 0.0
   d(move_right)/d(down) = 0.0
   d(move_right)/d(left) = 0.0
   d(move_right)/d(right) = 0.0
+VARIANT intervention_mid  K=8 frames (dx per frame vs NOOP; changed px; rows)
+  d(move_right)/d(up) = 0.0  px=0 rows=0:-1
+  d(move_right)/d(down) = 0.0  px=0 rows=0:-1
+  d(move_right)/d(left) = -0.5  px=56 rows=186:195
+  d(move_right)/d(right) = 0.5  px=56 rows=186:195
+VARIANT intervention_wall  K=8 frames (dx per frame vs NOOP; changed px; rows)
+  d(move_right)/d(up) = 0.0  px=0 rows=0:-1
+  d(move_right)/d(down) = 0.0  px=0 rows=0:-1
+  d(move_right)/d(left) = 0.0  px=0 rows=0:-1
+  d(move_right)/d(right) = 0.5  px=66 rows=186:195

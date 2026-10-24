@@ -22,7 +22,7 @@ using JuTari.Env: StellaEnvironment, env_reset!, env_step!, get_screen, get_ram
 using JuTari.Diff: soft_ram_peek, set_relax!, using_relax
 import Zygote
 
-const NOOP = 0
+const NOOP, UP, RIGHT, LEFT, DOWN = 0, 2, 3, 4, 5
 const CANNON_COLOR = 196          # classic-state player cannon colour (frame 1050)
 const SCENE_FRAME = 1050          # 35 s at the video's 30 fps
 outdir = joinpath(@__DIR__, "out"); isdir(outdir) || mkpath(outdir)
@@ -32,14 +32,40 @@ _cflat(s) = vec(permutedims(s))
 rom_bytes = read(joinpath(@__DIR__, "..", "..", "xitari", "roms", "space_invaders.bin"))
 e = StellaEnvironment(rom_bytes); env_reset!(e; boot_noop_steps = 60, boot_reset_steps = 4)
 for _ in 1:SCENE_FRAME; env_step!(e, NOOP); end
+# At 35 s the cannon rests at the left wall (x = 35), where LEFT is a no-op.
+# Scene rule: hold RIGHT until the cannon reaches the midpoint of its range
+# [35, 117] (measured on the hard machine), so no wall clips any direction.
+const X_MIN, X_MAX = 35, 117
+const X_MID = (X_MIN + X_MAX) ÷ 2
+wall = deepcopy(e)
+n_right = 0
+while Int(get_ram(e)[29]) < X_MID; env_step!(e, RIGHT); global n_right += 1; end
 scene = copy(get_screen(e)); H, W = size(scene)
+
+# Exact interventions on the hard machine: hold one direction for K frames
+# from the scene and from the wall state; cannon dx per frame vs NOOP.
+const K = 8
+function intervene(s0)
+    base = deepcopy(s0); for _ in 1:K; env_step!(base, NOOP); end
+    xb = Int(get_ram(base)[29]); sb = get_screen(base)
+    out = Dict{String,Tuple{Float64,Int,UnitRange{Int}}}()
+    for (nm, a) in (("up", UP), ("down", DOWN), ("left", LEFT), ("right", RIGHT))
+        c = deepcopy(s0); for _ in 1:K; env_step!(c, a); end
+        d = get_screen(c) .!= sb; rows = findall(vec(any(d; dims = 2)))
+        out[nm] = ((Int(get_ram(c)[29]) - xb) / K, count(d),
+                   isempty(rows) ? (0:-1) : (minimum(rows):maximum(rows)))
+    end
+    out
+end
+iv_mid, iv_wall = intervene(e), intervene(wall)
 write(joinpath(outdir, "ji_scene.raw"), UInt8.(_cflat(scene)))
 write(joinpath(outdir, "ji_scene.shape"), "$H $W")
-println("scene frame $SCENE_FRAME (35 s @30fps); size $H x $W; bg=", Int(scene[60, 3]),
-        " player-X=", Int(get_ram(e)[29]))
+println("scene: frame $SCENE_FRAME (35 s) + $n_right x RIGHT; size $H x $W; bg=",
+        Int(scene[60, 3]), " player-X=", Int(get_ram(e)[29]))
 
-# ---- 2. extract the real cannon footprint (colour 114) ---------------------
-canpx = [(r, c) for r in 178:198 for c in 24:62 if Int(scene[r, c]) == CANNON_COLOR]
+# ---- 2. extract the real cannon footprint (colour 196, rows <= 195: rows
+#      197-200 hold an unrelated colour-196 marker at cols 34-35) ----------
+canpx = [(r, c) for r in 178:195 for c in 1:W if Int(scene[r, c]) == CANNON_COLOR]
 py0 = minimum(first.(canpx)); px0 = minimum(last.(canpx))
 offs = Tuple((r - py0, c - px0) for (r, c) in canpx)
 bg_color = Float32(scene[py0 - 2, px0])              # background just above cannon
@@ -81,15 +107,15 @@ mask_int(px) = begin
     m
 end
 function naive_saliency()
-    ε = 0.5f0
+    ε = 1f-3   # derivative of round(): stay inside one integer cell (ε = 0.5
+               # would hit round-half-to-even and show a spurious finite step)
     (Float32(CANNON_COLOR) - bg_color) .*
         (mask_int(joy_x(Float32[0, 0, 0, ε])) .- mask_int(joy_x(Float32[0, 0, 0, -ε]))) ./ (2ε)
 end
 
-# INVERSE: push the cannon toward a target to its right; recover the control map
+# INVERSE: how the cannon's x responds to each joystick direction
 cannon_cx(j) = (o = occ(joy_x(j)); sum(o .* COLS) / (sum(o) + 1f-6))
-const TARGET = Float32(px0) + 18f0
-objective(j) = -(cannon_cx(j) - TARGET)^2
+objective(j) = cannon_cx(j)              # d(cannon x)/d joystick
 
 # ---- 4. three SOFT variants ------------------------------------------------
 variants = [("STE", false, 10.0, 0.10),
@@ -115,14 +141,22 @@ open(joinpath(outdir, "ji_grad.txt"), "w") do io
     let ε = 0.3f0
         for i in 1:4
             jp = zeros(Float32, 4); jp[i] = ε; jm = zeros(Float32, 4); jm[i] = -ε
-            op = -(cx_naive(round(Int, joy_x(jp))) - TARGET)^2
-            om = -(cx_naive(round(Int, joy_x(jm))) - TARGET)^2
+            op = cx_naive(round(Int, joy_x(jp)))
+            om = cx_naive(round(Int, joy_x(jm)))
             ginv_naive[i] = (op - om) / (2ε)
         end
     end
     println(io, "VARIANT naive  on=false alpha=0 T=0")
     for i in 1:4; println(io, "  d(move_right)/d($(labels[i])) = ", round(ginv_naive[i], digits = 4)); end
     println("variant naive: inverse grad (u,d,l,r) = ", round.(ginv_naive, digits = 3))
+    for (nm, iv) in (("intervention_mid", iv_mid), ("intervention_wall", iv_wall))
+        println(io, "VARIANT $nm  K=$K frames (dx per frame vs NOOP; changed px; rows)")
+        for l in labels
+            dx, npx, rows = iv[l]
+            println(io, "  d(move_right)/d($l) = ", round(dx, digits = 4), "  px=$npx rows=$rows")
+        end
+        println("$nm: ", [(l, iv[l]) for l in labels])
+    end
 end
 # naive (vanishing) map + crop geometry
 write(joinpath(outdir, "ji_naive.raw"), _cflat(naive_saliency()))

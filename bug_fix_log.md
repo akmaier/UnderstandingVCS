@@ -14,6 +14,46 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### ⚠️ Conformance re-check after the SOFT-step work — elevator_action "regression" was an unpatched xitari; jaxtari lacked the #123 LCG — 2026-10-24
+
+**Symptom.** Re-running the 64-ROM jutari sweeps on the laptop gave 63/64 RAM and 63/64 screen:
+elevator_action diverged (RAM frame 19, 400 px from frame 41). Bisecting over every jutari-core
+commit back to `dac8f755` (the commit that recorded 64/64) gave the SAME failure at every commit,
+so no emulator change caused it.
+
+**Root cause.** The laptop's `xitari/` checkout (git-excluded) lacked the #123 seed-zero patch
+(`Random::ourSeeded = true`, `random_seed = "0"`), so its Superchip RAM init was `time(NULL)`-seeded
+again; `tools/trace_dump` was a May-28 build. Same command, different hour → different elevator
+reference (verified: two runs an hour apart differ in RAM byte 111).
+Also: `tools/xitari_conformance_seed.patch` is **corrupt** (`git apply` fails at line 51) — apply
+its two one-line edits by hand. And the laptop xitari lacks the bus-trace hook
+(`system_bus_trace_callback`), so current `tools/trace_dump.cpp` does not link against it; the
+reference was rebuilt with a stub hook (RAM/screen output identical to the old binary on all 64
+ROMs except elevator_action; `--bus-trace` inert in that build).
+
+**jaxtari gap.** jaxtari zero-initialised Superchip RAM (`jaxtari/jaxtari/cart/system.py`), i.e.
+#123's jutari LCG(0) init was never mirrored, so jaxtari cannot match the deterministic reference
+on elevator_action. Fixed: `_sc_ram_lcg_init()` (bytes `a9 5f fe ea 06 a1 f9 73 …`, same as jutari).
+
+**ROM hashes.** Suppl. Table 3 / `tools/rom_sweep/rom_sha256.txt` (e0e8cd75) are the cluster's
+ROMs. The laptop's pitfall/enduro are the canonical-ALE dumps (MD5 3e90cf23…/94b92a88…) and differ
+by 2 bytes (pitfall $030E-$030F: `A5 89` vs `A9 00`) and 1 byte (enduro $0B53: `0C` vs `00`).
+
+**Measured (laptop, manifest ROMs = all 64 match rom_sha256.txt, seed-patched xitari):**
+jutari **64/64 RAM bit-exact, 64/64 screen pixel-exact**; `Pkg.test()` green. jaxtari 64-ROM sweep
++ full pytest + `JAXTARI_SOFT_SYSTEM_FULL=1` running on the LME cluster (worktree
+`/cluster/maier/UVCS_p1check`; xitari references precomputed on the laptop since the cluster has
+no xitari build).
+
+**Fig. 5 (paper).** `tools/xai_si_gradient/si_joystick_gradient.jl`: scene rule (hold RIGHT from
+35 s until cannon x = 76, midpoint of measured [35,117]); exact interventions (8 frames vs NOOP)
+mid-field and at the wall; inverse now d c_x/d joystick (no arbitrary target). Two latent bugs
+fixed: (1) footprint search rows 178:198 picked up an unrelated colour-196 marker at rows 197-200,
+cols 34-35; (2) the "naive ≡ 0" panel used ε = 0.5 with `round` (half-to-even), which is zero only
+for even x — at x = 76 it showed a spurious step; now ε = 1e-3.
+
+---
+
 ### ✅ jutari full-system SOFT step — soft == hard on all 64 ROMs (Theorem 1 now true on the whole machine) — 2026-10-24
 
 **Symptom.** The SOFT step was only a differentiable CPU core over a simplified bus:
