@@ -50,6 +50,35 @@ soft handler computes with a ROM byte. Equality tests therefore use a trajectory
 loss (13–17 non-zeros) with a floor, so they cannot pass vacuously.
 Tests: `jaxtari/tests/test_soft_replay.py` (6) + `test_soft_system.py` (8): **14 passed** (run on the tree before the rebase onto `bef47885`, the F8SC Superchip power-on-init change; the replay tests use Pong/Montezuma, no Superchip).
 
+### 📏 Long-horizon (3,600-frame) conformance, opcode coverage, reproducible xitari patches — 2026-10-25
+
+**Long horizon.** `tools/rom_sweep/sweep_longhorizon.py` now runs the UNCHANGED in-window
+harnesses (`sweep_jutari_ram.py` / `sweep_jutari_screen.py`, new `--frames/--out`) over all
+3,600 steps for all 64 manifest ROMs vs the seed-patched xitari: **RAM 63/64, screen 62/64 exact on
+every frame.** Exceptions are transient and re-converge (open, not chased):
+- amidar: RAM `$FB` (stack) `$B1` vs `$B5` (bit 2 = I flag of a pushed P) on frame 392 only; screen exact.
+- alien: two whole-frame screen differences (first 526, 1,671 px), RAM exact throughout.
+- carnival: 1 px on two frames (first 767, row 40).
+The old `results_longhorizon.md` (13 "problem" games) was stale; those 13 are exact now. Do NOT
+use `tools/longhorizon_diff.py` (comparison-video pipeline) as a conformance measure: its dumpers
+auto-reset on game over and produced spurious divergences (14 games; qbert/gravitar at ~1,865/1,930
+are RAM+pixel exact in the conformance harness).
+
+**Opcode coverage.** `tools/opcode_coverage.jl` → `tools/rom_sweep/results_opcode_coverage.md`:
+0/37 illegal opcodes, USBC never, 0 unhandled bytes executed over 1.21B instructions; illegal
+opcodes are covered by unit tests only.
+
+**xitari patches (reproducibility).** `tools/xitari_conformance_seed.patch` regenerated (the old
+file was corrupt); new `tools/xitari_bus_trace_hook.patch` (the `system_bus_trace_callback` hook
+that `tools/trace_dump.cpp` needs; previously local-only). Both `git apply` cleanly to pristine
+xitari. GOTCHA: `make clean` in `tools/` deletes `tools/trace_dump` — never run it while a sweep
+is using the binary (it killed one sweep here).
+
+**Supplement zip.** `tools/make_supplement_zip.sh` now ships `ROMS.sha256` from
+`tools/rom_sweep/rom_sha256.txt` (real SHA-256; it used to copy the name-only manifest.txt).
+
+---
+
 ### ⚠️ Conformance re-check after the SOFT-step work — elevator_action "regression" was an unpatched xitari; jaxtari lacked the #123 LCG — 2026-10-24
 
 **Symptom.** Re-running the 64-ROM jutari sweeps on the laptop gave 63/64 RAM and 63/64 screen:

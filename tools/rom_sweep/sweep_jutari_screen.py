@@ -49,7 +49,7 @@ def _xitari_screens(rom: Path, acts: Path, n: int):
     r = subprocess.run(
         [str(TRACE_DUMP), "--rom", str(rom), "--actions", str(acts),
          "--max-frames", str(n), "--screen"],
-        capture_output=True, text=True, check=True, timeout=600)
+        capture_output=True, text=True, check=True, timeout=max(600, n))
     out = []
     for line in r.stdout.strip().splitlines():
         o = json.loads(line)
@@ -68,7 +68,7 @@ def _jutari_screens(rom: Path, acts: Path, n: int, h: int = H):
         ["julia", "--project=" + str(REPO / "jutari"), str(SCREEN_DUMP),
          "--rom", str(rom), "--actions", str(acts), "--out", str(outp),
          "--max-frames", str(n)],
-        check=True, capture_output=True, timeout=900)
+        check=True, capture_output=True, timeout=max(900, 2 * n))
     b = np.fromfile(outp, dtype=np.uint8)
     outp.unlink(missing_ok=True)
     if len(b) == 0 or len(b) % (h * W) != 0:
@@ -120,7 +120,9 @@ def main():
     p.add_argument("--jobs", type=int, default=default_jobs)
     p.add_argument("--frames", type=int, default=FRAMES)
     p.add_argument("--games", nargs="*", default=None)
+    p.add_argument("--out", default=None, help="results markdown (default: results_jutari_screen.md)")
     args = p.parse_args()
+    out_path = Path(args.out) if args.out else RESULTS
 
     roms = sorted(ROMS.glob("*.bin"))
     if args.games:
@@ -176,7 +178,7 @@ def main():
         cell = "**0 ✅**" if mx == 0 else f"{mx}"
         fdc = "—" if fd < 0 else str(fd)
         lines.append(f"| {name} | {cell} | {tot} | {fdc} | {rows} |")
-    RESULTS.write_text("\n".join(lines) + "\n")
+    out_path.write_text("\n".join(lines) + "\n")
     print(f"DONE. {n_exact}/{len(results)} pixel-exact. Results -> {RESULTS}", flush=True)
 
 

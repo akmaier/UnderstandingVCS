@@ -39,11 +39,14 @@ echo "  staged $(find "$STAGE" -type f | wc -l | tr -d ' ') files"
 
 # --- 2. surface the ROM hash manifest at top level (ROMs themselves are NOT shipped) ---
 step "2/5 ROM hash manifest"
-if [[ -f "$STAGE/tools/rom_sweep/manifest.txt" ]]; then
-    cp "$STAGE/tools/rom_sweep/manifest.txt" "$STAGE/ROMS.sha256"
-    echo "  copied tools/rom_sweep/manifest.txt -> ROMS.sha256"
+# rom_sha256.txt holds the full SHA-256 per ROM (`shasum -a 256 roms/*.bin`);
+# manifest.txt is only the game -> source-file name mapping.
+if [[ -f "$STAGE/tools/rom_sweep/rom_sha256.txt" ]]; then
+    sort -k2 "$STAGE/tools/rom_sweep/rom_sha256.txt" > "$STAGE/ROMS.sha256"
+    echo "  copied tools/rom_sweep/rom_sha256.txt -> ROMS.sha256 ($(wc -l < "$STAGE/ROMS.sha256" | tr -d ' ') ROMs)"
 else
-    echo "  (no manifest found; README points to the supplement's per-game table)"
+    echo "FATAL: tools/rom_sweep/rom_sha256.txt missing -- ROMS.sha256 must carry real hashes" >&2
+    exit 1
 fi
 
 # --- 3. anonymize the EXPORT in place (text files only) ---
@@ -93,7 +96,11 @@ the per-game table in `supplementary.pdf`). Place them where the harness expects
 
 - jutari:  Julia 1.10+, then `cd jutari && julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.test()'`.
 - jaxtari: Python 3.12, then `cd jaxtari && pip install -e . && pytest`.
-- Conformance sweeps and benchmarks: see scripts under `tools/`.
+- Conformance sweeps and benchmarks: see scripts under `tools/`. The xitari
+  reference needs two small patches before building `tools/trace_dump`:
+  `tools/xitari_conformance_seed.patch` (deterministic Superchip-RAM seed) and
+  `tools/xitari_bus_trace_hook.patch` (bus-trace hook); `git apply` both in the
+  xitari checkout, then `make` there and in `tools/`.
 
 Released under the MIT License upon publication.
 README

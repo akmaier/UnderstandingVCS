@@ -1,0 +1,59 @@
+# Bus-trace hook for the xitari reference (git-excluded), needed to BUILD
+# tools/trace_dump (its --bus-trace flag; BUG_BISECTION_METHODOLOGY.md, commit d66b290).
+# Adds `system_bus_trace_callback`, called on every System::peek / System::poke with
+# (addr, value, is_write, cpu_cycles). Null by default, so normal runs are unaffected
+# (verified: identical RAM/screen output on pong/breakout/seaquest/elevator_action).
+#
+# Apply from the xitari working copy root:  git apply ../tools/xitari_bus_trace_hook.patch
+# then rebuild: `make` in xitari/ + `make` in tools/ (apply the seed patch too).
+
+diff --git a/emucore/m6502/src/System.cxx b/emucore/m6502/src/System.cxx
+index 38adb32..9244173 100644
+--- a/emucore/m6502/src/System.cxx
++++ b/emucore/m6502/src/System.cxx
+@@ -28,6 +28,10 @@
+ 
+ using namespace ale;
+ 
++// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
++// UnderstandingVCS bus-trace hook (declared in System.hxx); null = disabled.
++BusTraceCallback system_bus_trace_callback = 0;
++
+ // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ System::System(uInt16 n, uInt16 m)
+   : myAddressMask((1 << n) - 1),
+diff --git a/emucore/m6502/src/System.hxx b/emucore/m6502/src/System.hxx
+index f6c37c7..8d11fc6 100644
+--- a/emucore/m6502/src/System.hxx
++++ b/emucore/m6502/src/System.hxx
+@@ -34,6 +34,11 @@ class Deserializer;
+ #include "Device.hxx"
+ #include "NullDev.hxx"
+ 
++// UnderstandingVCS bus-trace hook (tools/trace_dump --bus-trace): when non-null,
++// called for every System::peek / System::poke with the CPU cycle count.
++typedef void (*BusTraceCallback)(ale::uInt16 addr, ale::uInt8 value, bool is_write, ale::uInt32 cpu_cycles);
++extern BusTraceCallback system_bus_trace_callback;
++
+ namespace ale {
+ 
+ /**
+@@ -270,6 +275,9 @@ class System
+ 
+       myDataBusState = result;
+ 
++      if(system_bus_trace_callback)
++        system_bus_trace_callback(addr, result, false, myCycles);
++
+       return result;
+     }
+ 
+@@ -297,6 +305,8 @@ class System
+ 
+       myDataBusState = value;
+ 
++      if(system_bus_trace_callback)
++        system_bus_trace_callback(addr, value, true, myCycles);
+     }
+ 
+     /**

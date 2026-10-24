@@ -76,6 +76,7 @@ def write_table(rows: list[dict], done: int):
                     f"| {r['status']} | {r.get('secs', 0):.0f} |\n")
 
 def main():
+    global FRAMES, OUT, TIMEOUT
     import argparse, os, threading
     from concurrent.futures import ThreadPoolExecutor, as_completed
     p = argparse.ArgumentParser(description="64-ROM jutari RAM-conformance sweep.")
@@ -88,7 +89,14 @@ def main():
                    help=f"parallel ROMs (default {default_jobs} = half cores)")
     p.add_argument("--games", nargs="*", default=NAMES,
                    help="subset of games to run (default: all 64)")
+    p.add_argument("--frames", type=int, default=FRAMES,
+                   help=f"frames per ROM (default {FRAMES}; long-horizon: 3600)")
+    p.add_argument("--out", default=None, help="results markdown (default: results_jutari_ram.md)")
     args = p.parse_args()
+    FRAMES = args.frames
+    TIMEOUT = max(TIMEOUT, 2 * FRAMES)
+    if args.out:
+        OUT = Path(args.out)
     games = args.games
 
     results: dict[str, dict] = {}

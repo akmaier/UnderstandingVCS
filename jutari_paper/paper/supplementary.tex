@@ -952,11 +952,46 @@ trajectories, not on all possible executions.
 Ten cartridge mappers are implemented, seven
 exercised by the 64 games.
 
-The \textsc{xitari} reference originally seeds
-Superchip RAM with \texttt{time(NULL)}, irrespective
-of its emulator seed. We patched this initialisation
-to zero to match the deterministic ports.
-The patch ships with the code.
+\paragraph{Opcode coverage.}
+jutari implements 189 opcode bytes:
+151 documented, the undocumented USBC alias (\texttt{\$EB}),
+and 37 illegal (27 multi-byte NOP variants, 6 LAX, 4 SAX);
+67 bytes lack handlers. Counting every executed instruction
+across 64 conformance ROMs,
+boot plus the 60-frame window covers 134/151 documented opcodes
+in 78.8 million instructions; boot plus 3,600 steps covers
+135/151 in 1.21 billion. Neither run executes an illegal
+opcode, USBC, or an unhandled byte. Thus, 64/64 conformance
+does not test illegal opcodes, which have unit-test coverage only.
+The 16 unexecuted documented opcodes are indexed-indirect,
+indirect-indexed, and absolute read-modify-write forms.
+The script and per-game table ship with the code.
+
+\paragraph{Long horizon.}
+We compared jutari against seed-patched \textsc{xitari}
+over all 3,600 frames (60 times the conformance window),
+using the same harness, boot, settings, and action stream,
+without game-over auto-reset. RAM is bit-exact on every frame
+for 63/64 games; screens are pixel-exact for 62/64.
+All three exceptions are transient and re-converge:
+\texttt{amidar} differs in one RAM byte (stacked processor
+status, I flag) at frame 392, with an exact screen;
+\texttt{alien} has two whole-frame screen differences
+(first at 526), with RAM exact throughout;
+\texttt{carnival} differs by one pixel on two frames
+(first at 767). Earlier divergences in 13 games arose
+from the comparison-video pipeline's game-over/auto-reset
+wrapper, not the emulator; those games are exact here.
+The sweep script and table ship with the code.
+
+\paragraph{Reference determinism.}
+\textsc{xitari} fills its 128-byte Superchip RAM at power-on
+using a pseudo-random generator seeded with \texttt{time(NULL)},
+independently of the emulator seed. This makes games reading
+RAM before writing it (e.g., \texttt{elevator\_action})
+non-reproducible. Our patch seeds the generator with zero;
+both ports reproduce the resulting byte sequence. A second
+patch adds a bus-trace hook for debugging. Both ship with the code.
 
 \section{Throughput}
 

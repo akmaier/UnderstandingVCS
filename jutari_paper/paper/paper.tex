@@ -266,11 +266,12 @@ Full-system soft step (CPU) & ${\sim}146{,}000$ & --- \\
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.90\textwidth]{figures/fig_pipeline.pdf}
-\caption{HARD executes the complete machine bit-exactly.
-SOFT-STE replays the instruction through differentiable CPU/RAM
-handlers and joins their outputs with hard values. CPU registers
-and RAM carry surrogate gradients; device and frame-buffer
-states remain hard.}
+\caption{HARD executes each instruction on the complete machine
+bit-exactly. SOFT replays the same instruction using differentiable
+CPU/RAM handlers, soft state, and hard device-read constants.
+A straight-through join preserves hard register and RAM values
+while propagating surrogate gradients to registers, RAM, and ROM
+bytes. Frame-buffer and device states carry no gradient.}
 \label{fig:pipeline}
 \end{figure*}
 

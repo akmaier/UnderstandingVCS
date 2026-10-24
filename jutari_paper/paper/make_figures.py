@@ -88,38 +88,47 @@ def fig_architecture():
 
 
 # --------------------------------------------------------------------------
+# Figure 2 box labels (wording written by ChatGPT).
+PIPELINE_LABELS = {
+    "state": "Machine state\nCPU, RAM, TIA, RIOT\ncartridge",
+    "hard": "HARD step\nComplete machine\ninteger, bit-exact",
+    "hard_out": "Bit-exact next state\nframe buffer\nand devices",
+    "context": "Bank/slice mapping\nTIA/RIOT/Superchip\nreads as constants",
+    "soft": "SOFT replay (float32)\nCPU/RAM; one-hot reads\nsigmoid branch gates",
+    "hard_vals": "Hard registers\nand RAM values",
+    "ste": "Straight-through join\nall registers and RAM\nforward hard; back soft",
+    "grad": "Gradients: registers\nRAM and ROM bytes\nnot frame/devices",
+}
+
+
 def fig_pipeline():
-    fig, ax = plt.subplots(figsize=(8.8, 2.15))
-    ax.set_xlim(0, 21); ax.set_ylim(0, 8.4); ax.axis("off")
+    # Full-system SOFT-STE step (SoftSystem.jl / soft_system.py): the HARD
+    # machine executes the instruction first; its cart mapping and I/O reads
+    # feed the SOFT replay of the CPU/RAM handlers; registers and RAM are joined
+    # by the straight-through estimator. Devices and frame buffer stay hard.
+    L = PIPELINE_LABELS
+    fig, ax = plt.subplots(figsize=(8.8, 2.35))
+    ax.set_xlim(0, 21); ax.set_ylim(0, 9.0); ax.axis("off")
 
-    # Shared inputs (left).
-    box(ax, 0.3, 5.5, 4.0, 2.2,
-        "ROM = weights\nRAM = soft tape\nbranches = gates", fc=LIGHT, fs=8.5)
-    box(ax, 0.3, 0.6, 4.0, 1.9, "VCS state\n(regs, RAM, TIA)", fc=LIGHT, fs=8.5)
+    box(ax, 0.2, 5.6, 3.9, 2.6, L["state"], fc=LIGHT, fs=8.2)
+    hard = box(ax, 5.0, 5.6, 5.6, 2.6, L["hard"], fs=8.2)
+    box(ax, 17.2, 5.6, 3.6, 2.6, L["hard_out"], fs=8.2)
 
-    # The two execution paths.
-    hard = box(ax, 5.3, 5.5, 5.4, 2.2,
-               "HARD step\nuint8 dispatch\ninteger ALU", fs=8.5)
-    soft = box(ax, 5.3, 0.6, 5.4, 2.2,
-               "SOFT step (float32)\none-hot reads\nsigmoid gate",
-               ec=STEEL, fs=8.5)
+    soft = box(ax, 5.0, 0.4, 5.6, 2.6, L["soft"], ec=STEEL, fs=8.2)
+    ste = box(ax, 11.7, 0.4, 4.6, 2.6, L["ste"], fc="#fbeede", ec=ORANGE, fs=8.2)
+    box(ax, 17.2, 0.4, 3.6, 2.6, L["grad"], ec=STEEL, fs=8.2)
 
-    # Straight-through join.
-    ste = box(ax, 12.0, 3.0, 5.6, 2.3,
-              "straight-through\nforward = hard\nbackward = soft",
-              fc="#fbeede", ec=ORANGE, fs=8.5)
-
-    box(ax, 18.2, 5.4, 2.6, 1.9, "bit-exact\nframe / RAM", fs=8)
-    box(ax, 18.2, 0.7, 2.6, 1.9, "gradients\n" r"$\partial$pixel$/\partial$ROM",
-        ec=STEEL, fs=8)
-
-    arrow(ax, (4.3, 6.6), (5.3, 6.6), style="-|>")
-    arrow(ax, (4.3, 1.55), (5.3, 1.55), style="-|>", color=STEEL)
-    arrow(ax, (10.7, 6.4), (12.0, 4.6), style="-|>", rad=-0.12)
-    arrow(ax, (10.7, 1.8), (12.0, 3.6), style="-|>", color=STEEL, rad=0.12)
-    arrow(ax, (17.6, 4.6), (18.2, 6.0), style="-|>", lw=1.3, rad=-0.1)
-    arrow(ax, (17.6, 3.6), (18.2, 1.7), style="-|>", lw=1.3,
-          ls=(0, (4, 2)), color=STEEL, rad=0.1)
+    arrow(ax, (4.1, 6.9), (5.0, 6.9), style="-|>")
+    arrow(ax, (4.1, 6.2), (5.0, 1.7), style="-|>", color=STEEL, rad=0.15)
+    arrow(ax, (10.6, 6.9), (17.2, 6.9), style="-|>", lw=1.3)
+    # hard -> soft: the replay context
+    arrow(ax, (7.8, 5.6), (7.8, 3.0), style="-|>", color=STEEL)
+    ax.text(8.0, 4.3, L["context"], fontsize=7.4, color=STEEL, va="center")
+    # hard -> STE: forward values
+    arrow(ax, (10.6, 6.0), (13.2, 3.0), style="-|>", rad=-0.15)
+    ax.text(12.35, 4.75, L["hard_vals"], fontsize=7.4, color=INK, va="center")
+    arrow(ax, (10.6, 1.7), (11.7, 1.7), style="-|>", color=STEEL)
+    arrow(ax, (16.3, 1.7), (17.2, 1.7), style="-|>", lw=1.3, ls=(0, (4, 2)), color=STEEL)
 
     fig.tight_layout(pad=0.2)
     fig.savefig(os.path.join(OUT, "fig_pipeline.pdf"), bbox_inches="tight")

@@ -21,12 +21,12 @@ index f20f8c2..cca822a 100644
 --- a/common/Defaults.cpp
 +++ b/common/Defaults.cpp
 @@ -36,7 +36,7 @@ namespace ale {
-
+ 
  void setDefaultSettings(Settings &settings) {
      // General settings
 -    settings.setString("random_seed", "time");
 +    settings.setString("random_seed", "0");  // deterministic conformance (Superchip RAM init, bug_fix_log #122)
-
+ 
      // Controller settings
      settings.setString("game_controller", "internal");
 @@ -54,7 +54,7 @@ void setDefaultSettings(Settings &settings) {
@@ -36,7 +36,7 @@ index f20f8c2..cca822a 100644
 -    settings.setString("random_seed", "time");
 +    settings.setString("random_seed", "0");  // deterministic conformance (Superchip RAM init, bug_fix_log #122)
      settings.setBool("disable_color_averaging", false);
-
+ 
      // Display Settings
 diff --git a/emucore/Random.cxx b/emucore/Random.cxx
 index 8edb0a4..bfd2af2 100644
@@ -44,7 +44,8 @@ index 8edb0a4..bfd2af2 100644
 +++ b/emucore/Random.cxx
 @@ -52,5 +52,5 @@ uInt32 Random::next()
  uInt32 Random::ourSeed = 0;
-
+ 
  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 -bool Random::ourSeeded = false;
 +bool Random::ourSeeded = true;  // deterministic conformance: pre-Console Random (Superchip RAM init) uses ourSeed=0, not time(NULL). bug_fix_log #122
+ 
