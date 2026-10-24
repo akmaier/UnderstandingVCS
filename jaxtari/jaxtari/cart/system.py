@@ -124,6 +124,20 @@ _SC_AREA_MASK   = 0x1F80     # high bits = $1000 or $1080
 _SC_OFFSET_MASK = 0x007F     # low 7 bits index into the 128-byte buffer
 
 
+def _sc_ram_lcg_init() -> bytearray:
+    """Superchip power-on RAM: xitari's `Random` LCG from seed 0
+    (`v = (v*2416 + 374441) % 1771875`, byte = `v & 0xFF`), the deterministic
+    conformance reference (`tools/xitari_conformance_seed.patch`,
+    bug_fix_log #122/#123). elevator_action reads this RAM uninitialised.
+    Mirror of jutari `Cart._sc_ram_lcg_init`."""
+    ram = bytearray(_SC_RAM_BYTES)
+    v = 0
+    for i in range(_SC_RAM_BYTES):
+        v = (v * 2416 + 374441) % 1771875
+        ram[i] = v & 0xFF
+    return ram
+
+
 # --------------------------------------------------------------------------- #
 # Cart state
 # --------------------------------------------------------------------------- #
@@ -149,7 +163,7 @@ class Cart:
         # mutate per write, and we never need gradient flow through cart
         # RAM (SOFT mode doesn't yet model bank state at all — see
         # STATUS.md P7f-e).
-        self.ram = bytearray(_SC_RAM_BYTES) if kind in _SC_KINDS else bytearray(0)
+        self.ram = _sc_ram_lcg_init() if kind in _SC_KINDS else bytearray(0)
         # P5c — E0: three mutable 1K-slice indices. The fourth slot is
         # fixed at slice 7. Default boot state is (0, 0, 0) — Parker
         # Bros titles all start their reset vector inside slot 3 (the
