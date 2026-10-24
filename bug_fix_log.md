@@ -14,6 +14,39 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### ✅ jutari full-system SOFT step — soft == hard on all 64 ROMs (Theorem 1 now true on the whole machine) — 2026-10-24
+
+**Symptom.** The SOFT step was only a differentiable CPU core over a simplified bus:
+one 4 KB ROM window (no bank switching) and every non-ROM address folded into the
+128-byte RAM via `addr & 0x7F` (`jutari/src/diff/SoftStep.jl` `_bus_read`/`_bus_write!`;
+same in `jaxtari/jaxtari/diff/soft_step.py`). TIA writes aliased RAM ($06 → RAM $86), TIA/
+RIOT reads returned RAM. Measured from reset (soft `soft_step!` vs hard `console_step!`):
+first RAM divergence at instruction 776 (pong), 833 (breakout), 1094 (space_invaders).
+No test compared soft vs hard trajectories on a real ROM, so it went unnoticed; the
+paper's Theorem 1 (Φ_S = Φ_H on the full state) did not hold for the implemented step.
+
+**Fix (jutari).** New `src/diff/SoftSystem.jl`: `soft_system_init/step/run`,
+`soft_handler_agreement`. Each step runs the HARD instruction (forward value), replays
+it through the SOFT handlers under a context (`_SYS_CTX`) — ROM fetches through the hard
+cart's bank/slice mapping (new `Cart.cart_rom_index`), TIA/RIOT/Superchip reads replayed
+from the hard bus as constants, non-RAM writes dropped — and joins them with the STE
+(registers + RAM = soft + sg(hard − soft)). Two soft-handler bugs found by the new check:
+(1) functional `_func_brk` was a halt stub (Pong/Breakout use BRK as a call) → now the full
+push/IRQ-vector sequence; (2) opcode/operand fetches always read ROM, wrong for code run
+from RAM (Up'n Down at PC=$00EA) → fetches now go through the bus decode.
+
+**Measured.** All 64 ROMs, 20 frames into play, 3,000 instructions: forward exact 64/64,
+and the soft handlers ALONE reproduce the hard registers+RAM on every instruction of all
+64 games (0 disagreements). Zygote gradient d(sum RAM + A)/d ROM through 200 full-system
+steps on Pong: finite, non-zero. New testset "full-system SOFT step" (7 ROMs, one per
+mapper family, + gradient) green; full `Pkg.test()` green.
+
+**Still open.** jaxtari mirror (in progress). jaxtari's hard path is eager Python, so the
+full-system soft step is CPU-only there; the GPU `soft_run_scan` throughput numbers measure
+the soft CPU core without the context (simplified bus) and must be labelled as such.
+
+---
+
 ### ⚠️ CORRECTION — the JAX persistent compilation cache does NOT speed up the conformance dump (measured) — 2026-06-19
 
 The perf-benchmark entry (commit 74eae97) recommended enabling

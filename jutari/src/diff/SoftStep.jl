@@ -120,6 +120,46 @@ end
 
 @inline _cart_addr(pc_offset::Real) = Int(pc_offset) & 0x0FFF
 
+# --------------------------------------------------------------------------- #
+# Full-system context (set by `soft_system_step`, SoftSystem.jl)
+# --------------------------------------------------------------------------- #
+#
+# Without a context the soft handlers use the simplified bus below: one 4 KB
+# ROM window and every non-ROM address folded into the 128-byte RAM. Inside
+# `soft_system_step` the handlers instead run against the live HARD machine:
+# ROM fetches follow the hard cartridge's bank / slice mapping, reads of TIA,
+# RIOT I/O and Superchip registers return the value the hard bus read during
+# the same instruction (a constant, no gradient), and writes to non-RAM
+# addresses leave the soft RAM untouched.
+const _SYS_CTX = Ref{Any}(nothing)
+
+struct _SysCtx
+    kind::Int
+    bank::Int
+    slices::Vector{Int}
+    io_reads::Vector{Tuple{Int,Int}}   # (13-bit addr, value), in hard read order
+end
+
+@inline _is_ram_addr(a::Int) = (a & 0x1000) == 0 && (a & 0x80) != 0 && (a & 0x200) == 0
+
+# Value the hard bus returned for the first read of `a` in this instruction
+# (0 if the hard instruction never read it, e.g. a soft-only dummy read).
+function _ctx_io_read(ctx::_SysCtx, a::Int)
+    for (addr, v) in ctx.io_reads
+        addr == a && return Float32(v)
+    end
+    return 0f0
+end
+
+# One-hot ROM read at the byte the hard cartridge maps `addr` to.
+function _rom_read(bus::SoftBus, addr::Real)
+    ctx = _SYS_CTX[]
+    ctx === nothing && return soft_rom_peek(bus.rom, _cart_addr(addr))
+    idx = cart_rom_index(ctx.kind, ctx.bank, ctx.slices, Int(addr))
+    idx < 0 && return _ctx_io_read(ctx, Int(addr) & 0x1FFF)
+    return soft_rom_peek(bus.rom, idx)
+end
+
 """
     _bus_read(bus, addr) -> Float32
 
@@ -133,8 +173,10 @@ input layer). RAM is the fallback.
 function _bus_read(bus::SoftBus, addr::Real)
     a_int = Int(addr) & 0x1FFF
     if (a_int & 0x1000) != 0
-        return soft_rom_peek(bus.rom, a_int & 0x0FFF)
+        return _rom_read(bus, addr)
     end
+    ctx = _SYS_CTX[]
+    ctx !== nothing && !_is_ram_addr(a_int) && return _ctx_io_read(ctx, a_int)
     # RIOT I/O region: A7=1, A9=1 → $0280-$029F
     if (a_int & 0x80) != 0 && (a_int & 0x200) != 0
         reg = a_int & 0x07
@@ -161,6 +203,7 @@ function _bus_write!(bus::SoftBus, addr::Real, value::Real)
     if (a_int & 0x1000) != 0
         return nothing                              # ROM write — drop
     end
+    _SYS_CTX[] !== nothing && !_is_ram_addr(a_int) && return nothing  # TIA/RIOT: hard machine owns it
     # P8-cx: TIM*T detection must include the RIOT-region guard —
     # without it innocuous stack addresses like $01FD match.
     is_riot_io = (a_int & 0x80) != 0 && (a_int & 0x200) != 0
@@ -286,12 +329,14 @@ end
 # _addr_ind_y etc.
 # --------------------------------------------------------------------------- #
 
+# Instruction-stream fetches go through the bus decode, so code executing
+# from RAM (e.g. Up'n Down's zero-page routines) is fetched from the soft RAM.
 @inline _operand_byte(bus::SoftBus, pc_plus_one::Real) =
-    soft_rom_peek(bus.rom, _cart_addr(pc_plus_one))
+    _func_bus_read(bus, pc_plus_one)
 
 function _operand_word(bus::SoftBus, pc_plus_one::Real)
-    lo = soft_rom_peek(bus.rom, _cart_addr(pc_plus_one))
-    hi = soft_rom_peek(bus.rom, _cart_addr(pc_plus_one + 1f0))
+    lo = _func_bus_read(bus, pc_plus_one)
+    hi = _func_bus_read(bus, pc_plus_one + 1f0)
     return lo + hi * 256f0
 end
 
@@ -1305,8 +1350,7 @@ table lookup over the 256-way opcode handler list. Mutates `state` and
 `bus.ram` in place. (`soft_step` is the Zygote-friendly functional twin.)
 """
 function soft_step!(state::SoftCPUState, bus::SoftBus)
-    rom_off = _cart_addr(state.PC)
-    opcode_float = soft_rom_peek(bus.rom, rom_off)
+    opcode_float = _func_bus_read(bus, state.PC)
     opcode_int = Int(opcode_float) & 0xFF
     cycles_before = state.cycles
     _HANDLERS[opcode_int + 1](state, bus)
@@ -1464,8 +1508,10 @@ RAM), differentiable on the cart and RAM paths.
 function _func_bus_read(bus::SoftBus, addr::Real)
     a_int = Int(addr) & 0x1FFF
     if (a_int & 0x1000) != 0
-        return soft_rom_peek(bus.rom, a_int & 0x0FFF)
+        return _rom_read(bus, addr)
     end
+    ctx = _SYS_CTX[]
+    ctx !== nothing && !_is_ram_addr(a_int) && return _ctx_io_read(ctx, a_int)
     if (a_int & 0x80) != 0 && (a_int & 0x200) != 0
         reg = a_int & 0x07
         reg == 4 && return bus.riot_intim
@@ -1487,6 +1533,7 @@ function _func_bus_write(bus::SoftBus, addr::Real, value::Real)
     if (a_int & 0x1000) != 0
         return bus                                          # ROM — drop
     end
+    _SYS_CTX[] !== nothing && !_is_ram_addr(a_int) && return bus  # TIA/RIOT: hard machine owns it
     is_riot_io = (a_int & 0x80) != 0 && (a_int & 0x200) != 0
     if is_riot_io && (a_int & 0x14) == 0x14
         return update_bus(bus;
@@ -1530,10 +1577,15 @@ _func_nop(state, bus)     = update_state(state; PC=state.PC + 1f0,
                                                 cycles=state.cycles + 2f0), bus
 
 function _func_brk(state, bus)
-    # End-of-trace sentinel (consistent with `_branch_brk!`'s historic
-    # P7b role — full BRK→IRQ sequence is the next deferral after this
-    # extension).
-    return update_state(state; cycles=state.cycles + 7f0), bus
+    # Functional mirror of `_branch_brk!`: push PC+2 and P|B|U, set I, jump
+    # through the IRQ vector (Pong / Breakout use BRK as a subroutine call).
+    ra_int = Int(state.PC + 2f0) & 0xFFFF
+    bus, sp = _func_push8(bus, state.SP, Float32((ra_int >> 8) & 0xFF))
+    bus, sp = _func_push8(bus, sp, Float32(ra_int & 0xFF))
+    bus, sp = _func_push8(bus, sp, Float32(Int(state.P) | 0x30))
+    new_p = Float32((Int(state.P) | 0x04 | 0x20) & 0xFF)
+    new_pc = _func_bus_read(bus, 0xFFFE) + _func_bus_read(bus, 0xFFFF) * 256f0
+    return update_state(state; SP=sp, P=new_p, PC=new_pc, cycles=state.cycles + 7f0), bus
 end
 
 function _func_jmp_abs(state, bus)
@@ -2387,8 +2439,7 @@ cycles += 2) — the trace stays gradient-clean but forward behaviour
 past an unhandled opcode is wrong.
 """
 function soft_step(state::SoftCPUState, bus::SoftBus)
-    rom_off       = _cart_addr(state.PC)
-    opcode_float  = soft_rom_peek(bus.rom, rom_off)
+    opcode_float  = _func_bus_read(bus, state.PC)
     opcode_int    = Int(opcode_float) & 0xFF
     return _FUNC_HANDLERS[opcode_int + 1](state, bus)
 end

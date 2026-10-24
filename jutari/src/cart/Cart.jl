@@ -28,7 +28,7 @@ DPC also deferred.
 """
 module Cart
 
-export CartState, make_cart, cart_peek, cart_peek_pure, cart_poke!, cart_reset!,
+export CartState, make_cart, cart_peek, cart_peek_pure, cart_rom_index, cart_poke!, cart_reset!,
        KIND_2K, KIND_4K, KIND_F8, KIND_F6, KIND_F4, KIND_E0, KIND_FE,
        KIND_F8SC, KIND_F6SC, KIND_F4SC
 
@@ -282,6 +282,36 @@ function cart_peek_pure(cart::CartState, addr::Integer)
         return cart.sc_ram[(Int(a) & _SC_OFFSET_MASK) + 1]
     end
     return cart.rom[cart.current_bank * 0x1000 + (Int(a) & 0x0FFF) + 1]
+end
+
+"""
+    cart_rom_index(cart, addr) -> Int
+
+Side-effect-free address decode: the 0-based ROM image offset that a read of
+`addr` returns in the CURRENT bank / slice mapping, or `-1` when the read is
+served by on-cart Superchip RAM instead of the ROM. Mirrors `cart_peek_pure`;
+used by the full-system SOFT step (`Diff.soft_system_step`) so its one-hot ROM
+read addresses the same byte the hard cartridge returns.
+"""
+cart_rom_index(cart::CartState, addr::Integer) =
+    cart_rom_index(cart.kind, cart.current_bank, cart.slice_slots, addr)
+
+function cart_rom_index(kind::Int, bank::Int, slices::AbstractVector{Int}, addr::Integer)
+    a = Int(addr) & 0x1FFF
+    if kind == KIND_2K
+        return a & 0x07FF
+    elseif kind == KIND_4K
+        return a & 0x0FFF
+    elseif kind == KIND_E0
+        slot = (a - 0x1000) >> 10
+        return (slot < 3 ? slices[slot + 1] : E0_FIXED_SLICE) * 0x0400 + (a & 0x03FF)
+    elseif kind == KIND_FE
+        return (Int(addr) & 0x0FFF) + ((Int(addr) & 0x2000) == 0 ? 0x1000 : 0)
+    end
+    if kind in _SC_KINDS && (a & _SC_AREA_MASK) == _SC_READ_BASE
+        return -1
+    end
+    return bank * 0x1000 + (a & 0x0FFF)
 end
 
 """

@@ -6242,3 +6242,44 @@ end
         end
     end
 end
+
+# Full-system SOFT step (Theorem 1 on the whole machine): forward equals the
+# hard console bit-for-bit, the soft handlers alone reproduce the hard step,
+# and the gradient reaches the ROM. One ROM per mapper family.
+@testset "full-system SOFT step — soft == hard on real ROMs" begin
+    roms_dir = normpath(joinpath(@__DIR__, "..", "..", "tools", "rom_sweep", "roms"))
+    for game in ("pong", "space_invaders", "ms_pacman", "montezuma_revenge",
+                 "elevator_action", "robotank", "up_n_down")
+        path = joinpath(roms_dir, "$game.bin")
+        isfile(path) || (@info "ROM $game missing — skipping"; continue)
+        e = JuTari.Env.StellaEnvironment(read(path))
+        JuTari.Env.env_reset!(e; boot_noop_steps = 60, boot_reset_steps = 4)
+        for _ in 1:5; JuTari.Env.env_step!(e, 0); end
+        con = e.console
+        st, bus = JuTari.Diff.soft_system_init(con)
+        exact = true; agree = true
+        for _ in 1:500
+            agree &= JuTari.Diff.soft_handler_agreement(st, bus, deepcopy(con))
+            st, bus = JuTari.Diff.soft_system_step(st, bus, con)
+            exact &= (Int(st.PC), Int(st.A), Int(st.X), Int(st.Y), Int(st.SP), Int(st.P)) ==
+                     (Int(con.cpu.PC), Int(con.cpu.A), Int(con.cpu.X), Int(con.cpu.Y),
+                      Int(con.cpu.SP), Int(con.cpu.P)) &&
+                     Int.(bus.ram) == Int.(con.bus.ram)
+        end
+        @test exact
+        @test agree
+    end
+    path = joinpath(roms_dir, "pong.bin")
+    if isfile(path)
+        e = JuTari.Env.StellaEnvironment(read(path))
+        JuTari.Env.env_reset!(e; boot_noop_steps = 60, boot_reset_steps = 4)
+        st0, bus0 = JuTari.Diff.soft_system_init(e.console)
+        function loss(rom)
+            s, b = JuTari.Diff.soft_system_run(st0, JuTari.Diff.update_bus(bus0; rom = rom),
+                                               deepcopy(e.console), 200)
+            return sum(b.ram) + s.A
+        end
+        g = Zygote.gradient(loss, bus0.rom)[1]
+        @test g !== nothing && all(isfinite, g) && any(!iszero, g)
+    end
+end

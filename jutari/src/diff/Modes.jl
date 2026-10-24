@@ -73,6 +73,9 @@ ChainRulesCore.rrule(::typeof(_stop_gradient), x) =
 # for RomTensor. `Bus.peek` is also `Base.peek` after the Bus-import
 # step; either qualified path resolves to the same function.
 import ..Bus: peek
+import ..Bus
+import ..Bus: trace_enable!, trace_take!
+import ..Cart: cart_rom_index
 
 export Mode, current_mode, set_mode!, using_mode,
        RomTensor, peek_many,
@@ -81,6 +84,7 @@ export Mode, current_mode, set_mode!, using_mode,
        SoftCPUState, SoftBus, initial_soft_cpu_state, initial_soft_bus,
        soft_step!, soft_run!, soft_rom_peek, soft_ram_peek,
        soft_step, soft_run, update_state, update_bus,    # P7e-x — functional path
+       soft_system_init, soft_system_step, soft_system_run, soft_handler_agreement,  # full-system SOFT (Theorem 1)
        set_relax!, using_relax, relax_config,            # relaxation study (alpha/T)
        _set_ram,                                          # P7e-x — Zygote-friendly RAM write helper
        _with_p, _float_flags_from_p,                      # P7c-dx — float-flag mirror helpers
@@ -129,6 +133,8 @@ include("RelaxConfig.jl")
 # P7b — parallel SOFT-mode `step!()` built on the primitives above.
 include("SoftState.jl")
 include("SoftStep.jl")
+# Full-system SOFT step — STE join of the soft handlers to the hard console.
+include("SoftSystem.jl")
 # P7f-a — differentiable TIA playfield renderer.
 include("SoftTIA.jl")
 
