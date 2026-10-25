@@ -5,14 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>A1 · Connectomics / data-flow graph — Paper 2 method</title>
 <meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css"><style>
+.guide h3{margin:26px 0 8px}
+.guide .gtag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;
+  background:#14301f;color:var(--accent-2);border:1px solid #23502f;margin-bottom:6px}
+.guide .chips a{display:inline-block;margin:3px 6px 3px 0;padding:3px 10px;border-radius:999px;
+  border:1px solid var(--border);background:var(--bg-soft);font-size:.86rem}
+.guide .chips a.wk::before{content:"W ";font-weight:700;color:var(--fg-dim)}
+.guide table.map{width:100%;border-collapse:collapse;margin:8px 0 4px}
+.guide table.map th,.guide table.map td{border:1px solid var(--border);padding:8px 10px;
+  vertical-align:top;text-align:left}
+.guide table.map th{background:var(--bg-soft);width:28%;font-weight:600}
+.guide ol.recipe li,.guide ul.pit li{margin:6px 0}
+.guide .code-xai,.guide .code-sub{display:inline-block;font-size:.7rem;padding:0 6px;
+  border-radius:5px;margin-right:6px;vertical-align:middle}
+.guide .code-xai{background:#16283a;color:var(--accent)}
+.guide .code-sub{background:#2e2414;color:var(--warn)}
+.guide pre.try{background:#0b0e12;border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;overflow-x:auto;font-family:var(--mono);font-size:.86rem}
+.guide .box{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+  padding:4px 18px 10px;margin:14px 0}
+@media (max-width:640px){.guide table.map th{width:auto}}
+</style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <script>window.addEventListener("load",function(){if(window.renderMathInElement)renderMathInElement(document.body,{throwOnError:false});});</script>
 </head>
 <body>
-<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="primer.html">XAI Primer</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
 
 <header class="hero"><div class="wrap">
   <span class="venue" style="color:var(--accent-2);font-weight:600">Phase A · neuroscience battery</span>
@@ -34,6 +55,115 @@
 </div></section>
 
 
+
+
+<section class="guide"><div class="wrap">
+  <span class="gtag">Phase A · neuroscience battery · wiring from perturbation</span>
+  <h2>Learn the method &mdash; a beginner's guide</h2>
+  <p class="sub">New to explainable AI? This block explains the method as it is used on neural
+  networks, then how we run the very same method on an Atari&nbsp;2600, where &mdash; unlike for a
+  network &mdash; we know the right answer. Every implementation step links to the code. See also the
+  <a href="primer.html">XAI primer</a> for the shared vocabulary.</p>
+  <div class="chips"><a class="wk" href="https://en.wikipedia.org/wiki/Connectomics">Connectomics</a><a class="wk" href="https://en.wikipedia.org/wiki/Connectome">Connectome</a><a class="wk" href="https://en.wikipedia.org/wiki/Directed_graph">Directed graph</a><a class="wk" href="https://en.wikipedia.org/wiki/Data-flow_analysis">Data-flow analysis</a><a class="wk" href="https://en.wikipedia.org/wiki/F-score">F-score (precision, recall, F1)</a></div>
+  <h3>The idea in plain words</h3>
+  
+<p>A <b>connectome</b> is a wiring diagram: a list of which parts of a system talk to which other
+parts. Neuroscientists build it for brains. They draw one dot per neuron and one arrow per
+connection. The hope is simple: <i>if we know who is wired to whom, we can read off how the system
+computes.</i> One way to find the arrows is to look at the anatomy. Another is to <b>perturb</b>:
+nudge one unit, watch which other units react, and draw an arrow from the nudged unit to every unit
+that moved. The result is a <b>directed graph</b> of influence.</p>
+<p>For a neural network you already have the anatomy: the weight matrices <i>are</i> the
+connectome, and they are fully known. Yet nobody claims that printing all the weights explains the
+network. That is the lesson of Jonas &amp; Kording, who mapped a whole microprocessor and still could
+not say how it ran a game. On the Atari we ask a sharper question. If we recover the wiring by
+cheap perturbations, the way it is done in practice, <b>how many of the arrows do we get right?</b>
+Because the machine can be re-run exactly, we can count every right and every wrong arrow.</p>
+  <h3>How it works on a neural network</h3>
+  
+<p><b>Neuroscience origin.</b> The first complete connectome was that of the worm
+<i>C.&nbsp;elegans</i>: 302 neurons, about 7000 synapses, mapped by electron microscopy in the 1980s.
+Its behaviour is still not fully explained by that map. Perturbation-based mapping (stimulate one
+cell, record the others) gives the <i>effective</i> connectivity instead of the anatomical one.</p>
+<p><b>Neural-network analogue.</b> In a network the anatomical connectome is the set of non-zero
+weights. The perturbation version is what interpretability calls <i>circuit discovery</i>: change
+one activation \(h_i\), see which downstream activations \(h_j\) change. Write the intervention as
+\(\mathrm{do}(h_i := v)\) (&ldquo;force \(h_i\) to the value \(v\), leave everything else to the
+network&rdquo;). The recovered edge set is</p>
+\[ E_{\text{rec}} = \{\, i\to j \;:\; h_j^{(L)}\big(\mathrm{do}(h_i := h_i+\delta)\big) \neq h_j^{(L)} \,\}, \]
+<p>where \(L\) is the latency (how many steps later you look) and \(\delta\) is the size of the
+nudge. Given a true edge set \(E_{\text{true}}\) you score it like any detector:</p>
+\[ P = \frac{|E_{\text{rec}}\cap E_{\text{true}}|}{|E_{\text{rec}}|},\quad
+   R = \frac{|E_{\text{rec}}\cap E_{\text{true}}|}{|E_{\text{true}}|},\quad
+   F_1 = \frac{2PR}{P+R}. \]
+<p><b>Toy example.</b> Three units in a chain, each copying the previous one with a one-step
+delay: \(a \to b \to c\). Nudge \(a\) and look one step later: only \(b\) moved. Nudge \(b\): only
+\(c\) moved. So \(E_{\text{rec}} = \{a\to b,\; b\to c\}\). Now look many steps later instead:
+nudging \(a\) moves \(b\) <i>and</i> \(c\). The long-horizon truth is
+\(E_{\text{true}} = \{a\to b,\; b\to c,\; a\to c\}\). Then \(P = 2/2 = 1\), \(R = 2/3\) and
+\(F_1 = 0.8\). Make it harder: let \(b\) copy \(a\) only when \(a &gt; 100\). With \(a = 50\) and a
+nudge of \(+17\), the gate never opens and even \(a\to b\) is missed. A single small nudge with a
+short wait sees only part of the wiring.</p>
+  <div class="box"><h3 style="margin-top:12px">Recipe</h3><ol class="recipe"><li>Choose the units (here: candidate RAM bytes) and freeze the system in one state.</li><li>Record a baseline: let the system run unperturbed for \(L\) steps and store every unit's value.</li><li>For each unit \(i\): restore the frozen state, apply one perturbation \(\mathrm{do}(i := \text{base}_i+\delta)\), run \(L\) steps.</li><li>Draw an arrow \(i\to j\) for every unit \(j\) whose value now differs from the baseline. Ignore the self-arrow \(i\to i\).</li><li>Build the reference graph the same way but exhaustively (several values, full horizon), or take it from the known anatomy.</li><li>Compare the two edge sets: precision, recall, \(F_1\), and the graph-edit distance (number of wrong plus missing arrows).</li></ol></div>
+  <h3>From a neural network to the Atari</h3>
+  <table class="map"><tr><th>The neuron</th><td>One <b>candidate RAM byte</b>. The VCS has 128 bytes of working memory (RAM). Each game's candidate list (e.g. ball&nbsp;x, paddle&nbsp;y, score) comes from published RAM annotations (OCAtari / AtariARI).</td></tr><tr><th>The synapse</th><td>A <b>data-flow edge</b> \(i\to j\): the game program (the ROM, the read-only cartridge code) reads byte \(i\) and, directly or through other bytes, writes a value into byte \(j\).</td></tr><tr><th>The stimulation electrode</th><td><code>intervene_ram!</code>: overwrite one RAM byte in the emulator at frame \(f^*\). A <i>frame</i> is one 1/60&nbsp;s video picture, the unit of game time.</td></tr><tr><th>The recording</th><td>A full snapshot of RAM (and screen) after re-running the bit-exact emulator <code>jutari</code> from that frozen state.</td></tr><tr><th>The true connectome</th><td>The <b>oracle</b> graph: the same probe done exhaustively (three values, full 15-frame horizon). Each probe is a real re-run of the real ROM, so every edge in it is a true causal dependency.</td></tr></table>
+  <h3>How we apply it to the VCS</h3>
+  
+<p>The runner <code>A1_connectomics.jl</code> does the whole experiment on one frozen game state.
+That state is shared with every other method in the study:</p>
+<ol>
+<li><b>The state.</b> The emulator boots the cartridge (60 no-op frames plus 4 reset frames, the
+same boot as the C++ reference), then plays 90 frames of <b>seeded random joystick input</b>
+(18 possible actions, seed&nbsp;0). That frame is \(f^*\). The 15 frames after it are the
+<i>horizon</i>. A <i>cause-density gate</i> checks with the oracle that at least four candidate
+causes really move the screen and records whether the state passed, so a frozen title screen
+is flagged. Two fresh boots must give
+byte-identical RAM and screen, or the runner refuses to score.</li>
+<li><b>The recovered graph (method under test).</b> For each candidate byte \(i\) the runner copies
+the frozen machine, adds 17 to byte \(i\) (wrapping at 256), steps <b>one frame</b>, and draws
+\(i\to j\) for every candidate byte \(j\) that differs from an unperturbed one-frame run. One value,
+one frame: a thin, realistic probe.</li>
+<li><b>The true graph (oracle).</b> The same loop, but byte \(i\) is set to <b>each</b> of
+\(0\), base\(+17\) and base\(+37\), and the machine runs the <b>full 15 frames</b>. An edge exists if
+<i>any</i> of the three values changes \(j\) at the end. Note what this truth is: a measured
+<i>total-effect</i> graph over the horizon. It includes indirect paths (\(a\to b\to c\) also counts as
+\(a\to c\)), exactly like the toy example. It is measured by re-running the ROM, not parsed from the
+disassembly listing.</li>
+<li><b>Scores.</b> Precision, recall, \(F_1\) and graph-edit distance over the off-diagonal edges.
+A positive control runs the oracle procedure as if it were the method; it must score a perfect
+\(F_1\), which proves the scorer can reward a correct graph.</li>
+<li><b>Generalisation probe.</b> The runner also builds a true graph from base\(+37\) alone, a value
+the recovery never used, and checks how well the recovered graph predicts it (edge agreement). A
+minimality term divides the number of true edges by the number of claimed edges.</li>
+</ol>
+<p>Why the gap? The VCS program updates many bytes only on certain frames, behind comparisons and
+timers. A one-frame wait misses every influence that takes longer to arrive. A single nudge of
+\(+17\) misses every influence that only fires for other values. And an effect that shows up after
+one frame but is undone by frame 15 becomes an arrow the truth does not have. The method sees a
+small, partly wrong slice of a richly connected machine.</p>
+  <h3>Read the code</h3>
+  <p class="sub"><span class="code-xai">XAI</span> the interpretability method &nbsp;
+  <span class="code-sub">substrate</span> the bit-exact emulator it runs on (jutari, Julia).</p>
+  <ul class="callstack"><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A1_connectomics.jl#L330"><code>A1_connectomics.jl:330</code></a> &mdash; The method under test: one <code>do(i := base+17)</code> per cell, one-frame latency, edge if another cell differs.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A1_connectomics.jl#L304"><code>A1_connectomics.jl:304</code></a> &mdash; The ground-truth graph: exhaustive do-set {0, +17, +37}, full horizon, edge if <i>any</i> value moves the cell.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A1_connectomics.jl#L242"><code>A1_connectomics.jl:242</code></a> &mdash; One probe: deep-copy the frozen machine, poke one RAM byte, step the tail, snapshot.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A1_connectomics.jl#L367"><code>A1_connectomics.jl:367</code></a> &mdash; Precision, recall, F1 and graph-edit distance over off-diagonal edges.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A1_connectomics.jl#L578"><code>A1_connectomics.jl:578</code></a> &mdash; The held-out base+37 graph used to test whether the recovery generalises.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A1_connectomics.jl#L488"><code>A1_connectomics.jl:488</code></a> &mdash; One game end to end: shared state, bit-exact check, both graphs, positive control, triad.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/shared_testbed_impl.jl#L71"><code>shared_testbed_impl.jl:71</code></a> &mdash; The seeded random joystick stream (90 + 15 frames) every method shares.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/shared_testbed_impl.jl#L115"><code>shared_testbed_impl.jl:115</code></a> &mdash; Builds the shared state and runs the oracle cause-density gate.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/jutari_oracle.jl#L174"><code>jutari_oracle.jl:174</code></a> &mdash; The &ldquo;electrode&rdquo;: write one byte into the console's RAM (the A1 runner carries an identical local copy).</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/env/StellaEnvironment.jl#L259"><code>StellaEnvironment.jl:259</code></a> &mdash; One video frame of the bit-exact emulated VCS: CPU, TIA video chip and RIOT timer.</li></ul>
+  <h3>Reading the result</h3>
+  
+<p>The figure shows the game frame and two square matrices over the same candidate bytes. Rows are
+the <i>cause</i> byte, columns the <i>effect</i> byte, and a bright square is an arrow. The left
+matrix is the oracle's true graph, the right one the recovered graph. The diagonal (a poked byte
+changing itself, unless the program overwrites it) is not scored. Read the error as the squares
+that are bright in one matrix but dark in the other. In Pong the true graph has whole bright rows,
+because the score bytes and the ball bytes reach many other cells within 15 frames. The one-frame
+recovery is empty off the diagonal. It misses the wiring rather than inventing it, so recall
+collapses and \(F_1\) lands at the bottom of the battery.</p>
+  <h3>Pitfalls</h3>
+  <ul class="pit"><li><b>Latency decides the answer.</b> A one-step readout finds only direct, fast edges. A long readout finds every indirect path. Neither is &ldquo;the&rdquo; connectome; say which one you mean.</li><li><b>One perturbation value is not enough.</b> Programs (and ReLU networks) are full of thresholds. A nudge that does not cross the threshold reports no edge, even though a different value would.</li><li><b>Transient effects create false arrows.</b> A change that appears one frame later but is overwritten before the horizon counts as an edge for the method and not for the truth.</li><li><b>Wiring is not function.</b> Even a perfect graph does not say <i>what</i> is computed. The worm's complete connectome did not explain its behaviour, and our oracle graph does not explain Pong.</li><li><b>Our truth is a total-effect graph, measured at one state.</b> It is not the static read/write graph of the whole program. Another game state can light up other edges.</li></ul>
+  <h3>Try it yourself</h3>
+  <pre class="try">julia --project=jutari tools/xai_study/phaseA_kording/A1_connectomics.jl --games core</pre>
+  <p class="sub">Writes <code>A1_&lt;game&gt;.{json,npz}</code> per game plus the combined <code>A1_connectomics.{json,npz}</code> into <code>tools/xai_study/phaseA_kording/out/</code>. Use <code>--game pong</code> for one game, or <code>--selftest</code> to run the checks without writing. Each game costs a few hundred short emulator re-runs (minutes on one core).</p>
+  <h3>Original papers &amp; further reading</h3>
+  <ul><li>Jonas &amp; Kording (2017). <i>Could a Neuroscientist Understand a Microprocessor?</i> PLOS Computational Biology 13(1): e1005268. &mdash; <a href="https://doi.org/10.1371/journal.pcbi.1005268">doi.org/10.1371/journal.pcbi.1005268</a></li><li>Sporns, Tononi &amp; K&ouml;tter (2005). <i>The Human Connectome: A Structural Description of the Human Brain.</i> PLOS Computational Biology 1(4): e42. &mdash; <a href="https://doi.org/10.1371/journal.pcbi.0010042">doi.org/10.1371/journal.pcbi.0010042</a></li><li>Bargmann &amp; Marder (2013). <i>From the connectome to brain function.</i> Nature Methods 10: 483&ndash;490. (Why a wiring diagram alone does not explain behaviour.) &mdash; <a href="https://doi.org/10.1038/nmeth.2451">doi.org/10.1038/nmeth.2451</a></li></ul>
+  <p><b>Read next:</b> <a href="m_A2_lesions.html">A2 · Single-unit lesions</a> · <a href="m_A6_granger.html">A6 · Granger causality</a> · <a href="m_A4_correlations.html">A4 · Pairwise correlations</a> · <a href="m_acdc.html">ACDC — automatic circuit discovery</a></p>
+</div></section>
 
 <section><div class="wrap">
   <h2>How it's scored</h2>
@@ -148,7 +278,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/cc950552d22a04a0bddfb0d14cd2429b3bca8859"><code>cc950552</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/46b94f1dfc8fa5dca6fdd4c820fb11a26497fc6f"><code>46b94f1d</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

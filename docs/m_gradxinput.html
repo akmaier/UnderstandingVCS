@@ -5,14 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Grad×Input / DeepLIFT — Paper 2 method</title>
 <meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css"><style>
+.guide h3{margin:26px 0 8px}
+.guide .gtag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;
+  background:#14301f;color:var(--accent-2);border:1px solid #23502f;margin-bottom:6px}
+.guide .chips a{display:inline-block;margin:3px 6px 3px 0;padding:3px 10px;border-radius:999px;
+  border:1px solid var(--border);background:var(--bg-soft);font-size:.86rem}
+.guide .chips a.wk::before{content:"W ";font-weight:700;color:var(--fg-dim)}
+.guide table.map{width:100%;border-collapse:collapse;margin:8px 0 4px}
+.guide table.map th,.guide table.map td{border:1px solid var(--border);padding:8px 10px;
+  vertical-align:top;text-align:left}
+.guide table.map th{background:var(--bg-soft);width:28%;font-weight:600}
+.guide ol.recipe li,.guide ul.pit li{margin:6px 0}
+.guide .code-xai,.guide .code-sub{display:inline-block;font-size:.7rem;padding:0 6px;
+  border-radius:5px;margin-right:6px;vertical-align:middle}
+.guide .code-xai{background:#16283a;color:var(--accent)}
+.guide .code-sub{background:#2e2414;color:var(--warn)}
+.guide pre.try{background:#0b0e12;border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;overflow-x:auto;font-family:var(--mono);font-size:.86rem}
+.guide .box{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+  padding:4px 18px 10px;margin:14px 0}
+@media (max-width:640px){.guide table.map th{width:auto}}
+</style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <script>window.addEventListener("load",function(){if(window.renderMathInElement)renderMathInElement(document.body,{throwOnError:false});});</script>
 </head>
 <body>
-<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="primer.html">XAI Primer</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
 
 <header class="hero"><div class="wrap">
   <span class="venue" style="color:var(--accent-2);font-weight:600">Phase B · attribution / XAI</span>
@@ -37,6 +58,106 @@
 <section><div class="wrap">
   <h2>Reading this example's causal region</h2>
   <p>This example explains the <b>score</b> (score@RAM&nbsp;$31). Its strongest true-cause is: RAM&nbsp;$31 (17% of its footprint sits in the score band, the rest in the play area). Because it explains the score, its only true-cause is RAM&nbsp;$31, so the region covers the score and the ball but <b>not the paddle</b>: the paddle cell (RAM&nbsp;$36) is not causal for the score, so it is legitimately absent.</p>
+</div></section>
+
+
+<section class="guide"><div class="wrap">
+  <span class="gtag">Gradient family · saliency weighted by the input</span>
+  <h2>Learn the method &mdash; a beginner's guide</h2>
+  <p class="sub">New to explainable AI? This block explains the method as it is used on neural
+  networks, then how we run the very same method on an Atari&nbsp;2600, where &mdash; unlike for a
+  network &mdash; we know the right answer. Every implementation step links to the code. See also the
+  <a href="primer.html">XAI primer</a> for the shared vocabulary.</p>
+  <div class="chips"><a class="wk" href="https://en.wikipedia.org/wiki/Gradient">Gradient</a><a class="wk" href="https://en.wikipedia.org/wiki/Hadamard_product_(matrices)">Hadamard product (element-wise product)</a><a class="wk" href="https://en.wikipedia.org/wiki/Linear_approximation">Linear approximation</a><a class="wk" href="https://en.wikipedia.org/wiki/Taylor_series">Taylor series</a></div>
+  <h3>The idea in plain words</h3>
+  
+<p>Vanilla saliency answers one question: <i>how sensitive is the output to each input?</i> That
+is useful, but it ignores how big the input actually is. A pixel can be very sensitive and still
+be black (value 0). Then it contributes nothing to the score right now. <b>Gradient&times;Input</b>
+fixes this by multiplying the two: the attribution of input \(i\) is its gradient
+<i>times its own value</i>. The result reads as &ldquo;how much of the output this input is
+responsible for, at the value it has&rdquo;.</p>
+<p><b>DeepLIFT</b> (Deep Learning Important FeaTures) generalises the idea. It picks a
+<b>reference</b> (or <b>baseline</b>) input that means &ldquo;nothing there&rdquo;, for example an
+all-black image. It then splits the difference between the output at the real input and the output
+at the reference among the inputs. The pieces add up exactly to that difference. This property is
+called <b>completeness</b> (DeepLIFT calls it &ldquo;summation-to-delta&rdquo;). With an all-zero
+reference and a linear model, DeepLIFT and Grad&times;Input give the same numbers. That is the
+setting we use on the Atari.</p>
+  <h3>How it works on a neural network</h3>
+  
+<p>As in vanilla saliency, write the network as \(y = f(x)\). Grad&times;Input and DeepLIFT
+(rescale rule) assign input \(i\)</p>
+\[ A^{\text{G}\times\text{I}}_i = x_i\,\frac{\partial f}{\partial x_i}(x),
+\qquad
+A^{\text{DL}}_i = (x_i - x^0_i)\; m_i ,\]
+<p>where \(x^0\) is the reference and \(m_i\) is a <b>multiplier</b>. For a linear unit
+\(m_i = \partial f/\partial x_i\). Through a nonlinearity such as a ReLU, the rescale rule
+uses the <i>finite</i> slope \(m = \Delta \text{out}/\Delta \text{in}\) between reference and
+input instead of the infinitesimal one. The product of input and gradient is the first-order Taylor
+term \(\nabla f(x)\cdot x\): for a linear function with zero bias it is exactly \(f(x) - f(0)\).</p>
+<p><b>Toy example 1 (linear).</b> Let \(f(x) = 2x_1 - x_2 + 0.5x_3\) at \(x = (4, 1, 0)\). The gradient
+is \((2, -1, 0.5)\). Saliency says \(x_1\) matters most, then \(x_2\), then \(x_3\). Grad&times;Input
+gives \((8, -1, 0)\): \(x_3\) gets <b>zero</b>, because it is switched off. The sum is
+\(8 - 1 + 0 = 7 = f(x) - f(0)\). Completeness holds.</p>
+<p><b>Toy example 2 (nonlinear).</b> Let \(f(x) = x^2\) at \(x = 3\), reference \(x^0 = 0\). The
+gradient is 6, so Grad&times;Input says 18. But the output only changed by \(f(3) - f(0) = 9\).
+DeepLIFT's rescale multiplier is \((9 - 0)/(3 - 0) = 3\), giving \(3 \cdot 3 = 9\): complete. So
+Grad&times;Input is complete only for linear pieces; DeepLIFT repairs this by using finite
+differences.</p>
+  <div class="box"><h3 style="margin-top:12px">Recipe</h3><ol class="recipe"><li>Pick the input \(x\), the scalar output \(y\), and (for DeepLIFT) a reference \(x^0\). The usual default is all zeros.</li><li>Compute the gradient \(\partial y/\partial x_i\) with one backward pass, exactly as in vanilla saliency.</li><li>Multiply element-wise: \(x_i \cdot \partial y/\partial x_i\) (Grad&times;Input) or \((x_i - x^0_i)\cdot m_i\) (DeepLIFT).</li><li>Optionally check completeness: \(\sum_i A_i\) should equal \(y(x) - y(x^0)\).</li><li>Keep the sign (positive = pushes the output up) or take \(|A_i|\) for a heat-map.</li></ol></div>
+  <h3>From a neural network to the Atari</h3>
+  <table class="map"><tr><th>The network \(f\)</th><td>The Atari 2600 VCS running the game ROM, emulated bit-exactly by <code>jutari</code>; its differentiable twin is the SOFT path <code>JuTari.Diff</code>.</td></tr><tr><th>The input \(x\)</th><td>The 128 RAM bytes at the intervention frame \(f^*\) (after 90 frames of seeded random play), as floats 0&ndash;255.</td></tr><tr><th>The reference \(x^0\)</th><td>The all-zeros RAM vector, the &ldquo;absent&rdquo; state. With this reference DeepLIFT and Grad&times;Input coincide byte for byte.</td></tr><tr><th>The output \(y\)</th><td>A <b>content</b> output (one RAM byte read one-hot) and a <b>position</b> output (screen pixels changed versus the un-intervened frame 15 frames later, made differentiable by the bilinear sampler).</td></tr><tr><th>&ldquo;Is the attribution right?&rdquo;</th><td>The intervention oracle: poke each cause, re-run the real ROM, measure \(|\Delta y|\).</td></tr></table>
+  <h3>How we apply it to the VCS</h3>
+  
+<p>The runner computes three maps from <b>one</b> gradient: Grad&times;Input
+\(u \odot \partial y/\partial u\), DeepLIFT \((u - 0)\odot \partial y/\partial u\), and vanilla saliency
+\(|\partial y/\partial u|\) as the contrast. Here \(u\) is the RAM vector. Because the reference is
+all zeros, the first two are identical. The record's headline number is the DeepLIFT
+correlation with the oracle.</p>
+<ul>
+<li><b>Content output.</b> \(y\) is <code>soft_ram_peek(ram, s)</code>, a one-hot dot product. Its
+gradient is the one-hot vector \(e_s\), so Grad&times;Input is a single spike of height
+\(u_s\) at byte \(s\). Completeness is exact: \(\sum_i A_i = u_s = y(x) - y(0)\). The runner
+checks this numerically. Note what the input factor can and cannot do here: it only <i>rescales</i>
+the one spike saliency already had. The ranking of causes is unchanged, unless \(u_s = 0\).
+Then the attribution vanishes entirely.</li>
+<li><b>Choosing the byte.</b> That last case is why <code>select_content_cell</code> refuses a zero
+byte. It also tests each candidate on the real VCS: poke it to value+17, run 15 frames, and keep
+only bytes whose own change survives to the readout. Otherwise the game could overwrite the poke
+within the horizon and leave an all-zero oracle map. A score byte is preferred when it qualifies.</li>
+<li><b>Position output.</b> The naive gradient is exactly zero, because sprite positions are set by
+strobe timing (see vanilla saliency). The runner therefore takes the gradient through the bilinear
+sampler, which slides a sprite footprint along a continuous column driven by one position byte.
+Grad&times;Input multiplies that gradient by the position byte's value. If the byte happens to be
+0, the restored gradient is wiped out again. This is a real failure mode the runner records,
+not a bug.</li>
+<li><b>Scoring.</b> Each map is turned into one number per oracle cause (\(|A|\) at that RAM byte; 0 for
+TIA-register and joystick causes the RAM map cannot see). It is compared with the oracle by
+Pearson/Spearman correlation and precision@3, and by deletion/insertion curves that re-run the real
+ROM. A positive control scores the oracle against itself.</li>
+</ul>
+  <h3>Read the code</h3>
+  <p class="sub"><span class="code-xai">XAI</span> the interpretability method &nbsp;
+  <span class="code-sub">substrate</span> the bit-exact emulator it runs on (jutari, Julia).</p>
+  <ul class="callstack"><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/gradxinput.jl#L303"><code>gradxinput.jl:303</code></a> &mdash; The method: Grad&times;Input <code>x .* g</code>, DeepLIFT <code>(x .- x0) .* g</code>, saliency <code>abs.(g)</code>.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/gradxinput.jl#L272"><code>gradxinput.jl:272</code></a> &mdash; One Zygote backward pass through the one-hot content read gives \(\partial y/\partial u\).</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/gradxinput.jl#L316"><code>gradxinput.jl:316</code></a> &mdash; Completeness check: \(|\sum A - (y(x) - y(x^0))|\), asserted to be ~0.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/gradxinput.jl#L237"><code>gradxinput.jl:237</code></a> &mdash; Picks a non-zero, causally persistent content byte (tested on the real VCS) so the input factor cannot trivially zero it.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/gradxinput.jl#L643"><code>gradxinput.jl:643</code></a> &mdash; Position output: the gradient is taken through the bilinear sampler instead of the (zero) naive read.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/gradxinput.jl#L594"><code>gradxinput.jl:594</code></a> &mdash; One game: shared testbed &rarr; oracle map &rarr; three attribution maps &rarr; scores &rarr; positive control.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/diff/SoftStep.jl#L106"><code>SoftStep.jl:106</code></a> &mdash; The forward-exact one-hot RAM read; its gradient is the one-hot vector \(e_s\).</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/shared_testbed_impl.jl#L357"><code>shared_testbed_impl.jl:357</code></a> &mdash; The bilinear sampler: a sprite whose column is a continuous function of one RAM byte.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/ground_truth/oracle_intervene.jl#L242"><code>oracle_intervene.jl:242</code></a> &mdash; The ground truth: poke a cause, re-run the ROM 15 frames, read the output.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/env/StellaEnvironment.jl#L259"><code>StellaEnvironment.jl:259</code></a> &mdash; One frame of the bit-exact machine, used by the oracle and the deletion/insertion curves.</li></ul>
+  <h3>Reading the result</h3>
+  
+<p>Compare the Grad&times;Input bars with the vanilla saliency page. On the <b>content</b> output
+both show one spike at the same byte; Grad&times;Input's spike is just taller or shorter, scaled by
+the byte's value. So its agreement with the oracle tracks saliency closely. A one-byte map can only partly
+match an oracle that lights up several causes over 15 frames. On the <b>position</b> output, expect much weaker agreement: the sampler restores a
+gradient, but it points at one byte, and that byte is not always the one the oracle ranks first.
+Completeness holds exactly on content, yet it does not make the map more faithful. Summing to the
+right total says nothing about whether the total is split among the right causes.</p>
+  <h3>Pitfalls</h3>
+  <ul class="pit"><li><b>Zero inputs get zero credit.</b> A byte (or pixel) whose value is 0 receives no attribution, however important it is. On the VCS many flags and counters are legitimately 0.</li><li><b>Reference dependence.</b> The all-zeros reference is a choice, not a law. Kindermans et al. showed that shifting every input by a constant changes Grad&times;Input/DeepLIFT maps although the model's decisions do not change.</li><li><b>Completeness is not faithfulness.</b> Attributions can sum to the exact output change and still be assigned to the wrong inputs. On the content read here it is complete by construction because the read is linear.</li><li><b>Inherits every gradient problem.</b> Multiplying by the input cannot create a gradient where there is none. The naive position gradient stays zero; only the sampler gives the method something to multiply.</li></ul>
+  <h3>Try it yourself</h3>
+  <pre class="try">julia --project=jutari tools/xai_study/phaseB_attribution/gradxinput.jl --games core</pre>
+  <p class="sub">Writes <code>gradxinput_deeplift_&lt;game&gt;_{content,position}.json/.npz</code> and a per-output summary into <code>tools/xai_study/phaseB_attribution/out/</code>. Each game re-runs the real ROM once per cause for the oracle and twice per cause for the deletion/insertion curves, so expect minutes per game on one CPU core.</p>
+  <h3>Original papers &amp; further reading</h3>
+  <ul><li>Shrikumar, Greenside &amp; Kundaje (2017). <i>Learning Important Features Through Propagating Activation Differences</i> (DeepLIFT). ICML. &mdash; <a href="https://arxiv.org/abs/1704.02685">arxiv.org/abs/1704.02685</a></li><li>Ancona, Ceolini, &Ouml;ztireli &amp; Gross (2018). <i>Towards better understanding of gradient-based attribution methods for Deep Neural Networks.</i> ICLR. &mdash; <a href="https://arxiv.org/abs/1711.06104">arxiv.org/abs/1711.06104</a></li><li>Kindermans et al. (2017/2019). <i>The (Un)reliability of saliency methods.</i> (Input-shift critique of Grad&times;Input and DeepLIFT.) &mdash; <a href="https://arxiv.org/abs/1711.00867">arxiv.org/abs/1711.00867</a></li></ul>
+  <p><b>Read next:</b> <a href="m_saliency.html">Vanilla gradient (saliency)</a> · <a href="m_ig_baseline_sweep.html">Integrated Gradients</a> · <a href="m_expected_gradients.html">Expected Gradients</a> · <a href="m_smoothgrad.html">SmoothGrad</a></p>
 </div></section>
 
 <section><div class="wrap">
@@ -152,7 +273,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/cc950552d22a04a0bddfb0d14cd2429b3bca8859"><code>cc950552</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/46b94f1dfc8fa5dca6fdd4c820fb11a26497fc6f"><code>46b94f1d</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

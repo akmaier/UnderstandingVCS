@@ -5,14 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SmoothGrad — Paper 2 method</title>
 <meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css"><style>
+.guide h3{margin:26px 0 8px}
+.guide .gtag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;
+  background:#14301f;color:var(--accent-2);border:1px solid #23502f;margin-bottom:6px}
+.guide .chips a{display:inline-block;margin:3px 6px 3px 0;padding:3px 10px;border-radius:999px;
+  border:1px solid var(--border);background:var(--bg-soft);font-size:.86rem}
+.guide .chips a.wk::before{content:"W ";font-weight:700;color:var(--fg-dim)}
+.guide table.map{width:100%;border-collapse:collapse;margin:8px 0 4px}
+.guide table.map th,.guide table.map td{border:1px solid var(--border);padding:8px 10px;
+  vertical-align:top;text-align:left}
+.guide table.map th{background:var(--bg-soft);width:28%;font-weight:600}
+.guide ol.recipe li,.guide ul.pit li{margin:6px 0}
+.guide .code-xai,.guide .code-sub{display:inline-block;font-size:.7rem;padding:0 6px;
+  border-radius:5px;margin-right:6px;vertical-align:middle}
+.guide .code-xai{background:#16283a;color:var(--accent)}
+.guide .code-sub{background:#2e2414;color:var(--warn)}
+.guide pre.try{background:#0b0e12;border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;overflow-x:auto;font-family:var(--mono);font-size:.86rem}
+.guide .box{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+  padding:4px 18px 10px;margin:14px 0}
+@media (max-width:640px){.guide table.map th{width:auto}}
+</style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <script>window.addEventListener("load",function(){if(window.renderMathInElement)renderMathInElement(document.body,{throwOnError:false});});</script>
 </head>
 <body>
-<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="primer.html">XAI Primer</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
 
 <header class="hero"><div class="wrap">
   <span class="venue" style="color:var(--accent-2);font-weight:600">Phase B · attribution / XAI</span>
@@ -37,6 +58,101 @@
 <section><div class="wrap">
   <h2>Reading this example's causal region</h2>
   <p>This example explains the content of <b>RAM&nbsp;$36</b> (byte&nbsp;54) — the most causally-active concept byte at this state. Its strongest true-causes are: RAM&nbsp;$36 (the play area — ball / paddles); RAM&nbsp;$31 (17% of its footprint sits in the score band, the rest in the play area). The <b>score digits</b> appear in the region because RAM&nbsp;$31 reaches them: perturbing it over the 30-frame NOOP window changes the game outcome, and hence the score — a <i>downstream</i> effect, not direct rendering.</p>
+</div></section>
+
+
+<section class="guide"><div class="wrap">
+  <span class="gtag">Gradient family · saliency averaged over noise</span>
+  <h2>Learn the method &mdash; a beginner's guide</h2>
+  <p class="sub">New to explainable AI? This block explains the method as it is used on neural
+  networks, then how we run the very same method on an Atari&nbsp;2600, where &mdash; unlike for a
+  network &mdash; we know the right answer. Every implementation step links to the code. See also the
+  <a href="primer.html">XAI primer</a> for the shared vocabulary.</p>
+  <div class="chips"><a class="wk" href="https://en.wikipedia.org/wiki/Normal_distribution">Normal distribution</a><a class="wk" href="https://en.wikipedia.org/wiki/Gaussian_noise">Gaussian noise</a><a class="wk" href="https://en.wikipedia.org/wiki/Monte_Carlo_method">Monte Carlo method</a><a class="wk" href="https://en.wikipedia.org/wiki/Smoothing">Smoothing</a></div>
+  <h3>The idea in plain words</h3>
+  
+<p>Vanilla saliency maps of image networks look speckled. Neighbouring pixels get wildly different
+values. Smilkov et al. argued that this is not what the network &ldquo;thinks&rdquo;. It is because
+the gradient of a deep ReLU network jumps around from point to point: move the input a hair and
+the gradient changes a lot. The map is accurate for that exact point, but noisy as a summary.</p>
+<p><b>SmoothGrad</b> fixes the look with a simple trick: make many copies of the input, add a little
+random noise to each, compute the saliency map of every copy, and <b>average</b> them. The random
+jumps cancel out; what is consistently there survives. In the authors' words, it removes noise by
+adding noise. It works as a wrapper around any gradient method. The catch is in the word
+<i>look</i>. Smoothing makes maps cleaner to the eye, and whether it makes them more <i>faithful</i>
+is a separate question. On the VCS we can answer that question exactly.</p>
+  <h3>How it works on a neural network</h3>
+  
+<p>With \(y = f(x)\) as in vanilla saliency, SmoothGrad averages the gradient over Gaussian
+(normal-distribution) noise of standard deviation \(\sigma\):</p>
+\[ \mathrm{SG}_i(x) \;=\; \frac{1}{N}\sum_{k=1}^{N}
+   \left|\frac{\partial f}{\partial x_i}\big(x + \varepsilon_k\big)\right|,
+   \qquad \varepsilon_k \sim \mathcal{N}(0, \sigma^2 I). \]
+<p>This is a <b>Monte Carlo</b> estimate (an average over random samples) of the expected gradient
+in a fuzzy neighbourhood of \(x\). Smilkov et al. recommend \(\sigma\) at 10&ndash;20&nbsp;% of the
+input range and \(N\) around 50. Some variants average the signed gradient; ours averages
+absolute values.</p>
+<p><b>Toy example: smoothing can wake up a dead gradient&hellip;</b> Take a single ReLU,
+\(f(x) = \max(0, x)\), at \(x = -0.1\). The vanilla gradient is 0: saliency says the input
+does not matter. Now draw \(N = 4\) noise values \(\varepsilon = (-0.8, 0.3, 1.2, -0.2)\). The noisy inputs are
+\((-0.9, 0.2, 1.1, -0.3)\), with gradients \((0, 1, 1, 0)\). SmoothGrad gives \(0.5\). With many samples and
+\(\sigma = 1\) it converges to \(P(x + \varepsilon > 0) \approx 0.46\). Because the kink is within
+reach of the noise, some samples land where the slope is non-zero.</p>
+<p><b>&hellip;but not a flat one.</b> Now take a step, \(f(x) = \mathbb{1}[x > 0]\). Its derivative
+is 0 on both sides of the jump. Every noisy sample also has gradient 0, and the average of zeros is
+zero. And for a straight line, \(f(x) = 3x\), every sample has gradient 3: smoothing changes
+nothing. Remember both cases: the VCS gives us exactly these two.</p>
+  <div class="box"><h3 style="margin-top:12px">Recipe</h3><ol class="recipe"><li>Choose the noise level \(\sigma\) (relative to the input range) and the sample count \(N\).</li><li>Draw \(N\) noise vectors \(\varepsilon_k \sim \mathcal{N}(0, \sigma^2 I)\), one value per input.</li><li>For each noisy copy \(x + \varepsilon_k\), run one forward and one backward pass and take \(|\partial y/\partial x_i|\).</li><li>Average the \(N\) maps. Optionally also keep the noise-free map for comparison.</li><li>Display the averaged map. Cost: \(N\) backward passes instead of one.</li></ol></div>
+  <h3>From a neural network to the Atari</h3>
+  <table class="map"><tr><th>The network \(f\)</th><td>The Atari 2600 VCS running the ROM, emulated bit-exactly by <code>jutari</code>; its differentiable twin is <code>JuTari.Diff</code>.</td></tr><tr><th>The input \(x\)</th><td>The 128 RAM bytes at the intervention frame \(f^*\) (after 90 frames of seeded random play).</td></tr><tr><th>Input noise</th><td>Gaussian noise with \(\sigma = 8\) <b>raw byte units</b> (about 3&nbsp;% of the 0&ndash;255 range) added to every RAM byte, \(N = 50\) copies, fixed seed.</td></tr><tr><th>The output \(y\)</th><td>A content output (one RAM byte read one-hot) and a position output (screen pixels changed versus the un-intervened frame, made differentiable by the bilinear sampler).</td></tr><tr><th>&ldquo;Is the smoothed map right?&rdquo;</th><td>The intervention oracle: poke each cause, re-run the real ROM, measure \(|\Delta y|\).</td></tr></table>
+  <h3>How we apply it to the VCS</h3>
+  
+<p>The runner computes \(\mathrm{SG}(u) = \frac1N\sum_k |\partial y/\partial u|_{u+\varepsilon_k}\) over
+the RAM vector \(u\) with Zygote, and returns the noise-free vanilla \(|\partial y/\partial u|\) next to it.
+Both are scored against the oracle, so the effect of smoothing on <i>faithfulness</i> is measured
+directly, not just its effect on looks.</p>
+<ul>
+<li><b>Noisy RAM is never executed.</b> A noisy copy holds values like 117.4 or &minus;3.1, which no real
+RAM byte can take. That is fine here because the gradient is evaluated only on the differentiable
+<i>read</i> of the output, not on the machine. The real VCS only ever sees integer pokes made by the
+oracle and the deletion/insertion curves.</li>
+<li><b>Content output = the straight line.</b> \(y\) is <code>soft_ram_peek(ram, idx)</code>, a linear
+one-hot read. Its gradient is \(e_{\text{idx}}\) at every input, noisy or not. So SmoothGrad returns
+exactly the vanilla map. The runner's <code>--sigma-sweep</code> option confirms this over five
+\((\sigma, N)\) settings, from \((0, 1)\) to \((32, 100)\): the content-path correlation does not
+move. The byte <code>idx</code> is the candidate the oracle shows to be most causally active.</li>
+<li><b>Naive position output = the step.</b> The honest position gradient is zero everywhere (sprites are
+placed by strobe timing). Averaging 50 zeros gives zero. Noise cannot manufacture a gradient the
+machine does not have.</li>
+<li><b>Sampler position output = the ReLU case.</b> The bilinear sampler draws the sprite at a continuous
+column driven by one RAM byte, using a triangular kernel one pixel wide. Noise of 8 byte units
+moves that column by several pixels, so many samples land where the kernel is flat or the
+occupancy is clamped. The averaged gradient can therefore be weaker than the un-smoothed one, and
+sometimes nearly zero. The runner records the raw sampler gradient and the smoothed one side by
+side, and treats a smoothed-away gradient as an honest smoothing effect, not as a vanishing.</li>
+<li><b>Scoring</b> follows the shared contract: correlation and precision@3 against the oracle,
+deletion/insertion curves on the real ROM, and an oracle-vs-itself positive control.</li>
+</ul>
+  <h3>Read the code</h3>
+  <p class="sub"><span class="code-xai">XAI</span> the interpretability method &nbsp;
+  <span class="code-sub">substrate</span> the bit-exact emulator it runs on (jutari, Julia).</p>
+  <ul class="callstack"><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/smoothgrad.jl#L327"><code>smoothgrad.jl:327</code></a> &mdash; The method: average \(|\nabla|\) over \(N\) noisy RAM copies; also returns the noise-free map.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/smoothgrad.jl#L334"><code>smoothgrad.jl:334</code></a> &mdash; The noise: \(\sigma\) in raw byte units, one Gaussian draw per RAM byte, seeded.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/smoothgrad.jl#L814"><code>smoothgrad.jl:814</code></a> &mdash; Robustness grid over \(\sigma\) and \(N\): does smoothing change faithfulness, or only looks?</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/smoothgrad.jl#L394"><code>smoothgrad.jl:394</code></a> &mdash; Picks the content byte the oracle shows to be most causally active.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/smoothgrad.jl#L493"><code>smoothgrad.jl:493</code></a> &mdash; One game: shared testbed &rarr; content and sampler-position outputs &rarr; naive vs sampler side by side.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/diff/SoftStep.jl#L106"><code>SoftStep.jl:106</code></a> &mdash; The linear one-hot RAM read: its gradient is the same at every noisy input.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/shared_testbed_impl.jl#L357"><code>shared_testbed_impl.jl:357</code></a> &mdash; The bilinear sampler for the position output, clamped to \([0,1]\).</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/shared_testbed_impl.jl#L67"><code>shared_testbed_impl.jl:67</code></a> &mdash; The one-pixel triangular kernel: flat outside \(|t|&lt;1\), which is why large noise smooths its slope away.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/ground_truth/oracle_intervene.jl#L242"><code>oracle_intervene.jl:242</code></a> &mdash; The ground truth: poke a cause, re-run the real ROM, read the output.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/env/StellaEnvironment.jl#L259"><code>StellaEnvironment.jl:259</code></a> &mdash; One frame of the bit-exact machine, used by the oracle and the deletion/insertion curves.</li></ul>
+  <h3>Reading the result</h3>
+  
+<p>Put this page next to vanilla saliency. On the <b>content</b> output the two maps are the same, and
+so is their agreement with the oracle: a single spike at the read byte, against an oracle that
+usually lights up several causes. On the <b>position</b> output, the smoothed sampler map is often
+fainter than the raw sampler map, and its agreement with the oracle stays weak. The lesson is
+general. SmoothGrad changes how a map looks, but here it does not change how faithful the map is.
+It cannot add causal information the gradient never carried.</p>
+  <h3>Pitfalls</h3>
+  <ul class="pit"><li><b>Denoising is not faithfulness.</b> A cleaner map can be exactly as wrong as the noisy one. Hooker et al. found that SmoothGrad did not beat a random ranking under retraining-based evaluation (ROAR).</li><li><b>Averaging zeros gives zero.</b> Where the function is flat over the whole noise neighbourhood (a step, a table look-up, sprite timing), SmoothGrad stays blind.</li><li><b>\(\sigma\) is a free knob.</b> Too small and nothing is smoothed; too large and the map describes a different region of input space. On the VCS, 8 byte units already moves a sprite by several pixels.</li><li><b>Off-distribution inputs.</b> Noisy copies are not valid inputs (non-integer, possibly negative bytes; for images, grainy photos). The method explains the model on inputs it would never see.</li></ul>
+  <h3>Try it yourself</h3>
+  <pre class="try">julia --project=jutari tools/xai_study/phaseB_attribution/smoothgrad.jl --games core</pre>
+  <p class="sub">Writes <code>smoothgrad_&lt;game&gt;_{content,ball_pixel}.json/.npz</code> and <code>smoothgrad_core_summary.json</code> into <code>tools/xai_study/phaseB_attribution/out/</code>. Defaults: <code>--sigma 8 --n-samples 50</code>. Add <code>--sigma-sweep</code> to reproduce the \(\sigma/N\) robustness grid (it re-runs every game per grid point).</p>
+  <h3>Original papers &amp; further reading</h3>
+  <ul><li>Smilkov, Thorat, Kim, Vi&eacute;gas &amp; Wattenberg (2017). <i>SmoothGrad: removing noise by adding noise.</i> ICML workshop. &mdash; <a href="https://arxiv.org/abs/1706.03825">arxiv.org/abs/1706.03825</a></li><li>Hooker, Erhan, Kindermans &amp; Kim (2019). <i>A Benchmark for Interpretability Methods in Deep Neural Networks</i> (ROAR). NeurIPS. &mdash; <a href="https://arxiv.org/abs/1806.10758">arxiv.org/abs/1806.10758</a></li></ul>
+  <p><b>Read next:</b> <a href="m_saliency.html">Vanilla gradient (saliency)</a> · <a href="m_ig_baseline_sweep.html">Integrated Gradients</a> · <a href="m_guided_backprop.html">Guided Backprop</a> · <a href="m_rise.html">RISE</a></p>
 </div></section>
 
 <section><div class="wrap">
@@ -152,7 +268,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/cc950552d22a04a0bddfb0d14cd2429b3bca8859"><code>cc950552</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/46b94f1dfc8fa5dca6fdd4c820fb11a26497fc6f"><code>46b94f1d</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

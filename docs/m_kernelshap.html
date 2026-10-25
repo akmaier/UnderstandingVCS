@@ -5,14 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>KernelSHAP / Shapley — Paper 2 method</title>
 <meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css"><style>
+.guide h3{margin:26px 0 8px}
+.guide .gtag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;
+  background:#14301f;color:var(--accent-2);border:1px solid #23502f;margin-bottom:6px}
+.guide .chips a{display:inline-block;margin:3px 6px 3px 0;padding:3px 10px;border-radius:999px;
+  border:1px solid var(--border);background:var(--bg-soft);font-size:.86rem}
+.guide .chips a.wk::before{content:"W ";font-weight:700;color:var(--fg-dim)}
+.guide table.map{width:100%;border-collapse:collapse;margin:8px 0 4px}
+.guide table.map th,.guide table.map td{border:1px solid var(--border);padding:8px 10px;
+  vertical-align:top;text-align:left}
+.guide table.map th{background:var(--bg-soft);width:28%;font-weight:600}
+.guide ol.recipe li,.guide ul.pit li{margin:6px 0}
+.guide .code-xai,.guide .code-sub{display:inline-block;font-size:.7rem;padding:0 6px;
+  border-radius:5px;margin-right:6px;vertical-align:middle}
+.guide .code-xai{background:#16283a;color:var(--accent)}
+.guide .code-sub{background:#2e2414;color:var(--warn)}
+.guide pre.try{background:#0b0e12;border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;overflow-x:auto;font-family:var(--mono);font-size:.86rem}
+.guide .box{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+  padding:4px 18px 10px;margin:14px 0}
+@media (max-width:640px){.guide table.map th{width:auto}}
+</style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <script>window.addEventListener("load",function(){if(window.renderMathInElement)renderMathInElement(document.body,{throwOnError:false});});</script>
 </head>
 <body>
-<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="primer.html">XAI Primer</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
 
 <header class="hero"><div class="wrap">
   <span class="venue" style="color:var(--accent-2);font-weight:600">Phase B · attribution / XAI</span>
@@ -37,6 +58,116 @@
 <section><div class="wrap">
   <h2>Reading this example's causal region</h2>
   <p>This example explains the content of <b>RAM&nbsp;$36</b> (byte&nbsp;54) — the most causally-active concept byte at this state. Its strongest true-causes are: RAM&nbsp;$36 (the play area — ball / paddles); RAM&nbsp;$31 (17% of its footprint sits in the score band, the rest in the play area). The <b>score digits</b> appear in the region because RAM&nbsp;$31 reaches them: perturbing it over the 30-frame NOOP window changes the game outcome, and hence the score — a <i>downstream</i> effect, not direct rendering.</p>
+</div></section>
+
+
+<section class="guide"><div class="wrap">
+  <span class="gtag">Perturbation family · fair shares from game theory</span>
+  <h2>Learn the method &mdash; a beginner's guide</h2>
+  <p class="sub">New to explainable AI? This block explains the method as it is used on neural
+  networks, then how we run the very same method on an Atari&nbsp;2600, where &mdash; unlike for a
+  network &mdash; we know the right answer. Every implementation step links to the code. See also the
+  <a href="primer.html">XAI primer</a> for the shared vocabulary.</p>
+  <div class="chips"><a class="wk" href="https://en.wikipedia.org/wiki/Shapley_value">Shapley value</a><a class="wk" href="https://en.wikipedia.org/wiki/Cooperative_game_theory">Cooperative game theory</a><a class="wk" href="https://en.wikipedia.org/wiki/Weighted_least_squares">Weighted least squares</a><a class="wk" href="https://en.wikipedia.org/wiki/Lagrange_multiplier">Lagrange multiplier</a><a class="wk" href="https://en.wikipedia.org/wiki/Binomial_coefficient">Binomial coefficient</a></div>
+  <h3>The idea in plain words</h3>
+  
+<p>Three friends share a taxi and the fare is 30 euros. How should they split it fairly, if each lives
+at a different distance? Game theory has a famous answer: the <b>Shapley value</b>. Imagine the
+friends joining the ride one after another, in every possible order. Each time someone joins, note
+how much the fare goes up. A person's fair share is the <b>average increase they cause, over all
+orders</b>. Lloyd Shapley proved this is the <i>only</i> split that obeys a few fairness rules, for
+example: the shares add up to the total, and two people who always contribute the same pay the same.</p>
+<p>For a neural network, the &ldquo;players&rdquo; are the input features and the &ldquo;total&rdquo; is
+the output minus a baseline output. A feature's Shapley value is its fair share of the prediction.
+Unlike occlusion, which removes one feature at a time, Shapley values look at every
+<b>coalition</b> (subset) of features, so backups and interactions are shared out correctly. The
+catch: \(n\) features have \(2^n\) coalitions. <b>KernelSHAP</b> estimates the values from a random
+sample of coalitions by solving one cleverly weighted linear regression.</p>
+  <h3>How it works on a neural network</h3>
+  
+<p>Let \(N\) be the set of \(n\) features and \(v(S)\) the model output when only the features in
+\(S\) are present (the others replaced by a baseline). The Shapley value of feature \(i\) is</p>
+\[ \phi_i \;=\; \sum_{S \subseteq N\setminus\{i\}} \frac{|S|!\,(n-|S|-1)!}{n!}\,\big[v(S\cup\{i\}) - v(S)\big] , \]
+<p>the order-averaged marginal contribution. The values always satisfy <b>efficiency</b>:
+\(\sum_i \phi_i = v(N) - v(\varnothing)\). Lundberg and Lee showed that the same \(\phi\) solves a
+weighted least-squares problem over coalitions \(z\in\{0,1\}^n\):</p>
+\[ \min_{\phi}\; \sum_{z} \pi(z)\Big(v(z) - v(\varnothing) - \textstyle\sum_i z_i\phi_i\Big)^2
+\quad\text{s.t.}\;\; \sum_i\phi_i = v(N)-v(\varnothing),\qquad
+\pi(z) = \frac{n-1}{\binom{n}{|z|}\,|z|\,(n-|z|)} . \]
+<p>The <b>Shapley kernel</b> \(\pi\) puts most weight on very small and very large coalitions.
+KernelSHAP samples coalitions instead of enumerating all \(2^n\), and solves this regression.</p>
+<p><b>Toy example: exact Shapley values of a 3-player game.</b> \(f(x) = 4x_1x_2 + 2x_3\) at
+\(x = (1,1,1)\), baseline 0. The coalition values are \(v(\varnothing)=0\), \(v(1)=v(2)=0\),
+\(v(3)=2\), \(v(12)=4\), \(v(13)=v(23)=2\), \(v(123)=6\). Walk through the 6 orders and record
+what each player adds:</p>
+<table>
+<tr><th>order</th><th>\(x_1\) adds</th><th>\(x_2\) adds</th><th>\(x_3\) adds</th></tr>
+<tr><td>1,2,3</td><td>0</td><td>4</td><td>2</td></tr>
+<tr><td>1,3,2</td><td>0</td><td>4</td><td>2</td></tr>
+<tr><td>2,1,3</td><td>4</td><td>0</td><td>2</td></tr>
+<tr><td>2,3,1</td><td>4</td><td>0</td><td>2</td></tr>
+<tr><td>3,1,2</td><td>0</td><td>4</td><td>2</td></tr>
+<tr><td>3,2,1</td><td>4</td><td>0</td><td>2</td></tr>
+</table>
+<p>Averages: \(\phi = (2, 2, 2)\), and \(2+2+2 = 6 = v(123)-v(\varnothing)\). The product term
+\(4x_1x_2\) is split evenly between its two players. Occlusion on the same toy gives \((4, 4, 2)\),
+which sums to 10: it counts the shared term <i>twice</i>. With \(n = 3\) the kernel gives every
+coalition of size 1 or 2 the same weight \(\pi = 1/3\), and the constrained regression over those
+6 coalitions returns exactly \((2,2,2)\).</p>
+  <div class="box"><h3 style="margin-top:12px">Recipe</h3><ol class="recipe"><li>Choose the output \(y\), the features, and the &ldquo;absent&rdquo; baseline (a fixed value or a background dataset).</li><li>Evaluate the two endpoints: all features present, \(v(N)\), and all absent, \(v(\varnothing)\).</li><li>Sample coalitions \(z\): draw a size \(s\) with probability proportional to the kernel mass of that size, then a random subset of that size.</li><li>Run the model once per distinct coalition (absent features set to the baseline), recording \(v(z)\).</li><li>Solve the kernel-weighted least squares for \(\phi\) under the efficiency constraint \(\sum_i\phi_i = v(N)-v(\varnothing)\).</li><li>Check convergence: re-solve with fewer coalitions and see whether \(\phi\) has settled.</li></ol></div>
+  <h3>From a neural network to the Atari</h3>
+  <table class="map"><tr><th>The model \(f\)</th><td>The cartridge program on the bit-exact emulated <b>Atari 2600 VCS</b> (<code>jutari</code>).</td></tr><tr><th>The players (features)</th><td>The <b>candidate RAM cells</b>, de-duplicated (8 to 23 per core game). TIA and joystick causes are not players.</td></tr><tr><th>Feature absent / background</th><td>One fixed baseline: the cell is set to <b>0</b> with <code>intervene_ram!</code>. No background dataset is averaged over.</td></tr><tr><th>Value \(v(z)\) of a coalition</th><td><code>deepcopy</code> the checkpoint, zero the absent cells, run 15 frames of the real ROM, read \(y\). No surrogate model of \(f\) is trained.</td></tr><tr><th>Sampling budget</th><td>512 sampled coalitions plus the two endpoints; repeated draws are merged, so each distinct coalition costs one re-run.</td></tr><tr><th>&ldquo;Ground-truth importance&rdquo;</th><td>The oracle's single-cause |&Delta;y| per cause, from real re-runs.</td></tr></table>
+  <h3>How we apply it to the VCS</h3>
+  
+<p><b>The value function is the real machine.</b> In textbook SHAP, \(v(S)\) is often approximated
+(e.g. by averaging over a background dataset). Here <code>coalition_value</code> computes it exactly:
+copy the checkpoint, zero every absent candidate cell with <code>intervene_ram!</code>, play the
+recorded 15 actions with <code>env_step!</code>, read the output. The only approximations left are
+the <b>coalition sampling</b> and the <b>additive form</b> of the explanation.</p>
+<ol>
+<li><b>Endpoints.</b> \(f_0 = v(\varnothing)\) (all candidate cells zeroed) and \(f_1 = v(N)\)
+(intact) are each one real run.</li>
+<li><b>Sampling.</b> <code>sample_coalitions</code> draws 512 coalitions: a size \(s\in\{1,\dots,C-1\}\)
+with probability \(\propto (C-1)/(s(C-s))\), then a uniform random subset of that size. Identical
+draws are merged by <code>dedup_coalitions</code>; their kernel weights are summed.</li>
+<li><b>Solve.</b> <code>kernelshap_solve</code> solves the weighted least squares (tiny ridge
+\(10^{-8}\)) and projects the answer onto \(\sum_i\phi_i = f_1 - f_0\) with a
+<b>Lagrange multiplier</b>. The runner records the remaining completeness residual as a check.</li>
+<li><b>To causes.</b> Each RAM cause gets \(|\phi|\) of its cell (the signed \(\phi\) are kept in the
+record); TIA and joystick causes get 0.</li>
+<li><b>Convergence.</b> The solve is repeated on the first \(N/8\), \(N/4\), \(N/2\) draws of the same
+pool, so the record shows faithfulness versus compute at no extra re-runs.</li>
+</ol>
+<p><b>An implementation detail worth knowing.</b> The coalitions are <i>drawn</i> in proportion to the
+kernel and then <i>also weighted</i> by the kernel \(\pi(s)\) in the solve. Textbook KernelSHAP does
+one or the other, not both. Our estimate therefore leans even more on near-empty and near-full
+coalitions (&ldquo;only this cell kept&rdquo;, &ldquo;only this cell zeroed&rdquo;) than exact Shapley
+values would. Efficiency still holds exactly, by the constraint.</p>
+<p><b>How is this different from the oracle?</b> The oracle measures each cause <i>alone</i> at the
+real state, in two directions (+17 and &rarr;0). Shapley values average a cell's effect over many
+coalitions of other cells being zeroed, and split shared effects fairly. So when two cells form an
+AND-like pair, the oracle (like occlusion) gives each one the full effect, while SHAP gives each half.
+Agreement in <i>ranking</i> is what we score.</p>
+  <h3>Read the code</h3>
+  <p class="sub"><span class="code-xai">XAI</span> the interpretability method &nbsp;
+  <span class="code-sub">substrate</span> the bit-exact emulator it runs on (jutari, Julia).</p>
+  <ul class="callstack"><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/kernelshap.jl#L156"><code>kernelshap.jl:156</code></a> &mdash; The value function \(v(z)\): <code>deepcopy</code>, zero the absent cells, 15 &times; <code>env_step!</code>, read y.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/kernelshap.jl#L176"><code>kernelshap.jl:176</code></a> &mdash; The Shapley kernel \(\pi(s) = (C-1)/(\binom{C}{s}s(C-s))\); endpoints handled by the constraint.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/kernelshap.jl#L189"><code>kernelshap.jl:189</code></a> &mdash; Draws coalition sizes from the kernel's size distribution, then a uniform subset.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/kernelshap.jl#L256"><code>kernelshap.jl:256</code></a> &mdash; Merges repeated draws (one re-run each) and sums their kernel weights.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/kernelshap.jl#L230"><code>kernelshap.jl:230</code></a> &mdash; Weighted least squares plus the Lagrange projection onto \(\sum\phi = f_1-f_0\).</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/kernelshap.jl#L368"><code>kernelshap.jl:368</code></a> &mdash; One experiment: oracle, endpoints, 512 coalitions, solve, scoring, convergence sweep.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/jutari_oracle.jl#L174"><code>jutari_oracle.jl:174</code></a> &mdash; The poke that makes a cell &ldquo;absent&rdquo; in the emulated RAM.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/env/StellaEnvironment.jl#L259"><code>StellaEnvironment.jl:259</code></a> &mdash; One frame of the real machine; each coalition costs 15 of them.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/ground_truth/oracle_intervene.jl#L242"><code>oracle_intervene.jl:242</code></a> &mdash; The oracle's single-cause re-run, the ground truth the Shapley values are compared with.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/shared_testbed_impl.jl#L115"><code>shared_testbed_impl.jl:115</code></a> &mdash; The shared gameplay checkpoint and the position output.</li></ul>
+  <h3>Reading the result</h3>
+  
+<p>Bars are \(|\phi|\) per cause next to the oracle's true effect. TIA and joystick causes are zero
+for SHAP by construction, and both causes of a byte share a height. Where the oracle shows two cells
+with large, similar effects, SHAP may show them at about half height each: that is fair sharing, not
+an error. Check the completeness residual (should be near zero) and the convergence block: if
+agreement still changes between \(N/2\) and \(N\), more coalitions would help. Expect SHAP to recover
+much of the true structure on both content and position outputs.</p>
+  <h3>Pitfalls</h3>
+  <ul class="pit"><li><b>&ldquo;Absent&rdquo; must be defined.</b> Shapley values depend completely on the baseline. Zero is one choice; a background dataset of real states would give different values.</li><li><b>Fair share is not causal effect.</b> Kumar et al. show Shapley values can credit features in ways that do not match the question you care about. Splitting an interaction in half is a convention, not a fact about the game.</li><li><b>Sampling error.</b> With many features, a few hundred coalitions cover a tiny fraction of the \(2^n\). Covert &amp; Lee analyse the estimator's variance; we report a convergence sweep instead of assuming it has converged.</li><li><b>Our weighting differs from the textbook.</b> Drawing and weighting by the kernel both emphasise extreme coalitions, so our values are a Shapley-like estimate, not the exact Shapley values even at infinite budget.</li><li><b>Off-distribution coalitions.</b> Zeroing many cells creates machine states the game never reaches. The VCS runs them faithfully, but they may say little about normal play.</li></ul>
+  <h3>Try it yourself</h3>
+  <pre class="try">julia --project=jutari tools/xai_study/phaseB_attribution/kernelshap.jl --games core</pre>
+  <p class="sub">Writes <code>kernelshap_&lt;game&gt;_{content,ball_pixel}.json/.npz</code> into <code>tools/xai_study/phaseB_attribution/out/</code>, with the signed \(\phi\), the completeness residual and the convergence sweep. Change the budget with <code>--n-coalitions</code>.</p>
+  <h3>Original papers &amp; further reading</h3>
+  <ul><li>Lundberg &amp; Lee (2017). <i>A Unified Approach to Interpreting Model Predictions.</i> NeurIPS. &mdash; <a href="https://arxiv.org/abs/1705.07874">arxiv.org/abs/1705.07874</a></li><li>Covert &amp; Lee (2021). <i>Improving KernelSHAP: Practical Shapley Value Estimation via Linear Regression.</i> AISTATS. &mdash; <a href="https://arxiv.org/abs/2012.01536">arxiv.org/abs/2012.01536</a></li><li>Kumar, Venkatasubramanian, Scheidegger &amp; Friedler (2020). <i>Problems with Shapley-value-based explanations as feature importance measures.</i> ICML. &mdash; <a href="https://arxiv.org/abs/2002.11097">arxiv.org/abs/2002.11097</a></li></ul>
+  <p><b>Read next:</b> <a href="m_lime.html">LIME</a> · <a href="m_rise.html">RISE</a> · <a href="m_occlusion.html">Occlusion</a> · <a href="m_ig_baseline_sweep.html">Integrated Gradients</a></p>
 </div></section>
 
 <section><div class="wrap">
@@ -152,7 +283,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/cc950552d22a04a0bddfb0d14cd2429b3bca8859"><code>cc950552</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/46b94f1dfc8fa5dca6fdd4c820fb11a26497fc6f"><code>46b94f1d</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

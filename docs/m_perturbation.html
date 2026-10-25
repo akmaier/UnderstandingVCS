@@ -5,14 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Extremal / meaningful perturbation — Paper 2 method</title>
 <meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css"><style>
+.guide h3{margin:26px 0 8px}
+.guide .gtag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;
+  background:#14301f;color:var(--accent-2);border:1px solid #23502f;margin-bottom:6px}
+.guide .chips a{display:inline-block;margin:3px 6px 3px 0;padding:3px 10px;border-radius:999px;
+  border:1px solid var(--border);background:var(--bg-soft);font-size:.86rem}
+.guide .chips a.wk::before{content:"W ";font-weight:700;color:var(--fg-dim)}
+.guide table.map{width:100%;border-collapse:collapse;margin:8px 0 4px}
+.guide table.map th,.guide table.map td{border:1px solid var(--border);padding:8px 10px;
+  vertical-align:top;text-align:left}
+.guide table.map th{background:var(--bg-soft);width:28%;font-weight:600}
+.guide ol.recipe li,.guide ul.pit li{margin:6px 0}
+.guide .code-xai,.guide .code-sub{display:inline-block;font-size:.7rem;padding:0 6px;
+  border-radius:5px;margin-right:6px;vertical-align:middle}
+.guide .code-xai{background:#16283a;color:var(--accent)}
+.guide .code-sub{background:#2e2414;color:var(--warn)}
+.guide pre.try{background:#0b0e12;border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;overflow-x:auto;font-family:var(--mono);font-size:.86rem}
+.guide .box{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+  padding:4px 18px 10px;margin:14px 0}
+@media (max-width:640px){.guide table.map th{width:auto}}
+</style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <script>window.addEventListener("load",function(){if(window.renderMathInElement)renderMathInElement(document.body,{throwOnError:false});});</script>
 </head>
 <body>
-<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="primer.html">XAI Primer</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
 
 <header class="hero"><div class="wrap">
   <span class="venue" style="color:var(--accent-2);font-weight:600">Phase B · attribution / XAI</span>
@@ -37,6 +58,101 @@
 <section><div class="wrap">
   <h2>Reading this example's causal region</h2>
   <p>This example explains the content of <b>RAM&nbsp;$36</b> (byte&nbsp;54) — the most causally-active concept byte at this state. Its strongest true-causes are: RAM&nbsp;$36 (the play area — ball / paddles); RAM&nbsp;$31 (17% of its footprint sits in the score band, the rest in the play area). The <b>score digits</b> appear in the region because RAM&nbsp;$31 reaches them: perturbing it over the 30-frame NOOP window changes the game outcome, and hence the score — a <i>downstream</i> effect, not direct rendering.</p>
+</div></section>
+
+
+<section class="guide"><div class="wrap">
+  <span class="gtag">Perturbation family · optimise the mask</span>
+  <h2>Learn the method &mdash; a beginner's guide</h2>
+  <p class="sub">New to explainable AI? This block explains the method as it is used on neural
+  networks, then how we run the very same method on an Atari&nbsp;2600, where &mdash; unlike for a
+  network &mdash; we know the right answer. Every implementation step links to the code. See also the
+  <a href="primer.html">XAI primer</a> for the shared vocabulary.</p>
+  <div class="chips"><a class="wk" href="https://en.wikipedia.org/wiki/Mathematical_optimization">Mathematical optimization</a><a class="wk" href="https://en.wikipedia.org/wiki/Greedy_algorithm">Greedy algorithm</a><a class="wk" href="https://en.wikipedia.org/wiki/Regularization_(mathematics)">Regularization (mathematics)</a><a class="wk" href="https://en.wikipedia.org/wiki/Jaccard_index">Jaccard index (intersection over union)</a></div>
+  <h3>The idea in plain words</h3>
+  
+<p>Occlusion slides a fixed grey square and reports a number for every position. That raises two
+questions. Why a square? Why that size? <b>Extremal perturbation</b> turns the question around. It
+asks: <i>what is the smallest region I must remove to destroy the prediction?</i> The answer is a
+<b>mask</b>, a map that says for each input whether it is removed. The mask is found by
+<b>optimisation</b>, not by sliding.</p>
+<p>The mask is the explanation. A good mask is <b>small</b> (it points at few inputs) and
+<b>extremal</b> (removing those inputs changes the output as much as possible). Fong and Vedaldi
+called the 2017 version &ldquo;meaningful perturbation&rdquo;, because the removal should look like
+a plausible change (a blur, not a random noise pattern). The 2019 version fixes the mask
+<b>area</b> in advance, say 10&nbsp;% of the image, and finds the best mask of exactly that size.
+This removes a hard-to-tune penalty weight. It is still a black-box method: it only needs to run the
+model on masked inputs.</p>
+  <h3>How it works on a neural network</h3>
+  
+<p>Let \(m \in [0,1]^n\) be a <b>soft mask</b> (\(m_i = 1\): input \(i\) removed, \(0\): kept) and
+\(\Phi(x; m)\) the perturbed input, e.g. \(x\) blended with a blurred copy where \(m\) is high. The
+2017 &ldquo;deletion game&rdquo; solves</p>
+\[ m^\star = \arg\min_{m}\; \lambda\,\|m\|_1 \;+\; f\big(\Phi(x; m)\big) , \]
+<p>trading mask size (the \(\ell_1\) <b>regulariser</b> \(\|m\|_1\), weighted by \(\lambda\))
+against how low the class score goes. The 2019 &ldquo;extremal&rdquo; version replaces the penalty
+by a hard <b>area constraint</b> \(\|m\|_1 = a\cdot n\). Both are solved by gradient descent on
+\(m\), with smoothness tricks so the mask does not become a noisy pattern that fools the network
+(an <i>adversarial</i> mask).</p>
+<p><b>Toy example.</b> \(f(x) = 4x_1x_2 + x_3\) at \(x = (1,1,1,1)\) (\(x_4\) unused), removal sets
+an input to 0, and the budget is 2 inputs. Removing one input at a time changes \(f\) by 4, 4, 1, 0.
+A greedy search takes \(x_1\) first (change 4). Next it tries each remaining input <i>together
+with</i> \(x_1\): adding \(x_2\) still gives 4 (the product is already dead), adding \(x_3\) gives 5.
+So the mask is \(\{x_1, x_3\}\), which destroys the whole output with two inputs. Note what happened
+to \(x_2\): it is just as important as \(x_1\), but once \(x_1\) is removed it adds nothing, so it is
+<b>not in the mask</b>. A minimal mask names <i>a</i> sufficient set, not <i>all</i> important
+inputs.</p>
+  <div class="box"><h3 style="margin-top:12px">Recipe</h3><ol class="recipe"><li>Choose the output \(y\), a removal operator (blur, grey, zero) and an area budget \(a\) (fraction of inputs that may be removed).</li><li>Start from an empty mask; record the intact output \(y(x)\).</li><li>Search for the mask of at most \(\lceil a\cdot n\rceil\) inputs that maximises \(|y(x) - y(\text{masked } x)|\): gradient descent on a soft mask for a network, greedy forward selection on a black box.</li><li>Stop when the budget is used up, or when adding one more input no longer increases the change.</li><li>Report the mask (the selected set), and score it against the true causal set with intersection-over-union (IoU).</li></ol></div>
+  <h3>From a neural network to the Atari</h3>
+  <table class="map"><tr><th>The network \(f\)</th><td>The cartridge program on the bit-exact emulated <b>Atari 2600 VCS</b> (<code>jutari</code>).</td></tr><tr><th>The mask \(m\) over pixels</th><td>A <b>set</b> of candidate causes (RAM bytes, one TIA colour register, the joystick) to remove together.</td></tr><tr><th>The perturbation \(\Phi(x;m)\)</th><td><code>occlude!</code> every cause in the set (RAM/TIA &rarr; 0) on a <code>deepcopy</code> of the checkpoint, then run 15 frames of the real ROM.</td></tr><tr><th>Gradient descent on a soft mask</th><td><b>Greedy forward selection</b> on a hard mask: the VCS output is discrete, so a mask gradient would be zero.</td></tr><tr><th>Area constraint \(a\)</th><td>At most \(\lceil 0.25\cdot C\rceil\) of the \(C\) causes may be selected (<code>--area 0.25</code>).</td></tr><tr><th>&ldquo;Is this mask right?&rdquo;</th><td>IoU of the mask with the oracle's top-\(k\) true movers, plus the same correlation and deletion/insertion scores as every other method.</td></tr></table>
+  <h3>How we apply it to the VCS</h3>
+  
+<p><b>Why greedy, not gradients.</b> The original optimises a soft mask by gradient descent. On the
+VCS that would fail for the same reason saliency fails on the position output: the machine is a
+discrete index computer and \(\partial y/\partial m = 0\) almost everywhere. So the runner optimises
+the mask <b>directly on the real emulator</b> with greedy forward selection, the discrete,
+budget-bounded cousin of the original optimiser.</p>
+<ol>
+<li><b>Single-cause pass.</b> For every cause \(i\), <code>masked_abs_dy</code> removes just that
+cause and re-runs: \(|y(\text{occlude}\{i\}) - y(\text{intact})|\). This pass is literally occlusion.</li>
+<li><b>Greedy growth.</b> Start with \(M = \varnothing\). In each step try every unselected cause
+\(i\): <code>deepcopy</code> the checkpoint, <code>occlude!</code> all of \(M\cup\{i\}\), run 15
+<code>env_step!</code> frames, read \(y\). Add the cause with the largest change.</li>
+<li><b>Stop</b> when \(|M| = \lceil 0.25\,C\rceil\), or when the best addition does not increase the
+change. If no single removal moves \(y\) at all, the mask stays empty: an honest null.</li>
+<li><b>Per-cause scores.</b> Selected causes get the larger of their entry value and single-cause score, plus a constant lift (the largest
+single-cause score), so the mask ranks first and its internal order is kept. Unselected causes keep
+their single-cause occlusion score.</li>
+</ol>
+<p><b>How is this different from the oracle?</b> The oracle probes each cause <i>alone</i>, with two
+directions (+17 and &rarr;0). Extremal perturbation probes <i>sets</i> of causes, and only in the
+&ldquo;remove&rdquo; direction. It can therefore see joint effects the oracle's per-cause map does not
+contain. But it deliberately reports a <i>minimal</i> set, so a cause that is redundant given the
+mask (like \(x_2\) in the toy) is left out, even if the oracle ranks it high. For the IoU, causes are
+reduced to the cell they actually touch, because <code>ram[i]:set</code> and
+<code>ram[i]:occlude</code> both zero the same byte when masked.</p>
+<p><b>Cost.</b> At most \(\lceil aC\rceil\cdot C\) greedy re-runs plus \(C\) single-cause re-runs and
+one intact run; every one is a full 15-frame run of the real ROM from the checkpoint.</p>
+  <h3>Read the code</h3>
+  <p class="sub"><span class="code-xai">XAI</span> the interpretability method &nbsp;
+  <span class="code-sub">substrate</span> the bit-exact emulator it runs on (jutari, Julia).</p>
+  <ul class="callstack"><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/perturbation.jl#L206"><code>perturbation.jl:206</code></a> &mdash; The optimiser: single-cause pass, then greedy forward selection under the area budget, with the no-gain stop rule.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/perturbation.jl#L179"><code>perturbation.jl:179</code></a> &mdash; Value of one mask: <code>deepcopy</code>, <code>occlude!</code> every masked cause, run the horizon, |&Delta;y|.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/perturbation.jl#L257"><code>perturbation.jl:257</code></a> &mdash; Maps the mask onto the per-cause axis (selected causes lifted above all others).</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/perturbation.jl#L327"><code>perturbation.jl:327</code></a> &mdash; The headline score: IoU of the mask with the oracle's top-k true movers, on the touched-cell axis.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/perturbation.jl#L359"><code>perturbation.jl:359</code></a> &mdash; The area budget \(\lceil a\cdot C\rceil\); <code>area = 0.25</code> by default.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/ig_baseline_sweep.jl#L224"><code>ig_baseline_sweep.jl:224</code></a> &mdash; The removal operator shared with occlusion, RISE, LIME and KernelSHAP.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/jutari_oracle.jl#L174"><code>jutari_oracle.jl:174</code></a> &mdash; The poke into the emulated RAM that every mask entry performs.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/env/StellaEnvironment.jl#L259"><code>StellaEnvironment.jl:259</code></a> &mdash; One frame of the real machine; each mask evaluation runs 15 of them.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/ground_truth/oracle_intervene.jl#L242"><code>oracle_intervene.jl:242</code></a> &mdash; The oracle's single-cause re-run, the ground truth the mask is compared with.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/shared_testbed_impl.jl#L115"><code>shared_testbed_impl.jl:115</code></a> &mdash; The shared gameplay checkpoint and the position output.</li></ul>
+  <h3>Reading the result</h3>
+  
+<p>The figure shows the per-cause scores next to the oracle, and the record lists the selected mask.
+The selected causes sit on top because of the lift. Check two things. First, are the mask's causes
+among the oracle's tallest bars? That is what the IoU measures. Second, are there tall oracle bars
+<i>outside</i> the mask? Usually there are: the mask is a small sufficient set, not the full list of
+important causes, so expect a partial overlap rather than a perfect match. The method works on the
+position output too, since it never uses a gradient.</p>
+  <h3>Pitfalls</h3>
+  <ul class="pit"><li><b>Minimal is not complete.</b> A mask names one small sufficient set. Redundant causes (backups) are left out even when each is important on its own.</li><li><b>Greedy is not optimal.</b> Forward selection can be trapped: two causes that only matter together are never picked if neither helps alone. Ties are broken by list order, so the choice between equally good causes is arbitrary.</li><li><b>Artefact masks.</b> On images, an unconstrained mask can become an adversarial pattern; the smoothness terms and blur perturbation of Fong et al. exist to stop this. On the VCS every mask is a valid machine state, but zeroing several bytes at once can push the game into states it never reaches in play.</li><li><b>The budget shapes the answer.</b> A different area fraction gives a different mask. The 2019 paper reports masks at several areas for this reason; we use one default.</li></ul>
+  <h3>Try it yourself</h3>
+  <pre class="try">julia --project=jutari tools/xai_study/phaseB_attribution/perturbation.jl --games core</pre>
+  <p class="sub">Writes <code>perturbation_&lt;game&gt;_{content,position}.json/.npz</code> into <code>tools/xai_study/phaseB_attribution/out/</code>, including the mask, its growth curve and the IoU. Change the budget with <code>--area 0.1</code>.</p>
+  <h3>Original papers &amp; further reading</h3>
+  <ul><li>Fong &amp; Vedaldi (2017). <i>Interpretable Explanations of Black Boxes by Meaningful Perturbation.</i> ICCV. &mdash; <a href="https://arxiv.org/abs/1704.03296">arxiv.org/abs/1704.03296</a></li><li>Fong, Patrick &amp; Vedaldi (2019). <i>Understanding Deep Networks via Extremal Perturbations and Smooth Masks.</i> ICCV. &mdash; <a href="https://arxiv.org/abs/1910.08485">arxiv.org/abs/1910.08485</a></li><li>Chang, Creager, Goldenberg &amp; Duvenaud (2019). <i>Explaining Image Classifiers by Counterfactual Generation</i> (masks with blur/grey create artefacts the classifier reacts to). ICLR. &mdash; <a href="https://arxiv.org/abs/1807.08024">arxiv.org/abs/1807.08024</a></li></ul>
+  <p><b>Read next:</b> <a href="m_occlusion.html">Occlusion</a> · <a href="m_counterfactual.html">On-distribution counterfactual</a> · <a href="m_rise.html">RISE</a> · <a href="m_kernelshap.html">KernelSHAP / Shapley</a></p>
 </div></section>
 
 <section><div class="wrap">
@@ -152,7 +268,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/cc950552d22a04a0bddfb0d14cd2429b3bca8859"><code>cc950552</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/46b94f1dfc8fa5dca6fdd4c820fb11a26497fc6f"><code>46b94f1d</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

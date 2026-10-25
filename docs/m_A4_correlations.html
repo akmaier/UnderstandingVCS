@@ -5,14 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>A4 · Pairwise correlations — Paper 2 method</title>
 <meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css"><style>
+.guide h3{margin:26px 0 8px}
+.guide .gtag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;
+  background:#14301f;color:var(--accent-2);border:1px solid #23502f;margin-bottom:6px}
+.guide .chips a{display:inline-block;margin:3px 6px 3px 0;padding:3px 10px;border-radius:999px;
+  border:1px solid var(--border);background:var(--bg-soft);font-size:.86rem}
+.guide .chips a.wk::before{content:"W ";font-weight:700;color:var(--fg-dim)}
+.guide table.map{width:100%;border-collapse:collapse;margin:8px 0 4px}
+.guide table.map th,.guide table.map td{border:1px solid var(--border);padding:8px 10px;
+  vertical-align:top;text-align:left}
+.guide table.map th{background:var(--bg-soft);width:28%;font-weight:600}
+.guide ol.recipe li,.guide ul.pit li{margin:6px 0}
+.guide .code-xai,.guide .code-sub{display:inline-block;font-size:.7rem;padding:0 6px;
+  border-radius:5px;margin-right:6px;vertical-align:middle}
+.guide .code-xai{background:#16283a;color:var(--accent)}
+.guide .code-sub{background:#2e2414;color:var(--warn)}
+.guide pre.try{background:#0b0e12;border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;overflow-x:auto;font-family:var(--mono);font-size:.86rem}
+.guide .box{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+  padding:4px 18px 10px;margin:14px 0}
+@media (max-width:640px){.guide table.map th{width:auto}}
+</style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <script>window.addEventListener("load",function(){if(window.renderMathInElement)renderMathInElement(document.body,{throwOnError:false});});</script>
 </head>
 <body>
-<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="primer.html">XAI Primer</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
 
 <header class="hero"><div class="wrap">
   <span class="venue" style="color:var(--accent-2);font-weight:600">Phase A · neuroscience battery</span>
@@ -34,6 +55,114 @@
 </div></section>
 
 
+
+
+<section class="guide"><div class="wrap">
+  <span class="gtag">Phase A · neuroscience battery · who fires together?</span>
+  <h2>Learn the method &mdash; a beginner's guide</h2>
+  <p class="sub">New to explainable AI? This block explains the method as it is used on neural
+  networks, then how we run the very same method on an Atari&nbsp;2600, where &mdash; unlike for a
+  network &mdash; we know the right answer. Every implementation step links to the code. See also the
+  <a href="primer.html">XAI primer</a> for the shared vocabulary.</p>
+  <div class="chips"><a class="wk" href="https://en.wikipedia.org/wiki/Pearson_correlation_coefficient">Pearson correlation coefficient</a><a class="wk" href="https://en.wikipedia.org/wiki/Correlation_does_not_imply_causation">Correlation does not imply causation</a><a class="wk" href="https://en.wikipedia.org/wiki/Confounding">Confounding</a><a class="wk" href="https://en.wikipedia.org/wiki/Single-linkage_clustering">Single-linkage clustering</a><a class="wk" href="https://en.wikipedia.org/wiki/Principal_component_analysis">Principal component analysis</a></div>
+  <h3>The idea in plain words</h3>
+  
+<p>Record many neurons at once and you get a table: one row per moment in time, one column per
+neuron. A natural first question is <i>which neurons go up and down together?</i> Measure that for
+every pair and you get a <b>correlation matrix</b>. Groups of units that move together are
+candidates for working together. In neuroscience the patterns of joint firing are called
+<b>spike words</b>, and their statistics have been studied in detail.</p>
+<p>A famous finding is &ldquo;<b>weak pairwise, strong global</b>&rdquo;. Any two neurons are only
+weakly correlated, yet the whole population sits in a few coordinated states far more often than
+chance. The tempting reading is that the correlation structure reveals the coupling, the true
+influence of one unit on another. But correlation is a passive measurement. Two units can move
+together because one drives the other, or because both are driven by a third thing. On the VCS
+almost everything is driven by the same clock, and the oracle can tell the two cases apart.</p>
+  <h3>How it works on a neural network</h3>
+  
+<p><b>Neuroscience origin.</b> Schneidman et al. recorded about 40 retinal neurons and found
+pairwise correlations that were small, yet a model built only from them predicted the frequent
+population-wide patterns. Tka&ccaron;ik et al. extended this to larger populations. Jonas &amp;
+Kording ran the same statistics on transistors of a 6502 chip and found the same
+&ldquo;weak pairwise, strong global&rdquo; picture, in a system whose real wiring is known and looks
+nothing like a brain.</p>
+<p><b>Neural-network analogue.</b> Correlating unit activations over a dataset is common: to find
+redundant units, to match units across two trained networks (Li et al.), or to compare whole layers
+(SVCCA, CKA). For units \(i,j\) with activations \(x_i(t)\) over inputs \(t\):</p>
+\[ C_{ij} = \rho\big(x_i, x_j\big), \qquad
+   \mathrm{PR} = \frac{\big(\sum_k \lambda_k\big)^2}{\sum_k \lambda_k^2}, \]
+<p>where \(\lambda_k\) are the eigenvalues of \(C\). The <b>participation ratio</b> PR counts the
+effective number of independent directions. A PR far below the number of units means a few global
+modes dominate (the same idea as keeping the top principal components).</p>
+<p><b>Toy example 1 (common driver).</b> Let a clock run \(t = 1,\dots,5\). Unit \(x = t\) and
+unit \(y = 2t + 1\). Neither reads the other. Still \(\rho(x,y) = 1\). If you overwrite \(x\), \(y\)
+does not change: the true coupling is \(0\). A correlation of 1, a coupling of 0.</p>
+<p><b>Toy example 2 (weak pairwise, strong global).</b> Three units, every pair correlated
+\(0.3\). The eigenvalues of \(C\) are \(1.6, 0.7, 0.7\), so \(\mathrm{PR} = 3^2 / (1.6^2 + 0.7^2 + 0.7^2)
+= 9 / 3.54 \approx 2.5\). With 300 such units, the top eigenvalue is \(1 + 299 \cdot 0.3 \approx 91\),
+the other 299 are \(0.7\), and PR is about 11, far below 300: many weak pairs add up to one strong
+collective mode.</p>
+  <div class="box"><h3 style="margin-top:12px">Recipe</h3><ol class="recipe"><li>Record the activity of all units over a long trajectory: a matrix of time &times; units.</li><li>Compute the Pearson correlation \(C_{ij}\) for every pair of units.</li><li>Group units whose \(|C_{ij}|\) passes a threshold into clusters (here: single linkage, \(\tau = 0.7\)).</li><li>Summarise the global structure: median \(|C_{ij}|\), the share of variance in the top eigenvalues, the participation ratio.</li><li>Obtain an independent measure of true coupling (here: the intervention oracle) for every pair.</li><li>Score: rank-correlate \(|C_{ij}|\) with the true coupling over all pairs, and compare clusters with the known variable groups.</li></ol></div>
+  <h3>From a neural network to the Atari</h3>
+  <table class="map"><tr><th>The neuron</th><td>One <b>candidate RAM byte</b> of the VCS's 128-byte working memory, named by published annotations (OCAtari / AtariARI); for the population statistics, every RAM byte that varies.</td></tr><tr><th>The multi-electrode recording</th><td>A RAM <b>tape</b>: all 128 bytes logged after every frame (one 1/60&nbsp;s picture) while the bit-exact emulator plays the shared input stream, 150 frames for most games.</td></tr><tr><th>The spike word</th><td>The joint pattern of byte values at one frame; the pairwise statistic is the Pearson correlation of two bytes' time series.</td></tr><tr><th>The true coupling</th><td>The <b>oracle</b>: overwrite byte \(i\) at frame \(f^*\) with \(0\) or base\(+17\), re-run the real ROM 15 frames, measure \(|\Delta|\) of byte \(j\). Symmetrised as \(\max(i\to j,\ j\to i)\).</td></tr><tr><th>Known cell types</th><td><b>Concept families</b> from the labels: all <code>enemy_*</code> bytes form one true group, all <code>player_*</code> bytes another, and so on.</td></tr></table>
+  <h3>How we apply it to the VCS</h3>
+  
+<p>The runner <code>A4_correlations.jl</code> has an observational half (the method) and an
+interventional half (the truth). Both use the shared game state: boot the cartridge (the ROM), play
+90 frames of seeded random joystick input to reach \(f^*\), keep the next 15 frames as the horizon,
+and confirm that two fresh replays agree byte for byte.</p>
+<ol>
+<li><b>Recording.</b> <code>a4_record_ram</code> steps the emulator along the same input stream
+(no-ops after the gameplay frames) and stores the 128 RAM bytes after every frame. The length is
+set per game (150 frames for most, longer for Q*bert and Ms. Pac-Man).</li>
+<li><b>Pairwise correlations.</b> <code>pairwise_corr</code> computes the Pearson matrix over the
+candidate bytes. A byte that never changes has zero variance and is given correlation 0 with
+everything.</li>
+<li><b>Clusters versus true groups.</b> Bytes with \(|C_{ij}| \ge 0.7\) are linked, and connected
+components become clusters. These are compared with the concept families using the Rand index,
+cluster purity and an <i>over-grouping ratio</i>: the share of within-cluster pairs that belong to
+different true groups.</li>
+<li><b>Global structure.</b> Over the candidate bytes and over the whole population of varying RAM
+bytes, the runner reports mean and median \(|C_{ij}|\), the top-1 and top-3 eigenvalue shares and
+the participation ratio. The &ldquo;weak pairwise, strong global&rdquo; flag is set when the
+population median \(|C_{ij}|\) is below 0.5 and the top three eigenvalues carry at least 60&nbsp;%
+of the total.</li>
+<li><b>Oracle coupling.</b> For every candidate byte \(i\), the machine is copied, byte \(i\) is
+set to \(0\) or base\(+17\), and the real ROM runs 15 frames. The coupling \(i\to j\) is the larger
+\(|\Delta|\) of byte \(j\). A third value, base\(+37\), is kept back as a held-out test.</li>
+<li><b>Scores.</b> F is the Spearman rank correlation between \(|C_{ij}|\) and the oracle coupling
+over all off-diagonal pairs. S is the Pearson correlation with the held-out coupling. M compares how
+many pairs the method calls coupled with how many truly are. A positive control scores the oracle
+against itself.</li>
+</ol>
+<p><b>How this differs from the neural original.</b> Our units are bytes with up to 256 values, not
+binary spikes, so we use Pearson correlation rather than a maximum-entropy model of spike words.
+And the &ldquo;true coupling&rdquo; is a measured total effect over 15 frames, which includes
+indirect paths, not a list of direct synapses.</p>
+  <h3>Read the code</h3>
+  <p class="sub"><span class="code-xai">XAI</span> the interpretability method &nbsp;
+  <span class="code-sub">substrate</span> the bit-exact emulator it runs on (jutari, Julia).</p>
+  <ul class="callstack"><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A4_correlations.jl#L241"><code>A4_correlations.jl:241</code></a> &mdash; The recording: a (frames &times; 128) RAM tape from the bit-exact emulator.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A4_correlations.jl#L391"><code>A4_correlations.jl:391</code></a> &mdash; The method: Pearson correlation matrix over the candidate bytes.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A4_correlations.jl#L447"><code>A4_correlations.jl:447</code></a> &mdash; Clusters vs concept families: Rand index, purity, over-grouping ratio.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A4_correlations.jl#L531"><code>A4_correlations.jl:531</code></a> &mdash; Weak-pairwise / strong-global: eigenvalue shares and participation ratio, candidates and full population.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A4_correlations.jl#L579"><code>A4_correlations.jl:579</code></a> &mdash; The ground truth: do(0) / do(+17) per byte, 15-frame re-run, |&Delta;| of every other byte; +37 held out.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A4_correlations.jl#L650"><code>A4_correlations.jl:650</code></a> &mdash; F = Spearman(|corr|, coupling) over pairs; S on the held-out value; M named vs true pairs.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/shared_testbed_impl.jl#L115"><code>shared_testbed_impl.jl:115</code></a> &mdash; The shared seeded-gameplay state and its oracle cause-density gate.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/triad_sm.jl#L57"><code>triad_sm.jl:57</code></a> &mdash; The shared minimality score M = |U*| / |U&#770;| used by every method.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/env/StellaEnvironment.jl#L259"><code>StellaEnvironment.jl:259</code></a> &mdash; One video frame of the bit-exact emulated VCS (called once per recorded frame).</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/env/StellaEnvironment.jl#L350"><code>StellaEnvironment.jl:350</code></a> &mdash; Read the 128 RAM bytes: one row of the recording.</li></ul>
+  <h3>Reading the result</h3>
+  
+<p>The figure shows two square matrices over the same candidate bytes. Left: the oracle's true
+coupling; a bright square means overwriting one byte changes the other within 15 frames. Right: the
+measured correlation. The diagonal of the right matrix is always 1 and is not scored. If the two
+matrices lit up the same off-diagonal squares, correlation would be a faithful map of coupling. In
+Pong most candidate bytes are zero in both, and both light up the same small group of ball and
+paddle bytes, so the ranking is partly right. But inside that group the two disagree: correlation
+gives every pair a similar, high value, because the bytes all move with the same ball, while the
+oracle says only one pair is strongly coupled, two weakly, and the player paddle not at all. Correlation found the group,
+not the wiring inside it. That is the partial score in the audit box.</p>
+  <h3>Pitfalls</h3>
+  <ul class="pit"><li><b>Common drivers.</b> Two units driven by the same clock or the same input correlate strongly without any influence between them. On a clock-locked machine this is the rule, not the exception.</li><li><b>No direction.</b> A correlation is symmetric. It cannot say whether \(i\) drives \(j\), \(j\) drives \(i\), or neither.</li><li><b>Silent but important units.</b> A byte that is constant during the recording has zero correlation with everything, however much it matters.</li><li><b>Collective structure is not mechanism.</b> A low participation ratio says activity is low-dimensional. Jonas &amp; Kording found the same signature in a chip, so it says little about how the system computes.</li><li><b>Window dependence.</b> Correlations are computed over one stretch of play. A different stretch, or a longer one, can give a different matrix.</li></ul>
+  <h3>Try it yourself</h3>
+  <pre class="try">julia --project=jutari tools/xai_study/phaseA_kording/A4_correlations.jl --games core</pre>
+  <p class="sub">Writes <code>A4_&lt;game&gt;.{json,npz}</code> per game into <code>tools/xai_study/phaseA_kording/out/</code>. <code>--tau-corr 0.7</code> sets the clustering threshold, <code>--traj-frames N</code> the recording length, <code>--selftest</code> runs the checks on the first game without writing.</p>
+  <h3>Original papers &amp; further reading</h3>
+  <ul><li>Schneidman, Berry, Segev &amp; Bialek (2006). <i>Weak pairwise correlations imply strongly correlated network states in a neural population.</i> Nature 440: 1007&ndash;1012. &mdash; <a href="https://doi.org/10.1038/nature04701">doi.org/10.1038/nature04701</a></li><li>Tka&ccaron;ik et al. (2014). <i>Searching for Collective Behavior in a Large Network of Sensory Neurons.</i> PLOS Computational Biology 10(1): e1003408. &mdash; <a href="https://doi.org/10.1371/journal.pcbi.1003408">doi.org/10.1371/journal.pcbi.1003408</a></li><li>Li, Yosinski, Clune, Lipson &amp; Hopcroft (2015). <i>Convergent Learning: Do different neural networks learn the same representations?</i> (unit-to-unit correlation in deep nets). &mdash; <a href="https://arxiv.org/abs/1511.07543">arxiv.org/abs/1511.07543</a></li><li>Jonas &amp; Kording (2017). <i>Could a Neuroscientist Understand a Microprocessor?</i> PLOS Computational Biology 13(1): e1005268. &mdash; <a href="https://doi.org/10.1371/journal.pcbi.1005268">doi.org/10.1371/journal.pcbi.1005268</a></li></ul>
+  <p><b>Read next:</b> <a href="m_A6_granger.html">A6 · Granger causality</a> · <a href="m_A7_dimred.html">A7 · Dimensionality reduction (NMF/PCA)</a> · <a href="m_A3_tuning.html">A3 · Tuning curves</a> · <a href="m_A1_connectomics.html">A1 · Connectomics / data-flow graph</a></p>
+</div></section>
 
 <section><div class="wrap">
   <h2>How it's scored</h2>
@@ -148,7 +277,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/cc950552d22a04a0bddfb0d14cd2429b3bca8859"><code>cc950552</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/46b94f1dfc8fa5dca6fdd4c820fb11a26497fc6f"><code>46b94f1d</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

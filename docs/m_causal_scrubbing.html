@@ -5,14 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Causal scrubbing — Paper 2 method</title>
 <meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css"><style>
+.guide h3{margin:26px 0 8px}
+.guide .gtag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;
+  background:#14301f;color:var(--accent-2);border:1px solid #23502f;margin-bottom:6px}
+.guide .chips a{display:inline-block;margin:3px 6px 3px 0;padding:3px 10px;border-radius:999px;
+  border:1px solid var(--border);background:var(--bg-soft);font-size:.86rem}
+.guide .chips a.wk::before{content:"W ";font-weight:700;color:var(--fg-dim)}
+.guide table.map{width:100%;border-collapse:collapse;margin:8px 0 4px}
+.guide table.map th,.guide table.map td{border:1px solid var(--border);padding:8px 10px;
+  vertical-align:top;text-align:left}
+.guide table.map th{background:var(--bg-soft);width:28%;font-weight:600}
+.guide ol.recipe li,.guide ul.pit li{margin:6px 0}
+.guide .code-xai,.guide .code-sub{display:inline-block;font-size:.7rem;padding:0 6px;
+  border-radius:5px;margin-right:6px;vertical-align:middle}
+.guide .code-xai{background:#16283a;color:var(--accent)}
+.guide .code-sub{background:#2e2414;color:var(--warn)}
+.guide pre.try{background:#0b0e12;border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;overflow-x:auto;font-family:var(--mono);font-size:.86rem}
+.guide .box{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+  padding:4px 18px 10px;margin:14px 0}
+@media (max-width:640px){.guide table.map th{width:auto}}
+</style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <script>window.addEventListener("load",function(){if(window.renderMathInElement)renderMathInElement(document.body,{throwOnError:false});});</script>
 </head>
 <body>
-<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="primer.html">XAI Primer</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
 
 <header class="hero"><div class="wrap">
   <span class="venue" style="color:var(--accent-2);font-weight:600">Phase C · mechanistic interpretability</span>
@@ -34,6 +55,104 @@
 </div></section>
 
 
+
+
+<section class="guide"><div class="wrap">
+  <span class="gtag">Mechanistic family · testing a circuit hypothesis</span>
+  <h2>Learn the method &mdash; a beginner's guide</h2>
+  <p class="sub">New to explainable AI? This block explains the method as it is used on neural
+  networks, then how we run the very same method on an Atari&nbsp;2600, where &mdash; unlike for a
+  network &mdash; we know the right answer. Every implementation step links to the code. See also the
+  <a href="primer.html">XAI primer</a> for the shared vocabulary.</p>
+  <div class="chips"><a class="wk" href="https://en.wikipedia.org/wiki/Statistical_hypothesis_test">Statistical hypothesis test</a><a class="wk" href="https://en.wikipedia.org/wiki/Resampling_(statistics)">Resampling (statistics)</a><a class="wk" href="https://en.wikipedia.org/wiki/Causal_model">Causal model</a><a class="wk" href="https://en.wikipedia.org/wiki/Ablation_(artificial_intelligence)">Ablation (artificial intelligence)</a><a class="wk" href="https://en.wikipedia.org/wiki/Mechanistic_interpretability">Mechanistic interpretability</a></div>
+  <h3>The idea in plain words</h3>
+  
+<p>Most interpretability methods <i>produce</i> explanations. Causal scrubbing <i>checks</i> one. You
+bring a <b>hypothesis</b>: &ldquo;for this behaviour, only these parts of the network matter, and they
+compute this&rdquo;. Causal scrubbing turns that sentence into an experiment that the hypothesis can
+fail.</p>
+<p>The trick is a simple consequence of the claim. If a part really does not matter, then replacing its
+activation with the activation it had on a <b>different, random input</b> should not change the
+behaviour. So: take everything the hypothesis calls irrelevant, <b>resample</b> it from other inputs
+(this is the &ldquo;scrubbing&rdquo;), run the model, and measure how much of the original performance
+survives. If it all survives, the hypothesis passes. If performance collapses, something the hypothesis
+called irrelevant was in fact doing work. It tests a whole explanation at once, not one component at a
+time, which makes it one of the strictest checks in mechanistic interpretability.</p>
+  <h3>How it works on a neural network</h3>
+  
+<p>A hypothesis has three parts: the model's computational graph \(G\), a simpler &ldquo;story&rdquo;
+graph \(I\), and a map \(c\) saying which nodes of \(G\) implement which nodes of \(I\). Scrubbing
+rewrites the forward pass on input \(x\). Every activation <b>not</b> claimed by the hypothesis is taken
+from a random other input \(x'\). Every activation that <b>is</b> claimed may be taken from any input
+\(x''\) that agrees with \(x\) on the feature the story says it computes. The score is the share of
+the loss gap that survives:</p>
+\[ \text{loss recovered} \;=\;
+   \frac{\mathbb{E}[L_{\text{random}}] - \mathbb{E}[L_{\text{scrubbed}}]}
+        {\mathbb{E}[L_{\text{random}}] - \mathbb{E}[L_{\text{model}}]} . \]
+<p>1 means the hypothesis explains all of the behaviour; 0 means it explains none of it.
+\(L_{\text{random}}\) is the loss when <i>everything</i> is resampled.</p>
+<p><b>Toy example.</b> A model computes \(y = 3x_1 + 0\cdot x_2\). The clean input is
+\(x=(1,4)\), so \(y=3\). A random other input is \(x'=(2,7)\).
+<b>Hypothesis A</b>: &ldquo;only \(x_1\) matters&rdquo;. Scrub \(x_2\) to 7: \(y = 3\cdot 1 + 0
+\cdot 7 = 3\). Unchanged, so A passes. <b>Hypothesis B</b>: &ldquo;only \(x_2\) matters&rdquo;.
+Scrub \(x_1\) to 2: \(y = 6\). The output moved, so B fails. A real test resamples many \(x'\) and
+averages, because one lucky resample can hide a dependence.</p>
+  <div class="box"><h3 style="margin-top:12px">Recipe</h3><ol class="recipe"><li>Write the hypothesis as a set of components (and, ideally, what each one computes).</li><li>Pick a behaviour metric and a pool of other inputs to resample from.</li><li>For each test input, replace every out-of-hypothesis activation with its value on a random other input; keep in-hypothesis activations consistent with the claim.</li><li>Run the model and record the metric; repeat over many resamples.</li><li>Report loss recovered. Also scrub a deliberately wrong hypothesis: a test that cannot fail a wrong story proves nothing.</li></ol></div>
+  <h3>From a neural network to the Atari</h3>
+  <table class="map"><tr><th>Components of the network</th><td>The candidate RAM cells of the game (for Pong: the two scores, paddle positions, ball position).</td></tr><tr><th>The behaviour</th><td>The value of <b>output cells</b> after the 15-frame horizon: cells that are driven by other cells but drive none themselves.</td></tr><tr><th>The hypothesis</th><td>A set of cells claimed to carry the behaviour. The TRUE one is the outputs plus all their ancestors in the exact data-flow graph.</td></tr><tr><th>Resampling from another input</th><td>Writing a different value into an out-of-circuit cell at \(f^*\): each value from the oracle set {0, base+17, base+37} except the current one.</td></tr><tr><th>Loss recovered</th><td>Scrubbing-preserved performance: the share of (trial, output) pairs whose output byte equals the clean run.</td></tr><tr><th>A wrong hypothesis</th><td>The true circuit with one demonstrably live ancestor swapped for an irrelevant cell, keeping the size the same.</td></tr></table>
+  <h3>How we apply it to the VCS</h3>
+  
+<p>On a network you must <i>guess</i> the hypothesis. On the VCS we can <b>compute</b> the true one and
+then check that scrubbing rewards it and punishes a false one. Our runner
+<code>causal_scrubbing.jl</code> does this per game:</p>
+<ol>
+<li><b>State.</b> The shared gameplay checkpoint at \(f^*\) (90 seeded random-action frames) and the
+15-frame action tail.</li>
+<li><b>True data-flow graph.</b> For each candidate cell \(i\), write 0, base+17 and base+37 in turn,
+replay the tail, and mark an edge \(i\to j\) if any value changes cell \(j\). This is the same exact
+graph the connectomics and ACDC pages are scored against.</li>
+<li><b>Behaviour and hypotheses.</b> The outputs are the sinks of that graph that have at least one
+ancestor. The <b>true</b> circuit is the outputs plus every cell with a path to them. The <b>wrong</b>
+circuit drops one ancestor that is confirmed live (changing it alone changes an output) and adds an
+outside cell instead.</li>
+<li><b>Scrubbing.</b> For each hypothesis, every cell outside the circuit is overwritten with a resample
+value, while circuit cells keep their clean value. The trial set walks through every resample value of
+every outside cell (the others held at their first resample value), plus one trial with all outside
+cells at their first resample value. After each trial the
+tail is replayed and the output cells are compared with the clean run.</li>
+<li><b>Verdict.</b> A hypothesis <b>passes</b> only if every output is preserved in every trial (score
+exactly 1). The run also reports whether the true circuit scores higher than the wrong one, and a graded
+similarity over all candidate cells and over the whole screen.</li>
+</ol>
+<p><b>Where we differ from the original.</b> The resample values are not activations from other real
+inputs. They come from the oracle's fixed value set, the same set used to build the true graph. The
+hypothesis is also only a <i>set of cells</i>: it makes no claim about what each cell computes, so
+there is no &ldquo;consistent&rdquo; resampling of in-circuit cells. Because the true circuit is
+built from the same interventions, its pass is close to guaranteed; it can still fail if several
+scrubbed cells interact. The informative half of the experiment is the <b>wrong</b> hypothesis: it must
+fail, and it shows that the test can tell a right story from a wrong one.</p>
+  <h3>Read the code</h3>
+  <p class="sub"><span class="code-xai">XAI</span> the interpretability method &nbsp;
+  <span class="code-sub">substrate</span> the bit-exact emulator it runs on (jutari, Julia).</p>
+  <ul class="callstack"><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/causal_scrubbing.jl#L289"><code>causal_scrubbing.jl:289</code></a> &mdash; The scrub: overwrite every out-of-circuit cell, keep circuit cells, replay the tail.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/causal_scrubbing.jl#L276"><code>causal_scrubbing.jl:276</code></a> &mdash; The resample distribution per cell: {0, base+17, base+37} minus the current value.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/causal_scrubbing.jl#L221"><code>causal_scrubbing.jl:221</code></a> &mdash; The exact data-flow graph the true hypothesis is derived from.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/causal_scrubbing.jl#L245"><code>causal_scrubbing.jl:245</code></a> &mdash; Transitive closure: every cell with a path to an output joins the true circuit.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/causal_scrubbing.jl#L352"><code>causal_scrubbing.jl:352</code></a> &mdash; Chooses the behaviour: sink cells of the true graph that have at least one ancestor.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/causal_scrubbing.jl#L426"><code>causal_scrubbing.jl:426</code></a> &mdash; Builds true and wrong hypotheses, runs every scrub trial, computes pass/fail and the triad.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/shared_testbed_impl.jl#L115"><code>shared_testbed_impl.jl:115</code></a> &mdash; The shared gameplay checkpoint, action tail and clean continuation.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/jutari_oracle.jl#L174"><code>jutari_oracle.jl:174</code></a> &mdash; Writes one byte into emulated RAM: the physical act of scrubbing a cell.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/env/StellaEnvironment.jl#L259"><code>StellaEnvironment.jl:259</code></a> &mdash; One bit-exact video frame; each scrub trial replays 15 of them.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/ground_truth/oracle_intervene.jl#L242"><code>oracle_intervene.jl:242</code></a> &mdash; The exact intervention oracle behind the shared state's cause-density gate.</li></ul>
+  <h3>Reading the result</h3>
+  
+<p>The figure shows two preservation maps for Pong (output cell &times; scrub trial): one for the true
+hypothesis and one for the wrong one. Expect the true map fully preserved and the wrong map broken in
+some trials, and the same split game after game in the scores. That pattern
+means two things. The test is <b>sensitive</b>: it catches a story that wrongly calls a live cell
+irrelevant. And it is <b>exact</b> here, because each resample is a real intervention on a fully
+observable machine, not an approximation. What a pass does <i>not</i> tell you is how the circuit
+computes the behaviour. It confirms the wiring, not the algorithm.</p>
+  <h3>Pitfalls</h3>
+  <ul class="pit"><li><b>A passing test needs a failing control.</b> If the resampling is too weak (for example, the pool of other inputs is too similar), every hypothesis passes. Always scrub a wrong hypothesis too.</li><li><b>Over-large hypotheses pass trivially.</b> &ldquo;Everything matters&rdquo; never fails a scrub. Pair the score with a measure of how small the hypothesis is.</li><li><b>Resample distribution matters.</b> Chan et al. resample from real inputs; we use a fixed oracle value set. Different distributions can expose different dependences, and Miller et al. show such details can flip verdicts.</li><li><b>Wiring is not meaning.</b> A set-of-cells hypothesis that passes says <i>where</i> the computation happens, not <i>what</i> it is. Testing a semantic claim needs a richer hypothesis (see DAS).</li></ul>
+  <h3>Try it yourself</h3>
+  <pre class="try">julia --project=jutari tools/xai_study/phaseC_mechanistic/causal_scrubbing.jl --games core</pre>
+  <p class="sub">Writes <code>causal_scrubbing_&lt;game&gt;.{json,npz}</code> and <code>causal_scrubbing_core_summary.json</code> into <code>tools/xai_study/phaseC_mechanistic/out/</code>. <code>--selftest</code> runs a quick check on Pong.</p>
+  <h3>Original papers &amp; further reading</h3>
+  <ul><li>Chan, Garriga-Alonso, Goldowsky-Dill, Greenblatt, Nitishinskaya, Radhakrishnan, Shlegeris &amp; Thomas (2022). <i>Causal Scrubbing: a method for rigorously testing interpretability hypotheses.</i> Redwood Research / Alignment Forum. &mdash; <a href="https://www.alignmentforum.org/posts/JvZhhzycHu2Yd57RN/causal-scrubbing-a-method-for-rigorously-testing">www.alignmentforum.org/posts/JvZhhzycHu2Yd57RN/causal-scrubbing-a-method-for-rigorously-testing</a></li><li>Geiger, Ibeling, Zur, Chaudhary, Chauhan, Huang, Arora, Wu, Goodman, Potts &amp; Icard (2023). <i>Causal Abstraction: A Theoretical Foundation for Mechanistic Interpretability.</i> (follow-up: puts scrubbing, patching and DAS in one framework) &mdash; <a href="https://arxiv.org/abs/2301.04709">arxiv.org/abs/2301.04709</a></li><li>Miller, Chughtai &amp; Saunders (2024). <i>Transformer Circuit Faithfulness Metrics are not Robust.</i> (critique: ablation details change the verdict) &mdash; <a href="https://arxiv.org/abs/2407.08734">arxiv.org/abs/2407.08734</a></li></ul>
+  <p><b>Read next:</b> <a href="m_acdc.html">ACDC — automatic circuit discovery</a> · <a href="m_das.html">Interchange interventions / DAS</a> · <a href="m_path_patching.html">Path patching / IOI circuit</a> · <a href="m_activation_patching.html">Activation patching / causal mediation</a></p>
+</div></section>
 
 <section><div class="wrap">
   <h2>How it's scored</h2>
@@ -148,7 +267,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/cc950552d22a04a0bddfb0d14cd2429b3bca8859"><code>cc950552</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/46b94f1dfc8fa5dca6fdd4c820fb11a26497fc6f"><code>46b94f1d</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

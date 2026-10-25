@@ -18,13 +18,23 @@ Live at **https://akmaier.github.io/UnderstandingVCS/** (GitHub Pages, source = 
   `conformance.html` is the guided code tour of the PXC1/PXC2/PXC-S/PXC4 harnesses; its
   GitHub blob links carry verified line numbers — re-check them with the snippet at the
   bottom of `build_pages.py`'s history if the harness files move.
+- `guides/<key>.py` — the **beginner's guide** for each of the 31 method pages ("Learn the
+  method": the method on neural networks, the translation to the VCS, code links into both the
+  XAI runner and the jutari substrate, pitfalls, a reproduce command). Schema in
+  `guides/__init__.py`. Code links are `(path, find-substring)` pairs resolved to line numbers at
+  build time — the build fails if a function moves, so links cannot rot silently.
+- `primer.py` — content for `primer.html`, the XAI primer (machine, NN↔VCS dictionary, oracle,
+  scoring, reading order, glossary) that every guide links to.
+- `check_guide_links.py` — verifies every Wikipedia / DOI / paper link in the guides and primer
+  (Wikipedia via the API: exists, not a disambiguation page, redirects reported).
 - `assets/` — generated PNG figures, looping GIFs, web MP4s, and the hand-written `css/style.css`.
 - `.nojekyll` — serve paths verbatim (no Jekyll processing).
 
 ## Rebuild
 ```bash
 python3 docs/build_assets.py   # PDFs/MP4s -> web img/gif/mp4   (only when sources change)
-python3 docs/build_pages.py    # manifest.py -> docs/*.html      (after any manifest edit)
+python3 docs/build_pages.py    # manifest.py + guides/ -> docs/*.html  (needs numpy)
+python3 docs/check_guide_links.py   # after editing a guide
 ```
 
 ## Scope

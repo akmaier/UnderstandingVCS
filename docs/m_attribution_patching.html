@@ -5,14 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Attribution / edge patching — Paper 2 method</title>
 <meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css"><style>
+.guide h3{margin:26px 0 8px}
+.guide .gtag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;
+  background:#14301f;color:var(--accent-2);border:1px solid #23502f;margin-bottom:6px}
+.guide .chips a{display:inline-block;margin:3px 6px 3px 0;padding:3px 10px;border-radius:999px;
+  border:1px solid var(--border);background:var(--bg-soft);font-size:.86rem}
+.guide .chips a.wk::before{content:"W ";font-weight:700;color:var(--fg-dim)}
+.guide table.map{width:100%;border-collapse:collapse;margin:8px 0 4px}
+.guide table.map th,.guide table.map td{border:1px solid var(--border);padding:8px 10px;
+  vertical-align:top;text-align:left}
+.guide table.map th{background:var(--bg-soft);width:28%;font-weight:600}
+.guide ol.recipe li,.guide ul.pit li{margin:6px 0}
+.guide .code-xai,.guide .code-sub{display:inline-block;font-size:.7rem;padding:0 6px;
+  border-radius:5px;margin-right:6px;vertical-align:middle}
+.guide .code-xai{background:#16283a;color:var(--accent)}
+.guide .code-sub{background:#2e2414;color:var(--warn)}
+.guide pre.try{background:#0b0e12;border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;overflow-x:auto;font-family:var(--mono);font-size:.86rem}
+.guide .box{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+  padding:4px 18px 10px;margin:14px 0}
+@media (max-width:640px){.guide table.map th{width:auto}}
+</style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <script>window.addEventListener("load",function(){if(window.renderMathInElement)renderMathInElement(document.body,{throwOnError:false});});</script>
 </head>
 <body>
-<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="primer.html">XAI Primer</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
 
 <header class="hero"><div class="wrap">
   <span class="venue" style="color:var(--accent-2);font-weight:600">Phase C · mechanistic interpretability</span>
@@ -34,6 +55,103 @@
 </div></section>
 
 
+
+
+<section class="guide"><div class="wrap">
+  <span class="gtag">Mechanistic family · patching at gradient cost</span>
+  <h2>Learn the method &mdash; a beginner's guide</h2>
+  <p class="sub">New to explainable AI? This block explains the method as it is used on neural
+  networks, then how we run the very same method on an Atari&nbsp;2600, where &mdash; unlike for a
+  network &mdash; we know the right answer. Every implementation step links to the code. See also the
+  <a href="primer.html">XAI primer</a> for the shared vocabulary.</p>
+  <div class="chips"><a class="wk" href="https://en.wikipedia.org/wiki/Taylor_series">Taylor series</a><a class="wk" href="https://en.wikipedia.org/wiki/Linear_approximation">Linear approximation</a><a class="wk" href="https://en.wikipedia.org/wiki/Finite_difference">Finite difference</a><a class="wk" href="https://en.wikipedia.org/wiki/Automatic_differentiation">Automatic differentiation</a></div>
+  <h3>The idea in plain words</h3>
+  
+<p>Activation patching is the gold standard of mechanistic interpretability, but it is slow. You need
+one extra forward pass for <i>every</i> component you test. A large language model has millions of
+neurons and thousands of attention heads at every token position, so exact patching of all of them is
+out of reach. <b>Attribution patching</b> is the shortcut. It <b>predicts</b> the effect of every patch
+at once from a single forward and backward pass.</p>
+<p>The trick is the oldest one in calculus: near a point, a smooth function looks like a straight line.
+If you know the <b>slope</b> of the output with respect to an activation (the gradient), and you know
+how far the patch would move that activation, then slope &times; distance is a guess for how far the
+output moves. That guess is a <b>first-order Taylor approximation</b>. It is exact when the output is
+linear in the activation, and wrong when it is not. On the VCS we can measure the exact patch effect
+for every site, so we can see precisely how much accuracy the shortcut trades for its speed.</p>
+  <h3>How it works on a neural network</h3>
+  
+<p>Use the notation of activation patching: clean input \(x\), corrupted input \(\tilde x\),
+component \(\ell\) with clean activation \(a = a_\ell(x)\) and corrupted activation
+\(a' = a_\ell(\tilde x)\). The exact patch effect is
+\(\Delta_\ell = y(x \mid a_\ell := a') - y(x)\). Attribution patching replaces it with</p>
+\[ \widehat{\Delta}_\ell \;=\; \left.\frac{\partial y}{\partial a_\ell}\right|_{x} \cdot \,(a' - a). \]
+<p>The gradient for <i>all</i> components comes from one backward pass on the clean run; the
+\(a' - a\) terms come from one cached corrupted run. That is three passes in total, instead of one per
+component. <b>Edge</b> attribution patching applies the same estimate to a connection between two
+components (the sender&rsquo;s change times the receiver&rsquo;s gradient), so it can score every edge
+of the computational graph cheaply.</p>
+<p><b>Toy example.</b> Let \(y = a^2\) with clean \(a = 1\). The slope is \(2a = 2\).</p>
+<ul>
+<li>Small patch \(a' = 1.1\): estimate \(2 \times 0.1 = 0.2\); truth \(1.21 - 1 = 0.21\). Close.</li>
+<li>Large patch \(a' = 4\): estimate \(2 \times 3 = 6\); truth \(16 - 1 = 15\). Badly off in size,
+but the sign is right.</li>
+<li>Patch at a flat point, clean \(a = 0\), \(a' = 3\): slope \(0\), estimate \(0\); truth \(9\). The
+estimate misses the effect completely.</li>
+</ul>
+<p>The first two cases are why attribution patching is good at <i>which</i> components matter but
+poor at <i>how much</i>. The third is the dangerous case: a real effect hidden behind a zero gradient,
+just like saturated attention or a dead ReLU.</p>
+  <div class="box"><h3 style="margin-top:12px">Recipe</h3><ol class="recipe"><li>Run the corrupted input once and cache every activation \(a'_\ell\).</li><li>Run the clean input forward, caching \(a_\ell\), and backward from the metric \(y\) to get every \(\partial y/\partial a_\ell\).</li><li>For each component, compute \(\widehat\Delta_\ell = \partial y/\partial a_\ell \cdot (a'_\ell - a_\ell)\) (a dot product for vector activations).</li><li>Rank components by \(|\widehat\Delta_\ell|\) and keep the top ones.</li><li>Verify the shortlist with exact activation patching; the estimate is a screen, not a verdict.</li></ol></div>
+  <h3>From a neural network to the Atari</h3>
+  <table class="map"><tr><th>Activation \(a_\ell\)</th><td>One state site at frame \(f^*\): a candidate RAM byte or the <code>COLUBK</code> TIA register.</td></tr><tr><th>Corrupted activation \(a'\)</th><td>The value from a donor run (LEFT or RIGHT pressed before \(f^*\)), or the directed value <code>base+17</code>.</td></tr><tr><th>Gradient \(\partial y / \partial a\)</th><td>The local slope of the true 15-frame output, measured by poking the byte to \(a \pm 1\) and re-running the real ROM (a central finite difference).</td></tr><tr><th>Metric \(y\)</th><td>The two most causally active candidate bytes and the count of changed screen pixels, read 15 frames later.</td></tr><tr><th>Exact patching (the reference)</th><td>The full re-run with the patched value, which on the VCS equals the oracle.</td></tr><tr><th>An edge</th><td>A (patched site, output) pair: one cell of the effect matrix.</td></tr></table>
+  <h3>How we apply it to the VCS</h3>
+  
+<p>The runner is built on top of the activation-patching harness. It uses the same shared gameplay
+checkpoint, the same outputs and the same patch list: donor patches from LEFT/RIGHT runs, directed
+<code>base+17</code> patches on every candidate byte, and one background-colour patch.</p>
+<ol>
+<li><b>The slope.</b> For each site the runner writes \(a+1\) and \(a-1\), re-runs 15 frames each,
+and divides the difference by 2. At 0 or 255 it uses a one-sided difference. This is the
+program&rsquo;s own local derivative, measured on the real machine. It is <i>not</i> a Zygote
+backward pass. For a single-frame content read the two coincide, but the finite difference also
+works across 15 frames of discrete code, where autodiff gives no useful answer.</li>
+<li><b>The estimate.</b> \(\widehat\Delta = \text{slope} \times (a' - a)\) for every (site, output)
+pair.</li>
+<li><b>The truth.</b> The exact patch: write \(a'\), re-run, read the outputs.</li>
+<li><b>Scores.</b> Pearson correlation of estimate vs truth over all cells, mean and relative error,
+edge precision/recall (does the estimate fire where the truth fires?), and the fraction of active
+edges where estimate and truth agree exactly (the &ldquo;linear regime&rdquo;).</li>
+<li><b>Positive control.</b> A byte read back at the patch frame itself is perfectly linear,
+\(y(a) = a\). For it the estimate must equal the truth for steps of 1 to 32. This proves the wiring
+is right, so any error elsewhere is the program&rsquo;s nonlinearity.</li>
+<li><b>Position gradient.</b> Because this is a gradient method, the runner also reports the naive
+Zygote gradient of the screen-position output (identically zero) next to the bilinear-sampler
+gradient, which restores a non-zero value.</li>
+</ol>
+<p>Note one honest consequence. On a network the gradient is nearly free. Here each slope costs two
+re-runs, so the VCS version is not cheaper than exact patching. It is run to measure the
+<i>approximation error</i>, not to save compute.</p>
+  <h3>Read the code</h3>
+  <p class="sub"><span class="code-xai">XAI</span> the interpretability method &nbsp;
+  <span class="code-sub">substrate</span> the bit-exact emulator it runs on (jutari, Julia).</p>
+  <ul class="callstack"><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/attribution_patching.jl#L136"><code>attribution_patching.jl:136</code></a> &mdash; The slope \(\partial y/\partial a\): central difference of two real re-runs at \(a\pm1\).</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/attribution_patching.jl#L351"><code>attribution_patching.jl:351</code></a> &mdash; The attribution-patching estimate: slope times the patch distance.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/attribution_patching.jl#L382"><code>attribution_patching.jl:382</code></a> &mdash; Edge precision/recall: the estimate&rsquo;s firing pattern vs the exact data-flow.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/attribution_patching.jl#L481"><code>attribution_patching.jl:481</code></a> &mdash; Positive control: a strictly linear site where the estimate must be exact.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/attribution_patching.jl#L427"><code>attribution_patching.jl:427</code></a> &mdash; Naive (zero) vs bilinear-sampler Zygote gradient for the screen-position output.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/activation_patching.jl#L282"><code>activation_patching.jl:282</code></a> &mdash; The exact patch both the slope probes and the reference are built from.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/shared_testbed_impl.jl#L357"><code>shared_testbed_impl.jl:357</code></a> &mdash; The bilinear sampler that gives the position output a usable gradient.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/diff/SoftStep.jl#L106"><code>SoftStep.jl:106</code></a> &mdash; The differentiable one-hot RAM read the sampler gradient flows through.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/jutari_oracle.jl#L174"><code>jutari_oracle.jl:174</code></a> &mdash; The byte write used for \(a\pm1\) probes and for the exact patch.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/env/StellaEnvironment.jl#L259"><code>StellaEnvironment.jl:259</code></a> &mdash; One bit-exact frame of the real machine.</li></ul>
+  <h3>Reading the result</h3>
+  
+<p>Expect the estimate to agree with the truth on <i>which</i> edges exist far better than on their
+<i>size</i>. Small donor patches and single-frame reads sit in the linear regime and match closely.
+Large directed patches, bytes that wrap at 255, and bytes the game recomputes each frame break
+linearity, and the scatter of estimate vs truth spreads out. The correlation is therefore good but
+clearly below the exact method, and the positive control shows the gap is the program&rsquo;s fault,
+not the harness&rsquo;s.</p>
+  <h3>Pitfalls</h3>
+  <ul class="pit"><li><b>Large patches are not small.</b> Taylor expansion holds near the clean point. A patch that moves an activation far (here, <code>base+17</code>) can land in a region the slope knows nothing about.</li><li><b>Zero gradient, real effect.</b> Saturated softmax, dead ReLUs or a threshold in the program give slope 0 and hide a large true effect. AtP* documents this for attention in LLMs.</li><li><b>Wrap-around and thresholds.</b> VCS bytes are 8-bit: 250 + 17 wraps to 11. Comparisons and branches make the output piecewise constant. Both break the linear model.</li><li><b>Cancellation.</b> Summing estimates over many components or positions can cancel positive and negative terms that are each large.</li><li><b>Use it as a filter.</b> The method is designed to shortlist candidates for exact patching, not to replace it.</li></ul>
+  <h3>Try it yourself</h3>
+  <pre class="try">julia --project=jutari tools/xai_study/phaseC_mechanistic/attribution_patching.jl --games core</pre>
+  <p class="sub">Writes <code>attribution_patching_&lt;game&gt;.json/.npz</code> and a core summary into <code>tools/xai_study/phaseC_mechanistic/out/</code>. Three re-runs per patch (two slope probes plus the exact patch); minutes per game on one CPU core.</p>
+  <h3>Original papers &amp; further reading</h3>
+  <ul><li>Nanda (2023). <i>Attribution Patching: Activation Patching At Industrial Scale.</i> Blog post. &mdash; <a href="https://www.neelnanda.io/mechanistic-interpretability/attribution-patching">www.neelnanda.io/mechanistic-interpretability/attribution-patching</a></li><li>Syed, Rager &amp; Conmy (2023). <i>Attribution Patching Outperforms Automated Circuit Discovery</i> (edge attribution patching). &mdash; <a href="https://arxiv.org/abs/2310.10348">arxiv.org/abs/2310.10348</a></li><li>Kram&aacute;r, Lieberum, Shah &amp; Nanda (2024). <i>AtP*: An efficient and scalable method for localizing LLM behaviour to components.</i> (Documents where the linear estimate fails, e.g. attention saturation, and proposes fixes.) &mdash; <a href="https://arxiv.org/abs/2403.00745">arxiv.org/abs/2403.00745</a></li></ul>
+  <p><b>Read next:</b> <a href="m_activation_patching.html">Activation patching / causal mediation</a> · <a href="m_saliency.html">Vanilla gradient (saliency)</a> · <a href="m_acdc.html">ACDC — automatic circuit discovery</a> · <a href="m_path_patching.html">Path patching / IOI circuit</a></p>
+</div></section>
 
 <section><div class="wrap">
   <h2>How it's scored</h2>
@@ -148,7 +266,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/cc950552d22a04a0bddfb0d14cd2429b3bca8859"><code>cc950552</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/46b94f1dfc8fa5dca6fdd4c820fb11a26497fc6f"><code>46b94f1d</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

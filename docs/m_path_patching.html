@@ -5,14 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Path patching / IOI circuit — Paper 2 method</title>
 <meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css"><style>
+.guide h3{margin:26px 0 8px}
+.guide .gtag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;
+  background:#14301f;color:var(--accent-2);border:1px solid #23502f;margin-bottom:6px}
+.guide .chips a{display:inline-block;margin:3px 6px 3px 0;padding:3px 10px;border-radius:999px;
+  border:1px solid var(--border);background:var(--bg-soft);font-size:.86rem}
+.guide .chips a.wk::before{content:"W ";font-weight:700;color:var(--fg-dim)}
+.guide table.map{width:100%;border-collapse:collapse;margin:8px 0 4px}
+.guide table.map th,.guide table.map td{border:1px solid var(--border);padding:8px 10px;
+  vertical-align:top;text-align:left}
+.guide table.map th{background:var(--bg-soft);width:28%;font-weight:600}
+.guide ol.recipe li,.guide ul.pit li{margin:6px 0}
+.guide .code-xai,.guide .code-sub{display:inline-block;font-size:.7rem;padding:0 6px;
+  border-radius:5px;margin-right:6px;vertical-align:middle}
+.guide .code-xai{background:#16283a;color:var(--accent)}
+.guide .code-sub{background:#2e2414;color:var(--warn)}
+.guide pre.try{background:#0b0e12;border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;overflow-x:auto;font-family:var(--mono);font-size:.86rem}
+.guide .box{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+  padding:4px 18px 10px;margin:14px 0}
+@media (max-width:640px){.guide table.map th{width:auto}}
+</style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <script>window.addEventListener("load",function(){if(window.renderMathInElement)renderMathInElement(document.body,{throwOnError:false});});</script>
 </head>
 <body>
-<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="primer.html">XAI Primer</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
 
 <header class="hero"><div class="wrap">
   <span class="venue" style="color:var(--accent-2);font-weight:600">Phase C · mechanistic interpretability</span>
@@ -34,6 +55,101 @@
 </div></section>
 
 
+
+
+<section class="guide"><div class="wrap">
+  <span class="gtag">Mechanistic family · patching the wiring, not the nodes</span>
+  <h2>Learn the method &mdash; a beginner's guide</h2>
+  <p class="sub">New to explainable AI? This block explains the method as it is used on neural
+  networks, then how we run the very same method on an Atari&nbsp;2600, where &mdash; unlike for a
+  network &mdash; we know the right answer. Every implementation step links to the code. See also the
+  <a href="primer.html">XAI primer</a> for the shared vocabulary.</p>
+  <div class="chips"><a class="wk" href="https://en.wikipedia.org/wiki/Mechanistic_interpretability">Mechanistic interpretability</a><a class="wk" href="https://en.wikipedia.org/wiki/Mediation_(statistics)">Mediation (statistics)</a><a class="wk" href="https://en.wikipedia.org/wiki/Directed_graph">Directed graph</a><a class="wk" href="https://en.wikipedia.org/wiki/Precision_and_recall">Precision and recall</a></div>
+  <h3>The idea in plain words</h3>
+  
+<p>Activation patching tells you that a component matters. It does not tell you <b>how</b> its
+influence reaches the output. Component A might act on the output directly, or it might only matter
+because it changes component B, which then changes the output. A <b>circuit</b> is the answer to that
+question: the small set of components and the <b>edges</b> (connections) between them that carry out a
+behaviour. To find edges you need a sharper tool.</p>
+<p><b>Path patching</b> is that tool. You change a <b>sender</b> component, but you let the change reach
+only one chosen <b>receiver</b>. Every other component downstream of the sender is held at the value it
+had in the normal run. If the output still moves, the signal must have travelled along the
+sender&rarr;receiver edge. This is how Wang et al. mapped the <b>indirect-object-identification
+(IOI)</b> circuit in GPT-2: which attention heads send which information to which other heads to
+complete &ldquo;When Mary and John went to the store, John gave a drink to&hellip;&rdquo; with
+&ldquo;Mary&rdquo;. On the VCS the true wiring between memory cells can be measured exactly, so we can
+check how much of it a path patch actually recovers.</p>
+  <h3>How it works on a neural network</h3>
+  
+<p>Think of the network as a directed graph of components. A transformer&rsquo;s components all read
+from and write to the <b>residual stream</b>, so every earlier head can influence every later one.
+Pick a sender \(s\) and a receiver \(r\). Path patching runs the clean input \(x\) with three rules:
+\(s\) takes its value from the corrupted input \(\tilde x\); the receiver \(r\) is recomputed
+normally, so it sees the corrupted \(s\); and every other component that \(s\) could reach is
+<b>frozen</b> to its clean value. Then</p>
+\[ \Delta_{s \to r} \;=\; y\big(x \,\big|\, s := s(\tilde x),\; \text{others frozen},\; r \text{ recomputed}\big) \;-\; y(x). \]
+<p>A non-zero \(\Delta_{s\to r}\) means the edge \(s \to r\) carries part of the behaviour. Repeating
+this over pairs, working backwards from the output, builds the circuit. The result is scored as a set
+of edges.</p>
+<p><b>Toy example.</b> Let \(b = 2a\), \(c = a + b\), and output \(y = c\). Clean \(a = 1\): \(b = 2\),
+\(c = 3\). Corrupt \(a := 2\). Plain activation patching of \(a\) gives \(b = 4\), \(c = 6\), so
+\(\Delta_a = 3\). Now path-patch the edge \(a \to b\): let \(b\) see \(a = 2\) (so \(b = 4\)), but
+freeze \(a\)&rsquo;s direct input to \(c\) at its clean value 1. Then \(c = 1 + 4 = 5\) and
+\(\Delta_{a\to b} = 2\). Path-patch the direct edge \(a \to c\) instead: \(b\) stays at 2, \(c = 2 + 2
+= 4\), \(\Delta_{a\to c} = 1\). The total effect of 3 splits into an indirect part (2, via \(b\)) and a
+direct part (1). That split is what node-level patching cannot give you.</p>
+  <div class="box"><h3 style="margin-top:12px">Recipe</h3><ol class="recipe"><li>Choose clean and corrupted inputs and a metric, as for activation patching.</li><li>Pick a sender component \(s\) and a receiver \(r\).</li><li>Run the clean input with \(s\) set to its corrupted value; freeze every other component downstream of \(s\) at its clean value; let only \(r\) recompute.</li><li>Run the rest of the network and record \(\Delta_{s\to r}\).</li><li>Repeat over sender/receiver pairs, starting from the output and moving backwards; keep the edges with large effects.</li><li>Score the recovered edge set (precision, recall, F1) against a reference, or test it with ablations.</li></ol></div>
+  <h3>From a neural network to the Atari</h3>
+  <table class="map"><tr><th>A component (head)</th><td>A candidate RAM cell: a byte the game uses as a variable.</td></tr><tr><th>Layers</th><td>Video frames. The sender lives at frame \(f^*\), the receiver at frame \(f^*{+}1\).</td></tr><tr><th>Sender corruption</th><td>Write <code>base+17</code> into the sender cell at \(f^*\).</td></tr><tr><th>Freeze all other components</th><td>After one frame, overwrite every other candidate cell with its clean value at \(f^*{+}1\); only the receiver keeps the sender&rsquo;s signal.</td></tr><tr><th>Metric</th><td>Does the receiver cell&rsquo;s own value differ from the clean run at the end of the 15-frame horizon?</td></tr><tr><th>Reference circuit</th><td>The <b>true routine</b>: the same path patch with an exhaustive set of sender values (0, <code>base+17</code>, <code>base+37</code>). An edge is true if any value fires it.</td></tr></table>
+  <h3>How we apply it to the VCS</h3>
+  
+<p>The nodes are the game&rsquo;s candidate RAM cells. Everything starts from the shared gameplay
+checkpoint at \(f^*\) with a 15-frame horizon. The first frame of the horizon is the
+sender&rarr;receiver hop, using the gameplay stream&rsquo;s own next action.</p>
+<ol>
+<li><b>One path patch</b> \(i \to j\): copy the checkpoint, write the sender value into cell \(i\),
+step one frame, then restore <i>every</i> candidate cell except \(j\) to its clean frame-\(f^*{+}1\)
+value. Run the remaining 14 frames. The edge fires if cell \(j\) ends up different from the clean
+run.</li>
+<li><b>Recovered circuit.</b> One sender value per edge (<code>base+17</code>), the classical
+single-shot path patch, over all ordered pairs of cells.</li>
+<li><b>True routine.</b> The same edge-restricted operation, but with three sender values. This is the
+faithful <b>direct</b> circuit the method targets. A separate transitive graph (perturb a cell, run the
+full horizon, see which cells change) is recorded for context only.</li>
+<li><b>Score.</b> Edge precision, recall and F1 of the recovered circuit against the true routine,
+with self-edges excluded.</li>
+<li><b>Positive control.</b> Re-deriving the circuit with the exhaustive value set must give F1 = 1,
+proving the scorer rewards a faithful circuit.</li>
+</ol>
+<p>Two differences from the transformer original matter. First, our &ldquo;layer&rdquo; is a whole
+frame of thousands of CPU instructions, and a cell can be read and rewritten many times inside it.
+Second, we freeze only the <i>candidate</i> cells, not every byte, CPU register or TIA register. A
+signal can also leak through those unfrozen parts. The runner also counts <b>transient receivers</b>:
+cells the program recomputes from scratch, so no single-frame path into them can survive to the end of
+the horizon.</p>
+  <h3>Read the code</h3>
+  <p class="sub"><span class="code-xai">XAI</span> the interpretability method &nbsp;
+  <span class="code-sub">substrate</span> the bit-exact emulator it runs on (jutari, Julia).</p>
+  <ul class="callstack"><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/path_patching.jl#L310"><code>path_patching.jl:310</code></a> &mdash; One path patch: corrupt the sender, step one frame, freeze every other candidate cell, run the rest.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/path_patching.jl#L377"><code>path_patching.jl:377</code></a> &mdash; The method: single-shot path patch with one sender value per edge.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/path_patching.jl#L353"><code>path_patching.jl:353</code></a> &mdash; The reference: the same edge-restricted patch with the exhaustive value set.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/path_patching.jl#L263"><code>path_patching.jl:263</code></a> &mdash; The transitive (multi-hop) data-flow graph, recorded for context.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/path_patching.jl#L424"><code>path_patching.jl:424</code></a> &mdash; Circuit precision, recall and F1 over off-diagonal edges.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/path_patching.jl#L493"><code>path_patching.jl:493</code></a> &mdash; The sender&rarr;receiver hop uses the gameplay stream&rsquo;s next action.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/jutari_oracle.jl#L174"><code>jutari_oracle.jl:174</code></a> &mdash; The byte write used for both the sender corruption and the freeze-restore.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/shared_testbed_impl.jl#L115"><code>shared_testbed_impl.jl:115</code></a> &mdash; The shared gameplay checkpoint and action stream.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/env/StellaEnvironment.jl#L259"><code>StellaEnvironment.jl:259</code></a> &mdash; One bit-exact frame: the one-frame hop and the remaining horizon.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/ground_truth/oracle_intervene.jl#L163"><code>oracle_intervene.jl:163</code></a> &mdash; Reads the candidate cells that become the circuit&rsquo;s nodes.</li></ul>
+  <h3>Reading the result</h3>
+  
+<p>Each game&rsquo;s figure compares two adjacency matrices: the recovered edges and the true routine.
+Expect low recall on most games. A single sender value often fails to trip an edge that another value
+would. Many cells are also rebuilt by the program within the frame through other cells, so the
+one-step path carries no surviving signal. On games where the direct circuit is genuinely empty the
+method trivially matches it. On others, including the Pong state shown here, it can recover almost
+nothing. The positive control shows this is a real limit of the single-shot method, not a scoring
+bug.</p>
+  <h3>Pitfalls</h3>
+  <ul class="pit"><li><b>Which nodes you freeze defines the answer.</b> Freezing too few lets the signal leak around the chosen path; freezing too many can break the computation. On the VCS we freeze only candidate cells.</li><li><b>One corruption value is not enough.</b> An edge can carry a signal only for some values (a branch that triggers above a threshold). Single-shot recall is limited by that.</li><li><b>Coarse layers.</b> A VCS frame contains many reads and writes of the same cell. A one-frame hop merges several real edges into one, or hides them.</li><li><b>Metric fragility.</b> Miller et al. show that circuit faithfulness scores in transformers change a lot with the ablation type and the metric. Report your choices.</li><li><b>Cost grows with pairs.</b> One re-run per sender&ndash;receiver pair and value: quadratic in the number of nodes. This is why ACDC and edge attribution patching exist.</li></ul>
+  <h3>Try it yourself</h3>
+  <pre class="try">julia --project=jutari tools/xai_study/phaseC_mechanistic/path_patching.jl --games core</pre>
+  <p class="sub">Writes <code>path_patching_&lt;game&gt;.json/.npz</code> and a core summary into <code>tools/xai_study/phaseC_mechanistic/out/</code>. The exhaustive reference needs up to three re-runs per ordered cell pair, so this is the slowest of the patching runners; it can be sharded per game on the cluster (<code>--shard i --nshards n</code>).</p>
+  <h3>Original papers &amp; further reading</h3>
+  <ul><li>Wang, Variengien, Conmy, Shlegeris &amp; Steinhardt (2022). <i>Interpretability in the Wild: a Circuit for Indirect Object Identification in GPT-2 small.</i> ICLR 2023. &mdash; <a href="https://arxiv.org/abs/2211.00593">arxiv.org/abs/2211.00593</a></li><li>Goldowsky-Dill, MacLeod, Sato &amp; Arora (2023). <i>Localizing Model Behavior with Path Patching.</i> &mdash; <a href="https://arxiv.org/abs/2304.05969">arxiv.org/abs/2304.05969</a></li><li>Miller, Chughtai &amp; Saunders (2024). <i>Transformer Circuit Faithfulness Metrics are not Robust.</i> (Shows that circuit scores depend heavily on ablation choices.) &mdash; <a href="https://arxiv.org/abs/2407.08734">arxiv.org/abs/2407.08734</a></li></ul>
+  <p><b>Read next:</b> <a href="m_activation_patching.html">Activation patching / causal mediation</a> · <a href="m_acdc.html">ACDC — automatic circuit discovery</a> · <a href="m_attribution_patching.html">Attribution / edge patching</a> · <a href="m_A1_connectomics.html">A1 · Connectomics / data-flow graph</a></p>
+</div></section>
 
 <section><div class="wrap">
   <h2>How it's scored</h2>
@@ -148,7 +264,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/cc950552d22a04a0bddfb0d14cd2429b3bca8859"><code>cc950552</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/46b94f1dfc8fa5dca6fdd4c820fb11a26497fc6f"><code>46b94f1d</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

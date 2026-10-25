@@ -158,6 +158,7 @@ PAGES = [
     ("conformance.html", "Conformance"),
     ("paper2.html", "Paper 2"),
     ("methods.html", "P2 Methods"),
+    ("primer.html", "XAI Primer"),
     ("ground_truth.html", "Ground Truth ROMs"),
     ("provenance.html", "Provenance"),
     ("environment.html", "Environment"),
@@ -181,7 +182,7 @@ def page(active, title, body):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>%s</title>
 <meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css">%s
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
@@ -198,7 +199,8 @@ regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build
 </div></footer>
 </body>
 </html>
-""" % (esc(title), nav(active), body, M.REPO_URL, HEAD, SHORT, M.REPO_URL)
+""" % (esc(title), GUIDE_CSS if "class=\"guide\"" in body else "", nav(active), body,
+       M.REPO_URL, HEAD, SHORT, M.REPO_URL)
 
 
 def render_ledger(claims):
@@ -285,6 +287,9 @@ def build_index():
   <p class="lead">A reproducibility and provenance dashboard for the two papers built on the
   differentiable Atari&nbsp;2600 VCS. Every claim links to the exact code, command, artifact,
   runtime and hardware — and to the external reference that proves the emulator is real.</p>
+  <p class="lead" style="margin-top:10px">Learning explainable AI? The
+  <a href="primer.html"><b>XAI primer</b></a> and the 30 method guides teach each method on neural
+  networks and then run it, with code, on a machine whose true answer we know.</p>
   <div class="media">
     <img src="assets/gif/si_compare.gif" alt="Space Invaders: xitari vs jutari vs pixel difference">
     <p class="caption">Space Invaders — <b>xitari</b> (reference C++) · <b>jutari</b> (our Julia port) ·
@@ -1011,6 +1016,9 @@ def build_methods():
   implementation, its reference, and the score it is graded on — plus how a run executes,
   what it writes, and where the records live. This is the Paper-2 counterpart of the
   <a href="conformance.html">conformance code tour</a>.</p>
+  <p style="margin-top:12px"><b>New to explainable AI?</b> Start with the
+  <a href="primer.html">XAI primer</a>; then every method page below has a beginner's guide: how the
+  method works on neural networks, how we apply it to the Atari, and the exact lines of code.</p>
   <p style="margin-top:12px"><a href="#stack">Execution stack</a> ·
   <a href="#oracle">Oracle &amp; T3</a> · <a href="#phaseA">Phase A</a> ·
   <a href="#phaseB">Phase B (attribution)</a> · <a href="#phaseC">Phase C (mechanistic)</a> ·
@@ -1582,6 +1590,291 @@ def build_callstack_section(key):
 </div></section>""" % (runner_link, BLOB, phase, phase, applied, comp_title, comp, orc_link, jaxh))
 
 
+# ---------------------------------------------------------------------------
+# "Learn the method" — the beginner's guide block (docs/guides/<key>.py). Turns each
+# method page into an XAI lesson: the method on neural nets, the translation to the
+# VCS, and the exact lines of both implementations (XAI runner + emulator substrate).
+# ---------------------------------------------------------------------------
+from guides import load_all as _load_guides  # noqa: E402
+GUIDES = _load_guides()
+_LINE_CACHE = {}
+
+
+def _find_line(path, needle):
+    """1-based line of the first line of REPO/path containing `needle`; raises if absent,
+    so a moved or renamed function breaks the build instead of rotting a link."""
+    if path not in _LINE_CACHE:
+        _LINE_CACHE[path] = open(os.path.join(REPO, path), encoding="utf-8").read().split("\n")
+    for i, ln in enumerate(_LINE_CACHE[path], 1):
+        if needle in ln:
+            return i
+    raise SystemExit("guide code link: %r not found in %s" % (needle, path))
+
+
+GUIDE_CSS = """<style>
+.guide h3{margin:26px 0 8px}
+.guide .gtag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;
+  background:#14301f;color:var(--accent-2);border:1px solid #23502f;margin-bottom:6px}
+.guide .chips a{display:inline-block;margin:3px 6px 3px 0;padding:3px 10px;border-radius:999px;
+  border:1px solid var(--border);background:var(--bg-soft);font-size:.86rem}
+.guide .chips a.wk::before{content:"W ";font-weight:700;color:var(--fg-dim)}
+.guide table.map{width:100%;border-collapse:collapse;margin:8px 0 4px}
+.guide table.map th,.guide table.map td{border:1px solid var(--border);padding:8px 10px;
+  vertical-align:top;text-align:left}
+.guide table.map th{background:var(--bg-soft);width:28%;font-weight:600}
+.guide ol.recipe li,.guide ul.pit li{margin:6px 0}
+.guide .code-xai,.guide .code-sub{display:inline-block;font-size:.7rem;padding:0 6px;
+  border-radius:5px;margin-right:6px;vertical-align:middle}
+.guide .code-xai{background:#16283a;color:var(--accent)}
+.guide .code-sub{background:#2e2414;color:var(--warn)}
+.guide pre.try{background:#0b0e12;border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;overflow-x:auto;font-family:var(--mono);font-size:.86rem}
+.guide .box{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+  padding:4px 18px 10px;margin:14px 0}
+@media (max-width:640px){.guide table.map th{width:auto}}
+</style>"""
+
+
+def build_guide_section(key):
+    g = GUIDES.get(key)
+    if not g:
+        return ""
+    titles = {m["key"]: m["title"] for m in M.P2_METHODS}
+    wiki = "".join('<a class="wk" href="%s">%s</a>' % (u, esc(l)) for l, u in g.get("wiki", []))
+    papers = "".join('<li>%s &mdash; <a href="%s">%s</a></li>' % (c, u, esc(u.split("//", 1)[-1]))
+                     for c, u in g.get("papers", []))
+    recipe = "".join("<li>%s</li>" % r for r in g.get("recipe", []))
+    amap = "".join("<tr><th>%s</th><td>%s</td></tr>" % (a, b) for a, b in g.get("atari_map", []))
+    code_rows = []
+    for c in g.get("code", []):
+        ln = _find_line(c["path"], c["find"])
+        tag = ('<span class="code-xai">XAI</span>' if c.get("role") == "xai"
+               else '<span class="code-sub">substrate</span>')
+        code_rows.append("<li>%s%s &mdash; %s</li>" % (
+            tag, srcln(c["path"], ln, "%s:%d" % (c["path"].rsplit("/", 1)[-1], ln)), c["desc"]))
+    pit = "".join("<li>%s</li>" % p for p in g.get("pitfalls", []))
+    nxt = " · ".join('<a href="m_%s.html">%s</a>' % (k, esc(titles.get(k, k)))
+                     for k in g.get("next", []) if k in titles)
+    return """
+<section class="guide"><div class="wrap">
+  <span class="gtag">%s</span>
+  <h2>Learn the method &mdash; a beginner's guide</h2>
+  <p class="sub">New to explainable AI? This block explains the method as it is used on neural
+  networks, then how we run the very same method on an Atari&nbsp;2600, where &mdash; unlike for a
+  network &mdash; we know the right answer. Every implementation step links to the code. See also the
+  <a href="primer.html">XAI primer</a> for the shared vocabulary.</p>
+  <div class="chips">%s</div>
+  <h3>The idea in plain words</h3>
+  %s
+  <h3>How it works on a neural network</h3>
+  %s
+  <div class="box"><h3 style="margin-top:12px">Recipe</h3><ol class="recipe">%s</ol></div>
+  <h3>From a neural network to the Atari</h3>
+  <table class="map">%s</table>
+  <h3>How we apply it to the VCS</h3>
+  %s
+  <h3>Read the code</h3>
+  <p class="sub"><span class="code-xai">XAI</span> the interpretability method &nbsp;
+  <span class="code-sub">substrate</span> the bit-exact emulator it runs on (jutari, Julia).</p>
+  <ul class="callstack">%s</ul>
+  <h3>Reading the result</h3>
+  %s
+  <h3>Pitfalls</h3>
+  <ul class="pit">%s</ul>
+  <h3>Try it yourself</h3>
+  <pre class="try">%s</pre>
+  <p class="sub">%s</p>
+  <h3>Original papers &amp; further reading</h3>
+  <ul>%s</ul>
+  %s
+</div></section>""" % (esc(g.get("level", "")), wiki, g["idea"], g["nn"], recipe, amap, g["atari"],
+                       "".join(code_rows), g.get("reading", ""), pit, esc(g.get("try_it", "")),
+                       g.get("try_note", ""), papers,
+                       ("<p><b>Read next:</b> %s</p>" % nxt) if nxt else "")
+
+
+import primer as PR  # noqa: E402
+
+
+def _pcode(name, label=None):
+    path, find = PR.CODE[name]
+    ln = _find_line(path, find)
+    return srcln(path, ln, label or "%s:%d" % (path.rsplit("/", 1)[-1], ln))
+
+
+def build_primer():
+    W = PR.W
+    titles = {m["key"]: m["title"] for m in M.P2_METHODS}
+    lvl = {k: g.get("level", "") for k, g in GUIDES.items()}
+    fams = []
+    for anchor, title, blurb, keys in PR.FAMILIES:
+        items = "".join('<li><a href="m_%s.html">%s</a>%s</li>' % (
+            k, esc(titles.get(k, k)),
+            (' <span class="cite">&mdash; %s</span>' % esc(lvl[k])) if lvl.get(k) else "")
+            for k in keys if k in titles)
+        fams.append('<div class="box" id="%s"><h3 style="margin-top:12px">%s</h3><p>%s</p>'
+                    '<ol class="recipe">%s</ol></div>' % (anchor, title, blurb, items))
+    gloss = "".join("<tr><th>%s</th><td>%s</td></tr>" % (a, b) for a, b in PR.GLOSSARY)
+    wk = lambda art, lab=None: '<a href="%s%s">%s</a>' % (W, art, lab or art.replace("_", " "))
+    body = """
+<header class="hero"><div class="wrap">
+  <span class="venue" style="color:var(--accent-2);font-weight:600">Start here if you are new to XAI</span>
+  <h1>XAI primer &mdash; explaining a machine whose answer we know</h1>
+  <p class="lead">Explainable-AI methods are normally judged by how convincing their pictures look,
+  because for a real neural network nobody knows the right answer. This site runs 30 of those methods
+  on an Atari&nbsp;2600 instead &mdash; a computer whose every wire we can read and whose behaviour
+  we can re-run exactly &mdash; and checks each one against the truth. This page gives you the
+  vocabulary; each <a href="methods.html">method page</a> then teaches one method in depth.</p>
+</div></header>
+
+<section class="guide"><div class="wrap">
+  <h2>1 &middot; What is explainable AI, and why is it hard to test?</h2>
+  <p>A trained network is a function \\(y = f(x)\\) with millions of parameters. It works, but nobody
+  wrote down <i>how</i> it works. <b>Explainable AI</b> (%s), also called interpretability, is the
+  collection of methods that try to recover that &ldquo;how&rdquo;. They answer questions like:
+  <i>which input pixels drove this decision?</i> (attribution), <i>which internal neurons compute
+  this feature?</i> (mechanistic interpretability), or <i>what would have to change for a different
+  answer?</i> (counterfactuals).</p>
+  <p>The catch: to check an explanation you need the true explanation, and for a network you do not
+  have it. So methods are usually validated by eye (&ldquo;the heat-map highlights the dog, looks
+  right&rdquo;) or against each other. Both are weak. Saliency maps have been shown to look sensible
+  even for networks with random weights.</p>
+  <p>The fix used here is to replace the network by a system that is <b>just as opaque to the
+  methods</b>, an unannotated machine state that changes over time and produces pixels, but whose
+  <b>%s</b> we do know, because we can read its program and re-run it exactly.</p>
+
+  <h2 style="margin-top:40px">2 &middot; Meet the machine: the Atari 2600 VCS</h2>
+  <p>The %s (Video Computer System, 1977) is about as simple as a games console gets:</p>
+  <table class="map">
+    <tr><th>CPU</th><td>A %s (a cut-down %s) at 1.19&nbsp;MHz. It executes the game program one
+      instruction at a time and has a handful of 8-bit registers (A, X, Y, stack pointer, status flags,
+      program counter).</td></tr>
+    <tr><th>RAM</th><td><b>128 bytes</b>, in the RIOT chip (%s). This is the game's entire working
+      memory: positions, score, lives, timers, random seeds. It is the main thing our methods explain,
+      the analogue of a network's activation vector.</td></tr>
+    <tr><th>ROM</th><td>The cartridge: 2&ndash;32&nbsp;KB of program code and data tables. This
+      is the &ldquo;weights&rdquo;: fixed, and fully readable by disassembly.</td></tr>
+    <tr><th>TIA</th><td>The %s, the video and sound chip. There is no frame buffer: the CPU must
+      write colour and sprite registers <i>while the TV beam sweeps each line</i>
+      (&ldquo;racing the beam&rdquo;). A sprite's horizontal position is set by <i>when</i> the program
+      hits a strobe register. This timing-based design is why gradients of sprite positions vanish.</td></tr>
+    <tr><th>Frame</th><td>262 scanlines &asymp; 1/60&nbsp;s &asymp; a few thousand CPU instructions. Our
+      environment advances one frame per <code>env_step!</code>, exactly like the Arcade Learning
+      Environment that deep-RL agents are trained on.</td></tr>
+  </table>
+  <p>We wrote two emulators of this machine: <b>jutari</b> (Julia) and <b>jaxtari</b> (JAX/Python).
+  Both are validated <b>bit-exact</b> against the reference C++ emulator: every RAM byte, register
+  and pixel is identical, frame by frame, on 64 games (see <a href="conformance.html">Conformance</a>).
+  So when a method says &ldquo;byte 54 matters&rdquo;, we can check that claim on the real
+  machine. Key substrate code: one frame %s, inside it the instruction loop %s, one CPU instruction %s.</p>
+
+  <h2 style="margin-top:40px">3 &middot; A neural network &harr; the VCS: the dictionary</h2>
+  <p>Every method was designed for neural networks. To apply it here, we translate:</p>
+  <table class="map">
+    <tr><th>Network \\(f\\) with weights</th><td>The ROM program, executed by the CPU, plus the TIA and
+      RIOT. The &ldquo;weights&rdquo; are fixed opcodes and data tables.</td></tr>
+    <tr><th>Input \\(x\\) / activations \\(h\\)</th><td>The machine state at the frame we explain
+      (\\(f^*\\)): 128 RAM bytes plus registers. Gradient and perturbation methods treat it as the
+      input; mechanistic methods treat the bytes as neurons.</td></tr>
+    <tr><th>Layers</th><td>Time. The state after each frame (or each instruction) is the next
+      &ldquo;layer&rdquo;. Running 15 frames is a very deep, weight-shared recurrent network.</td></tr>
+    <tr><th>Output / logit \\(y\\)</th><td>A <b>content</b> output (one RAM byte 15 frames later, e.g. a
+      score digit) and a <b>position</b> output (number of screen pixels that differ from the
+      un-intervened frame).</td></tr>
+    <tr><th>Backpropagation</th><td>The differentiable <b>SOFT</b> path of jutari: every instruction
+      rewritten in differentiable float arithmetic (%s, %s). Its forward values are
+      bit-identical to the hard machine (a straight-through estimator); only the backward pass is a
+      surrogate. Gradients flow through registers, RAM and the ALU, not through branch decisions,
+      memory addresses or the TIA renderer.</td></tr>
+    <tr><th>Ground truth</th><td>The <b>intervention oracle</b>, next section. Networks do not have one.</td></tr>
+  </table>
+  <div class="fig" style="max-width:900px;margin:16px auto"><a href="assets/img/p2_fig1_platform_oracle.png">
+    <img src="assets/img/p2_fig1_platform_oracle.png" alt="platform and oracle"></a></div>
+  <p class="caption">Paper&nbsp;2, Fig.&nbsp;1: the platform and the intervention oracle.</p>
+
+  <h2 style="margin-top:40px">4 &middot; The oracle: ground truth by intervention</h2>
+  <p>Causality has a precise meaning (%s, %s): <i>\\(u\\) causes \\(y\\)</i> if <b>setting</b>
+  \\(u\\) to another value, with everything else held fixed, changes \\(y\\). Observing that \\(u\\)
+  and \\(y\\) move together is not enough. On a network this experiment is expensive and ambiguous. On
+  a deterministic, bit-exact emulator it is trivial:</p>
+  <ol class="recipe">
+    <li><b>Reach a state.</b> Boot the game and play 90 frames of seeded random joystick input %s.
+      Save the machine at that frame, \\(f^*\\) (the checkpoint) %s.</li>
+    <li><b>Define causes.</b> For each RAM byte that the community annotations (AtariARI, OCAtari)
+      say means something, such as a ball x-position or a score, make two interventions: set it to
+      its value&nbsp;+17, and zero it. Add a TIA colour register and a different joystick action %s.</li>
+    <li><b>Intervene and re-run.</b> For each cause: copy the checkpoint, poke the value %s, play the
+      same 15 frames, read the output %s.</li>
+    <li><b>Measure.</b> The true effect is \\(|\\Delta y(u)| = |y(do(u)) - y(\\text{baseline})|\\) %s.
+      Every number is a real re-run, with no approximation.</li>
+  </ol>
+  <p>Every state is checked by a <i>cause-density gate</i>: at least four causes must actually move
+  the screen output, and each record notes whether its state passed, so a state where nothing happens
+  is flagged rather than silently scored.</p>
+
+  <h2 style="margin-top:40px">5 &middot; How a method is scored</h2>
+  <p>A method produces one score per cause, \\(a(u)\\). We compare it with the oracle \\(|\\Delta
+  y(u)|\\):</p>
+  <ul class="pit">
+    <li><b>%s and %s correlation</b> %s: do big attributions go with big true effects?</li>
+    <li><b>Precision@3</b> %s: of the method's top-3 causes, how many are in the oracle's top-3?</li>
+    <li><b>Deletion / insertion curves</b> %s: apply the causes in the method's order on the real
+      machine and watch the output move. A good ranking moves it early.</li>
+    <li><b>Positive control:</b> the oracle itself, scored as if it were a method, must come out
+      perfect. This proves the harness is not broken.</li>
+  </ul>
+  <p>These roll up into the paper's triad. <b>F</b>aithful: agrees with the oracle. <b>S</b>ufficient:
+  predicts held-out interventions. <b>M</b>inimal: names no more causes than necessary. An explanation
+  is only &ldquo;correct&rdquo; if it is all three. The <a href="methods.html#e6">leaderboard</a> shows
+  where each method lands.</p>
+
+  <h2 style="margin-top:40px">6 &middot; Two outputs, two lessons</h2>
+  <p><b>Content</b> outputs (a stored value) flow through arithmetic the gradient can follow. Here
+  gradient methods have a fair chance. <b>Position</b> outputs depend on <i>timing</i>: the sprite is
+  drawn where the CPU happened to be when it strobed a register. A tiny change in a position byte moves
+  the sprite by zero pixels, until it jumps by a whole pixel. The derivative is zero almost everywhere,
+  which is the textbook <i>vanishing gradient</i>. The site reports that honest zero and, next to it, a
+  gradient through a differentiable <b>bilinear sampler</b> %s that draws the sprite at a continuous
+  column, the trick used by spatial-transformer networks. Comparing the two shows how much an
+  attribution depends on a modelling choice the user rarely sees.</p>
+  <p>Most gradient runners differentiate the output read <i>at</i> \\(f^*\\). The
+  <a href="m_saliency.html">end-to-end arm</a> %s instead backpropagates from frame \\(f^*{+}15\\)
+  through every one of the &asymp;10<sup>5</sup> CPU instructions in between: the real &ldquo;deep
+  network&rdquo; case.</p>
+
+  <h2 style="margin-top:40px">7 &middot; The methods, in a suggested reading order</h2>
+  <p>Each page has the same structure: the idea in plain words, how it works on a neural network
+  (with a toy example), the translation to the VCS, the exact lines of code (method and emulator),
+  pitfalls, and a command to reproduce it.</p>
+  %s
+
+  <h2 style="margin-top:40px">8 &middot; Glossary</h2>
+  <table class="map">%s</table>
+
+  <h2 style="margin-top:40px">9 &middot; Run it yourself</h2>
+  <pre class="try">git clone %s
+cd UnderstandingVCS
+julia --project=jutari -e 'using Pkg; Pkg.instantiate(); Pkg.test()'   # emulator self-test, ~20 s
+julia --project=jutari tools/xai_study/phaseB_attribution/saliency.jl --game pong</pre>
+  <p class="sub">The ROMs are not in the repository (licence). See <a href="reproduce.html">Reproduce</a>
+  for how to obtain them and verify their SHA-256 hashes.</p>
+</div></section>
+""" % (wk("Explainable_artificial_intelligence", "XAI"), wk("Ground_truth", "ground truth"),
+       wk("Atari_2600"), wk("MOS_Technology_6507", "MOS 6507"), wk("MOS_Technology_6502", "6502"),
+       wk("MOS_Technology_6532", "MOS 6532"), wk("Television_Interface_Adaptor", "Television Interface Adaptor"),
+       _pcode("env_step", "env_step!"), _pcode("run_until_frame", "run_until_frame!"),
+       _pcode("cpu_step", "console_step!"),
+       _pcode("soft_system_step", "soft_system_step"), _pcode("soft_ram_peek", "soft_ram_peek"),
+       wk("Causal_model", "causal models"), wk("Do-calculus", "do-calculus"),
+       _pcode("actions"), _pcode("testbed"), _pcode("build_causes"), _pcode("intervene_ram"),
+       _pcode("run_intervention"), _pcode("oracle_abs"),
+       wk("Pearson_correlation_coefficient", "Pearson"),
+       wk("Spearman%27s_rank_correlation_coefficient", "Spearman"), _pcode("pearson"),
+       _pcode("patk"), _pcode("delins"), _pcode("sampler"), _pcode("e2e"),
+       "".join(fams), gloss, M.REPO_URL)
+    return page("primer.html", "XAI primer", body)
+
+
 def build_method_page(meth):
     rec = {}
     rpath = os.path.join(REPO, "tools", "xai_study", _RECDIR[meth["phase"]], "out",
@@ -1683,6 +1976,8 @@ def build_method_page(meth):
 
 %s
 
+%s
+
 <section><div class="wrap">
   <h2>How it's scored</h2>
   <p>%s</p>
@@ -1711,7 +2006,7 @@ def build_method_page(meth):
 </div></section>
 """ % (esc(_PHASE_LABEL[meth["phase"]]), esc(meth["title"]), esc(meth["ref"]),
        _PHASE_ANCHOR[meth["phase"]], about, meth["key"], meth["key"], esc(meth["title"]),
-       _method_caption(meth), score, _phaseB_reading(meth),
+       _method_caption(meth), score, _phaseB_reading(meth), build_guide_section(meth["key"]),
        howscored, build_fsm_math_section(meth["key"]), audit_html, results_section,
        build_callstack_section(meth["key"]),
        metahtml, BLOB, BLOB, BLOB)
@@ -2033,6 +2328,7 @@ def main():
         "paper2.html": build_paper(M.PAPER2),
         "conformance.html": build_conformance(),
         "methods.html": build_methods(),
+        "primer.html": build_primer(),
         "ground_truth.html": build_ground_truth(),
         "provenance.html": build_provenance(),
         "environment.html": build_environment(),

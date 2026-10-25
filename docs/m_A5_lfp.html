@@ -5,14 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>A5 · Local field potentials — Paper 2 method</title>
 <meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css"><style>
+.guide h3{margin:26px 0 8px}
+.guide .gtag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;
+  background:#14301f;color:var(--accent-2);border:1px solid #23502f;margin-bottom:6px}
+.guide .chips a{display:inline-block;margin:3px 6px 3px 0;padding:3px 10px;border-radius:999px;
+  border:1px solid var(--border);background:var(--bg-soft);font-size:.86rem}
+.guide .chips a.wk::before{content:"W ";font-weight:700;color:var(--fg-dim)}
+.guide table.map{width:100%;border-collapse:collapse;margin:8px 0 4px}
+.guide table.map th,.guide table.map td{border:1px solid var(--border);padding:8px 10px;
+  vertical-align:top;text-align:left}
+.guide table.map th{background:var(--bg-soft);width:28%;font-weight:600}
+.guide ol.recipe li,.guide ul.pit li{margin:6px 0}
+.guide .code-xai,.guide .code-sub{display:inline-block;font-size:.7rem;padding:0 6px;
+  border-radius:5px;margin-right:6px;vertical-align:middle}
+.guide .code-xai{background:#16283a;color:var(--accent)}
+.guide .code-sub{background:#2e2414;color:var(--warn)}
+.guide pre.try{background:#0b0e12;border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;overflow-x:auto;font-family:var(--mono);font-size:.86rem}
+.guide .box{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+  padding:4px 18px 10px;margin:14px 0}
+@media (max-width:640px){.guide table.map th{width:auto}}
+</style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <script>window.addEventListener("load",function(){if(window.renderMathInElement)renderMathInElement(document.body,{throwOnError:false});});</script>
 </head>
 <body>
-<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="primer.html">XAI Primer</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
 
 <header class="hero"><div class="wrap">
   <span class="venue" style="color:var(--accent-2);font-weight:600">Phase A · neuroscience battery</span>
@@ -34,6 +55,116 @@
 </div></section>
 
 
+
+
+<section class="guide"><div class="wrap">
+  <span class="gtag">Neuroscience battery · pooled signals and their rhythms</span>
+  <h2>Learn the method &mdash; a beginner's guide</h2>
+  <p class="sub">New to explainable AI? This block explains the method as it is used on neural
+  networks, then how we run the very same method on an Atari&nbsp;2600, where &mdash; unlike for a
+  network &mdash; we know the right answer. Every implementation step links to the code. See also the
+  <a href="primer.html">XAI primer</a> for the shared vocabulary.</p>
+  <div class="chips"><a class="wk" href="https://en.wikipedia.org/wiki/Local_field_potential">Local field potential</a><a class="wk" href="https://en.wikipedia.org/wiki/Spectral_density">Spectral density</a><a class="wk" href="https://en.wikipedia.org/wiki/Discrete_Fourier_transform">Discrete Fourier transform</a><a class="wk" href="https://en.wikipedia.org/wiki/Window_function">Window function</a><a class="wk" href="https://en.wikipedia.org/wiki/Epiphenomenon">Epiphenomenon</a></div>
+  <h3>The idea in plain words</h3>
+  
+<p>Put a microphone in a busy restaurant. You cannot follow any single conversation, but you
+still hear something: a loud hum that swells and fades. Neuroscientists do the same with the
+brain. An electrode in brain tissue records the <b>local field potential</b> (LFP): the summed
+electrical activity of thousands of nearby neurons. Nobody sees a single cell. What people study
+instead is the <b>rhythm</b> of this hum: how strong the slow waves are, how strong the fast ones.
+That breakdown of a signal into rhythms is called its <b>power spectrum</b>, and LFP bands such as
+&ldquo;theta&rdquo; or &ldquo;gamma&rdquo; are read as windows onto what the region computes.</p>
+<p>The worry is simple. A strong rhythm might be the computation. Or it might be a
+<b>pacemaker</b>: a global clock that ticks everywhere and makes every part of the system hum at
+the same beat, whether or not that part does useful work. Activity that is caused by the clock but
+carries no computation is called <b>epiphenomenal</b>. In a brain you cannot easily tell the two
+apart. On the Atari you can, because we know every clock of the machine exactly. A5 measures how
+much of the &ldquo;LFP&rdquo; spectrum is just those clocks.</p>
+  <h3>How it works on a neural network</h3>
+  
+<p><b>Neuroscience origin.</b> The LFP is a <i>mesoscale</i> signal: coarser than a single neuron,
+finer than an EEG over the whole skull. It is the analysis you can run when single-cell access is
+impossible. Jonas &amp; Kording (2017) recorded the analogous &ldquo;LFP&rdquo; of a simulated
+6502 chip and found rich rhythms that said nothing about the program it ran.</p>
+<p><b>Deep-learning analogue.</b> In a network, the LFP corresponds to <b>pooled or aggregate
+activation statistics</b>: the mean activation of a layer, the norm of a block's output, or the
+average over a group of units, tracked over time steps (tokens, video frames, RL steps). Write the
+activation of unit \(i\) at time \(t\) as \(a_i(t)\). Standardise each unit (subtract its mean,
+divide by its standard deviation: a <b>z-score</b> \(z_i\)) and average over a region \(R\):</p>
+\[ L(t) \;=\; \frac{1}{|R|}\sum_{i\in R} z_i(t), \qquad
+   P(f_k) \;=\; \Big|\sum_{t=0}^{T-1} L(t)\,w(t)\,e^{-2\pi i k t/T}\Big|^2 . \]
+<p>\(L(t)\) is the pooled signal, \(w(t)\) a smooth <b>window</b> that tapers the ends, and
+\(P(f_k)\) the power at frequency \(f_k = k/T\) cycles per step (the <b>discrete Fourier
+transform</b>). A peak in \(P\) at period \(p = 1/f\) means the pooled activity repeats every
+\(p\) steps.</p>
+<p><b>Toy example.</b> Take two units over \(T=8\) steps. Unit 1 is a counter that flips every
+step: \(z_1 = (+1,-1,+1,-1,+1,-1,+1,-1)\). Unit 2 holds a real variable that jumps once:
+\(z_2 = (-1,-1,-1,-1,+1,+1,+1,+1)\). Their pool is \(L = (0,-1,0,-1,1,0,1,0)\). Its spectrum has a
+peak at period 2 (from unit 1) and a slow component at period 8 (from unit 2). If we
+<i>know</i> unit 1 is a clock, we can fit sin/cos waves of period 2 to \(L\) and ask what fraction
+of \(L\)'s energy they explain. Here it is exactly half (energy 2 of 4): half of this &ldquo;LFP&rdquo; is pure clock,
+however striking the period-2 peak looks.</p>
+  <div class="box"><h3 style="margin-top:12px">Recipe</h3><ol class="recipe"><li>Record the activity of every unit over \(T\) time steps (here: all 128 RAM bytes, once per video frame).</li><li>Choose regions: one global pool of every unit that varies, plus smaller pools of related units.</li><li>Z-score each varying unit and average per time step: this is the region's pooled signal \(L(t)\).</li><li>Remove the mean and the linear trend, multiply by a Hann window, and take the DFT power spectrum.</li><li>Report the dominant periods. Then build a basis of the <i>known clocks</i> (sin/cos at their periods and harmonics).</li><li>Project \(L\) onto that clock basis: the fraction of its energy captured is the <b>clock-explained</b>, epiphenomenal fraction.</li></ol></div>
+  <h3>From a neural network to the Atari</h3>
+  <table class="map"><tr><th>Neurons in a brain region / units in a layer</th><td>The 128 bytes of the VCS's <b>RAM</b> (random-access memory: the program's working variables, e.g. ball position, score, timers), read once per <b>frame</b> (one full TV picture, 1/60 s).</td></tr><tr><th>The LFP: pooled, z-scored activity</th><td>The mean z-scored value of a set of RAM bytes per frame: the <b>global</b> pool (every byte that changes) and one <b>regional</b> pool per game-variable family (all score bytes, all enemy bytes, &hellip;).</td></tr><tr><th>Theta / gamma bands</th><td>Peaks in the per-frame power spectrum, reported as periods in frames (a period-2 blink, a period-8 animation cycle, &hellip;).</td></tr><tr><th>A global pacemaker</th><td>The machine's <b>known clocks</b>: the frame cadence itself, plus every RAM byte that is an exact free-running counter (it ticks by a fixed step, or repeats with a fixed short period). Games use these as animation and blink timers.</td></tr><tr><th>&ldquo;Is this rhythm computation?&rdquo;</th><td>Answered exactly: the fraction of the pooled signal's energy that lies in the span of the known-clock waves. That part is causally inert timing, not game logic.</td></tr></table>
+  <h3>How we apply it to the VCS</h3>
+  
+<p>The runner <code>A5_lfp.jl</code> follows the recipe on the real, bit-exact emulator. Concretely:</p>
+<ol>
+<li><b>The trajectory.</b> It builds the study's shared gameplay state: a seeded stream of random
+joystick actions (90 frames of play, then a 15-frame horizon). It drives the game with that stream
+and keeps going with NOOP (no button pressed) until the trajectory is long enough for a spectrum
+(256 frames for most games). Two fresh runs from power-on must give byte-identical RAM and screen,
+or the runner refuses to analyse. Then <code>a5_record_ram</code> calls <code>env_step!</code> and
+<code>get_ram</code> once per frame to fill a \(T\times128\) tape.</li>
+<li><b>Finding the clocks without labels.</b> <code>detect_clock_cells</code> scans each RAM byte.
+A byte is a <i>ramp</i> if its frame-to-frame difference (mod 256) is one constant non-zero step:
+a frame counter. It is <i>periodic</i> if it repeats exactly with some period between 2 and 64
+frames: a blink or animation timer. No game knowledge is used.</li>
+<li><b>The clock basis.</b> <code>clock_basis</code> stacks sin/cos waves at two slow
+frame-cadence periods (\(T\) and \(T/2\), always present) plus the first three harmonics of every
+detected clock period. Each wave goes through the same detrend and window as the data. A QR
+factorisation makes the basis orthonormal.</li>
+<li><b>Pooling and spectra.</b> <code>pool_region</code> builds the global pool and one pool per
+variable family from the candidate-cause list. <code>dft_power</code> computes a plain
+\(O(T^2)\) DFT (no FFT package is added to the emulator environment). The headline number is the
+<b>global pool's clock-explained fraction</b>, from <code>variance_explained_by</code>.</li>
+<li><b>Controls.</b> The self-test projects a pure clock wave (must score above 0.9) and a
+mid-band sinusoid placed between frequency bins (must score below 0.5). So a high clock fraction is a
+measurement, not a basis that explains everything.</li>
+</ol>
+<p><b>Where we differ from the neuroscience original.</b> We sample once per frame. The VCS also
+has a <b>scanline</b> clock (262 TV lines per frame) and a CPU clock, but those tick far faster than
+our sampling rate and cannot appear in a per-frame spectrum. The clocks A5 actually removes are the
+frame cadence and the frame-driven counter bytes. A5 is also <b>descriptive</b>. It never
+intervenes; the oracle is used only to build and gate the shared gameplay state. Its score asks
+&ldquo;how much of this signal is known-inert timing?&rdquo;, not &ldquo;does it find the causes of an
+output?&rdquo;.</p>
+  <h3>Read the code</h3>
+  <p class="sub"><span class="code-xai">XAI</span> the interpretability method &nbsp;
+  <span class="code-sub">substrate</span> the bit-exact emulator it runs on (jutari, Julia).</p>
+  <ul class="callstack"><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A5_lfp.jl#L629"><code>A5_lfp.jl:629</code></a> &mdash; One game end to end: shared gameplay stream &rarr; bit-exact check &rarr; RAM tape &rarr; clocks &rarr; regional spectra.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A5_lfp.jl#L197"><code>A5_lfp.jl:197</code></a> &mdash; The recording: step the ROM one frame at a time and copy the 128 RAM bytes into the tape.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A5_lfp.jl#L538"><code>A5_lfp.jl:538</code></a> &mdash; The LFP itself: z-score every varying byte of a region and average them per frame.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A5_lfp.jl#L342"><code>A5_lfp.jl:342</code></a> &mdash; A dependency-free one-sided DFT power spectrum (cycles per frame).</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A5_lfp.jl#L417"><code>A5_lfp.jl:417</code></a> &mdash; Label-free detection of the known clocks: constant-stride ramps and fixed-period timers.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A5_lfp.jl#L460"><code>A5_lfp.jl:460</code></a> &mdash; Frame-cadence waves plus harmonics of every clock period, detrended, windowed and orthonormalised.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A5_lfp.jl#L511"><code>A5_lfp.jl:511</code></a> &mdash; The score: the share of a pooled signal's energy that lies in the clock subspace.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/shared_testbed_impl.jl#L115"><code>shared_testbed_impl.jl:115</code></a> &mdash; The shared gameplay state: seeded random actions, checkpoint at frame 90, oracle cause-density gate.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/env/StellaEnvironment.jl#L259"><code>StellaEnvironment.jl:259</code></a> &mdash; One video frame of the real, bit-exact machine.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/env/StellaEnvironment.jl#L350"><code>StellaEnvironment.jl:350</code></a> &mdash; Direct read of the 128-byte RAM: the &ldquo;electrode&rdquo; that records every unit.</li></ul>
+  <h3>Reading the result</h3>
+  
+<p>The figure shows the global pool's power spectrum in cycles per frame. Expect most of the power
+at the lowest frequencies, slow sweeps over the whole recording (periods of \(T\) or \(T/2\)
+frames), and in some games sharp peaks at short integer periods: these look like the &ldquo;brain
+rhythms&rdquo; of the game. Then compare them with the clock basis. The slow sweeps are the frame
+cadence, the short peaks sit on a detected timer period or its harmonics, and in most games the
+clock-explained fraction is large. The rich-looking spectrum is mostly the machine's timing.
+Regional pools for real game variables (score, enemies) are often just as clock-dominated, or flat
+when their bytes never change; either way the spectrum cannot tell you <i>what</i> they compute or
+what causes them.
+The live faithfulness number is in the audit box below.</p>
+  <h3>Pitfalls</h3>
+  <ul class="pit"><li><b>Rhythm is not computation.</b> A strong, clean peak is often the easiest thing to see and the least informative: a pacemaker shows up everywhere it is wired.</li><li><b>Sampling hides fast clocks.</b> A per-frame recording cannot see the scanline or CPU clocks. They do not vanish; anything faster than half the sampling rate folds into lower frequencies or is averaged away. The same holds for an LFP filtered at a few hundred hertz.</li><li><b>Pooling destroys identity.</b> Averaging many units cancels opposite signals and lets one loud unit dominate. A flat pooled signal does not mean the units are idle.</li><li><b>The clock basis is a choice.</b> A larger basis explains more of any signal. That is why the runner checks that an off-grid sinusoid stays below 0.5; any LFP analysis should run a similar control.</li><li><b>Descriptive only.</b> Nothing here is an intervention. The spectrum says how activity varies, never which byte drives which output.</li></ul>
+  <h3>Try it yourself</h3>
+  <pre class="try">julia --project=jutari tools/xai_study/phaseA_kording/A5_lfp.jl --games core</pre>
+  <p class="sub">Writes <code>A5_&lt;game&gt;.json/.npz</code> (pooled signal, spectrum, clock cells, per-region clock fractions) into <code>tools/xai_study/phaseA_kording/out/</code>. Add <code>--selftest</code> to run the controls on the first game without writing. A few minutes per game on one CPU core, most of it building the shared gameplay state.</p>
+  <h3>Original papers &amp; further reading</h3>
+  <ul><li>Jonas &amp; Kording (2017). <i>Could a Neuroscientist Understand a Microprocessor?</i> PLoS Computational Biology 13(1): e1005268. &mdash; <a href="https://doi.org/10.1371/journal.pcbi.1005268">doi.org/10.1371/journal.pcbi.1005268</a></li><li>Buzs&aacute;ki, Anastassiou &amp; Koch (2012). <i>The origin of extracellular fields and currents &mdash; EEG, ECoG, LFP and spikes.</i> Nature Reviews Neuroscience 13: 407&ndash;420. &mdash; <a href="https://doi.org/10.1038/nrn3241">doi.org/10.1038/nrn3241</a></li></ul>
+  <p><b>Read next:</b> <a href="m_A4_correlations.html">A4 · Pairwise correlations</a> · <a href="m_A6_granger.html">A6 · Granger causality</a> · <a href="m_A7_dimred.html">A7 · Dimensionality reduction (NMF/PCA)</a> · <a href="m_A2_lesions.html">A2 · Single-unit lesions</a></p>
+</div></section>
 
 <section><div class="wrap">
   <h2>How it's scored</h2>
@@ -148,7 +279,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/cc950552d22a04a0bddfb0d14cd2429b3bca8859"><code>cc950552</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/46b94f1dfc8fa5dca6fdd4c820fb11a26497fc6f"><code>46b94f1d</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

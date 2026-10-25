@@ -723,8 +723,9 @@ P2_METHODS = [
     dict(key="logit_lens", phase="C", title="Logit / tuned lens",
          ref="nostalgebraist 2020; Belrose et al. 2023", script="tools/xai_study/phaseC_mechanistic/logit_lens.jl",
          game="pong", record="logit_lens_pong",
-         what="Reads intermediate state through the output decoder to see what is represented at "
-              "each stage; scored by readout fidelity against the true intermediate value."),
+         what="Reads intermediate state through a per-step linear decoder to see what is represented at "
+              "each stage; scored by the share of readout weight on oracle-causal cells (readout "
+              "fidelity is the positive control)."),
 ]
 
 # How each method's headline number is computed and compared to the oracle.
@@ -764,7 +765,7 @@ P2_METHOD_SCORED = {
  "dictionaries": "Fraction of NMF/PCA dictionary components matching known variables. {F} — partial; PCA mixes variables while NMF separates more.",
  "causal_scrubbing": "Behaviour preserved when resampling activations consistent with the TRUE circuit (should stay ~1) vs a wrong circuit (should drop). {F} — the true-circuit hypothesis passes the scrub.",
  "linear_probing": "Mean selectivity = probe accuracy minus control-task accuracy, averaged over labelled cells. {F} — concepts are decodable above the control, but some decodable cells are not causally used (the present-vs-used gap).",
- "logit_lens": "Readout fidelity (R²) of the lens-decoded intermediate against the true intermediate value. {F} — the state is linearly readable at the right site, as expected on a transparent machine.",
+ "logit_lens": "Faithful-weight fraction: the share of the tuned lens's readout weight on oracle-causal cells at the earliest decodable step. {F}. Readout fidelity (R²) is the positive control.",
 }
 
 # ---------------------------------------------------------------------------
@@ -1243,9 +1244,10 @@ P2_METHOD_ABOUT = {
    "transparent machine the readout is exact: the state is linearly readable at the right site, "
    "so the lens reproduces the true intermediate value on every game. This is expected, because "
    "the VCS keeps its variables in plain, addressable memory rather than in a distorted "
-   "distributed code. The logit lens is therefore a clean positive result on the machine, and it "
-   "sits with the exact causal methods. As with those, reading the right value at the right site "
-   "confirms that the value is represented and readable, but it does not by itself explain how "
+   "distributed code. Readability, however, is only the positive control. The scored question is "
+   "where the lens's readout weight sits: on the cells the oracle marks as truly causal, or on "
+   "clocks and counters that merely co-vary with the value. Reading the right value at the right "
+   "site confirms that the value is represented and readable, but it does not by itself explain how "
    "that value is computed or what role it plays.",
 }
 
@@ -1701,20 +1703,19 @@ P2_METHOD_HOWSCORED = {
    "earns a high plausibility proxy on a low faithfulness, which places it in the danger zone and "
    "makes it the clearest illustration of decodable-but-unused information.",
  "logit_lens":
-   "The score is the readout fidelity of the lens-decoded intermediate against the true "
-   "intermediate value, reported as an R-squared. We read an intermediate value through the "
-   "machine's own decoding and compare it to the true value at that site. The grading is always "
-   "against the intervention oracle. On this transparent machine the readout is exact: the state "
-   "is linearly readable at the right site, so the lens reproduces the true intermediate value on "
-   "every core game and the fidelity is at the ceiling. Faithfulness for this method is that "
-   "readout fidelity. There is no sprite-position hard-case here, because the method reads an "
+   "The scored faithfulness is the faithful-weight fraction. For each game variable we fit a "
+   "tuned lens (a per-step linear readout) and find the earliest step at which it decodes the "
+   "variable's final value. At that step we measure what share of the lens's readout weight sits "
+   "on cells the intervention oracle marks as truly causal for that variable, rather than on "
+   "correlated clocks and counters. A high share means the lens reads the mechanism; a low share "
+   "means it rides a correlate. Readout fidelity, the R-squared of the lens-decoded value against "
+   "the true intermediate value, is kept as a positive control and is the quantity the example "
+   "figure plots: on this transparent machine the state is linearly readable at the right site, "
+   "so fidelity sits at the ceiling. The point of the faithful-weight score is that readability "
+   "alone does not show use. A readout can decode a value early by combining cells that merely "
+   "co-vary with it. There is no sprite-position hard-case here, because the method reads an "
    "internal value rather than a rendered position, and it does not rely on a gradient. The "
-   "result is expected, because the VCS keeps its variables in plain, addressable memory rather "
-   "than in a distorted distributed code. The important qualification, which the score does not by "
-   "itself capture, is that reading the right value at the right site confirms the value is "
-   "represented and readable, but does not explain how the value is computed or what role it "
-   "plays. The grading is always against the oracle. The audit box reports the measured triad, "
-   "with fidelity at the ceiling.",
+   "grading is always against the oracle; the audit box reports the measured triad.",
 }
 
 # Map each method key -> its row name in the actual audit (leaderboard.json).

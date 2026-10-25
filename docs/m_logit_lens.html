@@ -5,14 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Logit / tuned lens — Paper 2 method</title>
 <meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css"><style>
+.guide h3{margin:26px 0 8px}
+.guide .gtag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;
+  background:#14301f;color:var(--accent-2);border:1px solid #23502f;margin-bottom:6px}
+.guide .chips a{display:inline-block;margin:3px 6px 3px 0;padding:3px 10px;border-radius:999px;
+  border:1px solid var(--border);background:var(--bg-soft);font-size:.86rem}
+.guide .chips a.wk::before{content:"W ";font-weight:700;color:var(--fg-dim)}
+.guide table.map{width:100%;border-collapse:collapse;margin:8px 0 4px}
+.guide table.map th,.guide table.map td{border:1px solid var(--border);padding:8px 10px;
+  vertical-align:top;text-align:left}
+.guide table.map th{background:var(--bg-soft);width:28%;font-weight:600}
+.guide ol.recipe li,.guide ul.pit li{margin:6px 0}
+.guide .code-xai,.guide .code-sub{display:inline-block;font-size:.7rem;padding:0 6px;
+  border-radius:5px;margin-right:6px;vertical-align:middle}
+.guide .code-xai{background:#16283a;color:var(--accent)}
+.guide .code-sub{background:#2e2414;color:var(--warn)}
+.guide pre.try{background:#0b0e12;border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;overflow-x:auto;font-family:var(--mono);font-size:.86rem}
+.guide .box{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+  padding:4px 18px 10px;margin:14px 0}
+@media (max-width:640px){.guide table.map th{width:auto}}
+</style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <script>window.addEventListener("load",function(){if(window.renderMathInElement)renderMathInElement(document.body,{throwOnError:false});});</script>
 </head>
 <body>
-<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="primer.html">XAI Primer</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
 
 <header class="hero"><div class="wrap">
   <span class="venue" style="color:var(--accent-2);font-weight:600">Phase C · mechanistic interpretability</span>
@@ -23,7 +44,7 @@
 
 <section><div class="wrap">
   <h2>What it does?</h2>
-  <p>The logit lens reads a system's intermediate state through its own output decoder. In a transformer it takes the hidden state at some middle layer and applies the final output projection to it, as if that intermediate state were the last layer, to see what the model would 'say' at that point. This reveals how the prediction forms across depth, and the tuned-lens variant learns a small correction so the readout is more faithful at each stage. It is a standard, cheap tool for tracing how information develops inside a network. We build the analogue on the VCS by reading an intermediate value through the machine's own decoding, and comparing the decoded value to the true intermediate value at that site. On this transparent machine the readout is exact: the state is linearly readable at the right site, so the lens reproduces the true intermediate value on every game. This is expected, because the VCS keeps its variables in plain, addressable memory rather than in a distorted distributed code. The logit lens is therefore a clean positive result on the machine, and it sits with the exact causal methods. As with those, reading the right value at the right site confirms that the value is represented and readable, but it does not by itself explain how that value is computed or what role it plays.</p>
+  <p>The logit lens reads a system's intermediate state through its own output decoder. In a transformer it takes the hidden state at some middle layer and applies the final output projection to it, as if that intermediate state were the last layer, to see what the model would 'say' at that point. This reveals how the prediction forms across depth, and the tuned-lens variant learns a small correction so the readout is more faithful at each stage. It is a standard, cheap tool for tracing how information develops inside a network. We build the analogue on the VCS by reading an intermediate value through the machine's own decoding, and comparing the decoded value to the true intermediate value at that site. On this transparent machine the readout is exact: the state is linearly readable at the right site, so the lens reproduces the true intermediate value on every game. This is expected, because the VCS keeps its variables in plain, addressable memory rather than in a distorted distributed code. Readability, however, is only the positive control. The scored question is where the lens's readout weight sits: on the cells the oracle marks as truly causal, or on clocks and counters that merely co-vary with the value. Reading the right value at the right site confirms that the value is represented and readable, but it does not by itself explain how that value is computed or what role it plays.</p>
 </div></section>
 
 <section><div class="wrap">
@@ -35,9 +56,102 @@
 
 
 
+
+<section class="guide"><div class="wrap">
+  <span class="gtag">Mechanistic family · reading intermediate states</span>
+  <h2>Learn the method &mdash; a beginner's guide</h2>
+  <p class="sub">New to explainable AI? This block explains the method as it is used on neural
+  networks, then how we run the very same method on an Atari&nbsp;2600, where &mdash; unlike for a
+  network &mdash; we know the right answer. Every implementation step links to the code. See also the
+  <a href="primer.html">XAI primer</a> for the shared vocabulary.</p>
+  <div class="chips"><a class="wk" href="https://en.wikipedia.org/wiki/Transformer_(deep_learning)">Transformer (deep learning)</a><a class="wk" href="https://en.wikipedia.org/wiki/Residual_neural_network">Residual neural network</a><a class="wk" href="https://en.wikipedia.org/wiki/Softmax_function">Softmax function</a><a class="wk" href="https://en.wikipedia.org/wiki/Logit">Logit</a><a class="wk" href="https://en.wikipedia.org/wiki/Coefficient_of_determination">Coefficient of determination</a></div>
+  <h3>The idea in plain words</h3>
+  
+<p>A transformer language model is a stack of layers. Each layer reads a shared vector, the
+<b>residual stream</b>, and adds its contribution back to it. Only at the very end does an
+<b>unembedding</b> matrix turn that vector into one score per word in the vocabulary. Those scores are
+the <b>logits</b>; a <b>softmax</b> turns them into probabilities for the next word.</p>
+<p>The <b>logit lens</b> asks a cheeky question: what if we applied that final unembedding to the
+residual stream <b>halfway up</b> the stack, as if the model stopped there? Because every layer writes
+into the same stream, this often gives sensible words. You can watch the prediction form layer by layer:
+vague at first, then sharpening into the final answer. The <b>tuned lens</b> improves on it. It learns a
+small linear correction for each layer, so that earlier layers, whose &ldquo;language&rdquo; drifts a
+little from the last layer's, are translated before decoding. Both are cheap, popular ways to trace how
+information develops through depth.</p>
+  <h3>How it works on a neural network</h3>
+  
+<p>Let \(h_\ell\) be the residual stream after layer \(\ell\), \(W_U\) the unembedding and
+\(\mathrm{LN}\) the final layer normalisation. Then</p>
+\[ \text{logits}_L = W_U\,\mathrm{LN}(h_L), \qquad
+   \text{logit lens: } W_U\,\mathrm{LN}(h_\ell), \qquad
+   \text{tuned lens: } W_U\,\mathrm{LN}(A_\ell h_\ell + b_\ell). \]
+<p>The tuned-lens translator \((A_\ell, b_\ell)\) is trained so its output distribution matches the
+model's final one (by minimising a KL divergence). No new information is created: the lens only reads
+what is already linearly there.</p>
+<p><b>Toy example.</b> A vocabulary of two words, &ldquo;Paris&rdquo; and &ldquo;Rome&rdquo;, and
+\(W_U = I\) (identity). The residual stream after layers 1, 2 and 3 is \((0.2, 0.1)\),
+\((1.5, 0.3)\) and \((3.0, 0.2)\). The softmax probability of &ldquo;Paris&rdquo; is
+\(1/(1+e^{-(z_1-z_2)})\): 0.52 after layer 1, 0.77 after layer 2, 0.94 after layer 3. The logit lens
+shows the answer &ldquo;Paris&rdquo; forming gradually. If layer 1 stored the answer in a rotated
+basis, the raw lens would read nonsense there, and a learned \(A_1\) would undo the rotation: that is the
+tuned lens.</p>
+  <div class="box"><h3 style="margin-top:12px">Recipe</h3><ol class="recipe"><li>Run the model and save the residual stream \(h_\ell\) at every layer.</li><li>Logit lens: apply the final norm and unembedding to each \(h_\ell\) and read the decoded prediction.</li><li>Tuned lens: for each layer, fit an affine map \(A_\ell h_\ell + b_\ell\) on training data so the decoded output matches the final output.</li><li>Evaluate on held-out data: how well does each layer's readout match the final answer, and from which layer on?</li><li>Check what the readout relies on: are its weights on components that actually drive the output?</li></ol></div>
+  <h3>From a neural network to the Atari</h3>
+  <table class="map"><tr><th>Layers \(\ell\)</th><td>The <b>frames</b> of the 15-frame horizon after \(f^*\): step 0 (the checkpoint) to step 15.</td></tr><tr><th>Residual stream \(h_\ell\)</th><td>The full 128-byte RAM at that step. RAM is the one state every frame reads and writes, like the residual stream.</td></tr><tr><th>Final logit</th><td>The value of a target variable's RAM cell <b>at the end</b> of the horizon (one per candidate cell; 8 for Pong).</td></tr><tr><th>Unembedding \(W_U\) (logit lens)</th><td>The identity readout: read the target's own cell at step \(t\). There is no learned matrix on the VCS.</td></tr><tr><th>Tuned-lens translator \(A_\ell, b_\ell\)</th><td>A ridge-regression readout from all 128 bytes at step \(t\) to the final value.</td></tr><tr><th>True intermediate value (unknown in an LLM)</th><td>The actual byte at that step on the bit-exact run, plus the oracle's mask of which cells causally drive each final value.</td></tr></table>
+  <h3>How we apply it to the VCS</h3>
+  
+<p>Our runner <code>logit_lens.jl</code> builds both lenses on the VCS and scores them against values
+we can measure directly.</p>
+<ul>
+<li><b>A set of runs to fit on.</b> A lens needs many examples. From the shared gameplay checkpoint at
+\(f^*\) we record 48 runs of 16 steps each: the clean run, a source run whose last prefix action is
+RIGHT, and 46 runs that each start with one candidate cell shifted by 17, 34, 64, 128 or 200. Every run is
+a genuine bit-exact replay of the ROM, so every row is a real machine state.</li>
+<li><b>Logit lens.</b> For each target variable and step \(t\), read its own cell. Against the true
+intermediate value this has fidelity (\(R^2\)) of exactly 1, because the readout <i>is</i> the cell. It
+is a <b>positive control</b> that the readout site is right, not a discovery. Against the
+<i>final</i> value it shows how early the cell already holds its end-of-horizon value.</li>
+<li><b>Tuned lens.</b> For each variable and step, fit a ridge regression (\(\lambda = 10^{-3}\)) from
+all 128 bytes to the final value on 70&nbsp;% of the runs, and score \(R^2\) on the other 30&nbsp;%.
+The earliest step with \(R^2 \ge 0.9\) is when the answer is &ldquo;already there&rdquo;.</li>
+<li><b>Faithful or spurious?</b> The oracle sets each candidate cell to its value + 17 at \(f^*\),
+replays, and marks which final values change. At the tuned lens's earliest decoding step we measure what
+share of its weight magnitude sits on those truly causal cells. A high share means the lens reads the
+mechanism. A low share means it found a correlate, for example a counter that happens to predict the
+answer.</li>
+</ul>
+<p><b>Where we differ from the original.</b> A transformer has one shared unembedding; on the VCS each
+variable lives in its own address, so the &ldquo;unembedding&rdquo; is just &ldquo;look at that
+address&rdquo;. Our layers are time steps, not stacked modules. And the training runs are mostly
+deliberate pokes, not a natural data distribution. Readout fidelity reaching the ceiling is
+therefore <b>expected</b>: the machine keeps its variables in plain, addressable memory. The more
+informative numbers are the tuned-lens curves and the faithful-weight share, which is the record's
+scored faithfulness.</p>
+  <h3>Read the code</h3>
+  <p class="sub"><span class="code-xai">XAI</span> the interpretability method &nbsp;
+  <span class="code-sub">substrate</span> the bit-exact emulator it runs on (jutari, Julia).</p>
+  <ul class="callstack"><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/logit_lens.jl#L258"><code>logit_lens.jl:258</code></a> &mdash; Builds the 48 real runs (clean, source, and single-cell pokes) the lenses are fit on.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/logit_lens.jl#L213"><code>logit_lens.jl:213</code></a> &mdash; Records the &ldquo;residual stream over layers&rdquo;: the RAM at steps 0 to 15.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/logit_lens.jl#L290"><code>logit_lens.jl:290</code></a> &mdash; The tuned-lens translator: a closed-form ridge regression per variable and step.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/logit_lens.jl#L300"><code>logit_lens.jl:300</code></a> &mdash; Readout fidelity: the coefficient of determination \(R^2\).</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/logit_lens.jl#L371"><code>logit_lens.jl:371</code></a> &mdash; The oracle mask: which cells, poked by +17, change each variable's final value.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/logit_lens.jl#L455"><code>logit_lens.jl:455</code></a> &mdash; Per variable and step: logit lens, tuned lens, earliest decoding step, faithful-weight share.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/shared_testbed_impl.jl#L115"><code>shared_testbed_impl.jl:115</code></a> &mdash; The shared gameplay checkpoint at \(f^*\) and the 15-frame action tail.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/jutari_oracle.jl#L174"><code>jutari_oracle.jl:174</code></a> &mdash; The single-byte RAM write behind every poked run and the causal mask.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/env/StellaEnvironment.jl#L259"><code>StellaEnvironment.jl:259</code></a> &mdash; One bit-exact frame: one &ldquo;layer&rdquo; of the VCS lens.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/env/StellaEnvironment.jl#L350"><code>StellaEnvironment.jl:350</code></a> &mdash; The 128-byte RAM read at each step: the residual-stream analogue.</li></ul>
+  <h3>Reading the result</h3>
+  
+<p>The figure plots readout fidelity against the true intermediate value, step by step, and it sits at
+the ceiling on every game. Read that as a sanity check: the variable is stored at the site we read, in plain form.
+The richer story is in the per-step curves. The logit lens reaches the final value only once the cell
+stops changing. The tuned lens can sometimes predict it earlier by combining other bytes. Then check the
+faithful-weight share: an early prediction built on causal cells is the mechanism showing through; one
+built on non-causal cells is a correlation, the same present-versus-used trap as in probing.</p>
+  <h3>Pitfalls</h3>
+  <ul class="pit"><li><b>Readable is not explained.</b> Reading the right value at the right place confirms it is represented. It says nothing about how it is computed or what role it plays later.</li><li><b>Representation drift.</b> In a transformer, early layers may use a different basis than the last one, so the raw logit lens reads nonsense there. That is why Belrose et al. propose the tuned lens.</li><li><b>A tuned lens can learn too much.</b> A flexible translator fit per layer can find correlates that the model never uses. Check which inputs carry its weight, as we do with the oracle mask.</li><li><b>Off-distribution fitting.</b> Our training runs are mostly deliberate single-cell pokes. Readouts fit on them may not transfer to ordinary gameplay states.</li></ul>
+  <h3>Try it yourself</h3>
+  <pre class="try">julia --project=jutari tools/xai_study/phaseC_mechanistic/logit_lens.jl --games core</pre>
+  <p class="sub">Writes <code>logit_lens_&lt;game&gt;.{json,npz}</code> and <code>logit_lens_core_summary.json</code> into <code>tools/xai_study/phaseC_mechanistic/out/</code>. <code>--n-traj K</code> changes the number of runs the lenses are fit on (default 48).</p>
+  <h3>Original papers &amp; further reading</h3>
+  <ul><li>nostalgebraist (2020). <i>interpreting GPT: the logit lens.</i> LessWrong. &mdash; <a href="https://www.lesswrong.com/posts/AcKRB8wDpdaN6v6ru/interpreting-gpt-the-logit-lens">www.lesswrong.com/posts/AcKRB8wDpdaN6v6ru/interpreting-gpt-the-logit-lens</a></li><li>Belrose, Furman, Smith, Halawi, Ostrovsky, McKinney, Biderman &amp; Steinhardt (2023). <i>Eliciting Latent Predictions from Transformers with the Tuned Lens.</i> (follow-up and critique: the raw logit lens is biased and brittle) &mdash; <a href="https://arxiv.org/abs/2303.08112">arxiv.org/abs/2303.08112</a></li></ul>
+  <p><b>Read next:</b> <a href="m_linear_probing.html">Linear probing + control tasks</a> · <a href="m_activation_patching.html">Activation patching / causal mediation</a> · <a href="m_das.html">Interchange interventions / DAS</a> · <a href="m_A8_wholestate.html">A8 · Whole-state recording</a></p>
+</div></section>
+
 <section><div class="wrap">
   <h2>How it's scored</h2>
-  <p>The score is the readout fidelity of the lens-decoded intermediate against the true intermediate value, reported as an R-squared. We read an intermediate value through the machine's own decoding and compare it to the true value at that site. The grading is always against the intervention oracle. On this transparent machine the readout is exact: the state is linearly readable at the right site, so the lens reproduces the true intermediate value on every core game and the fidelity is at the ceiling. Faithfulness for this method is that readout fidelity. There is no sprite-position hard-case here, because the method reads an internal value rather than a rendered position, and it does not rely on a gradient. The result is expected, because the VCS keeps its variables in plain, addressable memory rather than in a distorted distributed code. The important qualification, which the score does not by itself capture, is that reading the right value at the right site confirms the value is represented and readable, but does not explain how the value is computed or what role it plays. The grading is always against the oracle. The audit box reports the measured triad, with fidelity at the ceiling.</p>
+  <p>The scored faithfulness is the faithful-weight fraction. For each game variable we fit a tuned lens (a per-step linear readout) and find the earliest step at which it decodes the variable's final value. At that step we measure what share of the lens's readout weight sits on cells the intervention oracle marks as truly causal for that variable, rather than on correlated clocks and counters. A high share means the lens reads the mechanism; a low share means it rides a correlate. Readout fidelity, the R-squared of the lens-decoded value against the true intermediate value, is kept as a positive control and is the quantity the example figure plots: on this transparent machine the state is linearly readable at the right site, so fidelity sits at the ceiling. The point of the faithful-weight score is that readability alone does not show use. A readout can decode a value early by combining cells that merely co-vary with it. There is no sprite-position hard-case here, because the method reads an internal value rather than a rendered position, and it does not rely on a gradient. The grading is always against the oracle; the audit box reports the measured triad.</p>
   <p class="caption">The score is measured against the §1 intervention oracle — never against
   another interpretability method. F (faithful) is always vs the oracle; see the
   <a href="methods.html#stack">execution stack</a>. How each of F / S / M is actually computed for
@@ -148,7 +262,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/cc950552d22a04a0bddfb0d14cd2429b3bca8859"><code>cc950552</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/46b94f1dfc8fa5dca6fdd4c820fb11a26497fc6f"><code>46b94f1d</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

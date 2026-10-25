@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XAI primer</title>
+<meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
+<link rel="stylesheet" href="assets/css/style.css"><style>
+.guide h3{margin:26px 0 8px}
+.guide .gtag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;
+  background:#14301f;color:var(--accent-2);border:1px solid #23502f;margin-bottom:6px}
+.guide .chips a{display:inline-block;margin:3px 6px 3px 0;padding:3px 10px;border-radius:999px;
+  border:1px solid var(--border);background:var(--bg-soft);font-size:.86rem}
+.guide .chips a.wk::before{content:"W ";font-weight:700;color:var(--fg-dim)}
+.guide table.map{width:100%;border-collapse:collapse;margin:8px 0 4px}
+.guide table.map th,.guide table.map td{border:1px solid var(--border);padding:8px 10px;
+  vertical-align:top;text-align:left}
+.guide table.map th{background:var(--bg-soft);width:28%;font-weight:600}
+.guide ol.recipe li,.guide ul.pit li{margin:6px 0}
+.guide .code-xai,.guide .code-sub{display:inline-block;font-size:.7rem;padding:0 6px;
+  border-radius:5px;margin-right:6px;vertical-align:middle}
+.guide .code-xai{background:#16283a;color:var(--accent)}
+.guide .code-sub{background:#2e2414;color:var(--warn)}
+.guide pre.try{background:#0b0e12;border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;overflow-x:auto;font-family:var(--mono);font-size:.86rem}
+.guide .box{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+  padding:4px 18px 10px;margin:14px 0}
+@media (max-width:640px){.guide table.map th{width:auto}}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script>window.addEventListener("load",function(){if(window.renderMathInElement)renderMathInElement(document.body,{throwOnError:false});});</script>
+</head>
+<body>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="primer.html" class="active">XAI Primer</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+
+<header class="hero"><div class="wrap">
+  <span class="venue" style="color:var(--accent-2);font-weight:600">Start here if you are new to XAI</span>
+  <h1>XAI primer &mdash; explaining a machine whose answer we know</h1>
+  <p class="lead">Explainable-AI methods are normally judged by how convincing their pictures look,
+  because for a real neural network nobody knows the right answer. This site runs 30 of those methods
+  on an Atari&nbsp;2600 instead &mdash; a computer whose every wire we can read and whose behaviour
+  we can re-run exactly &mdash; and checks each one against the truth. This page gives you the
+  vocabulary; each <a href="methods.html">method page</a> then teaches one method in depth.</p>
+</div></header>
+
+<section class="guide"><div class="wrap">
+  <h2>1 &middot; What is explainable AI, and why is it hard to test?</h2>
+  <p>A trained network is a function \(y = f(x)\) with millions of parameters. It works, but nobody
+  wrote down <i>how</i> it works. <b>Explainable AI</b> (<a href="https://en.wikipedia.org/wiki/Explainable_artificial_intelligence">XAI</a>), also called interpretability, is the
+  collection of methods that try to recover that &ldquo;how&rdquo;. They answer questions like:
+  <i>which input pixels drove this decision?</i> (attribution), <i>which internal neurons compute
+  this feature?</i> (mechanistic interpretability), or <i>what would have to change for a different
+  answer?</i> (counterfactuals).</p>
+  <p>The catch: to check an explanation you need the true explanation, and for a network you do not
+  have it. So methods are usually validated by eye (&ldquo;the heat-map highlights the dog, looks
+  right&rdquo;) or against each other. Both are weak. Saliency maps have been shown to look sensible
+  even for networks with random weights.</p>
+  <p>The fix used here is to replace the network by a system that is <b>just as opaque to the
+  methods</b>, an unannotated machine state that changes over time and produces pixels, but whose
+  <b><a href="https://en.wikipedia.org/wiki/Ground_truth">ground truth</a></b> we do know, because we can read its program and re-run it exactly.</p>
+
+  <h2 style="margin-top:40px">2 &middot; Meet the machine: the Atari 2600 VCS</h2>
+  <p>The <a href="https://en.wikipedia.org/wiki/Atari_2600">Atari 2600</a> (Video Computer System, 1977) is about as simple as a games console gets:</p>
+  <table class="map">
+    <tr><th>CPU</th><td>A <a href="https://en.wikipedia.org/wiki/MOS_Technology_6507">MOS 6507</a> (a cut-down <a href="https://en.wikipedia.org/wiki/MOS_Technology_6502">6502</a>) at 1.19&nbsp;MHz. It executes the game program one
+      instruction at a time and has a handful of 8-bit registers (A, X, Y, stack pointer, status flags,
+      program counter).</td></tr>
+    <tr><th>RAM</th><td><b>128 bytes</b>, in the RIOT chip (<a href="https://en.wikipedia.org/wiki/MOS_Technology_6532">MOS 6532</a>). This is the game's entire working
+      memory: positions, score, lives, timers, random seeds. It is the main thing our methods explain,
+      the analogue of a network's activation vector.</td></tr>
+    <tr><th>ROM</th><td>The cartridge: 2&ndash;32&nbsp;KB of program code and data tables. This
+      is the &ldquo;weights&rdquo;: fixed, and fully readable by disassembly.</td></tr>
+    <tr><th>TIA</th><td>The <a href="https://en.wikipedia.org/wiki/Television_Interface_Adaptor">Television Interface Adaptor</a>, the video and sound chip. There is no frame buffer: the CPU must
+      write colour and sprite registers <i>while the TV beam sweeps each line</i>
+      (&ldquo;racing the beam&rdquo;). A sprite's horizontal position is set by <i>when</i> the program
+      hits a strobe register. This timing-based design is why gradients of sprite positions vanish.</td></tr>
+    <tr><th>Frame</th><td>262 scanlines &asymp; 1/60&nbsp;s &asymp; a few thousand CPU instructions. Our
+      environment advances one frame per <code>env_step!</code>, exactly like the Arcade Learning
+      Environment that deep-RL agents are trained on.</td></tr>
+  </table>
+  <p>We wrote two emulators of this machine: <b>jutari</b> (Julia) and <b>jaxtari</b> (JAX/Python).
+  Both are validated <b>bit-exact</b> against the reference C++ emulator: every RAM byte, register
+  and pixel is identical, frame by frame, on 64 games (see <a href="conformance.html">Conformance</a>).
+  So when a method says &ldquo;byte 54 matters&rdquo;, we can check that claim on the real
+  machine. Key substrate code: one frame <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/env/StellaEnvironment.jl#L259"><code>env_step!</code></a>, inside it the instruction loop <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/Console.jl#L106"><code>run_until_frame!</code></a>, one CPU instruction <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/Console.jl#L83"><code>console_step!</code></a>.</p>
+
+  <h2 style="margin-top:40px">3 &middot; A neural network &harr; the VCS: the dictionary</h2>
+  <p>Every method was designed for neural networks. To apply it here, we translate:</p>
+  <table class="map">
+    <tr><th>Network \(f\) with weights</th><td>The ROM program, executed by the CPU, plus the TIA and
+      RIOT. The &ldquo;weights&rdquo; are fixed opcodes and data tables.</td></tr>
+    <tr><th>Input \(x\) / activations \(h\)</th><td>The machine state at the frame we explain
+      (\(f^*\)): 128 RAM bytes plus registers. Gradient and perturbation methods treat it as the
+      input; mechanistic methods treat the bytes as neurons.</td></tr>
+    <tr><th>Layers</th><td>Time. The state after each frame (or each instruction) is the next
+      &ldquo;layer&rdquo;. Running 15 frames is a very deep, weight-shared recurrent network.</td></tr>
+    <tr><th>Output / logit \(y\)</th><td>A <b>content</b> output (one RAM byte 15 frames later, e.g. a
+      score digit) and a <b>position</b> output (number of screen pixels that differ from the
+      un-intervened frame).</td></tr>
+    <tr><th>Backpropagation</th><td>The differentiable <b>SOFT</b> path of jutari: every instruction
+      rewritten in differentiable float arithmetic (<a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/diff/SoftSystem.jl#L79"><code>soft_system_step</code></a>, <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/diff/SoftStep.jl#L106"><code>soft_ram_peek</code></a>). Its forward values are
+      bit-identical to the hard machine (a straight-through estimator); only the backward pass is a
+      surrogate. Gradients flow through registers, RAM and the ALU, not through branch decisions,
+      memory addresses or the TIA renderer.</td></tr>
+    <tr><th>Ground truth</th><td>The <b>intervention oracle</b>, next section. Networks do not have one.</td></tr>
+  </table>
+  <div class="fig" style="max-width:900px;margin:16px auto"><a href="assets/img/p2_fig1_platform_oracle.png">
+    <img src="assets/img/p2_fig1_platform_oracle.png" alt="platform and oracle"></a></div>
+  <p class="caption">Paper&nbsp;2, Fig.&nbsp;1: the platform and the intervention oracle.</p>
+
+  <h2 style="margin-top:40px">4 &middot; The oracle: ground truth by intervention</h2>
+  <p>Causality has a precise meaning (<a href="https://en.wikipedia.org/wiki/Causal_model">causal models</a>, <a href="https://en.wikipedia.org/wiki/Do-calculus">do-calculus</a>): <i>\(u\) causes \(y\)</i> if <b>setting</b>
+  \(u\) to another value, with everything else held fixed, changes \(y\). Observing that \(u\)
+  and \(y\) move together is not enough. On a network this experiment is expensive and ambiguous. On
+  a deterministic, bit-exact emulator it is trivial:</p>
+  <ol class="recipe">
+    <li><b>Reach a state.</b> Boot the game and play 90 frames of seeded random joystick input <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/shared_testbed_impl.jl#L71"><code>shared_testbed_impl.jl:71</code></a>.
+      Save the machine at that frame, \(f^*\) (the checkpoint) <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/shared_testbed_impl.jl#L115"><code>shared_testbed_impl.jl:115</code></a>.</li>
+    <li><b>Define causes.</b> For each RAM byte that the community annotations (AtariARI, OCAtari)
+      say means something, such as a ball x-position or a score, make two interventions: set it to
+      its value&nbsp;+17, and zero it. Add a TIA colour register and a different joystick action <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/ground_truth/oracle_intervene.jl#L185"><code>oracle_intervene.jl:185</code></a>.</li>
+    <li><b>Intervene and re-run.</b> For each cause: copy the checkpoint, poke the value <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/jutari_oracle.jl#L174"><code>jutari_oracle.jl:174</code></a>, play the
+      same 15 frames, read the output <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/ground_truth/oracle_intervene.jl#L242"><code>oracle_intervene.jl:242</code></a>.</li>
+    <li><b>Measure.</b> The true effect is \(|\Delta y(u)| = |y(do(u)) - y(\text{baseline})|\) <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/saliency.jl#L301"><code>saliency.jl:301</code></a>.
+      Every number is a real re-run, with no approximation.</li>
+  </ol>
+  <p>Every state is checked by a <i>cause-density gate</i>: at least four causes must actually move
+  the screen output, and each record notes whether its state passed, so a state where nothing happens
+  is flagged rather than silently scored.</p>
+
+  <h2 style="margin-top:40px">5 &middot; How a method is scored</h2>
+  <p>A method produces one score per cause, \(a(u)\). We compare it with the oracle \(|\Delta
+  y(u)|\):</p>
+  <ul class="pit">
+    <li><b><a href="https://en.wikipedia.org/wiki/Pearson_correlation_coefficient">Pearson</a> and <a href="https://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient">Spearman</a> correlation</b> <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/pilot_ig_vs_oracle.jl#L173"><code>pilot_ig_vs_oracle.jl:173</code></a>: do big attributions go with big true effects?</li>
+    <li><b>Precision@3</b> <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/pilot_ig_vs_oracle.jl#L198"><code>pilot_ig_vs_oracle.jl:198</code></a>: of the method's top-3 causes, how many are in the oracle's top-3?</li>
+    <li><b>Deletion / insertion curves</b> <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/saliency.jl#L264"><code>saliency.jl:264</code></a>: apply the causes in the method's order on the real
+      machine and watch the output move. A good ranking moves it early.</li>
+    <li><b>Positive control:</b> the oracle itself, scored as if it were a method, must come out
+      perfect. This proves the harness is not broken.</li>
+  </ul>
+  <p>These roll up into the paper's triad. <b>F</b>aithful: agrees with the oracle. <b>S</b>ufficient:
+  predicts held-out interventions. <b>M</b>inimal: names no more causes than necessary. An explanation
+  is only &ldquo;correct&rdquo; if it is all three. The <a href="methods.html#e6">leaderboard</a> shows
+  where each method lands.</p>
+
+  <h2 style="margin-top:40px">6 &middot; Two outputs, two lessons</h2>
+  <p><b>Content</b> outputs (a stored value) flow through arithmetic the gradient can follow. Here
+  gradient methods have a fair chance. <b>Position</b> outputs depend on <i>timing</i>: the sprite is
+  drawn where the CPU happened to be when it strobed a register. A tiny change in a position byte moves
+  the sprite by zero pixels, until it jumps by a whole pixel. The derivative is zero almost everywhere,
+  which is the textbook <i>vanishing gradient</i>. The site reports that honest zero and, next to it, a
+  gradient through a differentiable <b>bilinear sampler</b> <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/shared_testbed_impl.jl#L357"><code>shared_testbed_impl.jl:357</code></a> that draws the sprite at a continuous
+  column, the trick used by spatial-transformer networks. Comparing the two shows how much an
+  attribution depends on a modelling choice the user rarely sees.</p>
+  <p>Most gradient runners differentiate the output read <i>at</i> \(f^*\). The
+  <a href="m_saliency.html">end-to-end arm</a> <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/e2e_gradient.jl#L165"><code>e2e_gradient.jl:165</code></a> instead backpropagates from frame \(f^*{+}15\)
+  through every one of the &asymp;10<sup>5</sup> CPU instructions in between: the real &ldquo;deep
+  network&rdquo; case.</p>
+
+  <h2 style="margin-top:40px">7 &middot; The methods, in a suggested reading order</h2>
+  <p>Each page has the same structure: the idea in plain words, how it works on a neural network
+  (with a toy example), the translation to the VCS, the exact lines of code (method and emulator),
+  pitfalls, and a command to reproduce it.</p>
+  <div class="box" id="fam-grad"><h3 style="margin-top:12px">1 · Gradient methods &mdash; &ldquo;how sensitive is the output?&rdquo;</h3><p>Differentiate the output with respect to the input. One backward pass, no re-runs. They need a differentiable model, which is why the VCS has a differentiable twin. Start with saliency; every other member fixes one of its problems (scale, noise, saturation, the choice of baseline).</p><ol class="recipe"><li><a href="m_saliency.html">Vanilla gradient (saliency)</a> <span class="cite">&mdash; Gradient family · the starting point</span></li><li><a href="m_gradxinput.html">Grad×Input / DeepLIFT</a> <span class="cite">&mdash; Gradient family · saliency weighted by the input</span></li><li><a href="m_smoothgrad.html">SmoothGrad</a> <span class="cite">&mdash; Gradient family · saliency averaged over noise</span></li><li><a href="m_guided_backprop.html">Guided Backprop</a> <span class="cite">&mdash; Gradient family · a modified backward pass</span></li><li><a href="m_ig_baseline_sweep.html">Integrated Gradients</a> <span class="cite">&mdash; Gradient family · path integral from a baseline</span></li><li><a href="m_expected_gradients.html">Expected Gradients</a> <span class="cite">&mdash; Gradient family · Integrated Gradients averaged over baselines</span></li></ol></div><div class="box" id="fam-pert"><h3 style="margin-top:12px">2 · Perturbation methods &mdash; &ldquo;what happens if I change it?&rdquo;</h3><p>Treat the model as a black box: change inputs, re-run, watch the output. No gradients needed. On the VCS, re-running the model means re-running the real emulator, so these are the closest relatives of the oracle. They differ in <i>what</i> they change and how they summarise it.</p><ol class="recipe"><li><a href="m_occlusion.html">Occlusion</a> <span class="cite">&mdash; Perturbation family · the starting point</span></li><li><a href="m_perturbation.html">Extremal / meaningful perturbation</a> <span class="cite">&mdash; Perturbation family · optimise the mask</span></li><li><a href="m_rise.html">RISE</a> <span class="cite">&mdash; Perturbation family · random joint masks</span></li><li><a href="m_lime.html">LIME</a> <span class="cite">&mdash; Perturbation family · fit a local surrogate</span></li><li><a href="m_kernelshap.html">KernelSHAP / Shapley</a> <span class="cite">&mdash; Perturbation family · fair shares from game theory</span></li><li><a href="m_counterfactual.html">On-distribution counterfactual</a> <span class="cite">&mdash; Perturbation family · the smallest change that flips the outcome</span></li></ol></div><div class="box" id="fam-mech"><h3 style="margin-top:12px">3 · Mechanistic interpretability &mdash; &ldquo;which internal parts compute it?&rdquo;</h3><p>Open the box. Patch internal activations between two runs, find circuits, learn feature dictionaries, probe for information. Developed for transformers and LLMs; here the &ldquo;activations&rdquo; are RAM bytes and registers of a machine whose circuit we can read off the ROM.</p><ol class="recipe"><li><a href="m_activation_patching.html">Activation patching / causal mediation</a> <span class="cite">&mdash; Mechanistic family · the core causal tool</span></li><li><a href="m_attribution_patching.html">Attribution / edge patching</a> <span class="cite">&mdash; Mechanistic family · patching at gradient cost</span></li><li><a href="m_path_patching.html">Path patching / IOI circuit</a> <span class="cite">&mdash; Mechanistic family · patching the wiring, not the nodes</span></li><li><a href="m_acdc.html">ACDC — automatic circuit discovery</a> <span class="cite">&mdash; Mechanistic family · circuit discovery, automated</span></li><li><a href="m_das.html">Interchange interventions / DAS</a> <span class="cite">&mdash; Mechanistic family · testing a hypothesis about a variable</span></li><li><a href="m_causal_scrubbing.html">Causal scrubbing</a> <span class="cite">&mdash; Mechanistic family · testing a circuit hypothesis</span></li><li><a href="m_sae.html">Sparse autoencoders</a> <span class="cite">&mdash; Mechanistic family · features from superposition</span></li><li><a href="m_dictionaries.html">NMF/PCA dictionaries</a> <span class="cite">&mdash; Mechanistic family · classical dictionary learning</span></li><li><a href="m_linear_probing.html">Linear probing + control tasks</a> <span class="cite">&mdash; Mechanistic family · decoding what is represented</span></li><li><a href="m_logit_lens.html">Logit / tuned lens</a> <span class="cite">&mdash; Mechanistic family · reading intermediate states</span></li></ol></div><div class="box" id="fam-neuro"><h3 style="margin-top:12px">4 · The neuroscience battery &mdash; &ldquo;could a neuroscientist understand a microprocessor?&rdquo;</h3><p>The classic toolbox of systems neuroscience &mdash; lesions, tuning curves, correlations, field potentials, Granger causality, dimensionality reduction &mdash; applied to a chip, after Jonas &amp; Kording (2017). Many of these have direct deep-learning analogues (ablations, neuron selectivity, PCA of activations).</p><ol class="recipe"><li><a href="m_A1_connectomics.html">A1 · Connectomics / data-flow graph</a> <span class="cite">&mdash; Phase A · neuroscience battery · wiring from perturbation</span></li><li><a href="m_A2_lesions.html">A2 · Single-unit lesions</a> <span class="cite">&mdash; Phase A · neuroscience battery · knock one unit out</span></li><li><a href="m_A3_tuning.html">A3 · Tuning curves</a> <span class="cite">&mdash; Phase A · neuroscience battery · what does this unit respond to?</span></li><li><a href="m_A4_correlations.html">A4 · Pairwise correlations</a> <span class="cite">&mdash; Phase A · neuroscience battery · who fires together?</span></li><li><a href="m_A5_lfp.html">A5 · Local field potentials</a> <span class="cite">&mdash; Neuroscience battery · pooled signals and their rhythms</span></li><li><a href="m_A6_granger.html">A6 · Granger causality</a> <span class="cite">&mdash; Neuroscience battery · causal discovery from timing alone</span></li><li><a href="m_A7_dimred.html">A7 · Dimensionality reduction (NMF/PCA)</a> <span class="cite">&mdash; Neuroscience battery · latent factors of population activity</span></li><li><a href="m_A8_wholestate.html">A8 · Whole-state recording</a> <span class="cite">&mdash; Neuroscience battery · the record-everything baseline</span></li></ol></div><div class="box" id="fam-na"><h3 style="margin-top:12px">5 · When a method does not apply</h3><p>Some methods assume things the VCS does not have (e.g. attention heads, a token vocabulary). Marking them not-applicable, with the reason, is part of an honest benchmark.</p><ol class="recipe"><li><a href="m_na_audit.html">N/A audit: Grad-CAM, attention rollout, VIPER</a> <span class="cite">&mdash; Applicability audit · what a method needs before it can run</span></li></ol></div>
+
+  <h2 style="margin-top:40px">8 &middot; Glossary</h2>
+  <table class="map"><tr><th>Attribution</th><td>A score per input (or per internal unit) saying how much it contributed to an output.</td></tr><tr><th>Faithfulness (F)</th><td>Does the explanation agree with what the model actually does? Here: correlation of the method's scores with the oracle's true effects.</td></tr><tr><th>Sufficiency (S)</th><td>Can the explanation <i>predict</i> what happens under new, held-out interventions?</td></tr><tr><th>Minimality (M)</th><td>Does the explanation name only what is needed? True minimal cause set / named set.</td></tr><tr><th>Intervention / do(&middot;)</th><td>Setting a variable to a value by force and re-running, as opposed to merely observing it. Written \(do(u := v)\).</td></tr><tr><th>Oracle</th><td>Here: the exact answer to &ldquo;what does intervention \(u\) do to output \(y\)?&rdquo;, obtained by actually re-running the bit-exact emulator.</td></tr><tr><th>Cause \(u\)</th><td>One candidate intervention: a RAM byte set to a new value or zeroed, a TIA colour register, or a different joystick action.</td></tr><tr><th>Content output</th><td>A value the machine stores (one RAM byte at the end of the horizon), e.g. the score.</td></tr><tr><th>Position output</th><td>How many screen pixels differ from the un-intervened frame: depends on <i>where</i> a sprite is drawn.</td></tr><tr><th>Vanishing gradient</th><td>A gradient that is exactly zero although the input matters, because the function is flat or piecewise constant around the current point.</td></tr><tr><th>Straight-through estimator (STE)</th><td>Use the exact (hard, discrete) value in the forward pass and a smooth surrogate's derivative in the backward pass.</td></tr><tr><th>Bit-exact</th><td>Every RAM byte, register and pixel identical to the reference emulator (xitari / the Arcade Learning Environment) at every frame.</td></tr><tr><th>Frame</th><td>One video picture: 262 scanlines, about 1/60 s, a few thousand CPU instructions.</td></tr><tr><th>Horizon</th><td>The number of frames played after the intervention before the output is read (15 here).</td></tr><tr><th>Baseline / reference</th><td>The &ldquo;neutral&rdquo; input some methods compare against (Integrated Gradients, SHAP, occlusion). Choosing it is a modelling decision, not a detail.</td></tr><tr><th>Superposition</th><td>A network storing more features than it has neurons, by overlapping them; the reason sparse autoencoders are used.</td></tr></table>
+
+  <h2 style="margin-top:40px">9 &middot; Run it yourself</h2>
+  <pre class="try">git clone https://github.com/akmaier/UnderstandingVCS
+cd UnderstandingVCS
+julia --project=jutari -e 'using Pkg; Pkg.instantiate(); Pkg.test()'   # emulator self-test, ~20 s
+julia --project=jutari tools/xai_study/phaseB_attribution/saliency.jl --game pong</pre>
+  <p class="sub">The ROMs are not in the repository (licence). See <a href="reproduce.html">Reproduce</a>
+  for how to obtain them and verify their SHA-256 hashes.</p>
+</div></section>
+
+<footer><div class="wrap">
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/46b94f1dfc8fa5dca6fdd4c820fb11a26497fc6f"><code>46b94f1d</code></a> ·
+source of truth: <code>docs/manifest.py</code> ·
+regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
+<a href="https://github.com/akmaier/UnderstandingVCS">repository</a>
+</div></footer>
+</body>
+</html>

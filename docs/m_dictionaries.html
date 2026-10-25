@@ -5,14 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NMF/PCA dictionaries — Paper 2 method</title>
 <meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css"><style>
+.guide h3{margin:26px 0 8px}
+.guide .gtag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;
+  background:#14301f;color:var(--accent-2);border:1px solid #23502f;margin-bottom:6px}
+.guide .chips a{display:inline-block;margin:3px 6px 3px 0;padding:3px 10px;border-radius:999px;
+  border:1px solid var(--border);background:var(--bg-soft);font-size:.86rem}
+.guide .chips a.wk::before{content:"W ";font-weight:700;color:var(--fg-dim)}
+.guide table.map{width:100%;border-collapse:collapse;margin:8px 0 4px}
+.guide table.map th,.guide table.map td{border:1px solid var(--border);padding:8px 10px;
+  vertical-align:top;text-align:left}
+.guide table.map th{background:var(--bg-soft);width:28%;font-weight:600}
+.guide ol.recipe li,.guide ul.pit li{margin:6px 0}
+.guide .code-xai,.guide .code-sub{display:inline-block;font-size:.7rem;padding:0 6px;
+  border-radius:5px;margin-right:6px;vertical-align:middle}
+.guide .code-xai{background:#16283a;color:var(--accent)}
+.guide .code-sub{background:#2e2414;color:var(--warn)}
+.guide pre.try{background:#0b0e12;border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;overflow-x:auto;font-family:var(--mono);font-size:.86rem}
+.guide .box{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+  padding:4px 18px 10px;margin:14px 0}
+@media (max-width:640px){.guide table.map th{width:auto}}
+</style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <script>window.addEventListener("load",function(){if(window.renderMathInElement)renderMathInElement(document.body,{throwOnError:false});});</script>
 </head>
 <body>
-<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="primer.html">XAI Primer</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
 
 <header class="hero"><div class="wrap">
   <span class="venue" style="color:var(--accent-2);font-weight:600">Phase C · mechanistic interpretability</span>
@@ -34,6 +55,104 @@
 </div></section>
 
 
+
+
+<section class="guide"><div class="wrap">
+  <span class="gtag">Mechanistic family · classical dictionary learning</span>
+  <h2>Learn the method &mdash; a beginner's guide</h2>
+  <p class="sub">New to explainable AI? This block explains the method as it is used on neural
+  networks, then how we run the very same method on an Atari&nbsp;2600, where &mdash; unlike for a
+  network &mdash; we know the right answer. Every implementation step links to the code. See also the
+  <a href="primer.html">XAI primer</a> for the shared vocabulary.</p>
+  <div class="chips"><a class="wk" href="https://en.wikipedia.org/wiki/Principal_component_analysis">Principal component analysis</a><a class="wk" href="https://en.wikipedia.org/wiki/Non-negative_matrix_factorization">Non-negative matrix factorization</a><a class="wk" href="https://en.wikipedia.org/wiki/Sparse_dictionary_learning">Sparse dictionary learning</a><a class="wk" href="https://en.wikipedia.org/wiki/Singular_value_decomposition">Singular value decomposition</a></div>
+  <h3>The idea in plain words</h3>
+  
+<p>Suppose you record a network's activations for thousands of inputs and stack them into one big
+table: one row per input, one column per neuron. A <b>dictionary</b> is a short list of
+&ldquo;building-block&rdquo; patterns, called <b>atoms</b> or <b>components</b>, such that every row can
+be written as a weighted sum of a few atoms. If the atoms line up with real concepts, you have found the
+concepts <b>without any labels</b>. This is <b>dictionary learning</b>, and it is much older than deep
+learning: neuroscientists used it in the 1990s to explain how the visual cortex codes images.</p>
+<p>Two classical recipes are fast and need no training loop. <b>PCA</b> (principal component analysis)
+finds the directions along which the data varies most; they are orthogonal and may have negative
+entries. <b>NMF</b> (non-negative matrix factorisation) only allows non-negative atoms and weights, so
+everything is built by <i>adding</i> parts, never by cancelling them. That often gives &ldquo;parts&rdquo;
+a human can recognise. The sparse autoencoder is the modern, learned, sparse member of the same family.
+Running the classical ones first shows how much the extra machinery buys.</p>
+  <h3>How it works on a neural network</h3>
+  
+<p>Put the data in a matrix \(X\) with \(T\) rows (samples) and \(n\) columns (neurons). Both methods
+approximate it by a product of a thin matrix of <b>activations</b> \(A\) (\(T\times r\)) and a short
+matrix of <b>atoms</b> \(H\) (\(r\times n\)), with \(r \ll n\):</p>
+\[ X \;\approx\; \mu + A H \quad(\text{PCA, } H H^\top = I), \qquad
+   X \;\approx\; A H \quad(\text{NMF, } A \ge 0,\ H \ge 0). \]
+<p>PCA takes \(\mu\) = the column means and \(H\) = the top \(r\) right singular vectors of the centred
+data. NMF minimises \(\|X - AH\|^2\) with the Lee&ndash;Seung multiplicative updates, which keep every
+entry non-negative. An SAE is the same picture with a learned, non-linear, sparse encoder for \(A\).</p>
+<p><b>Toy example.</b> Three RAM-like cells \((a, b, c)\). Cells \(a, b\) move together (a ball's x and
+a copy of it); cell \(c\) is a score. Four frames: \((4,2,0)\), \((2,1,0)\), \((0,0,5)\),
+\((4,2,5)\). NMF with \(r=2\) finds the exact answer \(H_1=(2,1,0)\) (&ldquo;ball&rdquo;),
+\(H_2=(0,0,1)\) (&ldquo;score&rdquo;), with weights \((2,0), (1,0), (0,5), (2,5)\). Each atom is one
+variable. PCA on the same data gives a first component of roughly \(0.92\cdot\)score \(-\,0.38\cdot\)ball:
+both variables vary a lot, so the direction of largest variance <b>mixes</b> them, with a sign. Same data,
+same rank; only the constraint differs.</p>
+  <div class="box"><h3 style="margin-top:12px">Recipe</h3><ol class="recipe"><li>Record many activation vectors and stack them into a samples &times; units matrix.</li><li>Choose the number of atoms \(r\) (try several).</li><li>Fit PCA (singular value decomposition of the centred matrix) and NMF (multiplicative updates on the raw, non-negative matrix).</li><li>Inspect each atom's loadings: which units does it weigh, and do they belong to one concept?</li><li>Count the share of atoms that match a known concept (the matched fraction).</li><li>Test causally: remove one atom from the reconstruction, put the state back into the model, and measure the change in output.</li></ol></div>
+  <h3>From a neural network to the Atari</h3>
+  <table class="map"><tr><th>Activation table \(X\)</th><td>The RAM tape: one row per video frame, 128 columns (one per RAM byte).</td></tr><tr><th>Atom / component</th><td>A pattern over the 128 bytes. A clean atom loads on the bytes of <b>one</b> game variable.</td></tr><tr><th>Concept label</th><td>The verified concept&harr;cell map (for Pong: scores, paddle and ball positions), grouped into <b>families</b> such as &ldquo;ball&rdquo; or &ldquo;score&rdquo;.</td></tr><tr><th>Structural signals (no network analogue)</th><td>Known machine-level signals: the frame clock, how many bytes change per frame, and a fitted periodic phase.</td></tr><tr><th>Removing an atom</th><td>Zero its weight, rebuild the 128 bytes, round them, write them into the real machine, replay 15 frames.</td></tr><tr><th>Ground truth</th><td>The bit-exact re-run itself: an atom is causally used only if removing it changes the screen.</td></tr></table>
+  <h3>How we apply it to the VCS</h3>
+  
+<p>Our runner <code>dictionaries.jl</code> applies PCA, NMF and a small sparse autoencoder to the
+<b>same</b> RAM tape and scores all three with the <b>same</b> tests. That makes it a fair three-way
+comparison.</p>
+<ul>
+<li><b>Data.</b> The RAM after each frame along the shared gameplay stream (90 seeded random-action
+frames, the 15-frame horizon, then NOOP; 150 frames for Pong). PCA uses the centred bytes. NMF uses the
+raw bytes, which are naturally non-negative (0&ndash;255). The SAE uses z-scored bytes.</li>
+<li><b>Models.</b> PCA is one singular value decomposition. NMF runs 300 Lee&ndash;Seung updates. The
+SAE has as many hidden units as the rank, L1 weight 0.05, and 3000 epochs of gradient descent. All three
+are run at ranks 8, 4 and 12; rank 8 is the headline.</li>
+<li><b>Matching.</b> An atom counts as matched to a game variable if at least a quarter of its squared
+loading mass sits on candidate cells and at least half of that mass sits on <b>one</b> concept family.
+Otherwise it can still be matched to a structural signal if its activation over time correlates with the
+frame clock, the per-frame change count, or the periodic phase at \(|r|\ge 0.5\). The <b>matched
+fraction</b> is matched atoms over all atoms.</li>
+<li><b>Causal use.</b> The RAM at \(f^*\) is projected onto the dictionary. For each atom we zero its
+weight, decode, round and clamp to bytes, write all 128 bytes into a copy of the machine, and play the
+15-frame tail. The effect is the number of screen pixels that differ from the same write <i>without</i>
+the ablation, so the lossy reconstruction does not count as an effect. The same ablation is also played
+under a different, held-out action tail.</li>
+<li><b>Positive control.</b> Zeroing <i>all</i> atoms must break the screen. Otherwise the causal test
+would be blind.</li>
+</ul>
+<p>The triad: <b>F</b> is the Spearman correlation between how strongly each atom matches a variable
+and its causal effect (&ldquo;are the named atoms the used ones?&rdquo;). <b>S</b> correlates the effect
+with the held-out-tail effect. <b>M</b> is one minus the share of matched atoms whose removal does
+nothing: naming a causally dead atom is an over-claim.</p>
+<p>Why NMF tends to win on the VCS: RAM is literally a list of separate bytes that the program adds to
+and overwrites. That is an additive, non-negative &ldquo;parts&rdquo; structure, which is what NMF
+assumes. PCA's orthogonality has no reason to hold, so its components blend variables that happen to vary
+together.</p>
+  <h3>Read the code</h3>
+  <p class="sub"><span class="code-xai">XAI</span> the interpretability method &nbsp;
+  <span class="code-sub">substrate</span> the bit-exact emulator it runs on (jutari, Julia).</p>
+  <ul class="callstack"><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/dictionaries.jl#L409"><code>dictionaries.jl:409</code></a> &mdash; PCA: SVD of the centred RAM tape; rows of \(V^\top\) are the atoms.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/dictionaries.jl#L430"><code>dictionaries.jl:430</code></a> &mdash; NMF: Lee&ndash;Seung multiplicative updates that keep both factors non-negative.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/dictionaries.jl#L487"><code>dictionaries.jl:487</code></a> &mdash; The small L1 sparse autoencoder used as the third, learned dictionary.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/dictionaries.jl#L599"><code>dictionaries.jl:599</code></a> &mdash; Matched fraction: loading purity on one concept family, or correlation with a structural signal.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/dictionaries.jl#L680"><code>dictionaries.jl:680</code></a> &mdash; Ablate one atom, decode, write the state, replay, count pixels against the reconstruction control.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/dictionaries.jl#L671"><code>dictionaries.jl:671</code></a> &mdash; Writes a full 128-byte state into a copy of the machine and replays the tail.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/dictionaries.jl#L842"><code>dictionaries.jl:842</code></a> &mdash; One game: record the tape, then PCA / NMF / SAE at each rank, matching, causal use, triad.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/jutari_oracle.jl#L174"><code>jutari_oracle.jl:174</code></a> &mdash; The single-byte write into emulated RIOT RAM that the decoded state is built from.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/env/StellaEnvironment.jl#L220"><code>StellaEnvironment.jl:220</code></a> &mdash; Boots the cartridge with the xitari-parity reset before any recording.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/env/StellaEnvironment.jl#L259"><code>StellaEnvironment.jl:259</code></a> &mdash; One bit-exact video frame: the step behind every recorded row and every re-run.</li></ul>
+  <h3>Reading the result</h3>
+  
+<p>The figure compares the matched fraction of PCA, NMF and the SAE. Expect a partial result: NMF
+recovers more cleanly named atoms than PCA, because its atoms are additive parts, while PCA folds
+several variables into one signed direction. Then look at causal use. Several matched atoms do little
+or nothing when removed, while some unmatched ones matter. So a good matched fraction is evidence that a
+variable is <b>present</b> in the data, not that the program <b>uses</b> that atom. This is the same
+gap the SAE page shows.</p>
+  <h3>Pitfalls</h3>
+  <ul class="pit"><li><b>Variance is not importance.</b> PCA ranks directions by how much they vary. A busy frame counter can dominate the first component while a rarely changing but crucial byte is buried.</li><li><b>The rank is a choice.</b> Too few atoms merge variables; too many split one variable over several atoms. We sweep ranks 4, 8 and 12 for this reason.</li><li><b>Unsupervised factors are not unique.</b> Locatello et al. proved that, without extra assumptions, many different factorisations explain the data equally well. A matching atom may be luck of the initialisation.</li><li><b>Rounding to bytes.</b> On the VCS a decoded state must be rounded to integers before it can be written. Small atoms can vanish in the rounding, which reads as &ldquo;no causal effect&rdquo;.</li></ul>
+  <h3>Try it yourself</h3>
+  <pre class="try">julia --project=jutari tools/xai_study/phaseC_mechanistic/dictionaries.jl --games core</pre>
+  <p class="sub">Writes <code>dictionaries_&lt;game&gt;.{json,npz}</code> and <code>dictionaries_core_summary.json</code> into <code>tools/xai_study/phaseC_mechanistic/out/</code>. Use <code>--rank 8</code> for the headline rank only.</p>
+  <h3>Original papers &amp; further reading</h3>
+  <ul><li>Lee &amp; Seung (1999). <i>Learning the parts of objects by non-negative matrix factorization.</i> Nature 401. &mdash; <a href="https://doi.org/10.1038/44565">doi.org/10.1038/44565</a></li><li>Olshausen &amp; Field (1996). <i>Emergence of simple-cell receptive field properties by learning a sparse code for natural images.</i> Nature 381. &mdash; <a href="https://doi.org/10.1038/381607a0">doi.org/10.1038/381607a0</a></li><li>Locatello et al. (2019). <i>Challenging Common Assumptions in the Unsupervised Learning of Disentangled Representations.</i> ICML. (critique: unsupervised factors are not identifiable without extra assumptions) &mdash; <a href="https://arxiv.org/abs/1811.12359">arxiv.org/abs/1811.12359</a></li></ul>
+  <p><b>Read next:</b> <a href="m_sae.html">Sparse autoencoders</a> · <a href="m_A7_dimred.html">A7 · Dimensionality reduction (NMF/PCA)</a> · <a href="m_linear_probing.html">Linear probing + control tasks</a> · <a href="m_das.html">Interchange interventions / DAS</a></p>
+</div></section>
 
 <section><div class="wrap">
   <h2>How it's scored</h2>
@@ -148,7 +267,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/cc950552d22a04a0bddfb0d14cd2429b3bca8859"><code>cc950552</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/46b94f1dfc8fa5dca6fdd4c820fb11a26497fc6f"><code>46b94f1d</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

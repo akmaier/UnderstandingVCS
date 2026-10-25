@@ -5,14 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Guided Backprop — Paper 2 method</title>
 <meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css"><style>
+.guide h3{margin:26px 0 8px}
+.guide .gtag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;
+  background:#14301f;color:var(--accent-2);border:1px solid #23502f;margin-bottom:6px}
+.guide .chips a{display:inline-block;margin:3px 6px 3px 0;padding:3px 10px;border-radius:999px;
+  border:1px solid var(--border);background:var(--bg-soft);font-size:.86rem}
+.guide .chips a.wk::before{content:"W ";font-weight:700;color:var(--fg-dim)}
+.guide table.map{width:100%;border-collapse:collapse;margin:8px 0 4px}
+.guide table.map th,.guide table.map td{border:1px solid var(--border);padding:8px 10px;
+  vertical-align:top;text-align:left}
+.guide table.map th{background:var(--bg-soft);width:28%;font-weight:600}
+.guide ol.recipe li,.guide ul.pit li{margin:6px 0}
+.guide .code-xai,.guide .code-sub{display:inline-block;font-size:.7rem;padding:0 6px;
+  border-radius:5px;margin-right:6px;vertical-align:middle}
+.guide .code-xai{background:#16283a;color:var(--accent)}
+.guide .code-sub{background:#2e2414;color:var(--warn)}
+.guide pre.try{background:#0b0e12;border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;overflow-x:auto;font-family:var(--mono);font-size:.86rem}
+.guide .box{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+  padding:4px 18px 10px;margin:14px 0}
+@media (max-width:640px){.guide table.map th{width:auto}}
+</style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <script>window.addEventListener("load",function(){if(window.renderMathInElement)renderMathInElement(document.body,{throwOnError:false});});</script>
 </head>
 <body>
-<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="primer.html">XAI Primer</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
 
 <header class="hero"><div class="wrap">
   <span class="venue" style="color:var(--accent-2);font-weight:600">Phase B · attribution / XAI</span>
@@ -37,6 +58,109 @@
 <section><div class="wrap">
   <h2>Reading this example's causal region</h2>
   <p>This example explains the content of <b>RAM&nbsp;$36</b> (byte&nbsp;54) — the most causally-active concept byte at this state. Its strongest true-causes are: RAM&nbsp;$36 (the play area — ball / paddles); RAM&nbsp;$31 (17% of its footprint sits in the score band, the rest in the play area). The <b>score digits</b> appear in the region because RAM&nbsp;$31 reaches them: perturbing it over the 30-frame NOOP window changes the game outcome, and hence the score — a <i>downstream</i> effect, not direct rendering.</p>
+</div></section>
+
+
+<section class="guide"><div class="wrap">
+  <span class="gtag">Gradient family · a modified backward pass</span>
+  <h2>Learn the method &mdash; a beginner's guide</h2>
+  <p class="sub">New to explainable AI? This block explains the method as it is used on neural
+  networks, then how we run the very same method on an Atari&nbsp;2600, where &mdash; unlike for a
+  network &mdash; we know the right answer. Every implementation step links to the code. See also the
+  <a href="primer.html">XAI primer</a> for the shared vocabulary.</p>
+  <div class="chips"><a class="wk" href="https://en.wikipedia.org/wiki/Rectified_linear_unit">Rectified linear unit (ReLU)</a><a class="wk" href="https://en.wikipedia.org/wiki/Backpropagation">Backpropagation</a><a class="wk" href="https://en.wikipedia.org/wiki/Edge_detection">Edge detection</a><a class="wk" href="https://en.wikipedia.org/wiki/Saliency_map">Saliency map</a></div>
+  <h3>The idea in plain words</h3>
+  
+<p>Vanilla saliency maps of image classifiers look grainy. Positive and negative gradient signals
+mix as they flow back through the network. <b>Guided backpropagation</b> changes one rule in the
+backward pass to clean this up. At every <b>ReLU</b> (rectified linear unit, \(\max(0, z)\), the
+standard on/off nonlinearity of deep nets) it lets a gradient through only if the unit was
+<i>active</i> in the forward pass <b>and</b> the gradient arriving from above is <i>positive</i>.
+Negative signals (&ldquo;this feature argues <i>against</i> the class&rdquo;) are thrown away.</p>
+<p>The result looks spectacular: crisp, edge-like pictures of the object. That is why the method
+became popular. But it is no longer the gradient of anything. It is a hand-modified signal.
+Adebayo et al. (2018) asked a simple question: <i>does the map change if we destroy the model?</i>
+For guided backprop it barely does. The map behaves more like an edge detector applied to the
+input than an explanation of the network. This test, the <b>model-randomisation sanity check</b>,
+is part of our experiment, run on the machine itself.</p>
+  <h3>How it works on a neural network</h3>
+  
+<p>Take one ReLU unit \(h = \max(0, z)\) and let \(g = \partial y/\partial h\) be the gradient arriving
+from above. The three backward rules differ only in what they send down to \(z\):</p>
+\[ \text{backprop: } \mathbb{1}[z>0]\,g, \qquad
+   \text{deconvnet: } \mathbb{1}[g>0]\,g, \qquad
+   \text{guided: } \mathbb{1}[z>0]\,\mathbb{1}[g>0]\,g . \]
+<p>Guided backprop combines the two masks. Applied at every ReLU of the network it yields a map
+\(G(x)\) that, unlike saliency, is not the derivative \(\nabla f(x)\).</p>
+<p><b>Toy example.</b> Two inputs, two hidden ReLUs, one output:
+\(h_1 = \max(0, 2x_1 + x_2)\), \(h_2 = \max(0, x_1 - x_2 + 1)\), \(y = h_1 - h_2\).
+At \(x = (1, 1)\): \(h_1 = 3\), \(h_2 = 1\), \(y = 2\). Both units are active. From above,
+\(\partial y/\partial h = (1, -1)\).</p>
+<ul>
+<li><b>Vanilla gradient:</b> \(1\cdot(2, 1) + (-1)\cdot(1, -1) = (1, 2)\). It says \(x_2\) matters
+most.</li>
+<li><b>Guided:</b> the \(-1\) arriving at \(h_2\) is negative, so it is zeroed. Only
+\(1\cdot(2,1) = (2, 1)\) survives. It says \(x_1\) matters most.</li>
+</ul>
+<p>The ranking flipped. \(h_2\) <i>inhibits</i> the output and \(x_2\) acts partly by reducing that
+inhibition. Guided backprop discards inhibition, so it cannot see this. Check the truth directly:
+raising \(x_2\) by 0.1 raises \(y\) by 0.2, raising \(x_1\) by 0.1 raises it by only 0.1. Here the
+vanilla gradient was right and the &ldquo;cleaner&rdquo; map was wrong.</p>
+  <div class="box"><h3 style="margin-top:12px">Recipe</h3><ol class="recipe"><li>Run the forward pass and record which ReLUs are active (\(z > 0\)).</li><li>Start the backward pass from the scalar output \(y\), as in vanilla saliency.</li><li>At every ReLU, pass the gradient down only where \(z > 0\) <b>and</b> the incoming gradient is \(> 0\); set everything else to 0.</li><li>Continue to the input. Display the (usually absolute) result as a heat-map.</li><li>Sanity check (Adebayo): randomise the model's weights, recompute the map, and verify it <i>changes</i>. A map that stays the same cannot be explaining the model.</li></ol></div>
+  <h3>From a neural network to the Atari</h3>
+  <table class="map"><tr><th>The network \(f\)</th><td>The Atari 2600 VCS running the ROM, emulated bit-exactly by <code>jutari</code>; its differentiable twin is <code>JuTari.Diff</code>.</td></tr><tr><th>The ReLUs</th><td>There are none. The soft VCS's nonlinearities are straight-through round/clamp (identity backward), the stop-gradient branch estimator, and the distance-softmax read used only in the relaxation study. So the guided rule is applied once, to the assembled gradient over RAM.</td></tr><tr><th>The input \(x\)</th><td>The 128 RAM bytes at the intervention frame \(f^*\).</td></tr><tr><th>The output \(y\)</th><td>A content output (one RAM byte read one-hot) and a position output (screen pixels changed versus the un-intervened frame, made differentiable by the bilinear sampler).</td></tr><tr><th>Randomising the weights</th><td>Randomising the <b>program</b>: every ROM byte is replaced by a random byte, except the CPU's reset/interrupt vectors so the console still boots.</td></tr><tr><th>&ldquo;Is the map right?&rdquo;</th><td>The intervention oracle: poke each cause, re-run the real ROM, measure \(|\Delta y|\).</td></tr></table>
+  <h3>How we apply it to the VCS</h3>
+  
+<p>Our substrate has no deep stack of ReLUs. The runner says so plainly, and implements guided
+backprop as the rectification rule \(g \mapsto g\odot\mathbb{1}[g>0]\) applied to the gradient
+\(\partial y/\partial u\) over the RAM vector \(u\), followed by an absolute value. It returns
+the guided map <i>and</i> the vanilla \(|\partial y/\partial u|\), so the effect of the rule can
+be measured directly.</p>
+<ul>
+<li><b>Content output.</b> \(y = \) <code>soft_ram_peek(ram, idx)</code>, whose gradient is the one-hot
+vector \(e_{\text{idx}}\). It has no negative entries, so there is nothing to suppress: the guided
+map equals vanilla saliency exactly. The runner records this as <code>guided_equals_vanilla</code>.
+The byte <code>idx</code> is the candidate the oracle shows to be most causally active, the same
+choice as the SmoothGrad runner, so only the backward rule differs.</li>
+<li><b>Is the rule real?</b> To show it is not a no-op stub, <code>guided_demo_rectifies</code> applies it
+to a small linear surrogate with mixed-sign weights and asserts that every negative entry is
+zeroed.</li>
+<li><b>Position output.</b> The naive gradient is zero (sprite position is set by strobe timing). The
+bilinear sampler restores one, but its sign depends on which side of the screen cell the sprite
+edge sits: moving the sprite can <i>reduce</i> the cell's occupancy. A negative slope is exactly
+what the guided rule deletes. So guided backprop can throw away the very gradient the sampler
+restored. The runner reports the raw sampler gradient next to the rectified one.</li>
+<li><b>The Adebayo check.</b> <code>randomize_rom</code> fills the cartridge with random bytes but keeps the
+last 6 bytes of each 4&nbsp;KB bank (the 6502 reset/IRQ/NMI vectors). Three randomised programs are
+booted and replayed to \(f^*\). The runner counts how many RAM bytes differ from the real game,
+recomputes the guided map, and measures its cosine similarity to the real map. The scrambled programs
+reach very different RAM states. Yet the content map is identical, because the one-hot Jacobian
+does not depend on what the program computed. The runner classifies this as a genuine failure
+(&ldquo;model-invariant saliency, constant Jacobian&rdquo;), not as a harness error.</li>
+<li><b>Scoring</b> is shared with the other gradient methods: correlation and precision@3 against the
+oracle, and deletion/insertion curves re-run on the real ROM, plus an oracle-vs-itself control.</li>
+</ul>
+  <h3>Read the code</h3>
+  <p class="sub"><span class="code-xai">XAI</span> the interpretability method &nbsp;
+  <span class="code-sub">substrate</span> the bit-exact emulator it runs on (jutari, Julia).</p>
+  <ul class="callstack"><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/guided_backprop.jl#L336"><code>guided_backprop.jl:336</code></a> &mdash; The guided rule: keep positive gradient entries, zero the negative ones.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/guided_backprop.jl#L347"><code>guided_backprop.jl:347</code></a> &mdash; One Zygote gradient over RAM, then the rule; returns guided and vanilla maps side by side.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/guided_backprop.jl#L368"><code>guided_backprop.jl:368</code></a> &mdash; Proof the rule is wired: a mixed-sign surrogate whose negative gradients must be suppressed.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/guided_backprop.jl#L443"><code>guided_backprop.jl:443</code></a> &mdash; Model randomisation for the VCS: random ROM bytes, CPU vectors preserved.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/guided_backprop.jl#L479"><code>guided_backprop.jl:479</code></a> &mdash; The Adebayo sanity check: cosine/Spearman of the map under program randomisation, with a failure-mode diagnosis.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/guided_backprop.jl#L564"><code>guided_backprop.jl:564</code></a> &mdash; One output: oracle &rarr; guided map &rarr; scores &rarr; deletion/insertion &rarr; control &rarr; sanity check.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/diff/SoftStep.jl#L106"><code>SoftStep.jl:106</code></a> &mdash; The one-hot RAM read: a linear unit with a non-negative gradient, so the guided rule has nothing to remove.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/diff/StraightThrough.jl#L28"><code>StraightThrough.jl:28</code></a> &mdash; The straight-through round: one of the soft VCS's actual nonlinearities (exact forward, identity backward). Not a ReLU.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/shared_testbed_impl.jl#L357"><code>shared_testbed_impl.jl:357</code></a> &mdash; The bilinear sampler; its triangular kernel has slopes of both signs.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/ground_truth/oracle_intervene.jl#L242"><code>oracle_intervene.jl:242</code></a> &mdash; The ground truth: poke a cause, re-run the real ROM, read the output.</li></ul>
+  <h3>Reading the result</h3>
+  
+<p>On the <b>content</b> output the guided bars are the vanilla saliency bars, exactly. Any
+agreement with the oracle is saliency's agreement. On the <b>position</b> output the map is often
+empty, either because the naive gradient is zero or because the rule removed a negative sampler
+slope. Then look at the sanity-check box. A cosine similarity near 1 between the real and the
+scrambled-program maps means the map does not depend on the program. A faithful map must change
+when the model is destroyed; this one stays the same. The oracle, by
+contrast, re-runs the program and would see the difference at once.</p>
+  <h3>Pitfalls</h3>
+  <ul class="pit"><li><b>Not a gradient.</b> Guided backprop is a modified signal. It has no completeness property and no clear causal meaning.</li><li><b>Discards inhibition.</b> Inputs that matter by suppressing a unit are invisible to it, as the toy example shows.</li><li><b>Model-insensitive.</b> Adebayo et al. and Nie et al. showed that guided maps largely reconstruct the input image and change little when weights are randomised. On the VCS content read the map does not change at all.</li><li><b>Substrate mismatch.</b> The VCS has no ReLU layers, so here the method collapses to rectified vanilla saliency. That is an honest limit of transferring a network-specific rule to a different system.</li><li><b>Looks are misleading.</b> Sharper is not truer. Only the intervention oracle decides.</li></ul>
+  <h3>Try it yourself</h3>
+  <pre class="try">julia --project=jutari tools/xai_study/phaseB_attribution/guided_backprop.jl --games core --sanity</pre>
+  <p class="sub">Writes <code>guided_backprop_&lt;game&gt;_{content,ball_pixel}.json/.npz</code> and <code>guided_backprop_core_summary.json</code> into <code>tools/xai_study/phaseB_attribution/out/</code>. The sanity check boots three randomised ROMs per output; pass <code>--no-sanity</code> for a faster smoke run.</p>
+  <h3>Original papers &amp; further reading</h3>
+  <ul><li>Springenberg, Dosovitskiy, Brox &amp; Riedmiller (2015). <i>Striving for Simplicity: The All Convolutional Net.</i> ICLR workshop (introduces guided backpropagation). &mdash; <a href="https://arxiv.org/abs/1412.6806">arxiv.org/abs/1412.6806</a></li><li>Adebayo et al. (2018). <i>Sanity Checks for Saliency Maps.</i> NeurIPS. &mdash; <a href="https://arxiv.org/abs/1810.03292">arxiv.org/abs/1810.03292</a></li><li>Nie, Zhang &amp; Patel (2018). <i>A Theoretical Explanation for Perplexing Behaviors of Backpropagation-based Visualizations.</i> ICML. &mdash; <a href="https://arxiv.org/abs/1805.07039">arxiv.org/abs/1805.07039</a></li></ul>
+  <p><b>Read next:</b> <a href="m_saliency.html">Vanilla gradient (saliency)</a> · <a href="m_smoothgrad.html">SmoothGrad</a> · <a href="m_gradxinput.html">Grad×Input / DeepLIFT</a> · <a href="m_occlusion.html">Occlusion</a></p>
 </div></section>
 
 <section><div class="wrap">
@@ -152,7 +276,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/cc950552d22a04a0bddfb0d14cd2429b3bca8859"><code>cc950552</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/46b94f1dfc8fa5dca6fdd4c820fb11a26497fc6f"><code>46b94f1d</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

@@ -5,14 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>A7 · Dimensionality reduction (NMF/PCA) — Paper 2 method</title>
 <meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css"><style>
+.guide h3{margin:26px 0 8px}
+.guide .gtag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;
+  background:#14301f;color:var(--accent-2);border:1px solid #23502f;margin-bottom:6px}
+.guide .chips a{display:inline-block;margin:3px 6px 3px 0;padding:3px 10px;border-radius:999px;
+  border:1px solid var(--border);background:var(--bg-soft);font-size:.86rem}
+.guide .chips a.wk::before{content:"W ";font-weight:700;color:var(--fg-dim)}
+.guide table.map{width:100%;border-collapse:collapse;margin:8px 0 4px}
+.guide table.map th,.guide table.map td{border:1px solid var(--border);padding:8px 10px;
+  vertical-align:top;text-align:left}
+.guide table.map th{background:var(--bg-soft);width:28%;font-weight:600}
+.guide ol.recipe li,.guide ul.pit li{margin:6px 0}
+.guide .code-xai,.guide .code-sub{display:inline-block;font-size:.7rem;padding:0 6px;
+  border-radius:5px;margin-right:6px;vertical-align:middle}
+.guide .code-xai{background:#16283a;color:var(--accent)}
+.guide .code-sub{background:#2e2414;color:var(--warn)}
+.guide pre.try{background:#0b0e12;border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;overflow-x:auto;font-family:var(--mono);font-size:.86rem}
+.guide .box{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+  padding:4px 18px 10px;margin:14px 0}
+@media (max-width:640px){.guide table.map th{width:auto}}
+</style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <script>window.addEventListener("load",function(){if(window.renderMathInElement)renderMathInElement(document.body,{throwOnError:false});});</script>
 </head>
 <body>
-<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="primer.html">XAI Primer</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
 
 <header class="hero"><div class="wrap">
   <span class="venue" style="color:var(--accent-2);font-weight:600">Phase A · neuroscience battery</span>
@@ -34,6 +55,110 @@
 </div></section>
 
 
+
+
+<section class="guide"><div class="wrap">
+  <span class="gtag">Neuroscience battery · latent factors of population activity</span>
+  <h2>Learn the method &mdash; a beginner's guide</h2>
+  <p class="sub">New to explainable AI? This block explains the method as it is used on neural
+  networks, then how we run the very same method on an Atari&nbsp;2600, where &mdash; unlike for a
+  network &mdash; we know the right answer. Every implementation step links to the code. See also the
+  <a href="primer.html">XAI primer</a> for the shared vocabulary.</p>
+  <div class="chips"><a class="wk" href="https://en.wikipedia.org/wiki/Dimensionality_reduction">Dimensionality reduction</a><a class="wk" href="https://en.wikipedia.org/wiki/Principal_component_analysis">Principal component analysis</a><a class="wk" href="https://en.wikipedia.org/wiki/Non-negative_matrix_factorization">Non-negative matrix factorization</a><a class="wk" href="https://en.wikipedia.org/wiki/Singular_value_decomposition">Singular value decomposition</a></div>
+  <h3>The idea in plain words</h3>
+  
+<p>Modern recordings are huge: hundreds of neurons, or thousands of hidden units, over thousands of
+time steps. Nobody can stare at that table. <b>Dimensionality reduction</b> compresses it. It looks
+for a few <b>components</b>: patterns of joint activity that, added together, rebuild most of the
+table. Each component has a <b>loading</b> (how strongly each unit takes part) and an
+<b>activation</b> over time (how strongly the pattern is &ldquo;on&rdquo; at each step). The hope is that
+these few <b>latent factors</b> are the system's real internal variables: &ldquo;arm direction&rdquo;,
+&ldquo;choice&rdquo;, &ldquo;ball position&rdquo;.</p>
+<p>Two classic tools are used. <b>PCA</b> (principal component analysis) finds the directions along which the
+data vary most. <b>NMF</b> (non-negative matrix factorisation) instead rebuilds the data as a sum of
+non-negative &ldquo;parts&rdquo;, which often look more like separate objects. Both are
+unsupervised: they need no labels. That is their charm and their risk. They find what is
+<i>large</i> in the data, and large is not the same as <i>important</i>. On the Atari we can check
+which components match real signals, and whether the bytes they highlight are the ones that
+actually cause what appears on screen.</p>
+  <h3>How it works on a neural network</h3>
+  
+<p><b>Neuroscience origin.</b> PCA, factor analysis and NMF are staples of population analysis
+(Cunningham &amp; Yu 2014): reduce a recording to a few latent trajectories, then interpret them. Jonas
+&amp; Kording ran NMF on the transistor activity of a simulated 6502 and found components that tracked the
+clock and bus activity, not the program's logic.</p>
+<p><b>Deep-learning analogue.</b> <b>Dimensionality reduction of activations</b>: PCA of a layer's
+activations over a dataset, NMF of CNN feature maps into &ldquo;concept&rdquo; parts, or the top
+singular directions of a residual stream. Arrange the recording as a matrix \(X\) of size \(T\times n\)
+(time steps &times; units).</p>
+<p><b>PCA</b> centres each column (subtracts its mean, giving \(X_c\)) and takes the singular value
+decomposition \(X_c = U S V^\top\). Column \(j\) of \(V\) is component \(j\)'s loading over the \(n\)
+units; \(X_c V\) gives the activations; the share of variance explained is \(s_j^2/\sum_k s_k^2\).</p>
+<p><b>NMF</b> requires \(X\ge 0\) and finds \(W\ge 0\) (\(T\times r\), activations) and \(H\ge 0\)
+(\(r\times n\), loadings) that minimise \(\lVert X - WH\rVert_F\). The Lee&ndash;Seung multiplicative
+updates keep everything non-negative:</p>
+\[ H \leftarrow H \odot \frac{W^\top X}{W^\top W H}, \qquad
+   W \leftarrow W \odot \frac{X H^\top}{W H H^\top} . \]
+<p><b>Toy example.</b> Record two bytes over four frames. Byte A is a frame counter:
+\((0, 64, 128, 192)\). Byte B is the score: \((0, 0, 1, 1)\). Byte A has variance 5120; byte B has
+variance 0.25. PCA's first component points almost entirely at A and explains more than 99.99&nbsp;% of
+the variance. The score barely registers. Now suppose the score is what the screen shows and the counter
+only drives a blink. The top component has picked the <i>loudest</i> byte, not the <i>causal</i> one.
+Variance is a statement about the data, not about cause.</p>
+  <div class="box"><h3 style="margin-top:12px">Recipe</h3><ol class="recipe"><li>Record the population as a \(T\times n\) matrix \(X\) (here: 128 RAM bytes over \(T\) frames).</li><li>PCA: centre the columns, take the SVD, keep the variance fraction of each component.</li><li>NMF: pick a rank \(r\), run multiplicative updates from a seeded random start, and order components by energy.</li><li>For each leading component, ask whether it <i>matches</i> a known variable (its loading sits on one variable) or a known signal (its activation tracks it).</li><li>Turn the loadings into a per-unit &ldquo;recovery&rdquo; score: how strongly the leading components load on each unit.</li><li>On the VCS, compare that score with the oracle's true causal importance of each unit.</li></ol></div>
+  <h3>From a neural network to the Atari</h3>
+  <table class="map"><tr><th>Population recording / layer activations</th><td>The \(T\times128\) RAM tape: every byte of the VCS's working memory, once per frame. Bytes are 0&ndash;255, so the tape is non-negative and NMF applies directly.</td></tr><tr><th>Latent factors</th><td>The top-5 PCA components and the top-5 of a rank-8 NMF, each with a loading over the 128 bytes and an activation over frames.</td></tr><tr><th>Known task variables</th><td>The game's <b>candidate bytes</b>, grouped into variable families (score, ball, enemy, &hellip;), plus three structural signals: a frame <b>clock</b> ramp, the population <b>write activity</b> (bytes changed per frame), and a periodic <b>frame-phase</b> wave.</td></tr><tr><th>&ldquo;This component is the choice variable&rdquo;</th><td>A <b>matched</b> component: at least half of its candidate-byte loading lies on one family (and candidates carry a real share of the loading), or its activation correlates \(|r|\ge0.5\) with one structural signal.</td></tr><tr><th>Importance of a unit (unknown in a brain)</th><td>The <b>intervention oracle</b>: set the byte to 0 or base+17 at frame \(f^*\), re-run the real ROM for the horizon, count changed screen pixels.</td></tr></table>
+  <h3>How we apply it to the VCS</h3>
+  
+<p>The runner <code>A7_dimred.jl</code> does two things: a descriptive match of components to
+known signals, and an oracle-scored test of whether the components point at causal bytes.</p>
+<ol>
+<li><b>The recording.</b> From the shared gameplay state (seeded random actions, checkpoint at frame
+\(f^*=90\), 15-frame horizon), <code>a7_record_ram</code> steps the real ROM with
+<code>env_step!</code> and stores the RAM each frame. The trajectory is 150 frames for most games,
+continued with NOOP after the gameplay window.</li>
+<li><b>Decompositions.</b> <code>run_pca</code> centres the raw byte values and takes an SVD.
+<code>run_nmf</code> runs 300 Lee&ndash;Seung updates at rank 8 from a seeded random start, then sorts
+components by energy (the size of each rank-one part \(W_{:,k}H_{k,:}\)). No package is added; both are
+written out in the file.</li>
+<li><b>Matching.</b> <code>known_signals</code> builds the clock ramp, the write-activity count, and a
+sinusoid at the dominant autocorrelation period of that count. <code>match_components</code> then
+labels each of the top-5 components as a game variable, a known signal, or unmatched (purity threshold
+0.5). The headline record value is the <b>NMF matched-component fraction</b>.</li>
+<li><b>Causal check.</b> <code>recovery_scores</code> gives each candidate byte a score: its squared
+loading on the top-5 components, weighted by variance (PCA) or energy (NMF).
+<code>oracle_importance</code> pokes each candidate byte to 0 and to base+17, re-runs the horizon and
+counts changed pixels. A third value, base+37, is held out. <code>score_triad</code> gives F (Spearman
+rank correlation of recovery vs importance), S (Pearson against the held-out effect) and M (the true
+cause set's size over the named set's size).</li>
+</ol>
+<p><b>Read the match metric carefully.</b> A component that tracks the frame clock counts as
+&ldquo;matched&rdquo;. That is honest bookkeeping (the component <i>is</i> a real signal), but it is
+the epiphenomenal signal A5 warns about. The triad is what asks whether the components point at
+causes. Note also that the &ldquo;frame-phase&rdquo; wave is a stand-in: per-frame sampling cannot see the real
+VSYNC pulse, so it is a periodic proxy derived from the data.</p>
+  <h3>Read the code</h3>
+  <p class="sub"><span class="code-xai">XAI</span> the interpretability method &nbsp;
+  <span class="code-sub">substrate</span> the bit-exact emulator it runs on (jutari, Julia).</p>
+  <ul class="callstack"><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A7_dimred.jl#L382"><code>A7_dimred.jl:382</code></a> &mdash; PCA by SVD of the centred RAM tape: loadings and variance fractions.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A7_dimred.jl#L418"><code>A7_dimred.jl:418</code></a> &mdash; Lee&ndash;Seung multiplicative-update NMF, seeded and dependency-free.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A7_dimred.jl#L489"><code>A7_dimred.jl:489</code></a> &mdash; The structural signals a component may match: clock ramp, write activity, frame-phase wave.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A7_dimred.jl#L576"><code>A7_dimred.jl:576</code></a> &mdash; Labels each leading component as a game variable, a known signal, or unmatched.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A7_dimred.jl#L651"><code>A7_dimred.jl:651</code></a> &mdash; Per-byte recovery score: variance- or energy-weighted squared loading on the top components.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A7_dimred.jl#L688"><code>A7_dimred.jl:688</code></a> &mdash; Ground truth per byte: poke it, re-run the ROM, count changed pixels.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A7_dimred.jl#L749"><code>A7_dimred.jl:749</code></a> &mdash; F (Spearman), S (held-out Pearson) and M (minimality) against the oracle.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/triad_sm.jl#L57"><code>triad_sm.jl:57</code></a> &mdash; The shared minimality scorer \(M=|U^*|/|\hat U|\) used across the study.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/jutari_oracle.jl#L174"><code>jutari_oracle.jl:174</code></a> &mdash; The intervention: write one value into one RAM byte.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/env/StellaEnvironment.jl#L259"><code>StellaEnvironment.jl:259</code></a> &mdash; One video frame of the real, bit-exact machine.</li></ul>
+  <h3>Reading the result</h3>
+  
+<p>The figure shows two bars per candidate byte (Pong): the oracle's true causal importance and the
+byte's NMF recovery score, both scaled so the largest is 1. A faithful decomposition would give bars
+of matching height. Expect them not to match. The leading components favour the bytes that vary most,
+such as a paddle position the oracle calls inert, while bytes that matter but barely change, such as
+the scores, get almost no recovery. The match metric in the record tells a kinder story: a good share
+of the leading components match a game variable or a known signal, for PCA and NMF alike. The
+structure is real; it is just not the same thing as the program's causal story.</p>
+  <h3>Pitfalls</h3>
+  <ul class="pit"><li><b>Variance is not importance.</b> A wide-ranging counter dominates PCA while a one-bit flag that decides the game barely moves it (the toy example). Raw byte values are not rescaled here, so wide-range bytes weigh more.</li><li><b>Components mix variables.</b> Nothing forces one component per true variable. PCA's orthogonality constraint and NMF's additivity both produce blends when variables co-vary.</li><li><b>A match is not an explanation.</b> Matching the clock is a correct label for a causally inert signal. Matching a game variable says the variable varies a lot, not that the program uses it here.</li><li><b>Arbitrary choices.</b> Rank, number of components kept, purity threshold and NMF seed all change the answer. NMF also has no unique solution.</li><li><b>Correlational.</b> Like every recording-only method, it never intervenes. Only the oracle comparison tells you whether a component points at causes.</li></ul>
+  <h3>Try it yourself</h3>
+  <pre class="try">julia --project=jutari tools/xai_study/phaseA_kording/A7_dimred.jl --games core</pre>
+  <p class="sub">Writes <code>A7_&lt;game&gt;.json/.npz</code> (variance curves, loadings, matches, recovery scores, oracle importance, PCA and NMF triads) plus <code>A7_dimred_all.json</code> into <code>tools/xai_study/phaseA_kording/out/</code>. Flags <code>--nmf-rank</code>, <code>--topk</code> and <code>--purity</code> let you test the sensitivity. Minutes per game.</p>
+  <h3>Original papers &amp; further reading</h3>
+  <ul><li>Lee &amp; Seung (1999). <i>Learning the parts of objects by non-negative matrix factorization.</i> Nature 401: 788&ndash;791. &mdash; <a href="https://doi.org/10.1038/44565">doi.org/10.1038/44565</a></li><li>Cunningham &amp; Yu (2014). <i>Dimensionality reduction for large-scale neural recordings.</i> Nature Neuroscience 17: 1500&ndash;1509. &mdash; <a href="https://doi.org/10.1038/nn.3776">doi.org/10.1038/nn.3776</a></li><li>Jonas &amp; Kording (2017). <i>Could a Neuroscientist Understand a Microprocessor?</i> PLoS Computational Biology 13(1): e1005268. &mdash; <a href="https://doi.org/10.1371/journal.pcbi.1005268">doi.org/10.1371/journal.pcbi.1005268</a></li></ul>
+  <p><b>Read next:</b> <a href="m_A5_lfp.html">A5 · Local field potentials</a> · <a href="m_A3_tuning.html">A3 · Tuning curves</a> · <a href="m_sae.html">Sparse autoencoders</a> · <a href="m_linear_probing.html">Linear probing + control tasks</a></p>
+</div></section>
 
 <section><div class="wrap">
   <h2>How it's scored</h2>
@@ -148,7 +273,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/cc950552d22a04a0bddfb0d14cd2429b3bca8859"><code>cc950552</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/46b94f1dfc8fa5dca6fdd4c820fb11a26497fc6f"><code>46b94f1d</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

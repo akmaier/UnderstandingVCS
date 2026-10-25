@@ -286,7 +286,7 @@ def render_A(meth, rec, npz):
         for c in cells:
             ax[1].axvline(c, color=ACC2, lw=0.8, alpha=0.7)
         ax[1].set_xlabel("RAM cell index (0–127)"); ax[1].set_ylabel("activity (variance, norm.)")
-        ax[1].set_title("whole-state dump — green = the few truly causal cells")
+        ax[1].set_title("whole-state dump — green = the annotated candidate cells")
     fig.suptitle(title_for(rec, meth), fontsize=10)
     return fig
 

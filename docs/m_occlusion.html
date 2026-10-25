@@ -5,14 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Occlusion — Paper 2 method</title>
 <meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css"><style>
+.guide h3{margin:26px 0 8px}
+.guide .gtag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;
+  background:#14301f;color:var(--accent-2);border:1px solid #23502f;margin-bottom:6px}
+.guide .chips a{display:inline-block;margin:3px 6px 3px 0;padding:3px 10px;border-radius:999px;
+  border:1px solid var(--border);background:var(--bg-soft);font-size:.86rem}
+.guide .chips a.wk::before{content:"W ";font-weight:700;color:var(--fg-dim)}
+.guide table.map{width:100%;border-collapse:collapse;margin:8px 0 4px}
+.guide table.map th,.guide table.map td{border:1px solid var(--border);padding:8px 10px;
+  vertical-align:top;text-align:left}
+.guide table.map th{background:var(--bg-soft);width:28%;font-weight:600}
+.guide ol.recipe li,.guide ul.pit li{margin:6px 0}
+.guide .code-xai,.guide .code-sub{display:inline-block;font-size:.7rem;padding:0 6px;
+  border-radius:5px;margin-right:6px;vertical-align:middle}
+.guide .code-xai{background:#16283a;color:var(--accent)}
+.guide .code-sub{background:#2e2414;color:var(--warn)}
+.guide pre.try{background:#0b0e12;border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;overflow-x:auto;font-family:var(--mono);font-size:.86rem}
+.guide .box{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+  padding:4px 18px 10px;margin:14px 0}
+@media (max-width:640px){.guide table.map th{width:auto}}
+</style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <script>window.addEventListener("load",function(){if(window.renderMathInElement)renderMathInElement(document.body,{throwOnError:false});});</script>
 </head>
 <body>
-<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="primer.html">XAI Primer</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
 
 <header class="hero"><div class="wrap">
   <span class="venue" style="color:var(--accent-2);font-weight:600">Phase B · attribution / XAI</span>
@@ -37,6 +58,98 @@
 <section><div class="wrap">
   <h2>Reading this example's causal region</h2>
   <p>This example explains the content of <b>RAM&nbsp;$36</b> (byte&nbsp;54) — the most causally-active concept byte at this state. Its strongest true-causes are: RAM&nbsp;$36 (the play area — ball / paddles); RAM&nbsp;$31 (17% of its footprint sits in the score band, the rest in the play area). The <b>score digits</b> appear in the region because RAM&nbsp;$31 reaches them: perturbing it over the 30-frame NOOP window changes the game outcome, and hence the score — a <i>downstream</i> effect, not direct rendering.</p>
+</div></section>
+
+
+<section class="guide"><div class="wrap">
+  <span class="gtag">Perturbation family · the starting point</span>
+  <h2>Learn the method &mdash; a beginner's guide</h2>
+  <p class="sub">New to explainable AI? This block explains the method as it is used on neural
+  networks, then how we run the very same method on an Atari&nbsp;2600, where &mdash; unlike for a
+  network &mdash; we know the right answer. Every implementation step links to the code. See also the
+  <a href="primer.html">XAI primer</a> for the shared vocabulary.</p>
+  <div class="chips"><a class="wk" href="https://en.wikipedia.org/wiki/Explainable_artificial_intelligence">Explainable artificial intelligence</a><a class="wk" href="https://en.wikipedia.org/wiki/Sensitivity_analysis">Sensitivity analysis</a><a class="wk" href="https://en.wikipedia.org/wiki/Ablation_(artificial_intelligence)">Ablation (artificial intelligence)</a><a class="wk" href="https://en.wikipedia.org/wiki/Convolutional_neural_network">Convolutional neural network</a></div>
+  <h3>The idea in plain words</h3>
+  
+<p>A network looks at a photo and says &ldquo;dog: 92&nbsp;%&rdquo;. Instead of asking calculus
+questions, you can simply <b>cover part of the photo with a grey square</b> and run the network
+again. If the dog score drops to 30&nbsp;%, the covered patch mattered. If it stays at 92&nbsp;%,
+it did not. Slide the square across the whole photo, write down the drop at every position, and you
+get a heat-map. That is <b>occlusion</b>: hide one part, re-run, measure the change.</p>
+<p>Occlusion is a <b>black-box</b> method. It never opens the network. It needs no gradients and no
+weights, only the ability to feed in an input and read the output. That makes it slow (one full
+forward pass per patch) but very honest: it measures what the model <i>actually does</i> when a part
+is removed, not a local approximation of it. It is the simplest member of the
+<b>perturbation family</b> (RISE, LIME, KernelSHAP, extremal perturbation), which all work by
+changing the input and re-running the model.</p>
+  <h3>How it works on a neural network</h3>
+  
+<p>Write the network as \(y = f(x)\) with input \(x = (x_1,\dots,x_n)\). Pick a <b>baseline</b>
+value \(b\) that stands for &ldquo;absent&rdquo; (grey, black, zero, the dataset mean). Let
+\(x_{[i \leftarrow b]}\) be the input with part \(i\) replaced by the baseline. Occlusion gives part
+\(i\) the score</p>
+\[ O_i(x) \;=\; \big|\, f(x) - f(x_{[i \leftarrow b]}) \,\big| . \]
+<p>For images, &ldquo;part \(i\)&rdquo; is a square patch, and the square slides with some stride.
+The patch size and the baseline are both <b>choices</b>; the map changes when you change them. Cost:
+one forward pass for the intact input plus one per part.</p>
+<p><b>Toy example 1 (it works).</b> Let \(f(x_1,x_2,x_3) = 4x_1 + x_3\) at \(x = (1,1,1)\), baseline
+0. Then \(f(x) = 5\). Occluding \(x_1\) gives 1 (score 4), occluding \(x_2\) gives 5 (score 0),
+occluding \(x_3\) gives 4 (score 1). The map \((4,0,1)\) is exactly right.</p>
+<p><b>Toy example 2 (redundancy).</b> Now let \(f = \max(x_1, x_2) + x_3\) at \(x=(1,1,1)\), so
+\(f(x)=2\). Occlude \(x_1\): \(\max(0,1)+1 = 2\), score 0. Occlude \(x_2\): also score 0.
+Occlude \(x_3\): score 1. Occlusion says \(x_1\) and \(x_2\) are irrelevant. Yet occluding <i>both</i>
+gives \(f = 1\): together they matter as much as \(x_3\). Each one is a <b>backup</b> for the other,
+and a one-at-a-time probe cannot see a backup. Remember this blind spot; KernelSHAP fixes it.</p>
+  <div class="box"><h3 style="margin-top:12px">Recipe</h3><ol class="recipe"><li>Choose the output \(y\) to explain and a baseline value that means &ldquo;absent&rdquo;.</li><li>Run the model once on the intact input and record \(y(x)\).</li><li>For each part \(i\): copy the input, set part \(i\) to the baseline, run the model, record \(y(x_{[i\leftarrow b]})\).</li><li>Score part \(i\) by \(|y(x) - y(x_{[i\leftarrow b]})|\).</li><li>Display the scores as a heat-map (or, here, as one bar per candidate cause).</li></ol></div>
+  <h3>From a neural network to the Atari</h3>
+  <table class="map"><tr><th>The trained network \(f\)</th><td>The cartridge program running on the emulated <b>Atari 2600 VCS</b> (6507 CPU + TIA video chip + RIOT), bit-exact in <code>jutari</code>.</td></tr><tr><th>The input parts \(x_i\)</th><td>The candidate <b>causes</b> at the intervention frame \(f^*\): RAM bytes the game uses (score, positions, &hellip;), one TIA colour register, and the joystick input.</td></tr><tr><th>Grey patch / baseline \(b\)</th><td>Write <b>0</b> into the RAM byte or TIA register (<code>occlude!</code>). For the joystick cause, &ldquo;absent&rdquo; means &ldquo;no extra action&rdquo;: the recorded action stream is left unchanged.</td></tr><tr><th>One forward pass</th><td>Restore a <code>deepcopy</code> of the checkpoint, poke the value, and run the real ROM for the 15-frame horizon with <code>env_step!</code>.</td></tr><tr><th>The output \(y\)</th><td>A <b>content</b> output (one RAM byte at \(f^*{+}15\)) or a <b>position</b> output (how many screen pixels differ from the un-intervened frame).</td></tr><tr><th>&ldquo;Ground-truth importance&rdquo;</th><td>The intervention oracle: the same re-run machinery, but each RAM byte is probed twice (set to base+17, and set to 0), plus a TIA colour and a joystick do.</td></tr></table>
+  <h3>How we apply it to the VCS</h3>
+  
+<p>On the VCS, occlusion is almost embarrassingly direct. The game is stopped at frame \(f^*\) (after
+90 frames of seeded random play) and the machine is saved as a <b>checkpoint</b>. Then, for each
+candidate cause \(u\):</p>
+<ol>
+<li><code>deepcopy</code> the checkpoint (a full copy of CPU, RAM, TIA and RIOT state);</li>
+<li><code>occlude!</code> the cause: <code>intervene_ram!(env, idx, 0)</code> for a RAM byte,
+<code>intervene_tia!(env, reg, 0)</code> for a TIA register, nothing for the joystick;</li>
+<li>replay the same recorded 15 actions on the real ROM with <code>env_step!</code>;</li>
+<li>read \(y\) and store \(|y(\text{occluded}) - y(\text{intact})|\).</li>
+</ol>
+<p>That is one real-emulator re-run per cause, plus one intact run. No surrogate, no gradient, no
+learned model. Because it only reads the output after a real run, it works just as well on the
+<b>position</b> output, where the VCS places sprites by timing and every gradient is exactly zero.</p>
+<p><b>How is this different from the oracle?</b> Occlusion <i>is</i> a coarse oracle. The oracle's
+cause list contains, for every candidate RAM byte, two interventions: <code>ram[i]:set</code>
+(base value + 17) and <code>ram[i]:occlude</code> (value 0). For the occlude-mode entries, occlusion
+runs <b>exactly the same experiment as the oracle</b> and gets exactly the same number. The
+disagreements come from the rest: occlusion gives the <code>set</code> entry of a byte the same
+score as its <code>occlude</code> twin (it only knows one direction, &ldquo;to zero&rdquo;); it sets
+the background-colour register to 0 where the oracle sets it to white; and it gives the joystick
+cause zero, because &ldquo;absent&rdquo; leaves the action stream untouched while the oracle forces
+a RIGHT press. So we expect a high but not perfect agreement, and that is what the runner checks
+(it asserts a <i>positive</i> correlation on the core games, never a perfect one).</p>
+<p>The scoring then ranks causes by their occlusion score and runs deletion/insertion curves on the
+real machine: occlude the top-1, top-2, &hellip; causes together and watch \(y\) move.</p>
+  <h3>Read the code</h3>
+  <p class="sub"><span class="code-xai">XAI</span> the interpretability method &nbsp;
+  <span class="code-sub">substrate</span> the bit-exact emulator it runs on (jutari, Julia).</p>
+  <ul class="callstack"><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/occlusion.jl#L132"><code>occlusion.jl:132</code></a> &mdash; The method: one intact run, then per cause <code>deepcopy</code> &rarr; <code>occlude!</code> &rarr; 15 &times; <code>env_step!</code> &rarr; |&Delta;y|.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/occlusion.jl#L176"><code>occlusion.jl:176</code></a> &mdash; One experiment: oracle |&Delta;y| &rarr; occlusion map &rarr; Pearson/Spearman, precision@k &rarr; deletion/insertion on the real VCS &rarr; positive control.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/occlusion.jl#L249"><code>occlusion.jl:249</code></a> &mdash; Builds the shared gameplay state and scores both the content and the position output.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/saliency.jl#L244"><code>saliency.jl:244</code></a> &mdash; The occluder: RAM byte or TIA register &rarr; 0; the joystick cause leaves the action stream unchanged.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/jutari_oracle.jl#L174"><code>jutari_oracle.jl:174</code></a> &mdash; The actual poke into RIOT RAM of the emulated machine.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/jutari_oracle.jl#L185"><code>jutari_oracle.jl:185</code></a> &mdash; The poke into the TIA register file (used for the colour-register cause).</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/env/StellaEnvironment.jl#L259"><code>StellaEnvironment.jl:259</code></a> &mdash; One video frame of the bit-exact machine; every occlusion re-run calls it 15 times.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/ground_truth/oracle_intervene.jl#L185"><code>oracle_intervene.jl:185</code></a> &mdash; The cause list: each candidate byte as a <code>set</code> (+17) and an <code>occlude</code> (&rarr;0) cause, a TIA colour and a joystick do.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/ground_truth/oracle_intervene.jl#L242"><code>oracle_intervene.jl:242</code></a> &mdash; The oracle's own re-run: compare with <code>occlusion_attr</code> &mdash; same machinery, richer set of interventions.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/shared_testbed_impl.jl#L115"><code>shared_testbed_impl.jl:115</code></a> &mdash; The shared state every method explains: seeded random play, checkpoint at \(f^*\), the position output.</li></ul>
+  <h3>Reading the result</h3>
+  
+<p>Each cause has two bars: the occlusion score and the oracle's true effect. Look at the pairs of
+<code>:set</code> / <code>:occlude</code> causes of the same byte. Occlusion always gives the twins
+the same height, while the oracle may not. The <code>:occlude</code> bars should match the oracle
+exactly. The joystick bar is zero for occlusion by construction. Expect the tallest bars to line up
+with the oracle on both the content and the position output. This is the clearest contrast with the
+gradient family, whose position-output maps are flat.</p>
+  <h3>Pitfalls</h3>
+  <ul class="pit"><li><b>Single masking misses backups.</b> If two causes can each do the job alone (toy example 2), occluding either one changes nothing. Occlusion then calls both irrelevant. Joint effects need joint masking (RISE, KernelSHAP) or a search (extremal perturbation).</li><li><b>The baseline is a choice.</b> &ldquo;Absent&rdquo; = 0 is arbitrary. A byte whose current value is already 0 cannot be occluded at all and always scores 0, however important it is.</li><li><b>Off-distribution inputs.</b> On images a grey square is something the network never saw during training (Hooker et al.). On the VCS a zeroed byte is a <i>valid</i> machine state the program will run, but possibly one the game never reaches in normal play.</li><li><b>Granularity.</b> The map is only as fine as the parts you hide: patch size on images, the candidate cause list here. A cause that is not on the list gets no score at all.</li></ul>
+  <h3>Try it yourself</h3>
+  <pre class="try">julia --project=jutari tools/xai_study/phaseB_attribution/occlusion.jl --games core</pre>
+  <p class="sub">Writes <code>occlusion_&lt;game&gt;_{content,position}.json/.npz</code> into <code>tools/xai_study/phaseB_attribution/out/</code>. Cost per output: one intact run plus one re-run per cause, plus about twice that again for the deletion/insertion curves. Pass <code>--game pong</code> to run a single game.</p>
+  <h3>Original papers &amp; further reading</h3>
+  <ul><li>Zeiler &amp; Fergus (2014). <i>Visualizing and Understanding Convolutional Networks.</i> ECCV. &mdash; <a href="https://arxiv.org/abs/1311.2901">arxiv.org/abs/1311.2901</a></li><li>Hooker, Erhan, Kindermans &amp; Kim (2019). <i>A Benchmark for Interpretability Methods in Deep Neural Networks</i> (ROAR: removed pixels push the input off the training distribution). NeurIPS. &mdash; <a href="https://arxiv.org/abs/1806.10758">arxiv.org/abs/1806.10758</a></li></ul>
+  <p><b>Read next:</b> <a href="m_kernelshap.html">KernelSHAP / Shapley</a> · <a href="m_rise.html">RISE</a> · <a href="m_perturbation.html">Extremal / meaningful perturbation</a> · <a href="m_saliency.html">Vanilla gradient (saliency)</a></p>
 </div></section>
 
 <section><div class="wrap">
@@ -152,7 +265,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/cc950552d22a04a0bddfb0d14cd2429b3bca8859"><code>cc950552</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/46b94f1dfc8fa5dca6fdd4c820fb11a26497fc6f"><code>46b94f1d</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

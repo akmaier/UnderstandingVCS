@@ -5,14 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sparse autoencoders — Paper 2 method</title>
 <meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css"><style>
+.guide h3{margin:26px 0 8px}
+.guide .gtag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;
+  background:#14301f;color:var(--accent-2);border:1px solid #23502f;margin-bottom:6px}
+.guide .chips a{display:inline-block;margin:3px 6px 3px 0;padding:3px 10px;border-radius:999px;
+  border:1px solid var(--border);background:var(--bg-soft);font-size:.86rem}
+.guide .chips a.wk::before{content:"W ";font-weight:700;color:var(--fg-dim)}
+.guide table.map{width:100%;border-collapse:collapse;margin:8px 0 4px}
+.guide table.map th,.guide table.map td{border:1px solid var(--border);padding:8px 10px;
+  vertical-align:top;text-align:left}
+.guide table.map th{background:var(--bg-soft);width:28%;font-weight:600}
+.guide ol.recipe li,.guide ul.pit li{margin:6px 0}
+.guide .code-xai,.guide .code-sub{display:inline-block;font-size:.7rem;padding:0 6px;
+  border-radius:5px;margin-right:6px;vertical-align:middle}
+.guide .code-xai{background:#16283a;color:var(--accent)}
+.guide .code-sub{background:#2e2414;color:var(--warn)}
+.guide pre.try{background:#0b0e12;border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;overflow-x:auto;font-family:var(--mono);font-size:.86rem}
+.guide .box{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+  padding:4px 18px 10px;margin:14px 0}
+@media (max-width:640px){.guide table.map th{width:auto}}
+</style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <script>window.addEventListener("load",function(){if(window.renderMathInElement)renderMathInElement(document.body,{throwOnError:false});});</script>
 </head>
 <body>
-<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="primer.html">XAI Primer</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
 
 <header class="hero"><div class="wrap">
   <span class="venue" style="color:var(--accent-2);font-weight:600">Phase C · mechanistic interpretability</span>
@@ -34,6 +55,109 @@
 </div></section>
 
 
+
+
+<section class="guide"><div class="wrap">
+  <span class="gtag">Mechanistic family · features from superposition</span>
+  <h2>Learn the method &mdash; a beginner's guide</h2>
+  <p class="sub">New to explainable AI? This block explains the method as it is used on neural
+  networks, then how we run the very same method on an Atari&nbsp;2600, where &mdash; unlike for a
+  network &mdash; we know the right answer. Every implementation step links to the code. See also the
+  <a href="primer.html">XAI primer</a> for the shared vocabulary.</p>
+  <div class="chips"><a class="wk" href="https://en.wikipedia.org/wiki/Autoencoder">Autoencoder</a><a class="wk" href="https://en.wikipedia.org/wiki/Sparse_dictionary_learning">Sparse dictionary learning</a><a class="wk" href="https://en.wikipedia.org/wiki/Lasso_(statistics)">Lasso (statistics)</a><a class="wk" href="https://en.wikipedia.org/wiki/Representation_learning">Representation learning</a><a class="wk" href="https://en.wikipedia.org/wiki/Mechanistic_interpretability">Mechanistic interpretability</a></div>
+  <h3>The idea in plain words</h3>
+  
+<p>Look inside a language model and pick one neuron. You will often find it fires for many unrelated
+things: Python code, the French word for &ldquo;cat&rdquo;, and closing brackets. Such a neuron is
+<b>polysemantic</b> (many meanings). One explanation is <b>superposition</b>: the model wants to store
+more concepts (&ldquo;features&rdquo;) than it has neurons, so it packs them in as overlapping
+directions in activation space. That works because most features are <b>sparse</b>: in any one input,
+only a few of them are active, so the overlaps rarely collide.</p>
+<p>A <b>sparse autoencoder</b> (SAE) tries to undo the packing. It is a small, separate network trained
+to rebuild the model's activation vector through a hidden layer with many units, under a penalty that
+keeps <b>only a few units active at a time</b>. If it works, each hidden unit stands for one concept: it
+is <b>monosemantic</b>. These units are then called the model's &ldquo;features&rdquo;, given names, and
+used to explain and steer the model. SAEs are among the most widely used tools in interpretability
+today.</p>
+  <h3>How it works on a neural network</h3>
+  
+<p>Take an activation vector \(x \in \mathbb{R}^d\) (e.g. the residual stream of a transformer at one
+token). The SAE encodes and decodes it:</p>
+\[ z = \mathrm{ReLU}(W_e x + b_e), \qquad \hat x = W_d z + b_d, \qquad
+   \mathcal{L} = \|x - \hat x\|^2 + \lambda \|z\|_1 . \]
+<p>\(z\) is the <b>code</b> (one number per feature). ReLU sets negative values to zero. The first loss
+term asks for a good reconstruction. The second, an <b>L1 penalty</b> (the sum of absolute values,
+known from the lasso), pushes most entries of \(z\) to exactly zero. \(\lambda\) trades the two off.
+Usually the hidden layer is <b>wider</b> than \(d\) (&ldquo;overcomplete&rdquo;), so it has room for
+more features than neurons. Column \(k\) of \(W_d\) is feature \(k\)'s <b>direction</b> in activation
+space.</p>
+<p><b>Toy example.</b> A model stores 3 features in a 2-D space, at 120&deg; apart:
+\(u_1=(1,0)\), \(u_2=(-0.5,0.87)\), \(u_3=(-0.5,-0.87)\). An input has only feature 2 on:
+\(x=u_2=(-0.5,0.87)\). The two raw neurons read \(-0.5\) and \(0.87\): both respond, and each
+would also respond to the other features. Now an SAE with three hidden units, encoder rows
+\(u_1,u_2,u_3\) and bias \(-0.4\): the pre-activations are \((-0.5, 1.0, -0.5) - 0.4 =
+(-0.9, 0.6, -0.9)\), and ReLU gives \(z=(0, 0.6, 0)\). Only unit 2 fires. Three features, cleanly
+separated, from a 2-D space.</p>
+  <div class="box"><h3 style="margin-top:12px">Recipe</h3><ol class="recipe"><li>Record many activation vectors from the model (one layer, many inputs).</li><li>Normalise them, then train the SAE on the reconstruction loss plus \(\lambda\cdot\) L1 of the code.</li><li>Check reconstruction quality (fraction of variance explained) and sparsity (average number of active units, \(L_0\)).</li><li>Interpret each unit: list the inputs where it fires most, or correlate it with known concepts.</li><li>Test causally: set a feature to zero (or clamp it high), decode, put the result back into the model, and see whether the behaviour changes as the feature's name predicts.</li></ol></div>
+  <h3>From a neural network to the Atari</h3>
+  <table class="map"><tr><th>Activation vector \(x\)</th><td>The 128 bytes of RIOT RAM at one video frame. A recorded run gives one row per frame.</td></tr><tr><th>Layer being decomposed</th><td>The whole RAM state. The VCS has no layers; RAM is the single place where game state lives between frames.</td></tr><tr><th>Feature (SAE hidden unit)</th><td>A learned direction over RAM bytes. We hope each one tracks one <b>known game variable</b>, e.g. ball x or the player score.</td></tr><tr><th>Human label for a feature</th><td>The verified concept&harr;cell map (<code>candidates_&lt;game&gt;.json</code>). For Pong: 8 cells, including scores, paddle and ball positions.</td></tr><tr><th>Feature steering / ablation</th><td>Zero the feature in the code, decode to bytes, <b>write all 128 bytes into the real machine</b>, replay 15 frames, count screen pixels that change.</td></tr><tr><th>Ground truth (never available for an LLM)</th><td>The intervention oracle: how much the screen breaks when each cell itself is set to 0 or base+17 and the ROM re-runs.</td></tr></table>
+  <h3>How we apply it to the VCS</h3>
+  
+<p>Our runner <code>sae.jl</code> is a complete SAE pipeline written by hand in Julia (no deep-learning
+library), applied to the VCS state instead of a transformer.</p>
+<ul>
+<li><b>Data.</b> We record the RAM after every frame along the shared gameplay stream (90 seeded
+random-action frames plus the 15-frame horizon, continued with NOOP; 150 frames for Pong). Each byte is
+z-scored (mean 0, standard deviation 1). Bytes that never change are set to zero. Every fifth frame is
+held out for testing.</li>
+<li><b>Model and sweep.</b> \(z=\mathrm{ReLU}(W_e x+b_e)\), \(\hat x = W_d z + b_d\), loss = mean
+squared error + \(\lambda\cdot\)mean\(|z|\). Full-batch gradient descent, 4000 epochs, learning rate
+0.5, with the gradients written out explicitly. We sweep the width \(\in\{16,32,64\}\) and
+\(\lambda\in\{0.01,0.05,0.2\}\) and keep the model with the best <i>held-out</i> reconstruction. Note:
+these widths are smaller than 128, so the SAE is not overcomplete in raw bytes. But most of the 128 bytes
+are constant over a short run, so the number of bytes that actually vary is far smaller.</li>
+<li><b>Matching.</b> For each known cell that varies, we find the feature whose activation has the
+largest absolute Pearson correlation with the cell's value over the run. The cell is
+&ldquo;matched&rdquo; if that correlation is at least 0.7. The <b>match rate</b> is the share of
+varying known cells that get a match. This is the kind of evidence papers use to say &ldquo;this feature
+<i>is</i> concept X&rdquo;.</li>
+<li><b>Causal use.</b> This is the test a language model cannot give us. For each matched cell that the
+oracle says is causal, we encode the RAM at \(f^*\), set its best feature to zero, decode, undo the
+z-scoring, round to bytes, and write the full 128-byte vector into a copy of the machine. Then we play
+the 15-frame tail. The effect is the number of screen pixels that differ from the same write
+<i>without</i> the ablation, so reconstruction error cancels out. We also count <b>decode leakage</b>
+(how many bytes of the ablated decode differ from the real RAM) and the share of the effect that the target cell alone
+explains.</li>
+<li><b>Controls.</b> One ablated write is replayed through an independent fresh boot and must match
+the checkpoint path exactly. The oracle's own importance map, scored as if it were the method, must get
+a perfect rank correlation.</li>
+</ul>
+<p>The triad: <b>F</b> is the Spearman rank correlation between each cell's SAE &ldquo;recovery
+score&rdquo; (best feature correlation &times; decoder weight mass on that cell) and the oracle's
+importance. <b>S</b> predicts a held-out lesion (base+37) from the same score. <b>M</b> asks whether the
+cells the SAE highlights are the cells that matter.</p>
+  <h3>Read the code</h3>
+  <p class="sub"><span class="code-xai">XAI</span> the interpretability method &nbsp;
+  <span class="code-sub">substrate</span> the bit-exact emulator it runs on (jutari, Julia).</p>
+  <ul class="callstack"><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/sae.jl#L375"><code>sae.jl:375</code></a> &mdash; The model: encoder, decoder, L1 weight, random initialisation.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/sae.jl#L395"><code>sae.jl:395</code></a> &mdash; The objective: mean squared reconstruction error + \(\lambda\cdot\)mean\(|z|\).</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/sae.jl#L404"><code>sae.jl:404</code></a> &mdash; Training: full-batch gradient descent with hand-written gradients through ReLU and L1.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/sae.jl#L472"><code>sae.jl:472</code></a> &mdash; Naming features: best |Pearson r| between a feature and each known RAM cell, threshold 0.7.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/sae.jl#L612"><code>sae.jl:612</code></a> &mdash; The causal test: zero a feature, decode, write all 128 bytes, replay, count changed pixels.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/sae.jl#L241"><code>sae.jl:241</code></a> &mdash; Records the per-frame 128-byte RAM tape the SAE is trained on.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseC_mechanistic/sae.jl#L866"><code>sae.jl:866</code></a> &mdash; One game: record, sweep width &times; \(\lambda\), match, oracle importance, causal use, triad.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/jutari_oracle.jl#L174"><code>jutari_oracle.jl:174</code></a> &mdash; Writes one byte into the emulated RIOT RAM; the decoded state is written with 128 of these.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/env/StellaEnvironment.jl#L350"><code>StellaEnvironment.jl:350</code></a> &mdash; Exposes the live 128-byte RAM: the &ldquo;activation vector&rdquo; the SAE sees.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/env/StellaEnvironment.jl#L259"><code>StellaEnvironment.jl:259</code></a> &mdash; One bit-exact video frame, used for recording and for every causal re-run.</li></ul>
+  <h3>Reading the result</h3>
+  
+<p>Expect two very different pictures side by side. The reconstruction is close to perfect and the
+match rate is high: almost every known cell has a feature that tracks it. By the usual standard of the
+field, the SAE has &ldquo;found the variables&rdquo;. Then look at the causal-use bars. Ablating a
+matched feature often moves the screen much less than the oracle says that cell matters, or moves it
+through other bytes the decoder also touched. The lesson is the gap between <b>named</b> and
+<b>used</b>: a feature can track a variable perfectly and still not be the handle by which the program's
+computation runs.</p>
+  <h3>Pitfalls</h3>
+  <ul class="pit"><li><b>Correlation is not mechanism.</b> A feature that correlates with ball x may also correlate with a frame counter or the paddle. High correlation names a feature; it does not prove the model uses that direction.</li><li><b>Decode leakage.</b> Zeroing one feature changes the decoded value of many bytes at once. The observed effect then mixes several variables, which breaks the &ldquo;one feature, one concept&rdquo; story.</li><li><b>Hyper-parameters shape the dictionary.</b> Width and \(\lambda\) decide how features split or merge. A different sweep can give different &ldquo;features&rdquo; on the same data.</li><li><b>Interpretable-looking is not evidence.</b> Heap et al. found that standard automated interpretability scores for SAE features look similar on trained and randomly initialised transformers. On the VCS we score against the oracle instead.</li><li><b>Small state, easy case.</b> The VCS keeps variables in separate bytes, so there is little superposition to undo. A high match rate here is expected and says little about how SAEs fare on dense LLM activations.</li></ul>
+  <h3>Try it yourself</h3>
+  <pre class="try">julia --project=jutari tools/xai_study/phaseC_mechanistic/sae.jl --games core</pre>
+  <p class="sub">Writes <code>sae_&lt;game&gt;.{json,npz}</code> and <code>sae_core_summary.json</code> into <code>tools/xai_study/phaseC_mechanistic/out/</code>. The 9-point sweep dominates the run time; use <code>--d-hidden-sweep 32 --l1-sweep 0.05</code> for a quick single model.</p>
+  <h3>Original papers &amp; further reading</h3>
+  <ul><li>Cunningham, Ewart, Riggs, Huben &amp; Sharkey (2023). <i>Sparse Autoencoders Find Highly Interpretable Features in Language Models.</i> ICLR 2024. &mdash; <a href="https://arxiv.org/abs/2309.08600">arxiv.org/abs/2309.08600</a></li><li>Bricken et al. (2023). <i>Towards Monosemanticity: Decomposing Language Models With Dictionary Learning.</i> Transformer Circuits Thread. &mdash; <a href="https://transformer-circuits.pub/2023/monosemantic-features">transformer-circuits.pub/2023/monosemantic-features</a></li><li>Templeton et al. (2024). <i>Scaling Monosemanticity: Extracting Interpretable Features from Claude 3 Sonnet.</i> Transformer Circuits Thread. &mdash; <a href="https://transformer-circuits.pub/2024/scaling-monosemanticity/">transformer-circuits.pub/2024/scaling-monosemanticity/</a></li><li>Elhage et al. (2022). <i>Toy Models of Superposition.</i> (the theory SAEs are built on) &mdash; <a href="https://arxiv.org/abs/2209.10652">arxiv.org/abs/2209.10652</a></li><li>Heap et al. (2025). <i>Automated Interpretability Metrics Do Not Distinguish Trained and Random Transformers.</i> (critique: SAE features look interpretable even on random networks) &mdash; <a href="https://arxiv.org/abs/2501.17727">arxiv.org/abs/2501.17727</a></li></ul>
+  <p><b>Read next:</b> <a href="m_dictionaries.html">NMF/PCA dictionaries</a> · <a href="m_linear_probing.html">Linear probing + control tasks</a> · <a href="m_das.html">Interchange interventions / DAS</a> · <a href="m_A7_dimred.html">A7 · Dimensionality reduction (NMF/PCA)</a></p>
+</div></section>
 
 <section><div class="wrap">
   <h2>How it's scored</h2>
@@ -148,7 +272,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/cc950552d22a04a0bddfb0d14cd2429b3bca8859"><code>cc950552</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/46b94f1dfc8fa5dca6fdd4c820fb11a26497fc6f"><code>46b94f1d</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

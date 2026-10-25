@@ -5,14 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>A6 · Granger causality — Paper 2 method</title>
 <meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css"><style>
+.guide h3{margin:26px 0 8px}
+.guide .gtag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;
+  background:#14301f;color:var(--accent-2);border:1px solid #23502f;margin-bottom:6px}
+.guide .chips a{display:inline-block;margin:3px 6px 3px 0;padding:3px 10px;border-radius:999px;
+  border:1px solid var(--border);background:var(--bg-soft);font-size:.86rem}
+.guide .chips a.wk::before{content:"W ";font-weight:700;color:var(--fg-dim)}
+.guide table.map{width:100%;border-collapse:collapse;margin:8px 0 4px}
+.guide table.map th,.guide table.map td{border:1px solid var(--border);padding:8px 10px;
+  vertical-align:top;text-align:left}
+.guide table.map th{background:var(--bg-soft);width:28%;font-weight:600}
+.guide ol.recipe li,.guide ul.pit li{margin:6px 0}
+.guide .code-xai,.guide .code-sub{display:inline-block;font-size:.7rem;padding:0 6px;
+  border-radius:5px;margin-right:6px;vertical-align:middle}
+.guide .code-xai{background:#16283a;color:var(--accent)}
+.guide .code-sub{background:#2e2414;color:var(--warn)}
+.guide pre.try{background:#0b0e12;border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;overflow-x:auto;font-family:var(--mono);font-size:.86rem}
+.guide .box{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+  padding:4px 18px 10px;margin:14px 0}
+@media (max-width:640px){.guide table.map th{width:auto}}
+</style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <script>window.addEventListener("load",function(){if(window.renderMathInElement)renderMathInElement(document.body,{throwOnError:false});});</script>
 </head>
 <body>
-<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="primer.html">XAI Primer</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
 
 <header class="hero"><div class="wrap">
   <span class="venue" style="color:var(--accent-2);font-weight:600">Phase A · neuroscience battery</span>
@@ -34,6 +55,113 @@
 </div></section>
 
 
+
+
+<section class="guide"><div class="wrap">
+  <span class="gtag">Neuroscience battery · causal discovery from timing alone</span>
+  <h2>Learn the method &mdash; a beginner's guide</h2>
+  <p class="sub">New to explainable AI? This block explains the method as it is used on neural
+  networks, then how we run the very same method on an Atari&nbsp;2600, where &mdash; unlike for a
+  network &mdash; we know the right answer. Every implementation step links to the code. See also the
+  <a href="primer.html">XAI primer</a> for the shared vocabulary.</p>
+  <div class="chips"><a class="wk" href="https://en.wikipedia.org/wiki/Granger_causality">Granger causality</a><a class="wk" href="https://en.wikipedia.org/wiki/Vector_autoregression">Vector autoregression</a><a class="wk" href="https://en.wikipedia.org/wiki/Confounding">Confounding</a><a class="wk" href="https://en.wikipedia.org/wiki/Correlation_does_not_imply_causation">Correlation does not imply causation</a></div>
+  <h3>The idea in plain words</h3>
+  
+<p>You record two signals over time, say the activity of brain areas A and B. You cannot cut
+wires or stimulate anything. Can you still say which one drives the other? Clive Granger's idea
+(1969) is a clever proxy: <i>a cause comes before its effect, and it carries information about the
+effect</i>. So try to predict B's next value from B's own past. Then add A's past. If the prediction
+gets clearly better, A is said to <b>Granger-cause</b> B. Run this for every ordered pair and you get
+a directed graph of &ldquo;who influences whom&rdquo;, built purely from passive recordings.</p>
+<p>The word &ldquo;causality&rdquo; is generous. What the test really measures is <b>temporal
+precedence plus predictive information</b>. That is not the same as a causal wire. If both A and B are
+driven by a hidden third signal C, and A sees C a moment earlier than B, then A's past predicts B
+perfectly, with no wire from A to B at all. This hidden common driver is a <b>confounder</b>. A
+clock-driven machine like the Atari is full of them. A6 measures how far the Granger graph sits from
+the true wiring, which on the VCS we can establish by direct intervention.</p>
+  <h3>How it works on a neural network</h3>
+  
+<p><b>Neuroscience origin.</b> Granger causality is a workhorse for &ldquo;directed functional
+connectivity&rdquo; in EEG, MEG, LFP and fMRI data (Seth et al. 2015). Jonas &amp; Kording applied it
+to a simulated 6502 chip and found a graph that bore little resemblance to the real circuit.</p>
+<p><b>Deep-learning analogue.</b> In XAI it is <b>temporal-precedence causal discovery on activation
+time series</b>: record hidden units of a recurrent network, the residual stream across tokens, or the
+latent state of an RL agent over steps, then infer which units &ldquo;drive&rdquo; which.</p>
+<p><b>The test.</b> For an ordered pair \(x\to y\) and a lag \(p\), fit two linear autoregressions by
+least squares:</p>
+\[ \text{restricted:}\; y_t = a_0 + \sum_{l=1}^{p} a_l\,y_{t-l} + e_t, \qquad
+   \text{unrestricted:}\; y_t = a_0 + \sum_{l=1}^{p} a_l\,y_{t-l} + \sum_{l=1}^{p} b_l\,x_{t-l} + e'_t . \]
+<p>With residual sums of squares \(\mathrm{RSS}_r \ge \mathrm{RSS}_u\) over \(n\) usable steps, the
+Granger statistic and its F-test are</p>
+\[ G(x\to y) = \ln\frac{\mathrm{RSS}_r}{\mathrm{RSS}_u}, \qquad
+   F = \frac{(\mathrm{RSS}_r-\mathrm{RSS}_u)/p}{\mathrm{RSS}_u/(n-2p-1)} . \]
+<p>An edge \(x\to y\) is declared when the F-test's p-value falls below a significance level
+\(\alpha\) (usually 0.05).</p>
+<p><b>Toy example.</b> A hidden driver produces random numbers \(d = (3,1,4,1,5,9,2,6)\). Unit \(x\)
+copies it one step late, unit \(y\) two steps late: \(x_t = d_{t-1}\), \(y_t = d_{t-2}\). So
+\(x = (\cdot,3,1,4,1,5,9,2)\) and \(y = (\cdot,\cdot,3,1,4,1,5,9)\). Because \(d\) is random, \(y\)'s own
+past says little about its next value: \(\mathrm{RSS}_r\) is large. But \(y_t = x_{t-1}\) exactly, so
+adding \(x\)'s past drives \(\mathrm{RSS}_u\) to zero. \(G\) is huge, the p-value is tiny, and the
+test reports a strong edge \(x\to y\). There is no wire between them: both just read \(d\). Cutting
+\(x\) would leave \(y\) unchanged. Only that intervention reveals the truth.</p>
+  <div class="box"><h3 style="margin-top:12px">Recipe</h3><ol class="recipe"><li>Record the time series you want to connect (unit activations, region activity, RAM bytes).</li><li>Drop constant series: with zero variance the test is undefined.</li><li>For every ordered pair \(x\to y\), fit the restricted and unrestricted autoregressions at lag \(p\).</li><li>Compute \(G=\ln(\mathrm{RSS}_r/\mathrm{RSS}_u)\) and the F-test p-value.</li><li>Declare an edge \(x\to y\) if \(p\le\alpha\) (optionally also \(G\ge\tau\)).</li><li>Read the resulting directed graph as the system's influence structure, and here score it against the intervention-defined true graph.</li></ol></div>
+  <h3>From a neural network to the Atari</h3>
+  <table class="map"><tr><th>Recorded brain areas / hidden units</th><td>Two scopes: (a) the <b>candidate RAM bytes</b>, bytes the game is known to use for a score, a position, a timer, &hellip;; (b) three <b>subsystems</b>: the CPU's working RAM, the <b>TIA</b> (the video/sound chip, 64 registers) and the <b>RIOT</b> (timer and I/O chip).</td></tr><tr><th>An activity time series</th><td>Cell scope: the byte's value at every frame. Subsystem scope: how many bytes of that subsystem changed since the previous frame (its &ldquo;firing rate&rdquo;).</td></tr><tr><th>Directed functional connectivity</th><td>The Granger graph: an edge \(i\to j\) if byte \(i\)'s past significantly improves the prediction of byte \(j\) (lag 2, \(\alpha = 0.05\)).</td></tr><tr><th>The true anatomical wiring (unknown in a brain)</th><td>The <b>intervention oracle's</b> data-flow graph: edge \(i\to j\) if setting byte \(i\) to a new value at frame \(f^*\) and re-running the real ROM changes byte \(j\) 15 frames later.</td></tr><tr><th>A shared pacemaker / confounder</th><td>The frame loop. Every byte is updated in the same fixed order every frame, so many bytes move in lock-step without any data flowing between them.</td></tr></table>
+  <h3>How we apply it to the VCS</h3>
+  
+<p>The runner <code>A6_granger.jl</code> builds the method's graph and the true graph on the same
+nodes, then compares them.</p>
+<ol>
+<li><b>The recording.</b> From the shared gameplay state (seeded random actions, checkpoint at frame
+\(f^*=90\)) it records a trajectory of 150 frames for most games, continuing with NOOP after the
+gameplay window. <code>a6_record_tape</code> calls <code>env_step!</code> each frame and stores the
+128 RAM bytes plus the 64 TIA registers.</li>
+<li><b>Granger, cell scope.</b> <code>run_cell_granger</code> tests every ordered pair of candidate
+bytes with <code>granger</code>: lag \(p=2\), \(\alpha=0.05\), magnitude floor \(\tau=0\) (so
+significance alone decides, the textbook rule). The least-squares fits and the F-distribution
+p-value are written out by hand, so no statistics package is needed.</li>
+<li><b>Granger, subsystem scope.</b> <code>subsystem_activity</code> turns the tape into three
+change-count series. The CPU series counts changes in RAM bytes 0x00&ndash;0x5F, the RIOT series in
+0x60&ndash;0x7F, the TIA series in its register file. They are scored against a fixed truth: the CPU
+writes the TIA, and the CPU reads the RIOT.</li>
+<li><b>The true graph.</b> <code>true_dataflow_graph</code> takes the checkpoint at \(f^*\) and, for each
+candidate byte \(i\), pokes three values (0, base+17, base+37) with <code>intervene_ram!</code>. It
+re-runs the 15-frame horizon and marks \(i\to j\) for every candidate byte \(j\) that ends up
+different. A second graph from base+37 alone serves as a held-out probe.</li>
+<li><b>Scores.</b> <code>edge_rates</code> gives the headline <b>false-edge rate</b> (share of Granger
+edges that are not real), the missed-edge rate, and a <b>direction disagreement</b>: where both graphs
+have one arrow between a pair, how often they point opposite ways. <code>score_triad</code> adds F (edge
+F1 against the true graph), S (agreement with the held-out graph) and M (true edges divided by inferred
+edges). A positive control scores the true graph against itself and must give F1 = 1.</li>
+</ol>
+<p><b>Differences from the textbook use.</b> The true graph is a <i>15-frame reachability</i> graph: an
+edge means byte \(j\) changed by any route, direct or indirect. It is measured at one state, while
+Granger is fitted on the whole trajectory. Both choices favour Granger, not penalise it. The bytes are
+also integers that jump in steps, not the smooth, noisy signals the linear model assumes.</p>
+  <h3>Read the code</h3>
+  <p class="sub"><span class="code-xai">XAI</span> the interpretability method &nbsp;
+  <span class="code-sub">substrate</span> the bit-exact emulator it runs on (jutari, Julia).</p>
+  <ul class="callstack"><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A6_granger.jl#L431"><code>A6_granger.jl:431</code></a> &mdash; The bivariate Granger test: \(G=\ln(\mathrm{RSS}_r/\mathrm{RSS}_u)\), F statistic and p-value.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A6_granger.jl#L406"><code>A6_granger.jl:406</code></a> &mdash; Builds the lagged design matrices for the restricted and unrestricted fits.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A6_granger.jl#L611"><code>A6_granger.jl:611</code></a> &mdash; All ordered pairs of candidate bytes &rarr; the inferred directed graph.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A6_granger.jl#L559"><code>A6_granger.jl:559</code></a> &mdash; CPU / TIA / RIOT &ldquo;firing rates&rdquo;: bytes changed per frame.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A6_granger.jl#L646"><code>A6_granger.jl:646</code></a> &mdash; The ground-truth graph: poke each byte, re-run the ROM, see which bytes move.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A6_granger.jl#L678"><code>A6_granger.jl:678</code></a> &mdash; False-edge rate, missed-edge rate and direction disagreement.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A6_granger.jl#L839"><code>A6_granger.jl:839</code></a> &mdash; One game end to end: recording &rarr; both Granger scopes &rarr; true graph &rarr; triad &rarr; control.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/jutari_oracle.jl#L174"><code>jutari_oracle.jl:174</code></a> &mdash; The intervention: write one value into one RAM byte of a copied machine.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/env/StellaEnvironment.jl#L259"><code>StellaEnvironment.jl:259</code></a> &mdash; One video frame of the real, bit-exact machine (recording and re-runs).</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/ground_truth/oracle_intervene.jl#L242"><code>oracle_intervene.jl:242</code></a> &mdash; The shared oracle that gates the gameplay state used by every Phase-A runner.</li></ul>
+  <h3>Reading the result</h3>
+  
+<p>The figure sets the Granger graph beside the true data-flow graph over the same candidate bytes
+(Pong). Here the two hardly overlap: the true graph has whole rows of edges (the score and ball bytes
+reach many cells within 15 frames), while Granger asserts almost nothing, and what it does assert is
+not in the truth. In games with many moving bytes (Ms. Pac-Man, Q*bert) the Granger graph turns
+<b>dense</b> instead, with many bytes appearing to drive many others. Either way most Granger edges
+have no counterpart in the truth, which is why the false-edge rate sits near its ceiling and the
+faithfulness is among the lowest in the battery. The subsystem scope in the record tells the same
+story at coarse scale. Changing the lag or the threshold moves edges around but does not fix the
+picture, because the shared frame loop creates the predictability.</p>
+  <h3>Pitfalls</h3>
+  <ul class="pit"><li><b>Precedence is not causation.</b> A common driver seen at different delays produces strong, significant, directed edges between units that never interact (the toy example).</li><li><b>Lock-step systems break the test.</b> When everything is updated by one clock, almost every series predicts almost every other one. Deep networks run by a fixed schedule over time steps or layers share the problem.</li><li><b>Model mismatch.</b> The test assumes linear, stationary, noisy series. Integer counters that wrap at 256, flags and step jumps violate all three. Stokes &amp; Purdon show that filtering and model order distort results even on well-behaved data.</li><li><b>Multiple testing.</b> With \(n\) units there are \(n(n-1)\) tests. At \(\alpha=0.05\) some edges appear by chance alone, before any confounding.</li><li><b>The fix is an intervention, not a better statistic.</b> Only cutting or setting a unit separates &ldquo;earlier&rdquo; from &ldquo;cause&rdquo;. See lesions and activation patching.</li></ul>
+  <h3>Try it yourself</h3>
+  <pre class="try">julia --project=jutari tools/xai_study/phaseA_kording/A6_granger.jl --games core</pre>
+  <p class="sub">Writes <code>A6_&lt;game&gt;.json/.npz</code> (Granger statistics, p-values, inferred and true adjacency matrices, edge rates, triad) into <code>tools/xai_study/phaseA_kording/out/</code>. Try <code>--lag 4</code> or <code>--alpha 0.01</code> to see that the false edges persist. Minutes per game; the true graph costs three ROM re-runs per candidate byte.</p>
+  <h3>Original papers &amp; further reading</h3>
+  <ul><li>Granger (1969). <i>Investigating Causal Relations by Econometric Models and Cross-spectral Methods.</i> Econometrica 37(3): 424&ndash;438. &mdash; <a href="https://doi.org/10.2307/1912791">doi.org/10.2307/1912791</a></li><li>Seth, Barrett &amp; Barnett (2015). <i>Granger Causality Analysis in Neuroscience and Neuroimaging.</i> Journal of Neuroscience 35(8): 3293&ndash;3297. &mdash; <a href="https://doi.org/10.1523/JNEUROSCI.4399-14.2015">doi.org/10.1523/JNEUROSCI.4399-14.2015</a></li><li>Stokes &amp; Purdon (2017). <i>A study of problems encountered in Granger causality analysis from a neuroscience perspective.</i> PNAS 114(34): E7063&ndash;E7072. &mdash; <a href="https://doi.org/10.1073/pnas.1704663114">doi.org/10.1073/pnas.1704663114</a></li><li>Jonas &amp; Kording (2017). <i>Could a Neuroscientist Understand a Microprocessor?</i> PLoS Computational Biology 13(1): e1005268. &mdash; <a href="https://doi.org/10.1371/journal.pcbi.1005268">doi.org/10.1371/journal.pcbi.1005268</a></li></ul>
+  <p><b>Read next:</b> <a href="m_A1_connectomics.html">A1 · Connectomics / data-flow graph</a> · <a href="m_A4_correlations.html">A4 · Pairwise correlations</a> · <a href="m_A2_lesions.html">A2 · Single-unit lesions</a> · <a href="m_activation_patching.html">Activation patching / causal mediation</a></p>
+</div></section>
 
 <section><div class="wrap">
   <h2>How it's scored</h2>
@@ -148,7 +276,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/cc950552d22a04a0bddfb0d14cd2429b3bca8859"><code>cc950552</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/46b94f1dfc8fa5dca6fdd4c820fb11a26497fc6f"><code>46b94f1d</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

@@ -5,14 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>A2 · Single-unit lesions — Paper 2 method</title>
 <meta name="description" content="Reproducibility and provenance audit for the UnderstandingVCS papers.">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css"><style>
+.guide h3{margin:26px 0 8px}
+.guide .gtag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;
+  background:#14301f;color:var(--accent-2);border:1px solid #23502f;margin-bottom:6px}
+.guide .chips a{display:inline-block;margin:3px 6px 3px 0;padding:3px 10px;border-radius:999px;
+  border:1px solid var(--border);background:var(--bg-soft);font-size:.86rem}
+.guide .chips a.wk::before{content:"W ";font-weight:700;color:var(--fg-dim)}
+.guide table.map{width:100%;border-collapse:collapse;margin:8px 0 4px}
+.guide table.map th,.guide table.map td{border:1px solid var(--border);padding:8px 10px;
+  vertical-align:top;text-align:left}
+.guide table.map th{background:var(--bg-soft);width:28%;font-weight:600}
+.guide ol.recipe li,.guide ul.pit li{margin:6px 0}
+.guide .code-xai,.guide .code-sub{display:inline-block;font-size:.7rem;padding:0 6px;
+  border-radius:5px;margin-right:6px;vertical-align:middle}
+.guide .code-xai{background:#16283a;color:var(--accent)}
+.guide .code-sub{background:#2e2414;color:var(--warn)}
+.guide pre.try{background:#0b0e12;border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;overflow-x:auto;font-family:var(--mono);font-size:.86rem}
+.guide .box{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+  padding:4px 18px 10px;margin:14px 0}
+@media (max-width:640px){.guide table.map th{width:auto}}
+</style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <script>window.addEventListener("load",function(){if(window.renderMathInElement)renderMathInElement(document.body,{throwOnError:false});});</script>
 </head>
 <body>
-<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
+<nav><div class="wrap"><span class="brand">UnderstandingVCS · results audit</span><a href="index.html">Overview</a><a href="paper1.html">Paper 1</a><a href="conformance.html">Conformance</a><a href="paper2.html">Paper 2</a><a href="methods.html">P2 Methods</a><a href="primer.html">XAI Primer</a><a href="ground_truth.html">Ground Truth ROMs</a><a href="provenance.html">Provenance</a><a href="environment.html">Environment</a><a href="reproduce.html">Reproduce</a></div></nav>
 
 <header class="hero"><div class="wrap">
   <span class="venue" style="color:var(--accent-2);font-weight:600">Phase A · neuroscience battery</span>
@@ -34,6 +55,106 @@
 </div></section>
 
 
+
+
+<section class="guide"><div class="wrap">
+  <span class="gtag">Phase A · neuroscience battery · knock one unit out</span>
+  <h2>Learn the method &mdash; a beginner's guide</h2>
+  <p class="sub">New to explainable AI? This block explains the method as it is used on neural
+  networks, then how we run the very same method on an Atari&nbsp;2600, where &mdash; unlike for a
+  network &mdash; we know the right answer. Every implementation step links to the code. See also the
+  <a href="primer.html">XAI primer</a> for the shared vocabulary.</p>
+  <div class="chips"><a class="wk" href="https://en.wikipedia.org/wiki/Lesion">Lesion</a><a class="wk" href="https://en.wikipedia.org/wiki/Phineas_Gage">Phineas Gage</a><a class="wk" href="https://en.wikipedia.org/wiki/Ablation_(artificial_intelligence)">Ablation (artificial intelligence)</a><a class="wk" href="https://en.wikipedia.org/wiki/Dropout_(neural_networks)">Dropout (neural networks)</a><a class="wk" href="https://en.wikipedia.org/wiki/Interaction_(statistics)">Interaction (statistics)</a></div>
+  <h3>The idea in plain words</h3>
+  
+<p>The oldest question in brain science is: <i>what stops working if this part is gone?</i> In
+1848 an iron rod destroyed part of Phineas Gage's frontal lobe. He survived, but his personality
+changed. Doctors concluded that this region had something to do with self-control. That is a
+<b>lesion study</b>: remove or silence one part, watch which behaviour is lost, and credit the part
+with that behaviour.</p>
+<p>The appeal is that a lesion is an <b>intervention</b>, not an observation. You do not just
+watch a unit fire together with a behaviour; you take the unit away and see whether the behaviour
+goes too. That is a causal test. Its weakness is that it tests one unit at a time. If two units do
+a job together, or back each other up, removing one may show nothing, or something misleading.
+On the Atari we can measure both sides: how well single lesions rank the units, and how much of the
+joint behaviour they cannot see.</p>
+  <h3>How it works on a neural network</h3>
+  
+<p><b>Neuroscience origin.</b> Lesions come from accidents (Gage), strokes and surgery, and in
+animals from deliberate damage, cooling or drugs. Modern tools such as optogenetics can switch a
+cell type off for a few milliseconds. Jonas &amp; Kording &ldquo;lesioned&rdquo; the transistors of a
+simulated 6502 chip one by one (the VCS CPU, the 6507, is a 6502 variant) and found some that broke only one game. They
+warned that this does not mean the transistor is a &ldquo;Donkey Kong transistor&rdquo;.</p>
+<p><b>Neural-network analogue.</b> An <b>ablation study</b>: set one unit's activation to zero (or
+to its mean) and measure the drop in accuracy or in a logit. <i>Dropout</i> does random ablations
+during training. Written as an intervention on unit \(u\) with a set of clamp values \(V\):</p>
+\[ I(u) \;=\; \max_{v \in V}\; \big|\,y\big(\mathrm{do}(h_u := v)\big) - y\,\big| . \]
+<p>Rank the units by \(I(u)\) and you have an <b>importance map</b>. To test it, compare its ranking
+with a trusted ranking by <b>Spearman's \(\rho\)</b>, the correlation of the two rank lists
+(\(+1\) = same order).</p>
+<p><b>Toy example.</b> Let \(y = a\cdot b + c\) at \(a=b=c=1\), so \(y = 2\). Lesion \(a\) to 0:
+\(y = 1\), \(I(a) = 1\). Likewise \(I(b) = 1\) and \(I(c) = 1\). The map says all three matter
+equally. Now lesion \(a\) <i>and</i> \(b\): \(y = 1\), a drop of 1, not \(1+1 = 2\). The
+<b>interaction term</b></p>
+\[ \Delta_{\text{int}}(a,b) = E(a,b) - \big(E(a)+E(b)\big) = 1 - 2 = -1 \]
+<p>is non-zero: \(a\) and \(b\) work as a team (a product), \(c\) works alone (a sum). No single-unit
+map can tell those two kinds of units apart.</p>
+  <div class="box"><h3 style="margin-top:12px">Recipe</h3><ol class="recipe"><li>Freeze the system in one state and record a baseline run of the outputs you care about.</li><li>For each unit \(u\): restore the state, clamp \(u\) to a lesion value (zero, or a very different value), re-run, record the outputs.</li><li>Turn the change into one number per unit: the lesion importance \(I(u)\). Take the largest effect over the lesion values tried.</li><li>Rank the units by \(I(u)\). This is the importance map.</li><li>Score the map against a trusted reference ranking with Spearman's \(\rho\).</li><li>Lesion selected <i>pairs</i> too and compare \(E(i,j)\) with \(E(i)+E(j)\) to expose interactions the map hides.</li></ol></div>
+  <h3>From a neural network to the Atari</h3>
+  <table class="map"><tr><th>The neuron</th><td>One <b>candidate RAM byte</b>: one of the 128 bytes of VCS working memory that published annotations (OCAtari / AtariARI) link to a game concept such as ball&nbsp;x or score.</td></tr><tr><th>The lesion</th><td><code>intervene_ram!</code> at frame \(f^*\): overwrite the byte with \(0\) (&ldquo;silence&rdquo;) or with base&nbsp;XOR&nbsp;255 (every bit flipped, a maximally different value).</td></tr><tr><th>The behaviour</th><td>After 15 frames of re-run: the absolute change of every candidate byte <b>plus</b> the number of screen pixels that differ from the un-lesioned run.</td></tr><tr><th>The neurologist's ground truth</th><td>The <b>oracle role</b> of each byte: the same measurement with a larger set of interventions \(\{0,\ +17,\ +37,\ \text{XOR }255\}\), each a real re-run of the real ROM (the cartridge program).</td></tr><tr><th>Patients with two lesions</th><td>Pairs of the most important bytes, both flipped at once, to measure the interaction term.</td></tr></table>
+  <h3>How we apply it to the VCS</h3>
+  
+<p>The runner <code>A2_lesions.jl</code> works on the same frozen game state as every method in the
+study: the cartridge is booted (60 no-op plus 4 reset frames), then 90 frames of seeded random
+joystick input are played. That frame is \(f^*\); the horizon is the next 15 frames. Two fresh
+replays must agree byte for byte before anything is scored.</p>
+<ul>
+<li><b>Lesion map (method).</b> For each candidate byte the runner deep-copies the frozen machine,
+writes \(0\) or base&nbsp;XOR&nbsp;255 into it, and re-runs the 15 frames with the recorded joystick
+inputs. The footprint is the sum over candidate bytes of \(|\text{value} - \text{baseline}|\) plus the
+count of changed screen pixels. The importance is the larger footprint of the two clamps. It also
+records whether the machine still produced a valid frame; on the VCS a poked byte never crashes the
+CPU, so that flag is almost always true.</li>
+<li><b>Oracle role (truth).</b> The same footprint, maximised over four interventions: \(0\),
+base\(+17\), base\(+37\) and XOR&nbsp;255. The headline score is Spearman's \(\rho\) between the two
+rankings. A positive control ranks the oracle against itself and must give \(\rho = 1\).</li>
+<li><b>Interactions.</b> The runner takes the top-\(K\) bytes by lesion importance (\(K\) chosen so
+that at most 60 pairs are tested), flips both bytes of each pair, and computes
+\(\Delta_{\text{int}} = E(i,j) - (E(i)+E(j))\). A pair counts as a missed interaction if
+\(|\Delta_{\text{int}}|\) exceeds 5&nbsp;% of the typical single effect.</li>
+<li><b>Specificity check.</b> A byte is &ldquo;specific&rdquo; to the lesion map if at least 80&nbsp;%
+of its footprint lands on one readout. The runner counts how many of those the oracle calls generic
+(touching three or more readouts).</li>
+<li><b>Triad.</b> F is \(\rho\). S re-ranks against a held-out value (base\(+37\)) the lesion never
+used. M compares how many bytes the map names with how many truly move the output.</li>
+</ul>
+<p><b>How this differs from a brain lesion.</b> Our &ldquo;lesion&rdquo; is a one-time write at
+\(f^*\), not a clamp held for the whole horizon. The game program is free to overwrite the byte on
+the next frame, much as a brain can compensate. Also note that the lesion's two clamps are a
+<i>subset</i> of the oracle's four interventions, measured with the same footprint. A high rank
+correlation is therefore expected by design; the interaction count is the informative part.</p>
+  <h3>Read the code</h3>
+  <p class="sub"><span class="code-xai">XAI</span> the interpretability method &nbsp;
+  <span class="code-sub">substrate</span> the bit-exact emulator it runs on (jutari, Julia).</p>
+  <ul class="callstack"><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A2_lesions.jl#L277"><code>A2_lesions.jl:277</code></a> &mdash; The lesion primitive: deep-copy, write one or two bytes, step the horizon, snapshot.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A2_lesions.jl#L372"><code>A2_lesions.jl:372</code></a> &mdash; The two lesion values {0, base XOR 0xFF}, next to the oracle's four and the held-out one.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A2_lesions.jl#L344"><code>A2_lesions.jl:344</code></a> &mdash; The behavioural readout: per-byte absolute change plus count of changed screen pixels.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A2_lesions.jl#L384"><code>A2_lesions.jl:384</code></a> &mdash; Per-unit importance map under a given do-set (used for the method, the oracle and the held-out probe).</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A2_lesions.jl#L695"><code>A2_lesions.jl:695</code></a> &mdash; Pair lesions among the top units: the interaction term the single-unit map cannot see.</li><li><span class="code-xai">XAI</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseA_kording/A2_lesions.jl#L574"><code>A2_lesions.jl:574</code></a> &mdash; One game: shared state, bit-exact check, lesion vs oracle maps, Spearman, interactions, triad.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/shared_testbed_impl.jl#L115"><code>shared_testbed_impl.jl:115</code></a> &mdash; The shared seeded-gameplay state and its oracle cause-density gate.</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/ground_truth/oracle_intervene.jl#L242"><code>oracle_intervene.jl:242</code></a> &mdash; The reference oracle: poke a cause, re-run the ROM, snapshot (drives the gate).</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/jutari_oracle.jl#L174"><code>jutari_oracle.jl:174</code></a> &mdash; Write one byte into the console's RAM (the A2 runner carries an identical local copy).</li><li><span class="code-sub">substrate</span><a href="https://github.com/akmaier/UnderstandingVCS/blob/main/jutari/src/env/StellaEnvironment.jl#L259"><code>StellaEnvironment.jl:259</code></a> &mdash; One video frame of the bit-exact emulated VCS.</li></ul>
+  <h3>Reading the result</h3>
+  
+<p>The figure shows the game frame, a heat-map of where on the screen the lesions changed pixels,
+and a bar chart with two bars per candidate byte: the oracle's true causal role and the lesion
+importance, both scaled so the largest is 1. A faithful map has bars of matching height. In Pong
+they match exactly: the score bytes and the ball bytes are tall, the paddle bytes are
+zero. That is why this is the one classical method near the top of the battery. What the bars do
+<i>not</i> show is how the bytes combine. Look in the record's interaction block for the pairs whose
+joint lesion is far from the sum of the singles.</p>
+  <h3>Pitfalls</h3>
+  <ul class="pit"><li><b>Interactions are invisible.</b> Redundant units (either one suffices) look unimportant alone; cooperating units (both needed) are each over-credited. Only pair or group lesions reveal this.</li><li><b>The lesion value matters.</b> Zero is not &ldquo;off&rdquo; for a RAM byte; it is just another number, and may be a perfectly normal game value. That is why two very different clamp values are tried.</li><li><b>Importance is not function.</b> Knowing a byte matters says nothing about <i>what</i> it does. Jonas &amp; Kording's game-specific transistors were generic circuitry.</li><li><b>Compensation.</b> A one-time poke can be undone by the program on the next frame, just as networks and brains re-route around a damaged unit.</li><li><b>Agreement partly by construction.</b> Here the lesion and the oracle share the same machinery, so a high score says the cheap probe ranks units well, not that the explanation is complete.</li></ul>
+  <h3>Try it yourself</h3>
+  <pre class="try">julia --project=jutari tools/xai_study/phaseA_kording/A2_lesions.jl --games core</pre>
+  <p class="sub">Writes <code>A2_lesions_&lt;game&gt;.{json,npz}</code> per game and a combined <code>A2_lesions.{json,npz}</code> into <code>tools/xai_study/phaseA_kording/out/</code>. <code>--max-pairs K</code> caps the interaction budget (default 60); <code>--shard i --nshards n</code> runs one game per cluster task.</p>
+  <h3>Original papers &amp; further reading</h3>
+  <ul><li>Jonas &amp; Kording (2017). <i>Could a Neuroscientist Understand a Microprocessor?</i> PLOS Computational Biology 13(1): e1005268. &mdash; <a href="https://doi.org/10.1371/journal.pcbi.1005268">doi.org/10.1371/journal.pcbi.1005268</a></li><li>Morcos, Barrett, Rabinowitz &amp; Botvinick (2018). <i>On the importance of single directions for generalization.</i> ICLR. &mdash; <a href="https://arxiv.org/abs/1803.06959">arxiv.org/abs/1803.06959</a></li><li>Meyes, Lu, de Puiseau &amp; Meisen (2019). <i>Ablation Studies in Artificial Neural Networks.</i> arXiv. &mdash; <a href="https://arxiv.org/abs/1901.08644">arxiv.org/abs/1901.08644</a></li></ul>
+  <p><b>Read next:</b> <a href="m_occlusion.html">Occlusion</a> · <a href="m_activation_patching.html">Activation patching / causal mediation</a> · <a href="m_A1_connectomics.html">A1 · Connectomics / data-flow graph</a> · <a href="m_A3_tuning.html">A3 · Tuning curves</a></p>
+</div></section>
 
 <section><div class="wrap">
   <h2>How it's scored</h2>
@@ -148,7 +269,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/cc950552d22a04a0bddfb0d14cd2429b3bca8859"><code>cc950552</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/46b94f1dfc8fa5dca6fdd4c820fb11a26497fc6f"><code>46b94f1d</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>
