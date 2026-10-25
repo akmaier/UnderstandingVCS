@@ -1004,10 +1004,11 @@ The soft CPU core has a simplified bus:
 no TIA, a single 4\,KB ROM window, and only
 the RIOT timer. It excludes the complete TIA,
 RIOT, and cartridge execution of the full-system
-step. The \textsc{jaxtari} hard interpreter
-executes eagerly and cannot be batched on GPU.
-Consequently the GPU throughput figures do not
-measure full-machine differentiable rollouts.
+step. The \textsc{jaxtari} hard interpreter remains eager
+and sequential. Record-and-replay enables compiled,
+GPU-batched full-system SOFT-STE differentiation,
+but GPU throughput excludes the one-time hard
+recording cost per trajectory.
 
 CPU measurements use an Apple M1 Max core
 (Julia 1.12, JAX CPU backend). GPU measurements
@@ -1132,10 +1133,9 @@ handlers replay the instruction; CPU registers
 and RAM are joined with STE. In \textsc{jutari},
 the step reaches approximately 146,000
 instructions/s on Pong using one Apple M1 Max
-core (median of three runs). In \textsc{jaxtari},
-it executes eagerly on CPU and is slow;
-its measured GPU throughput applies only
-to the simplified soft CPU core.
+core (median of three runs). In \textsc{jaxtari}, eager execution reaches 943 forward
+and 0.13 gradient instructions/s; record-and-replay
+(below, Table~\ref{tab:s-replay}) avoids this cost.
 
 Zygote reverse-mode gradients through this
 full-system step depend strongly on window length.
@@ -1151,10 +1151,57 @@ is approximately 1.5 times faster at 50
 instructions, 3.7 times at 100, 4.8 times
 at 200, and 7 times at 400 instructions.
 
-Thus full-system gradients are practical for
-short windows, but not for million-step
-differentiable rollouts. An efficient per-step
-reverse pass is future work.
+In \textsc{jutari}, Zygote gradients remain practical
+only for short windows; \textsc{jaxtari} replay has
+flat gradient cost across window lengths.
+An efficient \textsc{jutari} reverse pass remains future work.
+
+\paragraph{Full-system replay.}
+The eager hard console records bank/slice mappings,
+TIA/RIOT/Superchip reads, and hard register/RAM values
+for each instruction. A compiled \texttt{lax.scan}
+replays SOFT-STE with \texttt{jit}, \texttt{vmap},
+and \texttt{grad}. Replay forward matches eager SOFT-STE
+and hard execution; ROM gradients are bitwise identical
+to eager gradients. Recording runs at 2,306 instructions/s
+on an M1 Max core and is slower on cluster CPUs.
+Single-trajectory CPU replay reaches 133k--179k
+forward and 41k--75k gradient instructions/s;
+gradient cost is flat across 100, 400, and 3,000
+instructions. Single-trajectory GPU replay is slower
+(9k--16k forward, 3.6k--5.7k gradient), owing to
+launch latency. Batched throughput uses a 400-instruction
+trace; the 256-way opcode switch evaluates all branches.
+At $B=1024$, 16\,GB GPUs require 20-instruction
+checkpoints instead of 100; $B=4096$ gradients exceed
+48\,GB (Table~\ref{tab:s-replay}).
+
+\begin{table}[tb]
+\centering
+\caption{Full-system SOFT-STE replay throughput on
+a recorded 400-instruction Pong trace, batched over
+$B$ copies. Forward and gradient rates are aggregate
+environment-instructions/s, excluding sequential hard
+recording. Gradient checkpoint intervals are 100
+instructions, except 20 at $B=1024$ on 16\,GB GPUs.}
+\label{tab:s-replay}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{llrrr}
+\toprule
+GPU & memory & $B$ & forward & gradient\\
+ & & & (instr./s) & (instr./s)\\
+\midrule
+V100     & 16\,GB & $256$  & $507{,}000$ & $69{,}000$\\
+RTX 5000 & 16\,GB & $256$  & $828{,}000$ & $81{,}000$\\
+A6000    & 48\,GB & $256$  & $954{,}000$ & $83{,}000$\\
+\addlinespace
+V100     & 16\,GB & $1024$ & $1{,}630{,}000$ & $177{,}000$\\
+RTX 5000 & 16\,GB & $1024$ & $2{,}010{,}000$ & $179{,}000$\\
+A6000    & 48\,GB & $1024$ & $\mathbf{2{,}620{,}000}$ & $\mathbf{254{,}000}$\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{Active Development Time}
 

@@ -61,8 +61,10 @@ measure zero soft-handler disagreements in
 (9 games spanning the exercised mapper families). Exact interventions on
 the hard machine independently test these gradients. A companion study
 finds that vanilla saliency can fail this test, while interventions
-recover more of the causal structure. GPU batching reaches ${\sim}3.1$M
-steps/s for the soft CPU core, not the full-system step. Both ports
+recover more of the causal structure. GPU batching reaches ${\sim}3.1$M instructions/s for the
+simplified soft CPU core; full-system SOFT-STE record-and-replay
+reaches 2.62M forward and 254k gradient instructions/s
+at batch size 1024, excluding sequential recording. Both ports
 will be released under the MIT license upon acceptance.
 \end{abstract}
 
@@ -236,10 +238,12 @@ exercised by the 64 games. Table~\ref{tab:ports} summarises the ports.
 \begin{table}[t]
 \centering
 \setlength{\tabcolsep}{4pt}
-\caption{Port statistics and instruction throughput. CPU: Apple M1 Max;
-GPU: GTX 1080 Ti / Quadro RTX 5000, peak batch $N\approx4096$.
-Batched JAX rows use the soft CPU core with a simplified bus.}
+\caption{Port statistics and instruction throughput.
+CPU: Apple M1 Max; GPU: GTX 1080 Ti / RTX 5000
+for the soft CPU core, RTX A6000 for full-system replay
+($B=1024$, forward/gradient). GPU rates exclude recording.}
 \label{tab:ports}
+\small
 \begin{tabular}{lcc}
 \toprule
  & \textsc{jutari} & \textsc{jaxtari} \\
@@ -257,6 +261,7 @@ Soft CPU core, 1 env (CPU) & $\mathbf{370{,}100}$ & $1{,}178$ \\
 Soft CPU core, batched CPU & --- & ${\sim}60{,}000$ \\
 Soft CPU core, batched GPU & --- & \textbf{$\sim$3.1\,M} \\
 Full-system soft step (CPU) & ${\sim}146{,}000$ & --- \\
+Full-system replay, batched GPU & --- & 2.6\,M/254\,k \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -600,17 +605,18 @@ trajectories, not all possible executions.
 For conformance, we patched \textsc{xitari}'s
 Superchip RAM seed from \texttt{time(NULL)} to zero,
 matching both ports. The patch ships with the code.
-One step denotes one CPU instruction, not an ALE
-frame. CPU measurements use an Apple M1 Max core;
-GPU measurements use a GTX 1080 Ti / Quadro RTX 5000
-with peak batch $N\approx4096$. Batched
-\textsc{jaxtari} uses the soft CPU core with no TIA,
-a single ROM window, and only the RIOT timer.
-Its hard path is eager and cannot be GPU-batched.
-Full-system steps run eagerly on CPU in both ports;
-Zygote reverse-mode throughput is measured in
-\textsc{jutari}. The JAX GPU numbers remain
-soft-CPU-core only.
+One step denotes one CPU instruction, not an ALE frame.
+CPU measurements use an Apple M1 Max core; GPU measurements
+use GTX 1080 Ti / RTX 5000 for the simplified soft CPU
+core (peak $N\approx4096$) and V100 / RTX 5000 / A6000
+for full-system replay. The soft CPU core omits TIA,
+uses one ROM window and only the RIOT timer.
+Full-system \textsc{jaxtari} records hard execution
+eagerly per trajectory, then replays SOFT-STE through
+compiled \texttt{lax.scan}, supporting \texttt{jit},
+\texttt{vmap}, and \texttt{grad}. Recording remains
+sequential. Zygote reverse-mode throughput is measured
+in \textsc{jutari}.
 
 \section{Results}
 
@@ -630,14 +636,16 @@ The \textsc{jutari} checks exposed and fixed functional
 \texttt{jax.grad} through 100 full-system steps
 reaches ROM bytes.
 
-The full-system soft step reaches ${\sim}146{,}000$
-instructions/s on CPU. Zygote reverse-mode gradients
-are practical for 50--400-instruction windows, at a
-few hundred instructions/s. The batched
-\textsc{jaxtari} soft CPU core reaches ${\sim}3.1$M
-instructions/s on GPU with ${\sim}5\%$ gradient
-overhead; this is not full-machine differentiable
-rollout throughput.
+The eager full-system soft step in \textsc{jutari}
+reaches ${\sim}146{,}000$ instructions/s on CPU.
+Zygote reverse-mode gradients are practical for
+50--400-instruction windows, at a few hundred
+instructions/s. The batched \textsc{jaxtari} soft CPU
+core reaches ${\sim}3.1$M instructions/s on GPU with
+${\sim}5\%$ gradient overhead. Full-system SOFT-STE
+replay reaches 2.62M forward and 254k gradient
+instructions/s on an A6000 ($B=1024$), excluding
+sequential recording.
 
 \subsection{Active Development Time}
 
@@ -754,10 +762,10 @@ seed-zero patch ships with the code.
 
 \paragraph{Limitations and next steps.}
 Conformance covers tested trajectories, not all
-executions. Audio is absent. \textsc{jutari}
-gradients are practical for short windows; GPU
-batching applies only to the soft CPU core, not
-full-system differentiation. The next step is
+executions. Audio is absent. \textsc{jutari}/Zygote gradients remain practical
+only for short windows. Full-system \textsc{jaxtari}
+GPU replay requires eager, sequential recording per
+trajectory, and gradient batch size is memory-limited. The next step is
 to intervene on a game variable, re-render
 bit-exactly, and measure the resulting change in
 a learned agent's action. Calibration on the
