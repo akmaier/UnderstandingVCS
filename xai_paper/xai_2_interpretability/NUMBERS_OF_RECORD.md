@@ -20,7 +20,7 @@ Before, activation_patching sat in the position family via the single pilot game
 |---|---|---|---|---|---|---|---|
 | A1_connectomics | intervention | 0.207 | — | 0.971 | 0.967 | 0.55 | 35 |
 | A2_lesions | intervention | 0.965 | — | 0.591 | 1.0 | 0.55 | 42 |
-| A3_tuning | correlational | 0.213 | — | 0.2 | 0.928 | 0.8 | 42 |
+| A3_tuning | correlational | 0.213 | — | 0.2 | 0.926 | 0.8 | 42 |
 | A4_spike_word | correlational | 0.225 | — | 0.133 | 0.363 | 0.8 | 34 |
 | A5_local_field_potentials | correlational | 0.376 | — | — | — | 0.8 | 40 |
 | A6_granger | correlational | 0.136 | — | 0.884 | 0.647 | 0.8 | 35 |

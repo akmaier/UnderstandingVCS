@@ -170,9 +170,9 @@
       "oracle_as_method_F": 1.0
     },
     "centipede": {
-      "F": -0.29411764705882354,
+      "F": -0.3122390663929938,
       "M": 1.0,
-      "S": -0.5894287233778472,
+      "S": -0.5895643498407601,
       "game_variable_spurious_tuning_rate": 0.0,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 9,
@@ -357,14 +357,14 @@
       "oracle_as_method_F": 1.0
     },
     "pacman": {
-      "F": -0.4123930494211613,
-      "M": 1.0,
-      "S": -0.3035723356955603,
+      "F": 0.0,
+      "M": null,
+      "S": 0.0,
       "game_variable_spurious_tuning_rate": 0.0,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 8,
       "n_oracle_causal": 7,
-      "n_strongly_tuned_gvar": 1,
+      "n_strongly_tuned_gvar": 0,
       "oracle_as_method_F": 1.0
     },
     "phoenix": {
@@ -513,5 +513,6 @@
   },
   "phase": "phaseA_kording",
   "problems": {},
-  "timestamp": "1783606671"
+  "timestamp": "1783606671",
+  "note_2026_10_25": "centipede + pacman re-scored after the score_raw duplicate-self-column fix (bug_fix_log 2026-10-25); other games unaffected (verified offline from the committed gvar_corr arrays)."
 }

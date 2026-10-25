@@ -435,11 +435,18 @@ function run_a3_tuning(traj::Trajectory, cands::Vector{Candidate},
     end
     # exclude each cell's own self-column from its selectivity. The first n game
     # variables are the n candidate cells in order, so column i is cell i's self.
+    # The derived `score_raw@si` column (index n+1, if present) is a verbatim copy
+    # of candidate byte si, so for THAT cell it is a second self-column (|corr|=1
+    # by construction) and must be skipped too (bug_fix_log 2026-10-25; affected
+    # centipede + pacman only).
+    score_dup = ng == n + 1 ?
+        findfirst(c -> occursin("score", lowercase(c.concept)), cands) : nothing
     gvar_sel = zeros(Float64, n)
     for i in 1:n
         best = 0.0
         for j in 1:ng
             j == i && continue                 # skip the self-column
+            j == n + 1 && i == score_dup && continue   # skip score_raw's copy of self
             best = max(best, G[i, j])
         end
         gvar_sel[i] = best

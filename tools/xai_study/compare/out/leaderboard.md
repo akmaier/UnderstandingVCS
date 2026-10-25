@@ -17,7 +17,7 @@ Across **all output regimes**, causal/intervention average **0.7051** (n=11) vs 
 ## Per-phase rollups (mean ± 95% CI over the phase's methods)
 | Phase | n methods | Faithfulness | Plausibility (proxy) | F∧S∧M | Faith (position regime) |
 |---|---|---|---|---|---|
-| phaseA_kording | 8 | 0.455 ± 0.2404 | 0.6688 | 0.4699 | None (n=0) |
+| phaseA_kording | 8 | 0.455 ± 0.2404 | 0.6688 | 0.4698 | None (n=0) |
 | phaseB_attribution | 12 | 0.4626 ± 0.0855 | 0.8125 | 0.6087 | 0.2796 (n=12) |
 | phaseC_mechanistic | 10 | 0.5955 ± 0.2178 | 0.625 | 0.6762 | 1.0 (n=1) |
 
@@ -49,7 +49,7 @@ Across **all output regimes**, causal/intervention average **0.7051** (n=11) vs 
 | phaseB_attribution | guided_backprop | gradient | 0.3223 | 0.0 | 0.9 | 0.3223 | 0.5725 | 0.9643 | 0.5625 |  |
 | phaseC_mechanistic | linear_probing_control_tasks | probing | 0.2404 | None | 0.85 | 0.2404 | None | 0.9316 | 0.586 |  |
 | phaseA_kording | A4_spike_word | correlational | 0.2246 | None | 0.8 | 0.2246 | 0.1332 | 0.3635 | 0.2216 |  |
-| phaseA_kording | A3_tuning | correlational | 0.2129 | None | 0.8 | 0.2129 | 0.2001 | 0.9277 | 0.3406 |  |
+| phaseA_kording | A3_tuning | correlational | 0.2129 | None | 0.8 | 0.2129 | 0.2001 | 0.9257 | 0.3403 |  |
 | phaseA_kording | A1_connectomics | intervention | 0.2066 | None | 0.55 | 0.2066 | 0.9708 | 0.9667 | 0.5788 |  |
 | phaseB_attribution | expected_gradients | gradient | 0.1754 | 0.0255 | 0.9 | 0.1754 | 0.5758 | 1.0 | 0.4656 |  |
 | phaseC_mechanistic | sparse_autoencoder | dim_reduction | 0.1526 | None | 0.75 | 0.1526 | 0.1828 | 0.9339 | 0.2965 |  |

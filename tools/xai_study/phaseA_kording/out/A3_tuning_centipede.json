@@ -1,19 +1,19 @@
 {
   "arrays": "A3_tuning_centipede.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "3d9f8be2",
   "extra": {
     "A3_tuning": {
       "clock_corr_per_cell": {
         "RAM[109]:life": 0.0,
-        "RAM[110]:projectile.xy": 0.579755583652864,
-        "RAM[111]:player.xy": 0.6602373920171057,
-        "RAM[112]:projectile.xy": 0.6025149067858443,
-        "RAM[113]:player.xy": 0.4651871732872403,
+        "RAM[110]:projectile.xy": 0.5797555836528641,
+        "RAM[111]:player.xy": 0.6602373920171055,
+        "RAM[112]:projectile.xy": 0.6025149067858442,
+        "RAM[113]:player.xy": 0.4651871732872402,
         "RAM[116]:relavant_ram_info": 0.0,
         "RAM[118]:score": 0.7498087255062201,
         "RAM[45]:relavant_ram_info": 0.725182762865551,
-        "RAM[91]:relavant_ram_info": 0.7059450940154113
+        "RAM[91]:relavant_ram_info": 0.7059450940154114
       },
       "epiphenomenal_control": "frame_clock",
       "game_variable_signals": [
@@ -32,24 +32,24 @@
       "gvar_selectivity_per_cell": {
         "RAM[109]:life": 0.0,
         "RAM[110]:projectile.xy": 0.6213976698547744,
-        "RAM[111]:player.xy": 0.7823681668669399,
-        "RAM[112]:projectile.xy": 0.401500662432131,
-        "RAM[113]:player.xy": 0.7857475457528722,
+        "RAM[111]:player.xy": 0.7823681668669398,
+        "RAM[112]:projectile.xy": 0.40150066243213095,
+        "RAM[113]:player.xy": 0.7857475457528726,
         "RAM[116]:relavant_ram_info": 0.0,
-        "RAM[118]:score": 1.0,
-        "RAM[45]:relavant_ram_info": 0.9986397282139565,
-        "RAM[91]:relavant_ram_info": 0.6835232526470159
+        "RAM[118]:score": 0.9986397282139559,
+        "RAM[45]:relavant_ram_info": 0.9986397282139559,
+        "RAM[91]:relavant_ram_info": 0.6835232526470156
       },
       "luminance_corr_per_cell": {
         "RAM[109]:life": 0.0,
         "RAM[110]:projectile.xy": 0.42677573368697364,
-        "RAM[111]:player.xy": 0.5815261487646264,
-        "RAM[112]:projectile.xy": 0.09413985103914868,
-        "RAM[113]:player.xy": 0.4693318217194974,
+        "RAM[111]:player.xy": 0.5815261487646262,
+        "RAM[112]:projectile.xy": 0.0941398510391487,
+        "RAM[113]:player.xy": 0.46933182171949744,
         "RAM[116]:relavant_ram_info": 0.0,
-        "RAM[118]:score": 0.7752953385098446,
-        "RAM[45]:relavant_ram_info": 0.7780603610203058,
-        "RAM[91]:relavant_ram_info": 0.38562722761302354
+        "RAM[118]:score": 0.7752953385098451,
+        "RAM[45]:relavant_ram_info": 0.7780603610203055,
+        "RAM[91]:relavant_ram_info": 0.3856272276130235
       },
       "luminance_spurious_tuning_rate": 0.0,
       "n_spurious_gvar": 0,
@@ -122,11 +122,11 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": -0.29411764705882354,
+      "F": -0.3122390663929938,
       "F_note": "Spearman(A3 game-variable selectivity, oracle causal importance) over 9 candidate cells",
       "M": 1.0,
       "M_note": "M = |U*|/|U_hat| (03_methods.tex sec:triad): |U*|=7 (oracle movers) / |U_hat|=7 (method above-threshold)",
-      "S": -0.5894287233778472,
+      "S": -0.5895643498407601,
       "S_note": "Pearson(A3 selectivity, held-out do(base+37) screen break) — sufficiency on a bit-exact re-run",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): a tuning-curve importance map scores LOW faithfulness despite fully-known structure. F<1 / spurious-tuning>0 quantify where the classical analysis departs from the ground truth. The oracle-as-method positive control (F=1.0) confirms the harness rewards a perfectly-faithful map.",
       "legacy_minimality": 1.0,
@@ -144,7 +144,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen-break (oracle causal importance) vs tuning selectivity",
-  "timestamp": "1783605149",
+  "timestamp": "1792932931",
   "value": 0.0,
   "where": "local"
 }

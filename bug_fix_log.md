@@ -14,6 +14,27 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🐛 A3 tuning: `score_raw` was a second, unexcluded self-column — 2026-10-25
+
+Found by a fact-check pass while writing the website's method guides.
+`A3_tuning.jl::game_variable_signals` appends a derived `score_raw@si` column that is a
+**verbatim copy** of the first score-concept candidate byte `si`. The selectivity loop
+excluded only column `i` (the cell's own column), so for that byte `|corr|` with its own
+copy = 1.0 → trivially "strongly tuned" whenever the score varies. Fix: also skip column
+n+1 for the duplicated cell. **Impact measured offline from the committed `gvar_corr`
+arrays first** (recomputed old F reproduced the recorded F exactly): only 2 of 45
+records change — centipede F −0.294 → −0.312, pacman F −0.412 → 0.000 (S → 0, M →
+null: no cell left strongly tuned). Re-run of pong (control, identical up to x86/ARM
+ulps — restored), centipede, pacman matches the offline prediction. Downstream:
+leaderboard A3 M 0.9277 → 0.9257 (F, S unchanged; all-regime 0.321 / position 0.326 gaps
+unchanged); Supplement S1 + NUMBERS_OF_RECORD A3 M 0.928 → 0.926. (PDF not rebuilt here.)
+
+**Naming gotcha (no code change):** the shared P2 "position" output is labelled
+`screen_region(n_changed_px)@r…c…` and commented as a "region", but
+`shared_testbed_impl.jl` reads `count(s.screen .!= base_screen)` — changed pixels over the
+**whole frame** vs the un-intervened frame. The `@cell` is only where the bilinear
+sampler's gradient is taken. The website guides now say "whole frame".
+
 ### 🔧 P2 "true end-to-end gradient" arm + Zygote reverse-mode gotchas — 2026-10-25
 
 New runner `tools/xai_study/phaseB_attribution/e2e_gradient.jl`: the content byte at
