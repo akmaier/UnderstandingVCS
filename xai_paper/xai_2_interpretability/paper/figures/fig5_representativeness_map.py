@@ -249,11 +249,11 @@ def build_rows(lb, demo, gbp, igsw, sae, prb, ci):
             n=2,
             mode="Saliency is model-invariant\n(sanity-check fails)",
             vcs_main=("Program-randomization: saliency\ncosine = "
-                      f"{ade_cos:.3f} while {ade_ram:.0f}% of RAM\nchanged "
+                      f"{ade_cos:.3f} while {ade_ram:.0f}/128 RAM bytes\nchanged "
                       f"-> sanity check {'PASSES' if ade_pass else 'FAILS'}."),
             vcs_full=("Program-randomization test: saliency\n"
                       f"cosine = {ade_cos:.3f} to the real map while\n"
-                      f"{ade_ram:.0f}% of RAM changed -> sanity check\n"
+                      f"{ade_ram:.0f}/128 RAM bytes changed -> sanity check\n"
                       f"{'PASSED' if ade_pass else 'FAILS'}. Constant Jacobian on the\n"
                       "content path, no ReLU."),
             vcs_score=1.0 - ade_cos,  # 0 = fully invariant (failed)
@@ -311,7 +311,7 @@ def build_rows(lb, demo, gbp, igsw, sae, prb, ci):
                       f"{sae_F:.3f} on causal use; probes decode at\n"
                       f"{probe_acc:.3f} acc but {probe_notcausal} cells are not causal."),
             vcs_full=("SAEs match a variable (100% of\n"
-                      f"candidates in {sae_match_games_full}/6 games, min "
+                      f"candidates in {sae_match_games_full}/{len(sae['games'])} games, min "
                       f"{sae_match_min*100:.0f}%)\nyet score {sae_F:.3f} on causal use; "
                       "probes\n"
                       f"decode at {probe_acc:.3f} acc but {probe_notcausal} cells are\n"
@@ -626,7 +626,7 @@ def main():
     check(
         "row2 Adebayo sanity FAILS (cosine==1.0, not passed)",
         ade["mean_cosine_to_real_map"] == 1.0 and ade["passed"] is False,
-        f"ram_changed={ade['mean_ram_at_frame_bytes_changed']:.1f}%",
+        f"ram_changed={ade['mean_ram_at_frame_bytes_changed']:.1f}/128 bytes",
     )
     check(
         "row3 correlation!=causation (Granger<0.25 & tuning<0.25)",
