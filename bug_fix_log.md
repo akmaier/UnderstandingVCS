@@ -14,6 +14,31 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### ✅ jaxtari 64-ROM conformance re-check on the cluster: RAM 64/64, screen 64/64 — 2026-10-25
+
+Re-ran the full jaxtari RAM (30 frames) + screen (60 frames) sweep at bef47885
+(incl. the Superchip-RAM LCG init for elevator_action) on the LME cluster:
+Slurm array 780326, 2 nodes × 32 games in parallel, xitari references
+precomputed on the laptop with the seed-patched `trace_dump` (no xitari build on
+the cluster). Driver: `tools/rom_sweep/cluster/{p1_jaxtari_sweep.sbatch,sweep_one.py}`
+(reuses `sweep_jaxtari._diff` unchanged, only the xitari side is read from cache).
+**Result: RAM bit-exact 64/64, screen pixel-exact 64/64** — incl. battle_zone and
+ms_pacman (stale 2 px rows in older tables) and elevator_action.
+Tables: `tools/rom_sweep/results_jaxtari_{ram,screen}.md`.
+
+Gotchas: (1) cluster cores are ~2× slower than the M1 and 32 concurrent games
+per node slow each further — per game ≈3.6–4.1 h RAM + 4.0–4.7 h screen. The
+first run (780314) hit the sweep's 45-min `JAXTARI_TIMEOUT` on every game;
+`sweep_one.py` sets 6 h. (2) `jaxtari_dump.py` writes its output only at the end,
+so 0-byte `/tmp/jaxdump_*` files mid-run are normal; progress is in
+`results/p1check/log_<i>.txt`. (3) A non-array sbatch using
+`$SLURM_ARRAY_TASK_ID` under `set -u` fails immediately (780321).
+
+Also: `JAXTARI_SOFT_SYSTEM_FULL=1 pytest tests/test_soft_system.py` (780319,
+all games, soft==hard full-system) **8/8 passed**, exit 0. Full jaxtari
+`pytest -n 16` (780320) still running at 12 h (one long test left; output is
+piped through `tail`, so nothing is visible until it ends).
+
 ### ✅ jaxtari full-system SOFT step: record / replay — jit / vmap / grad on device — 2026-10-24
 
 **Symptom.** `soft_system_run` steps the eager-Python hard console on every
