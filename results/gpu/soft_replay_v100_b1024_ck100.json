@@ -1,0 +1,32 @@
+{
+  "rom": "pong.bin",
+  "backend": "gpu",
+  "devices": [
+    "cuda:0"
+  ],
+  "record_device": "cpu:0",
+  "windows": {
+    "100": {
+      "checkpoint_every": null,
+      "fwd_instr_per_s": 8211.949714875876,
+      "grad_instr_per_s": 4577.520907919337,
+      "fwd_compile_s": 16.46014228509739,
+      "grad_compile_s": 51.23277133097872
+    }
+  },
+  "record_instr_per_s": 284.9146077817468,
+  "placement": {
+    "trace": "cuda:0",
+    "replay_output": "cuda:0"
+  },
+  "batched": [
+    {
+      "batch": 1024,
+      "window": 400,
+      "checkpoint_every": 100,
+      "fwd_env_instr_per_s": 1630374.74169496,
+      "fwd_compile_s": 15.333876424934715,
+      "grad_error": "JaxRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 21.59GiB. [tf-allocator-allocation-error=''] [executable_name='jit_lossB']"
+    }
+  ]
+}
