@@ -109,11 +109,14 @@ def test_write_at_1100_does_not_touch_ram():
     the RAM buffer — they fall through to the normal "drop / maybe
     bank-switch" path."""
     cart = _f8sc_cart()
+    # Power-on RAM is the xitari seed-0 LCG, not zeros (bef47885), so compare
+    # against the buffer as it was before the writes.
+    before = bytes(cart.ram)
     cart_poke(cart, 0x1080, 0xFF)                    # write to RAM read window
     cart_poke(cart, 0x1100, 0xFF)                    # write outside SC area
-    # The RAM buffer at offset 0x00 must still be 0 (initial value).
-    assert cart_peek(cart, 0x1080) == 0
-    # And offset 0 of the buffer wasn't touched by either write.
+    # Neither write touched the buffer.
+    assert bytes(cart.ram) == before
+    assert cart_peek(cart, 0x1080) == before[0]
 
 
 # --------------------------------------------------------------------------- #
