@@ -50,6 +50,27 @@ import ChainRulesCore
 @inline _dot(a::AbstractVector, b::AbstractVector) = sum(a .* b)
 
 """
+    _rom_grad_on :: Ref{Bool}  /  with_rom_grad(f, on::Bool)
+
+Reverse-mode switch for the exact one-hot ROM read (`soft_rom_peek`). Default
+`true`: gradients reach the ROM bytes (the "ROM as weights" view). `false`
+treats ROM reads as constants in the backward pass only — the forward value is
+unchanged — which makes long rollouts differentiated w.r.t. RAM / registers
+much cheaper. Scoped via `with_rom_grad(false) do ... end`.
+"""
+const _rom_grad_on = Ref(true)
+
+function with_rom_grad(f, on::Bool)
+    old = _rom_grad_on[]
+    _rom_grad_on[] = on
+    try
+        return f()
+    finally
+        _rom_grad_on[] = old
+    end
+end
+
+"""
     _stop_gradient(x) -> x
 
 Identity on the forward pass; backward pass propagates no gradient.
@@ -85,6 +106,7 @@ export Mode, current_mode, set_mode!, using_mode,
        soft_step!, soft_run!, soft_rom_peek, soft_ram_peek,
        soft_step, soft_run, update_state, update_bus,    # P7e-x — functional path
        soft_system_init, soft_system_step, soft_system_run, soft_handler_agreement,  # full-system SOFT (Theorem 1)
+       with_rom_grad,
        set_relax!, using_relax, relax_config,            # relaxation study (alpha/T)
        _set_ram,                                          # P7e-x — Zygote-friendly RAM write helper
        _with_p, _float_flags_from_p,                      # P7c-dx — float-flag mirror helpers

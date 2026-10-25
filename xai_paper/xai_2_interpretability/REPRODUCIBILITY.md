@@ -66,8 +66,14 @@ run on two bit-exact differentiable ports validated against the `xitari` C++ ref
 | **xitari** | `xitari/` at repo HEAD | the bit-exact reference oracle the ports are validated against |
 | **Julia** | 1.12.x (authoring env: 1.12.6); deps pinned by `jutari/Project.toml` | jutari runtime |
 
-Environment files (committed): `jutari/Project.toml` + `jutari/Manifest.toml` (Julia
-deps, fully pinned); `jaxtari/pyproject.toml` (Python deps). These are the
+Environment files (committed): `jutari/Project.toml` (Julia deps, `[compat]`-bounded:
+ChainRulesCore 1, JSON 1.6.1, Zygote 0.7.10) and `jaxtari/pyproject.toml` (Python deps).
+**`jutari/Manifest.toml` is NOT committed** (it is in `.gitignore`), so a fresh clone
+resolves the newest versions inside those bounds on `Pkg.instantiate()`; exact pins are
+not reproduced. (Corrected 2026-10-25: an earlier version of this paragraph claimed the
+Manifest was committed. A sanity re-run of the Pong oracle, saliency and occlusion
+records on a fresh resolve (Julia 1.12.7, Intel Xeon) reproduced every JSON value, with
+one npz entry differing by 1 ulp; see bug_fix_log.md.) These are the
 `environment.yml`/`Project.toml`/`Manifest.toml`/`pyproject.toml` set requested by the
 reproducibility checklist (improvement-instructions P6 §53).
 

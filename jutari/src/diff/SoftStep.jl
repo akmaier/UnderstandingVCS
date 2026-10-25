@@ -90,9 +90,7 @@ function soft_rom_peek(rom::AbstractVector{<:Real}, addr::Real)
             soft_memory_read(rom, mod(Int(round(addr)), n);
                              temperature = _relax_temp[]))
     end
-    idx = mod(Int(addr), n)
-    one_hot = Float32.((0:n - 1) .== idx)
-    return _dot(one_hot, Float32.(rom))
+    return _onehot_read(rom, mod(Int(addr), n), true)
 end
 
 """
@@ -114,8 +112,39 @@ function soft_ram_peek(ram::AbstractVector{<:Real}, addr::Real)
             soft_memory_read(ram, Int(round(addr));
                              temperature = _relax_temp[]))
     end
-    one_hot = Float32.((0:n - 1) .== Int(addr))
-    return _dot(one_hot, Float32.(ram))
+    return _onehot_read(ram, Int(addr), false)
+end
+
+# The exact (default-mode) one-hot read shared by soft_rom_peek / soft_ram_peek.
+# Forward: the original broadcast one-hot dot product, verbatim. Backward: a
+# hand-written rule with the SAME gradient Zygote derives from that dot product
+# (one-hot at `idx` w.r.t. the memory, none w.r.t. the address), built directly
+# instead of traced through an n-element broadcast. Over a long full-system
+# rollout the traced version materialised several ROM-sized (2-16K) dense
+# temporaries per instruction and made reverse mode superlinear. When
+# `_rom_grad_on[]` is false (`with_rom_grad(false) do ... end`), ROM reads are
+# treated as constants in reverse mode — for callers that only need gradients
+# w.r.t. registers / RAM. The forward value is identical either way.
+function _onehot_read(mem::AbstractVector{<:Real}, idx::Int, is_rom::Bool)
+    one_hot = Float32.((0:length(mem) - 1) .== idx)
+    return _dot(one_hot, Float32.(mem))
+end
+
+function ChainRulesCore.rrule(::typeof(_onehot_read), mem::AbstractVector{<:Real},
+                              idx::Int, is_rom::Bool)
+    y = _onehot_read(mem, idx, is_rom)
+    n = length(mem)
+    function _onehot_read_pullback(dy)
+        if is_rom && !_rom_grad_on[]
+            return (ChainRulesCore.NoTangent(), ChainRulesCore.ZeroTangent(),
+                    ChainRulesCore.NoTangent(), ChainRulesCore.NoTangent())
+        end
+        g = zeros(Float32, n)
+        g[idx + 1] = Float32(ChainRulesCore.unthunk(dy))
+        return (ChainRulesCore.NoTangent(), g,
+                ChainRulesCore.NoTangent(), ChainRulesCore.NoTangent())
+    end
+    return y, _onehot_read_pullback
 end
 
 @inline _cart_addr(pc_offset::Real) = Int(pc_offset) & 0x0FFF

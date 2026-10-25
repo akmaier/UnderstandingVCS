@@ -14,6 +14,49 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🔧 P2 "true end-to-end gradient" arm + Zygote reverse-mode gotchas — 2026-10-25
+
+New runner `tools/xai_study/phaseB_attribution/e2e_gradient.jl`: the content byte at
+f*+H (and, for the position output, the bilinear sampler at f*+H) differentiated back
+to the RAM tape at f* **through every 6507 instruction of the 15-frame horizon** via
+`JuTari.Diff.soft_system_step` (≈1–1.5·10⁵ instructions per game). All other P2 gradient
+runners differentiate a one-line surrogate at f* (`soft_ram_peek` / sampler), so they
+never see the CPU. Scored with saliency.jl's oracle / metrics verbatim. Gradient flows
+through registers, RAM, ALU; TIA/RIOT reads are replayed constants (no renderer gradient).
+
+Gotchas:
+1. **Zygote cost is superlinear in tape length.** One `Zygote.pullback` over N soft
+   instructions: N=200 ≈1 s, N=1000 ≈19 s, N=5000 ≈230 s (Pong, Xeon W-2150B). A whole
+   frame (~6–7k instr) in one tape is hopeless. Fix: **checkpoint every 200
+   instructions** — hard-run the horizon once, deepcopy the console at each chunk start
+   (chunks never straddle a frame, so action application stays on the hard machine),
+   then pull back chunk by chunk, last first. Exact chain rule, one chunk of tape in
+   memory. Still ≈10–20 s/chunk under load → ≈1.5–2.5 h per game on one core.
+2. **Sparse pullback for one-hot memory reads.** `soft_rom_peek` builds a dense one-hot
+   over the whole ROM per read, so Zygote's default pullback materialises a ROM-sized
+   cotangent per instruction (tried first as the cure for gotcha 1 — it is NOT: the
+   superlinear growth remained; checkpointing is the fix). New `_onehot_read` + `rrule` in `jutari/src/diff/SoftStep.jl` (sparse
+   pullback: one nonzero) for both RAM and ROM reads, plus the knob
+   `Diff.with_rom_grad(false)` (`Modes.jl`) that returns `ZeroTangent` for ROM reads
+   when only ∂/∂RAM is wanted. Forward unchanged (same `_dot` of the same one-hot);
+   default `_rom_grad_on[] = true` keeps the old gradients. `Pkg.test()` 2309 pass / 0
+   fail incl. full-system SOFT 15/15. RAM gradient identical with/without ROM grad
+   (checked on a 300-instruction Pong rollout).
+3. **Validity gates are asserted, not assumed:** the env_step!-mirror (pre-frame action
+   application / CPU loop / post-frame reward+terminal) must reproduce `env_step!`
+   RAM+registers, and every chunk's soft forward must equal the hard registers+RAM at
+   the next checkpoint bit-for-bit; the runner refuses to score otherwise.
+4. Julia's stdout is block-buffered when redirected — `flush(stdout)` after progress
+   lines or the log looks dead for an hour.
+
+Also: **sanity re-run of P2 after the Paper-1 fixes** (only jutari change since the P2
+records was the additive b84cd175; all P2 runners use the HARD `env_step!` path): Pong
+oracle, saliency and occlusion re-run on a fresh package resolve (Julia 1.12.7, Intel
+Xeon) — every JSON value identical to the committed records apart from commit/timestamp,
+one npz entry differs by 1 ulp (x86 vs ARM). No re-run of the P2 suite needed.
+**Provenance gap found:** `jutari/Manifest.toml` is gitignored, but REPRODUCIBILITY.md §1
+said it was committed — corrected.
+
 ### ✅ jaxtari 64-ROM conformance re-check on the cluster: RAM 64/64, screen 64/64 — 2026-10-25
 
 Re-ran the full jaxtari RAM (30 frames) + screen (60 frames) sweep at bef47885
