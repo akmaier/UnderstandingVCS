@@ -1,12 +1,12 @@
 \section{Coverage and applicability}\label{supp:coverage}
 
-The benchmark scores methods on a 42-game scored set drawn from a larger bit-exact substrate,
+The benchmark scores methods on a 44-game scored set drawn from a larger bit-exact substrate,
 with a six-game core as the running example. The coverage table makes the scope of that choice
 explicit. Paper~1 validates the
 differentiable VCS ports bit-for-bit against the \texttt{xitari} reference on all 64 Arcade
 Learning Environment games, within a 30-frame RAM and 60-frame screen window. The
 six core games listed in Table~\ref{supp:tab:coverage} carry the full tiered ground truth; the
-aggregate scores extend the same protocol to the 42-game scored set of
+aggregate scores extend the same protocol to the 44-game scored set of
 \Sectionname\ref{supp:scoredset}. Every method is scored on a shared gameplay state, produced by
 one seeded random-action stream (seed~$0$, $90$-frame prefix, $15$-frame analysis horizon), not
 on the boot screen. This gives the oracle a rich, non-degenerate cause set to score against.
@@ -16,8 +16,8 @@ scored games the port matches \texttt{xitari} on every frame from boot to $105$,
 screen (\Sectionname\ref{supp:scoredset}). The oracle in addition asserts determinism by
 re-running each scored state twice. We pick these six games as the core because all
 three tiers of ground truth (\Sectionname\ref{sec:tiers}) are available for them and the oracle is
-exact. Of the remaining 58 games, 36 more enter the scored set. The other 22 are bit-exact
-substrate but are not scored: 10 carry no T3 label, and 12 labeled games are held out for the
+exact. Of the remaining 58 games, 38 more enter the scored set. The other 20 are bit-exact
+substrate but are not scored: 10 carry no T3 label, and 10 labeled games are held out for the
 two methodological reasons of \Sectionname\ref{supp:scoredset}. \Sectionname\ref{supp:t3coverage}
 (Table~\ref{supp:tab:t3coverage}) records how far the external T3 labels reach across the
 64-game roster, defining the 54-game labeled breadth set from which the scored set is drawn. The
@@ -36,7 +36,7 @@ RAM / 60 screen frames) and the later $3{,}600$-frame check on Paper~1's fixed a
 $^{a}$That check has transient exceptions in \texttt{alien} and \texttt{carnival} (screen) and
 \texttt{amidar} (RAM); none falls inside frames 0--105 of the analysed streams. The
 last two columns give the methods run and the per-game output records contributed. A further
-36 games complete the 42-game scored set (\Sectionname\ref{supp:scoredset}); the remaining 22
+38 games complete the 44-game scored set (\Sectionname\ref{supp:scoredset}); the remaining 20
 games of the bit-exact 64-game substrate (Paper~1) are not scored. T3 labels are
 external (\Sectionname\ref{sec:tiers}); we record this so the benchmark does not appear to certify them.}
 \label{supp:tab:coverage}
@@ -54,7 +54,7 @@ seaquest & bit-exact & 0--105 & T1,T2,T3 & 30 + oracle & per-game \\
 space\_invaders & bit-exact & 0--105 & T1,T2,T3 & 30 + oracle & per-game \\
 \midrule
 38 further scored games & bit-exact & 0--105 & T1,T2,T3 & up to 30 + oracle & per-game \\
-22 unscored games & bit-exact & 30/60; 3600$^{a}$ fr & T1,T2 partial & not scored & --- \\
+20 unscored games & bit-exact & 30/60; 3600$^{a}$ fr & T1,T2 partial & not scored & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -68,11 +68,13 @@ enters the leaderboard. On \texttt{seaquest} the shared gameplay state and outpu
 of live candidate causes at the analysis frame from $2$ to $19$, which is what makes the game
 usable. Three residual degenerate patterns survive the gate. The pairwise neuroscience analysis (A4)
 finds no coupled candidate pair on \texttt{ms\_pacman} at the shared state, so it does not score
-that game, as for the other games A4 does not score ($33$ of $42$ are scored); an earlier
+that game, as for the other games A4 does not score ($36$ of $44$ are scored); an earlier
 \texttt{ms\_pacman} record produced before the shared testbed has been removed. The on-distribution counterfactual returns a zero delta
-on \texttt{space\_invaders}, \texttt{ms\_pacman}, and \texttt{qbert}, where its perturbation
-does not move the shared output; those cells record $F=0$. Expected Gradients scores low on the
-content regime of every game but \texttt{pong}, because the causal byte it should attribute to
+on both outputs of seven scored games (the core games \texttt{space\_invaders}, \texttt{ms\_pacman}
+and \texttt{qbert}, and \texttt{gopher}, \texttt{kangaroo}, \texttt{kung\_fu\_master} and
+\texttt{pacman}) and on the content output of \texttt{enduro}, where its perturbation does not
+move the shared output; those cells record $F=0$. Expected Gradients scores low on the
+content regime of every core game but \texttt{pong}, because the causal byte it should attribute to
 is static there. These last two enter the leaderboard means at their recorded values; we name
 them so that the low scores are read as degenerate cells rather than as evidence about the
 method.
@@ -122,7 +124,7 @@ labels imported from AtariARI~\cite{anand2019unsupervised} and OCAtari~\cite{del
 not derived by our oracle. This subsection documents where such labels \emph{exist}, so that the
 breadth and position analyses can, in principle, scale beyond the six-game core of
 Table~\ref{supp:tab:coverage}. It reports label \emph{availability and provenance} only. It does
-not report any score; the scores on the 42-game scored set drawn from it are in
+not report any score; the scores on the 44-game scored set drawn from it are in
 \Sectionname\ref{supp:protocols}.
 
 The counts are computed, not estimated. We intersect our bit-exact roster with the games that
@@ -185,35 +187,35 @@ are: \texttt{defender}, \texttt{elevator\_action}, \texttt{gravitar}, \texttt{jo
 \texttt{solaris}, \texttt{surround}, \texttt{tutankham}, \texttt{videochess},
 \texttt{wizard\_of\_wor}, and \texttt{zaxxon}.
 
-\subsection{Scored set: the 42-game applicable subset}\label{supp:scoredset}
+\subsection{Scored set: the 44-game applicable subset}\label{supp:scoredset}
 
 The T3-coverage of \Sectionname\ref{supp:t3coverage} sets the outer breadth of the sweep,
 but not every labeled game can measure faithfulness. The interpretability methods are scored on
-42 games, not on all 54 T3-labeled games of Table~\ref{supp:tab:t3coverage}. We hold out 12
+44 games, not on all 54 T3-labeled games of Table~\ref{supp:tab:t3coverage}. We hold out 10
 games for two methodological reasons, decided before scoring. This is a scope decision about
 where the benchmark can measure anything, not a result. The excluded games keep their exact T1
 and T2 ground truth on record; only their score cells are held out.
 
-The first reason is a lack of causal structure at the shared analysis state. Eight games fail
+The first reason is a lack of causal structure at the shared analysis state. Six games fail
 the oracle cause-density gate: fewer than four candidate causes move the shared output above
 the floor ($|\Delta y|>0.5$). A frame with almost no true causal signal cannot measure
-faithfulness, and running methods there would only add noise to the leaderboard. These eight
-are \texttt{crazy\_climber}, \texttt{enduro}, \texttt{pooyan}, \texttt{skiing},
+faithfulness, and running methods there would only add noise to the leaderboard. These six
+are \texttt{crazy\_climber}, \texttt{pooyan},
 \texttt{time\_pilot}, \texttt{asteroids}, \texttt{battle\_zone}, and \texttt{star\_gunner}. The
-second reason is the absence of a moving target for a position method. Seven games carry only
-static verified labels, such as score or life counters, so no sprite moves under intervention
-and a position method has nothing to recover. These seven are \texttt{amidar}, \texttt{asterix},
+second reason is the absence of a moving target for a position method. Seven games carry no
+verified label on a moving sprite (their verified labels, if any, are static, such as score or life counters), so no sprite moves under intervention
+and a position method has nothing to recover. These seven are \texttt{amidar}, \texttt{beam\_rider},
 \texttt{robotank}, \texttt{up\_n\_down}, \texttt{asteroids}, \texttt{battle\_zone}, and
 \texttt{star\_gunner}. The two criteria overlap for exactly three games, namely
 \texttt{asteroids}, \texttt{battle\_zone}, and \texttt{star\_gunner}, which fail both. Counting
-each excluded game once, the union is 5 gate-only plus 4 static-only plus 3 that fail both,
-which is 12, so the scored set is $54-12=42$ games. Table~\ref{supp:tab:scoredset}
-lists the 12 with their reason.
+each excluded game once, the union is 3 gate-only plus 4 static-only plus 3 that fail both,
+which is 10, so the scored set is $54-10=44$ games. Table~\ref{supp:tab:scoredset}
+lists the 10 with their reason.
 
-Each of the 42 scored games both clears the cause-density gate and carries a sprite that moves
+Each of the 44 scored games both clears the cause-density gate and carries a sprite that moves
 under intervention. Hence every one of them contributes to the all-regime leaderboard and to
 the position regime. The six core games of Table~\ref{supp:tab:coverage} are the subset of
-these 42 that also carry the full tiered ground truth and the exact oracle.
+these 44 that also carry the full tiered ground truth and the exact oracle.
 
 \paragraph{The analysed streams are bit-exact to frame 105.} Paper~1 certifies the port over 30 RAM
 and 60 screen frames, while the shared testbed scores at frame $105$. We therefore replayed, for
@@ -224,7 +226,7 @@ result table \texttt{p2\_stream\_check.md}). All 44 games match on every frame, 
 bytes and in every screen pixel. A negative control (Pitfall replayed without its start-up input)
 diverges at the boot frame, so the comparison is sensitive. Each game boots with its own ROM
 settings, the map Paper~1's conformance suite uses. An earlier version of the runners booted 37
-games with generic settings, which skipped the start-up inputs of seven scored games
+games with generic settings, which skipped the start-up inputs of seven games then in the scored set
 (\texttt{air\_raid}, \texttt{beam\_rider}, \texttt{double\_dunk}, \texttt{gopher},
 \texttt{pitfall}, \texttt{private\_eye}, \texttt{yars\_revenge}) and used a different screen crop
 for three (\texttt{air\_raid}, \texttt{carnival}, \texttt{pacman}). Those earlier streams were
@@ -234,20 +236,20 @@ start where the Arcade Learning Environment starts. All reported scores use the 
 The full per-game roster is in Table~\ref{supp:romroster}. It lists all 64 bit-exact games with
 their label source, the number of causally verified T3 labels, whether the game carries a moving
 tracked position, and whether it enters the scored set (with the held-out reason otherwise).
-It makes the $64\rightarrow54\rightarrow42$ funnel explicit at the level of individual games: 64
-in the roster, 54 with a T3 label, and 42 in the scored set. This mirrors the per-game
+It makes the $64\rightarrow54\rightarrow44$ funnel explicit at the level of individual games: 64
+in the roster, 54 with a T3 label, and 44 in the scored set. This mirrors the per-game
 ``Ground Truth ROMs'' page of the public dashboard.
 
 \begin{table}[t]
 \centering
-\caption{\textbf{Games held out from the scored set.} The 12 games excluded from the
-42-game scored set, with the methodological reason for each. ``Gate'' marks a
+\caption{\textbf{Games held out from the scored set.} The 10 games excluded from the
+44-game scored set, with the methodological reason for each. ``Gate'' marks a
 game that fails the oracle cause-density gate (fewer than four causes with $|\Delta y|>0.5$ at
-the shared analysis state). ``Static'' marks a game whose verified labels are all static
-(e.g.\ score or life counters), so no sprite moves under intervention for a position method to
+the shared analysis state). ``Static'' marks a game with no verified label on a moving sprite (its verified labels, if any, are static,
+e.g.\ score or life counters), so no sprite moves under intervention for a position method to
 recover. The two criteria overlap for three games marked ``gate + static'', so counting each
-game once the union is 5 gate-only plus 4 static-only plus 3 both, which is 12, and the scored
-set is $54-12=42$. These games keep their exact T1/T2 ground truth
+game once the union is 3 gate-only plus 4 static-only plus 3 both, which is 10, and the scored
+set is $54-10=44$. These games keep their exact T1/T2 ground truth
 (\Sectionname\ref{supp:t3coverage}); only their score cells are held out.}
 \label{supp:tab:scoredset}
 \footnotesize
@@ -257,15 +259,13 @@ set is $54-12=42$. These games keep their exact T1/T2 ground truth
 Game & Reason & Why held out \\
 \midrule
 crazy\_climber & gate & too few causes clear the density floor \\
-enduro & gate & too few causes clear the density floor \\
 pooyan & gate & too few causes clear the density floor \\
-skiing & gate & too few causes clear the density floor \\
 time\_pilot & gate & too few causes clear the density floor \\
 \midrule
-amidar & static & verified labels static; no sprite moves under intervention \\
-asterix & static & verified labels static; no sprite moves under intervention \\
-robotank & static & verified labels static; no sprite moves under intervention \\
-up\_n\_down & static & verified labels static; no sprite moves under intervention \\
+amidar & static & no verified label; no sprite moves under intervention \\
+beam\_rider & static & verified labels static; no sprite moves under intervention \\
+robotank & static & no verified label; no sprite moves under intervention \\
+up\_n\_down & static & no verified label; no sprite moves under intervention \\
 \midrule
 asteroids & gate + static & too few causes clear the density floor and no sprite moves under intervention \\
 battle\_zone & gate + static & too few causes clear the density floor and no sprite moves under intervention \\
@@ -280,17 +280,17 @@ Table~\ref{supp:romroster} gives the full per-game roster behind the counts abov
 each of the 64 bit-exact games. It mirrors the ``Ground Truth ROMs'' page of the public
 dashboard. For each game it records the T3 label source (OCAtari, both OCAtari and AtariARI, or
 none), the number of causally verified T3 labels, whether the game carries a moving tracked
-position, and whether it enters the 42-game scored set. Games that are held out show the
-reason in the last column. Reading down the last column makes the $64\rightarrow54\rightarrow42$
-funnel explicit: 64 games in the roster, 10 with no T3 label, 12 T3-labeled games held out from
-scoring for lack of causal structure or a moving target, and 42 in the scored set.
+position, and whether it enters the 44-game scored set. Games that are held out show the
+reason in the last column. Reading down the last column makes the $64\rightarrow54\rightarrow44$
+funnel explicit: 64 games in the roster, 10 with no T3 label, 10 T3-labeled games held out from
+scoring for lack of causal structure or a moving target, and 44 in the scored set.
 
 \footnotesize
 \begin{longtable}{@{}p{3.2cm}p{1.6cm}r p{1.7cm}p{4.2cm}@{}}
 \caption{\textbf{Per-game ground-truth roster.} All 64 bit-exact games, alphabetically. ``Label
 source'' is the T3 provenance (OCAtari, both sources, or --- for no label). ``T3 verified'' is the
 count of causally verified T3 labels. ``Moving pos.'' is Yes when the game carries a tracked
-sprite that moves under intervention. ``Scored set'' is Yes for the 42 scored games; otherwise
+sprite that moves under intervention. ``Scored set'' is Yes for the 44 scored games; otherwise
 it gives the held-out reason. The three held-out reasons match Table~\ref{supp:tab:scoredset}:
 the density gate, static-only labels, or both; ``no T3 label'' marks the 10 unlabeled games. This
 is a coverage record; no interpretability score appears in it.}
@@ -306,16 +306,16 @@ Game & Label source & T3 verified & Moving pos. & Scored set \\
 \endhead
 \bottomrule
 \endfoot
-\texttt{air\_raid} & OCAtari & 9 & Yes & Yes \\
+\texttt{air\_raid} & OCAtari & 10 & Yes & Yes \\
 \texttt{alien} & OCAtari & 3 & Yes & Yes \\
 \texttt{amidar} & OCAtari & 0 & --- & held out (static labels) \\
 \texttt{assault} & OCAtari & 14 & Yes & Yes \\
-\texttt{asterix} & OCAtari & 0 & --- & held out (static labels) \\
+\texttt{asterix} & OCAtari & 7 & Yes & Yes \\
 \texttt{asteroids} & both & 0 & --- & held out (gate + static) \\
 \texttt{atlantis} & OCAtari & 3 & Yes & Yes \\
 \texttt{bank\_heist} & OCAtari & 3 & Yes & Yes \\
 \texttt{battle\_zone} & OCAtari & 1 & --- & held out (gate + static) \\
-\texttt{beam\_rider} & OCAtari & 2 & Yes & Yes \\
+\texttt{beam\_rider} & OCAtari & 2 & --- & held out (static labels) \\
 \texttt{berzerk} & both & 13 & Yes & Yes \\
 \texttt{bowling} & both & 8 & Yes & Yes \\
 \texttt{boxing} & both & 8 & Yes & Yes \\
@@ -328,11 +328,11 @@ Game & Label source & T3 verified & Moving pos. & Scored set \\
 \texttt{demon\_attack} & both & 11 & Yes & Yes \\
 \texttt{double\_dunk} & OCAtari & 10 & Yes & Yes \\
 \texttt{elevator\_action} & --- & 0 & --- & no T3 label \\
-\texttt{enduro} & OCAtari & 2 & Yes & held out (density gate) \\
+\texttt{enduro} & OCAtari & 2 & Yes & Yes \\
 \texttt{fishing\_derby} & OCAtari & 7 & Yes & Yes \\
 \texttt{freeway} & both & 14 & Yes & Yes \\
 \texttt{frostbite} & both & 12 & Yes & Yes \\
-\texttt{gopher} & OCAtari & 14 & Yes & Yes \\
+\texttt{gopher} & OCAtari & 15 & Yes & Yes \\
 \texttt{gravitar} & --- & 0 & --- & no T3 label \\
 \texttt{hero} & both & 11 & Yes & Yes \\
 \texttt{ice\_hockey} & OCAtari & 10 & Yes & Yes \\
@@ -355,7 +355,7 @@ Game & Label source & T3 verified & Moving pos. & Scored set \\
 \texttt{road\_runner} & OCAtari & 7 & Yes & Yes \\
 \texttt{robotank} & OCAtari & 0 & --- & held out (static labels) \\
 \texttt{seaquest} & both & 11 & Yes & Yes \\
-\texttt{skiing} & OCAtari & 8 & Yes & held out (density gate) \\
+\texttt{skiing} & OCAtari & 8 & Yes & Yes \\
 \texttt{solaris} & --- & 0 & --- & no T3 label \\
 \texttt{space\_invaders} & both & 8 & Yes & Yes \\
 \texttt{star\_gunner} & OCAtari & 0 & --- & held out (gate + static) \\

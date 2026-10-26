@@ -10,13 +10,13 @@ Computer System (VCS).
 The machine was never built to be interpretable. Yet it is fully known, so the
 true cause of any output can be computed by exact intervention. We score thirty
 interpretability methods for faithfulness against this known answer ($1$ = exact,
-$0$ = chance), aggregated over 42 games.
+$0$ = chance), aggregated over 44 games.
 Causal and intervention methods are more faithful than gradient and correlational
 ones ($0.71$ versus $0.38$). The clearest case is a sprite's
 position, where the naive gradient is provably zero: a causal method scores $1.000$
-and standard saliency $0.115$. On this position regime the causal advantage is now
-statistically established: the family-mean gap is $0.33$, with a 95 percent bootstrap
-interval over the 42 games of $0.28$ to $0.38$ that excludes zero. But faithfulness is
+and standard saliency $0.092$. On this position regime the causal advantage is now
+statistically established: the family-mean gap is $0.34$, with a 95 percent bootstrap
+interval over the 44 games of $0.29$ to $0.38$ that excludes zero. But faithfulness is
 not what is missing. When we switch on the port's
 differentiable sampler, the naive gradient becomes non-zero---saliency rises
 from $0.000$ to $0.791$ on Pong---yet its faithfulness stays low on most games and no

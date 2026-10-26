@@ -145,8 +145,9 @@ and not on the naive one. The naive gradient of the discrete position output is 
 low and mixed in faithfulness rather than a fix. Expected Gradients draws its reference pool
 from the states of the same seeded gameplay trajectory, not from a synthetic baseline. Two
 patterns are degenerate rather than informative. The on-distribution counterfactual returns a
-zero delta on \texttt{space\_invaders}, \texttt{ms\_pacman}, and \texttt{qbert}, where its
-perturbation does not move the shared output at that frame; those cells record $F=0$ and enter
+zero delta on both outputs of \texttt{space\_invaders}, \texttt{ms\_pacman}, \texttt{qbert},
+\texttt{gopher}, \texttt{kangaroo}, \texttt{kung\_fu\_master} and \texttt{pacman}, and on the
+content output of \texttt{enduro}, where its perturbation does not move the shared output at that frame; those cells record $F=0$ and enter
 the mean at that value. Expected Gradients scores low on the content regime of every core game except \texttt{pong},
 because the causal byte it should land on is static there. The end-to-end gradient control of
 \Sectionname\ref{sec:results-b} (\texttt{e2e\_gradient.jl}, six core games, records

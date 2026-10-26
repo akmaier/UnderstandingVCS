@@ -233,8 +233,8 @@ zero there, and its correlation with the oracle is $0$. The reported faithfulnes
 $0.00$ and not a $0.5$ floor. Each per-record file keeps the raw correlation, so a negative
 correlation is stored as a negative number. The leaderboard summarizes all three phases the
 same way: it clips each per-record correlation at $0$ and then averages. Negative records
-occur in every phase, so the clip matters. Occlusion scores $F=0.687$ clipped and $0.681$
-raw; the tuning analysis A3 scores $0.213$ clipped and $0.146$ raw. For the same attribution
+occur in every phase, so the clip matters. Occlusion scores $F=0.685$ clipped and $0.681$
+raw; the tuning analysis A3 scores $0.207$ clipped and $0.117$ raw. For the same attribution
 map we also report, as quality measures,
 deletion/insertion area-under-curve (deleting or inserting the top-attributed inputs and
 tracking the change in output) and precision at $k$ against the true causal top-$k$,
@@ -282,7 +282,7 @@ set the explanation actually names. An explanation that names exactly the minima
 $1$; one that records the whole machine state pays for every spurious cell. The target level
 is the algorithmic unit, the register, RAM cell, opcode, module, or program variable, not the
 pixel. Whole-state recording names all $128$ RAM cells, where the true cause set averages a
-handful. It therefore scores $\mathrm{M}_{\mathrm{score}}=0.08$ across the scored games. Its
+handful. It therefore scores $\mathrm{M}_{\mathrm{score}}=0.07$ across the scored games. Its
 faithfulness is perfect because it withholds nothing, but it is maximally non-minimal.
 
 Two reporting axes carry the headline comparison, faithfulness against the ground truth and a
@@ -294,7 +294,7 @@ proxy cannot be tuned to the result. The per-tradition assignment, its rubric, a
 sources are tabulated in the Supplement (\Sectionname\ref{supp:plausibility}). There a sensitivity
 analysis perturbs the proxy under additive, rank-preserving, rank-jittering, and
 leave-one-tradition-out schemes. It finds the faithfulness-versus-proxy rank correlation
-stays negative throughout (from $-0.79$ to $-0.07$), so the headline contrast survives every
+stays negative throughout (from $-0.82$ to $-0.10$), so the headline contrast survives every
 alternative proxy assignment we tried. The proxy lets us find explanations with high
 plausibility but low faithfulness: explanations that convince but are wrong. F is satisfied by
 the wiring; S and M must be satisfied by the \emph{computation}. Separating them lets us
@@ -320,8 +320,8 @@ patching, automatic circuit discovery, sparse autoencoders, causal scrubbing, li
 probing with control tasks, and the logit and tuned
 lens~\cite{vig2020investigating,meng2022locating,geiger2021causal,geiger2023finding,nanda2023attribution,wang2022interpretability,conmy2023towards,cunningham2023sparse,chan2022causal,alain2017understanding,hewitt2019designing,belrose2023eliciting}.
 
-Aggregate faithfulness scoring runs on the 42 scored games, the T3-labeled roster minus
-the 12 degenerate or static games documented in Supplement~S3, where the oracle's re-runs
+Aggregate faithfulness scoring runs on the 44 scored games, the T3-labeled roster minus
+the 10 games documented in Supplement~S3 that fail the cause-density gate or carry no verified moving sprite, where the oracle's re-runs
 are exact. The six core games of \Sectionname\ref{sec:tiers} remain the running examples
 and carry the full tiered ground truth and oracle. Cell- and pixel-level scores,
 correlation, deletion and insertion area-under-curve, and precision at $k$, are taken
@@ -331,17 +331,17 @@ committed per-game records into one row per method on the shared
 faithfulness-versus-plausibility axes of the Results leaderboard.
 The headline contrast is the all-regime gap. Pooled over every output, causal and
 intervention methods average a faithfulness of $0.71$ against $0.38$ for gradient and
-correlational methods, a gap of $0.32$ whose $95\%$ bootstrap interval $[0.29,0.35]$
+correlational methods, a gap of $0.32$ whose $95\%$ bootstrap interval $[0.30,0.35]$
 excludes zero. On the position
 regime alone, where the naive gradient is zero under the hard forward map by
-Prop.~\ref{prop:zero}, the two families average $0.56$ against $0.23$, a gap of $0.33$. These
+Prop.~\ref{prop:zero}, the two families average $0.56$ against $0.22$, a gap of $0.34$. These
 position-regime scores already hand the gradient-based methods the bilinear sampler of the
 shared testbed; under the naive gradient those methods score $0$
 (\Sectionname\ref{sec:results_compare}).
-This gap is now statistically significant: a bootstrap over the 42 games gives a $95\%$
-interval of $[0.28,0.38]$ that excludes zero. The per-method extreme places an
+This gap is now statistically significant: a bootstrap over the 44 games gives a $95\%$
+interval of $[0.29,0.38]$ that excludes zero. The per-method extreme places an
 exact causal method, activation patching, at faithfulness $1.000$ on the position regime and
-the field's default saliency at only $0.115$ there, the popular method
+the field's default saliency at only $0.092$ there, the popular method
 nonetheless carrying the higher plausibility proxy ($0.9$ versus $0.5$). We measure the
 semantic gap relative to these numbers.
 
