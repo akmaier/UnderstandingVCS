@@ -1,7 +1,7 @@
 {
   "arrays": "rise_demon_attack_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-RISE causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -51,15 +51,15 @@
       "interpretation": "faithfulness (corr / precision@k / del-ins) recomputed from N/8, N/4, N/2, N masks of the SAME pool (no extra re-runs). RISE's Monte-Carlo variance is ∝ 1/N, so corr/p@k STABILISE as N grows; the spread between the smallest and full budget quantifies how many masks RISE needs on this output.",
       "points": [
         {
-          "deletion_auc": 0.6081664364640883,
+          "deletion_auc": 0.6081664364640882,
           "insertion_auc": 0.8329592541436464,
           "n_masks": 62,
-          "pearson_corr": 0.6068949785778932,
+          "pearson_corr": 0.6068949785778933,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.391905714848433
         },
         {
-          "deletion_auc": 0.8512603591160219,
+          "deletion_auc": 0.8512603591160217,
           "insertion_auc": 0.9434564917127073,
           "n_masks": 125,
           "pearson_corr": 0.7145844997684319,
@@ -85,7 +85,7 @@
       ]
     },
     "harness_positive_control": {
-      "deletion_auc": 0.9120338397790053,
+      "deletion_auc": 0.9120338397790052,
       "insertion_auc": 0.7777106353591161,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the RISE numbers above are then a true measurement, not an artefact of the metric.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
@@ -196,7 +196,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@16)",
-  "timestamp": "1783123110",
+  "timestamp": "1793018959",
   "value": 0.5746503081447546,
   "where": "local"
 }

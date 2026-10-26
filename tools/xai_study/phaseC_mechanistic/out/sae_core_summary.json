@@ -1,38 +1,38 @@
 {
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "games": [
     {
       "FSM": [
-        0.13656790856857132,
-        0.09047654443035366,
+        0.0,
+        0.1956248093328309,
         1.0
       ],
       "ablate_eq_oracle": true,
-      "best_d_hidden": 64,
+      "best_d_hidden": 32,
       "best_l1": 0.01,
-      "fve_held": 0.6005180589576495,
-      "fve_train": 0.993943690781718,
+      "fve_held": 0.6376494695286019,
+      "fve_train": 0.9932512360839855,
       "game": "air_raid",
       "in_window": false,
-      "matched_fraction": 0.5714285714285714,
-      "mean_target_share": 0.22026431718061673,
+      "matched_fraction": 0.75,
+      "mean_target_share": 0.5862568860539287,
       "n_cands": 13,
-      "n_causal_use_features": 4,
-      "n_causal_use_moved": 1,
-      "n_oracle_causal": 10,
-      "n_varying_known": 7,
+      "n_causal_use_features": 5,
+      "n_causal_use_moved": 0,
+      "n_oracle_causal": 12,
+      "n_varying_known": 8,
       "state": "f90+15"
     },
     {
       "FSM": [
         0.3592106040535498,
-        0.4632460218685284,
+        0.4632460218685296,
         1.0
       ],
       "ablate_eq_oracle": true,
       "best_d_hidden": 64,
       "best_l1": 0.01,
-      "fve_held": 0.9175593685648255,
+      "fve_held": 0.9175593685648253,
       "fve_train": 0.9946165135490328,
       "game": "alien",
       "in_window": false,
@@ -48,7 +48,7 @@
     {
       "FSM": [
         0.11349088288250998,
-        0.3743752565600241,
+        0.3743752565600237,
         0.9
       ],
       "ablate_eq_oracle": true,
@@ -69,15 +69,37 @@
     },
     {
       "FSM": [
+        -0.0957427107756338,
+        -0.27837098917653524,
+        1.0
+      ],
+      "ablate_eq_oracle": true,
+      "best_d_hidden": 64,
+      "best_l1": 0.01,
+      "fve_held": 0.9978188431458133,
+      "fve_train": 0.9981807806334089,
+      "game": "asterix",
+      "in_window": false,
+      "matched_fraction": 1.0,
+      "mean_target_share": 0.0,
+      "n_cands": 9,
+      "n_causal_use_features": 5,
+      "n_causal_use_moved": 1,
+      "n_oracle_causal": 8,
+      "n_varying_known": 5,
+      "state": "f90+15"
+    },
+    {
+      "FSM": [
         0.05334650693692645,
-        -0.5080410354014795,
+        -0.5080410354014793,
         1.0
       ],
       "ablate_eq_oracle": true,
       "best_d_hidden": 32,
       "best_l1": 0.01,
       "fve_held": 0.7670738835122161,
-      "fve_train": 0.9881788490843674,
+      "fve_train": 0.9881788490843675,
       "game": "atlantis",
       "in_window": false,
       "matched_fraction": 0.8,
@@ -92,7 +114,7 @@
     {
       "FSM": [
         -0.9,
-        -0.5062385472303005,
+        -0.5062385472302975,
         1.0
       ],
       "ablate_eq_oracle": true,
@@ -113,30 +135,8 @@
     },
     {
       "FSM": [
-        -0.3952847075210474,
-        -0.2622631519170488,
-        1.0
-      ],
-      "ablate_eq_oracle": true,
-      "best_d_hidden": 32,
-      "best_l1": 0.05,
-      "fve_held": 0.46792567200327106,
-      "fve_train": 0.9894725007027898,
-      "game": "beam_rider",
-      "in_window": false,
-      "matched_fraction": 1.0,
-      "mean_target_share": null,
-      "n_cands": 5,
-      "n_causal_use_features": 0,
-      "n_causal_use_moved": 0,
-      "n_oracle_causal": 2,
-      "n_varying_known": 1,
-      "state": "f90+15"
-    },
-    {
-      "FSM": [
         0.05377811504698011,
-        -0.22088282287910926,
+        -0.22088282287910901,
         0.875
       ],
       "ablate_eq_oracle": true,
@@ -158,7 +158,7 @@
     {
       "FSM": [
         0.5841794074233757,
-        0.4758484972523214,
+        0.47584849725232137,
         1.0
       ],
       "ablate_eq_oracle": true,
@@ -180,7 +180,7 @@
     {
       "FSM": [
         -0.13921151159742615,
-        0.21476462855897643,
+        0.2147646285589752,
         1.0
       ],
       "ablate_eq_oracle": true,
@@ -202,7 +202,7 @@
     {
       "FSM": [
         -0.6016568375961868,
-        -0.44707697182306805,
+        -0.4470769718230681,
         1.0
       ],
       "ablate_eq_oracle": true,
@@ -223,8 +223,8 @@
     },
     {
       "FSM": [
-        -0.2077619135785461,
-        -0.11240334575014867,
+        -0.23006406130101784,
+        -0.11287121838372259,
         1.0
       ],
       "ablate_eq_oracle": true,
@@ -246,7 +246,7 @@
     {
       "FSM": [
         -0.29958072586354806,
-        -0.44644836319176184,
+        -0.4464483631917626,
         1.0
       ],
       "ablate_eq_oracle": true,
@@ -268,7 +268,7 @@
     {
       "FSM": [
         -0.10597785837290354,
-        -0.08555942383521857,
+        -0.0855594238352185,
         0.7692307692307693
       ],
       "ablate_eq_oracle": true,
@@ -290,7 +290,7 @@
     {
       "FSM": [
         0.0499742996641977,
-        0.44777709629849977,
+        0.44777709629850015,
         0.75
       ],
       "ablate_eq_oracle": true,
@@ -311,30 +311,52 @@
     },
     {
       "FSM": [
-        0.22105263157894736,
-        0.5873497470920803,
+        0.43859649122807015,
+        0.47687124983786106,
         1.0
       ],
       "ablate_eq_oracle": true,
-      "best_d_hidden": 32,
+      "best_d_hidden": 64,
       "best_l1": 0.01,
-      "fve_held": 0.31536720420077924,
-      "fve_train": 0.972042960637059,
+      "fve_held": 0.925516215099466,
+      "fve_train": 0.9920993318408987,
       "game": "double_dunk",
       "in_window": false,
-      "matched_fraction": 0.6,
-      "mean_target_share": 0.11149191634389004,
+      "matched_fraction": 0.7,
+      "mean_target_share": 0.0,
       "n_cands": 12,
-      "n_causal_use_features": 6,
-      "n_causal_use_moved": 4,
+      "n_causal_use_features": 7,
+      "n_causal_use_moved": 2,
       "n_oracle_causal": 12,
       "n_varying_known": 10,
       "state": "f90+15"
     },
     {
       "FSM": [
+        -0.5,
+        -0.37189647415230953,
+        0.6666666666666666
+      ],
+      "ablate_eq_oracle": true,
+      "best_d_hidden": 64,
+      "best_l1": 0.01,
+      "fve_held": 0.6968579042215441,
+      "fve_train": 0.9910820795889782,
+      "game": "enduro",
+      "in_window": false,
+      "matched_fraction": 1.0,
+      "mean_target_share": 0.8978328173374612,
+      "n_cands": 3,
+      "n_causal_use_features": 2,
+      "n_causal_use_moved": 1,
+      "n_oracle_causal": 2,
+      "n_varying_known": 3,
+      "state": "f90+15"
+    },
+    {
+      "FSM": [
         -0.7726733661471831,
-        -0.3506001321948758,
+        -0.35060013219487574,
         0.7142857142857143
       ],
       "ablate_eq_oracle": true,
@@ -356,13 +378,13 @@
     {
       "FSM": [
         0.2864261009548606,
-        0.4810653920819949,
+        0.4810653920819959,
         1.0
       ],
       "ablate_eq_oracle": true,
       "best_d_hidden": 64,
       "best_l1": 0.05,
-      "fve_held": 0.7224075857083609,
+      "fve_held": 0.7224075857083608,
       "fve_train": 0.9898312152713653,
       "game": "freeway",
       "in_window": false,
@@ -378,7 +400,7 @@
     {
       "FSM": [
         0.27497628886111564,
-        0.059165453389015604,
+        0.059165453389015576,
         1.0
       ],
       "ablate_eq_oracle": true,
@@ -400,7 +422,7 @@
     {
       "FSM": [
         0.27284395178022064,
-        -0.11386682017635952,
+        -0.11386682017635946,
         1.0
       ],
       "ablate_eq_oracle": true,
@@ -422,7 +444,7 @@
     {
       "FSM": [
         0.17561849790288278,
-        0.2595200726507109,
+        0.25952007265071086,
         1.0
       ],
       "ablate_eq_oracle": true,
@@ -444,7 +466,7 @@
     {
       "FSM": [
         0.5796387898861253,
-        -0.09686520605800843,
+        -0.0968652060580084,
         0.875
       ],
       "ablate_eq_oracle": true,
@@ -488,7 +510,7 @@
     {
       "FSM": [
         0.3076260439960409,
-        0.4865258266961964,
+        0.48652582669619654,
         1.0
       ],
       "ablate_eq_oracle": true,
@@ -510,7 +532,7 @@
     {
       "FSM": [
         -0.15324324863084543,
-        -0.22444154140276848,
+        -0.22444154140276842,
         1.0
       ],
       "ablate_eq_oracle": true,
@@ -576,7 +598,7 @@
     {
       "FSM": [
         -0.2489219440935067,
-        -0.30357233569556025,
+        -0.3035723356955603,
         1.0
       ],
       "ablate_eq_oracle": true,
@@ -598,13 +620,13 @@
     {
       "FSM": [
         -0.15579710144927536,
-        -0.26956743496689056,
+        -0.2695674349668911,
         1.0
       ],
       "ablate_eq_oracle": true,
       "best_d_hidden": 64,
       "best_l1": 0.01,
-      "fve_held": 0.9032501353733755,
+      "fve_held": 0.9032501353733756,
       "fve_train": 0.991937742199127,
       "game": "phoenix",
       "in_window": false,
@@ -619,21 +641,21 @@
     },
     {
       "FSM": [
-        -0.40122637891401575,
-        -0.24437487682756134,
+        -0.37427833853919373,
+        -0.24800071230942894,
         0.8461538461538461
       ],
       "ablate_eq_oracle": true,
       "best_d_hidden": 64,
       "best_l1": 0.2,
-      "fve_held": 0.9536386087673189,
-      "fve_train": 0.9842430810043029,
+      "fve_held": 0.9512983248263159,
+      "fve_train": 0.9844404841699146,
       "game": "pitfall",
       "in_window": false,
-      "matched_fraction": 0.5384615384615384,
-      "mean_target_share": 0.19270833333333334,
+      "matched_fraction": 0.6923076923076923,
+      "mean_target_share": 0.06007751937984496,
       "n_cands": 16,
-      "n_causal_use_features": 4,
+      "n_causal_use_features": 6,
       "n_causal_use_moved": 0,
       "n_oracle_causal": 11,
       "n_varying_known": 13,
@@ -642,7 +664,7 @@
     {
       "FSM": [
         0.04081727099225389,
-        -0.45767859860044535,
+        -0.4576785986004453,
         1.0
       ],
       "ablate_eq_oracle": true,
@@ -663,36 +685,36 @@
     },
     {
       "FSM": [
-        0.20765756875009692,
-        0.1927648061055329,
+        0.11819813906514394,
+        0.06549243463182974,
         1.0
       ],
       "ablate_eq_oracle": true,
       "best_d_hidden": 64,
       "best_l1": 0.01,
-      "fve_held": 0.9679566244796382,
-      "fve_train": 0.9919118057193208,
+      "fve_held": 0.9770555516656403,
+      "fve_train": 0.9932397585633864,
       "game": "private_eye",
       "in_window": false,
-      "matched_fraction": 0.8571428571428571,
-      "mean_target_share": 0.11063829787234043,
+      "matched_fraction": 1.0,
+      "mean_target_share": 0.10235586280958453,
       "n_cands": 24,
       "n_causal_use_features": 5,
-      "n_causal_use_moved": 1,
+      "n_causal_use_moved": 2,
       "n_oracle_causal": 12,
-      "n_varying_known": 7,
+      "n_varying_known": 8,
       "state": "f90+15"
     },
     {
       "FSM": [
         0.25152248510206476,
-        -0.116811257193202,
+        -0.11681125719320197,
         0.4666666666666667
       ],
       "ablate_eq_oracle": true,
       "best_d_hidden": 16,
       "best_l1": 0.01,
-      "fve_held": 0.08723026831965142,
+      "fve_held": 0.08723026831965097,
       "fve_train": 0.9946527294721971,
       "game": "qbert",
       "in_window": false,
@@ -708,7 +730,7 @@
     {
       "FSM": [
         0.2013118669906605,
-        0.2861333689523191,
+        0.286133368952319,
         1.0
       ],
       "ablate_eq_oracle": true,
@@ -730,14 +752,14 @@
     {
       "FSM": [
         0.25781285509275953,
-        0.5405157931455652,
+        0.5405157931455649,
         0.46153846153846156
       ],
       "ablate_eq_oracle": true,
       "best_d_hidden": 16,
       "best_l1": 0.01,
-      "fve_held": 0.3346344846006797,
-      "fve_train": 0.9310265862972236,
+      "fve_held": 0.33463448460067924,
+      "fve_train": 0.9310265862972237,
       "game": "road_runner",
       "in_window": false,
       "matched_fraction": 0.5714285714285714,
@@ -752,7 +774,7 @@
     {
       "FSM": [
         -0.005354184303968214,
-        0.7055132895352106,
+        0.7055132895352111,
         1.0
       ],
       "ablate_eq_oracle": true,
@@ -773,14 +795,36 @@
     },
     {
       "FSM": [
+        0.11915864618843422,
+        -0.2094283964389882,
+        1.0
+      ],
+      "ablate_eq_oracle": true,
+      "best_d_hidden": 64,
+      "best_l1": 0.01,
+      "fve_held": 0.9949025822144415,
+      "fve_train": 0.997933355991062,
+      "game": "skiing",
+      "in_window": false,
+      "matched_fraction": 0.6666666666666666,
+      "mean_target_share": 0.0,
+      "n_cands": 9,
+      "n_causal_use_features": 3,
+      "n_causal_use_moved": 2,
+      "n_oracle_causal": 7,
+      "n_varying_known": 6,
+      "state": "f90+15"
+    },
+    {
+      "FSM": [
         -0.31961458557009514,
-        -0.12803011492848929,
+        -0.12803011492848926,
         1.0
       ],
       "ablate_eq_oracle": true,
       "best_d_hidden": 32,
       "best_l1": 0.01,
-      "fve_held": 0.7815690905705845,
+      "fve_held": 0.7815690905705847,
       "fve_train": 0.9938867708970198,
       "game": "space_invaders",
       "in_window": false,
@@ -796,13 +840,13 @@
     {
       "FSM": [
         0.15588790191108529,
-        -0.23278200619666606,
+        -0.232782006196666,
         1.0
       ],
       "ablate_eq_oracle": true,
       "best_d_hidden": 64,
       "best_l1": 0.01,
-      "fve_held": 0.6380593901408065,
+      "fve_held": 0.6380593901408067,
       "fve_train": 0.9920226760479027,
       "game": "tennis",
       "in_window": false,
@@ -818,7 +862,7 @@
     {
       "FSM": [
         -0.026617968572517456,
-        -0.035208757936185095,
+        -0.03520875793618487,
         1.0
       ],
       "ablate_eq_oracle": true,
@@ -840,7 +884,7 @@
     {
       "FSM": [
         -0.7925939239012171,
-        0.45014957557479807,
+        0.4501495755747975,
         1.0
       ],
       "ablate_eq_oracle": true,
@@ -861,32 +905,32 @@
     },
     {
       "FSM": [
-        0.5703847415451555,
-        0.4486493338752192,
-        0.7
+        0.5453595875014539,
+        0.1812281021814933,
+        0.5
       ],
       "ablate_eq_oracle": true,
-      "best_d_hidden": 16,
+      "best_d_hidden": 32,
       "best_l1": 0.01,
-      "fve_held": 0.8019215483476537,
-      "fve_train": 0.97826772229996,
+      "fve_held": 0.7909872334383083,
+      "fve_train": 0.9890811103574904,
       "game": "yars_revenge",
       "in_window": false,
-      "matched_fraction": 0.7,
-      "mean_target_share": 0.002229965156794425,
+      "matched_fraction": 0.875,
+      "mean_target_share": 0.3333333333333333,
       "n_cands": 13,
-      "n_causal_use_features": 5,
+      "n_causal_use_features": 3,
       "n_causal_use_moved": 0,
-      "n_oracle_causal": 7,
-      "n_varying_known": 10,
+      "n_oracle_causal": 4,
+      "n_varying_known": 8,
       "state": "f90+15"
     }
   ],
   "headline": "Full L1 SAE over recorded VCS RAM trajectories on the 6 core games: (a) reconstruction FVE (best of a d_hidden×l1 sweep), (b) feature↔variable match-rate vs the verified T3 cells, (c) CAUSAL USE — ablate a matched feature, decode back to RAM, re-run the real ROM (ablate==exact-patch oracle, asserted bit-exact) + specificity/monosemanticity (decode-leakage, target-share). Method-matrix expectation = PARTIAL: recovers features; faithfulness-to-computation debated.",
   "item": "P2-E5-6",
   "method": "sparse_autoencoder",
-  "n_games": 40,
+  "n_games": 42,
   "paper": "P2",
   "phase": "phaseC_mechanistic",
-  "timestamp": "1783609696"
+  "timestamp": "1793021567"
 }

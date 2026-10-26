@@ -1,7 +1,7 @@
 {
   "arrays": "expected_gradients_boxing_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-EG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "cause_names": [
@@ -75,7 +75,7 @@
       "deletion_auc": 0.7573022598870057,
       "eg_max_abs": 0.125,
       "insertion_auc": 0.5368502824858757,
-      "pearson_corr": 0.15630037693634644,
+      "pearson_corr": 0.1563003769363465,
       "precision_at_k": 0.0,
       "spearman_corr": 0.2748832530976198,
       "topk": 3,
@@ -122,11 +122,11 @@
     },
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE Expected Gradients over outputs×causes×games×references on GPU; the forward is bit-exact to this map.",
     "stability": {
-      "corr_max": 0.15630037693634646,
-      "corr_mean": 0.15630037693634644,
+      "corr_max": 0.1563003769363465,
+      "corr_mean": 0.15630037693634646,
       "corr_min": 0.15630037693634644,
-      "corr_spread": 2.7755575615628914e-17,
-      "corr_std": 1.962615573354719e-17,
+      "corr_spread": 5.551115123125783e-17,
+      "corr_std": 2.4037033579794548e-17,
       "interpretation": "EG draws M baselines from a distribution of real states, so it is a Monte-Carlo estimator. mean_pairwise_cosine is the average cosine of the per-cause EG attribution across independent reference-sample seeds (1.0 = perfectly stable). On the one-hot content path the gradient is a constant e_idx, so EG is essentially deterministic (cosine≈1, corr-spread≈0) — the reference distribution moves only the MAGNITUDE, not the ranking. This is the §5 stability column for EG.",
       "mean_pairwise_cosine": 1.0,
       "n_seeds": 5,
@@ -162,7 +162,7 @@
           "deletion_auc": 0.7573022598870057,
           "eg_max_abs": 0.125,
           "insertion_auc": 0.5368502824858757,
-          "pearson_corr": 0.15630037693634644,
+          "pearson_corr": 0.1563003769363465,
           "precision_at_k": 0.0,
           "seed": 0,
           "spearman_corr": 0.2748832530976198,
@@ -276,7 +276,7 @@
           "deletion_auc": 0.7573022598870057,
           "eg_max_abs": 0.25,
           "insertion_auc": 0.5368502824858757,
-          "pearson_corr": 0.15630037693634644,
+          "pearson_corr": 0.1563003769363465,
           "precision_at_k": 0.0,
           "seed": 3,
           "spearman_corr": 0.2748832530976198,
@@ -342,7 +342,7 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": 0.15630037693634644,
+      "F": 0.1563003769363465,
       "M": 1.0,
       "M_named_size": 2,
       "M_note": "|U*|=13 (oracle movers) / |U_hat|=2 (method above-threshold)",
@@ -353,17 +353,17 @@
     },
     "vs_single_baseline_ig": {
       "delta_deletion_auc": 0.0,
-      "delta_pearson": -5.551115123125783e-17,
+      "delta_pearson": 2.7755575615628914e-17,
       "delta_precision_at_k": 0.0,
       "ig_baseline": "zeros",
       "ig_completeness_err": 0.09375,
       "ig_deletion_auc": 0.7573022598870057,
       "ig_insertion_auc": 0.5368502824858757,
       "ig_max_abs": 1.09375,
-      "ig_pearson": 0.1563003769363465,
+      "ig_pearson": 0.15630037693634646,
       "ig_precision_at_k": 0.0,
       "ig_spearman": 0.2748832530976198,
-      "interpretation": "EG (Erion 2021) was proposed to remove IG's sensitive single-baseline choice (P2-E4-5 measured that sensitivity). On the VCS content path the head-to-head is decisive: the ranking is baseline-INVARIANT (∂y/∂u constant), so EG and IG score the SAME corr/precision@k (Δcorr=-0.0) — EG buys robustness (it avoids the IG degeneracy where a `zeros` baseline byte equals a 0-valued content byte) at M× the gradient compute, NOT a faithfulness gain. The position output: both VANISH."
+      "interpretation": "EG (Erion 2021) was proposed to remove IG's sensitive single-baseline choice (P2-E4-5 measured that sensitivity). On the VCS content path the head-to-head is decisive: the ranking is baseline-INVARIANT (∂y/∂u constant), so EG and IG score the SAME corr/precision@k (Δcorr=0.0) — EG buys robustness (it avoids the IG degeneracy where a `zeros` baseline byte equals a 0-valued content byte) at M× the gradient compute, NOT a faithfulness gain. The position output: both VANISH."
     },
     "y_full": 0.0
   },
@@ -376,9 +376,9 @@
   "phase": "phaseB_attribution",
   "seed": 0,
   "state": "gameplay(seed=0,prefix=90)+15",
-  "stderr": 8.777083671441753e-18,
+  "stderr": 1.0749688212373144e-17,
   "target_output": "screen_region(n_changed_px)@r84c44",
-  "timestamp": "1783131195",
-  "value": 0.15630037693634644,
+  "timestamp": "1793017331",
+  "value": 0.1563003769363465,
   "where": "local"
 }

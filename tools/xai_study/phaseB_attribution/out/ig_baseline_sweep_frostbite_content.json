@@ -1,7 +1,7 @@
 {
   "arrays": "ig_baseline_sweep_frostbite_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-IG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline_sweep": {
@@ -108,7 +108,7 @@
           "deletion_auc": 0.01426470588235294,
           "ig_max_abs": 189.9296875,
           "insertion_auc": 0.8625,
-          "pearson_corr": 0.4843202908398374,
+          "pearson_corr": 0.4843202908398373,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.45933787031196793,
           "topk": 3,
@@ -375,7 +375,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@77)",
-  "timestamp": "1783123062",
+  "timestamp": "1793018847",
   "value": 0.4843202908398374,
   "where": "local"
 }

@@ -1,7 +1,7 @@
 {
   "arrays": "guided_backprop_road_runner_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "adebayo_sanity_check": {
       "failure_mode": "model_invariant_saliency_constant_jacobian",
@@ -109,7 +109,7 @@
       "vanilla_precision_at_k": 0.0
     },
     "harness_positive_control": {
-      "deletion_auc": 0.9012619267466911,
+      "deletion_auc": 0.9012619267466914,
       "insertion_auc": 0.09202831640504772,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the Guided-BP numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
@@ -118,7 +118,7 @@
     },
     "method_reference": "Springenberg et al. 2015 (Guided Backprop / deconvnet); sanity check: Adebayo et al. 2018.",
     "metrics": {
-      "deletion_auc": 0.3652496626180836,
+      "deletion_auc": 0.36524966261808367,
       "insertion_auc": 0.7113360323886639,
       "pearson_corr": 0.0,
       "precision_at_k": 0.0,
@@ -212,7 +212,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r74c30",
-  "timestamp": "1783132569",
+  "timestamp": "1793022210",
   "value": 0.0,
   "where": "local"
 }

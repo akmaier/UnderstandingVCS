@@ -1,7 +1,7 @@
 {
   "arrays": "rise_ms_pacman_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-RISE causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -59,7 +59,7 @@
       "interpretation": "faithfulness (corr / precision@k / del-ins) recomputed from N/8, N/4, N/2, N masks of the SAME pool (no extra re-runs). RISE's Monte-Carlo variance is ∝ 1/N, so corr/p@k STABILISE as N grows; the spread between the smallest and full budget quantifies how many masks RISE needs on this output.",
       "points": [
         {
-          "deletion_auc": 0.6269721577726219,
+          "deletion_auc": 0.626972157772622,
           "insertion_auc": 0.6142111368909513,
           "n_masks": 62,
           "pearson_corr": -0.10556363541299496,
@@ -68,9 +68,9 @@
         },
         {
           "deletion_auc": 0.7508620689655174,
-          "insertion_auc": 0.6402873563218392,
+          "insertion_auc": 0.640287356321839,
           "n_masks": 125,
-          "pearson_corr": 0.14723405030231806,
+          "pearson_corr": 0.14723405030231804,
           "precision_at_k": 0.0,
           "spearman_corr": 0.21805146198458286
         },
@@ -78,7 +78,7 @@
           "deletion_auc": 0.6700116009280745,
           "insertion_auc": 0.6072505800464036,
           "n_masks": 250,
-          "pearson_corr": -0.08874720270092651,
+          "pearson_corr": -0.08874720270092647,
           "precision_at_k": 0.0,
           "spearman_corr": 0.3275634808046722
         },
@@ -86,7 +86,7 @@
           "deletion_auc": 0.6991299303944317,
           "insertion_auc": 0.7842807424593967,
           "n_masks": 500,
-          "pearson_corr": -0.2146683240854173,
+          "pearson_corr": -0.21466832408541728,
           "precision_at_k": 0.0,
           "spearman_corr": -0.072359628776329
         }
@@ -104,7 +104,7 @@
     "headline_metrics": {
       "deletion_auc": 0.6991299303944317,
       "insertion_auc": 0.7842807424593967,
-      "pearson_corr": -0.2146683240854173,
+      "pearson_corr": -0.21466832408541728,
       "precision_at_k": 0.0,
       "spearman_corr": -0.072359628776329,
       "topk": 3
@@ -210,7 +210,7 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": -0.2146683240854173,
+      "F": -0.21466832408541728,
       "M": 0.631578947368421,
       "M_named_size": 38,
       "M_note": "|U*|=24 (oracle movers) / |U_hat|=38 (method above-threshold)",
@@ -232,7 +232,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r84c77",
-  "timestamp": "1783124845",
-  "value": -0.2146683240854173,
+  "timestamp": "1793022659",
+  "value": -0.21466832408541728,
   "where": "local"
 }

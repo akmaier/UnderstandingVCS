@@ -1,7 +1,7 @@
 {
   "arrays": "A3_tuning_seaquest.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "A3_tuning": {
       "clock_corr_per_cell": {
@@ -62,7 +62,7 @@
         "RAM[103]:player_missile_x": 0.0,
         "RAM[118]:enemy5_x": 0.0,
         "RAM[1]:offset": 0.9955420069145828,
-        "RAM[30]:enemy_obstacle_x": 0.9998773271753919,
+        "RAM[30]:enemy_obstacle_x": 0.9998773271753918,
         "RAM[36]:enemy_variations": 1.0,
         "RAM[37]:enemy_variations": 1.0,
         "RAM[38]:enemy_variations": 1.0,
@@ -83,11 +83,11 @@
         "RAM[97]:player_y": 0.0
       },
       "luminance_corr_per_cell": {
-        "RAM[102]:oxygen_meter_value": 0.9893897102586676,
+        "RAM[102]:oxygen_meter_value": 0.989389710258668,
         "RAM[103]:player_missile_x": 0.0,
         "RAM[118]:enemy5_x": 0.0,
-        "RAM[1]:offset": 0.9777657360542354,
-        "RAM[30]:enemy_obstacle_x": 0.49420541518965266,
+        "RAM[1]:offset": 0.9777657360542356,
+        "RAM[30]:enemy_obstacle_x": 0.4942054151896527,
         "RAM[36]:enemy_variations": 0.49462568612371666,
         "RAM[37]:enemy_variations": 0.49462568612371666,
         "RAM[38]:enemy_variations": 0.49462568612371666,
@@ -104,7 +104,7 @@
         "RAM[71]:diver_or_enemy_missile_x": 0.0,
         "RAM[86]:player_direction": 0.0,
         "RAM[87]:player_missile_direction": 0.0,
-        "RAM[89]:enemy_directions": 0.38743935392959705,
+        "RAM[89]:enemy_directions": 0.3874393539295971,
         "RAM[97]:player_y": 0.0
       },
       "luminance_spurious_tuning_rate": 0.0,
@@ -231,7 +231,7 @@
       "F_note": "Spearman(A3 game-variable selectivity, oracle causal importance) over 23 candidate cells",
       "M": 1.0,
       "M_note": "M = |U*|/|U_hat| (03_methods.tex sec:triad): |U*|=15 (oracle movers) / |U_hat|=8 (method above-threshold)",
-      "S": 0.31122486209001726,
+      "S": 0.3112248620900171,
       "S_note": "Pearson(A3 selectivity, held-out do(base+37) screen break) — sufficiency on a bit-exact re-run",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): a tuning-curve importance map scores LOW faithfulness despite fully-known structure. F<1 / spurious-tuning>0 quantify where the classical analysis departs from the ground truth. The oracle-as-method positive control (F=1.0) confirms the harness rewards a perfectly-faithful map.",
       "legacy_minimality": 0.75,
@@ -249,7 +249,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen-break (oracle causal importance) vs tuning selectivity",
-  "timestamp": "1783606425",
+  "timestamp": "1793019918",
   "value": 0.25,
   "where": "local"
 }

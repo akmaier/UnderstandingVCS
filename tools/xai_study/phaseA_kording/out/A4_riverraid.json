@@ -1,7 +1,7 @@
 {
   "arrays": "A4_riverraid.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -162,11 +162,11 @@
     "trajectory_frames": 150,
     "trajectory_trace": "seeded random-action GAMEPLAY (seed=0, prefix=90+15, NOOP-continued past the window)",
     "triad": {
-      "F": 0.13604327904903238,
+      "F": 0.1360432078772404,
       "F_note": "Spearman(|pairwise corr|, oracle cell-cell coupling) over 231 candidate-cell pairs",
       "M": 0.11029411764705882,
       "M_note": "M = |U*|/|U_hat| over candidate-cell pairs (03_methods.tex sec:triad): |U*|=15 (oracle movers) / |U_hat|=136 (method above-threshold)",
-      "S": -0.02673551747877135,
+      "S": -0.026735517478771346,
       "S_note": "Pearson(|pairwise corr|, held-out do(base+37) coupling) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): pairwise correlation structure GENERALLY OVER-GROUPS — it lumps causally-unrelated cells that merely co-vary (the present≠used trap, pairwise). F<1 + over_grouping_ratio>0 quantify the departure from the true coupling.",
       "legacy_minimality": 0.0357142857142857,
@@ -175,12 +175,12 @@
     },
     "weak_pairwise_strong_global": {
       "candidate_frac_strong_pairs(|corr|>=0.5)": 0.3897058823529412,
-      "candidate_mean_abs_pairwise": 0.44046875405963576,
+      "candidate_mean_abs_pairwise": 0.4404687540596358,
       "candidate_median_abs_pairwise": 0.431506566191833,
       "candidate_n_varying_cells": 17,
-      "candidate_participation_ratio": 3.264570328702653,
-      "candidate_top3_eig_share": 0.8152205363047749,
-      "candidate_top_eig_share": 0.4847992725191148,
+      "candidate_participation_ratio": 3.264570328702654,
+      "candidate_top3_eig_share": 0.8152205363047746,
+      "candidate_top_eig_share": 0.48479927251911475,
       "note": "the spike-word headline (Schneidman 2006; Tkačik 2014): over the FULL POPULATION of varying RAM cells the median pairwise |corr| is WEAK while a few GLOBAL eigen-modes dominate — the effective dimensionality (participation ratio) is far below the #cells, so the collective structure greatly exceeds the pairwise structure. WPSG flag = population median|corr|<0.5 AND population top3-eig-share≥0.6. (The candidate_* set is curated so its pairwise corr runs higher.)",
       "population_mean_abs_pairwise": 0.36489872911449095,
       "population_median_abs_pairwise": 0.32056301183329455,
@@ -201,7 +201,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "cell-cell-coupling",
-  "timestamp": "1783606361",
-  "value": 0.13604327904903238,
+  "timestamp": "1793019455",
+  "value": 0.1360432078772404,
   "where": "local"
 }

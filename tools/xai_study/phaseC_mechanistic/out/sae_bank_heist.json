@@ -1,7 +1,7 @@
 {
   "arrays": "sae_bank_heist.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -91,7 +91,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.8971574570810156,
+          "best_corr": 0.8971574570810137,
           "best_feature": 43,
           "concept": "obj.xy",
           "family": "obj",
@@ -100,7 +100,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9615935211180012,
+          "best_corr": 0.9615935211180008,
           "best_feature": 16,
           "concept": "player.xy",
           "family": "player",
@@ -109,7 +109,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8506259743169312,
+          "best_corr": 0.8506259743169297,
           "best_feature": 31,
           "concept": "obj.xy",
           "family": "obj",
@@ -118,7 +118,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8850304705366745,
+          "best_corr": 0.8850304705366764,
           "best_feature": 60,
           "concept": "wh",
           "family": "wh",
@@ -187,8 +187,8 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.7848524076454434,
-          "fve_train": 0.8247673910912147,
+          "fve_held": 0.7848524087640726,
+          "fve_train": 0.8247673922222672,
           "l1": 0.2,
           "matched_fraction": 1.0,
           "mean_l0": 2.2133333333333334
@@ -211,8 +211,8 @@
         },
         {
           "d_hidden": 32,
-          "fve_held": 0.9113981579526588,
-          "fve_train": 0.9411620181891481,
+          "fve_held": 0.9113981579526256,
+          "fve_train": 0.9411620181891173,
           "l1": 0.2,
           "matched_fraction": 0.75,
           "mean_l0": 6.553333333333334
@@ -265,7 +265,7 @@
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
       "M": 1.0,
       "M_note": "|U*|=4 (oracle movers) / |U_hat|=4 (method above-threshold)",
-      "S": -0.5062385472303005,
+      "S": -0.5062385472302975,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
     }
@@ -282,7 +282,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783606991",
+  "timestamp": "1793016403",
   "value": 1.0,
   "where": "local"
 }

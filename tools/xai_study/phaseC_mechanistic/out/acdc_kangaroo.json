@@ -8,7 +8,7 @@
     "tau_sweep": "2 thresholds (pure thresholding of the cached effect matrix — NO extra re-runs)"
   },
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "ablation": "resample (parent overwritten with its value from the corrupted RIGHT-action donor run); standard ACDC corruption (Conmy et al. 2023 §3), not zero.",
     "bit_exact_rerun": true,
@@ -46,7 +46,7 @@
       59,
       83
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_kangaroo.json",
+    "candidates_file": "/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_kangaroo.json",
     "circuit": {
       "best_tau": 1.0,
       "discovered_edges_at_best_tau": [],
@@ -87,7 +87,7 @@
       "note": "causal scrubbing of the best-F1 discovered circuit: resample-ablate every parent NOT in the circuit, re-run, report the fraction of candidate-cell readouts unchanged vs clean.",
       "preserved_fraction": 0.13333333333333333
     },
-    "settings": "GenericRomSettings",
+    "settings": "KangarooRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge effect is an EXACT resample-ablation re-run on the true ROM.",
     "tau_sweep": [
       {
@@ -145,7 +145,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "auto-discovered inter-cell data-flow circuit (candidate RAM cells)",
-  "timestamp": "1783607964",
+  "timestamp": "1793018224",
   "value": 0.0,
   "where": "local"
 }

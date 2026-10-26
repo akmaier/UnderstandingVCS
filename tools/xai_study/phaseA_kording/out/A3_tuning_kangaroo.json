@@ -1,7 +1,7 @@
 {
   "arrays": "A3_tuning_kangaroo.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "A3_tuning": {
       "clock_corr_per_cell": {
@@ -73,7 +73,7 @@
         "RAM[45]:n_lives": 0.0,
         "RAM[54]:crashed": 0.0,
         "RAM[59]:time_value": 0.0,
-        "RAM[83]:child.xy": 0.11665063476713675
+        "RAM[83]:child.xy": 0.11665063476713658
       },
       "luminance_spurious_tuning_rate": 0.0,
       "n_spurious_gvar": 0,
@@ -142,7 +142,7 @@
       "RAM[83]:child.xy": 0.0
     },
     "positive_control_oracle_as_method_F": 1.0,
-    "rom_settings": "JuTari.RomSettingsModule.GenericRomSettings",
+    "rom_settings": "JuTari.TerminalGames.KangarooRomSettings",
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the oracle causal map is EXACT interventions re-run on the true ROM; the tuning curves are a DESCRIPTIVE active-trace recording (the recorder's documented purpose), not a bit-exact-vs-xitari claim.",
     "testbed": {
@@ -181,7 +181,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen-break (oracle causal importance) vs tuning selectivity",
-  "timestamp": "1783605696",
+  "timestamp": "1793018269",
   "value": 0.0,
   "where": "local"
 }

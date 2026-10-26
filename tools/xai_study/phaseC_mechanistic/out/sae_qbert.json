@@ -1,7 +1,7 @@
 {
   "arrays": "sae_qbert.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -183,7 +183,7 @@
       "note": "for each KNOWN candidate cell that VARIES, max|Pearson r| between any learned feature's activation and that cell over the trajectory; matched iff |r| ≥ 0.7. Match-rate = #matched / #varying.",
       "per_cell": [
         {
-          "best_corr": 0.9626035625629722,
+          "best_corr": 0.9626035625629629,
           "best_feature": 7,
           "concept": "tile_color_1",
           "family": "tile_color",
@@ -201,7 +201,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9996248202172693,
+          "best_corr": 0.9996248202172694,
           "best_feature": 8,
           "concept": "player_x",
           "family": "player",
@@ -210,7 +210,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9626035625629722,
+          "best_corr": 0.9626035625629629,
           "best_feature": 7,
           "concept": "tile_color_2",
           "family": "tile_color",
@@ -219,7 +219,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9626035625629722,
+          "best_corr": 0.9626035625629629,
           "best_feature": 7,
           "concept": "tile_color_3",
           "family": "tile_color",
@@ -246,7 +246,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.9626035625629722,
+          "best_corr": 0.9626035625629629,
           "best_feature": 7,
           "concept": "tile_color_4",
           "family": "tile_color",
@@ -255,7 +255,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9626035625629722,
+          "best_corr": 0.9626035625629629,
           "best_feature": 7,
           "concept": "tile_color_5",
           "family": "tile_color",
@@ -282,7 +282,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.9626035625629723,
+          "best_corr": 0.9626035625629631,
           "best_feature": 7,
           "concept": "green_enemy_column",
           "family": "green_enemy",
@@ -291,7 +291,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9626035625629723,
+          "best_corr": 0.9626035625629631,
           "best_feature": 7,
           "concept": "last_lives",
           "family": "lives",
@@ -300,7 +300,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8468884959538694,
+          "best_corr": 0.8468884959538705,
           "best_feature": 8,
           "concept": "player.xy",
           "family": "player",
@@ -309,7 +309,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.962603562562972,
+          "best_corr": 0.9626035625629628,
           "best_feature": 7,
           "concept": "coil_prev_y",
           "family": "coil_prev",
@@ -318,7 +318,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9626035625629723,
+          "best_corr": 0.962603562562963,
           "best_feature": 7,
           "concept": "enemy",
           "family": "enemy",
@@ -327,7 +327,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9626035625629731,
+          "best_corr": 0.9626035625629636,
           "best_feature": 7,
           "concept": "enemy",
           "family": "enemy",
@@ -354,7 +354,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.9626035625629723,
+          "best_corr": 0.9626035625629632,
           "best_feature": 7,
           "concept": "last_103",
           "family": "last",
@@ -396,7 +396,7 @@
       "best_d_hidden": 16,
       "best_l1": 0.01,
       "best_mean_l0": 5.635,
-      "fve_heldout": 0.08723026831965142,
+      "fve_heldout": 0.08723026831965097,
       "fve_train": 0.9946527294721971
     },
     "sae": {
@@ -413,7 +413,7 @@
     "sweep": {
       "best": {
         "d_hidden": 16,
-        "fve_held": 0.08723026831965142,
+        "fve_held": 0.08723026831965097,
         "fve_train": 0.9946527294721971,
         "l1": 0.01,
         "matched_fraction": 1.0,
@@ -422,7 +422,7 @@
       "grid": [
         {
           "d_hidden": 16,
-          "fve_held": 0.08723026831965142,
+          "fve_held": 0.08723026831965097,
           "fve_train": 0.9946527294721971,
           "l1": 0.01,
           "matched_fraction": 1.0,
@@ -430,7 +430,7 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.0829195219375577,
+          "fve_held": 0.08291952193755747,
           "fve_train": 0.9836670328245632,
           "l1": 0.05,
           "matched_fraction": 1.0,
@@ -438,7 +438,7 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.023293423630595833,
+          "fve_held": 0.0232934236305955,
           "fve_train": 0.9277571441391195,
           "l1": 0.2,
           "matched_fraction": 1.0,
@@ -454,7 +454,7 @@
         },
         {
           "d_hidden": 32,
-          "fve_held": -0.11657662263035729,
+          "fve_held": -0.11657662263035773,
           "fve_train": 0.9940475758266454,
           "l1": 0.05,
           "matched_fraction": 1.0,
@@ -462,15 +462,15 @@
         },
         {
           "d_hidden": 32,
-          "fve_held": -0.19905479504906642,
-          "fve_train": 0.9673789648750245,
+          "fve_held": -0.19905479504906776,
+          "fve_train": 0.9673789648750242,
           "l1": 0.2,
           "matched_fraction": 1.0,
           "mean_l0": 2.16
         },
         {
           "d_hidden": 64,
-          "fve_held": -0.2554332287260477,
+          "fve_held": -0.2554332287260479,
           "fve_train": 0.9976512989732862,
           "l1": 0.01,
           "matched_fraction": 1.0,
@@ -478,7 +478,7 @@
         },
         {
           "d_hidden": 64,
-          "fve_held": -0.38116327035680353,
+          "fve_held": -0.3811632703568044,
           "fve_train": 0.9960081483876352,
           "l1": 0.05,
           "matched_fraction": 1.0,
@@ -486,7 +486,7 @@
         },
         {
           "d_hidden": 64,
-          "fve_held": -0.5639977394138931,
+          "fve_held": -0.5639977394138942,
           "fve_train": 0.987625270109211,
           "l1": 0.2,
           "matched_fraction": 1.0,
@@ -516,7 +516,7 @@
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
       "M": 0.4666666666666667,
       "M_note": "|U*|=7 (oracle movers) / |U_hat|=15 (method above-threshold)",
-      "S": -0.116811257193202,
+      "S": -0.11681125719320197,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
     }
@@ -533,7 +533,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783609184",
+  "timestamp": "1793020444",
   "value": 1.0,
   "where": "local"
 }

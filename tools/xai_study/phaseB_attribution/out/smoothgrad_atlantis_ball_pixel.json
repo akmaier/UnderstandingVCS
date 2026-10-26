@@ -1,7 +1,7 @@
 {
   "arrays": "smoothgrad_atlantis_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-SmoothGrad causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run. NaN = a genuinely flat experiment.",
     "cause_names": [
@@ -38,7 +38,7 @@
     "metrics": {
       "deletion_auc": 0.7508333333333332,
       "insertion_auc": 0.2683333333333333,
-      "pearson_corr": -0.11292775170427805,
+      "pearson_corr": -0.11292775170427806,
       "precision_at_k": 0.3333333333333333,
       "spearman_corr": 0.24093544077473364,
       "topk": 3
@@ -117,7 +117,7 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": -0.11292775170427805,
+      "F": -0.11292775170427806,
       "M": 1.0,
       "M_named_size": 2,
       "M_note": "|U*|=12 (oracle movers) / |U_hat|=2 (method above-threshold)",
@@ -130,7 +130,7 @@
       "interpretation": "Δpearson = SmoothGrad − vanilla |grad|. ≈0 ⇒ smoothing did NOT change FAITHFULNESS (it denoises the visual map; on a one-hot content read the map is already on the true cause, nothing to denoise; on the vanishing position output both are 0 — smoothing cannot create a gradient).",
       "pearson_corr": 0.0,
       "precision_at_k": 0.3333333333333333,
-      "smoothing_delta_pearson": -0.11292775170427805
+      "smoothing_delta_pearson": -0.11292775170427806
     },
     "y_full": 0.0
   },
@@ -145,7 +145,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r22c76",
-  "timestamp": "1783127962",
-  "value": -0.11292775170427805,
+  "timestamp": "1793016322",
+  "value": -0.11292775170427806,
   "where": "local"
 }

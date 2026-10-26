@@ -1,7 +1,7 @@
 {
   "arrays": "counterfactual_video_pinball_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "alt_frame": 67,
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-CF causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
@@ -70,8 +70,8 @@
       "y_x": 0.0
     },
     "harness_positive_control": {
-      "deletion_auc": 0.7104166666666668,
-      "insertion_auc": 0.34375000000000006,
+      "deletion_auc": 0.7104166666666669,
+      "insertion_auc": 0.3437500000000001,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the CF numbers above are then a true measurement, not an artefact of the metric.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "oracle_column_degenerate": false,
@@ -80,7 +80,7 @@
     },
     "headline_metrics": {
       "deletion_auc": 0.6802884615384615,
-      "insertion_auc": 0.420673076923077,
+      "insertion_auc": 0.4206730769230771,
       "pearson_corr": -0.017863527841415233,
       "precision_at_k": 0.3333333333333333,
       "spearman_corr": 0.11785113019775792,
@@ -143,7 +143,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r184c66",
-  "timestamp": "1783134394",
+  "timestamp": "1793023027",
   "value": -0.017863527841415233,
   "where": "local"
 }

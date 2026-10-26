@@ -1,7 +1,7 @@
 {
   "arrays": "ig_baseline_sweep_ms_pacman_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-IG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline_sweep": {
@@ -108,7 +108,7 @@
           "deletion_auc": 0.6867577197149646,
           "ig_max_abs": 0.9019775390625,
           "insertion_auc": 0.6092042755344418,
-          "pearson_corr": -0.03351626941925098,
+          "pearson_corr": -0.03351626941925099,
           "precision_at_k": 0.0,
           "spearman_corr": 0.3087831979082573,
           "topk": 3,
@@ -225,8 +225,8 @@
       ],
       "completeness_err_max": 1.0,
       "corr_max": 0.0,
-      "corr_min": -0.03351626941925098,
-      "corr_sensitivity": 0.03351626941925098,
+      "corr_min": -0.03351626941925099,
+      "corr_sensitivity": 0.03351626941925099,
       "definitions": {
         "mean_ram": "constant baseline = mean(x) per byte (the 'average input')",
         "random": "one uniform-random RAM draw ∈ 0..255 (seed=0+9973)",
@@ -393,7 +393,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r84c77",
-  "timestamp": "1783123946",
+  "timestamp": "1793020651",
   "value": 0.0,
   "where": "local"
 }

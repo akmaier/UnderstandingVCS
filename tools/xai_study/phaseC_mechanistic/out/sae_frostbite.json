@@ -1,7 +1,7 @@
 {
   "arrays": "sae_frostbite.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -180,7 +180,7 @@
       "note": "for each KNOWN candidate cell that VARIES, max|Pearson r| between any learned feature's activation and that cell over the trajectory; matched iff |r| ≥ 0.7. Match-rate = #matched / #varying.",
       "per_cell": [
         {
-          "best_corr": 0.7109332989715246,
+          "best_corr": 0.7109332989715244,
           "best_feature": 45,
           "concept": "player_direction",
           "family": "player",
@@ -189,7 +189,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9230754218750026,
+          "best_corr": 0.9230754218750022,
           "best_feature": 41,
           "concept": "fourth_row_iceflow_x",
           "family": "fourth_row_iceflow",
@@ -198,7 +198,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9230754218750028,
+          "best_corr": 0.923075421875002,
           "best_feature": 41,
           "concept": "third_row_iceflow_x",
           "family": "third_row_iceflow",
@@ -207,7 +207,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9230754218750026,
+          "best_corr": 0.9230754218750022,
           "best_feature": 41,
           "concept": "second_row_iceflow_x",
           "family": "second_row_iceflow",
@@ -216,7 +216,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9230754218750028,
+          "best_corr": 0.923075421875002,
           "best_feature": 41,
           "concept": "top_row_iceflow_x",
           "family": "top_row_iceflow",
@@ -306,7 +306,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.957449347885103,
+          "best_corr": 0.9574493478851027,
           "best_feature": 41,
           "concept": "player_y",
           "family": "player",
@@ -315,7 +315,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8981196771668427,
+          "best_corr": 0.8981196771668426,
           "best_feature": 3,
           "concept": "player_x",
           "family": "player",
@@ -342,7 +342,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.9182810048488264,
+          "best_corr": 0.9182810048488266,
           "best_feature": 9,
           "concept": "sink",
           "family": "sink",
@@ -425,8 +425,8 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.8164278878388802,
-          "fve_train": 0.829886761065683,
+          "fve_held": 0.8164278878450761,
+          "fve_train": 0.8298867610719023,
           "l1": 0.2,
           "matched_fraction": 0.875,
           "mean_l0": 2.7066666666666666
@@ -474,7 +474,7 @@
         {
           "d_hidden": 64,
           "fve_held": 0.9616657949818239,
-          "fve_train": 0.9788382388259195,
+          "fve_train": 0.9788382388259194,
           "l1": 0.2,
           "matched_fraction": 0.875,
           "mean_l0": 13.926666666666666
@@ -503,7 +503,7 @@
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
       "M": 1.0,
       "M_note": "|U*|=14 (oracle movers) / |U_hat|=8 (method above-threshold)",
-      "S": 0.059165453389015604,
+      "S": 0.059165453389015576,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
     }
@@ -520,7 +520,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783607791",
+  "timestamp": "1793018107",
   "value": 1.0,
   "where": "local"
 }

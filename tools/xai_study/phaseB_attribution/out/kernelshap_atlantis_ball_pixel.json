@@ -1,7 +1,7 @@
 {
   "arrays": "kernelshap_atlantis_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-SHAP causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -41,42 +41,42 @@
       "interpretation": "the SHAP solve + faithfulness (corr / precision@k / del-ins) + the completeness residual recomputed from N/8, N/4, N/2, N coalitions of the SAME pool (no extra re-runs). The SHAP-sampling variance is ∝ 1/N, so corr/p@k STABILISE as N grows; the spread between the smallest and full budget quantifies how many coalitions KernelSHAP needs on this output (the §5 'convergence vs compute', the §7 'approximations diverge' knob).",
       "points": [
         {
-          "completeness_residual": 4.263256414560601e-14,
+          "completeness_residual": 1.4210854715202004e-14,
           "deletion_auc": 0.9550000000000001,
           "insertion_auc": 0.09416666666666665,
           "n_coalitions": 64,
           "n_unique": 47,
-          "pearson_corr": 0.6454328541788105,
+          "pearson_corr": 0.6454328541788106,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.6542870375608085
         },
         {
-          "completeness_residual": 2.842170943040401e-14,
+          "completeness_residual": 0.0,
           "deletion_auc": 0.9550000000000001,
           "insertion_auc": 0.09249999999999999,
           "n_coalitions": 128,
           "n_unique": 84,
-          "pearson_corr": 0.6458624912700662,
+          "pearson_corr": 0.645862491270067,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.474987224383087
-        },
-        {
-          "completeness_residual": 0.0,
-          "deletion_auc": 0.9550000000000001,
-          "insertion_auc": 0.09083333333333332,
-          "n_coalitions": 256,
-          "n_unique": 142,
-          "pearson_corr": 0.6475468723096562,
-          "precision_at_k": 0.3333333333333333,
-          "spearman_corr": 0.6998983935446149
         },
         {
           "completeness_residual": 1.4210854715202004e-14,
           "deletion_auc": 0.9550000000000001,
           "insertion_auc": 0.09083333333333332,
+          "n_coalitions": 256,
+          "n_unique": 142,
+          "pearson_corr": 0.6475468723096569,
+          "precision_at_k": 0.3333333333333333,
+          "spearman_corr": 0.6998983935446149
+        },
+        {
+          "completeness_residual": 0.0,
+          "deletion_auc": 0.9550000000000001,
+          "insertion_auc": 0.09083333333333332,
           "n_coalitions": 512,
           "n_unique": 221,
-          "pearson_corr": 0.6463802834649364,
+          "pearson_corr": 0.6463802834649355,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.6086756815770021
         }
@@ -87,8 +87,8 @@
       "f1_intact": 0.0,
       "f_full_minus_empty": -120.0,
       "interpretation": "Σφ = f(full) − f(∅) = y(intact) − y(all-masked) is the SHAP efficiency axiom (the additive attribution exactly reconstructs the output gap). Enforced by the equality constraint in the WLS solve; the tiny residual is numerical. This is the SHAP analogue of IG's completeness.",
-      "residual": 1.4210854715202004e-14,
-      "sum_phi": -119.99999999999999
+      "residual": 0.0,
+      "sum_phi": -120.0
     },
     "harness_positive_control": {
       "deletion_auc": 0.9487500000000001,
@@ -102,7 +102,7 @@
     "headline_metrics": {
       "deletion_auc": 0.9550000000000001,
       "insertion_auc": 0.09083333333333332,
-      "pearson_corr": 0.6463802834649364,
+      "pearson_corr": 0.6463802834649355,
       "precision_at_k": 0.3333333333333333,
       "spearman_corr": 0.6086756815770021,
       "topk": 3
@@ -135,36 +135,36 @@
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard i --nshards n --shard-kind game): one Slurm array task per core game; or batched SOFT-STE coalition re-runs over coalitions×games on GPU (the forward is bit-exact to this HARD map).",
     "shap_attr_per_cause": {
       "joystick:RIGHT": 0.0,
-      "ram[33]:occlude": 0.01873496222897976,
-      "ram[33]:set": 0.01873496222897976,
-      "ram[34]:occlude": 106.97385268219563,
-      "ram[34]:set": 106.97385268219563,
-      "ram[35]:occlude": 0.054346124680004076,
-      "ram[35]:set": 0.054346124680004076,
-      "ram[36]:occlude": 0.06343909381348936,
-      "ram[36]:set": 0.06343909381348936,
-      "ram[58]:occlude": 6.608259307002778,
-      "ram[58]:set": 6.608259307002778,
-      "ram[59]:occlude": 5.46058527934512,
-      "ram[59]:set": 5.46058527934512,
-      "ram[60]:occlude": 0.4352584470432945,
-      "ram[60]:set": 0.4352584470432945,
-      "ram[61]:occlude": 0.5346051977175144,
-      "ram[61]:set": 0.5346051977175144,
-      "ram[62]:occlude": 0.04038884466681146,
-      "ram[62]:set": 0.04038884466681146,
+      "ram[33]:occlude": 0.018734962228732242,
+      "ram[33]:set": 0.018734962228732242,
+      "ram[34]:occlude": 106.97385268219551,
+      "ram[34]:set": 106.97385268219551,
+      "ram[35]:occlude": 0.054346124679887864,
+      "ram[35]:set": 0.054346124679887864,
+      "ram[36]:occlude": 0.06343909381351737,
+      "ram[36]:set": 0.06343909381351737,
+      "ram[58]:occlude": 6.608259307002862,
+      "ram[58]:set": 6.608259307002862,
+      "ram[59]:occlude": 5.460585279345023,
+      "ram[59]:set": 5.460585279345023,
+      "ram[60]:occlude": 0.43525844704349853,
+      "ram[60]:set": 0.43525844704349853,
+      "ram[61]:occlude": 0.5346051977174886,
+      "ram[61]:set": 0.5346051977174886,
+      "ram[62]:occlude": 0.040388844666747276,
+      "ram[62]:set": 0.040388844666747276,
       "tia[COLUBK]:set": 0.0
     },
     "shap_phi_signed_per_cell": {
-      "33": -0.01873496222897976,
-      "34": -106.97385268219563,
-      "35": 0.054346124680004076,
-      "36": -0.06343909381348936,
-      "58": -6.608259307002778,
-      "59": -5.46058527934512,
-      "60": -0.4352584470432945,
-      "61": -0.5346051977175144,
-      "62": 0.04038884466681146
+      "33": -0.018734962228732242,
+      "34": -106.97385268219551,
+      "35": 0.054346124679887864,
+      "36": -0.06343909381351737,
+      "58": -6.608259307002862,
+      "59": -5.460585279345023,
+      "60": -0.43525844704349853,
+      "61": -0.5346051977174886,
+      "62": 0.040388844666747276
     },
     "shapley_kernel_note": "coalitions sampled with size s ~ p(s)∝(C−1)/(s·(C−s)); each row of the WLS is weighted by the Shapley kernel π(s)=(C−1)/(binom(C,s)·s·(C−s)) (Lundberg & Lee Theorem 2). Endpoints s∈{0,C} carry infinite weight ⇒ pinned exactly by the efficiency constraint (not sampled). A 1e-8 ridge stabilises rank-deficient designs.",
     "substrate": "jutari (Julia, HARD) — real-ROM coalition re-runs (bit-exact oracle machinery) + closed-form efficiency-constrained WLS solve. NO surrogate model: the value function IS the true emulator, so the only approximation is the coalition sampling + the additive (linear) SHAP model.",
@@ -181,7 +181,7 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": 0.6463802834649364,
+      "F": 0.6463802834649355,
       "M": 0.6666666666666666,
       "M_named_size": 18,
       "M_note": "|U*|=12 (oracle movers) / |U_hat|=18 (method above-threshold)",
@@ -202,7 +202,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r22c76",
-  "timestamp": "1783126612",
-  "value": 0.6463802834649364,
+  "timestamp": "1793016484",
+  "value": 0.6463802834649355,
   "where": "local"
 }

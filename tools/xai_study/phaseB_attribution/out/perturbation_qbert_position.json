@@ -1,7 +1,7 @@
 {
   "arrays": "perturbation_qbert_position.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-attributed causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -104,7 +104,7 @@
       "tia[COLUBK]:set": 0.0
     },
     "harness_positive_control": {
-      "deletion_auc": 0.8595096792426171,
+      "deletion_auc": 0.8595096792426169,
       "insertion_auc": 0.16429984456690688,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the extremal-perturbation numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
@@ -137,7 +137,7 @@
       "deletion_auc": 0.9241557156987424,
       "insertion_auc": 0.2098700014130281,
       "mask_iou_vs_true_causal_set": 0.14285714285714285,
-      "pearson_corr": 0.17263899139798136,
+      "pearson_corr": 0.1726389913979814,
       "precision_at_k": 0.0,
       "spearman_corr": 0.8960208015071232,
       "topk": 3
@@ -211,7 +211,7 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": 0.17263899139798136,
+      "F": 0.1726389913979814,
       "M": 1.0,
       "M_named_size": 12,
       "M_note": "|U*|=13 (oracle movers) / |U_hat|=12 (method above-threshold)",
@@ -233,7 +233,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r19c1",
-  "timestamp": "1783129644",
-  "value": 0.17263899139798136,
+  "timestamp": "1793021270",
+  "value": 0.1726389913979814,
   "where": "local"
 }

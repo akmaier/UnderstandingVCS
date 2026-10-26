@@ -1,7 +1,7 @@
 {
   "arrays": "sae_fishing_derby.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -94,7 +94,7 @@
       "note": "for each KNOWN candidate cell that VARIES, max|Pearson r| between any learned feature's activation and that cell over the trajectory; matched iff |r| ≥ 0.7. Match-rate = #matched / #varying.",
       "per_cell": [
         {
-          "best_corr": 0.9251502348427173,
+          "best_corr": 0.9251502348427165,
           "best_feature": 53,
           "concept": "p1s.hook_position",
           "family": "p1s",
@@ -103,7 +103,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7360736351820512,
+          "best_corr": 0.7360736351820508,
           "best_feature": 26,
           "concept": "p2s.hook_position",
           "family": "p2s",
@@ -112,7 +112,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8215687725336914,
+          "best_corr": 0.8215687725336904,
           "best_feature": 29,
           "concept": "p1s.hook_position",
           "family": "p1s",
@@ -121,7 +121,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.6613581990157196,
+          "best_corr": 0.6613581990157191,
           "best_feature": 20,
           "concept": "p2s.hook_position",
           "family": "p2s",
@@ -148,7 +148,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.7527613935767007,
+          "best_corr": 0.7527613935767009,
           "best_feature": 26,
           "concept": "p1s.hook_position",
           "family": "p1s",
@@ -157,7 +157,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7845193034454728,
+          "best_corr": 0.7845193034454723,
           "best_feature": 55,
           "concept": "p2s.hook_position",
           "family": "p2s",
@@ -166,7 +166,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7782742213000541,
+          "best_corr": 0.7782742213000534,
           "best_feature": 55,
           "concept": "xy",
           "family": "xy",
@@ -239,8 +239,8 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.7512405295859055,
-          "fve_train": 0.8149788037381248,
+          "fve_held": 0.7512405295858963,
+          "fve_train": 0.8149788037381163,
           "l1": 0.2,
           "matched_fraction": 0.7142857142857143,
           "mean_l0": 5.493333333333333
@@ -317,7 +317,7 @@
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
       "M": 0.7142857142857143,
       "M_note": "|U*|=5 (oracle movers) / |U_hat|=7 (method above-threshold)",
-      "S": -0.3506001321948758,
+      "S": -0.35060013219487574,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
     }
@@ -334,7 +334,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783607659",
+  "timestamp": "1793017829",
   "value": 0.8571428571428571,
   "where": "local"
 }

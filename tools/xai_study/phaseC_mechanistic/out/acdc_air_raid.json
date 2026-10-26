@@ -5,10 +5,10 @@
     "note": "paper-reasonable: the τ sweep adds zero re-runs (it thresholds the cached effect matrix). Heavy cost is the N resample re-runs + the exhaustive 3N ground-truth re-runs; re-runnable incrementally from the cached deepcopy checkpoint.",
     "rom_reruns_acdc": "N resample-ablations (1 per source) + 1 corrupted boot + 1 scrub re-run + 2 bit-exact baselines",
     "rom_reruns_true_graph": "≤ 3·N exhaustive interventions (N=13 cells × 3 do-values)",
-    "tau_sweep": "2 thresholds (pure thresholding of the cached effect matrix — NO extra re-runs)"
+    "tau_sweep": "4 thresholds (pure thresholding of the cached effect matrix — NO extra re-runs)"
   },
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "ablation": "resample (parent overwritten with its value from the corrupted RIGHT-action donor run); standard ACDC corruption (Conmy et al. 2023 §3), not zero.",
     "bit_exact_rerun": true,
@@ -42,21 +42,38 @@
       85,
       86
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_air_raid.json",
+    "candidates_file": "/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_air_raid.json",
     "circuit": {
-      "best_tau": 1.0,
-      "discovered_edges_at_best_tau": [],
-      "f1": 0.0,
-      "fn": 2,
+      "best_tau": 8.5,
+      "discovered_edges_at_best_tau": [
+        [
+          0,
+          9
+        ],
+        [
+          0,
+          10
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          9,
+          10
+        ]
+      ],
+      "f1": 0.6666666666666666,
+      "fn": 4,
       "fp": 0,
-      "n_discovered_edges_at_best": 0,
+      "n_discovered_edges_at_best": 4,
       "n_nodes": 13,
-      "n_true_edges": 2,
+      "n_true_edges": 8,
       "note": "edges are 0-based candidate ordinals [i,j] = cell i -> cell j. TRUE = exhaustive oracle (do 0/base+17/base+37, full horizon, any value changes j); DISCOVERED = ACDC keep-rule (resample-ablation effect > τ). The τ sweep is the ROC frontier.",
-      "precision": 0.0,
-      "recall": 0.0,
-      "roc_auc": 0.5,
-      "tp": 0,
+      "precision": 1.0,
+      "recall": 0.5,
+      "roc_auc": 0.75,
+      "tp": 4,
       "true_edges": [
         [
           0,
@@ -65,6 +82,30 @@
         [
           0,
           10
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          1,
+          9
+        ],
+        [
+          1,
+          10
+        ],
+        [
+          9,
+          10
+        ],
+        [
+          10,
+          9
+        ],
+        [
+          11,
+          12
         ]
       ]
     },
@@ -79,36 +120,56 @@
     "rom_basename": "air_raid.bin",
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard/--nshards/--shard-kind game --out-dir --roms-dir --where) — the full ACDC battery over the core + breadth sets; forward bit-exact to this HARD path.",
     "scrubbing": {
-      "n_scrubbed_parents": 13,
+      "n_scrubbed_parents": 11,
       "note": "causal scrubbing of the best-F1 discovered circuit: resample-ablate every parent NOT in the circuit, re-run, report the fraction of candidate-cell readouts unchanged vs clean.",
-      "preserved_fraction": 0.0
+      "preserved_fraction": 0.23076923076923078
     },
-    "settings": "GenericRomSettings",
+    "settings": "AirRaidRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge effect is an EXACT resample-ablation re-run on the true ROM.",
     "tau_sweep": [
       {
-        "f1": 0.0,
-        "fn": 2,
+        "f1": 0.6666666666666666,
+        "fn": 4,
         "fp": 0,
-        "n_discovered": 0,
-        "precision": 0.0,
-        "recall": 0.0,
-        "tau": 0.0,
-        "tp": 0
+        "n_discovered": 4,
+        "precision": 1.0,
+        "recall": 0.5,
+        "tau": 8.5,
+        "tp": 4
+      },
+      {
+        "f1": 0.5454545454545454,
+        "fn": 5,
+        "fp": 0,
+        "n_discovered": 3,
+        "precision": 1.0,
+        "recall": 0.375,
+        "tau": 90.5,
+        "tp": 3
+      },
+      {
+        "f1": 0.2222222222222222,
+        "fn": 7,
+        "fp": 0,
+        "n_discovered": 1,
+        "precision": 1.0,
+        "recall": 0.125,
+        "tau": 199.5,
+        "tp": 1
       },
       {
         "f1": 0.0,
-        "fn": 2,
+        "fn": 8,
         "fp": 0,
         "n_discovered": 0,
         "precision": 0.0,
         "recall": 0.0,
-        "tau": 1.0,
+        "tau": 236.0,
         "tp": 0
       }
     ],
     "testbed": {
-      "cause_density_above_floor": 14,
+      "cause_density_above_floor": 17,
       "cause_density_accepted": true,
       "cause_density_floor": 0.5,
       "cause_density_gate_k": 4,
@@ -121,11 +182,11 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": 0.0,
+      "F": 0.6666666666666666,
       "F_note": "best-F1 of the ACDC-discovered circuit edges vs the exhaustive-oracle true data-flow (13 candidate cells)",
-      "M": null,
-      "M_note": "M undefined: ACDC named NO edge at best-F1 τ (|U_hat|=0)",
-      "S": 0.0,
+      "M": 1.0,
+      "M_note": "|U*|=8 true edges / |U_hat|=4 discovered edges (best-F1 τ)",
+      "S": 0.23076923076923078,
       "S_note": "scrubbing-preserved performance: the discovered circuit alone (non-circuit parents resample-scrubbed) reproduces the clean candidate-cell readouts (fraction unchanged, bit-exact re-run)",
       "interpretation": "ACDC's goal state IS our ground truth (experiment_design.md §7: Partial→Succeed). The discovery uses a cheap single-value resample-ablation, so it can miss edges that fire only for a different value (recall deficit) and keep transient ones (precision deficit) vs the exhaustive true data-flow."
     }
@@ -141,7 +202,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "auto-discovered inter-cell data-flow circuit (candidate RAM cells)",
-  "timestamp": "1783606730",
-  "value": 0.0,
+  "timestamp": "1793015713",
+  "value": 0.6666666666666666,
   "where": "local"
 }

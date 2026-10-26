@@ -1,7 +1,7 @@
 {
   "arrays": "ig_baseline_sweep_gopher_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-IG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline_sweep": {
@@ -53,10 +53,10 @@
           },
           "baseline": "zeros",
           "completeness_err": 0.296875,
-          "deletion_auc": 0.7555491971005446,
+          "deletion_auc": 0.7555491971005444,
           "ig_max_abs": 1.296875,
-          "insertion_auc": 0.4351524295078556,
-          "pearson_corr": 0.7461922755201285,
+          "insertion_auc": 0.4351524295078555,
+          "pearson_corr": 0.7461922755201283,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.38524138971868477,
           "topk": 3,
@@ -87,8 +87,8 @@
             "ram[28]:set": 0.0,
             "ram[2]:occlude": 0.0,
             "ram[2]:set": 0.0,
-            "ram[31]:occlude": 0.89697265625,
-            "ram[31]:set": 0.89697265625,
+            "ram[31]:occlude": 0.892578125,
+            "ram[31]:set": 0.892578125,
             "ram[41]:occlude": 0.0,
             "ram[41]:set": 0.0,
             "ram[4]:occlude": 0.0,
@@ -108,11 +108,11 @@
             "tia[COLUBK]:set": 0.0
           },
           "baseline": "mean_ram",
-          "completeness_err": 0.10302734375,
-          "deletion_auc": 0.7555491971005446,
-          "ig_max_abs": 0.89697265625,
-          "insertion_auc": 0.4351524295078556,
-          "pearson_corr": 0.7461922755201285,
+          "completeness_err": 0.107421875,
+          "deletion_auc": 0.7555491971005444,
+          "ig_max_abs": 0.892578125,
+          "insertion_auc": 0.4351524295078555,
+          "pearson_corr": 0.7461922755201282,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.38524138971868477,
           "topk": 3,
@@ -167,7 +167,7 @@
           "completeness_err": 0.0,
           "deletion_auc": 0.24670516422155173,
           "ig_max_abs": 0.0,
-          "insertion_auc": 0.78844553116221,
+          "insertion_auc": 0.7884455311622102,
           "pearson_corr": 0.0,
           "precision_at_k": 0.0,
           "spearman_corr": 0.0,
@@ -223,7 +223,7 @@
           "completeness_err": 0.0,
           "deletion_auc": 0.24670516422155173,
           "ig_max_abs": 0.0,
-          "insertion_auc": 0.78844553116221,
+          "insertion_auc": 0.7884455311622102,
           "pearson_corr": 0.0,
           "precision_at_k": 0.0,
           "spearman_corr": 0.0,
@@ -232,9 +232,9 @@
         }
       ],
       "completeness_err_max": 0.296875,
-      "corr_max": 0.7461922755201285,
+      "corr_max": 0.7461922755201283,
       "corr_min": 0.0,
-      "corr_sensitivity": 0.7461922755201285,
+      "corr_sensitivity": 0.7461922755201283,
       "definitions": {
         "mean_ram": "constant baseline = mean(x) per byte (the 'average input')",
         "random": "one uniform-random RAM draw ∈ 0..255 (seed=0+9973)",
@@ -297,8 +297,8 @@
     ],
     "content_ram_index": -1,
     "harness_positive_control": {
-      "deletion_auc": 0.978913051017931,
-      "insertion_auc": 0.4441698747962404,
+      "deletion_auc": 0.9789130510179308,
+      "insertion_auc": 0.4441698747962405,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the IG numbers above are then a true measurement, not an artefact of the metric.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "oracle_column_degenerate": false,
@@ -308,9 +308,9 @@
     "headline_baseline": "zeros",
     "headline_metrics": {
       "completeness_err": 0.296875,
-      "deletion_auc": 0.7555491971005446,
-      "insertion_auc": 0.4351524295078556,
-      "pearson_corr": 0.7461922755201285,
+      "deletion_auc": 0.7555491971005444,
+      "insertion_auc": 0.4351524295078555,
+      "pearson_corr": 0.7461922755201283,
       "precision_at_k": 0.6666666666666666,
       "spearman_corr": 0.38524138971868477,
       "topk": 3
@@ -383,7 +383,7 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": 0.7461922755201285,
+      "F": 0.7461922755201283,
       "M": 1.0,
       "M_named_size": 2,
       "M_note": "|U*|=21 (oracle movers) / |U_hat|=2 (method above-threshold)",
@@ -405,7 +405,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r103c74",
-  "timestamp": "1783123161",
-  "value": 0.7461922755201285,
+  "timestamp": "1793019042",
+  "value": 0.7461922755201283,
   "where": "local"
 }

@@ -1,7 +1,7 @@
 {
   "arrays": "sae_centipede.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -122,7 +122,7 @@
       "note": "for each KNOWN candidate cell that VARIES, max|Pearson r| between any learned feature's activation and that cell over the trajectory; matched iff |r| ≥ 0.7. Match-rate = #matched / #varying.",
       "per_cell": [
         {
-          "best_corr": 0.9149300686673366,
+          "best_corr": 0.9149300686673415,
           "best_feature": 16,
           "concept": "relavant_ram_info",
           "family": "relavant_ram_info",
@@ -131,7 +131,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8299664124508527,
+          "best_corr": 0.8299664124508528,
           "best_feature": 10,
           "concept": "relavant_ram_info",
           "family": "relavant_ram_info",
@@ -149,7 +149,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.7141035925353912,
+          "best_corr": 0.7141035925353949,
           "best_feature": 23,
           "concept": "projectile.xy",
           "family": "projectile",
@@ -158,7 +158,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7632575665735525,
+          "best_corr": 0.7632575665735536,
           "best_feature": 16,
           "concept": "player.xy",
           "family": "player",
@@ -167,7 +167,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.6595780399822837,
+          "best_corr": 0.6595780399822833,
           "best_feature": 5,
           "concept": "projectile.xy",
           "family": "projectile",
@@ -176,7 +176,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8157708793848848,
+          "best_corr": 0.8157708793848847,
           "best_feature": 16,
           "concept": "player.xy",
           "family": "player",
@@ -194,7 +194,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.9190753933770455,
+          "best_corr": 0.9190753933770465,
           "best_feature": 16,
           "concept": "score",
           "family": "score",
@@ -267,8 +267,8 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.7692689213468543,
-          "fve_train": 0.8556906241626457,
+          "fve_held": 0.7692689213529404,
+          "fve_train": 0.8556906241692472,
           "l1": 0.2,
           "matched_fraction": 0.8571428571428571,
           "mean_l0": 3.06
@@ -291,7 +291,7 @@
         },
         {
           "d_hidden": 32,
-          "fve_held": 0.873749117354878,
+          "fve_held": 0.8737491173548779,
           "fve_train": 0.9627824994704934,
           "l1": 0.2,
           "matched_fraction": 0.8571428571428571,
@@ -345,7 +345,7 @@
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
       "M": 1.0,
       "M_note": "|U*|=7 (oracle movers) / |U_hat|=7 (method above-threshold)",
-      "S": -0.44644836319176184,
+      "S": -0.4464483631917626,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
     }
@@ -362,7 +362,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783607415",
+  "timestamp": "1793017173",
   "value": 0.8571428571428571,
   "where": "local"
 }

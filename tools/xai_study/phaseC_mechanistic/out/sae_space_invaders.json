@@ -1,7 +1,7 @@
 {
   "arrays": "sae_space_invaders.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -104,7 +104,7 @@
       "note": "for each KNOWN candidate cell that VARIES, max|Pearson r| between any learned feature's activation and that cell over the trajectory; matched iff |r| ≥ 0.7. Match-rate = #matched / #varying.",
       "per_cell": [
         {
-          "best_corr": 0.8375604038138038,
+          "best_corr": 0.8375604038138039,
           "best_feature": 20,
           "concept": "missiles_y",
           "family": "missiles",
@@ -131,7 +131,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.8870133758396587,
+          "best_corr": 0.8870133758396589,
           "best_feature": 6,
           "concept": "enemies_x",
           "family": "enemy",
@@ -230,7 +230,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.8456648593138733,
+          "best_corr": 0.8456648593138731,
           "best_feature": 25,
           "concept": "value",
           "family": "value",
@@ -287,7 +287,7 @@
       "best_d_hidden": 32,
       "best_l1": 0.01,
       "best_mean_l0": 14.753333333333334,
-      "fve_heldout": 0.7815690905705845,
+      "fve_heldout": 0.7815690905705847,
       "fve_train": 0.9938867708970198
     },
     "sae": {
@@ -304,7 +304,7 @@
     "sweep": {
       "best": {
         "d_hidden": 32,
-        "fve_held": 0.7815690905705845,
+        "fve_held": 0.7815690905705847,
         "fve_train": 0.9938867708970198,
         "l1": 0.01,
         "matched_fraction": 1.0,
@@ -313,7 +313,7 @@
       "grid": [
         {
           "d_hidden": 16,
-          "fve_held": 0.7762112984610718,
+          "fve_held": 0.7762112984610717,
           "fve_train": 0.991633394498086,
           "l1": 0.01,
           "matched_fraction": 1.0,
@@ -330,14 +330,14 @@
         {
           "d_hidden": 16,
           "fve_held": 0.5175738227182667,
-          "fve_train": 0.7969822855613176,
+          "fve_train": 0.7969822855613177,
           "l1": 0.2,
           "matched_fraction": 0.8,
           "mean_l0": 1.7266666666666666
         },
         {
           "d_hidden": 32,
-          "fve_held": 0.7815690905705845,
+          "fve_held": 0.7815690905705847,
           "fve_train": 0.9938867708970198,
           "l1": 0.01,
           "matched_fraction": 1.0,
@@ -353,7 +353,7 @@
         },
         {
           "d_hidden": 32,
-          "fve_held": 0.7057679422780386,
+          "fve_held": 0.7057679422780385,
           "fve_train": 0.9774229299468905,
           "l1": 0.2,
           "matched_fraction": 1.0,
@@ -369,7 +369,7 @@
         },
         {
           "d_hidden": 64,
-          "fve_held": 0.778658435291881,
+          "fve_held": 0.7786584352918811,
           "fve_train": 0.9937814651562974,
           "l1": 0.05,
           "matched_fraction": 1.0,
@@ -377,7 +377,7 @@
         },
         {
           "d_hidden": 64,
-          "fve_held": 0.7639001914759976,
+          "fve_held": 0.7639001914759977,
           "fve_train": 0.99009668068479,
           "l1": 0.2,
           "matched_fraction": 1.0,
@@ -407,7 +407,7 @@
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
       "M": 1.0,
       "M_note": "|U*|=11 (oracle movers) / |U_hat|=5 (method above-threshold)",
-      "S": -0.12803011492848929,
+      "S": -0.12803011492848926,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
     }
@@ -424,7 +424,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783609448",
+  "timestamp": "1793021079",
   "value": 1.0,
   "where": "local"
 }

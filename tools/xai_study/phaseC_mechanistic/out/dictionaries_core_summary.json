@@ -1,33 +1,33 @@
 {
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "games": [
     {
-      "all_ablated_break_px": 1816.0,
+      "all_ablated_break_px": 39352.0,
       "game": "air_raid",
       "headline_rank": 8,
       "in_window": false,
-      "matched_frac_nmf": 0.625,
-      "matched_frac_pca": 0.375,
-      "matched_frac_sae": 0.5,
+      "matched_frac_nmf": 0.5,
+      "matched_frac_pca": 0.75,
+      "matched_frac_sae": 0.75,
       "n_cands": 13,
       "n_causal_atoms_nmf": 8,
       "n_causal_atoms_pca": 8,
-      "n_causal_atoms_sae": 6,
+      "n_causal_atoms_sae": 4,
       "n_known_game_vars": 7,
       "nmf_FSM": [
-        -0.19518001458970663,
-        0.372719385938068,
+        -0.49388148266453447,
+        -0.8335335580691395,
         1.0
       ],
       "pca_FSM": [
-        0.545544725589981,
-        0.7661546202169359,
+        -0.36816052025536194,
+        0.9936410509033324,
         1.0
       ],
       "sae_FSM": [
-        0.287096310950944,
-        0.9574377811038883,
-        0.75
+        -0.4946069940476162,
+        -0.7449974006618802,
+        0.33333333333333337
       ],
       "state": "f90+15"
     },
@@ -92,6 +92,36 @@
       "state": "f90+15"
     },
     {
+      "all_ablated_break_px": 860.0,
+      "game": "asterix",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.625,
+      "matched_frac_pca": 0.125,
+      "matched_frac_sae": 0.375,
+      "n_cands": 9,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 8,
+      "n_causal_atoms_sae": 4,
+      "n_known_game_vars": 6,
+      "nmf_FSM": [
+        -0.1707825127659933,
+        0.9874900431860141,
+        1.0
+      ],
+      "pca_FSM": [
+        0.5773502691896257,
+        0.9962531223882041,
+        1.0
+      ],
+      "sae_FSM": [
+        0.07265477421488706,
+        -0.5302851778838278,
+        0.6666666666666667
+      ],
+      "state": "f90+15"
+    },
+    {
       "all_ablated_break_px": 410.0,
       "game": "atlantis",
       "headline_rank": 8,
@@ -148,36 +178,6 @@
         0.10171668390084188,
         0.6015638033988207,
         0.33333333333333337
-      ],
-      "state": "f90+15"
-    },
-    {
-      "all_ablated_break_px": 2859.0,
-      "game": "beam_rider",
-      "headline_rank": 8,
-      "in_window": false,
-      "matched_frac_nmf": 0.5,
-      "matched_frac_pca": 0.375,
-      "matched_frac_sae": 0.5,
-      "n_cands": 5,
-      "n_causal_atoms_nmf": 1,
-      "n_causal_atoms_pca": 7,
-      "n_causal_atoms_sae": 7,
-      "n_known_game_vars": 3,
-      "nmf_FSM": [
-        -0.35149982013099745,
-        1.0,
-        0.0
-      ],
-      "pca_FSM": [
-        -0.1118033988749895,
-        0.8572116532210061,
-        0.6666666666666667
-      ],
-      "sae_FSM": [
-        -0.4643002821097108,
-        -0.7032891436939308,
-        0.75
       ],
       "state": "f90+15"
     },
@@ -302,7 +302,7 @@
       "state": "f90+15"
     },
     {
-      "all_ablated_break_px": 1512.0,
+      "all_ablated_break_px": 1522.0,
       "game": "carnival",
       "headline_rank": 8,
       "in_window": false,
@@ -316,17 +316,17 @@
       "n_known_game_vars": 15,
       "nmf_FSM": [
         -0.13638618139749525,
-        0.985598180588023,
+        0.9853307328659456,
         1.0
       ],
       "pca_FSM": [
         0.4123930494211613,
-        0.9338699920152782,
+        0.9331362058460295,
         1.0
       ],
       "sae_FSM": [
         -0.357275409183397,
-        -0.47392936435496924,
+        -0.4285409985443434,
         0.33333333333333337
       ],
       "state": "f90+15"
@@ -422,32 +422,62 @@
       "state": "f90+15"
     },
     {
-      "all_ablated_break_px": 650.0,
+      "all_ablated_break_px": 732.0,
       "game": "double_dunk",
       "headline_rank": 8,
       "in_window": false,
-      "matched_frac_nmf": 0.25,
+      "matched_frac_nmf": 0.5,
       "matched_frac_pca": 0.125,
-      "matched_frac_sae": 0.5,
+      "matched_frac_sae": 0.25,
       "n_cands": 12,
-      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_nmf": 7,
       "n_causal_atoms_pca": 8,
       "n_causal_atoms_sae": 4,
       "n_known_game_vars": 2,
       "nmf_FSM": [
-        -0.7325886315065459,
-        0.9978812352029356,
-        1.0
+        -0.4678877204190327,
+        0.9980377326758731,
+        0.75
       ],
       "pca_FSM": [
-        0.08247860988423225,
-        0.7066225663393649,
+        -0.08247860988423225,
+        0.9996945628655505,
         1.0
       ],
       "sae_FSM": [
-        0.3581081081081081,
-        -0.9695912422560105,
-        0.75
+        0.28231569409213253,
+        0.9872624563783443,
+        1.0
+      ],
+      "state": "f90+15"
+    },
+    {
+      "all_ablated_break_px": 706.0,
+      "game": "enduro",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.25,
+      "matched_frac_pca": 0.125,
+      "matched_frac_sae": 0.625,
+      "n_cands": 3,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 7,
+      "n_causal_atoms_sae": 2,
+      "n_known_game_vars": 3,
+      "nmf_FSM": [
+        0.6573757351339166,
+        -0.5528162322313309,
+        1.0
+      ],
+      "pca_FSM": [
+        0.5773502691896257,
+        0.06491655399268116,
+        1.0
+      ],
+      "sae_FSM": [
+        -0.6388765649999399,
+        -0.8958736439367478,
+        0.0
       ],
       "state": "f90+15"
     },
@@ -546,17 +576,17 @@
       "game": "gopher",
       "headline_rank": 8,
       "in_window": false,
-      "matched_frac_nmf": 0.375,
+      "matched_frac_nmf": 0.25,
       "matched_frac_pca": 0.25,
-      "matched_frac_sae": 0.25,
+      "matched_frac_sae": 0.125,
       "n_cands": 20,
       "n_causal_atoms_nmf": 8,
       "n_causal_atoms_pca": 0,
       "n_causal_atoms_sae": 0,
       "n_known_game_vars": 5,
       "nmf_FSM": [
-        -0.2182178902359924,
-        0.8096720176577213,
+        -0.7325886315065459,
+        0.9612539861447534,
         1.0
       ],
       "pca_FSM": [
@@ -902,32 +932,32 @@
       "state": "f90+15"
     },
     {
-      "all_ablated_break_px": 734.0,
+      "all_ablated_break_px": 1246.0,
       "game": "pitfall",
       "headline_rank": 8,
       "in_window": false,
-      "matched_frac_nmf": 0.375,
+      "matched_frac_nmf": 0.25,
       "matched_frac_pca": 0.25,
       "matched_frac_sae": 0.375,
       "n_cands": 16,
       "n_causal_atoms_nmf": 8,
       "n_causal_atoms_pca": 8,
-      "n_causal_atoms_sae": 2,
+      "n_causal_atoms_sae": 3,
       "n_known_game_vars": 11,
       "nmf_FSM": [
-        -0.3000495990744896,
-        0.959827494645978,
+        0.20263089807627863,
+        0.9664956960325601,
         1.0
       ],
       "pca_FSM": [
-        0.03117398431942748,
-        0.6593092893669549,
+        0.5923057020691221,
+        0.456533821403077,
         1.0
       ],
       "sae_FSM": [
-        -0.42857142857142855,
-        0.6360679897457863,
-        0.0
+        -0.28125,
+        0.9663471895877238,
+        0.33333333333333337
       ],
       "state": "f90+15"
     },
@@ -962,32 +992,32 @@
       "state": "f90+15"
     },
     {
-      "all_ablated_break_px": 403.0,
+      "all_ablated_break_px": 399.0,
       "game": "private_eye",
       "headline_rank": 8,
       "in_window": false,
-      "matched_frac_nmf": 0.375,
-      "matched_frac_pca": 0.625,
+      "matched_frac_nmf": 0.5,
+      "matched_frac_pca": 0.75,
       "matched_frac_sae": 0.75,
       "n_cands": 24,
       "n_causal_atoms_nmf": 8,
-      "n_causal_atoms_pca": 8,
-      "n_causal_atoms_sae": 2,
+      "n_causal_atoms_pca": 7,
+      "n_causal_atoms_sae": 4,
       "n_known_game_vars": 13,
       "nmf_FSM": [
-        -0.1875,
-        0.9999467067211166,
+        0.29061909685954823,
+        0.999359527347382,
         1.0
       ],
       "pca_FSM": [
-        0.07319250547113998,
-        -0.7717400349208627,
-        1.0
+        0.1317388888104585,
+        0.5532379932110394,
+        0.8333333333333334
       ],
       "sae_FSM": [
-        -0.015680608569955765,
-        0.9622282692875925,
-        0.33333333333333337
+        0.08293893427471717,
+        0.51586988187703,
+        0.5
       ],
       "state": "f90+15"
     },
@@ -1112,6 +1142,36 @@
       "state": "f90+15"
     },
     {
+      "all_ablated_break_px": 1430.0,
+      "game": "skiing",
+      "headline_rank": 8,
+      "in_window": false,
+      "matched_frac_nmf": 0.375,
+      "matched_frac_pca": 0.375,
+      "matched_frac_sae": 0.625,
+      "n_cands": 9,
+      "n_causal_atoms_nmf": 8,
+      "n_causal_atoms_pca": 8,
+      "n_causal_atoms_sae": 3,
+      "n_known_game_vars": 6,
+      "nmf_FSM": [
+        -0.19094065395649334,
+        0.8541126141349661,
+        1.0
+      ],
+      "pca_FSM": [
+        0.13638618139749525,
+        0.9983152809333964,
+        1.0
+      ],
+      "sae_FSM": [
+        -0.8385254915624212,
+        -0.9067454174401387,
+        0.0
+      ],
+      "state": "f90+15"
+    },
+    {
       "all_ablated_break_px": 1343.0,
       "game": "space_invaders",
       "headline_rank": 8,
@@ -1232,40 +1292,40 @@
       "state": "f90+15"
     },
     {
-      "all_ablated_break_px": 4826.0,
+      "all_ablated_break_px": 3314.0,
       "game": "yars_revenge",
       "headline_rank": 8,
       "in_window": false,
-      "matched_frac_nmf": 0.375,
-      "matched_frac_pca": 0.5,
-      "matched_frac_sae": 0.625,
+      "matched_frac_nmf": 0.625,
+      "matched_frac_pca": 0.625,
+      "matched_frac_sae": 0.5,
       "n_cands": 13,
       "n_causal_atoms_nmf": 8,
       "n_causal_atoms_pca": 8,
-      "n_causal_atoms_sae": 3,
+      "n_causal_atoms_sae": 4,
       "n_known_game_vars": 6,
       "nmf_FSM": [
-        0.2182178902359924,
-        0.29223823794846676,
+        0.46355253465055324,
+        -0.35536043320212174,
         1.0
       ],
       "pca_FSM": [
-        0.11415291512216423,
-        -0.25444062344349605,
+        -0.9271050693011065,
+        -0.7503996733755761,
         1.0
       ],
       "sae_FSM": [
-        0.0,
-        0.4149713709442632,
-        0.19999999999999996
+        0.28378378378378377,
+        -0.3963451122201181,
+        0.5
       ],
       "state": "f90+15"
     }
   ],
   "headline": "PCA vs NMF vs SAE: matched-component fraction vs known variables AND the causal-use test (ablate an atom, re-run via the oracle — does it drive the output?). Generalises A7 with causal scoring.",
   "method": "nmf_pca_dictionaries(+SAE contrast)",
-  "n_games": 42,
+  "n_games": 44,
   "paper": "P2",
   "phase": "phaseC_mechanistic",
-  "timestamp": "1783609432"
+  "timestamp": "1793020899"
 }

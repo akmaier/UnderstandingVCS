@@ -1,7 +1,7 @@
 {
   "arrays": "occlusion_chopper_command_position.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-occlusion causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -69,7 +69,7 @@
     "metrics": {
       "deletion_auc": 0.9781673293893254,
       "insertion_auc": 0.08734523001325445,
-      "pearson_corr": 0.6898129751314401,
+      "pearson_corr": 0.6898129751314402,
       "precision_at_k": 0.3333333333333333,
       "spearman_corr": 0.809851193671125,
       "topk": 3
@@ -182,7 +182,7 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": 0.6898129751314401,
+      "F": 0.6898129751314402,
       "M": 1.0,
       "M_named_size": 14,
       "M_note": "|U*|=16 (oracle movers) / |U_hat|=14 (method above-threshold)",
@@ -204,7 +204,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r44c9",
-  "timestamp": "1783127018",
-  "value": 0.6898129751314401,
+  "timestamp": "1793017497",
+  "value": 0.6898129751314402,
   "where": "local"
 }

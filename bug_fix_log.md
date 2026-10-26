@@ -14,6 +14,24 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 📊 P2 44-game battery re-run (real boot, corrected labels) — records + cross-machine check — 2026-10-26
+
+Cluster jobs 780453/780454 (31 runners × 44 games, commit 56e3a03), all rc=0; all 44
+pass the cause-density gate in the re-run. Per-game refusals are unchanged in kind
+(A1/A4/A6/ACDC "no off-diagonal edge / no coupled pair", A5 "basis over-explains").
+
+**Reproduction check on games whose boot did NOT change** (committed laptop records vs the
+cluster re-run, leaderboard F/S/M per record): 1433/1697 triads identical; the rest are the
+changed-boot games plus float drift (logit_lens ≤1e-6, A4 ≤4e-4), with two gotchas worth knowing:
+- **A3_tuning qbert F 0.467 → 0.518**: several bytes tie at 0.99992543422330xx and differ in
+  the last ulp; the cross-machine ulp noise reorders the ranking. A metric fragility at exact
+  ties, not a bug.
+- **lime_hero content F 0.049 → 0.136**: hero's content output is flat at the shared state, so the
+  LIME surrogate fits pure ~1e-12 numerical noise (R² −473 vs −2317); its correlation with the
+  oracle is noise on either machine.
+Non-triad diagnostics (A5 spectra, A7 projections, dictionaries/SAE atom matching) also drift
+across machines; none feeds the leaderboard triad.
+
 ### 🐛 P2 scored set re-derived under the real boot: 42 → 44 games (T3 labels were also generic-boot) — 2026-10-26
 
 **Symptom.** Follow-up to the entry below. The generic-boot bug also reached the two

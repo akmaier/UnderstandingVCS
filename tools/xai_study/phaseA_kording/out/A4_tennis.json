@@ -1,7 +1,7 @@
 {
   "arrays": "A4_tennis.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -131,7 +131,7 @@
       "F_note": "Spearman(|pairwise corr|, oracle cell-cell coupling) over 105 candidate-cell pairs",
       "M": 0.39285714285714285,
       "M_note": "M = |U*|/|U_hat| over candidate-cell pairs (03_methods.tex sec:triad): |U*|=11 (oracle movers) / |U_hat|=28 (method above-threshold)",
-      "S": 0.10023681839107573,
+      "S": 0.10023681839107575,
       "S_note": "Pearson(|pairwise corr|, held-out do(base+37) coupling) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): pairwise correlation structure GENERALLY OVER-GROUPS — it lumps causally-unrelated cells that merely co-vary (the present≠used trap, pairwise). F<1 + over_grouping_ratio>0 quantify the departure from the true coupling.",
       "legacy_minimality": 0.125,
@@ -140,15 +140,15 @@
     },
     "weak_pairwise_strong_global": {
       "candidate_frac_strong_pairs(|corr|>=0.5)": 0.4642857142857143,
-      "candidate_mean_abs_pairwise": 0.45992434859928083,
+      "candidate_mean_abs_pairwise": 0.4599243485992809,
       "candidate_median_abs_pairwise": 0.42930771215307084,
       "candidate_n_varying_cells": 8,
-      "candidate_participation_ratio": 2.5750369479621726,
-      "candidate_top3_eig_share": 0.9233563197090722,
-      "candidate_top_eig_share": 0.5606413706620013,
+      "candidate_participation_ratio": 2.5750369479621718,
+      "candidate_top3_eig_share": 0.9233563197090723,
+      "candidate_top_eig_share": 0.5606413706620014,
       "note": "the spike-word headline (Schneidman 2006; Tkačik 2014): over the FULL POPULATION of varying RAM cells the median pairwise |corr| is WEAK while a few GLOBAL eigen-modes dominate — the effective dimensionality (participation ratio) is far below the #cells, so the collective structure greatly exceeds the pairwise structure. WPSG flag = population median|corr|<0.5 AND population top3-eig-share≥0.6. (The candidate_* set is curated so its pairwise corr runs higher.)",
       "population_mean_abs_pairwise": 0.24099026480277538,
-      "population_median_abs_pairwise": 0.144370622964231,
+      "population_median_abs_pairwise": 0.14437062296423106,
       "population_n_cells": 43,
       "population_participation_ratio": 7.400618625326005,
       "population_top3_eig_share": 0.5545897593313289,
@@ -166,7 +166,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "cell-cell-coupling",
-  "timestamp": "1783606555",
+  "timestamp": "1793019933",
   "value": 0.022994852339050034,
   "where": "local"
 }

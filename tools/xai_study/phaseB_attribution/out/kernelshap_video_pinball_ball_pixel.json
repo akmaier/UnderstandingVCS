@@ -1,7 +1,7 @@
 {
   "arrays": "kernelshap_video_pinball_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-SHAP causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -42,7 +42,7 @@
           "insertion_auc": 0.17291666666666666,
           "n_coalitions": 64,
           "n_unique": 37,
-          "pearson_corr": 0.30555572661067154,
+          "pearson_corr": 0.3055557266106717,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.5478151799050005
         },
@@ -52,7 +52,7 @@
           "insertion_auc": 0.17291666666666666,
           "n_coalitions": 128,
           "n_unique": 66,
-          "pearson_corr": 0.30756849345738313,
+          "pearson_corr": 0.30756849345738285,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.5478151799050005
         },
@@ -62,17 +62,17 @@
           "insertion_auc": 0.17291666666666666,
           "n_coalitions": 256,
           "n_unique": 93,
-          "pearson_corr": 0.3104400268180593,
+          "pearson_corr": 0.31044002681805866,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.5478151799050005
         },
         {
-          "completeness_residual": 0.0,
+          "completeness_residual": 2.842170943040401e-14,
           "deletion_auc": 0.7812500000000002,
           "insertion_auc": 0.17291666666666666,
           "n_coalitions": 512,
           "n_unique": 113,
-          "pearson_corr": 0.3093232534055976,
+          "pearson_corr": 0.3093232534055975,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.5478151799050005
         }
@@ -83,12 +83,12 @@
       "f1_intact": 0.0,
       "f_full_minus_empty": -208.0,
       "interpretation": "Σφ = f(full) − f(∅) = y(intact) − y(all-masked) is the SHAP efficiency axiom (the additive attribution exactly reconstructs the output gap). Enforced by the equality constraint in the WLS solve; the tiny residual is numerical. This is the SHAP analogue of IG's completeness.",
-      "residual": 0.0,
-      "sum_phi": -208.0
+      "residual": 2.842170943040401e-14,
+      "sum_phi": -208.00000000000003
     },
     "harness_positive_control": {
-      "deletion_auc": 0.7104166666666668,
-      "insertion_auc": 0.34375000000000006,
+      "deletion_auc": 0.7104166666666669,
+      "insertion_auc": 0.3437500000000001,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the KernelSHAP numbers above are then a true measurement, not an artefact of the metric.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "oracle_column_degenerate": false,
@@ -98,7 +98,7 @@
     "headline_metrics": {
       "deletion_auc": 0.7812500000000002,
       "insertion_auc": 0.17291666666666666,
-      "pearson_corr": 0.3093232534055976,
+      "pearson_corr": 0.3093232534055975,
       "precision_at_k": 0.3333333333333333,
       "spearman_corr": 0.5478151799050005,
       "topk": 3
@@ -127,30 +127,30 @@
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard i --nshards n --shard-kind game): one Slurm array task per core game; or batched SOFT-STE coalition re-runs over coalitions×games on GPU (the forward is bit-exact to this HARD map).",
     "shap_attr_per_cause": {
       "joystick:RIGHT": 0.0,
-      "ram[102]:occlude": 96.78020653110356,
-      "ram[102]:set": 96.78020653110356,
-      "ram[25]:occlude": 81.08944382545539,
-      "ram[25]:set": 81.08944382545539,
-      "ram[48]:occlude": 0.17477098994251872,
-      "ram[48]:set": 0.17477098994251872,
-      "ram[50]:occlude": 0.6410776837919955,
-      "ram[50]:set": 0.6410776837919955,
-      "ram[67]:occlude": 31.920853816969935,
-      "ram[67]:set": 31.920853816969935,
-      "ram[68]:occlude": 2.780076712232823,
-      "ram[68]:set": 2.780076712232823,
-      "ram[98]:occlude": 0.5232658448544598,
-      "ram[98]:set": 0.5232658448544598,
+      "ram[102]:occlude": 96.7802065311037,
+      "ram[102]:set": 96.7802065311037,
+      "ram[25]:occlude": 81.08944382545522,
+      "ram[25]:set": 81.08944382545522,
+      "ram[48]:occlude": 0.17477098994254714,
+      "ram[48]:set": 0.17477098994254714,
+      "ram[50]:occlude": 0.6410776837920558,
+      "ram[50]:set": 0.6410776837920558,
+      "ram[67]:occlude": 31.920853816969846,
+      "ram[67]:set": 31.920853816969846,
+      "ram[68]:occlude": 2.7800767122328076,
+      "ram[68]:set": 2.7800767122328076,
+      "ram[98]:occlude": 0.523265844854548,
+      "ram[98]:set": 0.523265844854548,
       "tia[COLUBK]:set": 0.0
     },
     "shap_phi_signed_per_cell": {
-      "102": -96.78020653110356,
-      "25": -81.08944382545539,
-      "48": 0.17477098994251872,
-      "50": -0.6410776837919955,
-      "67": -31.920853816969935,
-      "68": 2.780076712232823,
-      "98": -0.5232658448544598
+      "102": -96.7802065311037,
+      "25": -81.08944382545522,
+      "48": 0.17477098994254714,
+      "50": -0.6410776837920558,
+      "67": -31.920853816969846,
+      "68": 2.7800767122328076,
+      "98": -0.523265844854548
     },
     "shapley_kernel_note": "coalitions sampled with size s ~ p(s)∝(C−1)/(s·(C−s)); each row of the WLS is weighted by the Shapley kernel π(s)=(C−1)/(binom(C,s)·s·(C−s)) (Lundberg & Lee Theorem 2). Endpoints s∈{0,C} carry infinite weight ⇒ pinned exactly by the efficiency constraint (not sampled). A 1e-8 ridge stabilises rank-deficient designs.",
     "substrate": "jutari (Julia, HARD) — real-ROM coalition re-runs (bit-exact oracle machinery) + closed-form efficiency-constrained WLS solve. NO surrogate model: the value function IS the true emulator, so the only approximation is the coalition sampling + the additive (linear) SHAP model.",
@@ -167,7 +167,7 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": 0.3093232534055976,
+      "F": 0.3093232534055975,
       "M": 0.7857142857142857,
       "M_named_size": 14,
       "M_note": "|U*|=11 (oracle movers) / |U_hat|=14 (method above-threshold)",
@@ -188,7 +188,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r184c66",
-  "timestamp": "1783130861",
-  "value": 0.3093232534055976,
+  "timestamp": "1793024567",
+  "value": 0.3093232534055975,
   "where": "local"
 }

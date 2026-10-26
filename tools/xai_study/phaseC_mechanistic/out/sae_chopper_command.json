@@ -1,7 +1,7 @@
 {
   "arrays": "sae_chopper_command.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -169,7 +169,7 @@
       "note": "for each KNOWN candidate cell that VARIES, max|Pearson r| between any learned feature's activation and that cell over the trajectory; matched iff |r| ≥ 0.7. Match-rate = #matched / #varying.",
       "per_cell": [
         {
-          "best_corr": 0.955860469515689,
+          "best_corr": 0.9558604695156886,
           "best_feature": 32,
           "concept": "bomb.xy",
           "family": "bomb",
@@ -178,7 +178,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9534512829738849,
+          "best_corr": 0.9534512829738848,
           "best_feature": 36,
           "concept": "x",
           "family": "x",
@@ -187,7 +187,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9442438958727374,
+          "best_corr": 0.944243895872738,
           "best_feature": 51,
           "concept": "b_shot_line",
           "family": "b_shot_line",
@@ -196,7 +196,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.6807320556136686,
+          "best_corr": 0.6807320556136683,
           "best_feature": 28,
           "concept": "shot_lines",
           "family": "shot_lines",
@@ -232,7 +232,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.7988017843594778,
+          "best_corr": 0.7988017843594779,
           "best_feature": 62,
           "concept": "xy",
           "family": "xy",
@@ -241,7 +241,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.790532094138971,
+          "best_corr": 0.7905320941389715,
           "best_feature": 52,
           "concept": "player.orientation",
           "family": "player",
@@ -250,7 +250,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9020943902725969,
+          "best_corr": 0.9020943902725971,
           "best_feature": 8,
           "concept": "x0",
           "family": "x",
@@ -259,7 +259,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8470523137513875,
+          "best_corr": 0.8470523137513886,
           "best_feature": 20,
           "concept": "truck_x",
           "family": "truck",
@@ -268,7 +268,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9485375601518053,
+          "best_corr": 0.9485375601518051,
           "best_feature": 32,
           "concept": "bomb.xy",
           "family": "bomb",
@@ -277,7 +277,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8947269412063813,
+          "best_corr": 0.8947269412063791,
           "best_feature": 36,
           "concept": "player.xy",
           "family": "player",
@@ -286,7 +286,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.79928261636007,
+          "best_corr": 0.7992826163600704,
           "best_feature": 62,
           "concept": "player.xy",
           "family": "player",
@@ -295,7 +295,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.955860469515689,
+          "best_corr": 0.9558604695156886,
           "best_feature": 32,
           "concept": "bomb.xy",
           "family": "bomb",
@@ -304,7 +304,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9558604695156893,
+          "best_corr": 0.9558604695156887,
           "best_feature": 32,
           "concept": "bomb.xy",
           "family": "bomb",
@@ -416,8 +416,8 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.9064291490852087,
-          "fve_train": 0.946861186589129,
+          "fve_held": 0.9064291490841421,
+          "fve_train": 0.9468611865878338,
           "l1": 0.05,
           "matched_fraction": 1.0,
           "mean_l0": 5.153333333333333
@@ -448,11 +448,11 @@
         },
         {
           "d_hidden": 32,
-          "fve_held": 0.8844674106047791,
-          "fve_train": 0.9280697252483652,
+          "fve_held": 0.7552991526912519,
+          "fve_train": 0.816970345709531,
           "l1": 0.2,
-          "matched_fraction": 0.9230769230769231,
-          "mean_l0": 9.153333333333334
+          "matched_fraction": 1.0,
+          "mean_l0": 9.906666666666666
         },
         {
           "d_hidden": 64,
@@ -472,8 +472,8 @@
         },
         {
           "d_hidden": 64,
-          "fve_held": 0.9628108699417681,
-          "fve_train": 0.9894005309400162,
+          "fve_held": 0.962810869941768,
+          "fve_train": 0.9894005309400161,
           "l1": 0.2,
           "matched_fraction": 0.7692307692307693,
           "mean_l0": 11.993333333333334
@@ -502,7 +502,7 @@
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
       "M": 0.7692307692307693,
       "M_note": "|U*|=10 (oracle movers) / |U_hat|=13 (method above-threshold)",
-      "S": -0.08555942383521857,
+      "S": -0.0855594238352185,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
     }
@@ -519,7 +519,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783607479",
+  "timestamp": "1793017308",
   "value": 0.9230769230769231,
   "where": "local"
 }

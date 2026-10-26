@@ -1,7 +1,7 @@
 {
   "arrays": "expected_gradients_centipede_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-EG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "cause_names": [
@@ -321,14 +321,14 @@
     },
     "vs_single_baseline_ig": {
       "delta_deletion_auc": 0.0,
-      "delta_pearson": -1.3877787807814457e-17,
+      "delta_pearson": -2.7755575615628914e-17,
       "delta_precision_at_k": 0.0,
       "ig_baseline": "zeros",
       "ig_completeness_err": 0.078125,
       "ig_deletion_auc": 0.5794887780548629,
       "ig_insertion_auc": 0.5263715710723191,
       "ig_max_abs": 1.078125,
-      "ig_pearson": -0.08052376991658305,
+      "ig_pearson": -0.08052376991658304,
       "ig_precision_at_k": 0.0,
       "ig_spearman": -0.41087708961862446,
       "interpretation": "EG (Erion 2021) was proposed to remove IG's sensitive single-baseline choice (P2-E4-5 measured that sensitivity). On the VCS content path the head-to-head is decisive: the ranking is baseline-INVARIANT (∂y/∂u constant), so EG and IG score the SAME corr/precision@k (Δcorr=-0.0) — EG buys robustness (it avoids the IG degeneracy where a `zeros` baseline byte equals a 0-valued content byte) at M× the gradient compute, NOT a faithfulness gain. The position output: both VANISH."
@@ -346,7 +346,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": 6.938893903907228e-18,
   "target_output": "screen_region(n_changed_px)@r157c81",
-  "timestamp": "1783131429",
+  "timestamp": "1793017842",
   "value": -0.08052376991658307,
   "where": "local"
 }

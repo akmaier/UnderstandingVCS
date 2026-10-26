@@ -1,7 +1,7 @@
 {
   "arrays": "sae_private_eye.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -90,21 +90,21 @@
       "per_feature": [
         {
           "ablate_eq_oracle": true,
-          "decode_leakage": 10,
-          "delta_full": 209.0,
-          "delta_oracle": 209.0,
-          "delta_target_only": 0.0,
+          "decode_leakage": 19,
+          "delta_full": 298.0,
+          "delta_oracle": 298.0,
+          "delta_target_only": 142.0,
           "family": "player",
           "feature": 34,
           "moved": true,
           "ram_index": 63,
-          "raw_ablate": 47,
+          "raw_ablate": 46,
           "raw_base": 47,
-          "target_share": 0.0
+          "target_share": 0.4479495268138801
         },
         {
           "ablate_eq_oracle": true,
-          "decode_leakage": 13,
+          "decode_leakage": 14,
           "delta_full": 0.0,
           "delta_oracle": 0.0,
           "delta_target_only": 0.0,
@@ -118,52 +118,52 @@
         },
         {
           "ablate_eq_oracle": true,
-          "decode_leakage": 13,
+          "decode_leakage": 14,
           "delta_full": 0.0,
           "delta_oracle": 0.0,
-          "delta_target_only": 0.0,
+          "delta_target_only": 12.0,
           "family": "value",
           "feature": 13,
           "moved": false,
           "ram_index": 69,
-          "raw_ablate": 89,
+          "raw_ablate": 86,
           "raw_base": 89,
-          "target_share": 0.0
+          "target_share": 0.06382978723404255
         },
         {
           "ablate_eq_oracle": true,
           "decode_leakage": 13,
-          "delta_full": 0.0,
-          "delta_oracle": 0.0,
+          "delta_full": 132.0,
+          "delta_oracle": 132.0,
           "delta_target_only": 0.0,
           "family": "car",
           "feature": 53,
-          "moved": false,
+          "moved": true,
           "ram_index": 84,
-          "raw_ablate": 64,
+          "raw_ablate": 49,
           "raw_base": 59,
           "target_share": 0.0
         },
         {
           "ablate_eq_oracle": true,
-          "decode_leakage": 13,
+          "decode_leakage": 14,
           "delta_full": 0.0,
           "delta_oracle": 0.0,
-          "delta_target_only": 130.0,
+          "delta_target_only": 0.0,
           "family": "player",
           "feature": 35,
           "moved": false,
           "ram_index": 97,
-          "raw_ablate": 71,
+          "raw_ablate": 68,
           "raw_base": 68,
-          "target_share": 0.5531914893617021
+          "target_share": 0.0
         }
       ]
     },
     "conformance_note": "scored oracle frame f90+15 is BEYOND the strict 60-frame conformance window — the game only reaches live play later. HONEST descriptive jutari result (the bit-exact jutari re-run IS asserted), not an xitari-parity claim; Phase C is calibrated against the jutari oracle.",
     "feature_variable_match": {
-      "matched_fraction": 0.8571428571428571,
-      "n_varying_known_cells": 7,
+      "matched_fraction": 1.0,
+      "n_varying_known_cells": 8,
       "note": "for each KNOWN candidate cell that VARIES, max|Pearson r| between any learned feature's activation and that cell over the trajectory; matched iff |r| ≥ 0.7. Match-rate = #matched / #varying.",
       "per_cell": [
         {
@@ -185,16 +185,16 @@
           "varies": false
         },
         {
-          "best_corr": 0.0,
-          "best_feature": -1,
+          "best_corr": 0.9799354385713087,
+          "best_feature": 1,
           "concept": "player_direction",
           "family": "player",
-          "matched": false,
+          "matched": true,
           "ram_index": 58,
-          "varies": false
+          "varies": true
         },
         {
-          "best_corr": 0.8534945086204131,
+          "best_corr": 0.8630585391901032,
           "best_feature": 34,
           "concept": "player_x",
           "family": "player",
@@ -203,7 +203,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9049762903998452,
+          "best_corr": 0.9541986127923641,
           "best_feature": 13,
           "concept": "clock[0]",
           "family": "clock[0]",
@@ -212,11 +212,11 @@
           "varies": true
         },
         {
-          "best_corr": 0.609228483421073,
+          "best_corr": 0.8797120715127833,
           "best_feature": 22,
           "concept": "clock[1]",
           "family": "clock[1]",
-          "matched": false,
+          "matched": true,
           "ram_index": 68,
           "varies": true
         },
@@ -248,7 +248,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.7455427283660164,
+          "best_corr": 0.7643086495856682,
           "best_feature": 35,
           "concept": "player_y",
           "family": "player",
@@ -320,7 +320,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.9049218626648178,
+          "best_corr": 0.9541457162819649,
           "best_feature": 13,
           "concept": "value",
           "family": "value",
@@ -356,7 +356,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.9290553102267587,
+          "best_corr": 0.8061097001015942,
           "best_feature": 53,
           "concept": "car.xy",
           "family": "car",
@@ -374,7 +374,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.7436946890413666,
+          "best_corr": 0.8037322552247702,
           "best_feature": 35,
           "concept": "player._xy",
           "family": "player",
@@ -390,11 +390,11 @@
       "importance_per_cell": {
         "RAM[38]:xy": 0.0,
         "RAM[39]:dove_y": 0.0,
-        "RAM[40]:xy": 164.0,
+        "RAM[40]:xy": 167.0,
         "RAM[44]:xy": 0.0,
         "RAM[47]:x": 0.0,
         "RAM[48]:dove_x": 0.0,
-        "RAM[49]:xy": 332.0,
+        "RAM[49]:xy": 335.0,
         "RAM[51]:wh": 53.0,
         "RAM[58]:player_direction": 0.0,
         "RAM[63]:player_x": 7466.0,
@@ -409,9 +409,9 @@
         "RAM[79]:score[2]": 0.0,
         "RAM[84]:car.xy": 300.0,
         "RAM[86]:player_y": 0.0,
-        "RAM[88]:car.xy": 316.0,
+        "RAM[88]:car.xy": 370.0,
         "RAM[92]:room_number": 0.0,
-        "RAM[97]:player._xy": 156.0
+        "RAM[97]:player._xy": 158.0
       },
       "n_causal_cells": 12,
       "note": "oracle importance(i) = max whole-screen break of an EXACT do(cell_i:=0)/do(cell_i:=base+17) intervention re-run on the real ROM (the §1 oracle restricted to the candidate cell + screen). The SAME map A2 / A7 / pilot_si.jl score against — the TRUE causal role."
@@ -419,9 +419,9 @@
     "reconstruction": {
       "best_d_hidden": 64,
       "best_l1": 0.01,
-      "best_mean_l0": 36.49333333333333,
-      "fve_heldout": 0.9679566244796382,
-      "fve_train": 0.9919118057193208
+      "best_mean_l0": 35.32666666666667,
+      "fve_heldout": 0.9770555516656403,
+      "fve_train": 0.9932397585633864
     },
     "sae": {
       "activation": "relu",
@@ -437,84 +437,84 @@
     "sweep": {
       "best": {
         "d_hidden": 64,
-        "fve_held": 0.9679566244796382,
-        "fve_train": 0.9919118057193208,
+        "fve_held": 0.9770555516656403,
+        "fve_train": 0.9932397585633864,
         "l1": 0.01,
-        "matched_fraction": 0.8571428571428571,
-        "mean_l0": 36.49333333333333
+        "matched_fraction": 1.0,
+        "mean_l0": 35.32666666666667
       },
       "grid": [
         {
           "d_hidden": 16,
-          "fve_held": 0.9224830318697566,
-          "fve_train": 0.9683085421759405,
+          "fve_held": 0.9415374468584746,
+          "fve_train": 0.9604275914625023,
           "l1": 0.01,
-          "matched_fraction": 0.5714285714285714,
-          "mean_l0": 11.0
+          "matched_fraction": 0.625,
+          "mean_l0": 10.486666666666666
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.9135198884040492,
-          "fve_train": 0.9493522495009148,
+          "fve_held": 0.9021344321398295,
+          "fve_train": 0.9358570889793636,
           "l1": 0.05,
-          "matched_fraction": 0.42857142857142855,
-          "mean_l0": 8.266666666666667
+          "matched_fraction": 0.75,
+          "mean_l0": 7.273333333333333
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.7179392222957139,
-          "fve_train": 0.7664528836916289,
+          "fve_held": 0.7588850220321233,
+          "fve_train": 0.8019663590255641,
           "l1": 0.2,
-          "matched_fraction": 0.42857142857142855,
-          "mean_l0": 2.5
+          "matched_fraction": 0.75,
+          "mean_l0": 2.76
         },
         {
           "d_hidden": 32,
-          "fve_held": 0.9520321829071098,
-          "fve_train": 0.9884854118826174,
+          "fve_held": 0.9609986298988543,
+          "fve_train": 0.9899933743100661,
           "l1": 0.01,
-          "matched_fraction": 0.8571428571428571,
-          "mean_l0": 20.16
+          "matched_fraction": 0.75,
+          "mean_l0": 18.573333333333334
         },
         {
           "d_hidden": 32,
-          "fve_held": 0.9491472818348532,
-          "fve_train": 0.9806730555962538,
+          "fve_held": 0.9542179394716717,
+          "fve_train": 0.9809743663352807,
           "l1": 0.05,
-          "matched_fraction": 0.42857142857142855,
-          "mean_l0": 14.526666666666667
+          "matched_fraction": 0.75,
+          "mean_l0": 13.233333333333333
         },
         {
           "d_hidden": 32,
-          "fve_held": 0.9073713600044759,
-          "fve_train": 0.9455214949446437,
+          "fve_held": 0.9243336104860289,
+          "fve_train": 0.9542029451259888,
           "l1": 0.2,
-          "matched_fraction": 0.42857142857142855,
-          "mean_l0": 7.366666666666666
+          "matched_fraction": 0.625,
+          "mean_l0": 6.32
         },
         {
           "d_hidden": 64,
-          "fve_held": 0.9679566244796382,
-          "fve_train": 0.9919118057193208,
+          "fve_held": 0.9770555516656403,
+          "fve_train": 0.9932397585633864,
           "l1": 0.01,
-          "matched_fraction": 0.8571428571428571,
-          "mean_l0": 36.49333333333333
+          "matched_fraction": 1.0,
+          "mean_l0": 35.32666666666667
         },
         {
           "d_hidden": 64,
-          "fve_held": 0.9677468772759581,
-          "fve_train": 0.9887166215006659,
+          "fve_held": 0.9716334058793703,
+          "fve_train": 0.9898865238359014,
           "l1": 0.05,
-          "matched_fraction": 0.5714285714285714,
-          "mean_l0": 27.913333333333334
+          "matched_fraction": 0.875,
+          "mean_l0": 26.893333333333334
         },
         {
           "d_hidden": 64,
-          "fve_held": 0.9493909919015877,
-          "fve_train": 0.9769494690783396,
+          "fve_held": 0.9564030943217836,
+          "fve_train": 0.9779984997189106,
           "l1": 0.2,
-          "matched_fraction": 0.5714285714285714,
-          "mean_l0": 15.086666666666666
+          "matched_fraction": 0.75,
+          "mean_l0": 12.753333333333334
         }
       ],
       "note": "dictionary-size (d_hidden) × L1-penalty sweep — the full-SAE knobs (Cunningham/Bricken 2023: overcomplete dict + L1). FVE = fraction of variance explained on a held-out (every-5th-frame) split.",
@@ -530,17 +530,17 @@
       "note": "P2 redesign: the SAE is fit/scored on a seeded random-action GAMEPLAY state (not the FIRE/attract tape), gated by the §1 oracle cause-density gate. The descriptive trajectory is stepped along the gameplay stream (NOOP-continued past prefix+horizon). The SAE algorithm is unchanged; only the analysis state + trajectory move.",
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r148c48",
+      "shared_output": "screen_region(n_changed_px)@r148c49",
       "state_kind": "seeded_random_action_gameplay"
     },
     "trajectory_frames": 150,
     "trajectory_trace": "seeded random-action GAMEPLAY trajectory (seed=0, prefix=90; NOOP-continued past prefix+horizon)",
     "triad": {
-      "F": 0.20765756875009692,
+      "F": 0.11819813906514394,
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
       "M": 1.0,
-      "M_note": "|U*|=12 (oracle movers) / |U_hat|=7 (method above-threshold)",
-      "S": 0.1927648061055329,
+      "M_note": "|U*|=12 (oracle movers) / |U_hat|=8 (method above-threshold)",
+      "S": 0.06549243463182974,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
     }
@@ -549,7 +549,7 @@
   "item": "P2-E5-6",
   "method": "sparse_autoencoder",
   "metric_name": "feature_variable_matched_fraction",
-  "n": 7,
+  "n": 8,
   "oracle_ref": "oracle_intervene@private_eye (P2-E1-1) — exact single-cell + full-decode patch re-run; traj from jutari_record (P2-E0-2j)",
   "paper": "P2",
   "phase": "phaseC_mechanistic",
@@ -557,7 +557,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783609093",
-  "value": 0.8571428571428571,
+  "timestamp": "1793020261",
+  "value": 1.0,
   "where": "local"
 }

@@ -1,7 +1,7 @@
 {
   "arrays": "A8_road_runner.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -44,7 +44,7 @@
       89,
       90
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_road_runner.json",
+    "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_road_runner.json",
     "oracle_causal_ram_indices": [
       24,
       43,
@@ -82,7 +82,7 @@
       "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.047 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
     },
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-    "settings": "GenericRomSettings",
+    "settings": "RoadRunnerRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
     "testbed": {
       "cause_density_above_floor": 11,
@@ -135,7 +135,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "full RAM+register state map over time (whole-state record)",
-  "timestamp": "1783127686",
+  "timestamp": "1793020543",
   "value": 0.046875,
   "where": "local"
 }

@@ -1,7 +1,7 @@
 {
   "arrays": "sae_video_pinball.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -120,7 +120,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.8599548187464999,
+          "best_corr": 0.8599548187464991,
           "best_feature": 1,
           "concept": "ball_x",
           "family": "ball",
@@ -129,7 +129,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.952484937808899,
+          "best_corr": 0.9524849378088976,
           "best_feature": 3,
           "concept": "ball_y",
           "family": "ball",
@@ -138,7 +138,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7781159434072468,
+          "best_corr": 0.7781159434072465,
           "best_feature": 14,
           "concept": "player_left_paddle_y",
           "family": "player_left_paddle",
@@ -147,7 +147,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7225307111141319,
+          "best_corr": 0.7225307111141314,
           "best_feature": 18,
           "concept": "player_right_paddle_y",
           "family": "player_right_paddle",
@@ -227,8 +227,8 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.6800291802951854,
-          "fve_train": 0.8009458815364724,
+          "fve_held": 0.6800291802951677,
+          "fve_train": 0.8009458815364587,
           "l1": 0.2,
           "matched_fraction": 0.5,
           "mean_l0": 2.8066666666666666
@@ -305,7 +305,7 @@
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
       "M": 1.0,
       "M_note": "|U*|=7 (oracle movers) / |U_hat|=4 (method above-threshold)",
-      "S": 0.45014957557479807,
+      "S": 0.4501495755747975,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
     }
@@ -322,7 +322,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783609654",
+  "timestamp": "1793021489",
   "value": 1.0,
   "where": "local"
 }

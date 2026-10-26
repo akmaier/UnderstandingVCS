@@ -1,7 +1,7 @@
 {
   "arrays": "sae_assault.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -145,7 +145,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.8847782277390953,
+          "best_corr": 0.8847782277390954,
           "best_feature": 27,
           "concept": "score",
           "family": "score",
@@ -163,7 +163,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.6734901661983412,
+          "best_corr": 0.6734901661983405,
           "best_feature": 48,
           "concept": "player.xy",
           "family": "player",
@@ -181,7 +181,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.7234844237344277,
+          "best_corr": 0.723484423734429,
           "best_feature": 32,
           "concept": "vertic_missile",
           "family": "vertic_missile",
@@ -190,7 +190,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8439406662607338,
+          "best_corr": 0.8439406662607317,
           "best_feature": 12,
           "concept": "health",
           "family": "health",
@@ -208,7 +208,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.643545919511268,
+          "best_corr": 0.6435459195112675,
           "best_feature": 6,
           "concept": "enemy_x_part_1",
           "family": "enemy_x_part",
@@ -217,7 +217,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.5384150469042734,
+          "best_corr": 0.5384150469042738,
           "best_feature": 38,
           "concept": "enemy_x_part_2",
           "family": "enemy_x_part",
@@ -226,7 +226,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.58070446371661,
+          "best_corr": 0.5807044637166098,
           "best_feature": 48,
           "concept": "player_missile_x",
           "family": "player_missile",
@@ -244,7 +244,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.8412936661553858,
+          "best_corr": 0.8412936661553856,
           "best_feature": 63,
           "concept": "enemy_appearance",
           "family": "enemy_appearance",
@@ -253,7 +253,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7394880049046465,
+          "best_corr": 0.7394880049046474,
           "best_feature": 32,
           "concept": "player_missile_y",
           "family": "player_missile",
@@ -262,7 +262,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.4785306865804921,
+          "best_corr": 0.47853068658049197,
           "best_feature": 28,
           "concept": "mother_ship.xy",
           "family": "mother_ship",
@@ -374,16 +374,16 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.7987570242129183,
-          "fve_train": 0.8610668961968054,
+          "fve_held": 0.7987570242129185,
+          "fve_train": 0.8610668961968055,
           "l1": 0.05,
           "matched_fraction": 0.3,
           "mean_l0": 8.666666666666666
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.7560915765108756,
-          "fve_train": 0.8197712243695066,
+          "fve_held": 0.7560915765108758,
+          "fve_train": 0.8197712243695068,
           "l1": 0.2,
           "matched_fraction": 0.3,
           "mean_l0": 5.74
@@ -460,7 +460,7 @@
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
       "M": 0.9,
       "M_note": "|U*|=9 (oracle movers) / |U_hat|=10 (method above-threshold)",
-      "S": 0.3743752565600241,
+      "S": 0.3743752565600237,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
     }
@@ -477,7 +477,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783606869",
+  "timestamp": "1793016002",
   "value": 0.5,
   "where": "local"
 }

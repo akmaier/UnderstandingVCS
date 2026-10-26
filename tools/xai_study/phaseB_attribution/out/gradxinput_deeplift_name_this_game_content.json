@@ -1,7 +1,7 @@
 {
   "arrays": "gradxinput_deeplift_name_this_game_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-attributed causes occluded (deletion) / restored (insertion); each curve point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline": "all-zeros RAM (the 'absent' state)",
@@ -66,7 +66,7 @@
         "deletion_auc": 0.041666666666666664,
         "insertion_auc": 0.875,
         "method": "deeplift_rescale",
-        "pearson_corr": 0.8148153968972112,
+        "pearson_corr": 0.814815396897211,
         "precision_at_k": 1.0,
         "spearman_corr": 0.9958591954639384,
         "topk": 3
@@ -89,7 +89,7 @@
         "deletion_auc": 0.041666666666666664,
         "insertion_auc": 0.875,
         "method": "grad_x_input",
-        "pearson_corr": 0.8148153968972112,
+        "pearson_corr": 0.814815396897211,
         "precision_at_k": 1.0,
         "spearman_corr": 0.9958591954639384,
         "topk": 3
@@ -112,7 +112,7 @@
         "deletion_auc": 0.041666666666666664,
         "insertion_auc": 0.875,
         "method": "vanilla_saliency",
-        "pearson_corr": 0.8148153968972116,
+        "pearson_corr": 0.8148153968972115,
         "precision_at_k": 1.0,
         "spearman_corr": 0.9958591954639384,
         "topk": 3
@@ -140,7 +140,7 @@
     },
     "substrate": "jutari (Julia) — Zygote content-path ∂y/∂u over the RAM tape + TRUE-VCS deletion/insertion re-runs (real-ROM, bit-exact oracle machinery).",
     "triad": {
-      "F": 0.8148153968972112,
+      "F": 0.814815396897211,
       "M": 1.0,
       "M_named_size": 2,
       "M_note": "|U*|=2 (oracle movers) / |U_hat|=2 (method above-threshold)",
@@ -162,7 +162,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content:score@ram[51]",
-  "timestamp": "1783131050",
-  "value": 0.8148153968972112,
+  "timestamp": "1793019086",
+  "value": 0.814815396897211,
   "where": "local"
 }

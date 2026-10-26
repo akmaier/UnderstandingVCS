@@ -1,7 +1,7 @@
 {
   "arrays": "ig_baseline_sweep_bank_heist_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-IG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline_sweep": {
@@ -52,7 +52,7 @@
           "deletion_auc": 0.008999511062217332,
           "ig_max_abs": 0.998046875,
           "insertion_auc": 0.3346931915413765,
-          "pearson_corr": -0.12755330911210913,
+          "pearson_corr": -0.1275533091121091,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.4624047813530715,
           "topk": 3,
@@ -225,7 +225,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r81c23",
-  "timestamp": "1783121885",
+  "timestamp": "1793016524",
   "value": -0.1275533091121092,
   "where": "local"
 }

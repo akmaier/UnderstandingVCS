@@ -1,7 +1,7 @@
 {
   "arrays": "A7_ms_pacman.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -72,13 +72,13 @@
     "nmf": {
       "component_energy_share": [
         0.14318299093045786,
-        0.13360839840891314,
-        0.1327874231593247,
+        0.1336083984089132,
+        0.13278742315932468,
         0.12471937766619139,
         0.1236067562341629,
-        0.11638022218393551,
-        0.11327262611227262,
-        0.11244220530474182
+        0.11638022218393552,
+        0.11327262611227269,
+        0.11244220530474185
       ],
       "matched_components": {
         "matched_component_fraction": 0.6,
@@ -100,10 +100,10 @@
           "rw_activity"
         ],
         "per_component_matched_purity": [
-          0.5615946109687747,
-          0.43014406238646824,
+          0.5615946109687748,
+          0.4301440623864683,
           0.6169913783593737,
-          0.4744948906369935,
+          0.4744948906369936,
           0.863893953028933
         ],
         "topk": 5
@@ -113,15 +113,15 @@
       "rank": 8,
       "recon_rel_err_by_rank": [
         0.9025944622551003,
-        0.7514747739176626,
-        0.6089093393203484,
-        0.4865848054549337,
-        0.3957068874533118,
-        0.264552414357677,
-        0.1581590227026081,
-        0.056603128224842036
+        0.7514747739176612,
+        0.6089093393203499,
+        0.48658480545493443,
+        0.3957068874533099,
+        0.2645524143576749,
+        0.1581590227026075,
+        0.056603128224841884
       ],
-      "recon_rel_frobenius_err": 0.056603128224842036
+      "recon_rel_frobenius_err": 0.056603128224841884
     },
     "oracle_importance": {
       "importance_per_cell": {
@@ -150,14 +150,14 @@
     },
     "pca": {
       "cum_var_top": [
-        0.5160875489121943,
-        0.6961447535520364,
-        0.7716152419106448,
-        0.8310556894872909,
-        0.8809602600503409,
+        0.5160875489121951,
+        0.6961447535520371,
+        0.7716152419106455,
+        0.8310556894872912,
+        0.8809602600503411,
         0.9138501571164537,
-        0.9398368619571106,
-        0.9636465862313689
+        0.9398368619571105,
+        0.9636465862313688
       ],
       "matched_components": {
         "matched_component_fraction": 0.2,
@@ -179,11 +179,11 @@
           "(none; closest=rw_activity@0.2)"
         ],
         "per_component_matched_purity": [
-          0.8576476101305303,
-          0.11869236922612099,
-          0.12361840387494431,
-          0.09608551165135643,
-          0.20404015492313257
+          0.8576476101305306,
+          0.11869236922612088,
+          0.1236184038749448,
+          0.09608551165135598,
+          0.20404015492313302
         ],
         "topk": 5
       },
@@ -192,14 +192,14 @@
       "n_varying_cells": 45,
       "note": "PCA (SVD of the centred (T,128) tape). matched-component fraction = #top-k PCs concentrated on ONE known variable (a concept family, OR clock/R-W/vsync) / k. The pilot found ≈0 — PCs mix epiphenomenal high-variance structure across cells.",
       "var_explained_top": [
-        0.5160875489121943,
-        0.18005720463984207,
-        0.07547048835860845,
-        0.0594404475766461,
-        0.04990457056304999,
-        0.03288989706611273,
-        0.025986704840656957,
-        0.023809724274258322
+        0.5160875489121951,
+        0.18005720463984198,
+        0.07547048835860838,
+        0.0594404475766458,
+        0.04990457056304989,
+        0.032889897066112526,
+        0.025986704840656925,
+        0.023809724274258308
       ]
     },
     "purity_threshold": 0.5,
@@ -238,7 +238,7 @@
       "F_note": "Spearman(pca per-cell recovery score, oracle causal importance) over candidate cells",
       "M": 1.0,
       "M_note": "M = |U*|/|U_hat| (03_methods.tex sec:triad, pca): |U*|=14 (oracle movers) / |U_hat|=11 (method above-threshold)",
-      "S": -0.09584548081418404,
+      "S": -0.09584548081418402,
       "S_note": "Pearson(pca recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "legacy_minimality": 0.8333333333333334,
       "legacy_minimality_note": "1 − over-claim rate (the pre-standardization M). Retained for reference; the triad M above is the paper's |U*|/|U_hat|."
@@ -255,7 +255,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "latent-components",
-  "timestamp": "1783605967",
+  "timestamp": "1793018544",
   "value": 0.6,
   "where": "local"
 }

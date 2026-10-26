@@ -8,7 +8,7 @@
     "tau_sweep": "2 thresholds (pure thresholding of the cached effect matrix — NO extra re-runs)"
   },
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "ablation": "resample (parent overwritten with its value from the corrupted RIGHT-action donor run); standard ACDC corruption (Conmy et al. 2023 §3), not zero.",
     "bit_exact_rerun": true,
@@ -32,7 +32,7 @@
       80,
       89
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_pacman.json",
+    "candidates_file": "/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_pacman.json",
     "circuit": {
       "best_tau": 1.0,
       "discovered_edges_at_best_tau": [],
@@ -69,7 +69,7 @@
       "note": "causal scrubbing of the best-F1 discovered circuit: resample-ablate every parent NOT in the circuit, re-run, report the fraction of candidate-cell readouts unchanged vs clean.",
       "preserved_fraction": 0.125
     },
-    "settings": "GenericRomSettings",
+    "settings": "PacmanRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge effect is an EXACT resample-ablation re-run on the true ROM.",
     "tau_sweep": [
       {
@@ -103,7 +103,7 @@
       "note": "P2 redesign: ACDC runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. The clean stream is the shared gameplay tape; the resample donor shares the gameplay prefix and diverges only from f* (a RIGHT action) so it is on-distribution. The ACDC discovery algorithm is unchanged; only the analysis state moves.",
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r131c77",
+      "shared_output": "screen_region(n_changed_px)@r132c77",
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
@@ -127,7 +127,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "auto-discovered inter-cell data-flow circuit (candidate RAM cells)",
-  "timestamp": "1783608320",
+  "timestamp": "1793018871",
   "value": 0.0,
   "where": "local"
 }

@@ -1,7 +1,7 @@
 {
   "arrays": "ig_baseline_sweep_phoenix_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-IG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline_sweep": {
@@ -40,7 +40,7 @@
           "deletion_auc": 0.9807692307692307,
           "ig_max_abs": 121.0,
           "insertion_auc": 0.057692307692307696,
-          "pearson_corr": 0.9093146105232095,
+          "pearson_corr": 0.9093146105232096,
           "precision_at_k": 1.0,
           "spearman_corr": 0.9991996797437437,
           "topk": 3,
@@ -120,7 +120,7 @@
           "deletion_auc": 0.9807692307692307,
           "ig_max_abs": 6.0,
           "insertion_auc": 0.057692307692307696,
-          "pearson_corr": 0.9093146105232096,
+          "pearson_corr": 0.9093146105232098,
           "precision_at_k": 1.0,
           "spearman_corr": 0.9991996797437437,
           "topk": 3,
@@ -160,7 +160,7 @@
           "deletion_auc": 0.9807692307692307,
           "ig_max_abs": 72.0,
           "insertion_auc": 0.057692307692307696,
-          "pearson_corr": 0.9093146105232096,
+          "pearson_corr": 0.9093146105232098,
           "precision_at_k": 1.0,
           "spearman_corr": 0.9991996797437437,
           "topk": 3,
@@ -168,9 +168,9 @@
         }
       ],
       "completeness_err_max": 0.0,
-      "corr_max": 0.9093146105232096,
-      "corr_min": 0.9093146105232095,
-      "corr_sensitivity": 1.1102230246251565e-16,
+      "corr_max": 0.9093146105232098,
+      "corr_min": 0.9093146105232096,
+      "corr_sensitivity": 2.220446049250313e-16,
       "definitions": {
         "mean_ram": "constant baseline = mean(x) per byte (the 'average input')",
         "random": "one uniform-random RAM draw ∈ 0..255 (seed=0+9973)",
@@ -230,7 +230,7 @@
       "completeness_err": 0.0,
       "deletion_auc": 0.9807692307692307,
       "insertion_auc": 0.057692307692307696,
-      "pearson_corr": 0.9093146105232095,
+      "pearson_corr": 0.9093146105232096,
       "precision_at_k": 1.0,
       "spearman_corr": 0.9991996797437437,
       "topk": 3
@@ -269,7 +269,7 @@
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE IG over outputs×causes×games×baselines on GPU; the forward is bit-exact to this map.",
     "substrate": "jutari (Julia) — Zygote Integrated Gradients over the RAM tape + TRUE-VCS deletion/insertion re-runs (real-ROM, bit-exact oracle machinery).",
     "triad": {
-      "F": 0.9093146105232095,
+      "F": 0.9093146105232096,
       "M": 1.0,
       "M_named_size": 2,
       "M_note": "|U*|=2 (oracle movers) / |U_hat|=2 (method above-threshold)",
@@ -291,7 +291,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@89)",
-  "timestamp": "1783124137",
-  "value": 0.9093146105232095,
+  "timestamp": "1793020988",
+  "value": 0.9093146105232096,
   "where": "local"
 }

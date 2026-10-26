@@ -1,7 +1,7 @@
 {
   "arrays": "lime_name_this_game_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-LIME causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -41,7 +41,7 @@
     "headline_metrics": {
       "deletion_auc": 0.041666666666666664,
       "insertion_auc": 0.875,
-      "pearson_corr": 0.7875615306482171,
+      "pearson_corr": 0.7875615306482168,
       "precision_at_k": 0.6666666666666666,
       "spearman_corr": 0.65194287781876,
       "surrogate_r2": 0.9999999999999998,
@@ -49,16 +49,16 @@
     },
     "lime_attr_per_cause": {
       "joystick:RIGHT": 0.0,
-      "ram[100]:occlude": 101.99999856574215,
-      "ram[100]:set": 101.99999856574215,
-      "ram[50]:occlude": 5.458810577492119e-8,
-      "ram[50]:set": 5.458810577492119e-8,
-      "ram[51]:occlude": 5.566598117898868e-8,
-      "ram[51]:set": 5.566598117898868e-8,
-      "ram[60]:occlude": 3.8844421350167846e-8,
-      "ram[60]:set": 3.8844421350167846e-8,
-      "ram[99]:occlude": 2.1662132978994035e-8,
-      "ram[99]:set": 2.1662132978994035e-8,
+      "ram[100]:occlude": 101.99999856574203,
+      "ram[100]:set": 101.99999856574203,
+      "ram[50]:occlude": 5.458806460312603e-8,
+      "ram[50]:set": 5.458806460312603e-8,
+      "ram[51]:occlude": 5.5665963874886926e-8,
+      "ram[51]:set": 5.5665963874886926e-8,
+      "ram[60]:occlude": 3.8844400087907483e-8,
+      "ram[60]:set": 3.8844400087907483e-8,
+      "ram[99]:occlude": 2.166212755223491e-8,
+      "ram[99]:set": 2.166212755223491e-8,
       "tia[COLUBK]:set": 0.0
     },
     "oracle_abs_delta_per_cause": {
@@ -80,11 +80,11 @@
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard i --nshards n --shard-kind game): one Slurm array task per core game; or batched SOFT-STE masked re-runs over perturbations×cells×games on GPU (the forward is bit-exact to this HARD map), the linear fit done on the host.",
     "stability": {
       "coef_cosine_mean": 1.0,
-      "corr_mean": 0.7875615306482168,
-      "corr_std": 1.9229626863835638e-16,
+      "corr_mean": 0.7875615306482169,
+      "corr_std": 1.4686870114880517e-16,
       "fits": [
         {
-          "pearson_corr": 0.7875615306482171,
+          "pearson_corr": 0.7875615306482168,
           "precision_at_k": 0.6666666666666666,
           "seed": 0,
           "spearman_corr": 0.65194287781876,
@@ -112,7 +112,7 @@
           "surrogate_r2": 0.9999999999999998
         },
         {
-          "pearson_corr": 0.7875615306482169,
+          "pearson_corr": 0.787561530648217,
           "precision_at_k": 0.6666666666666666,
           "seed": 404,
           "spearman_corr": 0.65194287781876,
@@ -126,14 +126,14 @@
     },
     "substrate": "jutari (Julia, HARD) — LIME (Ribeiro et al. 2016) local linear surrogate: draw N random binary perturbations in the interpretable present/absent space over the candidate RAM cells, mask absent cells to 0, RE-RUN the real ROM (bit-exact oracle machinery), weight each perturbation by the cosine-distance kernel, fit a weighted linear surrogate by least squares (LinearAlgebra); coefficients = attribution. Every probe is a genuine emulator re-run; no gradient, no surrogate-of-a-surrogate.",
     "surrogate": {
-      "intercept": 4.000000787146395,
+      "intercept": 4.000000787146411,
       "interpretation": "the WEIGHTED R^2 of the linear surrogate on the sampled neighbourhood = the LOCAL FAITHFULNESS OF THE SURROGATE ITSELF (how well a linear g approximates the real ROM near x), distinct from the attribution↔oracle corr below. A low R^2 is LIME's own confession that a linear model is a poor local fit to the VCS computation.",
       "kernel": "cosine-distance exponential π(z)=exp(-D(z,1)^2/σ^2)",
       "model": "weighted linear g(z)=w·z+b, ridge-regularised normal equations (LinearAlgebra)",
       "r2": 0.9999999999999998
     },
     "triad": {
-      "F": 0.7875615306482171,
+      "F": 0.7875615306482168,
       "M": 1.0,
       "M_named_size": 2,
       "M_note": "|U*|=2 (oracle movers) / |U_hat|=2 (method above-threshold)",
@@ -153,9 +153,9 @@
   "phase": "phaseB_attribution",
   "seed": 0,
   "state": "f90+15",
-  "stderr": 1.9229626863835638e-16,
+  "stderr": 1.4686870114880517e-16,
   "target_output": "content(ram_self@100)",
-  "timestamp": "1783130941",
-  "value": 0.7875615306482171,
+  "timestamp": "1793024540",
+  "value": 0.7875615306482168,
   "where": "local"
 }

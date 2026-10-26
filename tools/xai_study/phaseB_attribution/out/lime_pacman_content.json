@@ -1,7 +1,7 @@
 {
   "arrays": "lime_pacman_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-LIME causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -55,22 +55,22 @@
     },
     "lime_attr_per_cause": {
       "joystick:RIGHT": 0.0,
-      "ram[24]:occlude": 1.0434366152636037e-7,
-      "ram[24]:set": 1.0434366152636037e-7,
-      "ram[26]:occlude": 5.569874958803407e-8,
-      "ram[26]:set": 5.569874958803407e-8,
-      "ram[49]:occlude": 9.991549381175014e-8,
-      "ram[49]:set": 9.991549381175014e-8,
-      "ram[59]:occlude": 127.99999821390432,
-      "ram[59]:set": 127.99999821390432,
-      "ram[76]:occlude": 1.1095304591964209e-8,
-      "ram[76]:set": 1.1095304591964209e-8,
-      "ram[78]:occlude": 1.8079684546341815e-7,
-      "ram[78]:set": 1.8079684546341815e-7,
-      "ram[80]:occlude": 3.017356868162595e-8,
-      "ram[80]:set": 3.017356868162595e-8,
-      "ram[89]:occlude": 1.0091955490682067e-7,
-      "ram[89]:set": 1.0091955490682067e-7,
+      "ram[24]:occlude": 1.0434365248192464e-7,
+      "ram[24]:set": 1.0434365248192464e-7,
+      "ram[26]:occlude": 5.5698817396680616e-8,
+      "ram[26]:set": 5.5698817396680616e-8,
+      "ram[49]:occlude": 9.991541395491535e-8,
+      "ram[49]:set": 9.991541395491535e-8,
+      "ram[59]:occlude": 127.99999821390442,
+      "ram[59]:set": 127.99999821390442,
+      "ram[76]:occlude": 1.1095264580073275e-8,
+      "ram[76]:set": 1.1095264580073275e-8,
+      "ram[78]:occlude": 1.807967645079189e-7,
+      "ram[78]:set": 1.807967645079189e-7,
+      "ram[80]:occlude": 3.01734984298919e-8,
+      "ram[80]:set": 3.01734984298919e-8,
+      "ram[89]:occlude": 1.0091945606094993e-7,
+      "ram[89]:set": 1.0091945606094993e-7,
       "tia[COLUBK]:set": 0.0
     },
     "oracle_abs_delta_per_cause": {
@@ -98,8 +98,8 @@
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard i --nshards n --shard-kind game): one Slurm array task per core game; or batched SOFT-STE masked re-runs over perturbations×cells×games on GPU (the forward is bit-exact to this HARD map), the linear fit done on the host.",
     "stability": {
       "coef_cosine_mean": 1.0,
-      "corr_mean": 0.7763215392512727,
-      "corr_std": 9.614813431917819e-17,
+      "corr_mean": 0.7763215392512728,
+      "corr_std": 7.850462293418876e-17,
       "fits": [
         {
           "pearson_corr": 0.7763215392512727,
@@ -109,14 +109,14 @@
           "surrogate_r2": 0.9999999999999998
         },
         {
-          "pearson_corr": 0.7763215392512727,
+          "pearson_corr": 0.7763215392512728,
           "precision_at_k": 0.6666666666666666,
           "seed": 101,
           "spearman_corr": 0.5467741194645765,
           "surrogate_r2": 0.9999999999999998
         },
         {
-          "pearson_corr": 0.7763215392512728,
+          "pearson_corr": 0.7763215392512727,
           "precision_at_k": 0.6666666666666666,
           "seed": 202,
           "spearman_corr": 0.5467741194645765,
@@ -144,7 +144,7 @@
     },
     "substrate": "jutari (Julia, HARD) — LIME (Ribeiro et al. 2016) local linear surrogate: draw N random binary perturbations in the interpretable present/absent space over the candidate RAM cells, mask absent cells to 0, RE-RUN the real ROM (bit-exact oracle machinery), weight each perturbation by the cosine-distance kernel, fit a weighted linear surrogate by least squares (LinearAlgebra); coefficients = attribution. Every probe is a genuine emulator re-run; no gradient, no surrogate-of-a-surrogate.",
     "surrogate": {
-      "intercept": 1.0557326133082899e-6,
+      "intercept": 1.0557322564246473e-6,
       "interpretation": "the WEIGHTED R^2 of the linear surrogate on the sampled neighbourhood = the LOCAL FAITHFULNESS OF THE SURROGATE ITSELF (how well a linear g approximates the real ROM near x), distinct from the attribution↔oracle corr below. A low R^2 is LIME's own confession that a linear model is a poor local fit to the VCS computation.",
       "kernel": "cosine-distance exponential π(z)=exp(-D(z,1)^2/σ^2)",
       "model": "weighted linear g(z)=w·z+b, ridge-regularised normal equations (LinearAlgebra)",
@@ -171,9 +171,9 @@
   "phase": "phaseB_attribution",
   "seed": 0,
   "state": "f90+15",
-  "stderr": 9.614813431917819e-17,
+  "stderr": 7.850462293418876e-17,
   "target_output": "content(ram_self@59)",
-  "timestamp": "1783131090",
+  "timestamp": "1793024775",
   "value": 0.7763215392512727,
   "where": "local"
 }

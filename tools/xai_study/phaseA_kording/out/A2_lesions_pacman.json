@@ -1,7 +1,7 @@
 {
   "arrays": "A2_lesions_pacman.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "budget": {
@@ -34,7 +34,7 @@
       80,
       89
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_pacman.json",
+    "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_pacman.json",
     "importance_def": "Σ|Δ(candidate-cell value at final frame)| + (#framebuffer cells changed vs baseline) — state + render channels",
     "importance_map": {
       "boot_run_still_works": [
@@ -119,7 +119,7 @@
       "positive_control_rho": 0.9999999999999998,
       "spearman_rho_lesion_vs_oracle": 0.9999999999999998
     },
-    "settings": "GenericRomSettings",
+    "settings": "PacmanRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every lesion is an EXACT clamp + deterministic re-run on the true ROM.",
     "testbed": {
       "cause_density_above_floor": 9,
@@ -131,7 +131,7 @@
       "note": "P2 redesign: the lesion study runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. A2's lesion algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r131c77",
+      "shared_output": "screen_region(n_changed_px)@r132c77",
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
@@ -158,7 +158,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "per-unit behavioural-importance map (candidate RAM cells)",
-  "timestamp": "1783606037",
+  "timestamp": "1793018975",
   "value": 0.9999999999999998,
   "where": "local"
 }

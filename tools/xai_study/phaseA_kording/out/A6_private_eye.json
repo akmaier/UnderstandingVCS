@@ -1,7 +1,7 @@
 {
   "arrays": "A6_private_eye.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -58,8 +58,12 @@
     ],
     "cell_scope": {
       "direction_disagreement": 0.0,
-      "false_edge_rate": 0.9,
+      "false_edge_rate": 0.9090909090909091,
       "inferred_edges_0based": [
+        [
+          2,
+          5
+        ],
         [
           3,
           5
@@ -102,7 +106,7 @@
         ]
       ],
       "missed_edge_rate": 0.8888888888888888,
-      "n_inferred_edges": 10,
+      "n_inferred_edges": 11,
       "n_nodes": 24,
       "n_true_edges": 9,
       "note": "false_edge_rate=#(Granger edge, true absent)/#Granger edges (=1−precision); missed_edge_rate=#(true edge, Granger absent)/#true edges (=1−recall); direction_disagreement = of unordered pairs with a single true AND single Granger arrow, the fraction whose directions OPPOSE — the headline temporal-precedence≠causation Granger failure.",
@@ -207,22 +211,22 @@
       "note": "P2 redesign: BOTH the scored oracle prefix (true data-flow graph) AND the descriptive Granger trajectory run on a seeded random-action GAMEPLAY state (not the FIRE-then-NOOP oracle tape / synthetic active tape), gated by the §1 oracle cause-density gate. The Granger tape is the gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A6's Granger + true-data-flow algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r148c48",
+      "shared_output": "screen_region(n_changed_px)@r148c49",
       "state_kind": "seeded_random_action_gameplay"
     },
     "trajectory_frames": 150,
     "trajectory_trace": "active trace (4×FIRE + periodic RIGHTFIRE/LEFTFIRE)",
     "triad": {
-      "F": 0.10526315789473685,
+      "F": 0.09999999999999999,
       "F_note": "F1 of the Granger-inferred directed edges vs the exact-oracle true data-flow edges (24 candidate cells)",
-      "M": 0.9,
-      "M_note": "M = |U*|/|U_hat| over edges: |true edges|=9 / |discovered edges|=10",
-      "S": 0.9818840579710145,
+      "M": 0.8181818181818182,
+      "M_note": "M = |U*|/|U_hat| over edges: |true edges|=9 / |discovered edges|=11",
+      "S": 0.980072463768116,
       "S_note": "off-diagonal directed-edge agreement between the Granger graph and the HELD-OUT base+37 true data-flow (generalisation to an unseen intervention, bit-exact re-run)",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): Granger causality infers TEMPORAL PRECEDENCE, which is NOT the true causal data-flow direction. On a deterministic register-transfer machine the two demonstrably disagree — false_edge_rate>0, missed_edge_rate>0, and direction_disagreement>0 quantify the departure from the known data-flow.",
-      "legacy_minimality": 0.09999999999999998,
+      "legacy_minimality": 0.09090909090909094,
       "legacy_minimality_note": "1 − false-edge rate (the pre-standardization edge M). Retained for reference; the triad M above is the paper's |true edges|/|discovered edges|.",
-      "n_inferred_edges": 10,
+      "n_inferred_edges": 11,
       "n_nodes": 24,
       "n_true_edges": 9
     }
@@ -238,7 +242,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "directed data-flow edges (CPU/TIA/RIOT subsystems + candidate RAM cells)",
-  "timestamp": "1783606205",
-  "value": 0.9,
+  "timestamp": "1793019341",
+  "value": 0.9090909090909091,
   "where": "local"
 }

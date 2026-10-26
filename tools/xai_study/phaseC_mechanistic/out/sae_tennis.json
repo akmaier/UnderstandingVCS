@@ -1,7 +1,7 @@
 {
   "arrays": "sae_tennis.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -130,7 +130,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.6869184227559781,
+          "best_corr": 0.6869184227559797,
           "best_feature": 44,
           "concept": "player_y",
           "family": "player",
@@ -139,7 +139,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8456310231896856,
+          "best_corr": 0.8456310231896863,
           "best_feature": 7,
           "concept": "enemy_y",
           "family": "enemy",
@@ -148,7 +148,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.6734606367989275,
+          "best_corr": 0.673460636798928,
           "best_feature": 48,
           "concept": "player_x",
           "family": "player",
@@ -157,7 +157,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8067708595264824,
+          "best_corr": 0.8067708595264823,
           "best_feature": 48,
           "concept": "enemy_x",
           "family": "enemy",
@@ -220,7 +220,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.7636417076823928,
+          "best_corr": 0.7636417076823913,
           "best_feature": 50,
           "concept": "(unnamed)",
           "family": "(unnamed)",
@@ -229,7 +229,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7414260033098445,
+          "best_corr": 0.741426003309845,
           "best_feature": 40,
           "concept": "(unnamed)",
           "family": "(unnamed)",
@@ -275,7 +275,7 @@
       "best_d_hidden": 64,
       "best_l1": 0.01,
       "best_mean_l0": 34.14,
-      "fve_heldout": 0.6380593901408065,
+      "fve_heldout": 0.6380593901408067,
       "fve_train": 0.9920226760479027
     },
     "sae": {
@@ -292,7 +292,7 @@
     "sweep": {
       "best": {
         "d_hidden": 64,
-        "fve_held": 0.6380593901408065,
+        "fve_held": 0.6380593901408067,
         "fve_train": 0.9920226760479027,
         "l1": 0.01,
         "matched_fraction": 0.625,
@@ -309,7 +309,7 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.6190823282733116,
+          "fve_held": 0.6190823282733117,
           "fve_train": 0.9323785889084721,
           "l1": 0.05,
           "matched_fraction": 0.25,
@@ -317,7 +317,7 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.5022344796672582,
+          "fve_held": 0.5022344796672584,
           "fve_train": 0.818854106703622,
           "l1": 0.2,
           "matched_fraction": 0.625,
@@ -333,7 +333,7 @@
         },
         {
           "d_hidden": 32,
-          "fve_held": 0.6170544069037185,
+          "fve_held": 0.6170544069037187,
           "fve_train": 0.9793587181758552,
           "l1": 0.05,
           "matched_fraction": 0.75,
@@ -341,7 +341,7 @@
         },
         {
           "d_hidden": 32,
-          "fve_held": 0.5250167680832221,
+          "fve_held": 0.5250167680832223,
           "fve_train": 0.9550173194395883,
           "l1": 0.2,
           "matched_fraction": 0.25,
@@ -349,7 +349,7 @@
         },
         {
           "d_hidden": 64,
-          "fve_held": 0.6380593901408065,
+          "fve_held": 0.6380593901408067,
           "fve_train": 0.9920226760479027,
           "l1": 0.01,
           "matched_fraction": 0.625,
@@ -357,7 +357,7 @@
         },
         {
           "d_hidden": 64,
-          "fve_held": 0.6103345247641234,
+          "fve_held": 0.6103345247641235,
           "fve_train": 0.9889412841554518,
           "l1": 0.05,
           "matched_fraction": 0.375,
@@ -365,7 +365,7 @@
         },
         {
           "d_hidden": 64,
-          "fve_held": 0.5274011470552428,
+          "fve_held": 0.5274011470552429,
           "fve_train": 0.9768786565573447,
           "l1": 0.2,
           "matched_fraction": 0.25,
@@ -395,7 +395,7 @@
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
       "M": 1.0,
       "M_note": "|U*|=11 (oracle movers) / |U_hat|=8 (method above-threshold)",
-      "S": -0.23278200619666606,
+      "S": -0.232782006196666,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
     }
@@ -412,7 +412,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783609508",
+  "timestamp": "1793021195",
   "value": 0.625,
   "where": "local"
 }

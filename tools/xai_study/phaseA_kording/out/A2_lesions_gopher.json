@@ -1,7 +1,7 @@
 {
   "arrays": "A2_lesions_gopher.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "budget": {
@@ -58,7 +58,7 @@
       50,
       85
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_gopher.json",
+    "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_gopher.json",
     "importance_def": "Σ|Δ(candidate-cell value at final frame)| + (#framebuffer cells changed vs baseline) — state + render channels",
     "importance_map": {
       "boot_run_still_works": [
@@ -203,7 +203,7 @@
       "positive_control_rho": 1.0,
       "spearman_rho_lesion_vs_oracle": 0.8179059180576631
     },
-    "settings": "GenericRomSettings",
+    "settings": "GopherRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every lesion is an EXACT clamp + deterministic re-run on the true ROM.",
     "testbed": {
       "cause_density_above_floor": 21,
@@ -242,7 +242,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "per-unit behavioural-importance map (candidate RAM cells)",
-  "timestamp": "1783605514",
+  "timestamp": "1793017761",
   "value": 0.8179059180576631,
   "where": "local"
 }

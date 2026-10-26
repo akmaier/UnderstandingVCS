@@ -1,7 +1,7 @@
 {
   "arrays": "A2_lesions_pitfall.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "budget": {
@@ -50,7 +50,7 @@
       90,
       92
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_pitfall.json",
+    "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_pitfall.json",
     "importance_def": "Σ|Δ(candidate-cell value at final frame)| + (#framebuffer cells changed vs baseline) — state + render channels",
     "importance_map": {
       "boot_run_still_works": [
@@ -73,11 +73,11 @@
       ],
       "lesion_importance": [
         0.0,
-        3293.0,
+        3264.0,
         1287.0,
         631.0,
         261.0,
-        944.0,
+        833.0,
         0.0,
         0.0,
         0.0,
@@ -86,7 +86,7 @@
         320.0,
         249.0,
         124.0,
-        40.0,
+        41.0,
         0.0
       ],
       "lesion_rank_order_0based": [
@@ -128,11 +128,11 @@
       ],
       "oracle_role": [
         0.0,
-        3293.0,
+        3264.0,
         1287.0,
         631.0,
         261.0,
-        944.0,
+        833.0,
         0.0,
         0.0,
         0.0,
@@ -141,22 +141,22 @@
         320.0,
         249.0,
         124.0,
-        40.0,
+        41.0,
         0.0
       ]
     },
     "interaction_blind_spot": {
       "interaction_missed_rate": 0.14545454545454545,
-      "max_superadditive_delta": 0.0,
+      "max_superadditive_delta": 103.0,
       "max_superadditive_pair_0based": [
-        0,
-        0
+        1,
+        5
       ],
-      "mean_abs_interaction": 12.254545454545454,
+      "mean_abs_interaction": 10.0,
       "n_missed": 8,
       "n_pairs": 55,
       "note": "the WHERE-SINGLE-UNIT-LESIONS-MISS result: Δ_int = E(i,j) − (E(i)+E(j)) over the top-importance unit pairs (budgeted). A non-zero Δ_int is super/sub-additivity that NO single-unit map can represent — the precise blind spot of A2.",
-      "tolerance": 20.554545454545455
+      "tolerance": 19.78181818181818
     },
     "lesion_doset": "single-unit {clamp→0, clamp→alt=base⊻0xFF}; per-unit effect = MAX importance over the do-set",
     "oracle_doset": "exhaustive {occlude→0, set→base+17, set→base+37, clamp→alt}; per-unit role = MAX importance over the do-set",
@@ -175,7 +175,7 @@
       "positive_control_rho": 1.0,
       "spearman_rho_lesion_vs_oracle": 1.0
     },
-    "settings": "GenericRomSettings",
+    "settings": "PitfallRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every lesion is an EXACT clamp + deterministic re-run on the true ROM.",
     "testbed": {
       "cause_density_above_floor": 19,
@@ -187,7 +187,7 @@
       "note": "P2 redesign: the lesion study runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. A2's lesion algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r120c61",
+      "shared_output": "screen_region(n_changed_px)@r114c129",
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
@@ -214,7 +214,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "per-unit behavioural-importance map (candidate RAM cells)",
-  "timestamp": "1783606142",
+  "timestamp": "1793019206",
   "value": 1.0,
   "where": "local"
 }

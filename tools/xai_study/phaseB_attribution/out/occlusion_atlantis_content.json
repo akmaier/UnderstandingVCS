@@ -1,7 +1,7 @@
 {
   "arrays": "occlusion_atlantis_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-occlusion causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -47,7 +47,7 @@
     "metrics": {
       "deletion_auc": 0.2959558823529412,
       "insertion_auc": 0.18713235294117644,
-      "pearson_corr": 0.778103777545779,
+      "pearson_corr": 0.7781037775457791,
       "precision_at_k": 0.6666666666666666,
       "spearman_corr": 0.8732960061725276,
       "topk": 3
@@ -104,7 +104,7 @@
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (E0-3) — --array=0-5%N over the 6 core games (--shard i --shard-kind game); each task re-runs the real ROM, no GPU needed.",
     "substrate": "jutari (Julia) — real-ROM single-cause occlusion + TRUE-VCS deletion/insertion re-runs (bit-exact oracle machinery). NO surrogate model.",
     "triad": {
-      "F": 0.778103777545779,
+      "F": 0.7781037775457791,
       "M": 0.75,
       "M_named_size": 4,
       "M_note": "|U*|=3 (oracle movers) / |U_hat|=4 (method above-threshold)",
@@ -126,7 +126,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@60)",
-  "timestamp": "1783126359",
-  "value": 0.778103777545779,
+  "timestamp": "1793016269",
+  "value": 0.7781037775457791,
   "where": "local"
 }

@@ -1,7 +1,7 @@
 {
   "arrays": "perturbation_asterix_content.npz",
   "ci": null,
-  "commit": "9391b559",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-attributed causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -60,7 +60,7 @@
       "tia[COLUBK]:set": 0.0
     },
     "harness_positive_control": {
-      "deletion_auc": 0.25,
+      "deletion_auc": 0.05,
       "insertion_auc": 0.0,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the extremal-perturbation numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
@@ -82,10 +82,10 @@
     "metrics": {
       "deletion_auc": 0.2,
       "insertion_auc": 0.0,
-      "mask_iou_vs_true_causal_set": 0.5,
-      "pearson_corr": 0.3890983483025079,
-      "precision_at_k": 0.6666666666666666,
-      "spearman_corr": 0.44182825484764543,
+      "mask_iou_vs_true_causal_set": 0.3333333333333333,
+      "pearson_corr": 0.2334359342661629,
+      "precision_at_k": 0.3333333333333333,
+      "spearman_corr": 0.3241618663343397,
       "topk": 3
     },
     "optimizer": "greedy forward selection on the TRUE VCS (the discrete, budget-bounded analogue of Fong & Vedaldi's projected-gradient soft-mask optimisation; chosen because a soft-mask gradient VANISHES on the §1 position/index output — see output_note)",
@@ -96,7 +96,7 @@
       "ram[39]:occlude": 80.0,
       "ram[39]:set": 0.0,
       "ram[41]:occlude": 0.0,
-      "ram[41]:set": 0.0,
+      "ram[41]:set": 80.0,
       "ram[54]:occlude": 0.0,
       "ram[54]:set": 0.0,
       "ram[73]:occlude": 0.0,
@@ -113,14 +113,25 @@
     },
     "oracle_causal_set": [
       "ram[39]:occlude",
+      "ram[41]:set",
       "ram[96]:set"
     ],
     "output_kind": "content",
-    "output_note": "MEANINGFUL / EXTREMAL PERTURBATION (Fong & Vedaldi 2017; Fong et al. 2019) is INTERVENTION-BASED: the attribution is an OPTIMISED MINIMAL MASK found by greedy forward selection on the TRUE VCS under an area budget — every probe is |y(occlude mask) − y(intact)| from a real-ROM re-run, NOT a surrogate. final mask |M|=1/5 (area≤0.25·C), mask |Δy|=80.0, pert L1=160.0, budget=102 real-ROM re-runs. CONTENT output: RAM byte 96 (the most causally-active candidate concept byte the oracle found at this state). The extremal mask is the MINIMAL set of cells whose joint perturbation maximally moves this byte; mask IoU vs the oracle's true-causal top-3 set = 0.5 is the §5 headline metric for this row. Extremal perturbation probes the occlude→0 direction, while the §1 oracle's per-cause map MIXES the set (base+17) and occlude (→0) modes plus a TIA/joystick do — so corr=0.389 (precision@3=0.667) is high but need not be 1. We REPORT the measured numbers; we do not assert IoU=1.",
+    "output_note": "MEANINGFUL / EXTREMAL PERTURBATION (Fong & Vedaldi 2017; Fong et al. 2019) is INTERVENTION-BASED: the attribution is an OPTIMISED MINIMAL MASK found by greedy forward selection on the TRUE VCS under an area budget — every probe is |y(occlude mask) − y(intact)| from a real-ROM re-run, NOT a surrogate. final mask |M|=1/5 (area≤0.25·C), mask |Δy|=80.0, pert L1=160.0, budget=102 real-ROM re-runs. CONTENT output: RAM byte 96 (the most causally-active candidate concept byte the oracle found at this state). The extremal mask is the MINIMAL set of cells whose joint perturbation maximally moves this byte; mask IoU vs the oracle's true-causal top-3 set = 0.3333333333333333 is the §5 headline metric for this row. Extremal perturbation probes the occlude→0 direction, while the §1 oracle's per-cause map MIXES the set (base+17) and occlude (→0) modes plus a TIA/joystick do — so corr=0.233 (precision@3=0.333) is high but need not be 1. We REPORT the measured numbers; we do not assert IoU=1.",
     "pert_l1": 160.0,
     "perturbation_baseline": "0 (masked RAM cell / TIA register set to 0; joystick masked == NOOP, the baseline trace) — the oracle's occlude! operator",
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (E0-3) — --array=0-5%N over the 6 core games (--shard i --shard-kind game); each task re-runs the real ROM, no GPU needed.",
     "substrate": "jutari (Julia) — real-ROM greedy extremal-mask optimisation + TRUE-VCS deletion/insertion re-runs (bit-exact oracle machinery). NO surrogate model, NO gradient.",
+    "triad": {
+      "F": 0.2334359342661629,
+      "M": 1.0,
+      "M_named_size": 2,
+      "M_note": "|U*|=3 (oracle movers) / |U_hat|=2 (method above-threshold)",
+      "M_true_minimal_size": 3,
+      "S": 0.0,
+      "S_note": "held-out predictive fit: 0/10 held-out do(u) within ε=8.0 (calib=10, fit Δy≈-0.067·attr+10.778)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 0.0
   },
   "game": "asterix",
@@ -134,7 +145,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@96)",
-  "timestamp": "1783015781",
-  "value": 0.3890983483025079,
+  "timestamp": "1793016128",
+  "value": 0.2334359342661629,
   "where": "local"
 }

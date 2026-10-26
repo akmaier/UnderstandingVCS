@@ -1,7 +1,7 @@
 {
   "arrays": "guided_backprop_phoenix_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "adebayo_sanity_check": {
       "failure_mode": "model_invariant_saliency_constant_jacobian",
@@ -81,7 +81,7 @@
       "delta_pearson_guided_minus_vanilla": 0.0,
       "guided_equals_vanilla": true,
       "interpretation": "Guided BP = vanilla |∂y/∂u| with negative-gradient suppression. On the VCS the explained output is a one-hot RAM read (a LINEAR unit, ∂y/∂u ≥ 0) and the soft emulator has NO deep ReLU stack, so the suppression removes nothing ⇒ Guided BP DEGENERATES to saliency (Δpearson = 0). The negative-suppression rule IS wired (it provably rectifies a mixed-sign surrogate — see guided_demo_rectifies); it simply has nothing to do on this substrate. This is the honest finding the DoD asks for.",
-      "vanilla_pearson": 0.9093146105232097,
+      "vanilla_pearson": 0.9093146105232096,
       "vanilla_precision_at_k": 1.0
     },
     "harness_positive_control": {
@@ -96,7 +96,7 @@
     "metrics": {
       "deletion_auc": 0.9807692307692307,
       "insertion_auc": 0.057692307692307696,
-      "pearson_corr": 0.9093146105232097,
+      "pearson_corr": 0.9093146105232096,
       "precision_at_k": 1.0,
       "spearman_corr": 0.9991996797437437,
       "topk": 3
@@ -134,7 +134,7 @@
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE guided gradients over outputs×causes×games on GPU; the forward is bit-exact to this map.",
     "substrate": "jutari (Julia) — Zygote content-path ∂y/∂u over the RAM tape, guided rule g⊙1[g>0] (suppress −grad), + TRUE-VCS deletion/insertion re-runs (real-ROM, bit-exact oracle machinery).",
     "triad": {
-      "F": 0.9093146105232097,
+      "F": 0.9093146105232096,
       "M": 1.0,
       "M_named_size": 2,
       "M_note": "|U*|=2 (oracle movers) / |U_hat|=2 (method above-threshold)",
@@ -156,7 +156,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@89)",
-  "timestamp": "1783131913",
-  "value": 0.9093146105232097,
+  "timestamp": "1793020930",
+  "value": 0.9093146105232096,
   "where": "local"
 }

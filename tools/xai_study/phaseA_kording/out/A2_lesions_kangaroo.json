@@ -1,7 +1,7 @@
 {
   "arrays": "A2_lesions_kangaroo.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "budget": {
@@ -48,7 +48,7 @@
       59,
       83
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_kangaroo.json",
+    "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_kangaroo.json",
     "importance_def": "Σ|Δ(candidate-cell value at final frame)| + (#framebuffer cells changed vs baseline) — state + render channels",
     "importance_map": {
       "boot_run_still_works": [
@@ -168,7 +168,7 @@
       "positive_control_rho": 0.9999999999999998,
       "spearman_rho_lesion_vs_oracle": 0.9999999999999998
     },
-    "settings": "GenericRomSettings",
+    "settings": "KangarooRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every lesion is an EXACT clamp + deterministic re-run on the true ROM.",
     "testbed": {
       "cause_density_above_floor": 16,
@@ -207,7 +207,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "per-unit behavioural-importance map (candidate RAM cells)",
-  "timestamp": "1783605742",
+  "timestamp": "1793018312",
   "value": 0.9999999999999998,
   "where": "local"
 }

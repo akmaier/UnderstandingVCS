@@ -1,7 +1,7 @@
 {
   "arrays": "rise_pong_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-RISE causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -40,7 +40,7 @@
           "deletion_auc": 0.027777777777777776,
           "insertion_auc": 0.8150793650793651,
           "n_masks": 62,
-          "pearson_corr": 0.4530487186768168,
+          "pearson_corr": 0.45304871867681684,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.5809036604762328
         },
@@ -48,7 +48,7 @@
           "deletion_auc": 0.027777777777777776,
           "insertion_auc": 0.8150793650793651,
           "n_masks": 125,
-          "pearson_corr": 0.47942965107548396,
+          "pearson_corr": 0.4794296510754841,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.5809036604762328
         },
@@ -154,7 +154,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@54)",
-  "timestamp": "1783125388",
+  "timestamp": "1793023662",
   "value": 0.6099143243210364,
   "where": "local"
 }

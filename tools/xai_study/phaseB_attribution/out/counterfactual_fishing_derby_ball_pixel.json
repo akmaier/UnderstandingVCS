@@ -1,7 +1,7 @@
 {
   "arrays": "counterfactual_fishing_derby_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "alt_frame": 15,
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-CF causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
@@ -89,7 +89,7 @@
     },
     "headline_metrics": {
       "deletion_auc": 0.9460843373493976,
-      "insertion_auc": 0.11034136546184743,
+      "insertion_auc": 0.1103413654618474,
       "pearson_corr": 0.966678902402068,
       "precision_at_k": 1.0,
       "spearman_corr": 0.7882161857719896,
@@ -156,7 +156,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r128c31",
-  "timestamp": "1783132160",
+  "timestamp": "1793018265",
   "value": 0.966678902402068,
   "where": "local"
 }

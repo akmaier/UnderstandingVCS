@@ -1,7 +1,7 @@
 {
   "arrays": "A8_gopher.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -48,7 +48,7 @@
       50,
       85
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_gopher.json",
+    "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_gopher.json",
     "oracle_causal_ram_indices": [
       0,
       1,
@@ -101,7 +101,7 @@
       "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.148 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
     },
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-    "settings": "GenericRomSettings",
+    "settings": "GopherRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
     "testbed": {
       "cause_density_above_floor": 21,
@@ -128,7 +128,7 @@
     "wholestate": {
       "ideal_minimal_size": 19,
       "n_oracle_causal_cells": 19,
-      "n_varying_ram_cells": 20,
+      "n_varying_ram_cells": 7,
       "note": "the whole-state recorder keeps ALL 192 state bytes every frame; only 19 candidate cells are causal by the oracle ⇒ it over-records by 6.7× — trivially faithful/sufficient, maximally non-minimal.",
       "over_recording_factor": 6.7368421052631575,
       "ram_size": 128,
@@ -154,7 +154,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "full RAM+register state map over time (whole-state record)",
-  "timestamp": "1783127686",
+  "timestamp": "1793020543",
   "value": 0.1484375,
   "where": "local"
 }

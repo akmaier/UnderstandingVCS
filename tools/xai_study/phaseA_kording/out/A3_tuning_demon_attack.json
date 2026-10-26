@@ -1,7 +1,7 @@
 {
   "arrays": "A3_tuning_demon_attack.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "A3_tuning": {
       "clock_corr_per_cell": {
@@ -9,8 +9,8 @@
         "RAM[13]:enemy_x": 0.40468361403905884,
         "RAM[16]:player.xy": 0.8108817199208616,
         "RAM[17]:enemy_x1": 0.39204587533148477,
-        "RAM[18]:enemy_x2": 0.6904660538751985,
-        "RAM[19]:enemy_x3": 0.3028318684757727,
+        "RAM[18]:enemy_x2": 0.6904660538751987,
+        "RAM[19]:enemy_x3": 0.30283186847577276,
         "RAM[20]:basex": 0.8566792190853243,
         "RAM[21]:missile_y": 0.27918895783706227,
         "RAM[22]:player_x": 0.38596908972779204,
@@ -46,15 +46,15 @@
         "RAM[16]:player.xy": 0.8322088874800065,
         "RAM[17]:enemy_x1": 0.9404661222080286,
         "RAM[18]:enemy_x2": 0.6687715079335746,
-        "RAM[19]:enemy_x3": 0.6390213323108423,
+        "RAM[19]:enemy_x3": 0.6390213323108421,
         "RAM[20]:basex": 0.9104128778633798,
         "RAM[21]:missile_y": 0.35698624852028266,
-        "RAM[22]:player_x": 0.6390213323108423,
+        "RAM[22]:player_x": 0.6390213323108421,
         "RAM[37]:enemy_projectile_y": 0.666049864349348,
         "RAM[62]:level": 0.0,
         "RAM[69]:enemy_y1": 0.9809896508610053,
         "RAM[70]:enemy_y2": 0.9809896508610053,
-        "RAM[71]:enemy_y3": 0.8965590888849244,
+        "RAM[71]:enemy_y3": 0.8965590888849243,
         "RAM[72]:falling_en.xy": 0.0
       },
       "luminance_corr_per_cell": {
@@ -69,7 +69,7 @@
         "RAM[22]:player_x": 0.26470383518697727,
         "RAM[37]:enemy_projectile_y": 0.3348800551353268,
         "RAM[62]:level": 0.0,
-        "RAM[69]:enemy_y1": 0.7841898127099245,
+        "RAM[69]:enemy_y1": 0.7841898127099244,
         "RAM[70]:enemy_y2": 0.6882464990667193,
         "RAM[71]:enemy_y3": 0.5888390948499248,
         "RAM[72]:falling_en.xy": 0.0
@@ -173,7 +173,7 @@
       "F_note": "Spearman(A3 game-variable selectivity, oracle causal importance) over 15 candidate cells",
       "M": 0.75,
       "M_note": "M = |U*|/|U_hat| (03_methods.tex sec:triad): |U*|=9 (oracle movers) / |U_hat|=12 (method above-threshold)",
-      "S": 0.19946711922258398,
+      "S": 0.199467119222584,
       "S_note": "Pearson(A3 selectivity, held-out do(base+37) screen break) — sufficiency on a bit-exact re-run",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): a tuning-curve importance map scores LOW faithfulness despite fully-known structure. F<1 / spurious-tuning>0 quantify where the classical analysis departs from the ground truth. The oracle-as-method positive control (F=1.0) confirms the harness rewards a perfectly-faithful map.",
       "legacy_minimality": 0.7142857142857143,
@@ -191,7 +191,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen-break (oracle causal importance) vs tuning selectivity",
-  "timestamp": "1783605241",
+  "timestamp": "1793017071",
   "value": 0.2857142857142857,
   "where": "local"
 }

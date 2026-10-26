@@ -1,7 +1,7 @@
 {
   "arrays": "A4_enduro.npz",
   "ci": null,
-  "commit": "9391b559",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -43,17 +43,17 @@
       "n_total_pairs": 3,
       "note": "true coupling(i,j) = max |Δ candidate-cell j| under an EXACT do(i:=0)/do(i:=base+17) intervention on cell i, re-run on the real ROM (symmetrised). The §1 oracle restricted to candidate-cell pairs — the TRUE coupling A4 is scored against.",
       "self_footprint_per_cell": {
-        "RAM[46]:x_drift": 589.0,
+        "RAM[46]:x_drift": 592.0,
         "RAM[52]:xy": 0.0,
-        "RAM[59]:y": 689.0
+        "RAM[59]:y": 562.0
       }
     },
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
     "scored_in_conformance_window": false,
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the coupling oracle uses EXACT interventions re-run on the true ROM.",
     "testbed": {
-      "cause_density_above_floor": 3,
-      "cause_density_accepted": false,
+      "cause_density_above_floor": 4,
+      "cause_density_accepted": true,
       "cause_density_floor": 0.5,
       "cause_density_gate_k": 4,
       "horizon": 15,
@@ -67,29 +67,31 @@
     "trajectory_frames": 150,
     "trajectory_trace": "seeded random-action GAMEPLAY (seed=0, prefix=90+15, NOOP-continued past the window)",
     "triad": {
-      "F": -0.5,
+      "F": 0.5,
       "F_note": "Spearman(|pairwise corr|, oracle cell-cell coupling) over 3 candidate-cell pairs",
-      "M": 1.0,
-      "M_note": "1 − over-claim rate: fraction of |corr|≥0.7-flagged pairs the oracle says are NOT coupled (correlation over-grouping)",
-      "S": 0.0,
+      "M": 0.6666666666666666,
+      "M_note": "M = |U*|/|U_hat| over candidate-cell pairs (03_methods.tex sec:triad): |U*|=2 (oracle movers) / |U_hat|=3 (method above-threshold)",
+      "S": -0.06411971071314461,
       "S_note": "Pearson(|pairwise corr|, held-out do(base+37) coupling) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): pairwise correlation structure GENERALLY OVER-GROUPS — it lumps causally-unrelated cells that merely co-vary (the present≠used trap, pairwise). F<1 + over_grouping_ratio>0 quantify the departure from the true coupling.",
+      "legacy_minimality": 1.0,
+      "legacy_minimality_note": "1 − over-claim rate (the pre-standardization M): fraction of |corr|-flagged pairs the oracle says are NOT coupled. Retained for reference; the triad M above is the paper's |U*|/|U_hat|.",
       "n_pairs": 3
     },
     "weak_pairwise_strong_global": {
-      "candidate_frac_strong_pairs(|corr|>=0.5)": 0.3333333333333333,
-      "candidate_mean_abs_pairwise": 0.22594945995029814,
-      "candidate_median_abs_pairwise": 0.1345128974738162,
+      "candidate_frac_strong_pairs(|corr|>=0.5)": 0.0,
+      "candidate_mean_abs_pairwise": 0.020082171111280727,
+      "candidate_median_abs_pairwise": 0.015957161279227187,
       "candidate_n_varying_cells": 3,
-      "candidate_participation_ratio": 2.506137215727434,
+      "candidate_participation_ratio": 2.995977548940865,
       "candidate_top3_eig_share": 1.0,
-      "candidate_top_eig_share": 0.513202424260235,
+      "candidate_top_eig_share": 0.34855251779893126,
       "note": "the spike-word headline (Schneidman 2006; Tkačik 2014): over the FULL POPULATION of varying RAM cells the median pairwise |corr| is WEAK while a few GLOBAL eigen-modes dominate — the effective dimensionality (participation ratio) is far below the #cells, so the collective structure greatly exceeds the pairwise structure. WPSG flag = population median|corr|<0.5 AND population top3-eig-share≥0.6. (The candidate_* set is curated so its pairwise corr runs higher.)",
-      "population_mean_abs_pairwise": 0.17786503441388613,
-      "population_median_abs_pairwise": 0.09064219060017457,
-      "population_n_cells": 73,
-      "population_participation_ratio": 10.61275083311495,
-      "population_top3_eig_share": 0.4643605827579428,
+      "population_mean_abs_pairwise": 0.21034804392236528,
+      "population_median_abs_pairwise": 0.10832456447461127,
+      "population_n_cells": 61,
+      "population_participation_ratio": 8.240681668968518,
+      "population_top3_eig_share": 0.5129359710440949,
       "weak_pairwise_strong_global": false
     }
   },
@@ -104,7 +106,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "cell-cell-coupling",
-  "timestamp": "1783015845",
-  "value": -0.5,
+  "timestamp": "1793017178",
+  "value": 0.5,
   "where": "local"
 }

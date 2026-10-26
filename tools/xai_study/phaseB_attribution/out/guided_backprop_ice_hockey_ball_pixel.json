@@ -1,7 +1,7 @@
 {
   "arrays": "guided_backprop_ice_hockey_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "adebayo_sanity_check": {
       "failure_mode": "model_invariant_saliency_constant_jacobian",
@@ -77,8 +77,8 @@
       "vanilla_precision_at_k": 0.3333333333333333
     },
     "harness_positive_control": {
-      "deletion_auc": 0.890374331550802,
-      "insertion_auc": 0.5975935828877005,
+      "deletion_auc": 0.8903743315508023,
+      "insertion_auc": 0.5975935828877006,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the Guided-BP numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "pearson_corr": 1.0,
@@ -164,7 +164,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r92c61",
-  "timestamp": "1783131207",
+  "timestamp": "1793019509",
   "value": 0.0,
   "where": "local"
 }

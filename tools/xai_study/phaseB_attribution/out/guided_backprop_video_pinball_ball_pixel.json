@@ -1,7 +1,7 @@
 {
   "arrays": "guided_backprop_video_pinball_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "adebayo_sanity_check": {
       "failure_mode": "model_invariant_saliency_constant_jacobian",
@@ -65,8 +65,8 @@
       "vanilla_precision_at_k": 0.6666666666666666
     },
     "harness_positive_control": {
-      "deletion_auc": 0.7104166666666668,
-      "insertion_auc": 0.34375000000000006,
+      "deletion_auc": 0.7104166666666669,
+      "insertion_auc": 0.3437500000000001,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the Guided-BP numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "pearson_corr": 1.0,
@@ -75,7 +75,7 @@
     "method_reference": "Springenberg et al. 2015 (Guided Backprop / deconvnet); sanity check: Adebayo et al. 2018.",
     "metrics": {
       "deletion_auc": 0.37259615384615385,
-      "insertion_auc": 0.7283653846153847,
+      "insertion_auc": 0.7283653846153848,
       "pearson_corr": 0.0,
       "precision_at_k": 0.6666666666666666,
       "spearman_corr": 0.0,
@@ -146,7 +146,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r184c66",
-  "timestamp": "1783133016",
+  "timestamp": "1793023179",
   "value": 0.0,
   "where": "local"
 }

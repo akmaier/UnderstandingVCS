@@ -1,7 +1,7 @@
 {
   "arrays": "A8_air_raid.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -34,31 +34,33 @@
       85,
       86
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_air_raid.json",
+    "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_air_raid.json",
     "oracle_causal_ram_indices": [
       19,
       20,
       21,
       27,
       28,
+      39,
       40,
       41,
       42,
       83,
+      84,
       85
     ],
     "oracle_importance_per_cell": {
-      "RAM[19]:player.xy": 132.0,
-      "RAM[20]:b1.xy": 1664.0,
-      "RAM[21]:b2.xy": 1600.0,
-      "RAM[27]:b1.damage": 696.0,
+      "RAM[19]:player.xy": 39352.0,
+      "RAM[20]:b1.xy": 39352.0,
+      "RAM[21]:b2.xy": 1664.0,
+      "RAM[27]:b1.damage": 704.0,
       "RAM[28]:b2.damage": 576.0,
-      "RAM[39]:lives.lives": 0.0,
-      "RAM[40]:a": 120.0,
-      "RAM[41]:b": 56.0,
-      "RAM[42]:c": 53.0,
-      "RAM[83]:enemy_missile.xy": 4.0,
-      "RAM[84]:enemy_missile.xy": 0.0,
+      "RAM[39]:lives.lives": 48.0,
+      "RAM[40]:a": 152.0,
+      "RAM[41]:b": 88.0,
+      "RAM[42]:c": 54.0,
+      "RAM[83]:enemy_missile.xy": 39352.0,
+      "RAM[84]:enemy_missile.xy": 39352.0,
       "RAM[85]:player_missile.xy": 4.0,
       "RAM[86]:player_missile.xy": 0.0
     },
@@ -68,13 +70,13 @@
       "S": 1.0,
       "minimal_set_sufficient": true,
       "name": "oracle minimal causal set (keep ONLY oracle-causal cells)",
-      "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.078 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
+      "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.094 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
     },
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-    "settings": "GenericRomSettings",
+    "settings": "AirRaidRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
     "testbed": {
-      "cause_density_above_floor": 14,
+      "cause_density_above_floor": 17,
       "cause_density_accepted": true,
       "cause_density_floor": 0.5,
       "cause_density_gate_k": 4,
@@ -89,18 +91,18 @@
     "triad": {
       "F": 1.0,
       "F_note": "recall of oracle-causal candidate cells under the whole-state map = 1.0 (the recorded whole state contains every cell, so it misses no causal cell)",
-      "M": 0.078125,
-      "M_note": "minimality at the FLOOR: |recovered set| = the whole 128-byte state; M = #oracle-causal cells / 128 = 10/128 (over-recording factor 12.8×)",
+      "M": 0.09375,
+      "M_note": "minimality at the FLOOR: |recovered set| = the whole 128-byte state; M = #oracle-causal cells / 128 = 12/128 (over-recording factor 10.7×)",
       "S": 1.0,
       "S_note": "the recorded whole 128-byte RAM state, restored into a fresh checkpoint, reproduces the exact RAM + rendered frame (lossless ⇒ literally sufficient)",
       "interpretation": "A8 is the DESCRIPTIVE BASELINE (experiment_design.md §4): 'record everything'. It is trivially FAITHFUL (F=1: the whole state contains every causal cell) and SUFFICIENT (S=1: the recorded state, restored, reproduces the exact frame), but maximally NON-MINIMAL (M at the floor: the recovered set IS the whole machine). This M is the lower bound the other A-methods (A1..A7) and the causal operators (§6) are measured against on the minimality axis — the F/M trade-off the quantified-Kording story turns on."
     },
     "wholestate": {
-      "ideal_minimal_size": 10,
-      "n_oracle_causal_cells": 10,
-      "n_varying_ram_cells": 60,
-      "note": "the whole-state recorder keeps ALL 192 state bytes every frame; only 10 candidate cells are causal by the oracle ⇒ it over-records by 12.8× — trivially faithful/sufficient, maximally non-minimal.",
-      "over_recording_factor": 12.8,
+      "ideal_minimal_size": 12,
+      "n_oracle_causal_cells": 12,
+      "n_varying_ram_cells": 33,
+      "note": "the whole-state recorder keeps ALL 192 state bytes every frame; only 12 candidate cells are causal by the oracle ⇒ it over-records by 10.7× — trivially faithful/sufficient, maximally non-minimal.",
+      "over_recording_factor": 10.666666666666666,
       "ram_size": 128,
       "tape_shape": [
         150,
@@ -124,7 +126,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "full RAM+register state map over time (whole-state record)",
-  "timestamp": "1783127685",
-  "value": 0.078125,
+  "timestamp": "1793020541",
+  "value": 0.09375,
   "where": "local"
 }

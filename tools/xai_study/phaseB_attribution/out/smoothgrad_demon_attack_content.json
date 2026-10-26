@@ -1,7 +1,7 @@
 {
   "arrays": "smoothgrad_demon_attack_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-SmoothGrad causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run. NaN = a genuinely flat experiment.",
     "cause_names": [
@@ -40,7 +40,7 @@
     ],
     "content_ram_index": 16,
     "harness_positive_control": {
-      "deletion_auc": 0.9120338397790053,
+      "deletion_auc": 0.9120338397790052,
       "insertion_auc": 0.7777106353591161,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the SmoothGrad numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
@@ -160,7 +160,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@16)",
-  "timestamp": "1783128702",
+  "timestamp": "1793017771",
   "value": 0.9544935095981931,
   "where": "local"
 }

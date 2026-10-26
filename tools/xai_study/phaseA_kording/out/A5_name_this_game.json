@@ -1,7 +1,7 @@
 {
   "arrays": "A5_name_this_game.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): the LFP-analog pooled-activity spectrum is rich, but a high fraction of its power is the KNOWN frame/animation clocks — epiphenomenal structure that says nothing about the causal computation (the dominant spectral peaks are clock harmonics). A5 REVEALS the pooled periodicities and MISSES the causal map; the clock-explained fraction is the quantified-Kording measurement here.",
@@ -36,9 +36,9 @@
     "method_kind": "descriptive (no oracle F/S/M; A5 reports the pooled spectral structure it REVEALS vs the causal map it MISSES — the clock-explained fraction quantifies how much of the headline spectrum is causally inert).",
     "regions": [
       {
-        "clock_explained_variance_fraction": 0.5754301008401932,
+        "clock_explained_variance_fraction": 0.5760245655723293,
         "dominant_period_frames": 32.0,
-        "dominant_power_share": 0.10118169045431827,
+        "dominant_power_share": 0.1011816904543182,
         "n_cells": 30,
         "n_cells_varying": 30,
         "ram_cells": [
@@ -76,9 +76,9 @@
         "region": "global"
       },
       {
-        "clock_explained_variance_fraction": 0.9918715874539407,
+        "clock_explained_variance_fraction": 0.9918726646501828,
         "dominant_period_frames": 256.0,
-        "dominant_power_share": 0.7804916879341468,
+        "dominant_power_share": 0.7804916879341467,
         "n_cells": 5,
         "n_cells_varying": 2,
         "ram_cells": [
@@ -96,7 +96,7 @@
       "dft": "dependency-free one-sided DFT power (no FFTW added to the shared jutari env); freq unit = cycles/frame; DC bin dropped after detrend; Hann-windowed; linear trend (frame-counter ramp) removed.",
       "frame_cadence_note": "the per-frame sampling clock is 1 frame; dominant periods are reported in FRAMES (period p ⇒ p-frame cycle, e.g. a period-2 blink, a period-N animation/score-flash timer). Relate to game cadence: short integer periods are animation/blink timers driven by the frame counter (T2), not game-state oscillations.",
       "global_dominant_period_frames": 32.0,
-      "global_dominant_power_share": 0.10118169045431827,
+      "global_dominant_power_share": 0.1011816904543182,
       "global_top_peak_periods_frames": [
         32.0,
         256.0,
@@ -105,11 +105,11 @@
         36.57142857142857
       ],
       "global_top_peak_power": [
-        30.974628657579927,
-        27.712823491052266,
-        25.294544350000184,
-        22.283677827492422,
-        14.020272989994842
+        30.974628657579903,
+        27.712823491052248,
+        25.294544350000194,
+        22.28367782749244,
+        14.020272989994844
       ]
     },
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the analysed RAM trajectory is a deterministic re-run (asserted).",
@@ -140,7 +140,7 @@
   "state": "gameplay(seed=0,prefix=90)+256",
   "stderr": null,
   "target_output": "pooled-activity-power-spectrum",
-  "timestamp": "1783125259",
-  "value": 0.5754301008401932,
+  "timestamp": "1793018604",
+  "value": 0.5760245655723293,
   "where": "local"
 }

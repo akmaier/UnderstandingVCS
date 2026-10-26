@@ -1,7 +1,7 @@
 {
   "arrays": "guided_backprop_assault_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "adebayo_sanity_check": {
       "failure_mode": "model_invariant_saliency_constant_jacobian",
@@ -110,15 +110,15 @@
     },
     "gbp_max_abs": 0.0,
     "guided_vs_vanilla": {
-      "delta_pearson_guided_minus_vanilla": 0.02182916843002006,
+      "delta_pearson_guided_minus_vanilla": 0.021829168430020064,
       "guided_equals_vanilla": false,
       "interpretation": "Guided BP = vanilla |∂y/∂u| with negative-gradient suppression. On the VCS the explained output is a one-hot RAM read (a LINEAR unit, ∂y/∂u ≥ 0) and the soft emulator has NO deep ReLU stack, so the suppression removes nothing ⇒ Guided BP DEGENERATES to saliency (Δpearson = 0). The negative-suppression rule IS wired (it provably rectifies a mixed-sign surrogate — see guided_demo_rectifies); it simply has nothing to do on this substrate. This is the honest finding the DoD asks for.",
-      "vanilla_pearson": -0.02182916843002006,
+      "vanilla_pearson": -0.021829168430020064,
       "vanilla_precision_at_k": 0.6666666666666666
     },
     "harness_positive_control": {
       "deletion_auc": 0.9869773940031512,
-      "insertion_auc": 0.2729899830379654,
+      "insertion_auc": 0.27298998303796546,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the Guided-BP numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "pearson_corr": 1.0,
@@ -127,7 +127,7 @@
     "method_reference": "Springenberg et al. 2015 (Guided Backprop / deconvnet); sanity check: Adebayo et al. 2018.",
     "metrics": {
       "deletion_auc": 0.1394921068624044,
-      "insertion_auc": 0.8888173542716876,
+      "insertion_auc": 0.8888173542716874,
       "pearson_corr": 0.0,
       "precision_at_k": 0.0,
       "spearman_corr": 0.0,
@@ -224,7 +224,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r20c11",
-  "timestamp": "1783129670",
+  "timestamp": "1793016088",
   "value": 0.0,
   "where": "local"
 }

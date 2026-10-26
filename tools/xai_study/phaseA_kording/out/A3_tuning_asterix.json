@@ -1,19 +1,19 @@
 {
   "arrays": "A3_tuning_asterix.npz",
   "ci": null,
-  "commit": "9391b559",
+  "commit": "56e3a03",
   "extra": {
     "A3_tuning": {
       "clock_corr_per_cell": {
-        "RAM[29]:enemy_or_eatable_object": 0.41134841720157017,
-        "RAM[39]:player.xy": 0.5350256997182348,
-        "RAM[41]:player.xy": 0.4354351187454063,
+        "RAM[29]:enemy_or_eatable_object": 0.4515259990411682,
+        "RAM[39]:player.xy": 0.7986867479407714,
+        "RAM[41]:player.xy": 0.49527113660149913,
         "RAM[54]:kind_of_visible_objs": 0.0,
         "RAM[73]:rewards_visible": 0.0,
-        "RAM[83]:lives": 0.1409522957204817,
+        "RAM[83]:lives": 0.0,
         "RAM[94]:dec_value": 0.0,
-        "RAM[95]:dec_value": 0.8653515363591701,
-        "RAM[96]:dec_value": 0.05116930903373748
+        "RAM[95]:dec_value": 0.8657366676864217,
+        "RAM[96]:dec_value": 0.06596467563012108
       },
       "epiphenomenal_control": "frame_clock",
       "game_variable_signals": [
@@ -29,35 +29,38 @@
       ],
       "game_variable_spurious_tuning_rate": 0.0,
       "gvar_selectivity_per_cell": {
-        "RAM[29]:enemy_or_eatable_object": 0.2629618530703887,
-        "RAM[39]:player.xy": 0.49845470942923187,
-        "RAM[41]:player.xy": 0.5880993643957725,
+        "RAM[29]:enemy_or_eatable_object": 0.33547364538693586,
+        "RAM[39]:player.xy": 0.8677930256511724,
+        "RAM[41]:player.xy": 0.519535485974602,
         "RAM[54]:kind_of_visible_objs": 0.0,
         "RAM[73]:rewards_visible": 0.0,
-        "RAM[83]:lives": 0.5880993643957725,
+        "RAM[83]:lives": 0.0,
         "RAM[94]:dec_value": 0.0,
-        "RAM[95]:dec_value": 0.49845470942923187,
-        "RAM[96]:dec_value": 0.3547874375934494
+        "RAM[95]:dec_value": 0.8677930256511724,
+        "RAM[96]:dec_value": 0.519535485974602
       },
       "luminance_corr_per_cell": {
-        "RAM[29]:enemy_or_eatable_object": 0.10319703790071863,
-        "RAM[39]:player.xy": 0.049213361168277264,
-        "RAM[41]:player.xy": 0.3069558106789882,
+        "RAM[29]:enemy_or_eatable_object": 0.7673380221896429,
+        "RAM[39]:player.xy": 0.5330888201958137,
+        "RAM[41]:player.xy": 0.4117671604330629,
         "RAM[54]:kind_of_visible_objs": 0.0,
         "RAM[73]:rewards_visible": 0.0,
-        "RAM[83]:lives": 0.898500348030238,
+        "RAM[83]:lives": 0.0,
         "RAM[94]:dec_value": 0.0,
-        "RAM[95]:dec_value": 0.12049177839837437,
-        "RAM[96]:dec_value": 0.018069756310609492
+        "RAM[95]:dec_value": 0.6132906243835091,
+        "RAM[96]:dec_value": 0.07219625959953735
       },
       "luminance_spurious_tuning_rate": 0.0,
       "n_spurious_gvar": 0,
       "n_spurious_luminance": 0,
-      "n_strongly_tuned_gvar": 0,
+      "n_strongly_tuned_gvar": 2,
       "n_strongly_tuned_luminance": 1,
       "note": "selectivity = max |corr| to a GAME variable (the cell's own self-column excluded; frame clock excluded — it is the epiphenomenal control). spurious = strongly-tuned (selectivity≥τ) but NOT causal by the oracle — the present≠used tuning-curve trap (experiment_design.md §4 A3, Phase-A's headline failure). The luminance family is the HARDWARE (no-T3) version of the same trap.",
       "spurious_gvar_cells": [],
-      "strongly_tuned_gvar_cells": [],
+      "strongly_tuned_gvar_cells": [
+        "RAM[39]:player.xy",
+        "RAM[95]:dec_value"
+      ],
       "tau": 0.7,
       "trajectory_frames": 150,
       "trajectory_trace": "seeded random-action GAMEPLAY (seed=0, prefix=90+15, NOOP-continued past the window)"
@@ -90,16 +93,16 @@
     "oracle_importance_per_cell": {
       "RAM[29]:enemy_or_eatable_object": 57.0,
       "RAM[39]:player.xy": 167.0,
-      "RAM[41]:player.xy": 68.0,
+      "RAM[41]:player.xy": 164.0,
       "RAM[54]:kind_of_visible_objs": 800.0,
       "RAM[73]:rewards_visible": 0.0,
-      "RAM[83]:lives": 849.0,
+      "RAM[83]:lives": 853.0,
       "RAM[94]:dec_value": 77.0,
       "RAM[95]:dec_value": 49.0,
       "RAM[96]:dec_value": 62.0
     },
     "positive_control_oracle_as_method_F": 1.0,
-    "rom_settings": "JuTari.RomSettingsModule.GenericRomSettings",
+    "rom_settings": "JuTari.JoystickGames.AsterixRomSettings",
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the oracle causal map is EXACT interventions re-run on the true ROM; the tuning curves are a DESCRIPTIVE active-trace recording (the recorder's documented purpose), not a bit-exact-vs-xitari claim.",
     "testbed": {
@@ -112,17 +115,19 @@
       "note": "P2 redesign: the tuning study runs on a seeded random-action GAMEPLAY state (not the FIRE×4/attract tape), gated by the §1 oracle cause-density gate. Both the oracle causal map AND the descriptive tuning trajectory are stepped along the SAME gameplay stream so the game variable VARIES on genuine input-driven play. A3's tuning algorithm is unchanged; only the analysis state moves.",
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r75c79",
+      "shared_output": "screen_region(n_changed_px)@r91c79",
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": 0.24794476842057891,
+      "F": -0.1932503014547343,
       "F_note": "Spearman(A3 game-variable selectivity, oracle causal importance) over 9 candidate cells",
       "M": 1.0,
-      "M_note": "1 − over-claim rate: fraction of strongly-tuned cells the oracle says are generic (non-causal)",
-      "S": -0.3868237236570359,
+      "M_note": "M = |U*|/|U_hat| (03_methods.tex sec:triad): |U*|=8 (oracle movers) / |U_hat|=5 (method above-threshold)",
+      "S": -0.32479169108138667,
       "S_note": "Pearson(A3 selectivity, held-out do(base+37) screen break) — sufficiency on a bit-exact re-run",
-      "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): a tuning-curve importance map scores LOW faithfulness despite fully-known structure. F<1 / spurious-tuning>0 quantify where the classical analysis departs from the ground truth. The oracle-as-method positive control (F=1.0) confirms the harness rewards a perfectly-faithful map."
+      "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): a tuning-curve importance map scores LOW faithfulness despite fully-known structure. F<1 / spurious-tuning>0 quantify where the classical analysis departs from the ground truth. The oracle-as-method positive control (F=1.0) confirms the harness rewards a perfectly-faithful map.",
+      "legacy_minimality": 1.0,
+      "legacy_minimality_note": "1 − over-claim rate (the pre-standardization M): fraction of strongly-tuned cells the oracle says are generic. Retained for reference; the triad M above is the paper's |U*|/|U_hat|."
     }
   },
   "game": "asterix",
@@ -136,7 +141,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen-break (oracle causal importance) vs tuning selectivity",
-  "timestamp": "1783015025",
+  "timestamp": "1793016016",
   "value": 0.0,
   "where": "local"
 }

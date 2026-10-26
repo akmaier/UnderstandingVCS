@@ -1,7 +1,7 @@
 {
   "arrays": "ig_baseline_sweep_riverraid_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-IG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline_sweep": {
@@ -59,7 +59,7 @@
           "completeness_err": 0.0,
           "deletion_auc": 0.01078397808969531,
           "ig_max_abs": 254.0,
-          "insertion_auc": 0.9604587470044507,
+          "insertion_auc": 0.960458747004451,
           "pearson_corr": 0.9995848704141626,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.6540768527283279,
@@ -119,7 +119,7 @@
           "completeness_err": 0.0,
           "deletion_auc": 0.01078397808969531,
           "ig_max_abs": 177.1953125,
-          "insertion_auc": 0.9604587470044507,
+          "insertion_auc": 0.960458747004451,
           "pearson_corr": 0.9995848704141624,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.6540768527283279,
@@ -179,7 +179,7 @@
           "completeness_err": 0.0,
           "deletion_auc": 0.01078397808969531,
           "ig_max_abs": 76.0,
-          "insertion_auc": 0.9604587470044507,
+          "insertion_auc": 0.960458747004451,
           "pearson_corr": 0.9995848704141619,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.6540768527283279,
@@ -239,7 +239,7 @@
           "completeness_err": 0.0,
           "deletion_auc": 0.01078397808969531,
           "ig_max_abs": 1.0,
-          "insertion_auc": 0.9604587470044507,
+          "insertion_auc": 0.960458747004451,
           "pearson_corr": 0.9995848704141624,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.6540768527283279,
@@ -318,7 +318,7 @@
     "content_ram_index": 55,
     "harness_positive_control": {
       "deletion_auc": 0.01078397808969531,
-      "insertion_auc": 0.9601163984936667,
+      "insertion_auc": 0.9601163984936669,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the IG numbers above are then a true measurement, not an artefact of the metric.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "oracle_column_degenerate": false,
@@ -329,7 +329,7 @@
     "headline_metrics": {
       "completeness_err": 0.0,
       "deletion_auc": 0.01078397808969531,
-      "insertion_auc": 0.9604587470044507,
+      "insertion_auc": 0.960458747004451,
       "pearson_corr": 0.9995848704141626,
       "precision_at_k": 0.6666666666666666,
       "spearman_corr": 0.6540768527283279,
@@ -411,7 +411,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@55)",
-  "timestamp": "1783124762",
+  "timestamp": "1793022194",
   "value": 0.9995848704141626,
   "where": "local"
 }

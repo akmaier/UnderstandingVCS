@@ -1,7 +1,7 @@
 {
   "arrays": "A5_video_pinball.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): the LFP-analog pooled-activity spectrum is rich, but a high fraction of its power is the KNOWN frame/animation clocks — epiphenomenal structure that says nothing about the causal computation (the dominant spectral peaks are clock harmonics). A5 REVEALS the pooled periodicities and MISSES the causal map; the clock-explained fraction is the quantified-Kording measurement here.",
@@ -17,9 +17,9 @@
     "method_kind": "descriptive (no oracle F/S/M; A5 reports the pooled spectral structure it REVEALS vs the causal map it MISSES — the clock-explained fraction quantifies how much of the headline spectrum is causally inert).",
     "regions": [
       {
-        "clock_explained_variance_fraction": 0.3751242331795909,
+        "clock_explained_variance_fraction": 0.3751242331795908,
         "dominant_period_frames": 128.0,
-        "dominant_power_share": 0.21012213169653282,
+        "dominant_power_share": 0.2101221316965327,
         "n_cells": 43,
         "n_cells_varying": 43,
         "ram_cells": [
@@ -70,9 +70,9 @@
         "region": "global"
       },
       {
-        "clock_explained_variance_fraction": 0.9720857607691952,
+        "clock_explained_variance_fraction": 0.9720857607691945,
         "dominant_period_frames": 256.0,
-        "dominant_power_share": 0.6532145955213172,
+        "dominant_power_share": 0.653214595521317,
         "n_cells": 2,
         "n_cells_varying": 2,
         "ram_cells": [
@@ -93,9 +93,9 @@
         "region": "lifeu"
       },
       {
-        "clock_explained_variance_fraction": 0.3342658709917382,
+        "clock_explained_variance_fraction": 0.33426587099173793,
         "dominant_period_frames": 42.666666666666664,
-        "dominant_power_share": 0.15285744784097344,
+        "dominant_power_share": 0.15285744784097346,
         "n_cells": 1,
         "n_cells_varying": 1,
         "ram_cells": [
@@ -104,9 +104,9 @@
         "region": "player_left_paddle"
       },
       {
-        "clock_explained_variance_fraction": 0.4850782772834232,
+        "clock_explained_variance_fraction": 0.485078277283423,
         "dominant_period_frames": 128.0,
-        "dominant_power_share": 0.2172963399361787,
+        "dominant_power_share": 0.21729633993617853,
         "n_cells": 1,
         "n_cells_varying": 1,
         "ram_cells": [
@@ -115,9 +115,9 @@
         "region": "player_right_paddle"
       },
       {
-        "clock_explained_variance_fraction": 0.9273977349817752,
+        "clock_explained_variance_fraction": 0.9273977349817748,
         "dominant_period_frames": 256.0,
-        "dominant_power_share": 0.9141342617587863,
+        "dominant_power_share": 0.9141342617587859,
         "n_cells": 2,
         "n_cells_varying": 1,
         "ram_cells": [
@@ -132,7 +132,7 @@
       "dft": "dependency-free one-sided DFT power (no FFTW added to the shared jutari env); freq unit = cycles/frame; DC bin dropped after detrend; Hann-windowed; linear trend (frame-counter ramp) removed.",
       "frame_cadence_note": "the per-frame sampling clock is 1 frame; dominant periods are reported in FRAMES (period p ⇒ p-frame cycle, e.g. a period-2 blink, a period-N animation/score-flash timer). Relate to game cadence: short integer periods are animation/blink timers driven by the frame counter (T2), not game-state oscillations.",
       "global_dominant_period_frames": 128.0,
-      "global_dominant_power_share": 0.21012213169653282,
+      "global_dominant_power_share": 0.2101221316965327,
       "global_top_peak_periods_frames": [
         128.0,
         256.0,
@@ -141,11 +141,11 @@
         36.57142857142857
       ],
       "global_top_peak_power": [
-        45.15036013745752,
-        27.199358538812724,
-        14.109495078838197,
-        12.74704539003014,
-        9.66667526393737
+        45.150360137457504,
+        27.19935853881275,
+        14.109495078838188,
+        12.747045390030138,
+        9.666675263937378
       ]
     },
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the analysed RAM trajectory is a deterministic re-run (asserted).",
@@ -176,7 +176,7 @@
   "state": "gameplay(seed=0,prefix=90)+256",
   "stderr": null,
   "target_output": "pooled-activity-power-spectrum",
-  "timestamp": "1783125955",
-  "value": 0.3751242331795909,
+  "timestamp": "1793020168",
+  "value": 0.3751242331795908,
   "where": "local"
 }

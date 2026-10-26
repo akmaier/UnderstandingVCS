@@ -1,7 +1,7 @@
 {
   "arrays": "guided_backprop_bowling_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "adebayo_sanity_check": {
       "failure_mode": "model_invariant_saliency_constant_jacobian",
@@ -113,11 +113,11 @@
       "delta_pearson_guided_minus_vanilla": 0.0,
       "guided_equals_vanilla": true,
       "interpretation": "Guided BP = vanilla |∂y/∂u| with negative-gradient suppression. On the VCS the explained output is a one-hot RAM read (a LINEAR unit, ∂y/∂u ≥ 0) and the soft emulator has NO deep ReLU stack, so the suppression removes nothing ⇒ Guided BP DEGENERATES to saliency (Δpearson = 0). The negative-suppression rule IS wired (it provably rectifies a mixed-sign surrogate — see guided_demo_rectifies); it simply has nothing to do on this substrate. This is the honest finding the DoD asks for.",
-      "vanilla_pearson": 0.688121797580833,
+      "vanilla_pearson": 0.6881217975808328,
       "vanilla_precision_at_k": 0.3333333333333333
     },
     "harness_positive_control": {
-      "deletion_auc": 0.27489177489177485,
+      "deletion_auc": 0.274891774891775,
       "insertion_auc": 0.932900432900433,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the Guided-BP numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
@@ -126,9 +126,9 @@
     },
     "method_reference": "Springenberg et al. 2015 (Guided Backprop / deconvnet); sanity check: Adebayo et al. 2018.",
     "metrics": {
-      "deletion_auc": 0.07359307359307359,
+      "deletion_auc": 0.07359307359307356,
       "insertion_auc": 0.4199134199134199,
-      "pearson_corr": 0.688121797580833,
+      "pearson_corr": 0.6881217975808328,
       "precision_at_k": 0.3333333333333333,
       "spearman_corr": 0.6881253898490473,
       "topk": 3
@@ -182,7 +182,7 @@
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE guided gradients over outputs×causes×games on GPU; the forward is bit-exact to this map.",
     "substrate": "jutari (Julia) — Zygote content-path ∂y/∂u over the RAM tape, guided rule g⊙1[g>0] (suppress −grad), + TRUE-VCS deletion/insertion re-runs (real-ROM, bit-exact oracle machinery).",
     "triad": {
-      "F": 0.688121797580833,
+      "F": 0.6881217975808328,
       "M": 1.0,
       "M_named_size": 2,
       "M_note": "|U*|=4 (oracle movers) / |U_hat|=2 (method above-threshold)",
@@ -204,7 +204,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@30)",
-  "timestamp": "1783130053",
-  "value": 0.688121797580833,
+  "timestamp": "1793016885",
+  "value": 0.6881217975808328,
   "where": "local"
 }

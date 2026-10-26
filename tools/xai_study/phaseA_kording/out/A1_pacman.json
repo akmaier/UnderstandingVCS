@@ -1,7 +1,7 @@
 {
   "arrays": "A1_pacman.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -24,7 +24,7 @@
       80,
       89
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_pacman.json",
+    "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_pacman.json",
     "graph": {
       "f1": 0.0,
       "fn": 1,
@@ -56,7 +56,7 @@
     },
     "rom_basename": "pacman.bin",
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-    "settings": "GenericRomSettings",
+    "settings": "PacmanRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
     "testbed": {
       "cause_density_above_floor": 9,
@@ -68,7 +68,7 @@
       "note": "P2 redesign: the connectomics recovery runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. A1's graph algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r131c77",
+      "shared_output": "screen_region(n_changed_px)@r132c77",
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
@@ -92,7 +92,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-  "timestamp": "1783606708",
+  "timestamp": "1793020298",
   "value": 0.0,
   "where": "local"
 }

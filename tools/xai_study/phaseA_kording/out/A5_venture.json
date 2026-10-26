@@ -1,7 +1,7 @@
 {
   "arrays": "A5_venture.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): the LFP-analog pooled-activity spectrum is rich, but a high fraction of its power is the KNOWN frame/animation clocks — epiphenomenal structure that says nothing about the causal computation (the dominant spectral peaks are clock harmonics). A5 REVEALS the pooled periodicities and MISSES the causal map; the clock-explained fraction is the quantified-Kording measurement here.",
@@ -30,9 +30,9 @@
     "method_kind": "descriptive (no oracle F/S/M; A5 reports the pooled spectral structure it REVEALS vs the causal map it MISSES — the clock-explained fraction quantifies how much of the headline spectrum is causally inert).",
     "regions": [
       {
-        "clock_explained_variance_fraction": 0.7294466651230482,
+        "clock_explained_variance_fraction": 0.7297957172710362,
         "dominant_period_frames": 2.0,
-        "dominant_power_share": 0.3061455975894106,
+        "dominant_power_share": 0.30614559758941073,
         "n_cells": 64,
         "n_cells_varying": 64,
         "ram_cells": [
@@ -126,9 +126,9 @@
         "region": "lives"
       },
       {
-        "clock_explained_variance_fraction": 0.039316276032138726,
+        "clock_explained_variance_fraction": 0.056573033149246804,
         "dominant_period_frames": 42.666666666666664,
-        "dominant_power_share": 0.07249051923026126,
+        "dominant_power_share": 0.07249051923026129,
         "n_cells": 2,
         "n_cells_varying": 2,
         "ram_cells": [
@@ -150,9 +150,9 @@
         "region": "score"
       },
       {
-        "clock_explained_variance_fraction": 0.6620899662659838,
+        "clock_explained_variance_fraction": 0.6630551895003448,
         "dominant_period_frames": 256.0,
-        "dominant_power_share": 0.3984912485011881,
+        "dominant_power_share": 0.39849124850118844,
         "n_cells": 12,
         "n_cells_varying": 12,
         "ram_cells": [
@@ -177,7 +177,7 @@
       "dft": "dependency-free one-sided DFT power (no FFTW added to the shared jutari env); freq unit = cycles/frame; DC bin dropped after detrend; Hann-windowed; linear trend (frame-counter ramp) removed.",
       "frame_cadence_note": "the per-frame sampling clock is 1 frame; dominant periods are reported in FRAMES (period p ⇒ p-frame cycle, e.g. a period-2 blink, a period-N animation/score-flash timer). Relate to game cadence: short integer periods are animation/blink timers driven by the frame counter (T2), not game-state oscillations.",
       "global_dominant_period_frames": 2.0,
-      "global_dominant_power_share": 0.3061455975894106,
+      "global_dominant_power_share": 0.30614559758941073,
       "global_top_peak_periods_frames": [
         2.0,
         256.0,
@@ -186,11 +186,11 @@
         4.0
       ],
       "global_top_peak_power": [
-        51.332627037154055,
-        41.134269171522796,
-        16.389599064979844,
+        51.33262703715407,
+        41.13426917152275,
+        16.38959906497986,
         15.93366160382363,
-        4.624189210409033
+        4.624189210409039
       ]
     },
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the analysed RAM trajectory is a deterministic re-run (asserted).",
@@ -221,7 +221,7 @@
   "state": "gameplay(seed=0,prefix=90)+256",
   "stderr": null,
   "target_output": "pooled-activity-power-spectrum",
-  "timestamp": "1783125894",
-  "value": 0.7294466651230482,
+  "timestamp": "1793020032",
+  "value": 0.7297957172710362,
   "where": "local"
 }

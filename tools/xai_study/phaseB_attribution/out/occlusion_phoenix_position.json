@@ -1,7 +1,7 @@
 {
   "arrays": "occlusion_phoenix_position.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-occlusion causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -51,9 +51,9 @@
     "intervention_note": "Occlusion is itself a (coarse, single-direction) intervention oracle (experiment_design.md §5 '≈ coarse intervention oracle'; §7 'Succeed/partial — faithful when the perturbation is a valid intervention'). Unlike the gradient family it does NOT vanish on the position/index output — the headline contrast.",
     "method_ref": "occlusion (Zeiler & Fergus 2014): attribution = |y(occlude u) − y(intact)|, a single-cause perturbation re-run on the true VCS",
     "metrics": {
-      "deletion_auc": 0.8680124223602486,
-      "insertion_auc": 0.17044911610129002,
-      "pearson_corr": 0.6217083110802958,
+      "deletion_auc": 0.8680124223602484,
+      "insertion_auc": 0.17044911610129,
+      "pearson_corr": 0.6217083110802957,
       "precision_at_k": 0.3333333333333333,
       "spearman_corr": 0.6943870783843046,
       "topk": 3
@@ -118,7 +118,7 @@
       "tia[COLUBK]:set": 0.0
     },
     "output_kind": "position",
-    "output_note": "OCCLUSION (Zeiler & Fergus 2014) is INTERVENTION-BASED: every attribution is |y(occlude u) − y(intact)| from a real-ROM re-run on the TRUE VCS, NOT a surrogate. occ max|attr|=45.0, occ L1=322.0, budget=81 real-ROM re-runs. POSITION/INDEX output (a discrete sprite-column pixel via round/argmax): the gradient methods (vanilla saliency / Grad×Input / IG) VANISH here (∂y/∂u≡0, the §1 caveat) and score near chance. Occlusion, being a valid intervention, RECOVERS the true causal bytes — measured corr=0.622, precision@3=0.333, del_auc=0.8680124223602486, ins_auc=0.17044911610129002. This is the §7 'Succeed/partial — faithful when the perturbation is a valid intervention' prediction, and the headline contrast with the vanishing gradients, in numbers.",
+    "output_note": "OCCLUSION (Zeiler & Fergus 2014) is INTERVENTION-BASED: every attribution is |y(occlude u) − y(intact)| from a real-ROM re-run on the TRUE VCS, NOT a surrogate. occ max|attr|=45.0, occ L1=322.0, budget=81 real-ROM re-runs. POSITION/INDEX output (a discrete sprite-column pixel via round/argmax): the gradient methods (vanilla saliency / Grad×Input / IG) VANISH here (∂y/∂u≡0, the §1 caveat) and score near chance. Occlusion, being a valid intervention, RECOVERS the true causal bytes — measured corr=0.622, precision@3=0.333, del_auc=0.8680124223602484, ins_auc=0.17044911610129. This is the §7 'Succeed/partial — faithful when the perturbation is a valid intervention' prediction, and the headline contrast with the vanishing gradients, in numbers.",
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (E0-3) — --array=0-5%N over the 6 core games (--shard i --shard-kind game); each task re-runs the real ROM, no GPU needed.",
     "substrate": "jutari (Julia) — real-ROM single-cause occlusion + TRUE-VCS deletion/insertion re-runs (bit-exact oracle machinery). NO surrogate model.",
     "testbed": {
@@ -134,7 +134,7 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": 0.6217083110802958,
+      "F": 0.6217083110802957,
       "M": 1.0,
       "M_named_size": 10,
       "M_note": "|U*|=12 (oracle movers) / |U_hat|=10 (method above-threshold)",
@@ -156,7 +156,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r53c84",
-  "timestamp": "1783128295",
-  "value": 0.6217083110802958,
+  "timestamp": "1793020286",
+  "value": 0.6217083110802957,
   "where": "local"
 }

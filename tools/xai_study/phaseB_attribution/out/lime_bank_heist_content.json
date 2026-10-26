@@ -1,7 +1,7 @@
 {
   "arrays": "lime_bank_heist_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-LIME causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -41,7 +41,7 @@
     "headline_metrics": {
       "deletion_auc": 0.041666666666666664,
       "insertion_auc": 0.875,
-      "pearson_corr": 0.899806807721758,
+      "pearson_corr": 0.8998068077217577,
       "precision_at_k": 1.0,
       "spearman_corr": 0.65194287781876,
       "surrogate_r2": 0.9999999999999998,
@@ -49,16 +49,16 @@
     },
     "lime_attr_per_cause": {
       "joystick:RIGHT": 0.0,
-      "ram[12]:occlude": 43.99999937763271,
-      "ram[12]:set": 43.99999937763271,
-      "ram[28]:occlude": 6.587028390298368e-9,
-      "ram[28]:set": 6.587028390298368e-9,
-      "ram[32]:occlude": 2.7654179184848696e-8,
-      "ram[32]:set": 2.7654179184848696e-8,
-      "ram[86]:occlude": 2.4012798925521002e-8,
-      "ram[86]:set": 2.4012798925521002e-8,
-      "ram[8]:occlude": 4.599384366257465e-8,
-      "ram[8]:set": 4.599384366257465e-8,
+      "ram[12]:occlude": 43.99999937763264,
+      "ram[12]:set": 43.99999937763264,
+      "ram[28]:occlude": 6.587073897929043e-9,
+      "ram[28]:set": 6.587073897929043e-9,
+      "ram[32]:occlude": 2.765421294525165e-8,
+      "ram[32]:set": 2.765421294525165e-8,
+      "ram[86]:occlude": 2.4012767505471768e-8,
+      "ram[86]:set": 2.4012767505471768e-8,
+      "ram[8]:occlude": 4.599380483962556e-8,
+      "ram[8]:set": 4.599380483962556e-8,
       "tia[COLUBK]:set": 0.0
     },
     "oracle_abs_delta_per_cause": {
@@ -80,39 +80,39 @@
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard i --nshards n --shard-kind game): one Slurm array task per core game; or batched SOFT-STE masked re-runs over perturbations×cells×games on GPU (the forward is bit-exact to this HARD map), the linear fit done on the host.",
     "stability": {
       "coef_cosine_mean": 1.0,
-      "corr_mean": 0.8998068077217578,
-      "corr_std": 2.0014830212433605e-16,
+      "corr_mean": 0.8998068077217576,
+      "corr_std": 1.4686870114880517e-16,
       "fits": [
         {
-          "pearson_corr": 0.899806807721758,
+          "pearson_corr": 0.8998068077217577,
           "precision_at_k": 1.0,
           "seed": 0,
           "spearman_corr": 0.65194287781876,
           "surrogate_r2": 0.9999999999999998
         },
         {
-          "pearson_corr": 0.8998068077217576,
+          "pearson_corr": 0.8998068077217578,
           "precision_at_k": 0.6666666666666666,
           "seed": 101,
           "spearman_corr": 0.65194287781876,
           "surrogate_r2": 0.9999999999999998
         },
         {
-          "pearson_corr": 0.899806807721758,
+          "pearson_corr": 0.8998068077217575,
           "precision_at_k": 0.6666666666666666,
           "seed": 202,
           "spearman_corr": 0.65194287781876,
           "surrogate_r2": 0.9999999999999998
         },
         {
-          "pearson_corr": 0.8998068077217578,
+          "pearson_corr": 0.8998068077217576,
           "precision_at_k": 0.6666666666666666,
           "seed": 303,
           "spearman_corr": 0.65194287781876,
           "surrogate_r2": 0.9999999999999998
         },
         {
-          "pearson_corr": 0.8998068077217577,
+          "pearson_corr": 0.8998068077217575,
           "precision_at_k": 0.6666666666666666,
           "seed": 404,
           "spearman_corr": 0.65194287781876,
@@ -126,14 +126,14 @@
     },
     "substrate": "jutari (Julia, HARD) — LIME (Ribeiro et al. 2016) local linear surrogate: draw N random binary perturbations in the interpretable present/absent space over the candidate RAM cells, mask absent cells to 0, RE-RUN the real ROM (bit-exact oracle machinery), weight each perturbation by the cosine-distance kernel, fit a weighted linear surrogate by least squares (LinearAlgebra); coefficients = attribution. Every probe is a genuine emulator re-run; no gradient, no surrogate-of-a-surrogate.",
     "surrogate": {
-      "intercept": 3.3601473655007847e-7,
+      "intercept": 3.360146797938577e-7,
       "interpretation": "the WEIGHTED R^2 of the linear surrogate on the sampled neighbourhood = the LOCAL FAITHFULNESS OF THE SURROGATE ITSELF (how well a linear g approximates the real ROM near x), distinct from the attribution↔oracle corr below. A low R^2 is LIME's own confession that a linear model is a poor local fit to the VCS computation.",
       "kernel": "cosine-distance exponential π(z)=exp(-D(z,1)^2/σ^2)",
       "model": "weighted linear g(z)=w·z+b, ridge-regularised normal equations (LinearAlgebra)",
       "r2": 0.9999999999999998
     },
     "triad": {
-      "F": 0.899806807721758,
+      "F": 0.8998068077217577,
       "M": 1.0,
       "M_named_size": 2,
       "M_note": "|U*|=2 (oracle movers) / |U_hat|=2 (method above-threshold)",
@@ -153,9 +153,9 @@
   "phase": "phaseB_attribution",
   "seed": 0,
   "state": "f90+15",
-  "stderr": 2.0014830212433605e-16,
+  "stderr": 1.4686870114880517e-16,
   "target_output": "content(ram_self@12)",
-  "timestamp": "1783126922",
-  "value": 0.899806807721758,
+  "timestamp": "1793017408",
+  "value": 0.8998068077217577,
   "where": "local"
 }

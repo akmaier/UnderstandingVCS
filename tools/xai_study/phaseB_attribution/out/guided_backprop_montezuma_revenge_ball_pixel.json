@@ -1,7 +1,7 @@
 {
   "arrays": "guided_backprop_montezuma_revenge_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "adebayo_sanity_check": {
       "failure_mode": "model_invariant_saliency_constant_jacobian",
@@ -97,8 +97,8 @@
       "vanilla_precision_at_k": 0.3333333333333333
     },
     "harness_positive_control": {
-      "deletion_auc": 0.978055729820159,
-      "insertion_auc": 0.08767034364979784,
+      "deletion_auc": 0.9780557298201589,
+      "insertion_auc": 0.08767034364979785,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the Guided-BP numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "pearson_corr": 1.0,
@@ -106,8 +106,8 @@
     },
     "method_reference": "Springenberg et al. 2015 (Guided Backprop / deconvnet); sanity check: Adebayo et al. 2018.",
     "metrics": {
-      "deletion_auc": 0.9740890317858637,
-      "insertion_auc": 0.10890448557089086,
+      "deletion_auc": 0.9740890317858633,
+      "insertion_auc": 0.10890448557089082,
       "pearson_corr": 0.0,
       "precision_at_k": 0.6666666666666666,
       "spearman_corr": 0.0,
@@ -194,7 +194,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r66c75",
-  "timestamp": "1783131606",
+  "timestamp": "1793020335",
   "value": 0.0,
   "where": "local"
 }

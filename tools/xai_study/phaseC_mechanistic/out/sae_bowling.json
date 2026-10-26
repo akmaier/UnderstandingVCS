@@ -1,7 +1,7 @@
 {
   "arrays": "sae_bowling.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -141,7 +141,7 @@
       "note": "for each KNOWN candidate cell that VARIES, max|Pearson r| between any learned feature's activation and that cell over the trajectory; matched iff |r| ≥ 0.7. Match-rate = #matched / #varying.",
       "per_cell": [
         {
-          "best_corr": 0.9662709118116928,
+          "best_corr": 0.9662709118116924,
           "best_feature": 11,
           "concept": "player_x",
           "family": "player",
@@ -150,7 +150,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9407751482302025,
+          "best_corr": 0.9407751482302019,
           "best_feature": 45,
           "concept": "ball_x",
           "family": "ball",
@@ -186,7 +186,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.9631128916672378,
+          "best_corr": 0.9631128916672372,
           "best_feature": 20,
           "concept": "ball_y",
           "family": "ball",
@@ -285,7 +285,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.9812713820346309,
+          "best_corr": 0.9812713820346302,
           "best_feature": 11,
           "concept": "states_of_throw",
           "family": "states_of_throw",
@@ -396,7 +396,7 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.4684819649591778,
+          "fve_held": 0.4684819649591776,
           "fve_train": 0.4893142947039659,
           "l1": 0.2,
           "matched_fraction": 0.75,
@@ -413,7 +413,7 @@
         {
           "d_hidden": 32,
           "fve_held": 0.9568942683023783,
-          "fve_train": 0.9792380031989473,
+          "fve_train": 0.9792380031989474,
           "l1": 0.05,
           "matched_fraction": 1.0,
           "mean_l0": 10.253333333333334
@@ -474,7 +474,7 @@
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
       "M": 1.0,
       "M_note": "|U*|=8 (oracle movers) / |U_hat|=4 (method above-threshold)",
-      "S": 0.4758484972523214,
+      "S": 0.47584849725232137,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
     }
@@ -491,7 +491,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783607156",
+  "timestamp": "1793016618",
   "value": 1.0,
   "where": "local"
 }

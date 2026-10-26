@@ -1,7 +1,7 @@
 {
   "arrays": "A6_carnival.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -186,7 +186,7 @@
       "true_dataflow_note": "T2 known data-flow: the 6507 CPU is the only bus master — CPU→TIA (writes graphics), RIOT→CPU (reads timer/inputs); TIA and RIOT never drive each other or the CPU. Index order [CPU,TIA,RIOT]."
     },
     "testbed": {
-      "cause_density_above_floor": 26,
+      "cause_density_above_floor": 27,
       "cause_density_accepted": true,
       "cause_density_floor": 0.5,
       "cause_density_gate_k": 4,
@@ -195,7 +195,7 @@
       "note": "P2 redesign: BOTH the scored oracle prefix (true data-flow graph) AND the descriptive Granger trajectory run on a seeded random-action GAMEPLAY state (not the FIRE-then-NOOP oracle tape / synthetic active tape), gated by the §1 oracle cause-density gate. The Granger tape is the gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A6's Granger + true-data-flow algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r84c33",
+      "shared_output": "screen_region(n_changed_px)@r92c33",
       "state_kind": "seeded_random_action_gameplay"
     },
     "trajectory_frames": 150,
@@ -226,7 +226,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "directed data-flow edges (CPU/TIA/RIOT subsystems + candidate RAM cells)",
-  "timestamp": "1783605105",
+  "timestamp": "1793016747",
   "value": 0.875,
   "where": "local"
 }

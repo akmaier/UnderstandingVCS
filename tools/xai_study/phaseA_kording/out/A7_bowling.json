@@ -1,7 +1,7 @@
 {
   "arrays": "A7_bowling.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -74,14 +74,14 @@
     "n_known_game_variables": 17,
     "nmf": {
       "component_energy_share": [
-        0.15351246918322672,
+        0.15351246918322675,
         0.14096300337140266,
         0.13552865827994232,
         0.13359973284491572,
-        0.1334969170508388,
-        0.13319073463538775,
-        0.09148118209316458,
-        0.07822730254112152
+        0.13349691705083874,
+        0.13319073463538778,
+        0.09148118209316455,
+        0.0782273025411215
       ],
       "matched_components": {
         "matched_component_fraction": 0.4,
@@ -103,10 +103,10 @@
           "clock"
         ],
         "per_component_matched_purity": [
-          0.16309691792056066,
-          0.283624717984719,
-          0.43999533491897025,
-          0.790834417210898,
+          0.16309691792056064,
+          0.28362471798471894,
+          0.4399953349189703,
+          0.7908344172108982,
           0.7186475954543026
         ],
         "topk": 5
@@ -115,16 +115,16 @@
       "note": "NMF (Lee & Seung multiplicative updates; RAM bytes are non-negative). matched-component fraction tests whether the non-negative PARTS align with single known variables better than PCA's signed components do — the prompt's NMF-vs-PCA question.",
       "rank": 8,
       "recon_rel_err_by_rank": [
-        0.8370466439286182,
-        0.6867259363337752,
-        0.5885680162701509,
-        0.45044648065069864,
-        0.31680318651747813,
+        0.8370466439286178,
+        0.6867259363337763,
+        0.5885680162701499,
+        0.45044648065070075,
+        0.31680318651747796,
         0.18873235068311073,
-        0.09743132426323235,
-        0.010099508326036108
+        0.09743132426323242,
+        0.010099508326036061
       ],
-      "recon_rel_frobenius_err": 0.01009950832603611
+      "recon_rel_frobenius_err": 0.010099508326036061
     },
     "oracle_importance": {
       "importance_per_cell": {
@@ -154,14 +154,14 @@
     },
     "pca": {
       "cum_var_top": [
-        0.7343019395685094,
-        0.9880454627249194,
+        0.7343019395685092,
+        0.9880454627249193,
         0.9951903184092497,
         0.9981954605566903,
         0.9996032701949942,
         0.9998554148560839,
         0.9999279460787172,
-        0.9999863428289111
+        0.999986342828911
       ],
       "matched_components": {
         "matched_component_fraction": 0.6,
@@ -183,11 +183,11 @@
           "(none; closest=rw_activity@0.01)"
         ],
         "per_component_matched_purity": [
-          0.7365134144615384,
-          0.6752220758052838,
-          0.07697029298139949,
-          0.6125737053238652,
-          0.0062548523834012396
+          0.7365134144615381,
+          0.6752220758052841,
+          0.07697029298139908,
+          0.6125737053238651,
+          0.0062548523834007105
         ],
         "topk": 5
       },
@@ -196,14 +196,14 @@
       "n_varying_cells": 10,
       "note": "PCA (SVD of the centred (T,128) tape). matched-component fraction = #top-k PCs concentrated on ONE known variable (a concept family, OR clock/R-W/vsync) / k. The pilot found ≈0 — PCs mix epiphenomenal high-variance structure across cells.",
       "var_explained_top": [
-        0.7343019395685094,
-        0.25374352315641,
-        0.007144855684330242,
-        0.0030051421474406427,
-        0.0014078096383038545,
-        0.0002521446610897366,
+        0.7343019395685092,
+        0.2537435231564102,
+        0.007144855684330251,
+        0.0030051421474406414,
+        0.0014078096383038582,
+        0.00025214466108973676,
         7.25312226332185e-5,
-        5.839675019388295e-5
+        5.8396750193882934e-5
       ]
     },
     "purity_threshold": 0.5,
@@ -259,7 +259,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "latent-components",
-  "timestamp": "1783604974",
+  "timestamp": "1793016377",
   "value": 0.4,
   "where": "local"
 }

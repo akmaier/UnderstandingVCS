@@ -1,7 +1,7 @@
 {
   "arrays": "perturbation_phoenix_position.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-attributed causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -103,7 +103,7 @@
       "deletion_auc": 0.883301481127568,
       "insertion_auc": 0.2679168657429527,
       "mask_iou_vs_true_causal_set": 0.3333333333333333,
-      "pearson_corr": 0.5688916783860671,
+      "pearson_corr": 0.568891678386067,
       "precision_at_k": 0.3333333333333333,
       "spearman_corr": 0.6377590335521908,
       "topk": 3
@@ -161,7 +161,7 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": 0.5688916783860671,
+      "F": 0.568891678386067,
       "M": 1.0,
       "M_named_size": 10,
       "M_note": "|U*|=12 (oracle movers) / |U_hat|=10 (method above-threshold)",
@@ -183,7 +183,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r53c84",
-  "timestamp": "1783129198",
-  "value": 0.5688916783860671,
+  "timestamp": "1793020425",
+  "value": 0.568891678386067,
   "where": "local"
 }

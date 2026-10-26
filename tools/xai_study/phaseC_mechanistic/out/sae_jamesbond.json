@@ -1,7 +1,7 @@
 {
   "arrays": "sae_jamesbond.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -120,7 +120,7 @@
       "note": "for each KNOWN candidate cell that VARIES, max|Pearson r| between any learned feature's activation and that cell over the trajectory; matched iff |r| ≥ 0.7. Match-rate = #matched / #varying.",
       "per_cell": [
         {
-          "best_corr": 0.7285256406671903,
+          "best_corr": 0.7285256406671897,
           "best_feature": 53,
           "concept": "xy",
           "family": "xy",
@@ -129,7 +129,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9020725257369269,
+          "best_corr": 0.902072525736926,
           "best_feature": 41,
           "concept": "xy",
           "family": "xy",
@@ -165,7 +165,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.6061111557461919,
+          "best_corr": 0.606111155746192,
           "best_feature": 43,
           "concept": "p_shot.xy",
           "family": "p_shot",
@@ -174,7 +174,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.5824289320244088,
+          "best_corr": 0.5824289320244094,
           "best_feature": 48,
           "concept": "p_shot.xy",
           "family": "p_shot",
@@ -192,7 +192,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.824250277531037,
+          "best_corr": 0.8242502775310372,
           "best_feature": 21,
           "concept": "xy",
           "family": "xy",
@@ -201,7 +201,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8853431085735555,
+          "best_corr": 0.885343108573556,
           "best_feature": 46,
           "concept": "xy",
           "family": "xy",
@@ -210,7 +210,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8853431085735555,
+          "best_corr": 0.885343108573556,
           "best_feature": 46,
           "concept": "xy",
           "family": "xy",
@@ -219,7 +219,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7740758428420941,
+          "best_corr": 0.7740758428420943,
           "best_feature": 21,
           "concept": "xy",
           "family": "xy",
@@ -289,7 +289,7 @@
       "grid": [
         {
           "d_hidden": 16,
-          "fve_held": 0.7067926229374775,
+          "fve_held": 0.7067926229374776,
           "fve_train": 0.9595696050391391,
           "l1": 0.01,
           "matched_fraction": 0.875,
@@ -297,7 +297,7 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.6980949032987771,
+          "fve_held": 0.6980949032987773,
           "fve_train": 0.9520503025470259,
           "l1": 0.05,
           "matched_fraction": 1.0,
@@ -305,8 +305,8 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.5354970923235831,
-          "fve_train": 0.8191943879901495,
+          "fve_held": 0.5354970922791634,
+          "fve_train": 0.8191943879479624,
           "l1": 0.2,
           "matched_fraction": 0.625,
           "mean_l0": 3.3533333333333335
@@ -329,7 +329,7 @@
         },
         {
           "d_hidden": 32,
-          "fve_held": 0.6378694415472146,
+          "fve_held": 0.6378694415472148,
           "fve_train": 0.9620154254049912,
           "l1": 0.2,
           "matched_fraction": 0.75,
@@ -345,7 +345,7 @@
         },
         {
           "d_hidden": 64,
-          "fve_held": 0.7419488614294036,
+          "fve_held": 0.7419488614294037,
           "fve_train": 0.9909861460140919,
           "l1": 0.05,
           "matched_fraction": 0.625,
@@ -353,7 +353,7 @@
         },
         {
           "d_hidden": 64,
-          "fve_held": 0.6832828426958594,
+          "fve_held": 0.6832828426958595,
           "fve_train": 0.9823401474515975,
           "l1": 0.2,
           "matched_fraction": 0.5,
@@ -383,7 +383,7 @@
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
       "M": 0.875,
       "M_note": "|U*|=7 (oracle movers) / |U_hat|=8 (method above-threshold)",
-      "S": -0.09686520605800843,
+      "S": -0.0968652060580084,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
     }
@@ -400,7 +400,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783608079",
+  "timestamp": "1793018744",
   "value": 0.75,
   "where": "local"
 }

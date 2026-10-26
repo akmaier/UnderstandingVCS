@@ -1,7 +1,7 @@
 {
   "arrays": "sae_hero.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -122,7 +122,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.98691428476088,
+          "best_corr": 0.9869142847608756,
           "best_feature": 48,
           "concept": "player_y",
           "family": "player",
@@ -131,7 +131,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9008270397628465,
+          "best_corr": 0.9008270397628463,
           "best_feature": 19,
           "concept": "power_meter",
           "family": "power_meter",
@@ -329,8 +329,8 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.4577891811017536,
-          "fve_train": 0.46662268684106256,
+          "fve_held": 0.4577891811017538,
+          "fve_train": 0.4666226868410629,
           "l1": 0.2,
           "matched_fraction": 1.0,
           "mean_l0": 0.8533333333333334
@@ -353,8 +353,8 @@
         },
         {
           "d_hidden": 32,
-          "fve_held": 0.8452096823626978,
-          "fve_train": 0.8587222898362694,
+          "fve_held": 0.8452096823626973,
+          "fve_train": 0.8587222898362692,
           "l1": 0.2,
           "matched_fraction": 1.0,
           "mean_l0": 4.273333333333333
@@ -407,7 +407,7 @@
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
       "M": 1.0,
       "M_note": "|U*|=11 (oracle movers) / |U_hat|=2 (method above-threshold)",
-      "S": -0.11386682017635952,
+      "S": -0.11386682017635946,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
     }
@@ -424,7 +424,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783607930",
+  "timestamp": "1793018421",
   "value": 1.0,
   "where": "local"
 }

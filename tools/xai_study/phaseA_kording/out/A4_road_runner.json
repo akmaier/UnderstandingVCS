@@ -1,7 +1,7 @@
 {
   "arrays": "A4_road_runner.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -142,7 +142,7 @@
     "trajectory_frames": 150,
     "trajectory_trace": "seeded random-action GAMEPLAY (seed=0, prefix=90+15, NOOP-continued past the window)",
     "triad": {
-      "F": 0.08178657132867038,
+      "F": 0.08178231255602005,
       "F_note": "Spearman(|pairwise corr|, oracle cell-cell coupling) over 153 candidate-cell pairs",
       "M": 0.07692307692307693,
       "M_note": "M = |U*|/|U_hat| over candidate-cell pairs (03_methods.tex sec:triad): |U*|=7 (oracle movers) / |U_hat|=91 (method above-threshold)",
@@ -155,12 +155,12 @@
     },
     "weak_pairwise_strong_global": {
       "candidate_frac_strong_pairs(|corr|>=0.5)": 0.38461538461538464,
-      "candidate_mean_abs_pairwise": 0.39915178453883554,
+      "candidate_mean_abs_pairwise": 0.3991517845388356,
       "candidate_median_abs_pairwise": 0.16895962222823846,
       "candidate_n_varying_cells": 14,
-      "candidate_participation_ratio": 2.993645256540541,
-      "candidate_top3_eig_share": 0.8750479635623963,
-      "candidate_top_eig_share": 0.4484805829100178,
+      "candidate_participation_ratio": 2.993645256540542,
+      "candidate_top3_eig_share": 0.8750479635623962,
+      "candidate_top_eig_share": 0.44848058291001774,
       "note": "the spike-word headline (Schneidman 2006; Tkačik 2014): over the FULL POPULATION of varying RAM cells the median pairwise |corr| is WEAK while a few GLOBAL eigen-modes dominate — the effective dimensionality (participation ratio) is far below the #cells, so the collective structure greatly exceeds the pairwise structure. WPSG flag = population median|corr|<0.5 AND population top3-eig-share≥0.6. (The candidate_* set is curated so its pairwise corr runs higher.)",
       "population_mean_abs_pairwise": 0.2809808051257938,
       "population_median_abs_pairwise": 0.16895962222823835,
@@ -181,7 +181,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "cell-cell-coupling",
-  "timestamp": "1783606412",
-  "value": 0.08178657132867038,
+  "timestamp": "1793019553",
+  "value": 0.08178231255602005,
   "where": "local"
 }

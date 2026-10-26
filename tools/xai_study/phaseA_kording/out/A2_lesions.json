@@ -1,15 +1,15 @@
 {
   "arrays": "A2_lesions.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "game": "core_set",
   "games": [
     "air_raid",
     "alien",
     "assault",
+    "asterix",
     "atlantis",
     "bank_heist",
-    "beam_rider",
     "berzerk",
     "bowling",
     "boxing",
@@ -19,6 +19,7 @@
     "chopper_command",
     "demon_attack",
     "double_dunk",
+    "enduro",
     "fishing_derby",
     "freeway",
     "frostbite",
@@ -41,6 +42,7 @@
     "riverraid",
     "road_runner",
     "seaquest",
+    "skiing",
     "space_invaders",
     "tennis",
     "venture",
@@ -49,20 +51,20 @@
   ],
   "method": "A2_lesions(exhaustive single-unit lesion importance map)",
   "metric_name": "mean_lesion_importance_spearman_vs_oracle_role",
-  "n": 42,
+  "n": 44,
   "oracle_ref": "oracle_intervene (per-unit causal role per game)",
   "paper": "P2",
   "per_game": {
     "air_raid": {
-      "false_specificity_rate": 0.0,
-      "interaction_missed_rate": 0.3090909090909091,
+      "false_specificity_rate": 0.625,
+      "interaction_missed_rate": 0.16363636363636364,
       "max_superadditive_delta": 0.0,
       "n_units": 13,
       "positive_control_rho": 1.0,
-      "spearman_rho_lesion_vs_oracle": 0.7527472527472527,
-      "triad_F": 0.7527472527472527,
+      "spearman_rho_lesion_vs_oracle": 0.9834710743801653,
+      "triad_F": 0.9834710743801653,
       "triad_M": 1.0,
-      "triad_S": 0.35962132447272827
+      "triad_S": 0.9724517906336089
     },
     "alien": {
       "false_specificity_rate": 0.0,
@@ -86,6 +88,17 @@
       "triad_M": 1.0,
       "triad_S": 0.7938640827669647
     },
+    "asterix": {
+      "false_specificity_rate": 0.16666666666666666,
+      "interaction_missed_rate": 0.08333333333333333,
+      "max_superadditive_delta": 0.0,
+      "n_units": 9,
+      "positive_control_rho": 0.9999999999999999,
+      "spearman_rho_lesion_vs_oracle": 0.9833333333333332,
+      "triad_F": 0.9833333333333332,
+      "triad_M": 1.0,
+      "triad_S": 0.9166666666666665
+    },
     "atlantis": {
       "false_specificity_rate": 0.25,
       "interaction_missed_rate": 0.05555555555555555,
@@ -107,17 +120,6 @@
       "triad_F": 0.9999999999999998,
       "triad_M": 1.0,
       "triad_S": 0.4616902584383194
-    },
-    "beam_rider": {
-      "false_specificity_rate": 0.0,
-      "interaction_missed_rate": 0.0,
-      "max_superadditive_delta": 0.0,
-      "n_units": 5,
-      "positive_control_rho": 1.0000000000000002,
-      "spearman_rho_lesion_vs_oracle": 1.0000000000000002,
-      "triad_F": 1.0000000000000002,
-      "triad_M": 1.0,
-      "triad_S": 1.0000000000000002
     },
     "berzerk": {
       "false_specificity_rate": 0.25,
@@ -172,7 +174,7 @@
       "spearman_rho_lesion_vs_oracle": 1.0,
       "triad_F": 1.0,
       "triad_M": 1.0,
-      "triad_S": 0.4637691099229001
+      "triad_S": 0.42443155149193984
     },
     "centipede": {
       "false_specificity_rate": 0.0,
@@ -209,14 +211,25 @@
     },
     "double_dunk": {
       "false_specificity_rate": 0.14285714285714285,
-      "interaction_missed_rate": 0.6,
-      "max_superadditive_delta": 97.0,
+      "interaction_missed_rate": 0.5272727272727272,
+      "max_superadditive_delta": 257.0,
       "n_units": 12,
       "positive_control_rho": 0.9999999999999998,
-      "spearman_rho_lesion_vs_oracle": 0.7824561403508771,
-      "triad_F": 0.7824561403508771,
+      "spearman_rho_lesion_vs_oracle": 0.9789473684210525,
+      "triad_F": 0.9789473684210525,
       "triad_M": 1.0,
-      "triad_S": -0.10896326142331159
+      "triad_S": 0.15465753234276483
+    },
+    "enduro": {
+      "false_specificity_rate": 1.0,
+      "interaction_missed_rate": 0.3333333333333333,
+      "max_superadditive_delta": 508.0,
+      "n_units": 3,
+      "positive_control_rho": 0.9999999999999998,
+      "spearman_rho_lesion_vs_oracle": 0.4999999999999999,
+      "triad_F": 0.4999999999999999,
+      "triad_M": 1.0,
+      "triad_S": 0.4999999999999999
     },
     "fishing_derby": {
       "false_specificity_rate": 0.0,
@@ -386,7 +399,7 @@
     "pitfall": {
       "false_specificity_rate": 0.3333333333333333,
       "interaction_missed_rate": 0.14545454545454545,
-      "max_superadditive_delta": 0.0,
+      "max_superadditive_delta": 103.0,
       "n_units": 16,
       "positive_control_rho": 1.0,
       "spearman_rho_lesion_vs_oracle": 1.0,
@@ -408,13 +421,13 @@
     "private_eye": {
       "false_specificity_rate": 0.06666666666666667,
       "interaction_missed_rate": 0.32727272727272727,
-      "max_superadditive_delta": 119.0,
+      "max_superadditive_delta": 120.0,
       "n_units": 24,
       "positive_control_rho": 1.0,
-      "spearman_rho_lesion_vs_oracle": 0.9973787680209698,
-      "triad_F": 0.9973787680209698,
+      "spearman_rho_lesion_vs_oracle": 1.0,
+      "triad_F": 1.0,
       "triad_M": 1.0,
-      "triad_S": 0.5150459853487128
+      "triad_S": 0.6109420325133718
     },
     "qbert": {
       "false_specificity_rate": 0.0,
@@ -459,6 +472,17 @@
       "triad_F": 1.0,
       "triad_M": 1.0,
       "triad_S": 0.7996077753088103
+    },
+    "skiing": {
+      "false_specificity_rate": 0.25,
+      "interaction_missed_rate": 0.19444444444444445,
+      "max_superadditive_delta": 156.0,
+      "n_units": 9,
+      "positive_control_rho": 0.9999999999999999,
+      "spearman_rho_lesion_vs_oracle": 0.9833333333333332,
+      "triad_F": 0.9833333333333332,
+      "triad_M": 1.0,
+      "triad_S": 0.6666666666666666
     },
     "space_invaders": {
       "false_specificity_rate": 0.5,
@@ -505,15 +529,15 @@
       "triad_S": -0.12613124477737825
     },
     "yars_revenge": {
-      "false_specificity_rate": 0.125,
+      "false_specificity_rate": 0.0,
       "interaction_missed_rate": 0.10909090909090909,
-      "max_superadditive_delta": 0.0,
+      "max_superadditive_delta": 2358.0,
       "n_units": 13,
-      "positive_control_rho": 1.0,
-      "spearman_rho_lesion_vs_oracle": 0.998625428903524,
-      "triad_F": 0.998625428903524,
+      "positive_control_rho": 0.9999999999999999,
+      "spearman_rho_lesion_vs_oracle": 0.9986101452630162,
+      "triad_F": 0.9986101452630162,
       "triad_M": 1.0,
-      "triad_S": 0.46877425582197874
+      "triad_S": 0.6925191444030873
     }
   },
   "phase": "phaseA_kording",
@@ -521,7 +545,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "per-unit behavioural-importance map (per game)",
-  "timestamp": "1783606764",
-  "value": 0.9650084696920399,
+  "timestamp": "1793020645",
+  "value": 0.9642464407221354,
   "where": "local"
 }

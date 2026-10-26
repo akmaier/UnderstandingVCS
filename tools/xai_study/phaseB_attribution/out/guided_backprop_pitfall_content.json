@@ -1,7 +1,7 @@
 {
   "arrays": "guided_backprop_pitfall_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "adebayo_sanity_check": {
       "failure_mode": "model_invariant_saliency_constant_jacobian",
@@ -101,8 +101,8 @@
       "vanilla_precision_at_k": 0.0
     },
     "harness_positive_control": {
-      "deletion_auc": 0.29411764705882354,
-      "insertion_auc": 0.0,
+      "deletion_auc": 0.9852941176470589,
+      "insertion_auc": 0.16176470588235295,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the Guided-BP numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "pearson_corr": 1.0,
@@ -110,8 +110,8 @@
     },
     "method_reference": "Springenberg et al. 2015 (Guided Backprop / deconvnet); sanity check: Adebayo et al. 2018.",
     "metrics": {
-      "deletion_auc": 0.17647058823529413,
-      "insertion_auc": 0.11718569780853517,
+      "deletion_auc": 0.8676470588235294,
+      "insertion_auc": 0.27895040369088814,
       "pearson_corr": -0.07288057172562686,
       "precision_at_k": 0.0,
       "spearman_corr": -0.07769769506350763,
@@ -180,7 +180,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@32)",
-  "timestamp": "1783132009",
+  "timestamp": "1793021125",
   "value": -0.07288057172562686,
   "where": "local"
 }

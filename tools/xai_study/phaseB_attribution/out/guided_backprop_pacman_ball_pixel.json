@@ -1,7 +1,7 @@
 {
   "arrays": "guided_backprop_pacman_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "adebayo_sanity_check": {
       "failure_mode": "model_invariant_saliency_constant_jacobian",
@@ -126,7 +126,7 @@
       "position_byte_ram_index": 49,
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r131c77",
+      "shared_output": "screen_region(n_changed_px)@r132c77",
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
@@ -145,14 +145,14 @@
   "method": "guided_backprop",
   "metric_name": "pearson_corr_with_oracle",
   "n": 18,
-  "oracle_ref": "oracle_intervene@pacman#screen_region(n_changed_px)@r131c77",
+  "oracle_ref": "oracle_intervene@pacman#screen_region(n_changed_px)@r132c77",
   "paper": "P2",
   "phase": "phaseB_attribution",
   "seed": 0,
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
-  "target_output": "screen_region(n_changed_px)@r131c77",
-  "timestamp": "1783131842",
+  "target_output": "screen_region(n_changed_px)@r132c77",
+  "timestamp": "1793020805",
   "value": 0.0,
   "where": "local"
 }

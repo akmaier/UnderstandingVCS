@@ -1,7 +1,7 @@
 {
   "arrays": "counterfactual_bowling_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "alt_frame": 15,
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-CF causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
@@ -134,8 +134,8 @@
       "y_x": 0.0
     },
     "harness_positive_control": {
-      "deletion_auc": 0.6087724063009234,
-      "insertion_auc": 0.16182328444685856,
+      "deletion_auc": 0.6087724063009238,
+      "insertion_auc": 0.1618232844468586,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the CF numbers above are then a true measurement, not an artefact of the metric.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "oracle_column_degenerate": false,
@@ -143,9 +143,9 @@
       "precision_at_k": 1.0
     },
     "headline_metrics": {
-      "deletion_auc": 0.3938593294460643,
-      "insertion_auc": 0.2367893586005831,
-      "pearson_corr": 0.42552369362442843,
+      "deletion_auc": 0.39385932944606417,
+      "insertion_auc": 0.23678935860058306,
+      "pearson_corr": 0.4255236936244283,
       "precision_at_k": 0.6666666666666666,
       "spearman_corr": 0.6600802404294597,
       "topk": 3
@@ -212,7 +212,7 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": 0.42552369362442843,
+      "F": 0.4255236936244283,
       "M": 1.0,
       "M_named_size": 8,
       "M_note": "|U*|=14 (oracle movers) / |U_hat|=8 (method above-threshold)",
@@ -233,7 +233,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r164c33",
-  "timestamp": "1783131539",
-  "value": 0.42552369362442843,
+  "timestamp": "1793016845",
+  "value": 0.4255236936244283,
   "where": "local"
 }

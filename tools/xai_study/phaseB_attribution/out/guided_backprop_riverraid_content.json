@@ -1,7 +1,7 @@
 {
   "arrays": "guided_backprop_riverraid_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "adebayo_sanity_check": {
       "failure_mode": "model_invariant_saliency_constant_jacobian",
@@ -126,7 +126,7 @@
     },
     "harness_positive_control": {
       "deletion_auc": 0.01078397808969531,
-      "insertion_auc": 0.9601163984936667,
+      "insertion_auc": 0.9601163984936669,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the Guided-BP numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "pearson_corr": 1.0,
@@ -135,7 +135,7 @@
     "method_reference": "Springenberg et al. 2015 (Guided Backprop / deconvnet); sanity check: Adebayo et al. 2018.",
     "metrics": {
       "deletion_auc": 0.01078397808969531,
-      "insertion_auc": 0.9604587470044507,
+      "insertion_auc": 0.960458747004451,
       "pearson_corr": 0.9995848704141624,
       "precision_at_k": 0.6666666666666666,
       "spearman_corr": 0.6540768527283279,
@@ -216,7 +216,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@55)",
-  "timestamp": "1783132469",
+  "timestamp": "1793022035",
   "value": 0.9995848704141624,
   "where": "local"
 }

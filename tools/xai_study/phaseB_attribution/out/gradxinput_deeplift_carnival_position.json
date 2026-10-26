@@ -1,7 +1,7 @@
 {
   "arrays": "gradxinput_deeplift_carnival_position.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-attributed causes occluded (deletion) / restored (insertion); each curve point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline": "all-zeros RAM (the 'absent' state)",
@@ -81,17 +81,17 @@
         "ram[42]:occlude": 1840.0,
         "ram[42]:set": 700.0,
         "ram[45]:occlude": 0.0,
-        "ram[45]:set": 4.0,
-        "ram[46]:occlude": 0.0,
-        "ram[46]:set": 2.0,
+        "ram[45]:set": 68.0,
+        "ram[46]:occlude": 4.0,
+        "ram[46]:set": 38.0,
         "ram[55]:occlude": 11.0,
         "ram[55]:set": 25.0,
         "ram[8]:occlude": 2.0,
         "ram[8]:set": 38.0,
-        "tia[COLUBK]:set": 30439.0
+        "tia[COLUBK]:set": 30959.0
       },
-      "deletion_auc": 0.647838121824227,
-      "insertion_auc": 0.3052623737532149,
+      "deletion_auc": 0.6517588294335364,
+      "insertion_auc": 0.32428564707358387,
       "interpretation": "corr=1 & precision@k=1 ⇒ the scoring harness rewards a faithful map; the method numbers above are then a true measurement, not an artefact.",
       "method": "oracle_abs_delta",
       "pearson_corr": 1.0,
@@ -141,12 +141,12 @@
           "ram[8]:set": 0.0,
           "tia[COLUBK]:set": 0.0
         },
-        "deletion_auc": 0.8577149395227199,
-        "insertion_auc": 0.4905579165304566,
+        "deletion_auc": 0.8582161926555518,
+        "insertion_auc": 0.4917565653263594,
         "method": "deeplift_rescale",
-        "pearson_corr": -0.047764449399949754,
+        "pearson_corr": -0.04775354895793837,
         "precision_at_k": 0.0,
-        "spearman_corr": 0.0709875633431916,
+        "spearman_corr": 0.05984366836048188,
         "topk": 3
       },
       "grad_x_input": {
@@ -190,12 +190,12 @@
           "ram[8]:set": 0.0,
           "tia[COLUBK]:set": 0.0
         },
-        "deletion_auc": 0.8577149395227199,
-        "insertion_auc": 0.4905579165304566,
+        "deletion_auc": 0.8582161926555518,
+        "insertion_auc": 0.4917565653263594,
         "method": "grad_x_input",
-        "pearson_corr": -0.047764449399949754,
+        "pearson_corr": -0.04775354895793837,
         "precision_at_k": 0.0,
-        "spearman_corr": 0.0709875633431916,
+        "spearman_corr": 0.05984366836048188,
         "topk": 3
       },
       "vanilla_saliency": {
@@ -239,12 +239,12 @@
           "ram[8]:set": 0.0,
           "tia[COLUBK]:set": 0.0
         },
-        "deletion_auc": 0.8577149395227199,
-        "insertion_auc": 0.4905579165304566,
+        "deletion_auc": 0.8582161926555518,
+        "insertion_auc": 0.4917565653263594,
         "method": "vanilla_saliency",
-        "pearson_corr": -0.04776444939994977,
+        "pearson_corr": -0.047753548957938353,
         "precision_at_k": 0.0,
-        "spearman_corr": 0.0709875633431916,
+        "spearman_corr": 0.05984366836048188,
         "topk": 3
       }
     },
@@ -279,16 +279,16 @@
       "ram[42]:occlude": 1840.0,
       "ram[42]:set": 700.0,
       "ram[45]:occlude": 0.0,
-      "ram[45]:set": 4.0,
-      "ram[46]:occlude": 0.0,
-      "ram[46]:set": 2.0,
+      "ram[45]:set": 68.0,
+      "ram[46]:occlude": 4.0,
+      "ram[46]:set": 38.0,
       "ram[55]:occlude": 11.0,
       "ram[55]:set": 25.0,
       "ram[8]:occlude": 2.0,
       "ram[8]:set": 38.0,
-      "tia[COLUBK]:set": 30439.0
+      "tia[COLUBK]:set": 30959.0
     },
-    "output_note": "POSITION/INDEX output (screen_region(n_changed_px)@r84c33) — the §1 caveat: a pixel value comes from a discrete sprite column (round/argmax), so there is no differentiable RAM read and the content-path gradient VANISHES (max|attr|=31.0). The oracle has real causal signal on position causes, so Grad×Input/DeepLIFT score near chance — the 'plausible ≠ faithful' headline; the intervention oracle is the sole truth here.",
+    "output_note": "POSITION/INDEX output (screen_region(n_changed_px)@r92c33) — the §1 caveat: a pixel value comes from a discrete sprite column (round/argmax), so there is no differentiable RAM read and the content-path gradient VANISHES (max|attr|=31.0). The oracle has real causal signal on position causes, so Grad×Input/DeepLIFT score near chance — the 'plausible ≠ faithful' headline; the intervention oracle is the sole truth here.",
     "sampler_on": {
       "note": "naive ∂pixel/∂ram ≡ 0 (Prop. prop:zero); the bilinear sampler (tools/xai_si_gradient/si_joystick_gradient.jl) restores a real ∂region/∂ram[position_byte], so Grad×Input/DeepLIFT/saliency all inherit a non-vanishing position gradient. per_cause_faithfulness_null=true ⇒ the sampler's position byte is not among this game's scored candidate causes, so the per-cause Pearson is null (recorded 0.0 by the shared convention), NOT a genuine zero corr — the keystone (a non-vanishing gradient) still holds on the full 128-byte map.",
       "per_cause_faithfulness_null": false,
@@ -302,7 +302,7 @@
     },
     "substrate": "jutari (Julia) — Zygote content-path ∂y/∂u over the RAM tape + TRUE-VCS deletion/insertion re-runs (real-ROM, bit-exact oracle machinery).",
     "testbed": {
-      "cause_density_above_floor": 26,
+      "cause_density_above_floor": 27,
       "cause_density_accepted": true,
       "cause_density_floor": 0.5,
       "cause_density_gate_k": 4,
@@ -311,17 +311,17 @@
       "position_byte_ram_index": 18,
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r84c33",
+      "shared_output": "screen_region(n_changed_px)@r92c33",
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": -0.047764449399949754,
+      "F": -0.04775354895793837,
       "M": 1.0,
       "M_named_size": 2,
-      "M_note": "|U*|=26 (oracle movers) / |U_hat|=2 (method above-threshold)",
-      "M_true_minimal_size": 26,
+      "M_note": "|U*|=27 (oracle movers) / |U_hat|=2 (method above-threshold)",
+      "M_true_minimal_size": 27,
       "S": 0.10526315789473684,
-      "S_note": "held-out predictive fit: 2/19 held-out do(u) within ε=228.4 (calib=19, fit Δy≈-56.4·attr+1876.389)",
+      "S_note": "held-out predictive fit: 2/19 held-out do(u) within ε=228.4 (calib=19, fit Δy≈-57.511·attr+1910.833)",
       "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
     },
     "y_full": 0.0
@@ -336,8 +336,8 @@
   "seed": 0,
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
-  "target_output": "position:screen_region(n_changed_px)@r84c33",
-  "timestamp": "1783132563",
-  "value": -0.047764449399949754,
+  "target_output": "position:screen_region(n_changed_px)@r92c33",
+  "timestamp": "1793022080",
+  "value": -0.04775354895793837,
   "where": "local"
 }

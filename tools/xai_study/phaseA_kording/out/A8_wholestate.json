@@ -1,15 +1,15 @@
 {
   "arrays": "A8_wholestate.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "game": "core_set",
   "games": [
     "air_raid",
     "alien",
     "assault",
+    "asterix",
     "atlantis",
     "bank_heist",
-    "beam_rider",
     "berzerk",
     "bowling",
     "boxing",
@@ -19,6 +19,7 @@
     "chopper_command",
     "demon_attack",
     "double_dunk",
+    "enduro",
     "fishing_derby",
     "freeway",
     "frostbite",
@@ -41,6 +42,7 @@
     "riverraid",
     "road_runner",
     "seaquest",
+    "skiing",
     "space_invaders",
     "tennis",
     "venture",
@@ -49,15 +51,15 @@
   ],
   "method": "A8_wholestate(record-everything descriptive baseline)",
   "metric_name": "mean_wholestate_minimality_M_vs_oracle",
-  "n": 42,
-  "note": "A8 = the descriptive baseline: F=S=1 (record everything ⇒ trivially faithful + sufficient), M at the floor (mean M = 0.076) — the minimality lower bound for the battery.",
+  "n": 44,
+  "note": "A8 = the descriptive baseline: F=S=1 (record everything ⇒ trivially faithful + sufficient), M at the floor (mean M = 0.075) — the minimality lower bound for the battery.",
   "oracle_ref": "oracle_intervene (exact intervention causal importance per game)",
   "paper": "P2",
   "per_game": {
     "air_raid": {
       "arrays": "A8_air_raid.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -90,31 +92,33 @@
           85,
           86
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_air_raid.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_air_raid.json",
         "oracle_causal_ram_indices": [
           19,
           20,
           21,
           27,
           28,
+          39,
           40,
           41,
           42,
           83,
+          84,
           85
         ],
         "oracle_importance_per_cell": {
-          "RAM[19]:player.xy": 132.0,
-          "RAM[20]:b1.xy": 1664.0,
-          "RAM[21]:b2.xy": 1600.0,
-          "RAM[27]:b1.damage": 696.0,
+          "RAM[19]:player.xy": 39352.0,
+          "RAM[20]:b1.xy": 39352.0,
+          "RAM[21]:b2.xy": 1664.0,
+          "RAM[27]:b1.damage": 704.0,
           "RAM[28]:b2.damage": 576.0,
-          "RAM[39]:lives.lives": 0.0,
-          "RAM[40]:a": 120.0,
-          "RAM[41]:b": 56.0,
-          "RAM[42]:c": 53.0,
-          "RAM[83]:enemy_missile.xy": 4.0,
-          "RAM[84]:enemy_missile.xy": 0.0,
+          "RAM[39]:lives.lives": 48.0,
+          "RAM[40]:a": 152.0,
+          "RAM[41]:b": 88.0,
+          "RAM[42]:c": 54.0,
+          "RAM[83]:enemy_missile.xy": 39352.0,
+          "RAM[84]:enemy_missile.xy": 39352.0,
           "RAM[85]:player_missile.xy": 4.0,
           "RAM[86]:player_missile.xy": 0.0
         },
@@ -124,13 +128,13 @@
           "S": 1.0,
           "minimal_set_sufficient": true,
           "name": "oracle minimal causal set (keep ONLY oracle-causal cells)",
-          "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.078 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
+          "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.094 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
         },
         "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-        "settings": "GenericRomSettings",
+        "settings": "AirRaidRomSettings",
         "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
         "testbed": {
-          "cause_density_above_floor": 14,
+          "cause_density_above_floor": 17,
           "cause_density_accepted": true,
           "cause_density_floor": 0.5,
           "cause_density_gate_k": 4,
@@ -145,18 +149,18 @@
         "triad": {
           "F": 1.0,
           "F_note": "recall of oracle-causal candidate cells under the whole-state map = 1.0 (the recorded whole state contains every cell, so it misses no causal cell)",
-          "M": 0.078125,
-          "M_note": "minimality at the FLOOR: |recovered set| = the whole 128-byte state; M = #oracle-causal cells / 128 = 10/128 (over-recording factor 12.8×)",
+          "M": 0.09375,
+          "M_note": "minimality at the FLOOR: |recovered set| = the whole 128-byte state; M = #oracle-causal cells / 128 = 12/128 (over-recording factor 10.7×)",
           "S": 1.0,
           "S_note": "the recorded whole 128-byte RAM state, restored into a fresh checkpoint, reproduces the exact RAM + rendered frame (lossless ⇒ literally sufficient)",
           "interpretation": "A8 is the DESCRIPTIVE BASELINE (experiment_design.md §4): 'record everything'. It is trivially FAITHFUL (F=1: the whole state contains every causal cell) and SUFFICIENT (S=1: the recorded state, restored, reproduces the exact frame), but maximally NON-MINIMAL (M at the floor: the recovered set IS the whole machine). This M is the lower bound the other A-methods (A1..A7) and the causal operators (§6) are measured against on the minimality axis — the F/M trade-off the quantified-Kording story turns on."
         },
         "wholestate": {
-          "ideal_minimal_size": 10,
-          "n_oracle_causal_cells": 10,
-          "n_varying_ram_cells": 60,
-          "note": "the whole-state recorder keeps ALL 192 state bytes every frame; only 10 candidate cells are causal by the oracle ⇒ it over-records by 12.8× — trivially faithful/sufficient, maximally non-minimal.",
-          "over_recording_factor": 12.8,
+          "ideal_minimal_size": 12,
+          "n_oracle_causal_cells": 12,
+          "n_varying_ram_cells": 33,
+          "note": "the whole-state recorder keeps ALL 192 state bytes every frame; only 12 candidate cells are causal by the oracle ⇒ it over-records by 10.7× — trivially faithful/sufficient, maximally non-minimal.",
+          "over_recording_factor": 10.666666666666666,
           "ram_size": 128,
           "tape_shape": [
             150,
@@ -180,14 +184,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127685",
-      "value": 0.078125,
+      "timestamp": "1793020541",
+      "value": 0.09375,
       "where": "local"
     },
     "alien": {
       "arrays": "A8_alien.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -206,7 +210,7 @@
           60,
           64
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_alien.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_alien.json",
         "oracle_causal_ram_indices": [
           45,
           47,
@@ -283,14 +287,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127685",
+      "timestamp": "1793020542",
       "value": 0.03125,
       "where": "local"
     },
     "assault": {
       "arrays": "A8_assault.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -337,7 +341,7 @@
           101,
           110
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_assault.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_assault.json",
         "oracle_causal_ram_indices": [
           0,
           1,
@@ -433,14 +437,130 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127685",
+      "timestamp": "1793020542",
       "value": 0.0703125,
+      "where": "local"
+    },
+    "asterix": {
+      "arrays": "A8_asterix.npz",
+      "ci": null,
+      "commit": "56e3a03",
+      "extra": {
+        "bit_exact_rerun": true,
+        "candidate_cells": [
+          "RAM[29]:enemy_or_eatable_object",
+          "RAM[39]:player.xy",
+          "RAM[41]:player.xy",
+          "RAM[54]:kind_of_visible_objs",
+          "RAM[73]:rewards_visible",
+          "RAM[83]:lives",
+          "RAM[94]:dec_value",
+          "RAM[95]:dec_value",
+          "RAM[96]:dec_value"
+        ],
+        "candidate_ram_indices": [
+          29,
+          39,
+          41,
+          54,
+          73,
+          83,
+          94,
+          95,
+          96
+        ],
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_asterix.json",
+        "oracle_causal_ram_indices": [
+          29,
+          39,
+          41,
+          54,
+          83,
+          94,
+          95,
+          96
+        ],
+        "oracle_importance_per_cell": {
+          "RAM[29]:enemy_or_eatable_object": 57.0,
+          "RAM[39]:player.xy": 167.0,
+          "RAM[41]:player.xy": 164.0,
+          "RAM[54]:kind_of_visible_objs": 800.0,
+          "RAM[73]:rewards_visible": 0.0,
+          "RAM[83]:lives": 853.0,
+          "RAM[94]:dec_value": 77.0,
+          "RAM[95]:dec_value": 49.0,
+          "RAM[96]:dec_value": 62.0
+        },
+        "positive_control": {
+          "F": 1.0,
+          "M": 1.0,
+          "S": 1.0,
+          "minimal_set_sufficient": true,
+          "name": "oracle minimal causal set (keep ONLY oracle-causal cells)",
+          "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.062 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
+        },
+        "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
+        "settings": "AsterixRomSettings",
+        "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
+        "testbed": {
+          "cause_density_above_floor": 12,
+          "cause_density_accepted": true,
+          "cause_density_floor": 0.5,
+          "cause_density_gate_k": 4,
+          "horizon": 15,
+          "n_causes": 20,
+          "note": "P2 redesign: BOTH the scored oracle prefix (causal importance) AND the whole-state recording run on a seeded random-action GAMEPLAY state (not the FIRE×4-then-NOOP oracle tape / synthetic active tape), gated by the §1 oracle cause-density gate. The recorded tape is the gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A8's recording + oracle-importance algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
+          "prefix": 90,
+          "seed": 0,
+          "shared_output": "screen_region(n_changed_px)@r91c79",
+          "state_kind": "seeded_random_action_gameplay"
+        },
+        "triad": {
+          "F": 1.0,
+          "F_note": "recall of oracle-causal candidate cells under the whole-state map = 1.0 (the recorded whole state contains every cell, so it misses no causal cell)",
+          "M": 0.0625,
+          "M_note": "minimality at the FLOOR: |recovered set| = the whole 128-byte state; M = #oracle-causal cells / 128 = 8/128 (over-recording factor 16.0×)",
+          "S": 1.0,
+          "S_note": "the recorded whole 128-byte RAM state, restored into a fresh checkpoint, reproduces the exact RAM + rendered frame (lossless ⇒ literally sufficient)",
+          "interpretation": "A8 is the DESCRIPTIVE BASELINE (experiment_design.md §4): 'record everything'. It is trivially FAITHFUL (F=1: the whole state contains every causal cell) and SUFFICIENT (S=1: the recorded state, restored, reproduces the exact frame), but maximally NON-MINIMAL (M at the floor: the recovered set IS the whole machine). This M is the lower bound the other A-methods (A1..A7) and the causal operators (§6) are measured against on the minimality axis — the F/M trade-off the quantified-Kording story turns on."
+        },
+        "wholestate": {
+          "ideal_minimal_size": 8,
+          "n_oracle_causal_cells": 8,
+          "n_varying_ram_cells": 43,
+          "note": "the whole-state recorder keeps ALL 192 state bytes every frame; only 8 candidate cells are causal by the oracle ⇒ it over-records by 16.0× — trivially faithful/sufficient, maximally non-minimal.",
+          "over_recording_factor": 16.0,
+          "ram_size": 128,
+          "tape_shape": [
+            150,
+            192
+          ],
+          "tia_size": 64,
+          "trajectory_frames": 150,
+          "trajectory_trace": "seeded random-action GAMEPLAY (prefix+horizon) then NOOP tail",
+          "wholestate_restore_lossless": true,
+          "wholestate_size": 192
+        }
+      },
+      "game": "asterix",
+      "method": "A8_wholestate(record-everything descriptive baseline)",
+      "metric_name": "wholestate_minimality_M_vs_oracle",
+      "n": 9,
+      "oracle_ref": "oracle_intervene@asterix#whole-screen-break causal importance (exhaustive do-set, full horizon)",
+      "paper": "P2",
+      "phase": "phaseA_kording",
+      "seed": 0,
+      "state": "gameplay(seed=0,prefix=90)+15",
+      "stderr": null,
+      "target_output": "full RAM+register state map over time (whole-state record)",
+      "timestamp": "1793020542",
+      "value": 0.0625,
       "where": "local"
     },
     "atlantis": {
       "arrays": "A8_atlantis.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -465,7 +585,7 @@
           61,
           62
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_atlantis.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_atlantis.json",
         "oracle_causal_ram_indices": [
           33,
           34,
@@ -548,14 +668,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127685",
+      "timestamp": "1793020543",
       "value": 0.0546875,
       "where": "local"
     },
     "bank_heist": {
       "arrays": "A8_bank_heist.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -572,7 +692,7 @@
           32,
           86
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_bank_heist.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_bank_heist.json",
         "oracle_causal_ram_indices": [
           8,
           12,
@@ -648,112 +768,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127685",
+      "timestamp": "1793020543",
       "value": 0.03125,
-      "where": "local"
-    },
-    "beam_rider": {
-      "arrays": "A8_beam_rider.npz",
-      "ci": null,
-      "commit": "d85961ed",
-      "extra": {
-        "bit_exact_rerun": true,
-        "candidate_cells": [
-          "RAM[25]:enemy_y",
-          "RAM[32]:projectile_y",
-          "RAM[33]:enemy_x",
-          "RAM[40]:projectile_x",
-          "RAM[41]:player.xy"
-        ],
-        "candidate_ram_indices": [
-          25,
-          32,
-          33,
-          40,
-          41
-        ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_beam_rider.json",
-        "oracle_causal_ram_indices": [
-          32,
-          41
-        ],
-        "oracle_importance_per_cell": {
-          "RAM[25]:enemy_y": 0.0,
-          "RAM[32]:projectile_y": 9.0,
-          "RAM[33]:enemy_x": 0.0,
-          "RAM[40]:projectile_x": 0.0,
-          "RAM[41]:player.xy": 237.0
-        },
-        "positive_control": {
-          "F": 1.0,
-          "M": 1.0,
-          "S": 1.0,
-          "minimal_set_sufficient": true,
-          "name": "oracle minimal causal set (keep ONLY oracle-causal cells)",
-          "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.016 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
-        },
-        "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-        "settings": "GenericRomSettings",
-        "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
-        "testbed": {
-          "cause_density_above_floor": 4,
-          "cause_density_accepted": true,
-          "cause_density_floor": 0.5,
-          "cause_density_gate_k": 4,
-          "horizon": 15,
-          "n_causes": 12,
-          "note": "P2 redesign: BOTH the scored oracle prefix (causal importance) AND the whole-state recording run on a seeded random-action GAMEPLAY state (not the FIRE×4-then-NOOP oracle tape / synthetic active tape), gated by the §1 oracle cause-density gate. The recorded tape is the gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A8's recording + oracle-importance algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
-          "prefix": 90,
-          "seed": 0,
-          "shared_output": "screen_region(n_changed_px)@r179c78",
-          "state_kind": "seeded_random_action_gameplay"
-        },
-        "triad": {
-          "F": 1.0,
-          "F_note": "recall of oracle-causal candidate cells under the whole-state map = 1.0 (the recorded whole state contains every cell, so it misses no causal cell)",
-          "M": 0.015625,
-          "M_note": "minimality at the FLOOR: |recovered set| = the whole 128-byte state; M = #oracle-causal cells / 128 = 2/128 (over-recording factor 64.0×)",
-          "S": 1.0,
-          "S_note": "the recorded whole 128-byte RAM state, restored into a fresh checkpoint, reproduces the exact RAM + rendered frame (lossless ⇒ literally sufficient)",
-          "interpretation": "A8 is the DESCRIPTIVE BASELINE (experiment_design.md §4): 'record everything'. It is trivially FAITHFUL (F=1: the whole state contains every causal cell) and SUFFICIENT (S=1: the recorded state, restored, reproduces the exact frame), but maximally NON-MINIMAL (M at the floor: the recovered set IS the whole machine). This M is the lower bound the other A-methods (A1..A7) and the causal operators (§6) are measured against on the minimality axis — the F/M trade-off the quantified-Kording story turns on."
-        },
-        "wholestate": {
-          "ideal_minimal_size": 2,
-          "n_oracle_causal_cells": 2,
-          "n_varying_ram_cells": 38,
-          "note": "the whole-state recorder keeps ALL 192 state bytes every frame; only 2 candidate cells are causal by the oracle ⇒ it over-records by 64.0× — trivially faithful/sufficient, maximally non-minimal.",
-          "over_recording_factor": 64.0,
-          "ram_size": 128,
-          "tape_shape": [
-            150,
-            192
-          ],
-          "tia_size": 64,
-          "trajectory_frames": 150,
-          "trajectory_trace": "seeded random-action GAMEPLAY (prefix+horizon) then NOOP tail",
-          "wholestate_restore_lossless": true,
-          "wholestate_size": 192
-        }
-      },
-      "game": "beam_rider",
-      "method": "A8_wholestate(record-everything descriptive baseline)",
-      "metric_name": "wholestate_minimality_M_vs_oracle",
-      "n": 5,
-      "oracle_ref": "oracle_intervene@beam_rider#whole-screen-break causal importance (exhaustive do-set, full horizon)",
-      "paper": "P2",
-      "phase": "phaseA_kording",
-      "seed": 0,
-      "state": "gameplay(seed=0,prefix=90)+15",
-      "stderr": null,
-      "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127685",
-      "value": 0.015625,
       "where": "local"
     },
     "berzerk": {
       "arrays": "A8_berzerk.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -812,7 +834,7 @@
           95,
           56
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_berzerk.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_berzerk.json",
         "oracle_causal_ram_indices": [
           11,
           19,
@@ -919,14 +941,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127685",
+      "timestamp": "1793020543",
       "value": 0.109375,
       "where": "local"
     },
     "bowling": {
       "arrays": "A8_bowling.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -973,7 +995,7 @@
           38,
           47
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_bowling.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_bowling.json",
         "oracle_causal_ram_indices": [
           29,
           30,
@@ -1068,14 +1090,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127685",
+      "timestamp": "1793020543",
       "value": 0.0625,
       "where": "local"
     },
     "boxing": {
       "arrays": "A8_boxing.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -1104,7 +1126,7 @@
           59,
           61
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_boxing.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_boxing.json",
         "oracle_causal_ram_indices": [
           17,
           18,
@@ -1191,14 +1213,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127685",
+      "timestamp": "1793020543",
       "value": 0.0703125,
       "where": "local"
     },
     "breakout": {
       "arrays": "A8_breakout.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -1223,7 +1245,7 @@
           57,
           76
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_breakout.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_breakout.json",
         "oracle_causal_ram_indices": [
           30,
           77,
@@ -1306,14 +1328,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127685",
+      "timestamp": "1793020543",
       "value": 0.0546875,
       "where": "local"
     },
     "carnival": {
       "arrays": "A8_carnival.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -1356,7 +1378,7 @@
           121,
           125
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_carnival.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_carnival.json",
         "oracle_causal_ram_indices": [
           1,
           2,
@@ -1389,8 +1411,8 @@
           "RAM[3]:ammo.wh": 1432.0,
           "RAM[40]:targets_third_row_variation": 388.0,
           "RAM[42]:ammo.rgb": 1840.0,
-          "RAM[45]:score": 4.0,
-          "RAM[46]:score": 8.0,
+          "RAM[45]:score": 68.0,
+          "RAM[46]:score": 46.0,
           "RAM[55]:missile": 30.0,
           "RAM[8]:bonus_sprites": 38.0
         },
@@ -1403,10 +1425,10 @@
           "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.117 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
         },
         "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-        "settings": "GenericRomSettings",
+        "settings": "CarnivalRomSettings",
         "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
         "testbed": {
-          "cause_density_above_floor": 26,
+          "cause_density_above_floor": 27,
           "cause_density_accepted": true,
           "cause_density_floor": 0.5,
           "cause_density_gate_k": 4,
@@ -1415,7 +1437,7 @@
           "note": "P2 redesign: BOTH the scored oracle prefix (causal importance) AND the whole-state recording run on a seeded random-action GAMEPLAY state (not the FIRE×4-then-NOOP oracle tape / synthetic active tape), gated by the §1 oracle cause-density gate. The recorded tape is the gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A8's recording + oracle-importance algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
           "prefix": 90,
           "seed": 0,
-          "shared_output": "screen_region(n_changed_px)@r84c33",
+          "shared_output": "screen_region(n_changed_px)@r92c33",
           "state_kind": "seeded_random_action_gameplay"
         },
         "triad": {
@@ -1456,14 +1478,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.1171875,
       "where": "local"
     },
     "centipede": {
       "arrays": "A8_centipede.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -1488,7 +1510,7 @@
           116,
           118
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_centipede.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_centipede.json",
         "oracle_causal_ram_indices": [
           45,
           91,
@@ -1571,14 +1593,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.0546875,
       "where": "local"
     },
     "chopper_command": {
       "arrays": "A8_chopper_command.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -1625,7 +1647,7 @@
           110,
           112
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_chopper_command.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_chopper_command.json",
         "oracle_causal_ram_indices": [
           65,
           66,
@@ -1722,14 +1744,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.078125,
       "where": "local"
     },
     "demon_attack": {
       "arrays": "A8_demon_attack.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -1766,7 +1788,7 @@
           37,
           72
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_demon_attack.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_demon_attack.json",
         "oracle_causal_ram_indices": [
           18,
           21,
@@ -1857,14 +1879,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.0703125,
       "where": "local"
     },
     "double_dunk": {
       "arrays": "A8_double_dunk.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -1895,7 +1917,7 @@
           118,
           119
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_double_dunk.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_double_dunk.json",
         "oracle_causal_ram_indices": [
           33,
           34,
@@ -1913,16 +1935,16 @@
         "oracle_importance_per_cell": {
           "RAM[118]:value": 38.0,
           "RAM[119]:value": 38.0,
-          "RAM[33]:xy": 429.0,
-          "RAM[34]:xy": 484.0,
-          "RAM[35]:xy": 290.0,
-          "RAM[36]:xy": 286.0,
-          "RAM[37]:xy": 1260.0,
-          "RAM[38]:xy": 144.0,
-          "RAM[39]:xy": 392.0,
-          "RAM[40]:xy": 166.0,
-          "RAM[46]:xy": 221.0,
-          "RAM[47]:xy": 233.0
+          "RAM[33]:xy": 281.0,
+          "RAM[34]:xy": 270.0,
+          "RAM[35]:xy": 299.0,
+          "RAM[36]:xy": 282.0,
+          "RAM[37]:xy": 186.0,
+          "RAM[38]:xy": 160.0,
+          "RAM[39]:xy": 387.0,
+          "RAM[40]:xy": 151.0,
+          "RAM[46]:xy": 16.0,
+          "RAM[47]:xy": 344.0
         },
         "positive_control": {
           "F": 1.0,
@@ -1933,7 +1955,7 @@
           "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.094 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
         },
         "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-        "settings": "GenericRomSettings",
+        "settings": "DoubleDunkRomSettings",
         "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
         "testbed": {
           "cause_density_above_floor": 22,
@@ -1960,7 +1982,7 @@
         "wholestate": {
           "ideal_minimal_size": 12,
           "n_oracle_causal_cells": 12,
-          "n_varying_ram_cells": 81,
+          "n_varying_ram_cells": 76,
           "note": "the whole-state recorder keeps ALL 192 state bytes every frame; only 12 candidate cells are causal by the oracle ⇒ it over-records by 10.7× — trivially faithful/sufficient, maximally non-minimal.",
           "over_recording_factor": 10.666666666666666,
           "ram_size": 128,
@@ -1986,14 +2008,106 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.09375,
+      "where": "local"
+    },
+    "enduro": {
+      "arrays": "A8_enduro.npz",
+      "ci": null,
+      "commit": "56e3a03",
+      "extra": {
+        "bit_exact_rerun": true,
+        "candidate_cells": [
+          "RAM[46]:x_drift",
+          "RAM[52]:xy",
+          "RAM[59]:y"
+        ],
+        "candidate_ram_indices": [
+          46,
+          52,
+          59
+        ],
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_enduro.json",
+        "oracle_causal_ram_indices": [
+          46,
+          59
+        ],
+        "oracle_importance_per_cell": {
+          "RAM[46]:x_drift": 772.0,
+          "RAM[52]:xy": 0.0,
+          "RAM[59]:y": 562.0
+        },
+        "positive_control": {
+          "F": 1.0,
+          "M": 1.0,
+          "S": 1.0,
+          "minimal_set_sufficient": true,
+          "name": "oracle minimal causal set (keep ONLY oracle-causal cells)",
+          "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.016 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
+        },
+        "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
+        "settings": "EnduroRomSettings",
+        "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
+        "testbed": {
+          "cause_density_above_floor": 4,
+          "cause_density_accepted": true,
+          "cause_density_floor": 0.5,
+          "cause_density_gate_k": 4,
+          "horizon": 15,
+          "n_causes": 8,
+          "note": "P2 redesign: BOTH the scored oracle prefix (causal importance) AND the whole-state recording run on a seeded random-action GAMEPLAY state (not the FIRE×4-then-NOOP oracle tape / synthetic active tape), gated by the §1 oracle cause-density gate. The recorded tape is the gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A8's recording + oracle-importance algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
+          "prefix": 90,
+          "seed": 0,
+          "shared_output": "screen_region(n_changed_px)@r1c9",
+          "state_kind": "seeded_random_action_gameplay"
+        },
+        "triad": {
+          "F": 1.0,
+          "F_note": "recall of oracle-causal candidate cells under the whole-state map = 1.0 (the recorded whole state contains every cell, so it misses no causal cell)",
+          "M": 0.015625,
+          "M_note": "minimality at the FLOOR: |recovered set| = the whole 128-byte state; M = #oracle-causal cells / 128 = 2/128 (over-recording factor 64.0×)",
+          "S": 1.0,
+          "S_note": "the recorded whole 128-byte RAM state, restored into a fresh checkpoint, reproduces the exact RAM + rendered frame (lossless ⇒ literally sufficient)",
+          "interpretation": "A8 is the DESCRIPTIVE BASELINE (experiment_design.md §4): 'record everything'. It is trivially FAITHFUL (F=1: the whole state contains every causal cell) and SUFFICIENT (S=1: the recorded state, restored, reproduces the exact frame), but maximally NON-MINIMAL (M at the floor: the recovered set IS the whole machine). This M is the lower bound the other A-methods (A1..A7) and the causal operators (§6) are measured against on the minimality axis — the F/M trade-off the quantified-Kording story turns on."
+        },
+        "wholestate": {
+          "ideal_minimal_size": 2,
+          "n_oracle_causal_cells": 2,
+          "n_varying_ram_cells": 61,
+          "note": "the whole-state recorder keeps ALL 192 state bytes every frame; only 2 candidate cells are causal by the oracle ⇒ it over-records by 64.0× — trivially faithful/sufficient, maximally non-minimal.",
+          "over_recording_factor": 64.0,
+          "ram_size": 128,
+          "tape_shape": [
+            150,
+            192
+          ],
+          "tia_size": 64,
+          "trajectory_frames": 150,
+          "trajectory_trace": "seeded random-action GAMEPLAY (prefix+horizon) then NOOP tail",
+          "wholestate_restore_lossless": true,
+          "wholestate_size": 192
+        }
+      },
+      "game": "enduro",
+      "method": "A8_wholestate(record-everything descriptive baseline)",
+      "metric_name": "wholestate_minimality_M_vs_oracle",
+      "n": 3,
+      "oracle_ref": "oracle_intervene@enduro#whole-screen-break causal importance (exhaustive do-set, full horizon)",
+      "paper": "P2",
+      "phase": "phaseA_kording",
+      "seed": 0,
+      "state": "gameplay(seed=0,prefix=90)+15",
+      "stderr": null,
+      "target_output": "full RAM+register state map over time (whole-state record)",
+      "timestamp": "1793020543",
+      "value": 0.015625,
       "where": "local"
     },
     "fishing_derby": {
       "arrays": "A8_fishing_derby.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -2018,7 +2132,7 @@
           66,
           75
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_fishing_derby.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_fishing_derby.json",
         "oracle_causal_ram_indices": [
           61,
           62,
@@ -2099,14 +2213,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.0390625,
       "where": "local"
     },
     "freeway": {
       "arrays": "A8_freeway.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -2141,7 +2255,7 @@
           15,
           104
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_freeway.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_freeway.json",
         "oracle_causal_ram_indices": [
           14,
           103,
@@ -2236,14 +2350,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.109375,
       "where": "local"
     },
     "frostbite": {
       "arrays": "A8_frostbite.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -2288,7 +2402,7 @@
           30,
           107
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_frostbite.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_frostbite.json",
         "oracle_causal_ram_indices": [
           31,
           32,
@@ -2388,14 +2502,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.109375,
       "where": "local"
     },
     "gopher": {
       "arrays": "A8_gopher.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -2442,7 +2556,7 @@
           50,
           85
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_gopher.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_gopher.json",
         "oracle_causal_ram_indices": [
           0,
           1,
@@ -2495,7 +2609,7 @@
           "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.148 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
         },
         "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-        "settings": "GenericRomSettings",
+        "settings": "GopherRomSettings",
         "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
         "testbed": {
           "cause_density_above_floor": 21,
@@ -2522,7 +2636,7 @@
         "wholestate": {
           "ideal_minimal_size": 19,
           "n_oracle_causal_cells": 19,
-          "n_varying_ram_cells": 20,
+          "n_varying_ram_cells": 7,
           "note": "the whole-state recorder keeps ALL 192 state bytes every frame; only 19 candidate cells are causal by the oracle ⇒ it over-records by 6.7× — trivially faithful/sufficient, maximally non-minimal.",
           "over_recording_factor": 6.7368421052631575,
           "ram_size": 128,
@@ -2548,14 +2662,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.1484375,
       "where": "local"
     },
     "hero": {
       "arrays": "A8_hero.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -2596,7 +2710,7 @@
           51,
           115
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_hero.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_hero.json",
         "oracle_causal_ram_indices": [
           27,
           28,
@@ -2691,14 +2805,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.0859375,
       "where": "local"
     },
     "ice_hockey": {
       "arrays": "A8_ice_hockey.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -2725,7 +2839,7 @@
           60,
           91
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_ice_hockey.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_ice_hockey.json",
         "oracle_causal_ram_indices": [
           52,
           53,
@@ -2811,14 +2925,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.0703125,
       "where": "local"
     },
     "jamesbond": {
       "arrays": "A8_jamesbond.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -2851,7 +2965,7 @@
           61,
           111
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_jamesbond.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_jamesbond.json",
         "oracle_causal_ram_indices": [
           25,
           27,
@@ -2938,14 +3052,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.0546875,
       "where": "local"
     },
     "kangaroo": {
       "arrays": "A8_kangaroo.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -2982,7 +3096,7 @@
           59,
           83
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_kangaroo.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_kangaroo.json",
         "oracle_causal_ram_indices": [
           16,
           17,
@@ -3021,7 +3135,7 @@
           "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.078 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
         },
         "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-        "settings": "GenericRomSettings",
+        "settings": "KangarooRomSettings",
         "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
         "testbed": {
           "cause_density_above_floor": 16,
@@ -3074,14 +3188,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.078125,
       "where": "local"
     },
     "krull": {
       "arrays": "A8_krull.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -3138,7 +3252,7 @@
           115,
           116
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_krull.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_krull.json",
         "oracle_causal_ram_indices": [
           28,
           29,
@@ -3241,14 +3355,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.0859375,
       "where": "local"
     },
     "kung_fu_master": {
       "arrays": "A8_kung_fu_master.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -3273,7 +3387,7 @@
           76,
           96
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_kung_fu_master.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_kung_fu_master.json",
         "oracle_causal_ram_indices": [
           29,
           72,
@@ -3355,14 +3469,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.046875,
       "where": "local"
     },
     "montezuma_revenge": {
       "arrays": "A8_montezuma_revenge.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -3399,7 +3513,7 @@
           61,
           62
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_montezuma_revenge.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_montezuma_revenge.json",
         "oracle_causal_ram_indices": [
           3,
           19,
@@ -3494,14 +3608,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.1015625,
       "where": "local"
     },
     "ms_pacman": {
       "arrays": "A8_ms_pacman.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -3546,7 +3660,7 @@
           121,
           122
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_ms_pacman.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_ms_pacman.json",
         "oracle_causal_ram_indices": [
           8,
           9,
@@ -3646,14 +3760,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.109375,
       "where": "local"
     },
     "name_this_game": {
       "arrays": "A8_name_this_game.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -3670,7 +3784,7 @@
           99,
           100
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_name_this_game.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_name_this_game.json",
         "oracle_causal_ram_indices": [
           50,
           60,
@@ -3746,14 +3860,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.03125,
       "where": "local"
     },
     "pacman": {
       "arrays": "A8_pacman.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -3776,7 +3890,7 @@
           80,
           89
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_pacman.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_pacman.json",
         "oracle_causal_ram_indices": [
           24,
           26,
@@ -3805,7 +3919,7 @@
           "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.055 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
         },
         "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-        "settings": "GenericRomSettings",
+        "settings": "PacmanRomSettings",
         "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
         "testbed": {
           "cause_density_above_floor": 9,
@@ -3817,7 +3931,7 @@
           "note": "P2 redesign: BOTH the scored oracle prefix (causal importance) AND the whole-state recording run on a seeded random-action GAMEPLAY state (not the FIRE×4-then-NOOP oracle tape / synthetic active tape), gated by the §1 oracle cause-density gate. The recorded tape is the gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A8's recording + oracle-importance algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
           "prefix": 90,
           "seed": 0,
-          "shared_output": "screen_region(n_changed_px)@r131c77",
+          "shared_output": "screen_region(n_changed_px)@r132c77",
           "state_kind": "seeded_random_action_gameplay"
         },
         "triad": {
@@ -3858,14 +3972,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.0546875,
       "where": "local"
     },
     "phoenix": {
       "arrays": "A8_phoenix.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -3896,7 +4010,7 @@
           94,
           95
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_phoenix.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_phoenix.json",
         "oracle_causal_ram_indices": [
           27,
           30,
@@ -3983,14 +4097,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.0625,
       "where": "local"
     },
     "pitfall": {
       "arrays": "A8_pitfall.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -4029,7 +4143,7 @@
           90,
           92
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_pitfall.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_pitfall.json",
         "oracle_causal_ram_indices": [
           97,
           98,
@@ -4046,7 +4160,7 @@
         "oracle_importance_per_cell": {
           "RAM[105]:player_y": 104.0,
           "RAM[18]:bottom_of_rope_x": 0.0,
-          "RAM[20]:index": 515.0,
+          "RAM[20]:index": 517.0,
           "RAM[32]:objects_list": 0.0,
           "RAM[46]:wh1": 0.0,
           "RAM[65]:s.wh": 0.0,
@@ -4057,7 +4171,7 @@
           "RAM[89]:t1.value": 58.0,
           "RAM[90]:t1.value": 8.0,
           "RAM[92]:theta_t": 0.0,
-          "RAM[97]:player_x": 2839.0,
+          "RAM[97]:player_x": 2815.0,
           "RAM[98]:enemy_logs_x": 190.0,
           "RAM[99]:enemy_scorpion_x": 73.0
         },
@@ -4070,7 +4184,7 @@
           "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.086 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
         },
         "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-        "settings": "GenericRomSettings",
+        "settings": "PitfallRomSettings",
         "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
         "testbed": {
           "cause_density_above_floor": 19,
@@ -4082,7 +4196,7 @@
           "note": "P2 redesign: BOTH the scored oracle prefix (causal importance) AND the whole-state recording run on a seeded random-action GAMEPLAY state (not the FIRE×4-then-NOOP oracle tape / synthetic active tape), gated by the §1 oracle cause-density gate. The recorded tape is the gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A8's recording + oracle-importance algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
           "prefix": 90,
           "seed": 0,
-          "shared_output": "screen_region(n_changed_px)@r120c61",
+          "shared_output": "screen_region(n_changed_px)@r114c129",
           "state_kind": "seeded_random_action_gameplay"
         },
         "triad": {
@@ -4123,14 +4237,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.0859375,
       "where": "local"
     },
     "pong": {
       "arrays": "A8_pong.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -4153,7 +4267,7 @@
           51,
           54
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_pong.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_pong.json",
         "oracle_causal_ram_indices": [
           13,
           14,
@@ -4232,14 +4346,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.03125,
       "where": "local"
     },
     "private_eye": {
       "arrays": "A8_private_eye.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -4294,7 +4408,7 @@
           88,
           97
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_private_eye.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_private_eye.json",
         "oracle_causal_ram_indices": [
           63,
           67,
@@ -4312,11 +4426,11 @@
         "oracle_importance_per_cell": {
           "RAM[38]:xy": 0.0,
           "RAM[39]:dove_y": 0.0,
-          "RAM[40]:xy": 164.0,
+          "RAM[40]:xy": 167.0,
           "RAM[44]:xy": 0.0,
           "RAM[47]:x": 0.0,
           "RAM[48]:dove_x": 0.0,
-          "RAM[49]:xy": 332.0,
+          "RAM[49]:xy": 335.0,
           "RAM[51]:wh": 53.0,
           "RAM[58]:player_direction": 0.0,
           "RAM[63]:player_x": 7466.0,
@@ -4331,9 +4445,9 @@
           "RAM[79]:score[2]": 0.0,
           "RAM[84]:car.xy": 300.0,
           "RAM[86]:player_y": 0.0,
-          "RAM[88]:car.xy": 316.0,
+          "RAM[88]:car.xy": 370.0,
           "RAM[92]:room_number": 0.0,
-          "RAM[97]:player._xy": 156.0
+          "RAM[97]:player._xy": 158.0
         },
         "positive_control": {
           "F": 1.0,
@@ -4344,7 +4458,7 @@
           "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.094 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
         },
         "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-        "settings": "GenericRomSettings",
+        "settings": "PrivateEyeRomSettings",
         "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
         "testbed": {
           "cause_density_above_floor": 20,
@@ -4356,7 +4470,7 @@
           "note": "P2 redesign: BOTH the scored oracle prefix (causal importance) AND the whole-state recording run on a seeded random-action GAMEPLAY state (not the FIRE×4-then-NOOP oracle tape / synthetic active tape), gated by the §1 oracle cause-density gate. The recorded tape is the gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A8's recording + oracle-importance algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
           "prefix": 90,
           "seed": 0,
-          "shared_output": "screen_region(n_changed_px)@r148c48",
+          "shared_output": "screen_region(n_changed_px)@r148c49",
           "state_kind": "seeded_random_action_gameplay"
         },
         "triad": {
@@ -4371,7 +4485,7 @@
         "wholestate": {
           "ideal_minimal_size": 12,
           "n_oracle_causal_cells": 12,
-          "n_varying_ram_cells": 27,
+          "n_varying_ram_cells": 28,
           "note": "the whole-state recorder keeps ALL 192 state bytes every frame; only 12 candidate cells are causal by the oracle ⇒ it over-records by 10.7× — trivially faithful/sufficient, maximally non-minimal.",
           "over_recording_factor": 10.666666666666666,
           "ram_size": 128,
@@ -4397,14 +4511,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.09375,
       "where": "local"
     },
     "qbert": {
       "arrays": "A8_qbert.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -4451,7 +4565,7 @@
           74,
           103
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_qbert.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_qbert.json",
         "oracle_causal_ram_indices": [
           21,
           52,
@@ -4545,14 +4659,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.0546875,
       "where": "local"
     },
     "riverraid": {
       "arrays": "A8_riverraid.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -4603,7 +4717,7 @@
           85,
           87
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_riverraid.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_riverraid.json",
         "oracle_causal_ram_indices": [
           50,
           51,
@@ -4711,14 +4825,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.1484375,
       "where": "local"
     },
     "road_runner": {
       "arrays": "A8_road_runner.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -4761,7 +4875,7 @@
           89,
           90
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_road_runner.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_road_runner.json",
         "oracle_causal_ram_indices": [
           24,
           43,
@@ -4799,7 +4913,7 @@
           "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.047 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
         },
         "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-        "settings": "GenericRomSettings",
+        "settings": "RoadRunnerRomSettings",
         "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
         "testbed": {
           "cause_density_above_floor": 11,
@@ -4852,14 +4966,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.046875,
       "where": "local"
     },
     "seaquest": {
       "arrays": "A8_seaquest.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -4912,7 +5026,7 @@
           89,
           118
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_seaquest.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_seaquest.json",
         "oracle_causal_ram_indices": [
           57,
           59,
@@ -5017,14 +5131,129 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.1171875,
+      "where": "local"
+    },
+    "skiing": {
+      "arrays": "A8_skiing.npz",
+      "ci": null,
+      "commit": "56e3a03",
+      "extra": {
+        "bit_exact_rerun": true,
+        "candidate_cells": [
+          "RAM[15]:player.orientation",
+          "RAM[25]:player.xy",
+          "RAM[26]:player.xy",
+          "RAM[62]:relevant_info",
+          "RAM[90]:player.ram_90",
+          "RAM[104]:minutes",
+          "RAM[105]:seconds",
+          "RAM[106]:milli_seconds",
+          "RAM[107]:score"
+        ],
+        "candidate_ram_indices": [
+          15,
+          25,
+          26,
+          62,
+          90,
+          104,
+          105,
+          106,
+          107
+        ],
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_skiing.json",
+        "oracle_causal_ram_indices": [
+          15,
+          25,
+          90,
+          104,
+          105,
+          106,
+          107
+        ],
+        "oracle_importance_per_cell": {
+          "RAM[104]:minutes": 597.0,
+          "RAM[105]:seconds": 52.0,
+          "RAM[106]:milli_seconds": 41.0,
+          "RAM[107]:score": 43.0,
+          "RAM[15]:player.orientation": 173.0,
+          "RAM[25]:player.xy": 118.0,
+          "RAM[26]:player.xy": 0.0,
+          "RAM[62]:relevant_info": 0.0,
+          "RAM[90]:player.ram_90": 397.0
+        },
+        "positive_control": {
+          "F": 1.0,
+          "M": 1.0,
+          "S": 1.0,
+          "minimal_set_sufficient": true,
+          "name": "oracle minimal causal set (keep ONLY oracle-causal cells)",
+          "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.055 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
+        },
+        "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
+        "settings": "SkiingRomSettings",
+        "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
+        "testbed": {
+          "cause_density_above_floor": 12,
+          "cause_density_accepted": true,
+          "cause_density_floor": 0.5,
+          "cause_density_gate_k": 4,
+          "horizon": 15,
+          "n_causes": 20,
+          "note": "P2 redesign: BOTH the scored oracle prefix (causal importance) AND the whole-state recording run on a seeded random-action GAMEPLAY state (not the FIRE×4-then-NOOP oracle tape / synthetic active tape), gated by the §1 oracle cause-density gate. The recorded tape is the gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A8's recording + oracle-importance algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
+          "prefix": 90,
+          "seed": 0,
+          "shared_output": "screen_region(n_changed_px)@r51c78",
+          "state_kind": "seeded_random_action_gameplay"
+        },
+        "triad": {
+          "F": 1.0,
+          "F_note": "recall of oracle-causal candidate cells under the whole-state map = 1.0 (the recorded whole state contains every cell, so it misses no causal cell)",
+          "M": 0.0546875,
+          "M_note": "minimality at the FLOOR: |recovered set| = the whole 128-byte state; M = #oracle-causal cells / 128 = 7/128 (over-recording factor 18.3×)",
+          "S": 1.0,
+          "S_note": "the recorded whole 128-byte RAM state, restored into a fresh checkpoint, reproduces the exact RAM + rendered frame (lossless ⇒ literally sufficient)",
+          "interpretation": "A8 is the DESCRIPTIVE BASELINE (experiment_design.md §4): 'record everything'. It is trivially FAITHFUL (F=1: the whole state contains every causal cell) and SUFFICIENT (S=1: the recorded state, restored, reproduces the exact frame), but maximally NON-MINIMAL (M at the floor: the recovered set IS the whole machine). This M is the lower bound the other A-methods (A1..A7) and the causal operators (§6) are measured against on the minimality axis — the F/M trade-off the quantified-Kording story turns on."
+        },
+        "wholestate": {
+          "ideal_minimal_size": 7,
+          "n_oracle_causal_cells": 7,
+          "n_varying_ram_cells": 86,
+          "note": "the whole-state recorder keeps ALL 192 state bytes every frame; only 7 candidate cells are causal by the oracle ⇒ it over-records by 18.3× — trivially faithful/sufficient, maximally non-minimal.",
+          "over_recording_factor": 18.285714285714285,
+          "ram_size": 128,
+          "tape_shape": [
+            150,
+            192
+          ],
+          "tia_size": 64,
+          "trajectory_frames": 150,
+          "trajectory_trace": "seeded random-action GAMEPLAY (prefix+horizon) then NOOP tail",
+          "wholestate_restore_lossless": true,
+          "wholestate_size": 192
+        }
+      },
+      "game": "skiing",
+      "method": "A8_wholestate(record-everything descriptive baseline)",
+      "metric_name": "wholestate_minimality_M_vs_oracle",
+      "n": 9,
+      "oracle_ref": "oracle_intervene@skiing#whole-screen-break causal importance (exhaustive do-set, full horizon)",
+      "paper": "P2",
+      "phase": "phaseA_kording",
+      "seed": 0,
+      "state": "gameplay(seed=0,prefix=90)+15",
+      "stderr": null,
+      "target_output": "full RAM+register state map over time (whole-state record)",
+      "timestamp": "1793020543",
+      "value": 0.0546875,
       "where": "local"
     },
     "space_invaders": {
       "arrays": "A8_space_invaders.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -5065,7 +5294,7 @@
           102,
           120
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_space_invaders.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_space_invaders.json",
         "oracle_causal_ram_indices": [
           24,
           26,
@@ -5161,14 +5390,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.09375,
       "where": "local"
     },
     "tennis": {
       "arrays": "A8_tennis.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -5205,7 +5434,7 @@
           55,
           80
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_tennis.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_tennis.json",
         "oracle_causal_ram_indices": [
           16,
           17,
@@ -5298,14 +5527,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.0859375,
       "where": "local"
     },
     "venture": {
       "arrays": "A8_venture.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -5348,7 +5577,7 @@
           85,
           90
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_venture.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_venture.json",
         "oracle_causal_ram_indices": [
           20,
           21,
@@ -5449,14 +5678,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.125,
       "where": "local"
     },
     "video_pinball": {
       "arrays": "A8_video_pinball.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -5477,7 +5706,7 @@
           102,
           25
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_video_pinball.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_video_pinball.json",
         "oracle_causal_ram_indices": [
           48,
           50,
@@ -5558,14 +5787,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
+      "timestamp": "1793020543",
       "value": 0.0546875,
       "where": "local"
     },
     "yars_revenge": {
       "arrays": "A8_yars_revenge.npz",
       "ci": null,
-      "commit": "d85961ed",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -5598,26 +5827,23 @@
           98,
           99
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_yars_revenge.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_yars_revenge.json",
         "oracle_causal_ram_indices": [
           31,
           32,
-          38,
           42,
-          46,
-          47,
           26
         ],
         "oracle_importance_per_cell": {
-          "RAM[26]:xy": 136.0,
-          "RAM[31]:player_y": 232.0,
-          "RAM[32]:player_x": 72.0,
+          "RAM[26]:xy": 3628.0,
+          "RAM[31]:player_y": 104.0,
+          "RAM[32]:player_x": 466.0,
           "RAM[37]:player_missile_y": 0.0,
-          "RAM[38]:player_missile_x": 4.0,
+          "RAM[38]:player_missile_x": 0.0,
           "RAM[42]:enemy_y": 168.0,
           "RAM[43]:enemy_x": 0.0,
-          "RAM[46]:enemy_missile_y": 16.0,
-          "RAM[47]:enemy_missile_x": 16.0,
+          "RAM[46]:enemy_missile_y": 0.0,
+          "RAM[47]:enemy_missile_x": 0.0,
           "RAM[96]:value": 0.0,
           "RAM[97]:value": 0.0,
           "RAM[98]:value": 0.0,
@@ -5629,13 +5855,13 @@
           "S": 1.0,
           "minimal_set_sufficient": true,
           "name": "oracle minimal causal set (keep ONLY oracle-causal cells)",
-          "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.055 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
+          "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.031 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
         },
         "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-        "settings": "GenericRomSettings",
+        "settings": "YarsRevengeRomSettings",
         "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
         "testbed": {
-          "cause_density_above_floor": 11,
+          "cause_density_above_floor": 9,
           "cause_density_accepted": true,
           "cause_density_floor": 0.5,
           "cause_density_gate_k": 4,
@@ -5644,24 +5870,24 @@
           "note": "P2 redesign: BOTH the scored oracle prefix (causal importance) AND the whole-state recording run on a seeded random-action GAMEPLAY state (not the FIRE×4-then-NOOP oracle tape / synthetic active tape), gated by the §1 oracle cause-density gate. The recorded tape is the gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A8's recording + oracle-importance algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
           "prefix": 90,
           "seed": 0,
-          "shared_output": "screen_region(n_changed_px)@r118c38",
+          "shared_output": "screen_region(n_changed_px)@r84c6",
           "state_kind": "seeded_random_action_gameplay"
         },
         "triad": {
           "F": 1.0,
           "F_note": "recall of oracle-causal candidate cells under the whole-state map = 1.0 (the recorded whole state contains every cell, so it misses no causal cell)",
-          "M": 0.0546875,
-          "M_note": "minimality at the FLOOR: |recovered set| = the whole 128-byte state; M = #oracle-causal cells / 128 = 7/128 (over-recording factor 18.3×)",
+          "M": 0.03125,
+          "M_note": "minimality at the FLOOR: |recovered set| = the whole 128-byte state; M = #oracle-causal cells / 128 = 4/128 (over-recording factor 32.0×)",
           "S": 1.0,
           "S_note": "the recorded whole 128-byte RAM state, restored into a fresh checkpoint, reproduces the exact RAM + rendered frame (lossless ⇒ literally sufficient)",
           "interpretation": "A8 is the DESCRIPTIVE BASELINE (experiment_design.md §4): 'record everything'. It is trivially FAITHFUL (F=1: the whole state contains every causal cell) and SUFFICIENT (S=1: the recorded state, restored, reproduces the exact frame), but maximally NON-MINIMAL (M at the floor: the recovered set IS the whole machine). This M is the lower bound the other A-methods (A1..A7) and the causal operators (§6) are measured against on the minimality axis — the F/M trade-off the quantified-Kording story turns on."
         },
         "wholestate": {
-          "ideal_minimal_size": 7,
-          "n_oracle_causal_cells": 7,
-          "n_varying_ram_cells": 37,
-          "note": "the whole-state recorder keeps ALL 192 state bytes every frame; only 7 candidate cells are causal by the oracle ⇒ it over-records by 18.3× — trivially faithful/sufficient, maximally non-minimal.",
-          "over_recording_factor": 18.285714285714285,
+          "ideal_minimal_size": 4,
+          "n_oracle_causal_cells": 4,
+          "n_varying_ram_cells": 24,
+          "note": "the whole-state recorder keeps ALL 192 state bytes every frame; only 4 candidate cells are causal by the oracle ⇒ it over-records by 32.0× — trivially faithful/sufficient, maximally non-minimal.",
+          "over_recording_factor": 32.0,
           "ram_size": 128,
           "tape_shape": [
             150,
@@ -5685,8 +5911,8 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "full RAM+register state map over time (whole-state record)",
-      "timestamp": "1783127686",
-      "value": 0.0546875,
+      "timestamp": "1793020543",
+      "value": 0.03125,
       "where": "local"
     }
   },
@@ -5695,7 +5921,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "full RAM+register state map over time (per game)",
-  "timestamp": "1783127686",
-  "value": 0.07552083333333333,
+  "timestamp": "1793020543",
+  "value": 0.07457386363636363,
   "where": "local"
 }

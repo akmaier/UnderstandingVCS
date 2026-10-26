@@ -1,7 +1,7 @@
 {
   "arrays": "guided_backprop_asterix_ball_pixel.npz",
   "ci": null,
-  "commit": "9391b559",
+  "commit": "56e3a03",
   "extra": {
     "adebayo_sanity_check": {
       "failure_mode": "model_invariant_saliency_constant_jacobian",
@@ -66,10 +66,10 @@
     },
     "gbp_max_abs": 0.0,
     "guided_vs_vanilla": {
-      "delta_pearson_guided_minus_vanilla": 0.06619008452089165,
+      "delta_pearson_guided_minus_vanilla": 0.0019364291053974572,
       "guided_equals_vanilla": false,
       "interpretation": "Guided BP = vanilla |∂y/∂u| with negative-gradient suppression. On the VCS the explained output is a one-hot RAM read (a LINEAR unit, ∂y/∂u ≥ 0) and the soft emulator has NO deep ReLU stack, so the suppression removes nothing ⇒ Guided BP DEGENERATES to saliency (Δpearson = 0). The negative-suppression rule IS wired (it provably rectifies a mixed-sign surrogate — see guided_demo_rectifies); it simply has nothing to do on this substrate. This is the honest finding the DoD asks for.",
-      "vanilla_pearson": -0.06619008452089165,
+      "vanilla_pearson": -0.0019364291053974572,
       "vanilla_precision_at_k": 0.0
     },
     "harness_positive_control": {
@@ -82,8 +82,8 @@
     },
     "method_reference": "Springenberg et al. 2015 (Guided Backprop / deconvnet); sanity check: Adebayo et al. 2018.",
     "metrics": {
-      "deletion_auc": 0.5186984687868079,
-      "insertion_auc": 0.586542991755006,
+      "deletion_auc": 0.518493552168816,
+      "insertion_auc": 0.5864888628370457,
       "pearson_corr": 0.0,
       "precision_at_k": 0.0,
       "spearman_corr": 0.0,
@@ -96,12 +96,12 @@
       "ram[39]:occlude": 167.0,
       "ram[39]:set": 100.0,
       "ram[41]:occlude": 68.0,
-      "ram[41]:set": 68.0,
+      "ram[41]:set": 164.0,
       "ram[54]:occlude": 0.0,
       "ram[54]:set": 680.0,
       "ram[73]:occlude": 0.0,
       "ram[73]:set": 0.0,
-      "ram[83]:occlude": 849.0,
+      "ram[83]:occlude": 853.0,
       "ram[83]:set": 34.0,
       "ram[94]:occlude": 0.0,
       "ram[94]:set": 70.0,
@@ -132,8 +132,18 @@
       "position_byte_ram_index": 41,
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r75c79",
+      "shared_output": "screen_region(n_changed_px)@r91c79",
       "state_kind": "seeded_random_action_gameplay"
+    },
+    "triad": {
+      "F": 0.0,
+      "M": null,
+      "M_named_size": 0,
+      "M_note": "M undefined: method names nothing (all-zero attribution) at this state",
+      "M_true_minimal_size": 12,
+      "S": 0.3,
+      "S_note": "held-out predictive fit: 3/10 held-out do(u) within ε=85.3 (calib=10, fit Δy≈0.0·attr+120.9)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
     },
     "y_full": 0.0
   },
@@ -141,14 +151,14 @@
   "method": "guided_backprop",
   "metric_name": "pearson_corr_with_oracle",
   "n": 20,
-  "oracle_ref": "oracle_intervene@asterix#screen_region(n_changed_px)@r75c79",
+  "oracle_ref": "oracle_intervene@asterix#screen_region(n_changed_px)@r91c79",
   "paper": "P2",
   "phase": "phaseB_attribution",
   "seed": 0,
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
-  "target_output": "screen_region(n_changed_px)@r75c79",
-  "timestamp": "1783017090",
+  "target_output": "screen_region(n_changed_px)@r91c79",
+  "timestamp": "1793016241",
   "value": 0.0,
   "where": "local"
 }

@@ -8,7 +8,7 @@
     "tau_sweep": "3 thresholds (pure thresholding of the cached effect matrix — NO extra re-runs)"
   },
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "ablation": "resample (parent overwritten with its value from the corrupted RIGHT-action donor run); standard ACDC corruption (Conmy et al. 2023 §3), not zero.",
     "bit_exact_rerun": true,
@@ -56,7 +56,7 @@
       101,
       110
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_assault.json",
+    "candidates_file": "/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_assault.json",
     "circuit": {
       "best_tau": 8.5,
       "discovered_edges_at_best_tau": [
@@ -214,7 +214,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "auto-discovered inter-cell data-flow circuit (candidate RAM cells)",
-  "timestamp": "1783606833",
+  "timestamp": "1793015915",
   "value": 0.42857142857142855,
   "where": "local"
 }

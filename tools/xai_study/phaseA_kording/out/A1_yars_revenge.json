@@ -1,7 +1,7 @@
 {
   "arrays": "A1_yars_revenge.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -34,21 +34,26 @@
       98,
       99
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_yars_revenge.json",
+    "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_yars_revenge.json",
     "graph": {
-      "f1": 0.0,
-      "fn": 5,
+      "f1": 0.19999999999999998,
+      "fn": 8,
       "fp": 0,
-      "graph_edit_distance": 5,
-      "graph_edit_distance_normalised": 0.03205128205128205,
+      "graph_edit_distance": 8,
+      "graph_edit_distance_normalised": 0.05128205128205128,
       "n_nodes": 13,
-      "n_recovered_edges": 0,
-      "n_true_edges": 5,
+      "n_recovered_edges": 1,
+      "n_true_edges": 9,
       "note": "edges are 0-based candidate ordinals [i,j] meaning cell i -> cell j. TRUE = exhaustive oracle (do 0/base+17/base+37, full horizon, any value changes j); RECOVERED = classical single do(base+17), 1-step latency. GED = symmetric edge difference (fp+fn) over off-diagonal edges.",
-      "precision": 0.0,
-      "recall": 0.0,
-      "recovered_edges": [],
-      "tp": 0,
+      "precision": 1.0,
+      "recall": 0.1111111111111111,
+      "recovered_edges": [
+        [
+          0,
+          6
+        ]
+      ],
+      "tp": 1,
       "true_edges": [
         [
           0,
@@ -60,7 +65,23 @@
         ],
         [
           1,
+          0
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
           3
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          1,
+          8
         ],
         [
           3,
@@ -82,10 +103,10 @@
     },
     "rom_basename": "yars_revenge.bin",
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-    "settings": "GenericRomSettings",
+    "settings": "YarsRevengeRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
     "testbed": {
-      "cause_density_above_floor": 11,
+      "cause_density_above_floor": 9,
       "cause_density_accepted": true,
       "cause_density_floor": 0.5,
       "cause_density_gate_k": 4,
@@ -94,15 +115,15 @@
       "note": "P2 redesign: the connectomics recovery runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. A1's graph algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r118c38",
+      "shared_output": "screen_region(n_changed_px)@r84c6",
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": 0.0,
+      "F": 0.19999999999999998,
       "F_note": "F1 of recovered data-flow edges vs the exact-oracle true edges (13 candidate cells)",
-      "M": null,
-      "M_note": "M = |U*|/|U_hat| over edges: |true edges|=5 / |discovered edges|=0",
-      "S": 0.9743589743589743,
+      "M": 1.0,
+      "M_note": "M = |U*|/|U_hat| over edges: |true edges|=9 / |discovered edges|=1",
+      "S": 0.9487179487179487,
       "S_note": "off-diagonal edge-agreement between the base+17 recovered graph and the HELD-OUT base+37 true edge set (generalisation to an unseen intervention value, bit-exact re-run)",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): classical connectomics scores LOW-to-PARTIAL faithfulness despite fully-known data-flow — the quantified-Kording lesson. A thin single-shot/short-latency perturbation misses long-latency / sign-dependent edges (recall deficit) and can over-claim transient ones (precision deficit)."
     }
@@ -118,7 +139,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-  "timestamp": "1783606708",
-  "value": 0.0,
+  "timestamp": "1793020298",
+  "value": 0.19999999999999998,
   "where": "local"
 }

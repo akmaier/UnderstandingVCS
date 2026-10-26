@@ -1,7 +1,7 @@
 {
   "arrays": "gradxinput_deeplift_ms_pacman_position.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-attributed causes occluded (deletion) / restored (insertion); each curve point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline": "all-zeros RAM (the 'absent' state)",
@@ -150,7 +150,7 @@
         "deletion_auc": 0.6867577197149646,
         "insertion_auc": 0.6092042755344418,
         "method": "deeplift_rescale",
-        "pearson_corr": -0.03351626941925098,
+        "pearson_corr": -0.03351626941925099,
         "precision_at_k": 0.0,
         "spearman_corr": 0.3087831979082573,
         "topk": 3
@@ -201,7 +201,7 @@
         "deletion_auc": 0.6867577197149646,
         "insertion_auc": 0.6092042755344418,
         "method": "grad_x_input",
-        "pearson_corr": -0.03351626941925098,
+        "pearson_corr": -0.03351626941925099,
         "precision_at_k": 0.0,
         "spearman_corr": 0.3087831979082573,
         "topk": 3
@@ -327,7 +327,7 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": -0.03351626941925098,
+      "F": -0.03351626941925099,
       "M": 1.0,
       "M_named_size": 2,
       "M_note": "|U*|=24 (oracle movers) / |U_hat|=2 (method above-threshold)",
@@ -349,7 +349,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "position:screen_region(n_changed_px)@r84c77",
-  "timestamp": "1783133585",
-  "value": -0.03351626941925098,
+  "timestamp": "1793023869",
+  "value": -0.03351626941925099,
   "where": "local"
 }

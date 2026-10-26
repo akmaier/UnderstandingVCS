@@ -1,7 +1,7 @@
 {
   "arrays": "guided_backprop_seaquest_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "adebayo_sanity_check": {
       "failure_mode": "model_invariant_saliency_constant_jacobian",
@@ -122,15 +122,15 @@
     },
     "gbp_max_abs": 0.0,
     "guided_vs_vanilla": {
-      "delta_pearson_guided_minus_vanilla": -0.7097972052076026,
+      "delta_pearson_guided_minus_vanilla": -0.7097972052076023,
       "guided_equals_vanilla": false,
       "interpretation": "Guided BP = vanilla |∂y/∂u| with negative-gradient suppression. On the VCS the explained output is a one-hot RAM read (a LINEAR unit, ∂y/∂u ≥ 0) and the soft emulator has NO deep ReLU stack, so the suppression removes nothing ⇒ Guided BP DEGENERATES to saliency (Δpearson = 0). The negative-suppression rule IS wired (it provably rectifies a mixed-sign surrogate — see guided_demo_rectifies); it simply has nothing to do on this substrate. This is the honest finding the DoD asks for.",
-      "vanilla_pearson": 0.7097972052076026,
+      "vanilla_pearson": 0.7097972052076023,
       "vanilla_precision_at_k": 0.3333333333333333
     },
     "harness_positive_control": {
       "deletion_auc": 0.9863841848450057,
-      "insertion_auc": 0.15428865288939914,
+      "insertion_auc": 0.15428865288939916,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the Guided-BP numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "pearson_corr": 1.0,
@@ -138,8 +138,8 @@
     },
     "method_reference": "Springenberg et al. 2015 (Guided Backprop / deconvnet); sanity check: Adebayo et al. 2018.",
     "metrics": {
-      "deletion_auc": 0.8146885763490243,
-      "insertion_auc": 0.212949674703406,
+      "deletion_auc": 0.814688576349024,
+      "insertion_auc": 0.2129496747034061,
       "pearson_corr": 0.0,
       "precision_at_k": 0.0,
       "spearman_corr": 0.0,
@@ -242,7 +242,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r52c77",
-  "timestamp": "1783132667",
+  "timestamp": "1793022378",
   "value": 0.0,
   "where": "local"
 }

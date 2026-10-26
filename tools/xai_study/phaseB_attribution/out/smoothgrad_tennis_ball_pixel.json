@@ -1,7 +1,7 @@
 {
   "arrays": "smoothgrad_tennis_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-SmoothGrad causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run. NaN = a genuinely flat experiment.",
     "cause_names": [
@@ -40,7 +40,7 @@
     ],
     "content_ram_index": -1,
     "harness_positive_control": {
-      "deletion_auc": 0.8664084141274234,
+      "deletion_auc": 0.8664084141274232,
       "insertion_auc": 0.19790945290858725,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the SmoothGrad numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
@@ -48,8 +48,8 @@
       "precision_at_k": 1.0
     },
     "metrics": {
-      "deletion_auc": 0.7285410636758319,
-      "insertion_auc": 0.2490729015918958,
+      "deletion_auc": 0.728541063675832,
+      "insertion_auc": 0.24907290159189568,
       "pearson_corr": -0.06444792148040426,
       "precision_at_k": 0.3333333333333333,
       "spearman_corr": -0.04345430873096018,
@@ -181,7 +181,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r26c68",
-  "timestamp": "1783130753",
+  "timestamp": "1793022384",
   "value": -0.06444792148040426,
   "where": "local"
 }

@@ -1,7 +1,7 @@
 {
   "arrays": "sae_atlantis.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -117,7 +117,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.8018124480754644,
+          "best_corr": 0.8018124480754657,
           "best_feature": 17,
           "concept": "score.value",
           "family": "score",
@@ -144,7 +144,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.673149547548559,
+          "best_corr": 0.6731495475485586,
           "best_feature": 15,
           "concept": "player_projectile",
           "family": "player_projectile",
@@ -153,7 +153,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8137078967233917,
+          "best_corr": 0.8137078967233915,
           "best_feature": 5,
           "concept": "proj1.xy",
           "family": "proj",
@@ -162,7 +162,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8588702054738205,
+          "best_corr": 0.8588702054738201,
           "best_feature": 3,
           "concept": "proj2.xy",
           "family": "proj",
@@ -171,7 +171,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8140686192699615,
+          "best_corr": 0.814068619269962,
           "best_feature": 5,
           "concept": "proj1.xy",
           "family": "proj",
@@ -212,7 +212,7 @@
       "best_l1": 0.01,
       "best_mean_l0": 19.393333333333334,
       "fve_heldout": 0.7670738835122161,
-      "fve_train": 0.9881788490843674
+      "fve_train": 0.9881788490843675
     },
     "sae": {
       "activation": "relu",
@@ -229,7 +229,7 @@
       "best": {
         "d_hidden": 32,
         "fve_held": 0.7670738835122161,
-        "fve_train": 0.9881788490843674,
+        "fve_train": 0.9881788490843675,
         "l1": 0.01,
         "matched_fraction": 0.8,
         "mean_l0": 19.393333333333334
@@ -245,7 +245,7 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.6734629773539635,
+          "fve_held": 0.6734629773539634,
           "fve_train": 0.9241135923118802,
           "l1": 0.05,
           "matched_fraction": 0.6,
@@ -253,7 +253,7 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.561395215981389,
+          "fve_held": 0.5613952159813889,
           "fve_train": 0.7722813285889955,
           "l1": 0.2,
           "matched_fraction": 0.2,
@@ -262,7 +262,7 @@
         {
           "d_hidden": 32,
           "fve_held": 0.7670738835122161,
-          "fve_train": 0.9881788490843674,
+          "fve_train": 0.9881788490843675,
           "l1": 0.01,
           "matched_fraction": 0.8,
           "mean_l0": 19.393333333333334
@@ -277,7 +277,7 @@
         },
         {
           "d_hidden": 32,
-          "fve_held": 0.6388823131160285,
+          "fve_held": 0.6388823131160284,
           "fve_train": 0.9423829020265164,
           "l1": 0.2,
           "matched_fraction": 0.4,
@@ -293,7 +293,7 @@
         },
         {
           "d_hidden": 64,
-          "fve_held": 0.7498331687222435,
+          "fve_held": 0.7498331687222434,
           "fve_train": 0.9872056901998784,
           "l1": 0.05,
           "matched_fraction": 0.6,
@@ -331,7 +331,7 @@
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
       "M": 1.0,
       "M_note": "|U*|=7 (oracle movers) / |U_hat|=5 (method above-threshold)",
-      "S": -0.5080410354014795,
+      "S": -0.5080410354014793,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
     }
@@ -348,7 +348,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783606931",
+  "timestamp": "1793016265",
   "value": 0.8,
   "where": "local"
 }

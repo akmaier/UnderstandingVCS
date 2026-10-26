@@ -1,7 +1,7 @@
 {
   "arrays": "perturbation_hero_position.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-attributed causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -92,8 +92,8 @@
       "tia[COLUBK]:set": 0.0
     },
     "harness_positive_control": {
-      "deletion_auc": 0.9620922669832083,
-      "insertion_auc": 0.7557115595453009,
+      "deletion_auc": 0.9620922669832085,
+      "insertion_auc": 0.755711559545301,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the extremal-perturbation numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "pearson_corr": 1.0,
@@ -123,9 +123,9 @@
     "method_ref": "meaningful/extremal perturbation (Fong & Vedaldi 2017; Fong et al. 2019): the attribution is an optimised MINIMAL MASK whose perturbation maximally changes y, under an area budget; optimised by greedy forward selection on the true VCS (each step a real do(occlude)-re-run), NOT a surrogate model.",
     "metrics": {
       "deletion_auc": 0.8773263193465702,
-      "insertion_auc": 0.2134475269721171,
+      "insertion_auc": 0.21344752697211716,
       "mask_iou_vs_true_causal_set": 0.2857142857142857,
-      "pearson_corr": 0.08751122312266545,
+      "pearson_corr": 0.08751122312266543,
       "precision_at_k": 0.0,
       "spearman_corr": 0.5736768592521814,
       "topk": 3
@@ -175,7 +175,7 @@
       "ram[40]:occlude"
     ],
     "output_kind": "position",
-    "output_note": "MEANINGFUL / EXTREMAL PERTURBATION (Fong & Vedaldi 2017; Fong et al. 2019) is INTERVENTION-BASED: the attribution is an OPTIMISED MINIMAL MASK found by greedy forward selection on the TRUE VCS under an area budget — every probe is |y(occlude mask) − y(intact)| from a real-ROM re-run, NOT a surrogate. final mask |M|=6/9 (area≤0.25·C), mask |Δy|=13500.0, pert L1=40700.0, budget=342 real-ROM re-runs. POSITION/INDEX output (a discrete sprite-column pixel via round/argmax): the gradient methods (vanilla saliency / Grad×Input / IG) VANISH here (∂y/∂u≡0, the §1 caveat) and score near chance — and a SOFT-mask gradient optimiser would vanish too, which is exactly why we optimise the mask by GREEDY selection on the real VCS. The extremal mask RECOVERS the true causal bytes — measured corr=0.088, precision@3=0.0, mask_IoU=0.2857142857142857, del_auc=0.8773263193465702, ins_auc=0.2134475269721171. This is the §7 'Succeed/partial — faithful when the perturbation is a valid intervention' prediction.",
+    "output_note": "MEANINGFUL / EXTREMAL PERTURBATION (Fong & Vedaldi 2017; Fong et al. 2019) is INTERVENTION-BASED: the attribution is an OPTIMISED MINIMAL MASK found by greedy forward selection on the TRUE VCS under an area budget — every probe is |y(occlude mask) − y(intact)| from a real-ROM re-run, NOT a surrogate. final mask |M|=6/9 (area≤0.25·C), mask |Δy|=13500.0, pert L1=40700.0, budget=342 real-ROM re-runs. POSITION/INDEX output (a discrete sprite-column pixel via round/argmax): the gradient methods (vanilla saliency / Grad×Input / IG) VANISH here (∂y/∂u≡0, the §1 caveat) and score near chance — and a SOFT-mask gradient optimiser would vanish too, which is exactly why we optimise the mask by GREEDY selection on the real VCS. The extremal mask RECOVERS the true causal bytes — measured corr=0.088, precision@3=0.0, mask_IoU=0.2857142857142857, del_auc=0.8773263193465702, ins_auc=0.21344752697211716. This is the §7 'Succeed/partial — faithful when the perturbation is a valid intervention' prediction.",
     "pert_l1": 40724.0,
     "perturbation_baseline": "0 (masked RAM cell / TIA register set to 0; joystick masked == NOOP, the baseline trace) — the oracle's occlude! operator",
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (E0-3) — --array=0-5%N over the 6 core games (--shard i --shard-kind game); each task re-runs the real ROM, no GPU needed.",
@@ -193,7 +193,7 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": 0.08751122312266545,
+      "F": 0.08751122312266543,
       "M": 1.0,
       "M_named_size": 16,
       "M_note": "|U*|=17 (oracle movers) / |U_hat|=16 (method above-threshold)",
@@ -215,7 +215,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r63c34",
-  "timestamp": "1783128423",
-  "value": 0.08751122312266545,
+  "timestamp": "1793018854",
+  "value": 0.08751122312266543,
   "where": "local"
 }

@@ -1,7 +1,7 @@
 {
   "arrays": "guided_backprop_frostbite_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "adebayo_sanity_check": {
       "failure_mode": "model_invariant_saliency_constant_jacobian",
@@ -109,7 +109,7 @@
       "delta_pearson_guided_minus_vanilla": 0.0,
       "guided_equals_vanilla": true,
       "interpretation": "Guided BP = vanilla |∂y/∂u| with negative-gradient suppression. On the VCS the explained output is a one-hot RAM read (a LINEAR unit, ∂y/∂u ≥ 0) and the soft emulator has NO deep ReLU stack, so the suppression removes nothing ⇒ Guided BP DEGENERATES to saliency (Δpearson = 0). The negative-suppression rule IS wired (it provably rectifies a mixed-sign surrogate — see guided_demo_rectifies); it simply has nothing to do on this substrate. This is the honest finding the DoD asks for.",
-      "vanilla_pearson": 0.48432029083983746,
+      "vanilla_pearson": 0.48432029083983735,
       "vanilla_precision_at_k": 0.3333333333333333
     },
     "harness_positive_control": {
@@ -124,7 +124,7 @@
     "metrics": {
       "deletion_auc": 0.01426470588235294,
       "insertion_auc": 0.8625,
-      "pearson_corr": 0.48432029083983746,
+      "pearson_corr": 0.48432029083983735,
       "precision_at_k": 0.3333333333333333,
       "spearman_corr": 0.45933787031196793,
       "topk": 3
@@ -176,7 +176,7 @@
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE guided gradients over outputs×causes×games on GPU; the forward is bit-exact to this map.",
     "substrate": "jutari (Julia) — Zygote content-path ∂y/∂u over the RAM tape, guided rule g⊙1[g>0] (suppress −grad), + TRUE-VCS deletion/insertion re-runs (real-ROM, bit-exact oracle machinery).",
     "triad": {
-      "F": 0.48432029083983746,
+      "F": 0.48432029083983735,
       "M": 1.0,
       "M_named_size": 2,
       "M_note": "|U*|=7 (oracle movers) / |U_hat|=2 (method above-threshold)",
@@ -198,7 +198,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@77)",
-  "timestamp": "1783130877",
-  "value": 0.48432029083983746,
+  "timestamp": "1793018738",
+  "value": 0.48432029083983735,
   "where": "local"
 }

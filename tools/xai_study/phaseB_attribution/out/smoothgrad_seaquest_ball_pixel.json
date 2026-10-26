@@ -1,7 +1,7 @@
 {
   "arrays": "smoothgrad_seaquest_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-SmoothGrad causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run. NaN = a genuinely flat experiment.",
     "cause_names": [
@@ -57,16 +57,16 @@
     "content_ram_index": -1,
     "harness_positive_control": {
       "deletion_auc": 0.9863841848450057,
-      "insertion_auc": 0.15428865288939914,
+      "insertion_auc": 0.15428865288939916,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the SmoothGrad numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "pearson_corr": 1.0,
       "precision_at_k": 1.0
     },
     "metrics": {
-      "deletion_auc": 0.96757797550708,
+      "deletion_auc": 0.9675779755070799,
       "insertion_auc": 0.06666188289322618,
-      "pearson_corr": 0.7097972052076027,
+      "pearson_corr": 0.7097972052076025,
       "precision_at_k": 0.3333333333333333,
       "spearman_corr": 0.3410477771148741,
       "topk": 3
@@ -201,7 +201,7 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": 0.7097972052076027,
+      "F": 0.7097972052076025,
       "M": 1.0,
       "M_named_size": 2,
       "M_note": "|U*|=19 (oracle movers) / |U_hat|=2 (method above-threshold)",
@@ -212,9 +212,9 @@
     },
     "vanilla_gradient_reference": {
       "interpretation": "Δpearson = SmoothGrad − vanilla |grad|. ≈0 ⇒ smoothing did NOT change FAITHFULNESS (it denoises the visual map; on a one-hot content read the map is already on the true cause, nothing to denoise; on the vanishing position output both are 0 — smoothing cannot create a gradient).",
-      "pearson_corr": 0.7097972052076026,
+      "pearson_corr": 0.7097972052076023,
       "precision_at_k": 0.3333333333333333,
-      "smoothing_delta_pearson": 1.1102230246251565e-16
+      "smoothing_delta_pearson": 2.220446049250313e-16
     },
     "y_full": 0.0
   },
@@ -229,7 +229,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r52c77",
-  "timestamp": "1783130602",
-  "value": 0.7097972052076027,
+  "timestamp": "1793021982",
+  "value": 0.7097972052076025,
   "where": "local"
 }

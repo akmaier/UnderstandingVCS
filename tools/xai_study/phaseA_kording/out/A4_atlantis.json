@@ -1,7 +1,7 @@
 {
   "arrays": "A4_atlantis.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -110,18 +110,18 @@
     },
     "weak_pairwise_strong_global": {
       "candidate_frac_strong_pairs(|corr|>=0.5)": 0.3,
-      "candidate_mean_abs_pairwise": 0.40153868847675656,
-      "candidate_median_abs_pairwise": 0.4756982039480843,
+      "candidate_mean_abs_pairwise": 0.40153868847675644,
+      "candidate_median_abs_pairwise": 0.47569820394808426,
       "candidate_n_varying_cells": 5,
-      "candidate_participation_ratio": 2.6149127337730613,
+      "candidate_participation_ratio": 2.6149127337730618,
       "candidate_top3_eig_share": 0.9400248153922428,
-      "candidate_top_eig_share": 0.5434788639479398,
+      "candidate_top_eig_share": 0.5434788639479396,
       "note": "the spike-word headline (Schneidman 2006; Tkačik 2014): over the FULL POPULATION of varying RAM cells the median pairwise |corr| is WEAK while a few GLOBAL eigen-modes dominate — the effective dimensionality (participation ratio) is far below the #cells, so the collective structure greatly exceeds the pairwise structure. WPSG flag = population median|corr|<0.5 AND population top3-eig-share≥0.6. (The candidate_* set is curated so its pairwise corr runs higher.)",
-      "population_mean_abs_pairwise": 0.21674235107194958,
-      "population_median_abs_pairwise": 0.12274147322561293,
+      "population_mean_abs_pairwise": 0.21674235107194953,
+      "population_median_abs_pairwise": 0.12274147322561292,
       "population_n_cells": 35,
-      "population_participation_ratio": 7.836478426681066,
-      "population_top3_eig_share": 0.5291039609040101,
+      "population_participation_ratio": 7.836478426681063,
+      "population_top3_eig_share": 0.5291039609040102,
       "weak_pairwise_strong_global": false
     }
   },
@@ -136,7 +136,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "cell-cell-coupling",
-  "timestamp": "1783604774",
+  "timestamp": "1793016113",
   "value": 0.5028299685740515,
   "where": "local"
 }

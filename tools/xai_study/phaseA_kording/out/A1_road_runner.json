@@ -1,7 +1,7 @@
 {
   "arrays": "A1_road_runner.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -44,7 +44,7 @@
       89,
       90
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_road_runner.json",
+    "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_road_runner.json",
     "graph": {
       "f1": 0.4444444444444445,
       "fn": 5,
@@ -109,7 +109,7 @@
     },
     "rom_basename": "road_runner.bin",
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-    "settings": "GenericRomSettings",
+    "settings": "RoadRunnerRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
     "testbed": {
       "cause_density_above_floor": 11,
@@ -145,7 +145,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-  "timestamp": "1783606708",
+  "timestamp": "1793020298",
   "value": 0.4444444444444445,
   "where": "local"
 }

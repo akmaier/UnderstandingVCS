@@ -1,7 +1,7 @@
 {
   "arrays": "rise_centipede_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-RISE causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -48,14 +48,14 @@
         },
         {
           "deletion_auc": 0.6131546134663342,
-          "insertion_auc": 0.4328553615960099,
+          "insertion_auc": 0.43285536159601,
           "n_masks": 125,
           "pearson_corr": -0.30339691246135053,
           "precision_at_k": 0.0,
           "spearman_corr": 0.07816608327818948
         },
         {
-          "deletion_auc": 0.59071072319202,
+          "deletion_auc": 0.5907107231920199,
           "insertion_auc": 0.5131546134663342,
           "n_masks": 250,
           "pearson_corr": -0.4002267950719575,
@@ -172,7 +172,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r157c81",
-  "timestamp": "1783122844",
+  "timestamp": "1793018437",
   "value": -0.3535016422645814,
   "where": "local"
 }

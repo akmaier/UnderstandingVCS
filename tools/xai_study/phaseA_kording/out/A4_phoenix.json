@@ -1,7 +1,7 @@
 {
   "arrays": "A4_phoenix.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -125,18 +125,18 @@
     },
     "weak_pairwise_strong_global": {
       "candidate_frac_strong_pairs(|corr|>=0.5)": 0.10714285714285714,
-      "candidate_mean_abs_pairwise": 0.22333206865111052,
+      "candidate_mean_abs_pairwise": 0.2233320686511105,
       "candidate_median_abs_pairwise": 0.16370768577494932,
       "candidate_n_varying_cells": 8,
-      "candidate_participation_ratio": 4.7409967069190575,
-      "candidate_top3_eig_share": 0.7313731084379966,
-      "candidate_top_eig_share": 0.300603160120653,
+      "candidate_participation_ratio": 4.7409967069190495,
+      "candidate_top3_eig_share": 0.7313731084379974,
+      "candidate_top_eig_share": 0.30060316012065325,
       "note": "the spike-word headline (Schneidman 2006; Tkačik 2014): over the FULL POPULATION of varying RAM cells the median pairwise |corr| is WEAK while a few GLOBAL eigen-modes dominate — the effective dimensionality (participation ratio) is far below the #cells, so the collective structure greatly exceeds the pairwise structure. WPSG flag = population median|corr|<0.5 AND population top3-eig-share≥0.6. (The candidate_* set is curated so its pairwise corr runs higher.)",
-      "population_mean_abs_pairwise": 0.2956243303807605,
+      "population_mean_abs_pairwise": 0.2956243303807606,
       "population_median_abs_pairwise": 0.23736655172237833,
       "population_n_cells": 75,
-      "population_participation_ratio": 6.377778856018627,
-      "population_top3_eig_share": 0.5839506140202194,
+      "population_participation_ratio": 6.3777788560186295,
+      "population_top3_eig_share": 0.5839506140202193,
       "weak_pairwise_strong_global": false
     }
   },
@@ -151,7 +151,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "cell-cell-coupling",
-  "timestamp": "1783606044",
+  "timestamp": "1793018794",
   "value": 0.22076907725660222,
   "where": "local"
 }

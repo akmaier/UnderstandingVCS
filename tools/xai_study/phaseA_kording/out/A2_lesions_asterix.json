@@ -1,7 +1,7 @@
 {
   "arrays": "A2_lesions_asterix.npz",
   "ci": null,
-  "commit": "9391b559",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "budget": {
@@ -36,7 +36,7 @@
       95,
       96
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_asterix.json",
+    "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_asterix.json",
     "importance_def": "Σ|Δ(candidate-cell value at final frame)| + (#framebuffer cells changed vs baseline) — state + render channels",
     "importance_map": {
       "boot_run_still_works": [
@@ -52,11 +52,11 @@
       ],
       "lesion_importance": [
         312.0,
-        313.0,
-        7057.0,
+        319.0,
+        7046.0,
         755.0,
         255.0,
-        854.0,
+        859.0,
         343.0,
         304.0,
         311.0
@@ -86,28 +86,28 @@
       ],
       "oracle_role": [
         312.0,
-        313.0,
-        7057.0,
-        975.0,
+        319.0,
+        7046.0,
+        973.0,
         255.0,
-        854.0,
+        859.0,
         343.0,
         304.0,
         311.0
       ]
     },
     "interaction_blind_spot": {
-      "interaction_missed_rate": 0.05555555555555555,
+      "interaction_missed_rate": 0.08333333333333333,
       "max_superadditive_delta": 0.0,
       "max_superadditive_pair_0based": [
         0,
         0
       ],
-      "mean_abs_interaction": 204.30555555555554,
-      "n_missed": 2,
+      "mean_abs_interaction": 203.55555555555554,
+      "n_missed": 3,
       "n_pairs": 36,
       "note": "the WHERE-SINGLE-UNIT-LESIONS-MISS result: Δ_int = E(i,j) − (E(i)+E(j)) over the top-importance unit pairs (budgeted). A non-zero Δ_int is super/sub-additivity that NO single-unit map can represent — the precise blind spot of A2.",
-      "tolerance": 55.37222222222222
+      "tolerance": 55.34444444444445
     },
     "lesion_doset": "single-unit {clamp→0, clamp→alt=base⊻0xFF}; per-unit effect = MAX importance over the do-set",
     "oracle_doset": "exhaustive {occlude→0, set→base+17, set→base+37, clamp→alt}; per-unit role = MAX importance over the do-set",
@@ -126,7 +126,7 @@
       "positive_control_rho": 0.9999999999999999,
       "spearman_rho_lesion_vs_oracle": 0.9833333333333332
     },
-    "settings": "GenericRomSettings",
+    "settings": "AsterixRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every lesion is an EXACT clamp + deterministic re-run on the true ROM.",
     "testbed": {
       "cause_density_above_floor": 12,
@@ -138,17 +138,19 @@
       "note": "P2 redesign: the lesion study runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. A2's lesion algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r75c79",
+      "shared_output": "screen_region(n_changed_px)@r91c79",
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
       "F": 0.9833333333333332,
       "F_note": "Spearman ρ of the single-unit lesion importance map vs the exact-oracle per-unit causal role (9 units).",
-      "M": 0.8333333333333334,
-      "M_note": "1 − false-specificity rate: fraction of lesion-flagged 'specific' units the oracle says are actually generic (spurious selectivity) — minimal & at the right level.",
-      "S": 0.7833333333333332,
+      "M": 1.0,
+      "M_note": "M = |U*|/|U_hat| (03_methods.tex sec:triad): |U*|=9 (oracle movers) / |U_hat|=9 (method above-threshold)",
+      "S": 0.9166666666666665,
       "S_note": "generalisation to a HELD-OUT clamp value: ρ of the lesion map (built on {0,alt}) vs the per-unit role under the UNSEEN value base+37 (scored on the bit-exact re-run).",
-      "interpretation": "Phase A calibration baseline (experiment_design.md §4): the single-unit lesion is a RELATIVELY FAITHFUL classical method (high F) BUT structurally blind to interaction effects (the interaction_blind_spot) and prone to spurious specificity (M<1). 'Right but incomplete' — the quantified-Kording lesson for ablation."
+      "interpretation": "Phase A calibration baseline (experiment_design.md §4): the single-unit lesion is a RELATIVELY FAITHFUL classical method (high F) BUT structurally blind to interaction effects (the interaction_blind_spot) and prone to spurious specificity (M<1). 'Right but incomplete' — the quantified-Kording lesson for ablation.",
+      "legacy_minimality": 0.8333333333333334,
+      "legacy_minimality_note": "1 − false-specificity rate (the pre-standardization M): fraction of lesion-flagged 'specific' units the oracle says are actually generic. Retained for reference; the triad M above is the paper's |U*|/|U_hat|."
     }
   },
   "frame": 90,
@@ -163,7 +165,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "per-unit behavioural-importance map (candidate RAM cells)",
-  "timestamp": "1783015034",
+  "timestamp": "1793016025",
   "value": 0.9833333333333332,
   "where": "local"
 }

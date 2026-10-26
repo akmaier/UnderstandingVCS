@@ -1,7 +1,7 @@
 {
   "arrays": "counterfactual_atlantis_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "alt_frame": 15,
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-CF causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
@@ -90,7 +90,7 @@
     "headline_metrics": {
       "deletion_auc": 0.6959558823529413,
       "insertion_auc": 0.34595588235294106,
-      "pearson_corr": 0.7728863117579013,
+      "pearson_corr": 0.7728863117579011,
       "precision_at_k": 0.6666666666666666,
       "spearman_corr": 0.836892528977506,
       "topk": 3
@@ -123,7 +123,7 @@
     "substrate": "jutari (Julia, HARD) — on-distribution counterfactual: set the real alternative state + re-run the real ROM (bit-exact oracle machinery); every validity test + del/ins curve point is a genuine emulator re-run, no surrogate.",
     "tau": 0.5,
     "triad": {
-      "F": 0.7728863117579013,
+      "F": 0.7728863117579011,
       "M": 1.0,
       "M_named_size": 2,
       "M_note": "|U*|=3 (oracle movers) / |U_hat|=2 (method above-threshold)",
@@ -144,7 +144,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@60)",
-  "timestamp": "1783131234",
-  "value": 0.7728863117579013,
+  "timestamp": "1793016339",
+  "value": 0.7728863117579011,
   "where": "local"
 }

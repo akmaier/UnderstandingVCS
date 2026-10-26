@@ -1,7 +1,7 @@
 {
   "arrays": "A3_tuning_pacman.npz",
   "ci": null,
-  "commit": "3d9f8be2",
+  "commit": "56e3a03",
   "extra": {
     "A3_tuning": {
       "clock_corr_per_cell": {
@@ -42,7 +42,7 @@
         "RAM[26]:ghst_bs": 0.0,
         "RAM[49]:player.xy": 0.0,
         "RAM[59]:pcmn_invsbl": 0.0,
-        "RAM[76]:scorev": 0.4011296830112079,
+        "RAM[76]:scorev": 0.40112968301128277,
         "RAM[78]:scorev": 0.0,
         "RAM[80]:scorev": 0.0,
         "RAM[89]:player.xy": 0.0
@@ -93,7 +93,7 @@
       "RAM[89]:player.xy": 0.0
     },
     "positive_control_oracle_as_method_F": 1.0,
-    "rom_settings": "JuTari.RomSettingsModule.GenericRomSettings",
+    "rom_settings": "JuTari.JoystickGames.PacmanRomSettings",
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the oracle causal map is EXACT interventions re-run on the true ROM; the tuning curves are a DESCRIPTIVE active-trace recording (the recorder's documented purpose), not a bit-exact-vs-xitari claim.",
     "testbed": {
@@ -106,7 +106,7 @@
       "note": "P2 redesign: the tuning study runs on a seeded random-action GAMEPLAY state (not the FIRE×4/attract tape), gated by the §1 oracle cause-density gate. Both the oracle causal map AND the descriptive tuning trajectory are stepped along the SAME gameplay stream so the game variable VARIES on genuine input-driven play. A3's tuning algorithm is unchanged; only the analysis state moves.",
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r131c77",
+      "shared_output": "screen_region(n_changed_px)@r132c77",
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
@@ -132,7 +132,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen-break (oracle causal importance) vs tuning selectivity",
-  "timestamp": "1792932987",
+  "timestamp": "1793018924",
   "value": 0.0,
   "where": "local"
 }

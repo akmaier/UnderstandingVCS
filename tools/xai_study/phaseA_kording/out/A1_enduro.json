@@ -1,7 +1,7 @@
 {
   "arrays": "A1_enduro.npz",
   "ci": null,
-  "commit": "9391b559",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -14,7 +14,7 @@
       52,
       59
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_enduro.json",
+    "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_enduro.json",
     "graph": {
       "f1": 0.0,
       "fn": 3,
@@ -54,11 +54,11 @@
     },
     "rom_basename": "enduro.bin",
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-    "settings": "GenericRomSettings",
+    "settings": "EnduroRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
     "testbed": {
-      "cause_density_above_floor": 3,
-      "cause_density_accepted": false,
+      "cause_density_above_floor": 4,
+      "cause_density_accepted": true,
       "cause_density_floor": 0.5,
       "cause_density_gate_k": 4,
       "horizon": 15,
@@ -72,9 +72,9 @@
     "triad": {
       "F": 0.0,
       "F_note": "F1 of recovered data-flow edges vs the exact-oracle true edges (3 candidate cells)",
-      "M": 1.0,
-      "M_note": "1 − over-claim rate: fraction of recovered edges the oracle says are spurious (false wiring)",
-      "S": 1.0,
+      "M": null,
+      "M_note": "M = |U*|/|U_hat| over edges: |true edges|=3 / |discovered edges|=0",
+      "S": 0.5,
       "S_note": "off-diagonal edge-agreement between the base+17 recovered graph and the HELD-OUT base+37 true edge set (generalisation to an unseen intervention value, bit-exact re-run)",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): classical connectomics scores LOW-to-PARTIAL faithfulness despite fully-known data-flow — the quantified-Kording lesson. A thin single-shot/short-latency perturbation misses long-latency / sign-dependent edges (recall deficit) and can over-claim transient ones (precision deficit)."
     }
@@ -90,7 +90,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-  "timestamp": "1783018500",
+  "timestamp": "1793020298",
   "value": 0.0,
   "where": "local"
 }

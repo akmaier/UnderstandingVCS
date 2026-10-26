@@ -1,12 +1,13 @@
 {
   "arrays": "A1_connectomics.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "game": "core_set",
   "games": [
     "air_raid",
     "alien",
     "assault",
+    "asterix",
     "atlantis",
     "berzerk",
     "bowling",
@@ -17,6 +18,7 @@
     "chopper_command",
     "demon_attack",
     "double_dunk",
+    "enduro",
     "frostbite",
     "hero",
     "ice_hockey",
@@ -34,6 +36,7 @@
     "riverraid",
     "road_runner",
     "seaquest",
+    "skiing",
     "space_invaders",
     "tennis",
     "venture",
@@ -42,14 +45,14 @@
   ],
   "method": "A1_connectomics(single-shot perturbation graph recovery)",
   "metric_name": "mean_dataflow_graph_F1_vs_oracle",
-  "n": 35,
+  "n": 38,
   "oracle_ref": "oracle_intervene (exact intervention data-flow per game)",
   "paper": "P2",
   "per_game": {
     "air_raid": {
       "arrays": "A1_air_raid.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -82,21 +85,26 @@
           85,
           86
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_air_raid.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_air_raid.json",
         "graph": {
-          "f1": 0.0,
-          "fn": 2,
+          "f1": 0.2222222222222222,
+          "fn": 7,
           "fp": 0,
-          "graph_edit_distance": 2,
-          "graph_edit_distance_normalised": 0.01282051282051282,
+          "graph_edit_distance": 7,
+          "graph_edit_distance_normalised": 0.04487179487179487,
           "n_nodes": 13,
-          "n_recovered_edges": 0,
-          "n_true_edges": 2,
+          "n_recovered_edges": 1,
+          "n_true_edges": 8,
           "note": "edges are 0-based candidate ordinals [i,j] meaning cell i -> cell j. TRUE = exhaustive oracle (do 0/base+17/base+37, full horizon, any value changes j); RECOVERED = classical single do(base+17), 1-step latency. GED = symmetric edge difference (fp+fn) over off-diagonal edges.",
-          "precision": 0.0,
-          "recall": 0.0,
-          "recovered_edges": [],
-          "tp": 0,
+          "precision": 1.0,
+          "recall": 0.125,
+          "recovered_edges": [
+            [
+              11,
+              12
+            ]
+          ],
+          "tp": 1,
           "true_edges": [
             [
               0,
@@ -105,6 +113,30 @@
             [
               0,
               10
+            ],
+            [
+              0,
+              12
+            ],
+            [
+              1,
+              9
+            ],
+            [
+              1,
+              10
+            ],
+            [
+              9,
+              10
+            ],
+            [
+              10,
+              9
+            ],
+            [
+              11,
+              12
             ]
           ]
         },
@@ -118,10 +150,10 @@
         },
         "rom_basename": "air_raid.bin",
         "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-        "settings": "GenericRomSettings",
+        "settings": "AirRaidRomSettings",
         "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
         "testbed": {
-          "cause_density_above_floor": 14,
+          "cause_density_above_floor": 17,
           "cause_density_accepted": true,
           "cause_density_floor": 0.5,
           "cause_density_gate_k": 4,
@@ -134,11 +166,11 @@
           "state_kind": "seeded_random_action_gameplay"
         },
         "triad": {
-          "F": 0.0,
+          "F": 0.2222222222222222,
           "F_note": "F1 of recovered data-flow edges vs the exact-oracle true edges (13 candidate cells)",
-          "M": null,
-          "M_note": "M = |U*|/|U_hat| over edges: |true edges|=2 / |discovered edges|=0",
-          "S": 0.9871794871794872,
+          "M": 1.0,
+          "M_note": "M = |U*|/|U_hat| over edges: |true edges|=8 / |discovered edges|=1",
+          "S": 0.9551282051282052,
           "S_note": "off-diagonal edge-agreement between the base+17 recovered graph and the HELD-OUT base+37 true edge set (generalisation to an unseen intervention value, bit-exact re-run)",
           "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): classical connectomics scores LOW-to-PARTIAL faithfulness despite fully-known data-flow — the quantified-Kording lesson. A thin single-shot/short-latency perturbation misses long-latency / sign-dependent edges (recall deficit) and can over-claim transient ones (precision deficit)."
         }
@@ -154,14 +186,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606707",
-      "value": 0.0,
+      "timestamp": "1793020297",
+      "value": 0.2222222222222222,
       "where": "local"
     },
     "alien": {
       "arrays": "A1_alien.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -180,7 +212,7 @@
           60,
           64
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_alien.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_alien.json",
         "graph": {
           "f1": 0.0,
           "fn": 1,
@@ -248,14 +280,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606707",
+      "timestamp": "1793020298",
       "value": 0.0,
       "where": "local"
     },
     "assault": {
       "arrays": "A1_assault.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -302,7 +334,7 @@
           101,
           110
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_assault.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_assault.json",
         "graph": {
           "f1": 0.0,
           "fn": 11,
@@ -410,14 +442,147 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606707",
+      "timestamp": "1793020298",
       "value": 0.0,
+      "where": "local"
+    },
+    "asterix": {
+      "arrays": "A1_asterix.npz",
+      "ci": null,
+      "commit": "56e3a03",
+      "extra": {
+        "bit_exact_rerun": true,
+        "candidate_cells": [
+          "RAM[29]:enemy_or_eatable_object",
+          "RAM[39]:player.xy",
+          "RAM[41]:player.xy",
+          "RAM[54]:kind_of_visible_objs",
+          "RAM[73]:rewards_visible",
+          "RAM[83]:lives",
+          "RAM[94]:dec_value",
+          "RAM[95]:dec_value",
+          "RAM[96]:dec_value"
+        ],
+        "candidate_ram_indices": [
+          29,
+          39,
+          41,
+          54,
+          73,
+          83,
+          94,
+          95,
+          96
+        ],
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_asterix.json",
+        "graph": {
+          "f1": 0.2222222222222222,
+          "fn": 7,
+          "fp": 0,
+          "graph_edit_distance": 7,
+          "graph_edit_distance_normalised": 0.09722222222222222,
+          "n_nodes": 9,
+          "n_recovered_edges": 1,
+          "n_true_edges": 8,
+          "note": "edges are 0-based candidate ordinals [i,j] meaning cell i -> cell j. TRUE = exhaustive oracle (do 0/base+17/base+37, full horizon, any value changes j); RECOVERED = classical single do(base+17), 1-step latency. GED = symmetric edge difference (fp+fn) over off-diagonal edges.",
+          "precision": 1.0,
+          "recall": 0.125,
+          "recovered_edges": [
+            [
+              3,
+              2
+            ]
+          ],
+          "tp": 1,
+          "true_edges": [
+            [
+              1,
+              4
+            ],
+            [
+              1,
+              8
+            ],
+            [
+              2,
+              8
+            ],
+            [
+              3,
+              0
+            ],
+            [
+              3,
+              2
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              5,
+              2
+            ],
+            [
+              5,
+              7
+            ]
+          ]
+        },
+        "positive_control": {
+          "f1": 1.0,
+          "graph_edit_distance": 0,
+          "name": "oracle-as-method (full do-set + full horizon)",
+          "note": "the oracle's OWN recovery must score F1=1, GED=0 — the harness rewards a perfectly-faithful graph, so the classical F1<1 is a real measurement.",
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "rom_basename": "asterix.bin",
+        "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
+        "settings": "AsterixRomSettings",
+        "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
+        "testbed": {
+          "cause_density_above_floor": 12,
+          "cause_density_accepted": true,
+          "cause_density_floor": 0.5,
+          "cause_density_gate_k": 4,
+          "horizon": 15,
+          "n_causes": 20,
+          "note": "P2 redesign: the connectomics recovery runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. A1's graph algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
+          "prefix": 90,
+          "seed": 0,
+          "shared_output": "screen_region(n_changed_px)@r91c79",
+          "state_kind": "seeded_random_action_gameplay"
+        },
+        "triad": {
+          "F": 0.2222222222222222,
+          "F_note": "F1 of recovered data-flow edges vs the exact-oracle true edges (9 candidate cells)",
+          "M": 1.0,
+          "M_note": "M = |U*|/|U_hat| over edges: |true edges|=8 / |discovered edges|=1",
+          "S": 0.9722222222222222,
+          "S_note": "off-diagonal edge-agreement between the base+17 recovered graph and the HELD-OUT base+37 true edge set (generalisation to an unseen intervention value, bit-exact re-run)",
+          "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): classical connectomics scores LOW-to-PARTIAL faithfulness despite fully-known data-flow — the quantified-Kording lesson. A thin single-shot/short-latency perturbation misses long-latency / sign-dependent edges (recall deficit) and can over-claim transient ones (precision deficit)."
+        }
+      },
+      "game": "asterix",
+      "method": "A1_connectomics(single-shot perturbation graph recovery)",
+      "metric_name": "dataflow_graph_F1_vs_oracle",
+      "n": 9,
+      "oracle_ref": "oracle_intervene@asterix#cell-to-cell data-flow (exhaustive do-set, full horizon)",
+      "paper": "P2",
+      "phase": "phaseA_kording",
+      "seed": 0,
+      "state": "gameplay(seed=0,prefix=90)+15",
+      "stderr": null,
+      "target_output": "inter-cell data-flow graph (candidate RAM cells)",
+      "timestamp": "1793020298",
+      "value": 0.2222222222222222,
       "where": "local"
     },
     "atlantis": {
       "arrays": "A1_atlantis.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -442,7 +607,7 @@
           61,
           62
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_atlantis.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_atlantis.json",
         "graph": {
           "f1": 0.0,
           "fn": 2,
@@ -514,14 +679,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606707",
+      "timestamp": "1793020298",
       "value": 0.0,
       "where": "local"
     },
     "berzerk": {
       "arrays": "A1_berzerk.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -580,7 +745,7 @@
           95,
           56
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_berzerk.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_berzerk.json",
         "graph": {
           "f1": 0.042553191489361694,
           "fn": 45,
@@ -833,14 +998,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606707",
+      "timestamp": "1793020298",
       "value": 0.042553191489361694,
       "where": "local"
     },
     "bowling": {
       "arrays": "A1_bowling.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -887,7 +1052,7 @@
           38,
           47
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_bowling.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_bowling.json",
         "graph": {
           "f1": 0.6666666666666666,
           "fn": 2,
@@ -976,14 +1141,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606707",
+      "timestamp": "1793020298",
       "value": 0.6666666666666666,
       "where": "local"
     },
     "boxing": {
       "arrays": "A1_boxing.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -1012,7 +1177,7 @@
           59,
           61
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_boxing.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_boxing.json",
         "graph": {
           "f1": 0.1111111111111111,
           "fn": 16,
@@ -1149,14 +1314,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606707",
+      "timestamp": "1793020298",
       "value": 0.1111111111111111,
       "where": "local"
     },
     "breakout": {
       "arrays": "A1_breakout.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -1181,7 +1346,7 @@
           57,
           76
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_breakout.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_breakout.json",
         "graph": {
           "f1": 0.2857142857142857,
           "fn": 5,
@@ -1274,14 +1439,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606707",
+      "timestamp": "1793020298",
       "value": 0.2857142857142857,
       "where": "local"
     },
     "carnival": {
       "arrays": "A1_carnival.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -1324,7 +1489,7 @@
           121,
           125
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_carnival.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_carnival.json",
         "graph": {
           "f1": 0.19999999999999998,
           "fn": 8,
@@ -1393,10 +1558,10 @@
         },
         "rom_basename": "carnival.bin",
         "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-        "settings": "GenericRomSettings",
+        "settings": "CarnivalRomSettings",
         "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
         "testbed": {
-          "cause_density_above_floor": 26,
+          "cause_density_above_floor": 27,
           "cause_density_accepted": true,
           "cause_density_floor": 0.5,
           "cause_density_gate_k": 4,
@@ -1405,7 +1570,7 @@
           "note": "P2 redesign: the connectomics recovery runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. A1's graph algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
           "prefix": 90,
           "seed": 0,
-          "shared_output": "screen_region(n_changed_px)@r84c33",
+          "shared_output": "screen_region(n_changed_px)@r92c33",
           "state_kind": "seeded_random_action_gameplay"
         },
         "triad": {
@@ -1429,14 +1594,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606707",
+      "timestamp": "1793020298",
       "value": 0.19999999999999998,
       "where": "local"
     },
     "centipede": {
       "arrays": "A1_centipede.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -1461,7 +1626,7 @@
           116,
           118
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_centipede.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_centipede.json",
         "graph": {
           "f1": 0.0,
           "fn": 3,
@@ -1537,14 +1702,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606707",
+      "timestamp": "1793020298",
       "value": 0.0,
       "where": "local"
     },
     "chopper_command": {
       "arrays": "A1_chopper_command.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -1591,7 +1756,7 @@
           110,
           112
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_chopper_command.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_chopper_command.json",
         "graph": {
           "f1": 0.45161290322580644,
           "fn": 17,
@@ -1780,14 +1945,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606707",
+      "timestamp": "1793020298",
       "value": 0.45161290322580644,
       "where": "local"
     },
     "demon_attack": {
       "arrays": "A1_demon_attack.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -1824,7 +1989,7 @@
           37,
           72
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_demon_attack.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_demon_attack.json",
         "graph": {
           "f1": 0.10526315789473684,
           "fn": 17,
@@ -1965,14 +2130,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606707",
+      "timestamp": "1793020298",
       "value": 0.10526315789473684,
       "where": "local"
     },
     "double_dunk": {
       "arrays": "A1_double_dunk.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -2003,26 +2168,30 @@
           118,
           119
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_double_dunk.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_double_dunk.json",
         "graph": {
-          "f1": 0.125,
-          "fn": 14,
+          "f1": 0.33333333333333337,
+          "fn": 8,
           "fp": 0,
-          "graph_edit_distance": 14,
-          "graph_edit_distance_normalised": 0.10606060606060606,
+          "graph_edit_distance": 8,
+          "graph_edit_distance_normalised": 0.06060606060606061,
           "n_nodes": 12,
-          "n_recovered_edges": 1,
-          "n_true_edges": 15,
+          "n_recovered_edges": 2,
+          "n_true_edges": 10,
           "note": "edges are 0-based candidate ordinals [i,j] meaning cell i -> cell j. TRUE = exhaustive oracle (do 0/base+17/base+37, full horizon, any value changes j); RECOVERED = classical single do(base+17), 1-step latency. GED = symmetric edge difference (fp+fn) over off-diagonal edges.",
           "precision": 1.0,
-          "recall": 0.06666666666666667,
+          "recall": 0.2,
           "recovered_edges": [
             [
               9,
-              8
+              4
+            ],
+            [
+              9,
+              5
             ]
           ],
-          "tp": 1,
+          "tp": 2,
           "true_edges": [
             [
               0,
@@ -2031,6 +2200,10 @@
             [
               0,
               4
+            ],
+            [
+              0,
+              5
             ],
             [
               0,
@@ -2045,32 +2218,12 @@
               0
             ],
             [
-              1,
-              4
+              2,
+              6
             ],
             [
-              1,
-              8
-            ],
-            [
-              8,
-              0
-            ],
-            [
-              8,
-              1
-            ],
-            [
-              8,
-              4
-            ],
-            [
-              9,
-              0
-            ],
-            [
-              9,
-              1
+              2,
+              7
             ],
             [
               9,
@@ -2079,10 +2232,6 @@
             [
               9,
               5
-            ],
-            [
-              9,
-              8
             ]
           ]
         },
@@ -2096,7 +2245,7 @@
         },
         "rom_basename": "double_dunk.bin",
         "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-        "settings": "GenericRomSettings",
+        "settings": "DoubleDunkRomSettings",
         "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
         "testbed": {
           "cause_density_above_floor": 22,
@@ -2112,11 +2261,11 @@
           "state_kind": "seeded_random_action_gameplay"
         },
         "triad": {
-          "F": 0.125,
+          "F": 0.33333333333333337,
           "F_note": "F1 of recovered data-flow edges vs the exact-oracle true edges (12 candidate cells)",
           "M": 1.0,
-          "M_note": "M = |U*|/|U_hat| over edges: |true edges|=15 / |discovered edges|=1",
-          "S": 0.9015151515151515,
+          "M_note": "M = |U*|/|U_hat| over edges: |true edges|=10 / |discovered edges|=2",
+          "S": 0.9621212121212122,
           "S_note": "off-diagonal edge-agreement between the base+17 recovered graph and the HELD-OUT base+37 true edge set (generalisation to an unseen intervention value, bit-exact re-run)",
           "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): classical connectomics scores LOW-to-PARTIAL faithfulness despite fully-known data-flow — the quantified-Kording lesson. A thin single-shot/short-latency perturbation misses long-latency / sign-dependent edges (recall deficit) and can over-claim transient ones (precision deficit)."
         }
@@ -2132,14 +2281,110 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606707",
-      "value": 0.125,
+      "timestamp": "1793020298",
+      "value": 0.33333333333333337,
+      "where": "local"
+    },
+    "enduro": {
+      "arrays": "A1_enduro.npz",
+      "ci": null,
+      "commit": "56e3a03",
+      "extra": {
+        "bit_exact_rerun": true,
+        "candidate_cells": [
+          "RAM[46]:x_drift",
+          "RAM[52]:xy",
+          "RAM[59]:y"
+        ],
+        "candidate_ram_indices": [
+          46,
+          52,
+          59
+        ],
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_enduro.json",
+        "graph": {
+          "f1": 0.0,
+          "fn": 3,
+          "fp": 0,
+          "graph_edit_distance": 3,
+          "graph_edit_distance_normalised": 0.5,
+          "n_nodes": 3,
+          "n_recovered_edges": 0,
+          "n_true_edges": 3,
+          "note": "edges are 0-based candidate ordinals [i,j] meaning cell i -> cell j. TRUE = exhaustive oracle (do 0/base+17/base+37, full horizon, any value changes j); RECOVERED = classical single do(base+17), 1-step latency. GED = symmetric edge difference (fp+fn) over off-diagonal edges.",
+          "precision": 0.0,
+          "recall": 0.0,
+          "recovered_edges": [],
+          "tp": 0,
+          "true_edges": [
+            [
+              0,
+              2
+            ],
+            [
+              2,
+              0
+            ],
+            [
+              2,
+              1
+            ]
+          ]
+        },
+        "positive_control": {
+          "f1": 1.0,
+          "graph_edit_distance": 0,
+          "name": "oracle-as-method (full do-set + full horizon)",
+          "note": "the oracle's OWN recovery must score F1=1, GED=0 — the harness rewards a perfectly-faithful graph, so the classical F1<1 is a real measurement.",
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "rom_basename": "enduro.bin",
+        "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
+        "settings": "EnduroRomSettings",
+        "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
+        "testbed": {
+          "cause_density_above_floor": 4,
+          "cause_density_accepted": true,
+          "cause_density_floor": 0.5,
+          "cause_density_gate_k": 4,
+          "horizon": 15,
+          "n_causes": 8,
+          "note": "P2 redesign: the connectomics recovery runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. A1's graph algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
+          "prefix": 90,
+          "seed": 0,
+          "shared_output": "screen_region(n_changed_px)@r1c9",
+          "state_kind": "seeded_random_action_gameplay"
+        },
+        "triad": {
+          "F": 0.0,
+          "F_note": "F1 of recovered data-flow edges vs the exact-oracle true edges (3 candidate cells)",
+          "M": null,
+          "M_note": "M = |U*|/|U_hat| over edges: |true edges|=3 / |discovered edges|=0",
+          "S": 0.5,
+          "S_note": "off-diagonal edge-agreement between the base+17 recovered graph and the HELD-OUT base+37 true edge set (generalisation to an unseen intervention value, bit-exact re-run)",
+          "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): classical connectomics scores LOW-to-PARTIAL faithfulness despite fully-known data-flow — the quantified-Kording lesson. A thin single-shot/short-latency perturbation misses long-latency / sign-dependent edges (recall deficit) and can over-claim transient ones (precision deficit)."
+        }
+      },
+      "game": "enduro",
+      "method": "A1_connectomics(single-shot perturbation graph recovery)",
+      "metric_name": "dataflow_graph_F1_vs_oracle",
+      "n": 3,
+      "oracle_ref": "oracle_intervene@enduro#cell-to-cell data-flow (exhaustive do-set, full horizon)",
+      "paper": "P2",
+      "phase": "phaseA_kording",
+      "seed": 0,
+      "state": "gameplay(seed=0,prefix=90)+15",
+      "stderr": null,
+      "target_output": "inter-cell data-flow graph (candidate RAM cells)",
+      "timestamp": "1793020298",
+      "value": 0.0,
       "where": "local"
     },
     "frostbite": {
       "arrays": "A1_frostbite.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -2184,7 +2429,7 @@
           30,
           107
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_frostbite.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_frostbite.json",
         "graph": {
           "f1": 0.0,
           "fn": 26,
@@ -2352,14 +2597,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606708",
+      "timestamp": "1793020298",
       "value": 0.0,
       "where": "local"
     },
     "hero": {
       "arrays": "A1_hero.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -2400,7 +2645,7 @@
           51,
           115
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_hero.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_hero.json",
         "graph": {
           "f1": 0.4,
           "fn": 3,
@@ -2485,14 +2730,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606708",
+      "timestamp": "1793020298",
       "value": 0.4,
       "where": "local"
     },
     "ice_hockey": {
       "arrays": "A1_ice_hockey.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -2519,7 +2764,7 @@
           60,
           91
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_ice_hockey.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_ice_hockey.json",
         "graph": {
           "f1": 0.0,
           "fn": 11,
@@ -2627,14 +2872,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606708",
+      "timestamp": "1793020298",
       "value": 0.0,
       "where": "local"
     },
     "jamesbond": {
       "arrays": "A1_jamesbond.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -2667,7 +2912,7 @@
           61,
           111
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_jamesbond.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_jamesbond.json",
         "graph": {
           "f1": 0.0,
           "fn": 3,
@@ -2743,14 +2988,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606708",
+      "timestamp": "1793020298",
       "value": 0.0,
       "where": "local"
     },
     "kangaroo": {
       "arrays": "A1_kangaroo.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -2787,7 +3032,7 @@
           59,
           83
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_kangaroo.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_kangaroo.json",
         "graph": {
           "f1": 0.0,
           "fn": 2,
@@ -2823,7 +3068,7 @@
         },
         "rom_basename": "kangaroo.bin",
         "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-        "settings": "GenericRomSettings",
+        "settings": "KangarooRomSettings",
         "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
         "testbed": {
           "cause_density_above_floor": 16,
@@ -2859,14 +3104,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606708",
+      "timestamp": "1793020298",
       "value": 0.0,
       "where": "local"
     },
     "krull": {
       "arrays": "A1_krull.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -2923,7 +3168,7 @@
           115,
           116
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_krull.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_krull.json",
         "graph": {
           "f1": 0.3333333333333333,
           "fn": 2,
@@ -3084,14 +3329,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606708",
+      "timestamp": "1793020298",
       "value": 0.3333333333333333,
       "where": "local"
     },
     "montezuma_revenge": {
       "arrays": "A1_montezuma_revenge.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -3128,7 +3373,7 @@
           61,
           62
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_montezuma_revenge.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_montezuma_revenge.json",
         "graph": {
           "f1": 0.125,
           "fn": 14,
@@ -3257,14 +3502,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606708",
+      "timestamp": "1793020298",
       "value": 0.125,
       "where": "local"
     },
     "ms_pacman": {
       "arrays": "A1_ms_pacman.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -3309,7 +3554,7 @@
           121,
           122
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_ms_pacman.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_ms_pacman.json",
         "graph": {
           "f1": 0.0,
           "fn": 18,
@@ -3445,14 +3690,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606708",
+      "timestamp": "1793020298",
       "value": 0.0,
       "where": "local"
     },
     "pacman": {
       "arrays": "A1_pacman.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -3475,7 +3720,7 @@
           80,
           89
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_pacman.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_pacman.json",
         "graph": {
           "f1": 0.0,
           "fn": 1,
@@ -3507,7 +3752,7 @@
         },
         "rom_basename": "pacman.bin",
         "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-        "settings": "GenericRomSettings",
+        "settings": "PacmanRomSettings",
         "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
         "testbed": {
           "cause_density_above_floor": 9,
@@ -3519,7 +3764,7 @@
           "note": "P2 redesign: the connectomics recovery runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. A1's graph algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
           "prefix": 90,
           "seed": 0,
-          "shared_output": "screen_region(n_changed_px)@r131c77",
+          "shared_output": "screen_region(n_changed_px)@r132c77",
           "state_kind": "seeded_random_action_gameplay"
         },
         "triad": {
@@ -3543,14 +3788,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606708",
+      "timestamp": "1793020298",
       "value": 0.0,
       "where": "local"
     },
     "phoenix": {
       "arrays": "A1_phoenix.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -3581,7 +3826,7 @@
           94,
           95
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_phoenix.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_phoenix.json",
         "graph": {
           "f1": 0.0,
           "fn": 1,
@@ -3649,14 +3894,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606708",
+      "timestamp": "1793020298",
       "value": 0.0,
       "where": "local"
     },
     "pitfall": {
       "arrays": "A1_pitfall.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -3695,7 +3940,7 @@
           90,
           92
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_pitfall.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_pitfall.json",
         "graph": {
           "f1": 0.3076923076923077,
           "fn": 9,
@@ -3776,7 +4021,7 @@
         },
         "rom_basename": "pitfall.bin",
         "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-        "settings": "GenericRomSettings",
+        "settings": "PitfallRomSettings",
         "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
         "testbed": {
           "cause_density_above_floor": 19,
@@ -3788,7 +4033,7 @@
           "note": "P2 redesign: the connectomics recovery runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. A1's graph algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
           "prefix": 90,
           "seed": 0,
-          "shared_output": "screen_region(n_changed_px)@r120c61",
+          "shared_output": "screen_region(n_changed_px)@r114c129",
           "state_kind": "seeded_random_action_gameplay"
         },
         "triad": {
@@ -3812,14 +4057,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606708",
+      "timestamp": "1793020298",
       "value": 0.3076923076923077,
       "where": "local"
     },
     "pong": {
       "arrays": "A1_pong.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -3842,7 +4087,7 @@
           51,
           54
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_pong.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_pong.json",
         "graph": {
           "f1": 0.0,
           "fn": 12,
@@ -3954,14 +4199,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606708",
+      "timestamp": "1793020298",
       "value": 0.0,
       "where": "local"
     },
     "private_eye": {
       "arrays": "A1_private_eye.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -4016,7 +4261,7 @@
           88,
           97
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_private_eye.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_private_eye.json",
         "graph": {
           "f1": 0.3636363636363636,
           "fn": 7,
@@ -4089,7 +4334,7 @@
         },
         "rom_basename": "private_eye.bin",
         "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-        "settings": "GenericRomSettings",
+        "settings": "PrivateEyeRomSettings",
         "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
         "testbed": {
           "cause_density_above_floor": 20,
@@ -4101,7 +4346,7 @@
           "note": "P2 redesign: the connectomics recovery runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. A1's graph algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
           "prefix": 90,
           "seed": 0,
-          "shared_output": "screen_region(n_changed_px)@r148c48",
+          "shared_output": "screen_region(n_changed_px)@r148c49",
           "state_kind": "seeded_random_action_gameplay"
         },
         "triad": {
@@ -4125,14 +4370,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606708",
+      "timestamp": "1793020298",
       "value": 0.3636363636363636,
       "where": "local"
     },
     "qbert": {
       "arrays": "A1_qbert.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -4179,7 +4424,7 @@
           74,
           103
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_qbert.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_qbert.json",
         "graph": {
           "f1": 1.0,
           "fn": 0,
@@ -4252,14 +4497,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606708",
+      "timestamp": "1793020298",
       "value": 1.0,
       "where": "local"
     },
     "riverraid": {
       "arrays": "A1_riverraid.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -4310,7 +4555,7 @@
           85,
           87
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_riverraid.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_riverraid.json",
         "graph": {
           "f1": 0.32,
           "fn": 17,
@@ -4475,14 +4720,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606708",
+      "timestamp": "1793020298",
       "value": 0.32,
       "where": "local"
     },
     "road_runner": {
       "arrays": "A1_road_runner.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -4525,7 +4770,7 @@
           89,
           90
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_road_runner.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_road_runner.json",
         "graph": {
           "f1": 0.4444444444444445,
           "fn": 5,
@@ -4590,7 +4835,7 @@
         },
         "rom_basename": "road_runner.bin",
         "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-        "settings": "GenericRomSettings",
+        "settings": "RoadRunnerRomSettings",
         "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
         "testbed": {
           "cause_density_above_floor": 11,
@@ -4626,14 +4871,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606708",
+      "timestamp": "1793020298",
       "value": 0.4444444444444445,
       "where": "local"
     },
     "seaquest": {
       "arrays": "A1_seaquest.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -4686,7 +4931,7 @@
           89,
           118
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_seaquest.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_seaquest.json",
         "graph": {
           "f1": 0.25,
           "fn": 12,
@@ -4815,14 +5060,134 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606708",
+      "timestamp": "1793020298",
       "value": 0.25,
+      "where": "local"
+    },
+    "skiing": {
+      "arrays": "A1_skiing.npz",
+      "ci": null,
+      "commit": "56e3a03",
+      "extra": {
+        "bit_exact_rerun": true,
+        "candidate_cells": [
+          "RAM[15]:player.orientation",
+          "RAM[25]:player.xy",
+          "RAM[26]:player.xy",
+          "RAM[62]:relevant_info",
+          "RAM[90]:player.ram_90",
+          "RAM[104]:minutes",
+          "RAM[105]:seconds",
+          "RAM[106]:milli_seconds",
+          "RAM[107]:score"
+        ],
+        "candidate_ram_indices": [
+          15,
+          25,
+          26,
+          62,
+          90,
+          104,
+          105,
+          106,
+          107
+        ],
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_skiing.json",
+        "graph": {
+          "f1": 0.0,
+          "fn": 6,
+          "fp": 0,
+          "graph_edit_distance": 6,
+          "graph_edit_distance_normalised": 0.08333333333333333,
+          "n_nodes": 9,
+          "n_recovered_edges": 0,
+          "n_true_edges": 6,
+          "note": "edges are 0-based candidate ordinals [i,j] meaning cell i -> cell j. TRUE = exhaustive oracle (do 0/base+17/base+37, full horizon, any value changes j); RECOVERED = classical single do(base+17), 1-step latency. GED = symmetric edge difference (fp+fn) over off-diagonal edges.",
+          "precision": 0.0,
+          "recall": 0.0,
+          "recovered_edges": [],
+          "tp": 0,
+          "true_edges": [
+            [
+              0,
+              1
+            ],
+            [
+              5,
+              0
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              5,
+              4
+            ],
+            [
+              5,
+              7
+            ],
+            [
+              7,
+              6
+            ]
+          ]
+        },
+        "positive_control": {
+          "f1": 1.0,
+          "graph_edit_distance": 0,
+          "name": "oracle-as-method (full do-set + full horizon)",
+          "note": "the oracle's OWN recovery must score F1=1, GED=0 — the harness rewards a perfectly-faithful graph, so the classical F1<1 is a real measurement.",
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "rom_basename": "skiing.bin",
+        "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
+        "settings": "SkiingRomSettings",
+        "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
+        "testbed": {
+          "cause_density_above_floor": 12,
+          "cause_density_accepted": true,
+          "cause_density_floor": 0.5,
+          "cause_density_gate_k": 4,
+          "horizon": 15,
+          "n_causes": 20,
+          "note": "P2 redesign: the connectomics recovery runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. A1's graph algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
+          "prefix": 90,
+          "seed": 0,
+          "shared_output": "screen_region(n_changed_px)@r51c78",
+          "state_kind": "seeded_random_action_gameplay"
+        },
+        "triad": {
+          "F": 0.0,
+          "F_note": "F1 of recovered data-flow edges vs the exact-oracle true edges (9 candidate cells)",
+          "M": null,
+          "M_note": "M = |U*|/|U_hat| over edges: |true edges|=6 / |discovered edges|=0",
+          "S": 0.9166666666666666,
+          "S_note": "off-diagonal edge-agreement between the base+17 recovered graph and the HELD-OUT base+37 true edge set (generalisation to an unseen intervention value, bit-exact re-run)",
+          "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): classical connectomics scores LOW-to-PARTIAL faithfulness despite fully-known data-flow — the quantified-Kording lesson. A thin single-shot/short-latency perturbation misses long-latency / sign-dependent edges (recall deficit) and can over-claim transient ones (precision deficit)."
+        }
+      },
+      "game": "skiing",
+      "method": "A1_connectomics(single-shot perturbation graph recovery)",
+      "metric_name": "dataflow_graph_F1_vs_oracle",
+      "n": 9,
+      "oracle_ref": "oracle_intervene@skiing#cell-to-cell data-flow (exhaustive do-set, full horizon)",
+      "paper": "P2",
+      "phase": "phaseA_kording",
+      "seed": 0,
+      "state": "gameplay(seed=0,prefix=90)+15",
+      "stderr": null,
+      "target_output": "inter-cell data-flow graph (candidate RAM cells)",
+      "timestamp": "1793020298",
+      "value": 0.0,
       "where": "local"
     },
     "space_invaders": {
       "arrays": "A1_space_invaders.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -4863,7 +5228,7 @@
           102,
           120
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_space_invaders.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_space_invaders.json",
         "graph": {
           "f1": 0.5,
           "fn": 6,
@@ -4976,14 +5341,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606708",
+      "timestamp": "1793020298",
       "value": 0.5,
       "where": "local"
     },
     "tennis": {
       "arrays": "A1_tennis.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -5020,7 +5385,7 @@
           55,
           80
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_tennis.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_tennis.json",
         "graph": {
           "f1": 0.5333333333333333,
           "fn": 7,
@@ -5145,14 +5510,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606708",
+      "timestamp": "1793020298",
       "value": 0.5333333333333333,
       "where": "local"
     },
     "venture": {
       "arrays": "A1_venture.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -5195,7 +5560,7 @@
           85,
           90
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_venture.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_venture.json",
         "graph": {
           "f1": 0.0,
           "fn": 40,
@@ -5419,14 +5784,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606708",
+      "timestamp": "1793020298",
       "value": 0.0,
       "where": "local"
     },
     "video_pinball": {
       "arrays": "A1_video_pinball.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -5447,7 +5812,7 @@
           102,
           25
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_video_pinball.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_video_pinball.json",
         "graph": {
           "f1": 0.6666666666666666,
           "fn": 1,
@@ -5524,14 +5889,14 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606708",
+      "timestamp": "1793020298",
       "value": 0.6666666666666666,
       "where": "local"
     },
     "yars_revenge": {
       "arrays": "A1_yars_revenge.npz",
       "ci": null,
-      "commit": "ddf78172",
+      "commit": "56e3a03",
       "extra": {
         "bit_exact_rerun": true,
         "candidate_cells": [
@@ -5564,21 +5929,26 @@
           98,
           99
         ],
-        "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_yars_revenge.json",
+        "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_yars_revenge.json",
         "graph": {
-          "f1": 0.0,
-          "fn": 5,
+          "f1": 0.19999999999999998,
+          "fn": 8,
           "fp": 0,
-          "graph_edit_distance": 5,
-          "graph_edit_distance_normalised": 0.03205128205128205,
+          "graph_edit_distance": 8,
+          "graph_edit_distance_normalised": 0.05128205128205128,
           "n_nodes": 13,
-          "n_recovered_edges": 0,
-          "n_true_edges": 5,
+          "n_recovered_edges": 1,
+          "n_true_edges": 9,
           "note": "edges are 0-based candidate ordinals [i,j] meaning cell i -> cell j. TRUE = exhaustive oracle (do 0/base+17/base+37, full horizon, any value changes j); RECOVERED = classical single do(base+17), 1-step latency. GED = symmetric edge difference (fp+fn) over off-diagonal edges.",
-          "precision": 0.0,
-          "recall": 0.0,
-          "recovered_edges": [],
-          "tp": 0,
+          "precision": 1.0,
+          "recall": 0.1111111111111111,
+          "recovered_edges": [
+            [
+              0,
+              6
+            ]
+          ],
+          "tp": 1,
           "true_edges": [
             [
               0,
@@ -5590,7 +5960,23 @@
             ],
             [
               1,
+              0
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              1,
               3
+            ],
+            [
+              1,
+              4
+            ],
+            [
+              1,
+              8
             ],
             [
               3,
@@ -5612,10 +5998,10 @@
         },
         "rom_basename": "yars_revenge.bin",
         "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-        "settings": "GenericRomSettings",
+        "settings": "YarsRevengeRomSettings",
         "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge is an EXACT intervention re-run on the true ROM.",
         "testbed": {
-          "cause_density_above_floor": 11,
+          "cause_density_above_floor": 9,
           "cause_density_accepted": true,
           "cause_density_floor": 0.5,
           "cause_density_gate_k": 4,
@@ -5624,15 +6010,15 @@
           "note": "P2 redesign: the connectomics recovery runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. A1's graph algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
           "prefix": 90,
           "seed": 0,
-          "shared_output": "screen_region(n_changed_px)@r118c38",
+          "shared_output": "screen_region(n_changed_px)@r84c6",
           "state_kind": "seeded_random_action_gameplay"
         },
         "triad": {
-          "F": 0.0,
+          "F": 0.19999999999999998,
           "F_note": "F1 of recovered data-flow edges vs the exact-oracle true edges (13 candidate cells)",
-          "M": null,
-          "M_note": "M = |U*|/|U_hat| over edges: |true edges|=5 / |discovered edges|=0",
-          "S": 0.9743589743589743,
+          "M": 1.0,
+          "M_note": "M = |U*|/|U_hat| over edges: |true edges|=9 / |discovered edges|=1",
+          "S": 0.9487179487179487,
           "S_note": "off-diagonal edge-agreement between the base+17 recovered graph and the HELD-OUT base+37 true edge set (generalisation to an unseen intervention value, bit-exact re-run)",
           "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): classical connectomics scores LOW-to-PARTIAL faithfulness despite fully-known data-flow — the quantified-Kording lesson. A thin single-shot/short-latency perturbation misses long-latency / sign-dependent edges (recall deficit) and can over-claim transient ones (precision deficit)."
         }
@@ -5648,8 +6034,8 @@
       "state": "gameplay(seed=0,prefix=90)+15",
       "stderr": null,
       "target_output": "inter-cell data-flow graph (candidate RAM cells)",
-      "timestamp": "1783606708",
-      "value": 0.0,
+      "timestamp": "1793020298",
+      "value": 0.19999999999999998,
       "where": "local"
     }
   },
@@ -5658,7 +6044,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "inter-cell data-flow graph (per game)",
-  "timestamp": "1783606708",
-  "value": 0.20662936472024052,
+  "timestamp": "1793020298",
+  "value": 0.2127580406048999,
   "where": "local"
 }

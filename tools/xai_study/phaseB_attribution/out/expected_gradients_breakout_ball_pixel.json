@@ -1,7 +1,7 @@
 {
   "arrays": "expected_gradients_breakout_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-EG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "cause_names": [
@@ -55,7 +55,7 @@
     "eg_self_baseline_invariant": false,
     "harness_positive_control": {
       "deletion_auc": 0.8589285714285714,
-      "insertion_auc": 0.32440476190476186,
+      "insertion_auc": 0.3244047619047619,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the EG numbers above are a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "oracle_column_degenerate": false,
@@ -64,7 +64,7 @@
     },
     "headline_metrics": {
       "completeness_err": 1.078125,
-      "deletion_auc": 0.4384146341463414,
+      "deletion_auc": 0.4384146341463415,
       "eg_max_abs": 1.828125,
       "insertion_auc": 0.6481707317073171,
       "pearson_corr": -0.23638701627808661,
@@ -143,7 +143,7 @@
             "tia[COLUBK]:set": 0.0
           },
           "completeness_err": 1.078125,
-          "deletion_auc": 0.4384146341463414,
+          "deletion_auc": 0.4384146341463415,
           "eg_max_abs": 1.828125,
           "insertion_auc": 0.6481707317073171,
           "pearson_corr": -0.23638701627808661,
@@ -177,7 +177,7 @@
             "tia[COLUBK]:set": 0.0
           },
           "completeness_err": 0.109375,
-          "deletion_auc": 0.4384146341463414,
+          "deletion_auc": 0.4384146341463415,
           "eg_max_abs": 0.9375,
           "insertion_auc": 0.6481707317073171,
           "pearson_corr": -0.2363870162780866,
@@ -211,7 +211,7 @@
             "tia[COLUBK]:set": 0.0
           },
           "completeness_err": 0.453125,
-          "deletion_auc": 0.4384146341463414,
+          "deletion_auc": 0.4384146341463415,
           "eg_max_abs": 0.25,
           "insertion_auc": 0.6481707317073171,
           "pearson_corr": -0.2363870162780866,
@@ -245,7 +245,7 @@
             "tia[COLUBK]:set": 0.0
           },
           "completeness_err": 0.53125,
-          "deletion_auc": 0.4384146341463414,
+          "deletion_auc": 0.4384146341463415,
           "eg_max_abs": 0.3125,
           "insertion_auc": 0.6481707317073171,
           "pearson_corr": -0.23638701627808661,
@@ -279,7 +279,7 @@
             "tia[COLUBK]:set": 0.0
           },
           "completeness_err": 0.828125,
-          "deletion_auc": 0.4384146341463414,
+          "deletion_auc": 0.4384146341463415,
           "eg_max_abs": 0.03125,
           "insertion_auc": 0.6481707317073171,
           "pearson_corr": -0.2363870162780866,
@@ -320,7 +320,7 @@
       "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
     },
     "vs_single_baseline_ig": {
-      "delta_deletion_auc": -0.014634146341463428,
+      "delta_deletion_auc": -0.014634146341463317,
       "delta_pearson": -0.23638701627808661,
       "delta_precision_at_k": 0.0,
       "ig_baseline": "zeros",
@@ -346,7 +346,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": 1.0749688212373144e-17,
   "target_output": "screen_region(n_changed_px)@r190c103",
-  "timestamp": "1783131267",
+  "timestamp": "1793017501",
   "value": -0.23638701627808661,
   "where": "local"
 }

@@ -1,7 +1,7 @@
 {
   "arrays": "A4_pong.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -96,7 +96,7 @@
       "F_note": "Spearman(|pairwise corr|, oracle cell-cell coupling) over 28 candidate-cell pairs",
       "M": 0.6666666666666666,
       "M_note": "M = |U*|/|U_hat| over candidate-cell pairs (03_methods.tex sec:triad): |U*|=4 (oracle movers) / |U_hat|=6 (method above-threshold)",
-      "S": -0.1696312413941485,
+      "S": -0.16963124139414856,
       "S_note": "Pearson(|pairwise corr|, held-out do(base+37) coupling) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): pairwise correlation structure GENERALLY OVER-GROUPS — it lumps causally-unrelated cells that merely co-vary (the present≠used trap, pairwise). F<1 + over_grouping_ratio>0 quantify the departure from the true coupling.",
       "legacy_minimality": 0.5,
@@ -108,15 +108,15 @@
       "candidate_mean_abs_pairwise": 0.8428443266128509,
       "candidate_median_abs_pairwise": 0.8587315052676625,
       "candidate_n_varying_cells": 4,
-      "candidate_participation_ratio": 1.2641703133882456,
+      "candidate_participation_ratio": 1.2641703133882463,
       "candidate_top3_eig_share": 0.999925140506763,
-      "candidate_top_eig_share": 0.8842571748841914,
+      "candidate_top_eig_share": 0.8842571748841912,
       "note": "the spike-word headline (Schneidman 2006; Tkačik 2014): over the FULL POPULATION of varying RAM cells the median pairwise |corr| is WEAK while a few GLOBAL eigen-modes dominate — the effective dimensionality (participation ratio) is far below the #cells, so the collective structure greatly exceeds the pairwise structure. WPSG flag = population median|corr|<0.5 AND population top3-eig-share≥0.6. (The candidate_* set is curated so its pairwise corr runs higher.)",
       "population_mean_abs_pairwise": 0.5406109337696315,
       "population_median_abs_pairwise": 0.44923254116681866,
       "population_n_cells": 19,
       "population_participation_ratio": 2.3900088806948805,
-      "population_top3_eig_share": 0.895212988931287,
+      "population_top3_eig_share": 0.8952129889312871,
       "weak_pairwise_strong_global": true
     }
   },
@@ -131,7 +131,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "cell-cell-coupling",
-  "timestamp": "1783606156",
+  "timestamp": "1793019027",
   "value": 0.6328515172740399,
   "where": "local"
 }

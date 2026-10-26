@@ -1,7 +1,7 @@
 {
   "arrays": "sae_ice_hockey.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -139,7 +139,7 @@
       "note": "for each KNOWN candidate cell that VARIES, max|Pearson r| between any learned feature's activation and that cell over the trajectory; matched iff |r| ≥ 0.7. Match-rate = #matched / #varying.",
       "per_cell": [
         {
-          "best_corr": 0.8261851201544537,
+          "best_corr": 0.8261851201544526,
           "best_feature": 19,
           "concept": "ball.xy",
           "family": "ball",
@@ -157,7 +157,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.7137709121997475,
+          "best_corr": 0.7137709121997474,
           "best_feature": 58,
           "concept": "enemy_2.xy",
           "family": "enemy",
@@ -166,7 +166,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.790524294314631,
+          "best_corr": 0.7905242943146302,
           "best_feature": 19,
           "concept": "player.xy",
           "family": "player",
@@ -175,7 +175,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8863225279646197,
+          "best_corr": 0.8863225279646199,
           "best_feature": 2,
           "concept": "enemy_1.xy",
           "family": "enemy",
@@ -193,7 +193,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.7940602014937668,
+          "best_corr": 0.7940602014937653,
           "best_feature": 19,
           "concept": "enemy_2.xy",
           "family": "enemy",
@@ -202,7 +202,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.6860115717002228,
+          "best_corr": 0.6860115717002232,
           "best_feature": 55,
           "concept": "player.xy",
           "family": "player",
@@ -211,7 +211,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9730821280053249,
+          "best_corr": 0.9730821280053252,
           "best_feature": 44,
           "concept": "enemy_1.xy",
           "family": "enemy",
@@ -220,7 +220,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8282963555910632,
+          "best_corr": 0.8282963555910621,
           "best_feature": 19,
           "concept": "ball.xy",
           "family": "ball",
@@ -294,8 +294,8 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.8758068410112689,
-          "fve_train": 0.8875798223061625,
+          "fve_held": 0.8758068415061459,
+          "fve_train": 0.8875798228643746,
           "l1": 0.2,
           "matched_fraction": 0.625,
           "mean_l0": 2.4266666666666667
@@ -372,7 +372,7 @@
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
       "M": 1.0,
       "M_note": "|U*|=9 (oracle movers) / |U_hat|=8 (method above-threshold)",
-      "S": 0.2595200726507109,
+      "S": 0.25952007265071086,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
     }
@@ -389,7 +389,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783608028",
+  "timestamp": "1793018648",
   "value": 0.875,
   "where": "local"
 }

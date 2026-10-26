@@ -1,7 +1,7 @@
 {
   "arrays": "sae_freeway.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -207,7 +207,7 @@
       "note": "for each KNOWN candidate cell that VARIES, max|Pearson r| between any learned feature's activation and that cell over the trajectory; matched iff |r| ≥ 0.7. Match-rate = #matched / #varying.",
       "per_cell": [
         {
-          "best_corr": 0.694786411298226,
+          "best_corr": 0.6947864112982253,
           "best_feature": 21,
           "concept": "player_y",
           "family": "player",
@@ -225,7 +225,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.7049523475406353,
+          "best_corr": 0.7049523475406358,
           "best_feature": 49,
           "concept": "enemy_car_x[0]",
           "family": "enemy_car_x[0]",
@@ -234,7 +234,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7027653859478561,
+          "best_corr": 0.7027653859478558,
           "best_feature": 28,
           "concept": "enemy_car_x[1]",
           "family": "enemy_car_x[1]",
@@ -243,7 +243,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7080313536844791,
+          "best_corr": 0.708031353684479,
           "best_feature": 28,
           "concept": "enemy_car_x[2]",
           "family": "enemy_car_x[2]",
@@ -252,7 +252,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7061233717064179,
+          "best_corr": 0.706123371706418,
           "best_feature": 28,
           "concept": "enemy_car_x[3]",
           "family": "enemy_car_x[3]",
@@ -261,7 +261,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7069895775450309,
+          "best_corr": 0.7069895775450311,
           "best_feature": 28,
           "concept": "enemy_car_x[4]",
           "family": "enemy_car_x[4]",
@@ -270,7 +270,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7069895775450309,
+          "best_corr": 0.7069895775450311,
           "best_feature": 28,
           "concept": "enemy_car_x[5]",
           "family": "enemy_car_x[5]",
@@ -279,7 +279,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7077617543404396,
+          "best_corr": 0.7077617543404399,
           "best_feature": 28,
           "concept": "enemy_car_x[6]",
           "family": "enemy_car_x[6]",
@@ -288,7 +288,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.70510535014647,
+          "best_corr": 0.7051053501464702,
           "best_feature": 28,
           "concept": "enemy_car_x[7]",
           "family": "enemy_car_x[7]",
@@ -297,7 +297,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7098790985493731,
+          "best_corr": 0.7098790985493733,
           "best_feature": 28,
           "concept": "enemy_car_x[8]",
           "family": "enemy_car_x[8]",
@@ -306,7 +306,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7047076636264319,
+          "best_corr": 0.7047076636264321,
           "best_feature": 28,
           "concept": "enemy_car_x[9]",
           "family": "enemy_car_x[9]",
@@ -360,7 +360,7 @@
       "best_d_hidden": 64,
       "best_l1": 0.05,
       "best_mean_l0": 31.546666666666667,
-      "fve_heldout": 0.7224075857083609,
+      "fve_heldout": 0.7224075857083608,
       "fve_train": 0.9898312152713653
     },
     "sae": {
@@ -377,7 +377,7 @@
     "sweep": {
       "best": {
         "d_hidden": 64,
-        "fve_held": 0.7224075857083609,
+        "fve_held": 0.7224075857083608,
         "fve_train": 0.9898312152713653,
         "l1": 0.05,
         "matched_fraction": 0.9090909090909091,
@@ -386,7 +386,7 @@
       "grid": [
         {
           "d_hidden": 16,
-          "fve_held": 0.5499412380299101,
+          "fve_held": 0.5499412380299098,
           "fve_train": 0.9188464063047282,
           "l1": 0.01,
           "matched_fraction": 1.0,
@@ -402,15 +402,15 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.5155402756379701,
-          "fve_train": 0.7601408685704714,
+          "fve_held": 0.515540275637958,
+          "fve_train": 0.7601408685703901,
           "l1": 0.2,
           "matched_fraction": 1.0,
           "mean_l0": 5.66
         },
         {
           "d_hidden": 32,
-          "fve_held": 0.6637921881456204,
+          "fve_held": 0.6637921881456201,
           "fve_train": 0.990654613892242,
           "l1": 0.01,
           "matched_fraction": 1.0,
@@ -418,7 +418,7 @@
         },
         {
           "d_hidden": 32,
-          "fve_held": 0.6913174428534502,
+          "fve_held": 0.6913174428534501,
           "fve_train": 0.9812494424882525,
           "l1": 0.05,
           "matched_fraction": 1.0,
@@ -426,7 +426,7 @@
         },
         {
           "d_hidden": 32,
-          "fve_held": 0.6331194045674544,
+          "fve_held": 0.6331194045674543,
           "fve_train": 0.9450883198190971,
           "l1": 0.2,
           "matched_fraction": 1.0,
@@ -442,7 +442,7 @@
         },
         {
           "d_hidden": 64,
-          "fve_held": 0.7224075857083609,
+          "fve_held": 0.7224075857083608,
           "fve_train": 0.9898312152713653,
           "l1": 0.05,
           "matched_fraction": 0.9090909090909091,
@@ -450,7 +450,7 @@
         },
         {
           "d_hidden": 64,
-          "fve_held": 0.7009149363640548,
+          "fve_held": 0.7009149363640546,
           "fve_train": 0.9784382313619472,
           "l1": 0.2,
           "matched_fraction": 0.09090909090909091,
@@ -480,7 +480,7 @@
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
       "M": 1.0,
       "M_note": "|U*|=14 (oracle movers) / |U_hat|=11 (method above-threshold)",
-      "S": 0.4810653920819949,
+      "S": 0.4810653920819959,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
     }
@@ -497,7 +497,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783607733",
+  "timestamp": "1793017988",
   "value": 0.9090909090909091,
   "where": "local"
 }

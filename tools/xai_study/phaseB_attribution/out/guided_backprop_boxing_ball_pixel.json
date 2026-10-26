@@ -1,7 +1,7 @@
 {
   "arrays": "guided_backprop_boxing_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "adebayo_sanity_check": {
       "failure_mode": "model_invariant_saliency_constant_jacobian",
@@ -74,10 +74,10 @@
     },
     "gbp_max_abs": 0.0,
     "guided_vs_vanilla": {
-      "delta_pearson_guided_minus_vanilla": -0.15630037693634644,
+      "delta_pearson_guided_minus_vanilla": -0.1563003769363465,
       "guided_equals_vanilla": false,
       "interpretation": "Guided BP = vanilla |∂y/∂u| with negative-gradient suppression. On the VCS the explained output is a one-hot RAM read (a LINEAR unit, ∂y/∂u ≥ 0) and the soft emulator has NO deep ReLU stack, so the suppression removes nothing ⇒ Guided BP DEGENERATES to saliency (Δpearson = 0). The negative-suppression rule IS wired (it provably rectifies a mixed-sign surrogate — see guided_demo_rectifies); it simply has nothing to do on this substrate. This is the honest finding the DoD asks for.",
-      "vanilla_pearson": 0.15630037693634644,
+      "vanilla_pearson": 0.1563003769363465,
       "vanilla_precision_at_k": 0.0
     },
     "harness_positive_control": {
@@ -170,7 +170,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r84c44",
-  "timestamp": "1783130144",
+  "timestamp": "1793017073",
   "value": 0.0,
   "where": "local"
 }

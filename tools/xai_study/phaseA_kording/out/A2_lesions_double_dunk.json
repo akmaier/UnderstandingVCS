@@ -1,7 +1,7 @@
 {
   "arrays": "A2_lesions_double_dunk.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "budget": {
@@ -42,7 +42,7 @@
       118,
       119
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_double_dunk.json",
+    "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_double_dunk.json",
     "importance_def": "Σ|Δ(candidate-cell value at final frame)| + (#framebuffer cells changed vs baseline) — state + render channels",
     "importance_map": {
       "boot_run_still_works": [
@@ -60,75 +60,75 @@
         true
       ],
       "lesion_importance": [
-        303.0,
-        286.0,
-        296.0,
-        422.0,
-        1443.0,
-        1248.0,
-        1133.0,
-        941.0,
-        496.0,
-        355.0,
+        343.0,
+        371.0,
+        285.0,
+        566.0,
+        1353.0,
+        1225.0,
+        911.0,
+        916.0,
+        247.0,
+        436.0,
         293.0,
         293.0
       ],
       "lesion_rank_order_0based": [
         4,
         5,
-        6,
         7,
-        8,
+        6,
         3,
         9,
+        1,
         0,
-        2,
         10,
         11,
-        1
+        2,
+        8
       ],
       "note": "lesion_importance[i] / oracle_role[i] are aligned to candidate_ram_indices[i]. rank_order lists candidate ordinals most→least important. A poked RAM cell never halts the 6502, so boot_run_still_works is ~all true (the screen-change term is the graded 'does behaviour still run' signal).",
       "oracle_rank_order_0based": [
         4,
         5,
-        6,
         7,
-        1,
-        8,
-        0,
+        6,
         3,
         9,
+        1,
+        0,
         2,
         10,
-        11
+        11,
+        8
       ],
       "oracle_role": [
-        479.0,
-        537.0,
-        327.0,
-        422.0,
-        1443.0,
-        1248.0,
-        1133.0,
-        941.0,
-        496.0,
-        355.0,
+        345.0,
+        371.0,
+        336.0,
+        566.0,
+        1353.0,
+        1225.0,
+        911.0,
+        916.0,
+        247.0,
+        436.0,
         293.0,
         293.0
       ]
     },
     "interaction_blind_spot": {
-      "interaction_missed_rate": 0.6,
-      "max_superadditive_delta": 97.0,
+      "interaction_missed_rate": 0.5272727272727272,
+      "max_superadditive_delta": 257.0,
       "max_superadditive_pair_0based": [
         6,
-        0
+        1
       ],
-      "mean_abs_interaction": 179.6,
-      "n_missed": 33,
+      "mean_abs_interaction": 153.47272727272727,
+      "n_missed": 29,
       "n_pairs": 55,
       "note": "the WHERE-SINGLE-UNIT-LESIONS-MISS result: Δ_int = E(i,j) − (E(i)+E(j)) over the top-importance unit pairs (budgeted). A non-zero Δ_int is super/sub-additivity that NO single-unit map can represent — the precise blind spot of A2.",
-      "tolerance": 32.50909090909091
+      "tolerance": 30.60909090909091
     },
     "lesion_doset": "single-unit {clamp→0, clamp→alt=base⊻0xFF}; per-unit effect = MAX importance over the do-set",
     "oracle_doset": "exhaustive {occlude→0, set→base+17, set→base+37, clamp→alt}; per-unit role = MAX importance over the do-set",
@@ -145,9 +145,9 @@
       "n_flagged_specific": 7,
       "note": "ρ EXPECTED HIGH — a single-unit clamp+re-run is itself an exact intervention, so lesion importance ≈ the unit's causal role (experiment_design.md §4 A2). false_specificity = #units the lesion map flags as driving ≈one output (specific) that the oracle says actually drive MANY outputs (generic) — spurious selectivity.",
       "positive_control_rho": 0.9999999999999998,
-      "spearman_rho_lesion_vs_oracle": 0.7824561403508771
+      "spearman_rho_lesion_vs_oracle": 0.9789473684210525
     },
-    "settings": "GenericRomSettings",
+    "settings": "DoubleDunkRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every lesion is an EXACT clamp + deterministic re-run on the true ROM.",
     "testbed": {
       "cause_density_above_floor": 22,
@@ -163,11 +163,11 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": 0.7824561403508771,
+      "F": 0.9789473684210525,
       "F_note": "Spearman ρ of the single-unit lesion importance map vs the exact-oracle per-unit causal role (12 units).",
       "M": 1.0,
       "M_note": "M = |U*|/|U_hat| (03_methods.tex sec:triad): |U*|=12 (oracle movers) / |U_hat|=12 (method above-threshold)",
-      "S": -0.10896326142331159,
+      "S": 0.15465753234276483,
       "S_note": "generalisation to a HELD-OUT clamp value: ρ of the lesion map (built on {0,alt}) vs the per-unit role under the UNSEEN value base+37 (scored on the bit-exact re-run).",
       "interpretation": "Phase A calibration baseline (experiment_design.md §4): the single-unit lesion is a RELATIVELY FAITHFUL classical method (high F) BUT structurally blind to interaction effects (the interaction_blind_spot) and prone to spurious specificity (M<1). 'Right but incomplete' — the quantified-Kording lesson for ablation.",
       "legacy_minimality": 0.8571428571428572,
@@ -186,7 +186,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "per-unit behavioural-importance map (candidate RAM cells)",
-  "timestamp": "1783605309",
-  "value": 0.7824561403508771,
+  "timestamp": "1793017187",
+  "value": 0.9789473684210525,
   "where": "local"
 }

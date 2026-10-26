@@ -1,7 +1,7 @@
 {
   "arrays": "perturbation_bowling_position.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-attributed causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -104,8 +104,8 @@
       "tia[COLUBK]:set": 0.0
     },
     "harness_positive_control": {
-      "deletion_auc": 0.6087724063009234,
-      "insertion_auc": 0.16182328444685856,
+      "deletion_auc": 0.6087724063009238,
+      "insertion_auc": 0.1618232844468586,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the extremal-perturbation numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "pearson_corr": 1.0,
@@ -130,7 +130,7 @@
     "mask_size": 4,
     "method_ref": "meaningful/extremal perturbation (Fong & Vedaldi 2017; Fong et al. 2019): the attribution is an optimised MINIMAL MASK whose perturbation maximally changes y, under an area budget; optimised by greedy forward selection on the true VCS (each step a real do(occlude)-re-run), NOT a surrogate model.",
     "metrics": {
-      "deletion_auc": 0.42428935860058314,
+      "deletion_auc": 0.4242893586005832,
       "insertion_auc": 0.08257410106899903,
       "mask_iou_vs_true_causal_set": 0.4,
       "pearson_corr": 0.5127360930801094,
@@ -189,7 +189,7 @@
       "ram[29]:set"
     ],
     "output_kind": "position",
-    "output_note": "MEANINGFUL / EXTREMAL PERTURBATION (Fong & Vedaldi 2017; Fong et al. 2019) is INTERVENTION-BASED: the attribution is an OPTIMISED MINIMAL MASK found by greedy forward selection on the TRUE VCS under an area budget — every probe is |y(occlude mask) − y(intact)| from a real-ROM re-run, NOT a surrogate. final mask |M|=4/11 (area≤0.25·C), mask |Δy|=784.0, pert L1=2310.0, budget=329 real-ROM re-runs. POSITION/INDEX output (a discrete sprite-column pixel via round/argmax): the gradient methods (vanilla saliency / Grad×Input / IG) VANISH here (∂y/∂u≡0, the §1 caveat) and score near chance — and a SOFT-mask gradient optimiser would vanish too, which is exactly why we optimise the mask by GREEDY selection on the real VCS. The extremal mask RECOVERS the true causal bytes — measured corr=0.513, precision@3=0.333, mask_IoU=0.4, del_auc=0.42428935860058314, ins_auc=0.08257410106899903. This is the §7 'Succeed/partial — faithful when the perturbation is a valid intervention' prediction.",
+    "output_note": "MEANINGFUL / EXTREMAL PERTURBATION (Fong & Vedaldi 2017; Fong et al. 2019) is INTERVENTION-BASED: the attribution is an OPTIMISED MINIMAL MASK found by greedy forward selection on the TRUE VCS under an area budget — every probe is |y(occlude mask) − y(intact)| from a real-ROM re-run, NOT a surrogate. final mask |M|=4/11 (area≤0.25·C), mask |Δy|=784.0, pert L1=2310.0, budget=329 real-ROM re-runs. POSITION/INDEX output (a discrete sprite-column pixel via round/argmax): the gradient methods (vanilla saliency / Grad×Input / IG) VANISH here (∂y/∂u≡0, the §1 caveat) and score near chance — and a SOFT-mask gradient optimiser would vanish too, which is exactly why we optimise the mask by GREEDY selection on the real VCS. The extremal mask RECOVERS the true causal bytes — measured corr=0.513, precision@3=0.333, mask_IoU=0.4, del_auc=0.4242893586005832, ins_auc=0.08257410106899903. This is the §7 'Succeed/partial — faithful when the perturbation is a valid intervention' prediction.",
     "pert_l1": 2312.0,
     "perturbation_baseline": "0 (masked RAM cell / TIA register set to 0; joystick masked == NOOP, the baseline trace) — the oracle's occlude! operator",
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (E0-3) — --array=0-5%N over the 6 core games (--shard i --shard-kind game); each task re-runs the real ROM, no GPU needed.",
@@ -229,7 +229,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r164c33",
-  "timestamp": "1783127414",
+  "timestamp": "1793016738",
   "value": 0.5127360930801094,
   "where": "local"
 }

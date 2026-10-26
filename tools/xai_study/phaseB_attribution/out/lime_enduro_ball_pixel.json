@@ -1,0 +1,161 @@
+{
+  "arrays": "lime_enduro_ball_pixel.npz",
+  "ci": null,
+  "commit": "56e3a03",
+  "extra": {
+    "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-LIME causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
+    "budget": {
+      "keep_prob": 0.5,
+      "kernel_width": 1.299038105676658,
+      "n_candidate_cells": 3,
+      "n_real_reruns": 1500,
+      "n_samples": 300,
+      "note": "N=300 perturbations per fit at keep_prob=0.5 (paper-reasonable for a ~3-dim interpretable space). Each perturbation = ONE real emulator re-run; the STABILITY sweep refits over 5 seeds ⇒ 1500 real re-runs total. Kernel = cosine-distance exp(-D^2/σ^2), σ=1.299 (LIME default).",
+      "rng": "MersenneTwister(seed*1_000_003 + 6271), per-fit seed offset 101·k",
+      "stability_seeds": 5
+    },
+    "cause_names": [
+      "ram[46]:set",
+      "ram[46]:occlude",
+      "ram[52]:set",
+      "ram[52]:occlude",
+      "ram[59]:set",
+      "ram[59]:occlude",
+      "tia[COLUBK]:set",
+      "joystick:RIGHT"
+    ],
+    "content_ram_index": -1,
+    "harness_positive_control": {
+      "deletion_auc": 0.8941473988439306,
+      "insertion_auc": 0.39414739884393063,
+      "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the LIME numbers above are then a true measurement, not an artefact of the metric.",
+      "method": "oracle_abs_delta (the perfectly-faithful attribution)",
+      "oracle_column_degenerate": false,
+      "pearson_corr": 1.0,
+      "precision_at_k": 1.0
+    },
+    "headline_metrics": {
+      "deletion_auc": 0.8905346820809248,
+      "insertion_auc": 0.35079479768786126,
+      "pearson_corr": 0.969469302005762,
+      "precision_at_k": 1.0,
+      "spearman_corr": 0.8374782761443419,
+      "surrogate_r2": 0.9036415428617816,
+      "topk": 3
+    },
+    "lime_attr_per_cause": {
+      "joystick:RIGHT": 0.0,
+      "ram[46]:occlude": 286.86347829567137,
+      "ram[46]:set": 286.86347829567137,
+      "ram[52]:occlude": 3.8203771223809575,
+      "ram[52]:set": 3.8203771223809575,
+      "ram[59]:occlude": 421.89522149092704,
+      "ram[59]:set": 421.89522149092704,
+      "tia[COLUBK]:set": 0.0
+    },
+    "oracle_abs_delta_per_cause": {
+      "joystick:RIGHT": 0.0,
+      "ram[46]:occlude": 452.0,
+      "ram[46]:set": 592.0,
+      "ram[52]:occlude": 0.0,
+      "ram[52]:set": 0.0,
+      "ram[59]:occlude": 562.0,
+      "ram[59]:set": 562.0,
+      "tia[COLUBK]:set": 0.0
+    },
+    "output_kind": "position",
+    "output_note": "POSITION/INDEX output (ball_pixel) — the §7 CONTRAST: unlike IG/saliency (which VANISH on position outputs because the pixel is a round/argmax sprite column with no differentiable RAM path), LIME — a BLACK-BOX perturb-and-re-run surrogate — STILL produces a real attribution here. It masks candidate RAM cells to 0, RE-RUNS the real ROM, reads the real pixel, and fits a locality-weighted linear surrogate; no differentiation needed. Reported, not asserted to be large; the intervention oracle remains the sole truth.",
+    "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard i --nshards n --shard-kind game): one Slurm array task per core game; or batched SOFT-STE masked re-runs over perturbations×cells×games on GPU (the forward is bit-exact to this HARD map), the linear fit done on the host.",
+    "stability": {
+      "coef_cosine_mean": 0.9994869105891089,
+      "corr_mean": 0.9761014364283019,
+      "corr_std": 0.004053394752506434,
+      "fits": [
+        {
+          "pearson_corr": 0.969469302005762,
+          "precision_at_k": 1.0,
+          "seed": 0,
+          "spearman_corr": 0.8374782761443419,
+          "surrogate_r2": 0.9036415428617816
+        },
+        {
+          "pearson_corr": 0.9762491011295932,
+          "precision_at_k": 1.0,
+          "seed": 101,
+          "spearman_corr": 0.8374782761443419,
+          "surrogate_r2": 0.9110247775219374
+        },
+        {
+          "pearson_corr": 0.978686858543619,
+          "precision_at_k": 1.0,
+          "seed": 202,
+          "spearman_corr": 0.8374782761443419,
+          "surrogate_r2": 0.9066992712189151
+        },
+        {
+          "pearson_corr": 0.979978047487324,
+          "precision_at_k": 1.0,
+          "seed": 303,
+          "spearman_corr": 0.8374782761443419,
+          "surrogate_r2": 0.9065933359802774
+        },
+        {
+          "pearson_corr": 0.9761238729752114,
+          "precision_at_k": 1.0,
+          "seed": 404,
+          "spearman_corr": 0.8374782761443419,
+          "surrogate_r2": 0.906762854265385
+        }
+      ],
+      "interpretation": "LIME refit from 5 INDEPENDENT perturbation pools (different seeds). corr_std + (1−coef_cosine_mean) quantify the SAMPLING DEPENDENCE — the §7 prediction (Partial/Fail: 'baseline/sampling-dependent; approximations diverge'). High coef_cosine (→1) ⇒ a stable explanation direction; large corr_std ⇒ the faithfulness verdict itself wobbles with the random seed.",
+      "seeds": 5,
+      "surrogate_r2_mean": 0.9069443563696593,
+      "surrogate_r2_std": 0.002635082489530059
+    },
+    "substrate": "jutari (Julia, HARD) — LIME (Ribeiro et al. 2016) local linear surrogate: draw N random binary perturbations in the interpretable present/absent space over the candidate RAM cells, mask absent cells to 0, RE-RUN the real ROM (bit-exact oracle machinery), weight each perturbation by the cosine-distance kernel, fit a weighted linear surrogate by least squares (LinearAlgebra); coefficients = attribution. Every probe is a genuine emulator re-run; no gradient, no surrogate-of-a-surrogate.",
+    "surrogate": {
+      "intercept": 786.3393460773498,
+      "interpretation": "the WEIGHTED R^2 of the linear surrogate on the sampled neighbourhood = the LOCAL FAITHFULNESS OF THE SURROGATE ITSELF (how well a linear g approximates the real ROM near x), distinct from the attribution↔oracle corr below. A low R^2 is LIME's own confession that a linear model is a poor local fit to the VCS computation.",
+      "kernel": "cosine-distance exponential π(z)=exp(-D(z,1)^2/σ^2)",
+      "model": "weighted linear g(z)=w·z+b, ridge-regularised normal equations (LinearAlgebra)",
+      "r2": 0.9036415428617816
+    },
+    "testbed": {
+      "cause_density_above_floor": 4,
+      "cause_density_accepted": true,
+      "cause_density_floor": 0.5,
+      "cause_density_gate_k": 4,
+      "horizon": 15,
+      "n_causes": 8,
+      "prefix": 90,
+      "seed": 0,
+      "shared_output": "screen_region(n_changed_px)@r1c9",
+      "state_kind": "seeded_random_action_gameplay"
+    },
+    "triad": {
+      "F": 0.969469302005762,
+      "M": 0.6666666666666666,
+      "M_named_size": 6,
+      "M_note": "|U*|=4 (oracle movers) / |U_hat|=6 (method above-threshold)",
+      "M_true_minimal_size": 4,
+      "S": 0.75,
+      "S_note": "held-out predictive fit: 3/4 held-out do(u) within ε=56.2 (calib=4, fit Δy≈1.51·attr+19.531)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
+    "y_intact": 0.0
+  },
+  "game": "enduro",
+  "method": "lime",
+  "metric_name": "pearson_corr_with_oracle",
+  "n": 8,
+  "oracle_ref": "oracle_intervene@enduro#screen_region(n_changed_px)@r1c9",
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "seed": 0,
+  "state": "gameplay(seed=0,prefix=90)+15",
+  "stderr": 0.004053394752506434,
+  "target_output": "screen_region(n_changed_px)@r1c9",
+  "timestamp": "1793020484",
+  "value": 0.969469302005762,
+  "where": "local"
+}

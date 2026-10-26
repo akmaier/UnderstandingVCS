@@ -1,7 +1,7 @@
 {
   "arrays": "guided_backprop_pitfall_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "adebayo_sanity_check": {
       "failure_mode": "model_invariant_saliency_constant_jacobian",
@@ -94,15 +94,15 @@
     },
     "gbp_max_abs": 0.0,
     "guided_vs_vanilla": {
-      "delta_pearson_guided_minus_vanilla": 0.0,
-      "guided_equals_vanilla": true,
+      "delta_pearson_guided_minus_vanilla": 0.028333193081364904,
+      "guided_equals_vanilla": false,
       "interpretation": "Guided BP = vanilla |∂y/∂u| with negative-gradient suppression. On the VCS the explained output is a one-hot RAM read (a LINEAR unit, ∂y/∂u ≥ 0) and the soft emulator has NO deep ReLU stack, so the suppression removes nothing ⇒ Guided BP DEGENERATES to saliency (Δpearson = 0). The negative-suppression rule IS wired (it provably rectifies a mixed-sign surrogate — see guided_demo_rectifies); it simply has nothing to do on this substrate. This is the honest finding the DoD asks for.",
-      "vanilla_pearson": 0.0,
+      "vanilla_pearson": -0.028333193081364904,
       "vanilla_precision_at_k": 0.0
     },
     "harness_positive_control": {
-      "deletion_auc": 0.9529453204318008,
-      "insertion_auc": 0.20203882891656133,
+      "deletion_auc": 0.9711209128201044,
+      "insertion_auc": 0.20705225218049303,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the Guided-BP numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "pearson_corr": 1.0,
@@ -110,8 +110,8 @@
     },
     "method_reference": "Springenberg et al. 2015 (Guided Backprop / deconvnet); sanity check: Adebayo et al. 2018.",
     "metrics": {
-      "deletion_auc": 0.8843006029463564,
-      "insertion_auc": 0.17555891676853902,
+      "deletion_auc": 0.898965510374766,
+      "insertion_auc": 0.17577860528097494,
       "pearson_corr": 0.0,
       "precision_at_k": 0.0,
       "spearman_corr": 0.0,
@@ -123,7 +123,7 @@
       "ram[105]:set": 68.0,
       "ram[18]:occlude": 0.0,
       "ram[18]:set": 0.0,
-      "ram[20]:occlude": 515.0,
+      "ram[20]:occlude": 517.0,
       "ram[20]:set": 331.0,
       "ram[32]:occlude": 0.0,
       "ram[32]:set": 0.0,
@@ -145,7 +145,7 @@
       "ram[90]:set": 0.0,
       "ram[92]:occlude": 0.0,
       "ram[92]:set": 0.0,
-      "ram[97]:occlude": 2839.0,
+      "ram[97]:occlude": 2815.0,
       "ram[97]:set": 100.0,
       "ram[98]:occlude": 165.0,
       "ram[98]:set": 130.0,
@@ -160,7 +160,7 @@
       "note": "naive ∂pixel/∂ram ≡ 0 (Prop. prop:zero); the bilinear sampler (tools/xai_si_gradient/si_joystick_gradient.jl) restores a real ∂pixel/∂ram[position_byte], to which the guided rule is applied. Reported naive-vs-sampler side by side. per_cause_faithfulness_null=true ⇒ the sampler's position byte is not among this game's scored candidate causes, so the per-cause Pearson is null (recorded 0.0 by the shared convention), NOT a genuine zero corr — the keystone (a non-vanishing gradient) still holds on the full 128-byte map.",
       "per_cause_faithfulness_null": true,
       "position_byte_in_cause_set": false,
-      "sampler_position_grad_max": 0.0
+      "sampler_position_grad_max": 1.0
     },
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE guided gradients over outputs×causes×games on GPU; the forward is bit-exact to this map.",
     "substrate": "jutari (Julia) — Zygote content-path ∂y/∂u over the RAM tape, guided rule g⊙1[g>0] (suppress −grad), + TRUE-VCS deletion/insertion re-runs (real-ROM, bit-exact oracle machinery).",
@@ -171,10 +171,10 @@
       "cause_density_gate_k": 4,
       "horizon": 15,
       "n_causes": 34,
-      "position_byte_ram_index": 98,
+      "position_byte_ram_index": 105,
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r120c61",
+      "shared_output": "screen_region(n_changed_px)@r114c129",
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
@@ -184,7 +184,7 @@
       "M_note": "M undefined: method names nothing (all-zero attribution) at this state",
       "M_true_minimal_size": 19,
       "S": 0.8823529411764706,
-      "S_note": "held-out predictive fit: 15/17 held-out do(u) within ε=283.9 (calib=17, fit Δy≈0.0·attr+57.471)",
+      "S_note": "held-out predictive fit: 15/17 held-out do(u) within ε=281.5 (calib=17, fit Δy≈0.0·attr+57.471)",
       "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
     },
     "y_full": 0.0
@@ -193,14 +193,14 @@
   "method": "guided_backprop",
   "metric_name": "pearson_corr_with_oracle",
   "n": 34,
-  "oracle_ref": "oracle_intervene@pitfall#screen_region(n_changed_px)@r120c61",
+  "oracle_ref": "oracle_intervene@pitfall#screen_region(n_changed_px)@r114c129",
   "paper": "P2",
   "phase": "phaseB_attribution",
   "seed": 0,
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
-  "target_output": "screen_region(n_changed_px)@r120c61",
-  "timestamp": "1783132009",
+  "target_output": "screen_region(n_changed_px)@r114c129",
+  "timestamp": "1793021125",
   "value": 0.0,
   "where": "local"
 }

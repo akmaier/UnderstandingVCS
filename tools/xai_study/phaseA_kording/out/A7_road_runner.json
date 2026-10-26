@@ -1,7 +1,7 @@
 {
   "arrays": "A7_road_runner.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -69,13 +69,13 @@
     "nmf": {
       "component_energy_share": [
         0.15113075470410073,
-        0.14614938383937912,
-        0.1335270364653836,
-        0.12199746120899545,
-        0.1191375737035252,
-        0.11750079273259512,
+        0.14614938383937914,
+        0.13352703646538358,
+        0.12199746120899548,
+        0.11913757370352519,
+        0.11750079273259507,
         0.1111421246169813,
-        0.09941487272903937
+        0.09941487272903939
       ],
       "matched_components": {
         "matched_component_fraction": 0.4,
@@ -99,7 +99,7 @@
         "per_component_matched_purity": [
           0.25412328176979126,
           0.7016576533168889,
-          0.5982062980891653,
+          0.5982062980891651,
           0.2024321985210285,
           0.3364366021141322
         ],
@@ -109,16 +109,16 @@
       "note": "NMF (Lee & Seung multiplicative updates; RAM bytes are non-negative). matched-component fraction tests whether the non-negative PARTS align with single known variables better than PCA's signed components do — the prompt's NMF-vs-PCA question.",
       "rank": 8,
       "recon_rel_err_by_rank": [
-        0.9211775617901824,
-        0.7777520027119406,
-        0.6231033332058005,
-        0.4870210234746672,
-        0.3627369230409791,
-        0.2570847779961933,
-        0.15546270257656092,
-        0.050001126900411585
+        0.9211775617901683,
+        0.777752002711929,
+        0.6231033332057914,
+        0.48702102347466003,
+        0.3627369230409736,
+        0.25708477799618923,
+        0.15546270257655853,
+        0.0500011269004108
       ],
-      "recon_rel_frobenius_err": 0.05000112690041159
+      "recon_rel_frobenius_err": 0.05000112690041081
     },
     "oracle_importance": {
       "importance_per_cell": {
@@ -146,14 +146,14 @@
     },
     "pca": {
       "cum_var_top": [
-        0.5163132575062027,
-        0.6437010118677988,
-        0.7543464467319142,
+        0.5163132575062026,
+        0.6437010118677987,
+        0.7543464467319143,
         0.8393552227928665,
-        0.9001541719929087,
+        0.9001541719929088,
         0.9348158092216484,
         0.9565286184850064,
-        0.9718560553531325
+        0.9718560553531326
       ],
       "matched_components": {
         "matched_component_fraction": 0.2,
@@ -175,11 +175,11 @@
           "(none; closest=rw_activity@0.14)"
         ],
         "per_component_matched_purity": [
-          0.2916410287129546,
-          0.21430399591280505,
-          0.4528101821517431,
-          0.5947364033576024,
-          0.14232662830875725
+          0.29164102871295455,
+          0.21430399591280508,
+          0.45281018215174307,
+          0.5947364033576025,
+          0.1423266283087572
         ],
         "topk": 5
       },
@@ -188,14 +188,14 @@
       "n_varying_cells": 53,
       "note": "PCA (SVD of the centred (T,128) tape). matched-component fraction = #top-k PCs concentrated on ONE known variable (a concept family, OR clock/R-W/vsync) / k. The pilot found ≈0 — PCs mix epiphenomenal high-variance structure across cells.",
       "var_explained_top": [
-        0.5163132575062027,
-        0.12738775436159605,
-        0.11064543486411545,
+        0.5163132575062026,
+        0.1273877543615961,
+        0.11064543486411561,
         0.08500877606095221,
         0.060798949200042314,
-        0.03466163722873971,
-        0.021712809263357963,
-        0.015327436868126095
+        0.03466163722873963,
+        0.021712809263357984,
+        0.015327436868126107
       ]
     },
     "purity_threshold": 0.5,
@@ -223,18 +223,18 @@
       "F_note": "Spearman(nmf per-cell recovery score, oracle causal importance) over candidate cells",
       "M": 0.4,
       "M_note": "M = |U*|/|U_hat| (03_methods.tex sec:triad, nmf): |U*|=6 (oracle movers) / |U_hat|=15 (method above-threshold)",
-      "S": 0.39742187490739433,
+      "S": 0.3974218749073943,
       "S_note": "Pearson(nmf recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): dim-reduction surfaces high-VARIANCE axes, which are NOT the causal cells (variance ≠ causal role — present ≠ used). F<1 + low matched-component fraction quantify the departure from the true causal structure.",
       "legacy_minimality": 0.625,
       "legacy_minimality_note": "1 − over-claim rate (the pre-standardization M). Retained for reference; the triad M above is the paper's |U*|/|U_hat|."
     },
     "triad_pca": {
-      "F": 0.45556325301797196,
+      "F": 0.43194605845496664,
       "F_note": "Spearman(pca per-cell recovery score, oracle causal importance) over candidate cells",
       "M": 0.42857142857142855,
       "M_note": "M = |U*|/|U_hat| (03_methods.tex sec:triad, pca): |U*|=6 (oracle movers) / |U_hat|=14 (method above-threshold)",
-      "S": 0.2253670332050655,
+      "S": 0.22536703320506557,
       "S_note": "Pearson(pca recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "legacy_minimality": 0.7142857142857143,
       "legacy_minimality_note": "1 − over-claim rate (the pre-standardization M). Retained for reference; the triad M above is the paper's |U*|/|U_hat|."
@@ -251,7 +251,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "latent-components",
-  "timestamp": "1783606485",
+  "timestamp": "1793019601",
   "value": 0.4,
   "where": "local"
 }

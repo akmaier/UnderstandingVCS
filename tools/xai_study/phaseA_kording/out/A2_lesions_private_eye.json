@@ -1,7 +1,7 @@
 {
   "arrays": "A2_lesions_private_eye.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "budget": {
@@ -66,7 +66,7 @@
       88,
       97
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_private_eye.json",
+    "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_private_eye.json",
     "importance_def": "Σ|Δ(candidate-cell value at final frame)| + (#framebuffer cells changed vs baseline) — state + render channels",
     "importance_map": {
       "boot_run_still_works": [
@@ -97,29 +97,29 @@
       ],
       "lesion_importance": [
         96.0,
-        2553.0,
+        2551.0,
         0.0,
-        7821.0,
+        7824.0,
         140.0,
-        197.0,
+        201.0,
         255.0,
         255.0,
         199.0,
         0.0,
         255.0,
         207.0,
-        281.0,
+        284.0,
         255.0,
-        2096.0,
-        2979.0,
+        2095.0,
+        2988.0,
         259.0,
         110.0,
         287.0,
         286.0,
         323.0,
-        490.0,
-        564.0,
-        253.0
+        489.0,
+        593.0,
+        255.0
       ],
       "lesion_rank_order_0based": [
         3,
@@ -139,8 +139,8 @@
         13,
         23,
         11,
-        8,
         5,
+        8,
         4,
         17,
         0,
@@ -165,8 +165,8 @@
         10,
         13,
         23,
-        5,
         11,
+        5,
         8,
         4,
         17,
@@ -176,43 +176,43 @@
       ],
       "oracle_role": [
         96.0,
-        2553.0,
+        2551.0,
         0.0,
-        7821.0,
+        7824.0,
         140.0,
-        219.0,
+        201.0,
         255.0,
         255.0,
         199.0,
         0.0,
         255.0,
         207.0,
-        281.0,
+        284.0,
         255.0,
-        2096.0,
-        2979.0,
+        2095.0,
+        2988.0,
         259.0,
         110.0,
         287.0,
         286.0,
         323.0,
-        490.0,
-        564.0,
-        253.0
+        489.0,
+        593.0,
+        255.0
       ]
     },
     "interaction_blind_spot": {
       "interaction_missed_rate": 0.32727272727272727,
-      "max_superadditive_delta": 119.0,
+      "max_superadditive_delta": 120.0,
       "max_superadditive_pair_0based": [
         1,
         12
       ],
-      "mean_abs_interaction": 283.6545454545454,
+      "mean_abs_interaction": 284.8181818181818,
       "n_missed": 18,
       "n_pairs": 55,
       "note": "the WHERE-SINGLE-UNIT-LESIONS-MISS result: Δ_int = E(i,j) − (E(i)+E(j)) over the top-importance unit pairs (budgeted). A non-zero Δ_int is super/sub-additivity that NO single-unit map can represent — the precise blind spot of A2.",
-      "tolerance": 80.66818181818182
+      "tolerance": 80.85454545454546
     },
     "lesion_doset": "single-unit {clamp→0, clamp→alt=base⊻0xFF}; per-unit effect = MAX importance over the do-set",
     "oracle_doset": "exhaustive {occlude→0, set→base+17, set→base+37, clamp→alt}; per-unit role = MAX importance over the do-set",
@@ -229,9 +229,9 @@
       "n_flagged_specific": 15,
       "note": "ρ EXPECTED HIGH — a single-unit clamp+re-run is itself an exact intervention, so lesion importance ≈ the unit's causal role (experiment_design.md §4 A2). false_specificity = #units the lesion map flags as driving ≈one output (specific) that the oracle says actually drive MANY outputs (generic) — spurious selectivity.",
       "positive_control_rho": 1.0,
-      "spearman_rho_lesion_vs_oracle": 0.9973787680209698
+      "spearman_rho_lesion_vs_oracle": 1.0
     },
-    "settings": "GenericRomSettings",
+    "settings": "PrivateEyeRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every lesion is an EXACT clamp + deterministic re-run on the true ROM.",
     "testbed": {
       "cause_density_above_floor": 20,
@@ -243,15 +243,15 @@
       "note": "P2 redesign: the lesion study runs on a seeded random-action GAMEPLAY state (not the boot/attract NOOP tape), gated by the §1 oracle cause-density gate. A2's lesion algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r148c48",
+      "shared_output": "screen_region(n_changed_px)@r148c49",
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": 0.9973787680209698,
+      "F": 1.0,
       "F_note": "Spearman ρ of the single-unit lesion importance map vs the exact-oracle per-unit causal role (24 units).",
       "M": 1.0,
       "M_note": "M = |U*|/|U_hat| (03_methods.tex sec:triad): |U*|=22 (oracle movers) / |U_hat|=22 (method above-threshold)",
-      "S": 0.5150459853487128,
+      "S": 0.6109420325133718,
       "S_note": "generalisation to a HELD-OUT clamp value: ρ of the lesion map (built on {0,alt}) vs the per-unit role under the UNSEEN value base+37 (scored on the bit-exact re-run).",
       "interpretation": "Phase A calibration baseline (experiment_design.md §4): the single-unit lesion is a RELATIVELY FAITHFUL classical method (high F) BUT structurally blind to interaction effects (the interaction_blind_spot) and prone to spurious specificity (M<1). 'Right but incomplete' — the quantified-Kording lesson for ablation.",
       "legacy_minimality": 0.9333333333333333,
@@ -270,7 +270,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "per-unit behavioural-importance map (candidate RAM cells)",
-  "timestamp": "1783606261",
-  "value": 0.9973787680209698,
+  "timestamp": "1793019457",
+  "value": 1.0,
   "where": "local"
 }

@@ -1,7 +1,7 @@
 {
   "arrays": "lime_yars_revenge_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-LIME causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -65,32 +65,32 @@
     },
     "lime_attr_per_cause": {
       "joystick:RIGHT": 0.0,
-      "ram[26]:occlude": 1.334817209156275e-8,
-      "ram[26]:set": 1.334817209156275e-8,
-      "ram[31]:occlude": 1.5508114669042218e-7,
-      "ram[31]:set": 1.5508114669042218e-7,
-      "ram[32]:occlude": 1.6002544162555193e-7,
-      "ram[32]:set": 1.6002544162555193e-7,
-      "ram[37]:occlude": 2.991925914600879e-8,
-      "ram[37]:set": 2.991925914600879e-8,
-      "ram[38]:occlude": 1.809847980244495e-7,
-      "ram[38]:set": 1.809847980244495e-7,
-      "ram[42]:occlude": 1.0658157317956032e-7,
-      "ram[42]:set": 1.0658157317956032e-7,
-      "ram[43]:occlude": 149.9999978481032,
-      "ram[43]:set": 149.9999978481032,
-      "ram[46]:occlude": 8.213068650937465e-8,
-      "ram[46]:set": 8.213068650937465e-8,
-      "ram[47]:occlude": 1.9151914671274135e-9,
-      "ram[47]:set": 1.9151914671274135e-9,
-      "ram[96]:occlude": 5.075640352348727e-8,
-      "ram[96]:set": 5.075640352348727e-8,
-      "ram[97]:occlude": 1.296888634358259e-7,
-      "ram[97]:set": 1.296888634358259e-7,
-      "ram[98]:occlude": 3.8735736518707746e-7,
-      "ram[98]:set": 3.8735736518707746e-7,
-      "ram[99]:occlude": 3.958184509492864e-8,
-      "ram[99]:set": 3.958184509492864e-8,
+      "ram[26]:occlude": 1.3348122306077955e-8,
+      "ram[26]:set": 1.3348122306077955e-8,
+      "ram[31]:occlude": 1.550811609712012e-7,
+      "ram[31]:set": 1.550811609712012e-7,
+      "ram[32]:occlude": 1.6002544376368189e-7,
+      "ram[32]:set": 1.6002544376368189e-7,
+      "ram[37]:occlude": 2.991926338854934e-8,
+      "ram[37]:set": 2.991926338854934e-8,
+      "ram[38]:occlude": 1.8098476552161784e-7,
+      "ram[38]:set": 1.8098476552161784e-7,
+      "ram[42]:occlude": 1.0658157761835909e-7,
+      "ram[42]:set": 1.0658157761835909e-7,
+      "ram[43]:occlude": 149.99999784810302,
+      "ram[43]:set": 149.99999784810302,
+      "ram[46]:occlude": 8.213065811145273e-8,
+      "ram[46]:set": 8.213065811145273e-8,
+      "ram[47]:occlude": 1.9151539672291915e-9,
+      "ram[47]:set": 1.9151539672291915e-9,
+      "ram[96]:occlude": 5.075634820763168e-8,
+      "ram[96]:set": 5.075634820763168e-8,
+      "ram[97]:occlude": 1.296888145770222e-7,
+      "ram[97]:set": 1.296888145770222e-7,
+      "ram[98]:occlude": 3.8735733450333097e-7,
+      "ram[98]:set": 3.8735733450333097e-7,
+      "ram[99]:occlude": 3.9581847859011546e-8,
+      "ram[99]:set": 3.9581847859011546e-8,
       "tia[COLUBK]:set": 0.0
     },
     "oracle_abs_delta_per_cause": {
@@ -128,8 +128,8 @@
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard i --nshards n --shard-kind game): one Slurm array task per core game; or batched SOFT-STE masked re-runs over perturbations×cells×games on GPU (the forward is bit-exact to this HARD map), the linear fit done on the host.",
     "stability": {
       "coef_cosine_mean": 1.0,
-      "corr_mean": 0.770816456565065,
-      "corr_std": 2.0770370905276122e-16,
+      "corr_mean": 0.7708164565650648,
+      "corr_std": 1.7554167342883506e-16,
       "fits": [
         {
           "pearson_corr": 0.770816456565065,
@@ -139,28 +139,28 @@
           "surrogate_r2": 0.9999999999999998
         },
         {
-          "pearson_corr": 0.7708164565650649,
+          "pearson_corr": 0.7708164565650648,
           "precision_at_k": 0.6666666666666666,
           "seed": 101,
           "spearman_corr": 0.4469067593777291,
           "surrogate_r2": 0.9999999999999998
         },
         {
-          "pearson_corr": 0.770816456565065,
+          "pearson_corr": 0.7708164565650649,
           "precision_at_k": 0.6666666666666666,
           "seed": 202,
           "spearman_corr": 0.4469067593777291,
           "surrogate_r2": 0.9999999999999998
         },
         {
-          "pearson_corr": 0.7708164565650647,
+          "pearson_corr": 0.7708164565650646,
           "precision_at_k": 0.6666666666666666,
           "seed": 303,
           "spearman_corr": 0.4469067593777291,
           "surrogate_r2": 0.9999999999999998
         },
         {
-          "pearson_corr": 0.7708164565650648,
+          "pearson_corr": 0.7708164565650647,
           "precision_at_k": 0.6666666666666666,
           "seed": 404,
           "spearman_corr": 0.4469067593777291,
@@ -174,7 +174,7 @@
     },
     "substrate": "jutari (Julia, HARD) — LIME (Ribeiro et al. 2016) local linear surrogate: draw N random binary perturbations in the interpretable present/absent space over the candidate RAM cells, mask absent cells to 0, RE-RUN the real ROM (bit-exact oracle machinery), weight each perturbation by the cosine-distance kernel, fit a weighted linear surrogate by least squares (LinearAlgebra); coefficients = attribution. Every probe is a genuine emulator re-run; no gradient, no surrogate-of-a-surrogate.",
     "surrogate": {
-      "intercept": 1.3260008154771904e-6,
+      "intercept": 1.3260009410484721e-6,
       "interpretation": "the WEIGHTED R^2 of the linear surrogate on the sampled neighbourhood = the LOCAL FAITHFULNESS OF THE SURROGATE ITSELF (how well a linear g approximates the real ROM near x), distinct from the attribution↔oracle corr below. A low R^2 is LIME's own confession that a linear model is a poor local fit to the VCS computation.",
       "kernel": "cosine-distance exponential π(z)=exp(-D(z,1)^2/σ^2)",
       "model": "weighted linear g(z)=w·z+b, ridge-regularised normal equations (LinearAlgebra)",
@@ -201,9 +201,9 @@
   "phase": "phaseB_attribution",
   "seed": 0,
   "state": "f90+15",
-  "stderr": 2.0770370905276122e-16,
+  "stderr": 1.7554167342883506e-16,
   "target_output": "content(ram_self@43)",
-  "timestamp": "1783133503",
+  "timestamp": "1793028794",
   "value": 0.770816456565065,
   "where": "local"
 }

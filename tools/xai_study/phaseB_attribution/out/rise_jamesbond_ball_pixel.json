@@ -1,7 +1,7 @@
 {
   "arrays": "rise_jamesbond_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-RISE causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -47,24 +47,24 @@
       "interpretation": "faithfulness (corr / precision@k / del-ins) recomputed from N/8, N/4, N/2, N masks of the SAME pool (no extra re-runs). RISE's Monte-Carlo variance is ∝ 1/N, so corr/p@k STABILISE as N grows; the spread between the smallest and full budget quantifies how many masks RISE needs on this output.",
       "points": [
         {
-          "deletion_auc": 0.8915077189842266,
-          "insertion_auc": 0.19540077189842261,
+          "deletion_auc": 0.8915077189842269,
+          "insertion_auc": 0.1954007718984226,
           "n_masks": 62,
-          "pearson_corr": 0.5691286551593265,
+          "pearson_corr": 0.5691286551593264,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.33503939578423314
         },
         {
           "deletion_auc": 0.845610558272896,
-          "insertion_auc": 0.23474307078203185,
+          "insertion_auc": 0.2347430707820319,
           "n_masks": 125,
-          "pearson_corr": 0.518693795335467,
+          "pearson_corr": 0.5186937953354669,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.39465494663552014
         },
         {
           "deletion_auc": 0.8478312812728398,
-          "insertion_auc": 0.24272642941474112,
+          "insertion_auc": 0.24272642941474115,
           "n_masks": 250,
           "pearson_corr": 0.5318914625891334,
           "precision_at_k": 0.3333333333333333,
@@ -72,7 +72,7 @@
         },
         {
           "deletion_auc": 0.7447474888392859,
-          "insertion_auc": 0.16704101562499998,
+          "insertion_auc": 0.167041015625,
           "n_masks": 500,
           "pearson_corr": 0.6028551353422643,
           "precision_at_k": 0.3333333333333333,
@@ -81,7 +81,7 @@
       ]
     },
     "harness_positive_control": {
-      "deletion_auc": 0.8912699966439199,
+      "deletion_auc": 0.8912699966439205,
       "insertion_auc": 0.27370930752880634,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the RISE numbers above are then a true measurement, not an artefact of the metric.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
@@ -91,7 +91,7 @@
     },
     "headline_metrics": {
       "deletion_auc": 0.7447474888392859,
-      "insertion_auc": 0.16704101562499998,
+      "insertion_auc": 0.167041015625,
       "pearson_corr": 0.6028551353422643,
       "precision_at_k": 0.3333333333333333,
       "spearman_corr": 0.44711663138465274,
@@ -196,7 +196,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r121c35",
-  "timestamp": "1783124198",
+  "timestamp": "1793021417",
   "value": 0.6028551353422643,
   "where": "local"
 }

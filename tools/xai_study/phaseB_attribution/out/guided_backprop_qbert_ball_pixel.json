@@ -1,7 +1,7 @@
 {
   "arrays": "guided_backprop_qbert_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "adebayo_sanity_check": {
       "failure_mode": "model_invariant_saliency_constant_jacobian",
@@ -110,14 +110,14 @@
     },
     "gbp_max_abs": 0.0,
     "guided_vs_vanilla": {
-      "delta_pearson_guided_minus_vanilla": 0.03106238348041688,
+      "delta_pearson_guided_minus_vanilla": 0.031062383480416872,
       "guided_equals_vanilla": false,
       "interpretation": "Guided BP = vanilla |∂y/∂u| with negative-gradient suppression. On the VCS the explained output is a one-hot RAM read (a LINEAR unit, ∂y/∂u ≥ 0) and the soft emulator has NO deep ReLU stack, so the suppression removes nothing ⇒ Guided BP DEGENERATES to saliency (Δpearson = 0). The negative-suppression rule IS wired (it provably rectifies a mixed-sign surrogate — see guided_demo_rectifies); it simply has nothing to do on this substrate. This is the honest finding the DoD asks for.",
-      "vanilla_pearson": -0.03106238348041688,
+      "vanilla_pearson": -0.031062383480416872,
       "vanilla_precision_at_k": 0.3333333333333333
     },
     "harness_positive_control": {
-      "deletion_auc": 0.8595096792426171,
+      "deletion_auc": 0.8595096792426169,
       "insertion_auc": 0.16429984456690688,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the Guided-BP numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
@@ -224,7 +224,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r19c1",
-  "timestamp": "1783132342",
+  "timestamp": "1793021772",
   "value": 0.0,
   "where": "local"
 }

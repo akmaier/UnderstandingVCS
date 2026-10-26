@@ -1,7 +1,7 @@
 {
   "arrays": "rise_montezuma_revenge_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-RISE causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -59,7 +59,7 @@
           "spearman_corr": 0.6068125012886544
         },
         {
-          "deletion_auc": 0.9737709988847066,
+          "deletion_auc": 0.973770998884707,
           "insertion_auc": 0.0867293147915795,
           "n_masks": 125,
           "pearson_corr": 0.7836441653967625,
@@ -68,9 +68,9 @@
         },
         {
           "deletion_auc": 0.9737448591942004,
-          "insertion_auc": 0.0964750627352572,
+          "insertion_auc": 0.09647506273525723,
           "n_masks": 250,
-          "pearson_corr": 0.8236636590303199,
+          "pearson_corr": 0.8236636590303198,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.49343143159489233
         },
@@ -85,8 +85,8 @@
       ]
     },
     "harness_positive_control": {
-      "deletion_auc": 0.978055729820159,
-      "insertion_auc": 0.08767034364979784,
+      "deletion_auc": 0.9780557298201589,
+      "insertion_auc": 0.08767034364979785,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the RISE numbers above are then a true measurement, not an artefact of the metric.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "oracle_column_degenerate": false,
@@ -208,7 +208,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r66c75",
-  "timestamp": "1783124691",
+  "timestamp": "1793022351",
   "value": 0.786840990351001,
   "where": "local"
 }

@@ -1,7 +1,7 @@
 {
   "arrays": "A8_carnival.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -44,7 +44,7 @@
       121,
       125
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_carnival.json",
+    "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_carnival.json",
     "oracle_causal_ram_indices": [
       1,
       2,
@@ -77,8 +77,8 @@
       "RAM[3]:ammo.wh": 1432.0,
       "RAM[40]:targets_third_row_variation": 388.0,
       "RAM[42]:ammo.rgb": 1840.0,
-      "RAM[45]:score": 4.0,
-      "RAM[46]:score": 8.0,
+      "RAM[45]:score": 68.0,
+      "RAM[46]:score": 46.0,
       "RAM[55]:missile": 30.0,
       "RAM[8]:bonus_sprites": 38.0
     },
@@ -91,10 +91,10 @@
       "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.117 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
     },
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-    "settings": "GenericRomSettings",
+    "settings": "CarnivalRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
     "testbed": {
-      "cause_density_above_floor": 26,
+      "cause_density_above_floor": 27,
       "cause_density_accepted": true,
       "cause_density_floor": 0.5,
       "cause_density_gate_k": 4,
@@ -103,7 +103,7 @@
       "note": "P2 redesign: BOTH the scored oracle prefix (causal importance) AND the whole-state recording run on a seeded random-action GAMEPLAY state (not the FIRE×4-then-NOOP oracle tape / synthetic active tape), gated by the §1 oracle cause-density gate. The recorded tape is the gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A8's recording + oracle-importance algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r84c33",
+      "shared_output": "screen_region(n_changed_px)@r92c33",
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
@@ -144,7 +144,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "full RAM+register state map over time (whole-state record)",
-  "timestamp": "1783127686",
+  "timestamp": "1793020543",
   "value": 0.1171875,
   "where": "local"
 }

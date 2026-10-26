@@ -1,7 +1,7 @@
 {
   "arrays": "gradxinput_deeplift_enduro_content.npz",
   "ci": null,
-  "commit": "9391b559",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-attributed causes occluded (deletion) / restored (insertion); each curve point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline": "all-zeros RAM (the 'absent' state)",
@@ -22,16 +22,16 @@
     "harness_positive_control": {
       "attr_per_cause": {
         "joystick:RIGHT": 0.0,
-        "ram[46]:occlude": 4.0,
-        "ram[46]:set": 16.0,
+        "ram[46]:occlude": 0.0,
+        "ram[46]:set": 0.0,
         "ram[52]:occlude": 0.0,
         "ram[52]:set": 0.0,
-        "ram[59]:occlude": 248.0,
-        "ram[59]:set": 0.0,
+        "ram[59]:occlude": 80.0,
+        "ram[59]:set": 80.0,
         "tia[COLUBK]:set": 0.0
       },
-      "deletion_auc": 0.9243951612903227,
-      "insertion_auc": 0.6824596774193548,
+      "deletion_auc": 0.0625,
+      "insertion_auc": 0.8125,
       "interpretation": "corr=1 & precision@k=1 ⇒ the scoring harness rewards a faithful map; the method numbers above are then a true measurement, not an artefact.",
       "method": "oracle_abs_delta",
       "pearson_corr": 1.0,
@@ -43,79 +43,89 @@
       "deeplift_rescale": {
         "attr_per_cause": {
           "joystick:RIGHT": 0.0,
-          "ram[46]:occlude": 4.0,
-          "ram[46]:set": 4.0,
+          "ram[46]:occlude": 0.0,
+          "ram[46]:set": 0.0,
           "ram[52]:occlude": 0.0,
           "ram[52]:set": 0.0,
-          "ram[59]:occlude": 0.0,
-          "ram[59]:set": 0.0,
+          "ram[59]:occlude": 25.0,
+          "ram[59]:set": 25.0,
           "tia[COLUBK]:set": 0.0
         },
-        "deletion_auc": 0.43154761904761907,
-        "insertion_auc": 0.689484126984127,
+        "deletion_auc": 0.0625,
+        "insertion_auc": 0.8125,
         "method": "deeplift_rescale",
-        "pearson_corr": -0.16701039091743433,
-        "precision_at_k": 0.6666666666666666,
-        "spearman_corr": 0.5773502691896258,
+        "pearson_corr": 1.0,
+        "precision_at_k": 1.0,
+        "spearman_corr": 1.0,
         "topk": 3
       },
       "grad_x_input": {
         "attr_per_cause": {
           "joystick:RIGHT": 0.0,
-          "ram[46]:occlude": 4.0,
-          "ram[46]:set": 4.0,
+          "ram[46]:occlude": 0.0,
+          "ram[46]:set": 0.0,
           "ram[52]:occlude": 0.0,
           "ram[52]:set": 0.0,
-          "ram[59]:occlude": 0.0,
-          "ram[59]:set": 0.0,
+          "ram[59]:occlude": 25.0,
+          "ram[59]:set": 25.0,
           "tia[COLUBK]:set": 0.0
         },
-        "deletion_auc": 0.43154761904761907,
-        "insertion_auc": 0.689484126984127,
+        "deletion_auc": 0.0625,
+        "insertion_auc": 0.8125,
         "method": "grad_x_input",
-        "pearson_corr": -0.16701039091743433,
-        "precision_at_k": 0.6666666666666666,
-        "spearman_corr": 0.5773502691896258,
+        "pearson_corr": 1.0,
+        "precision_at_k": 1.0,
+        "spearman_corr": 1.0,
         "topk": 3
       },
       "vanilla_saliency": {
         "attr_per_cause": {
           "joystick:RIGHT": 0.0,
-          "ram[46]:occlude": 1.0,
-          "ram[46]:set": 1.0,
+          "ram[46]:occlude": 0.0,
+          "ram[46]:set": 0.0,
           "ram[52]:occlude": 0.0,
           "ram[52]:set": 0.0,
-          "ram[59]:occlude": 0.0,
-          "ram[59]:set": 0.0,
+          "ram[59]:occlude": 1.0,
+          "ram[59]:set": 1.0,
           "tia[COLUBK]:set": 0.0
         },
-        "deletion_auc": 0.43154761904761907,
-        "insertion_auc": 0.689484126984127,
+        "deletion_auc": 0.0625,
+        "insertion_auc": 0.8125,
         "method": "vanilla_saliency",
-        "pearson_corr": -0.16701039091743433,
-        "precision_at_k": 0.6666666666666666,
-        "spearman_corr": 0.5773502691896258,
+        "pearson_corr": 1.0,
+        "precision_at_k": 1.0,
+        "spearman_corr": 1.0,
         "topk": 3
       }
     },
     "oracle_abs_delta_per_cause": {
       "joystick:RIGHT": 0.0,
-      "ram[46]:occlude": 4.0,
-      "ram[46]:set": 16.0,
+      "ram[46]:occlude": 0.0,
+      "ram[46]:set": 0.0,
       "ram[52]:occlude": 0.0,
       "ram[52]:set": 0.0,
-      "ram[59]:occlude": 248.0,
-      "ram[59]:set": 0.0,
+      "ram[59]:occlude": 80.0,
+      "ram[59]:set": 80.0,
       "tia[COLUBK]:set": 0.0
     },
-    "output_note": "CONTENT (score) output (score@ram[46]), read one-hot from RAM — the STE gradient is alive and the score byte is non-zero, so Grad×Input/DeepLIFT concentrate on the TRUE causal score byte (precision@1=1): FAITHFUL here. DeepLIFT is complete (Σ attr ≈ Δy; err=0.0).",
+    "output_note": "CONTENT (score) output (score@ram[59]), read one-hot from RAM — the STE gradient is alive and the score byte is non-zero, so Grad×Input/DeepLIFT concentrate on the TRUE causal score byte (precision@1=1): FAITHFUL here. DeepLIFT is complete (Σ attr ≈ Δy; err=0.0).",
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE Grad×Input over outputs×causes×games on GPU; the forward is bit-exact to this map.",
     "score_cell": {
-      "concept": "x_drift",
-      "ram_index": 46
+      "concept": "y",
+      "ram_index": 59
     },
     "substrate": "jutari (Julia) — Zygote content-path ∂y/∂u over the RAM tape + TRUE-VCS deletion/insertion re-runs (real-ROM, bit-exact oracle machinery).",
-    "y_full": 7.0
+    "triad": {
+      "F": 1.0,
+      "M": 1.0,
+      "M_named_size": 2,
+      "M_note": "|U*|=2 (oracle movers) / |U_hat|=2 (method above-threshold)",
+      "M_true_minimal_size": 2,
+      "S": 1.0,
+      "S_note": "held-out predictive fit: 4/4 held-out do(u) within ε=8.0 (calib=4, fit Δy≈3.2·attr+0.0)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
+    "y_full": 113.0
   },
   "game": "enduro",
   "method": "gradxinput_deeplift",
@@ -127,8 +137,8 @@
   "seed": 0,
   "state": "f90+15",
   "stderr": null,
-  "target_output": "content:score@ram[46]",
-  "timestamp": "1783017992",
-  "value": -0.16701039091743433,
+  "target_output": "content:score@ram[59]",
+  "timestamp": "1793017414",
+  "value": 1.0,
   "where": "local"
 }

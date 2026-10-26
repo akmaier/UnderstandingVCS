@@ -1,7 +1,7 @@
 {
   "arrays": "rise_freeway_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-RISE causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -49,18 +49,18 @@
       "interpretation": "faithfulness (corr / precision@k / del-ins) recomputed from N/8, N/4, N/2, N masks of the SAME pool (no extra re-runs). RISE's Monte-Carlo variance is ∝ 1/N, so corr/p@k STABILISE as N grows; the spread between the smallest and full budget quantifies how many masks RISE needs on this output.",
       "points": [
         {
-          "deletion_auc": 0.49554734248504045,
+          "deletion_auc": 0.4955473424850404,
           "insertion_auc": 0.5377859908482928,
           "n_masks": 62,
-          "pearson_corr": -0.017193310290006186,
+          "pearson_corr": -0.017193310290006196,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.05310845854133511
         },
         {
           "deletion_auc": 0.4906898979232664,
-          "insertion_auc": 0.5426434354100669,
+          "insertion_auc": 0.5426434354100668,
           "n_masks": 125,
-          "pearson_corr": -0.18601532656154113,
+          "pearson_corr": -0.18601532656154107,
           "precision_at_k": 0.0,
           "spearman_corr": -0.049381549170013354
         },
@@ -68,7 +68,7 @@
           "deletion_auc": 0.5791094684970081,
           "insertion_auc": 0.4542238648363252,
           "n_masks": 250,
-          "pearson_corr": 0.0667793800327608,
+          "pearson_corr": 0.06677938003276081,
           "precision_at_k": 0.0,
           "spearman_corr": 0.2674057473923364
         },
@@ -83,8 +83,8 @@
       ]
     },
     "harness_positive_control": {
-      "deletion_auc": 0.7237064413938754,
-      "insertion_auc": 0.4567581837381204,
+      "deletion_auc": 0.7237064413938755,
+      "insertion_auc": 0.4567581837381203,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the RISE numbers above are then a true measurement, not an artefact of the metric.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "oracle_column_degenerate": false,
@@ -202,7 +202,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r173c19",
-  "timestamp": "1783123502",
+  "timestamp": "1793020005",
   "value": 0.04696425235916711,
   "where": "local"
 }

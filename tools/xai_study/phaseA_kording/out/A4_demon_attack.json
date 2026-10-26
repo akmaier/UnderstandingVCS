@@ -1,7 +1,7 @@
 {
   "arrays": "A4_demon_attack.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -140,18 +140,18 @@
     },
     "weak_pairwise_strong_global": {
       "candidate_frac_strong_pairs(|corr|>=0.5)": 0.3939393939393939,
-      "candidate_mean_abs_pairwise": 0.42318561470765687,
+      "candidate_mean_abs_pairwise": 0.4231856147076568,
       "candidate_median_abs_pairwise": 0.34975441946050456,
       "candidate_n_varying_cells": 12,
       "candidate_participation_ratio": 3.2684321669444554,
       "candidate_top3_eig_share": 0.8027500661408423,
-      "candidate_top_eig_share": 0.4979539511270121,
+      "candidate_top_eig_share": 0.49795395112701196,
       "note": "the spike-word headline (Schneidman 2006; Tkačik 2014): over the FULL POPULATION of varying RAM cells the median pairwise |corr| is WEAK while a few GLOBAL eigen-modes dominate — the effective dimensionality (participation ratio) is far below the #cells, so the collective structure greatly exceeds the pairwise structure. WPSG flag = population median|corr|<0.5 AND population top3-eig-share≥0.6. (The candidate_* set is curated so its pairwise corr runs higher.)",
-      "population_mean_abs_pairwise": 0.3176773252349288,
+      "population_mean_abs_pairwise": 0.31767732523492886,
       "population_median_abs_pairwise": 0.2659701333328386,
       "population_n_cells": 61,
-      "population_participation_ratio": 5.68605569517252,
-      "population_top3_eig_share": 0.6017632108038524,
+      "population_participation_ratio": 5.686055695172522,
+      "population_top3_eig_share": 0.6017632108038525,
       "weak_pairwise_strong_global": true
     }
   },
@@ -166,7 +166,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "cell-cell-coupling",
-  "timestamp": "1783605252",
+  "timestamp": "1793016979",
   "value": 0.2795626015310641,
   "where": "local"
 }

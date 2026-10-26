@@ -1,7 +1,7 @@
 {
   "arrays": "gradxinput_deeplift_freeway_position.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-attributed causes occluded (deletion) / restored (insertion); each curve point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline": "all-zeros RAM (the 'absent' state)",
@@ -74,8 +74,8 @@
         "ram[15]:set": 44.0,
         "tia[COLUBK]:set": 0.0
       },
-      "deletion_auc": 0.7237064413938754,
-      "insertion_auc": 0.4567581837381204,
+      "deletion_auc": 0.7237064413938755,
+      "insertion_auc": 0.4567581837381203,
       "interpretation": "corr=1 & precision@k=1 ⇒ the scoring harness rewards a faithful map; the method numbers above are then a true measurement, not an artefact.",
       "method": "oracle_abs_delta",
       "pearson_corr": 1.0,
@@ -118,7 +118,7 @@
           "tia[COLUBK]:set": 0.0
         },
         "deletion_auc": 0.5327877507919747,
-        "insertion_auc": 0.5005455825413586,
+        "insertion_auc": 0.5005455825413587,
         "method": "deeplift_rescale",
         "pearson_corr": 0.04852977624427649,
         "precision_at_k": 0.3333333333333333,
@@ -159,7 +159,7 @@
           "tia[COLUBK]:set": 0.0
         },
         "deletion_auc": 0.5327877507919747,
-        "insertion_auc": 0.5005455825413586,
+        "insertion_auc": 0.5005455825413587,
         "method": "grad_x_input",
         "pearson_corr": 0.04852977624427649,
         "precision_at_k": 0.3333333333333333,
@@ -200,9 +200,9 @@
           "tia[COLUBK]:set": 0.0
         },
         "deletion_auc": 0.5327877507919747,
-        "insertion_auc": 0.5005455825413586,
+        "insertion_auc": 0.5005455825413587,
         "method": "vanilla_saliency",
-        "pearson_corr": 0.0485297762442765,
+        "pearson_corr": 0.04852977624427651,
         "precision_at_k": 0.3333333333333333,
         "spearman_corr": 0.04034497741458672,
         "topk": 3
@@ -289,7 +289,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "position:screen_region(n_changed_px)@r173c19",
-  "timestamp": "1783132942",
+  "timestamp": "1793022826",
   "value": 0.04852977624427649,
   "where": "local"
 }

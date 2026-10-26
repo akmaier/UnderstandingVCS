@@ -1,7 +1,7 @@
 {
   "arrays": "occlusion_asterix_content.npz",
   "ci": null,
-  "commit": "9391b559",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-occlusion causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -35,7 +35,7 @@
     "comparison_note": "Occlusion vs the gradient family: vanilla saliency/Grad×Input/IG measure ∂y/∂u (vanish on index outputs); occlusion measures Δy under a real intervention (alive everywhere the perturbation is valid). Occlusion vs the full §1 oracle: occlusion probes ONE direction (occlude→0) at ONE baseline; the oracle mixes set+occlude+do — so occlusion is the coarse twin of the oracle.",
     "content_ram_index": 96,
     "harness_positive_control": {
-      "deletion_auc": 0.25,
+      "deletion_auc": 0.05,
       "insertion_auc": 0.0,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the occlusion numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
@@ -47,9 +47,9 @@
     "metrics": {
       "deletion_auc": 0.2,
       "insertion_auc": 0.0,
-      "pearson_corr": 0.6644686678370257,
-      "precision_at_k": 0.6666666666666666,
-      "spearman_corr": 0.47156772125317936,
+      "pearson_corr": 0.4325910136264251,
+      "precision_at_k": 0.3333333333333333,
+      "spearman_corr": 0.3490449235764129,
       "topk": 3
     },
     "occ_l1": 160.0,
@@ -84,7 +84,7 @@
       "ram[39]:occlude": 80.0,
       "ram[39]:set": 0.0,
       "ram[41]:occlude": 0.0,
-      "ram[41]:set": 0.0,
+      "ram[41]:set": 80.0,
       "ram[54]:occlude": 0.0,
       "ram[54]:set": 0.0,
       "ram[73]:occlude": 0.0,
@@ -100,9 +100,19 @@
       "tia[COLUBK]:set": 0.0
     },
     "output_kind": "content",
-    "output_note": "OCCLUSION (Zeiler & Fergus 2014) is INTERVENTION-BASED: every attribution is |y(occlude u) − y(intact)| from a real-ROM re-run on the TRUE VCS, NOT a surrogate. occ max|attr|=80.0, occ L1=160.0, budget=63 real-ROM re-runs. CONTENT output: RAM byte 96 (the most causally-active candidate concept byte the oracle found at this state). Occlusion probes ONLY the occlude-to-0 direction, while the §1 oracle's per-cause map MIXES the set (base+17) and occlude (→0) modes plus a TIA/joystick do — so occlusion is a COARSE oracle (§5 '≈ coarse intervention oracle'): the occlude-mode causes line up, the set-mode causes can disagree. Expect high but not perfect corr=0.664 (precision@3=0.667). We REPORT the measured numbers; we do not assert corr=1.",
+    "output_note": "OCCLUSION (Zeiler & Fergus 2014) is INTERVENTION-BASED: every attribution is |y(occlude u) − y(intact)| from a real-ROM re-run on the TRUE VCS, NOT a surrogate. occ max|attr|=80.0, occ L1=160.0, budget=63 real-ROM re-runs. CONTENT output: RAM byte 96 (the most causally-active candidate concept byte the oracle found at this state). Occlusion probes ONLY the occlude-to-0 direction, while the §1 oracle's per-cause map MIXES the set (base+17) and occlude (→0) modes plus a TIA/joystick do — so occlusion is a COARSE oracle (§5 '≈ coarse intervention oracle'): the occlude-mode causes line up, the set-mode causes can disagree. Expect high but not perfect corr=0.433 (precision@3=0.333). We REPORT the measured numbers; we do not assert corr=1.",
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (E0-3) — --array=0-5%N over the 6 core games (--shard i --shard-kind game); each task re-runs the real ROM, no GPU needed.",
     "substrate": "jutari (Julia) — real-ROM single-cause occlusion + TRUE-VCS deletion/insertion re-runs (bit-exact oracle machinery). NO surrogate model.",
+    "triad": {
+      "F": 0.4325910136264251,
+      "M": 1.0,
+      "M_named_size": 2,
+      "M_note": "|U*|=3 (oracle movers) / |U_hat|=2 (method above-threshold)",
+      "M_true_minimal_size": 3,
+      "S": 0.0,
+      "S_note": "held-out predictive fit: 0/10 held-out do(u) within ε=8.0 (calib=10, fit Δy≈-0.135·attr+10.778)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
     "y_full": 0.0
   },
   "game": "asterix",
@@ -116,7 +126,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@96)",
-  "timestamp": "1783015737",
-  "value": 0.6644686678370257,
+  "timestamp": "1793016131",
+  "value": 0.4325910136264251,
   "where": "local"
 }

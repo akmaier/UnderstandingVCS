@@ -1,7 +1,7 @@
 {
   "arrays": "A8_double_dunk.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -32,7 +32,7 @@
       118,
       119
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_double_dunk.json",
+    "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_double_dunk.json",
     "oracle_causal_ram_indices": [
       33,
       34,
@@ -50,16 +50,16 @@
     "oracle_importance_per_cell": {
       "RAM[118]:value": 38.0,
       "RAM[119]:value": 38.0,
-      "RAM[33]:xy": 429.0,
-      "RAM[34]:xy": 484.0,
-      "RAM[35]:xy": 290.0,
-      "RAM[36]:xy": 286.0,
-      "RAM[37]:xy": 1260.0,
-      "RAM[38]:xy": 144.0,
-      "RAM[39]:xy": 392.0,
-      "RAM[40]:xy": 166.0,
-      "RAM[46]:xy": 221.0,
-      "RAM[47]:xy": 233.0
+      "RAM[33]:xy": 281.0,
+      "RAM[34]:xy": 270.0,
+      "RAM[35]:xy": 299.0,
+      "RAM[36]:xy": 282.0,
+      "RAM[37]:xy": 186.0,
+      "RAM[38]:xy": 160.0,
+      "RAM[39]:xy": 387.0,
+      "RAM[40]:xy": 151.0,
+      "RAM[46]:xy": 16.0,
+      "RAM[47]:xy": 344.0
     },
     "positive_control": {
       "F": 1.0,
@@ -70,7 +70,7 @@
       "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.094 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
     },
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-    "settings": "GenericRomSettings",
+    "settings": "DoubleDunkRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
     "testbed": {
       "cause_density_above_floor": 22,
@@ -97,7 +97,7 @@
     "wholestate": {
       "ideal_minimal_size": 12,
       "n_oracle_causal_cells": 12,
-      "n_varying_ram_cells": 81,
+      "n_varying_ram_cells": 76,
       "note": "the whole-state recorder keeps ALL 192 state bytes every frame; only 12 candidate cells are causal by the oracle ⇒ it over-records by 10.7× — trivially faithful/sufficient, maximally non-minimal.",
       "over_recording_factor": 10.666666666666666,
       "ram_size": 128,
@@ -123,7 +123,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "full RAM+register state map over time (whole-state record)",
-  "timestamp": "1783127686",
+  "timestamp": "1793020543",
   "value": 0.09375,
   "where": "local"
 }

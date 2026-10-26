@@ -1,7 +1,7 @@
 {
   "arrays": "saliency_venture_position.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-saliency causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment (e.g. the vanishing position output).",
     "baseline": "none (vanilla saliency uses no baseline and no input weighting)",
@@ -50,7 +50,7 @@
     "grad_l1": 1.0,
     "harness_positive_control": {
       "deletion_auc": 0.797995951417004,
-      "insertion_auc": 0.22419028340080974,
+      "insertion_auc": 0.22419028340080968,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the vanilla-saliency numbers are then a true measurement, not a harness artefact.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "pearson_corr": 1.0,
@@ -59,8 +59,8 @@
     "method_ref": "vanilla gradient / saliency (Simonyan et al. 2014): attribution = |∂y/∂u|",
     "metrics": {
       "deletion_auc": 0.7615537686809619,
-      "insertion_auc": 0.22817170240415846,
-      "pearson_corr": -0.013986262555186296,
+      "insertion_auc": 0.22817170240415857,
+      "pearson_corr": -0.013986262555186292,
       "precision_at_k": 0.6666666666666666,
       "spearman_corr": 0.36864256497122916,
       "topk": 3
@@ -171,7 +171,7 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": -0.013986262555186296,
+      "F": -0.013986262555186292,
       "M": 1.0,
       "M_named_size": 2,
       "M_note": "|U*|=29 (oracle movers) / |U_hat|=2 (method above-threshold)",
@@ -193,7 +193,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r73c4",
-  "timestamp": "1783129304",
-  "value": -0.013986262555186296,
+  "timestamp": "1793022222",
+  "value": -0.013986262555186292,
   "where": "local"
 }

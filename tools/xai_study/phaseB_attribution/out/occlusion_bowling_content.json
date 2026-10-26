@@ -1,7 +1,7 @@
 {
   "arrays": "occlusion_bowling_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-occlusion causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -57,7 +57,7 @@
     "comparison_note": "Occlusion vs the gradient family: vanilla saliency/Grad×Input/IG measure ∂y/∂u (vanish on index outputs); occlusion measures Δy under a real intervention (alive everywhere the perturbation is valid). Occlusion vs the full §1 oracle: occlusion probes ONE direction (occlude→0) at ONE baseline; the oracle mixes set+occlude+do — so occlusion is the coarse twin of the oracle.",
     "content_ram_index": 30,
     "harness_positive_control": {
-      "deletion_auc": 0.27489177489177485,
+      "deletion_auc": 0.274891774891775,
       "insertion_auc": 0.932900432900433,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the occlusion numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
@@ -67,9 +67,9 @@
     "intervention_note": "Occlusion is itself a (coarse, single-direction) intervention oracle (experiment_design.md §5 '≈ coarse intervention oracle'; §7 'Succeed/partial — faithful when the perturbation is a valid intervention'). Unlike the gradient family it does NOT vanish on the position/index output — the headline contrast.",
     "method_ref": "occlusion (Zeiler & Fergus 2014): attribution = |y(occlude u) − y(intact)|, a single-cause perturbation re-run on the true VCS",
     "metrics": {
-      "deletion_auc": 0.26839826839826836,
+      "deletion_auc": 0.2683982683982685,
       "insertion_auc": 0.9393939393939396,
-      "pearson_corr": 0.9326697556035181,
+      "pearson_corr": 0.932669755603518,
       "precision_at_k": 0.6666666666666666,
       "spearman_corr": 0.9971884272921023,
       "topk": 3
@@ -170,7 +170,7 @@
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (E0-3) — --array=0-5%N over the 6 core games (--shard i --shard-kind game); each task re-runs the real ROM, no GPU needed.",
     "substrate": "jutari (Julia) — real-ROM single-cause occlusion + TRUE-VCS deletion/insertion re-runs (bit-exact oracle machinery). NO surrogate model.",
     "triad": {
-      "F": 0.9326697556035181,
+      "F": 0.932669755603518,
       "M": 1.0,
       "M_named_size": 4,
       "M_note": "|U*|=4 (oracle movers) / |U_hat|=4 (method above-threshold)",
@@ -192,7 +192,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@30)",
-  "timestamp": "1783126645",
-  "value": 0.9326697556035181,
+  "timestamp": "1793016734",
+  "value": 0.932669755603518,
   "where": "local"
 }

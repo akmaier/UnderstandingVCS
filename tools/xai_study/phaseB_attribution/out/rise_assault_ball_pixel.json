@@ -1,7 +1,7 @@
 {
   "arrays": "rise_assault_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-RISE causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -64,15 +64,15 @@
           "deletion_auc": 0.9821291716846678,
           "insertion_auc": 0.04832394788577522,
           "n_masks": 62,
-          "pearson_corr": 0.6057675441023539,
+          "pearson_corr": 0.6057675441023537,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.23697977717749333
         },
         {
-          "deletion_auc": 0.9856818372945791,
-          "insertion_auc": 0.04452692742819696,
+          "deletion_auc": 0.9856818372945797,
+          "insertion_auc": 0.04452692742819697,
           "n_masks": 125,
-          "pearson_corr": 0.6357959883932508,
+          "pearson_corr": 0.6357959883932509,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.4877028956646532
         },
@@ -80,12 +80,12 @@
           "deletion_auc": 0.9829241182994806,
           "insertion_auc": 0.048685719997905524,
           "n_masks": 250,
-          "pearson_corr": 0.6705395107477546,
+          "pearson_corr": 0.6705395107477548,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.2566661849994481
         },
         {
-          "deletion_auc": 0.984723458541392,
+          "deletion_auc": 0.9847234585413922,
           "insertion_auc": 0.048798377102998745,
           "n_masks": 500,
           "pearson_corr": 0.6860583389076942,
@@ -96,7 +96,7 @@
     },
     "harness_positive_control": {
       "deletion_auc": 0.9869773940031512,
-      "insertion_auc": 0.2729899830379654,
+      "insertion_auc": 0.27298998303796546,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the RISE numbers above are then a true measurement, not an artefact of the metric.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "oracle_column_degenerate": false,
@@ -104,7 +104,7 @@
       "precision_at_k": 1.0
     },
     "headline_metrics": {
-      "deletion_auc": 0.984723458541392,
+      "deletion_auc": 0.9847234585413922,
       "insertion_auc": 0.048798377102998745,
       "pearson_corr": 0.6860583389076942,
       "precision_at_k": 0.3333333333333333,
@@ -238,7 +238,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r20c11",
-  "timestamp": "1783121832",
+  "timestamp": "1793016301",
   "value": 0.6860583389076942,
   "where": "local"
 }

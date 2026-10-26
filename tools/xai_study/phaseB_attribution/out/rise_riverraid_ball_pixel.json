@@ -1,7 +1,7 @@
 {
   "arrays": "rise_riverraid_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-RISE causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -66,23 +66,23 @@
       "points": [
         {
           "deletion_auc": 0.7003074956899139,
-          "insertion_auc": 0.692639402334737,
+          "insertion_auc": 0.6926394023347369,
           "n_masks": 62,
-          "pearson_corr": -0.013774010352274574,
+          "pearson_corr": -0.013774010352274579,
           "precision_at_k": 0.0,
           "spearman_corr": 0.2279972433388844
         },
         {
-          "deletion_auc": 0.6045935653203187,
-          "insertion_auc": 0.821633200957225,
+          "deletion_auc": 0.6045935653203186,
+          "insertion_auc": 0.8216332009572251,
           "n_masks": 125,
-          "pearson_corr": -0.19951737423767774,
+          "pearson_corr": -0.1995173742376778,
           "precision_at_k": 0.0,
           "spearman_corr": 0.002498599927001473
         },
         {
-          "deletion_auc": 0.7422589997169496,
-          "insertion_auc": 0.6017459064904321,
+          "deletion_auc": 0.7422589997169493,
+          "insertion_auc": 0.6017459064904324,
           "n_masks": 250,
           "pearson_corr": 0.06084408395686685,
           "precision_at_k": 0.0,
@@ -90,9 +90,9 @@
         },
         {
           "deletion_auc": 0.878860850695189,
-          "insertion_auc": 0.5828673008139844,
+          "insertion_auc": 0.5828673008139842,
           "n_masks": 500,
-          "pearson_corr": 0.28585583774383155,
+          "pearson_corr": 0.2858558377438315,
           "precision_at_k": 0.0,
           "spearman_corr": 0.3802869088896242
         }
@@ -109,8 +109,8 @@
     },
     "headline_metrics": {
       "deletion_auc": 0.878860850695189,
-      "insertion_auc": 0.5828673008139844,
-      "pearson_corr": 0.28585583774383155,
+      "insertion_auc": 0.5828673008139842,
+      "pearson_corr": 0.2858558377438315,
       "precision_at_k": 0.0,
       "spearman_corr": 0.3802869088896242,
       "topk": 3
@@ -228,7 +228,7 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": 0.28585583774383155,
+      "F": 0.2858558377438315,
       "M": 0.75,
       "M_named_size": 44,
       "M_note": "|U*|=33 (oracle movers) / |U_hat|=44 (method above-threshold)",
@@ -250,7 +250,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r158c79",
-  "timestamp": "1783125967",
-  "value": 0.28585583774383155,
+  "timestamp": "1793024725",
+  "value": 0.2858558377438315,
   "where": "local"
 }

@@ -1,7 +1,7 @@
 {
   "arrays": "A3_tuning_frostbite.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "A3_tuning": {
       "clock_corr_per_cell": {
@@ -50,7 +50,7 @@
       ],
       "game_variable_spurious_tuning_rate": 0.0,
       "gvar_selectivity_per_cell": {
-        "RAM[100]:player_y": 0.8983564434041583,
+        "RAM[100]:player_y": 0.8983564434041581,
         "RAM[102]:player_x": 0.9811118228760527,
         "RAM[104]:enemy_bear_x": 0.0,
         "RAM[107]:sink": 0.7845305172851199,
@@ -71,7 +71,7 @@
         "RAM[87]:enemy_x[3]": 0.0
       },
       "luminance_corr_per_cell": {
-        "RAM[100]:player_y": 0.9224080963223296,
+        "RAM[100]:player_y": 0.9224080963223297,
         "RAM[102]:player_x": 0.8644481206208557,
         "RAM[104]:enemy_bear_x": 0.0,
         "RAM[107]:sink": 0.5265427298517856,
@@ -80,7 +80,7 @@
         "RAM[32]:third_row_iceflow_x": 0.8889826219768076,
         "RAM[33]:second_row_iceflow_x": 0.8889826219768076,
         "RAM[34]:top_row_iceflow_x": 0.8889826219768076,
-        "RAM[4]:player_direction": 0.4103106710045986,
+        "RAM[4]:player_direction": 0.41031067100459867,
         "RAM[72]:score[0]": 0.0,
         "RAM[73]:score[1]": 0.0,
         "RAM[74]:score[2]": 0.0,
@@ -199,7 +199,7 @@
       "F_note": "Spearman(A3 game-variable selectivity, oracle causal importance) over 19 candidate cells",
       "M": 1.0,
       "M_note": "M = |U*|/|U_hat| (03_methods.tex sec:triad): |U*|=14 (oracle movers) / |U_hat|=8 (method above-threshold)",
-      "S": 0.3457043993506602,
+      "S": 0.34570439935066016,
       "S_note": "Pearson(A3 selectivity, held-out do(base+37) screen break) — sufficiency on a bit-exact re-run",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): a tuning-curve importance map scores LOW faithfulness despite fully-known structure. F<1 / spurious-tuning>0 quantify where the classical analysis departs from the ground truth. The oracle-as-method positive control (F=1.0) confirms the harness rewards a perfectly-faithful map.",
       "legacy_minimality": 1.0,
@@ -217,7 +217,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen-break (oracle causal importance) vs tuning selectivity",
-  "timestamp": "1783605437",
+  "timestamp": "1793017637",
   "value": 0.0,
   "where": "local"
 }

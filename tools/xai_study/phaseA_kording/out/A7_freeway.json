@@ -1,7 +1,7 @@
 {
   "arrays": "A7_freeway.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -57,12 +57,12 @@
     "nmf": {
       "component_energy_share": [
         0.17371735072858419,
-        0.15110312805926351,
-        0.13305708378241957,
+        0.1511031280592635,
+        0.13305708378241962,
         0.12423728185909991,
-        0.11112164728298717,
+        0.1111216472829872,
         0.10863330855933594,
-        0.1085790685437085,
+        0.10857906854370852,
         0.08955113118460124
       ],
       "matched_components": {
@@ -97,16 +97,16 @@
       "note": "NMF (Lee & Seung multiplicative updates; RAM bytes are non-negative). matched-component fraction tests whether the non-negative PARTS align with single known variables better than PCA's signed components do — the prompt's NMF-vs-PCA question.",
       "rank": 8,
       "recon_rel_err_by_rank": [
-        0.8382483798028888,
-        0.6919024584703225,
-        0.5649496943461022,
-        0.4446226560626712,
-        0.35775793974551595,
-        0.26248265317885233,
-        0.17057951411351793,
-        0.10565129264715811
+        0.8382483798028455,
+        0.6919024584702902,
+        0.564949694346077,
+        0.44462265606265106,
+        0.3577579397454986,
+        0.26248265317884056,
+        0.17057951411351074,
+        0.10565129264715294
       ],
-      "recon_rel_frobenius_err": 0.1056512926471581
+      "recon_rel_frobenius_err": 0.10565129264715292
     },
     "oracle_importance": {
       "importance_per_cell": {
@@ -130,12 +130,12 @@
     },
     "pca": {
       "cum_var_top": [
-        0.19593068119171386,
-        0.3567936314646796,
-        0.47497373388483954,
-        0.5828391761211896,
+        0.19593068119171356,
+        0.35679363146467935,
+        0.4749737338848392,
+        0.5828391761211895,
         0.6689853904048684,
-        0.745887595021117,
+        0.7458875950211171,
         0.8130946329969677,
         0.8738048604118454
       ],
@@ -160,10 +160,10 @@
         ],
         "per_component_matched_purity": [
           0.9788075542413343,
-          0.4303931051695535,
-          0.3226842229017238,
-          0.43733964943724885,
-          0.32501560414890185
+          0.43039310516955387,
+          0.3226842229017218,
+          0.4373396494372485,
+          0.32501560414890374
         ],
         "topk": 5
       },
@@ -172,14 +172,14 @@
       "n_varying_cells": 44,
       "note": "PCA (SVD of the centred (T,128) tape). matched-component fraction = #top-k PCs concentrated on ONE known variable (a concept family, OR clock/R-W/vsync) / k. The pilot found ≈0 — PCs mix epiphenomenal high-variance structure across cells.",
       "var_explained_top": [
-        0.19593068119171386,
-        0.1608629502729657,
-        0.11818010242015996,
-        0.10786544223635006,
-        0.08614621428367875,
-        0.07690220461624862,
-        0.06720703797585068,
-        0.06071022741487769
+        0.19593068119171356,
+        0.16086295027296577,
+        0.1181801024201599,
+        0.10786544223635025,
+        0.08614621428367884,
+        0.07690220461624879,
+        0.06720703797585062,
+        0.060710227414877686
       ]
     },
     "purity_threshold": 0.5,
@@ -218,7 +218,7 @@
       "F_note": "Spearman(pca per-cell recovery score, oracle causal importance) over candidate cells",
       "M": 1.0,
       "M_note": "M = |U*|/|U_hat| (03_methods.tex sec:triad, pca): |U*|=14 (oracle movers) / |U_hat|=11 (method above-threshold)",
-      "S": 0.4725779141475216,
+      "S": 0.4725779141475214,
       "S_note": "Pearson(pca recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "legacy_minimality": 1.0,
       "legacy_minimality_note": "1 − over-claim rate (the pre-standardization M). Retained for reference; the triad M above is the paper's |U*|/|U_hat|."
@@ -235,7 +235,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "latent-components",
-  "timestamp": "1783605439",
+  "timestamp": "1793017437",
   "value": 0.6,
   "where": "local"
 }

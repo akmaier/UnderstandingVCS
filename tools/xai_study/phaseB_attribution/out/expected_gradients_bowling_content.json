@@ -1,7 +1,7 @@
 {
   "arrays": "expected_gradients_bowling_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-EG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "cause_names": [
@@ -98,7 +98,7 @@
     "eg_samples": 64,
     "eg_self_baseline_invariant": false,
     "harness_positive_control": {
-      "deletion_auc": 0.27489177489177485,
+      "deletion_auc": 0.274891774891775,
       "insertion_auc": 0.932900432900433,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the EG numbers above are a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
@@ -108,7 +108,7 @@
     },
     "headline_metrics": {
       "completeness_err": 0.0,
-      "deletion_auc": 0.07359307359307359,
+      "deletion_auc": 0.07359307359307356,
       "eg_max_abs": 17.96875,
       "insertion_auc": 0.4199134199134199,
       "pearson_corr": 0.688121797580833,
@@ -170,11 +170,11 @@
     "ref_self_byte_min": 14,
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE Expected Gradients over outputs×causes×games×references on GPU; the forward is bit-exact to this map.",
     "stability": {
-      "corr_max": 0.688121797580833,
+      "corr_max": 0.6881217975808331,
       "corr_mean": 0.6881217975808329,
       "corr_min": 0.6881217975808329,
-      "corr_spread": 1.1102230246251565e-16,
-      "corr_std": 1.1102230246251565e-16,
+      "corr_spread": 2.220446049250313e-16,
+      "corr_std": 1.4686870114880517e-16,
       "interpretation": "EG draws M baselines from a distribution of real states, so it is a Monte-Carlo estimator. mean_pairwise_cosine is the average cosine of the per-cause EG attribution across independent reference-sample seeds (1.0 = perfectly stable). On the one-hot content path the gradient is a constant e_idx, so EG is essentially deterministic (cosine≈1, corr-spread≈0) — the reference distribution moves only the MAGNITUDE, not the ranking. This is the §5 stability column for EG.",
       "mean_pairwise_cosine": 1.0,
       "n_seeds": 5,
@@ -225,7 +225,7 @@
             "tia[COLUBK]:set": 0.0
           },
           "completeness_err": 0.0,
-          "deletion_auc": 0.07359307359307359,
+          "deletion_auc": 0.07359307359307356,
           "eg_max_abs": 17.96875,
           "insertion_auc": 0.4199134199134199,
           "pearson_corr": 0.688121797580833,
@@ -281,7 +281,7 @@
             "tia[COLUBK]:set": 0.0
           },
           "completeness_err": 0.0,
-          "deletion_auc": 0.07359307359307359,
+          "deletion_auc": 0.07359307359307356,
           "eg_max_abs": 19.625,
           "insertion_auc": 0.4199134199134199,
           "pearson_corr": 0.688121797580833,
@@ -337,7 +337,7 @@
             "tia[COLUBK]:set": 0.0
           },
           "completeness_err": 0.0,
-          "deletion_auc": 0.07359307359307359,
+          "deletion_auc": 0.07359307359307356,
           "eg_max_abs": 15.375,
           "insertion_auc": 0.4199134199134199,
           "pearson_corr": 0.688121797580833,
@@ -393,10 +393,10 @@
             "tia[COLUBK]:set": 0.0
           },
           "completeness_err": 0.0,
-          "deletion_auc": 0.07359307359307359,
+          "deletion_auc": 0.07359307359307356,
           "eg_max_abs": 19.5625,
           "insertion_auc": 0.4199134199134199,
-          "pearson_corr": 0.688121797580833,
+          "pearson_corr": 0.6881217975808331,
           "precision_at_k": 0.3333333333333333,
           "seed": 3,
           "spearman_corr": 0.6881253898490473,
@@ -449,7 +449,7 @@
             "tia[COLUBK]:set": 0.0
           },
           "completeness_err": 0.0,
-          "deletion_auc": 0.07359307359307359,
+          "deletion_auc": 0.07359307359307356,
           "eg_max_abs": 19.65625,
           "insertion_auc": 0.4199134199134199,
           "pearson_corr": 0.6881217975808329,
@@ -480,7 +480,7 @@
       "delta_precision_at_k": 0.0,
       "ig_baseline": "zeros",
       "ig_completeness_err": 0.0,
-      "ig_deletion_auc": 0.07359307359307359,
+      "ig_deletion_auc": 0.07359307359307356,
       "ig_insertion_auc": 0.4199134199134199,
       "ig_max_abs": 44.0,
       "ig_pearson": 0.6881217975808331,
@@ -499,9 +499,9 @@
   "phase": "phaseB_attribution",
   "seed": 0,
   "state": "f90+15",
-  "stderr": 4.965068306494546e-17,
+  "stderr": 6.568167990716596e-17,
   "target_output": "content(ram_self@30)",
-  "timestamp": "1783131084",
+  "timestamp": "1793017096",
   "value": 0.688121797580833,
   "where": "local"
 }

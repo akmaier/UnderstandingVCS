@@ -1,7 +1,7 @@
 {
   "arrays": "sae_ms_pacman.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -189,7 +189,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.6951397816824998,
+          "best_corr": 0.6951397816824993,
           "best_feature": 42,
           "concept": "enemy_inky_x",
           "family": "enemy",
@@ -198,7 +198,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.4091148416437001,
+          "best_corr": 0.4091148416437005,
           "best_feature": 60,
           "concept": "enemy_pinky_x",
           "family": "enemy",
@@ -207,7 +207,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8965114821061868,
+          "best_corr": 0.8965114821061873,
           "best_feature": 21,
           "concept": "enemy_blinky_x",
           "family": "enemy",
@@ -216,7 +216,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8939726892113136,
+          "best_corr": 0.8939726892113137,
           "best_feature": 21,
           "concept": "player_x",
           "family": "player",
@@ -234,7 +234,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.9033149652818937,
+          "best_corr": 0.9033149652818928,
           "best_feature": 33,
           "concept": "enemy_sue_y",
           "family": "enemy",
@@ -243,7 +243,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8875929962788576,
+          "best_corr": 0.887592996278857,
           "best_feature": 13,
           "concept": "enemy_inky_y",
           "family": "enemy",
@@ -252,7 +252,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8323313894750078,
+          "best_corr": 0.8323313894750077,
           "best_feature": 56,
           "concept": "enemy_pinky_y",
           "family": "enemy",
@@ -261,7 +261,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9553128215037401,
+          "best_corr": 0.9553128215037409,
           "best_feature": 21,
           "concept": "enemy_blinky_y",
           "family": "enemy",
@@ -306,7 +306,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.9001985284289981,
+          "best_corr": 0.9001985284289984,
           "best_feature": 21,
           "concept": "dots_eaten_count",
           "family": "dots",
@@ -315,7 +315,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9001985284289981,
+          "best_corr": 0.9001985284289984,
           "best_feature": 21,
           "concept": "player_score",
           "family": "score",
@@ -425,11 +425,11 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.848413571526975,
-          "fve_train": 0.860057972460841,
+          "fve_held": 0.8501150619428095,
+          "fve_train": 0.8617522107006682,
           "l1": 0.2,
           "matched_fraction": 0.6363636363636364,
-          "mean_l0": 2.2725
+          "mean_l0": 2.26
         },
         {
           "d_hidden": 32,
@@ -449,8 +449,8 @@
         },
         {
           "d_hidden": 32,
-          "fve_held": 0.9346943743850006,
-          "fve_train": 0.9501109281934201,
+          "fve_held": 0.9346943743850002,
+          "fve_train": 0.9501109281934199,
           "l1": 0.2,
           "matched_fraction": 0.8181818181818182,
           "mean_l0": 5.4225
@@ -520,7 +520,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783608686",
+  "timestamp": "1793019428",
   "value": 0.8181818181818182,
   "where": "local"
 }

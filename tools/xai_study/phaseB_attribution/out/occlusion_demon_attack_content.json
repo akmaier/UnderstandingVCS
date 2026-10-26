@@ -1,7 +1,7 @@
 {
   "arrays": "occlusion_demon_attack_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-occlusion causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -47,7 +47,7 @@
     "comparison_note": "Occlusion vs the gradient family: vanilla saliency/Grad×Input/IG measure ∂y/∂u (vanish on index outputs); occlusion measures Δy under a real intervention (alive everywhere the perturbation is valid). Occlusion vs the full §1 oracle: occlusion probes ONE direction (occlude→0) at ONE baseline; the oracle mixes set+occlude+do — so occlusion is the coarse twin of the oracle.",
     "content_ram_index": 16,
     "harness_positive_control": {
-      "deletion_auc": 0.9120338397790053,
+      "deletion_auc": 0.9120338397790052,
       "insertion_auc": 0.7777106353591161,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the occlusion numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
@@ -57,8 +57,8 @@
     "intervention_note": "Occlusion is itself a (coarse, single-direction) intervention oracle (experiment_design.md §5 '≈ coarse intervention oracle'; §7 'Succeed/partial — faithful when the perturbation is a valid intervention'). Unlike the gradient family it does NOT vanish on the position/index output — the headline contrast.",
     "method_ref": "occlusion (Zeiler & Fergus 2014): attribution = |y(occlude u) − y(intact)|, a single-cause perturbation re-run on the true VCS",
     "metrics": {
-      "deletion_auc": 0.9120338397790053,
-      "insertion_auc": 0.9710808011049723,
+      "deletion_auc": 0.9120338397790052,
+      "insertion_auc": 0.9710808011049725,
       "pearson_corr": 0.944998220546597,
       "precision_at_k": 0.6666666666666666,
       "spearman_corr": 0.8705628387201343,
@@ -162,7 +162,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@16)",
-  "timestamp": "1783127084",
+  "timestamp": "1793017618",
   "value": 0.944998220546597,
   "where": "local"
 }

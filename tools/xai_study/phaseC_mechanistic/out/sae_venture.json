@@ -1,7 +1,7 @@
 {
   "arrays": "sae_venture.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -247,7 +247,7 @@
       "note": "for each KNOWN candidate cell that VARIES, max|Pearson r| between any learned feature's activation and that cell over the trajectory; matched iff |r| ≥ 0.7. Match-rate = #matched / #varying.",
       "per_cell": [
         {
-          "best_corr": 0.7254596613472881,
+          "best_corr": 0.7254596613472882,
           "best_feature": 2,
           "concept": "sprite0_y",
           "family": "sprite",
@@ -256,7 +256,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7794927717774249,
+          "best_corr": 0.7794927717774245,
           "best_feature": 2,
           "concept": "sprite1_y",
           "family": "sprite",
@@ -265,7 +265,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8538488746243716,
+          "best_corr": 0.8538488746243713,
           "best_feature": 2,
           "concept": "sprite2_y",
           "family": "sprite",
@@ -274,7 +274,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8463540574144361,
+          "best_corr": 0.8463540574144358,
           "best_feature": 13,
           "concept": "sprite3_y",
           "family": "sprite",
@@ -283,7 +283,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7896864199991562,
+          "best_corr": 0.7896864199991565,
           "best_feature": 9,
           "concept": "sprite4_y",
           "family": "sprite",
@@ -292,7 +292,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7787019656733607,
+          "best_corr": 0.7787019656733605,
           "best_feature": 2,
           "concept": "sprite5_y",
           "family": "sprite",
@@ -337,7 +337,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.6453499855811047,
+          "best_corr": 0.6453499855811046,
           "best_feature": 13,
           "concept": "sprite0_x",
           "family": "sprite",
@@ -346,7 +346,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7253622723196462,
+          "best_corr": 0.7253622723196459,
           "best_feature": 15,
           "concept": "sprite1_x",
           "family": "sprite",
@@ -355,7 +355,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.797979263929599,
+          "best_corr": 0.7979792639295996,
           "best_feature": 13,
           "concept": "sprite2_x",
           "family": "sprite",
@@ -364,7 +364,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9764846197123722,
+          "best_corr": 0.9764846197123723,
           "best_feature": 13,
           "concept": "sprite3_x",
           "family": "sprite",
@@ -373,7 +373,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.813203024196336,
+          "best_corr": 0.8132030241963362,
           "best_feature": 13,
           "concept": "sprite4_x",
           "family": "sprite",
@@ -382,7 +382,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7876129498649428,
+          "best_corr": 0.787612949864943,
           "best_feature": 12,
           "concept": "sprite5_x",
           "family": "sprite",
@@ -474,23 +474,23 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.6398488941392644,
-          "fve_train": 0.9564729616235184,
+          "fve_held": 0.6398488941392646,
+          "fve_train": 0.9564729616235188,
           "l1": 0.05,
           "matched_fraction": 0.7857142857142857,
           "mean_l0": 5.9
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.5768274240891891,
-          "fve_train": 0.9037686867537986,
+          "fve_held": 0.5706392397583302,
+          "fve_train": 0.8963178264511703,
           "l1": 0.2,
           "matched_fraction": 0.7142857142857143,
-          "mean_l0": 2.6533333333333333
+          "mean_l0": 2.62
         },
         {
           "d_hidden": 32,
-          "fve_held": 0.6402191231277657,
+          "fve_held": 0.6402191231277655,
           "fve_train": 0.991631503707314,
           "l1": 0.01,
           "matched_fraction": 0.9285714285714286,
@@ -498,7 +498,7 @@
         },
         {
           "d_hidden": 32,
-          "fve_held": 0.5728478217657349,
+          "fve_held": 0.5728478217657347,
           "fve_train": 0.9893002878962593,
           "l1": 0.05,
           "matched_fraction": 0.7857142857142857,
@@ -506,15 +506,15 @@
         },
         {
           "d_hidden": 32,
-          "fve_held": 0.3006749501248227,
-          "fve_train": 0.9630446464348328,
+          "fve_held": 0.3006749500211855,
+          "fve_train": 0.9630446463786434,
           "l1": 0.2,
           "matched_fraction": 0.8571428571428571,
           "mean_l0": 5.126666666666667
         },
         {
           "d_hidden": 64,
-          "fve_held": 0.5855387578872295,
+          "fve_held": 0.5855387578872293,
           "fve_train": 0.9957914591557623,
           "l1": 0.01,
           "matched_fraction": 0.9285714285714286,
@@ -522,7 +522,7 @@
         },
         {
           "d_hidden": 64,
-          "fve_held": 0.5320041142101652,
+          "fve_held": 0.5320041142101655,
           "fve_train": 0.9937726971308385,
           "l1": 0.05,
           "matched_fraction": 0.8571428571428571,
@@ -530,7 +530,7 @@
         },
         {
           "d_hidden": 64,
-          "fve_held": 0.4634287758311464,
+          "fve_held": 0.46342877583114617,
           "fve_train": 0.9873601340295551,
           "l1": 0.2,
           "matched_fraction": 0.7142857142857143,
@@ -560,7 +560,7 @@
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
       "M": 1.0,
       "M_note": "|U*|=16 (oracle movers) / |U_hat|=14 (method above-threshold)",
-      "S": -0.035208757936185095,
+      "S": -0.03520875793618487,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
     }
@@ -577,7 +577,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783609579",
+  "timestamp": "1793021334",
   "value": 0.9285714285714286,
   "where": "local"
 }

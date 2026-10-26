@@ -1,7 +1,7 @@
 {
   "arrays": "gradxinput_deeplift_space_invaders_position.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-attributed causes occluded (deletion) / restored (insertion); each curve point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline": "all-zeros RAM (the 'absent' state)",
@@ -135,7 +135,7 @@
           "ram[9]:set": 0.0,
           "tia[COLUBK]:set": 0.0
         },
-        "deletion_auc": 0.8094840773188707,
+        "deletion_auc": 0.8094840773188708,
         "insertion_auc": 0.3884890835766931,
         "method": "deeplift_rescale",
         "pearson_corr": -0.03339178677267661,
@@ -182,7 +182,7 @@
           "ram[9]:set": 0.0,
           "tia[COLUBK]:set": 0.0
         },
-        "deletion_auc": 0.8094840773188707,
+        "deletion_auc": 0.8094840773188708,
         "insertion_auc": 0.3884890835766931,
         "method": "grad_x_input",
         "pearson_corr": -0.03339178677267661,
@@ -229,7 +229,7 @@
           "ram[9]:set": 0.0,
           "tia[COLUBK]:set": 0.0
         },
-        "deletion_auc": 0.8094840773188707,
+        "deletion_auc": 0.8094840773188708,
         "insertion_auc": 0.3884890835766931,
         "method": "vanilla_saliency",
         "pearson_corr": -0.03339178677267661,
@@ -325,7 +325,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "position:screen_region(n_changed_px)@r192c35",
-  "timestamp": "1783134299",
+  "timestamp": "1793025141",
   "value": -0.03339178677267661,
   "where": "local"
 }

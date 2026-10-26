@@ -1,7 +1,7 @@
 {
   "arrays": "kernelshap_asterix_content.npz",
   "ci": null,
-  "commit": "9391b559",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-SHAP causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -41,44 +41,44 @@
       "interpretation": "the SHAP solve + faithfulness (corr / precision@k / del-ins) + the completeness residual recomputed from N/8, N/4, N/2, N coalitions of the SAME pool (no extra re-runs). The SHAP-sampling variance is ∝ 1/N, so corr/p@k STABILISE as N grows; the spread between the smallest and full budget quantifies how many coalitions KernelSHAP needs on this output (the §5 'convergence vs compute', the §7 'approximations diverge' knob).",
       "points": [
         {
-          "completeness_residual": 8.881784197001252e-16,
+          "completeness_residual": 8.881784197001252e-15,
           "deletion_auc": 0.2,
           "insertion_auc": 0.0,
           "n_coalitions": 64,
           "n_unique": 47,
-          "pearson_corr": 0.6357226174148287,
+          "pearson_corr": 0.4412713684304564,
           "precision_at_k": 0.3333333333333333,
-          "spearman_corr": 0.1361718341077341
+          "spearman_corr": 0.24790456224722401
         },
         {
-          "completeness_residual": 6.217248937900877e-15,
+          "completeness_residual": 0.0,
           "deletion_auc": 0.3,
           "insertion_auc": 0.0,
           "n_coalitions": 128,
           "n_unique": 84,
-          "pearson_corr": 0.6457925046464013,
+          "pearson_corr": 0.4389421722539635,
           "precision_at_k": 0.3333333333333333,
-          "spearman_corr": 0.08112364585141606
+          "spearman_corr": 0.1531175237409325
         },
         {
-          "completeness_residual": 4.440892098500626e-16,
+          "completeness_residual": 1.3322676295501878e-15,
           "deletion_auc": 0.1,
           "insertion_auc": 0.0,
           "n_coalitions": 256,
           "n_unique": 142,
-          "pearson_corr": 0.6429899021459206,
+          "pearson_corr": 0.45279423813492925,
           "precision_at_k": 0.3333333333333333,
-          "spearman_corr": 0.08112364585141606
+          "spearman_corr": 0.2041566983212433
         },
         {
-          "completeness_residual": 2.220446049250313e-15,
+          "completeness_residual": 4.884981308350689e-15,
           "deletion_auc": 0.1,
           "insertion_auc": 0.0,
           "n_coalitions": 512,
           "n_unique": 221,
-          "pearson_corr": 0.6441303411763282,
+          "pearson_corr": 0.4585757033251803,
           "precision_at_k": 0.3333333333333333,
-          "spearman_corr": 0.08112364585141606
+          "spearman_corr": 0.2041566983212433
         }
       ]
     },
@@ -87,11 +87,11 @@
       "f1_intact": 0.0,
       "f_full_minus_empty": 0.0,
       "interpretation": "Σφ = f(full) − f(∅) = y(intact) − y(all-masked) is the SHAP efficiency axiom (the additive attribution exactly reconstructs the output gap). Enforced by the equality constraint in the WLS solve; the tiny residual is numerical. This is the SHAP analogue of IG's completeness.",
-      "residual": 2.220446049250313e-15,
-      "sum_phi": -2.220446049250313e-15
+      "residual": 4.884981308350689e-15,
+      "sum_phi": -4.884981308350689e-15
     },
     "harness_positive_control": {
-      "deletion_auc": 0.25,
+      "deletion_auc": 0.05,
       "insertion_auc": 0.0,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the KernelSHAP numbers above are then a true measurement, not an artefact of the metric.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
@@ -102,9 +102,9 @@
     "headline_metrics": {
       "deletion_auc": 0.1,
       "insertion_auc": 0.0,
-      "pearson_corr": 0.6441303411763282,
+      "pearson_corr": 0.4585757033251803,
       "precision_at_k": 0.3333333333333333,
-      "spearman_corr": 0.08112364585141606,
+      "spearman_corr": 0.2041566983212433,
       "topk": 3
     },
     "method_ref": "KernelSHAP / Shapley sampling (Lundberg & Lee, NeurIPS 2017; Štrumbelj & Kononenko, KAIS 2014): sample coalitions from the Shapley kernel, re-run the true ROM with absent cells masked to 0, solve the efficiency-constrained weighted least squares for the SHAP values φ = attribution.",
@@ -115,7 +115,7 @@
       "ram[39]:occlude": 80.0,
       "ram[39]:set": 0.0,
       "ram[41]:occlude": 0.0,
-      "ram[41]:set": 0.0,
+      "ram[41]:set": 80.0,
       "ram[54]:occlude": 0.0,
       "ram[54]:set": 0.0,
       "ram[73]:occlude": 0.0,
@@ -131,43 +131,53 @@
       "tia[COLUBK]:set": 0.0
     },
     "output_kind": "content",
-    "output_note": "CONTENT output: RAM byte 96 (the most causally-active candidate concept byte — SAME pick as the IG/EG/saliency/RISE/CF siblings). KernelSHAP (Lundberg & Lee 2017) samples 512 coalitions from the Shapley-kernel size distribution, re-runs the real ROM for each unique one (masking absent cells to 0), and solves the efficiency-constrained weighted least squares for the SHAP values φ. EFFICIENCY axiom Σφ=-0.0 ≈ f1−f0=0.0 (residual 2.2e-15). Faithfulness corr=0.644 @N=512; convergence corr goes 0.636→0.644 as N goes 64→512 (SHAP sampling variance ∝ 1/N — the §7 'approximations diverge' knob). Every probe is a genuine emulator re-run (RAM→0 = the oracle's own occlude!), apples-to-apples with the del/ins curves.",
+    "output_note": "CONTENT output: RAM byte 96 (the most causally-active candidate concept byte — SAME pick as the IG/EG/saliency/RISE/CF siblings). KernelSHAP (Lundberg & Lee 2017) samples 512 coalitions from the Shapley-kernel size distribution, re-runs the real ROM for each unique one (masking absent cells to 0), and solves the efficiency-constrained weighted least squares for the SHAP values φ. EFFICIENCY axiom Σφ=-0.0 ≈ f1−f0=0.0 (residual 4.9e-15). Faithfulness corr=0.459 @N=512; convergence corr goes 0.441→0.459 as N goes 64→512 (SHAP sampling variance ∝ 1/N — the §7 'approximations diverge' knob). Every probe is a genuine emulator re-run (RAM→0 = the oracle's own occlude!), apples-to-apples with the del/ins curves.",
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard i --nshards n --shard-kind game): one Slurm array task per core game; or batched SOFT-STE coalition re-runs over coalitions×games on GPU (the forward is bit-exact to this HARD map).",
     "shap_attr_per_cause": {
       "joystick:RIGHT": 0.0,
-      "ram[29]:occlude": 3.602438211231702,
-      "ram[29]:set": 3.602438211231702,
+      "ram[29]:occlude": 3.6024382112317026,
+      "ram[29]:set": 3.6024382112317026,
       "ram[39]:occlude": 36.037446929620366,
       "ram[39]:set": 36.037446929620366,
-      "ram[41]:occlude": 6.344933760287183,
-      "ram[41]:set": 6.344933760287183,
-      "ram[54]:occlude": 4.253335723283821,
-      "ram[54]:set": 4.253335723283821,
-      "ram[73]:occlude": 4.156947100024685,
-      "ram[73]:set": 4.156947100024685,
-      "ram[83]:occlude": 8.288334732353018,
-      "ram[83]:set": 8.288334732353018,
-      "ram[94]:occlude": 2.93896000143613,
-      "ram[94]:set": 2.93896000143613,
-      "ram[95]:occlude": 3.5683430551395414,
-      "ram[95]:set": 3.5683430551395414,
-      "ram[96]:occlude": 2.884154345864284,
-      "ram[96]:set": 2.884154345864284,
+      "ram[41]:occlude": 6.344933760287179,
+      "ram[41]:set": 6.344933760287179,
+      "ram[54]:occlude": 4.2533357232838265,
+      "ram[54]:set": 4.2533357232838265,
+      "ram[73]:occlude": 4.156947100024675,
+      "ram[73]:set": 4.156947100024675,
+      "ram[83]:occlude": 8.288334732353007,
+      "ram[83]:set": 8.288334732353007,
+      "ram[94]:occlude": 2.9389600014361354,
+      "ram[94]:set": 2.9389600014361354,
+      "ram[95]:occlude": 3.5683430551395423,
+      "ram[95]:set": 3.5683430551395423,
+      "ram[96]:occlude": 2.884154345864293,
+      "ram[96]:set": 2.884154345864293,
       "tia[COLUBK]:set": 0.0
     },
     "shap_phi_signed_per_cell": {
-      "29": 3.602438211231702,
+      "29": 3.6024382112317026,
       "39": -36.037446929620366,
-      "41": 6.344933760287183,
-      "54": 4.253335723283821,
-      "73": 4.156947100024685,
-      "83": 8.288334732353018,
-      "94": 2.93896000143613,
-      "95": 3.5683430551395414,
-      "96": 2.884154345864284
+      "41": 6.344933760287179,
+      "54": 4.2533357232838265,
+      "73": 4.156947100024675,
+      "83": 8.288334732353007,
+      "94": 2.9389600014361354,
+      "95": 3.5683430551395423,
+      "96": 2.884154345864293
     },
     "shapley_kernel_note": "coalitions sampled with size s ~ p(s)∝(C−1)/(s·(C−s)); each row of the WLS is weighted by the Shapley kernel π(s)=(C−1)/(binom(C,s)·s·(C−s)) (Lundberg & Lee Theorem 2). Endpoints s∈{0,C} carry infinite weight ⇒ pinned exactly by the efficiency constraint (not sampled). A 1e-8 ridge stabilises rank-deficient designs.",
-    "substrate": "jutari (Julia, HARD) — real-ROM coalition re-runs (bit-exact oracle machinery) + closed-form efficiency-constrained WLS solve. NO surrogate model: the value function IS the true emulator, so the only approximation is the coalition sampling + the additive (linear) SHAP model."
+    "substrate": "jutari (Julia, HARD) — real-ROM coalition re-runs (bit-exact oracle machinery) + closed-form efficiency-constrained WLS solve. NO surrogate model: the value function IS the true emulator, so the only approximation is the coalition sampling + the additive (linear) SHAP model.",
+    "triad": {
+      "F": 0.4585757033251803,
+      "M": 0.16666666666666666,
+      "M_named_size": 18,
+      "M_note": "|U*|=3 (oracle movers) / |U_hat|=18 (method above-threshold)",
+      "M_true_minimal_size": 3,
+      "S": 0.0,
+      "S_note": "held-out predictive fit: 0/10 held-out do(u) within ε=8.0 (calib=10, fit Δy≈-0.147·attr+10.763)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    }
   },
   "game": "asterix",
   "method": "kernelshap",
@@ -180,7 +190,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@96)",
-  "timestamp": "1783015895",
-  "value": 0.6441303411763282,
+  "timestamp": "1793016296",
+  "value": 0.4585757033251803,
   "where": "local"
 }

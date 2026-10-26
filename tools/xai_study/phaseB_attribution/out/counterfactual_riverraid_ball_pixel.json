@@ -1,7 +1,7 @@
 {
   "arrays": "counterfactual_riverraid_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "alt_frame": 30,
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-CF causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
@@ -153,8 +153,8 @@
       "precision_at_k": 1.0
     },
     "headline_metrics": {
-      "deletion_auc": 0.9160262293394632,
-      "insertion_auc": 0.34574823951212397,
+      "deletion_auc": 0.9160262293394633,
+      "insertion_auc": 0.34574823951212424,
       "pearson_corr": 0.6131050455189929,
       "precision_at_k": 0.3333333333333333,
       "spearman_corr": 0.6411343457084541,
@@ -247,7 +247,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r158c79",
-  "timestamp": "1783133875",
+  "timestamp": "1793021908",
   "value": 0.6131050455189929,
   "where": "local"
 }

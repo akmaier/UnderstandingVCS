@@ -1,7 +1,7 @@
 {
   "arrays": "A5_jamesbond.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): the LFP-analog pooled-activity spectrum is rich, but a high fraction of its power is the KNOWN frame/animation clocks — epiphenomenal structure that says nothing about the causal computation (the dominant spectral peaks are clock harmonics). A5 REVEALS the pooled periodicities and MISSES the causal map; the clock-explained fraction is the quantified-Kording measurement here.",
@@ -36,9 +36,9 @@
     "method_kind": "descriptive (no oracle F/S/M; A5 reports the pooled spectral structure it REVEALS vs the causal map it MISSES — the clock-explained fraction quantifies how much of the headline spectrum is causally inert).",
     "regions": [
       {
-        "clock_explained_variance_fraction": 0.2566088771907982,
+        "clock_explained_variance_fraction": 0.2566947109842703,
         "dominant_period_frames": 3.011764705882353,
-        "dominant_power_share": 0.10394871158657812,
+        "dominant_power_share": 0.10394871158657805,
         "n_cells": 75,
         "n_cells_varying": 75,
         "ram_cells": [
@@ -121,9 +121,9 @@
         "region": "global"
       },
       {
-        "clock_explained_variance_fraction": 0.6701009699675476,
+        "clock_explained_variance_fraction": 0.669253364081124,
         "dominant_period_frames": 256.0,
-        "dominant_power_share": 0.2730450385107718,
+        "dominant_power_share": 0.27304503851077183,
         "n_cells": 2,
         "n_cells_varying": 2,
         "ram_cells": [
@@ -133,7 +133,7 @@
         "region": "p_shot"
       },
       {
-        "clock_explained_variance_fraction": 0.5905642423246611,
+        "clock_explained_variance_fraction": 0.5906085650632675,
         "dominant_period_frames": 85.33333333333333,
         "dominant_power_share": 0.18733986379523784,
         "n_cells": 4,
@@ -147,9 +147,9 @@
         "region": "value"
       },
       {
-        "clock_explained_variance_fraction": 0.7220548540240987,
+        "clock_explained_variance_fraction": 0.7213656613979503,
         "dominant_period_frames": 256.0,
-        "dominant_power_share": 0.2788776880886253,
+        "dominant_power_share": 0.27887768808862556,
         "n_cells": 7,
         "n_cells_varying": 7,
         "ram_cells": [
@@ -169,7 +169,7 @@
       "dft": "dependency-free one-sided DFT power (no FFTW added to the shared jutari env); freq unit = cycles/frame; DC bin dropped after detrend; Hann-windowed; linear trend (frame-counter ramp) removed.",
       "frame_cadence_note": "the per-frame sampling clock is 1 frame; dominant periods are reported in FRAMES (period p ⇒ p-frame cycle, e.g. a period-2 blink, a period-N animation/score-flash timer). Relate to game cadence: short integer periods are animation/blink timers driven by the frame counter (T2), not game-state oscillations.",
       "global_dominant_period_frames": 3.011764705882353,
-      "global_dominant_power_share": 0.10394871158657812,
+      "global_dominant_power_share": 0.10394871158657805,
       "global_top_peak_periods_frames": [
         3.011764705882353,
         2.9767441860465116,
@@ -178,11 +178,11 @@
         2.0
       ],
       "global_top_peak_power": [
-        5.3713995250693465,
-        5.334526087817203,
-        4.1139107927052425,
-        3.872624367387974,
-        3.672793870570574
+        5.371399525069345,
+        5.334526087817198,
+        4.113910792705241,
+        3.872624367387973,
+        3.672793870570577
       ]
     },
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the analysed RAM trajectory is a deterministic re-run (asserted).",
@@ -213,7 +213,7 @@
   "state": "gameplay(seed=0,prefix=90)+256",
   "stderr": null,
   "target_output": "pooled-activity-power-spectrum",
-  "timestamp": "1783124970",
-  "value": 0.2566088771907982,
+  "timestamp": "1793018004",
+  "value": 0.2566947109842703,
   "where": "local"
 }

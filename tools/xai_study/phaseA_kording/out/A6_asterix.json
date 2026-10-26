@@ -1,7 +1,7 @@
 {
   "arrays": "A6_asterix.npz",
   "ci": null,
-  "commit": "9391b559",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -27,62 +27,26 @@
       96
     ],
     "cell_scope": {
-      "direction_disagreement": 1.0,
-      "false_edge_rate": 0.9166666666666666,
+      "direction_disagreement": 0.0,
+      "false_edge_rate": 1.0,
       "inferred_edges_0based": [
         [
-          0,
-          5
-        ],
-        [
           1,
-          2
-        ],
-        [
-          1,
-          5
-        ],
-        [
-          2,
-          1
-        ],
-        [
-          2,
-          5
-        ],
-        [
-          5,
-          1
-        ],
-        [
-          5,
-          2
+          7
         ],
         [
           7,
           1
-        ],
-        [
-          7,
-          5
-        ],
-        [
-          8,
-          2
-        ],
-        [
-          8,
-          5
         ],
         [
           8,
           7
         ]
       ],
-      "missed_edge_rate": 0.8333333333333334,
-      "n_inferred_edges": 12,
+      "missed_edge_rate": 1.0,
+      "n_inferred_edges": 3,
       "n_nodes": 9,
-      "n_true_edges": 6,
+      "n_true_edges": 8,
       "note": "false_edge_rate=#(Granger edge, true absent)/#Granger edges (=1−precision); missed_edge_rate=#(true edge, Granger absent)/#true edges (=1−recall); direction_disagreement = of unordered pairs with a single true AND single Granger arrow, the fraction whose directions OPPOSE — the headline temporal-precedence≠causation Granger failure.",
       "true_edges_0based": [
         [
@@ -94,12 +58,20 @@
           8
         ],
         [
+          2,
+          8
+        ],
+        [
           3,
           0
         ],
         [
           3,
           2
+        ],
+        [
+          5,
+          1
         ],
         [
           5,
@@ -133,12 +105,8 @@
     "subsystem_scope": {
       "activity_metric": "per-frame #bytes changed vs previous frame (CPU=RAM working set lower 3/4; TIA=64-byte register file; RIOT=upper-RAM timer/SWCHx I/O block)",
       "direction_disagreement": 1.0,
-      "false_edge_rate": 0.75,
+      "false_edge_rate": 1.0,
       "inferred_edges_0based": [
-        [
-          0,
-          2
-        ],
         [
           1,
           0
@@ -149,10 +117,10 @@
         ],
         [
           2,
-          0
+          1
         ]
       ],
-      "missed_edge_rate": 0.5,
+      "missed_edge_rate": 1.0,
       "note": "on a tightly clock-locked frame loop Granger generically infers DENSE bidirectional edges among all co-active subsystems (every subsystem's past predicts every other's) — false-edge rate > 0 despite the true data-flow being sparse and directional.",
       "subsystems": [
         "CPU",
@@ -181,22 +149,24 @@
       "note": "P2 redesign: BOTH the scored oracle prefix (true data-flow graph) AND the descriptive Granger trajectory run on a seeded random-action GAMEPLAY state (not the FIRE-then-NOOP oracle tape / synthetic active tape), gated by the §1 oracle cause-density gate. The Granger tape is the gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A6's Granger + true-data-flow algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r75c79",
+      "shared_output": "screen_region(n_changed_px)@r91c79",
       "state_kind": "seeded_random_action_gameplay"
     },
     "trajectory_frames": 150,
     "trajectory_trace": "active trace (4×FIRE + periodic RIGHTFIRE/LEFTFIRE)",
     "triad": {
-      "F": 0.1111111111111111,
+      "F": 0.0,
       "F_note": "F1 of the Granger-inferred directed edges vs the exact-oracle true data-flow edges (9 candidate cells)",
-      "M": 0.08333333333333337,
-      "M_note": "1 − false-edge rate: fraction of Granger-inferred edges the oracle says are spurious (temporal precedence ≠ causation)",
-      "S": 0.8055555555555556,
+      "M": 1.0,
+      "M_note": "M = |U*|/|U_hat| over edges: |true edges|=8 / |discovered edges|=3",
+      "S": 0.9166666666666666,
       "S_note": "off-diagonal directed-edge agreement between the Granger graph and the HELD-OUT base+37 true data-flow (generalisation to an unseen intervention, bit-exact re-run)",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): Granger causality infers TEMPORAL PRECEDENCE, which is NOT the true causal data-flow direction. On a deterministic register-transfer machine the two demonstrably disagree — false_edge_rate>0, missed_edge_rate>0, and direction_disagreement>0 quantify the departure from the known data-flow.",
-      "n_inferred_edges": 12,
+      "legacy_minimality": 0.0,
+      "legacy_minimality_note": "1 − false-edge rate (the pre-standardization edge M). Retained for reference; the triad M above is the paper's |true edges|/|discovered edges|.",
+      "n_inferred_edges": 3,
       "n_nodes": 9,
-      "n_true_edges": 6
+      "n_true_edges": 8
     }
   },
   "game": "asterix",
@@ -210,7 +180,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "directed data-flow edges (CPU/TIA/RIOT subsystems + candidate RAM cells)",
-  "timestamp": "1783015029",
-  "value": 0.9166666666666666,
+  "timestamp": "1793016017",
+  "value": 1.0,
   "where": "local"
 }

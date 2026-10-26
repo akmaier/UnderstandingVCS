@@ -1,7 +1,7 @@
 {
   "arrays": "A3_tuning_road_runner.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "A3_tuning": {
       "clock_corr_per_cell": {
@@ -16,10 +16,10 @@
         "RAM[42]:tb.xy": 0.0,
         "RAM[43]:truck.xy": 0.0,
         "RAM[55]:t.xy": 0.14095229572048196,
-        "RAM[5]:enemy.xy": 0.652212749593741,
+        "RAM[5]:enemy.xy": 0.6522127495937409,
         "RAM[80]:player.xy": 0.5079623808520414,
-        "RAM[81]:enemy.xy": 0.8146635385529252,
-        "RAM[82]:rc.xy": 0.9072433548875025,
+        "RAM[81]:enemy.xy": 0.8146635385529254,
+        "RAM[82]:rc.xy": 0.9072433548875027,
         "RAM[83]:l_cac.xy": 0.9044217228752286,
         "RAM[89]:am.xy": 0.9072433548875024,
         "RAM[90]:loc": 0.0
@@ -53,17 +53,17 @@
         "RAM[37]:(unnamed)": 1.0,
         "RAM[38]:(unnamed)": 1.0,
         "RAM[39]:(unnamed)": 1.0,
-        "RAM[3]:player.xy": 0.6440812843432604,
+        "RAM[3]:player.xy": 0.6440812843432606,
         "RAM[41]:player.wh": 0.42100728586081915,
         "RAM[42]:tb.xy": 0.0,
         "RAM[43]:truck.xy": 0.0,
         "RAM[55]:t.xy": 1.0,
-        "RAM[5]:enemy.xy": 0.8926558591217616,
-        "RAM[80]:player.xy": 0.8926558591217616,
+        "RAM[5]:enemy.xy": 0.8926558591217618,
+        "RAM[80]:player.xy": 0.8926558591217618,
         "RAM[81]:enemy.xy": 0.62204506677311,
-        "RAM[82]:rc.xy": 1.0,
-        "RAM[83]:l_cac.xy": 0.999629375273874,
-        "RAM[89]:am.xy": 1.0,
+        "RAM[82]:rc.xy": 0.9999999999999999,
+        "RAM[83]:l_cac.xy": 0.9996293752738741,
+        "RAM[89]:am.xy": 0.9999999999999999,
         "RAM[90]:loc": 0.0
       },
       "luminance_corr_per_cell": {
@@ -78,7 +78,7 @@
         "RAM[42]:tb.xy": 0.0,
         "RAM[43]:truck.xy": 0.0,
         "RAM[55]:t.xy": 0.008960535786168731,
-        "RAM[5]:enemy.xy": 0.41424780084666474,
+        "RAM[5]:enemy.xy": 0.41424780084666485,
         "RAM[80]:player.xy": 0.3898417908815876,
         "RAM[81]:enemy.xy": 0.5869279210468743,
         "RAM[82]:rc.xy": 0.43145978646411776,
@@ -182,7 +182,7 @@
       "RAM[90]:loc": 0.0
     },
     "positive_control_oracle_as_method_F": 1.0,
-    "rom_settings": "JuTari.RomSettingsModule.GenericRomSettings",
+    "rom_settings": "JuTari.TerminalGames.RoadRunnerRomSettings",
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the oracle causal map is EXACT interventions re-run on the true ROM; the tuning curves are a DESCRIPTIVE active-trace recording (the recorder's documented purpose), not a bit-exact-vs-xitari claim.",
     "testbed": {
@@ -199,11 +199,11 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": -0.1440731286823028,
+      "F": -0.194521858652323,
       "F_note": "Spearman(A3 game-variable selectivity, oracle causal importance) over 18 candidate cells",
       "M": 0.42857142857142855,
       "M_note": "M = |U*|/|U_hat| (03_methods.tex sec:triad): |U*|=6 (oracle movers) / |U_hat|=14 (method above-threshold)",
-      "S": 0.08320721561275962,
+      "S": 0.08320721561275966,
       "S_note": "Pearson(A3 selectivity, held-out do(base+37) screen break) — sufficiency on a bit-exact re-run",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): a tuning-curve importance map scores LOW faithfulness despite fully-known structure. F<1 / spurious-tuning>0 quantify where the classical analysis departs from the ground truth. The oracle-as-method positive control (F=1.0) confirms the harness rewards a perfectly-faithful map.",
       "legacy_minimality": 0.36363636363636365,
@@ -221,7 +221,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen-break (oracle causal importance) vs tuning selectivity",
-  "timestamp": "1783606382",
+  "timestamp": "1793019828",
   "value": 0.6363636363636364,
   "where": "local"
 }

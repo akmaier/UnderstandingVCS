@@ -1,7 +1,7 @@
 {
   "arrays": "rise_video_pinball_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-RISE causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -46,15 +46,15 @@
           "deletion_auc": 0.9654017857142857,
           "insertion_auc": 0.09375,
           "n_masks": 125,
-          "pearson_corr": 0.7099323588038814,
+          "pearson_corr": 0.7099323588038813,
           "precision_at_k": 1.0,
           "spearman_corr": 0.6683786036416091
         },
         {
-          "deletion_auc": 0.9553571428571429,
+          "deletion_auc": 0.9553571428571428,
           "insertion_auc": 0.09375,
           "n_masks": 250,
-          "pearson_corr": 0.739171594145708,
+          "pearson_corr": 0.7391715941457079,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.48609352992117016
         },
@@ -62,7 +62,7 @@
           "deletion_auc": 0.9486607142857144,
           "insertion_auc": 0.09375,
           "n_masks": 500,
-          "pearson_corr": 0.7310423242861002,
+          "pearson_corr": 0.7310423242861004,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.3645701474408777
         }
@@ -80,7 +80,7 @@
     "headline_metrics": {
       "deletion_auc": 0.9486607142857144,
       "insertion_auc": 0.09375,
-      "pearson_corr": 0.7310423242861002,
+      "pearson_corr": 0.7310423242861004,
       "precision_at_k": 0.6666666666666666,
       "spearman_corr": 0.3645701474408777,
       "topk": 3
@@ -126,7 +126,7 @@
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard i --nshards n --shard-kind game): one Slurm array task per core game; or batched SOFT-STE masked re-runs over masks×cells×games on GPU (the forward is bit-exact to this HARD map).",
     "substrate": "jutari (Julia, HARD) — RISE (Petsiuk 2018) randomized-mask saliency: draw N random binary masks over the candidate RAM cells, mask the dropped cells to 0, RE-RUN the real ROM (bit-exact oracle machinery), weight each mask by the masked output. Every probe is a genuine emulator re-run; no gradient, no surrogate.",
     "triad": {
-      "F": 0.7310423242861002,
+      "F": 0.7310423242861004,
       "M": 0.21428571428571427,
       "M_named_size": 14,
       "M_note": "|U*|=3 (oracle movers) / |U_hat|=14 (method above-threshold)",
@@ -148,7 +148,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@67)",
-  "timestamp": "1783126730",
-  "value": 0.7310423242861002,
+  "timestamp": "1793026206",
+  "value": 0.7310423242861004,
   "where": "local"
 }

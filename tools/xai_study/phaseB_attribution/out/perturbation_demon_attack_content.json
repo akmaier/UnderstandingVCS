@@ -1,7 +1,7 @@
 {
   "arrays": "perturbation_demon_attack_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-attributed causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -84,7 +84,7 @@
       "tia[COLUBK]:set": 0.0
     },
     "harness_positive_control": {
-      "deletion_auc": 0.9120338397790053,
+      "deletion_auc": 0.9120338397790052,
       "insertion_auc": 0.7777106353591161,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the extremal-perturbation numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
@@ -104,8 +104,8 @@
     "mask_size": 1,
     "method_ref": "meaningful/extremal perturbation (Fong & Vedaldi 2017; Fong et al. 2019): the attribution is an optimised MINIMAL MASK whose perturbation maximally changes y, under an area budget; optimised by greedy forward selection on the true VCS (each step a real do(occlude)-re-run), NOT a surrogate model.",
     "metrics": {
-      "deletion_auc": 0.9120338397790053,
-      "insertion_auc": 0.9710808011049723,
+      "deletion_auc": 0.9120338397790052,
+      "insertion_auc": 0.9710808011049725,
       "mask_iou_vs_true_causal_set": 0.5,
       "pearson_corr": 0.9605419678553581,
       "precision_at_k": 0.6666666666666666,
@@ -181,7 +181,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@16)",
-  "timestamp": "1783127881",
+  "timestamp": "1793017632",
   "value": 0.9605419678553581,
   "where": "local"
 }

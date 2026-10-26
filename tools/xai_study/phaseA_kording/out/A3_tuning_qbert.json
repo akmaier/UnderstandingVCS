@@ -1,19 +1,19 @@
 {
   "arrays": "A3_tuning_qbert.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "A3_tuning": {
       "clock_corr_per_cell": {
-        "RAM[103]:last_103": 0.14095229572048182,
+        "RAM[103]:last_103": 0.1409522957204818,
         "RAM[105]:green_enemy_column": 0.14095229572048193,
         "RAM[21]:tile_color_1": 0.14095229572048174,
-        "RAM[33]:player.xy": 0.19866660720589915,
+        "RAM[33]:player.xy": 0.19866660720589918,
         "RAM[35]:player_column": 0.14095229572048187,
         "RAM[39]:coil_prev_y": 0.14095229572048193,
         "RAM[43]:player_x": 0.14095229572048185,
         "RAM[46]:enemy": 0.14095229572048176,
-        "RAM[47]:enemy": 0.14095229572048182,
+        "RAM[47]:enemy": 0.1409522957204818,
         "RAM[52]:tile_color_2": 0.14095229572048174,
         "RAM[54]:tile_color_3": 0.14095229572048174,
         "RAM[67]:player_y": 0.14095229572048187,
@@ -55,11 +55,11 @@
         "RAM[103]:last_103": 1.0,
         "RAM[105]:green_enemy_column": 1.0,
         "RAM[21]:tile_color_1": 1.0,
-        "RAM[33]:player.xy": 0.7047299449448811,
+        "RAM[33]:player.xy": 0.704729944944881,
         "RAM[35]:player_column": 1.0,
         "RAM[39]:coil_prev_y": 1.0,
         "RAM[43]:player_x": 1.0,
-        "RAM[46]:enemy": 1.0,
+        "RAM[46]:enemy": 0.9999999999999999,
         "RAM[47]:enemy": 1.0,
         "RAM[52]:tile_color_2": 1.0,
         "RAM[54]:tile_color_3": 1.0,
@@ -74,15 +74,15 @@
         "RAM[8]:last_lives": 1.0
       },
       "luminance_corr_per_cell": {
-        "RAM[103]:last_103": 0.9999254342233039,
-        "RAM[105]:green_enemy_column": 0.9999254342233049,
+        "RAM[103]:last_103": 0.999925434223304,
+        "RAM[105]:green_enemy_column": 0.9999254342233048,
         "RAM[21]:tile_color_1": 0.9999254342233045,
-        "RAM[33]:player.xy": 0.7044117605272525,
-        "RAM[35]:player_column": 0.00496506598654864,
-        "RAM[39]:coil_prev_y": 0.9999254342233047,
-        "RAM[43]:player_x": 0.004965065986548638,
-        "RAM[46]:enemy": 0.9999254342233032,
-        "RAM[47]:enemy": 0.9999254342233047,
+        "RAM[33]:player.xy": 0.7044117605272527,
+        "RAM[35]:player_column": 0.004965065986548639,
+        "RAM[39]:coil_prev_y": 0.9999254342233046,
+        "RAM[43]:player_x": 0.004965065986548639,
+        "RAM[46]:enemy": 0.9999254342233033,
+        "RAM[47]:enemy": 0.9999254342233048,
         "RAM[52]:tile_color_2": 0.9999254342233045,
         "RAM[54]:tile_color_3": 0.9999254342233045,
         "RAM[67]:player_y": 0.004965065986548639,
@@ -93,7 +93,7 @@
         "RAM[85]:tile_color_5": 0.9999254342233045,
         "RAM[86]:tile_color_6": 0.0,
         "RAM[89]:score": 0.0,
-        "RAM[8]:last_lives": 0.9999254342233049
+        "RAM[8]:last_lives": 0.9999254342233048
       },
       "luminance_spurious_tuning_rate": 0.5,
       "n_spurious_gvar": 8,
@@ -219,7 +219,7 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": 0.4670040692672171,
+      "F": 0.5179704016913319,
       "F_note": "Spearman(A3 game-variable selectivity, oracle causal importance) over 20 candidate cells",
       "M": 0.4666666666666667,
       "M_note": "M = |U*|/|U_hat| (03_methods.tex sec:triad): |U*|=7 (oracle movers) / |U_hat|=15 (method above-threshold)",
@@ -241,7 +241,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen-break (oracle causal importance) vs tuning selectivity",
-  "timestamp": "1783606261",
+  "timestamp": "1793019558",
   "value": 0.5333333333333333,
   "where": "local"
 }

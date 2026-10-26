@@ -1,19 +1,19 @@
 {
   "arrays": "A3_tuning_fishing_derby.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "A3_tuning": {
       "clock_corr_per_cell": {
         "RAM[23]:p1s.hook_position": 0.693179426360484,
         "RAM[24]:p2s.hook_position": 0.7001854377540041,
-        "RAM[34]:p1s.hook_position": 0.5479516123632191,
-        "RAM[35]:p2s.hook_position": 0.30467144073464275,
+        "RAM[34]:p1s.hook_position": 0.5479516123632192,
+        "RAM[35]:p2s.hook_position": 0.3046714407346427,
         "RAM[61]:value": 0.0,
         "RAM[62]:value": 0.0,
         "RAM[65]:p1s.hook_position": 0.6337490551238341,
         "RAM[66]:p2s.hook_position": 0.9996667858723377,
-        "RAM[75]:xy": 0.9985999111047462
+        "RAM[75]:xy": 0.998599911104746
       },
       "epiphenomenal_control": "frame_clock",
       "game_variable_signals": [
@@ -32,12 +32,12 @@
         "RAM[23]:p1s.hook_position": 0.6931159269930306,
         "RAM[24]:p2s.hook_position": 0.9197606249455793,
         "RAM[34]:p1s.hook_position": 0.5512790197383723,
-        "RAM[35]:p2s.hook_position": 0.348580113689634,
+        "RAM[35]:p2s.hook_position": 0.34858011368963404,
         "RAM[61]:value": 0.0,
         "RAM[62]:value": 0.0,
         "RAM[65]:p1s.hook_position": 0.9197606249455793,
-        "RAM[66]:p2s.hook_position": 0.9981449119221973,
-        "RAM[75]:xy": 0.9981449119221973
+        "RAM[66]:p2s.hook_position": 0.9981449119221976,
+        "RAM[75]:xy": 0.9981449119221976
       },
       "luminance_corr_per_cell": {
         "RAM[23]:p1s.hook_position": 0.6947110681573047,
@@ -127,7 +127,7 @@
       "F_note": "Spearman(A3 game-variable selectivity, oracle causal importance) over 9 candidate cells",
       "M": 0.7142857142857143,
       "M_note": "M = |U*|/|U_hat| (03_methods.tex sec:triad): |U*|=5 (oracle movers) / |U_hat|=7 (method above-threshold)",
-      "S": 0.49046566783404316,
+      "S": 0.4904656678340433,
       "S_note": "Pearson(A3 selectivity, held-out do(base+37) screen break) — sufficiency on a bit-exact re-run",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): a tuning-curve importance map scores LOW faithfulness despite fully-known structure. F<1 / spurious-tuning>0 quantify where the classical analysis departs from the ground truth. The oracle-as-method positive control (F=1.0) confirms the harness rewards a perfectly-faithful map.",
       "legacy_minimality": 0.75,
@@ -145,7 +145,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen-break (oracle causal importance) vs tuning selectivity",
-  "timestamp": "1783605336",
+  "timestamp": "1793017410",
   "value": 0.25,
   "where": "local"
 }

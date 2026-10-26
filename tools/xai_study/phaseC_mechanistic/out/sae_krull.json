@@ -1,7 +1,7 @@
 {
   "arrays": "sae_krull.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -142,7 +142,7 @@
       "note": "for each KNOWN candidate cell that VARIES, max|Pearson r| between any learned feature's activation and that cell over the trajectory; matched iff |r| ≥ 0.7. Match-rate = #matched / #varying.",
       "per_cell": [
         {
-          "best_corr": 0.8234778151408205,
+          "best_corr": 0.8234778151408207,
           "best_feature": 51,
           "concept": "bottom",
           "family": "bottom",
@@ -151,7 +151,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8234778151408205,
+          "best_corr": 0.8234778151408207,
           "best_feature": 51,
           "concept": "xy",
           "family": "xy",
@@ -259,7 +259,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.9791713153903647,
+          "best_corr": 0.9791713153903644,
           "best_feature": 11,
           "concept": "player.xy",
           "family": "player",
@@ -304,7 +304,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.9992175633528209,
+          "best_corr": 0.9992175633528207,
           "best_feature": 58,
           "concept": "player.xy",
           "family": "player",
@@ -331,7 +331,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.9992175633528209,
+          "best_corr": 0.9992175633528207,
           "best_feature": 58,
           "concept": "player.xy",
           "family": "player",
@@ -448,7 +448,7 @@
         {
           "d_hidden": 16,
           "fve_held": 0.7068344494442265,
-          "fve_train": 0.7306559399920456,
+          "fve_train": 0.7306559399920455,
           "l1": 0.2,
           "matched_fraction": 0.4,
           "mean_l0": 1.8466666666666667
@@ -525,7 +525,7 @@
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
       "M": 1.0,
       "M_note": "|U*|=11 (oracle movers) / |U_hat|=5 (method above-threshold)",
-      "S": 0.4865258266961964,
+      "S": 0.48652582669619654,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
     }
@@ -542,7 +542,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783608189",
+  "timestamp": "1793018958",
   "value": 1.0,
   "where": "local"
 }

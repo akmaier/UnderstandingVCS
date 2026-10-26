@@ -1,7 +1,7 @@
 {
   "arrays": "A5_space_invaders.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): the LFP-analog pooled-activity spectrum is rich, but a high fraction of its power is the KNOWN frame/animation clocks — epiphenomenal structure that says nothing about the causal computation (the dominant spectral peaks are clock harmonics). A5 REVEALS the pooled periodicities and MISSES the causal map; the clock-explained fraction is the quantified-Kording measurement here.",
@@ -48,7 +48,7 @@
     "method_kind": "descriptive (no oracle F/S/M; A5 reports the pooled spectral structure it REVEALS vs the causal map it MISSES — the clock-explained fraction quantifies how much of the headline spectrum is causally inert).",
     "regions": [
       {
-        "clock_explained_variance_fraction": 0.49346442768787013,
+        "clock_explained_variance_fraction": 0.4934644276878701,
         "dominant_period_frames": 2.0,
         "dominant_power_share": 0.15251075785943563,
         "n_cells": 31,
@@ -101,7 +101,7 @@
         "region": "(unnamed)"
       },
       {
-        "clock_explained_variance_fraction": 0.7449344158430259,
+        "clock_explained_variance_fraction": 0.7449344158430253,
         "dominant_period_frames": 128.0,
         "dominant_power_share": 0.3284940868588878,
         "n_cells": 1,
@@ -112,9 +112,9 @@
         "region": "bullets"
       },
       {
-        "clock_explained_variance_fraction": 0.9343250983683254,
+        "clock_explained_variance_fraction": 0.9343250983683241,
         "dominant_period_frames": 256.0,
-        "dominant_power_share": 0.6110921147231311,
+        "dominant_power_share": 0.6110921147231315,
         "n_cells": 2,
         "n_cells_varying": 1,
         "ram_cells": [
@@ -146,7 +146,7 @@
         "region": "lives"
       },
       {
-        "clock_explained_variance_fraction": 0.4177218335310422,
+        "clock_explained_variance_fraction": 0.41772183353104186,
         "dominant_period_frames": 2.0,
         "dominant_power_share": 0.2856348404397105,
         "n_cells": 1,
@@ -202,9 +202,9 @@
         "region": "shields"
       },
       {
-        "clock_explained_variance_fraction": 0.05781579179832501,
+        "clock_explained_variance_fraction": 0.05781579179832503,
         "dominant_period_frames": 19.692307692307693,
-        "dominant_power_share": 0.061081240075181606,
+        "dominant_power_share": 0.06108124007518161,
         "n_cells": 1,
         "n_cells_varying": 1,
         "ram_cells": [
@@ -213,9 +213,9 @@
         "region": "value"
       },
       {
-        "clock_explained_variance_fraction": 0.7366396874356689,
+        "clock_explained_variance_fraction": 0.7366396874356685,
         "dominant_period_frames": 128.0,
-        "dominant_power_share": 0.3225760510073267,
+        "dominant_power_share": 0.32257605100732667,
         "n_cells": 1,
         "n_cells_varying": 1,
         "ram_cells": [
@@ -251,9 +251,9 @@
       ],
       "global_top_peak_power": [
         66.49396609526653,
-        46.88433000335239,
-        41.49587724446809,
-        30.25187783836227,
+        46.88433000335238,
+        41.4958772444681,
+        30.25187783836225,
         22.711740314568942
       ]
     },
@@ -285,7 +285,7 @@
   "state": "gameplay(seed=0,prefix=90)+256",
   "stderr": null,
   "target_output": "pooled-activity-power-spectrum",
-  "timestamp": "1783125790",
-  "value": 0.49346442768787013,
+  "timestamp": "1793019819",
+  "value": 0.4934644276878701,
   "where": "local"
 }

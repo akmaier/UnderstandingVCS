@@ -1,7 +1,7 @@
 {
   "arrays": "A4_carnival.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -117,8 +117,8 @@
         "RAM[3]:ammo.wh": 1432.0,
         "RAM[40]:targets_third_row_variation": 388.0,
         "RAM[42]:ammo.rgb": 1840.0,
-        "RAM[45]:score": 4.0,
-        "RAM[46]:score": 2.0,
+        "RAM[45]:score": 68.0,
+        "RAM[46]:score": 38.0,
         "RAM[55]:missile": 25.0,
         "RAM[8]:bonus_sprites": 38.0
       }
@@ -127,7 +127,7 @@
     "scored_in_conformance_window": false,
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the coupling oracle uses EXACT interventions re-run on the true ROM.",
     "testbed": {
-      "cause_density_above_floor": 26,
+      "cause_density_above_floor": 27,
       "cause_density_accepted": true,
       "cause_density_floor": 0.5,
       "cause_density_gate_k": 4,
@@ -136,7 +136,7 @@
       "note": "P2 redesign: the correlation/coupling study runs on a seeded random-action GAMEPLAY state (not the per-game FIRE/attract tape), gated by the §1 oracle cause-density gate. Both the coupling oracle AND the descriptive correlation trajectory are stepped along the SAME gameplay stream so the candidate cells VARY on genuine input-driven play. A4's correlation/coupling algorithm is unchanged; only the analysis state moves.",
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r84c33",
+      "shared_output": "screen_region(n_changed_px)@r92c33",
       "state_kind": "seeded_random_action_gameplay"
     },
     "trajectory_frames": 150,
@@ -146,7 +146,7 @@
       "F_note": "Spearman(|pairwise corr|, oracle cell-cell coupling) over 153 candidate-cell pairs",
       "M": 0.17777777777777778,
       "M_note": "M = |U*|/|U_hat| over candidate-cell pairs (03_methods.tex sec:triad): |U*|=8 (oracle movers) / |U_hat|=45 (method above-threshold)",
-      "S": 0.24426465335590591,
+      "S": 0.24426465335590594,
       "S_note": "Pearson(|pairwise corr|, held-out do(base+37) coupling) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): pairwise correlation structure GENERALLY OVER-GROUPS — it lumps causally-unrelated cells that merely co-vary (the present≠used trap, pairwise). F<1 + over_grouping_ratio>0 quantify the departure from the true coupling.",
       "legacy_minimality": 0.25,
@@ -155,18 +155,18 @@
     },
     "weak_pairwise_strong_global": {
       "candidate_frac_strong_pairs(|corr|>=0.5)": 0.5111111111111111,
-      "candidate_mean_abs_pairwise": 0.5049282076216125,
-      "candidate_median_abs_pairwise": 0.5751096187684855,
+      "candidate_mean_abs_pairwise": 0.5049282076216127,
+      "candidate_median_abs_pairwise": 0.5751096187684854,
       "candidate_n_varying_cells": 10,
-      "candidate_participation_ratio": 2.429014855148986,
+      "candidate_participation_ratio": 2.4290148551489845,
       "candidate_top3_eig_share": 0.8926022179566979,
-      "candidate_top_eig_share": 0.6007063705257787,
+      "candidate_top_eig_share": 0.6007063705257789,
       "note": "the spike-word headline (Schneidman 2006; Tkačik 2014): over the FULL POPULATION of varying RAM cells the median pairwise |corr| is WEAK while a few GLOBAL eigen-modes dominate — the effective dimensionality (participation ratio) is far below the #cells, so the collective structure greatly exceeds the pairwise structure. WPSG flag = population median|corr|<0.5 AND population top3-eig-share≥0.6. (The candidate_* set is curated so its pairwise corr runs higher.)",
       "population_mean_abs_pairwise": 0.32474164559035323,
       "population_median_abs_pairwise": 0.19506432342508973,
       "population_n_cells": 51,
-      "population_participation_ratio": 4.689046818002067,
-      "population_top3_eig_share": 0.6024911307886119,
+      "population_participation_ratio": 4.689046818002064,
+      "population_top3_eig_share": 0.602491130788612,
       "weak_pairwise_strong_global": true
     }
   },
@@ -181,7 +181,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "cell-cell-coupling",
-  "timestamp": "1783605109",
+  "timestamp": "1793016697",
   "value": 0.2543403682626058,
   "where": "local"
 }

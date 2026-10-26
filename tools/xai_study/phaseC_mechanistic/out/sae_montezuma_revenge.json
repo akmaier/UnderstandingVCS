@@ -1,7 +1,7 @@
 {
   "arrays": "sae_montezuma_revenge.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -162,7 +162,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.9011479140583183,
+          "best_corr": 0.9011479140583178,
           "best_feature": 39,
           "concept": "player_x",
           "family": "player",
@@ -171,7 +171,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8792499109077426,
+          "best_corr": 0.8792499109077431,
           "best_feature": 62,
           "concept": "player_y",
           "family": "player",
@@ -207,7 +207,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.8397099866095291,
+          "best_corr": 0.8397099866095302,
           "best_feature": 31,
           "concept": "enemy_skull_x",
           "family": "enemy_skull",
@@ -216,7 +216,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7412556622021194,
+          "best_corr": 0.741255662202119,
           "best_feature": 41,
           "concept": "player_direction",
           "family": "player",
@@ -252,7 +252,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7974183261876082,
+          "best_corr": 0.7974183261876086,
           "best_feature": 12,
           "concept": "room_state",
           "family": "room_state",
@@ -332,7 +332,7 @@
         {
           "d_hidden": 16,
           "fve_held": 0.8139268853427666,
-          "fve_train": 0.8279919123406057,
+          "fve_train": 0.8279919123406055,
           "l1": 0.2,
           "matched_fraction": 0.5,
           "mean_l0": 2.06
@@ -355,7 +355,7 @@
         },
         {
           "d_hidden": 32,
-          "fve_held": 0.9273869810332239,
+          "fve_held": 0.927386981033224,
           "fve_train": 0.9489676340847788,
           "l1": 0.2,
           "matched_fraction": 0.5,
@@ -409,7 +409,7 @@
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
       "M": 1.0,
       "M_note": "|U*|=13 (oracle movers) / |U_hat|=6 (method above-threshold)",
-      "S": -0.22444154140276848,
+      "S": -0.22444154140276842,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
     }
@@ -426,7 +426,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783608326",
+  "timestamp": "1793019236",
   "value": 1.0,
   "where": "local"
 }

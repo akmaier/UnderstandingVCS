@@ -1,7 +1,7 @@
 {
   "arrays": "sae_pacman.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -99,7 +99,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.8792518803800399,
+          "best_corr": 0.8792518803800401,
           "best_feature": 50,
           "concept": "scorev",
           "family": "scorev",
@@ -198,8 +198,8 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.7118426858045303,
-          "fve_train": 0.8073810979932456,
+          "fve_held": 0.7118426858082925,
+          "fve_train": 0.8073810979960802,
           "l1": 0.2,
           "matched_fraction": 1.0,
           "mean_l0": 0.7333333333333333
@@ -246,7 +246,7 @@
         },
         {
           "d_hidden": 64,
-          "fve_held": 0.9260129347577167,
+          "fve_held": 0.9260129347577168,
           "fve_train": 0.9909067027481554,
           "l1": 0.2,
           "matched_fraction": 1.0,
@@ -266,7 +266,7 @@
       "note": "P2 redesign: the SAE is fit/scored on a seeded random-action GAMEPLAY state (not the FIRE/attract tape), gated by the §1 oracle cause-density gate. The descriptive trajectory is stepped along the gameplay stream (NOOP-continued past prefix+horizon). The SAE algorithm is unchanged; only the analysis state + trajectory move.",
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r131c77",
+      "shared_output": "screen_region(n_changed_px)@r132c77",
       "state_kind": "seeded_random_action_gameplay"
     },
     "trajectory_frames": 150,
@@ -276,7 +276,7 @@
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
       "M": 1.0,
       "M_note": "|U*|=6 (oracle movers) / |U_hat|=1 (method above-threshold)",
-      "S": -0.30357233569556025,
+      "S": -0.3035723356955603,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
     }
@@ -293,7 +293,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783608819",
+  "timestamp": "1793019690",
   "value": 1.0,
   "where": "local"
 }

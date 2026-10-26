@@ -1,7 +1,7 @@
 {
   "arrays": "saliency_kangaroo_position.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-saliency causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment (e.g. the vanishing position output).",
     "baseline": "none (vanilla saliency uses no baseline and no input weighting)",
@@ -44,7 +44,7 @@
     "grad_l1": 0.0,
     "harness_positive_control": {
       "deletion_auc": 0.9202564741035857,
-      "insertion_auc": 0.46607320717131473,
+      "insertion_auc": 0.46607320717131495,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the vanilla-saliency numbers are then a true measurement, not a harness artefact.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "pearson_corr": 1.0,
@@ -52,7 +52,7 @@
     },
     "method_ref": "vanilla gradient / saliency (Simonyan et al. 2014): attribution = |∂y/∂u|",
     "metrics": {
-      "deletion_auc": 0.7723651960784313,
+      "deletion_auc": 0.7723651960784315,
       "insertion_auc": 0.48388480392156863,
       "pearson_corr": 0.0,
       "precision_at_k": 0.0,
@@ -175,7 +175,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r105c80",
-  "timestamp": "1783127813",
+  "timestamp": "1793019310",
   "value": 0.0,
   "where": "local"
 }

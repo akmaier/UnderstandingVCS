@@ -1,7 +1,7 @@
 {
   "arrays": "lime_ms_pacman_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-LIME causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -69,52 +69,52 @@
     "headline_metrics": {
       "deletion_auc": 0.8913218390804595,
       "insertion_auc": 0.37339080459770113,
-      "pearson_corr": 0.35247155847445893,
+      "pearson_corr": 0.35247155847445777,
       "precision_at_k": 0.3333333333333333,
       "spearman_corr": 0.22874979419613686,
-      "surrogate_r2": 0.7097305677649836,
+      "surrogate_r2": 0.7097305677649834,
       "topk": 3
     },
     "lime_attr_per_cause": {
       "joystick:RIGHT": 0.0,
-      "ram[10]:occlude": 43.94895008992661,
-      "ram[10]:set": 43.94895008992661,
-      "ram[119]:occlude": 10.358048495331445,
-      "ram[119]:set": 10.358048495331445,
-      "ram[11]:occlude": 8.435641472144345,
-      "ram[11]:set": 8.435641472144345,
-      "ram[120]:occlude": 3.858265321049686,
-      "ram[120]:set": 3.858265321049686,
-      "ram[121]:occlude": 5.197476897894134,
-      "ram[121]:set": 5.197476897894134,
-      "ram[122]:occlude": 13.234711818014105,
-      "ram[122]:set": 13.234711818014105,
-      "ram[123]:occlude": 88.50879698814674,
-      "ram[123]:set": 88.50879698814674,
-      "ram[12]:occlude": 2.2121741172845093,
-      "ram[12]:set": 2.2121741172845093,
-      "ram[13]:occlude": 1.6821071928696474,
-      "ram[13]:set": 1.6821071928696474,
-      "ram[14]:occlude": 4.1003082659128784,
-      "ram[14]:set": 4.1003082659128784,
-      "ram[15]:occlude": 6.143228430987229,
-      "ram[15]:set": 6.143228430987229,
-      "ram[16]:occlude": 26.30842698862437,
-      "ram[16]:set": 26.30842698862437,
-      "ram[17]:occlude": 10.759444457571975,
-      "ram[17]:set": 10.759444457571975,
-      "ram[19]:occlude": 69.7433033253652,
-      "ram[19]:set": 69.7433033253652,
-      "ram[56]:occlude": 2.382441987695231,
-      "ram[56]:set": 2.382441987695231,
-      "ram[6]:occlude": 28.148749384850305,
-      "ram[6]:set": 28.148749384850305,
-      "ram[7]:occlude": 4.435921450044763,
-      "ram[7]:set": 4.435921450044763,
-      "ram[8]:occlude": 9.538958576510119,
-      "ram[8]:set": 9.538958576510119,
-      "ram[9]:occlude": 34.157257922263284,
-      "ram[9]:set": 34.157257922263284,
+      "ram[10]:occlude": 43.94895008992477,
+      "ram[10]:set": 43.94895008992477,
+      "ram[119]:occlude": 10.35804849533091,
+      "ram[119]:set": 10.35804849533091,
+      "ram[11]:occlude": 8.435641472142555,
+      "ram[11]:set": 8.435641472142555,
+      "ram[120]:occlude": 3.858265321048232,
+      "ram[120]:set": 3.858265321048232,
+      "ram[121]:occlude": 5.197476897893251,
+      "ram[121]:set": 5.197476897893251,
+      "ram[122]:occlude": 13.234711818015985,
+      "ram[122]:set": 13.234711818015985,
+      "ram[123]:occlude": 88.50879698814526,
+      "ram[123]:set": 88.50879698814526,
+      "ram[12]:occlude": 2.2121741172835376,
+      "ram[12]:set": 2.2121741172835376,
+      "ram[13]:occlude": 1.6821071928718516,
+      "ram[13]:set": 1.6821071928718516,
+      "ram[14]:occlude": 4.100308265912298,
+      "ram[14]:set": 4.100308265912298,
+      "ram[15]:occlude": 6.1432284309888425,
+      "ram[15]:set": 6.1432284309888425,
+      "ram[16]:occlude": 26.308426988622347,
+      "ram[16]:set": 26.308426988622347,
+      "ram[17]:occlude": 10.759444457570273,
+      "ram[17]:set": 10.759444457570273,
+      "ram[19]:occlude": 69.74330332536314,
+      "ram[19]:set": 69.74330332536314,
+      "ram[56]:occlude": 2.382441987696346,
+      "ram[56]:set": 2.382441987696346,
+      "ram[6]:occlude": 28.14874938484941,
+      "ram[6]:set": 28.14874938484941,
+      "ram[7]:occlude": 4.435921450043383,
+      "ram[7]:set": 4.435921450043383,
+      "ram[8]:occlude": 9.538958576508543,
+      "ram[8]:set": 9.538958576508543,
+      "ram[9]:occlude": 34.157257922262,
+      "ram[9]:set": 34.157257922262,
       "tia[COLUBK]:set": 0.0
     },
     "oracle_abs_delta_per_cause": {
@@ -163,58 +163,58 @@
     "output_note": "POSITION/INDEX output (ball_pixel) — the §7 CONTRAST: unlike IG/saliency (which VANISH on position outputs because the pixel is a round/argmax sprite column with no differentiable RAM path), LIME — a BLACK-BOX perturb-and-re-run surrogate — STILL produces a real attribution here. It masks candidate RAM cells to 0, RE-RUNS the real ROM, reads the real pixel, and fits a locality-weighted linear surrogate; no differentiation needed. Reported, not asserted to be large; the intervention oracle remains the sole truth.",
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (--shard i --nshards n --shard-kind game): one Slurm array task per core game; or batched SOFT-STE masked re-runs over perturbations×cells×games on GPU (the forward is bit-exact to this HARD map), the linear fit done on the host.",
     "stability": {
-      "coef_cosine_mean": 0.9595819672384879,
-      "corr_mean": 0.35699513308675446,
-      "corr_std": 0.03611929212991237,
+      "coef_cosine_mean": 0.9595819672384867,
+      "corr_mean": 0.3569951330867551,
+      "corr_std": 0.036119292129916415,
       "fits": [
         {
-          "pearson_corr": 0.35247155847445893,
+          "pearson_corr": 0.35247155847445777,
           "precision_at_k": 0.3333333333333333,
           "seed": 0,
           "spearman_corr": 0.22874979419613686,
-          "surrogate_r2": 0.7097305677649836
+          "surrogate_r2": 0.7097305677649834
         },
         {
-          "pearson_corr": 0.3382322119530858,
+          "pearson_corr": 0.33823221195308195,
           "precision_at_k": 0.3333333333333333,
           "seed": 101,
           "spearman_corr": 0.3034436045458958,
-          "surrogate_r2": 0.6757932499667325
+          "surrogate_r2": 0.6757932499667326
         },
         {
-          "pearson_corr": 0.31068957275600484,
+          "pearson_corr": 0.3106895727560043,
           "precision_at_k": 0.3333333333333333,
           "seed": 202,
           "spearman_corr": 0.5201334606126445,
-          "surrogate_r2": 0.6451174853859125
+          "surrogate_r2": 0.6451174853859126
         },
         {
-          "pearson_corr": 0.3799553876589283,
+          "pearson_corr": 0.37995538765892567,
           "precision_at_k": 0.3333333333333333,
           "seed": 303,
           "spearman_corr": 0.4833701008311226,
-          "surrogate_r2": 0.6106640754444684
+          "surrogate_r2": 0.6106640754444685
         },
         {
-          "pearson_corr": 0.4036269345912943,
+          "pearson_corr": 0.4036269345913059,
           "precision_at_k": 0.3333333333333333,
           "seed": 404,
           "spearman_corr": 0.5551461842140941,
-          "surrogate_r2": 0.6557966472621103
+          "surrogate_r2": 0.6557966472621104
         }
       ],
       "interpretation": "LIME refit from 5 INDEPENDENT perturbation pools (different seeds). corr_std + (1−coef_cosine_mean) quantify the SAMPLING DEPENDENCE — the §7 prediction (Partial/Fail: 'baseline/sampling-dependent; approximations diverge'). High coef_cosine (→1) ⇒ a stable explanation direction; large corr_std ⇒ the faithfulness verdict itself wobbles with the random seed.",
       "seeds": 5,
       "surrogate_r2_mean": 0.6594204051648415,
-      "surrogate_r2_std": 0.03672215724566492
+      "surrogate_r2_std": 0.036722157245664834
     },
     "substrate": "jutari (Julia, HARD) — LIME (Ribeiro et al. 2016) local linear surrogate: draw N random binary perturbations in the interpretable present/absent space over the candidate RAM cells, mask absent cells to 0, RE-RUN the real ROM (bit-exact oracle machinery), weight each perturbation by the cosine-distance kernel, fit a weighted linear surrogate by least squares (LinearAlgebra); coefficients = attribution. Every probe is a genuine emulator re-run; no gradient, no surrogate-of-a-surrogate.",
     "surrogate": {
-      "intercept": 481.3978350242275,
+      "intercept": 481.3978350242129,
       "interpretation": "the WEIGHTED R^2 of the linear surrogate on the sampled neighbourhood = the LOCAL FAITHFULNESS OF THE SURROGATE ITSELF (how well a linear g approximates the real ROM near x), distinct from the attribution↔oracle corr below. A low R^2 is LIME's own confession that a linear model is a poor local fit to the VCS computation.",
       "kernel": "cosine-distance exponential π(z)=exp(-D(z,1)^2/σ^2)",
       "model": "weighted linear g(z)=w·z+b, ridge-regularised normal equations (LinearAlgebra)",
-      "r2": 0.7097305677649836
+      "r2": 0.7097305677649834
     },
     "testbed": {
       "cause_density_above_floor": 24,
@@ -229,7 +229,7 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": 0.35247155847445893,
+      "F": 0.35247155847445777,
       "M": 0.631578947368421,
       "M_named_size": 38,
       "M_note": "|U*|=24 (oracle movers) / |U_hat|=38 (method above-threshold)",
@@ -249,9 +249,9 @@
   "phase": "phaseB_attribution",
   "seed": 0,
   "state": "gameplay(seed=0,prefix=90)+15",
-  "stderr": 0.03611929212991237,
+  "stderr": 0.036119292129916415,
   "target_output": "screen_region(n_changed_px)@r84c77",
-  "timestamp": "1783130787",
-  "value": 0.35247155847445893,
+  "timestamp": "1793024299",
+  "value": 0.35247155847445777,
   "where": "local"
 }

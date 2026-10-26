@@ -1,7 +1,7 @@
 {
   "arrays": "sae_riverraid.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -273,7 +273,7 @@
       "note": "for each KNOWN candidate cell that VARIES, max|Pearson r| between any learned feature's activation and that cell over the trajectory; matched iff |r| ≥ 0.7. Match-rate = #matched / #varying.",
       "per_cell": [
         {
-          "best_corr": 0.8818851749116184,
+          "best_corr": 0.881885174911617,
           "best_feature": 51,
           "concept": "missile_y",
           "family": "missile",
@@ -282,7 +282,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7491968055052334,
+          "best_corr": 0.7491968055052335,
           "best_feature": 33,
           "concept": "player_x",
           "family": "player",
@@ -291,7 +291,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9131368066819562,
+          "best_corr": 0.9131368066819561,
           "best_feature": 35,
           "concept": "fuel_meter_high",
           "family": "fuel_meter_high",
@@ -300,7 +300,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7713292896548739,
+          "best_corr": 0.7713292896548742,
           "best_feature": 60,
           "concept": "fuel_meter_low",
           "family": "fuel_meter_low",
@@ -309,7 +309,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7839836885615508,
+          "best_corr": 0.7839836885615511,
           "best_feature": 33,
           "concept": "missile_x",
           "family": "missile",
@@ -318,7 +318,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.6354653383413543,
+          "best_corr": 0.6354653383413541,
           "best_feature": 5,
           "concept": "player._prev11",
           "family": "player",
@@ -327,7 +327,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7133285802002816,
+          "best_corr": 0.7133285802002812,
           "best_feature": 28,
           "concept": "grass_layout",
           "family": "grass_layout",
@@ -336,7 +336,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9733825385065179,
+          "best_corr": 0.9733825385065177,
           "best_feature": 34,
           "concept": "objects_pos",
           "family": "objects_pos",
@@ -345,7 +345,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9027291866695716,
+          "best_corr": 0.9027291866695707,
           "best_feature": 50,
           "concept": "xanchor",
           "family": "xanchor",
@@ -354,7 +354,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9733825385065176,
+          "best_corr": 0.9733825385065178,
           "best_feature": 34,
           "concept": "object_size",
           "family": "object_size",
@@ -363,7 +363,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8677332237789405,
+          "best_corr": 0.8677332237789399,
           "best_feature": 12,
           "concept": "orientation",
           "family": "orientation",
@@ -372,7 +372,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9733825385065179,
+          "best_corr": 0.9733825385065177,
           "best_feature": 34,
           "concept": "object_type",
           "family": "object_type",
@@ -381,7 +381,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.822114340642077,
+          "best_corr": 0.8221143406420773,
           "best_feature": 27,
           "concept": "obj_type",
           "family": "obj_type",
@@ -408,7 +408,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7710463001988255,
+          "best_corr": 0.7710463001988256,
           "best_feature": 33,
           "concept": "lives.value",
           "family": "lives",
@@ -444,7 +444,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.850006669732042,
+          "best_corr": 0.8500066697320416,
           "best_feature": 35,
           "concept": "score",
           "family": "score",
@@ -453,7 +453,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8041461945340963,
+          "best_corr": 0.8041461945340961,
           "best_feature": 35,
           "concept": "score",
           "family": "score",
@@ -533,7 +533,7 @@
         {
           "d_hidden": 16,
           "fve_held": 0.9569306236913091,
-          "fve_train": 0.9704400923152576,
+          "fve_train": 0.9704400923152577,
           "l1": 0.01,
           "matched_fraction": 0.5882352941176471,
           "mean_l0": 7.733333333333333
@@ -548,8 +548,8 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.9083424507415664,
-          "fve_train": 0.9227292423269544,
+          "fve_held": 0.9083424507469658,
+          "fve_train": 0.9227292423330028,
           "l1": 0.2,
           "matched_fraction": 0.5882352941176471,
           "mean_l0": 2.1266666666666665
@@ -572,8 +572,8 @@
         },
         {
           "d_hidden": 32,
-          "fve_held": 0.9490280784661139,
-          "fve_train": 0.9686321390044139,
+          "fve_held": 0.9490280784661138,
+          "fve_train": 0.9686321390044138,
           "l1": 0.2,
           "matched_fraction": 0.47058823529411764,
           "mean_l0": 5.406666666666666
@@ -626,7 +626,7 @@
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
       "M": 1.0,
       "M_note": "|U*|=19 (oracle movers) / |U_hat|=17 (method above-threshold)",
-      "S": 0.2861333689523191,
+      "S": 0.286133368952319,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
     }
@@ -643,7 +643,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783609269",
+  "timestamp": "1793020618",
   "value": 0.9411764705882353,
   "where": "local"
 }

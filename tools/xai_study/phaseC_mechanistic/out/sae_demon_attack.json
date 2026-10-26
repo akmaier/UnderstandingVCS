@@ -1,7 +1,7 @@
 {
   "arrays": "sae_demon_attack.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -154,7 +154,7 @@
       "note": "for each KNOWN candidate cell that VARIES, max|Pearson r| between any learned feature's activation and that cell over the trajectory; matched iff |r| ≥ 0.7. Match-rate = #matched / #varying.",
       "per_cell": [
         {
-          "best_corr": 0.8587128226932718,
+          "best_corr": 0.8587128226932715,
           "best_feature": 24,
           "concept": "enemy_x1",
           "family": "enemy_x",
@@ -172,7 +172,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.6658053782253799,
+          "best_corr": 0.6658053782253786,
           "best_feature": 56,
           "concept": "enemy_x3",
           "family": "enemy_x",
@@ -181,7 +181,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.6008036872170188,
+          "best_corr": 0.6008036872170186,
           "best_feature": 60,
           "concept": "missile_y",
           "family": "missile",
@@ -190,7 +190,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.771519457175285,
+          "best_corr": 0.771519457175284,
           "best_feature": 37,
           "concept": "player_x",
           "family": "player",
@@ -208,7 +208,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.883062449746425,
+          "best_corr": 0.8830624497464246,
           "best_feature": 25,
           "concept": "enemy_y1",
           "family": "enemy_y",
@@ -217,7 +217,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8807701190574231,
+          "best_corr": 0.880770119057424,
           "best_feature": 47,
           "concept": "enemy_y2",
           "family": "enemy_y",
@@ -226,7 +226,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.7472590462972182,
+          "best_corr": 0.7472590462972185,
           "best_feature": 47,
           "concept": "enemy_y3",
           "family": "enemy_y",
@@ -244,7 +244,7 @@
           "varies": false
         },
         {
-          "best_corr": 0.8904775740936721,
+          "best_corr": 0.8904775740936718,
           "best_feature": 24,
           "concept": "enemy_x",
           "family": "enemy",
@@ -253,7 +253,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.834721673891939,
+          "best_corr": 0.8347216738919383,
           "best_feature": 40,
           "concept": "player.xy",
           "family": "player",
@@ -262,7 +262,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.8274565189647761,
+          "best_corr": 0.8274565189647745,
           "best_feature": 25,
           "concept": "basex",
           "family": "basex",
@@ -271,7 +271,7 @@
           "varies": true
         },
         {
-          "best_corr": 0.9323595104360568,
+          "best_corr": 0.9323595104360567,
           "best_feature": 7,
           "concept": "enemy_projectile_y",
           "family": "enemy_projectile",
@@ -343,7 +343,7 @@
       "grid": [
         {
           "d_hidden": 16,
-          "fve_held": 0.8540465334489729,
+          "fve_held": 0.8540465334489727,
           "fve_train": 0.9040814301071403,
           "l1": 0.01,
           "matched_fraction": 0.6666666666666666,
@@ -359,8 +359,8 @@
         },
         {
           "d_hidden": 16,
-          "fve_held": 0.8012932642202769,
-          "fve_train": 0.8419441311531604,
+          "fve_held": 0.8012932640081434,
+          "fve_train": 0.8419441309362128,
           "l1": 0.2,
           "matched_fraction": 0.4166666666666667,
           "mean_l0": 2.8066666666666666
@@ -437,7 +437,7 @@
       "F_note": "Spearman(SAE per-cell recovery = max|feature r|·decoder-mass, oracle causal importance)",
       "M": 0.75,
       "M_note": "|U*|=9 (oracle movers) / |U_hat|=12 (method above-threshold)",
-      "S": 0.44777709629849977,
+      "S": 0.44777709629850015,
       "S_note": "Pearson(SAE recovery, held-out do(base+37) screen break) — sufficiency on the bit-exact re-run",
       "interpretation": "Phase C method-matrix expectation = PARTIAL (experiment_design.md §7): the SAE RECOVERS features (match-rate > 0) but faithfulness-to-computation is debated — F<1 + the causal-use monosemanticity (M) quantify how many 'matched' features are causally real single-variable features vs correlational/polysemantic smears."
     }
@@ -454,7 +454,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "state_features_vs_known_variables+causal_use",
-  "timestamp": "1783607536",
+  "timestamp": "1793017417",
   "value": 0.75,
   "where": "local"
 }

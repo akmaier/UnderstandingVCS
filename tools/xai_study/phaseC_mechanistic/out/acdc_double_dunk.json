@@ -5,10 +5,10 @@
     "note": "paper-reasonable: the τ sweep adds zero re-runs (it thresholds the cached effect matrix). Heavy cost is the N resample re-runs + the exhaustive 3N ground-truth re-runs; re-runnable incrementally from the cached deepcopy checkpoint.",
     "rom_reruns_acdc": "N resample-ablations (1 per source) + 1 corrupted boot + 1 scrub re-run + 2 bit-exact baselines",
     "rom_reruns_true_graph": "≤ 3·N exhaustive interventions (N=12 cells × 3 do-values)",
-    "tau_sweep": "6 thresholds (pure thresholding of the cached effect matrix — NO extra re-runs)"
+    "tau_sweep": "4 thresholds (pure thresholding of the cached effect matrix — NO extra re-runs)"
   },
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "ablation": "resample (parent overwritten with its value from the corrupted RIGHT-action donor run); standard ACDC corruption (Conmy et al. 2023 §3), not zero.",
     "bit_exact_rerun": true,
@@ -40,7 +40,7 @@
       118,
       119
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_double_dunk.json",
+    "candidates_file": "/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_double_dunk.json",
     "circuit": {
       "best_tau": 0.5,
       "discovered_edges_at_best_tau": [
@@ -49,16 +49,12 @@
           1
         ],
         [
-          8,
-          0
+          2,
+          6
         ],
         [
-          8,
-          1
-        ],
-        [
-          8,
-          4
+          2,
+          7
         ],
         [
           9,
@@ -67,23 +63,19 @@
         [
           9,
           5
-        ],
-        [
-          9,
-          8
         ]
       ],
-      "f1": 0.6363636363636364,
-      "fn": 8,
+      "f1": 0.6666666666666666,
+      "fn": 5,
       "fp": 0,
-      "n_discovered_edges_at_best": 7,
+      "n_discovered_edges_at_best": 5,
       "n_nodes": 12,
-      "n_true_edges": 15,
+      "n_true_edges": 10,
       "note": "edges are 0-based candidate ordinals [i,j] = cell i -> cell j. TRUE = exhaustive oracle (do 0/base+17/base+37, full horizon, any value changes j); DISCOVERED = ACDC keep-rule (resample-ablation effect > τ). The τ sweep is the ROC frontier.",
       "precision": 1.0,
-      "recall": 0.4666666666666667,
-      "roc_auc": 0.7333333333333334,
-      "tp": 7,
+      "recall": 0.5,
+      "roc_auc": 0.75,
+      "tp": 5,
       "true_edges": [
         [
           0,
@@ -92,6 +84,10 @@
         [
           0,
           4
+        ],
+        [
+          0,
+          5
         ],
         [
           0,
@@ -106,32 +102,12 @@
           0
         ],
         [
-          1,
-          4
+          2,
+          6
         ],
         [
-          1,
-          8
-        ],
-        [
-          8,
-          0
-        ],
-        [
-          8,
-          1
-        ],
-        [
-          8,
-          4
-        ],
-        [
-          9,
-          0
-        ],
-        [
-          9,
-          1
+          2,
+          7
         ],
         [
           9,
@@ -140,10 +116,6 @@
         [
           9,
           5
-        ],
-        [
-          9,
-          8
         ]
       ]
     },
@@ -162,67 +134,47 @@
       "note": "causal scrubbing of the best-F1 discovered circuit: resample-ablate every parent NOT in the circuit, re-run, report the fraction of candidate-cell readouts unchanged vs clean.",
       "preserved_fraction": 0.25
     },
-    "settings": "GenericRomSettings",
+    "settings": "DoubleDunkRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; every edge effect is an EXACT resample-ablation re-run on the true ROM.",
     "tau_sweep": [
       {
-        "f1": 0.6363636363636364,
-        "fn": 8,
+        "f1": 0.6666666666666666,
+        "fn": 5,
         "fp": 0,
-        "n_discovered": 7,
+        "n_discovered": 5,
         "precision": 1.0,
-        "recall": 0.4666666666666667,
+        "recall": 0.5,
         "tau": 0.5,
-        "tp": 7
+        "tp": 5
       },
       {
-        "f1": 0.5714285714285715,
-        "fn": 9,
+        "f1": 0.4615384615384615,
+        "fn": 7,
         "fp": 0,
-        "n_discovered": 6,
+        "n_discovered": 3,
         "precision": 1.0,
-        "recall": 0.4,
-        "tau": 1.5,
-        "tp": 6
-      },
-      {
-        "f1": 0.4210526315789474,
-        "fn": 11,
-        "fp": 0,
-        "n_discovered": 4,
-        "precision": 1.0,
-        "recall": 0.26666666666666666,
+        "recall": 0.3,
         "tau": 2.5,
-        "tp": 4
+        "tp": 3
       },
       {
-        "f1": 0.23529411764705882,
-        "fn": 13,
-        "fp": 0,
-        "n_discovered": 2,
-        "precision": 1.0,
-        "recall": 0.13333333333333333,
-        "tau": 4.0,
-        "tp": 2
-      },
-      {
-        "f1": 0.125,
-        "fn": 14,
+        "f1": 0.18181818181818182,
+        "fn": 9,
         "fp": 0,
         "n_discovered": 1,
         "precision": 1.0,
-        "recall": 0.06666666666666667,
+        "recall": 0.1,
         "tau": 5.5,
         "tp": 1
       },
       {
         "f1": 0.0,
-        "fn": 15,
+        "fn": 10,
         "fp": 0,
         "n_discovered": 0,
         "precision": 0.0,
         "recall": 0.0,
-        "tau": 7.0,
+        "tau": 8.0,
         "tp": 0
       }
     ],
@@ -240,10 +192,10 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": 0.6363636363636364,
+      "F": 0.6666666666666666,
       "F_note": "best-F1 of the ACDC-discovered circuit edges vs the exhaustive-oracle true data-flow (12 candidate cells)",
       "M": 1.0,
-      "M_note": "|U*|=15 true edges / |U_hat|=7 discovered edges (best-F1 τ)",
+      "M_note": "|U*|=10 true edges / |U_hat|=5 discovered edges (best-F1 τ)",
       "S": 0.25,
       "S_note": "scrubbing-preserved performance: the discovered circuit alone (non-circuit parents resample-scrubbed) reproduces the clean candidate-cell readouts (fraction unchanged, bit-exact re-run)",
       "interpretation": "ACDC's goal state IS our ground truth (experiment_design.md §7: Partial→Succeed). The discovery uses a cheap single-value resample-ablation, so it can miss edges that fire only for a different value (recall deficit) and keep transient ones (precision deficit) vs the exhaustive true data-flow."
@@ -260,7 +212,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "auto-discovered inter-cell data-flow circuit (candidate RAM cells)",
-  "timestamp": "1783607479",
-  "value": 0.6363636363636364,
+  "timestamp": "1793017138",
+  "value": 0.6666666666666666,
   "where": "local"
 }

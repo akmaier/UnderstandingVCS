@@ -1,43 +1,40 @@
 {
   "arrays": "A5_gopher.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): the LFP-analog pooled-activity spectrum is rich, but a high fraction of its power is the KNOWN frame/animation clocks — epiphenomenal structure that says nothing about the causal computation (the dominant spectral peaks are clock harmonics). A5 REVEALS the pooled periodicities and MISSES the causal map; the clock-explained fraction is the quantified-Kording measurement here.",
     "known_clocks": {
-      "clock_basis_dim": 4,
-      "clock_cells": [],
-      "n_clock_cells": 0,
+      "clock_basis_dim": 6,
+      "clock_cells": [
+        {
+          "kind": "ramp",
+          "period": 256,
+          "ram_index": 75,
+          "stride": 1
+        }
+      ],
+      "n_clock_cells": 1,
       "n_harmonics_per_period": 3,
       "n_periodic": 0,
-      "n_ramp": 0,
+      "n_ramp": 1,
       "note": "known clocks (T2) = RAM cells that are EXACT free-running counters over the trajectory: constant-stride ramps (frame/down counters, prescalers) or fixed-period cyclic timers (animation/blink). These are hardware/firmware clocks driven by the frame cadence, NOT game state — detected structurally (no labels). The clock basis is the frame ramp + sin/cos harmonics of every detected clock period; the %-variance a pooled signal projects onto it is the EPIPHENOMENAL fraction (experiment_design.md §4 A5)."
     },
     "method_kind": "descriptive (no oracle F/S/M; A5 reports the pooled spectral structure it REVEALS vs the causal map it MISSES — the clock-explained fraction quantifies how much of the headline spectrum is causally inert).",
     "regions": [
       {
-        "clock_explained_variance_fraction": 0.43131436375346877,
+        "clock_explained_variance_fraction": 0.47076937802026403,
         "dominant_period_frames": 256.0,
-        "dominant_power_share": 0.18192756004547414,
-        "n_cells": 30,
-        "n_cells_varying": 30,
+        "dominant_power_share": 0.26679105152838317,
+        "n_cells": 20,
+        "n_cells_varying": 20,
         "ram_cells": [
           19,
           23,
           39,
           41,
           45,
-          58,
-          59,
-          60,
-          61,
-          62,
-          63,
-          64,
-          65,
-          68,
-          72,
           73,
           74,
           75,
@@ -68,9 +65,9 @@
         "region": "bird"
       },
       {
-        "clock_explained_variance_fraction": 0.9230442218595911,
+        "clock_explained_variance_fraction": 0.9195884030972864,
         "dominant_period_frames": 256.0,
-        "dominant_power_share": 0.9539540598411398,
+        "dominant_power_share": 0.9419293780697295,
         "n_cells": 2,
         "n_cells_varying": 1,
         "ram_cells": [
@@ -132,20 +129,20 @@
       "dft": "dependency-free one-sided DFT power (no FFTW added to the shared jutari env); freq unit = cycles/frame; DC bin dropped after detrend; Hann-windowed; linear trend (frame-counter ramp) removed.",
       "frame_cadence_note": "the per-frame sampling clock is 1 frame; dominant periods are reported in FRAMES (period p ⇒ p-frame cycle, e.g. a period-2 blink, a period-N animation/score-flash timer). Relate to game cadence: short integer periods are animation/blink timers driven by the frame counter (T2), not game-state oscillations.",
       "global_dominant_period_frames": 256.0,
-      "global_dominant_power_share": 0.18192756004547414,
+      "global_dominant_power_share": 0.26679105152838317,
       "global_top_peak_periods_frames": [
         256.0,
         128.0,
         85.33333333333333,
         64.0,
-        32.0
+        28.444444444444443
       ],
       "global_top_peak_power": [
-        18.306491347526503,
-        14.696534743384122,
-        8.611135091601195,
-        6.340945317089986,
-        3.6472179510409943
+        62.09377867110843,
+        33.284010174690756,
+        15.711864094416384,
+        14.73444938747441,
+        7.66503121225295
       ]
     },
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the analysed RAM trajectory is a deterministic re-run (asserted).",
@@ -168,7 +165,7 @@
   "game": "gopher",
   "method": "A5_local_field_potentials(pooled_activity_spectra)",
   "metric_name": "A5_global_pool_clock_explained_variance_fraction_epiphenomenal",
-  "n": 30,
+  "n": 20,
   "oracle_ref": "T2_known_clocks@gopher (frame-counter + free-running periodic timers; structural detection)",
   "paper": "P2",
   "phase": "phaseA_kording",
@@ -176,7 +173,7 @@
   "state": "gameplay(seed=0,prefix=90)+256",
   "stderr": null,
   "target_output": "pooled-activity-power-spectrum",
-  "timestamp": "1783124786",
-  "value": 0.43131436375346877,
+  "timestamp": "1793017585",
+  "value": 0.47076937802026403,
   "where": "local"
 }

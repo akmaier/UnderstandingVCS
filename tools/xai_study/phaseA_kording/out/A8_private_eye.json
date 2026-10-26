@@ -1,7 +1,7 @@
 {
   "arrays": "A8_private_eye.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -56,7 +56,7 @@
       88,
       97
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_private_eye.json",
+    "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_private_eye.json",
     "oracle_causal_ram_indices": [
       63,
       67,
@@ -74,11 +74,11 @@
     "oracle_importance_per_cell": {
       "RAM[38]:xy": 0.0,
       "RAM[39]:dove_y": 0.0,
-      "RAM[40]:xy": 164.0,
+      "RAM[40]:xy": 167.0,
       "RAM[44]:xy": 0.0,
       "RAM[47]:x": 0.0,
       "RAM[48]:dove_x": 0.0,
-      "RAM[49]:xy": 332.0,
+      "RAM[49]:xy": 335.0,
       "RAM[51]:wh": 53.0,
       "RAM[58]:player_direction": 0.0,
       "RAM[63]:player_x": 7466.0,
@@ -93,9 +93,9 @@
       "RAM[79]:score[2]": 0.0,
       "RAM[84]:car.xy": 300.0,
       "RAM[86]:player_y": 0.0,
-      "RAM[88]:car.xy": 316.0,
+      "RAM[88]:car.xy": 370.0,
       "RAM[92]:room_number": 0.0,
-      "RAM[97]:player._xy": 156.0
+      "RAM[97]:player._xy": 158.0
     },
     "positive_control": {
       "F": 1.0,
@@ -106,7 +106,7 @@
       "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.094 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
     },
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-    "settings": "GenericRomSettings",
+    "settings": "PrivateEyeRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
     "testbed": {
       "cause_density_above_floor": 20,
@@ -118,7 +118,7 @@
       "note": "P2 redesign: BOTH the scored oracle prefix (causal importance) AND the whole-state recording run on a seeded random-action GAMEPLAY state (not the FIRE×4-then-NOOP oracle tape / synthetic active tape), gated by the §1 oracle cause-density gate. The recorded tape is the gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A8's recording + oracle-importance algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r148c48",
+      "shared_output": "screen_region(n_changed_px)@r148c49",
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
@@ -133,7 +133,7 @@
     "wholestate": {
       "ideal_minimal_size": 12,
       "n_oracle_causal_cells": 12,
-      "n_varying_ram_cells": 27,
+      "n_varying_ram_cells": 28,
       "note": "the whole-state recorder keeps ALL 192 state bytes every frame; only 12 candidate cells are causal by the oracle ⇒ it over-records by 10.7× — trivially faithful/sufficient, maximally non-minimal.",
       "over_recording_factor": 10.666666666666666,
       "ram_size": 128,
@@ -159,7 +159,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "full RAM+register state map over time (whole-state record)",
-  "timestamp": "1783127686",
+  "timestamp": "1793020543",
   "value": 0.09375,
   "where": "local"
 }

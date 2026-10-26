@@ -1,7 +1,7 @@
 {
   "arrays": "occlusion_freeway_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-occlusion causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -46,7 +46,7 @@
     "content_ram_index": 14,
     "harness_positive_control": {
       "deletion_auc": 0.3341736694677871,
-      "insertion_auc": 0.04789915966386556,
+      "insertion_auc": 0.04789915966386557,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the occlusion numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "pearson_corr": 1.0,
@@ -56,8 +56,8 @@
     "method_ref": "occlusion (Zeiler & Fergus 2014): attribution = |y(occlude u) − y(intact)|, a single-cause perturbation re-run on the true VCS",
     "metrics": {
       "deletion_auc": 0.3341736694677871,
-      "insertion_auc": 0.04789915966386556,
-      "pearson_corr": 0.7468969670496021,
+      "insertion_auc": 0.04789915966386557,
+      "pearson_corr": 0.746896967049602,
       "precision_at_k": 1.0,
       "spearman_corr": 0.9994052928406509,
       "topk": 3
@@ -134,7 +134,7 @@
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (E0-3) — --array=0-5%N over the 6 core games (--shard i --shard-kind game); each task re-runs the real ROM, no GPU needed.",
     "substrate": "jutari (Julia) — real-ROM single-cause occlusion + TRUE-VCS deletion/insertion re-runs (bit-exact oracle machinery). NO surrogate model.",
     "triad": {
-      "F": 0.7468969670496021,
+      "F": 0.746896967049602,
       "M": 1.0,
       "M_named_size": 2,
       "M_note": "|U*|=2 (oracle movers) / |U_hat|=2 (method above-threshold)",
@@ -156,7 +156,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@14)",
-  "timestamp": "1783127308",
-  "value": 0.7468969670496021,
+  "timestamp": "1793018204",
+  "value": 0.746896967049602,
   "where": "local"
 }

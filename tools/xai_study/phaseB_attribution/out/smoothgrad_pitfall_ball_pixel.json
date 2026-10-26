@@ -1,7 +1,7 @@
 {
   "arrays": "smoothgrad_pitfall_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-SmoothGrad causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run. NaN = a genuinely flat experiment.",
     "cause_names": [
@@ -42,19 +42,19 @@
     ],
     "content_ram_index": -1,
     "harness_positive_control": {
-      "deletion_auc": 0.9529453204318008,
-      "insertion_auc": 0.20203882891656133,
+      "deletion_auc": 0.9711209128201044,
+      "insertion_auc": 0.20705225218049303,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the SmoothGrad numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "pearson_corr": 1.0,
       "precision_at_k": 1.0
     },
     "metrics": {
-      "deletion_auc": 0.8323146095352546,
-      "insertion_auc": 0.21480222945113228,
-      "pearson_corr": 0.0035319406086390423,
+      "deletion_auc": 0.8472111593452547,
+      "insertion_auc": 0.21524652515034448,
+      "pearson_corr": -0.0283331930813649,
       "precision_at_k": 0.0,
-      "spearman_corr": 0.3464222195802119,
+      "spearman_corr": 0.23983076740168516,
       "topk": 3
     },
     "oracle_abs_delta_per_cause": {
@@ -63,7 +63,7 @@
       "ram[105]:set": 68.0,
       "ram[18]:occlude": 0.0,
       "ram[18]:set": 0.0,
-      "ram[20]:occlude": 515.0,
+      "ram[20]:occlude": 517.0,
       "ram[20]:set": 331.0,
       "ram[32]:occlude": 0.0,
       "ram[32]:set": 0.0,
@@ -85,7 +85,7 @@
       "ram[90]:set": 0.0,
       "ram[92]:occlude": 0.0,
       "ram[92]:set": 0.0,
-      "ram[97]:occlude": 2839.0,
+      "ram[97]:occlude": 2815.0,
       "ram[97]:set": 100.0,
       "ram[98]:occlude": 165.0,
       "ram[98]:set": 130.0,
@@ -94,20 +94,20 @@
       "tia[COLUBK]:set": 0.0
     },
     "output_kind": "position",
-    "output_note": "POSITION/INDEX output — the §1 caveat: the pixel value comes from a discrete sprite column (round/argmax), so there is no differentiable RAM read and SmoothGrad VANISHES (max|attr|=0.16). The oracle has real causal signal here, so SmoothGrad scores near chance — the 'plausible ≠ faithful' contrast; the intervention oracle is the sole truth. Noise smoothing CANNOT manufacture a gradient that does not exist.",
+    "output_note": "POSITION/INDEX output — the §1 caveat: the pixel value comes from a discrete sprite column (round/argmax), so there is no differentiable RAM read and SmoothGrad VANISHES (max|attr|=0.2). The oracle has real causal signal here, so SmoothGrad scores near chance — the 'plausible ≠ faithful' contrast; the intervention oracle is the sole truth. Noise smoothing CANNOT manufacture a gradient that does not exist.",
     "sampler_on": {
       "naive_position_grad_max": 0.0,
       "note": "naive ∂pixel/∂ram ≡ 0 (Prop. prop:zero); the bilinear sampler (tools/xai_si_gradient/si_joystick_gradient.jl) restores a real ∂pixel/∂ram[position_byte] (sampler_position_grad_max>0 = the VANILLA, un-smoothed gradient — the keystone). Reported naive-vs-sampler side by side. Noise smoothing cannot manufacture the naive gradient; and where the sprite SATURATES the triangular-kernel cell (occupancy clamped at 1, locally flat), SmoothGrad's noise-average of the sampler gradient can DENOISE to ~0 (sampler_position_smoothgrad_max) even though the vanilla gradient is alive — an honest smoothing effect, not a vanishing. per_cause_faithfulness_null=true ⇒ the sampler's position byte is not among this game's scored candidate causes, so the per-cause Pearson is null (recorded 0.0 by the shared convention), NOT a genuine zero corr — the keystone (a non-vanishing gradient) still holds on the full 128-byte map.",
       "per_cause_faithfulness_null": false,
       "position_byte_in_cause_set": true,
-      "sampler_position_grad_max": 0.0,
-      "sampler_position_smoothgrad_max": 0.1599999964237213
+      "sampler_position_grad_max": 1.0,
+      "sampler_position_smoothgrad_max": 0.20000000298023224
     },
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE SmoothGrad over outputs×causes×games on GPU; the forward is bit-exact to this map.",
     "sg_attr_per_cause": {
       "joystick:RIGHT": 0.0,
-      "ram[105]:occlude": 0.0,
-      "ram[105]:set": 0.0,
+      "ram[105]:occlude": 0.20000000298023224,
+      "ram[105]:set": 0.20000000298023224,
       "ram[18]:occlude": 0.0,
       "ram[18]:set": 0.0,
       "ram[20]:occlude": 0.0,
@@ -134,13 +134,13 @@
       "ram[92]:set": 0.0,
       "ram[97]:occlude": 0.0,
       "ram[97]:set": 0.0,
-      "ram[98]:occlude": 0.1599999964237213,
-      "ram[98]:set": 0.1599999964237213,
+      "ram[98]:occlude": 0.0,
+      "ram[98]:set": 0.0,
       "ram[99]:occlude": 0.0,
       "ram[99]:set": 0.0,
       "tia[COLUBK]:set": 0.0
     },
-    "sg_max_abs": 0.1599999964237213,
+    "sg_max_abs": 0.20000000298023224,
     "smoothgrad_n_samples": 50,
     "smoothgrad_sigma": 8.0,
     "smoothgrad_sigma_units": "raw RAM-byte units (byte∈0..255; σ=8.0 ≈ 3.1% of full scale)",
@@ -152,27 +152,27 @@
       "cause_density_gate_k": 4,
       "horizon": 15,
       "n_causes": 34,
-      "position_byte_ram_index": 98,
+      "position_byte_ram_index": 105,
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r120c61",
+      "shared_output": "screen_region(n_changed_px)@r114c129",
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": 0.0035319406086390423,
+      "F": -0.0283331930813649,
       "M": 1.0,
       "M_named_size": 2,
       "M_note": "|U*|=19 (oracle movers) / |U_hat|=2 (method above-threshold)",
       "M_true_minimal_size": 19,
       "S": 0.8823529411764706,
-      "S_note": "held-out predictive fit: 15/17 held-out do(u) within ε=283.9 (calib=17, fit Δy≈481.641·attr+52.938)",
+      "S_note": "held-out predictive fit: 15/17 held-out do(u) within ε=281.5 (calib=17, fit Δy≈55.937·attr+56.812)",
       "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
     },
     "vanilla_gradient_reference": {
       "interpretation": "Δpearson = SmoothGrad − vanilla |grad|. ≈0 ⇒ smoothing did NOT change FAITHFULNESS (it denoises the visual map; on a one-hot content read the map is already on the true cause, nothing to denoise; on the vanishing position output both are 0 — smoothing cannot create a gradient).",
-      "pearson_corr": 0.0,
+      "pearson_corr": -0.028333193081364904,
       "precision_at_k": 0.0,
-      "smoothing_delta_pearson": 0.0035319406086390423
+      "smoothing_delta_pearson": 3.469446951953614e-18
     },
     "y_full": 0.0
   },
@@ -180,14 +180,14 @@
   "method": "smoothgrad",
   "metric_name": "pearson_corr_with_oracle",
   "n": 34,
-  "oracle_ref": "oracle_intervene@pitfall#screen_region(n_changed_px)@r120c61",
+  "oracle_ref": "oracle_intervene@pitfall#screen_region(n_changed_px)@r114c129",
   "paper": "P2",
   "phase": "phaseB_attribution",
   "seed": 0,
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
-  "target_output": "screen_region(n_changed_px)@r120c61",
-  "timestamp": "1783130001",
-  "value": 0.0035319406086390423,
+  "target_output": "screen_region(n_changed_px)@r114c129",
+  "timestamp": "1793020754",
+  "value": -0.0283331930813649,
   "where": "local"
 }

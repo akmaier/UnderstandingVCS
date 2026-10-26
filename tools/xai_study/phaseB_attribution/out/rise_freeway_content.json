@@ -1,7 +1,7 @@
 {
   "arrays": "rise_freeway_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-RISE causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -50,7 +50,7 @@
       "points": [
         {
           "deletion_auc": 0.004201680672268908,
-          "insertion_auc": 0.11120448179271705,
+          "insertion_auc": 0.11120448179271701,
           "n_masks": 62,
           "pearson_corr": 0.3763132869794216,
           "precision_at_k": 0.3333333333333333,
@@ -58,7 +58,7 @@
         },
         {
           "deletion_auc": 0.06750700280112044,
-          "insertion_auc": 0.04789915966386556,
+          "insertion_auc": 0.04789915966386557,
           "n_masks": 125,
           "pearson_corr": 0.49480863542504777,
           "precision_at_k": 0.6666666666666666,
@@ -66,15 +66,15 @@
         },
         {
           "deletion_auc": 0.004201680672268908,
-          "insertion_auc": 0.11120448179271705,
+          "insertion_auc": 0.11120448179271701,
           "n_masks": 250,
-          "pearson_corr": 0.4899824724365857,
+          "pearson_corr": 0.48998247243658555,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.3712646511028423
         },
         {
           "deletion_auc": 0.004201680672268908,
-          "insertion_auc": 0.11120448179271705,
+          "insertion_auc": 0.11120448179271701,
           "n_masks": 500,
           "pearson_corr": 0.47123217891883773,
           "precision_at_k": 0.3333333333333333,
@@ -84,7 +84,7 @@
     },
     "harness_positive_control": {
       "deletion_auc": 0.3341736694677871,
-      "insertion_auc": 0.04789915966386556,
+      "insertion_auc": 0.04789915966386557,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the RISE numbers above are then a true measurement, not an artefact of the metric.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "oracle_column_degenerate": false,
@@ -93,7 +93,7 @@
     },
     "headline_metrics": {
       "deletion_auc": 0.004201680672268908,
-      "insertion_auc": 0.11120448179271705,
+      "insertion_auc": 0.11120448179271701,
       "pearson_corr": 0.47123217891883773,
       "precision_at_k": 0.3333333333333333,
       "spearman_corr": 0.3709330166899843,
@@ -190,7 +190,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@14)",
-  "timestamp": "1783123502",
+  "timestamp": "1793020005",
   "value": 0.47123217891883773,
   "where": "local"
 }

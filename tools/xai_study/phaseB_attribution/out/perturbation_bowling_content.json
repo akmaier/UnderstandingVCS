@@ -1,7 +1,7 @@
 {
   "arrays": "perturbation_bowling_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-attributed causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -104,7 +104,7 @@
       "tia[COLUBK]:set": 0.0
     },
     "harness_positive_control": {
-      "deletion_auc": 0.27489177489177485,
+      "deletion_auc": 0.274891774891775,
       "insertion_auc": 0.932900432900433,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the extremal-perturbation numbers are then a true measurement.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
@@ -124,10 +124,10 @@
     "mask_size": 1,
     "method_ref": "meaningful/extremal perturbation (Fong & Vedaldi 2017; Fong et al. 2019): the attribution is an optimised MINIMAL MASK whose perturbation maximally changes y, under an area budget; optimised by greedy forward selection on the true VCS (each step a real do(occlude)-re-run), NOT a surrogate model.",
     "metrics": {
-      "deletion_auc": 0.26839826839826836,
+      "deletion_auc": 0.2683982683982685,
       "insertion_auc": 0.9393939393939396,
       "mask_iou_vs_true_causal_set": 0.5,
-      "pearson_corr": 0.7604695317875181,
+      "pearson_corr": 0.7604695317875182,
       "precision_at_k": 0.6666666666666666,
       "spearman_corr": 0.9960955923447614,
       "topk": 3
@@ -189,7 +189,7 @@
     "scales_to_cluster_via": "tools/cluster/xai_array_jl.sbatch (E0-3) — --array=0-5%N over the 6 core games (--shard i --shard-kind game); each task re-runs the real ROM, no GPU needed.",
     "substrate": "jutari (Julia) — real-ROM greedy extremal-mask optimisation + TRUE-VCS deletion/insertion re-runs (bit-exact oracle machinery). NO surrogate model, NO gradient.",
     "triad": {
-      "F": 0.7604695317875181,
+      "F": 0.7604695317875182,
       "M": 1.0,
       "M_named_size": 4,
       "M_note": "|U*|=4 (oracle movers) / |U_hat|=4 (method above-threshold)",
@@ -211,7 +211,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@30)",
-  "timestamp": "1783127414",
-  "value": 0.7604695317875181,
+  "timestamp": "1793016738",
+  "value": 0.7604695317875182,
   "where": "local"
 }

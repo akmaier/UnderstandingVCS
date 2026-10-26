@@ -1,7 +1,7 @@
 {
   "arrays": "A3_tuning_gopher.npz",
   "ci": null,
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "extra": {
     "A3_tuning": {
       "clock_corr_per_cell": {
@@ -176,7 +176,7 @@
       "RAM[8]:ram_conditions": 84.0
     },
     "positive_control_oracle_as_method_F": 1.0,
-    "rom_settings": "JuTari.RomSettingsModule.GenericRomSettings",
+    "rom_settings": "JuTari.JoystickGames.GopherRomSettings",
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core+breadth set; the forward is bit-exact to this HARD path.",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the oracle causal map is EXACT interventions re-run on the true ROM; the tuning curves are a DESCRIPTIVE active-trace recording (the recorder's documented purpose), not a bit-exact-vs-xitari claim.",
     "testbed": {
@@ -215,7 +215,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen-break (oracle causal importance) vs tuning selectivity",
-  "timestamp": "1783605479",
+  "timestamp": "1793017731",
   "value": 0.0,
   "where": "local"
 }

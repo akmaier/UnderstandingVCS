@@ -1,7 +1,7 @@
 {
   "arrays": "rise_hero_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-RISE causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -56,7 +56,7 @@
       "points": [
         {
           "deletion_auc": 0.8876317005354653,
-          "insertion_auc": 0.24671109625999355,
+          "insertion_auc": 0.2467110962599936,
           "n_masks": 62,
           "pearson_corr": 0.4262062739744234,
           "precision_at_k": 0.3333333333333333,
@@ -64,33 +64,33 @@
         },
         {
           "deletion_auc": 0.9347363367373008,
-          "insertion_auc": 0.2171708742345194,
+          "insertion_auc": 0.21717087423451933,
           "n_masks": 125,
-          "pearson_corr": 0.4927019627655565,
+          "pearson_corr": 0.4927019627655566,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.36880585286409423
         },
         {
-          "deletion_auc": 0.9263665323212091,
-          "insertion_auc": 0.2297523675296095,
+          "deletion_auc": 0.9263665323212094,
+          "insertion_auc": 0.22975236752960956,
           "n_masks": 250,
-          "pearson_corr": 0.467079590295317,
+          "pearson_corr": 0.4670795902953166,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.1958409294331272
         },
         {
-          "deletion_auc": 0.9162201018126616,
+          "deletion_auc": 0.9162201018126613,
           "insertion_auc": 0.18165082547461697,
           "n_masks": 500,
-          "pearson_corr": 0.49149522764365006,
+          "pearson_corr": 0.49149522764364995,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.031245276490755335
         }
       ]
     },
     "harness_positive_control": {
-      "deletion_auc": 0.9620922669832083,
-      "insertion_auc": 0.7557115595453009,
+      "deletion_auc": 0.9620922669832085,
+      "insertion_auc": 0.755711559545301,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the RISE numbers above are then a true measurement, not an artefact of the metric.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "oracle_column_degenerate": false,
@@ -98,9 +98,9 @@
       "precision_at_k": 1.0
     },
     "headline_metrics": {
-      "deletion_auc": 0.9162201018126616,
+      "deletion_auc": 0.9162201018126613,
       "insertion_auc": 0.18165082547461697,
-      "pearson_corr": 0.49149522764365006,
+      "pearson_corr": 0.49149522764364995,
       "precision_at_k": 0.3333333333333333,
       "spearman_corr": 0.031245276490755335,
       "topk": 3
@@ -198,7 +198,7 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": 0.49149522764365006,
+      "F": 0.49149522764364995,
       "M": 0.5,
       "M_named_size": 34,
       "M_note": "|U*|=17 (oracle movers) / |U_hat|=34 (method above-threshold)",
@@ -220,7 +220,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r63c34",
-  "timestamp": "1783123934",
-  "value": 0.49149522764365006,
+  "timestamp": "1793020880",
+  "value": 0.49149522764364995,
   "where": "local"
 }

@@ -1,12 +1,12 @@
 {
-  "commit": "ddf78172",
+  "commit": "56e3a03",
   "games": [
     "air_raid",
     "alien",
     "assault",
+    "asterix",
     "atlantis",
     "bank_heist",
-    "beam_rider",
     "berzerk",
     "bowling",
     "boxing",
@@ -16,6 +16,7 @@
     "chopper_command",
     "demon_attack",
     "double_dunk",
+    "enduro",
     "fishing_derby",
     "freeway",
     "frostbite",
@@ -38,6 +39,7 @@
     "riverraid",
     "road_runner",
     "seaquest",
+    "skiing",
     "space_invaders",
     "tennis",
     "venture",
@@ -49,14 +51,14 @@
   "paper": "P2",
   "per_game": {
     "air_raid": {
-      "F": 0.44509092864955974,
+      "F": 0.7170606094787978,
       "M": 1.0,
-      "S": 0.441391028390696,
+      "S": 0.7186652653601542,
       "game_variable_spurious_tuning_rate": 0.0,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 13,
-      "n_oracle_causal": 10,
-      "n_strongly_tuned_gvar": 2,
+      "n_oracle_causal": 12,
+      "n_strongly_tuned_gvar": 5,
       "oracle_as_method_F": 1.0
     },
     "alien": {
@@ -73,7 +75,7 @@
     "assault": {
       "F": 0.05111473465226815,
       "M": 0.9,
-      "S": -0.004154225247010312,
+      "S": -0.004154225247010302,
       "game_variable_spurious_tuning_rate": 0.0,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 20,
@@ -81,10 +83,21 @@
       "n_strongly_tuned_gvar": 2,
       "oracle_as_method_F": 1.0
     },
+    "asterix": {
+      "F": -0.1932503014547343,
+      "M": 1.0,
+      "S": -0.32479169108138667,
+      "game_variable_spurious_tuning_rate": 0.0,
+      "luminance_spurious_tuning_rate": 0.0,
+      "n_candidates": 9,
+      "n_oracle_causal": 8,
+      "n_strongly_tuned_gvar": 2,
+      "oracle_as_method_F": 1.0
+    },
     "atlantis": {
       "F": -0.008973031700969426,
       "M": 1.0,
-      "S": -0.4463596861662293,
+      "S": -0.4463596861662294,
       "game_variable_spurious_tuning_rate": 0.0,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 9,
@@ -95,23 +108,12 @@
     "bank_heist": {
       "F": 0.5642880936468349,
       "M": 1.0,
-      "S": 0.24732755464540002,
+      "S": 0.24732755464539993,
       "game_variable_spurious_tuning_rate": 0.0,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 5,
       "n_oracle_causal": 4,
       "n_strongly_tuned_gvar": 2,
-      "oracle_as_method_F": 1.0
-    },
-    "beam_rider": {
-      "F": 0.0,
-      "M": null,
-      "S": 0.0,
-      "game_variable_spurious_tuning_rate": 0.0,
-      "luminance_spurious_tuning_rate": 0.0,
-      "n_candidates": 5,
-      "n_oracle_causal": 2,
-      "n_strongly_tuned_gvar": 0,
       "oracle_as_method_F": 1.0
     },
     "berzerk": {
@@ -128,7 +130,7 @@
     "bowling": {
       "F": 0.6028609781740759,
       "M": 1.0,
-      "S": 0.573317002188103,
+      "S": 0.5733170021881029,
       "game_variable_spurious_tuning_rate": 0.0,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 20,
@@ -159,9 +161,9 @@
       "oracle_as_method_F": 1.0
     },
     "carnival": {
-      "F": -0.16583361273566838,
+      "F": -0.17775629077548769,
       "M": 1.0,
-      "S": -0.027514430244021528,
+      "S": -0.02381874986892848,
       "game_variable_spurious_tuning_rate": 0.2857142857142857,
       "luminance_spurious_tuning_rate": 0.25,
       "n_candidates": 18,
@@ -172,7 +174,7 @@
     "centipede": {
       "F": -0.3122390663929938,
       "M": 1.0,
-      "S": -0.5895643498407601,
+      "S": -0.58956434984076,
       "game_variable_spurious_tuning_rate": 0.0,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 9,
@@ -194,7 +196,7 @@
     "demon_attack": {
       "F": 0.40551714810818956,
       "M": 0.75,
-      "S": 0.19946711922258398,
+      "S": 0.199467119222584,
       "game_variable_spurious_tuning_rate": 0.2857142857142857,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 15,
@@ -203,20 +205,31 @@
       "oracle_as_method_F": 1.0
     },
     "double_dunk": {
-      "F": 0.6172925911496242,
+      "F": 0.3781013149380332,
       "M": 1.0,
-      "S": 0.8081236695984967,
+      "S": 0.653508607887974,
       "game_variable_spurious_tuning_rate": 0.0,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 12,
       "n_oracle_causal": 12,
-      "n_strongly_tuned_gvar": 5,
+      "n_strongly_tuned_gvar": 3,
+      "oracle_as_method_F": 1.0
+    },
+    "enduro": {
+      "F": -0.8660254037844387,
+      "M": 0.6666666666666666,
+      "S": -0.7102052830928753,
+      "game_variable_spurious_tuning_rate": 0.0,
+      "luminance_spurious_tuning_rate": 0.0,
+      "n_candidates": 3,
+      "n_oracle_causal": 2,
+      "n_strongly_tuned_gvar": 0,
       "oracle_as_method_F": 1.0
     },
     "fishing_derby": {
       "F": 0.4914584462347158,
       "M": 0.7142857142857143,
-      "S": 0.49046566783404316,
+      "S": 0.4904656678340433,
       "game_variable_spurious_tuning_rate": 0.25,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 9,
@@ -227,7 +240,7 @@
     "freeway": {
       "F": 0.8292331563725777,
       "M": 1.0,
-      "S": 0.87293711354933,
+      "S": 0.8729371135493302,
       "game_variable_spurious_tuning_rate": 0.0,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 14,
@@ -238,7 +251,7 @@
     "frostbite": {
       "F": 0.4758823959013542,
       "M": 1.0,
-      "S": 0.3457043993506602,
+      "S": 0.34570439935066016,
       "game_variable_spurious_tuning_rate": 0.0,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 19,
@@ -260,7 +273,7 @@
     "hero": {
       "F": 0.22856228260465336,
       "M": 1.0,
-      "S": -0.11368823540888827,
+      "S": -0.11368823540888823,
       "game_variable_spurious_tuning_rate": 0.0,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 17,
@@ -271,7 +284,7 @@
     "ice_hockey": {
       "F": -0.018932061141568826,
       "M": 1.0,
-      "S": 0.03150735251621093,
+      "S": 0.03150735251621099,
       "game_variable_spurious_tuning_rate": 0.125,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 10,
@@ -282,7 +295,7 @@
     "jamesbond": {
       "F": 0.18808987203611782,
       "M": 0.875,
-      "S": 0.129782474238937,
+      "S": 0.12978247423893705,
       "game_variable_spurious_tuning_rate": 0.3333333333333333,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 13,
@@ -304,7 +317,7 @@
     "krull": {
       "F": 0.3051930077235561,
       "M": 1.0,
-      "S": 0.18365989249169115,
+      "S": 0.18365989249169118,
       "game_variable_spurious_tuning_rate": 0.5,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 25,
@@ -326,7 +339,7 @@
     "montezuma_revenge": {
       "F": -0.15056128530079577,
       "M": 1.0,
-      "S": -0.22572720175722374,
+      "S": -0.22572720175722372,
       "game_variable_spurious_tuning_rate": 0.2,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 15,
@@ -381,7 +394,7 @@
     "pitfall": {
       "F": 0.14597776417104621,
       "M": 0.8461538461538461,
-      "S": 0.25791481273808803,
+      "S": 0.25672500451119706,
       "game_variable_spurious_tuning_rate": 0.45454545454545453,
       "luminance_spurious_tuning_rate": 0.3333333333333333,
       "n_candidates": 16,
@@ -392,7 +405,7 @@
     "pong": {
       "F": -0.00684931506849315,
       "M": 1.0,
-      "S": -0.4123124924684856,
+      "S": -0.41231249246848567,
       "game_variable_spurious_tuning_rate": 0.5,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 8,
@@ -401,9 +414,9 @@
       "oracle_as_method_F": 1.0
     },
     "private_eye": {
-      "F": 0.22313646443121316,
+      "F": 0.16618899555905703,
       "M": 1.0,
-      "S": 0.32711709371971315,
+      "S": 0.29243800641094764,
       "game_variable_spurious_tuning_rate": 0.2,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 24,
@@ -412,7 +425,7 @@
       "oracle_as_method_F": 1.0
     },
     "qbert": {
-      "F": 0.4670040692672171,
+      "F": 0.5179704016913319,
       "M": 0.4666666666666667,
       "S": 0.18328210425224595,
       "game_variable_spurious_tuning_rate": 0.5333333333333333,
@@ -425,7 +438,7 @@
     "riverraid": {
       "F": -0.19074892159734472,
       "M": 1.0,
-      "S": 0.09213658568432537,
+      "S": 0.09213658568432535,
       "game_variable_spurious_tuning_rate": 0.23076923076923078,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 22,
@@ -434,9 +447,9 @@
       "oracle_as_method_F": 1.0
     },
     "road_runner": {
-      "F": -0.1440731286823028,
+      "F": -0.194521858652323,
       "M": 0.42857142857142855,
-      "S": 0.08320721561275962,
+      "S": 0.08320721561275966,
       "game_variable_spurious_tuning_rate": 0.6363636363636364,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 18,
@@ -447,12 +460,23 @@
     "seaquest": {
       "F": 0.0776304119280381,
       "M": 1.0,
-      "S": 0.31122486209001726,
+      "S": 0.3112248620900171,
       "game_variable_spurious_tuning_rate": 0.25,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 23,
       "n_oracle_causal": 15,
       "n_strongly_tuned_gvar": 8,
+      "oracle_as_method_F": 1.0
+    },
+    "skiing": {
+      "F": -0.05580684237796761,
+      "M": 1.0,
+      "S": -0.28963619882538794,
+      "game_variable_spurious_tuning_rate": 0.3333333333333333,
+      "luminance_spurious_tuning_rate": 0.3333333333333333,
+      "n_candidates": 9,
+      "n_oracle_causal": 7,
+      "n_strongly_tuned_gvar": 3,
       "oracle_as_method_F": 1.0
     },
     "space_invaders": {
@@ -480,7 +504,7 @@
     "venture": {
       "F": -0.23587879013347468,
       "M": 1.0,
-      "S": -0.08327214323531465,
+      "S": -0.08327214323531466,
       "game_variable_spurious_tuning_rate": 0.07692307692307693,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 18,
@@ -500,19 +524,18 @@
       "oracle_as_method_F": 1.0
     },
     "yars_revenge": {
-      "F": 0.3945142898586108,
-      "M": 0.7,
-      "S": 0.22262027288469005,
-      "game_variable_spurious_tuning_rate": 0.2857142857142857,
+      "F": 0.5530673354238026,
+      "M": 0.5,
+      "S": 0.35786391180327837,
+      "game_variable_spurious_tuning_rate": 0.5,
       "luminance_spurious_tuning_rate": 0.0,
       "n_candidates": 13,
-      "n_oracle_causal": 7,
-      "n_strongly_tuned_gvar": 7,
+      "n_oracle_causal": 4,
+      "n_strongly_tuned_gvar": 6,
       "oracle_as_method_F": 1.0
     }
   },
   "phase": "phaseA_kording",
   "problems": {},
-  "timestamp": "1783606671",
-  "note_2026_10_25": "centipede + pacman re-scored after the score_raw duplicate-self-column fix (bug_fix_log 2026-10-25); other games unaffected (verified offline from the committed gvar_corr arrays)."
+  "timestamp": "1793020549"
 }

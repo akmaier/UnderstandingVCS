@@ -1,7 +1,7 @@
 {
   "arrays": "rise_centipede_content.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-RISE causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -42,13 +42,13 @@
           "deletion_auc": 0.41811594202898555,
           "insertion_auc": 0.7905797101449277,
           "n_masks": 62,
-          "pearson_corr": 0.41361058709550613,
+          "pearson_corr": 0.4136105870955062,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.5536003009787126
         },
         {
           "deletion_auc": 0.2253623188405797,
-          "insertion_auc": 0.8833333333333331,
+          "insertion_auc": 0.8833333333333332,
           "n_masks": 125,
           "pearson_corr": 0.668678277264985,
           "precision_at_k": 0.6666666666666666,
@@ -56,15 +56,15 @@
         },
         {
           "deletion_auc": 0.12536231884057972,
-          "insertion_auc": 0.8833333333333331,
+          "insertion_auc": 0.8833333333333332,
           "n_masks": 250,
-          "pearson_corr": 0.7299359646275843,
+          "pearson_corr": 0.7299359646275844,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.6118740168712087
         },
         {
           "deletion_auc": 0.12536231884057972,
-          "insertion_auc": 0.8833333333333331,
+          "insertion_auc": 0.8833333333333332,
           "n_masks": 500,
           "pearson_corr": 0.6780170530533524,
           "precision_at_k": 0.6666666666666666,
@@ -83,7 +83,7 @@
     },
     "headline_metrics": {
       "deletion_auc": 0.12536231884057972,
-      "insertion_auc": 0.8833333333333331,
+      "insertion_auc": 0.8833333333333332,
       "pearson_corr": 0.6780170530533524,
       "precision_at_k": 0.6666666666666666,
       "spearman_corr": 0.6118740168712087,
@@ -160,7 +160,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@110)",
-  "timestamp": "1783122844",
+  "timestamp": "1793018437",
   "value": 0.6780170530533524,
   "where": "local"
 }

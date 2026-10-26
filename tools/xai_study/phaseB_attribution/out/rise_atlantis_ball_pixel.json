@@ -1,7 +1,7 @@
 {
   "arrays": "rise_atlantis_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-RISE causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "budget": {
@@ -40,9 +40,9 @@
       "points": [
         {
           "deletion_auc": 0.9091666666666667,
-          "insertion_auc": 0.09916666666666665,
+          "insertion_auc": 0.09916666666666667,
           "n_masks": 62,
-          "pearson_corr": 0.6431243118549594,
+          "pearson_corr": 0.6431243118549593,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.4026381769604976
         },
@@ -55,10 +55,10 @@
           "spearman_corr": 0.6196853192282658
         },
         {
-          "deletion_auc": 0.9149999999999998,
+          "deletion_auc": 0.915,
           "insertion_auc": 0.12166666666666667,
           "n_masks": 250,
-          "pearson_corr": 0.6435957818550091,
+          "pearson_corr": 0.6435957818550092,
           "precision_at_k": 0.6666666666666666,
           "spearman_corr": 0.4057837877180015
         },
@@ -66,7 +66,7 @@
           "deletion_auc": 0.8966666666666667,
           "insertion_auc": 0.14333333333333337,
           "n_masks": 500,
-          "pearson_corr": 0.6598638462060321,
+          "pearson_corr": 0.6598638462060322,
           "precision_at_k": 0.3333333333333333,
           "spearman_corr": 0.13683406795141909
         }
@@ -84,7 +84,7 @@
     "headline_metrics": {
       "deletion_auc": 0.8966666666666667,
       "insertion_auc": 0.14333333333333337,
-      "pearson_corr": 0.6598638462060321,
+      "pearson_corr": 0.6598638462060322,
       "precision_at_k": 0.3333333333333333,
       "spearman_corr": 0.13683406795141909,
       "topk": 3
@@ -150,7 +150,7 @@
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
-      "F": 0.6598638462060321,
+      "F": 0.6598638462060322,
       "M": 0.6666666666666666,
       "M_named_size": 18,
       "M_note": "|U*|=12 (oracle movers) / |U_hat|=18 (method above-threshold)",
@@ -172,7 +172,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "screen_region(n_changed_px)@r22c76",
-  "timestamp": "1783121939",
-  "value": 0.6598638462060321,
+  "timestamp": "1793016732",
+  "value": 0.6598638462060322,
   "where": "local"
 }

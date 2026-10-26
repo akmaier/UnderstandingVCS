@@ -1,7 +1,7 @@
 {
   "arrays": "A5_kangaroo.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "interpretation": "Phase A is the calibration baseline (experiment_design.md §4): the LFP-analog pooled-activity spectrum is rich, but a high fraction of its power is the KNOWN frame/animation clocks — epiphenomenal structure that says nothing about the causal computation (the dominant spectral peaks are clock harmonics). A5 REVEALS the pooled periodicities and MISSES the causal map; the clock-explained fraction is the quantified-Kording measurement here.",
@@ -24,7 +24,7 @@
     "method_kind": "descriptive (no oracle F/S/M; A5 reports the pooled spectral structure it REVEALS vs the causal map it MISSES — the clock-explained fraction quantifies how much of the headline spectrum is causally inert).",
     "regions": [
       {
-        "clock_explained_variance_fraction": 0.867200584605125,
+        "clock_explained_variance_fraction": 0.8672005846051241,
         "dominant_period_frames": 256.0,
         "dominant_power_share": 0.3644214199177418,
         "n_cells": 17,
@@ -51,9 +51,9 @@
         "region": "global"
       },
       {
-        "clock_explained_variance_fraction": 0.8935886077087123,
+        "clock_explained_variance_fraction": 0.8935886077087118,
         "dominant_period_frames": 256.0,
-        "dominant_power_share": 0.4782005185829696,
+        "dominant_power_share": 0.4782005185829697,
         "n_cells": 1,
         "n_cells_varying": 1,
         "ram_cells": [
@@ -73,9 +73,9 @@
         "region": "climbing"
       },
       {
-        "clock_explained_variance_fraction": 0.740373510498152,
+        "clock_explained_variance_fraction": 0.7403735104981524,
         "dominant_period_frames": 256.0,
-        "dominant_power_share": 0.32398299948202675,
+        "dominant_power_share": 0.32398299948202697,
         "n_cells": 1,
         "n_cells_varying": 1,
         "ram_cells": [
@@ -180,11 +180,11 @@
         2.9767441860465116
       ],
       "global_top_peak_power": [
-        126.33892115421997,
+        126.33892115422,
         115.31267997259145,
-        23.722466164730186,
-        14.76177756576794,
-        14.604212063793069
+        23.72246616473019,
+        14.761777565767932,
+        14.604212063793074
       ]
     },
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the analysed RAM trajectory is a deterministic re-run (asserted).",
@@ -215,7 +215,7 @@
   "state": "gameplay(seed=0,prefix=90)+256",
   "stderr": null,
   "target_output": "pooled-activity-power-spectrum",
-  "timestamp": "1783125012",
-  "value": 0.867200584605125,
+  "timestamp": "1793018088",
+  "value": 0.8672005846051241,
   "where": "local"
 }

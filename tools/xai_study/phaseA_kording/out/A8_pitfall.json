@@ -1,7 +1,7 @@
 {
   "arrays": "A8_pitfall.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "bit_exact_rerun": true,
     "candidate_cells": [
@@ -40,7 +40,7 @@
       90,
       92
     ],
-    "candidates_file": "/Users/maier/Documents/code/UnderstandingVCS/tools/xai_study/t3/out/candidates_pitfall.json",
+    "candidates_file": "/net/cluster/maier/UVCS_e2e/tools/xai_study/t3/out/candidates_pitfall.json",
     "oracle_causal_ram_indices": [
       97,
       98,
@@ -57,7 +57,7 @@
     "oracle_importance_per_cell": {
       "RAM[105]:player_y": 104.0,
       "RAM[18]:bottom_of_rope_x": 0.0,
-      "RAM[20]:index": 515.0,
+      "RAM[20]:index": 517.0,
       "RAM[32]:objects_list": 0.0,
       "RAM[46]:wh1": 0.0,
       "RAM[65]:s.wh": 0.0,
@@ -68,7 +68,7 @@
       "RAM[89]:t1.value": 58.0,
       "RAM[90]:t1.value": 8.0,
       "RAM[92]:theta_t": 0.0,
-      "RAM[97]:player_x": 2839.0,
+      "RAM[97]:player_x": 2815.0,
       "RAM[98]:enemy_logs_x": 190.0,
       "RAM[99]:enemy_scorpion_x": 73.0
     },
@@ -81,7 +81,7 @@
       "note": "the oracle's own minimal causal set scores F=1, S=1, M=1 — same faithfulness/sufficiency as the whole-state record but PERFECT minimality. M_control=1 ≫ M_wholestate=0.086 proves the harness REWARDS minimality, so the whole-state floor M is a real measurement, not a broken scorer."
     },
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — the full A1..A8 battery over the core + breadth sets; forward bit-exact to this HARD path.",
-    "settings": "GenericRomSettings",
+    "settings": "PitfallRomSettings",
     "substrate": "jutari (Julia, HARD) — real-ROM bit-exact path; the whole-state record + the oracle causal map are EXACT re-runs of the true ROM.",
     "testbed": {
       "cause_density_above_floor": 19,
@@ -93,7 +93,7 @@
       "note": "P2 redesign: BOTH the scored oracle prefix (causal importance) AND the whole-state recording run on a seeded random-action GAMEPLAY state (not the FIRE×4-then-NOOP oracle tape / synthetic active tape), gated by the §1 oracle cause-density gate. The recorded tape is the gameplay stream for the first prefix+horizon frames then NOOP-continued to traj_frames. A8's recording + oracle-importance algorithm is unchanged; only the analysis state moves onto genuine input-driven gameplay.",
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r120c61",
+      "shared_output": "screen_region(n_changed_px)@r114c129",
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
@@ -134,7 +134,7 @@
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
   "target_output": "full RAM+register state map over time (whole-state record)",
-  "timestamp": "1783127686",
+  "timestamp": "1793020543",
   "value": 0.0859375,
   "where": "local"
 }

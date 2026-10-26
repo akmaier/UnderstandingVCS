@@ -1,7 +1,7 @@
 {
   "arrays": "ig_baseline_sweep_pacman_ball_pixel.npz",
   "ci": null,
-  "commit": "d85961ed",
+  "commit": "56e3a03",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-IG causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment.",
     "baseline_sweep": {
@@ -64,7 +64,7 @@
           "deletion_auc": 0.8928571428571428,
           "ig_max_abs": 0.7578125,
           "insertion_auc": 0.1626984126984127,
-          "pearson_corr": 0.48107772977858715,
+          "pearson_corr": 0.48107772977858704,
           "precision_at_k": 1.0,
           "spearman_corr": 0.5102260072873557,
           "topk": 3,
@@ -136,9 +136,9 @@
         }
       ],
       "completeness_err_max": 1.0,
-      "corr_max": 0.48107772977858715,
+      "corr_max": 0.48107772977858704,
       "corr_min": 0.0,
-      "corr_sensitivity": 0.48107772977858715,
+      "corr_sensitivity": 0.48107772977858704,
       "definitions": {
         "mean_ram": "constant baseline = mean(x) per byte (the 'average input')",
         "random": "one uniform-random RAM draw ∈ 0..255 (seed=0+9973)",
@@ -235,7 +235,7 @@
       "position_byte_ram_index": 49,
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r131c77",
+      "shared_output": "screen_region(n_changed_px)@r132c77",
       "state_kind": "seeded_random_action_gameplay"
     },
     "triad": {
@@ -254,14 +254,14 @@
   "method": "integrated_gradients",
   "metric_name": "pearson_corr_with_oracle",
   "n": 18,
-  "oracle_ref": "oracle_intervene@pacman#screen_region(n_changed_px)@r131c77",
+  "oracle_ref": "oracle_intervene@pacman#screen_region(n_changed_px)@r132c77",
   "paper": "P2",
   "phase": "phaseB_attribution",
   "seed": 0,
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
-  "target_output": "screen_region(n_changed_px)@r131c77",
-  "timestamp": "1783124074",
+  "target_output": "screen_region(n_changed_px)@r132c77",
+  "timestamp": "1793020885",
   "value": 0.481077729778587,
   "where": "local"
 }
