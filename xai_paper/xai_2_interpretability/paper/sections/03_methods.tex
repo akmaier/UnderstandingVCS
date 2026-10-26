@@ -43,14 +43,17 @@ reverse-mode automatic differentiation (Zygote) on the CPU. A neural
 interpretability study works with three things: the inputs, the state, and the outputs. Our
 substrate gives us all three.
 
-We state one limit plainly. Paper~1 certifies bit-exactness over 30 frames of RAM and 60
+We close one gap explicitly. Paper~1 certifies bit-exactness over 30 frames of RAM and 60
 frames of screen on fixed action streams. Our shared testbed scores at frame 105, a 90-frame
-seeded random-action prefix plus a 15-frame horizon, which lies beyond that window. A later
-3,600-frame conformance check matches \texttt{xitari} on every frame in RAM for 63 of 64 games
-and in screen for 62 of 64; the three exceptions are transient and none is a core
-game~\cite{maier2025vcs}. Our own stream is not compared against \texttt{xitari}. What we do
-check is determinism on the port itself: the oracle re-runs each scored state twice from boot
-and asserts that RAM and screen are bit-identical before it trusts any effect. The gradient methods differentiate the output read at the
+seeded random-action prefix plus a 15-frame horizon, which lies beyond that window. We therefore
+validated the exact streams we analyse. For each of the 44 scored games we replay its testbed
+stream through the same boot and step code the methods use, and compare RAM and screen against
+the seed-patched \texttt{xitari} reference on every frame from boot to frame 105. All 44 games
+match on every frame, in RAM and in screen (Supplement~\ref{supp:scoredset}). Every game boots
+with its own ROM settings, including the start-up inputs the Arcade Learning Environment
+prescribes for some games, the same settings Paper~1's conformance suite uses. Within the port,
+the oracle also re-runs each scored state twice from boot and asserts that RAM and screen are
+bit-identical before it trusts any effect. The gradient methods differentiate the output read at the
 intervention frame. As a control, we also differentiate the output at the end of the 15-frame
 horizon back through every CPU instruction in between (\Sectionname\ref{sec:results-b}). We do
 not assume gradients over longer horizons.

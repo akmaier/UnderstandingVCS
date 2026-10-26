@@ -11,27 +11,30 @@ aggregate scores extend the same protocol to the 42-game scored set of
 one seeded random-action stream (seed~$0$, $90$-frame prefix, $15$-frame analysis horizon), not
 on the boot screen. This gives the oracle a rich, non-degenerate cause set to score against.
 The scored frame ($105$) lies beyond the window Paper~1 certifies, which is $30$ RAM and $60$
-screen frames on fixed action streams. A later $3{,}600$-frame check on Paper~1's fixed action
-streams matches \texttt{xitari} on every frame in RAM for 63 of 64 games and on screen for 62 of
-64; the exceptions are transient and none is a core game. The oracle in addition asserts
-determinism by re-running each scored state twice. We pick these six games as the core because all
+screen frames on fixed action streams, so we validated the analysed streams directly: for all 44
+scored games the port matches \texttt{xitari} on every frame from boot to $105$, in RAM and in
+screen (\Sectionname\ref{supp:scoredset}). The oracle in addition asserts determinism by
+re-running each scored state twice. We pick these six games as the core because all
 three tiers of ground truth (\Sectionname\ref{sec:tiers}) are available for them and the oracle is
 exact. Of the remaining 58 games, 36 more enter the scored set. The other 22 are bit-exact
 substrate but are not scored: 10 carry no T3 label, and 12 labeled games are held out for the
 two methodological reasons of \Sectionname\ref{supp:scoredset}. \Sectionname\ref{supp:t3coverage}
 (Table~\ref{supp:tab:t3coverage}) records how far the external T3 labels reach across the
 64-game roster, defining the 54-game labeled breadth set from which the scored set is drawn. The
-conformance column records the certified Paper~1 window and the later $3{,}600$-frame check. The tier column records which of the three
+conformance column records, for the scored games, the frame-by-frame check of the analysed stream
+and, for the unscored games, Paper~1's certified window and its later $3{,}600$-frame check. The tier column records which of the three
 ground-truth tiers (T1 exact intervention, T2 data-flow, T3 externally-supplied semantic
 labels) is available.
 
 \begin{table}[t]
 \centering
 \caption{\textbf{Core-game coverage.} The six core games carry exact tiered ground truth and
-the full set of methods. ``30/60; 3600'' is the certified Paper~1 window (30 RAM / 60 screen
-frames) and the later $3{,}600$-frame check on Paper~1's fixed action streams; scoring happens
-at frame $105$, beyond the certified window. $^{a}$The $3{,}600$-frame check has transient
-exceptions in \texttt{alien} and \texttt{carnival} (screen) and \texttt{amidar} (RAM). The
+the full set of methods. ``0--105'' means the analysed stream (the seed-0 testbed stream the
+methods score) matches \texttt{xitari} on every frame from boot to frame $105$, in RAM and in
+screen (\Sectionname\ref{supp:scoredset}). ``30/60; 3600'' is the certified Paper~1 window (30
+RAM / 60 screen frames) and the later $3{,}600$-frame check on Paper~1's fixed action streams.
+$^{a}$That check has transient exceptions in \texttt{alien} and \texttt{carnival} (screen) and
+\texttt{amidar} (RAM); none falls inside frames 0--105 of the analysed streams. The
 last two columns give the methods run and the per-game output records contributed. A further
 36 games complete the 42-game scored set (\Sectionname\ref{supp:scoredset}); the remaining 22
 games of the bit-exact 64-game substrate (Paper~1) are not scored. T3 labels are
@@ -43,14 +46,14 @@ external (\Sectionname\ref{sec:tiers}); we record this so the benchmark does not
 \toprule
 Game & Paper-1 status & Conformance & Tiers & Methods run & Records \\
 \midrule
-breakout & bit-exact & 30/60; 3600 fr & T1,T2,T3 & 30 + oracle & per-game \\
-ms\_pacman & bit-exact & 30/60; 3600 fr & T1,T2,T3 & 30 + oracle & per-game \\
-pong & bit-exact & 30/60; 3600 fr & T1,T2,T3 & 30 + oracle & per-game \\
-qbert & bit-exact & 30/60; 3600 fr & T1,T2,T3 & 30 + oracle & per-game \\
-seaquest & bit-exact & 30/60; 3600 fr & T1,T2,T3 & 30 + oracle & per-game \\
-space\_invaders & bit-exact & 30/60; 3600 fr & T1,T2,T3 & 30 + oracle & per-game \\
+breakout & bit-exact & 0--105 & T1,T2,T3 & 30 + oracle & per-game \\
+ms\_pacman & bit-exact & 0--105 & T1,T2,T3 & 30 + oracle & per-game \\
+pong & bit-exact & 0--105 & T1,T2,T3 & 30 + oracle & per-game \\
+qbert & bit-exact & 0--105 & T1,T2,T3 & 30 + oracle & per-game \\
+seaquest & bit-exact & 0--105 & T1,T2,T3 & 30 + oracle & per-game \\
+space\_invaders & bit-exact & 0--105 & T1,T2,T3 & 30 + oracle & per-game \\
 \midrule
-36 further scored games & bit-exact & 30/60; 3600$^{a}$ fr & T1,T2,T3 & up to 30 + oracle & per-game \\
+38 further scored games & bit-exact & 0--105 & T1,T2,T3 & up to 30 + oracle & per-game \\
 22 unscored games & bit-exact & 30/60; 3600$^{a}$ fr & T1,T2 partial & not scored & --- \\
 \bottomrule
 \end{tabular}
@@ -211,6 +214,22 @@ Each of the 42 scored games both clears the cause-density gate and carries a spr
 under intervention. Hence every one of them contributes to the all-regime leaderboard and to
 the position regime. The six core games of Table~\ref{supp:tab:coverage} are the subset of
 these 42 that also carry the full tiered ground truth and the exact oracle.
+
+\paragraph{The analysed streams are bit-exact to frame 105.} Paper~1 certifies the port over 30 RAM
+and 60 screen frames, while the shared testbed scores at frame $105$. We therefore replayed, for
+each of the 44 scored games, the exact seed-0 testbed stream through the boot and step code the
+methods use, and compared it with the seed-patched \texttt{xitari} reference on every frame from
+boot to frame $105$ (tools \texttt{tools/xai\_study/repro/p2\_stream\_\{dump.jl,xitari.sh,check.py\}},
+result table \texttt{p2\_stream\_check.md}). All 44 games match on every frame, in all 128 RAM
+bytes and in every screen pixel. A negative control (Pitfall replayed without its start-up input)
+diverges at the boot frame, so the comparison is sensitive. Each game boots with its own ROM
+settings, the map Paper~1's conformance suite uses. An earlier version of the runners booted 37
+games with generic settings, which skipped the start-up inputs of seven scored games
+(\texttt{air\_raid}, \texttt{beam\_rider}, \texttt{double\_dunk}, \texttt{gopher},
+\texttt{pitfall}, \texttt{private\_eye}, \texttt{yars\_revenge}) and used a different screen crop
+for three (\texttt{air\_raid}, \texttt{carnival}, \texttt{pacman}). Those earlier streams were
+bit-exact as well (RAM 42/42 against \texttt{xitari} without start-up inputs), but they did not
+start where the Arcade Learning Environment starts. All reported scores use the corrected boot, and the scored set itself was re-derived under it: the cause-density gate and the verified sprite labels were recomputed, which adds \texttt{asterix}, \texttt{enduro} and \texttt{skiing} and removes \texttt{beam\_rider} (no sprite moves under intervention at the shared state), for 44 scored games.
 
 The full per-game roster is in Table~\ref{supp:romroster}. It lists all 64 bit-exact games with
 their label source, the number of causally verified T3 labels, whether the game carries a moving
