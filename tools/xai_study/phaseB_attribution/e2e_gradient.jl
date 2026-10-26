@@ -420,8 +420,9 @@ function main(args = ARGS)
         end
     end
     selftest_only && return 0
-    # one process per game is the practical way to run this arm (each game is ~1 h
-    # of reverse mode); single-game runs write a per-game summary, `--merge`
+    # one process per game is the practical way to run this arm (290–540 chunks of
+    # 200 instructions per game, ~1.7 min per chunk with 9 games per cluster node:
+    # 8–15 h per game); single-game runs write a per-game summary, `--merge`
     # folds them into e2e_core_summary.json.
     sp = joinpath(OUT_DIR, length(games) == 1 ? "e2e_summary_$(only(games)).json" :
                                                  "e2e_core_summary.json")
