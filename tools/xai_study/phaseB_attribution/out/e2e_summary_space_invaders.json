@@ -1,0 +1,72 @@
+{
+  "commit": "0e3fd1f7",
+  "games": [
+    "space_invaders"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 54898.434580888,
+      "content_ram_index": 81,
+      "deletion_auc": 0.023373983739837415,
+      "game": "space_invaders",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.9583333333333334,
+      "method": "e2e_saliency",
+      "output": "content(ram@81, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.9998830846093596,
+      "precision_at_k": 1.0,
+      "spearman": 0.9995917534020515
+    },
+    {
+      "backward_seconds": 54898.434580888,
+      "content_ram_index": -1,
+      "deletion_auc": 0.7962731191767487,
+      "game": "space_invaders",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.3998922263941037,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r192c35",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 0.0,
+      "spearman": 0.0
+    },
+    {
+      "backward_seconds": 54898.434580888,
+      "content_ram_index": 81,
+      "deletion_auc": 0.023373983739837415,
+      "game": "space_invaders",
+      "grad_l1": 246.0,
+      "insertion_auc": 0.9583333333333334,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@81, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.9998830846093599,
+      "precision_at_k": 1.0,
+      "spearman": 0.9995917534020515
+    },
+    {
+      "backward_seconds": 54898.434580888,
+      "content_ram_index": -1,
+      "deletion_auc": 0.7962731191767487,
+      "game": "space_invaders",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.3998922263941037,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r192c35",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 0.0,
+      "spearman": 0.0
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1792985770",
+  "topk": 3
+}

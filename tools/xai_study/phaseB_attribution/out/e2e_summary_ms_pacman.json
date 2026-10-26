@@ -1,0 +1,72 @@
+{
+  "commit": "0e3fd1f7",
+  "games": [
+    "ms_pacman"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 44657.9172162,
+      "content_ram_index": 16,
+      "deletion_auc": 0.0125,
+      "game": "ms_pacman",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.9625,
+      "method": "e2e_saliency",
+      "output": "content(ram@16, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.8105163119782979,
+      "precision_at_k": 1.0,
+      "spearman": 0.9996712148522013
+    },
+    {
+      "backward_seconds": 44657.9172162,
+      "content_ram_index": -1,
+      "deletion_auc": 0.6867577197149646,
+      "game": "ms_pacman",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.6092042755344418,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r84c77",
+      "output_kind": "position",
+      "pearson": -0.033516269419250976,
+      "precision_at_k": 0.0,
+      "spearman": 0.3087831979082573
+    },
+    {
+      "backward_seconds": 44657.9172162,
+      "content_ram_index": 16,
+      "deletion_auc": 0.0125,
+      "game": "ms_pacman",
+      "grad_l1": 98.0,
+      "insertion_auc": 0.9625,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@16, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.810516311978298,
+      "precision_at_k": 1.0,
+      "spearman": 0.9996712148522013
+    },
+    {
+      "backward_seconds": 44657.9172162,
+      "content_ram_index": -1,
+      "deletion_auc": 0.6867577197149646,
+      "game": "ms_pacman",
+      "grad_l1": 88.0,
+      "insertion_auc": 0.6092042755344418,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r84c77",
+      "output_kind": "position",
+      "pearson": -0.03351626941925096,
+      "precision_at_k": 0.0,
+      "spearman": 0.3087831979082573
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1792975577",
+  "topk": 3
+}

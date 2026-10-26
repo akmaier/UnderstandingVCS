@@ -108,6 +108,12 @@ not a bug.</li>
 TIA-register and joystick causes the RAM map cannot see). It is compared with the oracle by
 Pearson/Spearman correlation and precision@3, and by deletion/insertion curves that re-run the real
 ROM. A positive control scores the oracle against itself.</li>
+<li><b>End-to-end variant.</b> <code>e2e_gradient.jl</code> also multiplies its through-the-machine
+gradient (see <a href="m_saliency.html">vanilla saliency</a>) by the RAM at \(f^*\). It reads the
+content byte the saliency runner uses and has no non-zero guard. So the failure mode above shows up
+for real. In Seaquest that byte holds 0 at \(f^*\), and the e2e Grad&times;Input score is exactly 0,
+while the e2e saliency on the same gradient scores 0.017. The same happens for Q*bert's position
+output.</li>
 </ul>""",
 
     code=[

@@ -14,6 +14,42 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 📊 P2 end-to-end gradient arm — results on the 6 core games — 2026-10-26
+
+`e2e_gradient.jl --games core` (records `out/e2e_{saliency,gradxinput}_<g>_*`,
+`out/e2e_core_summary.json`). Run twice, independently: locally (M1, records tagged
+c5d7db7e/0e3fd1f7) and on the cluster (Slurm array 780337, x86, tagged 3d9f8be2).
+Arrays identical; scalars differ by ≤ 1 ulp. Committed: cluster pong + local others.
+**Forward bit-exact ✓ in all 6** (65k–100k instructions differentiated per game,
+330–510 checkpointed chunks; backward 9–18 h on one core — turbo QOS does not help a
+serial pass).
+
+| game | ‖g_content‖₁ / nnz | e2e sal. F content | surrogate | ‖g_pos‖₁ / nnz | e2e sal. F position | surrogate |
+|---|---|---|---|---|---|---|
+| pong | 16 / 2 | 0.464 | 0.464 | 16 / 2 | 0.278 | 0.278 |
+| breakout | 1 / 1 | 0.750 | 0.750 | **0 / 0** | **0.000** | −0.236 |
+| space_invaders | 1 / 1 | 1.000 | 1.000 | **0 / 0** | **0.000** | −0.033 |
+| seaquest | 1 / 1 | 0.017 | 0.017 | 1 / 1 | 0.710 | 0.710 |
+| ms_pacman | 1 / 1 | 0.811 | 0.811 | 1 / 1 | −0.034 | −0.034 |
+| qbert | 1 / 1 | 0.999 | 0.999 | 1 / 1 | −0.031 | −0.031 |
+
+**Finding:** differentiating through the whole horizon adds *nothing* the one-line
+surrogate didn't have. In 5/6 games ∂RAM[idx]@f*+H / ∂RAM@f* is exactly e_idx (the byte
+persists or is incremented); every other causal path the oracle sees goes through
+branches, indexed addressing or TIA/RIOT reads, which the STE gradient cannot see. The
+one exception is instructive: in **pong** the gradient also lands on RAM[56] with
+∂ = **15 = H** (a per-frame velocity integrated into the position over 15 frames). But
+RAM[56] is not a candidate cause, so per-cause scores still equal the surrogate. The
+oracle's top content cause (ram[49] occlude, |Δ| = 175) gets 0.
+**Position zeros are real, not a harness bug.** A diagnostic (cluster job 780418;
+script kept out of the repo) evaluated the sampler cotangent at f*+H for all 6 games:
+∂sampler/∂pos = −1 everywhere, and ram_T equals the baseline. So the zero is the
+rollout: Breakout's paddle byte 72 (165 → 149 over the horizon) is recomputed from the
+paddle pot read, a TIA input replayed as a constant. Space Invaders loses it the same
+way. Grad×Input is 0 where the byte holds 0 at f* (seaquest content, qbert position).
+The committed `gradxinput_deeplift_*` records headline DeepLIFT with a different content
+target, so compare e2e against `saliency_*` only.
+
 ### 🐛 A3 tuning: `score_raw` was a second, unexcluded self-column — 2026-10-25
 
 Found by a fact-check pass while writing the website's method guides.

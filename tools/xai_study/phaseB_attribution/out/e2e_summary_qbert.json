@@ -1,0 +1,72 @@
+{
+  "commit": "0e3fd1f7",
+  "games": [
+    "qbert"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 50099.187213591,
+      "content_ram_index": 39,
+      "deletion_auc": 0.011904761904761904,
+      "game": "qbert",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.9642857142857143,
+      "method": "e2e_saliency",
+      "output": "content(ram@39, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.9994497161363469,
+      "precision_at_k": 1.0,
+      "spearman": 0.999702513752156
+    },
+    {
+      "backward_seconds": 50099.187213591,
+      "content_ram_index": -1,
+      "deletion_auc": 0.6520771513353116,
+      "game": "qbert",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.3717323724742123,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r19c1",
+      "output_kind": "position",
+      "pearson": -0.031062383480416882,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.1364912705249751
+    },
+    {
+      "backward_seconds": 50099.187213591,
+      "content_ram_index": 39,
+      "deletion_auc": 0.011904761904761904,
+      "game": "qbert",
+      "grad_l1": 255.0,
+      "insertion_auc": 0.9642857142857143,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@39, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.9994497161363473,
+      "precision_at_k": 1.0,
+      "spearman": 0.999702513752156
+    },
+    {
+      "backward_seconds": 50099.187213591,
+      "content_ram_index": -1,
+      "deletion_auc": 0.674120389995761,
+      "game": "qbert",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.3496891338137629,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r19c1",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 0.0,
+      "spearman": 0.0
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1792981051",
+  "topk": 3
+}

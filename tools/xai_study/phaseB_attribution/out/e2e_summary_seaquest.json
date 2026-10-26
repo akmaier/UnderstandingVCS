@@ -1,0 +1,72 @@
+{
+  "commit": "0e3fd1f7",
+  "games": [
+    "seaquest"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 44019.388734053,
+      "content_ram_index": 118,
+      "deletion_auc": null,
+      "game": "seaquest",
+      "grad_l1": 1.0,
+      "insertion_auc": null,
+      "method": "e2e_saliency",
+      "output": "content(ram@118, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.017329864981630125,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.467285499863313
+    },
+    {
+      "backward_seconds": 44019.388734053,
+      "content_ram_index": -1,
+      "deletion_auc": 0.9675779755070799,
+      "game": "seaquest",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.06666188289322618,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r52c77",
+      "output_kind": "position",
+      "pearson": 0.7097972052076023,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.3410477771148741
+    },
+    {
+      "backward_seconds": 44019.388734053,
+      "content_ram_index": 118,
+      "deletion_auc": null,
+      "game": "seaquest",
+      "grad_l1": 0.0,
+      "insertion_auc": null,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@118, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.0,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.0
+    },
+    {
+      "backward_seconds": 44019.388734053,
+      "content_ram_index": -1,
+      "deletion_auc": 0.9675779755070799,
+      "game": "seaquest",
+      "grad_l1": 76.0,
+      "insertion_auc": 0.06666188289322618,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r52c77",
+      "output_kind": "position",
+      "pearson": 0.7097972052076025,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.3410477771148741
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1792974908",
+  "topk": 3
+}

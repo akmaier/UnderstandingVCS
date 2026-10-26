@@ -190,6 +190,10 @@ julia --project=<repo>/jutari tools/xai_study/phaseB_attribution/lime.jl        
 julia --project=<repo>/jutari tools/xai_study/phaseB_attribution/kernelshap.jl     --games core
 julia --project=<repo>/jutari tools/xai_study/phaseB_attribution/counterfactual.jl --games core
 julia --project=<repo>/jutari tools/xai_study/phaseB_attribution/na_audit.jl                  # N/A-method writeup (--md)
+# true end-to-end gradient arm (2026-10-26): one serial backward pass per game, 9-18 h on one core.
+# Run one game per job (--game <g>), then fold the per-game summaries:
+julia --project=<repo>/jutari tools/xai_study/phaseB_attribution/e2e_gradient.jl   --game pong
+julia --project=<repo>/jutari tools/xai_study/phaseB_attribution/e2e_gradient.jl   --games core --merge
 ```
 
 ### Phase C — mechanistic interpretability (E5)

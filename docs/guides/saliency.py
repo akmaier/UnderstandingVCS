@@ -101,7 +101,30 @@ This is the same trick spatial-transformer networks use, and it restores a non-z
 <code>e2e_gradient.jl</code> runner instead differentiates the content byte at \(f^*{+}15\)
 <b>back through every CPU instruction of the 15 frames</b> (about 10<sup>5</sup> instructions,
 checkpointed every 200). That is the analogue of backpropagating through a very deep, very
-discrete network. The renderer (TIA) is still not differentiated.</p>""",
+discrete network. The renderer (TIA) is still not differentiated.</p>
+<p><b>What it found</b> (six core games, forward pass bit-exact in every one, 9&ndash;18 hours of
+backward pass per game on one core):</p>
+<ul>
+<li><b>Content:</b> in five games the gradient through 65&thinsp;000&ndash;81&thinsp;000 instructions is
+<i>exactly</i> the one-hot vector \(e_{\text{idx}}\) again (\(\lVert g\rVert_1 = 1\), one non-zero
+entry), so its scores equal the one-line read's to the last digit (Breakout 0.750, Space Invaders 1.000,
+Seaquest 0.017, Ms.&nbsp;Pac-Man 0.811, Q*bert 0.999). The byte simply persists or is incremented.
+Every other way the oracle's causes reach it goes through a branch (&ldquo;if the ball hit the
+paddle&hellip;&rdquo;), an indexed load or a hardware read, and none of those carries a gradient.</li>
+<li><b>Pong, the instructive exception:</b> the gradient also lands on RAM[56] with
+\(\partial y/\partial \mathrm{ram}_{56} = 15\), the horizon length. That is the signature of a
+velocity being added to a position once per frame: \(x_{t+15} = x_t + 15\,v\), so
+\(\partial x_{t+15}/\partial v = 15\). Backpropagation through time has discovered the game's
+physics. RAM[56] is not among the candidate causes, though, so the scores again equal the one-line
+read's (0.464), and the oracle's strongest cause still gets zero.</li>
+<li><b>Position:</b> in Breakout and Space Invaders the gradient arriving at \(f^*\) is
+<b>exactly zero</b>, although the sampler's gradient at \(f^*{+}15\) is non-zero (checked). Breakout
+recomputes its paddle position every frame from the paddle controller, a hardware input the gradient
+treats as a constant. The vanishing gradient, measured.</li>
+</ul>
+<p>The lesson for neural networks: a deeper, more &ldquo;honest&rdquo; gradient is not automatically a
+more faithful explanation. Through a computation made of decisions rather than smooth arithmetic,
+backpropagation sees only the smooth sliver.</p>""",
 
     code=[
         dict(path="tools/xai_study/phaseB_attribution/saliency.jl", find="function saliency_over_ram",
@@ -144,7 +167,8 @@ causes: the gradient is <i>local</i>, the oracle is <i>global</i>.</p>""",
     try_it="julia --project=jutari tools/xai_study/phaseB_attribution/saliency.jl --games core",
     try_note="Writes <code>saliency_&lt;game&gt;_{content,position}.json/.npz</code> into "
              "<code>tools/xai_study/phaseB_attribution/out/</code>. For the end-to-end variant run "
-             "<code>e2e_gradient.jl --game pong</code> (about an hour per game on one CPU core).",
+             "<code>e2e_gradient.jl --game pong</code> (9&ndash;18 hours per game on one CPU core; records "
+             "<code>e2e_{saliency,gradxinput}_&lt;game&gt;_*</code> and <code>e2e_core_summary.json</code>).",
 
     next=["gradxinput", "smoothgrad", "ig_baseline_sweep", "occlusion"],
 )

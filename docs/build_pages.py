@@ -1840,7 +1840,11 @@ def build_primer():
   <p>Most gradient runners differentiate the output read <i>at</i> \\(f^*\\). The
   <a href="m_saliency.html">end-to-end arm</a> %s instead backpropagates from frame \\(f^*{+}15\\)
   through every one of the &asymp;10<sup>5</sup> CPU instructions in between: the real &ldquo;deep
-  network&rdquo; case.</p>
+  network&rdquo; case. The measured answer is a lesson in itself: in all six core games the forward
+  pass stays bit-exact, yet the gradient that comes out is (almost) the same one-hot spike the one-line
+  read gives. Every other causal path runs through a branch, a table look-up or a hardware read, and
+  a gradient cannot see any of those. In Breakout and Space Invaders the position gradient dies
+  completely on the way back.</p>
 
   <h2 style="margin-top:40px">7 &middot; The methods, in a suggested reading order</h2>
   <p>Each page has the same structure: the idea in plain words, how it works on a neural network

@@ -1,0 +1,72 @@
+{
+  "commit": "3d9f8be",
+  "games": [
+    "pong"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 66264.369595468,
+      "content_ram_index": 54,
+      "deletion_auc": 0.07539682539682538,
+      "game": "pong",
+      "grad_l1": 16.0,
+      "insertion_auc": 0.3611111111111111,
+      "method": "e2e_saliency",
+      "output": "content(ram@54, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.46421209661041496,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.7342477813388187
+    },
+    {
+      "backward_seconds": 66264.369595468,
+      "content_ram_index": -1,
+      "deletion_auc": 0.6363049095607235,
+      "game": "pong",
+      "grad_l1": 16.0,
+      "insertion_auc": 0.6388888888888888,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r162c17",
+      "output_kind": "position",
+      "pearson": 0.27782225429724294,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.40614777080541176
+    },
+    {
+      "backward_seconds": 66264.369595468,
+      "content_ram_index": 54,
+      "deletion_auc": 0.07539682539682538,
+      "game": "pong",
+      "grad_l1": 175.0,
+      "insertion_auc": 0.3611111111111111,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@54, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.46421209661041496,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.7342477813388187
+    },
+    {
+      "backward_seconds": 66264.369595468,
+      "content_ram_index": -1,
+      "deletion_auc": 0.6363049095607235,
+      "game": "pong",
+      "grad_l1": 175.0,
+      "insertion_auc": 0.6388888888888888,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r162c17",
+      "output_kind": "position",
+      "pearson": 0.277822254297243,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.40614777080541176
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1792999056",
+  "topk": 3
+}
