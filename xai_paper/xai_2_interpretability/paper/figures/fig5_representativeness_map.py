@@ -657,7 +657,7 @@ def main():
     )
     bl_sens_max = max(rr["baseline_corr_sensitivity"] for rr in igsw["results"])
     check(
-        # 42-game battery: EG faithfulness lands low (0.175) but no longer below
+        # 44-game battery: EG faithfulness lands low (0.175) but no longer below
         # 0.1; the durable claim is high baseline-sensitivity + a LOW EG score.
         "row6 IG/EG baseline-sensitive (max corr_sensitivity>0.5, EG low <0.30)",
         bl_sens_max > 0.5 and R["expected_gradients"]["faithfulness"] < 0.30,

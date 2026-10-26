@@ -152,7 +152,7 @@ def main():
 
     rows = load_rows(args.csv)
     # The aggregate cross-method contrast this figure references is the ROBUST
-    # all-regime causal-vs-gradient gap (CI excludes 0). On the 42-game scored
+    # all-regime causal-vs-gradient gap (CI excludes 0). On the 44-game scored
     # battery the POSITION-regime gap is now ALSO significant (its bootstrap CI
     # excludes 0) — source of truth = position_bootstrap.json (family-mean gap).
     ci_csv = os.path.join(
@@ -321,7 +321,7 @@ def main():
     leg._legend_box.align = "left"
 
     # Honest aggregate-contrast line: the ROBUST all-regime gap (CI excludes 0),
-    # and — on the 42-game battery — the POSITION-regime gap, which is now ALSO
+    # and — on the 44-game battery — the POSITION-regime gap, which is now ALSO
     # SIGNIFICANT (its bootstrap CI excludes 0). Position numbers come from
     # position_bootstrap.json (family-mean gap), the paper's headline convention.
     ag = headline_gaps.get("all_regime_gap")
@@ -354,7 +354,7 @@ def main():
     fig.text(
         0.965, 0.058,
         "Data: sampler_faithfulness.csv (6 core games, 120+30-frame state) + the "
-        "42-game aggregate contrast (leaderboard_ci.csv + position_bootstrap.json); "
+        "44-game aggregate contrast (leaderboard_ci.csv + position_bootstrap.json); "
         "pure read — no experiment re-run.",
         fontsize=FS_MIN, color=C_MUTE, ha="right", va="bottom",
     )

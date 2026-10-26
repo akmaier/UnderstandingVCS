@@ -416,7 +416,7 @@ finding_row(
      "role — the tuning-curve trap, quantified."],
 )
 
-# Row A2 — high rho but interaction blind spot (42-game: rho = 0.96)
+# Row A2 — high rho but interaction blind spot (44-game: rho = 0.96)
 finding_row(
     2, TRAD_COLOR["intervention"], "A2", "high ρ, blind to interactions",
     f"ρ = {FACT_A2['rho_mean']:.2f} vs true role; misses {FACT_A2['si_miss']*100:.0f}% of interactions",
@@ -424,7 +424,7 @@ finding_row(
      "invisible to one-unit-at-a-time ablation."],
 )
 
-# Row A7 — NMF edges PCA, both mediocre (42-game: NMF 0.52 > PCA 0.35)
+# Row A7 — NMF edges PCA, both mediocre (44-game: NMF 0.52 > PCA 0.35)
 finding_row(
     3, TRAD_COLOR["dim_reduction"], "A7", "NMF > PCA (both mediocre)",
     f"NMF matched frac {FACT_A7['nmf_mean']:.2f} vs PCA {FACT_A7['pca_mean']:.2f} (best {FACT_A7['nmf_best']:.1f})",
@@ -435,7 +435,7 @@ finding_row(
 # provenance footnote — no data-path microtext in the figure body (fig_pass #6);
 # exact paths live in the Supplement provenance table.
 fig.text(0.012, 0.018,
-         "Data: committed §R records (42-game scored battery); whiskers = 95% bootstrap CI "
+         "Data: committed §R records (44-game scored battery); whiskers = 95% bootstrap CI "
          "(every bar has a CI record). See Supplement provenance table.",
          ha="left", va="bottom", fontsize=8.0, color=C_MUTE, fontstyle="italic")
 
@@ -490,10 +490,10 @@ if FACT_A6["pong_triadF"] != 0.0:
 if max(FACT_A3.values()) <= 0.0:
     problems.append("A3 spurious-tuning absent in every game (tuning-curve trap gone)")
 if not (FACT_A2["rho_mean"] >= 0.90):
-    problems.append("A2 mean rho not high (~0.96 on the 42-game battery; headline finding broken)")
+    problems.append("A2 mean rho not high (~0.96 on the 44-game battery; headline finding broken)")
 if not (FACT_A2["si_superadd"] > 0):
     problems.append("A2 interaction blind-spot absent (super-additive delta = 0)")
-# A7: both dim-reductions score mediocre against the true basis. On the 42-game
+# A7: both dim-reductions score mediocre against the true basis. On the 44-game
 # battery NMF edges PCA (NMF 0.52 > PCA 0.35) rather than being near-tied; the
 # durable finding is that NEITHER recovers the basis (both well below the oracle).
 # Assert both are mediocre and NMF is at least as good as PCA.

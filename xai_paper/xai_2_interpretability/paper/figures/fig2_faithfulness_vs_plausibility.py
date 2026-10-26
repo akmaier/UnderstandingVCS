@@ -427,9 +427,9 @@ assert head == b"%PDF-", f"not a PDF (header={head!r})"
 
 # cross-check: the contrast endpoints I drew are the SAME methods E6-3 names
 # (activation_patching = the faithful method; vanilla_saliency = the popular one).
-# The plotted coordinates come from the 42-game leaderboard (the source of truth),
+# The plotted coordinates come from the 44-game leaderboard (the source of truth),
 # not from faithful_demo.json — the demo's `faithfulness_all_regimes` fields are a
-# frozen 6-core-game record and no longer byte-equal to the re-run 42-game
+# frozen 6-core-game record and no longer byte-equal to the re-run 44-game
 # leaderboard, so we assert method IDENTITY + the qualitative faithful>popular
 # ordering, not a stale byte match.
 ap_rec = next(m for m in methods if m["method"] == "activation_patching")
