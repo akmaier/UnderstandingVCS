@@ -121,7 +121,7 @@
     <li><b>Define causes.</b> For each RAM byte that the community annotations (AtariARI, OCAtari)
       say means something, such as a ball x-position or a score, make two interventions: set it to
       its value&nbsp;+17, and zero it. Add a TIA colour register and a different joystick action <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/ground_truth/oracle_intervene.jl#L185"><code>oracle_intervene.jl:185</code></a>.</li>
-    <li><b>Intervene and re-run.</b> For each cause: copy the checkpoint, poke the value <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/jutari_oracle.jl#L174"><code>jutari_oracle.jl:174</code></a>, play the
+    <li><b>Intervene and re-run.</b> For each cause: copy the checkpoint, poke the value <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/common/jutari_oracle.jl#L176"><code>jutari_oracle.jl:176</code></a>, play the
       same 15 frames, read the output <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/ground_truth/oracle_intervene.jl#L242"><code>oracle_intervene.jl:242</code></a>.</li>
     <li><b>Measure.</b> The true effect is \(|\Delta y(u)| = |y(do(u)) - y(\text{baseline})|\) <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/saliency.jl#L301"><code>saliency.jl:301</code></a>.
       Every number is a real re-run, with no approximation.</li>
@@ -183,7 +183,7 @@ julia --project=jutari tools/xai_study/phaseB_attribution/saliency.jl --game pon
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/110da753db2acac440960f92c54025b755c57763"><code>110da753</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/b98b44536fb8b381d0406d6f7ef943d102d7dc16"><code>b98b4453</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

@@ -1,7 +1,7 @@
 {
   "arrays": "saliency_up_n_down_content.npz",
   "ci": null,
-  "commit": "9391b559",
+  "commit": "c2cae9e",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-saliency causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment (e.g. the vanishing position output).",
     "baseline": "none (vanilla saliency uses no baseline and no input weighting)",
@@ -25,8 +25,8 @@
     "content_ram_index": 49,
     "grad_l1": 1.0,
     "harness_positive_control": {
-      "deletion_auc": 0.9600674915635545,
-      "insertion_auc": 0.10854893138357705,
+      "deletion_auc": 0.9611428571428572,
+      "insertion_auc": 0.10857142857142857,
       "interpretation": "corr=1 & precision@k=1 (on a non-degenerate column) ⇒ the scoring harness rewards a faithful map; the vanilla-saliency numbers are then a true measurement, not a harness artefact.",
       "method": "oracle_abs_delta (the perfectly-faithful attribution)",
       "pearson_corr": 1.0,
@@ -34,11 +34,11 @@
     },
     "method_ref": "vanilla gradient / saliency (Simonyan et al. 2014): attribution = |∂y/∂u|",
     "metrics": {
-      "deletion_auc": 0.9533183352080989,
-      "insertion_auc": 0.10854893138357705,
-      "pearson_corr": 0.7404804122202103,
+      "deletion_auc": 0.9531428571428572,
+      "insertion_auc": 0.10857142857142857,
+      "pearson_corr": 0.7473673135691197,
       "precision_at_k": 0.6666666666666666,
-      "spearman_corr": 0.7124274490013944,
+      "spearman_corr": 0.7624400821656306,
       "topk": 3
     },
     "oracle_abs_delta_per_cause": {
@@ -47,18 +47,18 @@
       "ram[13]:set": 0.0,
       "ram[14]:occlude": 0.0,
       "ram[14]:set": 0.0,
-      "ram[49]:occlude": 124.0,
-      "ram[49]:set": 11.0,
+      "ram[49]:occlude": 122.0,
+      "ram[49]:set": 12.0,
       "ram[50]:occlude": 1.0,
       "ram[50]:set": 0.0,
       "ram[51]:occlude": 1.0,
       "ram[51]:set": 0.0,
       "ram[54]:occlude": 0.0,
-      "ram[54]:set": 1.0,
+      "ram[54]:set": 0.0,
       "tia[COLUBK]:set": 0.0
     },
     "output_kind": "content",
-    "output_note": "CONTENT output: RAM byte 49 read one-hot through soft_ram_peek (∂y/∂ram[49]=1) — the most causally-active candidate concept byte the oracle found at this state. The STE gradient is ALIVE (grad L1=1.0), so vanilla saliency puts its mass on this self-byte (precision@1 vs the self-byte=1). Whether that equals the ORACLE's top cause is the FAITHFULNESS question: saliency answers 'what is y a function of NOW' (the self-byte), the oracle 'what CAUSES y over the horizon' (possibly an upstream byte) — measured corr=0.74, precision@3=0.667. Vanilla saliency has NO input weighting and NO completeness (unlike Grad×Input/DeepLIFT) — the bare gradient baseline.",
+    "output_note": "CONTENT output: RAM byte 49 read one-hot through soft_ram_peek (∂y/∂ram[49]=1) — the most causally-active candidate concept byte the oracle found at this state. The STE gradient is ALIVE (grad L1=1.0), so vanilla saliency puts its mass on this self-byte (precision@1 vs the self-byte=1). Whether that equals the ORACLE's top cause is the FAITHFULNESS question: saliency answers 'what is y a function of NOW' (the self-byte), the oracle 'what CAUSES y over the horizon' (possibly an upstream byte) — measured corr=0.747, precision@3=0.667. Vanilla saliency has NO input weighting and NO completeness (unlike Grad×Input/DeepLIFT) — the bare gradient baseline.",
     "sal_max_abs": 1.0,
     "saliency_attr_per_cause": {
       "joystick:RIGHT": 0.0,
@@ -78,7 +78,17 @@
     },
     "scales_to_cluster_via": "tools/cluster/xai_*.sbatch (E0-3) — batched SOFT-STE saliency over outputs×causes×games on GPU; the forward is bit-exact to this map.",
     "substrate": "jutari (Julia) — Zygote content-path |∂y/∂u| over the RAM tape + TRUE-VCS deletion/insertion re-runs (real-ROM, bit-exact oracle machinery).",
-    "y_full": 29.0
+    "triad": {
+      "F": 0.7473673135691197,
+      "M": 1.0,
+      "M_named_size": 2,
+      "M_note": "|U*|=4 (oracle movers) / |U_hat|=2 (method above-threshold)",
+      "M_true_minimal_size": 4,
+      "S": 0.8571428571428571,
+      "S_note": "held-out predictive fit: 6/7 held-out do(u) within ε=12.2 (calib=7, fit Δy≈12.0·attr+0.0)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    },
+    "y_full": 30.0
   },
   "game": "up_n_down",
   "method": "vanilla_saliency",
@@ -91,7 +101,7 @@
   "state": "f90+15",
   "stderr": null,
   "target_output": "content(ram_self@49)",
-  "timestamp": "1783020097",
-  "value": 0.7404804122202103,
+  "timestamp": "1793011189",
+  "value": 0.7473673135691197,
   "where": "local"
 }

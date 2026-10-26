@@ -140,7 +140,7 @@ def build():
             "per_game": per_game_block(lb_method),
         }
 
-    # ---- games{} — only the 42 scored games; per-method faithfulness on each ----
+    # ---- games{} — only the 44 scored games; per-method faithfulness on each ----
     gt = json.load(open(GROUNDTRUTH_JSON))
     # per-game -> per SITE method faithfulness (invert the per{} table)
     game_methods = defaultdict(dict)

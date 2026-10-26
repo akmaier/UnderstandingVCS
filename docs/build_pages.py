@@ -13,6 +13,8 @@ import sys
 import json as _json
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+# size of the scored battery (XAI_SCORED), as recorded per game in groundtruth_data.json
+N_SCORED_GAMES = sum(bool(d.get("scored")) for d in _json.load(open(os.path.join(HERE, "groundtruth_data.json"))).values())
 REPO = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 import manifest as M  # noqa: E402
@@ -991,12 +993,12 @@ def build_methods():
         ("common/jutari_oracle.jl", "tools/xai_study/common/jutari_oracle.jl", "the intervention/gradient oracle on the jutari substrate"),
         ("common/replay.py", "tools/xai_study/common/replay.py", "deterministic replay-to-state (the <code>f&lt;start&gt;+&lt;window&gt;</code> encoding)"),
         ("common/seeds.py", "tools/xai_study/common/seeds.py", "the single seed=0 source"),
-        ("common/game_set.json", "tools/xai_study/common/game_set.json", "the labeled game set (42 scored games; 6-game core is a subset)"),
+        ("common/game_set.json", "tools/xai_study/common/game_set.json", "the labeled game set (44 scored games; 6-game core is a subset)"),
         ("repro/make_hash_tables.py", "tools/xai_study/repro/make_hash_tables.py", "SHA-256 ROM + action-stream hashes (verify with --verify)"),
     ]
 
     diagram = """  ROM  (AutoROM, SHA-256 verified — not redistributed)
-    │   jutari substrate · seed 0 · state f120+30 · games: labeled (42 scored)
+    │   jutari substrate · seed 0 · state f120+30 · games: labeled (44 scored)
     ▼
   ground_truth/oracle_intervene.jl ── exact |Δy(u)| ──▶  the §1 oracle  (T1 causal truth)
     │
@@ -1033,7 +1035,7 @@ def build_methods():
   runner then produces its own attribution/circuit and is graded against that oracle on the
   correctness triad — <b>F</b> faithful (true causes), <b>S</b> sufficient (predicts held-out
   interventions), <b>M</b> minimal/right-level. Runners are Julia on the jutari substrate
-  (jaxtari eager is ≈205× slower), <code>seed = 0</code>, on the 42 scored games,
+  (jaxtari eager is ≈205× slower), <code>seed = 0</code>, on the 44 scored games,
   inside the Paper-1 bit-exact horizon.</p>
   <pre><code>%s</code></pre>
   <p>Every runner writes a self-describing <b>§R record</b> per game/regime —
@@ -1927,7 +1929,7 @@ def build_method_page(meth):
 <section><div class="wrap">
   <h2>In the audit</h2>
   <p>This is the method's entry in the actual cross-method audit — scored on the paper's
-  correctness triad, each axis a <b>mean over all %s scored games</b> (%s committed §R records), not
+  correctness triad, each axis a <b>mean over %s of the %d scored games</b> (%s committed §R records), not
   the single example shown above. Tradition: <b>%s</b>. The example figure (Pong) is one of those
   records.</p>
   %s
@@ -1935,7 +1937,7 @@ def build_method_page(meth):
   <p class="caption">Source: %s · the whole leaderboard is on the
   <a href="methods.html#e6">methods page</a> and the
   <a href="paper2.html">Paper&nbsp;2 audit</a>.</p>
-</div></section>""" % (ng, nr, esc(str(trad)), bign, TRIAD_LEGEND, src(lb, "leaderboard.json"))
+</div></section>""" % (ng, N_SCORED_GAMES, nr, esc(str(trad)), bign, TRIAD_LEGEND, src(lb, "leaderboard.json"))
     else:
         audit_html = """
 <section><div class="wrap">
@@ -2075,7 +2077,7 @@ def build_ground_truth():
                    else '<span class="ob ok">scored</span>' if d.get("scored") else '')
         exrow = ('<li class="na"><b>Excluded from the scored battery:</b> %s</li>'
                  % esc(d.get("excluded_reason", ""))) if excluded else ""
-        # Per-game results detail page (only for the 42 scored games).
+        # Per-game results detail page (only for the 44 scored games).
         if g in SITE["games"]:
             thumb = '<a href="g_%s.html">%s</a>' % (g, thumb)
             resrow = ('<li class="ok"><b><a href="g_%s.html">Per-game results →</a></b> '
@@ -2187,10 +2189,10 @@ def build_ground_truth():
   <span style="color:#8a6d1f">amber</span> = present but limited at this frame,
   <span style="color:#b23b3b">red</span> = not available. The 10 games with no external label carry
   exact T1/T2 ground truth but are held out of the label-dependent (T3) study.</p>
-  <p>Of the 54 labelled ROMs, <b>42 make up the scored battery</b>; the other 12 are <b>excluded</b>
-  (dimmed and tagged below). We exclude a game for one of two honest reasons. Eight <b>fail the
+  <p>Of the 54 labelled ROMs, <b>44 make up the scored battery</b>; the other 10 are <b>excluded</b>
+  (dimmed and tagged below). We exclude a game for one of two honest reasons. Six <b>fail the
   cause-density gate</b>: at the shared frame the chosen output has almost no true causes, so there is
-  nothing for a method to be right or wrong about. Four have <b>no sprite that moves under
+  nothing for a method to be right or wrong about. Seven have <b>no sprite that moves under
   intervention</b> &mdash; their verified labels are static things like a score counter, so there is no
   position for a position method to recover; three games fail both tests. Running interpretability
   methods on such a frame cannot measure faithfulness &mdash; it would only add noise to the leaderboard

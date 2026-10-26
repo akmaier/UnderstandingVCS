@@ -2,54 +2,54 @@
   "games": {
     "air_raid": {
       "accepted": true,
-      "n_moving": 8,
-      "n_verified": 9,
+      "n_moving": 9,
+      "n_verified": 10,
       "origin": "OCAtari",
       "per_method": {
         "A1_connectomics": {
-          "F": 0.0,
+          "F": 0.2222,
           "F_content": null,
           "F_position": null,
-          "M": null,
-          "S": 0.9872
+          "M": 1.0,
+          "S": 0.9551
         },
         "A2_lesions": {
-          "F": 0.7527,
+          "F": 0.9835,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.3596
+          "S": 0.9725
         },
         "A3_tuning": {
-          "F": 0.4451,
+          "F": 0.7171,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.4414
+          "S": 0.7187
         },
         "A4_correlations": {
-          "F": 0.0,
+          "F": 0.4449,
           "F_content": null,
           "F_position": null,
-          "M": 0.0952,
-          "S": -0.0687
+          "M": 0.25,
+          "S": 0.3975
         },
         "A5_lfp": {
-          "F": 0.1858,
+          "F": 0.226,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "A6_granger": {
-          "F": 0.0,
+          "F": 0.1053,
           "F_content": null,
           "F_position": null,
-          "M": 0.2222,
-          "S": 0.9295
+          "M": 0.7273,
+          "S": 0.891
         },
         "A7_dimred": {
-          "F": 0.8,
+          "F": 0.6,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -59,49 +59,49 @@
           "F": 1.0,
           "F_content": null,
           "F_position": null,
-          "M": 0.0781,
+          "M": 0.0938,
           "S": 1.0
         },
         "acdc": {
-          "F": 0.0,
+          "F": 0.6667,
           "F_content": null,
           "F_position": null,
-          "M": null,
-          "S": 0.0
+          "M": 1.0,
+          "S": 0.2308
         },
         "activation_patching": {
           "F": 1.0,
           "F_content": null,
           "F_position": 1.0,
-          "M": 1.0,
+          "M": 0.8235,
           "S": 1.0
         },
         "attribution_patching": {
-          "F": 0.2627,
+          "F": 0.6344,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.9667
+          "S": 0.9833
         },
         "causal_scrubbing": {
           "F": 1.0,
           "F_content": null,
           "F_position": null,
-          "M": 1.0,
+          "M": 0.6667,
           "S": 1.0
         },
         "counterfactual": {
-          "F": 0.7871,
-          "F_content": 0.7906,
-          "F_position": 0.7836,
+          "F": 0.2894,
+          "F_content": 0.1951,
+          "F_position": 0.3838,
           "M": 1.0,
-          "S": 0.5714
+          "S": 0.7143
         },
         "das": {
           "F": 1.0,
           "F_content": null,
           "F_position": null,
-          "M": 1.0,
+          "M": 0.625,
           "S": 1.0
         },
         "dictionaries": {
@@ -109,105 +109,105 @@
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.3727
+          "S": -0.8335
         },
         "expected_gradients": {
-          "F": 0.3953,
-          "F_content": 0.7906,
-          "F_position": 0.0,
+          "F": 0.2939,
+          "F_content": 0.3599,
+          "F_position": 0.228,
           "M": 1.0,
-          "S": 0.4643
+          "S": 0.0357
         },
         "gradxinput": {
-          "F": 0.4481,
-          "F_content": 0.8962,
-          "F_position": 0.0,
+          "F": 0.2197,
+          "F_content": 0.2114,
+          "F_position": 0.228,
           "M": 1.0,
-          "S": 0.4643
+          "S": 0.3929
         },
         "guided_backprop": {
-          "F": 0.3953,
-          "F_content": 0.7906,
+          "F": 0.1799,
+          "F_content": 0.3599,
           "F_position": 0.0,
           "M": 1.0,
-          "S": 0.4643
+          "S": 0.0357
         },
         "ig_baseline_sweep": {
-          "F": 0.3953,
-          "F_content": 0.7906,
-          "F_position": 0.0,
+          "F": 0.2939,
+          "F_content": 0.3599,
+          "F_position": 0.228,
           "M": 1.0,
-          "S": 0.4643
+          "S": 0.0357
         },
         "kernelshap": {
-          "F": 0.7699,
-          "F_content": 0.7906,
-          "F_position": 0.7491,
-          "M": 0.7692,
+          "F": 0.607,
+          "F_content": 0.6016,
+          "F_position": 0.6124,
+          "M": 0.4231,
           "S": 0.5
         },
         "lime": {
-          "F": 0.7688,
-          "F_content": 0.7906,
-          "F_position": 0.747,
-          "M": 0.7692,
-          "S": 0.5
+          "F": 0.4366,
+          "F_content": 0.3833,
+          "F_position": 0.4899,
+          "M": 0.4231,
+          "S": 0.7143
         },
         "logit_lens": {
-          "F": 0.9761,
+          "F": 0.8905,
           "F_content": null,
           "F_position": null,
-          "M": 0.1398,
+          "M": 0.1064,
           "S": null
         },
         "occlusion": {
-          "F": 0.7746,
-          "F_content": 0.7906,
-          "F_position": 0.7587,
-          "M": 1.0,
-          "S": 0.4643
+          "F": 0.6776,
+          "F_content": 0.6559,
+          "F_position": 0.6994,
+          "M": 0.9167,
+          "S": 0.7857
         },
         "path_patching": {
-          "F": 0.0,
+          "F": 1.0,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "perturbation": {
-          "F": 0.5656,
-          "F_content": 0.547,
-          "F_position": 0.5843,
-          "M": 1.0,
-          "S": 0.5714
+          "F": 0.5778,
+          "F_content": 0.4414,
+          "F_position": 0.7142,
+          "M": 0.9167,
+          "S": 0.7857
         },
         "rise": {
-          "F": 0.7114,
-          "F_content": 0.7597,
-          "F_position": 0.663,
-          "M": 0.3077,
-          "S": 0.5714
+          "F": 0.4409,
+          "F_content": 0.3807,
+          "F_position": 0.5011,
+          "M": 0.4231,
+          "S": 0.6071
         },
         "sae": {
-          "F": 0.1366,
+          "F": 0.0,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.0905
+          "S": 0.1956
         },
         "saliency": {
-          "F": 0.3953,
-          "F_content": 0.7906,
-          "F_position": 0.0,
+          "F": 0.2939,
+          "F_content": 0.3599,
+          "F_position": 0.228,
           "M": 1.0,
-          "S": 0.5
+          "S": 0.0357
         },
         "smoothgrad": {
-          "F": 0.3953,
-          "F_content": 0.7906,
-          "F_position": 0.0,
+          "F": 0.2939,
+          "F_content": 0.3599,
+          "F_position": 0.228,
           "M": 1.0,
-          "S": 0.5
+          "S": 0.0357
         }
       },
       "position_regime": true,
@@ -248,7 +248,7 @@
           "S": 0.0
         },
         "A5_lfp": {
-          "F": 0.5811,
+          "F": 0.581,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -461,7 +461,7 @@
           "S": 0.2473
         },
         "A5_lfp": {
-          "F": 0.7005,
+          "F": 0.7014,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -646,6 +646,219 @@
       "position_regime": true,
       "scored": true
     },
+    "asterix": {
+      "accepted": true,
+      "n_moving": 5,
+      "n_verified": 7,
+      "origin": "OCAtari",
+      "per_method": {
+        "A1_connectomics": {
+          "F": 0.2222,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.9722
+        },
+        "A2_lesions": {
+          "F": 0.9833,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.9167
+        },
+        "A3_tuning": {
+          "F": 0.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": -0.3248
+        },
+        "A4_correlations": {
+          "F": 0.109,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.7,
+          "S": 0.1366
+        },
+        "A5_lfp": {
+          "F": 0.703,
+          "F_content": null,
+          "F_position": null,
+          "M": null,
+          "S": null
+        },
+        "A6_granger": {
+          "F": 0.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.9167
+        },
+        "A7_dimred": {
+          "F": 0.6,
+          "F_content": null,
+          "F_position": null,
+          "M": null,
+          "S": null
+        },
+        "A8_wholestate": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.0625,
+          "S": 1.0
+        },
+        "acdc": {
+          "F": 0.4,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.2222
+        },
+        "activation_patching": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": 1.0,
+          "M": 0.9286,
+          "S": 1.0
+        },
+        "attribution_patching": {
+          "F": 0.9464,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.9762
+        },
+        "causal_scrubbing": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 1.0
+        },
+        "counterfactual": {
+          "F": 0.0,
+          "F_content": 0.0,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.1
+        },
+        "das": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.9091,
+          "S": 1.0
+        },
+        "dictionaries": {
+          "F": 0.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.9875
+        },
+        "expected_gradients": {
+          "F": 0.0,
+          "F_content": 0.0,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.1
+        },
+        "gradxinput": {
+          "F": 0.3827,
+          "F_content": 0.7655,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.5
+        },
+        "guided_backprop": {
+          "F": 0.0,
+          "F_content": 0.0,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.15
+        },
+        "ig_baseline_sweep": {
+          "F": 0.0,
+          "F_content": 0.0,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.1
+        },
+        "kernelshap": {
+          "F": 0.4761,
+          "F_content": 0.4586,
+          "F_position": 0.4937,
+          "M": 0.4167,
+          "S": 0.15
+        },
+        "lime": {
+          "F": 0.5062,
+          "F_content": 0.525,
+          "F_position": 0.4874,
+          "M": 0.4167,
+          "S": 0.5
+        },
+        "logit_lens": {
+          "F": 0.7488,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.1111,
+          "S": null
+        },
+        "occlusion": {
+          "F": 0.4626,
+          "F_content": 0.4326,
+          "F_position": 0.4925,
+          "M": 1.0,
+          "S": 0.15
+        },
+        "path_patching": {
+          "F": 0.4,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": null
+        },
+        "perturbation": {
+          "F": 0.2514,
+          "F_content": 0.2334,
+          "F_position": 0.2694,
+          "M": 1.0,
+          "S": 0.15
+        },
+        "rise": {
+          "F": 0.5047,
+          "F_content": 0.5068,
+          "F_position": 0.5026,
+          "M": 0.4167,
+          "S": 0.5
+        },
+        "sae": {
+          "F": 0.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": -0.2784
+        },
+        "saliency": {
+          "F": 0.0,
+          "F_content": 0.0,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.1
+        },
+        "smoothgrad": {
+          "F": 0.0,
+          "F_content": 0.0,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.1
+        }
+      },
+      "position_regime": true,
+      "scored": true
+    },
     "atlantis": {
       "accepted": true,
       "n_moving": 3,
@@ -681,7 +894,7 @@
           "S": 0.0
         },
         "A5_lfp": {
-          "F": 0.544,
+          "F": 0.5437,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -887,7 +1100,7 @@
           "S": 0.2473
         },
         "A5_lfp": {
-          "F": 0.2847,
+          "F": 0.2836,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -1051,198 +1264,6 @@
       "position_regime": true,
       "scored": true
     },
-    "beam_rider": {
-      "accepted": true,
-      "n_moving": 1,
-      "n_verified": 2,
-      "origin": "OCAtari",
-      "per_method": {
-        "A2_lesions": {
-          "F": 1.0,
-          "F_content": null,
-          "F_position": null,
-          "M": 1.0,
-          "S": 1.0
-        },
-        "A3_tuning": {
-          "F": 0.0,
-          "F_content": null,
-          "F_position": null,
-          "M": null,
-          "S": 0.0
-        },
-        "A5_lfp": {
-          "F": 0.2937,
-          "F_content": null,
-          "F_position": null,
-          "M": null,
-          "S": null
-        },
-        "A7_dimred": {
-          "F": 0.6,
-          "F_content": null,
-          "F_position": null,
-          "M": null,
-          "S": null
-        },
-        "A8_wholestate": {
-          "F": 1.0,
-          "F_content": null,
-          "F_position": null,
-          "M": 0.0156,
-          "S": 1.0
-        },
-        "activation_patching": {
-          "F": 1.0,
-          "F_content": null,
-          "F_position": 1.0,
-          "M": 1.0,
-          "S": 1.0
-        },
-        "attribution_patching": {
-          "F": 0.0,
-          "F_content": null,
-          "F_position": null,
-          "M": 1.0,
-          "S": 0.0
-        },
-        "causal_scrubbing": {
-          "F": 1.0,
-          "F_content": null,
-          "F_position": null,
-          "M": 1.0,
-          "S": 1.0
-        },
-        "counterfactual": {
-          "F": 0.0,
-          "F_content": 0.0,
-          "F_position": 0.0,
-          "M": null,
-          "S": 0.4167
-        },
-        "das": {
-          "F": 1.0,
-          "F_content": null,
-          "F_position": null,
-          "M": 1.0,
-          "S": 1.0
-        },
-        "dictionaries": {
-          "F": 0.0,
-          "F_content": null,
-          "F_position": null,
-          "M": 0.25,
-          "S": 1.0
-        },
-        "expected_gradients": {
-          "F": 0.0,
-          "F_content": 0.0,
-          "F_position": 0.0,
-          "M": null,
-          "S": 0.4167
-        },
-        "gradxinput": {
-          "F": 0.8814,
-          "F_content": 0.7662,
-          "F_position": 0.9966,
-          "M": 1.0,
-          "S": 0.8333
-        },
-        "guided_backprop": {
-          "F": 0.3831,
-          "F_content": 0.7662,
-          "F_position": 0.0,
-          "M": 1.0,
-          "S": 0.4167
-        },
-        "ig_baseline_sweep": {
-          "F": 0.8814,
-          "F_content": 0.7662,
-          "F_position": 0.9966,
-          "M": 1.0,
-          "S": 0.8333
-        },
-        "kernelshap": {
-          "F": 0.8817,
-          "F_content": 0.7662,
-          "F_position": 0.9972,
-          "M": 0.7,
-          "S": 0.8333
-        },
-        "lime": {
-          "F": 0.8817,
-          "F_content": 0.7662,
-          "F_position": 0.9972,
-          "M": 0.7,
-          "S": 0.8333
-        },
-        "linear_probing": {
-          "F": 1.0,
-          "F_content": null,
-          "F_position": null,
-          "M": 0.5,
-          "S": null
-        },
-        "logit_lens": {
-          "F": 1.0,
-          "F_content": null,
-          "F_position": null,
-          "M": 1.0,
-          "S": null
-        },
-        "occlusion": {
-          "F": 0.8818,
-          "F_content": 0.7662,
-          "F_position": 0.9974,
-          "M": 1.0,
-          "S": 0.8333
-        },
-        "path_patching": {
-          "F": 1.0,
-          "F_content": null,
-          "F_position": null,
-          "M": null,
-          "S": null
-        },
-        "perturbation": {
-          "F": 0.7055,
-          "F_content": 0.4994,
-          "F_position": 0.9116,
-          "M": 1.0,
-          "S": 0.8333
-        },
-        "rise": {
-          "F": 0.8337,
-          "F_content": 0.7281,
-          "F_position": 0.9393,
-          "M": 0.3,
-          "S": 0.5833
-        },
-        "sae": {
-          "F": 0.0,
-          "F_content": null,
-          "F_position": null,
-          "M": 1.0,
-          "S": -0.2623
-        },
-        "saliency": {
-          "F": 0.8814,
-          "F_content": 0.7662,
-          "F_position": 0.9966,
-          "M": 1.0,
-          "S": 0.8333
-        },
-        "smoothgrad": {
-          "F": 0.8814,
-          "F_content": 0.7662,
-          "F_position": 0.9966,
-          "M": 1.0,
-          "S": 0.8333
-        }
-      },
-      "position_regime": true,
-      "scored": true
-    },
     "berzerk": {
       "accepted": true,
       "n_moving": 7,
@@ -1278,7 +1299,7 @@
           "S": 0.2366
         },
         "A5_lfp": {
-          "F": 0.089,
+          "F": 0.0891,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -1498,7 +1519,7 @@
           "S": 0.5272
         },
         "A5_lfp": {
-          "F": 0.2978,
+          "F": 0.2974,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -1711,7 +1732,7 @@
           "S": 0.1436
         },
         "A5_lfp": {
-          "F": 0.2281,
+          "F": 0.2288,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -1931,7 +1952,7 @@
           "S": -0.0462
         },
         "A5_lfp": {
-          "F": 0.1859,
+          "F": 0.1857,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -2134,14 +2155,14 @@
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.4638
+          "S": 0.4244
         },
         "A3_tuning": {
           "F": 0.0,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": -0.0275
+          "S": -0.0238
         },
         "A4_correlations": {
           "F": 0.2543,
@@ -2210,7 +2231,7 @@
           "F": 1.0,
           "F_content": null,
           "F_position": null,
-          "M": 0.8947,
+          "M": 0.9,
           "S": 1.0
         },
         "dictionaries": {
@@ -2218,7 +2239,7 @@
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.9856
+          "S": 0.9853
         },
         "expected_gradients": {
           "F": 0.0,
@@ -2252,15 +2273,15 @@
           "F": 0.4137,
           "F_content": 0.8274,
           "F_position": 0.0,
-          "M": 0.4028,
+          "M": 0.4167,
           "S": 0.4474
         },
         "lime": {
           "F": 0.3305,
           "F_content": 0.6609,
           "F_position": 0.0,
-          "M": 0.4028,
-          "S": 0.4737
+          "M": 0.4167,
+          "S": 0.4474
         },
         "linear_probing": {
           "F": 0.4191,
@@ -2301,7 +2322,7 @@
           "F": 0.3304,
           "F_content": 0.6608,
           "F_position": 0.0,
-          "M": 0.4028,
+          "M": 0.4167,
           "S": 0.4737
         },
         "sae": {
@@ -2309,7 +2330,7 @@
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": -0.1124
+          "S": -0.1129
         },
         "saliency": {
           "F": 0.0,
@@ -2364,7 +2385,7 @@
           "S": 0.1429
         },
         "A5_lfp": {
-          "F": 0.1008,
+          "F": 0.1007,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -2584,7 +2605,7 @@
           "S": 0.1788
         },
         "A5_lfp": {
-          "F": 0.4384,
+          "F": 0.4394,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -2804,7 +2825,7 @@
           "S": 0.0081
         },
         "A5_lfp": {
-          "F": 0.343,
+          "F": 0.3422,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -2996,49 +3017,49 @@
       "origin": "OCAtari",
       "per_method": {
         "A1_connectomics": {
-          "F": 0.125,
+          "F": 0.3333,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.9015
+          "S": 0.9621
         },
         "A2_lesions": {
-          "F": 0.7825,
+          "F": 0.9789,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": -0.109
+          "S": 0.1547
         },
         "A3_tuning": {
-          "F": 0.6173,
+          "F": 0.3781,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.8081
+          "S": 0.6535
         },
         "A4_correlations": {
-          "F": 0.158,
+          "F": 0.2948,
           "F_content": null,
           "F_position": null,
-          "M": 0.2,
-          "S": 0.0194
+          "M": 0.1111,
+          "S": 0.081
         },
         "A5_lfp": {
-          "F": 0.3394,
+          "F": 0.2246,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "A6_granger": {
-          "F": 0.2909,
+          "F": 0.2979,
           "F_content": null,
           "F_position": null,
-          "M": 0.375,
-          "S": 0.697
+          "M": 0.2703,
+          "S": 0.7424
         },
         "A7_dimred": {
-          "F": 0.4,
+          "F": 0.6,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -3052,7 +3073,7 @@
           "S": 1.0
         },
         "acdc": {
-          "F": 0.6364,
+          "F": 0.6667,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
@@ -3062,35 +3083,35 @@
           "F": 1.0,
           "F_content": null,
           "F_position": 1.0,
-          "M": 0.9706,
+          "M": 0.9667,
           "S": 1.0
         },
         "attribution_patching": {
-          "F": 0.0585,
+          "F": 0.0,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.0364
+          "S": 0.8909
         },
         "causal_scrubbing": {
-          "F": 0.2353,
+          "F": 1.0,
           "F_content": null,
           "F_position": null,
-          "M": 1.0,
-          "S": 0.2353
+          "M": 0.8889,
+          "S": 1.0
         },
         "counterfactual": {
-          "F": 0.0305,
-          "F_content": 0.0,
-          "F_position": 0.061,
+          "F": 0.3985,
+          "F_content": 0.797,
+          "F_position": 0.0,
           "M": 1.0,
-          "S": 0.8077
+          "S": 0.5385
         },
         "das": {
           "F": 1.0,
           "F_content": null,
           "F_position": null,
-          "M": 0.8947,
+          "M": 0.8824,
           "S": 1.0
         },
         "dictionaries": {
@@ -3098,105 +3119,318 @@
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.9979
+          "S": 0.998
         },
         "expected_gradients": {
-          "F": 0.3687,
-          "F_content": 0.7375,
+          "F": 0.3985,
+          "F_content": 0.797,
           "F_position": 0.0,
           "M": 1.0,
-          "S": 0.8077
+          "S": 0.5385
         },
         "gradxinput": {
-          "F": 0.497,
-          "F_content": 0.9941,
+          "F": 0.4085,
+          "F_content": 0.817,
           "F_position": 0.0,
           "M": 1.0,
-          "S": 0.8077
+          "S": 0.5385
         },
         "guided_backprop": {
-          "F": 0.3687,
-          "F_content": 0.7375,
+          "F": 0.3985,
+          "F_content": 0.797,
           "F_position": 0.0,
           "M": 1.0,
-          "S": 0.8077
+          "S": 0.5385
         },
         "ig_baseline_sweep": {
-          "F": 0.3687,
-          "F_content": 0.7375,
+          "F": 0.3985,
+          "F_content": 0.797,
           "F_position": 0.0,
           "M": 1.0,
-          "S": 0.8077
+          "S": 0.5385
         },
         "kernelshap": {
-          "F": 0.4864,
-          "F_content": 0.7376,
-          "F_position": 0.2353,
-          "M": 0.5833,
-          "S": 0.8077
+          "F": 0.5888,
+          "F_content": 0.797,
+          "F_position": 0.3806,
+          "M": 0.5,
+          "S": 0.6154
         },
         "lime": {
-          "F": 0.4617,
-          "F_content": 0.7375,
-          "F_position": 0.1859,
-          "M": 0.5833,
-          "S": 0.8077
+          "F": 0.4539,
+          "F_content": 0.797,
+          "F_position": 0.1107,
+          "M": 0.5,
+          "S": 0.5385
         },
         "logit_lens": {
-          "F": 0.8528,
+          "F": 0.8269,
           "F_content": null,
           "F_position": null,
-          "M": 0.1165,
+          "M": 0.1143,
           "S": null
         },
         "occlusion": {
-          "F": 0.7278,
-          "F_content": 0.7377,
-          "F_position": 0.718,
+          "F": 0.8357,
+          "F_content": 0.797,
+          "F_position": 0.8743,
           "M": 1.0,
-          "S": 0.8077
+          "S": 0.6154
         },
         "path_patching": {
           "F": 1.0,
+          "F_content": null,
+          "F_position": null,
+          "M": null,
+          "S": null
+        },
+        "perturbation": {
+          "F": 0.3958,
+          "F_content": 0.555,
+          "F_position": 0.2366,
+          "M": 1.0,
+          "S": 0.5385
+        },
+        "rise": {
+          "F": 0.4719,
+          "F_content": 0.6983,
+          "F_position": 0.2456,
+          "M": 0.5,
+          "S": 0.5385
+        },
+        "sae": {
+          "F": 0.4386,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.4769
+        },
+        "saliency": {
+          "F": 0.3985,
+          "F_content": 0.797,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.5385
+        },
+        "smoothgrad": {
+          "F": 0.3985,
+          "F_content": 0.797,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.5385
+        }
+      },
+      "position_regime": true,
+      "scored": true
+    },
+    "enduro": {
+      "accepted": true,
+      "n_moving": 2,
+      "n_verified": 2,
+      "origin": "OCAtari",
+      "per_method": {
+        "A1_connectomics": {
+          "F": 0.0,
+          "F_content": null,
+          "F_position": null,
+          "M": null,
+          "S": 0.5
+        },
+        "A2_lesions": {
+          "F": 0.5,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.5
+        },
+        "A3_tuning": {
+          "F": 0.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.6667,
+          "S": -0.7102
+        },
+        "A4_correlations": {
+          "F": 0.5,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.6667,
+          "S": -0.0641
+        },
+        "A5_lfp": {
+          "F": 0.5231,
+          "F_content": null,
+          "F_position": null,
+          "M": null,
+          "S": null
+        },
+        "A6_granger": {
+          "F": 0.4,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.5
+        },
+        "A7_dimred": {
+          "F": 0.2,
+          "F_content": null,
+          "F_position": null,
+          "M": null,
+          "S": null
+        },
+        "A8_wholestate": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.0156,
+          "S": 1.0
+        },
+        "acdc": {
+          "F": 0.8,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.6667
+        },
+        "activation_patching": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": 1.0,
+          "M": 0.9,
+          "S": 1.0
+        },
+        "attribution_patching": {
+          "F": 0.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.8,
+          "S": 0.0
+        },
+        "causal_scrubbing": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.3333,
+          "S": 1.0
+        },
+        "counterfactual": {
+          "F": 0.2648,
+          "F_content": 0.0,
+          "F_position": 0.5296,
+          "M": 1.0,
+          "S": 0.0
+        },
+        "das": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.75,
+          "S": 1.0
+        },
+        "dictionaries": {
+          "F": 0.6574,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": -0.5528
+        },
+        "expected_gradients": {
+          "F": 0.5,
+          "F_content": 1.0,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.5
+        },
+        "gradxinput": {
+          "F": 0.5,
+          "F_content": 1.0,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.5
+        },
+        "guided_backprop": {
+          "F": 0.5,
+          "F_content": 1.0,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.5
+        },
+        "ig_baseline_sweep": {
+          "F": 0.5,
+          "F_content": 1.0,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.5
+        },
+        "kernelshap": {
+          "F": 0.9893,
+          "F_content": 1.0,
+          "F_position": 0.9785,
+          "M": 0.8333,
+          "S": 0.875
+        },
+        "lime": {
+          "F": 0.9847,
+          "F_content": 1.0,
+          "F_position": 0.9695,
+          "M": 0.8333,
+          "S": 0.875
+        },
+        "logit_lens": {
+          "F": 0.0635,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.018,
+          "S": null
+        },
+        "occlusion": {
+          "F": 0.9934,
+          "F_content": 1.0,
+          "F_position": 0.9868,
+          "M": 1.0,
+          "S": 0.875
+        },
+        "path_patching": {
+          "F": 0.8,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
           "S": null
         },
         "perturbation": {
-          "F": 0.3689,
-          "F_content": 0.4752,
-          "F_position": 0.2626,
+          "F": 0.9215,
+          "F_content": 0.9333,
+          "F_position": 0.9097,
           "M": 1.0,
-          "S": 0.8462
+          "S": 0.625
         },
         "rise": {
-          "F": 0.3639,
-          "F_content": 0.7092,
-          "F_position": 0.0185,
-          "M": 0.5833,
-          "S": 0.8077
+          "F": 0.4049,
+          "F_content": 0.7948,
+          "F_position": 0.0151,
+          "M": 0.5,
+          "S": 0.0
         },
         "sae": {
-          "F": 0.2211,
+          "F": 0.0,
           "F_content": null,
           "F_position": null,
-          "M": 1.0,
-          "S": 0.5873
+          "M": 0.6667,
+          "S": -0.3719
         },
         "saliency": {
-          "F": 0.3687,
-          "F_content": 0.7375,
+          "F": 0.5,
+          "F_content": 1.0,
           "F_position": 0.0,
           "M": 1.0,
-          "S": 0.8077
+          "S": 0.5
         },
         "smoothgrad": {
-          "F": 0.3687,
-          "F_content": 0.7375,
+          "F": 0.5,
+          "F_content": 1.0,
           "F_position": 0.0,
           "M": 1.0,
-          "S": 0.8077
+          "S": 0.5
         }
       },
       "position_regime": true,
@@ -3223,7 +3457,7 @@
           "S": 0.4905
         },
         "A5_lfp": {
-          "F": 0.5735,
+          "F": 0.5734,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -3415,7 +3649,7 @@
           "S": 0.8729
         },
         "A5_lfp": {
-          "F": 0.4471,
+          "F": 0.4454,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -3614,7 +3848,7 @@
           "S": -0.039
         },
         "A5_lfp": {
-          "F": 0.1375,
+          "F": 0.1388,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -3801,8 +4035,8 @@
     },
     "gopher": {
       "accepted": true,
-      "n_moving": 14,
-      "n_verified": 14,
+      "n_moving": 15,
+      "n_verified": 15,
       "origin": "OCAtari",
       "per_method": {
         "A2_lesions": {
@@ -3820,7 +4054,7 @@
           "S": 0.0
         },
         "A5_lfp": {
-          "F": 0.5687,
+          "F": 0.5292,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -3880,7 +4114,7 @@
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.8097
+          "S": 0.9613
         },
         "expected_gradients": {
           "F": 0.0,
@@ -4117,8 +4351,8 @@
           "S": 0.4167
         },
         "lime": {
-          "F": 0.2906,
-          "F_content": 0.0493,
+          "F": 0.3338,
+          "F_content": 0.1357,
           "F_position": 0.532,
           "M": 0.2803,
           "S": 0.4167
@@ -4438,7 +4672,7 @@
           "S": 0.3446
         },
         "A5_lfp": {
-          "F": 0.7434,
+          "F": 0.7433,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -4787,7 +5021,7 @@
           "F": 0.9495,
           "F_content": null,
           "F_position": null,
-          "M": 0.1429,
+          "M": 0.1444,
           "S": null
         },
         "occlusion": {
@@ -4878,7 +5112,7 @@
           "S": 0.0048
         },
         "A5_lfp": {
-          "F": 0.1485,
+          "F": 0.1484,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -5077,7 +5311,7 @@
           "S": 0.0
         },
         "A5_lfp": {
-          "F": 0.7728,
+          "F": 0.774,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -5269,7 +5503,7 @@
           "S": 0.3215
         },
         "A5_lfp": {
-          "F": 0.4016,
+          "F": 0.4019,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -5688,7 +5922,7 @@
           "S": 0.7541
         },
         "A5_lfp": {
-          "F": 0.4246,
+          "F": 0.424,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -5880,7 +6114,7 @@
           "S": 0.0
         },
         "A5_lfp": {
-          "F": 0.2128,
+          "F": 0.2126,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -6002,7 +6236,7 @@
           "F": 1.0,
           "F_content": null,
           "F_position": null,
-          "M": 1.0,
+          "M": 0.875,
           "S": null
         },
         "occlusion": {
@@ -6093,7 +6327,7 @@
           "S": 0.3001
         },
         "A5_lfp": {
-          "F": 0.3083,
+          "F": 0.3071,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -6280,7 +6514,7 @@
     },
     "pitfall": {
       "accepted": true,
-      "n_moving": 7,
+      "n_moving": 8,
       "n_verified": 10,
       "origin": "both",
       "per_method": {
@@ -6303,17 +6537,17 @@
           "F_content": null,
           "F_position": null,
           "M": 0.8462,
-          "S": 0.2579
+          "S": 0.2567
         },
         "A4_correlations": {
-          "F": 0.3444,
+          "F": 0.3448,
           "F_content": null,
           "F_position": null,
           "M": 0.141,
-          "S": 0.3319
+          "S": 0.3345
         },
         "A5_lfp": {
-          "F": 0.3968,
+          "F": 0.4147,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -6323,8 +6557,8 @@
           "F": 0.0,
           "F_content": null,
           "F_position": null,
-          "M": 0.6111,
-          "S": 0.8917
+          "M": 0.8462,
+          "S": 0.9125
         },
         "A7_dimred": {
           "F": 0.4,
@@ -6355,7 +6589,7 @@
           "S": 1.0
         },
         "attribution_patching": {
-          "F": 0.7904,
+          "F": 0.7832,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
@@ -6369,9 +6603,9 @@
           "S": 1.0
         },
         "counterfactual": {
-          "F": 0.4334,
+          "F": 0.4342,
           "F_content": 0.5454,
-          "F_position": 0.3215,
+          "F_position": 0.323,
           "M": 1.0,
           "S": 0.9412
         },
@@ -6383,11 +6617,11 @@
           "S": 1.0
         },
         "dictionaries": {
-          "F": 0.0,
+          "F": 0.2026,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.9598
+          "S": 0.9665
         },
         "expected_gradients": {
           "F": 0.0,
@@ -6397,8 +6631,8 @@
           "S": 0.8824
         },
         "gradxinput": {
-          "F": 0.4924,
-          "F_content": 0.9849,
+          "F": 0.4983,
+          "F_content": 0.9965,
           "F_position": 0.0,
           "M": 1.0,
           "S": 0.9118
@@ -6411,44 +6645,44 @@
           "S": 0.8824
         },
         "ig_baseline_sweep": {
-          "F": 0.0018,
+          "F": 0.0,
           "F_content": 0.0,
-          "F_position": 0.0035,
+          "F_position": 0.0,
           "M": 1.0,
           "S": 0.8824
         },
         "kernelshap": {
-          "F": 0.606,
-          "F_content": 0.5056,
+          "F": 0.6965,
+          "F_content": 0.6865,
           "F_position": 0.7065,
           "M": 0.3438,
           "S": 0.8824
         },
         "lime": {
-          "F": 0.5613,
-          "F_content": 0.4163,
+          "F": 0.6999,
+          "F_content": 0.6934,
           "F_position": 0.7064,
           "M": 0.3438,
-          "S": 0.8529
+          "S": 0.8824
         },
         "linear_probing": {
-          "F": 0.1844,
+          "F": 0.1836,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
           "S": null
         },
         "logit_lens": {
-          "F": 0.441,
+          "F": 0.4577,
           "F_content": null,
           "F_position": null,
-          "M": 0.1058,
+          "M": 0.1038,
           "S": null
         },
         "occlusion": {
-          "F": 0.7346,
+          "F": 0.7348,
           "F_content": 0.7525,
-          "F_position": 0.7168,
+          "F_position": 0.7171,
           "M": 0.875,
           "S": 0.8824
         },
@@ -6460,25 +6694,25 @@
           "S": null
         },
         "perturbation": {
-          "F": 0.3408,
+          "F": 0.3259,
           "F_content": 0.4792,
-          "F_position": 0.2024,
+          "F_position": 0.1727,
           "M": 0.875,
           "S": 0.8824
         },
         "rise": {
-          "F": 0.4885,
-          "F_content": 0.3306,
-          "F_position": 0.6464,
+          "F": 0.6009,
+          "F_content": 0.5524,
+          "F_position": 0.6493,
           "M": 0.3438,
-          "S": 0.8529
+          "S": 0.8824
         },
         "sae": {
           "F": 0.0,
           "F_content": null,
           "F_position": null,
           "M": 0.8462,
-          "S": -0.2444
+          "S": -0.248
         },
         "saliency": {
           "F": 0.0,
@@ -6488,9 +6722,9 @@
           "S": 0.8824
         },
         "smoothgrad": {
-          "F": 0.0018,
+          "F": 0.0,
           "F_content": 0.0,
-          "F_position": 0.0035,
+          "F_position": 0.0,
           "M": 1.0,
           "S": 0.8824
         }
@@ -6533,7 +6767,7 @@
           "S": -0.1696
         },
         "A5_lfp": {
-          "F": 0.2481,
+          "F": 0.2483,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -6720,7 +6954,7 @@
     },
     "private_eye": {
       "accepted": true,
-      "n_moving": 9,
+      "n_moving": 10,
       "n_verified": 12,
       "origin": "both",
       "per_method": {
@@ -6732,42 +6966,42 @@
           "S": 1.0
         },
         "A2_lesions": {
-          "F": 0.9974,
+          "F": 1.0,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.515
+          "S": 0.6109
         },
         "A3_tuning": {
-          "F": 0.2231,
+          "F": 0.1662,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.3271
+          "S": 0.2924
         },
         "A4_correlations": {
-          "F": 0.0282,
+          "F": 0.0111,
           "F_content": null,
           "F_position": null,
-          "M": 0.4286,
-          "S": 0.134
+          "M": 0.3214,
+          "S": 0.12
         },
         "A5_lfp": {
-          "F": 0.4602,
+          "F": 0.4578,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "A6_granger": {
-          "F": 0.1053,
+          "F": 0.1,
           "F_content": null,
           "F_position": null,
-          "M": 0.9,
-          "S": 0.9819
+          "M": 0.8182,
+          "S": 0.9801
         },
         "A7_dimred": {
-          "F": 0.2,
+          "F": 0.6,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -6795,7 +7029,7 @@
           "S": 1.0
         },
         "attribution_patching": {
-          "F": 0.4437,
+          "F": 0.4973,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
@@ -6809,9 +7043,9 @@
           "S": 0.8897
         },
         "counterfactual": {
-          "F": 0.637,
-          "F_content": 0.7638,
-          "F_position": 0.5103,
+          "F": 0.6337,
+          "F_content": 0.7576,
+          "F_position": 0.5098,
           "M": 1.0,
           "S": 0.96
         },
@@ -6823,72 +7057,72 @@
           "S": 1.0
         },
         "dictionaries": {
-          "F": 0.0,
+          "F": 0.2906,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.9999
+          "S": 0.9994
         },
         "expected_gradients": {
-          "F": 0.3835,
-          "F_content": 0.7638,
-          "F_position": 0.0032,
+          "F": 0.3803,
+          "F_content": 0.7576,
+          "F_position": 0.0029,
           "M": 1.0,
           "S": 0.96
         },
         "gradxinput": {
-          "F": 0.4867,
+          "F": 0.4866,
           "F_content": 0.9703,
-          "F_position": 0.0032,
+          "F_position": 0.0029,
           "M": 1.0,
           "S": 0.96
         },
         "guided_backprop": {
-          "F": 0.3819,
-          "F_content": 0.7638,
+          "F": 0.3788,
+          "F_content": 0.7576,
           "F_position": 0.0,
           "M": 1.0,
           "S": 0.96
         },
         "ig_baseline_sweep": {
-          "F": 0.3835,
-          "F_content": 0.7638,
-          "F_position": 0.0032,
+          "F": 0.3803,
+          "F_content": 0.7576,
+          "F_position": 0.0029,
           "M": 1.0,
           "S": 0.96
         },
         "kernelshap": {
-          "F": 0.7434,
-          "F_content": 0.7498,
-          "F_position": 0.7371,
+          "F": 0.6201,
+          "F_content": 0.5034,
+          "F_position": 0.7369,
           "M": 0.2292,
           "S": 0.96
         },
         "lime": {
-          "F": 0.7318,
-          "F_content": 0.7268,
-          "F_position": 0.7368,
+          "F": 0.7336,
+          "F_content": 0.7307,
+          "F_position": 0.7366,
           "M": 0.2292,
           "S": 0.96
         },
         "linear_probing": {
-          "F": 0.0,
+          "F": 0.0876,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
           "S": null
         },
         "logit_lens": {
-          "F": 0.8778,
+          "F": 0.8774,
           "F_content": null,
           "F_position": null,
-          "M": 0.2785,
+          "M": 0.275,
           "S": null
         },
         "occlusion": {
-          "F": 0.7514,
-          "F_content": 0.7638,
-          "F_position": 0.7391,
+          "F": 0.7483,
+          "F_content": 0.7576,
+          "F_position": 0.7389,
           "M": 1.0,
           "S": 0.96
         },
@@ -6900,37 +7134,37 @@
           "S": null
         },
         "perturbation": {
-          "F": 0.3518,
-          "F_content": 0.5152,
-          "F_position": 0.1883,
+          "F": 0.3474,
+          "F_content": 0.5071,
+          "F_position": 0.1878,
           "M": 1.0,
           "S": 0.96
         },
         "rise": {
-          "F": 0.7189,
-          "F_content": 0.7149,
-          "F_position": 0.7229,
-          "M": 0.2292,
+          "F": 0.7178,
+          "F_content": 0.713,
+          "F_position": 0.7227,
+          "M": 0.2301,
           "S": 0.96
         },
         "sae": {
-          "F": 0.2077,
+          "F": 0.1182,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.1928
+          "S": 0.0655
         },
         "saliency": {
-          "F": 0.3835,
-          "F_content": 0.7638,
-          "F_position": 0.0032,
+          "F": 0.3803,
+          "F_content": 0.7576,
+          "F_position": 0.0029,
           "M": 1.0,
           "S": 0.96
         },
         "smoothgrad": {
-          "F": 0.3835,
-          "F_content": 0.7638,
-          "F_position": 0.0032,
+          "F": 0.3803,
+          "F_content": 0.7576,
+          "F_position": 0.0029,
           "M": 1.0,
           "S": 0.96
         }
@@ -6959,14 +7193,14 @@
           "S": 0.1642
         },
         "A3_tuning": {
-          "F": 0.467,
+          "F": 0.518,
           "F_content": null,
           "F_position": null,
           "M": 0.4667,
           "S": 0.1833
         },
         "A4_correlations": {
-          "F": 0.0483,
+          "F": 0.0487,
           "F_content": null,
           "F_position": null,
           "M": 0.0095,
@@ -7193,7 +7427,7 @@
           "S": -0.0267
         },
         "A5_lfp": {
-          "F": 0.6041,
+          "F": 0.6044,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -7413,7 +7647,7 @@
           "S": -0.0571
         },
         "A5_lfp": {
-          "F": 0.3836,
+          "F": 0.3829,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -7525,8 +7759,8 @@
           "S": 0.5
         },
         "lime": {
-          "F": 0.5413,
-          "F_content": 0.1412,
+          "F": 0.4707,
+          "F_content": 0.0,
           "F_position": 0.9414,
           "M": 0.1667,
           "S": 0.4737
@@ -7633,7 +7867,7 @@
           "S": 0.0329
         },
         "A5_lfp": {
-          "F": 0.305,
+          "F": 0.3056,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -7806,6 +8040,219 @@
           "F_position": 0.7098,
           "M": 1.0,
           "S": 0.4792
+        }
+      },
+      "position_regime": true,
+      "scored": true
+    },
+    "skiing": {
+      "accepted": true,
+      "n_moving": 5,
+      "n_verified": 8,
+      "origin": "OCAtari",
+      "per_method": {
+        "A1_connectomics": {
+          "F": 0.0,
+          "F_content": null,
+          "F_position": null,
+          "M": null,
+          "S": 0.9167
+        },
+        "A2_lesions": {
+          "F": 0.9833,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.6667
+        },
+        "A3_tuning": {
+          "F": 0.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": -0.2896
+        },
+        "A4_correlations": {
+          "F": 0.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.3333,
+          "S": -0.1328
+        },
+        "A5_lfp": {
+          "F": 0.4753,
+          "F_content": null,
+          "F_position": null,
+          "M": null,
+          "S": null
+        },
+        "A6_granger": {
+          "F": 0.3333,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.8889
+        },
+        "A7_dimred": {
+          "F": 0.4,
+          "F_content": null,
+          "F_position": null,
+          "M": null,
+          "S": null
+        },
+        "A8_wholestate": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.0547,
+          "S": 1.0
+        },
+        "acdc": {
+          "F": 0.8,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.3333
+        },
+        "activation_patching": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": 1.0,
+          "M": 0.9091,
+          "S": 1.0
+        },
+        "attribution_patching": {
+          "F": 0.7586,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.9524
+        },
+        "causal_scrubbing": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 1.0
+        },
+        "counterfactual": {
+          "F": 0.6997,
+          "F_content": 0.8086,
+          "F_position": 0.5909,
+          "M": 0.875,
+          "S": 0.45
+        },
+        "das": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.7273,
+          "S": 1.0
+        },
+        "dictionaries": {
+          "F": 0.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.8541
+        },
+        "expected_gradients": {
+          "F": 0.4049,
+          "F_content": 0.8097,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.45
+        },
+        "gradxinput": {
+          "F": 0.4758,
+          "F_content": 0.9517,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.45
+        },
+        "guided_backprop": {
+          "F": 0.4049,
+          "F_content": 0.8097,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.45
+        },
+        "ig_baseline_sweep": {
+          "F": 0.4049,
+          "F_content": 0.8097,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.45
+        },
+        "kernelshap": {
+          "F": 0.6996,
+          "F_content": 0.8097,
+          "F_position": 0.5895,
+          "M": 0.8333,
+          "S": 0.45
+        },
+        "lime": {
+          "F": 0.6986,
+          "F_content": 0.8097,
+          "F_position": 0.5875,
+          "M": 0.8333,
+          "S": 0.45
+        },
+        "logit_lens": {
+          "F": 0.8141,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.0609,
+          "S": null
+        },
+        "occlusion": {
+          "F": 0.6953,
+          "F_content": 0.8097,
+          "F_position": 0.5808,
+          "M": 1.0,
+          "S": 0.45
+        },
+        "path_patching": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": null
+        },
+        "perturbation": {
+          "F": 0.3404,
+          "F_content": 0.5712,
+          "F_position": 0.1096,
+          "M": 1.0,
+          "S": 0.45
+        },
+        "rise": {
+          "F": 0.7002,
+          "F_content": 0.7809,
+          "F_position": 0.6195,
+          "M": 0.4167,
+          "S": 0.6
+        },
+        "sae": {
+          "F": 0.1192,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": -0.2094
+        },
+        "saliency": {
+          "F": 0.4049,
+          "F_content": 0.8097,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.45
+        },
+        "smoothgrad": {
+          "F": 0.4049,
+          "F_content": 0.8097,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.45
         }
       },
       "position_regime": true,
@@ -8066,7 +8513,7 @@
           "S": 0.1002
         },
         "A5_lfp": {
-          "F": 0.3959,
+          "F": 0.3953,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -8286,7 +8733,7 @@
           "S": 0.1411
         },
         "A5_lfp": {
-          "F": 0.2706,
+          "F": 0.2702,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -8684,49 +9131,49 @@
       "origin": "both",
       "per_method": {
         "A1_connectomics": {
-          "F": 0.0,
+          "F": 0.2,
           "F_content": null,
           "F_position": null,
-          "M": null,
-          "S": 0.9744
+          "M": 1.0,
+          "S": 0.9487
         },
         "A2_lesions": {
           "F": 0.9986,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.4688
+          "S": 0.6925
         },
         "A3_tuning": {
-          "F": 0.3945,
+          "F": 0.5531,
           "F_content": null,
           "F_position": null,
-          "M": 0.7,
-          "S": 0.2226
+          "M": 0.5,
+          "S": 0.3579
         },
         "A4_correlations": {
-          "F": 0.1908,
+          "F": 0.4011,
           "F_content": null,
           "F_position": null,
-          "M": 0.1111,
-          "S": 0.0722
+          "M": 0.2857,
+          "S": 0.25
         },
         "A5_lfp": {
-          "F": 0.4136,
+          "F": 0.6071,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "A6_granger": {
-          "F": 0.0,
+          "F": 0.3448,
           "F_content": null,
           "F_position": null,
-          "M": 0.1852,
-          "S": 0.8013
+          "M": 0.45,
+          "S": 0.8782
         },
         "A7_dimred": {
-          "F": 0.4,
+          "F": 0.6,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -8736,11 +9183,11 @@
           "F": 1.0,
           "F_content": null,
           "F_position": null,
-          "M": 0.0547,
+          "M": 0.0312,
           "S": 1.0
         },
         "acdc": {
-          "F": 0.8889,
+          "F": 0.9412,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
@@ -8754,7 +9201,7 @@
           "S": 1.0
         },
         "attribution_patching": {
-          "F": 1.0,
+          "F": 0.9997,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
@@ -8764,13 +9211,13 @@
           "F": 1.0,
           "F_content": null,
           "F_position": null,
-          "M": 0.7143,
+          "M": 0.8571,
           "S": 1.0
         },
         "counterfactual": {
-          "F": 0.388,
+          "F": 0.4073,
           "F_content": 0.7759,
-          "F_position": 0.0,
+          "F_position": 0.0388,
           "M": 1.0,
           "S": 0.4643
         },
@@ -8778,15 +9225,15 @@
           "F": 1.0,
           "F_content": null,
           "F_position": null,
-          "M": 0.875,
+          "M": 0.7368,
           "S": 1.0
         },
         "dictionaries": {
-          "F": 0.2182,
+          "F": 0.4636,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.2922
+          "S": -0.3554
         },
         "expected_gradients": {
           "F": 0.0,
@@ -8796,11 +9243,11 @@
           "S": 0.4643
         },
         "gradxinput": {
-          "F": 0.2466,
-          "F_content": 0.4933,
+          "F": 0.4222,
+          "F_content": 0.8445,
           "F_position": 0.0,
           "M": 1.0,
-          "S": 0.4286
+          "S": 0.4643
         },
         "guided_backprop": {
           "F": 0.3854,
@@ -8817,37 +9264,37 @@
           "S": 0.4643
         },
         "kernelshap": {
-          "F": 0.3854,
+          "F": 0.4059,
           "F_content": 0.7708,
-          "F_position": 0.0,
-          "M": 0.7115,
+          "F_position": 0.0411,
+          "M": 0.6731,
           "S": 0.4643
         },
         "lime": {
-          "F": 0.3854,
+          "F": 0.4058,
           "F_content": 0.7708,
-          "F_position": 0.0,
-          "M": 0.7115,
+          "F_position": 0.0408,
+          "M": 0.6731,
           "S": 0.4643
         },
         "linear_probing": {
-          "F": 0.1519,
+          "F": 0.0716,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
           "S": null
         },
         "logit_lens": {
-          "F": 0.8863,
+          "F": 0.8235,
           "F_content": null,
           "F_position": null,
-          "M": 0.1558,
+          "M": 0.1467,
           "S": null
         },
         "occlusion": {
-          "F": 0.3854,
+          "F": 0.4052,
           "F_content": 0.7708,
-          "F_position": 0.0,
+          "F_position": 0.0395,
           "M": 1.0,
           "S": 0.4643
         },
@@ -8855,7 +9302,7 @@
           "F": 1.0,
           "F_content": null,
           "F_position": null,
-          "M": null,
+          "M": 1.0,
           "S": null
         },
         "perturbation": {
@@ -8869,15 +9316,15 @@
           "F": 0.3783,
           "F_content": 0.7565,
           "F_position": 0.0,
-          "M": 0.25,
+          "M": 0.2115,
           "S": 0.4643
         },
         "sae": {
-          "F": 0.5704,
+          "F": 0.5454,
           "F_content": null,
           "F_position": null,
-          "M": 0.7,
-          "S": 0.4486
+          "M": 0.5,
+          "S": 0.1812
         },
         "saliency": {
           "F": 0.3854,
@@ -8900,35 +9347,35 @@
   },
   "headline": {
     "all_regime_ci": [
-      0.293,
-      0.348
+      0.297,
+      0.351
     ],
-    "all_regime_gap": 0.321,
-    "causal_all": 0.705,
+    "all_regime_gap": 0.324,
+    "causal_all": 0.709,
     "causal_all_n": 11,
-    "causal_pos": 0.561,
+    "causal_pos": 0.56,
     "causal_pos_n": 4,
-    "grad_all": 0.385,
+    "grad_all": 0.384,
     "grad_all_n": 14,
-    "grad_pos": 0.235,
+    "grad_pos": 0.222,
     "grad_pos_n": 9,
     "position_ci": [
-      0.277,
-      0.375
+      0.293,
+      0.383
     ],
-    "position_gap": 0.326
+    "position_gap": 0.338
   },
   "meta": {
     "generated_by": "docs/gen_site_data.py",
     "n_methods": 31,
-    "n_records": 1772,
+    "n_records": 1862,
     "scored_game_list": [
       "air_raid",
       "alien",
       "assault",
+      "asterix",
       "atlantis",
       "bank_heist",
-      "beam_rider",
       "berzerk",
       "bowling",
       "boxing",
@@ -8938,6 +9385,7 @@
       "chopper_command",
       "demon_attack",
       "double_dunk",
+      "enduro",
       "fishing_derby",
       "freeway",
       "frostbite",
@@ -8960,35 +9408,36 @@
       "riverraid",
       "road_runner",
       "seaquest",
+      "skiing",
       "space_invaders",
       "tennis",
       "venture",
       "video_pinball",
       "yars_revenge"
     ],
-    "scored_games": 42,
+    "scored_games": 44,
     "source": "leaderboard.json+position_bootstrap.json+\u00a7R records"
   },
   "methods": {
     "A1_connectomics": {
-      "F": 0.2066,
-      "F_ci": 0.0837,
+      "F": 0.2128,
+      "F_ci": 0.0772,
       "F_content": null,
       "F_position": null,
-      "M": 0.9667,
-      "S": 0.9708,
+      "M": 0.971,
+      "S": 0.9571,
       "leaderboard_method": "A1_connectomics",
       "metric": "dataflow_graph_F1_vs_oracle",
-      "n_games": 35,
-      "n_records": 35,
+      "n_games": 38,
+      "n_records": 38,
       "name": "A1 \u00b7 Connectomics / data-flow graph",
       "per_game": {
         "air_raid": {
-          "F": 0.0,
+          "F": 0.2222,
           "F_content": null,
           "F_position": null,
-          "M": null,
-          "S": 0.9872
+          "M": 1.0,
+          "S": 0.9551
         },
         "alien": {
           "F": 0.0,
@@ -9003,6 +9452,13 @@
           "F_position": null,
           "M": null,
           "S": 0.9895
+        },
+        "asterix": {
+          "F": 0.2222,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.9722
         },
         "atlantis": {
           "F": 0.0,
@@ -9068,11 +9524,18 @@
           "S": 0.9619
         },
         "double_dunk": {
-          "F": 0.125,
+          "F": 0.3333,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.9015
+          "S": 0.9621
+        },
+        "enduro": {
+          "F": 0.0,
+          "F_content": null,
+          "F_position": null,
+          "M": null,
+          "S": 0.5
         },
         "frostbite": {
           "F": 0.0,
@@ -9193,6 +9656,13 @@
           "M": 1.0,
           "S": 0.9842
         },
+        "skiing": {
+          "F": 0.0,
+          "F_content": null,
+          "F_position": null,
+          "M": null,
+          "S": 0.9167
+        },
         "space_invaders": {
           "F": 0.5,
           "F_content": null,
@@ -9222,11 +9692,11 @@
           "S": 0.9762
         },
         "yars_revenge": {
-          "F": 0.0,
+          "F": 0.2,
           "F_content": null,
           "F_position": null,
-          "M": null,
-          "S": 0.9744
+          "M": 1.0,
+          "S": 0.9487
         }
       },
       "phase": "A",
@@ -9235,24 +9705,24 @@
       "tradition": "intervention"
     },
     "A2_lesions": {
-      "F": 0.965,
-      "F_ci": 0.021,
+      "F": 0.9642,
+      "F_ci": 0.0261,
       "F_content": null,
       "F_position": null,
       "M": 1.0,
-      "S": 0.5888,
+      "S": 0.6104,
       "leaderboard_method": "A2_lesions",
       "metric": "lesion_importance_spearman_vs_oracle_role",
-      "n_games": 42,
-      "n_records": 42,
+      "n_games": 44,
+      "n_records": 44,
       "name": "A2 \u00b7 Single-unit lesions",
       "per_game": {
         "air_raid": {
-          "F": 0.7527,
+          "F": 0.9835,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.3596
+          "S": 0.9725
         },
         "alien": {
           "F": 1.0,
@@ -9268,6 +9738,13 @@
           "M": 1.0,
           "S": 0.7939
         },
+        "asterix": {
+          "F": 0.9833,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.9167
+        },
         "atlantis": {
           "F": 0.95,
           "F_content": null,
@@ -9281,13 +9758,6 @@
           "F_position": null,
           "M": 1.0,
           "S": 0.4617
-        },
-        "beam_rider": {
-          "F": 1.0,
-          "F_content": null,
-          "F_position": null,
-          "M": 1.0,
-          "S": 1.0
         },
         "berzerk": {
           "F": 0.9981,
@@ -9322,7 +9792,7 @@
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.4638
+          "S": 0.4244
         },
         "centipede": {
           "F": 1.0,
@@ -9346,11 +9816,18 @@
           "S": 0.438
         },
         "double_dunk": {
-          "F": 0.7825,
+          "F": 0.9789,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": -0.109
+          "S": 0.1547
+        },
+        "enduro": {
+          "F": 0.5,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.5
         },
         "fishing_derby": {
           "F": 1.0,
@@ -9472,11 +9949,11 @@
           "S": 0.8356
         },
         "private_eye": {
-          "F": 0.9974,
+          "F": 1.0,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.515
+          "S": 0.6109
         },
         "qbert": {
           "F": 0.9984,
@@ -9505,6 +9982,13 @@
           "F_position": null,
           "M": 1.0,
           "S": 0.7996
+        },
+        "skiing": {
+          "F": 0.9833,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.6667
         },
         "space_invaders": {
           "F": 0.9863,
@@ -9539,7 +10023,7 @@
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.4688
+          "S": 0.6925
         }
       },
       "phase": "A",
@@ -9548,24 +10032,24 @@
       "tradition": "intervention"
     },
     "A3_tuning": {
-      "F": 0.2129,
-      "F_ci": 0.0798,
+      "F": 0.2074,
+      "F_ci": 0.0796,
       "F_content": null,
       "F_position": null,
-      "M": 0.9257,
-      "S": 0.2001,
+      "M": 0.9177,
+      "S": 0.196,
       "leaderboard_method": "A3_tuning",
       "metric": "A3_game_variable_spurious_tuning_rate",
-      "n_games": 42,
-      "n_records": 42,
+      "n_games": 44,
+      "n_records": 44,
       "name": "A3 \u00b7 Tuning curves",
       "per_game": {
         "air_raid": {
-          "F": 0.4451,
+          "F": 0.7171,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.4414
+          "S": 0.7187
         },
         "alien": {
           "F": 0.105,
@@ -9581,6 +10065,13 @@
           "M": 0.9,
           "S": -0.0042
         },
+        "asterix": {
+          "F": 0.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": -0.3248
+        },
         "atlantis": {
           "F": 0.0,
           "F_content": null,
@@ -9594,13 +10085,6 @@
           "F_position": null,
           "M": 1.0,
           "S": 0.2473
-        },
-        "beam_rider": {
-          "F": 0.0,
-          "F_content": null,
-          "F_position": null,
-          "M": null,
-          "S": 0.0
         },
         "berzerk": {
           "F": 0.5133,
@@ -9635,7 +10119,7 @@
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": -0.0275
+          "S": -0.0238
         },
         "centipede": {
           "F": 0.0,
@@ -9659,11 +10143,18 @@
           "S": 0.1995
         },
         "double_dunk": {
-          "F": 0.6173,
+          "F": 0.3781,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.8081
+          "S": 0.6535
+        },
+        "enduro": {
+          "F": 0.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.6667,
+          "S": -0.7102
         },
         "fishing_derby": {
           "F": 0.4915,
@@ -9775,7 +10266,7 @@
           "F_content": null,
           "F_position": null,
           "M": 0.8462,
-          "S": 0.2579
+          "S": 0.2567
         },
         "pong": {
           "F": 0.0,
@@ -9785,14 +10276,14 @@
           "S": -0.4123
         },
         "private_eye": {
-          "F": 0.2231,
+          "F": 0.1662,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.3271
+          "S": 0.2924
         },
         "qbert": {
-          "F": 0.467,
+          "F": 0.518,
           "F_content": null,
           "F_position": null,
           "M": 0.4667,
@@ -9818,6 +10309,13 @@
           "F_position": null,
           "M": 1.0,
           "S": 0.3112
+        },
+        "skiing": {
+          "F": 0.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": -0.2896
         },
         "space_invaders": {
           "F": 0.0,
@@ -9848,11 +10346,11 @@
           "S": 0.4722
         },
         "yars_revenge": {
-          "F": 0.3945,
+          "F": 0.5531,
           "F_content": null,
           "F_position": null,
-          "M": 0.7,
-          "S": 0.2226
+          "M": 0.5,
+          "S": 0.3579
         }
       },
       "phase": "A",
@@ -9861,24 +10359,24 @@
       "tradition": "correlational"
     },
     "A4_correlations": {
-      "F": 0.2314,
-      "F_ci": 0.0604,
+      "F": 0.2506,
+      "F_ci": 0.0593,
       "F_content": null,
       "F_position": null,
-      "M": 0.3725,
-      "S": 0.1373,
+      "M": 0.3929,
+      "S": 0.147,
       "leaderboard_method": "A4_spike_word",
       "metric": "A4_faithfulness_spearman_corr_vs_oracle_coupling",
-      "n_games": 33,
-      "n_records": 33,
+      "n_games": 36,
+      "n_records": 36,
       "name": "A4 \u00b7 Pairwise correlations",
       "per_game": {
         "air_raid": {
-          "F": 0.0,
+          "F": 0.4449,
           "F_content": null,
           "F_position": null,
-          "M": 0.0952,
-          "S": -0.0687
+          "M": 0.25,
+          "S": 0.3975
         },
         "alien": {
           "F": 0.0,
@@ -9893,6 +10391,13 @@
           "F_position": null,
           "M": 0.2222,
           "S": 0.2473
+        },
+        "asterix": {
+          "F": 0.109,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.7,
+          "S": 0.1366
         },
         "atlantis": {
           "F": 0.5028,
@@ -9958,11 +10463,18 @@
           "S": 0.0081
         },
         "double_dunk": {
-          "F": 0.158,
+          "F": 0.2948,
           "F_content": null,
           "F_position": null,
-          "M": 0.2,
-          "S": 0.0194
+          "M": 0.1111,
+          "S": 0.081
+        },
+        "enduro": {
+          "F": 0.5,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.6667,
+          "S": -0.0641
         },
         "frostbite": {
           "F": 0.3618,
@@ -10021,11 +10533,11 @@
           "S": 0.3001
         },
         "pitfall": {
-          "F": 0.3444,
+          "F": 0.3448,
           "F_content": null,
           "F_position": null,
           "M": 0.141,
-          "S": 0.3319
+          "S": 0.3345
         },
         "pong": {
           "F": 0.6329,
@@ -10035,14 +10547,14 @@
           "S": -0.1696
         },
         "private_eye": {
-          "F": 0.0282,
+          "F": 0.0111,
           "F_content": null,
           "F_position": null,
-          "M": 0.4286,
-          "S": 0.134
+          "M": 0.3214,
+          "S": 0.12
         },
         "qbert": {
-          "F": 0.0483,
+          "F": 0.0487,
           "F_content": null,
           "F_position": null,
           "M": 0.0095,
@@ -10068,6 +10580,13 @@
           "F_position": null,
           "M": 0.4286,
           "S": 0.0329
+        },
+        "skiing": {
+          "F": 0.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.3333,
+          "S": -0.1328
         },
         "space_invaders": {
           "F": 0.1175,
@@ -10098,11 +10617,11 @@
           "S": 0.5445
         },
         "yars_revenge": {
-          "F": 0.1908,
+          "F": 0.4011,
           "F_content": null,
           "F_position": null,
-          "M": 0.1111,
-          "S": 0.0722
+          "M": 0.2857,
+          "S": 0.25
         }
       },
       "phase": "A",
@@ -10111,139 +10630,146 @@
       "tradition": "correlational"
     },
     "A5_lfp": {
-      "F": 0.3757,
-      "F_ci": 0.0553,
+      "F": 0.3935,
+      "F_ci": 0.056,
       "F_content": null,
       "F_position": null,
       "M": null,
       "S": null,
       "leaderboard_method": "A5_local_field_potentials",
       "metric": "A5_global_pool_clock_explained_variance_fraction_epiphenomenal",
-      "n_games": 40,
-      "n_records": 40,
+      "n_games": 42,
+      "n_records": 42,
       "name": "A5 \u00b7 Local field potentials",
       "per_game": {
         "air_raid": {
-          "F": 0.1858,
+          "F": 0.226,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "alien": {
-          "F": 0.5811,
+          "F": 0.581,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "assault": {
-          "F": 0.7005,
+          "F": 0.7014,
+          "F_content": null,
+          "F_position": null,
+          "M": null,
+          "S": null
+        },
+        "asterix": {
+          "F": 0.703,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "atlantis": {
-          "F": 0.544,
+          "F": 0.5437,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "bank_heist": {
-          "F": 0.2847,
-          "F_content": null,
-          "F_position": null,
-          "M": null,
-          "S": null
-        },
-        "beam_rider": {
-          "F": 0.2937,
+          "F": 0.2836,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "berzerk": {
-          "F": 0.089,
+          "F": 0.0891,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "bowling": {
-          "F": 0.2978,
+          "F": 0.2974,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "boxing": {
-          "F": 0.2281,
+          "F": 0.2288,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "breakout": {
-          "F": 0.1859,
+          "F": 0.1857,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "centipede": {
-          "F": 0.1008,
+          "F": 0.1007,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "chopper_command": {
-          "F": 0.4384,
+          "F": 0.4394,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "demon_attack": {
-          "F": 0.343,
+          "F": 0.3422,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "double_dunk": {
-          "F": 0.3394,
+          "F": 0.2246,
+          "F_content": null,
+          "F_position": null,
+          "M": null,
+          "S": null
+        },
+        "enduro": {
+          "F": 0.5231,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "fishing_derby": {
-          "F": 0.5735,
+          "F": 0.5734,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "freeway": {
-          "F": 0.4471,
+          "F": 0.4454,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "frostbite": {
-          "F": 0.1375,
+          "F": 0.1388,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "gopher": {
-          "F": 0.5687,
+          "F": 0.5292,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -10257,7 +10783,7 @@
           "S": null
         },
         "jamesbond": {
-          "F": 0.7434,
+          "F": 0.7433,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -10271,21 +10797,21 @@
           "S": null
         },
         "krull": {
-          "F": 0.1485,
+          "F": 0.1484,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "kung_fu_master": {
-          "F": 0.7728,
+          "F": 0.774,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "montezuma_revenge": {
-          "F": 0.4016,
+          "F": 0.4019,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -10299,42 +10825,42 @@
           "S": null
         },
         "name_this_game": {
-          "F": 0.4246,
+          "F": 0.424,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "pacman": {
-          "F": 0.2128,
+          "F": 0.2126,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "phoenix": {
-          "F": 0.3083,
+          "F": 0.3071,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "pitfall": {
-          "F": 0.3968,
+          "F": 0.4147,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "pong": {
-          "F": 0.2481,
+          "F": 0.2483,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "private_eye": {
-          "F": 0.4602,
+          "F": 0.4578,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -10348,21 +10874,28 @@
           "S": null
         },
         "riverraid": {
-          "F": 0.6041,
+          "F": 0.6044,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "road_runner": {
-          "F": 0.3836,
+          "F": 0.3829,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "seaquest": {
-          "F": 0.305,
+          "F": 0.3056,
+          "F_content": null,
+          "F_position": null,
+          "M": null,
+          "S": null
+        },
+        "skiing": {
+          "F": 0.4753,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -10376,14 +10909,14 @@
           "S": null
         },
         "tennis": {
-          "F": 0.3959,
+          "F": 0.3953,
           "F_content": null,
           "F_position": null,
           "M": null,
           "S": null
         },
         "venture": {
-          "F": 0.2706,
+          "F": 0.2702,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -10397,7 +10930,7 @@
           "S": null
         },
         "yars_revenge": {
-          "F": 0.4136,
+          "F": 0.6071,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -10410,24 +10943,24 @@
       "tradition": "correlational"
     },
     "A6_granger": {
-      "F": 0.1364,
-      "F_ci": 0.0474,
+      "F": 0.1568,
+      "F_ci": 0.0473,
       "F_content": null,
       "F_position": null,
-      "M": 0.6469,
-      "S": 0.8841,
+      "M": 0.7006,
+      "S": 0.8777,
       "leaderboard_method": "A6_granger",
       "metric": "A6_cell_false_edge_rate_vs_true_dataflow",
-      "n_games": 35,
-      "n_records": 35,
+      "n_games": 38,
+      "n_records": 38,
       "name": "A6 \u00b7 Granger causality",
       "per_game": {
         "air_raid": {
-          "F": 0.0,
+          "F": 0.1053,
           "F_content": null,
           "F_position": null,
-          "M": 0.2222,
-          "S": 0.9295
+          "M": 0.7273,
+          "S": 0.891
         },
         "alien": {
           "F": 0.0,
@@ -10442,6 +10975,13 @@
           "F_position": null,
           "M": 1.0,
           "S": 0.9763
+        },
+        "asterix": {
+          "F": 0.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.9167
         },
         "atlantis": {
           "F": 0.3333,
@@ -10507,11 +11047,18 @@
           "S": 0.8762
         },
         "double_dunk": {
-          "F": 0.2909,
+          "F": 0.2979,
           "F_content": null,
           "F_position": null,
-          "M": 0.375,
-          "S": 0.697
+          "M": 0.2703,
+          "S": 0.7424
+        },
+        "enduro": {
+          "F": 0.4,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.5
         },
         "frostbite": {
           "F": 0.3448,
@@ -10587,8 +11134,8 @@
           "F": 0.0,
           "F_content": null,
           "F_position": null,
-          "M": 0.6111,
-          "S": 0.8917
+          "M": 0.8462,
+          "S": 0.9125
         },
         "pong": {
           "F": 0.0,
@@ -10598,11 +11145,11 @@
           "S": 0.8214
         },
         "private_eye": {
-          "F": 0.1053,
+          "F": 0.1,
           "F_content": null,
           "F_position": null,
-          "M": 0.9,
-          "S": 0.9819
+          "M": 0.8182,
+          "S": 0.9801
         },
         "qbert": {
           "F": 0.0118,
@@ -10631,6 +11178,13 @@
           "F_position": null,
           "M": 0.7368,
           "S": 0.9466
+        },
+        "skiing": {
+          "F": 0.3333,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.8889
         },
         "space_invaders": {
           "F": 0.0,
@@ -10661,11 +11215,11 @@
           "S": 0.9524
         },
         "yars_revenge": {
-          "F": 0.0,
+          "F": 0.3448,
           "F_content": null,
           "F_position": null,
-          "M": 0.1852,
-          "S": 0.8013
+          "M": 0.45,
+          "S": 0.8782
         }
       },
       "phase": "A",
@@ -10674,20 +11228,20 @@
       "tradition": "correlational"
     },
     "A7_dimred": {
-      "F": 0.519,
-      "F_ci": 0.0613,
+      "F": 0.5227,
+      "F_ci": 0.0573,
       "F_content": null,
       "F_position": null,
       "M": null,
       "S": null,
       "leaderboard_method": "A7_dim_reduction",
       "metric": "A7_nmf_matched_component_fraction_vs_known_vars",
-      "n_games": 42,
-      "n_records": 42,
+      "n_games": 44,
+      "n_records": 44,
       "name": "A7 \u00b7 Dimensionality reduction (NMF/PCA)",
       "per_game": {
         "air_raid": {
-          "F": 0.8,
+          "F": 0.6,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -10707,6 +11261,13 @@
           "M": null,
           "S": null
         },
+        "asterix": {
+          "F": 0.6,
+          "F_content": null,
+          "F_position": null,
+          "M": null,
+          "S": null
+        },
         "atlantis": {
           "F": 0.4,
           "F_content": null,
@@ -10715,13 +11276,6 @@
           "S": null
         },
         "bank_heist": {
-          "F": 0.6,
-          "F_content": null,
-          "F_position": null,
-          "M": null,
-          "S": null
-        },
-        "beam_rider": {
           "F": 0.6,
           "F_content": null,
           "F_position": null,
@@ -10785,7 +11339,14 @@
           "S": null
         },
         "double_dunk": {
-          "F": 0.4,
+          "F": 0.6,
+          "F_content": null,
+          "F_position": null,
+          "M": null,
+          "S": null
+        },
+        "enduro": {
+          "F": 0.2,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -10911,7 +11472,7 @@
           "S": null
         },
         "private_eye": {
-          "F": 0.2,
+          "F": 0.6,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -10940,6 +11501,13 @@
         },
         "seaquest": {
           "F": 0.6,
+          "F_content": null,
+          "F_position": null,
+          "M": null,
+          "S": null
+        },
+        "skiing": {
+          "F": 0.4,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -10974,7 +11542,7 @@
           "S": null
         },
         "yars_revenge": {
-          "F": 0.4,
+          "F": 0.6,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -10991,19 +11559,19 @@
       "F_ci": 0.0,
       "F_content": null,
       "F_position": null,
-      "M": 0.0755,
+      "M": 0.0746,
       "S": 1.0,
       "leaderboard_method": "A8_wholestate",
       "metric": "wholestate_minimality_M_vs_oracle",
-      "n_games": 42,
-      "n_records": 42,
+      "n_games": 44,
+      "n_records": 44,
       "name": "A8 \u00b7 Whole-state recording",
       "per_game": {
         "air_raid": {
           "F": 1.0,
           "F_content": null,
           "F_position": null,
-          "M": 0.0781,
+          "M": 0.0938,
           "S": 1.0
         },
         "alien": {
@@ -11020,6 +11588,13 @@
           "M": 0.0703,
           "S": 1.0
         },
+        "asterix": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.0625,
+          "S": 1.0
+        },
         "atlantis": {
           "F": 1.0,
           "F_content": null,
@@ -11032,13 +11607,6 @@
           "F_content": null,
           "F_position": null,
           "M": 0.0312,
-          "S": 1.0
-        },
-        "beam_rider": {
-          "F": 1.0,
-          "F_content": null,
-          "F_position": null,
-          "M": 0.0156,
           "S": 1.0
         },
         "berzerk": {
@@ -11102,6 +11670,13 @@
           "F_content": null,
           "F_position": null,
           "M": 0.0938,
+          "S": 1.0
+        },
+        "enduro": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.0156,
           "S": 1.0
         },
         "fishing_derby": {
@@ -11258,6 +11833,13 @@
           "M": 0.1172,
           "S": 1.0
         },
+        "skiing": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.0547,
+          "S": 1.0
+        },
         "space_invaders": {
           "F": 1.0,
           "F_content": null,
@@ -11290,7 +11872,7 @@
           "F": 1.0,
           "F_content": null,
           "F_position": null,
-          "M": 0.0547,
+          "M": 0.0312,
           "S": 1.0
         }
       },
@@ -11300,24 +11882,24 @@
       "tradition": "descriptive"
     },
     "acdc": {
-      "F": 0.6254,
-      "F_ci": 0.1102,
+      "F": 0.6483,
+      "F_ci": 0.0977,
       "F_content": null,
       "F_position": null,
       "M": 1.0,
-      "S": 0.2995,
+      "S": 0.3141,
       "leaderboard_method": "ACDC",
       "metric": "discovered_circuit_best_F1_vs_true_dataflow",
-      "n_games": 35,
-      "n_records": 35,
+      "n_games": 38,
+      "n_records": 38,
       "name": "ACDC \u2014 automatic circuit discovery",
       "per_game": {
         "air_raid": {
-          "F": 0.0,
+          "F": 0.6667,
           "F_content": null,
           "F_position": null,
-          "M": null,
-          "S": 0.0
+          "M": 1.0,
+          "S": 0.2308
         },
         "alien": {
           "F": 1.0,
@@ -11332,6 +11914,13 @@
           "F_position": null,
           "M": 1.0,
           "S": 0.45
+        },
+        "asterix": {
+          "F": 0.4,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.2222
         },
         "atlantis": {
           "F": 0.6667,
@@ -11397,11 +11986,18 @@
           "S": 0.4667
         },
         "double_dunk": {
-          "F": 0.6364,
+          "F": 0.6667,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
           "S": 0.25
+        },
+        "enduro": {
+          "F": 0.8,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.6667
         },
         "frostbite": {
           "F": 0.6667,
@@ -11522,6 +12118,13 @@
           "M": 1.0,
           "S": 0.2174
         },
+        "skiing": {
+          "F": 0.8,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.3333
+        },
         "space_invaders": {
           "F": 0.5,
           "F_content": null,
@@ -11551,7 +12154,7 @@
           "S": 0.2857
         },
         "yars_revenge": {
-          "F": 0.8889,
+          "F": 0.9412,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
@@ -11568,19 +12171,19 @@
       "F_ci": 0.0,
       "F_content": null,
       "F_position": 1.0,
-      "M": 0.9729,
-      "S": 0.996,
+      "M": 0.964,
+      "S": 0.9962,
       "leaderboard_method": "activation_patching",
       "metric": "max_abs_recovered_minus_exact;pearson_corr_with_oracle",
-      "n_games": 42,
-      "n_records": 84,
+      "n_games": 44,
+      "n_records": 88,
       "name": "Activation patching / causal mediation",
       "per_game": {
         "air_raid": {
           "F": 1.0,
           "F_content": null,
           "F_position": 1.0,
-          "M": 1.0,
+          "M": 0.8235,
           "S": 1.0
         },
         "alien": {
@@ -11597,6 +12200,13 @@
           "M": 1.0,
           "S": 1.0
         },
+        "asterix": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": 1.0,
+          "M": 0.9286,
+          "S": 1.0
+        },
         "atlantis": {
           "F": 1.0,
           "F_content": null,
@@ -11605,13 +12215,6 @@
           "S": 1.0
         },
         "bank_heist": {
-          "F": 1.0,
-          "F_content": null,
-          "F_position": 1.0,
-          "M": 1.0,
-          "S": 1.0
-        },
-        "beam_rider": {
           "F": 1.0,
           "F_content": null,
           "F_position": 1.0,
@@ -11678,7 +12281,14 @@
           "F": 1.0,
           "F_content": null,
           "F_position": 1.0,
-          "M": 0.9706,
+          "M": 0.9667,
+          "S": 1.0
+        },
+        "enduro": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": 1.0,
+          "M": 0.9,
           "S": 1.0
         },
         "fishing_derby": {
@@ -11835,6 +12445,13 @@
           "M": 1.0,
           "S": 1.0
         },
+        "skiing": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": 1.0,
+          "M": 0.9091,
+          "S": 1.0
+        },
         "space_invaders": {
           "F": 1.0,
           "F_content": null,
@@ -11877,24 +12494,24 @@
       "tradition": "causal"
     },
     "attribution_patching": {
-      "F": 0.4563,
-      "F_ci": 0.113,
+      "F": 0.4825,
+      "F_ci": 0.1109,
       "F_content": null,
       "F_position": null,
-      "M": 0.9947,
-      "S": 0.769,
+      "M": 0.9904,
+      "S": 0.7977,
       "leaderboard_method": "attribution_patching",
       "metric": "corr_approx_vs_exact",
-      "n_games": 42,
-      "n_records": 42,
+      "n_games": 44,
+      "n_records": 44,
       "name": "Attribution / edge patching",
       "per_game": {
         "air_raid": {
-          "F": 0.2627,
+          "F": 0.6344,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.9667
+          "S": 0.9833
         },
         "alien": {
           "F": 0.0,
@@ -11910,6 +12527,13 @@
           "M": 1.0,
           "S": 0.978
         },
+        "asterix": {
+          "F": 0.9464,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.9762
+        },
         "atlantis": {
           "F": 0.493,
           "F_content": null,
@@ -11923,13 +12547,6 @@
           "F_position": null,
           "M": 1.0,
           "S": 0.0417
-        },
-        "beam_rider": {
-          "F": 0.0,
-          "F_content": null,
-          "F_position": null,
-          "M": 1.0,
-          "S": 0.0
         },
         "berzerk": {
           "F": 0.9997,
@@ -11988,11 +12605,18 @@
           "S": 0.913
         },
         "double_dunk": {
-          "F": 0.0585,
+          "F": 0.0,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.0364
+          "S": 0.8909
+        },
+        "enduro": {
+          "F": 0.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.8,
+          "S": 0.0
         },
         "fishing_derby": {
           "F": 0.1827,
@@ -12100,7 +12724,7 @@
           "S": 0.9091
         },
         "pitfall": {
-          "F": 0.7904,
+          "F": 0.7832,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
@@ -12114,7 +12738,7 @@
           "S": 0.973
         },
         "private_eye": {
-          "F": 0.4437,
+          "F": 0.4973,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
@@ -12143,6 +12767,13 @@
         },
         "seaquest": {
           "F": 0.1777,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.9524
+        },
+        "skiing": {
+          "F": 0.7586,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
@@ -12177,7 +12808,7 @@
           "S": 0.9091
         },
         "yars_revenge": {
-          "F": 1.0,
+          "F": 0.9997,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
@@ -12190,23 +12821,23 @@
       "tradition": "gradient"
     },
     "causal_scrubbing": {
-      "F": 0.9792,
-      "F_ci": 0.0359,
+      "F": 0.9975,
+      "F_ci": 0.0049,
       "F_content": null,
       "F_position": null,
-      "M": 0.814,
-      "S": 0.9792,
+      "M": 0.8001,
+      "S": 0.9975,
       "leaderboard_method": "causal_scrubbing",
       "metric": "scrubbing_preserved_performance_true",
-      "n_games": 42,
-      "n_records": 42,
+      "n_games": 44,
+      "n_records": 44,
       "name": "Causal scrubbing",
       "per_game": {
         "air_raid": {
           "F": 1.0,
           "F_content": null,
           "F_position": null,
-          "M": 1.0,
+          "M": 0.6667,
           "S": 1.0
         },
         "alien": {
@@ -12223,6 +12854,13 @@
           "M": 0.7778,
           "S": 1.0
         },
+        "asterix": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 1.0
+        },
         "atlantis": {
           "F": 1.0,
           "F_content": null,
@@ -12231,13 +12869,6 @@
           "S": 1.0
         },
         "bank_heist": {
-          "F": 1.0,
-          "F_content": null,
-          "F_position": null,
-          "M": 1.0,
-          "S": 1.0
-        },
-        "beam_rider": {
           "F": 1.0,
           "F_content": null,
           "F_position": null,
@@ -12301,11 +12932,18 @@
           "S": 1.0
         },
         "double_dunk": {
-          "F": 0.2353,
+          "F": 1.0,
           "F_content": null,
           "F_position": null,
-          "M": 1.0,
-          "S": 0.2353
+          "M": 0.8889,
+          "S": 1.0
+        },
+        "enduro": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.3333,
+          "S": 1.0
         },
         "fishing_derby": {
           "F": 1.0,
@@ -12461,6 +13099,13 @@
           "M": 0.7857,
           "S": 1.0
         },
+        "skiing": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 1.0
+        },
         "space_invaders": {
           "F": 1.0,
           "F_content": null,
@@ -12493,7 +13138,7 @@
           "F": 1.0,
           "F_content": null,
           "F_position": null,
-          "M": 0.7143,
+          "M": 0.8571,
           "S": 1.0
         }
       },
@@ -12503,24 +13148,24 @@
       "tradition": "causal"
     },
     "counterfactual": {
-      "F": 0.4329,
-      "F_ci": 0.0806,
-      "F_content": 0.5886,
-      "F_position": 0.2772,
-      "M": 0.989,
-      "S": 0.6392,
+      "F": 0.4326,
+      "F_ci": 0.0773,
+      "F_content": 0.5846,
+      "F_position": 0.2805,
+      "M": 0.9863,
+      "S": 0.6103,
       "leaderboard_method": "on_distribution_counterfactual",
       "metric": "pearson_corr_with_oracle",
-      "n_games": 42,
-      "n_records": 84,
+      "n_games": 44,
+      "n_records": 88,
       "name": "On-distribution counterfactual",
       "per_game": {
         "air_raid": {
-          "F": 0.7871,
-          "F_content": 0.7906,
-          "F_position": 0.7836,
+          "F": 0.2894,
+          "F_content": 0.1951,
+          "F_position": 0.3838,
           "M": 1.0,
-          "S": 0.5714
+          "S": 0.7143
         },
         "alien": {
           "F": 0.781,
@@ -12536,6 +13181,13 @@
           "M": 1.0,
           "S": 0.9048
         },
+        "asterix": {
+          "F": 0.0,
+          "F_content": 0.0,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.1
+        },
         "atlantis": {
           "F": 0.7119,
           "F_content": 0.7729,
@@ -12549,13 +13201,6 @@
           "F_position": 0.6763,
           "M": 1.0,
           "S": 0.8333
-        },
-        "beam_rider": {
-          "F": 0.0,
-          "F_content": 0.0,
-          "F_position": 0.0,
-          "M": null,
-          "S": 0.4167
         },
         "berzerk": {
           "F": 0.0492,
@@ -12614,11 +13259,18 @@
           "S": 0.875
         },
         "double_dunk": {
-          "F": 0.0305,
-          "F_content": 0.0,
-          "F_position": 0.061,
+          "F": 0.3985,
+          "F_content": 0.797,
+          "F_position": 0.0,
           "M": 1.0,
-          "S": 0.8077
+          "S": 0.5385
+        },
+        "enduro": {
+          "F": 0.2648,
+          "F_content": 0.0,
+          "F_position": 0.5296,
+          "M": 1.0,
+          "S": 0.0
         },
         "fishing_derby": {
           "F": 0.9571,
@@ -12726,9 +13378,9 @@
           "S": 0.5385
         },
         "pitfall": {
-          "F": 0.4334,
+          "F": 0.4342,
           "F_content": 0.5454,
-          "F_position": 0.3215,
+          "F_position": 0.323,
           "M": 1.0,
           "S": 0.9412
         },
@@ -12740,9 +13392,9 @@
           "S": 0.3889
         },
         "private_eye": {
-          "F": 0.637,
-          "F_content": 0.7638,
-          "F_position": 0.5103,
+          "F": 0.6337,
+          "F_content": 0.7576,
+          "F_position": 0.5098,
           "M": 1.0,
           "S": 0.96
         },
@@ -12774,6 +13426,13 @@
           "M": 1.0,
           "S": 0.9583
         },
+        "skiing": {
+          "F": 0.6997,
+          "F_content": 0.8086,
+          "F_position": 0.5909,
+          "M": 0.875,
+          "S": 0.45
+        },
         "space_invaders": {
           "F": 0.0,
           "F_content": 0.0,
@@ -12803,9 +13462,9 @@
           "S": 0.5
         },
         "yars_revenge": {
-          "F": 0.388,
+          "F": 0.4073,
           "F_content": 0.7759,
-          "F_position": 0.0,
+          "F_position": 0.0388,
           "M": 1.0,
           "S": 0.4643
         }
@@ -12820,19 +13479,19 @@
       "F_ci": 0.0,
       "F_content": null,
       "F_position": null,
-      "M": 0.8895,
+      "M": 0.8688,
       "S": 1.0,
       "leaderboard_method": "interchange_interventions_das",
       "metric": "interchange_accuracy_aligned",
-      "n_games": 42,
-      "n_records": 42,
+      "n_games": 44,
+      "n_records": 44,
       "name": "Interchange interventions / DAS",
       "per_game": {
         "air_raid": {
           "F": 1.0,
           "F_content": null,
           "F_position": null,
-          "M": 1.0,
+          "M": 0.625,
           "S": 1.0
         },
         "alien": {
@@ -12849,6 +13508,13 @@
           "M": 0.875,
           "S": 1.0
         },
+        "asterix": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.9091,
+          "S": 1.0
+        },
         "atlantis": {
           "F": 1.0,
           "F_content": null,
@@ -12857,13 +13523,6 @@
           "S": 1.0
         },
         "bank_heist": {
-          "F": 1.0,
-          "F_content": null,
-          "F_position": null,
-          "M": 1.0,
-          "S": 1.0
-        },
-        "beam_rider": {
           "F": 1.0,
           "F_content": null,
           "F_position": null,
@@ -12902,7 +13561,7 @@
           "F": 1.0,
           "F_content": null,
           "F_position": null,
-          "M": 0.8947,
+          "M": 0.9,
           "S": 1.0
         },
         "centipede": {
@@ -12930,7 +13589,14 @@
           "F": 1.0,
           "F_content": null,
           "F_position": null,
-          "M": 0.8947,
+          "M": 0.8824,
+          "S": 1.0
+        },
+        "enduro": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.75,
           "S": 1.0
         },
         "fishing_derby": {
@@ -13087,6 +13753,13 @@
           "M": 0.9697,
           "S": 1.0
         },
+        "skiing": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.7273,
+          "S": 1.0
+        },
         "space_invaders": {
           "F": 1.0,
           "F_content": null,
@@ -13119,7 +13792,7 @@
           "F": 1.0,
           "F_content": null,
           "F_position": null,
-          "M": 0.875,
+          "M": 0.7368,
           "S": 1.0
         }
       },
@@ -13129,16 +13802,16 @@
       "tradition": "causal"
     },
     "dictionaries": {
-      "F": 0.1016,
-      "F_ci": 0.0572,
+      "F": 0.1287,
+      "F_ci": 0.062,
       "F_content": null,
       "F_position": null,
-      "M": 0.9663,
-      "S": 0.7511,
+      "M": 0.9848,
+      "S": 0.7245,
       "leaderboard_method": "nmf_pca_dictionaries",
       "metric": "nmf_causal_effect_agreement_spearman",
-      "n_games": 42,
-      "n_records": 42,
+      "n_games": 44,
+      "n_records": 44,
       "name": "NMF/PCA dictionaries",
       "per_game": {
         "air_raid": {
@@ -13146,7 +13819,7 @@
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.3727
+          "S": -0.8335
         },
         "alien": {
           "F": 0.0,
@@ -13162,6 +13835,13 @@
           "M": 1.0,
           "S": 0.9085
         },
+        "asterix": {
+          "F": 0.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.9875
+        },
         "atlantis": {
           "F": 0.0,
           "F_content": null,
@@ -13175,13 +13855,6 @@
           "F_position": null,
           "M": 1.0,
           "S": 0.6269
-        },
-        "beam_rider": {
-          "F": 0.0,
-          "F_content": null,
-          "F_position": null,
-          "M": 0.25,
-          "S": 1.0
         },
         "berzerk": {
           "F": 0.0,
@@ -13216,7 +13889,7 @@
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.9856
+          "S": 0.9853
         },
         "centipede": {
           "F": 0.2728,
@@ -13244,7 +13917,14 @@
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.9979
+          "S": 0.998
+        },
+        "enduro": {
+          "F": 0.6574,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": -0.5528
         },
         "fishing_derby": {
           "F": 0.0,
@@ -13272,7 +13952,7 @@
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.8097
+          "S": 0.9613
         },
         "hero": {
           "F": 0.0,
@@ -13352,11 +14032,11 @@
           "S": -0.9281
         },
         "pitfall": {
-          "F": 0.0,
+          "F": 0.2026,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.9598
+          "S": 0.9665
         },
         "pong": {
           "F": 0.3,
@@ -13366,11 +14046,11 @@
           "S": 0.9322
         },
         "private_eye": {
-          "F": 0.0,
+          "F": 0.2906,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.9999
+          "S": 0.9994
         },
         "qbert": {
           "F": 0.1268,
@@ -13399,6 +14079,13 @@
           "F_position": null,
           "M": 1.0,
           "S": 0.6517
+        },
+        "skiing": {
+          "F": 0.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": 0.8541
         },
         "space_invaders": {
           "F": 0.0,
@@ -13429,11 +14116,11 @@
           "S": 0.7107
         },
         "yars_revenge": {
-          "F": 0.2182,
+          "F": 0.4636,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.2922
+          "S": -0.3554
         }
       },
       "phase": "C",
@@ -13442,24 +14129,24 @@
       "tradition": "dim_reduction"
     },
     "expected_gradients": {
-      "F": 0.1754,
-      "F_ci": 0.0695,
-      "F_content": 0.3252,
-      "F_position": 0.0255,
+      "F": 0.1863,
+      "F_ci": 0.0693,
+      "F_content": 0.343,
+      "F_position": 0.0295,
       "M": 1.0,
-      "S": 0.5758,
+      "S": 0.5481,
       "leaderboard_method": "expected_gradients",
       "metric": "pearson_corr_with_oracle",
-      "n_games": 42,
-      "n_records": 84,
+      "n_games": 44,
+      "n_records": 88,
       "name": "Expected Gradients",
       "per_game": {
         "air_raid": {
-          "F": 0.3953,
-          "F_content": 0.7906,
-          "F_position": 0.0,
+          "F": 0.2939,
+          "F_content": 0.3599,
+          "F_position": 0.228,
           "M": 1.0,
-          "S": 0.4643
+          "S": 0.0357
         },
         "alien": {
           "F": 0.0,
@@ -13475,6 +14162,13 @@
           "M": 1.0,
           "S": 0.9048
         },
+        "asterix": {
+          "F": 0.0,
+          "F_content": 0.0,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.1
+        },
         "atlantis": {
           "F": 0.3864,
           "F_content": 0.7729,
@@ -13488,13 +14182,6 @@
           "F_position": 0.0,
           "M": 1.0,
           "S": 0.8333
-        },
-        "beam_rider": {
-          "F": 0.0,
-          "F_content": 0.0,
-          "F_position": 0.0,
-          "M": null,
-          "S": 0.4167
         },
         "berzerk": {
           "F": 0.058,
@@ -13553,11 +14240,18 @@
           "S": 0.875
         },
         "double_dunk": {
-          "F": 0.3687,
-          "F_content": 0.7375,
+          "F": 0.3985,
+          "F_content": 0.797,
           "F_position": 0.0,
           "M": 1.0,
-          "S": 0.8077
+          "S": 0.5385
+        },
+        "enduro": {
+          "F": 0.5,
+          "F_content": 1.0,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.5
         },
         "fishing_derby": {
           "F": 0.4738,
@@ -13679,9 +14373,9 @@
           "S": 0.4444
         },
         "private_eye": {
-          "F": 0.3835,
-          "F_content": 0.7638,
-          "F_position": 0.0032,
+          "F": 0.3803,
+          "F_content": 0.7576,
+          "F_position": 0.0029,
           "M": 1.0,
           "S": 0.96
         },
@@ -13712,6 +14406,13 @@
           "F_position": 0.0,
           "M": null,
           "S": 0.4792
+        },
+        "skiing": {
+          "F": 0.4049,
+          "F_content": 0.8097,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.45
         },
         "space_invaders": {
           "F": 0.0,
@@ -13755,24 +14456,24 @@
       "tradition": "gradient"
     },
     "gradxinput": {
-      "F": 0.4856,
-      "F_ci": 0.0899,
-      "F_content": 0.8563,
-      "F_position": 0.115,
-      "M": 0.9929,
-      "S": 0.6254,
+      "F": 0.4713,
+      "F_ci": 0.0877,
+      "F_content": 0.8504,
+      "F_position": 0.0923,
+      "M": 0.9932,
+      "S": 0.6041,
       "leaderboard_method": "gradxinput_deeplift",
       "metric": "deeplift_pearson_corr_with_oracle",
-      "n_games": 42,
-      "n_records": 84,
+      "n_games": 44,
+      "n_records": 88,
       "name": "Grad\u00d7Input / DeepLIFT",
       "per_game": {
         "air_raid": {
-          "F": 0.4481,
-          "F_content": 0.8962,
-          "F_position": 0.0,
+          "F": 0.2197,
+          "F_content": 0.2114,
+          "F_position": 0.228,
           "M": 1.0,
-          "S": 0.4643
+          "S": 0.3929
         },
         "alien": {
           "F": 0.4298,
@@ -13788,6 +14489,13 @@
           "M": 1.0,
           "S": 0.9524
         },
+        "asterix": {
+          "F": 0.3827,
+          "F_content": 0.7655,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.5
+        },
         "atlantis": {
           "F": 0.3649,
           "F_content": 0.7297,
@@ -13799,13 +14507,6 @@
           "F": 0.4554,
           "F_content": 0.9108,
           "F_position": 0.0,
-          "M": 1.0,
-          "S": 0.8333
-        },
-        "beam_rider": {
-          "F": 0.8814,
-          "F_content": 0.7662,
-          "F_position": 0.9966,
           "M": 1.0,
           "S": 0.8333
         },
@@ -13866,11 +14567,18 @@
           "S": 0.875
         },
         "double_dunk": {
-          "F": 0.497,
-          "F_content": 0.9941,
+          "F": 0.4085,
+          "F_content": 0.817,
           "F_position": 0.0,
           "M": 1.0,
-          "S": 0.8077
+          "S": 0.5385
+        },
+        "enduro": {
+          "F": 0.5,
+          "F_content": 1.0,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.5
         },
         "fishing_derby": {
           "F": 0.3843,
@@ -13978,8 +14686,8 @@
           "S": 0.5769
         },
         "pitfall": {
-          "F": 0.4924,
-          "F_content": 0.9849,
+          "F": 0.4983,
+          "F_content": 0.9965,
           "F_position": 0.0,
           "M": 1.0,
           "S": 0.9118
@@ -13992,9 +14700,9 @@
           "S": 0.5
         },
         "private_eye": {
-          "F": 0.4867,
+          "F": 0.4866,
           "F_content": 0.9703,
-          "F_position": 0.0032,
+          "F_position": 0.0029,
           "M": 1.0,
           "S": 0.96
         },
@@ -14026,6 +14734,13 @@
           "M": 1.0,
           "S": 0.9583
         },
+        "skiing": {
+          "F": 0.4758,
+          "F_content": 0.9517,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.45
+        },
         "space_invaders": {
           "F": 0.4999,
           "F_content": 0.9999,
@@ -14055,11 +14770,11 @@
           "S": 0.5
         },
         "yars_revenge": {
-          "F": 0.2466,
-          "F_content": 0.4933,
+          "F": 0.4222,
+          "F_content": 0.8445,
           "F_position": 0.0,
           "M": 1.0,
-          "S": 0.4286
+          "S": 0.4643
         }
       },
       "phase": "B",
@@ -14068,24 +14783,24 @@
       "tradition": "gradient"
     },
     "guided_backprop": {
-      "F": 0.3223,
-      "F_ci": 0.0875,
-      "F_content": 0.6447,
+      "F": 0.3153,
+      "F_ci": 0.0854,
+      "F_content": 0.6305,
       "F_position": 0.0,
-      "M": 0.9643,
-      "S": 0.5725,
+      "M": 0.9659,
+      "S": 0.5461,
       "leaderboard_method": "guided_backprop",
       "metric": "pearson_corr_with_oracle",
-      "n_games": 42,
-      "n_records": 84,
+      "n_games": 44,
+      "n_records": 88,
       "name": "Guided Backprop",
       "per_game": {
         "air_raid": {
-          "F": 0.3953,
-          "F_content": 0.7906,
+          "F": 0.1799,
+          "F_content": 0.3599,
           "F_position": 0.0,
           "M": 1.0,
-          "S": 0.4643
+          "S": 0.0357
         },
         "alien": {
           "F": 0.3897,
@@ -14101,6 +14816,13 @@
           "M": 1.0,
           "S": 0.9048
         },
+        "asterix": {
+          "F": 0.0,
+          "F_content": 0.0,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.15
+        },
         "atlantis": {
           "F": 0.3864,
           "F_content": 0.7729,
@@ -14114,13 +14836,6 @@
           "F_position": 0.0,
           "M": 1.0,
           "S": 0.8333
-        },
-        "beam_rider": {
-          "F": 0.3831,
-          "F_content": 0.7662,
-          "F_position": 0.0,
-          "M": 1.0,
-          "S": 0.4167
         },
         "berzerk": {
           "F": 0.0482,
@@ -14179,11 +14894,18 @@
           "S": 0.875
         },
         "double_dunk": {
-          "F": 0.3687,
-          "F_content": 0.7375,
+          "F": 0.3985,
+          "F_content": 0.797,
           "F_position": 0.0,
           "M": 1.0,
-          "S": 0.8077
+          "S": 0.5385
+        },
+        "enduro": {
+          "F": 0.5,
+          "F_content": 1.0,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.5
         },
         "fishing_derby": {
           "F": 0.4738,
@@ -14305,8 +15027,8 @@
           "S": 0.3889
         },
         "private_eye": {
-          "F": 0.3819,
-          "F_content": 0.7638,
+          "F": 0.3788,
+          "F_content": 0.7576,
           "F_position": 0.0,
           "M": 1.0,
           "S": 0.96
@@ -14338,6 +15060,13 @@
           "F_position": 0.0,
           "M": 1.0,
           "S": 0.4792
+        },
+        "skiing": {
+          "F": 0.4049,
+          "F_content": 0.8097,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.45
         },
         "space_invaders": {
           "F": 0.4999,
@@ -14381,24 +15110,24 @@
       "tradition": "gradient"
     },
     "ig_baseline_sweep": {
-      "F": 0.3794,
-      "F_ci": 0.0862,
-      "F_content": 0.6443,
-      "F_position": 0.1146,
-      "M": 0.9841,
-      "S": 0.5907,
+      "F": 0.361,
+      "F_ci": 0.0833,
+      "F_content": 0.6301,
+      "F_position": 0.0919,
+      "M": 0.9846,
+      "S": 0.5529,
       "leaderboard_method": "integrated_gradients",
       "metric": "pearson_corr_with_oracle",
-      "n_games": 42,
-      "n_records": 84,
+      "n_games": 44,
+      "n_records": 88,
       "name": "Integrated Gradients",
       "per_game": {
         "air_raid": {
-          "F": 0.3953,
-          "F_content": 0.7906,
-          "F_position": 0.0,
+          "F": 0.2939,
+          "F_content": 0.3599,
+          "F_position": 0.228,
           "M": 1.0,
-          "S": 0.4643
+          "S": 0.0357
         },
         "alien": {
           "F": 0.3897,
@@ -14414,6 +15143,13 @@
           "M": 1.0,
           "S": 0.9048
         },
+        "asterix": {
+          "F": 0.0,
+          "F_content": 0.0,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.1
+        },
         "atlantis": {
           "F": 0.3864,
           "F_content": 0.7729,
@@ -14425,13 +15161,6 @@
           "F": 0.4499,
           "F_content": 0.8998,
           "F_position": 0.0,
-          "M": 1.0,
-          "S": 0.8333
-        },
-        "beam_rider": {
-          "F": 0.8814,
-          "F_content": 0.7662,
-          "F_position": 0.9966,
           "M": 1.0,
           "S": 0.8333
         },
@@ -14492,11 +15221,18 @@
           "S": 0.875
         },
         "double_dunk": {
-          "F": 0.3687,
-          "F_content": 0.7375,
+          "F": 0.3985,
+          "F_content": 0.797,
           "F_position": 0.0,
           "M": 1.0,
-          "S": 0.8077
+          "S": 0.5385
+        },
+        "enduro": {
+          "F": 0.5,
+          "F_content": 1.0,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.5
         },
         "fishing_derby": {
           "F": 0.4738,
@@ -14604,9 +15340,9 @@
           "S": 0.5769
         },
         "pitfall": {
-          "F": 0.0018,
+          "F": 0.0,
           "F_content": 0.0,
-          "F_position": 0.0035,
+          "F_position": 0.0,
           "M": 1.0,
           "S": 0.8824
         },
@@ -14618,9 +15354,9 @@
           "S": 0.4444
         },
         "private_eye": {
-          "F": 0.3835,
-          "F_content": 0.7638,
-          "F_position": 0.0032,
+          "F": 0.3803,
+          "F_content": 0.7576,
+          "F_position": 0.0029,
           "M": 1.0,
           "S": 0.96
         },
@@ -14651,6 +15387,13 @@
           "F_position": 0.7098,
           "M": 1.0,
           "S": 0.4792
+        },
+        "skiing": {
+          "F": 0.4049,
+          "F_content": 0.8097,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.45
         },
         "space_invaders": {
           "F": 0.4999,
@@ -14694,23 +15437,23 @@
       "tradition": "gradient"
     },
     "kernelshap": {
-      "F": 0.6518,
-      "F_ci": 0.0649,
-      "F_content": 0.7083,
-      "F_position": 0.5954,
-      "M": 0.57,
-      "S": 0.6567,
+      "F": 0.6497,
+      "F_ci": 0.062,
+      "F_content": 0.7058,
+      "F_position": 0.5937,
+      "M": 0.565,
+      "S": 0.6371,
       "leaderboard_method": "kernelshap",
       "metric": "pearson_corr_with_oracle",
-      "n_games": 42,
-      "n_records": 84,
+      "n_games": 44,
+      "n_records": 88,
       "name": "KernelSHAP / Shapley",
       "per_game": {
         "air_raid": {
-          "F": 0.7699,
-          "F_content": 0.7906,
-          "F_position": 0.7491,
-          "M": 0.7692,
+          "F": 0.607,
+          "F_content": 0.6016,
+          "F_position": 0.6124,
+          "M": 0.4231,
           "S": 0.5
         },
         "alien": {
@@ -14727,6 +15470,13 @@
           "M": 0.2625,
           "S": 0.9048
         },
+        "asterix": {
+          "F": 0.4761,
+          "F_content": 0.4586,
+          "F_position": 0.4937,
+          "M": 0.4167,
+          "S": 0.15
+        },
         "atlantis": {
           "F": 0.596,
           "F_content": 0.5456,
@@ -14739,13 +15489,6 @@
           "F_content": 0.8998,
           "F_position": 0.4376,
           "M": 0.9,
-          "S": 0.8333
-        },
-        "beam_rider": {
-          "F": 0.8817,
-          "F_content": 0.7662,
-          "F_position": 0.9972,
-          "M": 0.7,
           "S": 0.8333
         },
         "berzerk": {
@@ -14780,7 +15523,7 @@
           "F": 0.4137,
           "F_content": 0.8274,
           "F_position": 0.0,
-          "M": 0.4028,
+          "M": 0.4167,
           "S": 0.4474
         },
         "centipede": {
@@ -14805,11 +15548,18 @@
           "S": 0.875
         },
         "double_dunk": {
-          "F": 0.4864,
-          "F_content": 0.7376,
-          "F_position": 0.2353,
-          "M": 0.5833,
-          "S": 0.8077
+          "F": 0.5888,
+          "F_content": 0.797,
+          "F_position": 0.3806,
+          "M": 0.5,
+          "S": 0.6154
+        },
+        "enduro": {
+          "F": 0.9893,
+          "F_content": 1.0,
+          "F_position": 0.9785,
+          "M": 0.8333,
+          "S": 0.875
         },
         "fishing_derby": {
           "F": 0.9578,
@@ -14917,8 +15667,8 @@
           "S": 0.4615
         },
         "pitfall": {
-          "F": 0.606,
-          "F_content": 0.5056,
+          "F": 0.6965,
+          "F_content": 0.6865,
           "F_position": 0.7065,
           "M": 0.3438,
           "S": 0.8824
@@ -14931,9 +15681,9 @@
           "S": 0.3889
         },
         "private_eye": {
-          "F": 0.7434,
-          "F_content": 0.7498,
-          "F_position": 0.7371,
+          "F": 0.6201,
+          "F_content": 0.5034,
+          "F_position": 0.7369,
           "M": 0.2292,
           "S": 0.96
         },
@@ -14965,6 +15715,13 @@
           "M": 0.4318,
           "S": 0.4792
         },
+        "skiing": {
+          "F": 0.6996,
+          "F_content": 0.8097,
+          "F_position": 0.5895,
+          "M": 0.8333,
+          "S": 0.45
+        },
         "space_invaders": {
           "F": 0.9096,
           "F_content": 0.9996,
@@ -14994,10 +15751,10 @@
           "S": 0.5
         },
         "yars_revenge": {
-          "F": 0.3854,
+          "F": 0.4059,
           "F_content": 0.7708,
-          "F_position": 0.0,
-          "M": 0.7115,
+          "F_position": 0.0411,
+          "M": 0.6731,
           "S": 0.4643
         }
       },
@@ -15007,24 +15764,24 @@
       "tradition": "gradient"
     },
     "lime": {
-      "F": 0.6441,
-      "F_ci": 0.0652,
-      "F_content": 0.6973,
-      "F_position": 0.591,
-      "M": 0.557,
-      "S": 0.6547,
+      "F": 0.6399,
+      "F_ci": 0.0634,
+      "F_content": 0.6985,
+      "F_position": 0.5813,
+      "M": 0.5527,
+      "S": 0.6463,
       "leaderboard_method": "lime",
       "metric": "pearson_corr_with_oracle",
-      "n_games": 42,
-      "n_records": 84,
+      "n_games": 44,
+      "n_records": 88,
       "name": "LIME",
       "per_game": {
         "air_raid": {
-          "F": 0.7688,
-          "F_content": 0.7906,
-          "F_position": 0.747,
-          "M": 0.7692,
-          "S": 0.5
+          "F": 0.4366,
+          "F_content": 0.3833,
+          "F_position": 0.4899,
+          "M": 0.4231,
+          "S": 0.7143
         },
         "alien": {
           "F": 0.8431,
@@ -15040,6 +15797,13 @@
           "M": 0.2625,
           "S": 0.9048
         },
+        "asterix": {
+          "F": 0.5062,
+          "F_content": 0.525,
+          "F_position": 0.4874,
+          "M": 0.4167,
+          "S": 0.5
+        },
         "atlantis": {
           "F": 0.64,
           "F_content": 0.6319,
@@ -15052,13 +15816,6 @@
           "F_content": 0.8998,
           "F_position": 0.4269,
           "M": 0.9,
-          "S": 0.8333
-        },
-        "beam_rider": {
-          "F": 0.8817,
-          "F_content": 0.7662,
-          "F_position": 0.9972,
-          "M": 0.7,
           "S": 0.8333
         },
         "berzerk": {
@@ -15093,8 +15850,8 @@
           "F": 0.3305,
           "F_content": 0.6609,
           "F_position": 0.0,
-          "M": 0.4028,
-          "S": 0.4737
+          "M": 0.4167,
+          "S": 0.4474
         },
         "centipede": {
           "F": 0.3785,
@@ -15118,11 +15875,18 @@
           "S": 0.875
         },
         "double_dunk": {
-          "F": 0.4617,
-          "F_content": 0.7375,
-          "F_position": 0.1859,
-          "M": 0.5833,
-          "S": 0.8077
+          "F": 0.4539,
+          "F_content": 0.797,
+          "F_position": 0.1107,
+          "M": 0.5,
+          "S": 0.5385
+        },
+        "enduro": {
+          "F": 0.9847,
+          "F_content": 1.0,
+          "F_position": 0.9695,
+          "M": 0.8333,
+          "S": 0.875
         },
         "fishing_derby": {
           "F": 0.9578,
@@ -15153,8 +15917,8 @@
           "S": 0.9286
         },
         "hero": {
-          "F": 0.2906,
-          "F_content": 0.0493,
+          "F": 0.3338,
+          "F_content": 0.1357,
           "F_position": 0.532,
           "M": 0.2803,
           "S": 0.4167
@@ -15230,11 +15994,11 @@
           "S": 0.4615
         },
         "pitfall": {
-          "F": 0.5613,
-          "F_content": 0.4163,
+          "F": 0.6999,
+          "F_content": 0.6934,
           "F_position": 0.7064,
           "M": 0.3438,
-          "S": 0.8529
+          "S": 0.8824
         },
         "pong": {
           "F": 0.6204,
@@ -15244,9 +16008,9 @@
           "S": 0.3889
         },
         "private_eye": {
-          "F": 0.7318,
-          "F_content": 0.7268,
-          "F_position": 0.7368,
+          "F": 0.7336,
+          "F_content": 0.7307,
+          "F_position": 0.7366,
           "M": 0.2292,
           "S": 0.96
         },
@@ -15265,8 +16029,8 @@
           "S": 0.8696
         },
         "road_runner": {
-          "F": 0.5413,
-          "F_content": 0.1412,
+          "F": 0.4707,
+          "F_content": 0.0,
           "F_position": 0.9414,
           "M": 0.1667,
           "S": 0.4737
@@ -15277,6 +16041,13 @@
           "F_position": 0.7137,
           "M": 0.413,
           "S": 0.4792
+        },
+        "skiing": {
+          "F": 0.6986,
+          "F_content": 0.8097,
+          "F_position": 0.5875,
+          "M": 0.8333,
+          "S": 0.45
         },
         "space_invaders": {
           "F": 0.878,
@@ -15307,10 +16078,10 @@
           "S": 0.5
         },
         "yars_revenge": {
-          "F": 0.3854,
+          "F": 0.4058,
           "F_content": 0.7708,
-          "F_position": 0.0,
-          "M": 0.7115,
+          "F_position": 0.0408,
+          "M": 0.6731,
           "S": 0.4643
         }
       },
@@ -15320,16 +16091,16 @@
       "tradition": "gradient"
     },
     "linear_probing": {
-      "F": 0.2404,
-      "F_ci": 0.0983,
+      "F": 0.2114,
+      "F_ci": 0.0825,
       "F_content": null,
       "F_position": null,
-      "M": 0.9316,
+      "M": 0.9441,
       "S": null,
       "leaderboard_method": "linear_probing_control_tasks",
       "metric": "probe_selectivity_vs_causal_use_correlation",
-      "n_games": 42,
-      "n_records": 42,
+      "n_games": 44,
+      "n_records": 44,
       "name": "Linear probing + control tasks",
       "per_game": {
         "assault": {
@@ -15344,13 +16115,6 @@
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": null
-        },
-        "beam_rider": {
-          "F": 1.0,
-          "F_content": null,
-          "F_position": null,
-          "M": 0.5,
           "S": null
         },
         "berzerk": {
@@ -15459,7 +16223,7 @@
           "S": null
         },
         "pitfall": {
-          "F": 0.1844,
+          "F": 0.1836,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
@@ -15473,7 +16237,7 @@
           "S": null
         },
         "private_eye": {
-          "F": 0.0,
+          "F": 0.0876,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
@@ -15515,7 +16279,7 @@
           "S": null
         },
         "yars_revenge": {
-          "F": 0.1519,
+          "F": 0.0716,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
@@ -15528,23 +16292,23 @@
       "tradition": "probing"
     },
     "logit_lens": {
-      "F": 0.8197,
-      "F_ci": 0.0529,
+      "F": 0.7931,
+      "F_ci": 0.0593,
       "F_content": null,
       "F_position": null,
-      "M": 0.224,
+      "M": 0.1915,
       "S": null,
       "leaderboard_method": "logit_tuned_lens",
       "metric": "logit_lens_faithful_weight_fraction_vs_causal_mask",
-      "n_games": 42,
-      "n_records": 42,
+      "n_games": 44,
+      "n_records": 44,
       "name": "Logit / tuned lens",
       "per_game": {
         "air_raid": {
-          "F": 0.9761,
+          "F": 0.8905,
           "F_content": null,
           "F_position": null,
-          "M": 0.1398,
+          "M": 0.1064,
           "S": null
         },
         "alien": {
@@ -15561,6 +16325,13 @@
           "M": 0.1625,
           "S": null
         },
+        "asterix": {
+          "F": 0.7488,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.1111,
+          "S": null
+        },
         "atlantis": {
           "F": 0.7481,
           "F_content": null,
@@ -15573,13 +16344,6 @@
           "F_content": null,
           "F_position": null,
           "M": 0.0694,
-          "S": null
-        },
-        "beam_rider": {
-          "F": 1.0,
-          "F_content": null,
-          "F_position": null,
-          "M": 1.0,
           "S": null
         },
         "berzerk": {
@@ -15639,10 +16403,17 @@
           "S": null
         },
         "double_dunk": {
-          "F": 0.8528,
+          "F": 0.8269,
           "F_content": null,
           "F_position": null,
-          "M": 0.1165,
+          "M": 0.1143,
+          "S": null
+        },
+        "enduro": {
+          "F": 0.0635,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.018,
           "S": null
         },
         "fishing_derby": {
@@ -15698,7 +16469,7 @@
           "F": 0.9495,
           "F_content": null,
           "F_position": null,
-          "M": 0.1429,
+          "M": 0.1444,
           "S": null
         },
         "krull": {
@@ -15740,7 +16511,7 @@
           "F": 1.0,
           "F_content": null,
           "F_position": null,
-          "M": 1.0,
+          "M": 0.875,
           "S": null
         },
         "phoenix": {
@@ -15751,10 +16522,10 @@
           "S": null
         },
         "pitfall": {
-          "F": 0.441,
+          "F": 0.4577,
           "F_content": null,
           "F_position": null,
-          "M": 0.1058,
+          "M": 0.1038,
           "S": null
         },
         "pong": {
@@ -15765,10 +16536,10 @@
           "S": null
         },
         "private_eye": {
-          "F": 0.8778,
+          "F": 0.8774,
           "F_content": null,
           "F_position": null,
-          "M": 0.2785,
+          "M": 0.275,
           "S": null
         },
         "qbert": {
@@ -15797,6 +16568,13 @@
           "F_content": null,
           "F_position": null,
           "M": 0.3099,
+          "S": null
+        },
+        "skiing": {
+          "F": 0.8141,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.0609,
           "S": null
         },
         "space_invaders": {
@@ -15828,10 +16606,10 @@
           "S": null
         },
         "yars_revenge": {
-          "F": 0.8863,
+          "F": 0.8235,
           "F_content": null,
           "F_position": null,
-          "M": 0.1558,
+          "M": 0.1467,
           "S": null
         }
       },
@@ -15841,24 +16619,24 @@
       "tradition": "causal"
     },
     "occlusion": {
-      "F": 0.6869,
-      "F_ci": 0.0647,
-      "F_content": 0.7543,
-      "F_position": 0.6194,
-      "M": 0.9731,
-      "S": 0.6667,
+      "F": 0.6851,
+      "F_ci": 0.0625,
+      "F_content": 0.7517,
+      "F_position": 0.6185,
+      "M": 0.9724,
+      "S": 0.6539,
       "leaderboard_method": "occlusion",
       "metric": "pearson_corr_with_oracle",
-      "n_games": 42,
-      "n_records": 84,
+      "n_games": 44,
+      "n_records": 88,
       "name": "Occlusion",
       "per_game": {
         "air_raid": {
-          "F": 0.7746,
-          "F_content": 0.7906,
-          "F_position": 0.7587,
-          "M": 1.0,
-          "S": 0.4643
+          "F": 0.6776,
+          "F_content": 0.6559,
+          "F_position": 0.6994,
+          "M": 0.9167,
+          "S": 0.7857
         },
         "alien": {
           "F": 0.8814,
@@ -15874,6 +16652,13 @@
           "M": 0.9167,
           "S": 0.9048
         },
+        "asterix": {
+          "F": 0.4626,
+          "F_content": 0.4326,
+          "F_position": 0.4925,
+          "M": 1.0,
+          "S": 0.15
+        },
         "atlantis": {
           "F": 0.715,
           "F_content": 0.7781,
@@ -15885,13 +16670,6 @@
           "F": 0.7881,
           "F_content": 0.8998,
           "F_position": 0.6763,
-          "M": 1.0,
-          "S": 0.8333
-        },
-        "beam_rider": {
-          "F": 0.8818,
-          "F_content": 0.7662,
-          "F_position": 0.9974,
           "M": 1.0,
           "S": 0.8333
         },
@@ -15952,11 +16730,18 @@
           "S": 0.9062
         },
         "double_dunk": {
-          "F": 0.7278,
-          "F_content": 0.7377,
-          "F_position": 0.718,
+          "F": 0.8357,
+          "F_content": 0.797,
+          "F_position": 0.8743,
           "M": 1.0,
-          "S": 0.8077
+          "S": 0.6154
+        },
+        "enduro": {
+          "F": 0.9934,
+          "F_content": 1.0,
+          "F_position": 0.9868,
+          "M": 1.0,
+          "S": 0.875
         },
         "fishing_derby": {
           "F": 0.9577,
@@ -16064,9 +16849,9 @@
           "S": 0.4615
         },
         "pitfall": {
-          "F": 0.7346,
+          "F": 0.7348,
           "F_content": 0.7525,
-          "F_position": 0.7168,
+          "F_position": 0.7171,
           "M": 0.875,
           "S": 0.8824
         },
@@ -16078,9 +16863,9 @@
           "S": 0.3889
         },
         "private_eye": {
-          "F": 0.7514,
-          "F_content": 0.7638,
-          "F_position": 0.7391,
+          "F": 0.7483,
+          "F_content": 0.7576,
+          "F_position": 0.7389,
           "M": 1.0,
           "S": 0.96
         },
@@ -16112,6 +16897,13 @@
           "M": 1.0,
           "S": 0.4792
         },
+        "skiing": {
+          "F": 0.6953,
+          "F_content": 0.8097,
+          "F_position": 0.5808,
+          "M": 1.0,
+          "S": 0.45
+        },
         "space_invaders": {
           "F": 0.9189,
           "F_content": 0.9999,
@@ -16141,9 +16933,9 @@
           "S": 0.5
         },
         "yars_revenge": {
-          "F": 0.3854,
+          "F": 0.4052,
           "F_content": 0.7708,
-          "F_position": 0.0,
+          "F_position": 0.0395,
           "M": 1.0,
           "S": 0.4643
         }
@@ -16154,20 +16946,20 @@
       "tradition": "intervention"
     },
     "path_patching": {
-      "F": 0.5796,
-      "F_ci": 0.1334,
+      "F": 0.6032,
+      "F_ci": 0.1265,
       "F_content": null,
       "F_position": null,
       "M": 1.0,
       "S": null,
       "leaderboard_method": "path_patching",
       "metric": "path_circuit_F1_vs_true_routine",
-      "n_games": 42,
-      "n_records": 42,
+      "n_games": 44,
+      "n_records": 44,
       "name": "Path patching / IOI circuit",
       "per_game": {
         "air_raid": {
-          "F": 0.0,
+          "F": 1.0,
           "F_content": null,
           "F_position": null,
           "M": null,
@@ -16187,6 +16979,13 @@
           "M": null,
           "S": null
         },
+        "asterix": {
+          "F": 0.4,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": null
+        },
         "atlantis": {
           "F": 0.0,
           "F_content": null,
@@ -16195,13 +16994,6 @@
           "S": null
         },
         "bank_heist": {
-          "F": 1.0,
-          "F_content": null,
-          "F_position": null,
-          "M": null,
-          "S": null
-        },
-        "beam_rider": {
           "F": 1.0,
           "F_content": null,
           "F_position": null,
@@ -16266,6 +17058,13 @@
         },
         "double_dunk": {
           "F": 1.0,
+          "F_content": null,
+          "F_position": null,
+          "M": null,
+          "S": null
+        },
+        "enduro": {
+          "F": 0.8,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
@@ -16425,6 +17224,13 @@
           "M": 1.0,
           "S": null
         },
+        "skiing": {
+          "F": 1.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": null
+        },
         "space_invaders": {
           "F": 0.2857,
           "F_content": null,
@@ -16457,7 +17263,7 @@
           "F": 1.0,
           "F_content": null,
           "F_position": null,
-          "M": null,
+          "M": 1.0,
           "S": null
         }
       },
@@ -16467,24 +17273,24 @@
       "tradition": "causal"
     },
     "perturbation": {
-      "F": 0.4605,
-      "F_ci": 0.0595,
-      "F_content": 0.5736,
-      "F_position": 0.3474,
-      "M": 0.9689,
-      "S": 0.6297,
+      "F": 0.4583,
+      "F_ci": 0.059,
+      "F_content": 0.5749,
+      "F_position": 0.3418,
+      "M": 0.9684,
+      "S": 0.6079,
       "leaderboard_method": "extremal_perturbation",
       "metric": "pearson_corr_with_oracle",
-      "n_games": 42,
-      "n_records": 84,
+      "n_games": 44,
+      "n_records": 88,
       "name": "Extremal / meaningful perturbation",
       "per_game": {
         "air_raid": {
-          "F": 0.5656,
-          "F_content": 0.547,
-          "F_position": 0.5843,
-          "M": 1.0,
-          "S": 0.5714
+          "F": 0.5778,
+          "F_content": 0.4414,
+          "F_position": 0.7142,
+          "M": 0.9167,
+          "S": 0.7857
         },
         "alien": {
           "F": 0.5812,
@@ -16500,6 +17306,13 @@
           "M": 0.9167,
           "S": 0.9048
         },
+        "asterix": {
+          "F": 0.2514,
+          "F_content": 0.2334,
+          "F_position": 0.2694,
+          "M": 1.0,
+          "S": 0.15
+        },
         "atlantis": {
           "F": 0.3933,
           "F_content": 0.5266,
@@ -16511,13 +17324,6 @@
           "F": 0.4665,
           "F_content": 0.6956,
           "F_position": 0.2374,
-          "M": 1.0,
-          "S": 0.8333
-        },
-        "beam_rider": {
-          "F": 0.7055,
-          "F_content": 0.4994,
-          "F_position": 0.9116,
           "M": 1.0,
           "S": 0.8333
         },
@@ -16578,11 +17384,18 @@
           "S": 0.875
         },
         "double_dunk": {
-          "F": 0.3689,
-          "F_content": 0.4752,
-          "F_position": 0.2626,
+          "F": 0.3958,
+          "F_content": 0.555,
+          "F_position": 0.2366,
           "M": 1.0,
-          "S": 0.8462
+          "S": 0.5385
+        },
+        "enduro": {
+          "F": 0.9215,
+          "F_content": 0.9333,
+          "F_position": 0.9097,
+          "M": 1.0,
+          "S": 0.625
         },
         "fishing_derby": {
           "F": 0.812,
@@ -16690,9 +17503,9 @@
           "S": 0.5385
         },
         "pitfall": {
-          "F": 0.3408,
+          "F": 0.3259,
           "F_content": 0.4792,
-          "F_position": 0.2024,
+          "F_position": 0.1727,
           "M": 0.875,
           "S": 0.8824
         },
@@ -16704,9 +17517,9 @@
           "S": 0.3889
         },
         "private_eye": {
-          "F": 0.3518,
-          "F_content": 0.5152,
-          "F_position": 0.1883,
+          "F": 0.3474,
+          "F_content": 0.5071,
+          "F_position": 0.1878,
           "M": 1.0,
           "S": 0.96
         },
@@ -16737,6 +17550,13 @@
           "F_position": 0.2893,
           "M": 1.0,
           "S": 0.4792
+        },
+        "skiing": {
+          "F": 0.3404,
+          "F_content": 0.5712,
+          "F_position": 0.1096,
+          "M": 1.0,
+          "S": 0.45
         },
         "space_invaders": {
           "F": 0.5567,
@@ -16780,24 +17600,24 @@
       "tradition": "intervention"
     },
     "rise": {
-      "F": 0.5522,
-      "F_ci": 0.0646,
-      "F_content": 0.6644,
-      "F_position": 0.4399,
-      "M": 0.3475,
-      "S": 0.5825,
+      "F": 0.5435,
+      "F_ci": 0.0615,
+      "F_content": 0.6611,
+      "F_position": 0.4259,
+      "M": 0.3556,
+      "S": 0.5631,
       "leaderboard_method": "rise",
       "metric": "pearson_corr_with_oracle",
-      "n_games": 42,
-      "n_records": 84,
+      "n_games": 44,
+      "n_records": 88,
       "name": "RISE",
       "per_game": {
         "air_raid": {
-          "F": 0.7114,
-          "F_content": 0.7597,
-          "F_position": 0.663,
-          "M": 0.3077,
-          "S": 0.5714
+          "F": 0.4409,
+          "F_content": 0.3807,
+          "F_position": 0.5011,
+          "M": 0.4231,
+          "S": 0.6071
         },
         "alien": {
           "F": 0.611,
@@ -16813,6 +17633,13 @@
           "M": 0.2625,
           "S": 0.9048
         },
+        "asterix": {
+          "F": 0.5047,
+          "F_content": 0.5068,
+          "F_position": 0.5026,
+          "M": 0.4167,
+          "S": 0.5
+        },
         "atlantis": {
           "F": 0.5941,
           "F_content": 0.5284,
@@ -16826,13 +17653,6 @@
           "F_position": 0.4434,
           "M": 0.5,
           "S": 0.8333
-        },
-        "beam_rider": {
-          "F": 0.8337,
-          "F_content": 0.7281,
-          "F_position": 0.9393,
-          "M": 0.3,
-          "S": 0.5833
         },
         "berzerk": {
           "F": 0.335,
@@ -16866,7 +17686,7 @@
           "F": 0.3304,
           "F_content": 0.6608,
           "F_position": 0.0,
-          "M": 0.4028,
+          "M": 0.4167,
           "S": 0.4737
         },
         "centipede": {
@@ -16891,11 +17711,18 @@
           "S": 0.8125
         },
         "double_dunk": {
-          "F": 0.3639,
-          "F_content": 0.7092,
-          "F_position": 0.0185,
-          "M": 0.5833,
-          "S": 0.8077
+          "F": 0.4719,
+          "F_content": 0.6983,
+          "F_position": 0.2456,
+          "M": 0.5,
+          "S": 0.5385
+        },
+        "enduro": {
+          "F": 0.4049,
+          "F_content": 0.7948,
+          "F_position": 0.0151,
+          "M": 0.5,
+          "S": 0.0
         },
         "fishing_derby": {
           "F": 0.8674,
@@ -17003,11 +17830,11 @@
           "S": 0.1923
         },
         "pitfall": {
-          "F": 0.4885,
-          "F_content": 0.3306,
-          "F_position": 0.6464,
+          "F": 0.6009,
+          "F_content": 0.5524,
+          "F_position": 0.6493,
           "M": 0.3438,
-          "S": 0.8529
+          "S": 0.8824
         },
         "pong": {
           "F": 0.5339,
@@ -17017,10 +17844,10 @@
           "S": 0.3889
         },
         "private_eye": {
-          "F": 0.7189,
-          "F_content": 0.7149,
-          "F_position": 0.7229,
-          "M": 0.2292,
+          "F": 0.7178,
+          "F_content": 0.713,
+          "F_position": 0.7227,
+          "M": 0.2301,
           "S": 0.96
         },
         "qbert": {
@@ -17050,6 +17877,13 @@
           "F_position": 0.6925,
           "M": 0.413,
           "S": 0.4792
+        },
+        "skiing": {
+          "F": 0.7002,
+          "F_content": 0.7809,
+          "F_position": 0.6195,
+          "M": 0.4167,
+          "S": 0.6
         },
         "space_invaders": {
           "F": 0.8305,
@@ -17083,7 +17917,7 @@
           "F": 0.3783,
           "F_content": 0.7565,
           "F_position": 0.0,
-          "M": 0.25,
+          "M": 0.2115,
           "S": 0.4643
         }
       },
@@ -17093,24 +17927,24 @@
       "tradition": "gradient"
     },
     "sae": {
-      "F": 0.1526,
-      "F_ci": 0.0613,
+      "F": 0.1474,
+      "F_ci": 0.0603,
       "F_content": null,
       "F_position": null,
-      "M": 0.9339,
-      "S": 0.1828,
+      "M": 0.9244,
+      "S": 0.1646,
       "leaderboard_method": "sparse_autoencoder",
       "metric": "feature_variable_matched_fraction",
-      "n_games": 40,
-      "n_records": 40,
+      "n_games": 42,
+      "n_records": 42,
       "name": "Sparse autoencoders",
       "per_game": {
         "air_raid": {
-          "F": 0.1366,
+          "F": 0.0,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.0905
+          "S": 0.1956
         },
         "alien": {
           "F": 0.3592,
@@ -17126,6 +17960,13 @@
           "M": 0.9,
           "S": 0.3744
         },
+        "asterix": {
+          "F": 0.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": -0.2784
+        },
         "atlantis": {
           "F": 0.0533,
           "F_content": null,
@@ -17139,13 +17980,6 @@
           "F_position": null,
           "M": 1.0,
           "S": -0.5062
-        },
-        "beam_rider": {
-          "F": 0.0,
-          "F_content": null,
-          "F_position": null,
-          "M": 1.0,
-          "S": -0.2623
         },
         "berzerk": {
           "F": 0.0538,
@@ -17180,7 +18014,7 @@
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": -0.1124
+          "S": -0.1129
         },
         "centipede": {
           "F": 0.0,
@@ -17204,11 +18038,18 @@
           "S": 0.4478
         },
         "double_dunk": {
-          "F": 0.2211,
+          "F": 0.4386,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.5873
+          "S": 0.4769
+        },
+        "enduro": {
+          "F": 0.0,
+          "F_content": null,
+          "F_position": null,
+          "M": 0.6667,
+          "S": -0.3719
         },
         "fishing_derby": {
           "F": 0.0,
@@ -17306,7 +18147,7 @@
           "F_content": null,
           "F_position": null,
           "M": 0.8462,
-          "S": -0.2444
+          "S": -0.248
         },
         "pong": {
           "F": 0.0408,
@@ -17316,11 +18157,11 @@
           "S": -0.4577
         },
         "private_eye": {
-          "F": 0.2077,
+          "F": 0.1182,
           "F_content": null,
           "F_position": null,
           "M": 1.0,
-          "S": 0.1928
+          "S": 0.0655
         },
         "qbert": {
           "F": 0.2515,
@@ -17349,6 +18190,13 @@
           "F_position": null,
           "M": 1.0,
           "S": 0.7055
+        },
+        "skiing": {
+          "F": 0.1192,
+          "F_content": null,
+          "F_position": null,
+          "M": 1.0,
+          "S": -0.2094
         },
         "space_invaders": {
           "F": 0.0,
@@ -17379,11 +18227,11 @@
           "S": 0.4501
         },
         "yars_revenge": {
-          "F": 0.5704,
+          "F": 0.5454,
           "F_content": null,
           "F_position": null,
-          "M": 0.7,
-          "S": 0.4486
+          "M": 0.5,
+          "S": 0.1812
         }
       },
       "phase": "C",
@@ -17392,24 +18240,24 @@
       "tradition": "dim_reduction"
     },
     "saliency": {
-      "F": 0.3798,
-      "F_ci": 0.0861,
-      "F_content": 0.6447,
-      "F_position": 0.115,
-      "M": 0.9795,
-      "S": 0.5932,
+      "F": 0.3614,
+      "F_ci": 0.0832,
+      "F_content": 0.6305,
+      "F_position": 0.0923,
+      "M": 0.9803,
+      "S": 0.5545,
       "leaderboard_method": "vanilla_saliency",
       "metric": "pearson_corr_with_oracle",
-      "n_games": 42,
-      "n_records": 84,
+      "n_games": 44,
+      "n_records": 88,
       "name": "Vanilla gradient (saliency)",
       "per_game": {
         "air_raid": {
-          "F": 0.3953,
-          "F_content": 0.7906,
-          "F_position": 0.0,
+          "F": 0.2939,
+          "F_content": 0.3599,
+          "F_position": 0.228,
           "M": 1.0,
-          "S": 0.5
+          "S": 0.0357
         },
         "alien": {
           "F": 0.3897,
@@ -17425,6 +18273,13 @@
           "M": 1.0,
           "S": 0.9048
         },
+        "asterix": {
+          "F": 0.0,
+          "F_content": 0.0,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.1
+        },
         "atlantis": {
           "F": 0.3864,
           "F_content": 0.7729,
@@ -17436,13 +18291,6 @@
           "F": 0.4499,
           "F_content": 0.8998,
           "F_position": 0.0,
-          "M": 1.0,
-          "S": 0.8333
-        },
-        "beam_rider": {
-          "F": 0.8814,
-          "F_content": 0.7662,
-          "F_position": 0.9966,
           "M": 1.0,
           "S": 0.8333
         },
@@ -17503,11 +18351,18 @@
           "S": 0.875
         },
         "double_dunk": {
-          "F": 0.3687,
-          "F_content": 0.7375,
+          "F": 0.3985,
+          "F_content": 0.797,
           "F_position": 0.0,
           "M": 1.0,
-          "S": 0.8077
+          "S": 0.5385
+        },
+        "enduro": {
+          "F": 0.5,
+          "F_content": 1.0,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.5
         },
         "fishing_derby": {
           "F": 0.4738,
@@ -17629,9 +18484,9 @@
           "S": 0.4444
         },
         "private_eye": {
-          "F": 0.3835,
-          "F_content": 0.7638,
-          "F_position": 0.0032,
+          "F": 0.3803,
+          "F_content": 0.7576,
+          "F_position": 0.0029,
           "M": 1.0,
           "S": 0.96
         },
@@ -17662,6 +18517,13 @@
           "F_position": 0.7098,
           "M": 1.0,
           "S": 0.4792
+        },
+        "skiing": {
+          "F": 0.4049,
+          "F_content": 0.8097,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.45
         },
         "space_invaders": {
           "F": 0.4999,
@@ -17705,24 +18567,24 @@
       "tradition": "gradient"
     },
     "smoothgrad": {
-      "F": 0.3799,
-      "F_ci": 0.0861,
-      "F_content": 0.6447,
-      "F_position": 0.1151,
-      "M": 0.981,
-      "S": 0.5968,
+      "F": 0.3614,
+      "F_ci": 0.0832,
+      "F_content": 0.6305,
+      "F_position": 0.0923,
+      "M": 0.9817,
+      "S": 0.5579,
       "leaderboard_method": "smoothgrad",
       "metric": "pearson_corr_with_oracle",
-      "n_games": 42,
-      "n_records": 84,
+      "n_games": 44,
+      "n_records": 88,
       "name": "SmoothGrad",
       "per_game": {
         "air_raid": {
-          "F": 0.3953,
-          "F_content": 0.7906,
-          "F_position": 0.0,
+          "F": 0.2939,
+          "F_content": 0.3599,
+          "F_position": 0.228,
           "M": 1.0,
-          "S": 0.5
+          "S": 0.0357
         },
         "alien": {
           "F": 0.3897,
@@ -17738,6 +18600,13 @@
           "M": 1.0,
           "S": 0.9048
         },
+        "asterix": {
+          "F": 0.0,
+          "F_content": 0.0,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.1
+        },
         "atlantis": {
           "F": 0.3864,
           "F_content": 0.7729,
@@ -17749,13 +18618,6 @@
           "F": 0.4499,
           "F_content": 0.8998,
           "F_position": 0.0,
-          "M": 1.0,
-          "S": 0.8333
-        },
-        "beam_rider": {
-          "F": 0.8814,
-          "F_content": 0.7662,
-          "F_position": 0.9966,
           "M": 1.0,
           "S": 0.8333
         },
@@ -17816,11 +18678,18 @@
           "S": 0.875
         },
         "double_dunk": {
-          "F": 0.3687,
-          "F_content": 0.7375,
+          "F": 0.3985,
+          "F_content": 0.797,
           "F_position": 0.0,
           "M": 1.0,
-          "S": 0.8077
+          "S": 0.5385
+        },
+        "enduro": {
+          "F": 0.5,
+          "F_content": 1.0,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.5
         },
         "fishing_derby": {
           "F": 0.4738,
@@ -17928,9 +18797,9 @@
           "S": 0.5769
         },
         "pitfall": {
-          "F": 0.0018,
+          "F": 0.0,
           "F_content": 0.0,
-          "F_position": 0.0035,
+          "F_position": 0.0,
           "M": 1.0,
           "S": 0.8824
         },
@@ -17942,9 +18811,9 @@
           "S": 0.4444
         },
         "private_eye": {
-          "F": 0.3835,
-          "F_content": 0.7638,
-          "F_position": 0.0032,
+          "F": 0.3803,
+          "F_content": 0.7576,
+          "F_position": 0.0029,
           "M": 1.0,
           "S": 0.96
         },
@@ -17975,6 +18844,13 @@
           "F_position": 0.7098,
           "M": 1.0,
           "S": 0.4792
+        },
+        "skiing": {
+          "F": 0.4049,
+          "F_content": 0.8097,
+          "F_position": 0.0,
+          "M": 1.0,
+          "S": 0.45
         },
         "space_invaders": {
           "F": 0.4999,

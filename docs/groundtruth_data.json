@@ -4,9 +4,9 @@
   "excluded_reason": "",
   "labeled": true,
   "n_candidates": 13,
-  "n_causes": 14,
-  "n_moving": 8,
-  "n_verified": 9,
+  "n_causes": 17,
+  "n_moving": 9,
+  "n_verified": 10,
   "origin": "OCAtari",
   "position_labels": [
    "a",
@@ -70,16 +70,21 @@
  },
  "asterix": {
   "accepted": true,
-  "excluded_reason": "no moving sprite",
+  "excluded_reason": "",
   "labeled": true,
   "n_candidates": 9,
   "n_causes": 12,
-  "n_moving": 0,
-  "n_verified": 0,
+  "n_moving": 5,
+  "n_verified": 7,
   "origin": "OCAtari",
-  "position_labels": [],
-  "position_regime": false,
-  "scored": false
+  "position_labels": [
+   "dec_value",
+   "kind_of_visible_objs",
+   "lives",
+   "player.xy"
+  ],
+  "position_regime": true,
+  "scored": true
  },
  "asteroids": {
   "accepted": false,
@@ -140,18 +145,16 @@
  },
  "beam_rider": {
   "accepted": true,
-  "excluded_reason": "",
+  "excluded_reason": "no moving sprite",
   "labeled": true,
   "n_candidates": 5,
   "n_causes": 4,
-  "n_moving": 1,
+  "n_moving": 0,
   "n_verified": 2,
   "origin": "OCAtari",
-  "position_labels": [
-   "player.xy"
-  ],
-  "position_regime": true,
-  "scored": true
+  "position_labels": [],
+  "position_regime": false,
+  "scored": false
  },
  "berzerk": {
   "accepted": true,
@@ -234,7 +237,7 @@
   "excluded_reason": "",
   "labeled": true,
   "n_candidates": 18,
-  "n_causes": 26,
+  "n_causes": 27,
   "n_moving": 12,
   "n_verified": 17,
   "origin": "OCAtari",
@@ -242,8 +245,8 @@
    "ammo.rgb",
    "ammo.wh",
    "bonus_sprites",
-   "missile.xy",
-   "player.xy",
+   "missile",
+   "player",
    "targets_second_row_variation"
   ],
   "position_regime": true,
@@ -364,11 +367,11 @@
   "scored": false
  },
  "enduro": {
-  "accepted": false,
-  "excluded_reason": "gate-rejected",
+  "accepted": true,
+  "excluded_reason": "",
   "labeled": true,
   "n_candidates": 3,
-  "n_causes": 3,
+  "n_causes": 4,
   "n_moving": 2,
   "n_verified": 2,
   "origin": "OCAtari",
@@ -376,8 +379,8 @@
    "x_drift",
    "y"
   ],
-  "position_regime": false,
-  "scored": false
+  "position_regime": true,
+  "scored": true
  },
  "fishing_derby": {
   "accepted": true,
@@ -442,14 +445,15 @@
   "labeled": true,
   "n_candidates": 20,
   "n_causes": 21,
-  "n_moving": 14,
-  "n_verified": 14,
+  "n_moving": 15,
+  "n_verified": 15,
   "origin": "OCAtari",
   "position_labels": [
    "gopher.xy",
    "player.xy",
    "ram_conditions",
-   "ram_conditions_2"
+   "ram_conditions_2",
+   "value"
   ],
   "position_regime": true,
   "scored": true
@@ -679,7 +683,7 @@
   "labeled": true,
   "n_candidates": 16,
   "n_causes": 19,
-  "n_moving": 7,
+  "n_moving": 8,
   "n_verified": 10,
   "origin": "both",
   "position_labels": [
@@ -733,7 +737,7 @@
   "labeled": true,
   "n_candidates": 24,
   "n_causes": 20,
-  "n_moving": 9,
+  "n_moving": 10,
   "n_verified": 12,
   "origin": "both",
   "position_labels": [
@@ -836,21 +840,22 @@
   "scored": true
  },
  "skiing": {
-  "accepted": false,
-  "excluded_reason": "gate-rejected",
+  "accepted": true,
+  "excluded_reason": "",
   "labeled": true,
   "n_candidates": 9,
-  "n_causes": 0,
-  "n_moving": 4,
+  "n_causes": 12,
+  "n_moving": 5,
   "n_verified": 8,
   "origin": "OCAtari",
   "position_labels": [
+   "milli_seconds",
    "player.ram_90",
    "player.xy",
    "score"
   ],
-  "position_regime": false,
-  "scored": false
+  "position_regime": true,
+  "scored": true
  },
  "solaris": {
   "accepted": null,
@@ -964,7 +969,7 @@
   "excluded_reason": "no moving sprite",
   "labeled": true,
   "n_candidates": 0,
-  "n_causes": 7,
+  "n_causes": 6,
   "n_moving": 0,
   "n_verified": 0,
   "origin": "OCAtari",
@@ -1043,12 +1048,14 @@
   "excluded_reason": "",
   "labeled": true,
   "n_candidates": 13,
-  "n_causes": 11,
+  "n_causes": 9,
   "n_moving": 3,
   "n_verified": 4,
   "origin": "both",
   "position_labels": [
-   "value"
+   "enemy_y",
+   "player_y",
+   "xy"
   ],
   "position_regime": true,
   "scored": true

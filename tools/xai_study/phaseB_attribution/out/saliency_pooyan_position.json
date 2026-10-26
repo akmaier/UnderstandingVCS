@@ -1,7 +1,7 @@
 {
   "arrays": "saliency_pooyan_position.npz",
   "ci": null,
-  "commit": "9391b559",
+  "commit": "c2cae9e",
   "extra": {
     "auc_note": "deletion/insertion curves measured on the TRUE VCS by re-running the real ROM with top-saliency causes occluded (deletion) / restored (insertion); every point is a genuine emulator re-run, not a surrogate. NaN = a genuinely flat experiment (e.g. the vanishing position output).",
     "baseline": "none (vanilla saliency uses no baseline and no input weighting)",
@@ -125,8 +125,18 @@
       "position_byte_ram_index": -1,
       "prefix": 90,
       "seed": 0,
-      "shared_output": "screen_region(n_changed_px)@r105c80",
+      "shared_output": "screen_region(n_changed_px)@r110c80",
       "state_kind": "seeded_random_action_gameplay"
+    },
+    "triad": {
+      "F": 0.0,
+      "M": null,
+      "M_named_size": 0,
+      "M_note": "M undefined: method names nothing (all-zero attribution) at this state",
+      "M_true_minimal_size": 2,
+      "S": 0.9166666666666666,
+      "S_note": "held-out predictive fit: 11/12 held-out do(u) within ε=2.4 (calib=12, fit Δy≈0.0·attr+2.0)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
     },
     "y_full": 0.0
   },
@@ -134,14 +144,14 @@
   "method": "vanilla_saliency",
   "metric_name": "pearson_corr_with_oracle",
   "n": 24,
-  "oracle_ref": "oracle_intervene@pooyan#screen_region(n_changed_px)@r105c80",
+  "oracle_ref": "oracle_intervene@pooyan#screen_region(n_changed_px)@r110c80",
   "paper": "P2",
   "phase": "phaseB_attribution",
   "seed": 0,
   "state": "gameplay(seed=0,prefix=90)+15",
   "stderr": null,
-  "target_output": "screen_region(n_changed_px)@r105c80",
-  "timestamp": "1783019111",
+  "target_output": "screen_region(n_changed_px)@r110c80",
+  "timestamp": "1793010485",
   "value": 0.0,
   "where": "local"
 }

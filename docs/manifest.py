@@ -458,7 +458,7 @@ PAPER2 = {
             "value": "54 records",
             "detail": "Connectomics, single-unit lesions, tuning curves, pairwise correlations, "
                       "LFP spectra, Granger causality, NMF/PCA, whole-state — each scored "
-                      "against the true read/write graph over the 42 scored games.",
+                      "against the true read/write graph over the 44 scored games.",
             "script": "tools/xai_study/phaseA_kording/A1_connectomics.jl",
             "command": "julia --project=jutari tools/xai_study/phaseA_kording/A2_lesions.jl --games core",
             "artifact": "tools/xai_study/phaseA_kording/out/",
@@ -1080,7 +1080,7 @@ P2_METHOD_ABOUT = {
    "layers, so it needs attention weights that the VCS does not have. VIPER distils a learned "
    "policy into a decision tree, so it needs a trained policy, and the VCS runs a fixed ROM, not "
    "a learned agent. The VCS is a 6502 CPU with a TIA video chip and a RIOT, executing "
-   "hand-written machine code. Across all 42 scored games the count of each required substrate, "
+   "hand-written machine code. Across all 44 scored games the count of each required substrate, "
    "convolutional layer, attention matrix, learned policy, is exactly zero. Re-targeting "
    "Grad-CAM's pooling onto the raw register state would simply be the content-path gradient "
    "under a different name, so it would add nothing. We therefore mark these methods as 'does not "
@@ -1400,7 +1400,7 @@ P2_METHOD_HOWSCORED = {
    "minority of games, so the position score stays low while the content score stays high. The "
    "completeness property, that attributions sum to the output change, does not rescue the "
    "position regime. The audit box reports the all-regime faithfulness, which averages the strong "
-   "content result and the weak position result across the 42 scored games, so the single number "
+   "content result and the weak position result across the 44 scored games, so the single number "
    "sits between the two.",
  "guided_backprop":
    "The score is the Pearson correlation of the guided-backprop map with the oracle's exact "
@@ -1428,7 +1428,7 @@ P2_METHOD_HOWSCORED = {
    "restores a non-zero position gradient, but that restored gradient is faithful on only a "
    "minority of games, so the position score stays low. The content score stays high. So the "
    "all-regime faithfulness sits in the middle, as an average of the strong content result and "
-   "the weak position result across the 42 scored games. The audit box reports that measured "
+   "the weak position result across the 44 scored games. The audit box reports that measured "
    "number. SmoothGrad is a clean test of whether the popular denoise-the-gradient fix rescues "
    "attribution on discrete game logic, and the score shows that it does not.",
  "ig_baseline_sweep":
@@ -1459,7 +1459,7 @@ P2_METHOD_HOWSCORED = {
    "for the usual reason: the naive gradient is zero on a discrete strobe-timed step and "
    "averaging baselines does not change that. Its plausibility proxy is high, which places it "
    "squarely in the danger zone of high plausibility with low faithfulness. The audit box reports "
-   "the measured all-regime faithfulness across the 42 scored games, so the low number is an "
+   "the measured all-regime faithfulness across the 44 scored games, so the low number is an "
    "average over the whole scored set, not one unlucky game.",
  "occlusion":
    "The score is the Pearson correlation of the occlusion map with the oracle's exact causal map, "
@@ -1473,7 +1473,7 @@ P2_METHOD_HOWSCORED = {
    "well above the gradient methods', and its all-regime faithfulness is the highest among the "
    "attribution methods. Its only shortfall relative to the exact oracle is granularity: it "
    "perturbs at the size of the occluder and can miss fine or joint effects that the oracle "
-   "captures exactly. The audit box reports the measured all-regime faithfulness across the 42 "
+   "captures exactly. The audit box reports the measured all-regime faithfulness across the 44 "
    "scored games. Occlusion is the clearest attribution-side evidence that a method is faithful "
    "exactly when its mechanism is a valid intervention on the real system.",
  "perturbation":
@@ -1488,7 +1488,7 @@ P2_METHOD_HOWSCORED = {
    "Minimality is central to this method, because it explicitly seeks the smallest disruptive "
    "mask, so the score rewards a mask that is both on-target and small. The grading never "
    "compares the mask to another method's mask, only to the oracle's minimal set. The audit box "
-   "reports the measured all-regime faithfulness across the 42 scored games, so the number "
+   "reports the measured all-regime faithfulness across the 44 scored games, so the number "
    "reflects the whole scored set rather than the single game where the optimised mask happens to "
    "line up best with the true causes.",
  "rise":
@@ -1502,7 +1502,7 @@ P2_METHOD_HOWSCORED = {
    "less informative, so the estimate is noisier and the position score drops below the content "
    "score. The accuracy also depends on how many masks are drawn, since RISE is a Monte-Carlo "
    "estimate. The grading is always against the oracle, never against another method. The audit "
-   "box reports the measured all-regime faithfulness across the 42 scored games, which averages "
+   "box reports the measured all-regime faithfulness across the 44 scored games, which averages "
    "the stronger content result and the weaker position result. RISE shows that a truly "
    "perturbation-based method can beat the gradient family on discrete outputs while still paying "
    "for using random rather than targeted interventions.",
@@ -1519,7 +1519,7 @@ P2_METHOD_HOWSCORED = {
    "neighbourhood is sampled and on the surrogate's fit, so it can vary across runs, and we "
    "report that stability alongside the correlation. The grading never compares LIME to another "
    "method, only to the oracle. The audit box reports the measured all-regime faithfulness across "
-   "the 42 scored games, so the number reflects the whole scored set. On the VCS we can test the "
+   "the 44 scored games, so the number reflects the whole scored set. On the VCS we can test the "
    "surrogate against the exact answer, which a real network never allows.",
  "kernelshap":
    "The score is the Pearson correlation of the estimated Shapley values with the oracle's exact "
@@ -1533,7 +1533,7 @@ P2_METHOD_HOWSCORED = {
    "Shapley values sum to the difference between the intact and fully masked outputs, which is an "
    "internal consistency check. The cost the score implicitly reflects is convergence: too few "
    "coalitions leave the estimate noisy. The grading is always against the oracle, never against "
-   "another method. The audit box reports the measured all-regime faithfulness across the 42 "
+   "another method. The audit box reports the measured all-regime faithfulness across the 44 "
    "scored games. On the VCS the theoretical fairness of the Shapley value becomes a measured "
    "faithfulness number, tested against an exact answer the method never sees on a real network.",
  "counterfactual":
@@ -1549,12 +1549,12 @@ P2_METHOD_HOWSCORED = {
    "valid edit exists, the single-edit search only partly recovers the true minimal set, so the "
    "correlation stays modest. Minimality is central here, because the method explicitly seeks the "
    "smallest flipping edit. The grading is always against the oracle. The audit box reports the "
-   "measured all-regime faithfulness across the 42 scored games, so the moderate number reflects both "
+   "measured all-regime faithfulness across the 44 scored games, so the moderate number reflects both "
    "the no-op frames and the partial recovery on the frames where the search does run.",
  "na_audit":
    "This entry is not scored on the faithfulness leaderboard, and that is deliberate. Grad-CAM, "
    "attention rollout, and VIPER need a convolutional layer, an attention matrix, or a learned "
-   "policy that the VCS does not have. Across all 42 scored games the count of each required "
+   "policy that the VCS does not have. Across all 44 scored games the count of each required "
    "substrate is exactly zero, against many genuine candidate causes per game for the methods "
    "that do apply. A faithfulness number would be meaningless, because there is no map to compare "
    "to the oracle. So we record a measured structural fact, applies equals false, rather than "
