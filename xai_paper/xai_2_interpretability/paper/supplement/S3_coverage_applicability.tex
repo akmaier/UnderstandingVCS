@@ -1,66 +1,78 @@
 \section{Coverage and applicability}\label{supp:coverage}
 
-The benchmark scores methods on a six-game core drawn from a larger bit-exact substrate. The
-coverage table makes the scope of that choice explicit. Paper~1 validates the
+The benchmark scores methods on a 42-game scored set drawn from a larger bit-exact substrate,
+with a six-game core as the running example. The coverage table makes the scope of that choice
+explicit. Paper~1 validates the
 differentiable VCS ports bit-for-bit against the \texttt{xitari} reference on all 64 Arcade
 Learning Environment games, within a 30-frame RAM and 60-frame screen window. The
-interpretability study reported here runs on the six games listed in
-Table~\ref{supp:tab:coverage}. Every method is scored on a shared gameplay state, produced by
+six core games listed in Table~\ref{supp:tab:coverage} carry the full tiered ground truth; the
+aggregate scores extend the same protocol to the 42-game scored set of
+\Sectionname\ref{supp:scoredset}. Every method is scored on a shared gameplay state, produced by
 one seeded random-action stream (seed~$0$, $90$-frame prefix, $15$-frame analysis horizon), not
-on the boot screen. This keeps the analysis inside the Paper~1 bit-exact window while giving the
-oracle a rich, non-degenerate cause set to score against. We pick these six games because all
+on the boot screen. This gives the oracle a rich, non-degenerate cause set to score against.
+The scored frame ($105$) lies beyond the window Paper~1 certifies, which is $30$ RAM and $60$
+screen frames on fixed action streams. A later $3{,}600$-frame check on Paper~1's fixed action
+streams matches \texttt{xitari} on every frame in RAM for 63 of 64 games and on screen for 62 of
+64; the exceptions are transient and none is a core game. The oracle in addition asserts
+determinism by re-running each scored state twice. We pick these six games as the core because all
 three tiers of ground truth (\Sectionname\ref{sec:tiers}) are available for them and the oracle is
-exact. The remaining 58 games are
-bit-exact substrate but are not scored here. Some fall outside the validated horizon for the
-analyses we run. For others, the tiered labels they would need are not yet produced. They are
-candidates for the larger sweep. \Sectionname\ref{supp:t3coverage}
+exact. Of the remaining 58 games, 36 more enter the scored set. The other 22 are bit-exact
+substrate but are not scored: 10 carry no T3 label, and 12 labeled games are held out for the
+two methodological reasons of \Sectionname\ref{supp:scoredset}. \Sectionname\ref{supp:t3coverage}
 (Table~\ref{supp:tab:t3coverage}) records how far the external T3 labels reach across the
-64-game roster, defining a 54-game labeled breadth set from which that sweep will draw; the
-six games here are the core subset of it that carries the full tiered ground truth. Games are
-not excluded for any methodological reason. The
-horizon column records the validated window. The tier column records which of the three
+64-game roster, defining the 54-game labeled breadth set from which the scored set is drawn. The
+conformance column records the certified Paper~1 window and the later $3{,}600$-frame check. The tier column records which of the three
 ground-truth tiers (T1 exact intervention, T2 data-flow, T3 externally-supplied semantic
 labels) is available.
 
 \begin{table}[t]
 \centering
 \caption{\textbf{Core-game coverage.} The six core games carry exact tiered ground truth and
-the full set of methods. Faithfulness is scored within the Paper~1 bit-exact window. The
-last two columns give the methods run and the per-game output records contributed. The wider
-64-game substrate is bit-exact (Paper~1) but is reserved for the larger sweep. T3 labels are
+the full set of methods. ``30/60; 3600'' is the certified Paper~1 window (30 RAM / 60 screen
+frames) and the later $3{,}600$-frame check on Paper~1's fixed action streams; scoring happens
+at frame $105$, beyond the certified window. $^{a}$The $3{,}600$-frame check has transient
+exceptions in \texttt{alien} and \texttt{carnival} (screen) and \texttt{amidar} (RAM). The
+last two columns give the methods run and the per-game output records contributed. A further
+36 games complete the 42-game scored set (\Sectionname\ref{supp:scoredset}); the remaining 22
+games of the bit-exact 64-game substrate (Paper~1) are not scored. T3 labels are
 external (\Sectionname\ref{sec:tiers}); we record this so the benchmark does not appear to certify them.}
 \label{supp:tab:coverage}
 \footnotesize
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}p{2.4cm}p{1.9cm}p{1.5cm}p{1.7cm}p{1.5cm}p{1.4cm}@{}}
 \toprule
-Game & Paper-1 status & Horizon & Tiers & Methods run & Records \\
+Game & Paper-1 status & Conformance & Tiers & Methods run & Records \\
 \midrule
-breakout & bit-exact & 30/60 fr & T1,T2,T3 & 30 + oracle & per-game \\
-ms\_pacman & bit-exact & 30/60 fr & T1,T2,T3 & 30 + oracle & per-game \\
-pong & bit-exact & 30/60 fr & T1,T2,T3 & 30 + oracle & per-game \\
-qbert & bit-exact & 30/60 fr & T1,T2,T3 & 30 + oracle & per-game \\
-seaquest & bit-exact & 30/60 fr & T1,T2,T3 & 30 + oracle & per-game \\
-space\_invaders & bit-exact & 30/60 fr & T1,T2,T3 & 30 + oracle & per-game \\
+breakout & bit-exact & 30/60; 3600 fr & T1,T2,T3 & 30 + oracle & per-game \\
+ms\_pacman & bit-exact & 30/60; 3600 fr & T1,T2,T3 & 30 + oracle & per-game \\
+pong & bit-exact & 30/60; 3600 fr & T1,T2,T3 & 30 + oracle & per-game \\
+qbert & bit-exact & 30/60; 3600 fr & T1,T2,T3 & 30 + oracle & per-game \\
+seaquest & bit-exact & 30/60; 3600 fr & T1,T2,T3 & 30 + oracle & per-game \\
+space\_invaders & bit-exact & 30/60; 3600 fr & T1,T2,T3 & 30 + oracle & per-game \\
 \midrule
-58 further games & bit-exact (P1) & 30/60 fr & T1,T2 partial & reserved & --- \\
+36 further scored games & bit-exact & 30/60; 3600$^{a}$ fr & T1,T2,T3 & up to 30 + oracle & per-game \\
+22 unscored games & bit-exact & 30/60; 3600$^{a}$ fr & T1,T2 partial & not scored & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 A gameplay state can still be degenerate for a particular method, and the benchmark records
-this rather than scoring it as a failure. The oracle cause-density gate is the first guard. It
-counts how many candidate causes move the shared output above a floor, and rejects a state that
-does not clear a minimum count, so a near-flat oracle column never reaches a method. On
-\texttt{seaquest} the gate raises the count of live candidate causes at the analysis frame from
-$2$ to $19$, which is what makes the game usable. Three residual degenerate cells survive the
-gate and are marked, not scored as zero. On \texttt{ms\_pacman} the pairwise neuroscience
-analysis (A4) finds no coupled candidate pair at that frame, so its cell is uninformative. The
-on-distribution counterfactual returns a zero delta on \texttt{space\_invaders},
-\texttt{ms\_pacman}, and \texttt{qbert}, where its perturbation does not move the shared output;
-those cells are recorded as not-valid. Expected Gradients scores low on the content regime of
-every game but \texttt{pong}, because the causal byte it should attribute to is static there.
-None of these cells is read as a wrong answer.
+this explicitly. The oracle cause-density gate is the first guard. It
+counts how many candidate causes move the shared output by more than $0.5$ and flags a state with
+fewer than four. The gate does not re-sample the state; a game whose shared state is flagged is
+held out of the scored set (\Sectionname\ref{supp:scoredset}), so a near-flat oracle column never
+enters the leaderboard. On \texttt{seaquest} the shared gameplay state and output raise the count
+of live candidate causes at the analysis frame from $2$ to $19$, which is what makes the game
+usable. Three residual degenerate patterns survive the gate. The pairwise neuroscience analysis (A4)
+finds no coupled candidate pair on \texttt{ms\_pacman} at the shared state, so it does not score
+that game, as for the other games A4 does not score ($33$ of $42$ are scored); an earlier
+\texttt{ms\_pacman} record produced before the shared testbed has been removed. The on-distribution counterfactual returns a zero delta
+on \texttt{space\_invaders}, \texttt{ms\_pacman}, and \texttt{qbert}, where its perturbation
+does not move the shared output; those cells record $F=0$. Expected Gradients scores low on the
+content regime of every game but \texttt{pong}, because the causal byte it should attribute to
+is static there. These last two enter the leaderboard means at their recorded values; we name
+them so that the low scores are read as degenerate cells rather than as evidence about the
+method.
 
 Whether a method applies at all depends on what the method needs from its target. The
 applicability matrix records that for every method family. The Phase~A neuroscience analyses
@@ -107,8 +119,8 @@ labels imported from AtariARI~\cite{anand2019unsupervised} and OCAtari~\cite{del
 not derived by our oracle. This subsection documents where such labels \emph{exist}, so that the
 breadth and position analyses can, in principle, scale beyond the six-game core of
 Table~\ref{supp:tab:coverage}. It reports label \emph{availability and provenance} only. It does
-not report any result on the wider set. The larger sweep is in progress and has produced no
-scores yet; nothing below should be read as a score.
+not report any score; the scores on the 42-game scored set drawn from it are in
+\Sectionname\ref{supp:protocols}.
 
 The counts are computed, not estimated. We intersect our bit-exact roster with the games that
 carry a label in the installed source of each project: the OCAtari object-property tables and the

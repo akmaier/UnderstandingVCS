@@ -90,7 +90,8 @@ gradient is provably zero (Prop.~\ref{prop:zero}). A reader could dismiss that z
 artifact of a discrete index, so we remove it: turning the differentiable port's bilinear
 sampler on --- a sub-pixel interpolation that makes the discrete position read smooth ---
 restores the position gradient, and the gradient methods become faithful too on the games with a moving tracked
-sprite. Making them faithful does not change the conclusion, because faithfulness was never the
+sprite. A gradient through the whole running program, instead of a single read, returns the
+same map. Making them faithful does not change the conclusion, because faithfulness was never the
 dividing line.
 
 With the same oracle we ask what a faithful method \emph{delivers}, and the answer is always
@@ -103,7 +104,7 @@ computed, not its wiring ---
 The data then show a gap in both directions: a circuit that is graph-correct and minimal yet
 does not reproduce the behavior it explains, and a learned feature that matches a named game
 variable perfectly yet is causally unused: removing it does not change the output. We name this residual the \emph{semantic gap}, and
-it does not shrink when faithfulness is made universal. The per-method scores are reported in
+it does not shrink where faithfulness is restored. The per-method scores are reported in
 \Sectionname\ref{sec:results} (Tables~\ref{tab:phaseA}--\ref{tab:phaseC} and
 Figs.~\ref{fig:faithfulness} and~\ref{fig:sampler}).
 
@@ -184,6 +185,6 @@ closing it.
 %   pages     = {2733--2743}, year = {2019}}
 %
 % @misc{maier2025vcs,
-%   title  = {A Bit-Exact, Differentiable Atari 2600 (Paper 1)},
-%   author = {Maier, Andreas and Bayer, Stefan and Krauss, Patrick},
-%   year   = {2025}, note = {companion paper; this program}}
+%   title  = {A Differentiable {Atari} {VCS}: A Complex, Fully Known Ground Truth for Explainable {AI}},
+%   author = {Maier, Andreas and Bayer, Siming and Krauss, Patrick},
+%   year   = {2026}, eprint = {2606.22447}, note = {companion paper; see references.bib}}

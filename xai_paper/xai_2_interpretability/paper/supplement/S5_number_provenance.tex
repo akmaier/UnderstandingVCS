@@ -30,19 +30,19 @@ relative to \texttt{tools/xai\_study/}.}
 \toprule
 Number & Value & Record (JSON key) & Command \\
 \midrule
-Faithfulness gap, all regimes (causal $-$ gradient) & $0.3213$\newline {\scriptsize$[0.294,0.348]$, excl.\ $0$} & \jkey{position_bootstrap.json}: \jkey{all\_regime.family\_mean\_gap}, \jkey{ci95} & \jkey{position_bootstrap.py} \\
-Causal/interv.\ mean F, all regimes & $0.705$\newline {\scriptsize$n{=}11$} & \jkey{leaderboard.json}: \jkey{family_causal_intervention} \jkey{mean} & \jkey{leaderboard.py} \\
-Gradient/corr.\ mean F, all regimes & $0.384$\newline {\scriptsize$n{=}14$} & \jkey{leaderboard.json}: \jkey{family_gradient_correlational} \jkey{mean} & \jkey{leaderboard.py} \\
-Faithfulness gap, position regime (bootstrap over games) & $0.3264$\newline {\scriptsize$[0.277,0.375]$, excl.\ $0$} & \jkey{position_bootstrap.json}: \jkey{family_mean_gap}, \jkey{ci95} & \jkey{position_bootstrap.py} \\
-Causal/interv.\ mean F, position regime & $0.561$\newline {\scriptsize$\pm0.3212$, $n{=}4$} & \jkey{leaderboard.json}: \jkey{family_..._intervention_position} \jkey{mean} & \jkey{leaderboard.py} \\
-Gradient/corr.\ mean F, position regime & $0.2343$\newline {\scriptsize$\pm0.156$, $n{=}9$} & \jkey{leaderboard.json}: \jkey{family_..._correlational_position} \jkey{mean} & \jkey{leaderboard.py} \\
+Faithfulness gap, all regimes (causal $-$ gradient) & $0.321$\newline {\scriptsize$[0.293,0.348]$, excl.\ $0$} & \jkey{position_bootstrap.json}: \jkey{all\_regime.family\_mean\_gap}, \jkey{ci95} & \jkey{position_bootstrap.py} \\
+Causal/interv.\ mean F, all regimes & $0.705$\newline {\scriptsize$n{=}11$} & \jkey{leaderboard.json}: \jkey{headline_contrast.all_regimes.causal_...mean} & \jkey{leaderboard.py} \\
+Gradient/corr.\ mean F, all regimes & $0.385$\newline {\scriptsize$n{=}14$} & \jkey{leaderboard.json}: \jkey{headline_contrast.all_regimes.gradient_...mean} & \jkey{leaderboard.py} \\
+Faithfulness gap, position regime (bootstrap over games) & $0.3264$\newline {\scriptsize$[0.277,0.375]$, excl.\ $0$} & \jkey{position_bootstrap.json}: \jkey{position.family_mean_gap}, \jkey{ci95} & \jkey{position_bootstrap.py} \\
+Causal/interv.\ mean F, position regime & $0.561$\newline {\scriptsize$\pm0.3212$, $n{=}4$} & \jkey{leaderboard.json}: \jkey{headline_contrast.position_regime.causal_...mean} & \jkey{leaderboard.py} \\
+Gradient/corr.\ mean F, position regime & $0.2346$\newline {\scriptsize$\pm0.156$, $n{=}9$} & \jkey{leaderboard.json}: \jkey{headline_contrast.position_regime.gradient_...mean} & \jkey{leaderboard.py} \\
 Decisive pair, position regime (act.\ patch vs.\ vanilla sal.) & $1.000$\newline vs.\ $0.115$ & \texttt{faithful\_demo}: \jkey{pair_contrast} & \jkey{faithful_demo.py} \\
-Plausibility proxy, decisive pair & $0.5$ vs.\ $0.9$ & \texttt{faithful\_demo}: \jkey{...plausibility_proxy} & \jkey{faithful_demo.py} \\
-ACDC sufficiency $S$ & $0.299$ & \jkey{leaderboard.json}: ACDC \jkey{triad_S} & \jkey{leaderboard.py} \\
+Plausibility proxy, decisive pair & $0.5$ vs.\ $0.9$ & \texttt{faithful\_demo}: \jkey{..._method.plausibility_proxy} & \jkey{faithful_demo.py} \\
+ACDC sufficiency $S$ & $0.300$ & \jkey{leaderboard.json}: ACDC \jkey{triad_S} & \jkey{leaderboard.py} \\
 Whole-state minimality $M$ & $0.0755$ & \jkey{leaderboard.json}: A8 \jkey{triad_M} & \jkey{leaderboard.py} \\
 Methods scored (rows) & $31$ & \texttt{leaderboard}: \jkey{n_methods} & \jkey{leaderboard.py} \\
-Per-game records aggregated & $1773$ & \texttt{leaderboard}: \jkey{n_per_game_records_aggregated} & \jkey{leaderboard.py} \\
-Naive gradient, discrete position output & position $0$;\newline content $1.0$; sampler $166$ & \jkey{oracle_grad_pong.json}: \texttt{value}, \jkey{extra.sampler} & \jkey{oracle_grad.jl} \\
+Per-game records aggregated & $1772$ & \texttt{leaderboard}: \jkey{n_per_game_records_aggregated} & \jkey{leaderboard.py} \\
+Naive gradient, discrete position output & position $0$;\newline content $1.0$; sampler $166$ & \jkey{oracle_grad_pong.json}: \texttt{value}, \jkey{extra.index}, \jkey{extra.sampler} & \jkey{oracle_grad.jl} \\
 Exact oracle $\max|\Delta\text{score}|$ (Pong) & $17.0$ & \jkey{oracle_pong_score.json}: \texttt{value} & \jkey{oracle_intervene.jl} \\
 \bottomrule
 \end{tabular}

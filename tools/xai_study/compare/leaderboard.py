@@ -319,10 +319,15 @@ def load_per_game_records(scored_only=True):
     whereas the battery grades activation_patching on the whole-behaviour interchange
     metric (no position regime). Leaving them in double-counted that one Pong point
     and inflated the causal position-family mean (0.415 -> 0.561), and with it the
-    position gap (0.180 -> 0.327). Excluding them makes aggregation the battery only."""
+    position gap (0.180 -> 0.327). Excluding them makes aggregation the battery only.
+
+    ``e2e_*`` records are SKIPPED too. They are the 6-core-game true end-to-end gradient
+    arm (phaseB_attribution/e2e_gradient.jl, 2026-10-26): a sub-study of vanilla saliency /
+    Grad×Input on the same shared testbed, reported separately in Paper 2 §5 (Results B).
+    It is not a 42-game battery method, so it gets no leaderboard row of its own."""
     for phase, d in PHASE_DIRS.items():
         for path in sorted(glob.glob(os.path.join(d, "*.json"))):
-            if os.path.basename(path).startswith("pilot"):
+            if os.path.basename(path).startswith(("pilot", "e2e_")):
                 continue
             try:
                 rec = json.load(open(path))

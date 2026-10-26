@@ -14,13 +14,17 @@ It is a shared gameplay state, produced by a single seeded random-action stream 
 for a $90$-frame prefix and then rolled forward for a $15$-frame analysis horizon. The stream is
 deterministic, so every method sees the identical state on each game, and the run is asserted
 bit-exact per game. An oracle cause-density gate screens the state before any method runs. The
-gate counts how many candidate causes move the output above a floor and rejects states with too
-few, so a near-flat oracle column cannot pass. This gate is what turns a degenerate frame into a
-usable one; on \texttt{seaquest} it raises the count of live candidate causes from $2$ to $19$.
+gate counts how many candidate causes move the output by more than $0.5$ and flags a state with
+fewer than four. It does not re-sample the state; a game whose shared state fails the gate is
+left out of the scored set (\Sectionname\ref{supp:scoredset}), so a near-flat oracle column is
+never scored. On \texttt{seaquest} the redesigned shared state and output raise the count of
+live candidate causes from $2$ to $19$.
 The candidate-cause set is the machine's own state. This set is the RAM bytes together with the
 CPU registers and the TIA and RIOT registers exposed by the substrate. The output every method
-attributes over is a shared screen-buffer region read at the end of the analysis horizon, not a
-single hand-picked pixel. The reference is the intervention oracle of \Sectionname\ref{sec:oracle},
+attributes over is a shared screen-buffer count read at the end of the analysis horizon, not a
+single hand-picked pixel. It counts the pixels of the whole frame that differ from the
+un-intervened frame; the record label \texttt{screen\_region(n\_changed\_px)@r$\cdot$c$\cdot$}
+names only the cell at which the sampler gradient is taken. The reference is the intervention oracle of \Sectionname\ref{sec:oracle},
 evaluated by exact re-runs of the emulator under $\mathrm{do}(u)$. A method that
 cannot be applied to a given output regime is recorded as not-applicable rather than scored
 as zero. An empty result is therefore never read as a wrong one. Faithfulness is the F
@@ -34,11 +38,13 @@ oracle positive control in one place; the per-method protocols follow.
 \centering
 \caption{\textbf{Consolidated leaderboard: all methods, all triad axes.} One row per method
 across the three phases, plus the intervention oracle as a positive control. $F$ is
-faithfulness (Pearson correlation against the oracle, with the bootstrap-over-games 95\% CI in
-brackets), $S$ is sufficiency, $M$ is minimality, all as defined in \Sectionname\ref{sec:triad};
-Plaus is the elicited plausibility prior and $n$ is the number of scored games. Attribution
-methods that emit only a saliency have no defined $S$ or $M$ and are marked ``---''; A5
-(field potentials) and A7 (dimensionality reduction) likewise lack the $S$/$M$ decomposition.
+faithfulness (the per-method metric against the oracle, with the bootstrap-over-games 95\% CI in
+brackets), $S$ is sufficiency, $M$ is minimality, all as defined in \Sectionname\ref{sec:triad}.
+Every per-record $F$, $S$, and $M$ is clipped to $[0,1]$ before averaging, while the per-game records
+keep the raw value;
+Plaus is the tradition-level plausibility proxy and $n$ is the number of scored games. A5
+(field potentials) and A7 (dimensionality reduction) lack the $S$/$M$ decomposition, and path
+patching, the logit lens, and linear probing carry no $S$; these cells are marked ``---''.
 Values are transcribed from \texttt{tools/xai\_study/compare/out/leaderboard.json} (the
 committed numbers of record).}
 \label{supp:leaderboard}
@@ -48,38 +54,38 @@ committed numbers of record).}
 \toprule
 Method & Phase & Tradition & $F$ (95\% CI) & $S$ & $M$ & Plaus & $n$ \\
 \midrule
-A1 connectomics & A & intervention & 0.207 [0.130, 0.293] & 0.971 & 0.967 & 0.55 & 35 \\
-A2 lesions & A & intervention & 0.965 [0.942, 0.983] & 0.591 & 1.000 & 0.55 & 42 \\
-A3 tuning curves & A & correlational & 0.213 [0.136, 0.295] & 0.200 & 0.926 & 0.80 & 42 \\
-A4 spike-word / pairwise & A & correlational & 0.225 [0.166, 0.283] & 0.133 & 0.363 & 0.80 & 34 \\
-A5 field potentials & A & correlational & 0.376 [0.323, 0.428] & --- & --- & 0.80 & 40 \\
-A6 Granger & A & correlational & 0.136 [0.091, 0.184] & 0.884 & 0.647 & 0.80 & 35 \\
-A7 dim.\ reduction & A & dim.\ red. & 0.519 [0.457, 0.581] & --- & --- & 0.75 & 42 \\
-A8 whole-state & A & descriptive & 1.000 [1.000, 1.000] & 1.000 & 0.075 & 0.30 & 42 \\
+A1 connectomics & A & intervention & 0.207 [0.128, 0.286] & 0.971 & 0.967 & 0.55 & 35 \\
+A2 lesions & A & intervention & 0.965 [0.942, 0.984] & 0.589 & 1.000 & 0.55 & 42 \\
+A3 tuning curves & A & correlational & 0.213 [0.140, 0.294] & 0.200 & 0.926 & 0.80 & 42 \\
+A4 spike-word / pairwise & A & correlational & 0.231 [0.175, 0.291] & 0.137 & 0.372 & 0.80 & 33 \\
+A5 field potentials & A & correlational & 0.376 [0.323, 0.436] & --- & --- & 0.80 & 40 \\
+A6 Granger & A & correlational & 0.136 [0.092, 0.185] & 0.884 & 0.647 & 0.80 & 35 \\
+A7 dim.\ reduction & A & dim.\ red. & 0.519 [0.457, 0.576] & --- & --- & 0.75 & 42 \\
+A8 whole-state & A & descriptive & 1.000 [1.000, 1.000] & 1.000 & 0.076 & 0.30 & 42 \\
 \midrule
-Vanilla saliency & B & gradient & 0.380 [0.316, 0.445] & --- & --- & 0.90 & 42 \\
-smoothgrad & B & gradient & 0.380 [0.317, 0.445] & --- & --- & 0.90 & 42 \\
-Guided backprop & B & gradient & 0.322 [0.267, 0.375] & --- & --- & 0.90 & 42 \\
-Grad$\times$Input / DeepLIFT & B & gradient & 0.486 [0.448, 0.526] & --- & --- & 0.90 & 42 \\
-Integrated Gradients & B & gradient & 0.379 [0.314, 0.444] & --- & --- & 0.90 & 42 \\
-Expected Gradients & B & gradient & 0.175 [0.110, 0.240] & --- & --- & 0.90 & 42 \\
-kernelshap & B & gradient & 0.652 [0.596, 0.709] & --- & --- & 0.90 & 42 \\
-lime & B & gradient & 0.644 [0.582, 0.705] & --- & --- & 0.90 & 42 \\
-rise & B & gradient & 0.552 [0.500, 0.600] & --- & --- & 0.90 & 42 \\
-occlusion & B & intervention & 0.687 [0.624, 0.746] & --- & --- & 0.55 & 42 \\
-Extremal perturbation & B & intervention & 0.461 [0.410, 0.513] & --- & --- & 0.55 & 42 \\
-On-distribution counterfactual & B & intervention & 0.433 [0.343, 0.522] & --- & --- & 0.55 & 42 \\
+Vanilla saliency & B & gradient & 0.380 [0.314, 0.442] & 0.593 & 0.979 & 0.90 & 42 \\
+smoothgrad & B & gradient & 0.380 [0.315, 0.443] & 0.597 & 0.981 & 0.90 & 42 \\
+Guided backprop & B & gradient & 0.322 [0.264, 0.375] & 0.572 & 0.964 & 0.90 & 42 \\
+Grad$\times$Input / DeepLIFT & B & gradient & 0.486 [0.448, 0.525] & 0.625 & 0.993 & 0.90 & 42 \\
+Integrated Gradients & B & gradient & 0.379 [0.316, 0.440] & 0.591 & 0.984 & 0.90 & 42 \\
+Expected Gradients & B & gradient & 0.175 [0.115, 0.242] & 0.576 & 1.000 & 0.90 & 42 \\
+kernelshap & B & gradient & 0.652 [0.594, 0.710] & 0.657 & 0.570 & 0.90 & 42 \\
+lime & B & gradient & 0.644 [0.582, 0.706] & 0.655 & 0.557 & 0.90 & 42 \\
+rise & B & gradient & 0.552 [0.502, 0.602] & 0.583 & 0.348 & 0.90 & 42 \\
+occlusion & B & intervention & 0.687 [0.628, 0.741] & 0.667 & 0.973 & 0.55 & 42 \\
+Extremal perturbation & B & intervention & 0.460 [0.407, 0.513] & 0.630 & 0.969 & 0.55 & 42 \\
+On-distribution counterfactual & B & intervention & 0.433 [0.338, 0.522] & 0.639 & 0.989 & 0.55 & 42 \\
 \midrule
-Activation patching & C & causal & 1.000 [1.000, 1.000] & --- & --- & 0.50 & 42 \\
+Activation patching & C & causal & 1.000 [1.000, 1.000] & 0.996 & 0.973 & 0.50 & 42 \\
 Causal scrubbing & C & causal & 0.979 [0.940, 1.000] & 0.979 & 0.814 & 0.50 & 42 \\
-Interchange interventions (DAS) & C & causal & 1.000 [1.000, 1.000] & --- & --- & 0.50 & 42 \\
-Logit / tuned lens & C & causal & 0.820 [0.768, 0.871] & --- & 0.224 & 0.50 & 42 \\
-Path patching & C & causal & 0.580 [0.452, 0.710] & --- & --- & 0.50 & 42 \\
-ACDC & C & causal & 0.625 [0.514, 0.730] & 0.299 & 1.000 & 0.50 & 35 \\
-Attribution patching & C & gradient & 0.456 [0.345, 0.573] & --- & --- & 0.90 & 42 \\
-Linear probing (+ control) & C & probing & 0.240 [0.153, 0.346] & --- & 0.932 & 0.85 & 42 \\
-NMF / PCA dictionaries & C & dim.\ red. & 0.102 [0.049, 0.160] & 0.751 & 0.966 & 0.75 & 42 \\
-Sparse autoencoder & C & dim.\ red. & 0.153 [0.096, 0.218] & 0.183 & 0.934 & 0.75 & 40 \\
+Interchange interventions (DAS) & C & causal & 1.000 [1.000, 1.000] & 1.000 & 0.890 & 0.50 & 42 \\
+Logit / tuned lens & C & causal & 0.820 [0.765, 0.869] & --- & 0.224 & 0.50 & 42 \\
+Path patching & C & causal & 0.580 [0.444, 0.710] & --- & 1.000 & 0.50 & 42 \\
+ACDC & C & causal & 0.625 [0.508, 0.731] & 0.300 & 1.000 & 0.50 & 35 \\
+Attribution patching & C & gradient & 0.456 [0.349, 0.572] & 0.769 & 0.995 & 0.90 & 42 \\
+Linear probing (+ control) & C & probing & 0.240 [0.152, 0.344] & --- & 0.932 & 0.85 & 27 \\
+NMF / PCA dictionaries & C & dim.\ red. & 0.102 [0.049, 0.164] & 0.751 & 0.966 & 0.75 & 42 \\
+Sparse autoencoder & C & dim.\ red. & 0.153 [0.092, 0.215] & 0.183 & 0.934 & 0.75 & 40 \\
 \midrule
 Intervention oracle & --- & oracle & 1.000 [1.000, 1.000] & 1.000 & 1.000 & 1.00 & 1 \\
 \bottomrule
@@ -91,10 +97,11 @@ each classical analysis recovers the known mechanism on the shared gameplay stat
 method's baseline is the exact data-flow graph or causal role that the substrate makes
 available. Its budget is the scored set (\Sectionname\ref{supp:scoredset}) unless noted,
 with the six-game core as the running example, and its scoring metric is named in
-Table~\ref{supp:tab:phaseA}. One core cell is honestly degenerate. On \texttt{ms\_pacman} the
-pairwise analysis (A4) finds no coupled candidate pair to score at that frame, so its
-\texttt{ms\_pacman} value is uninformative rather than a failure; the other five games carry
-it.
+Table~\ref{supp:tab:phaseA}. One core cell needs a note. An earlier pairwise-analysis (A4)
+record on \texttt{ms\_pacman}, produced on its own trajectory before the shared testbed existed,
+has been removed. At the shared testbed the A4 runner finds no coupled candidate pair on
+\texttt{ms\_pacman} and does not score it, as for the other games A4 does not score; A4 is
+scored on $33$ of the $42$ games. The other five core games carry A4 on the shared state.
 
 \begin{table}[t]
 \centering
@@ -114,11 +121,11 @@ Method & Input / candidate causes & Reference & Scoring metric & Record \\
 \midrule
 A1 connectomics & RAM/register activity over trajectory & data-flow graph & data-flow graph $F_1$ vs.\ oracle & A1 \\
 A2 lesions & single-cell knockouts via $\mathrm{do}(u)$ & true causal role & lesion-importance $\rho$ vs.\ role & A2 \\
-A3 tuning curves & per-cell response vs.\ variable & variable coupling & $1-$ spurious-tuning rate & A3 \\
+A3 tuning curves & per-cell response vs.\ variable & oracle causal importance & rank corr.\ of tuning selectivity vs.\ importance & A3 \\
 A4 spike-word / pairwise & pairwise cell correlations & true coupling & corr.\ $\rho$ vs.\ coupling & A4 \\
 A5 field potentials & pooled-activity spectra & true causal share & $1-$ clock-explained var. & A5 \\
-A6 Granger & directed lag structure & true data-flow & $1-$ false-edge rate & A6 \\
-A7 dim.\ reduction & NMF/PCA over activity & known variables & NMF matched-component frac. & A7 \\
+A6 Granger & directed lag structure (lag 2, $\alpha=0.05$) & true data-flow & edge $F_1$ vs.\ data-flow & A6 \\
+A7 dim.\ reduction & NMF/PCA over activity & known variables & NMF matched frac.\ of top-5 components (purity $\geq0.5$) & A7 \\
 A8 whole-state & full state record & oracle decomp. & minimality $M$ vs.\ oracle & A8 \\
 \bottomrule
 \end{tabular}
@@ -136,12 +143,22 @@ runs with the bilinear sub-pixel sampler turned on, so it is scored on a real po
 and not on the naive one. The naive gradient of the discrete position output is provably zero
 (Prop.~\ref{prop:zero}); the sampler restores a finite gradient, but the restored gradient is
 low and mixed in faithfulness rather than a fix. Expected Gradients draws its reference pool
-from the states of the same seeded gameplay trajectory, not from a synthetic baseline. Two cells
-are honestly degenerate and recorded as such. The on-distribution counterfactual returns a zero
-delta on \texttt{space\_invaders}, \texttt{ms\_pacman}, and \texttt{qbert}, where its perturbation
-does not move the shared output at that frame; those cells are marked not-valid rather than
-scored. Expected Gradients scores low on the content regime of every game except \texttt{pong},
-because the causal byte it should land on is static there. The budgets that matter are the
+from the states of the same seeded gameplay trajectory, not from a synthetic baseline. Two
+patterns are degenerate rather than informative. The on-distribution counterfactual returns a
+zero delta on \texttt{space\_invaders}, \texttt{ms\_pacman}, and \texttt{qbert}, where its
+perturbation does not move the shared output at that frame; those cells record $F=0$ and enter
+the mean at that value. Expected Gradients scores low on the content regime of every game except \texttt{pong},
+because the causal byte it should land on is static there. The end-to-end gradient control of
+\Sectionname\ref{sec:results-b} (\texttt{e2e\_gradient.jl}, six core games, records
+\texttt{e2e\_\{saliency,gradxinput\}\_$\langle$game$\rangle$\_*} and \texttt{e2e\_core\_summary.json}) is not a
+separate leaderboard row. It differentiates the end-of-horizon output back to the RAM at the
+intervention frame through the full-system soft step, one instruction at a time ($65{,}081$ to
+$99{,}703$ instructions per game). Reverse mode is checkpointed every $200$ instructions, and
+each chunk's soft forward pass is asserted bit-equal to the hard registers and RAM. The
+position output chains the rollout with the same bilinear sampler at the end of the horizon.
+It is scored with the same oracle, causes, and metrics as vanilla saliency. The backward pass
+takes 9--18\,h per game on one CPU core. Two independent runs (ARM and x86) agree to within one
+unit in the last place. The budgets that matter are the
 Monte-Carlo or perturbation counts of the sampling estimators, recorded per method in
 Table~\ref{supp:tab:phaseB}. The seed-dispersion of the stochastic members is carried in
 \texttt{leaderboard\_ci.csv} (\texttt{seed\_sd}, \texttt{seed\_sd\_source}) and reproduced
@@ -167,10 +184,10 @@ smoothgrad & gradient & noise-averaged gradient; $\sigma$-robustness committed &
 Guided backprop & gradient & single guided pass & --- \\
 Grad$\times$Input / DeepLIFT & gradient & DeepLIFT reference-difference & --- \\
 Integrated Gradients & gradient & path integral, baseline = zero state & --- \\
-Expected Gradients & gradient & expectation over baselines (refits) & yes \\
-kernelshap & gradient & Monte-Carlo coalition sampling ($\propto 1/\sqrt{N}$) & 0.017 \\
-lime & gradient & local linear fit, perturbation refits & 0.029 \\
-rise & gradient & random-mask Monte-Carlo ($\propto 1/\sqrt{N}$) & 0.051 \\
+Expected Gradients & gradient & expectation over baselines (refits) & 0.0 \\
+kernelshap & gradient & Monte-Carlo coalition sampling ($\propto 1/\sqrt{N}$) & 0.019 \\
+lime & gradient & local linear fit, perturbation refits & 0.005 \\
+rise & gradient & random-mask Monte-Carlo ($\propto 1/\sqrt{N}$) & 0.061 \\
 occlusion & intervention & exhaustive single-cell masking & --- \\
 Extremal perturbation & intervention & optimized mask, area-constrained & --- \\
 On-distribution counterfactual & intervention & on-manifold $\mathrm{do}(u)$ resampling & --- \\
@@ -209,13 +226,13 @@ Method & Tradition & Scoring metric \\
 Activation patching & causal & $\max|\text{recovered}-\text{exact}|$ vs.\ oracle \\
 Causal scrubbing & causal & scrubbing-preserved performance \\
 Interchange interventions (DAS) & causal & aligned interchange accuracy \\
-Logit / tuned lens & causal & logit-lens fidelity to true intermediate \\
+Logit / tuned lens & causal & faithful-weight fraction (readout fidelity $1.0$ is a positive control) \\
 Path patching & causal & path-circuit $F_1$ vs.\ true routine \\
 ACDC & causal & discovered-circuit best $F_1$ vs.\ data-flow \\
 Attribution patching & gradient & corr.\ of approximation vs.\ exact patch \\
 Linear probing (+ control) & probing & selectivity vs.\ control task \\
 NMF / PCA dictionaries & dim.\ red. & matched-component fraction vs.\ vars \\
-Sparse autoencoder & dim.\ red. & feature-variable matched fraction \\
+Sparse autoencoder & dim.\ red. & Spearman of per-cell recovery vs.\ oracle importance \\
 \bottomrule
 \end{tabular}
 

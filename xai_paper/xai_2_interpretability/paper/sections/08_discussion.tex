@@ -26,7 +26,7 @@ toolkit, and mechanistic interpretability. These traditions are rarely studied t
 the oracle places them on one scale. Jonas and Kording warned that an analyst armed with
 systems neuroscience could fail to understand even a microprocessor, because describing
 structure is not the same as explaining how it works~\cite{jonas2017could}. We make that a
-measurement. The classical analyses recover rich structure yet scores low against the known
+measurement. The classical analyses recover rich structure yet score low against the known
 mechanism. The naive gradient is provably zero on the discrete position regime, and only the
 causal operators reach the ceiling. Mechanistic interpretability has until now been calibrated
 against synthetic or compiled ground truth, transformers with a planted circuit by
@@ -65,12 +65,20 @@ saliency, grad\(\times\)input, smoothgrad, and integrated gradients (Fig.~\ref{f
 restored gradient concentrates on the position byte that drives the sprite, \texttt{ram[54]} on
 Pong; it finds the right cause. Yet the rise is confined to one or two games. Averaged over the
 six position games the restored faithfulness is only about $0.22$ for the SmoothGrad-family
-methods and about $0.09$ for integrated and expected gradients. So a faithful-capable substrate
+methods, $0.09$ for integrated gradients, and $0.13$ for expected gradients. So a faithful-capable substrate
 does not make the gradient method faithful in general. Where it does become faithful, none of these
 methods recovers any meaning, exactly as
 before, and exactly like every other method in the study. Even where the gradient is corrected, it
 identifies the cause but no meaning. So the meaning was never present in the wiring for a method
 to recover.
+
+A second artifact reading also fails. The gradient methods differentiate a single read at the
+intervention frame, so one could argue that a gradient through the running program would do
+better. We computed that gradient on the six core games, through up to $10^5$ bit-exact CPU
+instructions per game (\Sectionname\ref{sec:results-b}). It returned the same one-hot map as the
+single read and the same scores. In two games it lost the position gradient entirely. The
+program's causal structure lives in branches, indexed addressing, and hardware reads, and
+backpropagation does not traverse any of them. A deeper gradient is not a more faithful one.
 
 The improvement occurs only in specific cases, and that pattern is itself evidence. It is not a
 universal rise. It rises only on the games with a moving tracked sprite the gradient can flow to.
@@ -170,7 +178,7 @@ on use vs.\ presence; \cite{anand2019unsupervised,elhage2022toy,kindermans2019un
 probing, superposition, and reliability). The takeaway is one line: every VCS failure has a named
 counterpart in how interpretability methods are reported to fail on networks, so a property
 provable here is one to suspect there. On the position regime the causal and intervention
-methods open a $0.327$ faithfulness gap over the gradient and correlational methods, whose
+methods open a $0.326$ faithfulness gap over the gradient and correlational methods, whose
 $95\%$ bootstrap interval over the 42 games $[0.28,0.38]$ excludes zero, so the advantage is
 now statistically significant; the all-regime gap of $0.32$ likewise excludes zero. The naive
 gradient is provably zero on the
@@ -190,8 +198,8 @@ convincing than the exactly correct map. It should validate on known systems bef
 unknown ones, since a method that cannot pass where the answer is computable cannot be audited
 where it is not. Most important, it should stop treating faithfulness as understanding. The open
 problem for explainable AI is not a better saliency map; it is the semantic gap. We confirmed
-this directly: we closed the faithfulness gap for the gradient methods, and the meaning still did
-not appear. The field does not need an instrument that reads the mechanism more sharply. It needs
+this directly: where we closed the faithfulness gap for the gradient methods, the meaning still
+did not appear. The field does not need an instrument that reads the mechanism more sharply. It needs
 one that supplies the reference the mechanism does not contain: the system's behavior, documented
 for software in its manuals and data. Faithfulness is the part we can now measure, and on causal
 methods we can achieve it. Meaning remains unsolved, because no internal method carries the
@@ -211,9 +219,12 @@ universal. The rise occurs on Pong and Q*bert, but not on the static-sprite game
 zeros-baseline integrated gradient, and not where the restored gradient falls on a cell the
 program does not read. We report it as such, not as a law over all methods and games. The
 plausibility axis is a documented method-tradition proxy, not a human-subjects measurement, and
-we report it at that proxy's coarse resolution. Our scores hold within Paper~1's validated
-conformance window (30 RAM frames, 60 screen frames). Outside that horizon the substrate is not certified bit-exact, and we keep
-every scored claim inside it. The subject is one old machine with no learning, which is the
+we report it at that proxy's coarse resolution. Paper~1 validated the port against
+\texttt{xitari} over 30 RAM frames and 60 screen frames. Our shared testbed scores at frame
+$105$ (a $90$-frame gameplay prefix plus the $15$-frame horizon), beyond that window. A later
+check over $3{,}600$ frames on Paper~1's fixed action streams matches \texttt{xitari} on every frame in RAM for 63 of
+the 64 games and in screen for 62; the first exception comes at frame $392$. Every scored
+intervention is also re-run bit-exactly on the port itself. The subject is one old machine with no learning, which is the
 necessary-condition framing once more: a stress test, not a forecast.
 
 We end with the broader implication. Because the substrate is differentiable, it tells us which

@@ -37,9 +37,9 @@ Outputs (to ``tools/xai_study/compare/out/``):
 
 ----------------------------------------------------------------------------------------
 Bootstrap design (review P1#16 "bootstrap over games AND over records"):
-  * Resample-over-GAMES is the headline CI: the 6 core games are the unit of
-    generalisation, so each family mean / per-method mean / headline contrast is
-    bootstrapped by resampling the 6 games with replacement (>=`--boot` resamples).
+  * Resample-over-GAMES is the headline CI: the scored games (42; 6 in the original
+    core-only design) are the unit of generalisation, so each family mean / per-method mean / headline contrast is
+    bootstrapped by resampling the games with replacement (>=`--boot` resamples).
     This is the CI the figures and results sections must read.
   * Resample-over-RECORDS is also reported (resample the flat list of per-(game,regime)
     records) as a within-method check; for methods with one record per game the two
@@ -71,6 +71,8 @@ import os
 import sys
 import warnings
 from collections import defaultdict
+
+import zlib
 
 import numpy as np
 
@@ -474,7 +476,12 @@ def main():
     ap.add_argument("--seed", type=int, default=20260623, help="bootstrap RNG seed")
     args = ap.parse_args()
 
-    rng = np.random.default_rng(args.seed)
+    # One independent RNG stream per (row, leg), keyed by name (2026-10-26). With a single
+    # shared stream, adding/removing one record anywhere shifted EVERY later CI in the
+    # 3rd-4th decimal (observed on the A3 and A4-ms_pacman fixes); now a CI moves only when
+    # its own data moves. crc32 is stable across runs/platforms (unlike hash()).
+    def rng_for(*key):
+        return np.random.default_rng([args.seed, zlib.crc32("/".join(key).encode())])
     index_note = ("present (provenance only)" if os.path.exists(args.index)
                   else "not present — globbed phase out/ trees directly (records ARE the index)")
 
@@ -484,13 +491,13 @@ def main():
     rows = []
     for (phase, mk), g in sorted(groups.items()):
         pg = game_means(g["by_game"])
-        mean_g, lo_g, hi_g, n_games = boot_ci_over_games(pg, rng, args.boot)
-        mean_r, lo_r, hi_r, n_rec = boot_ci_over_records(g["records"], rng, args.boot)
+        mean_g, lo_g, hi_g, n_games = boot_ci_over_games(pg, rng_for(mk, "games"), args.boot)
+        mean_r, lo_r, hi_r, n_rec = boot_ci_over_records(g["records"], rng_for(mk, "records"), args.boot)
         # triad legs (S, M) bootstrapped over games — for the headline S/M numbers
         s_pg = game_means(g["S"]); m_pg = game_means(g["M"]); f_pg = game_means(g["F"])
-        S_mean, S_lo, S_hi, _ = boot_ci_over_games(s_pg, rng, args.boot)
-        M_mean, M_lo, M_hi, _ = boot_ci_over_games(m_pg, rng, args.boot)
-        F_mean, F_lo, F_hi, _ = boot_ci_over_games(f_pg, rng, args.boot)
+        S_mean, S_lo, S_hi, _ = boot_ci_over_games(s_pg, rng_for(mk, "S"), args.boot)
+        M_mean, M_lo, M_hi, _ = boot_ci_over_games(m_pg, rng_for(mk, "M"), args.boot)
+        F_mean, F_lo, F_hi, _ = boot_ci_over_games(f_pg, rng_for(mk, "F"), args.boot)
         seed_sd, seed_src, seed_n = (None, "", 0)
         if mk in SAMPLING_METHODS:
             seed_sd, seed_src, seed_n = seed_sd_for_method(mk)
@@ -540,7 +547,7 @@ def main():
                 if vals:
                     per_method.append(vals)
                     members.append(mk)
-        mean, lo, hi, nm, ng = boot_ci_family(per_method, rng, args.boot)
+        mean, lo, hi, nm, ng = boot_ci_family(per_method, rng_for(name), args.boot)
         return {
             "kind": "family", "phase": "ALL" if regime is None else f"regime:{regime}",
             "method": name, "tradition": "+".join(sorted(tradition_set)),
@@ -568,7 +575,7 @@ def main():
 
     # ---- headline numbers (each as its own row with a CI) ----
     def named_headline(name, per_game_value):
-        mean, lo, hi, n = boot_ci_over_games(per_game_value, rng, args.boot)
+        mean, lo, hi, n = boot_ci_over_games(per_game_value, rng_for(name), args.boot)
         return {
             "kind": "headline", "phase": "headline", "method": name, "tradition": "",
             "n_games": n, "n_records": "",
@@ -602,12 +609,14 @@ def main():
                     if r["method"] == "family_gradient_correlational_position")
     # bootstrap the gap directly (shared games) via aggregation_robustness's position_only
     agg = aggregation_robustness(groups, np.random.default_rng(args.seed + 1), args.boot)
+    # games the gap bootstrap resamples over (was hard-coded 6, a 6-game-era leftover)
+    n_gap_games = len({gm for v in groups.values() for gm in v["by_game"]})
     pos_gap = next(v for v in agg if v["variant"] == "position_only")
     all_gap = next(v for v in agg if v["variant"] == "equal_by_method")
     rows.append({
         "kind": "headline", "phase": "headline", "method": "position_regime_gap",
         "tradition": "causal_intervention − gradient_correlational",
-        "n_games": 6, "n_records": "",
+        "n_games": n_gap_games, "n_records": "",
         "mean": pos_gap["gap"], "ci_lo": pos_gap["gap_ci_lo"], "ci_hi": pos_gap["gap_ci_hi"],
         "mean_over_records": "", "ci_lo_over_records": "", "ci_hi_over_records": "",
         "S_mean": "", "S_ci_lo": "", "S_ci_hi": "",
@@ -618,7 +627,7 @@ def main():
     rows.append({
         "kind": "headline", "phase": "headline", "method": "all_regime_gap",
         "tradition": "causal_intervention − gradient_correlational",
-        "n_games": 6, "n_records": "",
+        "n_games": n_gap_games, "n_records": "",
         "mean": all_gap["gap"], "ci_lo": all_gap["gap_ci_lo"], "ci_hi": all_gap["gap_ci_hi"],
         "mean_over_records": "", "ci_lo_over_records": "", "ci_hi_over_records": "",
         "S_mean": "", "S_ci_lo": "", "S_ci_hi": "",
@@ -680,7 +689,7 @@ def main():
         "generated_by": "tools/xai_study/compare/uncertainty.py",
         "method": ("pure read + resample over committed §R records (no emulator re-run, no "
                    "committed result altered); CIs wrap the identical leaderboard.py point "
-                   "estimate. Bootstrap = percentile, resampling the 6 core games with "
+                   "estimate. Bootstrap = percentile, resampling the scored games with "
                    "replacement; n_boot=%d; seed=%d." % (args.boot, args.seed)),
         "index_note": index_note,
         "n_boot": args.boot, "seed": args.seed,

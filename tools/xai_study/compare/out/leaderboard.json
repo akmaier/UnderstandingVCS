@@ -9,7 +9,7 @@
     "y_plausibility": "DOCUMENTED METHOD-TRADITION PROXY (PLAUSIBILITY_BY_TRADITION), NOT a measurement \u2014 exposes the \u00a70 danger zone. [0,1] higher=looks-more-convincing."
   },
   "n_methods": 31,
-  "n_per_game_records_aggregated": 1773,
+  "n_per_game_records_aggregated": 1772,
   "na_audit_records_excluded": [
     "na_audit_air_raid.json",
     "na_audit_alien.json",
@@ -129,23 +129,23 @@
       "phase_code": "A",
       "method": "A4_spike_word",
       "tradition": "correlational",
-      "n_games": 34,
-      "n_records": 34,
-      "faithfulness": 0.2246,
-      "faithfulness_ci95": 0.0601,
-      "faithfulness_n": 34,
+      "n_games": 33,
+      "n_records": 33,
+      "faithfulness": 0.2314,
+      "faithfulness_ci95": 0.0604,
+      "faithfulness_n": 33,
       "faithfulness_position_regime": null,
       "faithfulness_content_regime": null,
-      "faithfulness_other_regime": 0.2246,
+      "faithfulness_other_regime": 0.2314,
       "plausibility_proxy": 0.8,
-      "triad_F": 0.2246,
-      "triad_S": 0.1332,
-      "triad_M": 0.3635,
-      "FSM_composite": 0.2216,
+      "triad_F": 0.2314,
+      "triad_S": 0.1373,
+      "triad_M": 0.3725,
+      "FSM_composite": 0.2279,
       "is_positive_control": 0,
       "faith_source": "triad.F",
       "metric_names": "A4_faithfulness_spearman_corr_vs_oracle_coupling",
-      "commits": "39cd1d3;ddf78172"
+      "commits": "ddf78172"
     },
     {
       "phase": "phaseA_kording",
@@ -772,10 +772,10 @@
   "phase_rollups": {
     "phaseA_kording": {
       "n_methods": 8,
-      "faithfulness_mean": 0.455,
-      "faithfulness_ci95": 0.2404,
+      "faithfulness_mean": 0.4559,
+      "faithfulness_ci95": 0.24,
       "plausibility_proxy_mean": 0.6688,
-      "FSM_composite_mean": 0.4698,
+      "FSM_composite_mean": 0.4709,
       "faithfulness_position_regime_mean": null,
       "position_regime_n": 0
     },
@@ -812,9 +812,9 @@
     "all_regimes": {
       "causal_intervention_faithfulness_mean": 0.7051,
       "causal_intervention_n": 11,
-      "gradient_correlational_faithfulness_mean": 0.384,
+      "gradient_correlational_faithfulness_mean": 0.3845,
       "gradient_correlational_n": 14,
-      "gap": 0.321
+      "gap": 0.3206
     }
   },
   "danger_zone_discrepancy_table": [
@@ -879,8 +879,8 @@
       "method": "A4_spike_word",
       "tradition": "correlational",
       "plausibility_proxy": 0.8,
-      "faithfulness": 0.2246,
-      "plausibility_minus_faithfulness": 0.5754
+      "faithfulness": 0.2314,
+      "plausibility_minus_faithfulness": 0.5686
     },
     {
       "phase": "phaseB_attribution",

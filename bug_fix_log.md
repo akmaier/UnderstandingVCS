@@ -14,6 +14,40 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🐛 P2 aggregation: e2e rows leaked into the leaderboard, a stale A4 record, shared-RNG CI jitter — 2026-10-26
+
+Found while updating Paper 2 after the e2e arm landed.
+1. **e2e records leaked into the leaderboard.** `leaderboard.load_per_game_records` globs
+   `phaseB_attribution/out/*.json`, so the new `e2e_*` records became two extra rows
+   (`e2e_saliency`, `e2e_gradxinput`, tradition "unknown"), giving 1797 records → 33 rows. Headline
+   family gaps were unaffected (unknown tradition), but the Phase-B rollups changed. Fix: skip
+   `e2e_*` like `pilot*` (6-game sub-study, reported separately in §Results B).
+2. **Stale A4 record.** `A4_ms_pacman.json` was from commit 39cd1d3, scored at frame 330+30 with no
+   shared testbed. It survived the 42-game re-run (7271b7e7) because, at the shared state, the
+   runner REFUSES ms_pacman ("oracle found NO coupled candidate pair … uninformative"; re-checked
+   today, cluster job 780436), so the old file was never overwritten. Removed it. A4 now has 33
+   scored games (F 0.225 → 0.231, S 0.133 → 0.137, M 0.364 → 0.372), 1773 → 1772 records, the
+   gradient/correlational family 0.384 → 0.385, and the all-regime gap 0.3210 → 0.3205 with
+   CI [0.294, 0.348] → [0.293, 0.348]. The position headline is unchanged (0.326 [0.277, 0.375]).
+   **Gotcha:** a runner that refuses a game leaves any older record in place. Check for
+   records whose `extra.testbed` is missing or whose commit predates the battery
+   (the content halves of Phase-B records keep it under another key, so check per method).
+3. **Shared-RNG CI jitter.** `uncertainty.py` drew every bootstrap from ONE RNG stream, so
+   changing one record (A3 fix, A4 removal) moved CIs of unrelated methods by 1e-3. Now each
+   (row, leg) uses `default_rng([seed, crc32(name/leg)])`. This was verified by toggling the A4 record:
+   only A4, the gradient family and the all-regime gap rows change. One-time consequence: all CIs
+   were re-drawn. Also fixed the hard-coded `n_games: 6` on the two headline-gap rows (now 42).
+4. fig5's self-check `SAE-match min > 0.8` dated from the 6-game era. On 40 games the min is 0.5
+   (18/40 at 1.0), so it now tests the median (0.933).
+Paper 2 numbers audited against these outputs (5 auditors + re-sync). Notable text errors fixed:
+- The testbed scores at frame 105, BEYOND Paper 1's 30/60-frame window. The paper claimed otherwise.
+- The cause-density gate only flags.
+- The position output counts changed pixels over the WHOLE frame.
+- The leaderboard clips F/S/M at 0 in all phases.
+- KernelSHAP/LIME/RISE count in the gradient family.
+- Several pre-battery per-game numbers (A2 "40% / 1044 px").
+- A GPU claim.
+
 ### 📊 P2 end-to-end gradient arm — results on the 6 core games — 2026-10-26
 
 `e2e_gradient.jl --games core` (records `out/e2e_{saliency,gradxinput}_<g>_*`,

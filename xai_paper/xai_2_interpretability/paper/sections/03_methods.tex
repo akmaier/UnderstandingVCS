@@ -17,9 +17,9 @@ agent. It is a real, complex artifact never designed to be interpretable. Yet we
 measure its every causal dependency exactly. Paper~1 built it, a bit-exact, differentiable
 port of the 1977 VCS. The port is validated bit-for-bit against the \texttt{xitari} C++
 reference on all 64 games of the Paper-1 roster, in random-access memory and rendered screen,
-within the validated conformance window~\cite{maier2025vcs,xitari}. We use it in two
-interchangeable, cross-checked realizations, \texttt{jutari} (Julia) and \texttt{jaxtari}
-(JAX/Python).
+over a 30-frame RAM and 60-frame screen conformance window~\cite{maier2025vcs,xitari}. The port
+exists in two cross-checked realizations, \texttt{jutari} (Julia) and \texttt{jaxtari}
+(JAX/Python). All scored runs in this paper use \texttt{jutari}.
 
 The substrate grants four capabilities that no neural network offers for free. The first is
 an exact forward map,
@@ -38,14 +38,22 @@ the ``activations'' we interpret are the program's own variables. The fourth is 
 content-path gradient $\partial y / \partial u$ through a straight-through estimator (STE,
 a surrogate gradient whose forward pass still returns the exact discrete value)
 formulation whose forward pass is bit-exact to the hard machine at any finite
-temperature (a smoothing parameter)~\cite{bengio2013estimating,jang2017gumbel}, batched on the GPU. A neural
+temperature (a smoothing parameter)~\cite{bengio2013estimating,jang2017gumbel}, computed by
+reverse-mode automatic differentiation (Zygote) on the CPU. A neural
 interpretability study works with three things: the inputs, the state, and the outputs. Our
 substrate gives us all three.
 
-We respect one limit throughout. Paper-1 bit-exactness holds within a bounded frame window
-on a fixed action stream, on the order of 30 frames of RAM and 60 frames of screen. Every
-scored claim is taken inside that validated horizon. Long-horizon end-to-end gradients
-are not needed for our single-step metrics, so we do not assume them.
+We state one limit plainly. Paper~1 certifies bit-exactness over 30 frames of RAM and 60
+frames of screen on fixed action streams. Our shared testbed scores at frame 105, a 90-frame
+seeded random-action prefix plus a 15-frame horizon, which lies beyond that window. A later
+3,600-frame conformance check matches \texttt{xitari} on every frame in RAM for 63 of 64 games
+and in screen for 62 of 64; the three exceptions are transient and none is a core
+game~\cite{maier2025vcs}. Our own stream is not compared against \texttt{xitari}. What we do
+check is determinism on the port itself: the oracle re-runs each scored state twice from boot
+and asserts that RAM and screen are bit-identical before it trusts any effect. The gradient methods differentiate the output read at the
+intervention frame. As a control, we also differentiate the output at the end of the 15-frame
+horizon back through every CPU instruction in between (\Sectionname\ref{sec:results-b}). We do
+not assume gradients over longer horizons.
 
 \subsection{The ground-truth oracle}\label{sec:oracle}
 
@@ -203,7 +211,9 @@ and call it \emph{right} when all three clear their thresholds,
   \label{eq:triad}
 \end{equation}
 with $\tau_{\mathrm{F}}=\tau_{\mathrm{S}}=\tau_{\mathrm{M}}=0.5$ throughout. Results report the
-continuous scores; the predicate is a derived summary, not the primary quantity. All three are
+continuous scores; the predicate is a derived summary, not the primary quantity. The
+leaderboard's composite F\,$\wedge$\,S\,$\wedge$\,M column is the geometric mean of a method's
+three mean scores (the plain mean of those present when a leg is missing). All three are
 defined against the oracle, not against any method under test, which keeps the criterion
 non-circular.
 
@@ -217,13 +227,12 @@ effects, scored \emph{raw}. A method whose attribution carries no causal signal 
 at $\rho=0$, not at the $0.5$ of an affine $\tfrac{1}{2}(1+\rho)$ remap. This is what makes
 the position regime informative. Under Prop.~\ref{prop:zero} the naive gradient is identically
 zero there, and its correlation with the oracle is $0$. The reported faithfulness is therefore
-$0.00$ and not a $0.5$ floor. The two committed estimators differ only in how the raw
-correlation is summarized across the scored games. Phase~B reports the raw correlation
-directly (e.g.\ occlusion at $F=0.687$), so a negative correlation is recorded as a negative
-number. In Phase~A's single-unit and tuning analyses the per-game correlations can be negative,
-so we clip each per-game correlation at $0$ and then average across games (e.g.\ the tuning
-analysis A3 at $0.213$, the clip-at-zero mean of per-game correlations
-that include negatives). For the same attribution map we also report, as quality measures,
+$0.00$ and not a $0.5$ floor. Each per-record file keeps the raw correlation, so a negative
+correlation is stored as a negative number. The leaderboard summarizes all three phases the
+same way: it clips each per-record correlation at $0$ and then averages. Negative records
+occur in every phase, so the clip matters. Occlusion scores $F=0.687$ clipped and $0.681$
+raw; the tuning analysis A3 scores $0.213$ clipped and $0.146$ raw. For the same attribution
+map we also report, as quality measures,
 deletion/insertion area-under-curve (deleting or inserting the top-attributed inputs and
 tracking the change in output) and precision at $k$ against the true causal top-$k$,
 $\mathrm{P@}k=|\,\mathrm{top}_k(\hat{E})\cap\mathrm{top}_k(\{\Delta y(u)\})\,|/k$. For a
@@ -234,8 +243,8 @@ the true $\{\Delta y(u)\}$. The final $\mathrm{F}_{\mathrm{score}}$ is the per-r
 metric averaged first within a game over its output records, then with equal weight across the
 scored games, so no game-rich method dominates; confidence intervals are 95\% bootstrap over
 games (\Sectionname\ref{sec:scoring}). The three Phases differ only in which primitive is primary: Phase~A
-uses graph $F_1$ for the data-flow methods and the clip-at-zero mean correlation for the
-single-unit and tuning analyses, Phase~B uses the raw effect-agreement correlation $\rho$ with
+uses graph $F_1$ for the data-flow methods and the correlation for the
+single-unit and tuning analyses, Phase~B uses the effect-agreement correlation $\rho$ with
 deletion/insertion AUC and $\mathrm{P@}k$ as the attribution map's quality measures, and Phase~C
 uses the causal-effect-agreement correlation for patching and mediation and graph $F_1$ for
 circuit discovery. The leaderboard score is therefore a single scalar per method, but it is
@@ -258,7 +267,8 @@ same held-out test. We deliberately do not define it through interchange interve
 scrubbing. Those are themselves mechanistic-interpretability methods under test in Phase~C, so
 using them would make the criterion circular. All three phases report $\mathrm{S}$ where the
 calibration and held-out split is defined, and its bootstrap intervals follow
-\Sectionname\ref{sec:scoring}.
+\Sectionname\ref{sec:scoring}. Like F, the leaderboard clips each per-record S at $0$ before
+averaging, so a method-level S lies in $[0,1]$.
 
 Minimality asks whether the explanation is parsimonious and lives at the algorithmic level of
 the machine's own module decomposition. We define
@@ -321,7 +331,10 @@ intervention methods average a faithfulness of $0.71$ against $0.38$ for gradien
 correlational methods, a gap of $0.32$ whose $95\%$ bootstrap interval $[0.29,0.35]$
 excludes zero. On the position
 regime alone, where the naive gradient is zero under the hard forward map by
-Prop.~\ref{prop:zero}, the two families average $0.56$ against $0.23$, a gap of $0.33$.
+Prop.~\ref{prop:zero}, the two families average $0.56$ against $0.23$, a gap of $0.33$. These
+position-regime scores already hand the gradient-based methods the bilinear sampler of the
+shared testbed; under the naive gradient those methods score $0$
+(\Sectionname\ref{sec:results_compare}).
 This gap is now statistically significant: a bootstrap over the 42 games gives a $95\%$
 interval of $[0.28,0.38]$ that excludes zero. The per-method extreme places an
 exact causal method, activation patching, at faithfulness $1.000$ on the position regime and
