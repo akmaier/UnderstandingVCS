@@ -281,7 +281,7 @@ def is_summary_record(path, rec):
 
 
 def _load_scored_games():
-    """The 42 scored games (XAI_SCORED in tools/xai_study/common/game_sets.jl) — the
+    """The 44 scored games (XAI_SCORED in tools/xai_study/common/game_sets.jl) — the
     single source of truth. Records for the 12 excluded (degenerate/static) games are
     dropped from aggregation so the leaderboard reflects exactly the scored battery.
     Empty set (parse failure) => no filtering, so this degrades safe."""

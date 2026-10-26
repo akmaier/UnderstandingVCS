@@ -2,7 +2,7 @@
   "arrays": "verified_pitfall.npz",
   "bit_exact_rerun": true,
   "ci": null,
-  "commit": "a6514d51",
+  "commit": "c2cae9e",
   "deltas": [
     -8,
     -4,
@@ -21,7 +21,7 @@
   "method_note": "perturb candidate RAM byte by small symmetric deltas, re-render the bit-exact framebuffer over horizons [1, 2, 3, 4]; a byte that changes the frame is verified-causal (strictly stronger than probing: info present vs used). Offset = intercept of robust median-pairwise regression of changed-region centroid vs byte value along the motion axis.",
   "metric_name": "verified_rate",
   "n": 16,
-  "n_moving_objects": 7,
+  "n_moving_objects": 8,
   "n_unverified": 6,
   "n_verified": 10,
   "oracle_ref": "verify_labels@pitfall (intervention on jutari, common/jutari_oracle.jl intervene_ram!)",
@@ -32,12 +32,12 @@
   "stderr": null,
   "substrate": "jutari (Julia, HARD) — Paper-1 64/64 bit-exact real-ROM path",
   "target_output": "verified_causal_ram_to_concept_map",
-  "timestamp": "1783013841",
+  "timestamp": "1793015294",
   "upgrades": "tools/xai_study/t3/out/candidates_pitfall.json (P2-E2-1)",
   "value": 0.625,
   "verdicts": [
     {
-      "base_value": 0,
+      "base_value": 19,
       "concepts": [
         "bottom_of_rope_x",
         "y"
@@ -226,13 +226,13 @@
         3,
         4
       ],
-      "max_changed_px": 63,
+      "max_changed_px": 80,
       "motion_axis": "y",
       "moves_object": true,
       "offset_agrees": false,
       "ram_addr_hex": "0xE9",
       "ram_index": 105,
-      "recovered_offset": 102.50459025073445,
+      "recovered_offset": 102.28992898441427,
       "regression_bytes": [
         24.0,
         28.0,
@@ -240,17 +240,17 @@
         40.0
       ],
       "regression_render_pos": [
-        110.57142857142857,
-        111.7560975609756,
+        110.2625,
+        112.84615384615384,
         113.08823529411765,
         116.49019607843137
       ],
-      "render_slope_per_byte": 0.3330451082872168,
+      "render_slope_per_byte": 0.34645059546254375,
       "resp_per_horizon": [
-        63,
-        63,
-        63,
-        63
+        80,
+        80,
+        80,
+        80
       ],
       "sources": [
         "AtariARI",
@@ -522,7 +522,7 @@
       "verified": true
     },
     {
-      "base_value": 32,
+      "base_value": 25,
       "concepts": [
         "t1.value"
       ],
@@ -533,31 +533,31 @@
         3,
         4
       ],
-      "max_changed_px": 64,
+      "max_changed_px": 59,
       "motion_axis": "x",
       "moves_object": true,
       "offset_agrees": null,
       "ram_addr_hex": "0xD8",
       "ram_index": 88,
-      "recovered_offset": 22.655677083333334,
+      "recovered_offset": 41.431314926189174,
       "regression_bytes": [
-        24.0,
-        28.0,
-        36.0,
-        40.0
+        17.0,
+        21.0,
+        29.0,
+        33.0
       ],
       "regression_render_pos": [
-        32.27777777777778,
-        34.71875,
-        38.28,
-        38.5
+        38.806451612903224,
+        39.0,
+        38.8421052631579,
+        34.86440677966102
       ],
-      "render_slope_per_byte": 0.4170225694444445,
+      "render_slope_per_byte": -0.13305732209145038,
       "resp_per_horizon": [
-        64,
-        64,
-        64,
-        64
+        59,
+        59,
+        59,
+        59
       ],
       "sources": [
         "OCAtari"
@@ -566,7 +566,7 @@
       "verified": true
     },
     {
-      "base_value": 0,
+      "base_value": 89,
       "concepts": [
         "t1.value"
       ],
@@ -577,24 +577,31 @@
         3,
         4
       ],
-      "max_changed_px": 25,
-      "motion_axis": "none",
-      "moves_object": false,
+      "max_changed_px": 40,
+      "motion_axis": "x",
+      "moves_object": true,
       "offset_agrees": null,
       "ram_addr_hex": "0xD9",
       "ram_index": 89,
-      "recovered_offset": null,
+      "recovered_offset": 66.3587701612903,
       "regression_bytes": [
-        4.0,
-        8.0
+        81.0,
+        85.0,
+        93.0,
+        97.0
       ],
-      "regression_render_pos": [],
-      "render_slope_per_byte": null,
+      "regression_render_pos": [
+        62.806451612903224,
+        63.0,
+        63.42424242424242,
+        60.7
+      ],
+      "render_slope_per_byte": -0.04163306451612869,
       "resp_per_horizon": [
-        25,
-        25,
-        25,
-        25
+        40,
+        40,
+        40,
+        40
       ],
       "sources": [
         "OCAtari"
@@ -603,7 +610,7 @@
       "verified": true
     },
     {
-      "base_value": 59,
+      "base_value": 28,
       "concepts": [
         "t1.value"
       ],
@@ -637,7 +644,7 @@
       "verified": false
     },
     {
-      "base_value": 0,
+      "base_value": 118,
       "concepts": [
         "theta_t"
       ],

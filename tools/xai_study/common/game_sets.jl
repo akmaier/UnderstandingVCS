@@ -42,22 +42,27 @@ const XAI_LABELED = [
     "yars_revenge",
 ]
 
-# The SCORED battery: the 42 games that both (a) pass the cause-density gate at the
+# The SCORED battery: the 44 games that both (a) pass the cause-density gate at the
 # shared analysis state (seed=0, prefix=90 — >=4 causes with |Δy|>0.5) AND (b) carry
 # >=1 causally-verified label that moves a sprite. Every scored game therefore
-# contributes to BOTH the all-regime and the position regime. The 12 games excluded
+# contributes to BOTH the all-regime and the position regime. The 10 games excluded
 # from XAI_LABELED are documented on the Ground Truth ROMs page and Supplement S3:
-#   gate-rejected (too few strong causes): crazy_climber, enduro, pooyan, skiing,
-#       time_pilot  (+ asteroids, battle_zone, star_gunner, which are also static);
-#   no moving sprite (static at the shared state): amidar, asterix, robotank, up_n_down.
+#   gate-rejected (too few strong causes): crazy_climber, pooyan, time_pilot
+#       (+ asteroids, battle_zone, star_gunner, which also move no sprite);
+#   no moving sprite at the shared state: beam_rider; no verified label at all:
+#       amidar, robotank, up_n_down.
 # Derived deterministically from the verified T3 files + the cause-density census.
+# 2026-10-26: re-derived after every game boots with its real RomSettings
+# (xai_settings_for, below; was GenericRomSettings for 37 games): enduro and skiing
+# now pass the gate, asterix now has 5 verified moving sprites (0 under the generic
+# boot), and beam_rider's single moving sprite is gone. 42 -> 44 games.
 const XAI_SCORED = [
-    "air_raid", "alien", "assault", "atlantis", "bank_heist", "beam_rider", "berzerk",
+    "air_raid", "alien", "assault", "asterix", "atlantis", "bank_heist", "berzerk",
     "bowling", "boxing", "breakout", "carnival", "centipede", "chopper_command",
-    "demon_attack", "double_dunk", "fishing_derby", "freeway", "frostbite", "gopher",
-    "hero", "ice_hockey", "jamesbond", "kangaroo", "krull", "kung_fu_master",
+    "demon_attack", "double_dunk", "enduro", "fishing_derby", "freeway", "frostbite",
+    "gopher", "hero", "ice_hockey", "jamesbond", "kangaroo", "krull", "kung_fu_master",
     "montezuma_revenge", "ms_pacman", "name_this_game", "pacman", "phoenix", "pitfall",
-    "pong", "private_eye", "qbert", "riverraid", "road_runner", "seaquest",
+    "pong", "private_eye", "qbert", "riverraid", "road_runner", "seaquest", "skiing",
     "space_invaders", "tennis", "venture", "video_pinball", "yars_revenge",
 ]
 
@@ -67,7 +72,7 @@ const XAI_SCORED = [
 The UNIFORM `--games` expander shared by every A/B/C runner:
   * "core"     → `core` (the caller's 6-game core set; default unchanged)
   * "labeled"  → XAI_LABELED (the 54 T3-labeled / OCAtari-covered games)
-  * "scored"   → XAI_SCORED (the 42 non-degenerate, moving-sprite games; the battery scope)
+  * "scored"   → XAI_SCORED (the 44 non-degenerate, moving-sprite games; the battery scope)
   * anything else → a comma-separated explicit list, lowercased+stripped.
 """
 function xai_resolve_games(arg::AbstractString, core::AbstractVector{<:AbstractString})

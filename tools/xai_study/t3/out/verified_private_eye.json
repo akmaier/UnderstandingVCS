@@ -2,7 +2,7 @@
   "arrays": "verified_private_eye.npz",
   "bit_exact_rerun": true,
   "ci": null,
-  "commit": "a6514d51",
+  "commit": "c2cae9e",
   "deltas": [
     -8,
     -4,
@@ -21,7 +21,7 @@
   "method_note": "perturb candidate RAM byte by small symmetric deltas, re-render the bit-exact framebuffer over horizons [1, 2, 3, 4]; a byte that changes the frame is verified-causal (strictly stronger than probing: info present vs used). Offset = intercept of robust median-pairwise regression of changed-region centroid vs byte value along the motion axis.",
   "metric_name": "verified_rate",
   "n": 24,
-  "n_moving_objects": 9,
+  "n_moving_objects": 10,
   "n_unverified": 12,
   "n_verified": 12,
   "oracle_ref": "verify_labels@private_eye (intervention on jutari, common/jutari_oracle.jl intervene_ram!)",
@@ -32,7 +32,7 @@
   "stderr": null,
   "substrate": "jutari (Julia, HARD) — Paper-1 64/64 bit-exact real-ROM path",
   "target_output": "verified_causal_ram_to_concept_map",
-  "timestamp": "1783013850",
+  "timestamp": "1793015307",
   "upgrades": "tools/xai_study/t3/out/candidates_private_eye.json (P2-E2-1)",
   "value": 0.5,
   "verdicts": [
@@ -144,7 +144,7 @@
       "verified": false
     },
     {
-      "base_value": 30,
+      "base_value": 52,
       "concepts": [
         "player_x",
         "car_x",
@@ -163,20 +163,20 @@
       "offset_agrees": false,
       "ram_addr_hex": "0xBF",
       "ram_index": 63,
-      "recovered_offset": 20.85997114618945,
+      "recovered_offset": 32.62564160750371,
       "regression_bytes": [
-        22.0,
-        26.0,
-        34.0,
-        38.0
+        44.0,
+        48.0,
+        56.0,
+        60.0
       ],
       "regression_render_pos": [
-        32.169611307420496,
-        34.31924882629108,
-        38.42788461538461,
-        40.48056537102474
+        54.36749116607774,
+        56.357798165137616,
+        60.28506787330317,
+        62.28268551236749
       ],
-      "render_slope_per_byte": 0.5165070513059784,
+      "render_slope_per_byte": 0.4942201294561329,
       "resp_per_horizon": [
         283,
         283,
@@ -191,7 +191,7 @@
       "verified": true
     },
     {
-      "base_value": 3,
+      "base_value": 2,
       "concepts": [
         "clock[0]",
         "value"
@@ -203,31 +203,31 @@
         3,
         4
       ],
-      "max_changed_px": 38,
-      "motion_axis": "x",
+      "max_changed_px": 34,
+      "motion_axis": "y",
       "moves_object": true,
       "offset_agrees": null,
       "ram_addr_hex": "0xC3",
       "ram_index": 67,
-      "recovered_offset": 69.57142857142857,
+      "recovered_offset": 24.2,
       "regression_bytes": [
         0.0,
         0.0,
-        7.0,
-        11.0
+        6.0,
+        10.0
       ],
       "regression_render_pos": [
-        69.57142857142857,
-        69.57142857142857,
-        71.0,
-        71.05263157894737
+        24.2,
+        24.2,
+        23.666666666666668,
+        23.72
       ],
-      "render_slope_per_byte": 0.1346548188653455,
+      "render_slope_per_byte": -0.04800000000000004,
       "resp_per_horizon": [
-        38,
-        38,
-        38,
-        38
+        25,
+        34,
+        34,
+        34
       ],
       "sources": [
         "AtariARI",
@@ -237,7 +237,7 @@
       "verified": true
     },
     {
-      "base_value": 0,
+      "base_value": 55,
       "concepts": [
         "clock[1]"
       ],
@@ -673,7 +673,7 @@
       "verified": true
     },
     {
-      "base_value": 0,
+      "base_value": 89,
       "concepts": [
         "value"
       ],
@@ -684,24 +684,31 @@
         3,
         4
       ],
-      "max_changed_px": 25,
-      "motion_axis": "none",
-      "moves_object": false,
+      "max_changed_px": 40,
+      "motion_axis": "x",
+      "moves_object": true,
       "offset_agrees": null,
       "ram_addr_hex": "0xC5",
       "ram_index": 69,
-      "recovered_offset": null,
+      "recovered_offset": 104.25745967741938,
       "regression_bytes": [
-        4.0,
-        8.0
+        81.0,
+        85.0,
+        93.0,
+        97.0
       ],
-      "regression_render_pos": [],
-      "render_slope_per_byte": null,
+      "regression_render_pos": [
+        94.80645161290323,
+        95.0,
+        94.25,
+        92.7
+      ],
+      "render_slope_per_byte": -0.11270161290322589,
       "resp_per_horizon": [
-        25,
-        25,
-        25,
-        25
+        40,
+        40,
+        40,
+        40
       ],
       "sources": [
         "OCAtari"
@@ -839,27 +846,27 @@
         3,
         4
       ],
-      "max_changed_px": 137,
+      "max_changed_px": 272,
       "motion_axis": "y",
       "moves_object": true,
       "offset_agrees": false,
       "ram_addr_hex": "0xD4",
       "ram_index": 84,
-      "recovered_offset": 149.79628400796284,
+      "recovered_offset": 161.77881944444445,
       "regression_bytes": [
         4.0,
         8.0
       ],
       "regression_render_pos": [
-        155.9090909090909,
-        162.02189781021897
+        162.3671875,
+        162.95555555555555
       ],
-      "render_slope_per_byte": 1.5282017252820168,
+      "render_slope_per_byte": 0.14709201388888715,
       "resp_per_horizon": [
-        137,
-        137,
-        137,
-        137
+        180,
+        211,
+        240,
+        272
       ],
       "sources": [
         "OCAtari"
@@ -880,27 +887,27 @@
         3,
         4
       ],
-      "max_changed_px": 182,
+      "max_changed_px": 211,
       "motion_axis": "y",
       "moves_object": true,
       "offset_agrees": false,
       "ram_addr_hex": "0xD8",
       "ram_index": 88,
-      "recovered_offset": 167.61172161172163,
+      "recovered_offset": 166.91653212786568,
       "regression_bytes": [
         4.0,
         8.0
       ],
       "regression_render_pos": [
-        166.31410256410257,
-        165.0164835164835
+        165.57668711656441,
+        164.23684210526315
       ],
-      "render_slope_per_byte": -0.3244047619047663,
+      "render_slope_per_byte": -0.3349612528253161,
       "resp_per_horizon": [
-        182,
-        182,
-        182,
-        182
+        190,
+        211,
+        211,
+        211
       ],
       "sources": [
         "OCAtari"
@@ -920,27 +927,27 @@
         3,
         4
       ],
-      "max_changed_px": 94,
+      "max_changed_px": 102,
       "motion_axis": "y",
       "moves_object": true,
       "offset_agrees": null,
       "ram_addr_hex": "0xE1",
       "ram_index": 97,
-      "recovered_offset": 156.87506185056904,
+      "recovered_offset": 156.33061658398302,
       "regression_bytes": [
         4.0,
         8.0
       ],
       "regression_render_pos": [
-        154.95348837209303,
-        153.03191489361703
+        154.65060240963857,
+        152.97058823529412
       ],
-      "render_slope_per_byte": -0.4803933696190015,
+      "render_slope_per_byte": -0.42000354358611247,
       "resp_per_horizon": [
-        94,
-        94,
-        94,
-        94
+        102,
+        96,
+        95,
+        88
       ],
       "sources": [
         "OCAtari"

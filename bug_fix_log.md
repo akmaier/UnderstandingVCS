@@ -14,6 +14,34 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🐛 P2 scored set re-derived under the real boot: 42 → 44 games (T3 labels were also generic-boot) — 2026-10-26
+
+**Symptom.** Follow-up to the entry below. The generic-boot bug also reached the two
+inputs that *define* the scored set: the cause-density gate (saliency `ts` census) and
+the T3 verify-by-intervention labels (`t3/verify_labels.jl`, which boots through
+`common/jutari_oracle.jl`). Both were computed with `GenericRomSettings` for every game
+whose settings the old maps lacked.
+
+**Re-run (cluster).** Gate re-check on the 12 held-out games (job 780446) and
+`verify_labels.jl` on all 54 labeled games (job 780452; the gate clone needed the
+primary clone's Julia project and an `xitari/roms/mspacman.bin` alias, since
+verify_labels resolves ms_pacman as `mspacman.bin`). Labels change in exactly the 14
+games whose boot settings changed (air_raid, asterix, battle_zone, beam_rider,
+carnival, double_dunk, enduro, gopher, pacman, pitfall, pooyan, private_eye, skiing,
+yars_revenge); the other 40 are identical up to timestamp/commit.
+
+**Effect on the frozen rule (gate passes AND ≥1 verified moving sprite):**
+- enduro (gate 4/8) and skiing (12/20) now pass the gate; both have moving sprites (2, 5) → **in**.
+- asterix: 0 → 5 verified moving sprites (the generic boot never started the game); gate 12/20 → **in**.
+- beam_rider: moving sprites 1 → 0 → **out**.
+- amidar/robotank/up_n_down pass the gate but have 0 candidate labels; crazy_climber, pooyan,
+  time_pilot, asteroids, battle_zone, star_gunner stay gate-rejected.
+
+`XAI_SCORED` is now 44 games. Streams of the new games validated vs xitari: enduro, skiing
+RAM+screen exact to frame 105 (asterix in the full re-check). The whole P2 battery is
+re-run on the 44 with the corrected labels (the earlier 42-game re-run, 780440/1, was
+cancelled — it read the generic-boot labels); e2e saliency/G×I adds asterix, enduro, skiing.
+
 ### 🐛 P2 harness parity: 37 scored games booted with GenericRomSettings; streams now validated vs xitari to frame 105 — 2026-10-26
 
 **Symptom (found while validating the P2 streams against xitari).** Every P2 runner carried
