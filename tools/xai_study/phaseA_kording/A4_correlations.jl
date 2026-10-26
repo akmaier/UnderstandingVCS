@@ -169,8 +169,8 @@ function a4_settings_for(game::AbstractString)
     g == "space_invaders" && return JT.SpaceInvadersRomSettings()
     g == "ms_pacman"      && return JT.JoystickGames.MsPacmanRomSettings()
     g == "qbert"          && return JT.JoystickGames.QbertRomSettings()
-    # seaquest + any other -> Generic (its Paper-1 bit-exact settings)
-    return JT.GenericRomSettings()
+    # seaquest + any other -> the full conformance map (common/game_sets.jl)
+    return xai_settings_for(g, JT)
 end
 
 # A few core games' ROM files don't match their canonical name (the shared

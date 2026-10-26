@@ -58,6 +58,8 @@ import Statistics
 using JuTari
 using JuTari.Env: StellaEnvironment, env_reset!, env_step!, get_screen, get_ram
 using JuTari.Diff: soft_ram_peek
+# the ONE per-game RomSettings map (xai_settings_for) + game sets / ROM resolver
+include(joinpath(@__DIR__, "game_sets.jl"))
 
 # The §1 oracle machinery (env/boot/snapshot/intervene + Cause + candidate set).
 # oracle_intervene.jl includes jutari_oracle.jl, so we get the whole harness.
@@ -114,7 +116,7 @@ function settings_for(game::AbstractString)
     g == "space_invaders" && return JuTari.SpaceInvadersRomSettings()
     g == "ms_pacman"      && return JuTari.JoystickGames.MsPacmanRomSettings()
     g == "qbert"          && return JuTari.JoystickGames.QbertRomSettings()
-    return JuTari.GenericRomSettings()   # seaquest (no registered settings yet)
+    return xai_settings_for(g, JuTari)   # full conformance map (common/game_sets.jl); seaquest et al. -> Generic
 end
 
 function load_env(; game::AbstractString)

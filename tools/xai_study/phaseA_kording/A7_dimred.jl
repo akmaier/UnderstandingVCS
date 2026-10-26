@@ -181,7 +181,7 @@ function a7_settings_for(game::AbstractString)
     g == "space_invaders" && return JT.SpaceInvadersRomSettings()
     g == "ms_pacman"      && return JT.JoystickGames.MsPacmanRomSettings()
     g == "qbert"          && return JT.JoystickGames.QbertRomSettings()
-    return JT.GenericRomSettings()     # seaquest + any other
+    return xai_settings_for(g, JT)     # full conformance map (common/game_sets.jl)
 end
 
 # A few ROM files don't match their canonical name; mirror the alias map so A7

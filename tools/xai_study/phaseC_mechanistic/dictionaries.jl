@@ -181,7 +181,7 @@ function settings_for_game(game::AbstractString)
     g == "space_invaders" && return JT.SpaceInvadersRomSettings()
     g == "ms_pacman"      && return JT.JoystickGames.MsPacmanRomSettings()
     g == "qbert"          && return JT.JoystickGames.QbertRomSettings()
-    return JT.GenericRomSettings()     # seaquest + any other
+    return xai_settings_for(g, JT)     # full conformance map (common/game_sets.jl)
 end
 
 const _ROM_ALIASES = Dict("ms_pacman" => ["ms_pacman", "mspacman"],

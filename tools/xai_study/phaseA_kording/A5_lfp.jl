@@ -157,7 +157,7 @@ function a5_settings_for(game::AbstractString)
     g == "space_invaders" && return JT.SpaceInvadersRomSettings()
     g == "ms_pacman"      && return JT.JoystickGames.MsPacmanRomSettings()
     g == "qbert"          && return JT.JoystickGames.QbertRomSettings()
-    return JT.GenericRomSettings()   # seaquest + any other
+    return xai_settings_for(g, JT)     # full conformance map (common/game_sets.jl)
 end
 
 # ROM name aliases (mirror A4 / t3/import_labels.py) so A5 resolves ms_pacman etc.

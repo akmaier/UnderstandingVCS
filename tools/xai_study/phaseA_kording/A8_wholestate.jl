@@ -181,7 +181,7 @@ function settings_for_game(game::AbstractString)
     g == "ms_pacman"      && return JuTari.JoystickGames.MsPacmanRomSettings()
     g == "qbert"          && return JuTari.JoystickGames.QbertRomSettings()
     # seaquest (+ any other) → Generic, exactly as the screen tool resolves it.
-    return JuTari.RomSettingsModule.GenericRomSettings()
+    return xai_settings_for(g, JuTari)   # full conformance map (common/game_sets.jl)
 end
 
 function settings_name(game::AbstractString)
@@ -191,7 +191,7 @@ function settings_name(game::AbstractString)
     g == "space_invaders" && return "SpaceInvadersRomSettings"
     g == "ms_pacman"      && return "MsPacmanRomSettings"
     g == "qbert"          && return "QbertRomSettings"
-    return "GenericRomSettings"
+    return string(nameof(typeof(xai_settings_for(g, JuTari))))
 end
 
 """Boot `game` with its PARITY RomSettings (xitari-parity boot 60 NOOP + 4 RESET),

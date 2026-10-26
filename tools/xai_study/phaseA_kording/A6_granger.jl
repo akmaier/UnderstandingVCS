@@ -190,7 +190,7 @@ function a6_settings_for(game::AbstractString)
     g == "space_invaders" && return JT.SpaceInvadersRomSettings()
     g == "ms_pacman"      && return JT.JoystickGames.MsPacmanRomSettings()
     g == "qbert"          && return JT.JoystickGames.QbertRomSettings()
-    return JT.GenericRomSettings()
+    return xai_settings_for(g, JT)     # full conformance map (common/game_sets.jl)
 end
 
 # ROM-name aliases (ms_pacman's file is mspacman.bin); mirrors A4 / import_labels.

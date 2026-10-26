@@ -194,7 +194,8 @@ end
 games use Generic settings (recorded honestly), matching the Phase-B/C fallback."""
 spec_for(game::AbstractString) = get(GAME_SPECS, lowercase(String(game)),
     GameSpec(String(game), String(game) * ".bin",
-             () -> JuTari.GenericRomSettings(), "GenericRomSettings"))
+             () -> xai_settings_for(game, JuTari),   # full conformance map (common/game_sets.jl)
+             string(nameof(typeof(xai_settings_for(game, JuTari))))))
 
 """A freshly-reset env with the xitari-parity boot (60 NOOP + 4 RESET) and the
 game's RomSettings."""

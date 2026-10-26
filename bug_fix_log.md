@@ -14,6 +14,47 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 🐛 P2 harness parity: 37 scored games booted with GenericRomSettings; streams now validated vs xitari to frame 105 — 2026-10-26
+
+**Symptom (found while validating the P2 streams against xitari).** Every P2 runner carried
+its own 5-core-game `settings_for` copy (about 25 copies) and fell back to `GenericRomSettings`
+for the other 37 scored games. So 7 scored games skipped ALE's starting actions:
+- air_raid FIRE
+- beam_rider RIGHT
+- double_dunk UPFIRE
+- gopher FIRE
+- pitfall UP
+- private_eye UP
+- yars_revenge FIRE
+
+3 more used a different screen crop or height: air_raid 250 rows, carnival 214, pacman y_start.
+kangaroo and road_runner lost only their terminal readers. This is CLAUDE.md rule #2 (cf. task
+#95 "pitfall doesn't jump"), now in the XAI harness.
+
+**Fix.** One map, `common/game_sets.jl::xai_settings_for(game, JT)`. It mirrors
+`tools/jutari_trace_dump.jl::_SETTINGS_BY_BASENAME`, the Paper-1 conformance map
+(checked equal on all 28 entries). Every runner's fallback now routes through it, and
+`jutari_oracle.jl` / `gameplay_state.jl` include game_sets.jl. 11 scored games change
+settings. The other 31 are byte-identical, since Generic is their real setting.
+
+**Validation (new: `tools/xai_study/repro/p2_stream_{dump.jl,xitari.sh,check.py}`, `trace_min.cpp`).**
+- The exact P2 stream (seed 0, prefix 90, horizon 15, the runners' own boot/step path) was
+  compared per frame against upstream xitari @ 4945fc6 built locally with three changes:
+  the seed-0 patch, an `XI_NO_STARTING_ACTIONS` switch, and the zlib macOS `fdopen` fix
+  (`#if defined(MACOS)` only).
+- **Old generic streams vs xitari without starting actions: RAM 42/42 exact on frames 0–105.**
+  Screen 39/42; the 3 misses are the crop/height games, a settings difference, not emulation.
+  So the published records were computed on a bit-exact machine.
+- **Fixed streams vs stock xitari: RAM 42/42 and screen 42/42 exact on every frame 0–105.**
+  Table: `tools/xai_study/repro/p2_stream_check.md`.
+- Negative control: pitfall's fixed stream vs xitari without starting actions diverges at
+  frame 0, so the check is sensitive.
+- Checker gotcha: the dump's per-frame stride must use the game's own screen height (air_raid
+  250). A fixed 210-row stride misaligns every RAM byte from frame 2.
+
+**Pending:** re-run the 11 changed games. Every summary is battery-wide, so the plan is the
+full 42-game battery on the cluster, with the 31 unchanged games as a cross-machine check.
+
 ### 🐛 P2 aggregation: e2e rows leaked into the leaderboard, a stale A4 record, shared-RNG CI jitter — 2026-10-26
 
 Found while updating Paper 2 after the e2e arm landed.

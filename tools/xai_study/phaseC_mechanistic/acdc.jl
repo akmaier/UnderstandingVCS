@@ -224,7 +224,8 @@ function spec_for(game::AbstractString)
     haskey(GAME_SPECS, g) && return GAME_SPECS[g]
     stem = get(ROM_BASENAME, g, g)
     return GameSpec(g, stem * ".bin",
-                    () -> JuTari.GenericRomSettings(), "GenericRomSettings")
+                    () -> xai_settings_for(g, JuTari),   # full conformance map (common/game_sets.jl)
+                    string(nameof(typeof(xai_settings_for(g, JuTari)))))
 end
 
 """Absolute ROM path for a game: search this worktree's xitari/roms, the primary

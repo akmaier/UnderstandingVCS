@@ -117,3 +117,46 @@ function xai_find_rom(names::AbstractVector{<:AbstractString},
     end
     error("ROM not found: tried names=$(collect(names)) under roots=$(collect(roots))")
 end
+
+# ---------------------------------------------------------------------------------------
+# Per-game RomSettings — the ONE map every P2 runner resolves through (2026-10-26).
+#
+# MUST mirror tools/jutari_trace_dump.jl::_SETTINGS_BY_BASENAME (the map Paper-1's 64/64
+# conformance was measured with; CLAUDE.md rule #2: settings maps must agree). Before this,
+# every runner carried its own 5-core-game copy and booted the other 37 scored games with
+# GenericRomSettings, so 7 scored games skipped ALE's starting actions (air_raid FIRE,
+# beam_rider RIGHT, double_dunk UPFIRE, gopher FIRE, pitfall UP, private_eye UP,
+# yars_revenge FIRE) and 3 used a different screen crop/height (air_raid, carnival, pacman).
+# `JT` is the caller's JuTari module (some runners only bind it as JutariOracle.JuTari).
+# Games absent here (seaquest, alien, …) legitimately use GenericRomSettings, as in Paper 1.
+const _XAI_SETTINGS_PATH = Dict{String,Tuple{Symbol,Symbol}}(
+    "breakout" => (:PaddleGames, :BreakoutRomSettings), "pong" => (:PaddleGames, :PongRomSettings),
+    "pitfall" => (:JoystickGames, :PitfallRomSettings), "enduro" => (:JoystickGames, :EnduroRomSettings),
+    "air_raid" => (:JoystickGames, :AirRaidRomSettings), "asterix" => (:JoystickGames, :AsterixRomSettings),
+    "beam_rider" => (:JoystickGames, :BeamRiderRomSettings),
+    "double_dunk" => (:JoystickGames, :DoubleDunkRomSettings),
+    "elevator_action" => (:JoystickGames, :ElevatorActionRomSettings),
+    "gopher" => (:JoystickGames, :GopherRomSettings), "gravitar" => (:JoystickGames, :GravitarRomSettings),
+    "journey_escape" => (:JoystickGames, :JourneyEscapeRomSettings),
+    "private_eye" => (:JoystickGames, :PrivateEyeRomSettings), "skiing" => (:JoystickGames, :SkiingRomSettings),
+    "up_n_down" => (:JoystickGames, :UpNDownRomSettings),
+    "yars_revenge" => (:JoystickGames, :YarsRevengeRomSettings),
+    "amidar" => (:JoystickGames, :AmidarRomSettings), "surround" => (:JoystickGames, :SurroundRomSettings),
+    "carnival" => (:JoystickGames, :CarnivalRomSettings), "pooyan" => (:JoystickGames, :PooyanRomSettings),
+    "battle_zone" => (:JoystickGames, :BattleZoneRomSettings),
+    "ms_pacman" => (:JoystickGames, :MsPacmanRomSettings), "pacman" => (:JoystickGames, :PacmanRomSettings),
+    "qbert" => (:JoystickGames, :QbertRomSettings), "wizard_of_wor" => (:JoystickGames, :WizardOfWorRomSettings),
+    "space_invaders" => (:TerminalGames, :SpaceInvadersRomSettings),
+    "road_runner" => (:TerminalGames, :RoadRunnerRomSettings),
+    "kangaroo" => (:TerminalGames, :KangarooRomSettings),
+)
+
+"""    xai_settings_for(game, JT) -> RomSettings
+
+The RomSettings Paper-1 conformance uses for `game` (`JT` = the caller's JuTari module)."""
+function xai_settings_for(game::AbstractString, JT::Module)
+    g = lowercase(String(game))
+    haskey(_XAI_SETTINGS_PATH, g) || return JT.GenericRomSettings()
+    sub, ty = _XAI_SETTINGS_PATH[g]
+    return getfield(getfield(JT, sub), ty)()
+end

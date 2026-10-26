@@ -149,7 +149,7 @@ function settings_for(game::AbstractString)
     g == "space_invaders" && return JuTari.SpaceInvadersRomSettings()
     g == "ms_pacman"      && return JuTari.JoystickGames.MsPacmanRomSettings()
     g == "qbert"          && return JuTari.JoystickGames.QbertRomSettings()
-    return JuTari.GenericRomSettings()   # seaquest (no registered settings yet)
+    return xai_settings_for(g, JuTari)   # full conformance map (common/game_sets.jl); seaquest et al. -> Generic
 end
 
 function candidates_path_for(game::AbstractString)

@@ -23,6 +23,8 @@ module JutariOracle
 
 using JuTari
 using JuTari.Env: StellaEnvironment, env_reset!, env_step!, get_screen, get_ram
+# the ONE per-game RomSettings map (xai_settings_for) + game sets / ROM resolver
+include(joinpath(@__DIR__, "game_sets.jl"))
 
 export Snapshot, load_pong_env, boot_replay, snapshot, continue_from,
        intervene_ram!, intervene_tia!, fresh_baseline_ram_screen,
@@ -97,7 +99,7 @@ function settings_for(game::AbstractString)
     g == "space_invaders" && return JuTari.SpaceInvadersRomSettings()
     g == "ms_pacman"      && return JuTari.JoystickGames.MsPacmanRomSettings()
     g == "qbert"          && return JuTari.JoystickGames.QbertRomSettings()
-    return JuTari.GenericRomSettings()   # seaquest (no registered settings yet)
+    return xai_settings_for(g, JuTari)   # full conformance map (common/game_sets.jl); seaquest et al. -> Generic
 end
 
 # --- env construction + boot ------------------------------------------------

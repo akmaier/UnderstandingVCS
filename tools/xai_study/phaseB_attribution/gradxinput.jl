@@ -159,7 +159,7 @@ function _rom_path(game::AbstractString)
     # the mapped basename AND the raw ALE name, so all labeled games resolve uniformly.
     return xai_find_rom(unique([base, g]), xai_rom_roots(; primary_repo = _PRIMARY_REPO))
 end
-_settings(game::AbstractString) = get(_SETTINGS_CTOR, game, GenericRomSettings)()
+_settings(game::AbstractString) = get(_SETTINGS_CTOR, game, () -> xai_settings_for(game, JuTari))()   # full conformance map (common/game_sets.jl)
 
 """A freshly-reset env for `game` with the xitari-parity boot (60 NOOP + 4 RESET)
 and the game's REAL RomSettings — the same boot the screen scoreboard uses."""
