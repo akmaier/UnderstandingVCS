@@ -37,7 +37,7 @@ Outputs (to ``tools/xai_study/compare/out/``):
 
 ----------------------------------------------------------------------------------------
 Bootstrap design (review P1#16 "bootstrap over games AND over records"):
-  * Resample-over-GAMES is the headline CI: the scored games (42; 6 in the original
+  * Resample-over-GAMES is the headline CI: the scored games (44; 6 in the original
     core-only design) are the unit of generalisation, so each family mean / per-method mean / headline contrast is
     bootstrapped by resampling the games with replacement (>=`--boot` resamples).
     This is the CI the figures and results sections must read.

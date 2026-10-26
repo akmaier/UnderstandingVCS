@@ -308,7 +308,7 @@ def _game_of(path, rec):
 
 def load_per_game_records(scored_only=True):
     """Yield (phase, path, rec) for every per-game §R record across A/B/C. When
-    scored_only and the 42-game scored set is known, records for games OUTSIDE that
+    scored_only and the scored set (XAI_SCORED, 44 games) is known, records for games OUTSIDE that
     set are skipped, so aggregation covers exactly the scored battery.
 
     ``pilot*`` records are SKIPPED. Those are the June single-game proof-of-concept
@@ -324,7 +324,7 @@ def load_per_game_records(scored_only=True):
     ``e2e_*`` records are SKIPPED too. They are the 6-core-game true end-to-end gradient
     arm (phaseB_attribution/e2e_gradient.jl, 2026-10-26): a sub-study of vanilla saliency /
     Grad×Input on the same shared testbed, reported separately in Paper 2 §5 (Results B).
-    It is not a 42-game battery method, so it gets no leaderboard row of its own."""
+    It is not a battery method, so it gets no leaderboard row of its own."""
     for phase, d in PHASE_DIRS.items():
         for path in sorted(glob.glob(os.path.join(d, "*.json"))):
             if os.path.basename(path).startswith(("pilot", "e2e_")):

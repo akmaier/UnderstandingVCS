@@ -4,35 +4,35 @@ Pure read over the committed leaderboard (E6-1, `compare/out/leaderboard.json`) 
 
 ## Headline
 
-> On a system where the answer is known exactly — the bit-exact VCS with the §1 intervention oracle as ground truth — the field's default attribution tool scores near chance where a causal method scores near the ceiling. On the position/index regime (discrete sprite-position outputs whose naive gradient is provably zero, §1), the FAITHFUL method 'activation_patching' (causal) reaches faithfulness 1.000 (≈ the oracle ceiling 1.0), while the POPULAR method 'vanilla_saliency' (gradient) collapses to 0.115 (≈ the 0.0 naive-gradient floor) — a per-method gap of 0.885. Aggregated over the regime, causal/intervention methods average 0.561 (±0.321, n=4) vs 0.235 (±0.156, n=9) for gradient/correlational methods — a 0.326 faithfulness gap. The popular method nonetheless carries the higher human-plausibility proxy (0.9 vs 0.5): plausible ≠ faithful (the §0 danger zone), measured.
+> On a system where the answer is known exactly — the bit-exact VCS with the §1 intervention oracle as ground truth — the field's default attribution tool scores near chance where a causal method scores near the ceiling. On the position/index regime (discrete sprite-position outputs whose naive gradient is provably zero, §1), the FAITHFUL method 'activation_patching' (causal) reaches faithfulness 1.000 (≈ the oracle ceiling 1.0), while the POPULAR method 'vanilla_saliency' (gradient) collapses to 0.092 (≈ the 0.0 naive-gradient floor) — a per-method gap of 0.908. Aggregated over the regime, causal/intervention methods average 0.560 (±0.321, n=4) vs 0.222 (±0.157, n=9) for gradient/correlational methods — a 0.338 faithfulness gap. The popular method nonetheless carries the higher human-plausibility proxy (0.9 vs 0.5): plausible ≠ faithful (the §0 danger zone), measured.
 
 ## The pair (on the position/index regime, naive gradient ≡ 0)
 
 | Role | Method | Tradition | Phase | Faith (position) | Faith (all regimes) | Plausibility (proxy) |
 |---|---|---|---|---|---|---|
 | FAITHFUL | `activation_patching` | causal | phaseC_mechanistic | **1.0000** | 1.0000 | 0.5 |
-| POPULAR | `vanilla_saliency` | gradient | phaseB_attribution | **0.1150** | 0.3798 | 0.9 |
-| _gap_ | (faithful − popular) | | | **0.8850** | 0.6202 | |
+| POPULAR | `vanilla_saliency` | gradient | phaseB_attribution | **0.0923** | 0.3614 | 0.9 |
+| _gap_ | (faithful − popular) | | | **0.9077** | 0.6386 | |
 | _reference_ | ORACLE ceiling / naive-grad floor | | | 1.0 / 0.0 | | |
 
 ## Aggregate over the regime (leaderboard headline)
 
 | Bucket | Faithfulness (position) | n |
 |---|---|---|
-| causal/intervention (faithful) | 0.5610 ± 0.3212 | 4 |
-| gradient/correlational (popular) | 0.2346 ± 0.1559 | 9 |
-| **gap** | **0.3264** | |
+| causal/intervention (faithful) | 0.5602 ± 0.3214 | 4 |
+| gradient/correlational (popular) | 0.2221 ± 0.1571 | 9 |
+| **gap** | **0.3381** | |
 
 ## Per-game head-to-head
 
 | Game | Faithful | (regime) | Popular | (regime) | Gap |
 |---|---|---|---|---|---|
-| air_raid | 1.0000 | position | 0.0000 | position | 1.0000 |
+| air_raid | 1.0000 | position | 0.2280 | position | 0.7720 |
 | alien | 1.0000 | position | 0.0000 | position | 1.0000 |
 | assault | 1.0000 | position | 0.0000 | position | 1.0000 |
+| asterix | 1.0000 | position | 0.0000 | position | 1.0000 |
 | atlantis | 1.0000 | position | 0.0000 | position | 1.0000 |
 | bank_heist | 1.0000 | position | 0.0000 | position | 1.0000 |
-| beam_rider | 1.0000 | position | 0.9966 | position | 0.0034 |
 | berzerk | 1.0000 | position | 0.0196 | position | 0.9804 |
 | bowling | 1.0000 | position | 0.3485 | position | 0.6515 |
 | boxing | 1.0000 | position | 0.1563 | position | 0.8437 |
@@ -42,6 +42,7 @@ Pure read over the committed leaderboard (E6-1, `compare/out/leaderboard.json`) 
 | chopper_command | 1.0000 | position | 0.0000 | position | 1.0000 |
 | demon_attack | 1.0000 | position | 0.0000 | position | 1.0000 |
 | double_dunk | 1.0000 | position | 0.0000 | position | 1.0000 |
+| enduro | 1.0000 | position | 0.0000 | position | 1.0000 |
 | fishing_derby | 1.0000 | position | 0.0000 | position | 1.0000 |
 | freeway | 1.0000 | position | 0.0485 | position | 0.9515 |
 | frostbite | 1.0000 | position | 0.0589 | position | 0.9411 |
@@ -59,11 +60,12 @@ Pure read over the committed leaderboard (E6-1, `compare/out/leaderboard.json`) 
 | phoenix | 1.0000 | position | 0.0000 | position | 1.0000 |
 | pitfall | 1.0000 | position | 0.0000 | position | 1.0000 |
 | pong | 1.0000 | position | 0.2778 | position | 0.7222 |
-| private_eye | 1.0000 | position | 0.0032 | position | 0.9968 |
+| private_eye | 1.0000 | position | 0.0029 | position | 0.9971 |
 | qbert | 1.0000 | position | 0.0000 | position | 1.0000 |
 | riverraid | 1.0000 | position | 0.0000 | position | 1.0000 |
 | road_runner | 1.0000 | position | 0.0000 | position | 1.0000 |
 | seaquest | 1.0000 | position | 0.7098 | position | 0.2902 |
+| skiing | 1.0000 | position | 0.0000 | position | 1.0000 |
 | space_invaders | 1.0000 | position | 0.0000 | position | 1.0000 |
 | tennis | 1.0000 | position | 0.0000 | position | 1.0000 |
 | venture | 1.0000 | position | 0.0000 | position | 1.0000 |
@@ -71,10 +73,10 @@ Pure read over the committed leaderboard (E6-1, `compare/out/leaderboard.json`) 
 | yars_revenge | 1.0000 | position | 0.0000 | position | 1.0000 |
 
 ## Self-check: PASS
-- [x] faithful beats popular on the position regime — 1.0000 > 0.1150
-- [x] per-method position gap > 0 — gap=0.8850
-- [x] aggregate bucket gap matches leaderboard headline — demo=0.3264 lb=0.3264
+- [x] faithful beats popular on the position regime — 1.0000 > 0.0923
+- [x] per-method position gap > 0 — gap=0.9077
+- [x] aggregate bucket gap matches leaderboard headline — demo=0.3381 lb=0.3381
 - [x] faithful is near ceiling (>=0.9 of oracle 1.0) — 1.0000 >= 0.9
-- [x] popular is near chance (<=0.25, i.e. far below the causal ceiling) — 0.1150 <= 0.25
+- [x] popular is near chance (<=0.25, i.e. far below the causal ceiling) — 0.0923 <= 0.25
 - [x] popular plausibility proxy > faithful (danger zone) — 0.9 > 0.5
-- [x] every paired per-game row has faithful >= popular — n_paired=42
+- [x] every paired per-game row has faithful >= popular — n_paired=44
