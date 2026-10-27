@@ -158,11 +158,12 @@
   <p>Most gradient runners differentiate the output read <i>at</i> \(f^*\). The
   <a href="m_saliency.html">end-to-end arm</a> <a href="https://github.com/akmaier/UnderstandingVCS/blob/main/tools/xai_study/phaseB_attribution/e2e_gradient.jl#L165"><code>e2e_gradient.jl:165</code></a> instead backpropagates from frame \(f^*{+}15\)
   through every one of the &asymp;10<sup>5</sup> CPU instructions in between: the real &ldquo;deep
-  network&rdquo; case. The measured answer is a lesson in itself: in all six core games the forward
-  pass stays bit-exact, yet the gradient that comes out is (almost) the same one-hot spike the one-line
-  read gives. Every other causal path runs through a branch, a table look-up or a hardware read, and
-  a gradient cannot see any of those. In Breakout and Space Invaders the position gradient dies
-  completely on the way back.</p>
+  network&rdquo; case. The measured answer is a lesson in itself: in all 44 scored games the forward
+  pass stays bit-exact, yet on most of them the gradient that comes out is the same one-hot spike the
+  one-line read gives. Every other causal path runs through a branch, a table look-up or a hardware
+  read, and a gradient cannot see any of those. On 8 games the content gradient and on 8 the position
+  gradient dies completely on the way back (Breakout and Space Invaders among them). Only Centipede,
+  where the output byte is carried over from the oracle's strongest cause, gets a better map.</p>
 
   <h2 style="margin-top:40px">7 &middot; The methods, in a suggested reading order</h2>
   <p>Each page has the same structure: the idea in plain words, how it works on a neural network
@@ -183,7 +184,7 @@ julia --project=jutari tools/xai_study/phaseB_attribution/saliency.jl --game pon
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/b98b44536fb8b381d0406d6f7ef943d102d7dc16"><code>b98b4453</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/cb87413c024b871a3d2a73860264067ed85b6fd5"><code>cb87413c</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>

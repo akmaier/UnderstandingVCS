@@ -132,8 +132,10 @@ This is the same trick spatial-transformer networks use, and it restores a non-z
 <b>back through every CPU instruction of the 15 frames</b> (about 10<sup>5</sup> instructions,
 checkpointed every 200). That is the analogue of backpropagating through a very deep, very
 discrete network. The renderer (TIA) is still not differentiated.</p>
-<p><b>What it found</b> (six core games, forward pass bit-exact in every one, 9&ndash;18 hours of
-backward pass per game on one core):</p>
+<p><b>What it found</b> (all 44 scored games, forward pass bit-exact in every one, 8&ndash;23 hours
+of backward pass per game on one core). On most games the answer is the same map as the one-line read.
+On the content byte the per-cause map is unchanged in 34 of 43 games finished so far, and in the position
+output in 34 as well. The six core games show the patterns one by one:</p>
 <ul>
 <li><b>Content:</b> in five games the gradient through 65&thinsp;000&ndash;81&thinsp;000 instructions is
 <i>exactly</i> the one-hot vector \(e_{\text{idx}}\) again (\(\lVert g\rVert_1 = 1\), one non-zero
@@ -146,11 +148,17 @@ paddle&hellip;&rdquo;), an indexed load or a hardware read, and none of those ca
 velocity being added to a position once per frame: \(x_{t+15} = x_t + 15\,v\), so
 \(\partial x_{t+15}/\partial v = 15\). Backpropagation through time has discovered the game's
 physics. RAM[56] is not among the candidate causes, though, so the scores again equal the one-line
-read's (0.464), and the oracle's strongest cause still gets zero.</li>
+read's (0.464), and the oracle's strongest cause still gets zero. Atlantis shows the same signature.</li>
 <li><b>Position:</b> in Breakout and Space Invaders the gradient arriving at \(f^*\) is
 <b>exactly zero</b>, although the sampler's gradient at \(f^*{+}15\) is non-zero (checked). Breakout
 recomputes its paddle position every frame from the paddle controller, a hardware input the gradient
 treats as a constant. The vanishing gradient, measured.</li>
+<li><b>Across all games:</b> the gradient vanishes completely on 8 games' content byte and on 8 games'
+position output. Three games lose a good content score that way (Enduro 1.000 to 0, Phoenix 0.909 to 0,
+Air Raid 0.360 to 0). One game gains: in Centipede the content byte at \(f^*{+}15\) is carried over
+from RAM[111] at \(f^*\), the oracle's strongest cause, and the score jumps from &minus;0.10 to 0.85.
+On average the deep gradient is slightly <i>less</i> faithful than the one-line read (content 0.627 to
+0.594, position 0.090 to 0.084).</li>
 </ul>
 <p>The lesson for neural networks: a deeper, more &ldquo;honest&rdquo; gradient is not automatically a
 more faithful explanation. Through a computation made of decisions rather than smooth arithmetic,
@@ -171,7 +179,7 @@ causes: the gradient is <i>local</i>, the oracle is <i>global</i>.</p>
   <ul class="pit"><li><b>Local is not global.</b> A gradient describes an infinitesimal neighbourhood. Real interventions are finite (here: set a byte to a new value), and on a discrete machine the two can disagree completely.</li><li><b>Vanishing / zero gradients</b> wherever the computation is piecewise constant (thresholds, comparisons, table look-ups, sprite positioning by timing). ReLU networks have the same problem in their flat regions; the VCS has it everywhere.</li><li><b>Saturation.</b> If a byte is already at a value where the output no longer responds (think of a saturated sigmoid), its gradient is ~0 even though it matters a lot.</li><li><b>Visual plausibility is not faithfulness.</b> Adebayo et al. showed saliency maps can look sensible even for a network with randomised weights. Here we never judge a map by looks: every score is against the oracle.</li></ul>
   <h3>Try it yourself</h3>
   <pre class="try">julia --project=jutari tools/xai_study/phaseB_attribution/saliency.jl --games core</pre>
-  <p class="sub">Writes <code>saliency_&lt;game&gt;_{content,position}.json/.npz</code> into <code>tools/xai_study/phaseB_attribution/out/</code>. For the end-to-end variant run <code>e2e_gradient.jl --game pong</code> (9&ndash;18 hours per game on one CPU core; records <code>e2e_{saliency,gradxinput}_&lt;game&gt;_*</code> and <code>e2e_core_summary.json</code>).</p>
+  <p class="sub">Writes <code>saliency_&lt;game&gt;_{content,position}.json/.npz</code> into <code>tools/xai_study/phaseB_attribution/out/</code>. For the end-to-end variant run <code>e2e_gradient.jl --game pong</code> (8&ndash;23 hours per game on one CPU core; records <code>e2e_{saliency,gradxinput}_&lt;game&gt;_*</code> and <code>e2e_core_summary.json</code>).</p>
   <h3>Original papers &amp; further reading</h3>
   <ul><li>Simonyan, Vedaldi &amp; Zisserman (2014). <i>Deep Inside Convolutional Networks: Visualising Image Classification Models and Saliency Maps.</i> ICLR workshop. &mdash; <a href="https://arxiv.org/abs/1312.6034">arxiv.org/abs/1312.6034</a></li><li>Adebayo et al. (2018). <i>Sanity Checks for Saliency Maps.</i> NeurIPS. &mdash; <a href="https://arxiv.org/abs/1810.03292">arxiv.org/abs/1810.03292</a></li></ul>
   <p><b>Read next:</b> <a href="m_gradxinput.html">Grad×Input / DeepLIFT</a> · <a href="m_smoothgrad.html">SmoothGrad</a> · <a href="m_ig_baseline_sweep.html">Integrated Gradients</a> · <a href="m_occlusion.html">Occlusion</a></p>
@@ -290,7 +298,7 @@ document.addEventListener('click',function(e){
 </div></section>
 
 <footer><div class="wrap">
-Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/b98b44536fb8b381d0406d6f7ef943d102d7dc16"><code>b98b4453</code></a> ·
+Built from <a href="https://github.com/akmaier/UnderstandingVCS/commit/cb87413c024b871a3d2a73860264067ed85b6fd5"><code>cb87413c</code></a> ·
 source of truth: <code>docs/manifest.py</code> ·
 regenerate with <code>python3 docs/build_assets.py &amp;&amp; python3 docs/build_pages.py</code> ·
 <a href="https://github.com/akmaier/UnderstandingVCS">repository</a>
