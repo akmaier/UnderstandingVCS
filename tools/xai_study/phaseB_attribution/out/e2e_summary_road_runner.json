@@ -1,0 +1,72 @@
+{
+  "commit": "56e3a03",
+  "games": [
+    "road_runner"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 48542.317516738,
+      "content_ram_index": 55,
+      "deletion_auc": null,
+      "game": "road_runner",
+      "grad_l1": 0.0,
+      "insertion_auc": null,
+      "method": "e2e_saliency",
+      "output": "content(ram@55, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.0,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.0
+    },
+    {
+      "backward_seconds": 48542.317516738,
+      "content_ram_index": -1,
+      "deletion_auc": 0.36524966261808367,
+      "game": "road_runner",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.7113360323886639,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r74c30",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 0.0,
+      "spearman": 0.0
+    },
+    {
+      "backward_seconds": 48542.317516738,
+      "content_ram_index": 55,
+      "deletion_auc": null,
+      "game": "road_runner",
+      "grad_l1": 0.0,
+      "insertion_auc": null,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@55, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.0,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.0
+    },
+    {
+      "backward_seconds": 48542.317516738,
+      "content_ram_index": -1,
+      "deletion_auc": 0.36524966261808367,
+      "game": "road_runner",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.7113360323886639,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r74c30",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 0.0,
+      "spearman": 0.0
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1793058911",
+  "topk": 3
+}

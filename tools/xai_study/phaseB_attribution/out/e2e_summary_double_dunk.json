@@ -1,0 +1,72 @@
+{
+  "commit": "56e3a03",
+  "games": [
+    "double_dunk"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 65724.995323953,
+      "content_ram_index": 46,
+      "deletion_auc": 0.972552447552448,
+      "game": "double_dunk",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.058566433566433554,
+      "method": "e2e_saliency",
+      "output": "content(ram@46, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.797034343404584,
+      "precision_at_k": 1.0,
+      "spearman": 0.9991996797437437
+    },
+    {
+      "backward_seconds": 65724.995323953,
+      "content_ram_index": -1,
+      "deletion_auc": 0.6924691747886371,
+      "game": "double_dunk",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.18898833019937705,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r105c80",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 0.0,
+      "spearman": 0.0
+    },
+    {
+      "backward_seconds": 65724.995323953,
+      "content_ram_index": 46,
+      "deletion_auc": 0.972552447552448,
+      "game": "double_dunk",
+      "grad_l1": 148.0,
+      "insertion_auc": 0.058566433566433554,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@46, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.7970343434045838,
+      "precision_at_k": 1.0,
+      "spearman": 0.9991996797437437
+    },
+    {
+      "backward_seconds": 65724.995323953,
+      "content_ram_index": -1,
+      "deletion_auc": 0.6924691747886371,
+      "game": "double_dunk",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.18898833019937705,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r105c80",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 0.0,
+      "spearman": 0.0
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1793075988",
+  "topk": 3
+}

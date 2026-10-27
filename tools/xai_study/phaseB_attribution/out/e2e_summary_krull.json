@@ -1,0 +1,72 @@
+{
+  "commit": "56e3a03",
+  "games": [
+    "krull"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 43682.815376212,
+      "content_ram_index": 79,
+      "deletion_auc": 0.029977375565610864,
+      "game": "krull",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.9711538461538461,
+      "method": "e2e_saliency",
+      "output": "content(ram@79, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.999454952651106,
+      "precision_at_k": 1.0,
+      "spearman": 0.9998077477632911
+    },
+    {
+      "backward_seconds": 43682.815376212,
+      "content_ram_index": -1,
+      "deletion_auc": 0.7594691430242761,
+      "game": "krull",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.6919055279321438,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r162c84",
+      "output_kind": "position",
+      "pearson": 0.6077952299606671,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.39165068286269766
+    },
+    {
+      "backward_seconds": 43682.815376212,
+      "content_ram_index": 79,
+      "deletion_auc": 0.029977375565610864,
+      "game": "krull",
+      "grad_l1": 255.0,
+      "insertion_auc": 0.9711538461538461,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@79, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.999454952651106,
+      "precision_at_k": 1.0,
+      "spearman": 0.9998077477632911
+    },
+    {
+      "backward_seconds": 43682.815376212,
+      "content_ram_index": -1,
+      "deletion_auc": 0.7594691430242761,
+      "game": "krull",
+      "grad_l1": 75.0,
+      "insertion_auc": 0.6919055279321438,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r162c84",
+      "output_kind": "position",
+      "pearson": 0.6077952299606673,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.39165068286269766
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1793053972",
+  "topk": 3
+}

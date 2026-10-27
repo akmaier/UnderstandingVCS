@@ -1,0 +1,72 @@
+{
+  "commit": "56e3a03",
+  "games": [
+    "montezuma_revenge"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 60597.275803151,
+      "content_ram_index": 45,
+      "deletion_auc": 0.015625,
+      "game": "montezuma_revenge",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.953125,
+      "method": "e2e_saliency",
+      "output": "content(ram@45, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.9995066377475382,
+      "precision_at_k": 1.0,
+      "spearman": 0.9994795732148172
+    },
+    {
+      "backward_seconds": 60597.275803151,
+      "content_ram_index": -1,
+      "deletion_auc": 0.9740890317858633,
+      "game": "montezuma_revenge",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.10890448557089082,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r66c75",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.0
+    },
+    {
+      "backward_seconds": 60597.275803151,
+      "content_ram_index": 45,
+      "deletion_auc": 0.015625,
+      "game": "montezuma_revenge",
+      "grad_l1": 254.0,
+      "insertion_auc": 0.953125,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@45, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.9995066377475385,
+      "precision_at_k": 1.0,
+      "spearman": 0.9994795732148172
+    },
+    {
+      "backward_seconds": 60597.275803151,
+      "content_ram_index": -1,
+      "deletion_auc": 0.9740890317858633,
+      "game": "montezuma_revenge",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.10890448557089082,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r66c75",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.0
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1793070916",
+  "topk": 3
+}

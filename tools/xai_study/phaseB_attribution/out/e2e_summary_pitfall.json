@@ -1,0 +1,72 @@
+{
+  "commit": "56e3a03",
+  "games": [
+    "pitfall"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 64224.0915177,
+      "content_ram_index": 32,
+      "deletion_auc": 0.9264705882352942,
+      "game": "pitfall",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.22012687427912342,
+      "method": "e2e_saliency",
+      "output": "content(ram@32, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.0,
+      "precision_at_k": 0.0,
+      "spearman": 0.0
+    },
+    {
+      "backward_seconds": 64224.0915177,
+      "content_ram_index": -1,
+      "deletion_auc": 0.8472111593452547,
+      "game": "pitfall",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.21524652515034448,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r114c129",
+      "output_kind": "position",
+      "pearson": -0.028333193081364897,
+      "precision_at_k": 0.0,
+      "spearman": 0.23983076740168516
+    },
+    {
+      "backward_seconds": 64224.0915177,
+      "content_ram_index": 32,
+      "deletion_auc": 0.9264705882352942,
+      "game": "pitfall",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.22012687427912342,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@32, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.0,
+      "precision_at_k": 0.0,
+      "spearman": 0.0
+    },
+    {
+      "backward_seconds": 64224.0915177,
+      "content_ram_index": -1,
+      "deletion_auc": 0.8472111593452547,
+      "game": "pitfall",
+      "grad_l1": 22.0,
+      "insertion_auc": 0.21524652515034448,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r114c129",
+      "output_kind": "position",
+      "pearson": -0.02833319308136491,
+      "precision_at_k": 0.0,
+      "spearman": 0.23983076740168516
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1793074581",
+  "topk": 3
+}

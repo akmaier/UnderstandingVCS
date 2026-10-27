@@ -1,0 +1,72 @@
+{
+  "commit": "56e3a03",
+  "games": [
+    "alien"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 62606.108151968,
+      "content_ram_index": 60,
+      "deletion_auc": 0.03571428571428571,
+      "game": "alien",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.8928571428571429,
+      "method": "e2e_saliency",
+      "output": "content(ram@60, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.7793451871942164,
+      "precision_at_k": 1.0,
+      "spearman": 0.9970370305242862
+    },
+    {
+      "backward_seconds": 62606.108151968,
+      "content_ram_index": -1,
+      "deletion_auc": 0.4831591173054588,
+      "game": "alien",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.535423925667828,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r64c78",
+      "output_kind": "position",
+      "pearson": -0.3037098067066092,
+      "precision_at_k": 0.0,
+      "spearman": -0.3364632924552266
+    },
+    {
+      "backward_seconds": 62606.108151968,
+      "content_ram_index": 60,
+      "deletion_auc": 0.03571428571428571,
+      "game": "alien",
+      "grad_l1": 116.0,
+      "insertion_auc": 0.8928571428571429,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@60, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.7793451871942162,
+      "precision_at_k": 1.0,
+      "spearman": 0.9970370305242862
+    },
+    {
+      "backward_seconds": 62606.108151968,
+      "content_ram_index": -1,
+      "deletion_auc": 0.5737514518002323,
+      "game": "alien",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.5574912891986062,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r64c78",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 0.0,
+      "spearman": 0.0
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1793072892",
+  "topk": 3
+}

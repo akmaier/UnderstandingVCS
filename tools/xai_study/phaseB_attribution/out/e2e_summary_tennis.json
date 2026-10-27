@@ -1,0 +1,72 @@
+{
+  "commit": "56e3a03",
+  "games": [
+    "tennis"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 70481.591948316,
+      "content_ram_index": 45,
+      "deletion_auc": 0.015625,
+      "game": "tennis",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.953125,
+      "method": "e2e_saliency",
+      "output": "content(ram@45, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.9998555185690604,
+      "precision_at_k": 1.0,
+      "spearman": 0.9994795732148172
+    },
+    {
+      "backward_seconds": 70481.591948316,
+      "content_ram_index": -1,
+      "deletion_auc": 0.728541063675832,
+      "game": "tennis",
+      "grad_l1": 16.0,
+      "insertion_auc": 0.24907290159189568,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r26c68",
+      "output_kind": "position",
+      "pearson": -0.06444792148040426,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": -0.04345430873096018
+    },
+    {
+      "backward_seconds": 70481.591948316,
+      "content_ram_index": 45,
+      "deletion_auc": 0.015625,
+      "game": "tennis",
+      "grad_l1": 247.0,
+      "insertion_auc": 0.953125,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@45, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.9998555185690603,
+      "precision_at_k": 1.0,
+      "spearman": 0.9994795732148172
+    },
+    {
+      "backward_seconds": 70481.591948316,
+      "content_ram_index": -1,
+      "deletion_auc": 0.728541063675832,
+      "game": "tennis",
+      "grad_l1": 3863.0,
+      "insertion_auc": 0.24907290159189568,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r26c68",
+      "output_kind": "position",
+      "pearson": -0.06444792148040426,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": -0.04345430873096018
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1793080759",
+  "topk": 3
+}

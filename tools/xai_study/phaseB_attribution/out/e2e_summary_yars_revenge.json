@@ -1,0 +1,72 @@
+{
+  "commit": "56e3a03",
+  "games": [
+    "yars_revenge"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 60470.060171538,
+      "content_ram_index": 43,
+      "deletion_auc": 0.017857142857142856,
+      "game": "yars_revenge",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.9464285714285714,
+      "method": "e2e_saliency",
+      "output": "content(ram@43, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.7708164565650645,
+      "precision_at_k": 1.0,
+      "spearman": 0.9993138935727439
+    },
+    {
+      "backward_seconds": 60470.060171538,
+      "content_ram_index": -1,
+      "deletion_auc": 0.4388664270739743,
+      "game": "yars_revenge",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.6044848757112907,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r84c6",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.0
+    },
+    {
+      "backward_seconds": 60470.060171538,
+      "content_ram_index": 43,
+      "deletion_auc": 0.017857142857142856,
+      "game": "yars_revenge",
+      "grad_l1": 150.0,
+      "insertion_auc": 0.9464285714285714,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@43, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.7708164565650647,
+      "precision_at_k": 1.0,
+      "spearman": 0.9993138935727439
+    },
+    {
+      "backward_seconds": 60470.060171538,
+      "content_ram_index": -1,
+      "deletion_auc": 0.4388664270739743,
+      "game": "yars_revenge",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.6044848757112907,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r84c6",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.0
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1793070750",
+  "topk": 3
+}

@@ -1,0 +1,72 @@
+{
+  "commit": "56e3a03",
+  "games": [
+    "bank_heist"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 51731.735944065,
+      "content_ram_index": 12,
+      "deletion_auc": 0.041666666666666664,
+      "game": "bank_heist",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.875,
+      "method": "e2e_saliency",
+      "output": "content(ram@12, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.8998068077217578,
+      "precision_at_k": 1.0,
+      "spearman": 0.9958591954639384
+    },
+    {
+      "backward_seconds": 51731.735944065,
+      "content_ram_index": -1,
+      "deletion_auc": 0.008999511062217332,
+      "game": "bank_heist",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.3346931915413765,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r81c23",
+      "output_kind": "position",
+      "pearson": -0.1275533091121092,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.4624047813530715
+    },
+    {
+      "backward_seconds": 51731.735944065,
+      "content_ram_index": 12,
+      "deletion_auc": 0.041666666666666664,
+      "game": "bank_heist",
+      "grad_l1": 44.0,
+      "insertion_auc": 0.875,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@12, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.8998068077217579,
+      "precision_at_k": 1.0,
+      "spearman": 0.9958591954639384
+    },
+    {
+      "backward_seconds": 51731.735944065,
+      "content_ram_index": -1,
+      "deletion_auc": 0.008999511062217332,
+      "game": "bank_heist",
+      "grad_l1": 41.0,
+      "insertion_auc": 0.3346931915413765,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r81c23",
+      "output_kind": "position",
+      "pearson": -0.1275533091121092,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.4624047813530715
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1793062006",
+  "topk": 3
+}

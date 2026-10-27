@@ -1,0 +1,72 @@
+{
+  "commit": "56e3a03",
+  "games": [
+    "jamesbond"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 52722.027970164,
+      "content_ram_index": 27,
+      "deletion_auc": 0.9821428571428571,
+      "game": "jamesbond",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.05357142857142857,
+      "method": "e2e_saliency",
+      "output": "content(ram@27, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.7474149731016062,
+      "precision_at_k": 1.0,
+      "spearman": 0.9993138935727439
+    },
+    {
+      "backward_seconds": 52722.027970164,
+      "content_ram_index": -1,
+      "deletion_auc": 0.8304871535391015,
+      "game": "jamesbond",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.2354177208073311,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r121c35",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 0.0,
+      "spearman": 0.0
+    },
+    {
+      "backward_seconds": 52722.027970164,
+      "content_ram_index": 27,
+      "deletion_auc": 0.9821428571428571,
+      "game": "jamesbond",
+      "grad_l1": 36.0,
+      "insertion_auc": 0.05357142857142857,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@27, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.7474149731016063,
+      "precision_at_k": 1.0,
+      "spearman": 0.9993138935727439
+    },
+    {
+      "backward_seconds": 52722.027970164,
+      "content_ram_index": -1,
+      "deletion_auc": 0.8304871535391015,
+      "game": "jamesbond",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.2354177208073311,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r121c35",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 0.0,
+      "spearman": 0.0
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1793062985",
+  "topk": 3
+}

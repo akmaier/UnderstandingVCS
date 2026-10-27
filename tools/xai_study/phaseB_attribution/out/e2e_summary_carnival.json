@@ -1,0 +1,72 @@
+{
+  "commit": "56e3a03",
+  "games": [
+    "carnival"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 29160.363482123,
+      "content_ram_index": 111,
+      "deletion_auc": 0.10526315789473684,
+      "game": "carnival",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.0,
+      "method": "e2e_saliency",
+      "output": "content(ram@111, f*+15)",
+      "output_kind": "content",
+      "pearson": -0.022106649166536086,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.3447736487448959
+    },
+    {
+      "backward_seconds": 29160.363482123,
+      "content_ram_index": -1,
+      "deletion_auc": 0.8582161926555518,
+      "game": "carnival",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.4917565653263594,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r92c33",
+      "output_kind": "position",
+      "pearson": -0.047753548957938353,
+      "precision_at_k": 0.0,
+      "spearman": 0.05984366836048188
+    },
+    {
+      "backward_seconds": 29160.363482123,
+      "content_ram_index": 111,
+      "deletion_auc": 0.10526315789473684,
+      "game": "carnival",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.0,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@111, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.0,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.0
+    },
+    {
+      "backward_seconds": 29160.363482123,
+      "content_ram_index": -1,
+      "deletion_auc": 0.8582161926555518,
+      "game": "carnival",
+      "grad_l1": 31.0,
+      "insertion_auc": 0.4917565653263594,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r92c33",
+      "output_kind": "position",
+      "pearson": -0.047753548957938353,
+      "precision_at_k": 0.0,
+      "spearman": 0.05984366836048188
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1793039448",
+  "topk": 3
+}

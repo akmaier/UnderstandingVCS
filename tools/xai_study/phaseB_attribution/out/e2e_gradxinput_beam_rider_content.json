@@ -1,0 +1,110 @@
+{
+  "arrays": "e2e_gradxinput_beam_rider_content.npz",
+  "ci": null,
+  "commit": "56e3a03",
+  "extra": {
+    "attr_per_cause": {
+      "joystick:RIGHT": 0.0,
+      "ram[25]:occlude": 0.0,
+      "ram[25]:set": 0.0,
+      "ram[32]:occlude": 0.0,
+      "ram[32]:set": 0.0,
+      "ram[33]:occlude": 0.0,
+      "ram[33]:set": 0.0,
+      "ram[40]:occlude": 0.0,
+      "ram[40]:set": 0.0,
+      "ram[41]:occlude": 128.0,
+      "ram[41]:set": 128.0,
+      "tia[COLUBK]:set": 0.0
+    },
+    "backward_seconds": 66961.436770596,
+    "cause_names": [
+      "ram[25]:set",
+      "ram[25]:occlude",
+      "ram[32]:set",
+      "ram[32]:occlude",
+      "ram[33]:set",
+      "ram[33]:occlude",
+      "ram[40]:set",
+      "ram[40]:occlude",
+      "ram[41]:set",
+      "ram[41]:occlude",
+      "tia[COLUBK]:set",
+      "joystick:RIGHT"
+    ],
+    "content_ram_index": 41,
+    "grad_l1": 1.0,
+    "grad_nnz": 1,
+    "gradient_path": "content: y = RAM[idx] at f*+H, differentiated through the CPU rollout",
+    "harness_positive_control": {
+      "deletion_auc": 0.041666666666666664,
+      "insertion_auc": 0.875,
+      "pearson_corr": 1.0,
+      "precision_at_k": 1.0
+    },
+    "method_ref": "Gradient×Input (Shrikumar et al. 2016), TRUE END-TO-END: |∂y(f*+H)/∂ram_f* ⊙ ram_f*|",
+    "metrics": {
+      "deletion_auc": 0.041666666666666664,
+      "insertion_auc": 0.875,
+      "pearson_corr": 0.7662396634704649,
+      "precision_at_k": 1.0,
+      "spearman_corr": 0.9958591954639384,
+      "topk": 3
+    },
+    "n_instructions_differentiated": 89482,
+    "oracle_abs_delta_per_cause": {
+      "joystick:RIGHT": 0.0,
+      "ram[25]:occlude": 0.0,
+      "ram[25]:set": 0.0,
+      "ram[32]:occlude": 0.0,
+      "ram[32]:set": 0.0,
+      "ram[33]:occlude": 0.0,
+      "ram[33]:set": 0.0,
+      "ram[40]:occlude": 0.0,
+      "ram[40]:set": 0.0,
+      "ram[41]:occlude": 128.0,
+      "ram[41]:set": 17.0,
+      "tia[COLUBK]:set": 0.0
+    },
+    "oracle_column_degenerate": false,
+    "output_kind": "content",
+    "substrate": "jutari Diff.soft_system_step over every instruction of the horizon (forward asserted bit-exact to env_step!); Zygote VJP checkpointed every 200 instructions. Gradient flows through CPU registers, RAM, ALU and ROM; TIA/RIOT reads are constants; addressing/branch decisions carry no gradient.",
+    "testbed": {
+      "cause_density_above_floor": 4,
+      "cause_density_accepted": true,
+      "cell": [
+        179,
+        78
+      ],
+      "horizon": 15,
+      "position_byte_ram_index": 41,
+      "prefix": 90,
+      "seed": 0,
+      "state_kind": "seeded_random_action_gameplay"
+    },
+    "triad": {
+      "F": 0.7662396634704649,
+      "M": 1.0,
+      "M_named_size": 2,
+      "M_note": "|U*|=2 (oracle movers) / |U_hat|=2 (method above-threshold)",
+      "M_true_minimal_size": 2,
+      "S": 0.8333333333333334,
+      "S_note": "held-out predictive fit: 5/6 held-out do(u) within ε=12.8 (calib=6, fit Δy≈0.133·attr+0.0)",
+      "definition": "F∧S∧M triad (03_methods.tex sec:triad): F = faithfulness (runner-computed, unchanged); S = held-out predictive sufficiency over a disjoint do(u) split scored on the oracle's bit-exact re-runs; M = |U*|/|U_hat| (true minimal cause set / method-named set)."
+    }
+  },
+  "game": "beam_rider",
+  "method": "e2e_gradxinput",
+  "metric_name": "pearson_corr_with_oracle",
+  "n": 12,
+  "oracle_ref": "oracle_intervene@beam_rider#content(ram@41, f*+15)",
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "seed": 0,
+  "state": "gameplay(seed=0,prefix=90)+15",
+  "stderr": null,
+  "target_output": "content(ram@41, f*+15)",
+  "timestamp": "1793077218",
+  "value": 0.7662396634704649,
+  "where": "local"
+}

@@ -1,0 +1,72 @@
+{
+  "commit": "56e3a03",
+  "games": [
+    "bowling"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 53135.584217201,
+      "content_ram_index": 30,
+      "deletion_auc": 0.07359307359307356,
+      "game": "bowling",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.4199134199134199,
+      "method": "e2e_saliency",
+      "output": "content(ram@30, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.6881217975808328,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.6881253898490473
+    },
+    {
+      "backward_seconds": 53135.584217201,
+      "content_ram_index": -1,
+      "deletion_auc": 0.7310799319727894,
+      "game": "bowling",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.2874453352769679,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r164c33",
+      "output_kind": "position",
+      "pearson": 0.34852126796713173,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.38497085331018943
+    },
+    {
+      "backward_seconds": 53135.584217201,
+      "content_ram_index": 30,
+      "deletion_auc": 0.07359307359307356,
+      "game": "bowling",
+      "grad_l1": 44.0,
+      "insertion_auc": 0.4199134199134199,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@30, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.6881217975808331,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.6881253898490473
+    },
+    {
+      "backward_seconds": 53135.584217201,
+      "content_ram_index": -1,
+      "deletion_auc": 0.7310799319727894,
+      "game": "bowling",
+      "grad_l1": 24.0,
+      "insertion_auc": 0.2874453352769679,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r164c33",
+      "output_kind": "position",
+      "pearson": 0.3485212679671316,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.38497085331018943
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1793063463",
+  "topk": 3
+}

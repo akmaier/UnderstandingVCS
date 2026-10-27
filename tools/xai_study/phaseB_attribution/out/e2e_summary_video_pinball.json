@@ -1,0 +1,72 @@
+{
+  "commit": "56e3a03",
+  "games": [
+    "video_pinball"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 68403.209473705,
+      "content_ram_index": 67,
+      "deletion_auc": 0.9587053571428572,
+      "game": "video_pinball",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.09375,
+      "method": "e2e_saliency",
+      "output": "content(ram@67, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.7702573842286506,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.8419386910539691
+    },
+    {
+      "backward_seconds": 68403.209473705,
+      "content_ram_index": -1,
+      "deletion_auc": 0.641826923076923,
+      "game": "video_pinball",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.4591346153846154,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r184c66",
+      "output_kind": "position",
+      "pearson": 0.1600531541991161,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.2710982070722703
+    },
+    {
+      "backward_seconds": 68403.209473705,
+      "content_ram_index": 67,
+      "deletion_auc": 0.9587053571428572,
+      "game": "video_pinball",
+      "grad_l1": 144.0,
+      "insertion_auc": 0.09375,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@67, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.7702573842286508,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.8419386910539691
+    },
+    {
+      "backward_seconds": 68403.209473705,
+      "content_ram_index": -1,
+      "deletion_auc": 0.641826923076923,
+      "game": "video_pinball",
+      "grad_l1": 144.0,
+      "insertion_auc": 0.4591346153846154,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r184c66",
+      "output_kind": "position",
+      "pearson": 0.16005315419911606,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.2710982070722703
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1793078711",
+  "topk": 3
+}

@@ -1,0 +1,72 @@
+{
+  "commit": "56e3a03",
+  "games": [
+    "asterix"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 34997.329209848,
+      "content_ram_index": 96,
+      "deletion_auc": 0.1,
+      "game": "asterix",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.0,
+      "method": "e2e_saliency",
+      "output": "content(ram@96, f*+15)",
+      "output_kind": "content",
+      "pearson": -0.004860573186813769,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.27923593886113035
+    },
+    {
+      "backward_seconds": 34997.329209848,
+      "content_ram_index": -1,
+      "deletion_auc": 0.5148593200468933,
+      "game": "asterix",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.5864888628370457,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r91c79",
+      "output_kind": "position",
+      "pearson": -0.0019364291053974572,
+      "precision_at_k": 0.0,
+      "spearman": 0.29862057276352755
+    },
+    {
+      "backward_seconds": 34997.329209848,
+      "content_ram_index": 96,
+      "deletion_auc": 0.1,
+      "game": "asterix",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.0,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@96, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.0,
+      "precision_at_k": 0.0,
+      "spearman": 0.0
+    },
+    {
+      "backward_seconds": 34997.329209848,
+      "content_ram_index": -1,
+      "deletion_auc": 0.5148593200468933,
+      "game": "asterix",
+      "grad_l1": 86.0,
+      "insertion_auc": 0.5864888628370457,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r91c79",
+      "output_kind": "position",
+      "pearson": -0.001936429105397469,
+      "precision_at_k": 0.0,
+      "spearman": 0.29862057276352755
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1793050689",
+  "topk": 3
+}

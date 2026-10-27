@@ -1,0 +1,72 @@
+{
+  "commit": "56e3a03",
+  "games": [
+    "demon_attack"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 65861.183214955,
+      "content_ram_index": 16,
+      "deletion_auc": 0.4866194751381214,
+      "game": "demon_attack",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.7777106353591161,
+      "method": "e2e_saliency",
+      "output": "content(ram@16, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.9544935095981931,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.8292641817265206
+    },
+    {
+      "backward_seconds": 65861.183214955,
+      "content_ram_index": -1,
+      "deletion_auc": 0.6312810069723784,
+      "game": "demon_attack",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.5537635760257442,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r189c1",
+      "output_kind": "position",
+      "pearson": -0.014979481067275728,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.29226486632063514
+    },
+    {
+      "backward_seconds": 65861.183214955,
+      "content_ram_index": 16,
+      "deletion_auc": 0.4866194751381214,
+      "game": "demon_attack",
+      "grad_l1": 181.0,
+      "insertion_auc": 0.7777106353591161,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@16, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.954493509598193,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.8292641817265206
+    },
+    {
+      "backward_seconds": 65861.183214955,
+      "content_ram_index": -1,
+      "deletion_auc": 0.6312810069723784,
+      "game": "demon_attack",
+      "grad_l1": 181.0,
+      "insertion_auc": 0.5537635760257442,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r189c1",
+      "output_kind": "position",
+      "pearson": -0.014979481067275724,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.29226486632063514
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1793076113",
+  "topk": 3
+}

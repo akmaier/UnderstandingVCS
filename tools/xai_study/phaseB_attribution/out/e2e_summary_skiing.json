@@ -1,0 +1,72 @@
+{
+  "commit": "56e3a03",
+  "games": [
+    "skiing"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 63258.207509209,
+      "content_ram_index": 90,
+      "deletion_auc": 0.025,
+      "game": "skiing",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.925,
+      "method": "e2e_saliency",
+      "output": "content(ram@90, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.8097455827355623,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.836892528977506
+    },
+    {
+      "backward_seconds": 63258.207509209,
+      "content_ram_index": -1,
+      "deletion_auc": 0.5816287878787879,
+      "game": "skiing",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.47973484848484843,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r51c78",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 0.0,
+      "spearman": 0.0
+    },
+    {
+      "backward_seconds": 63258.207509209,
+      "content_ram_index": 90,
+      "deletion_auc": 0.025,
+      "game": "skiing",
+      "grad_l1": 88.0,
+      "insertion_auc": 0.925,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@90, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.8097455827355622,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.836892528977506
+    },
+    {
+      "backward_seconds": 63258.207509209,
+      "content_ram_index": -1,
+      "deletion_auc": 0.5816287878787879,
+      "game": "skiing",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.47973484848484843,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r51c78",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 0.0,
+      "spearman": 0.0
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1793078961",
+  "topk": 3
+}

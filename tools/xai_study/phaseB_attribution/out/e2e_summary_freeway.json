@@ -1,0 +1,72 @@
+{
+  "commit": "56e3a03",
+  "games": [
+    "freeway"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 63063.472811622,
+      "content_ram_index": 14,
+      "deletion_auc": 0.3341736694677871,
+      "game": "freeway",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.04789915966386557,
+      "method": "e2e_saliency",
+      "output": "content(ram@14, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.7468969670496017,
+      "precision_at_k": 1.0,
+      "spearman": 0.9994052928406509
+    },
+    {
+      "backward_seconds": 63063.472811622,
+      "content_ram_index": -1,
+      "deletion_auc": 0.5327877507919747,
+      "game": "freeway",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.5005455825413587,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r173c19",
+      "output_kind": "position",
+      "pearson": 0.04852977624427651,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.04034497741458672
+    },
+    {
+      "backward_seconds": 63063.472811622,
+      "content_ram_index": 14,
+      "deletion_auc": 0.3341736694677871,
+      "game": "freeway",
+      "grad_l1": 19.0,
+      "insertion_auc": 0.04789915966386557,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@14, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.7468969670496024,
+      "precision_at_k": 1.0,
+      "spearman": 0.9994052928406509
+    },
+    {
+      "backward_seconds": 63063.472811622,
+      "content_ram_index": -1,
+      "deletion_auc": 0.5327877507919747,
+      "game": "freeway",
+      "grad_l1": 18.0,
+      "insertion_auc": 0.5005455825413587,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r173c19",
+      "output_kind": "position",
+      "pearson": 0.04852977624427649,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.04034497741458672
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1793073431",
+  "topk": 3
+}

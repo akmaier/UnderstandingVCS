@@ -1,0 +1,72 @@
+{
+  "commit": "56e3a03",
+  "games": [
+    "assault"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 35169.809566199,
+      "content_ram_index": 39,
+      "deletion_auc": 0.32670344560588466,
+      "game": "assault",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.35728803716608587,
+      "method": "e2e_saliency",
+      "output": "content(ram@39, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.0,
+      "precision_at_k": 0.0,
+      "spearman": 0.0
+    },
+    {
+      "backward_seconds": 35169.809566199,
+      "content_ram_index": -1,
+      "deletion_auc": 0.1394921068624044,
+      "game": "assault",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.8888173542716874,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r20c11",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 0.0,
+      "spearman": 0.0
+    },
+    {
+      "backward_seconds": 35169.809566199,
+      "content_ram_index": 39,
+      "deletion_auc": 0.32670344560588466,
+      "game": "assault",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.35728803716608587,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@39, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.0,
+      "precision_at_k": 0.0,
+      "spearman": 0.0
+    },
+    {
+      "backward_seconds": 35169.809566199,
+      "content_ram_index": -1,
+      "deletion_auc": 0.1394921068624044,
+      "game": "assault",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.8888173542716874,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r20c11",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 0.0,
+      "spearman": 0.0
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1793045439",
+  "topk": 3
+}
