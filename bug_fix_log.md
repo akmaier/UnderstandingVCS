@@ -278,6 +278,34 @@ all games, soft==hard full-system) **8/8 passed**, exit 0. Full jaxtari
 `pytest -n 16` (780320) still running at 12 h (one long test left; output is
 piped through `tail`, so nothing is visible until it ends).
 
+### 🔎 Correction: the pitfall/enduro fixture change is a ROM-dump difference, not the xitari build — 2026-10-27
+
+The entry below leaves "why the 06-24 xitari build no longer draws the ACTIVISION logo" open. It is not
+the build. Two different dumps of each ROM are in use:
+
+| game | manifest (`tools/rom_sweep/rom_sha256.txt`, cluster, other machine) | this Mac's `xitari/roms/` and `tools/rom_sweep/roms/` |
+|---|---|---|
+| pitfall | c719b477… | c56c99d9… (differs at $030E-F: A5 89 vs A9 00) |
+| enduro  | ca9bb897… | 6045c8be… (differs at $0B53: 0C vs 00) |
+
+Measured with ONE xitari build (this Mac's current seed-patched `tools/trace_dump --screen`, actions
+`tools/fixtures/actions/*_noop_10.txt`, 10 frames):
+
+| ROM | vs OLD (June) fixture | vs NEW fixture (2edd0073) |
+|---|---|---|
+| pitfall manifest | 557 px/frame | **0** |
+| pitfall Mac dump | **0** | 557 |
+| enduro manifest  | 114 px/frame | **0** |
+| enduro Mac dump  | **0** | 114 |
+
+So the June fixtures were made from the Mac's dumps (which draw the logo); the new fixtures were made
+from the manifest ROMs (which do not). The xitari build renders both correctly. The new fixtures are
+the right ones (they match the manifest that ships in the supplement), but on any machine with the
+older dumps — currently this Mac — `test_screen_conformance[pitfall|enduro]` now fails at 557/114 px.
+Fix there: replace the two ROMs with the manifest images (check against `rom_sha256.txt`).
+Note also that local sweeps on this Mac (e.g. the 3,600-frame long-horizon run) used the older dumps
+for these two games; both were exact there, so no reported number changes.
+
 ### ✅ pitfall / enduro screen fixtures regenerated from the current xitari (stale since 2026-06-24) — 2026-10-27
 
 **Symptom.** `test_screen_conformance` failed `test_jaxtari_screen_matches_xitari[pitfall_noop_10]`
