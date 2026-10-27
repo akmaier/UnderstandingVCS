@@ -260,6 +260,34 @@ all games, soft==hard full-system) **8/8 passed**, exit 0. Full jaxtari
 `pytest -n 16` (780320) still running at 12 h (one long test left; output is
 piped through `tail`, so nothing is visible until it ends).
 
+### ✅ pitfall / enduro screen fixtures regenerated from the current xitari (stale since 2026-06-24) — 2026-10-27
+
+**Symptom.** `test_screen_conformance` failed `test_jaxtari_screen_matches_xitari[pitfall_noop_10]`
+(557 px every frame) and `[enduro_noop_10]` (114 px every frame) on the Mac and on the cluster
+(full-suite jobs 780320, 780336). The jutari twins passed. Same numbers as the June stale-fixture
+episode (0b48b970).
+
+**Ruled out.** (1) jaxtari regression — bisected 7 commits 0b48b970…8dcbaf00: all fail at 557 px,
+including 0b48b970 itself. (2) ROMs — `xitari/roms/{pitfall,enduro}.bin` unchanged since 2026-05-18,
+identical on the cluster (sha256 c719b477… / ca9bb897…). (3) Rendering vs game state — same score,
+timer, positions; the diff is only the bottom "ACTIVISION" logo (drawn in the fixture, absent now)
+and Pitfall's score/timer digits shifted 1 px — both in the 48-pixel-sprite HUD kernel. No frame
+offset explains it.
+
+**Cause.** The stored xitari screens (2026-06-17) came from an older xitari build; `tools/trace_dump`
+was rebuilt 2026-06-24. Measured on the test case: current xitari vs current jaxtari = 0 px, current
+xitari vs current jutari = 0 px (all 10 frames, both games); current xitari vs stored fixture =
+557 / 114 px. The jutari test passed only because its fixture came from the same June batch. The local
+xitari tree carries the two repo patches (seed-0, bus-trace hook) plus an env-gated diagnostic print in
+`TIA.cxx`; none of them should change rendering, so *why* the 06-24 build no longer draws the logo
+is NOT established (open: bisect the xitari build).
+
+**Fix.** By the author's decision ("regenerate the four pitfall and enduro screen fixtures from today's
+xitari"): xitari fixtures from `tools/trace_dump --screen` (actions `tools/fixtures/actions/*_noop_10.txt`,
+10 frames), jutari fixtures from `tools/jutari_screen_dump.jl`; gzip mtime=0. All four screen tests
+pass at pin 0 (pytest, 4 passed, 10 min). Note: the reference now omits the Activision logo a real
+console shows — a fidelity question about the xitari build, not about either port.
+
 ### ✅ jaxtari full-system SOFT step: record / replay — jit / vmap / grad on device — 2026-10-24
 
 **Symptom.** `soft_system_run` steps the eager-Python hard console on every
