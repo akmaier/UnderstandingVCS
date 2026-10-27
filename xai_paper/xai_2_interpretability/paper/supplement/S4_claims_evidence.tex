@@ -35,7 +35,7 @@ A faithful causal method reaches the oracle ceiling where the default tool stays
 The naive gradient of a discrete position output is provably zero & Prop.~\ref{prop:zero} (\Sectionname\ref{sec:oracle}); \jkey{oracle_grad} & all gradient methods & grad@position $=0$; sampler restores $166$ & position path only; restored gradient is low/mixed \\
 High plausibility coexists with low faithfulness (the danger zone) & Fig.~\ref{fig:faithfulness}; \jkey{faithful_demo} & vanilla saliency & proxy $0.9$, F $0.092$ (position regime; all-regimes F $0.361$, plotted in Fig.~\ref{fig:faithfulness}) & proxy, not measured plausibility \\
 Faithful attribution recovers the wiring but not the computation's semantics & Fig.~\ref{fig:taxonomy} (\Sectionname\ref{supp:coverage}); discussion & Phase~B vs.\ C & F vs.\ S, M & necessary-condition stress test \\
-A gradient through the whole program gives the same map as the one-step surrogate & \Sectionname\ref{sec:results-b}; \jkey{e2e_core_summary.json} & vanilla saliency, Grad$\times$Input; 6 core games & F content, F position & control on the 6 core games only; not a leaderboard row \\
+A gradient through the whole program gives the same map as the one-step surrogate on most games, and no higher faithfulness on average & \Sectionname\ref{sec:results-b}; \jkey{e2e_core_summary.json}, \jkey{e2e_vs_single.json} & vanilla saliency, Grad$\times$Input; 44 scored games & F content, F position & control; not a leaderboard row \\
 The failure modes have documented NN analogues & Fig.~\ref{fig:representativeness} & taxonomy & --- & analogues, not proof \\
 \bottomrule
 \end{tabular}

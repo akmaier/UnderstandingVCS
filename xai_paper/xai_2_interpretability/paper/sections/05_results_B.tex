@@ -65,27 +65,35 @@ causal and intervention family $0.71$. The position map is not empty by choice; 
 weak exactly where the discrete game logic sits.
 
 One objection remains: these gradients differentiate a single read at the intervention
-frame, not the program that runs during the horizon. We therefore ran a true end-to-end
-control on the six core games. We read the output at the end of the horizon and
-differentiate it back to the RAM at the intervention frame through every CPU instruction
-in between, $65{,}081$ to $99{,}703$ instructions per game. The pass is checkpointed every
-$200$ instructions, and the forward pass is bit-exact to the hard machine in every game.
-TIA and RIOT reads enter as constants, so the renderer itself is not differentiated. The
-result is the same one-hot map. In five of the six games the end-to-end gradient of the
-content byte is exactly $e_{\mathrm{idx}}$ ($\lVert g\rVert_1=1$, one non-zero entry), and
-its scores equal those of the single read to the last digit (Breakout $0.750$,
-Space~Invaders $1.000$, Seaquest $0.017$, Ms.~Pac-Man $0.811$, Q*bert $0.999$). Every other
-path by which the oracle's causes reach the output runs through a branch, an indexed load,
-or a hardware read, and the straight-through gradient carries none of these. Pong is the
-one exception, and it is instructive: the gradient also reaches \texttt{ram[56]} with
-$\partial y/\partial u = 15$, the horizon length, which is what a per-frame velocity added
-to a position produces. That byte is not among the candidate causes, so Pong's scores are
-unchanged ($0.464$ content, $0.278$ position). On the position output the end-to-end
-gradient vanishes entirely on Breakout and Space~Invaders, although the sampler's gradient
-at the end of the horizon is non-zero. Breakout recomputes its paddle position every frame
-from the paddle input, a hardware read the gradient cannot see. Differentiating the whole
-program therefore does not rescue the gradient family; it sees the same smooth sliver of
-the computation.
+frame, not the program that runs during the horizon. Vanilla saliency, Grad$\times$Input, IG,
+Expected Gradients, SmoothGrad and guided backprop are in that sense local read-out
+surrogates of the true gradient. We therefore ran a true end-to-end control on all
+$44$ scored games. We read the output at the end of the horizon and differentiate it back to
+the RAM at the intervention frame through every CPU instruction in between, $57{,}073$ to
+$99{,}703$ instructions per game. The pass is checkpointed every $200$ instructions, and the
+forward pass is bit-exact to the hard machine in every game. TIA and RIOT reads enter as
+constants, so the renderer itself is not differentiated. On most games the result is the
+same map. On the content output the end-to-end per-cause map equals the single read's on
+$34$ of $43$ games. On $32$ of them the gradient is exactly $e_{\mathrm{idx}}$
+($\lVert g\rVert_1=1$, one non-zero entry). On Pong and Atlantis it also reaches a byte
+outside the candidate causes with $\partial y/\partial u = 15$, the horizon length, which is
+what a per-frame velocity added to a position produces. On $8$ games the gradient vanishes,
+because the straight-through gradient finds no arithmetic path from the intervention frame to
+the byte at the end of the horizon. This costs Enduro ($1.000$ to $0$), Phoenix ($0.909$ to
+$0$) and Air~Raid ($0.360$ to $0$) their content score. One game gains: in Centipede the
+content byte at the end of the horizon is carried over from \texttt{ram[111]} at the
+intervention frame (unit derivative, no other support), the gradient follows it to the oracle's largest cause, and its
+faithfulness rises from $-0.096$ to $0.851$. On the position output the map is unchanged on
+$34$ games and vanishes on $8$, among them Breakout and Space~Invaders, although the
+sampler's gradient at the end of the horizon is non-zero. Breakout recomputes its paddle
+position every frame from the paddle input, a hardware read the gradient cannot see.
+Averaged over the games, faithfulness falls from $0.627$ to $0.594$ on content and from
+$0.090$ to $0.084$ on position. Differentiating the whole program therefore does not rescue
+the gradient family. The gradient follows data that is copied or added. Every other path by
+which the oracle's causes reach the output runs through a branch, an indexed load, or a
+hardware read, and the straight-through gradient carries none of these. It sees the same
+smooth sliver of the computation.
+%% PENDING ice_hockey (job 780536): counts above are over the 43 games done; update to 44.
 
 Two further results make this point stronger. The baseline choice is the perennial
 worry about IG. Here it changes magnitude, not faithfulness. The

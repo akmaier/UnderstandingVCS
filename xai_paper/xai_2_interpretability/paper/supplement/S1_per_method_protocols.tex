@@ -150,16 +150,17 @@ zero delta on both outputs of \texttt{space\_invaders}, \texttt{ms\_pacman}, \te
 content output of \texttt{enduro}, where its perturbation does not move the shared output at that frame; those cells record $F=0$ and enter
 the mean at that value. Expected Gradients scores low on the content regime of every core game except \texttt{pong},
 because the causal byte it should land on is static there. The end-to-end gradient control of
-\Sectionname\ref{sec:results-b} (\texttt{e2e\_gradient.jl}, six core games, records
-\texttt{e2e\_\{saliency,gradxinput\}\_$\langle$game$\rangle$\_*} and \texttt{e2e\_core\_summary.json}) is not a
+\Sectionname\ref{sec:results-b} (\texttt{e2e\_gradient.jl}, all $44$ scored games, records
+\texttt{e2e\_\{saliency,gradxinput\}\_$\langle$game$\rangle$\_*}, merged in \texttt{e2e\_core\_summary.json} and
+compared with the single read in \texttt{compare/out/e2e\_vs\_single.json}) is not a
 separate leaderboard row. It differentiates the end-of-horizon output back to the RAM at the
-intervention frame through the full-system soft step, one instruction at a time ($65{,}081$ to
+intervention frame through the full-system soft step, one instruction at a time ($57{,}073$ to
 $99{,}703$ instructions per game). Reverse mode is checkpointed every $200$ instructions, and
 each chunk's soft forward pass is asserted bit-equal to the hard registers and RAM. The
 position output chains the rollout with the same bilinear sampler at the end of the horizon.
 It is scored with the same oracle, causes, and metrics as vanilla saliency. The backward pass
-takes 9--18\,h per game on one CPU core. Two independent runs (ARM and x86) agree to within one
-unit in the last place. The budgets that matter are the
+takes 8--23\,h per game on one CPU core. On the six core games two independent runs (ARM and
+x86) agree to within one unit in the last place. The budgets that matter are the
 Monte-Carlo or perturbation counts of the sampling estimators, recorded per method in
 Table~\ref{supp:tab:phaseB}. The seed-dispersion of the stochastic members is carried in
 \texttt{leaderboard\_ci.csv} (\texttt{seed\_sd}, \texttt{seed\_sd\_source}) and reproduced

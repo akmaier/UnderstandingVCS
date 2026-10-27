@@ -74,11 +74,13 @@ to recover.
 
 A second artifact reading also fails. The gradient methods differentiate a single read at the
 intervention frame, so one could argue that a gradient through the running program would do
-better. We computed that gradient on the six core games, through up to $10^5$ bit-exact CPU
-instructions per game (\Sectionname\ref{sec:results-b}). It returned the same one-hot map as the
-single read and the same scores. In two games it lost the position gradient entirely. The
-program's causal structure lives in branches, indexed addressing, and hardware reads, and
-backpropagation does not traverse any of them. A deeper gradient is not a more faithful one.
+better. We computed that gradient on all $44$ scored games, through up to $10^5$ bit-exact CPU
+instructions per game (\Sectionname\ref{sec:results-b}). On most games it returned the same map
+as the single read and the same scores. On $8$ games it lost the content gradient and on $8$ the
+position gradient entirely. It helped once, on Centipede, where the output byte is carried over
+from the oracle's largest cause. The program's causal structure lives in branches, indexed addressing,
+and hardware reads, and backpropagation does not traverse any of them. A deeper gradient is not a
+more faithful one.
 
 The improvement occurs only in specific cases, and that pattern is itself evidence. It is not a
 universal rise. It rises only on the games with a moving tracked sprite the gradient can flow to.

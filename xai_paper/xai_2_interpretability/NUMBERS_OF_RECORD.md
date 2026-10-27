@@ -68,15 +68,31 @@ Note: `linear_probing_control_tasks` has n_games 44 in `leaderboard.json` but it
 | sparse_autoencoder | dim_reduction | 0.147 | — | 0.165 | 0.924 | 0.75 | 42 |
 | ORACLE | oracle | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | 1 |
 
-## End-to-end gradient control (6 core games, 2026-10-26)
+## End-to-end gradient control (44 scored games, 2026-10-27)
 `phaseB_attribution/e2e_gradient.jl`; records `out/e2e_{saliency,gradxinput}_<game>_{content,position}.json`,
-merged in `out/e2e_core_summary.json`. The end-of-horizon output (f*+15) is differentiated back to RAM at f*
-through every instruction of the horizon (65,081–99,703 per game), Zygote VJP checkpointed every 200
-instructions, each chunk's soft forward asserted bit-equal to the hard registers + RAM. Backward 9–18 h per
-game on one core; local (ARM) and cluster (x86) runs agree to ≤ 1 ulp. Scored like vanilla saliency
-(Pearson vs the oracle, same causes).
+per-game `out/e2e_summary_<game>.json`, merged in `out/e2e_core_summary.json` (name kept from the 6-core
+pilot). Compared with the single read by `compare/e2e_vs_single.py` → `compare/out/e2e_vs_single.{json,md}`.
+The end-of-horizon output (f*+15) is differentiated back to RAM at f* through every instruction of the
+horizon (57,073–99,703 per game), Zygote VJP checkpointed every 200 instructions, each chunk's soft
+forward asserted bit-equal to the hard registers + RAM. Backward 8–23 h per game on one core (6 core games
+local ARM + cluster x86, agree to ≤ 1 ulp; the other 38 on the cluster, commit 56e3a03). Scored like
+vanilla saliency (Pearson vs the oracle, same causes).
 
-| game | e2e saliency F content | e2e saliency F position |
+**PENDING ice_hockey** (job 780536; the first run hit the 24 h wall at chunk 501/540). Counts below: 43 games.
+
+| category (e2e per-cause map vs single read) | content | position |
+|---|---|---|
+| identical (content: exactly e_idx) | 32 | 31 |
+| extra support, same map (velocity byte, ∂y/∂u = 15) | 2 (atlantis, pong) | 3 (frostbite, pong, tennis) |
+| gradient vanishes | 8 (air_raid, assault, chopper_command, enduro, hero, phoenix, pitfall, road_runner) | 8 (air_raid, assault, breakout, chopper_command, jamesbond, montezuma_revenge, private_eye, space_invaders) |
+| one-hot on a different byte | 1 (centipede: ram[110]@f*+15 ← ram[111]@f*) | 1 (centipede) |
+
+Mean clipped F, single → e2e: content 0.627 → 0.594, position 0.090 → 0.084.
+Score changes (single → e2e, unclipped): enduro content 1.000 → 0, phoenix content 0.909 → 0,
+air_raid content 0.360 → 0 and position 0.228 → 0, centipede content −0.096 → 0.851; centipede position
+−0.081 → −0.076; every other changed cell goes from a value ≤ 0.03 to 0.
+
+| core game | e2e saliency F content | e2e saliency F position |
 |---|---|---|
 | pong | 0.464 | 0.278 |
 | breakout | 0.750 | 0.000 |
@@ -85,6 +101,7 @@ game on one core; local (ARM) and cluster (x86) runs agree to ≤ 1 ulp. Scored 
 | ms_pacman | 0.811 | −0.034 |
 | qbert | 0.999 | −0.031 |
 
-Grad×Input equals saliency except where the byte holds 0 at f* (seaquest content 0.000, qbert position 0.000).
+Grad×Input equals saliency except where the byte holds 0 at f* (asterix, carnival, seaquest content;
+alien, qbert position: 0.000).
 The e2e records are **excluded from the leaderboard aggregation** (`leaderboard.py` skips `e2e_*`, as it skips
-`pilot*`); the control is a 6-core-game sub-study, not a leaderboard row.
+`pilot*`); the control is a sub-study, not a leaderboard row.

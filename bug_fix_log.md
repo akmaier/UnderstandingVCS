@@ -14,6 +14,24 @@ measured before/after, and any conformance (PXC) numbers that moved.
 
 ---
 
+### 📊 P2 end-to-end gradient arm on all 44 scored games (43 in, ice_hockey re-running) — 2026-10-27
+- **Run**: cluster jobs 780442–45 + 780455 (packed, 9 games per node, commit 56e3a03), 38 non-core games
+  + beam_rider (no longer scored, left out of the merge). All rc=0. Backward 8–23 h per game; a 200-instruction
+  chunk costs ~100–160 s with 9 games on a node, so the longest games came close to the 24 h wall.
+- **Gotcha — ice_hockey hit the wall**: 540 chunks, job 780445 TIMEOUT at chunk 501/540 (`scontrol update
+  TimeLimit` is denied to users). Re-running alone as job 780536 in the worktree `/cluster/maier/UVCS_e2e_bk`
+  (detached at 56e3a03, `--project=/cluster/maier/UVCS_e2e/jutari`, `XAI_PRIMARY_REPO=/cluster/maier/UVCS_e2e`).
+  For a re-run, give games with > 480 chunks their own job.
+- **Gotcha — `pkill -f` inside a packed job**: killing a redundant backup with `pkill -f "game riverraid"` also
+  matched the `bash -c run_one … e2e_riverraid` wrapper; xargs then aborted ("bash: terminated by signal 15")
+  and took the sibling ice_hockey run down with it. Kill the julia PID only.
+- **Result** (`compare/e2e_vs_single.py`, 43 games): the e2e per-cause map equals the single read on 34/43
+  content and 34/43 position cells; the gradient vanishes on 8 + 8; centipede is the one gain (ram[110]@f*+15
+  is carried over from ram[111]@f*, the oracle's top cause; F −0.096 → 0.851). Losses: enduro content
+  1.000 → 0, phoenix 0.909 → 0, air_raid 0.360/0.228 → 0. Mean clipped F content 0.627 → 0.594, position
+  0.090 → 0.084. Paper Results B / S1 / S4 / S6 / Discussion / intro and NUMBERS_OF_RECORD updated;
+  counts become final when ice_hockey lands.
+
 ### 📊 P2 44-game battery re-run (real boot, corrected labels) — records + cross-machine check — 2026-10-26
 
 Cluster jobs 780453/780454 (31 runners × 44 games, commit 56e3a03), all rc=0; all 44
