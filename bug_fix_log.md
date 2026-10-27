@@ -303,6 +303,9 @@ from the manifest ROMs (which do not). The xitari build renders both correctly. 
 the right ones (they match the manifest that ships in the supplement), but on any machine with the
 older dumps — currently this Mac — `test_screen_conformance[pitfall|enduro]` now fails at 557/114 px.
 Fix there: replace the two ROMs with the manifest images (check against `rom_sha256.txt`).
+**Done on this Mac (2026-10-27):** both ROMs replaced in `xitari/roms/` and `tools/rom_sweep/roms/`
+(old dumps kept outside the repo); all 64 ROMs now pass `shasum -c rom_sha256.txt`;
+`test_screen_conformance -k "pitfall or enduro"`: 4 passed.
 Note also that local sweeps on this Mac (e.g. the 3,600-frame long-horizon run) used the older dumps
 for these two games; both were exact there, so no reported number changes.
 
