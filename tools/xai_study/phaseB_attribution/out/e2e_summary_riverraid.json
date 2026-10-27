@@ -1,0 +1,72 @@
+{
+  "commit": "56e3a03",
+  "games": [
+    "riverraid"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 75139.665656012,
+      "content_ram_index": 55,
+      "deletion_auc": 0.01078397808969531,
+      "game": "riverraid",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.960458747004451,
+      "method": "e2e_saliency",
+      "output": "content(ram@55, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.9995848704141622,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.6540768527283279
+    },
+    {
+      "backward_seconds": 75139.665656012,
+      "content_ram_index": -1,
+      "deletion_auc": 0.8434881247480424,
+      "game": "riverraid",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.4996075891823273,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r158c79",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.0
+    },
+    {
+      "backward_seconds": 75139.665656012,
+      "content_ram_index": 55,
+      "deletion_auc": 0.01078397808969531,
+      "game": "riverraid",
+      "grad_l1": 254.0,
+      "insertion_auc": 0.960458747004451,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@55, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.9995848704141634,
+      "precision_at_k": 0.6666666666666666,
+      "spearman": 0.6540768527283279
+    },
+    {
+      "backward_seconds": 75139.665656012,
+      "content_ram_index": -1,
+      "deletion_auc": 0.8434881247480424,
+      "game": "riverraid",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.4996075891823273,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r158c79",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 0.3333333333333333,
+      "spearman": 0.0
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1793085559",
+  "topk": 3
+}

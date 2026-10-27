@@ -1,0 +1,72 @@
+{
+  "commit": "56e3a03",
+  "games": [
+    "private_eye"
+  ],
+  "method": "e2e_gradient (saliency + Grad×Input)",
+  "n_games_scored": 1,
+  "na_games": [],
+  "paper": "P2",
+  "phase": "phaseB_attribution",
+  "results": [
+    {
+      "backward_seconds": 75261.729244894,
+      "content_ram_index": 68,
+      "deletion_auc": 0.7339800995024874,
+      "game": "private_eye",
+      "grad_l1": 1.0,
+      "insertion_auc": 0.09477611940298508,
+      "method": "e2e_saliency",
+      "output": "content(ram@68, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.757645073690618,
+      "precision_at_k": 1.0,
+      "spearman": 0.9997917317482359
+    },
+    {
+      "backward_seconds": 75261.729244894,
+      "content_ram_index": -1,
+      "deletion_auc": 0.8403301168105637,
+      "game": "private_eye",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.21808532249873033,
+      "method": "e2e_saliency",
+      "output": "screen_region(n_changed_px)@r148c49",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 0.0,
+      "spearman": 0.0
+    },
+    {
+      "backward_seconds": 75261.729244894,
+      "content_ram_index": 68,
+      "deletion_auc": 0.7339800995024874,
+      "game": "private_eye",
+      "grad_l1": 55.0,
+      "insertion_auc": 0.09477611940298508,
+      "method": "e2e_gradxinput",
+      "output": "content(ram@68, f*+15)",
+      "output_kind": "content",
+      "pearson": 0.7576450736906181,
+      "precision_at_k": 1.0,
+      "spearman": 0.9997917317482359
+    },
+    {
+      "backward_seconds": 75261.729244894,
+      "content_ram_index": -1,
+      "deletion_auc": 0.8403301168105637,
+      "game": "private_eye",
+      "grad_l1": 0.0,
+      "insertion_auc": 0.21808532249873033,
+      "method": "e2e_gradxinput",
+      "output": "screen_region(n_changed_px)@r148c49",
+      "output_kind": "position",
+      "pearson": 0.0,
+      "precision_at_k": 0.0,
+      "spearman": 0.0
+    }
+  ],
+  "seed": 0,
+  "timestamp": "1793085665",
+  "topk": 3
+}
