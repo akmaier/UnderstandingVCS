@@ -1,11 +1,9 @@
 {
  "summary": {
   "n_scored_games": 44,
-  "n_games_with_e2e": 43,
-  "missing": [
-   "ice_hockey"
-  ],
-  "content_n": 43,
+  "n_games_with_e2e": 44,
+  "missing": [],
+  "content_n": 44,
   "categories": {
    "content": {
     "extra_support_same_map": [
@@ -27,6 +25,7 @@
      "freeway",
      "frostbite",
      "gopher",
+     "ice_hockey",
      "jamesbond",
      "kangaroo",
      "krull",
@@ -63,6 +62,7 @@
    "position": {
     "extra_support_same_map": [
      "frostbite",
+     "ice_hockey",
      "pong",
      "tennis"
     ],
@@ -114,9 +114,9 @@
     ]
    }
   },
-  "content_F_equal_single": 34,
-  "position_n": 43,
-  "position_F_equal_single": 34,
+  "content_F_equal_single": 35,
+  "position_n": 44,
+  "position_F_equal_single": 35,
   "not_equal": [
    [
     "air_raid",
@@ -227,12 +227,12 @@
     0.0
    ]
   ],
-  "mean_clipped_F_e2e_saliency_content": 0.5943572349639428,
-  "mean_clipped_F_single_saliency_content": 0.6273469087917302,
-  "mean_clipped_F_e2e_gradxinput_content": 0.593954214848091,
-  "mean_clipped_F_e2e_saliency_position": 0.08406055848283481,
-  "mean_clipped_F_single_saliency_position": 0.09008285850594605,
-  "mean_clipped_F_e2e_gradxinput_position": 0.08406055848283481
+  "mean_clipped_F_e2e_saliency_content": 0.5982803315810993,
+  "mean_clipped_F_single_saliency_content": 0.6305202400946187,
+  "mean_clipped_F_e2e_gradxinput_content": 0.5978864710133349,
+  "mean_clipped_F_e2e_saliency_position": 0.0864213078215904,
+  "mean_clipped_F_single_saliency_position": 0.09230673738963091,
+  "mean_clipped_F_e2e_gradxinput_position": 0.0864213078215904
  },
  "rows": [
   {
@@ -1036,12 +1036,40 @@
   {
    "game": "ice_hockey",
    "output": "content",
-   "status": "missing_e2e"
+   "status": "ok",
+   "target_e2e": "content(ram@55, f*+15)",
+   "target_single": "content(ram_self@55)",
+   "grad_l1": 1.0,
+   "grad_nnz": 1,
+   "n_instructions": 106547,
+   "backward_seconds": 74454.214761452,
+   "F_e2e_saliency": 0.7669734861188282,
+   "F_single_saliency": 0.7669734861188282,
+   "F_e2e_gradxinput": 0.7669734861188278,
+   "one_hot": true,
+   "zero_gradient": false,
+   "max_abs_attr_diff": 0.0,
+   "F_equal": true,
+   "category": "identical"
   },
   {
    "game": "ice_hockey",
    "output": "position",
-   "status": "missing_e2e"
+   "status": "ok",
+   "target_e2e": "screen_region(n_changed_px)@r92c61",
+   "target_single": "screen_region(n_changed_px)@r92c61",
+   "grad_l1": 9.0,
+   "grad_nnz": 2,
+   "n_instructions": 106547,
+   "backward_seconds": 74454.214761452,
+   "F_e2e_saliency": 0.1879335293880802,
+   "F_single_saliency": 0.1879335293880802,
+   "F_e2e_gradxinput": 0.1879335293880802,
+   "one_hot": false,
+   "zero_gradient": false,
+   "max_abs_attr_diff": 0.0,
+   "F_equal": true,
+   "category": "extra_support_same_map"
   },
   {
    "game": "jamesbond",
