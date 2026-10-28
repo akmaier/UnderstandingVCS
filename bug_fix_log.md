@@ -317,25 +317,31 @@ for these two games; both were exact there, so no reported number changes.
 episode (0b48b970).
 
 **Ruled out.** (1) jaxtari regression — bisected 7 commits 0b48b970…8dcbaf00: all fail at 557 px,
-including 0b48b970 itself. (2) ROMs — `xitari/roms/{pitfall,enduro}.bin` unchanged since 2026-05-18,
-identical on the cluster (sha256 c719b477… / ca9bb897…). (3) Rendering vs game state — same score,
+including 0b48b970 itself. (2) ROMs *on the machine that ran the bisect* —
+`xitari/roms/{pitfall,enduro}.bin` there unchanged since 2026-05-18 and identical to the cluster
+(sha256 c719b477… / ca9bb897…). That did NOT rule out the ROMs as the cause: the June fixtures were
+made on a machine with different dumps (see the correction entry above). (3) Rendering vs game state — same score,
 timer, positions; the diff is only the bottom "ACTIVISION" logo (drawn in the fixture, absent now)
 and Pitfall's score/timer digits shifted 1 px — both in the 48-pixel-sprite HUD kernel. No frame
 offset explains it.
 
-**Cause.** The stored xitari screens (2026-06-17) came from an older xitari build; `tools/trace_dump`
-was rebuilt 2026-06-24. Measured on the test case: current xitari vs current jaxtari = 0 px, current
+**Cause — CORRECTED (2026-10-28).** The diagnosis written here at first ("the stored screens came
+from an older xitari build; trace_dump was rebuilt 2026-06-24") was WRONG. With one xitari build the
+June fixtures equal xitari on the older pitfall/enduro dumps (c56c99d9… / 6045c8be…) and the new
+fixtures equal xitari on the manifest ROMs (c719b477… / ca9bb897…); cross pairs give exactly
+557 / 114 px — a ROM-dump difference, the build is innocent (see "🔎 Correction" above, 7263999d).
+Original measurements, still valid: on the test case: current xitari vs current jaxtari = 0 px, current
 xitari vs current jutari = 0 px (all 10 frames, both games); current xitari vs stored fixture =
 557 / 114 px. The jutari test passed only because its fixture came from the same June batch. The local
 xitari tree carries the two repo patches (seed-0, bus-trace hook) plus an env-gated diagnostic print in
-`TIA.cxx`; none of them should change rendering, so *why* the 06-24 build no longer draws the logo
-is NOT established (open: bisect the xitari build).
+`TIA.cxx`; none of them changes rendering — consistent with the corrected cause.
 
 **Fix.** By the author's decision ("regenerate the four pitfall and enduro screen fixtures from today's
 xitari"): xitari fixtures from `tools/trace_dump --screen` (actions `tools/fixtures/actions/*_noop_10.txt`,
 10 frames), jutari fixtures from `tools/jutari_screen_dump.jl`; gzip mtime=0. All four screen tests
 pass at pin 0 (pytest, 4 passed, 10 min). Note: the reference now omits the Activision logo a real
-console shows — a fidelity question about the xitari build, not about either port.
+console shows — no: the regenerated fixtures are correct for the manifest ROMs (rom_sha256.txt);
+the logo / 1-px HUD shift belongs to the other ROM dump, not to xitari.
 
 ### ✅ jaxtari full-system SOFT step: record / replay — jit / vmap / grad on device — 2026-10-24
 
