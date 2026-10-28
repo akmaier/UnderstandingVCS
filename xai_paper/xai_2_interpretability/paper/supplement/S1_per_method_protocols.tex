@@ -155,7 +155,7 @@ because the causal byte it should land on is static there. The end-to-end gradie
 compared with the single read in \texttt{compare/out/e2e\_vs\_single.json}) is not a
 separate leaderboard row. It differentiates the end-of-horizon output back to the RAM at the
 intervention frame through the full-system soft step, one instruction at a time ($57{,}073$ to
-$99{,}703$ instructions per game). Reverse mode is checkpointed every $200$ instructions, and
+$106{,}547$ instructions per game). Reverse mode is checkpointed every $200$ instructions, and
 each chunk's soft forward pass is asserted bit-equal to the hard registers and RAM. The
 position output chains the rollout with the same bilinear sampler at the end of the horizon.
 It is scored with the same oracle, causes, and metrics as vanilla saliency. The backward pass

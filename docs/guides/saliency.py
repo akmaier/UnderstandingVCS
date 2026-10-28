@@ -104,8 +104,8 @@ checkpointed every 200). That is the analogue of backpropagating through a very 
 discrete network. The renderer (TIA) is still not differentiated.</p>
 <p><b>What it found</b> (all 44 scored games, forward pass bit-exact in every one, 8&ndash;23 hours
 of backward pass per game on one core). On most games the answer is the same map as the one-line read.
-On the content byte the per-cause map is unchanged in 34 of 43 games finished so far, and in the position
-output in 34 as well. The six core games show the patterns one by one:</p>
+On the content byte the per-cause map is unchanged in 35 of the 44 games, and in the position output in
+35 as well. The six core games show the patterns one by one:</p>
 <ul>
 <li><b>Content:</b> in five games the gradient through 65&thinsp;000&ndash;81&thinsp;000 instructions is
 <i>exactly</i> the one-hot vector \(e_{\text{idx}}\) again (\(\lVert g\rVert_1 = 1\), one non-zero
@@ -127,8 +127,8 @@ treats as a constant. The vanishing gradient, measured.</li>
 position output. Three games lose a good content score that way (Enduro 1.000 to 0, Phoenix 0.909 to 0,
 Air Raid 0.360 to 0). One game gains: in Centipede the content byte at \(f^*{+}15\) is carried over
 from RAM[111] at \(f^*\), the oracle's strongest cause, and the score jumps from &minus;0.10 to 0.85.
-On average the deep gradient is slightly <i>less</i> faithful than the one-line read (content 0.627 to
-0.594, position 0.090 to 0.084).</li>
+On average the deep gradient is slightly <i>less</i> faithful than the one-line read (content 0.631 to
+0.598, position 0.092 to 0.086).</li>
 </ul>
 <p>The lesson for neural networks: a deeper, more &ldquo;honest&rdquo; gradient is not automatically a
 more faithful explanation. Through a computation made of decisions rather than smooth arithmetic,

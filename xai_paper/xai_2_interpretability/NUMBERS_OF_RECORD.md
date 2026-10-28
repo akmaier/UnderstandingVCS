@@ -73,21 +73,19 @@ Note: `linear_probing_control_tasks` has n_games 44 in `leaderboard.json` but it
 per-game `out/e2e_summary_<game>.json`, merged in `out/e2e_core_summary.json` (name kept from the 6-core
 pilot). Compared with the single read by `compare/e2e_vs_single.py` → `compare/out/e2e_vs_single.{json,md}`.
 The end-of-horizon output (f*+15) is differentiated back to RAM at f* through every instruction of the
-horizon (57,073–99,703 per game), Zygote VJP checkpointed every 200 instructions, each chunk's soft
+horizon (57,073–106,547 per game), Zygote VJP checkpointed every 200 instructions, each chunk's soft
 forward asserted bit-equal to the hard registers + RAM. Backward 8–23 h per game on one core (6 core games
-local ARM + cluster x86, agree to ≤ 1 ulp; the other 38 on the cluster, commit 56e3a03). Scored like
+local ARM + cluster x86, agree to ≤ 1 ulp; the other 38 on the cluster, commit 56e3a03; ice_hockey re-run alone, job 780536). Scored like
 vanilla saliency (Pearson vs the oracle, same causes).
-
-**PENDING ice_hockey** (job 780536; the first run hit the 24 h wall at chunk 501/540). Counts below: 43 games.
 
 | category (e2e per-cause map vs single read) | content | position |
 |---|---|---|
-| identical (content: exactly e_idx) | 32 | 31 |
-| extra support, same map (velocity byte, ∂y/∂u = 15) | 2 (atlantis, pong) | 3 (frostbite, pong, tennis) |
+| identical (content: exactly e_idx) | 33 | 31 |
+| extra support, same map (a second byte outside the causes; ∂y/∂u = 15 on atlantis, pong, tennis) | 2 (atlantis, pong) | 4 (frostbite, ice_hockey, pong, tennis) |
 | gradient vanishes | 8 (air_raid, assault, chopper_command, enduro, hero, phoenix, pitfall, road_runner) | 8 (air_raid, assault, breakout, chopper_command, jamesbond, montezuma_revenge, private_eye, space_invaders) |
 | one-hot on a different byte | 1 (centipede: ram[110]@f*+15 ← ram[111]@f*) | 1 (centipede) |
 
-Mean clipped F, single → e2e: content 0.627 → 0.594, position 0.090 → 0.084.
+Mean clipped F over the 44 games, single → e2e: content 0.631 → 0.598, position 0.092 → 0.086.
 Score changes (single → e2e, unclipped): enduro content 1.000 → 0, phoenix content 0.909 → 0,
 air_raid content 0.360 → 0 and position 0.228 → 0, centipede content −0.096 → 0.851; centipede position
 −0.081 → −0.076; every other changed cell goes from a value ≤ 0.03 to 0.
