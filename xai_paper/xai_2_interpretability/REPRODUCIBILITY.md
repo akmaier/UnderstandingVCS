@@ -111,17 +111,21 @@ The `extra{}` block carries the per-record specifics, including — for scorable
 plus the correctness-triad block `extra.triad.{F,S,M}` where the method reports S/M.
 This is what makes the leaderboard (E6) a pure read and the benchmark oracle ROM-free.
 
-**Where the records live** (counts at this HEAD):
+**Where the records live.** Counts are committed `.json` files (`git ls-files '<path>/*.json'`) at
+commit f1eed307 (2026-11-01). Heavy arrays sit in sibling `.npz` files, which are not counted. Every
+folder holds more files than the leaderboard aggregates (**1862**, §6.5). The leaderboard also skips
+`pilot*` harness runs, `*summary*` roll-ups and the `e2e_*` control, and it reads only the 44 scored
+games.
 
-| Path | Records | Content |
-|---|---|---|
-| `tools/xai_study/ground_truth/out/` | 3 | the §1 intervention/gradient/cross-check oracle records |
-| `tools/xai_study/phaseA_kording/out/` | 54 | Phase A — Jonas&Kording battery (`A1…A8`) |
-| `tools/xai_study/phaseB_attribution/out/` | 166 | Phase B — every attribution/XAI method × core games × regimes |
-| `tools/xai_study/phaseC_mechanistic/out/` | 72 | Phase C — mechanistic interp (patching, SAE, probing, circuits) |
-| `tools/xai_study/compare/out/` | leaderboard.{json,csv,md} + faithful_demo.{json,md,npz} | E6-1 leaderboard + E6-3 headline demo (pure reads) |
-| `tools/xai_study/compare/benchmark/out/` | 14 | the packaged benchmark's `magnitude_proxy` demonstration records |
-| `tools/xai_study/t3/out/` | candidates_*/discovered_*/verified_* | T3 game-concept labels (§2) |
+| Path | `.json` files | of which | Content |
+|---|---|---|---|
+| `tools/xai_study/ground_truth/out/` | 3 | — | the §1 intervention/gradient/cross-check oracle records |
+| `tools/xai_study/phaseA_kording/out/` | 365 | 1 pilot | Phase A — Jonas&Kording battery (`A1…A8`) |
+| `tools/xai_study/phaseB_attribution/out/` | 1441 | 226 `e2e_*` (180 per-game records, 46 summaries), 13 other summaries, 2 pilot | Phase B — every attribution/XAI method × games × output regimes, plus the end-to-end gradient control (44 scored games + beam_rider, which is no longer scored) |
+| `tools/xai_study/phaseC_mechanistic/out/` | 544 | 10 summaries, 2 pilot | Phase C — mechanistic interp (patching, SAE, probing, circuits) |
+| `tools/xai_study/compare/out/` | leaderboard.{json,csv,md}, leaderboard_ci.{json,csv}, faithful_demo.{json,md,npz}, position_bootstrap.json, e2e_vs_single.{json,md}, sensitivity CSVs | — | E6-1 leaderboard + CIs, E6-3 headline demo, the end-to-end vs single-read comparison (pure reads) |
+| `tools/xai_study/compare/benchmark/out/` | 14 | — | the packaged benchmark's `magnitude_proxy` demonstration records |
+| `tools/xai_study/t3/out/` | 113 | 54 candidates, 5 discovered, 54 verified (`discovered_*`/`verified_*` each with a sibling `.npz`) | T3 game-concept labels (§2) |
 
 The correctness triad (SPEC §0 / `experiment_design.md` §0) the records are scored on:
 **F** Faithful (claimed causes are the *true* causes — vs the §1 oracle), **S** Sufficient
